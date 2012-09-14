@@ -11,13 +11,17 @@ _default_bytes = {
     }
 
 def _set_and_order_fields(dct):
-    # Loop through the dictionary and create a _names field that orders any
+    # Loop through the dictionary and create a __pod__ field that orders any
     #  fields provided
-    names = [(x._counter, key) for key, x in dct.items() \
+    # If a __pod__ attribute exists, then extend it with the new names
+    names = [(x._DType__counter, key) for key, x in dct.items() \
              if isinstance(x, DType)]
     # Sort the list of names by the counter
     names.sort(key=lambda x: x[0]) 
-    dct['_names'] = [val for _, name in names]
+    prior = dct.get('__bytes__', [])
+    dct['__bytes__'] = prior + [(name, dct[name]) for _, name in names]
+    for _, name in names:
+        del dct[name]
     
 class dtype(type):
     def __new__(cls, name, bases, dct):
@@ -29,10 +33,10 @@ class dtype(type):
 
 class DType(object):
     __metaclass__ = dtype
-    _counter = 0
+    __counter = 0
     def __init__(self):
-        self._counter = DType._counter
-        DType._counter = self._counter + 1
+        self.__counter = DType.__counter
+        DType.__counter = self.__counter + 1
     def _validate_bits(self):
         try:
             valid = self._valid
