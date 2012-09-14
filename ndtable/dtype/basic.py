@@ -1,5 +1,6 @@
 import math
 import ctypes
+from collections import namedtuple
 
 LOG2 = math.log(2)
 
@@ -10,16 +11,25 @@ _default_bytes = {
     'complex': ctypes.sizeof(ctypes.c_double)*2
     }
 
-def _set_and_order_fields(dct):
-    # Loop through the dictionary and create a __pod__ field that orders any
-    #  fields provided
-    # If a __pod__ attribute exists, then extend it with the new names
+def _set_and_order_fields(clsname, dct):
+    # Loop through the dictionary and create a __pod__ named tuple that orders 
+    #   any fields provided
+    # If a __pod__ attribute exists, then extend it
     names = [(x._DType__counter, key) for key, x in dct.items() \
              if isinstance(x, DType)]
     # Sort the list of names by the counter
     names.sort(key=lambda x: x[0]) 
-    prior = dct.get('__bytes__', [])
-    dct['__bytes__'] = prior + [(name, dct[name]) for _, name in names]
+    prior = dct.get('__pod__', None)
+    field_names = tuple(name for _, name in names)
+    values = tuple(dct[name] for name in field_names)
+    if prior is not None:
+       pdict = prior._asdict()
+       old_names, old_values = zip(*pdict.items())
+       field_names = old_names + field_names
+       values = old_values + values
+    new = namedtuple(clsname+'_pod', field_names)
+    dct['__pod__'] = new._make(values)
+    # Remove the attributes moved into the pod
     for _, name in names:
         del dct[name]
     
@@ -28,7 +38,7 @@ class dtype(type):
         # Bypass if DType base-class being processed
         if name == 'DType':
             return type.__new__(cls, name, bases, dct)
-        _set_and_order_fields(dct)
+        _set_and_order_fields(name, dct)
         return type.__new__(cls, name, bases, dct)
 
 class DType(object):
