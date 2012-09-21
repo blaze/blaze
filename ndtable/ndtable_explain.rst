@@ -2,18 +2,20 @@
 NDTable
 ======
 
-The NDTable is a python-level object that allows the user to query rapidly the contents of N-dimensional arrays and tables and is a common interface for algorithm writers to write against.   At its core, the NDTable is an abstract interface which defines the notion of nodes, delayed-evaluation, and index objects so that:
+An NDTable is a python-object that allows N-dimensional + "field" indexing using indexed byte-interfaces.    It is a generalization of NumPy, Pandas, data array, larry, ctable, and CArray, and is meant to serve as a foundational abstraction on which to build out-of-core and distributed algorithms by focusing attention away from moving data to the object and rather layering interpretation on top of data that exists. 
 
-    1) Domain experts have a unified n-dimensional table object to manipulate and hold their data
-    2) Algorithm writers and Developers have a unified API to communicate about the structure of data
+There are two interfaces to the NDTable that are critical: 
+
+    1) Domain expert interface that allows easy construction, indexing, manipulation and computation with an ND table.
+    2) Algorithm writers and developers searching for a unified API that allows coherent communication about the structure of data for optimization. 
 
 It is intended to be *the* glue that holds the pydata ecosystem together.   It has an interface for domain-experts to query their information and an interface for algorithm writers to create out-of-core algorithms against.   The long-term goal is for NDTable to be the interface that *all* pydata projects interact with. 
 
 It is the calculations / operations that can be done with an NDTable that will ultimately matter and define whether or not it gets used in the Python ecosystem.  We need to make it easy to create these calculations and algorithms and push to grow this ecosystem rapidly.  
 
-At the heart of NDTable is a delayed-evaluation system (like SymPy, Theano, and a host of other tools).  As a result, every operation actually returns a node of a simple, directed graph of functions and arguments (just like DyND).  However, as far as possible, these nodes will propagate meta-data and meta-compute (such as dtype, and shape, and index-iterator parameters so that the eventual calculation framework can reason about how to manage the calculation. 
+At the heart of NDTable is a delayed-evaluation system (like SymPy, Theano, and a host of other tools).  As a result, every operation actually returns a node of a simple, directed graph of functions and arguments (also analagous to DyND).  However, as far as possible, these nodes will propagate meta-data and meta-compute (such as dtype, and shape, and index-iterator parameters so that the eventual calculation framework can reason about how to manage the calculation. 
 
-Some nodes of the expression graph are "reified" NDTables (meaning they are no longer an expression graph but a collection of byte-buffers with attached index-iterators). 
+Some nodes of the expression graph are "reified" NDTables (meaning they are no longer an expression graph but a collection of indexed byte-buffers). 
 
 NDTable is a Generalization of NumPy
 =========================
@@ -26,8 +28,7 @@ In addition to the ufuncs defined over NumPy arrays, NumPy defines basically 3 t
      * A shape
      * A strides map to a single data-buffer (a linear, formula-based index)
 
-Generalizing Strides
-----------------
+These concepts are generalized via the concept of indexed byte-buffers.   NumPy-style arrays consist of a single data-segment that can be explained via a linear indexing function with strides as the coefficients.   In addition, to serving as a dispatch mechanism for functions, the dtype also participates in indexing operations via the itemsize, and structure data-types. 
 
 NumPy is a pointer to memory with "indexing" information provided by strides.  While we don't typically think of NumPy arrays as having an "index", the strides attribute provides a linear, formula-based index so that A[I] maps to mem[I \cdot s] where mem is the memory buffer for the array, I is the index-vector, and s is the strides vector.
 
@@ -35,12 +36,36 @@ NDTable generalizes this notion to multiple data-buffers and (necessarily) diffe
 
 One concept which will remain true is that some algorithms will work faster and more optimally with data laid out in a certain way.  As a result, an ndtable may have several data-layouts to choose from which can be selected as needed for optimization. 
 
-So, at the core of every (reified) ndtable there is a collection of byte-buffers and an index (or collection of indexes) that allows mapping calls to __getitem__ to the appropriate segments.  These byte-buffers, how they are indexed, and what they represent are the fundamental building-blocks of the NDTable. 
+So, at the core of every (reified) ndtable there is a collection of byte-interfaces and an index (or collection of indexes) that allows mapping calls to __getitem__ to the appropriate interface.  These byte-interfaces, how they are indexed (including the meaning of shape), and what elements represent, are the fundamental building-blocks of the NDTable. 
 
-In the general case, the byte-buffers are an interface to bytes (wrapping memory, a disk-file, HTTP request, data-base connection, a measurement, generated data, or other byte-stream).   For memory, there is a fast-path (i.e. the raw pointer might be stored rather than through an interface).   The byte-interface is defined formally by a POD data-structure and then explicit C-ABI function pointers but we will start with just Python objects.
+Byte-interfaces
+============
 
-A byte-buffer interface is either generator (next(N)) or random-access (read, seek, write).  
+Byte-interfaces are objects that connect to raw memory, disk-files, HTTP requests, GPU memory, data-base connections, measurements, generated data, or any other byte-streams).   Care is taken so that memory-based byte-buffers can be as fast as possible.  
 
+A byte-interface is either generator-like (with a next(N) method), file-like (read, write) or memory-like (getref (N,byte-stride)).   Default caches are used for generator-like and file-like byte-interfaces which can be over-ridden by the object.
+
+Index
+====
+
+An index is a mapping from a domain specification to a collection of byte-interfaces and offsets.  
+
+IndexedBytes
+=========
+
+Shape
+====
+
+DType
+=====
+
+NDTable
+======
+
+
+
+Random Thoughts
+============
 
 Generalizing Shape
 ---------------
