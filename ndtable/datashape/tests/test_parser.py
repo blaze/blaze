@@ -11,6 +11,14 @@ def test_simple_parse():
     assert type(z) is DataShape
 
     assert type(x[0]) is Integer
+    assert type(y[0]) is Enum
+
+    assert type(z[0]) is Integer
+    assert type(z[1]) is Integer
+    assert type(z[2]) is Record
+
+    assert z[2]('x') is int64
+    assert z[2]('y') is int32
 
 def test_flatten1():
     x = parse('a, ( b, ( c, ( d ) ) )')

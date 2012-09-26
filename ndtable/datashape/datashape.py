@@ -103,9 +103,16 @@ class CType(DataShape):
     def __init__(self, ctype):
         self.parameters = [ctype]
         self.name = ctype
+        Type.register(ctype, self)
 
     def __str__(self):
         return str(self.parameters[0])
+
+    def __eq__(self, other):
+        if type(other) is CType:
+            return self.parameters[0] == other.parameters[0]
+        else:
+            return False
 
 class Term(DataShape):
     abstract = True
