@@ -2,7 +2,7 @@
 This defines the DataShape "type system".
 
 data CType = int8 | int16 | int32 | int64 | uint8 | uint16 | uint32 | ...
-data Size = Integer | Variable | Function | Stream | Var n
+data Size = Integer | Variable | Function | Stream | Var a b
 data Type = Size | CType | Record
 data DataShape = Size : Type
 """
@@ -46,7 +46,7 @@ class DataShape(object):
     composite = False
     name = False
 
-    def __init__(self, operands=None, name=False):
+    def __init__(self, operands=None, name=None):
 
         if type(operands) is DataShape:
             self.operands = operands
@@ -163,6 +163,48 @@ class Enum(Term):
 
     def __str__(self):
         return 'Enum (' + ','.join(map(str,self.parameters)) + ')'
+
+class Var(Term):
+
+    def __init__(self, a, b=False):
+        self.a = a.val
+        if b:
+            self.b = b.val
+
+        if a and b:
+            assert self.a < self.b, 'Must have upper < lower'
+        self.parameters = [self.a, self.b]
+
+    @property
+    def upper(self):
+        # Just upper bound
+        if self.b == False:
+            return self.a
+
+        # No upper bound case
+        elif self.b == None:
+            return float('inf')
+
+        # Lower and upper bound
+        else:
+            return self.b
+
+    @property
+    def lower(self):
+        # Just upper bound
+        if self.b == False:
+            return 0
+
+        # No upper bound case
+        elif self.b == None:
+            return self.a
+
+        # Lower and upper bound
+        else:
+            return self.a
+
+    def __str__(self):
+        return 'Var (' + ' '.join(map(str, [self.lower, self.upper])) + ')'
 
 class Tuple(Term):
 
