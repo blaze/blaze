@@ -215,6 +215,14 @@ class Record(DataShape, Mapping):
     def __repr__(self):
         return 'Record ' + repr(self.d)
 
+class Stream(Term):
+
+    def __init__(self, ret_type):
+        self.parameters = [ret_type]
+
+    def __str__(self):
+        return 'Stream '+ repr(self.parameters[0])
+
 def compose(A,B):
     """
     Datashape composition operator.
@@ -237,7 +245,32 @@ def compose(A,B):
 
     return DataShape(operands=(f+g))
 
-int64 = CType('int64')
-int32 = CType('int32')
-int16 = CType('int16')
-int8  = CType('int8')
+_int       = CType('int')
+_float     = CType('float')
+_long      = CType('long')
+_bool      = CType('bool')
+double     = CType('double')
+short      = CType('short')
+longdouble = CType('longdbouble')
+char       = CType('char')
+
+uint       = CType('uint')
+ulong      = CType('ulong')
+ulonglong  = CType('ulonglong')
+
+int8       = CType('int8')
+int16      = CType('int16')
+int32      = CType('int32')
+int64      = CType('int64')
+
+uint8      = CType('uint8')
+uint16     = CType('uint16')
+uint32     = CType('uint32')
+uint64     = CType('uint64')
+
+complex64  = CType('complex64')
+complex128 = CType('complex128')
+complex256 = CType('complex256')
+
+void       = CType('void')
+pyobj      = CType('PyObject')

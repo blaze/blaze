@@ -43,3 +43,7 @@ def test_parse_equality():
     y = parse('800, 600, int64')
 
     assert x == y
+
+def test_parse_ctypes():
+    x = parse('800, 600, double')
+    y = parse('800, 600, PyObject')

@@ -4,9 +4,10 @@ Parser for DataShape grammer.
 
 import re
 import ast
+import inspect
 from collections import OrderedDict, Iterable
 from datashape import Integer, TypeVar, Tuple, Record, Function, \
-    Enum, Type, DataShape
+    Enum, Type, DataShape, Stream
 
 class Visitor(object):
 
@@ -67,6 +68,7 @@ class Translate(Visitor):
         internals = {
             'Record' : Record,
             'Enum'   : Enum,
+            'Stream' : Stream,
         }
         internals.update(Type.registry)
 
@@ -82,7 +84,13 @@ class Translate(Visitor):
         kwargs = OrderedDict(zip(k,v))
 
         if type(fn) is TypeVar and fn.symbol in internals:
-            return internals[fn.symbol](*args, **kwargs)
+            try:
+                return internals[fn.symbol](*args, **kwargs)
+            except TypeError:
+                n = len(inspect.getargspec(internals[fn.symbol].__init__).args)
+                m = len(args)
+                raise Exception('Constructor %s expected %i arguments, got %i' % \
+                    (fn.symbol, (n-1), m))
         else:
             raise NameError(fn.symbol)
 
