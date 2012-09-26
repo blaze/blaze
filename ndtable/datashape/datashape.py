@@ -37,7 +37,7 @@ class Type(type):
 
     @staticmethod
     def register(name, cls):
-        assert not name in Type.registry
+        assert name not in Type.registry
         Type.registry[name] = cls
 
 class DataShape(object):
@@ -89,6 +89,12 @@ class DataShape(object):
         else:
             return ' '.join(map(str, self.operands))
 
+    def __eq__(self, other):
+        if type(other) is DataShape:
+            return self.operands == other.operands
+        else:
+            return False
+
     def __repr__(self):
         return str(self)
 
@@ -120,6 +126,12 @@ class Integer(Term):
     def free(self):
         return set([])
 
+    def __eq__(self, other):
+        if type(other) is Integer:
+            return self.val == other.val
+        else:
+            return False
+
     def __str__(self):
         return str(self.val)
 
@@ -133,6 +145,12 @@ class TypeVar(Term):
 
     def __str__(self):
         return str(self.symbol)
+
+    def __eq__(self, other):
+        if isinstance(other, TypeVar):
+            return self.symbol == other.symbol
+        else:
+            return False
 
 class Enum(Term):
 

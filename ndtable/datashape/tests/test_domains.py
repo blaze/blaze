@@ -29,7 +29,7 @@ def test_fromlist():
     ds = DataShape(operands=it)
 
     x,y,z = tuple(ds)
-    assert all([x==a, y==b, z==int64])
+    assert all([x is a, y is b, z is int64])
 
 def test_fromlist_compose():
     it1 = (a, b)
@@ -39,7 +39,7 @@ def test_fromlist_compose():
 
     ds = ds2 * ds1
 
-    assert ds[2] == int64
+    assert ds[2] is int64
 
 def test_fromlist_compose2():
     it1 = (a, b)
@@ -57,4 +57,8 @@ def test_iteration():
     ds2 = int64 * (ds * ds)
     assert ds2[0] == a
     assert ds2[1] == a
-    assert ds2[-1] == int64
+    assert ds2[-1] is int64
+
+def test_shallow_equality():
+    assert TypeVar('x') == TypeVar('x')
+    assert Integer(42) == Integer(42)

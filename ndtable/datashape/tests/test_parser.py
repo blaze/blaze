@@ -16,6 +16,8 @@ def test_flatten1():
     x = parse('a, ( b, ( c, ( d ) ) )')
     y = parse('a, b, c, d')
 
+    assert len(x.operands) == len(y.operands)
+
     assert x[0].symbol == 'a'
     assert x[1].symbol == 'b'
     assert x[2].symbol == 'c'
@@ -25,3 +27,11 @@ def test_flatten1():
     assert y[1].symbol == 'b'
     assert y[2].symbol == 'c'
     assert y[3].symbol == 'd'
+
+    assert x.operands == y.operands
+
+def test_parse_equality():
+    x = parse('800, 600, int64')
+    y = parse('800, 600, int64')
+
+    assert x == y

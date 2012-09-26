@@ -19,4 +19,3 @@ def test_custom_type():
     assert p1[2] is RGBA
 
     p2 = parse('Record(x=Quaternion, y=Quaternion)')
-    import pdb; pdb.set_trace()
