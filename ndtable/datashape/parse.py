@@ -50,7 +50,10 @@ class Translate(Visitor):
 
     # var -> TypeVar
     def Name(self, tree):
-        return TypeVar(tree.id)
+        if tree.id in Type.registry:
+            return Type.registry[tree.id]
+        else:
+            return TypeVar(tree.id)
 
     # (f . g) -> Compose
     def Attribute(self, tree):

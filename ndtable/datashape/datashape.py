@@ -35,6 +35,11 @@ class Type(type):
         Type.registry[name] = cls
         return cls
 
+    @staticmethod
+    def register(name, cls):
+        assert not name in Type.registry
+        Type.registry[name] = cls
+
 class DataShape(object):
     __metaclass__ = Type
 
@@ -86,14 +91,6 @@ class DataShape(object):
 
     def __repr__(self):
         return str(self)
-
-    @classmethod
-    def register(cls, name, ds):
-        cls.__metaclass__.registry[name] = ds
-
-    @property
-    def defined(self):
-        return  self.__metaclass__.registry
 
 class CType(DataShape):
 
@@ -219,23 +216,3 @@ int64 = CType('int64')
 int32 = CType('int32')
 int16 = CType('int16')
 int8  = CType('int8')
-
-if __name__ == '__main__':
-
-    w = TypeVar('w')
-    x = TypeVar('x')
-    y = TypeVar('y')
-    z = TypeVar('z')
-
-    Quaternion = operands=(z*y*x*w)
-    RGBA = Record(R=int16, G=int16, B=int16, A=int8)
-
-    RGBA * 800 * 600
-
-    T = Tuple(1,2,3)
-
-    DataShape.register('Quaternion', Quaternion)
-    DataShape.register('RGBA', RGBA)
-
-    print(T)
-    print(Quaternion * 800 * 600)
