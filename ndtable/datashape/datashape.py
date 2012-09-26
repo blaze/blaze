@@ -14,6 +14,11 @@ from collections import Mapping
 
 free_vars = methodcaller('free')
 
+# Emulate dtype('int64') kind of behavior
+def datashape(identifier):
+    from parse import parse
+    return parse(identifier)
+
 def shape_coerce(ob):
     if type(ob) is int:
         return Integer(ob)
