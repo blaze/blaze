@@ -14,11 +14,6 @@ from collections import Mapping
 
 free_vars = methodcaller('free')
 
-# Emulate dtype('int64') kind of behavior
-def datashape(identifier):
-    from parse import parse
-    return parse(identifier)
-
 def shape_coerce(ob):
     if type(ob) is int:
         return Integer(ob)
@@ -118,6 +113,31 @@ class CType(DataShape):
             return self.parameters[0] == other.parameters[0]
         else:
             return False
+
+    @property
+    def type(self):
+        raise NotImplementedError()
+
+    @property
+    def kind(self):
+        raise NotImplementedError()
+
+    @property
+    def char(self):
+        raise NotImplementedError()
+
+    @property
+    def num(self):
+        raise NotImplementedError()
+
+    @property
+    def str(self):
+        raise NotImplementedError()
+
+    @property
+    def byeteorder(self):
+        raise NotImplementedError()
+
 
 class Term(DataShape):
     abstract = True
@@ -244,6 +264,14 @@ class Record(DataShape, Mapping):
         self.k = kwargs.keys()
         self.v = kwargs.values()
 
+    @property
+    def fields(self):
+        return self.d
+
+    @property
+    def names(self):
+        return self.k
+
     def free(self):
         return set(self.k)
 
@@ -257,7 +285,7 @@ class Record(DataShape, Mapping):
         return len(self.k)
 
     def __str__(self):
-        return '( ' + ''.join([('%s = %s, ' % (k,v)) for k,v in zip(self.k, self.v)]) + ')'
+        return '(Record ' + ''.join([('%s = %s, ' % (k,v)) for k,v in zip(self.k, self.v)]) + ')'
 
     def __repr__(self):
         return 'Record ' + repr(self.d)
