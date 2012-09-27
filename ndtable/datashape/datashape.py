@@ -333,10 +333,11 @@ def compose(A,B):
 
     return DataShape(operands=(f+g))
 
-_int       = CType('int')
-_float     = CType('float')
-_long      = CType('long')
-_bool      = CType('bool')
+int_       = CType('int')
+float_     = CType('float')
+long_      = CType('long')
+bool_      = CType('bool')
+string     = CType('string')
 double     = CType('double')
 short      = CType('short')
 longdouble = CType('longdbouble')
@@ -363,10 +364,10 @@ complex256 = CType('complex256')
 void       = CType('void')
 pyobj      = CType('PyObject')
 
-# shorthand
+# Shorthand
 
 O = pyobj
-b1 = _bool
+b1 = bool_
 i1 = int8
 i2 = int16
 i4 = int32
@@ -376,13 +377,15 @@ u2 = uint16
 u4 = uint32
 u8 = uint64
 
-f = f4 = _float
+f = f4 = float_
 d = f8 = double
 #f16 = float128
 
 F   = c8  = complex64
 D   = c16 = complex128
 c32       = complex256
+
+S = string
 
 # Downcast a datashape object into a Numpy
 # (shape, dtype) tuple if possible.
@@ -408,7 +411,6 @@ def to_numpy(ds):
 # (shape, dtype) tuple if possible.
 # i.e.
 #   5,5,in32 -> ( (5,5), dtype('int32') )
-
 def to_datashape(shape, dtype):
     import numpy as np
 

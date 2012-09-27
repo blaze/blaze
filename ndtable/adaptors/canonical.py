@@ -116,7 +116,7 @@ class SocketAdaptor(Adaptor):
 
     def __alloc__(self):
         self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self.setsockopt(self.SOL_SOCKET, self.SO_REUSEADDR,1)
+        self.setsockopt(self.SOL_SOCKET, self.SO_REUSEADDR, 1)
         self.socket.connect((self.host, self.port))
 
     def __dealloc__(self):
