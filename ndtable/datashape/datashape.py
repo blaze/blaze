@@ -321,3 +321,24 @@ complex256 = CType('complex256')
 
 void       = CType('void')
 pyobj      = CType('PyObject')
+
+# shorthand
+
+O = pyobj
+b1 = _bool
+i1 = int8
+i2 = int16
+i4 = int32
+i8 = int64
+u1 = uint8
+u2 = uint16
+u4 = uint32
+u8 = uint64
+
+f = f4 = _float
+d = f8 = double
+#f16 = float128
+
+F   = c8  = complex64
+D   = c16 = complex128
+c32       = complex256
