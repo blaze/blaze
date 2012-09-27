@@ -74,7 +74,7 @@ class MemoryAdaptor(Adaptor):
     def __dealloc__(self):
         self.free(self.block)
 
-class FileAdaptor(object):
+class FileAdaptor(Adaptor):
     """
     File on local disk.
     """
@@ -84,6 +84,7 @@ class FileAdaptor(object):
 
     def __init__(self, fname, mode='r+'):
         self.fd = None
+        self.fname = fname
         self.mode = mode
         self.__alloc__()
 
@@ -99,7 +100,7 @@ class FileAdaptor(object):
     def __dealloc__(self):
         self.fd.close()
 
-class SocketAdaptor(object):
+class SocketAdaptor(Adaptor):
     """
     Stream of bytes over TCP.
     """

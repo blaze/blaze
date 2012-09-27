@@ -1,5 +1,5 @@
 import numpy as np
-from ndtable import NDTable
+from ndtable import NDTable, Index
 from datashape import datashape
 from blaze import Blaze
 
@@ -12,3 +12,10 @@ def test_ndable_init():
 
     bi = blaze.open('file://foo.npy')
     table = NDTable(bi, datashape('5, 5, int32'))
+
+def test_ndable_init_index():
+    blaze = Blaze()
+
+    bi = blaze.open('file://foo.npy')
+    idx = Index(bi)
+    table = NDTable(idx, datashape('5, 5, int32'))
