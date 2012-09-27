@@ -11,6 +11,7 @@ import ctypes
 from numbers import Integral
 from operator import methodcaller
 from collections import Mapping
+from utils import ReverseLookupDict
 
 free_vars = methodcaller('free')
 
@@ -66,6 +67,18 @@ class DataShape(object):
             #itx = reduce(compose, operands)
         #else:
             #self.operands = operands
+
+    def size(self):
+        """
+        In numpy, size would be a integer value. In Blaze the
+        size is now a symbolic object
+
+        A Numpy array of size (2,3) has size
+            np.prod([2,3]) = 6
+        A NDTable of datashape (a,b,2,3,int32) has size
+            6*a*b
+        """
+        pass
 
     def __getitem__(self, index):
         return self.operands[index]
@@ -370,3 +383,37 @@ d = f8 = double
 F   = c8  = complex64
 D   = c16 = complex128
 c32       = complex256
+
+# Downcast a datashape object into a Numpy
+# (shape, dtype) tuple if possible.
+# i.e.
+#   5,5,in32 -> ( (5,5), dtype('int32') )
+
+# TODO: records -> numpy struct notation
+def to_numpy(ds):
+    shape = tuple()
+    dtype = None
+
+    assert isinstance(ds, DataShape)
+    for dim in ds:
+        if isinstance(dim, Integer):
+            shape += (dim,)
+        if isinstance(dim, CType):
+            dtype += (dim,)
+
+    assert len(shape) > 0 and dtype, "Could not convert"
+    return (shape, dtype)
+
+# Upconvert a datashape object into a Numpy
+# (shape, dtype) tuple if possible.
+# i.e.
+#   5,5,in32 -> ( (5,5), dtype('int32') )
+
+def to_datashape(shape, dtype):
+    import numpy as np
+
+    ReverseLookupDict({
+        np.int32: int32,
+        np.float: float,
+    })
+    return dtype*shape
