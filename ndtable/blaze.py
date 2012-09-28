@@ -2,6 +2,7 @@ import os
 import uuid
 from urlparse import urlparse
 from adaptors.canonical import MemoryAdaptor, FileAdaptor, SocketAdaptor
+from ndtable import NDTable
 
 class Blaze(object):
     """
@@ -30,3 +31,5 @@ class Blaze(object):
             return byte_interface
         else:
             raise NotImplementedError()
+
+    Table = NDTable

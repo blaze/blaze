@@ -162,7 +162,19 @@ class Term(DataShape):
     def __repr__(self):
         return str(self)
 
+class Fixed(Term):
+    pass
+
+    def __init__(self, i):
+        assert isinstance(i, Integral)
+        self.val = i
+
 class Integer(Term):
+    """
+    Integers, at the top level this means a Fixed dimension, at
+    level of constructor it just means Integer in the sense of
+    of machine integer.
+    """
 
     def __init__(self, i):
         assert isinstance(i, Integral)
@@ -210,6 +222,11 @@ class Bitfield(Term):
 
     def __str__(self):
         return 'Bitfield (' + str(self.size) + ')'
+
+class Null(Term):
+
+    def __str__(self):
+        return ''
 
 class Either(Term):
 
@@ -382,6 +399,9 @@ complex256 = CType('complex256')
 
 void       = CType('void')
 pyobj      = CType('PyObject')
+
+na = nan = Null
+Type.register('NA', Null)
 
 # Shorthand
 

@@ -21,3 +21,9 @@ class NDTable(object):
 
     def __getslice__(self, i, j):
         pass
+
+    def from_sql(dburl, query):
+        pass
+
+    def from_csv(fname, *params):
+        pass

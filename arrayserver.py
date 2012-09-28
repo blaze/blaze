@@ -73,8 +73,8 @@ def application(socket, address):
 
     fd = socket.makefile()
     header = fd.readline()
-    stride = socket.readline()
-    offset = socket.readline()
+    stride = fd.readline()
+    offset = fd.readline()
     method, url = header.split()
 
     if method == 'GET':
