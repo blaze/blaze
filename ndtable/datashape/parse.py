@@ -7,7 +7,7 @@ import ast
 import inspect
 from collections import OrderedDict, Iterable
 from datashape import Integer, TypeVar, Tuple, Record, Function, \
-    Enum, Type, DataShape, Stream, Var, Maybe, Bitfield
+    Enum, Type, DataShape, Stream, Var, Either, Bitfield
 
 class Visitor(object):
 
@@ -70,7 +70,7 @@ class Translate(Visitor):
             'Enum'     : Enum,
             'Stream'   : Stream,
             'Var'      : Var,
-            'Maybe'    : Maybe,
+            'Either'   : Either,
             'Bitfield' : Bitfield,
         }
         internals.update(Type.registry)

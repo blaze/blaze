@@ -211,10 +211,12 @@ class Bitfield(Term):
     def __str__(self):
         return 'Bitfield (' + str(self.size) + ')'
 
-class Maybe(Term):
+class Either(Term):
 
-    def __init__(self, typ):
-        self.parameters = [typ]
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+        self.parameters = [a,b]
 
     def __str__(self):
         return 'Maybe (' + ','.join(map(str,self.parameters)) + ')'
