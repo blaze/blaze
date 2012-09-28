@@ -7,7 +7,7 @@ import ast
 import inspect
 from collections import OrderedDict, Iterable
 from datashape import Integer, TypeVar, Tuple, Record, Function, \
-    Enum, Type, DataShape, Stream, Var
+    Enum, Type, DataShape, Stream, Var, Maybe, Bitfield
 
 class Visitor(object):
 
@@ -66,10 +66,12 @@ class Translate(Visitor):
     # function call -> Function
     def Call(self, tree):
         internals = {
-            'Record' : Record,
-            'Enum'   : Enum,
-            'Stream' : Stream,
-            'Var'    : Var,
+            'Record'   : Record,
+            'Enum'     : Enum,
+            'Stream'   : Stream,
+            'Var'      : Var,
+            'Maybe'    : Maybe,
+            'Bitfield' : Bitfield,
         }
         internals.update(Type.registry)
 

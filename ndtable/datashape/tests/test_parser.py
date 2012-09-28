@@ -99,3 +99,11 @@ def test_parse_vars():
 
     assert x[0].lower == 1
     assert x[0].upper == 2
+
+def test_parse_maybe():
+    x = parse('Maybe(int64)')
+    assert x[0].parameters == [int64]
+
+def test_parse_maybe():
+    x = parse('Bitfield(64)')
+    assert x[0].size == Integer(64)

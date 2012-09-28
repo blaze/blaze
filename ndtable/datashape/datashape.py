@@ -202,6 +202,23 @@ class Enum(Term):
     def __str__(self):
         return 'Enum (' + ','.join(map(str,self.parameters)) + ')'
 
+class Bitfield(Term):
+
+    def __init__(self, size):
+        self.size = size
+        self.parameters = [size]
+
+    def __str__(self):
+        return 'Bitfield (' + str(self.size) + ')'
+
+class Maybe(Term):
+
+    def __init__(self, typ):
+        self.parameters = [typ]
+
+    def __str__(self):
+        return 'Maybe (' + ','.join(map(str,self.parameters)) + ')'
+
 class Var(Term):
 
     def __init__(self, a, b=False):
@@ -298,7 +315,7 @@ class Record(DataShape, Mapping):
         return len(self.k)
 
     def __str__(self):
-        return '(Record ' + ''.join([('%s = %s, ' % (k,v)) for k,v in zip(self.k, self.v)]) + ')'
+        return 'Record ( ' + ''.join([('%s = %s, ' % (k,v)) for k,v in zip(self.k, self.v)]) + ')'
 
     def __repr__(self):
         return 'Record ' + repr(self.d)

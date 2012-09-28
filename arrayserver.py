@@ -78,10 +78,10 @@ def application(socket, address):
     method, url = header.split()
 
     if method == 'GET':
-        with locks(url):
+        with locks[url]:
             get(url, socket, stride, offset)
     if method == 'POST':
-        with locks(url):
+        with locks[url]:
             post(url, socket, stride, offset)
 
 if __name__ == '__main__':

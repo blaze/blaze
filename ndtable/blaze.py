@@ -5,7 +5,7 @@ from adaptors.canonical import MemoryAdaptor, FileAdaptor, SocketAdaptor
 
 class Blaze(object):
     """
-    The blaze scheduler.
+    The Blaze scheduler.
     """
 
     def __init__(self):
