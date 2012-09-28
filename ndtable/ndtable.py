@@ -1,7 +1,6 @@
 class Index(object):
     def __init__(self, byte_interfaces):
         self.byte_interfaces = byte_interfaces
-        pass
 
 class AutoIndex(Index):
     pass

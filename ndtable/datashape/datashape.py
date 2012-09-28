@@ -226,7 +226,7 @@ class Bitfield(Term):
 class Null(Term):
 
     def __str__(self):
-        return ''
+        return 'NA'
 
 class Either(Term):
 
