@@ -6,6 +6,8 @@ import re
 import ast
 import inspect
 from collections import OrderedDict, Iterable
+from operator import add
+from string import maketrans, translate
 from datashape import Integer, TypeVar, Tuple, Record, Function, \
     Enum, Type, DataShape, Stream, Var, Either, Bitfield, \
     Ternary
@@ -131,16 +133,19 @@ class Translate(Visitor):
 
 translator = Translate()
 
-def parse(expr):
-
+operators = {
     # Function map
-    expr = re.sub(r'->', '>>', expr)
-
+    '->' : '>>',
     # Ternary operator
-    # a ? (b, c)
-    # b if a else c
-    # With a : x -> Bool
-    expr = re.sub(r'\?', '%', expr)
+    '?'  : '%' ,
+}
 
+op_table = maketrans(
+    reduce(add, operators.keys()),
+    reduce(add, operators.values())
+)
+
+def parse(expr):
+    expr = translate(expr, op_table)
     past = ast.parse(expr, '<string>', mode='eval')
     return translator.visit(past)

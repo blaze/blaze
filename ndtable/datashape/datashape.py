@@ -299,6 +299,9 @@ class Tuple(Term):
         return '(' + ','.join(map(str,self.parameters)) + ')'
 
 class Ternary(Term):
+    # a ? (b, c)
+    # b if a else c
+    # With a : x -> Bool
 
     def __init__(self, cond, rest):
         self.cond = cond
