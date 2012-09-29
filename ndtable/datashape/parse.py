@@ -7,7 +7,8 @@ import ast
 import inspect
 from collections import OrderedDict, Iterable
 from datashape import Integer, TypeVar, Tuple, Record, Function, \
-    Enum, Type, DataShape, Stream, Var, Either, Bitfield
+    Enum, Type, DataShape, Stream, Var, Either, Bitfield, \
+    Ternary
 
 class Visitor(object):
 
@@ -112,6 +113,10 @@ class Translate(Visitor):
             left = self.visit(tree.left)
             right = self.visit(tree.right)
             return Function(arg_type=left, ret_type=right)
+        elif type(tree.op) is ast.Mod:
+            left = self.visit(tree.left)
+            right = self.visit(tree.right)
+            return Ternary(left, right)
         else:
             raise SyntaxError()
 
@@ -127,6 +132,15 @@ class Translate(Visitor):
 translator = Translate()
 
 def parse(expr):
+
+    # Function map
     expr = re.sub(r'->', '>>', expr)
+
+    # Ternary operator
+    # a ? (b, c)
+    # b if a else c
+    # With a : x -> Bool
+    expr = re.sub(r'\?', '%', expr)
+
     past = ast.parse(expr, '<string>', mode='eval')
     return translator.visit(past)

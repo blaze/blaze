@@ -228,6 +228,13 @@ class Null(Term):
     def __str__(self):
         return 'NA'
 
+# Type level Bool ( i.e. for use in ternary expressions, not the
+# same as the value-level bool ).
+class Bool(Term):
+
+    def __str__(self):
+        return 'Bool'
+
 class Either(Term):
 
     def __init__(self, a, b):
@@ -290,6 +297,20 @@ class Tuple(Term):
 
     def __str__(self):
         return '(' + ','.join(map(str,self.parameters)) + ')'
+
+class Ternary(Term):
+
+    def __init__(self, cond, rest):
+        self.cond = cond
+        self.rest = rest
+
+        self.parameters = [cond, rest]
+
+    def free(self):
+        return map(free_vars, self.cond) | free_vars(self.rest)
+
+    def __str__(self):
+        return str(self.cond) + " ? (" + str(self.rest) +  ')'
 
 class Function(Term):
 
@@ -402,6 +423,7 @@ pyobj      = CType('PyObject')
 
 na = nan = Null
 Type.register('NA', Null)
+Type.register('Bool', Bool)
 
 # Shorthand
 
