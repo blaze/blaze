@@ -15,6 +15,15 @@ from utils import ReverseLookupDict
 
 free_vars = methodcaller('free')
 
+def expr_string(spine, const_args, outer=None):
+    if not outer:
+        outer = '()'
+
+    if const_args:
+        return str(spine) + outer[0] + ','.join(map(str,const_args)) + outer[1]
+    else:
+        return str(spine)
+
 def shape_coerce(ob):
     if type(ob) is int:
         return Integer(ob)
@@ -159,6 +168,10 @@ class Term(DataShape):
     def __init__(self, *parameters):
         self.parameters = parameters
 
+    def __str__(self):
+        clsname = self.__class__.__name__
+        return expr_string(clsname, self.parameters)
+
     def __repr__(self):
         return str(self)
 
@@ -210,30 +223,25 @@ class TypeVar(Term):
             return False
 
 class Enum(Term):
-
     def __str__(self):
-        return 'Enum (' + ','.join(map(str,self.parameters)) + ')'
+        # Use c-style enumeration syntax
+        return expr_string('', self.parameters, '{}')
 
 class Bitfield(Term):
 
     def __init__(self, size):
-        self.size = size
+        self.size = size.val
         self.parameters = [size]
-
-    def __str__(self):
-        return 'Bitfield (' + str(self.size) + ')'
 
 class Null(Term):
 
     def __str__(self):
-        return 'NA'
+        return expr_string('NA', None)
 
 # Type level Bool ( i.e. for use in ternary expressions, not the
 # same as the value-level bool ).
 class Bool(Term):
-
-    def __str__(self):
-        return 'Bool'
+    pass
 
 class Either(Term):
 
@@ -242,15 +250,14 @@ class Either(Term):
         self.b = b
         self.parameters = [a,b]
 
-    def __str__(self):
-        return 'Maybe (' + ','.join(map(str,self.parameters)) + ')'
-
 class Var(Term):
 
     def __init__(self, a, b=False):
         self.a = a.val
         if b:
             self.b = b.val
+        else:
+            self.b = b
 
         if a and b:
             assert self.a < self.b, 'Must have upper < lower'
@@ -285,7 +292,7 @@ class Var(Term):
             return self.a
 
     def __str__(self):
-        return 'Var (' + ' '.join(map(str, [self.lower, self.upper])) + ')'
+        return expr_string('Var', [self.lower, self.upper])
 
 class Tuple(Term):
 
@@ -296,7 +303,7 @@ class Tuple(Term):
         return self.operands[start:stop]
 
     def __str__(self):
-        return '(' + ','.join(map(str,self.parameters)) + ')'
+        return expr_string('', self.parameters)
 
 class Ternary(Term):
     # a ? (b, c)
@@ -363,14 +370,6 @@ class Record(DataShape, Mapping):
     def __repr__(self):
         return 'Record ' + repr(self.d)
 
-class Stream(Term):
-
-    def __init__(self, ret_type):
-        self.parameters = [ret_type]
-
-    def __str__(self):
-        return 'Stream '+ repr(self.parameters[0])
-
 def compose(A,B):
     """
     Datashape composition operator.
@@ -425,8 +424,11 @@ void       = CType('void')
 pyobj      = CType('PyObject')
 
 na = nan = Null
+Stream = Var(Integer(0), None)
+
 Type.register('NA', Null)
 Type.register('Bool', Bool)
+Type.register('Stream', Stream)
 
 # Shorthand
 

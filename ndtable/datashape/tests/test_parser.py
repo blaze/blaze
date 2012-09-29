@@ -111,7 +111,7 @@ def test_parse_either():
 
 def test_parse_bitfield():
     x = parse('Bitfield(64)')
-    assert x[0].size == Integer(64)
+    assert x[0].size == 64
 
 def test_parse_bool():
     x = parse('a -> Bool')

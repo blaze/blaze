@@ -9,7 +9,7 @@ from collections import OrderedDict, Iterable
 from operator import add
 from string import maketrans, translate
 from datashape import Integer, TypeVar, Tuple, Record, Function, \
-    Enum, Type, DataShape, Stream, Var, Either, Bitfield, \
+    Enum, Type, DataShape, Var, Either, Bitfield, \
     Ternary
 
 class Visitor(object):
@@ -71,7 +71,6 @@ class Translate(Visitor):
         internals = {
             'Record'   : Record,
             'Enum'     : Enum,
-            'Stream'   : Stream,
             'Var'      : Var,
             'Either'   : Either,
             'Bitfield' : Bitfield,
@@ -105,6 +104,10 @@ class Translate(Visitor):
     def Tuple(self, tree):
         operands = self.visit(tree.elts)
         return DataShape(operands)
+
+    def Set(self, tree):
+        args = map(self.visit, tree.elts)
+        return Enum(*args)
 
     def Index(self, tree):
         return self.visit(tree.value)

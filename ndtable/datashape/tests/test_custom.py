@@ -25,7 +25,7 @@ def test_custom_type():
     p2 = parse('Record(x=Quaternion, y=Quaternion)')
 
 def test_custom_stream():
-    p1 = parse('Stream( RGBA )')
+    p1 = parse('Stream, RGBA')
 
 def test_custom_csv_like():
     # A csv-like file is a variable-length strings
