@@ -1,5 +1,5 @@
-from parse import parse
-from datashape import *
+from ndtable.datashape.parse import parse, load
+from ndtable.datashape.coretypes import *
 
 from textwrap import dedent
 
@@ -155,3 +155,13 @@ def test_parse_custom_record():
     x = parse('Stock')
     y = parse(dedent(stock))
     assert x[0].k == y[0].k
+
+def test_module_parse():
+    mod = load('tests/foo.types')
+
+    assert 'X' in dir(mod)
+    assert type(mod.X) is DataShape
+
+    assert 'Y' in dir(mod)
+    assert type(mod.Y) is DataShape
+    import pdb; pdb.set_trace()

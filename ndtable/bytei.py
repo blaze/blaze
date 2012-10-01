@@ -3,19 +3,57 @@
 #  - stdlib.io
 #  - carray
 
+import struct
+from ctypes import Structure, c_void_p, c_int
 from adaptors.canonical import READ, WRITE, CONTIGIOUS, STRIDED, \
     CHUNKED, STREAM
+
+class Buffer(Structure):
+    _fields_ = [
+        ('data'     , c_void_p) ,
+        ('offset'   , c_int)    ,
+        ('stride'   , c_int*2)  ,
+        ('itemsize' , c_int)    ,
+        ('flags'    , c_int)    ,
+    ]
+
+def BufferList(n):
+    class List(Structure):
+        _fields_ = [
+            ('buffers', Buffer*n)
+        ]
+        def __iter__(self):
+            for b in self.buffers:
+                yield b
+
+    return List
+
+def StreamList(n):
+    class Stream(Structure):
+        _fields_ = [
+            ('index', c_int),
+            ('next' , c_void_p)
+        ]
+        def __iter__(self):
+            self.index = 0
+            return self
+
+        def __next__(self):
+            self.index += 1
+            yield self.next
+
+    return Stream
 
 class Flags:
     ACCESS_DEFAULT = 1
     ACCESS_READ    = 2
     ACCESS_WRITE   = 3
-    ACCESS_COPY    = 4 # Copied locally, but not comitted
+    ACCESS_COPY    = 4 # Copied locally, but not committed
     ACCESS_APPEND  = 5
 
-class Bytes(object):
+class ByteProvider(object):
 
-    def __init__(self, substrate=None):
+    def __init__(self):
         pass
 
     def as_contigious(self, start, stop):
@@ -27,7 +65,7 @@ class Bytes(object):
     def as_stream(self, count):
         pass
 
-class ByteI(object):
+class ByteDescriptor(object):
     """
     Adaptor provides low-level IO operations. The byte interface
     provides the high-level API operations on those bytes that abstracts

@@ -3,18 +3,22 @@ Parser for DataShape grammer.
 """
 
 import re
+import imp
 import ast
 import inspect
 from collections import OrderedDict, Iterable
 from operator import add
 from string import maketrans, translate
-from datashape import Integer, TypeVar, Tuple, Record, Function, \
+
+# TODO: Tuple is just enumeration
+from coretypes import Integer, TypeVar, Tuple, Record, Function, \
     Enum, Type, DataShape, Var, Either, Bitfield, Ternary
 
 class Visitor(object):
 
     def __init__(self):
         super(Visitor,self).__init__()
+        self.namespace = {}
         self.fallback = self.Unknown
 
     def Unknown(self, tree):
@@ -25,8 +29,9 @@ class Visitor(object):
             return [self.visit(i) for i in tree]
         else:
             nodei = tree.__class__.__name__
-            if nodei in self.__class__.__dict__:
-                return getattr(self,nodei)(tree)
+            trans = getattr(self,nodei, False)
+            if trans:
+                return trans(tree)
             else:
                 return self.Unknown(tree)
 
@@ -133,7 +138,18 @@ class Translate(Visitor):
     def Lambda(self, tree):
         raise NotImplementedError()
 
-translator = Translate()
+class TranslateModule(Translate):
+
+    def Module(self, tree):
+        return [self.visit(i) for i in tree.body]
+
+    def Assign(self, tree):
+        left = tree.targets[0].id
+        right = self.visit(tree.value)
+        assert left not in self.namespace
+        self.namespace[left] = right
+
+expr_translator = Translate()
 
 operators = {
     # Function map
@@ -150,4 +166,21 @@ op_table = maketrans(
 def parse(expr):
     expr = translate(expr, op_table)
     past = ast.parse(expr, '<string>', mode='eval')
-    return translator.visit(past)
+    return expr_translator.visit(past)
+
+def load(fname, modname=None):
+    translator = TranslateModule()
+
+    with open(fname, 'r') as fd:
+        expr = fd.read()
+        expr = translate(expr, op_table)
+        past = ast.parse(expr)
+        translator.visit(past)
+
+    if not modname:
+        modname = fname
+    mod = imp.new_module(modname)
+
+    for k,v in translator.namespace.iteritems():
+        setattr(mod, k, v)
+    return mod

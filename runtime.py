@@ -27,7 +27,30 @@ class NaiveSchedule(Schedule):
 #   b) translates easily into to C or LLVM
 #   c) a way to explore parallelization
 
-instructions = [
+class Buffer(object):
+    pass
+
+class Stream(object):
+    pass
+
+class BufferList(object):
+    pass
+
+class StreamList(object):
+    pass
+
+# BUFFERPOP     [ TOS, ]
+#                    ^
+#                    |
+# +---+---+---+---+-----+
+# | D | C | B | A | TOS |
+# +---+---+---+---+-----+
+#                    |
+#                    |
+#                    v
+# STREAMPOP     Stream : TOS
+
+opcodes = [
     # These would C functions provided by the adaptor. copy bytes
     # from a byte-source or to a byte-sink.
 
@@ -59,10 +82,12 @@ instructions = [
     # Store contents of top of stack at the address
     'STORE',
 
-    # Removes the top of stack
-    'POP',
-]
+    # Removes the top of stack as a buffer, pushes it into a
+    # StreamList instance.
+    'STREAMPOP',
 
-def Scheduler(object):
-    def __init__(self):
-        pass
+    # Removes the top of stack as a buffer, pushes it into a
+    # BufferList instance.
+
+    'BUFFERPOP',
+]

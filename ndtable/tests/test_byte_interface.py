@@ -1,7 +1,7 @@
 import numpy as np
-from ndtable import NDTable, Index
-from datashape import datashape
-from blaze import Blaze
+from ndtable.table import NDTable, Index
+from ndtable.datashape import datashape
+from ndtable.blaze import Blaze
 
 def setUp():
     na = np.ones((5,5), dtype=np.dtype('int32'))

@@ -2,7 +2,7 @@ import os
 import uuid
 from urlparse import urlparse
 from adaptors.canonical import MemoryAdaptor, FileAdaptor, SocketAdaptor
-from ndtable import NDTable
+from ndtable.table import NDTable
 
 class Blaze(object):
     """

@@ -1,4 +1,4 @@
-from datashape import *
+from ndtable.datashape import *
 
 a = Integer(800)
 b = Integer(600)

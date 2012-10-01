@@ -566,9 +566,9 @@ uint16     = CType('uint', 16)
 uint32     = CType('uint', 32)
 uint64     = CType('uint', 64)
 
-complex64  = CType('complex64' , 64)
-complex128 = CType('complex128', 128)
-complex256 = CType('complex256', 256)
+complex64  = CType('complex' , 64)
+complex128 = CType('complex', 128)
+complex256 = CType('complex', 256)
 
 void       = CType('void')
 pyobj      = CType('PyObject')
@@ -639,5 +639,3 @@ def to_datashape(shape, dtype):
         np.float: float,
     })
     return dtype*shape
-
-__all__ = Type.registry.keys()

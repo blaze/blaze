@@ -1,5 +1,5 @@
-from datashape import *
-from parse import parse
+from ndtable.datashape.coretypes import *
+from ndtable.datashape.parse import parse
 
 w = TypeVar('w')
 x = TypeVar('x')
