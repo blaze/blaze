@@ -72,11 +72,6 @@ class DataShape(object):
             self.name = name
             self.__metaclass__.registry[name] = self
 
-        #if isinstance(operands, Iterable):
-            #itx = reduce(compose, operands)
-        #else:
-            #self.operands = operands
-
     def size(self):
         """
         In numpy, size would be a integer value. In Blaze the
@@ -98,12 +93,12 @@ class DataShape(object):
     def __rmul__(self, other):
         if not isinstance(other, DataShape):
             other = shape_coerce(other)
-        return compose(other, self)
+        return product(other, self)
 
     def __mul__(self, other):
         if not isinstance(other, DataShape):
             other = shape_coerce(other)
-        return compose(other, self)
+        return product(other, self)
 
     def __str__(self):
         if self.name:
@@ -222,16 +217,16 @@ class TypeVar(Term):
         else:
             return False
 
-class Enum(Term):
-    def __str__(self):
-        # Use c-style enumeration syntax
-        return expr_string('', self.parameters, '{}')
-
 class Bitfield(Term):
 
     def __init__(self, size):
         self.size = size.val
         self.parameters = [size]
+
+class Null(Term):
+
+    def __str__(self):
+        return expr_string('NA', None)
 
 class Null(Term):
 
@@ -250,6 +245,8 @@ class Either(Term):
         self.b = b
         self.parameters = [a,b]
 
+# Internal-like range of dimensions, the special case of
+# [0, inf) is aliased to the type Stream.
 class Var(Term):
 
     def __init__(self, a, b=False):
@@ -325,17 +322,25 @@ class Ternary(Term):
 class Function(Term):
 
     # Same as Numba notation
-    def __init__(self, arg_type, ret_type):
-        self.arg_type = arg_type
-        self.ret_type = ret_type
+    def __init__(self, argtypes, restype):
+        self.arg_type = argtypes
+        self.ret_type = restype
 
-        self.parameters = [arg_type, ret_type]
+        self.parameters = [argtypes, restype]
 
     def free(self):
         return map(free_vars, self.arg_type) | free_vars(self.ret_type)
 
     def __str__(self):
         return str(self.arg_type) + " -> " + str(self.ret_type)
+
+# Aggregate Types
+# ===============
+
+class Enum(Term):
+    def __str__(self):
+        # Use c-style enumeration syntax
+        return expr_string('', self.parameters, '{}')
 
 class Record(DataShape, Mapping):
 
@@ -370,10 +375,121 @@ class Record(DataShape, Mapping):
     def __repr__(self):
         return 'Record ' + repr(self.d)
 
-def compose(A,B):
+# Memory Types
+# ============
+
+class RemoteSpace(object):
+    def __init__(self, blaze_uri):
+        pass
+
+class LocalMemory(object):
+    def __init__(self):
+        self.bounds = ( 0x0, 0xffffffffffffffff )
+
+class SharedMemory(object):
+    def __init__(self, key):
+        # something like:
+        # shmid = shmget(key)
+        # shmat(shmid, NULL, 0)
+        self.bounds = ( 0x0, 0x1 )
+
+class Ptr(Term):
     """
-    Datashape composition operator.
+    Type*
+    Type Addrspace*
+
+    Usage:
+    ------
+    Pointer to a integer in local memory
+        int32*
+
+    Pointer to a 4x4 matrix of integers in local memory
+        (4, 4, int32)*
+
+    Pointer to a record in local memory
+        {x: int32, y:int32, label: string}*
+
+    Pointer to integer in a shared memory segement keyed by 'foo'
+        int32 (shm 'foo')*
+
+    Pointer to integer on a array server 'bar'
+        int32 (rmt array://bar)*
     """
+
+    def __init__(self, pointee, addrspace=None):
+        self.pointee = pointee
+        if addrspace:
+            self.addrspace = addrspace
+        else:
+            self.addrspace = LocalMemory()
+
+    @property
+    def byte_bounds(self):
+        return self.addrspace.bounds
+
+    @property
+    def local(self):
+        return isinstance(self.addrspace, LocalMemory())
+
+    @property
+    def remote(self):
+        return isinstance(self.addrspace, RemoteSpace())
+
+# Class derived Records
+# =====================
+# They're just records but can be constructed like Django models.
+
+def derived(sig):
+    from parse import parse
+    sig = parse(sig)
+    def a(fn):
+        return sig
+    return a
+
+class Derived(DataShape):
+    def __init__(self, fn):
+        self.parameters = [fn]
+
+class DeclMeta(type):
+    def __new__(meta, name, bases, namespace):
+        abstract = namespace.pop('abstract', False)
+        if abstract:
+            cls = type(name, bases, namespace)
+        else:
+            cls = type.__new__(meta, name, bases, namespace)
+            cls.construct.im_func(cls, namespace)
+            if hasattr(cls, 'fields'):
+                rcd = Record(**cls.fields)
+                Type.register(name, rcd)
+        return cls
+
+    def construct(cls, fields):
+        pass
+
+class Decl(object):
+    __metaclass__ = DeclMeta
+
+class RecordClass(Decl):
+    fields = {}
+
+    def construct(cls, fields):
+        cls.fields = cls.fields.copy()
+        for name, value in fields.items():
+            if isinstance(value, DataShape):
+                cls.add(name, value)
+
+    @classmethod
+    def add(cls, name, field):
+        cls.fields[name] = field
+
+# Constructions
+# =============
+
+# Right now we only have one operator (,) which constructs
+# product types ( ie A * B ). We call these dimensions.
+
+# product :: A -> B -> A * B
+def product(A,B):
     if A.composite and B.composite:
         f = A.operands
         g = B.operands
@@ -391,6 +507,32 @@ def compose(A,B):
         g = (B,)
 
     return DataShape(operands=(f+g))
+
+# fst :: A * B -> A
+def fst(ds):
+    return ds[0]
+
+# snd :: A * B -> B
+def snd(ds):
+    return ds[1:]
+
+# Coproduct is the dual to the (,) operator. It constructs sum
+# types ( ie A + B ).
+def coprod(A, B):
+    return Either(A,B)
+
+# left  :: A + B -> A
+def left(ds):
+    return ds.parameters[0]
+
+# right :: A + B -> B
+def right(ds):
+    return ds.parameters[1]
+
+# Machines Types
+# ==============
+# At the type level these are all singleton types, they take no
+# arguments in their constructors.
 
 int_       = CType('int')
 float_     = CType('float')
@@ -426,6 +568,10 @@ pyobj      = CType('PyObject')
 na = nan = Null
 Stream = Var(Integer(0), None)
 
+# *the* null record, # since we need
+#   {} is {} = True
+NullRecord = Record()
+
 Type.register('NA', Null)
 Type.register('Bool', Bool)
 Type.register('Stream', Stream)
@@ -443,8 +589,8 @@ u2 = uint16
 u4 = uint32
 u8 = uint64
 
-f = f4 = float_
-d = f8 = double
+f4 = float_
+f8 = double
 #f16 = float128
 
 F   = c8  = complex64

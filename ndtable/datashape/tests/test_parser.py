@@ -1,6 +1,8 @@
 from parse import parse
 from datashape import *
 
+from textwrap import dedent
+
 def test_simple_parse():
     x = parse('800, 600, RGBA')
     y = parse('Enum (1,2)')
@@ -123,3 +125,33 @@ def test_parse_ternary():
 
 def test_parse_ternary_function():
     x = parse('(a -> Bool) ? (b,c)')
+
+def test_parse_custom_record():
+
+    class Stock(RecordClass):
+        name   = string
+        open   = float_
+        close  = float_
+        max    = int64
+        min    = int64
+        volume = float_
+
+        @derived('int64 -> int64')
+        def mid(self):
+            return (self.min + self.max)/2
+
+    stock = """
+    Record(
+      name   = string,
+      min    = int64,
+      max    = int64,
+      mid    = int64 -> int64,
+      volume = float,
+      close  = float,
+      open   = float,
+    )
+    """
+
+    x = parse('Stock')
+    y = parse(dedent(stock))
+    assert x[0].k == y[0].k

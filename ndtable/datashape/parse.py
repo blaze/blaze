@@ -9,8 +9,7 @@ from collections import OrderedDict, Iterable
 from operator import add
 from string import maketrans, translate
 from datashape import Integer, TypeVar, Tuple, Record, Function, \
-    Enum, Type, DataShape, Var, Either, Bitfield, \
-    Ternary
+    Enum, Type, DataShape, Var, Either, Bitfield, Ternary
 
 class Visitor(object):
 
@@ -117,7 +116,7 @@ class Translate(Visitor):
         if type(tree.op) is ast.RShift:
             left = self.visit(tree.left)
             right = self.visit(tree.right)
-            return Function(arg_type=left, ret_type=right)
+            return Function(left, right)
         elif type(tree.op) is ast.Mod:
             left = self.visit(tree.left)
             right = self.visit(tree.right)
