@@ -12,7 +12,7 @@ from string import maketrans, translate
 
 # TODO: Tuple is just enumeration
 from coretypes import Integer, TypeVar, Tuple, Record, Function, \
-    Enum, Type, DataShape, Var, Either, Bitfield, Ternary
+    Enum, Type, DataShape, Var, Either, Bitfield, Ternary, Fixed
 
 class Visitor(object):
 
@@ -106,7 +106,12 @@ class Translate(Visitor):
 
     # tuple -> DataShape
     def Tuple(self, tree):
-        operands = self.visit(tree.elts)
+        def toplevel(elt):
+            if isinstance(elt, ast.Num):
+                return Fixed(elt.n)
+            else:
+                return self.visit(elt)
+        operands = map(toplevel, tree.elts)
         return DataShape(operands)
 
     def Set(self, tree):

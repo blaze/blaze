@@ -11,7 +11,7 @@ import ctypes
 from platform import architecture
 from numbers import Integral
 from operator import methodcaller
-from collections import Mapping
+from collections import Mapping, Sequence
 from utils import ReverseLookupDict
 
 free_vars = methodcaller('free')
@@ -179,11 +179,18 @@ class Term(DataShape):
         return str(self)
 
 class Fixed(Term):
-    pass
 
     def __init__(self, i):
         assert isinstance(i, Integral)
+        assert i > 0
         self.val = i
+        self.parameters = [self.val]
+
+    def __eq__(self, other):
+        if type(other) is Fixed:
+            return self.val == other.val
+        else:
+            return False
 
 class Integer(Term):
     """
@@ -340,10 +347,16 @@ class Function(Term):
 # Aggregate Types
 # ===============
 
-class Enum(Term):
+class Enum(Term, Sequence):
     def __str__(self):
         # Use c-style enumeration syntax
         return expr_string('', self.parameters, '{}')
+
+    def __getitem__(self, index):
+        return self.parameters[index]
+
+    def __len__(self):
+        return len(self.parameters)
 
 class Record(DataShape, Mapping):
 

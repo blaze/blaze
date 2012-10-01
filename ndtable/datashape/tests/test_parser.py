@@ -12,11 +12,11 @@ def test_simple_parse():
     assert type(y) is DataShape
     assert type(z) is DataShape
 
-    assert type(x[0]) is Integer
+    assert type(x[0]) is Fixed
     assert type(y[0]) is Enum
 
-    assert type(z[0]) is Integer
-    assert type(z[1]) is Integer
+    assert type(z[0]) is Fixed
+    assert type(z[1]) is Fixed
     assert type(z[2]) is Record
 
     assert z[2]('x') is int64
@@ -24,7 +24,7 @@ def test_simple_parse():
 
 def test_compound_record():
     p = parse('6, Record(x=int, y=float, z=str)')
-    assert type(p[0]) is Integer
+    assert type(p[0]) is Fixed
     assert type(p[1]) is Record
 
 def test_free_variables():
@@ -32,8 +32,8 @@ def test_free_variables():
 
     assert type(p[0]) is TypeVar
     assert type(p[1]) is TypeVar
-    assert type(p[2]) is Integer
-    assert type(p[3]) is Integer
+    assert type(p[2]) is Fixed
+    assert type(p[3]) is Fixed
     assert type(p[4]) is Record
     assert p[4]('R') is int16
     assert p[4]('G') is int16
@@ -45,8 +45,8 @@ def test_flat_datashape():
 
     assert type(p[0]) is TypeVar
     assert type(p[1]) is TypeVar
-    assert type(p[2]) is Integer
-    assert type(p[3]) is Integer
+    assert type(p[2]) is Fixed
+    assert type(p[3]) is Fixed
 
     assert p[4:8] == (int16, int16, int16, int8)
 
@@ -91,6 +91,13 @@ def test_parse_equality():
     y = parse('800, 600, int64')
 
     assert x == y
+
+def test_parse_fixed_integer_diff():
+    x = parse('1, int32')
+    y = parse('{1}, int32')
+
+    assert type(x[0]) is Fixed
+    assert type(y[0][0]) is Integer
 
 def test_parse_ctypes():
     x = parse('800, 600, double')
@@ -164,4 +171,3 @@ def test_module_parse():
 
     assert 'Y' in dir(mod)
     assert type(mod.Y) is DataShape
-    import pdb; pdb.set_trace()
