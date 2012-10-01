@@ -8,6 +8,7 @@ data DataShape = Size : Type
 """
 
 import ctypes
+from platform import architecture
 from numbers import Integral
 from operator import methodcaller
 from collections import Mapping
@@ -117,10 +118,17 @@ class DataShape(object):
 
 class CType(DataShape):
 
-    def __init__(self, ctype):
-        self.parameters = [ctype]
-        self.name = ctype
-        Type.register(ctype, self)
+    def __init__(self, ctype, size=None):
+        if size:
+            assert 1 <= size < (2**23-1)
+            label = ctype + str(size)
+            self.parameters = [label]
+            self.name = label
+            Type.register(label, self)
+        else:
+            self.parameters = [ctype]
+            self.name = ctype
+            Type.register(ctype, self)
 
     def __str__(self):
         return str(self.parameters[0])
@@ -222,11 +230,6 @@ class Bitfield(Term):
     def __init__(self, size):
         self.size = size.val
         self.parameters = [size]
-
-class Null(Term):
-
-    def __str__(self):
-        return expr_string('NA', None)
 
 class Null(Term):
 
@@ -488,6 +491,9 @@ class RecordClass(Decl):
 # Right now we only have one operator (,) which constructs
 # product types ( ie A * B ). We call these dimensions.
 
+# It is neccesarry that if forall z = x * y then
+#   fst(z) * snd(z) = z
+
 # product :: A -> B -> A * B
 def product(A,B):
     if A.composite and B.composite:
@@ -534,6 +540,8 @@ def right(ds):
 # At the type level these are all singleton types, they take no
 # arguments in their constructors.
 
+word = int(architecture()[0][0:2])
+
 int_       = CType('int')
 float_     = CType('float')
 long_      = CType('long')
@@ -548,19 +556,19 @@ uint       = CType('uint')
 ulong      = CType('ulong')
 ulonglong  = CType('ulonglong')
 
-int8       = CType('int8')
-int16      = CType('int16')
-int32      = CType('int32')
-int64      = CType('int64')
+int8       = CType('int', 8)
+int16      = CType('int', 16)
+int32      = CType('int', 32)
+int64      = CType('int', 64)
 
-uint8      = CType('uint8')
-uint16     = CType('uint16')
-uint32     = CType('uint32')
-uint64     = CType('uint64')
+uint8      = CType('uint',  8)
+uint16     = CType('uint', 16)
+uint32     = CType('uint', 32)
+uint64     = CType('uint', 64)
 
-complex64  = CType('complex64')
-complex128 = CType('complex128')
-complex256 = CType('complex256')
+complex64  = CType('complex64' , 64)
+complex128 = CType('complex128', 128)
+complex256 = CType('complex256', 256)
 
 void       = CType('void')
 pyobj      = CType('PyObject')

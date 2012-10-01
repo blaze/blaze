@@ -136,7 +136,7 @@ def test_parse_custom_record():
         min    = int64
         volume = float_
 
-        @derived('int64 -> int64')
+        @derived('int64 -> int64 -> int64')
         def mid(self):
             return (self.min + self.max)/2
 
@@ -145,7 +145,7 @@ def test_parse_custom_record():
       name   = string,
       min    = int64,
       max    = int64,
-      mid    = int64 -> int64,
+      mid    = int64 -> int64 -> int64,
       volume = float,
       close  = float,
       open   = float,
