@@ -192,6 +192,9 @@ class Fixed(Term):
         else:
             return False
 
+    def __str__(self):
+        return str(self.val)
+
 class Integer(Term):
     """
     Integers, at the top level this means a Fixed dimension, at
@@ -559,7 +562,6 @@ int_       = CType('int')
 float_     = CType('float')
 long_      = CType('long')
 bool_      = CType('bool')
-string     = CType('string')
 double     = CType('double')
 short      = CType('short')
 longdouble = CType('longdbouble')
@@ -585,6 +587,10 @@ complex256 = CType('complex', 256)
 
 void       = CType('void')
 pyobj      = CType('PyObject')
+
+# TODO: differentiate between fixed-length and variable-length
+# strings.
+string     = CType('string')
 
 na = nan = Null
 Stream = Var(Integer(0), None)

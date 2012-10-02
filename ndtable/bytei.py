@@ -93,9 +93,9 @@ class ByteDescriptor(object):
     def read(self, num):
         if self.adaptor.has_op(READ, CONTIGIOUS):
             pass
-        elif self.adaptor.has_op(READ, CHUNKED):
+        if self.adaptor.has_op(READ, CHUNKED):
             pass
-        elif self.adaptor.has_op(READ, STREAM):
+        if self.adaptor.has_op(READ, STREAM):
             pass
 
     # Size of the bytes

@@ -166,8 +166,8 @@ def test_parse_custom_record():
 def test_module_parse():
     mod = load('tests/foo.types')
 
-    assert 'X' in dir(mod)
-    assert type(mod.X) is DataShape
+    assert 'A' in dir(mod)
+    assert type(mod.B) is DataShape
 
-    assert 'Y' in dir(mod)
-    assert type(mod.Y) is DataShape
+    assert 'B' in dir(mod)
+    assert type(mod.A) is DataShape

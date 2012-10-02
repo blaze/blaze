@@ -173,6 +173,7 @@ def parse(expr):
     past = ast.parse(expr, '<string>', mode='eval')
     return expr_translator.visit(past)
 
+# Load a file of type definition as if it were a python module.
 def load(fname, modname=None):
     translator = TranslateModule()
 

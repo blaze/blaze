@@ -1,5 +1,4 @@
-from ndtable.datashape.coretypes import *
-from ndtable.datashape.parse import parse
+from ndtable.datashape import *
 
 w = TypeVar('w')
 x = TypeVar('x')
@@ -18,17 +17,17 @@ def setUp():
     Type.register('File', File)
 
 def test_custom_type():
-    p1 = parse('800, 600, RGBA')
+    p1 = datashape('800, 600, RGBA')
     assert p1[2] is RGBA
 
     # We want to build records out of custom type aliases
-    p2 = parse('Record(x=Quaternion, y=Quaternion)')
+    p2 = datashape('Record(x=Quaternion, y=Quaternion)')
 
 def test_custom_stream():
-    p1 = parse('Stream, RGBA')
+    p1 = datashape('Stream, RGBA')
 
 def test_custom_csv_like():
     # A csv-like file is a variable-length strings
-    p1 = parse('n, string')
-    p2 = parse('File')
+    p1 = datashape('n, string')
+    p2 = datashape('File')
     assert p1 == p2

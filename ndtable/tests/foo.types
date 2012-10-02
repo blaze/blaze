@@ -1,4 +1,4 @@
 # Here is our sample types
 
-X = 1, 2, int32
-Y = X, Y, RGBA
+A = 1, 2, int32
+B = X, Y, RGBA
