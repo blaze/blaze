@@ -53,15 +53,38 @@ Dim2       = N, M
 Quaternion = 4, 4, int32
 ```
 
+Once the types are registered they can be used in dtype expressions just
+like primitive values and also to construct even higher order types.
+
+For example a record of quaternions.
+
+```python
+{x: Quaternion, y: Quaternion}
+```
+
+Notes. The free variables in a alias are unique only to the
+constructor. For example composing the Dim2 constructor would
+functionally create 4 variable dimensions *not* a 4 dimensional
+structure with 2 rigid dimensions.
+
+```python
+Dim, Dim2, int32 = a, b, c, d, int32
+
+# NOT THIS
+Dim, Dim2, int32 = a, b, a, b, int32
+```
+
 Record Types
 ------------
 
 Record types are struct-like objects which hold a collection
-of types keyed by labels. For example a pixel.
+of types keyed by labels. For example a pixel:
 
 ```python
 RGBA = {r: int32, g: int32, b: int32, a: int8}
 ```
+
+Most importantly they are heterogenous.
 
 Enumeration Types
 -----------------
@@ -76,10 +99,10 @@ Lengths = {1,2,3}
 Lengths * 3
 ```
 
-This would correspond to a variable ragged triangular table of
+This would correspond to a variable triangular table of
 the form:
 
-```
+```python
            3
 
          * * *
@@ -89,6 +112,23 @@ Lengths    * *
 
 Variable Length
 ---------------
+
+The dual of the fixed length is a variable dimension which corresponds
+to a unique yet undefined variable that is not specified.
+
+```python
+A, A, int32
+```
+
+```python
+A, B, int32
+```
+
+The first example corresponds to a neccessarily square matrix of
+integers while the later permits rectangular forms.
+
+Ranged Length
+-------------
 
 Variable length types correspond where the dimension is not
 known.
@@ -124,7 +164,7 @@ Would permit tables of the form:
 
 ```
 1 3 7
-1 2  
+1 2
 1
 ```
 
@@ -179,6 +219,8 @@ A, B, ( A, B -> Var(A, B) ), int32
 
 Pointer Types
 -------------
+
+** Work in Progress **
 
 Pointers are dimension specifiers like machine types but where
 the data is not in specified by value, but *by reference*. We use

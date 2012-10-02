@@ -51,20 +51,6 @@ class Flags:
     ACCESS_COPY    = 4 # Copied locally, but not committed
     ACCESS_APPEND  = 5
 
-class ByteProvider(object):
-
-    def __init__(self):
-        pass
-
-    def as_contigious(self, start, stop):
-        pass
-
-    def as_strided(self):
-        pass
-
-    def as_stream(self, count):
-        pass
-
 class ByteDescriptor(object):
     """
     Adaptor provides low-level IO operations. The byte interface

@@ -1,9 +1,4 @@
-class Index(object):
-    def __init__(self, byte_interfaces):
-        self.byte_interfaces = byte_interfaces
-
-class AutoIndex(Index):
-    pass
+from idx import Index, AutoIndex
 
 class NDTable(object):
     def __init__(self, obj, datashape, index=None, metadata=None):
@@ -15,7 +10,7 @@ class NDTable(object):
         elif isinstance(obj, Index):
             self.index = index
 
-    def __getitem__(self, index):
+    def __getitem__(self, indexer):
         pass
 
     def __getslice__(self, i, j):
@@ -26,3 +21,12 @@ class NDTable(object):
 
     def from_csv(fname, *params):
         pass
+
+    # IPython notebook integration
+    def to_html(self):
+        return '<table></table>'
+
+    def _repr_html_(self):
+        return ('<div style="max-height:1000px;'
+                'max-width:1500px;overflow:auto;">\n' +
+                self.to_html() + '\n</div>')

@@ -40,6 +40,7 @@ READ  = 1
 WRITE = 2
 READWRITE = READ | WRITE
 
+# TODO: better name? Adaptor carry's too much baggage
 class Adaptor(object):
 
     def has_op(self, op, method):
@@ -47,6 +48,20 @@ class Adaptor(object):
             return method & self.read_capabilities
         if op == WRITE:
             return method & self.write_capabilities
+
+class RawAdaptor(Adaptor):
+    """
+    Work on a raw Python buffer object. For development.
+    """
+
+    def __init__(self, buf):
+        self.buf = buf
+
+    def read(self, offset, nbytes):
+        return
+
+    def write(self, offset, nbytes):
+        return
 
 class MemoryAdaptor(Adaptor):
     """
@@ -131,3 +146,28 @@ class SocketAdaptor(Adaptor):
 
     def write(self, nbytes):
         pass
+
+class ImageAdaptor(Adaptor):
+
+    def __init__(self, ifile):
+        self.ifile = ifile
+        self.fd = None
+        self.__alloc__()
+
+    def __alloc__(self):
+        from PIL import Image
+        self.fd = Image.open(self.ifile)
+
+    def __dealloc__(self):
+        self.fd.close()
+
+    def read(self, nbytes):
+        pass
+
+    def write(self, nbytes):
+        pass
+
+# TODO: probably just want to duck-type it to whatever the IO Pro
+# interface uses...
+class IOPro(Adaptor):
+    pass
