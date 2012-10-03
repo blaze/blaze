@@ -59,12 +59,14 @@ class RawAdaptor(Adaptor):
     """
     Work with Python lists as if they were byte interfaces.
     """
+    read_capabilities  = CONTIGIOUS | STRIDED | STREAM
+    write_capabilities = CONTIGIOUS | STRIDED | STREAM
 
     def __init__(self, lst):
         self.lst = lst
 
     def calculate(self, ntype):
-        # Python list are untyped so discard information about
+        # Python lists are untyped so discard information about
         # machine types.
         return len(self.lst)
 

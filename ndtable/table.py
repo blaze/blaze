@@ -1,3 +1,6 @@
+from datashape.coretypes import Fixed
+from idx import Index, AutoIndex, Space, Subspace, can_coerce
+from ndtable.adaptors.canonical import PyAdaptor, RawAdaptor
 """
 Usage:
 
@@ -28,8 +31,6 @@ x | 1 2 3 4   < -- Subspace a
 y | 5 6 7 8   < -- Subspace b
 """
 
-from idx import Index, AutoIndex, Space, Subspace
-from ndtable.adaptors.canonical import PyAdaptor, RawAdaptor
 
 class NDTable(object):
     def __init__(self, obj, datashape, index=None, metadata=None):
@@ -49,23 +50,41 @@ class NDTable(object):
 
     @staticmethod
     def from_views(shape, *memviews):
-        regions  = []
-        indexes  = []
+        subspaces = []
+        indexes   = []
 
         adaptors = [RawAdaptor(mvw) for mvw in memviews]
         ntype    = shape[-1]
+        dimspec  = shape[0:-1]
 
         for i, adapt in enumerate(adaptors):
-            region   = Subspace(adapt)
-            idx_size = region.size(ntype)
+            subspace = Subspace(adapt)
+            idx_size = subspace.size(ntype)
 
-            regions += [region]
-            indexes += [AutoIndex(idx_size)]
+            axi = dimspec[-i]
+
+            # If we have a fixed dimension specifier we need only
+            # check that the element size of the array maps as a
+            # multiple of the fixed value.
+            if isinstance(axi, Fixed):
+                assert idx_size == axi.val, (idx_size, axi.val)
+                index_cls = AutoIndex
+
+            # Otherwise we need more complex logic for example
+            # Var(0, 5) would need to check that the bounds of
+            # the subspace actually map onto range 0,5.
+            else:
+                index_cls = can_coerce(axi, idx_size, adapt)
+
+            index_inst = index_cls(idx_size)
+
+            subspaces += [subspace]
+            indexes   += [index_inst]
 
         # ???
         metadata = {}
 
-        space = Space(*regions)
+        space = Space(*subspaces)
         return NDTable(space, shape, indexes, metadata)
 
     @staticmethod

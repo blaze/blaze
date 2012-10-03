@@ -1,3 +1,5 @@
+from datashape.coretypes import Var
+
 """
 An index describes how we map the entire "space" of indexer objects to
 the range of storage blocks that comprise the NDArray.
@@ -6,8 +8,8 @@ the range of storage blocks that comprise the NDArray.
     atom     = int | str | special
     indexer  = atom | slice [atom]
 
-The index may span multiple regions of data. Hypothetically we
-may have a table comprised of::
+The index may span multiple subspaces of data. Hypothetically we may
+have a table comprised of::
 
         a    b    c    d
       +------------------+
@@ -18,7 +20,7 @@ may have a table comprised of::
     z |     CSV          |
       +------------------+
 
-A slice across a domain could possibly span multiple regions::
+A slice across a domain could possibly span multiple subspaces::
 
         a    b    c    d
       +------------------+
@@ -95,6 +97,9 @@ class Index(object):
 
 class AutoIndex(Index):
 
+    ordered   = True
+    monotonic = True
+
     def __init__(self, size):
         #self.mapping = arange(0, size)
         self.mapping = range(size)
@@ -110,3 +115,13 @@ class AutoIndex(Index):
             self.mapping[0],
             self.mapping[-1]
         )
+
+def can_coerce(axis, idx_size, adapt):
+    # Can we meaningfully interprete the axis as providing a
+    # bijection between elements of the adaptor byte descriptor
+    # in the context of the given element size.
+
+    if isinstance(axis, Var):
+        return idx_size
+    else:
+        raise NotImplementedError()
