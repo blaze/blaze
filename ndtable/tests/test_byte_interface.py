@@ -8,26 +8,10 @@ def setUp():
     na = np.ones((5,5), dtype=np.dtype('int32'))
     na.tofile('foo.npy')
 
-def test_ndable_init():
-    blaze = Blaze()
+def test_from_views():
+    # Heterogenous Python lists of objects
+    a = [1,2,3,4]
+    b = [5,6,7,8]
 
-    bi = blaze.open('file://foo.npy')
-    table = NDTable(bi, datashape('5, 5, int32'))
-
-def test_ndable_init_index():
-    blaze = Blaze()
-
-    bi = blaze.open('file://foo.npy')
-    idx = Index(bi)
-    table = NDTable(idx, datashape('5, 5, int32'))
-
-def test_raw_adaptor():
-
-    # Create a "memoryblock" like structure out a bytearray
-    size = 6
-    buf = bytearray(size)
-
-    adp = RawAdaptor(buf)
-    idx = Index(adp)
-
-    table = NDTable(idx, datashape('2, 3, int32'))
+    shape = datashape('2, 4, int32')
+    table = NDTable.from_views(shape, a, b)

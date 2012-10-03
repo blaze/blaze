@@ -1,9 +1,9 @@
 """
 Usage:
 
-# Region 1
+# Subspace 1
 r1 = [1,2,3,4]
-# Region 2
+# Subspace 2
 r2 = [5,6,7,8]
 
 # Together these just form an amorphous lump of data without any
@@ -24,11 +24,11 @@ nd = NDTable([a,b], idx, ds)
 
     a b c d
   +---------
-x | 1 2 3 4   < -- Region a
-y | 5 6 7 8   < -- Region b
+x | 1 2 3 4   < -- Subspace a
+y | 5 6 7 8   < -- Subspace b
 """
 
-from idx import Index, AutoIndex, Region
+from idx import Index, AutoIndex, Space, Subspace
 from ndtable.adaptors.canonical import PyAdaptor, RawAdaptor
 
 class NDTable(object):
@@ -36,10 +36,10 @@ class NDTable(object):
         self.datashape = datashape
         self.metadata = metadata
 
-        if isinstance(obj, list):
-            self.index = AutoIndex(*obj)
-        elif isinstance(obj, Index):
-            self.index = index
+        if isinstance(obj, Space):
+            self.space = obj
+        else:
+            assert False
 
     def __getitem__(self, indexer):
         pass
@@ -56,7 +56,7 @@ class NDTable(object):
         ntype    = shape[-1]
 
         for i, adapt in enumerate(adaptors):
-            region   = Region(adapt)
+            region   = Subspace(adapt)
             idx_size = region.size(ntype)
 
             regions += [region]
@@ -64,7 +64,9 @@ class NDTable(object):
 
         # ???
         metadata = {}
-        return NDTable(regions, shape, indexes, metadata)
+
+        space = Space(*regions)
+        return NDTable(space, shape, indexes, metadata)
 
     @staticmethod
     def from_sql(dburl, query):

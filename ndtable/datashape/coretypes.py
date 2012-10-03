@@ -8,6 +8,7 @@ data DataShape = Size : Type
 """
 
 import ctypes
+from numpy import dtype
 from platform import architecture
 from numbers import Integral
 from operator import methodcaller
@@ -132,6 +133,10 @@ class CType(DataShape):
             self.parameters = [ctype]
             self.name = ctype
             Type.register(ctype, self)
+
+    def size(self):
+        # TODO: no cheating!
+        return dtype(self.name).itemsize
 
     def __str__(self):
         return str(self.parameters[0])

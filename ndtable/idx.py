@@ -35,10 +35,40 @@ Or even more complicated in higher-dimensional cases.
 
 from functools import total_ordering
 from numpy import arange, searchsorted
+from collections import Set
 
-class Region(object):
+# TODO: What to name the container of subspaces?
+class Space(Set):
+
+    def __init__(self, *subspaces):
+        self.subspaces = subspaces
+
+    def __contains__(self, other):
+        return other in self.subspaces
+
+    def __iter__(self):
+        return iter(self.subspaces)
+
+    def __len__(self):
+        return len(self.subspaces)
+
+    def __repr__(self):
+        out = ''
+        for space in self.subspaces:
+            out += 'Subspace: %r\n' % space
+        return out
+
+class Subspace(object):
+
     def __init__(self, adaptor):
-        pass
+        self.adaptor = adaptor
+
+    def size(self, ntype):
+        itemsize = ntype.size()
+        return self.adaptor.calculate(itemsize)
+
+    def __repr__(self):
+        return 'Region(%r)' % self.adaptor
 
 class Index(object):
 
@@ -65,6 +95,18 @@ class Index(object):
 
 class AutoIndex(Index):
 
-    def __init__(self, byte_interfaces):
-        # arange
+    def __init__(self, size):
+        #self.mapping = arange(0, size)
+        self.mapping = range(size)
+
+    def start(self):
         pass
+
+    def end(self):
+        pass
+
+    def __repr__(self):
+        return 'arange(%r, %r)' % (
+            self.mapping[0],
+            self.mapping[-1]
+        )

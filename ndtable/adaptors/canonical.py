@@ -50,24 +50,32 @@ class Adaptor(object):
         if op == WRITE:
             return method & self.write_capabilities
 
-class RawAdaptor(Adaptor):
-    """
-    Work on a raw Python buffer object. For development.
-    """
-
-    def __init__(self, buf):
-        self.buf = buf
-
-    def size(self, ntype):
+    def calculate(self, ntype):
         # Calculate the length of the buffer assuming given a
         # machine type.
-        return len(self.buf) / ntype
+        raise NotImplementedError()
+
+class RawAdaptor(Adaptor):
+    """
+    Work with Python lists as if they were byte interfaces.
+    """
+
+    def __init__(self, lst):
+        self.lst = lst
+
+    def calculate(self, ntype):
+        # Python list are untyped so discard information about
+        # machine types.
+        return len(self.lst)
 
     def read(self, offset, nbytes):
-        return self.buf[offset:nbytes]
+        return self.lst[offset:nbytes]
 
     def write(self, offset, nbytes):
         return
+
+    def __repr__(self):
+        return 'Raw(ptr=%r)' % id(self.lst)
 
 class MemoryAdaptor(Adaptor):
     """
