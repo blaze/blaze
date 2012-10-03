@@ -1,5 +1,5 @@
 from numpy import array, arange, dtype
-from ndtable.stridealgebra import numpy_get
+from ndtable.slicealgebra import numpy_get
 
 def test_contains_numpy1D():
     na = array([1,2,3])

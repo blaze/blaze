@@ -21,6 +21,7 @@ from a stream to contiguous involves copying data.
 """
 
 import socket
+from weakref import ref
 from ctypes import CDLL, c_int, POINTER, byref, string_at
 libc = CDLL("libc.so.6")
 
@@ -57,8 +58,13 @@ class RawAdaptor(Adaptor):
     def __init__(self, buf):
         self.buf = buf
 
+    def size(self, ntype):
+        # Calculate the length of the buffer assuming given a
+        # machine type.
+        return len(self.buf) / ntype
+
     def read(self, offset, nbytes):
-        return
+        return self.buf[offset:nbytes]
 
     def write(self, offset, nbytes):
         return
@@ -101,6 +107,7 @@ class FileAdaptor(Adaptor):
         self.fd = None
         self.fname = fname
         self.mode = mode
+        # TODO: lazy
         self.__alloc__()
 
     def read(self, offset, nbytes):
@@ -160,6 +167,27 @@ class ImageAdaptor(Adaptor):
 
     def __dealloc__(self):
         self.fd.close()
+
+    def read(self, nbytes):
+        pass
+
+    def write(self, nbytes):
+        pass
+
+class PyAdaptor(Adaptor):
+
+    def __init__(self, pyobj):
+        # Works for anything that supports memory-like access
+        try:
+            self.ref = memoryview(pyobj)
+        except:
+            self.ref = memoryview(pyobj)
+
+    def __alloc__(self):
+        pass
+
+    def __dealloc__(self):
+        pass
 
     def read(self, nbytes):
         pass

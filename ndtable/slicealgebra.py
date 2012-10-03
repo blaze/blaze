@@ -1,21 +1,23 @@
 """
-The algebra of strides maps indexer objects down into memory objects.
-Since the Blaze model is based on recursive structuring of data this may
+The algebra of slice indexer objects down into memory objects. Since the
+Blaze model is based on recursive structuring of data regions this may
 involve several levels of pointer chasing to get to "the bottom turtle".
 
 Ostensibly a "toy" implementation of the core methods of Numpy in pure
-Python to ensure that our generalization contains numpy proper.
+Python to ensure that our generalization contains Numpy proper.
 """
 
 # ==================================================================
 # Numpy
 # ==================================================================
 
+#        buffer start       dot product          cast into native
+#            |                   |                      |
+# ptr = (char *)buf + ( indices dot strides ) = *((typeof(item) *)ptr);
+
 import numpy as np
 from struct import unpack
 from itertools import izip
-
-# Any generalized algebra *must* contain numpy.
 
 # void *
 # PyArray_GetPtr(PyArrayObject *obj, npy_intp* ind)
@@ -43,6 +45,23 @@ def numpy_get(na, indexer):
         addr += strides[i] * indexer[i]
 
     return unpack(kind, data[addr:addr+size])[0]
+
+# void *get_item_pointer(int ndim, void *buf, Py_ssize_t *strides,
+#                        Py_ssize_t *suboffsets, Py_ssize_t *indices) {
+#     char *pointer = (char*)buf;
+#     int i;
+#     for (i = 0; i < ndim; i++) {
+#         pointer += strides[i] * indices[i];
+#         if (suboffsets[i] >=0 ) {
+#             pointer = *((char**)pointer) + suboffsets[i];
+#         }
+#     }
+#     return (void*)pointer;
+# }
+
+# Pil is an extension of this but with suboffsets.
+def pil_get(na, indexer):
+    pass
 
 # array_iter_base_init(PyArrayIterObject *it, PyArrayObject *ao)
 # {
@@ -123,8 +142,10 @@ def numpy_ufunc(fn, data, types, ntypes, nin, nout):
     pass
 
 # ==================================================================
-# General Stride Algebra
+# General Slice Algebra
 # ==================================================================
+
+# Expressed in terms of regions and datashape.
 
 def blaze_get():
     pass
