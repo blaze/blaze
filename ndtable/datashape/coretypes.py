@@ -16,6 +16,9 @@ from utils import ReverseLookupDict
 
 free_vars = methodcaller('free')
 
+def var_generator():
+    pass
+
 def expr_string(spine, const_args, outer=None):
     if not outer:
         outer = '()'

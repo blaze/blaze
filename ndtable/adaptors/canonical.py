@@ -97,7 +97,7 @@ class FileAdaptor(Adaptor):
     read_capabilities  = STRIDED | STREAM
     write_capabilities = STRIDED | STREAM
 
-    def __init__(self, fname, mode='r+'):
+    def __init__(self, fname, mode='rb+'):
         self.fd = None
         self.fname = fname
         self.mode = mode
