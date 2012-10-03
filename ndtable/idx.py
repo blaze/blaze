@@ -1,8 +1,11 @@
-from datashape.coretypes import Var
+from collections import Set
+from itertools import count
+from datashape.coretypes import Var, TypeVar
 
 """
 An index describes how we map the entire "space" of indexer objects to
 the range of storage blocks that comprise the NDArray.
+from datashape.coretypes import TypeVar
 
     special  = Any | All
     atom     = int | str | special
@@ -35,9 +38,6 @@ Or even more complicated in higher-dimensional cases.
 
 """
 
-from functools import total_ordering
-from numpy import arange, searchsorted
-from collections import Set
 
 # TODO: What to name the container of subspaces?
 class Space(Set):
@@ -104,16 +104,36 @@ class AutoIndex(Index):
         #self.mapping = arange(0, size)
         self.mapping = range(size)
 
+    @property
     def start(self):
-        pass
+        self.mapping[0]
 
+    @property
     def end(self):
-        pass
+        self.mapping[1]
 
     def __repr__(self):
         return 'arange(%r, %r)' % (
-            self.mapping[0],
-            self.mapping[-1]
+            self.start,
+            self.end
+        )
+
+class GeneratingIndex(Index):
+    """
+    Create a index from a Ptyhon generating function.
+    """
+
+    def __init__(self, genfn, *args):
+        self.index = 0
+        self.mapping = genfn(*args)
+
+    def __next__(self):
+        return next(self.mapping)
+
+    def __repr__(self):
+        return 'arange(%r, %r)' % (
+            self.start,
+            self.end
         )
 
 def can_coerce(axis, idx_size, adapt):
@@ -122,6 +142,11 @@ def can_coerce(axis, idx_size, adapt):
     # in the context of the given element size.
 
     if isinstance(axis, Var):
-        return idx_size
+        assert axis.lower < idx_size < axis.upper
+        return AutoIndex(idx_size)
+    if isinstance(axis, TypeVar):
+        # Spin off a unique generator to map to elements on this
+        # dimension.
+        return GeneratingIndex(count, 0)
     else:
         raise NotImplementedError()
