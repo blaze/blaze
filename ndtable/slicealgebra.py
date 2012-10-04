@@ -1,11 +1,67 @@
 """
-The algebra of slice indexer objects down into memory objects. Since the
-Blaze model is based on recursive structuring of data regions this may
-involve several levels of calls to get to "the bottom turtle".
+A generalization of Numpy strides.
 
-Ostensibly a "toy" implementation of the core methods of Numpy in pure
-Python to ensure that our generalization contains Numpy proper.
+The "algebra" of slices maps indexer objects down into memory objects.
+Since the Blaze model is based on recursive structuring of data regions
+this may involve several levels of calls to get to "the bottom turtle".
+
+The top is ostensibly a "toy" implementation of the core methods of
+Numpy in pure Python to ensure that our generalization contains Numpy's
+linear formula-based index.
 """
+
+import numpy as np
+from struct import unpack
+from itertools import izip
+from functools import partial
+from operator import add, mul
+
+# ==================================================================
+# Math
+# ==================================================================
+
+# foldl :: (a -> a -> a) -> a -> [a] -> a
+def foldl(op, origin, xs):
+    """
+     if xs = [a,b,c]
+        origin = o
+     then
+       foldl f origin xs =
+       (f (f o a) b) c
+    """
+    r = origin
+    for x in xs:
+        r = op(r, x)
+    return r
+
+# scanl :: (a -> b -> a) -> a -> [b] -> [a]
+def scanr(op, origin, xs):
+    """
+    scanr f o [a,b,c] =
+        [f a (f b (f c o)),f b (f c o),f c o,o]
+
+    This yields precisely the classical Numpy formula for strides
+    if use mutliplication and take the tail.
+    """
+    i = origin
+    r = [i]
+    for x in reversed(xs):
+        i = op(i,x)
+        r.insert(0, i)
+    return r
+
+# zipwith :: (a -> b -> c) -> [a] -> [b] -> [c]
+def zipwith(op, xs, ys):
+    """
+    zipwith g [a,b,c] [x,y,z] =
+        [g a x, g b y, g c z]
+    """
+    return map(op, xs, ys)
+
+def generalized_dot(f, g, o1, o2, xs, ys):
+    return o1 + foldl(f, o2, zipwith(g, xs, ys))
+
+dot = partial(generalized_dot, add, mul, 0, 0)
 
 # ==================================================================
 # Numpy
@@ -14,12 +70,6 @@ Python to ensure that our generalization contains Numpy proper.
 #        buffer start       dot product          cast into native
 #            |                   |                      |
 # ptr = (char *)buf + ( indices dot strides ) = *((typeof(item) *)ptr);
-
-import numpy as np
-from struct import unpack
-from itertools import izip
-from functools import partial
-from operator import add, mul
 
 # void *
 # PyArray_GetPtr(PyArrayObject *obj, npy_intp* ind)
@@ -34,17 +84,27 @@ from operator import add, mul
 #     return (void *)dptr;
 # }
 
+def numpy_strides(na):
+    nd    = na.ndim
+    shape = na.shape
+    size  = na.dtype.itemsize
+
+    # For C order
+    return scanr(mul, size, shape[1:])
+
+    # For Fortran order
+    #return scanl(mul, size, shape[:-1])
+
 def numpy_get(na, indexer):
 
-    n       = na.ndim
+    nd      = na.ndim
     strides = na.strides
     data    = na.data
     size    = na.dtype.itemsize
     kind    = na.dtype.char
     addr    = 0
 
-    for i in reversed(xrange(n)):
-        addr += strides[i] * indexer[i]
+    addr = dot(strides, indexer)
 
     return unpack(kind, data[addr:addr+size])[0]
 
@@ -172,27 +232,6 @@ def numpy_ufunc(fn, data, types, ntypes, nin, nout):
 #      ...
 #      traverse[n]   = f( datashape[n] )
 
-# foldl :: (a -> a -> a) -> a -> [a] -> a
-def foldl(op, origin, xs):
-    # if xs = [a,b,c]
-    #    origin = 0
-    # then
-    #   foldl f origin xs =
-    #   (f (f 0 a) b) c
-    r = origin
-    for x in xs:
-        r = op(r, x)
-    return r
-
-# zipwith :: (a -> b -> c) -> [a] -> [b] -> [c]
-def zipwith(op, xs, ys):
-    return map(op, xs, ys)
-
-def generalized_dot(f, g, origin, xs, ys):
-    return foldl(f, origin, zipwith(g, xs, ys))
-
-dot = partial(generalized_dot, add, mul, 0)
-
 def blaze_get(na, indexer):
     pass
 
@@ -214,3 +253,14 @@ def blaze_unary_loop(f, a):
 
 def blaze_ufunc(fn, data, types, ntypes, nin, nout):
     pass
+
+if __name__ == '__main__':
+    a,b = [1,2,3], [4,5,6]
+    c = np.ones((4,4,4))
+
+    assert dot(a,b) == np.dot(a,b)
+
+    assert numpy_strides(c) == list(c.strides)
+    assert numpy_get(c, [0,0,1]) == c[0][0][1]
+    assert numpy_get(c, [0,1,0]) == c[0][1][0]
+    assert numpy_get(c, [1,0,0]) == c[1][0][0]
