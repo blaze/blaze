@@ -34,41 +34,20 @@ Abstract               Image               Numpy
  Physical Substrate    Disk                Memory
 
 """
-
 import socket
-from weakref import ref
-from ctypes import CDLL, c_int, POINTER, byref, string_at
+from ctypes import CDLL, string_at
+from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
+from ndtable.bytei import ByteProvider
+
 libc = CDLL("libc.so.6")
 
 free   = libc.free
 malloc = libc.free
 
-CONTIGIOUS = 1
-STRIDED    = 2
-STREAM     = 4
-CHUNKED    = 8
 
-# TODO: ask peter
-# Chunked??? For memory access that is partial but chunk sizes
-# don't correlate to datashape.
-
-READ  = 1
-WRITE = 2
-READWRITE = READ | WRITE
-
-# TODO: better name? Source carry's too much baggage
-class Source(object):
-
-    def has_op(self, op, method):
-        if op == READ:
-            return method & self.read_capabilities
-        if op == WRITE:
-            return method & self.write_capabilities
-
-    def calculate(self, ntype):
-        # Calculate the length of the buffer assuming given a
-        # machine type.
-        raise NotImplementedError()
+# TODO: rework hierarchy
+class Source(ByteProvider):
+    pass
 
 class RawSource(Source):
     """

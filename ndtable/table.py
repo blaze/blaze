@@ -33,25 +33,23 @@ class DataTable(object):
             self.space = []
 
     @staticmethod
-    def from_views(shape, *memviews):
+    def from_providers(shape, *providers):
         """
-        Create a DataTable from a 1D list of memoryviews.
+        Create a DataTable from a 1D list of byte providers.
         """
         subspaces = []
         indexes   = []
-
-        adaptors = [RawSource(mvw) for mvw in memviews]
 
         # Just use the inner dimension
         ntype    = shape[-1]
         innerdim = shape[1]
         outerdim = shape[0]
 
-        for i, adapt in enumerate(adaptors):
+        for i, provide in enumerate(providers):
             # Make sure we don't go over the outer dimension
             assert i < outerdim
 
-            subspace = Subspace(adapt)
+            subspace = Subspace(provide)
             idx_size = subspace.size(ntype)
 
             # If we have a fixed dimension specifier we need only
@@ -65,7 +63,7 @@ class DataTable(object):
             # Var(0, 5) would need to check that the bounds of
             # the subspace actually map onto the interval [0,5]
             else:
-                index = can_coerce(innerdim, idx_size, adapt)
+                index = can_coerce(innerdim, idx_size, provide)
 
             subspaces += [subspace]
             indexes   += [index]

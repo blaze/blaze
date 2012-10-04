@@ -73,15 +73,15 @@ class Space(Set):
 
 class Subspace(object):
 
-    def __init__(self, adaptor):
-        self.adaptor = adaptor
+    def __init__(self, underlying):
+        self.underlying = underlying
 
     def size(self, ntype):
         itemsize = ntype.size()
-        return self.adaptor.calculate(itemsize)
+        return self.underlying.calculate(itemsize)
 
     def __repr__(self):
-        return 'Region(%r)' % self.adaptor
+        return 'Subspace(%r)' % self.adaptor
 
 class Index(object):
 

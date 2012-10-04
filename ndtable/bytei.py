@@ -3,54 +3,9 @@
 #  - stdlib.io
 #  - carray
 
-import struct
-from ctypes import Structure, c_void_p, c_int
-from sources.canonical import READ, WRITE, CONTIGIOUS, STRIDED, \
+from byteproto import READ, WRITE, CONTIGIOUS, STRIDED, \
     CHUNKED, STREAM
 from idx import Indexable
-
-class Buffer(Structure):
-    _fields_ = [
-        ('data'     , c_void_p) ,
-        ('offset'   , c_int)    ,
-        ('stride'   , c_int*2)  ,
-        ('itemsize' , c_int)    ,
-        ('flags'    , c_int)    ,
-    ]
-
-def BufferList(n):
-    class List(Structure):
-        _fields_ = [
-            ('buffers', Buffer*n)
-        ]
-        def __iter__(self):
-            for b in self.buffers:
-                yield b
-
-    return List
-
-def StreamList(n):
-    class Stream(Structure):
-        _fields_ = [
-            ('index', c_int),
-            ('next' , c_void_p)
-        ]
-        def __iter__(self):
-            self.index = 0
-            return self
-
-        def __next__(self):
-            self.index += 1
-            yield self.next
-
-    return Stream
-
-class Flags:
-    ACCESS_DEFAULT = 1
-    ACCESS_READ    = 2
-    ACCESS_WRITE   = 3
-    ACCESS_COPY    = 4 # Copied locally, but not committed
-    ACCESS_APPEND  = 5
 
 class ByteProvider(Indexable):
 
@@ -62,6 +17,17 @@ class ByteProvider(Indexable):
 
     def __getslice__(self, start, stop, step):
         pass
+
+    def has_op(self, op, method):
+        if op == READ:
+            return method & self.read_capabilities
+        if op == WRITE:
+            return method & self.write_capabilities
+
+    def calculate(self, ntype):
+        # Calculate the length of the buffer assuming given a
+        # machine type.
+        raise NotImplementedError()
 
 class ByteDescriptor(object):
     """
