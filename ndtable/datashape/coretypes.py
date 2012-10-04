@@ -369,6 +369,16 @@ class Enum(Term, Sequence):
     def __len__(self):
         return len(self.parameters)
 
+class Union(Term, Sequence):
+    def __str__(self):
+        return expr_string('', self.parameters, '{}')
+
+    def __getitem__(self, index):
+        return self.parameters[index]
+
+    def __len__(self):
+        return len(self.parameters)
+
 class Record(DataShape, Mapping):
 
     def __init__(self, **kwargs):

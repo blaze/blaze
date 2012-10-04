@@ -18,6 +18,21 @@ from a stream to contiguous involves copying data.
      |     Strided      |
      v        |         |
            Stream      Copy
+
+
+Abstract               Image               Numpy
+========               --------            --------
+
+ Space                 Image               Array
+   |                    |                   |
+ Subspace              Pixel               Dimension
+   |                    |                   |
+ Byte Descriptor       File Descriptor     Memoryview
+   |                    |                   |
+ Source               PNG Source         Memory Source
+   |                    |                   |
+ Physical Substrate    Disk                Memory
+
 """
 
 import socket
@@ -41,8 +56,8 @@ READ  = 1
 WRITE = 2
 READWRITE = READ | WRITE
 
-# TODO: better name? Adaptor carry's too much baggage
-class Adaptor(object):
+# TODO: better name? Source carry's too much baggage
+class Source(object):
 
     def has_op(self, op, method):
         if op == READ:
@@ -55,7 +70,7 @@ class Adaptor(object):
         # machine type.
         raise NotImplementedError()
 
-class RawAdaptor(Adaptor):
+class RawSource(Source):
     """
     Work with Python lists as if they were byte interfaces.
     """
@@ -79,7 +94,7 @@ class RawAdaptor(Adaptor):
     def __repr__(self):
         return 'Raw(ptr=%r)' % id(self.lst)
 
-class MemoryAdaptor(Adaptor):
+class MemorySource(Source):
     """
     Allocate a memory block, explicitly outside of the Python
     heap.
@@ -105,7 +120,7 @@ class MemoryAdaptor(Adaptor):
     def __dealloc__(self):
         self.free(self.block)
 
-class FileAdaptor(Adaptor):
+class FileSource(Source):
     """
     File on local disk.
     """
@@ -132,7 +147,7 @@ class FileAdaptor(Adaptor):
     def __dealloc__(self):
         self.fd.close()
 
-class SocketAdaptor(Adaptor):
+class SocketSource(Source):
     """
     Stream of bytes over TCP.
     """
@@ -164,7 +179,7 @@ class SocketAdaptor(Adaptor):
     def write(self, nbytes):
         pass
 
-class ImageAdaptor(Adaptor):
+class ImageSource(Source):
 
     def __init__(self, ifile):
         self.ifile = ifile
@@ -184,28 +199,7 @@ class ImageAdaptor(Adaptor):
     def write(self, nbytes):
         pass
 
-class PyAdaptor(Adaptor):
-
-    def __init__(self, pyobj):
-        # Works for anything that supports memory-like access
-        try:
-            self.ref = memoryview(pyobj)
-        except:
-            self.ref = memoryview(pyobj)
-
-    def __alloc__(self):
-        pass
-
-    def __dealloc__(self):
-        pass
-
-    def read(self, nbytes):
-        pass
-
-    def write(self, nbytes):
-        pass
-
 # TODO: probably just want to duck-type it to whatever the IO Pro
 # interface uses...
-class IOPro(Adaptor):
+class IOProSource(Source):
     pass

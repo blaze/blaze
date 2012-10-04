@@ -1,6 +1,6 @@
 import numpy as np
 from ndtable.datashape import datashape
-from ndtable.table import NDTable
+from ndtable.table import DataTable
 
 
 def setUp():
@@ -13,12 +13,19 @@ def test_from_views():
     b = [5,6,7,8]
 
     shape = datashape('2, 4, int32')
-    table = NDTable.from_views(shape, a, b)
+    table = DataTable.from_views(shape, a, b)
 
 def test_from_views_complex_dims():
-    # Heterogenous Python lists of objects
     a = [1,2,3,4]
     b = [5,6,7,8]
 
     shape = datashape('2, Var(10), int32')
-    table = NDTable.from_views(shape, a, b)
+    table = DataTable.from_views(shape, a, b)
+
+
+def test_from_views_complex_dims():
+    a = [1,2,3,4]
+    b = [5,6,7,8]
+
+    shape = datashape('2, Var(10), int32')
+    table = DataTable.from_views(shape, a, b)

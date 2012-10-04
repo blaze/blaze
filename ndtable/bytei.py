@@ -6,6 +6,7 @@
 import struct
 from ctypes import Structure, c_void_p, c_int
 from adaptors.canonical import READ, WRITE, CONTIGIOUS, STRIDED, \
+from table import Indexable
     CHUNKED, STREAM
 
 class Buffer(Structure):
@@ -51,12 +52,15 @@ class Flags:
     ACCESS_COPY    = 4 # Copied locally, but not committed
     ACCESS_APPEND  = 5
 
+class ByteProvider(Indexable):
+    pass
+
 class ByteDescriptor(object):
     """
-    Adaptor provides low-level IO operations. The byte interface
-    provides the high-level API operations on those bytes that abstracts
-    away the notion of whether the object is contiguous, strided, or
-    streamed and can extract or write bytes in any case.
+    Source provides low-level IO operations. The byte interface provides
+    the high-level API operations on those bytes that abstracts away the
+    notion of whether the object is contiguous, strided, or streamed and
+    can extract or write bytes in any case.
 
     If the adaptor supports an operation natively then it can perform it
     in a single "instruction", if it does not then the byte interface

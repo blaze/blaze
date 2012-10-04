@@ -1,41 +1,23 @@
-from ndtable.adaptors.canonical import RawAdaptor
-
+from adaptors.canonical import RawSource
 from datashape.coretypes import Fixed
 from idx import AutoIndex, Space, Subspace, can_coerce
 
 
 """
-Usage:
-
-# Subspace 1
-r1 = [1,2,3,4]
-# Subspace 2
-r2 = [5,6,7,8]
-
-# Together these just form an amorphous lump of data without any
-# structure.
-a = PyAdaptor(r1)
-b = PyAdaptor(r2)
-
-rows    = ['x','y]
-columns = ['a','b','c','d']
-
-# The combination of these two properties is sufficient to
-# overlay the desired structure on top of the lump of data.
-
-idx = Index(rows, columns)
-ds  = (2, 4, int32)
-
-nd = NDTable([a,b], idx, ds)
-
-    a b c d
-  +---------
-x | 1 2 3 4   < -- Subspace a
-y | 5 6 7 8   < -- Subspace b
 """
 
+class Indexable(object):
 
-class NDTable(object):
+    def __getitem__(self, indexer):
+        pass
+
+    def __getslice__(self, start, stop, step):
+        pass
+
+class IndexArray(object):
+    pass
+
+class DataTable(object):
     def __init__(self, obj, datashape, index=None, metadata=None):
         self.datashape = datashape
         self.metadata = metadata
@@ -45,21 +27,15 @@ class NDTable(object):
         else:
             assert False
 
-    def __getitem__(self, indexer):
-        pass
-
-    def __getslice__(self, start, stop, step):
-        pass
-
     @staticmethod
     def from_views(shape, *memviews):
         """
-        Create a NDTable from a 1D list of memoryviews.
+        Create a DataTable from a 1D list of memoryviews.
         """
         subspaces = []
         indexes   = []
 
-        adaptors = [RawAdaptor(mvw) for mvw in memviews]
+        adaptors = [RawSource(mvw) for mvw in memviews]
 
         # Just use the inner dimension
         ntype    = shape[-1]
@@ -77,7 +53,7 @@ class NDTable(object):
             # check that the element size of the array maps as a
             # multiple of the fixed value.
             if isinstance(innerdim, Fixed):
-                assert idx_size == innerdim.val, (idx_size, axi.val)
+                assert idx_size == innerdim.val, (idx_size, innerdim.val)
                 index = AutoIndex(idx_size)
 
             # Otherwise we need more complex logic for example
@@ -93,7 +69,7 @@ class NDTable(object):
         metadata = {}
 
         space = Space(*subspaces)
-        return NDTable(space, shape, indexes, metadata)
+        return DataTable(space, shape, indexes, metadata)
 
     @staticmethod
     def from_sql(dburl, query):
@@ -105,7 +81,7 @@ class NDTable(object):
 
     # IPython notebook integration
     def to_html(self):
-        return '<table><th>NDTable!</th></table>'
+        return '<table><th>DataTable!</th></table>'
 
     def _repr_html_(self):
         return ('<div style="max-height:1000px;'
