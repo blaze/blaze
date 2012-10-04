@@ -9,15 +9,18 @@ There are primitive machine types which on top of you can build
 composite and dimensionalized structures.
 
 ```python
+uint32
 int32
 float
+char
+...
 ```
 
 Fixed Dimensions
 ----------------
 
 Fixed dimensions are just integer values at the top level of the
-datatype.
+datatype. These are identical to ``shape`` parameters in numpy.
 
 ```python
 2, int32
@@ -183,6 +186,24 @@ each row represents a measurement at a given time.
 { 96  , 50  , 60  , 0 }
 ```
 
+Union Types
+-----------
+
+A union is a set of possible types, of which the actual value
+will be exactly one of.
+
+```python
+IntOrChar  = Union(int32, char)
+StringLike = Union(char, string)
+```
+
+```python
+Pixel = Union(
+    {r: int32, g: int32, b: int32, a: int8},
+    {h: int32, s: int32, v: int32},
+)
+```
+
 Nullable Types
 --------------
 
@@ -192,12 +213,6 @@ constructor.
 ```python
 MaybeFloat = Either float nan
 MaybeInt   = Either int32 nan
-```
-
-Or for union ( in the C-sense) like structures.
-
-```python
-IntOrChar   = Either int32 char
 ```
 
 Function Types
@@ -224,7 +239,8 @@ Pointer Types
 
 Pointers are dimension specifiers like machine types but where
 the data is not in specified by value, but *by reference*. We use
-adopt same notation as LLVM.
+adopt same notation as LLVM where the second argument is the
+address space to reference.
 
 Pointer to a integer in local memory:
 
@@ -235,25 +251,25 @@ int32*
 Pointer to a 4x4 matrix of integers in local memory
 
 ```python
-(4, 4, int32)*
+*(4, 4, int32)
 ```
 
 Pointer to a record in local memory
 
 ```python
-{x: int32, y:int32, label: string}*
+*{x: int32, y:int32, label: string}
 ```
 
 Pointer to integer in a shared memory segement keyed by 'foo'
 
 ```python
-int32 (shm 'foo')*
+*int32 (shm 'foo')
 ```
 
 Pointer to integer on a array server 'bar'
 
 ```python
-int32 (rmt array://bar)*
+*int32 (rmt array://bar)
 ```
 
 Parametric Types
