@@ -369,6 +369,7 @@ class Enum(Term, Sequence):
     def __len__(self):
         return len(self.parameters)
 
+# C-style union
 class Union(Term, Sequence):
     def __str__(self):
         return expr_string('', self.parameters, '{}')

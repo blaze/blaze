@@ -1,7 +1,7 @@
 """
 The algebra of slice indexer objects down into memory objects. Since the
 Blaze model is based on recursive structuring of data regions this may
-involve several levels of pointer chasing to get to "the bottom turtle".
+involve several levels of calls to get to "the bottom turtle".
 
 Ostensibly a "toy" implementation of the core methods of Numpy in pure
 Python to ensure that our generalization contains Numpy proper.
@@ -145,9 +145,32 @@ def numpy_ufunc(fn, data, types, ntypes, nin, nout):
 # General Slice Algebra
 # ==================================================================
 
-# Expressed in terms of regions and datashape.
+# Numpy is a linear mapping between strides and indexers. In numpy the
+# for example the datshape gives (2, 3, int32):
 
-def blaze_get():
+#   With n = 2
+#   With stride[i] = shape[i+1] * ... *shape[n]
+
+# Yields strides
+#   (24, 8)
+
+# The new general form is when our strides become symbolic entities in
+# their own right and instead of being just multiplication, they take on
+# a function corresponding to the datashape. I propose we call these the
+# "traversers" of which strides are a subset.
+
+#   Fixed     ~ (*) -- equiveleant to Numpy
+#   Var       ~
+#   TypeVar   ~
+#   Enum(i)   ~ [ a, b, c, ...][i]
+#   Record(k) ~ { 'a': ds1, 'b': ds2, ... }[k]
+
+# With traverse[i]   = f( datashape[i], datashape[i+1], ... )
+#      traverse[i+1] = f( datashape[i+2], datashape[i+1], ... )
+#      ...
+#      traverse[n]   = f( datashape[n] )
+
+def blaze_get(na, indexer):
     pass
 
 def blaze_iter():

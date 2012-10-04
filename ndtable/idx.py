@@ -38,6 +38,17 @@ Or even more complicated in higher-dimensional cases.
 
 """
 
+class Indexable(object):
+    """
+    The top abstraction in the Blaze class hierarchy.
+    """
+
+    def __getitem__(self, indexer):
+        pass
+
+    def __getslice__(self, start, stop, step):
+        pass
+
 
 # TODO: What to name the container of subspaces?
 class Space(Set):

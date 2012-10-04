@@ -6,8 +6,8 @@
 import struct
 from ctypes import Structure, c_void_p, c_int
 from sources.canonical import READ, WRITE, CONTIGIOUS, STRIDED, \
-from table import Indexable
     CHUNKED, STREAM
+from idx import Indexable
 
 class Buffer(Structure):
     _fields_ = [
@@ -55,8 +55,10 @@ class Flags:
 class ByteProvider(Indexable):
 
     def __init__(self, source):
+        pass
 
     def __getitem__(self, indexer):
+        pass
 
     def __getslice__(self, start, stop, step):
         pass
@@ -87,6 +89,7 @@ class ByteDescriptor(object):
         pass
 
     def read(self, num):
+        pass
 
     # Size of the bytes
     def write(self, n):

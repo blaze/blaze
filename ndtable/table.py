@@ -1,17 +1,8 @@
-from sources.canonical import RawSource
+from bytei import ByteProvider
 from datashape.coretypes import Fixed
 from idx import AutoIndex, Space, Subspace, can_coerce
-
-class Indexable(object):
-    """
-    The top abstraction in the Blaze class hierarchy.
-    """
-
-    def __getitem__(self, indexer):
-        pass
-
-    def __getslice__(self, start, stop, step):
-        pass
+from sources.canonical import RawSource
+from idx import Indexable
 
 class IndexArray(object):
     """
@@ -19,15 +10,27 @@ class IndexArray(object):
     """
     pass
 
+class Table(object):
+    """
+    Deferred evaluation table that constructs the expression
+    graph.
+    """
+    pass
+
 class DataTable(object):
+    """
+    A reified Table.
+    """
     def __init__(self, obj, datashape, index=None, metadata=None):
         self.datashape = datashape
         self.metadata = metadata
 
-        if isinstance(obj, Space):
+        if isinstance(obj, Indexable):
             self.space = obj
-        else:
-            assert False
+        elif isinstance(obj, ByteProvider):
+            self.space = obj
+        elif isinstance(obj, list):
+            self.space = []
 
     @staticmethod
     def from_views(shape, *memviews):
