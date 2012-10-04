@@ -34,7 +34,7 @@ def foldl(op, origin, xs):
         r = op(r, x)
     return r
 
-# scanl :: (a -> b -> a) -> a -> [b] -> [a]
+# scanr :: (a -> b -> b) -> b -> [a] -> [b]
 def scanr(op, origin, xs):
     """
     scanr f o [a,b,c] =
@@ -98,12 +98,12 @@ def numpy_strides(na):
 def numpy_get(na, indexer):
 
     nd      = na.ndim
-    strides = na.strides
     data    = na.data
     size    = na.dtype.itemsize
     kind    = na.dtype.char
     addr    = 0
 
+    strides = numpy_strides(na)
     addr = dot(strides, indexer)
 
     return unpack(kind, data[addr:addr+size])[0]
@@ -150,7 +150,7 @@ def pil_get(na, indexer):
 # }
 
 
-#define PyArray_ITER_NEXT(it) {                                            \
+#  define PyArray_ITER_NEXT(it) {                                            \
 #         _PyAIT(it)->index++;                                               \
 #         if (_PyAIT(it)->nd_m1 == 0) {                                      \
 #                 _PyArray_ITER_NEXT1(_PyAIT(it));                           \

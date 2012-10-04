@@ -44,6 +44,15 @@ class Indexable(object):
     """
 
     def __getitem__(self, indexer):
+        if isinstance(indexer, (int, str)):
+            self.index1d(indexer)
+        else:
+            self.indexnd(indexer)
+
+    def index1d(self, indexer):
+        pass
+
+    def indexnd(self, indexer):
         pass
 
     def __getslice__(self, start, stop, step):
@@ -81,15 +90,13 @@ class Subspace(object):
         return Fixed(self.underlying.calculate(itemsize))
 
     def __repr__(self):
-        return 'Subspace(%r)' % self.underlying
+        return repr(self.underlying)
 
 class Index(object):
 
     ordered   = False
     monotonic = False
-
-    def __init__(self, byte_interfaces):
-        self.byte_interfaces = byte_interfaces
+    injective = True
 
     def as_contigious(self):
         pass
@@ -106,14 +113,92 @@ class Index(object):
     def union(self, other):
         return
 
-class AutoIndex(Index):
+class HierichalIndex(object):
+    """
+    A hierarchal index a panel with multiple index levels
+    represented by tuples.
+
+    i   j  |        A         B
+    -----------------------------
+    one 1  |  -0.040130 -1.471796
+        2  |  -0.027718 -0.752819
+        3  |  -1.166752  0.395943
+    two 1  |  -1.057556 -0.012255
+        2  |   1.839669  0.185417
+        3  |   1.084758  0.594895
+
+    The mapping is may not be injective. For example
+    indexing into ['one'] or ['1'] will perform a SELECT like
+    query on the tables contained in the level.
+    """
+
+    ordered   = False
+    monotonic = False
+    injective = False
+
+    def __init__(self, tuples):
+        # XXX
+        self.levels = 2
+
+    def levels(self):
+        return self.levels
+
+class FilenameIndex(Index):
+    """
+    Take a collection of subspaces and enumerate them in the
+    order of the 'name' parameter on the byte provider'. If the
+    ByteProvider does not provide one, a exception is raised.
+
+    For example a collection of files
+
+        /003_sensor.csv
+        /001_sensor.csv
+        /002_sensor.csv
+        /010_sensor.csv
+
+    Would produce index:
+
+        {
+            0: File(name='/001_sensor.csv')
+            1: File(name='/002_sensor.csv')
+            2: File(name='/003_sensor.csv')
+            3: File(name='/010_sensor.csv')
+        }
+
+    This provides a total monotonic ordering.
+    """
 
     ordered   = True
     monotonic = True
+    injective = True
 
-    def __init__(self, size):
-        #self.mapping = arange(0, size)
-        self.mapping = range(size)
+    def __init__(self, space):
+        self.mapping = sorted(space, self.compare)
+
+    @staticmethod
+    def compare(a, b):
+        return a.name > b.name
+
+class AutoIndex(Index):
+    """
+    Take a collection of subspaces and just create the outer
+    index by enumerating them in the order passed to
+    DataTable.
+
+    Passing in a collection of Python objects would just
+    enumerate the Raw ByteProviders.
+
+        {0: Raw(ptr=31304808), 1: Raw(ptr=31305528)}
+
+    This provides a total monotonic ordering.
+    """
+
+    ordered   = True
+    monotonic = True
+    injective = True
+
+    def __init__(self, space):
+        self.mapping = dict(enumerate(space.subspaces))
 
     @property
     def start(self):
@@ -131,15 +216,16 @@ class AutoIndex(Index):
 
 class GeneratingIndex(Index):
     """
-    Create a index from a Ptyhon generating function.
+    Create a index from a Python generating function.
     """
 
     def __init__(self, genfn, *args):
         self.index = 0
         self.mapping = genfn(*args)
 
-    def __next__(self):
-        return next(self.mapping)
+        self.monotonic = args.get('monotonic')
+        self.ordered   = args.get('ordered')
+        self.injective = args.get('injective')
 
     def __repr__(self):
         return 'arange(%r, %r)' % (

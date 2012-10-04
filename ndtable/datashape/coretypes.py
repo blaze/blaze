@@ -9,6 +9,8 @@ data DataShape = Size : Type
 
 import ctypes
 from numpy import dtype
+from string import letters
+from itertools import count
 from platform import architecture
 from numbers import Integral
 from operator import methodcaller
@@ -17,8 +19,18 @@ from utils import ReverseLookupDict
 
 free_vars = methodcaller('free')
 
-def var_generator():
-    pass
+def _var_generator():
+    """
+    Generate a stream of unique free variables.
+    """
+    for a in count(0):
+        for b in letters:
+            if a == 0:
+                yield b
+            else:
+                yield ''.join([str(a),str(b)])
+
+var_generator = _var_generator()
 
 def expr_string(spine, const_args, outer=None):
     if not outer:

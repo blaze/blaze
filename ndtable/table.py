@@ -1,9 +1,9 @@
+from idx import Indexable
 from bytei import ByteProvider
 from datashape.coretypes import Type, Fixed, Var, TypeVar, \
     DataShape
 from idx import AutoIndex, Space, Subspace
 from sources.canonical import RawSource
-from idx import Indexable
 
 class CannotEmbed(Exception):
     def __init__(self, space, dim):
@@ -65,20 +65,32 @@ class Table(object):
     """
     pass
 
-class DataTable(object):
+class DataTable(Indexable):
     """
     A reified Table.
     """
-    def __init__(self, obj, datashape, index=None, metadata=None):
+    def __init__(self, obj, datashape=None, index=None, metadata=None):
         self.datashape = datashape
-        self.metadata = metadata
+        self.metadata  = metadata
+        self.space     = self.cast_space(obj)
 
-        if isinstance(obj, Indexable):
-            self.space = obj
+        if index is None:
+            self.index = AutoIndex(self.space)
+
+    def cast_space(self, obj):
+
+        if isinstance(obj, Space):
+            space = obj
+        elif isinstance(obj, Indexable):
+            space = obj
         elif isinstance(obj, ByteProvider):
-            self.space = obj
+            space = obj
         elif isinstance(obj, list):
-            self.space = []
+            space = map(self.add_space, obj)
+        else:
+            raise RuntimeError("Don't know how to cast")
+
+        return space
 
     @staticmethod
     def from_providers(shape, *providers):
@@ -96,14 +108,14 @@ class DataTable(object):
         # equal ) with the number of given providers.
         assert can_embed(providers, outerdim)
 
-        for i, provide in enumerate(providers):
+        for i, provider in enumerate(providers):
             # Make sure we don't go over the outer dimension
 
             # (+1) because we don't usually consider 0 dimension
             # as 1
             assert (i+1) < outerdim
 
-            subspace = Subspace(provide)
+            subspace = Subspace(provider)
             substructure = subspace.size(ntype)
 
             # Can we embed the substructure inside of the of the inner
@@ -116,7 +128,7 @@ class DataTable(object):
         metadata = {}
 
         space = Space(*subspaces)
-        return DataTable(space, shape, indexes, metadata)
+        return DataTable(space, datashape=shape, index=None)
 
     @staticmethod
     def from_sql(dburl, query):
