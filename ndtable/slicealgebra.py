@@ -18,6 +18,8 @@ Python to ensure that our generalization contains Numpy proper.
 import numpy as np
 from struct import unpack
 from itertools import izip
+from functools import partial
+from operator import add, mul
 
 # void *
 # PyArray_GetPtr(PyArrayObject *obj, npy_intp* ind)
@@ -169,6 +171,27 @@ def numpy_ufunc(fn, data, types, ntypes, nin, nout):
 #      traverse[i+1] = f( datashape[i+2], datashape[i+1], ... )
 #      ...
 #      traverse[n]   = f( datashape[n] )
+
+# foldl :: (a -> a -> a) -> a -> [a] -> a
+def foldl(op, origin, xs):
+    # if xs = [a,b,c]
+    #    origin = 0
+    # then
+    #   foldl f origin xs =
+    #   (f (f 0 a) b) c
+    r = origin
+    for x in xs:
+        r = op(r, x)
+    return r
+
+# zipwith :: (a -> b -> c) -> [a] -> [b] -> [c]
+def zipwith(op, xs, ys):
+    return map(op, xs, ys)
+
+def generalized_dot(f, g, origin, xs, ys):
+    return foldl(f, origin, zipwith(g, xs, ys))
+
+dot = partial(generalized_dot, add, mul, 0)
 
 def blaze_get(na, indexer):
     pass

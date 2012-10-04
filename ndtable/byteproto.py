@@ -10,6 +10,13 @@ READ  = 1
 WRITE = 2
 READWRITE = READ | WRITE
 
+class Flags:
+    ACCESS_DEFAULT = 1
+    ACCESS_READ    = 2
+    ACCESS_WRITE   = 3
+    ACCESS_COPY    = 4
+    ACCESS_APPEND  = 5
+
 class Buffer(Structure):
     _fields_ = [
         ('data'     , c_void_p) ,
@@ -45,10 +52,3 @@ def StreamList(n):
             yield self.next
 
     return Stream
-
-class Flags:
-    ACCESS_DEFAULT = 1
-    ACCESS_READ    = 2
-    ACCESS_WRITE   = 3
-    ACCESS_COPY    = 4
-    ACCESS_APPEND  = 5
