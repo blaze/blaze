@@ -18,16 +18,6 @@ def test_from_views():
     shape = datashape('2, 4, int32')
     table = DataTable.from_providers(shape, ai, bi)
 
-def test_from_views_complex_dims():
-    a = [1,2,3,4]
-    b = [5,6,7,8]
-
-    ai = RawSource(a)
-    bi = RawSource(b)
-
-    shape = datashape('2, Var(10), int32')
-    table = DataTable.from_providers(shape, ai, bi)
-
 
 def test_from_views_complex_dims():
     a = [1,2,3,4]
@@ -38,3 +28,26 @@ def test_from_views_complex_dims():
 
     shape = datashape('2, Var(10), int32')
     table = DataTable.from_providers(shape, ai, bi)
+
+
+def test_from_views_complex_dims():
+    a = [1,2,3,4]
+    b = [5,6,7,8]
+
+    ai = RawSource(a)
+    bi = RawSource(b)
+
+    shape = datashape('2, Var(5), int32')
+    table = DataTable.from_providers(shape, ai, bi)
+
+def test_ragged():
+    a = [1,2,3,4]
+    b = [5,6]
+    c = [7]
+
+    ai = RawSource(a)
+    bi = RawSource(b)
+    ci = RawSource(c)
+
+    shape = datashape('3, Var(5), int32')
+    table = DataTable.from_providers(shape, ai, bi, ci)

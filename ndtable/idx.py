@@ -1,6 +1,6 @@
 from collections import Set
 from itertools import count
-from datashape.coretypes import Var, TypeVar
+from datashape.coretypes import Var, TypeVar, Fixed
 
 """
 An index describes how we map the entire "space" of indexer objects to
@@ -78,10 +78,10 @@ class Subspace(object):
 
     def size(self, ntype):
         itemsize = ntype.size()
-        return self.underlying.calculate(itemsize)
+        return Fixed(self.underlying.calculate(itemsize))
 
     def __repr__(self):
-        return 'Subspace(%r)' % self.adaptor
+        return 'Subspace(%r)' % self.underlying
 
 class Index(object):
 
@@ -146,18 +146,3 @@ class GeneratingIndex(Index):
             self.start,
             self.end
         )
-
-def can_coerce(axis, idx_size, adapt):
-    # Can we meaningfully interprete the axis as providing a
-    # bijection between elements of the adaptor byte descriptor
-    # in the context of the given element size.
-
-    if isinstance(axis, Var):
-        assert axis.lower < idx_size < axis.upper
-        return AutoIndex(idx_size)
-    if isinstance(axis, TypeVar):
-        # Spin off a unique generator to map to elements on this
-        # dimension.
-        return GeneratingIndex(count, 0)
-    else:
-        raise NotImplementedError()
