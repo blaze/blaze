@@ -5,7 +5,7 @@
 
 import struct
 from ctypes import Structure, c_void_p, c_int
-from adaptors.canonical import READ, WRITE, CONTIGIOUS, STRIDED, \
+from sources.canonical import READ, WRITE, CONTIGIOUS, STRIDED, \
 from table import Indexable
     CHUNKED, STREAM
 
@@ -53,7 +53,13 @@ class Flags:
     ACCESS_APPEND  = 5
 
 class ByteProvider(Indexable):
-    pass
+
+    def __init__(self, source):
+
+    def __getitem__(self, indexer):
+
+    def __getslice__(self, start, stop, step):
+        pass
 
 class ByteDescriptor(object):
     """
@@ -62,13 +68,13 @@ class ByteDescriptor(object):
     notion of whether the object is contiguous, strided, or streamed and
     can extract or write bytes in any case.
 
-    If the adaptor supports an operation natively then it can perform it
+    If the source supports an operation natively then it can perform it
     in a single "instruction", if it does not then the byte interface
     will devise a way to do the operation as a sequence of instructions.
     """
 
-    def __init__(self, adaptor, flags):
-        self.adaptor = adaptor
+    def __init__(self, source, flags):
+        self.source = source
         self.flags = flags
 
     def close(self):
@@ -81,12 +87,6 @@ class ByteDescriptor(object):
         pass
 
     def read(self, num):
-        if self.adaptor.has_op(READ, CONTIGIOUS):
-            pass
-        if self.adaptor.has_op(READ, CHUNKED):
-            pass
-        if self.adaptor.has_op(READ, STREAM):
-            pass
 
     # Size of the bytes
     def write(self, n):

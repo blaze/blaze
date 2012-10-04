@@ -1,12 +1,11 @@
-from adaptors.canonical import RawSource
+from sources.canonical import RawSource
 from datashape.coretypes import Fixed
 from idx import AutoIndex, Space, Subspace, can_coerce
 
-
-"""
-"""
-
 class Indexable(object):
+    """
+    The top abstraction in the Blaze class hierarchy.
+    """
 
     def __getitem__(self, indexer):
         pass
@@ -15,6 +14,9 @@ class Indexable(object):
         pass
 
 class IndexArray(object):
+    """
+    A numpy array without math functions
+    """
     pass
 
 class DataTable(object):
