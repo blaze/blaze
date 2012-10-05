@@ -49,7 +49,7 @@ malloc = libc.free
 class Source(ByteProvider):
     pass
 
-class RawSource(Source):
+class PythonSource(Source):
     """
     Work with Python lists as if they were byte interfaces.
     """
@@ -71,7 +71,7 @@ class RawSource(Source):
         return
 
     def __repr__(self):
-        return 'Raw(ptr=%r)' % id(self.lst)
+        return 'PyObject(ptr=%r)' % id(self.lst)
 
 class MemorySource(Source):
     """
