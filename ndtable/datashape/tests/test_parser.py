@@ -1,5 +1,5 @@
 from ndtable.datashape.parse import parse, load
-from ndtable.datashape.coretypes import *
+from ndtable.datashape import *
 
 from textwrap import dedent
 

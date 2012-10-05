@@ -526,41 +526,6 @@ def derived(sig):
         return sig
     return a
 
-class DeclMeta(type):
-    def __new__(meta, name, bases, namespace):
-        abstract = namespace.pop('abstract', False)
-        if abstract:
-            cls = type(name, bases, namespace)
-        else:
-            cls = type.__new__(meta, name, bases, namespace)
-            cls.construct.im_func(cls, namespace)
-            if hasattr(cls, 'fields'):
-                rcd = Record(**cls.fields)
-                Type.register(name, rcd)
-        return cls
-
-    def construct(cls, fields):
-        pass
-
-class Decl(object):
-    __metaclass__ = DeclMeta
-
-class RecordClass(Decl):
-    """
-    Record object, declared as class. Provied to the datashape
-    parser through the metaclass.
-    """
-    fields = {}
-
-    def construct(cls, fields):
-        cls.fields = cls.fields.copy()
-        for name, value in fields.items():
-            if isinstance(value, DataShape):
-                cls.add(name, value)
-
-    @classmethod
-    def add(cls, name, field):
-        cls.fields[name] = field
 
 # Constructions
 # =============
@@ -642,6 +607,12 @@ uint16     = CType('uint', 16)
 uint32     = CType('uint', 32)
 uint64     = CType('uint', 64)
 
+float8       = CType('float', 8)
+float16      = CType('float', 16)
+float32      = CType('float', 32)
+float64      = CType('float', 64)
+float128     = CType('float', 128)
+
 complex64  = CType('complex' , 64)
 complex128 = CType('complex', 128)
 complex256 = CType('complex', 256)
@@ -668,17 +639,25 @@ Type.register('Stream', Stream)
 
 O = pyobj
 b1 = bool_
+
 i1 = int8
 i2 = int16
 i4 = int32
 i8 = int64
+
 u1 = uint8
 u2 = uint16
 u4 = uint32
 u8 = uint64
 
-f = f4 = float_
-d = f8 = double
+f1 = float8
+f2 = float16
+f4 = float32
+f8 = float64
+f16 = float128
+
+f = float_
+d = double
 
 c8  = complex64
 c16 = complex128
