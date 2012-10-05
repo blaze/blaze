@@ -52,6 +52,9 @@ def flatten(it):
 
 class Type(type):
     registry = {}
+
+    __init__ = NotImplemented
+
     def __new__(meta, name, bases, dct):
         cls = type(name, bases, dct)
         Type.registry[name] = cls

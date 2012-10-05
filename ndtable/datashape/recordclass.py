@@ -7,8 +7,9 @@ that lets PyTables and Blaze interoperate.
 """
 
 from utils import ReverseLookupDict
-from coretypes import Record, Type, DataShape
+from coretypes import Record, Type, DataShape, Atom
 
+from tables import IsDescription
 from tables import description as pytables
 import coretypes as blaze
 
@@ -45,8 +46,15 @@ def from_pytables(description):
 def to_pytables(record):
     fields = [
         pytable_rosetta[field] for field in record.fields
+        if isinstance(field, Atom)
     ]
-    return type('Description', Decl, fields)
+
+    substructs = [
+        to_pytables(field) for field in record.fields
+        if isinstance(field, DataShape)
+    ]
+
+    return type('Description', IsDescription, fields + substructs)
 
 class DeclMeta(type):
     def __new__(meta, name, bases, namespace):
@@ -57,6 +65,8 @@ class DeclMeta(type):
             cls = type.__new__(meta, name, bases, namespace)
             cls.construct.im_func(cls, namespace)
             if hasattr(cls, 'fields'):
+                # Side-effectful operation to register the alias
+                # with the parser
                 rcd = Record(**cls.fields)
                 Type.register(name, rcd)
         return cls
