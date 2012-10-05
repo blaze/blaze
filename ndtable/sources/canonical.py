@@ -29,7 +29,7 @@ Abstract               Image               Numpy
    |                    |                   |
  Byte Descriptor       File Descriptor     Memoryview
    |                    |                   |
- Source               PNG Source         Memory Source
+ Byte Provider         PNG Source          Memory Source
    |                    |                   |
  Physical Substrate    Disk                Memory
 
@@ -177,8 +177,3 @@ class ImageSource(Source):
 
     def write(self, nbytes):
         pass
-
-# TODO: probably just want to duck-type it to whatever the IO Pro
-# interface uses...
-class IOProSource(Source):
-    pass

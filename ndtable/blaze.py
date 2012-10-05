@@ -2,11 +2,11 @@ import os
 import uuid
 from urlparse import urlparse
 from adaptors.canonical import MemoryAdaptor, FileAdaptor, SocketAdaptor
-from ndtable.table import NDTable
+from ndtable.table import DataTable
 
 class Blaze(object):
     """
-    The Blaze scheduler.
+    The Blaze spawner.
     """
 
     def __init__(self):
@@ -32,4 +32,4 @@ class Blaze(object):
         else:
             raise NotImplementedError()
 
-    Table = NDTable
+    Table = DataTable

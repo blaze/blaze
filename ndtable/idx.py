@@ -1,4 +1,5 @@
-from collections import Set
+from abc import ABCMeta
+from collections import Set, Mapping, Sequence
 from itertools import count
 from datashape.coretypes import Var, TypeVar, Fixed
 
@@ -38,6 +39,10 @@ Or even more complicated in higher-dimensional cases.
 
 """
 
+# ================
+# Indexable Spaces
+# ================
+
 class Indexable(object):
     """
     The top abstraction in the Blaze class hierarchy.
@@ -62,8 +67,10 @@ class Indexable(object):
         pass
 
 
-# TODO: What to name the container of subspaces?
 class Space(Set):
+    """
+    A bag of subspaces with no notion of ordering or dimension.
+    """
 
     def __init__(self, *subspaces):
         self.subspaces = subspaces
@@ -95,7 +102,12 @@ class Subspace(object):
     def __repr__(self):
         return repr(self.underlying)
 
+# =======
+# Indexes
+# =======
+
 class Index(object):
+    __metaclass__ = ABCMeta
 
     ordered   = False
     monotonic = False
@@ -116,7 +128,28 @@ class Index(object):
     def union(self, other):
         return
 
-class HierichalIndex(object):
+    @classmethod
+    def __subclasshook__(cls, other):
+        """
+        ABC Magic so that the user doesn't need to subclass Index
+        in order to make a custom one.
+        """
+        if cls is Index:
+            # Sequence of tuples kind
+            if isinstance(other, Sequence):
+                return True
+
+            # Dictionary mapping to parameters of subspaces
+            # (i.e. filenames, pointers, DDFS tags )
+            elif isinstance(other, Mapping):
+                return True
+
+            # Arbitrary logic
+            elif hasattr(other, '__index__'):
+                return True
+        raise NotImplemented
+
+class HierichalIndex(Index):
     """
     A hierarchal index a panel with multiple index levels represented by
     tuples.
@@ -201,7 +234,10 @@ class AutoIndex(Index):
     Passing in a collection of Python objects would just
     enumerate the Raw ByteProviders.
 
-        {0: Raw(ptr=31304808), 1: Raw(ptr=31305528)}
+        {
+            0: PyObject(ptr=31304808),
+            1: PyObject(ptr=31305528),
+        }
 
     This provides a total monotonic ordering.
     """
