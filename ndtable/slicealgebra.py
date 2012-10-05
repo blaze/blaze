@@ -179,6 +179,11 @@ def pil_get(na, indexer):
 #         }                                                                  \
 # }
 
+
+
+# Classical Numpy ufuncs could be thought of as generators expressions
+# over iterators on the datastructure.
+
 def numpy_iter(na):
     pass
 
@@ -186,7 +191,7 @@ def numpy_binary_loop(f, a, b):
     ai = numpy_iter(a)
     bi = numpy_iter(b)
 
-    for i,j in izip(ai, bi):
+    for i, j in izip(ai, bi):
         yield f(i,j)
 
 def numpy_unary_loop(f, a):

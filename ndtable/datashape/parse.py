@@ -11,7 +11,7 @@ from operator import add
 from string import maketrans, translate
 
 # TODO: Tuple is just enumeration
-from coretypes import Integer, TypeVar, Tuple, Record, Function, \
+from coretypes import Integer, TypeVar, Record, Function, \
     Enum, Type, DataShape, Var, Either, Bitfield, Ternary, Fixed
 
 class Visitor(object):

@@ -41,6 +41,9 @@ Or even more complicated in higher-dimensional cases.
 class Indexable(object):
     """
     The top abstraction in the Blaze class hierarchy.
+
+    An index is a mapping from a domain specification to a collection of
+    byte-interfaces
     """
 
     def __getitem__(self, indexer):
@@ -115,8 +118,8 @@ class Index(object):
 
 class HierichalIndex(object):
     """
-    A hierarchal index a panel with multiple index levels
-    represented by tuples.
+    A hierarchal index a panel with multiple index levels represented by
+    tuples.
 
     i   j  |        A         B
     -----------------------------
@@ -127,9 +130,16 @@ class HierichalIndex(object):
         2  |   1.839669  0.185417
         3  |   1.084758  0.594895
 
-    The mapping is may not be injective. For example
-    indexing into ['one'] or ['1'] will perform a SELECT like
-    query on the tables contained in the level.
+    The mapping is not ( in general ) injective. For example indexing
+    into ['one'] or ['1'] will perform a SELECT like query on the tables
+    contained in the level.
+
+    Internally the representation of this would would be:
+
+        0, 0, 1, 1, 2, 2, 3, 3
+        0, 1, 0, 1, 0, 1, 0, 1
+
+    Which endows the structure with lexicographical order.
     """
 
     ordered   = False
@@ -173,7 +183,10 @@ class FilenameIndex(Index):
     injective = True
 
     def __init__(self, space):
-        self.mapping = sorted(space, self.compare)
+        try:
+            self.mapping = sorted(space, self.compare)
+        except KeyError:
+            raise Exception("Subspace does not contain 'name' key")
 
     @staticmethod
     def compare(a, b):

@@ -1,9 +1,7 @@
-from idx import Indexable
 from bytei import ByteProvider
-from datashape.coretypes import Type, Fixed, Var, TypeVar, \
-    DataShape
-from idx import AutoIndex, Space, Subspace
-from sources.canonical import RawSource
+from datashape.coretypes import Fixed, Var, TypeVar, DataShape
+from idx import Indexable, AutoIndex, Space, Subspace, Index
+
 
 class CannotEmbed(Exception):
     def __init__(self, space, dim):
@@ -52,13 +50,13 @@ def can_embed(obj, dim2):
 
     raise CannotEmbed(dim1, dim2)
 
-class IndexArray(object):
+class IndexArray(Indexable):
     """
     A numpy array without math functions
     """
     pass
 
-class Table(object):
+class Table(Indexable):
     """
     Deferred evaluation table that constructs the expression
     graph.
@@ -74,8 +72,11 @@ class DataTable(Indexable):
         self.metadata  = metadata
         self.space     = self.cast_space(obj)
 
+        # DataTable always has an index
         if index is None:
             self.index = AutoIndex(self.space)
+        elif isinstance(index, Index):
+            self.index = index
 
     def cast_space(self, obj):
 
@@ -101,8 +102,8 @@ class DataTable(Indexable):
         indexes   = []
 
         ntype    = shape[-1]
-        innerdim = shape[1]
         outerdim = shape[0]
+        innerdim = shape[1]
 
         # The number of providers must be compatable ( not neccessarily
         # equal ) with the number of given providers.

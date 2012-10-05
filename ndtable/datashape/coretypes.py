@@ -1,10 +1,5 @@
 """
 This defines the DataShape "type system".
-
-data CType = int8 | int16 | int32 | int64 | uint8 | uint16 | uint32 | ...
-data Size = Integer | Variable | Function | Stream | Var a b
-data Type = Size | CType | Record
-data DataShape = Size : Type
 """
 
 import ctypes
@@ -66,6 +61,10 @@ class Type(type):
     def register(name, cls):
         assert name not in Type.registry
         Type.registry[name] = cls
+
+# ==================================================================
+# Base Types
+# ==================================================================
 
 class DataShape(object):
     __metaclass__ = Type
@@ -132,7 +131,28 @@ class DataShape(object):
     def __repr__(self):
         return str(self)
 
+class Atom(DataShape):
+    abstract = True
+
+    # Type constructor
+    def __init__(self, *parameters):
+        self.parameters = parameters
+
+    def __str__(self):
+        clsname = self.__class__.__name__
+        return expr_string(clsname, self.parameters)
+
+    def __repr__(self):
+        return str(self)
+
+# ==================================================================
+# Native Types
+# ==================================================================
+
 class CType(DataShape):
+    """
+    Symbol for a sized type mapping uniquely to a native type.
+    """
 
     def __init__(self, ctype, size=None):
         if size:
@@ -184,21 +204,10 @@ class CType(DataShape):
         raise NotImplementedError()
 
 
-class Term(DataShape):
-    abstract = True
-
-    # Type constructor
-    def __init__(self, *parameters):
-        self.parameters = parameters
-
-    def __str__(self):
-        clsname = self.__class__.__name__
-        return expr_string(clsname, self.parameters)
-
-    def __repr__(self):
-        return str(self)
-
-class Fixed(Term):
+class Fixed(Atom):
+    """
+    Fixed dimension.
+    """
 
     def __init__(self, i):
         assert isinstance(i, Integral)
@@ -215,7 +224,7 @@ class Fixed(Term):
     def __str__(self):
         return str(self.val)
 
-class Integer(Term):
+class Integer(Atom):
     """
     Integers, at the top level this means a Fixed dimension, at
     level of constructor it just means Integer in the sense of
@@ -238,7 +247,10 @@ class Integer(Term):
     def __str__(self):
         return str(self.val)
 
-class TypeVar(Term):
+class TypeVar(Atom):
+    """
+    A free variable in the dimension specifier.
+    """
 
     def __init__(self, symbol):
         self.symbol = symbol
@@ -255,23 +267,28 @@ class TypeVar(Term):
         else:
             return False
 
-class Bitfield(Term):
+class Bitfield(Atom):
 
     def __init__(self, size):
         self.size = size.val
         self.parameters = [size]
 
-class Null(Term):
+class Null(Atom):
+    """
+    Type a polymorphic missing value.
+    """
 
     def __str__(self):
         return expr_string('NA', None)
 
-# Type level Bool ( i.e. for use in ternary expressions, not the
-# same as the value-level bool ).
-class Bool(Term):
+class Bool(Atom):
+    """
+    Type level Bool ( i.e. for use in ternary expressions, not the
+    same as the value-level bool ).
+    """
     pass
 
-class Either(Term):
+class Either(Atom):
 
     def __init__(self, a, b):
         self.a = a
@@ -280,7 +297,11 @@ class Either(Term):
 
 # Internal-like range of dimensions, the special case of
 # [0, inf) is aliased to the type Stream.
-class Var(Term):
+class Var(Atom):
+    """
+    Range type representing a bound or unbound interval of
+    of possible Fixed dimensions.
+    """
 
     def __init__(self, a, b=False):
         self.a = a.val
@@ -324,21 +345,14 @@ class Var(Term):
     def __str__(self):
         return expr_string('Var', [self.lower, self.upper])
 
-class Tuple(Term):
+class Ternary(Atom):
+    """
+    Ternary expression.
 
-    def __getitem__(self, index):
-        return self.parameters[index]
-
-    def __getslice__(self, start, stop):
-        return self.operands[start:stop]
-
-    def __str__(self):
-        return expr_string('', self.parameters)
-
-class Ternary(Term):
-    # a ? (b, c)
-    # b if a else c
-    # With a : x -> Bool
+        a ? (b, c)
+        b if a else c
+        With a : x -> Bool
+    """
 
     def __init__(self, cond, rest):
         self.cond = cond
@@ -352,7 +366,12 @@ class Ternary(Term):
     def __str__(self):
         return str(self.cond) + " ? (" + str(self.rest) +  ')'
 
-class Function(Term):
+class Function(Atom):
+    """
+    A arbitrary function to specify the dimension objects. Details of
+    this are in flux. Not sure if embedding lambdas in the datashape is
+    feasible.
+    """
 
     # Same as Numba notation
     def __init__(self, argtypes, restype):
@@ -370,7 +389,12 @@ class Function(Term):
 # Aggregate Types
 # ===============
 
-class Enum(Term, Sequence):
+class Enum(Atom, Sequence):
+    """
+    A finite enumeration of Fixed dimensions that a datashape is over,
+    in order.
+    """
+
     def __str__(self):
         # Use c-style enumeration syntax
         return expr_string('', self.parameters, '{}')
@@ -381,8 +405,11 @@ class Enum(Term, Sequence):
     def __len__(self):
         return len(self.parameters)
 
-# C-style union
-class Union(Term, Sequence):
+class Union(Atom, Sequence):
+    """
+    C-style union
+    """
+
     def __str__(self):
         return expr_string('', self.parameters, '{}')
 
@@ -393,6 +420,9 @@ class Union(Term, Sequence):
         return len(self.parameters)
 
 class Record(DataShape, Mapping):
+    """
+    A composite data structure with fields mapped to types.
+    """
 
     def __init__(self, **kwargs):
         self.d = kwargs
@@ -443,7 +473,7 @@ class SharedMemory(object):
         # shmat(shmid, NULL, 0)
         self.bounds = ( 0x0, 0x1 )
 
-class Ptr(Term):
+class Ptr(Atom):
     """
     Type*
     Type Addrspace*
@@ -496,10 +526,6 @@ def derived(sig):
         return sig
     return a
 
-class Derived(DataShape):
-    def __init__(self, fn):
-        self.parameters = [fn]
-
 class DeclMeta(type):
     def __new__(meta, name, bases, namespace):
         abstract = namespace.pop('abstract', False)
@@ -520,6 +546,10 @@ class Decl(object):
     __metaclass__ = DeclMeta
 
 class RecordClass(Decl):
+    """
+    Record object, declared as class. Provied to the datashape
+    parser through the metaclass.
+    """
     fields = {}
 
     def construct(cls, fields):
@@ -647,13 +677,12 @@ u2 = uint16
 u4 = uint32
 u8 = uint64
 
-f4 = float_
-f8 = double
-#f16 = float128
+f = f4 = float_
+d = f8 = double
 
-F   = c8  = complex64
-D   = c16 = complex128
-c32       = complex256
+c8  = complex64
+c16 = complex128
+c32 = complex256
 
 S = string
 
