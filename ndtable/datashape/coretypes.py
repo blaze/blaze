@@ -5,10 +5,10 @@ This defines the DataShape "type system".
 import ctypes
 from numpy import dtype
 from string import letters
-from itertools import count
+from itertools import count, izip
 from platform import architecture
 from numbers import Integral
-from operator import methodcaller
+from operator import methodcaller, eq
 from collections import Mapping, Sequence
 from utils import ReverseLookupDict
 
@@ -127,7 +127,10 @@ class DataShape(object):
 
     def __eq__(self, other):
         if type(other) is DataShape:
-            return self.operands == other.operands
+            # Since we're iterable, just enumerate the dimension
+            # specifiers and check them each individually if
+            # every axis equals the other
+            return all( a==b for a,b in izip(self, other) )
         else:
             return False
 
@@ -214,7 +217,6 @@ class Fixed(Atom):
 
     def __init__(self, i):
         assert isinstance(i, Integral)
-        assert i > 0
         self.val = i
         self.parameters = [self.val]
 

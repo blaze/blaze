@@ -1,7 +1,7 @@
 from operator import eq
 
 from bytei import ByteProvider
-from datashape.coretypes import Fixed, Var, TypeVar, DataShape
+from datashape.coretypes import Fixed, Var, TypeVar, Record, DataShape
 from idx import Indexable, AutoIndex, Space, Subspace, Index
 
 
@@ -14,6 +14,17 @@ class CannotEmbed(Exception):
         return "Cannot embed space of values (%r) in (%r)" % (
             self.space, self.dim
         )
+
+class CannotUnion(Exception):
+    def __init__(self, space, dim):
+        self.space = space
+        self.dim   = dim
+
+    def __str__(self):
+        return "Union of spaces (%r) in (%r)" % (
+            self.space, self.dim
+        )
+
 
 def describe(obj):
 
@@ -52,6 +63,55 @@ def can_embed(obj, dim2):
 
     if isinstance(dim1, TypeVar):
         return True
+
+    raise CannotEmbed(dim1, dim2)
+
+def commensurable(a,b):
+    ta = type(a)
+    tb = type(b)
+
+    if (ta,tb) == (Fixed, Fixed):
+        return lambda x,y: x.val + y.val
+
+
+    if (ta,tb) == (TypeVar, Fixed):
+        return lambda x,y: TypeVar('x0')
+
+    if (ta,tb) == (Fixed, TypeVar):
+        return lambda x,y: TypeVar('x0')
+
+
+    if (ta,tb) == (Record, Record):
+        return lambda x,y: Record((x.d).update(y.d))
+
+
+    # Also reverse
+    if (ta,tb) == (Fixed, Var):
+        return lambda x,y: Var(min(x.val, y.lower), max(x.val, y.upper))
+
+# Union of the subspaces, not sure quite what this means yet but
+# feels right.
+
+# I miss Haskell pattern matching. :`(
+def union(obj, dim2):
+    dim1 = describe(obj)
+
+    x  , y  = dim1[0]  , dim2[0]
+    xs , ys = dim1[1:] , dim2[1:]
+
+    if x == y:
+
+        # a, ...
+        # b, ...
+        # --------------
+        # (a+b), ...
+
+        if isinstance(dim1, Fixed):
+            if isinstance(dim2, Fixed):
+                if dim1 == dim2:
+                    return dim1[1:], dim2[1:]
+
+        union(dim1[1:], dim2[1:])
 
     raise CannotEmbed(dim1, dim2)
 
@@ -117,6 +177,7 @@ class DataTable(Indexable):
         # Look at the metadata for the provider, see if we can
         # infer whether the given list of providers is regular
         shapes = [a.calculate(None) for a in providers]
+        #import pdb; pdb.set_trace()
 
         # For example, the following sources would be regular
 
@@ -130,7 +191,8 @@ class DataTable(Indexable):
 
         # Indicate whether or not the union of the subspaces covers the
         # inner dimension.
-        covers = regular and (shapes[0] == innerdim)
+        covers = reduce(union, shapes) == shape
+        #covers = regular and (shapes[0] == innerdim)
 
         for i, provider in enumerate(providers):
             # Make sure we don't go over the outer dimension
@@ -155,7 +217,10 @@ class DataTable(Indexable):
         space.annotate(regular, covers)
 
         # Build the index for the space
-        index = AutoIndex(space)
+        index = AutoIndex(shape, space)
+
+        # this is perhaps IO side-effectful
+        index.build()
 
         return DataTable(space, datashape=shape, index=index)
 

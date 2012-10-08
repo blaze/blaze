@@ -47,6 +47,13 @@ class CannotInfer(Exception):
     def __str__(self):
         return "Cannot infer"
 
+
+def certain(obj, predicate):
+    try:
+        return getattr(obj, predicate)
+    except CannotInfer:
+        return False
+
 # ================
 # Indexable Spaces
 # ================
@@ -94,7 +101,8 @@ class Space(Set):
 
     @property
     def regular(self):
-        # don't guess
+        # Don't guess since, regular=False is not the same as "I
+        # don't know yet"
         if self._regular is None:
             raise CannotInfer()
         return self._regular
@@ -283,19 +291,21 @@ class AutoIndex(Index):
     monotonic = True
     injective = True
 
-    def __init__(self, space):
+    def __init__(self, shape, space):
+        self.shape = shape
         self.space = space
         self.mapping = dict(enumerate(space.subspaces))
 
-    def build(self, shape):
-        if self.space.regular and self.space.covers:
+    def build(self):
+        space = self.space
+
+        if space.regular and space.covers:
             pass
-        elif self.space.regular:
+        elif space.regular:
             pass
 
     def __index__(self):
-        return {
-        }
+        pass
 
     @property
     def start(self):
