@@ -47,7 +47,16 @@ malloc = libc.free
 
 # TODO: rework hierarchy
 class Source(ByteProvider):
-    pass
+
+    def calculate(self, ntype):
+        """
+        Provide information about the structure of the underlying data
+        that is knowable a priori.
+
+        May or may not be dependent on the passed ntype value depending
+        on the source.
+        """
+        pass
 
 class PythonSource(Source):
     """

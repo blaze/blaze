@@ -41,7 +41,7 @@ def scanr(op, origin, xs):
         [f a (f b (f c o)),f b (f c o),f c o,o]
 
     This yields precisely the classical Numpy formula for strides
-    if use mutliplication and take the tail.
+    if op is mutliplication and take the tail.
     """
     i = origin
     r = [i]
@@ -182,7 +182,7 @@ def pil_get(na, indexer):
 
 
 # Classical Numpy ufuncs could be thought of as generators expressions
-# over iterators on the datastructure.
+# over iterators on the array-like structure.
 
 def numpy_iter(na):
     pass

@@ -12,7 +12,8 @@ from string import maketrans, translate
 
 # TODO: Tuple is just enumeration
 from coretypes import Integer, TypeVar, Record, Function, \
-    Enum, Type, DataShape, Var, Either, Bitfield, Ternary, Fixed
+    Enum, Type, DataShape, Var, Either, Bitfield, Ternary, \
+    Fixed, Ptr
 
 class Visitor(object):
 
@@ -122,6 +123,17 @@ class Translate(Visitor):
         return self.visit(tree.value)
 
     # " (a,b) -> c " -> Function((a,b), c)
+    def UnaryOp(self, tree):
+        if type(tree.op) is ast.Invert:
+            if hasattr(tree.operand, 'elts'):
+                args = map(self.visit, tree.operand.elts)
+                return Ptr(*args)
+            else:
+                return Ptr(tree.operand.id)
+            assert False
+        else:
+            raise SyntaxError()
+
     def BinOp(self, tree):
         if type(tree.op) is ast.RShift:
             left = self.visit(tree.left)
@@ -161,6 +173,8 @@ operators = {
     '->' : '>>',
     # Ternary operator
     '?'  : '%' ,
+    # Pointer operator
+    '*'  : '~' ,
 }
 
 op_table = maketrans(

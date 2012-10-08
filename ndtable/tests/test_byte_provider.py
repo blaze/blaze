@@ -54,18 +54,6 @@ def test_ragged():
     shape = datashape('3, Var(5), int32')
     table = DataTable.from_providers(shape, ai, bi, ci)
 
-def test_mismatch_outer():
-    a = [1,2,3,4]
-    b = [5,6]
-    c = [7]
-
-    ai = PythonSource(a)
-    bi = PythonSource(b)
-    ci = PythonSource(c)
-
-    shape = datashape('3, Var(5), int32')
-    table = DataTable.from_providers(shape, ai, bi, ci)
-
 def test_mismatch_inner():
     a = [1,2,3,4]
     b = [5,6]

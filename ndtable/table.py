@@ -1,3 +1,5 @@
+from operator import eq
+
 from bytei import ByteProvider
 from datashape.coretypes import Fixed, Var, TypeVar, DataShape
 from idx import Indexable, AutoIndex, Space, Subspace, Index
@@ -44,6 +46,9 @@ def can_embed(obj, dim2):
         if isinstance(dim2, Var):
             if dim2.lower < dim1.val < dim2.upper:
                 return True
+
+        if isinstance(dim2, TypeVar):
+            return True
 
     if isinstance(dim1, TypeVar):
         return True
@@ -109,6 +114,24 @@ class DataTable(Indexable):
         # equal ) with the number of given providers.
         assert can_embed(providers, outerdim)
 
+        # Look at the metadata for the provider, see if we can
+        # infer whether the given list of providers is regular
+        shapes = [a.calculate(None) for a in providers]
+
+        # For example, the following sources would be regular
+
+        #   A B C         A B C
+        # 1 - - -   +  1  - - -
+        #              2  - - -
+
+        # TODO: there are other ways this could be true as well,
+        # need more sophisticated checker
+        regular = reduce(eq, shapes)
+
+        # Indicate whether or not the union of the subspaces covers the
+        # inner dimension.
+        covers = regular and (shapes[0] == innerdim)
+
         for i, provider in enumerate(providers):
             # Make sure we don't go over the outer dimension
 
@@ -129,6 +152,8 @@ class DataTable(Indexable):
         metadata = {}
 
         space = Space(*subspaces)
+        space.annotate(regular, covers)
+
         return DataTable(space, datashape=shape, index=None)
 
     @staticmethod

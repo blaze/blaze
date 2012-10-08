@@ -22,6 +22,27 @@ table1_ds = """N, Record(
 )
 """
 
+table1_denormal = """N, Record(
+    name     = string,
+    pressure = float32,
+    temp     = float64,
+    x        = float32,
+    y        = float32
+)
+"""
+
+table1_normal = """N, Record(
+    name     = string,
+    pressure = float32,
+    temp     = float64,
+    pos      = Record(
+        name     = string,
+        pressure = float32,
+        temp     = float64
+    )
+)
+"""
+
 def test_hdf5_create_regular():
     # Concatentation of two regular tables into one Blaze DataTable
 
@@ -41,3 +62,11 @@ def test_hdf5_create_irregular():
 
     shape = datashape(table1_ds)
     table = DataTable.from_providers(shape, ci, di)
+
+#def test_hdf5_create_snowflake():
+
+    #ci = HDF5Source(Table1, path='example.h5/' 'c')
+    #di = HDF5Source(Table2, path='example.h5/' 'd')
+
+    #shape = datashape(table1_ds)
+    #table = DataTable.from_providers(shape, ci, di)

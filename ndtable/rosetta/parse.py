@@ -1,10 +1,19 @@
+"""
+Rosetta stones are a declarative way of building translation tables
+between multiple Python namespaces. They can be used to map the
+constructs of one numeric Python project to another project.
+
+This could be used in Blaze to "glue" together different PyData
+projects and make them understand each other's type systems and
+interoperate at the ByteProvider level.
+"""
+
 import ast
 from pprint import pprint
 from string import translate
 from ndtable.datashape.parse import Translate, Visitor, op_table
 
 expr_translator = Translate()
-stone = {}
 
 class Var(object):
     def __init__(self, *names):
@@ -35,6 +44,10 @@ class Mapping(object):
         self.dom = a
         self.cod = b
 
+    def astuple(self):
+        # TODO: generally return lambdas
+        return (self.dom, self.cod)
+
     def bound(self):
         """
         Variables that appear in the domain and the codomain.
@@ -54,7 +67,7 @@ class Mapping(object):
         return set(self.dom.free_vars()) - set(self.cod.free_vars())
 
     def __repr__(self):
-        return str(self.dom) + " ::= " + str(self.cod)
+        return str(self.dom) + " := " + str(self.cod)
 
 class Rosetta(Visitor):
 
@@ -77,7 +90,9 @@ class Rosetta(Visitor):
         return Apply(fn, args)
 
     def Name(self, tree):
-        return Var(tree.id)
+        stem = tree.id
+        py = getattr(self.namespace, stem, None)
+        return py or Var(stem)
 
     def Num(self, tree):
         return Num(tree.n)
@@ -88,14 +103,6 @@ class Rosetta(Visitor):
             right = expr_translator.visit(tree.comparators[0])
             return Mapping(left, right)
 
-def test_simple():
-    tr = Rosetta()
-
-    #expr = open('rosetta/theano.py').read()
-    #expr = open('rosetta/llvm.py').read()
-    expr = open('rosetta/cython.py').read()
-
-    expr = translate(expr, op_table)
-    past = ast.parse(expr)
-    x = tr.visit(past)
-    pprint(x, width=1)
+def parse(expr_string):
+    expr = translate(expr_string, op_table)
+    return ast.parse(expr)

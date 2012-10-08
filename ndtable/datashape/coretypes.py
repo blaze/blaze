@@ -292,6 +292,9 @@ class Bool(Atom):
     pass
 
 class Either(Atom):
+    """
+    Taged union with two slots.
+    """
 
     def __init__(self, a, b):
         self.a = a
@@ -443,6 +446,12 @@ class Record(DataShape, Mapping):
     def free(self):
         return set(self.k)
 
+    def __eq__(self, other):
+        if isinstance(other, Record):
+            return self.d == other.d
+        else:
+            return False
+
     def __call__(self, key):
         return self.d[key]
 
@@ -484,26 +493,29 @@ class Ptr(Atom):
     Usage:
     ------
     Pointer to a integer in local memory
-        int32*
+        *int32
 
     Pointer to a 4x4 matrix of integers in local memory
-        (4, 4, int32)*
+        *(4, 4, int32)
 
     Pointer to a record in local memory
-        {x: int32, y:int32, label: string}*
+        *{x: int32, y:int32, label: string}
 
     Pointer to integer in a shared memory segement keyed by 'foo'
-        int32 (shm 'foo')*
+        *(int32 (shm 'foo'))
 
     Pointer to integer on a array server 'bar'
-        int32 (rmt array://bar)*
+        *(int32 (rmt array://bar))
     """
 
     def __init__(self, pointee, addrspace=None):
         self.pointee = pointee
+
         if addrspace:
             self.addrspace = addrspace
+            self.parameters = [pointee, addrspace]
         else:
+            self.parameters = [pointee]
             self.addrspace = LocalMemory()
 
     @property
@@ -673,7 +685,7 @@ S = string
 # i.e.
 #   5,5,in32 -> ( (5,5), dtype('int32') )
 
-# TODO: records -> numpy struct notation
+# TODO: numpy structured arrays
 def to_numpy(ds):
     shape = tuple()
     dtype = None
@@ -695,6 +707,7 @@ def to_numpy(ds):
 def to_datashape(shape, dtype):
     import numpy as np
 
+    # TODO: use rosetta stones
     ReverseLookupDict({
         np.int32: int32,
         np.float: float,

@@ -8,40 +8,22 @@ that lets PyTables and Blaze interoperate.
 
 from utils import ReverseLookupDict
 from coretypes import Record, Type, DataShape, Atom
+from ndtable import rosetta
 
-from tables import IsDescription
-from tables import description as pytables
-import coretypes as blaze
-
-pytable_rosetta = ReverseLookupDict({
-    blaze.bool_      : pytables.BoolCol,
-    blaze.string     : pytables.StringCol,
-
-    blaze.int8       : pytables.Int8Col,
-    blaze.int16      : pytables.Int16Col,
-    blaze.int32      : pytables.Int32Col,
-    blaze.int64      : pytables.Int64Col,
-
-    blaze.uint8      : pytables.UInt8Col,
-    blaze.uint16     : pytables.UInt16Col,
-    blaze.uint32     : pytables.UInt32Col,
-    blaze.uint64     : pytables.UInt64Col,
-
-    blaze.float32    : pytables.Float32Col,
-    blaze.float64    : pytables.Float64Col,
-    #blaze.float128   : pytables.Float128Col,
-
-    blaze.complex64  : pytables.Complex64Col,
-    blaze.complex128 : pytables.Complex128Col,
-
-    blaze.Enum       : pytables.EnumCol,
-})
+def pytables_deconstruct(col):
+    name, atom = col
+    try:
+        stem = rosetta.pytables[type(atom)]
+    except KeyError:
+        raise Exception('Could not cast')
+    return name, stem
 
 def from_pytables(description):
-    fields = [
-        pytable_rosetta[field] for field in description._f_walk()
-    ]
-    return type('Record', Decl, fields)
+    fields = dict(
+        pytables_deconstruct(field) for field in
+        description.columns.iteritems()
+    )
+    return Record(**fields)
 
 def to_pytables(record):
     fields = [

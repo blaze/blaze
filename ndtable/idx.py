@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from numbers import Integral
 from collections import Set, Mapping, Sequence
 from itertools import count
 from datashape.coretypes import Var, TypeVar, Fixed
@@ -39,6 +40,13 @@ Or even more complicated in higher-dimensional cases.
 
 """
 
+class CannotInfer(Exception):
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return "Cannot infer"
+
 # ================
 # Indexable Spaces
 # ================
@@ -74,6 +82,26 @@ class Space(Set):
 
     def __init__(self, *subspaces):
         self.subspaces = subspaces
+        self._regular = None
+        self._covers  = None
+
+    def annotate(self, regular, covers):
+        self._regular = regular
+        self._covers  = covers
+
+    @property
+    def regular(self):
+        # don't guess
+        if self._regular is None:
+            raise CannotInfer()
+        return self._regular
+
+    @property
+    def covers(self):
+        # don't guess
+        if self._covers is None:
+            raise CannotInfer()
+        return self._covers
 
     def __contains__(self, other):
         return other in self.subspaces
@@ -97,7 +125,11 @@ class Subspace(object):
 
     def size(self, ntype):
         itemsize = ntype.size()
-        return Fixed(self.underlying.calculate(itemsize))
+
+        if isinstance(itemsize, Integral):
+            return Fixed(self.underlying.calculate(itemsize))
+        else:
+            return TypeVar('x0')
 
     def __repr__(self):
         return repr(self.underlying)

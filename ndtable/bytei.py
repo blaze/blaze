@@ -3,6 +3,19 @@
 #  - stdlib.io
 #  - carray
 
+"""
+Byte providers map a subset of the indexer space into low-level
+IO operations.
+
+The ByteProvider provides the high-level API operations on those bytes
+that abstracts away the notion of whether the object is contiguous,
+strided, or streamed and can extract or write bytes in any case.
+
+If the ByteDescriptor supports an operation natively then it can perform
+it in a single "instruction", if it does not then the byte interface
+will devise a way to do the operation as a sequence of instructions.
+"""
+
 from byteproto import READ, WRITE, CONTIGIOUS, STRIDED, \
     CHUNKED, STREAM
 from idx import Indexable
@@ -31,14 +44,6 @@ class ByteProvider(Indexable):
 
 class ByteDescriptor(object):
     """
-    Source provides low-level IO operations. The byte interface provides
-    the high-level API operations on those bytes that abstracts away the
-    notion of whether the object is contiguous, strided, or streamed and
-    can extract or write bytes in any case.
-
-    If the source supports an operation natively then it can perform it
-    in a single "instruction", if it does not then the byte interface
-    will devise a way to do the operation as a sequence of instructions.
     """
 
     def __init__(self, source, flags):
