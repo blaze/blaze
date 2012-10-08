@@ -219,6 +219,7 @@ class Fixed(Atom):
         assert isinstance(i, Integral)
         self.val = i
         self.parameters = [self.val]
+        self.operands = [self.val]
 
     def __eq__(self, other):
         if type(other) is Fixed:

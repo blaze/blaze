@@ -1,6 +1,6 @@
 import numpy as np
 from ndtable.datashape import datashape
-from ndtable.table import DataTable, CannotEmbed
+from ndtable.table import NDTable, CannotEmbed
 from ndtable.sources.hdf5 import HDF5Source
 
 from tables.description import *
@@ -50,7 +50,7 @@ def test_hdf5_create_regular():
     bi = HDF5Source(Table1, path='example.h5/' 'b')
 
     shape = datashape(table1_ds)
-    table = DataTable.from_providers(shape, ai, bi)
+    table = NDTable.from_providers(shape, ai, bi)
 
     assert table.space.regular
     assert table.space.covers
@@ -64,7 +64,7 @@ def test_hdf5_create_irregular():
     di = HDF5Source(Table2, path='example.h5/' 'd')
 
     shape = datashape(table1_ds)
-    table = DataTable.from_providers(shape, ci, di)
+    table = NDTable.from_providers(shape, ci, di)
 
     assert not table.space.regular
 
@@ -74,7 +74,7 @@ def test_hdf5_create_irregular():
     #di = HDF5Source(Table2, path='example.h5/' 'd')
 
     #shape = datashape(table1_ds)
-    #table = DataTable.from_providers(shape, ci, di)
+    #table = NDTable.from_providers(shape, ci, di)
 
 def test_hdf5_indexing():
     # Concatentation of two regular tables into one Blaze DataTable
@@ -83,7 +83,7 @@ def test_hdf5_indexing():
     bi = HDF5Source(Table1, path='example.h5/' 'b')
 
     shape = datashape(table1_ds)
-    table = DataTable.from_providers(shape, ai, bi)
+    table = NDTable.from_providers(shape, ai, bi)
 
     #result = table[0]
     #import pdb; pdb.set_trace()

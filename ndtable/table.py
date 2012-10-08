@@ -37,7 +37,7 @@ def describe(obj):
     elif isinstance(obj, tuple):
         return Fixed(len(obj))
 
-    elif isinstance(obj, DataTable):
+    elif isinstance(obj, NDTable):
         return obj.datashape
 
 def can_embed(obj, dim2):
@@ -101,10 +101,12 @@ def union(obj, dim2):
 
     if x == y:
 
-        # a, ...
-        # b, ...
+        #   union(x:xs, y:ys)
+        #
+        #   x, xs
+        # + y, ys
         # --------------
-        # (a+b), ...
+        #   (x+y), union(xs, ys) ..
 
         if isinstance(dim1, Fixed):
             if isinstance(dim2, Fixed):
@@ -128,7 +130,7 @@ class Table(Indexable):
     """
     pass
 
-class DataTable(Indexable):
+class NDTable(Indexable):
     """
     A reified Table.
     """
@@ -137,7 +139,7 @@ class DataTable(Indexable):
         self.metadata  = metadata
         self.space     = self.cast_space(obj)
 
-        # DataTable always has an index
+        # NDTable always has an index
         if index is None:
             self.index = AutoIndex(self.space)
         elif isinstance(index, Index):
@@ -161,7 +163,7 @@ class DataTable(Indexable):
     @staticmethod
     def from_providers(shape, *providers):
         """
-        Create a DataTable from a 1D list of byte providers.
+        Create a NDTable from a 1D list of byte providers.
         """
         subspaces = []
         indexes   = []
@@ -222,7 +224,7 @@ class DataTable(Indexable):
         # this is perhaps IO side-effectful
         index.build()
 
-        return DataTable(space, datashape=shape, index=index)
+        return NDTable(space, datashape=shape, index=index)
 
     def index1d(self, point):
         # Which subspace does the point exist in?
@@ -241,7 +243,7 @@ class DataTable(Indexable):
 
     # IPython notebook integration
     def to_html(self):
-        return '<table><th>DataTable!</th></table>'
+        return '<table><th>NDTable!</th></table>'
 
     def _repr_html_(self):
         return ('<div style="max-height:1000px;'
