@@ -29,10 +29,16 @@ nosetests.xml
 # Translations
 *.mo
 
-# Mr Developer
+# Project Files
 .mr.developer.cfg
 .project
 .pydevproject
+.ropeproject
 
 *.swp
 *.swo
+
+# Data files
+*.h5
+*.csv
+*.npy

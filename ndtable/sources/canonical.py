@@ -56,7 +56,7 @@ class Source(ByteProvider):
         May or may not be dependent on the passed ntype value depending
         on the source.
         """
-        pass
+        raise NotImplementedError()
 
 class PythonSource(Source):
     """

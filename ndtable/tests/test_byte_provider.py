@@ -54,6 +54,8 @@ def test_ragged():
     shape = datashape('3, Var(5), int32')
     table = DataTable.from_providers(shape, ai, bi, ci)
 
+    assert not table.space.regular
+
 def test_mismatch_inner():
     a = [1,2,3,4]
     b = [5,6]

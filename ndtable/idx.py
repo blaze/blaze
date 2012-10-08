@@ -56,7 +56,7 @@ class Indexable(object):
     The top abstraction in the Blaze class hierarchy.
 
     An index is a mapping from a domain specification to a collection of
-    byte-interfaces
+    byte or subtables.
     """
 
     def __getitem__(self, indexer):
@@ -66,10 +66,10 @@ class Indexable(object):
             self.indexnd(indexer)
 
     def index1d(self, indexer):
-        pass
+        raise NotImplementedError()
 
     def indexnd(self, indexer):
-        pass
+        raise NotImplementedError()
 
     def __getslice__(self, start, stop, step):
         pass
@@ -124,6 +124,7 @@ class Subspace(object):
         self.underlying = underlying
 
     def size(self, ntype):
+        # TODO: rethink this
         itemsize = ntype.size()
 
         if isinstance(itemsize, Integral):
@@ -184,25 +185,25 @@ class Index(object):
 class HierichalIndex(Index):
     """
     A hierarchal index a panel with multiple index levels represented by
-    tuples.
+    tuples.::
 
-    i   j  |        A         B
-    -----------------------------
-    one 1  |  -0.040130 -1.471796
-        2  |  -0.027718 -0.752819
-        3  |  -1.166752  0.395943
-    two 1  |  -1.057556 -0.012255
-        2  |   1.839669  0.185417
-        3  |   1.084758  0.594895
+        i   j  |        A         B
+        -----------------------------
+        one 1  |  -0.040130 -1.471796
+            2  |  -0.027718 -0.752819
+            3  |  -1.166752  0.395943
+        two 1  |  -1.057556 -0.012255
+            2  |   1.839669  0.185417
+            3  |   1.084758  0.594895
 
     The mapping is not ( in general ) injective. For example indexing
     into ['one'] or ['1'] will perform a SELECT like query on the tables
     contained in the level.
 
-    Internally the representation of this would would be:
+    Internally the representation of this would would be::
 
-        0, 0, 1, 1, 2, 2, 3, 3
-        0, 1, 0, 1, 0, 1, 0, 1
+        i : 0, 0, 1, 1, 2, 2, 3, 3
+        j : 0, 1, 0, 1, 0, 1, 0, 1
 
     Which endows the structure with lexicographical order.
     """
@@ -279,15 +280,22 @@ class AutoIndex(Index):
     injective = True
 
     def __init__(self, space):
+        self.space = space
         self.mapping = dict(enumerate(space.subspaces))
+
+    def construct(self):
+        if self.space.regular and self.space.covers:
+            pass
+        elif self.space.regular:
+            pass
 
     @property
     def start(self):
-        self.mapping[0]
+        return self.mapping[0]
 
     @property
     def end(self):
-        self.mapping[1]
+        return self.mapping[1]
 
     def __repr__(self):
         return 'arange(%r, %r)' % (

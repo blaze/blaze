@@ -156,6 +156,13 @@ class DataTable(Indexable):
 
         return DataTable(space, datashape=shape, index=None)
 
+    def index1d(self, point):
+        # Which subspace does the point exist in?
+        preimage, x = self.index(point)
+
+        # Return a 0 dimensional
+        preimage.take()
+
     @staticmethod
     def from_sql(dburl, query):
         pass
@@ -172,3 +179,6 @@ class DataTable(Indexable):
         return ('<div style="max-height:1000px;'
                 'max-width:1500px;overflow:auto;">\n' +
                 self.to_html() + '\n</div>')
+
+    def __repr__(self):
+        pass
