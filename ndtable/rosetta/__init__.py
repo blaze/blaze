@@ -1,0 +1,14 @@
+from parse import Rosetta, parse
+
+def _pytables():
+    import tables as pytables
+
+    tr = Rosetta()
+    tr.namespace = pytables
+
+    expr = open('rosetta/pytables.py').read()
+    stone = tr.visit(parse(expr))
+
+    return dict(a.astuple() for a in stone)
+
+pytables = _pytables()
