@@ -154,7 +154,10 @@ class DataTable(Indexable):
         space = Space(*subspaces)
         space.annotate(regular, covers)
 
-        return DataTable(space, datashape=shape, index=None)
+        # Build the index for the space
+        index = AutoIndex(space)
+
+        return DataTable(space, datashape=shape, index=index)
 
     def index1d(self, point):
         # Which subspace does the point exist in?

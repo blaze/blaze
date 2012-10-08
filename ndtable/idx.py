@@ -65,14 +65,17 @@ class Indexable(object):
         else:
             self.indexnd(indexer)
 
+    def __getslice__(self, start, stop, step):
+        pass
+
     def index1d(self, indexer):
         raise NotImplementedError()
 
     def indexnd(self, indexer):
         raise NotImplementedError()
 
-    def __getslice__(self, start, stop, step):
-        pass
+    def __index__(self):
+        raise NotImplementedError()
 
 
 class Space(Set):
@@ -180,6 +183,7 @@ class Index(object):
             # Arbitrary logic
             elif hasattr(other, '__index__'):
                 return True
+
         raise NotImplemented
 
 class HierichalIndex(Index):
@@ -225,14 +229,14 @@ class FilenameIndex(Index):
     order of the 'name' parameter on the byte provider'. If the
     ByteProvider does not provide one, a exception is raised.
 
-    For example a collection of files
+    For example a collection of files::
 
         /003_sensor.csv
         /001_sensor.csv
         /002_sensor.csv
         /010_sensor.csv
 
-    Would produce index:
+    Would produce index::
 
         {
             0: File(name='/001_sensor.csv')
@@ -283,11 +287,15 @@ class AutoIndex(Index):
         self.space = space
         self.mapping = dict(enumerate(space.subspaces))
 
-    def construct(self):
+    def build(self, shape):
         if self.space.regular and self.space.covers:
             pass
         elif self.space.regular:
             pass
+
+    def __index__(self):
+        return {
+        }
 
     @property
     def start(self):
