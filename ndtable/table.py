@@ -91,11 +91,6 @@ class NDTable(Indexable):
         # Does it cover the space?
         covers = map(can_embed, uni, shape)
 
-        if not covers:
-            import pdb; pdb.set_trace()
-
-        #covers = regular and (shapes[0] == innerdim)
-
         for i, provider in enumerate(providers):
             # Make sure we don't go over the outer dimension
 

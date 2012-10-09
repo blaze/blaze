@@ -2,7 +2,6 @@
 This defines the DataShape "type system".
 """
 
-import ctypes
 from numpy import dtype
 from string import letters
 from itertools import count, izip
@@ -64,6 +63,47 @@ class Type(type):
     def register(name, cls):
         assert name not in Type.registry
         Type.registry[name] = cls
+
+def table_like(ds):
+    return type(ds[-1]) is Record
+
+def array_like(ds):
+    return not table_like(ds)
+
+def expand(ds):
+    """
+    Expand the datashape into a tree like structure of nested
+    structure.
+    """
+    x = ds[0]
+
+    #       o
+    #      /|\
+    #  1 o ... o n
+
+    if isinstance(x, Fixed):
+        y = list(expand(ds[1:]))
+        for a in xrange(0, x.val):
+            yield y
+
+    elif isinstance(x, Enum):
+        y = list(expand(ds[1:]))
+        for a in x.parameters:
+            for b in a:
+                yield y
+
+    #       o
+    #       |
+    #       o
+    #       |
+    #       o
+
+    elif isinstance(x, Record):
+        for a in x.k:
+            yield a
+
+    else:
+        yield x
 
 # ==================================================================
 # Primitive Types
@@ -567,7 +607,6 @@ def derived(sig):
     def a(fn):
         return sig
     return a
-
 
 # Constructions
 # =============
