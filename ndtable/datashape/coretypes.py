@@ -8,7 +8,7 @@ from string import letters
 from itertools import count, izip
 from platform import architecture
 from numbers import Integral
-from operator import methodcaller, eq
+from operator import methodcaller
 from collections import Mapping, Sequence
 from utils import ReverseLookupDict
 
@@ -103,8 +103,8 @@ class Bool(Primitive):
 class Integer(Primitive):
     """
     Integers, at the top level this means a Fixed dimension, at
-    level of constructor it just means Integer in the sense of
-    of machine integer.
+    level of constructor it just means integer in the sense of
+    of just an integer value.
     """
 
     def __init__(self, i):

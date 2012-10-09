@@ -15,13 +15,13 @@ class CannotEmbed(Exception):
             self.space, self.dim
         )
 
-class CannotUnion(Exception):
+class Incommensurable(Exception):
     def __init__(self, space, dim):
         self.space = space
         self.dim   = dim
 
     def __str__(self):
-        return "Union of spaces (%r) in (%r)" % (
+        return "No way of unifying (%s) (%s)" % (
             self.space, self.dim
         )
 
@@ -64,60 +64,78 @@ def can_embed(obj, dim2):
     if isinstance(dim1, TypeVar):
         return True
 
+    if isinstance(dim1, Record):
+
+        if isinstance(dim2, Record):
+            # is superset
+            return set(dim1.k) >= set(dim2.k)
+
     raise CannotEmbed(dim1, dim2)
 
-def commensurable(a,b):
+def unify(a,b):
+    """
+    Defines the unification of datashapes.
+    """
     ta = type(a)
     tb = type(b)
 
     if (ta,tb) == (Fixed, Fixed):
-        return lambda x,y: x.val + y.val
+        return Fixed(a.val + b.val)
 
+    # --
 
     if (ta,tb) == (TypeVar, Fixed):
-        return lambda x,y: TypeVar('x0')
+        return TypeVar('x0')
 
     if (ta,tb) == (Fixed, TypeVar):
-        return lambda x,y: TypeVar('x0')
+        return TypeVar('x0')
 
+    # --
 
     if (ta,tb) == (Record, Record):
-        return lambda x,y: Record((x.d).update(y.d))
+        c = a.d.items() + b.d.items()
+        return Record(**dict(c))
 
+    # --
 
-    # Also reverse
     if (ta,tb) == (Fixed, Var):
-        return lambda x,y: Var(min(x.val, y.lower), max(x.val, y.upper))
+        return Var(min(a.val, b.lower), max(a.val, b.upper))
+
+    if (ta,tb) == (Var, Fixed):
+        return Var(min(a.lower, b.val), max(a.val, b.val))
+
+    if (ta,tb) == (Var, Var):
+        return Var(min(a.lower, b.lower), max(b.upper, b.upper))
+
+    # --
+
+    #if (ta,tb) == (Union, Union):
+        #return Union(a.parameters + b.parameters)
+
+    raise Incommensurable(a,b)
 
 # Union of the subspaces, not sure quite what this means yet but
 # feels right.
 
 # I miss Haskell pattern matching. :`(
-def union(obj, dim2):
-    dim1 = describe(obj)
-
+def union(dim1, dim2):
     x  , y  = dim1[0]  , dim2[0]
     xs , ys = dim1[1:] , dim2[1:]
 
-    if x == y:
+    z = unify(x,y)
 
-        #   union(x:xs, y:ys)
-        #
-        #   x, xs
-        # + y, ys
-        # --------------
-        #   (x+y), union(xs, ys) ..
+    if xs and ys:
+        return union(xs, ys)*z
+    else:
+        return z
 
-        if isinstance(dim1, Fixed):
-            if isinstance(dim2, Fixed):
-                if dim1 == dim2:
-                    return dim1[1:], dim2[1:]
+class Array(Indexable):
+    """
+    A numpy array without math functions
+    """
+    pass
 
-        union(dim1[1:], dim2[1:])
-
-    raise CannotEmbed(dim1, dim2)
-
-class IndexArray(Indexable):
+class NDArray(Indexable):
     """
     A numpy array without math functions
     """
@@ -193,7 +211,14 @@ class NDTable(Indexable):
 
         # Indicate whether or not the union of the subspaces covers the
         # inner dimension.
-        covers = reduce(union, shapes) == shape
+        uni = reduce(union, shapes)
+
+        # Does it cover the outer dimension?
+        covers = map(can_embed, uni, shape)
+
+        if not covers:
+            import pdb; pdb.set_trace()
+
         #covers = regular and (shapes[0] == innerdim)
 
         for i, provider in enumerate(providers):
