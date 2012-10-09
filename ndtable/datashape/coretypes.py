@@ -377,11 +377,17 @@ class Var(Atom):
     """
 
     def __init__(self, a, b=False):
-        self.a = a.val
-        if b:
-            self.b = b.val
+        if type(a) is int:
+            self.a = a
         else:
+            self.a = a.val
+
+        if type(b) is int:
             self.b = b
+        elif b is False or b is None:
+            self.b = b
+        else:
+            self.b = b.val
 
         if a and b:
             assert self.a < self.b, 'Must have upper < lower'

@@ -11,26 +11,11 @@ class CannotEmbed(Exception):
             self.space, self.dim
         )
 
-def describe(obj):
-    # circular references...
-    from ndtable.table import NDTable
-
-    if isinstance(obj, DataShape):
-        return obj
-
-    elif isinstance(obj, list):
-        return Fixed(len(obj))
-
-    elif isinstance(obj, tuple):
-        return Fixed(len(obj))
-
-    elif isinstance(obj, NDTable):
-        return obj.datashape
-
 def can_embed(dim1, dim2):
     """
-    Can we embed a ``obj`` inside of the space specified by the outer
-    dimension ``dim``.
+    Can we embed a ``dim1`` inside of the space specified by the outer
+    dimension ``dim2``. This inspects the full chain, instead of
+    unification which is pairwise.
     """
     # We want explicit fallthrough
     if isinstance(dim1, Fixed):
@@ -58,5 +43,10 @@ def can_embed(dim1, dim2):
 
     if isinstance(dim1, TypeVar):
         return True
+
+    # TODO:
+    if isinstance(dim1, CType):
+        if isinstance(dim2, CType):
+            return True
 
     raise CannotEmbed(dim1, dim2)

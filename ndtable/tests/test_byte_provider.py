@@ -29,7 +29,7 @@ def test_from_views_complex_dims():
     ai = PythonSource(a)
     bi = PythonSource(b)
 
-    shape = datashape('2, Var(10), int32')
+    shape = datashape('8, object')
     table = NDTable.from_providers(shape, ai, bi)
 
 
@@ -40,7 +40,7 @@ def test_from_views_complex_dims():
     ai = PythonSource(a)
     bi = PythonSource(b)
 
-    shape = datashape('2, Var(5), int32')
+    shape = datashape('8, object')
     table = NDTable.from_providers(shape, ai, bi)
 
 def test_ragged():
@@ -52,7 +52,7 @@ def test_ragged():
     bi = PythonSource(b)
     ci = PythonSource(c)
 
-    shape = datashape('3, Var(5), int32')
+    shape = datashape('Var(7), object')
     table = NDTable.from_providers(shape, ai, bi, ci)
 
     assert not table.space.regular
