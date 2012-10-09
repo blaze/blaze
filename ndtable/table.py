@@ -2,7 +2,9 @@ from operator import eq
 
 from bytei import ByteProvider
 from idx import Indexable, AutoIndex, Space, Subspace, Index
-from datashape.unification import union, can_embed
+
+from datashape.unification import union
+from datashape.embedding import can_embed
 
 class Array(Indexable):
     """

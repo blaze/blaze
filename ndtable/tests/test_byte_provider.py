@@ -1,7 +1,7 @@
 import numpy as np
 from ndtable.datashape import datashape
 from ndtable.table import NDTable
-from ndtable.datashape.unification import CannotEmbed
+from ndtable.datashape.embedding import can_embed, CannotEmbed
 from ndtable.sources.canonical import PythonSource
 
 from nose.tools import assert_raises
