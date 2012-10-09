@@ -43,7 +43,7 @@ Where this is decomposed coordinate wise.
 
 from numpy import promote_types
 from coretypes import Fixed, Var, TypeVar, Record, \
-    DataShape, CType
+    CType, array_like
 
 class Incommensurable(Exception):
     def __init__(self, space, dim):
@@ -55,7 +55,19 @@ class Incommensurable(Exception):
             self.space, self.dim
         )
 
+def broadcast(shape1, shape2):
+    """
+    Subcase that should be identical to ``np.broadcast``.
+    """
+    assert array_like(shape1)
+    assert array_like(shape2)
+
+    return unify(shape1, shape2)
+
 def union(dim1, dim2):
+    """
+    General case of Blaze broadcasting.
+    """
     x  , y  = dim1[0]  , dim2[0]
     xs , ys = dim1[1:] , dim2[1:]
 
