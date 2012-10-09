@@ -27,13 +27,11 @@ def describe(obj):
     elif isinstance(obj, NDTable):
         return obj.datashape
 
-def can_embed(obj, dim2):
+def can_embed(dim1, dim2):
     """
     Can we embed a ``obj`` inside of the space specified by the outer
     dimension ``dim``.
     """
-    dim1 = describe(obj)
-
     # We want explicit fallthrough
     if isinstance(dim1, Fixed):
 

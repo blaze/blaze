@@ -6,6 +6,23 @@ from idx import Indexable, AutoIndex, Space, Subspace, Index
 from datashape.unification import union
 from datashape.embedding import can_embed
 
+from datashape.coretypes import DataShape, Fixed
+
+def describe(obj):
+
+    if isinstance(obj, DataShape):
+        return obj
+
+    elif isinstance(obj, list):
+        return Fixed(len(obj))
+
+    elif isinstance(obj, tuple):
+        return Fixed(len(obj))
+
+    elif isinstance(obj, NDTable):
+        return obj.datashape
+
+
 class Array(Indexable):
     """
     A numpy array without math functions
@@ -67,9 +84,12 @@ class NDTable(Indexable):
         outerdim = shape[0]
         innerdim = shape[1]
 
+
+        provided_dim = describe(providers)
+
         # The number of providers must be compatable ( not neccessarily
         # equal ) with the number of given providers.
-        assert can_embed(providers, outerdim)
+        assert can_embed(provided_dim, outerdim)
 
         # Look at the metadata for the provider, see if we can
         # infer whether the given list of providers is regular

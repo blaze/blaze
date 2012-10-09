@@ -18,7 +18,7 @@ def test_from_views():
     ai = PythonSource(a)
     bi = PythonSource(b)
 
-    shape = datashape('2, 4, object')
+    shape = datashape('8, object')
     table = NDTable.from_providers(shape, ai, bi)
 
 
