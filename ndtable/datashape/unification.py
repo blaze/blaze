@@ -1,4 +1,23 @@
-from numpy import promote_types, dtype
+"""
+Unification is a generalization of Numpy broadcasting.
+
+In Numpy we two arrays and broadcast them to yield similar shaped
+object::
+
+    A      (2d array):  5 x 4
+    B      (1d array):      1
+    Result (2d array):  5 x 4
+
+In Blaze we take two arrays with more complex datashapes and
+merge them for::
+
+    A                :  3, 2, Var(3)
+    B                :     1, Var(4)
+    Result           :  3, 2, Var(4)
+
+"""
+
+from numpy import promote_types
 from coretypes import Fixed, Var, TypeVar, Record, \
     DataShape, CType
 

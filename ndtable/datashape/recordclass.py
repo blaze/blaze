@@ -6,6 +6,8 @@ Also provides a mapping between HDF5 in terms of Blaze subset
 that lets PyTables and Blaze interoperate.
 """
 
+from tables import IsDescription
+
 from utils import ReverseLookupDict
 from coretypes import Record, Type, DataShape, Atom
 from ndtable import rosetta
