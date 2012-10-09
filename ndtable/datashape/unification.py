@@ -9,11 +9,35 @@ object::
     Result (2d array):  5 x 4
 
 In Blaze we take two arrays with more complex datashapes and
-merge them for::
+unify them at each coordinate.
 
-    A                :  3, 2, Var(3)
-    B                :     1, Var(4)
-    Result           :  3, 2, Var(4)
+    A                :  3, 2, Var(3), int32
+    B                :     1, Var(4), float32
+    Result           :  3, 2, Var(4), float32
+
+Where this is decomposed coordinate wise.
+
+      3 | 2 | Var(3) | int32
+
+    +   | 1 | Var(4) | float32
+    ---------------------------
+
+      unify( Fixed(2), Fixed(0) ) = Fixed(3)
+    = 3
+
+      unify( Fixed(2), Fixed(1) ) = Fixed(2)
+
+          2
+
+      unify( Var(3), Var(4) ) = Var(4)
+
+               Var(4)
+
+      unify( int32, float32 ) = float32
+
+                       float32
+
+    = 3, 2, Var(4), float32
 
 """
 
