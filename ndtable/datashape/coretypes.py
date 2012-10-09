@@ -66,6 +66,64 @@ class Type(type):
         Type.registry[name] = cls
 
 # ==================================================================
+# Primitive Types
+# ==================================================================
+
+class Primitive(object):
+    composite = False
+
+    def __init__(self, *parameters):
+        self.parameters = parameters
+
+    def __rmul__(self, other):
+        if not isinstance(other, (DataShape, Primitive)):
+            other = shape_coerce(other)
+        return product(other, self)
+
+    def __mul__(self, other):
+        if not isinstance(other, (DataShape, Primitive)):
+            other = shape_coerce(other)
+        return product(other, self)
+
+class Null(Primitive):
+    """
+    Type polymorphic missing value.
+    """
+
+    def __str__(self):
+        return expr_string('NA', None)
+
+class Bool(Primitive):
+    """
+    Type level Bool ( i.e. for use in ternary expressions, not the
+    same as the value-level bool ).
+    """
+    pass
+
+class Integer(Primitive):
+    """
+    Integers, at the top level this means a Fixed dimension, at
+    level of constructor it just means Integer in the sense of
+    of machine integer.
+    """
+
+    def __init__(self, i):
+        assert isinstance(i, Integral)
+        self.val = i
+
+    def free(self):
+        return set([])
+
+    def __eq__(self, other):
+        if type(other) is Integer:
+            return self.val == other.val
+        else:
+            return False
+
+    def __str__(self):
+        return str(self.val)
+
+# ==================================================================
 # Base Types
 # ==================================================================
 
@@ -110,12 +168,12 @@ class DataShape(object):
         return self.operands[start:stop]
 
     def __rmul__(self, other):
-        if not isinstance(other, DataShape):
+        if not isinstance(other, (DataShape, Primitive)):
             other = shape_coerce(other)
         return product(other, self)
 
     def __mul__(self, other):
-        if not isinstance(other, DataShape):
+        if not isinstance(other, (DataShape, Primitive)):
             other = shape_coerce(other)
         return product(other, self)
 
@@ -230,29 +288,6 @@ class Fixed(Atom):
     def __str__(self):
         return str(self.val)
 
-class Integer(Atom):
-    """
-    Integers, at the top level this means a Fixed dimension, at
-    level of constructor it just means Integer in the sense of
-    of machine integer.
-    """
-
-    def __init__(self, i):
-        assert isinstance(i, Integral)
-        self.val = i
-
-    def free(self):
-        return set([])
-
-    def __eq__(self, other):
-        if type(other) is Integer:
-            return self.val == other.val
-        else:
-            return False
-
-    def __str__(self):
-        return str(self.val)
-
 class TypeVar(Atom):
     """
     A free variable in the dimension specifier.
@@ -278,21 +313,6 @@ class Bitfield(Atom):
     def __init__(self, size):
         self.size = size.val
         self.parameters = [size]
-
-class Null(Atom):
-    """
-    Type a polymorphic missing value.
-    """
-
-    def __str__(self):
-        return expr_string('NA', None)
-
-class Bool(Atom):
-    """
-    Type level Bool ( i.e. for use in ternary expressions, not the
-    same as the value-level bool ).
-    """
-    pass
 
 class Either(Atom):
     """
