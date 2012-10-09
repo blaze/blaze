@@ -1,6 +1,6 @@
 import numpy as np
 from ndtable.datashape import datashape
-from ndtable.table import NDTable, CannotEmbed
+from ndtable.table import NDTable
 from ndtable.sources.hdf5 import HDF5Source
 
 from tables.description import *

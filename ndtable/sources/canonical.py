@@ -38,6 +38,7 @@ import socket
 from ctypes import CDLL, string_at
 from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
 from ndtable.bytei import ByteProvider
+from ndtable.datashape import Fixed, pyobj
 
 libc = CDLL("libc.so.6")
 
@@ -71,7 +72,7 @@ class PythonSource(Source):
     def calculate(self, ntype):
         # Python lists are untyped so discard information about
         # machine types.
-        return len(self.lst)
+        return pyobj*Fixed(len(self.lst))
 
     def read(self, offset, nbytes):
         return self.lst[offset:nbytes]

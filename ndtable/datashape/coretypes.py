@@ -230,6 +230,10 @@ class CType(DataShape):
             self.name = ctype
             Type.register(ctype, self)
 
+    @classmethod
+    def from_str(self, s):
+        return Type.registry[s]
+
     def size(self):
         # TODO: no cheating!
         return dtype(self.name).itemsize
@@ -656,7 +660,7 @@ complex128 = CType('complex', 128)
 complex256 = CType('complex', 256)
 
 void       = CType('void')
-pyobj      = CType('PyObject')
+pyobj      = CType('object')
 
 # TODO: differentiate between fixed-length and variable-length
 # strings.

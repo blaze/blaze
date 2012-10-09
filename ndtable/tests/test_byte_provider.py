@@ -1,6 +1,7 @@
 import numpy as np
 from ndtable.datashape import datashape
-from ndtable.table import NDTable, CannotEmbed
+from ndtable.table import NDTable
+from ndtable.datashape.unification import CannotEmbed
 from ndtable.sources.canonical import PythonSource
 
 from nose.tools import assert_raises
@@ -17,7 +18,7 @@ def test_from_views():
     ai = PythonSource(a)
     bi = PythonSource(b)
 
-    shape = datashape('2, 4, int32')
+    shape = datashape('8, object')
     table = NDTable.from_providers(shape, ai, bi)
 
 
