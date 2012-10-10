@@ -98,18 +98,30 @@ Tabular:
 NDTable:
     A Tabular object with lazy evaluation of data, but immediate evaluation
     of index space transformations.  Once data has been evaluated, then it
-    is cached on the NDTable object.  The NDTable is intended for library
-    and infrastructure code, and its interface is designed with consistency
-    and programmatic handling of errors as the primary focus, and command-line
-    usability as secondary.
+    is cached on the NDTable object.  Operations on NDTables will generally
+    return NDTable.
+    
+    NDTable is intended for library and infrastructure code, and its interface
+    is designed with consistency and programmatic handling of errors as the
+    primary focus, and command-line usability as secondary.
 
 Table:
     A node in an expression graph on Tabular objects; basically an even more
     lazily evaluated NDTable.  Even index transformations are not computed
-    immediately, but rather on-demand.  The Table is meant to be used at 
-    a REPL and in simple scripts, and its interface and methods are designed
-    for usability by end-users.
+    immediately, but rather on-demand.  Operations on Tables may return Tables
+    or NDTables, depending on the circumstance.  The Table is meant to be used
+    at a REPL and in simple scripts, and its interface and methods are
+    designed for usability by end-users.
 
+ArrayLike:
+    Base interface for traditional multi-dimensional arrays.  Includes methods
+    and operators which are useful over dense cubes or matrices of data.
+
+NDArray:
+    Same concept as NDTable, but for the ArrayLike interface.
+
+Array:
+    Same concept as Table, but for ArrayLike.
 
 ================
 Objects In Depth
@@ -118,12 +130,12 @@ Objects In Depth
 DataSpace
 =========
 
-DataSpace, combined with DataShape, can also be thought of as recursive or
+DataSpace, combined with Shape, can also be thought of as recursive or
 array-oriented means for expressing a nested tree coordinate structure. 
 
 
-DataShape
-=========
+Shape
+=====
 
 The generalized DataShape describes a hierarchical (possibly heterogenous)
 tree of coordinates as a tuple of specifications of some recursive function.
@@ -176,41 +188,38 @@ tree-view makes it more apparently how hierarchical and other indexing
 approaches may lead to equally valid and useful mappings over the set of
 values in the leaf nodes.
 
-.. TODO: This following section may need to be updated in light of the
-   concept model above.
+Tabular, NDTable, and Table
+===========================
 
-.. =========================================================================
+A Table is a Python object that allows N-dimensional + "named fields"
+indexing.  It is a generalization of NumPy, Pandas, data array, larry, ctable,
+and CArray, and is meant to serve as a foundational abstraction on which to
+build out-of-core and distributed algorithms by focusing attention away from
+moving data to the code and rather layering interpretation on top of data that
+exists. 
 
-NDTable
-=======
-
-An NDTable is a Python object that allows N-dimensional + "field" indexing
-using indexed byte-interfaces.  It is a generalization of NumPy, Pandas, data
-array, larry, ctable, and CArray, and is meant to serve as a foundational
-abstraction on which to build out-of-core and distributed algorithms by
-focusing attention away from moving data to the code and rather layering
-interpretation on top of data that exists. 
-
-There are two interfaces to the NDTable that are critical: 
+There are two interfaces to Blaze Tabular objects:
 
     1) Domain expert interface that allows easy construction, indexing,
-       manipulation and computation with an ND table.  
+       manipulation and computation.  This is served by the interface and
+       methods on Table objects.
 
     2) Algorithm writers and developers searching for a unified API that allows
        coherent communication about the structure of data for optimization. 
+       This is served by the NDTable object.
 
 It is intended to be *the* glue that holds the PyData ecosystem together.   It
-has an interface for domain-experts to query their information and an interface
+has an interface for domain experts to query their information and an interface
 for algorithm writers to create out-of-core algorithms against.   The long-term
-goal is for NDTable to be the interface that *all* pydata projects interact
+goal is for NDTable to be the interface that *all* PyData projects interact
 with. 
 
-It is the calculations / operations that can be done with an NDTable that will
+It is the calculations / operations that can be done with a Table that will
 ultimately matter and define whether or not it gets used in the Python
 ecosystem.  We need to make it easy to create these calculations and algorithms
 and push to grow this ecosystem rapidly.  
 
-At the heart of NDTable is a delayed-evaluation system (like SymPy, Theano, and
+At the heart of Table is a delayed-evaluation system (like SymPy, Theano, and
 a host of other tools).  As a result, every operation actually returns a node
 of a simple, directed graph of functions and arguments (also analagous to
 DyND).  However, as far as possible, these nodes will propagate meta-data and
@@ -218,30 +227,105 @@ meta-compute (such as dtype, and shape, and index-iterator parameters so that
 the eventual calculation framework can reason about how to manage the
 calculation. 
 
-.. Some nodes of the expression graph are "reified" NDTables (meaning they are no
-   longer an expression graph but a collection of indexed byte-buffers). 
+The methods and operators on Tables will be similar to those available in the
+projects mentioned above: Pandas, larry, CArray/ctable, etc.
 
-NDTable is a Generalization of NumPy
-====================================
+
+Data Descriptors
+================
+
+DataDescriptors are objects that represent connections to raw memory, files,
+HTTP URLs, GPU memory, database connections, measurements, procedurally
+generated data, or any other byte streams.  The main concept is that
+throughout the Blaze compilation and execution engines, only descriptions of
+data are transported and mutated, and buffers of data themselves are not read
+or copied unless absolutely necessary.  There should be enough metadata in a
+DataDescriptor so that the Blaze low-level run time can easily and efficiently
+process the data as it needs it.
+
+There are four basic types of DataDescriptors: Buffer, Stream, List of
+Buffers, and List of Streams.
+
+Buffer:
+    Random-access capable, suited for data parallel approaches.  Compatible
+    with Numpy and with Python memoryviews.  Generally refers to a single
+    contiguous region of memory or file pointer on disk (although the strides
+    may be heterogenous).  Has some underlying C-compatible data type as
+    its element specification, and also has some flags (such as Writable,
+    etc.)
+
+Stream:
+    Streaming interface for data that cannot be read in a data parallel way.
+    Flags and C-compatible elements types just like Buffers, but has actual
+    data read functions.  Stream metadata includes hinting for optimal chunks
+    in which to read data.
+    
+BufferList:
+    A list of discontiguous Buffer objects.  Has many of the same properties
+    of the Buffer, most significantly, can be accessed in parallel.
+
+StreamList:
+    A list of independent streams.  They might be chained (read one after the
+    other), or zipped (read in parallel).
+
+
+Buffering of Streams
+--------------------
+
+Some amount of copying may be unavoidable with Streams.  In these cases, the
+buffering of data maybe handled by the Blaze runtime itself, as near to the
+stream source as possible, and with as much information about optimal
+allocation and alignment of the data buffer.  Furthermore, the Stream should
+have metadata about error handling, early return, and the like, so that
+end-user code has very rich mechanisms to ensure that no extra processing is
+ever performed.
+
+Streaming through Buffers
+-------------------------
+
+Buffers may refer to data regions on disk which do not fit into memory. In
+these situations, the Blaze runtime may be able to automatically stream
+data off disk into memory and through the processor in a transparent way.
+
+
+Index
+=====
+
+An index is a mapping from a domain specification to a collection of
+byte-interfaces and offsets.  
+
+
+ByteProvider
+============
+
+
+
+
+===============
+Random Thoughts
+===============
+
+Blaze is a Generalization of NumPy
+----------------------------------
 
 .. TODO: This section in particular is an expression of older thoughts and 
    ideas about the NDTable and the object hierarchy.
 
-We would like the NDTable to be a Generalization of NumPy.   Whether this means
+We would like the NDTable to be a Generalization of NumPy.  Whether this means
 that the NDTable augments or replaces NumPy (on the Python side) in the future
-has yet to be determined.   For now, it will augment NumPy and provide
+has yet to be determined.  For now, it will augment NumPy and provide
 compatibility whenever possible.
 
 In addition to the ufuncs defined over NumPy arrays, NumPy defines basically 3
-things that we wish to generalize
+things that we wish to generalize:
      
      * A data-type
      * A shape
      * A strides map to a single data-buffer (a linear, formula-based index)
 
-These concepts are generalized via the concept of indexed byte-buffers.
+These concepts are generalized via the concept of DataDescriptors.
 NumPy-style arrays consist of a single data-segment that can be explained via a
-linear indexing function with strides as the coefficients.   In addition, to
+linear indexing function with strides as the coefficients.  In addition to
 serving as a dispatch mechanism for functions, the dtype also participates in
 indexing operations via the itemsize, and structure data-types. 
 
@@ -251,80 +335,36 @@ strides attribute provides a linear, formula-based index so that A[I] maps to
 mem[I \cdot s] where mem is the memory buffer for the array, I is the
 index-vector, and s is the strides vector.
 
-NDTable generalizes this notion to multiple data-buffers and (necessarily)
-different kinds of indexes.    Domain-experts are not going to care (much)
+Blaze generalizes this notion to multiple data-buffers and (necessarily)
+different kinds of indexes.   Domain-experts are not going to care (much)
 about the details of how this lays out (just as today most users of NumPy don't
-care about the strides).   However, algorithm writers will care a great deal
+care about the strides).  However, algorithm writers will care a great deal
 about the actual data-layout of an NDTable and want to process the elements of
-an array in the easiest possible way.   There must be interfaces that allow
-algorithm writers to get at this information.    
+an array in the easiest possible way.  The ByteProvider and DataDescriptor
+interfaces allow algorithm writers to get at this information.    
 
 One concept which will remain true is that some algorithms will work faster and
-more optimally with data laid out in a certain way.  As a result, an ndtable
+more optimally with data laid out in a certain way.  As a result, an NDTable
 may have several data-layouts to choose from which can be selected as needed
 for optimization. 
 
-So, at the core of every (reified) NDTable there is a collection of
-byte-interfaces and an index (or collection of indexes) that allows mapping
-calls to __getitem__ to the appropriate interface.  These byte-interfaces, how
-they are indexed (including the meaning of shape), and what elements represent,
-are the fundamental building-blocks of the NDTable. 
-
-Byte-interfaces
-============
-
-Byte-interfaces are objects that connect to raw memory, disk-files, HTTP
-requests, GPU memory, data-base connections, measurements, generated data, or
-any other byte-streams).   Care is taken so that memory-based byte-buffers can
-be as fast as possible.  
-
-A byte-interface is either generator-like (with a next(N) method), file-like
-(read, write) or memory-like (getref (N,byte-stride)).   Default caches are
-used for generator-like and file-like byte-interfaces which can be over-ridden
-by the object.
-
-Index
-====
-
-An index is a mapping from a domain specification to a collection of
-byte-interfaces and offsets.  
-
-IndexedBytes
-=========
-
-Shape
-====
-
-DType
-=====
-
-NDTable
-======
-
-
-
-Random Thoughts
-============
-
 Generalizing Shape
----------------
+------------------
 
-The shape attribute is an important part of every NumPy array.  For NDTable, the shape attribute may not always be a tuple of integers.   len(a.shape) will be the number of dimensions that the array holds. but the tuple may contain other objects (functions, tuples, None, etc.) depending on the complexity of the data layout and whether or not it is infinite. 
-
-A core concept in NDTables is the dimension / field table.   One can construct a dimension / field table for every NDTable.   This table is a logical expression of what is a queryable via mapping (__getitem__) and what is extractable via attribute lookup (or mapping on the .fields object).   It allows a logical separation between "dimensions" and "measures".   It is important to note that, unlike NumPy, the fields of an ndtable do not have to be contiguous segments.  In addition, despite the appearance of the table, dimensions can be composed of multiple "elements" (hierarchical dimensions).  
+.. A core concept in NDTables is the dimension / field table.   One can construct a dimension / field table for every NDTable.   This table is a logical expression of what is a queryable via mapping (__getitem__) and what is extractable via attribute lookup (or mapping on the .fields object).   It allows a logical separation between "dimensions" and "measures".   It is important to note that, unlike NumPy, the fields of an ndtable do not have to be contiguous segments.  In addition, despite the appearance of the table, dimensions can be composed of multiple "elements" (hierarchical dimensions).  
 
 Dimensions are much more generalized in NDTable from NumPy.  Dimensions can be grouped together from fields and other dimensions.   Dimensions can be automatic (standard 0..N-1 style of NumPy, or based on labels).   All NDTables can have labeled fields and labeled dimensions and labeled axes.   Labels on dimensions are "level" dtypes in that the labels are "interned" and replaced with an integer column. 
 
 Generalizing DataType
-------------------
+---------------------
 
-The data-type in Python is a Python object.   In general, however, it should be a type-object (more like ctypes --- long ago I argued the other way on the Python dev list, but now I realize I was wrong).   Dtypes are just type objects defined dynamically.   There isn't a need for a separate "array-scalar".  An array-scalar is just an instance of the dtype type-object.  
+The data-type in Python is a Python object.   In general, however, it should be a type-object (more like ctypes --- long ago I argued the other way on the Python dev list, but now I realize I was wrong).   Dtypes are just type objects defined dynamically.  There isn't a need for a separate "array-scalar".  An array-scalar is just an instance of the dtype type-object.  
 
-In NDTable we need a way to define all kinds of data: a Data-definition language.   Just using Python's class syntax should be enough.     However, there is the potential for confusion about which attributes and methods are "virtual" and dynamic and which are "the data description itself....".   It might make sense to define a __pod__ attribute of the metaclass so that ever instance can populate it's own attribute list and this __pod__ attriubute will be 
+In NDTable we need a way to define all kinds of data: a Data-definition language.   Just using Python's class syntax should be enough.  However, there is the potential for confusion about which attributes and methods are "virtual" and dynamic and which are "the data description itself....".  It might make sense to define a __pod__ attribute of the metaclass so that ever instance can populate it's own attribute list and this __pod__ attriubute will be ...
 
 
 Generalizing UFuncs
-==============
+===================
 
 On top of this basic data-structure we create algorithms and operations:  a table-function object.   The table-function object takes a kernel which deals with memory chunks and   
 
