@@ -35,16 +35,9 @@ Abstract               Image               Numpy
 
 """
 import socket
-from ctypes import CDLL, string_at
 from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
 from ndtable.bytei import ByteProvider
 from ndtable.datashape import Fixed, pyobj
-
-libc = CDLL("libc.so.6")
-
-free   = libc.free
-malloc = libc.free
-
 
 # TODO: rework hierarchy
 class Source(ByteProvider):
@@ -83,7 +76,7 @@ class PythonSource(Source):
     def __repr__(self):
         return 'PyObject(ptr=%r)' % id(self.lst)
 
-class MemorySource(Source):
+class ByteSource(Source):
     """
     Allocate a memory block, explicitly outside of the Python
     heap.
@@ -92,22 +85,20 @@ class MemorySource(Source):
     read_capabilities  = CONTIGIOUS | STRIDED | STREAM
     write_capabilities = CONTIGIOUS | STRIDED | STREAM
 
-    def __init__(self):
-        # TODO: lazy
-        self.__alloc__()
+    def __init__(self, bits):
+        self.bits = bytearray(bits)
 
     def read(self, offset, nbytes):
-        bits = bytearray(string_at(self.block, offset))
-        return memoryview(bits)
+        return memoryview(self.bits)[offset: offset+nbytes]
 
     def write(self, offset, wbytes):
         pass
 
     def __alloc__(self, itemsize, size):
-        self.block = malloc(itemsize*size)
+        pass
 
     def __dealloc__(self):
-        self.free(self.block)
+        pass
 
 class FileSource(Source):
     """

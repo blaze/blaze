@@ -66,7 +66,7 @@ def broadcast(shape1, shape2):
 
 def union(dim1, dim2):
     """
-    General case of Blaze broadcasting.
+    General case
     """
     x  , y  = dim1[0]  , dim2[0]
     xs , ys = dim1[1:] , dim2[1:]
