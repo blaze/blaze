@@ -2,7 +2,6 @@
 Parser for DataShape grammer.
 """
 
-import re
 import imp
 import ast
 import inspect
