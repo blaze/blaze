@@ -6,6 +6,9 @@ from idx import AutoIndex
 
 # Nominal | Ordinal | Scalar
 
+def splitl(lst, n):
+    return lst[0:n], lst[n], lst[n:-1]
+
 def linearize(spatial):
     # create flat hash map of all indexes
     pass
@@ -109,32 +112,26 @@ class Layout(object):
 
 # Low-level calls, never used by the end-user.
 def hstack(a,b):
-    l = a.components[0]
-    m = a.components[1:]
-
-    i = b.components[0]
-    j = b.components[1:]
+    a0, a1, a2 = splitl(a.components, 0)
+    b0, b1, b2 = splitl(b.components, 0)
 
     # stack the first axi
-    s, t = stack(l,i)
+    x1, y1 = stack(a1,b1)
 
-    p1 = Spatial([s]+m, a.ref)
-    p2 = Spatial([t]+j, b.ref)
+    p1 = Spatial(a0 + [x1] + a2, a.ref)
+    p2 = Spatial(b0 + [y1] + b2, b.ref)
 
     return Layout([p1, p2])
 
 def vstack(a,b):
-    l = a.components[0]
-    m = a.components[1:]
-
-    i = b.components[0]
-    j = b.components[1:]
+    a0, a1, a2 = splitl(a.components, 1)
+    b0, b1, b2 = splitl(b.components, 1)
 
     # stack the first axi
-    s, t = stack(l,i)
+    x1, y1 = stack(a1,b1)
 
-    p1 = Spatial([s]+m, a.ref)
-    p2 = Spatial([t]+j, b.ref)
+    p1 = Spatial(a0 + [x1] + a2, a.ref)
+    p2 = Spatial(b0 + [y1] + b2, b.ref)
 
     return Layout([p1, p2])
 
@@ -148,6 +145,7 @@ def test_simple():
     x = Spatial([a,b], alpha)
     y = Spatial([a,b], beta)
 
-    stacked = hstack(x,y)
+    #stacked = hstack(x,y)
+    stacked = vstack(x,y)
     print stacked
     print stacked[(1,1)]
