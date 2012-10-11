@@ -3,10 +3,54 @@ Scalar layout methods for glueing together array-like structures.
 
 If we build a structure ( A U B ) as some union of two blocks of data,
 then we need only a invertible linear transformation which is able to
-map coordinates between the blocks as we drill down into subblocks.
+map coordinates between the blocks as we drill down into
+subblocks::
 
     (i,j) -> (i', j')
 
+Vertical Stacking
+=================
+
+::
+
+      Block 1            Block 2
+
+      1 2 3 4            1 2 3 4
+    0 - - - -  vstack  0 * * * *
+    1 - - - -          1 * * * *
+
+              \     /
+
+               1 2 3 4
+             0 - - - - + --- Transform =
+             1 - - - -       (i,j) -> (i, j)
+             2 * * * * + --- Transform =
+             3 * * * *       (i,j) -> (i-2, j)
+
+
+Horizontal Stacking
+===================
+
+::
+      Block 1            Block 2
+
+      1 2 3 4            1 2 3 4
+    0 - - - -  hstack  0 * * * *
+    1 - - - -          1 * * * *
+
+              \     /
+
+               1 2 3 4
+             0 - - * *
+             1 - - * *
+             2 - - * *
+             3 - - * *
+               |   |
+               |   |
+               |   + Transform =
+               |     (i,j) -> (i-2, j)
+               + --- Transform =
+                     (i,j) -> (i, j)
 """
 
 from copy import copy
