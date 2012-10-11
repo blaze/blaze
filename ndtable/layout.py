@@ -73,6 +73,10 @@ class interval(object):
         """
         return interval(self.inf + n, self.sup + n)
 
+    def __iter__(self):
+        yield self.inf
+        yield self.sup
+
     def __repr__(self):
         return '[%i,%i]' % (self.inf, self.sup)
 
@@ -96,6 +100,9 @@ class Spatial(object):
 
     def untransform(self, ts):
         self.components = self.tinv(self.components)
+
+    def __iter__(self):
+        return iter(self.components)
 
     def __getitem__(self, indexer):
         return self.ref[indexer]
