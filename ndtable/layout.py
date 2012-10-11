@@ -299,7 +299,7 @@ vstack = partial(nstack, 0)
 hstack = partial(nstack, 1)
 dstack = partial(nstack, 2)
 
-def test_simple():
+def test_vertical_stack():
     alpha = object()
     beta  = object()
 
@@ -329,3 +329,26 @@ def test_simple():
     block, coords = s[[2,1]]
     assert block is beta
     assert coords == [0,1]
+
+def test_horizontal_stack():
+    alpha = object()
+    beta  = object()
+
+    a = interval(0,2)
+    b = interval(0,2)
+
+    x = Spatial([a,b], alpha)
+    y = Spatial([a,b], beta)
+
+    s = hstack(x,y)
+    block, coords = s[[0,0]]
+    assert block is alpha
+    assert coords == [0,0]
+
+    block, coords = s[[0,1]]
+    assert block is alpha
+    assert coords == [0,1]
+
+    block, coords = s[[0,2]]
+    assert block is beta
+    assert coords == [0,0]
