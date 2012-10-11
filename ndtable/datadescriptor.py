@@ -16,9 +16,8 @@ class DataDescriptor(object):
 
     desctype = Enum("buffer", "buflist", "stream", "streamlist")
 
-    def __init__(self, source, flags):
-        self.source = source
-        self.flags = flags
+    def __init__(self):
+        pass
 
     #------------------------------------------------------------------------
     # Generic adapters
@@ -33,7 +32,7 @@ class DataDescriptor(object):
         In the C level implementation of the DataDescriptor interface, this
         returns a void* pointer to the data.
         """
-        pass
+        return Buffer
 
     def asbuflist(self, copy=False):
         """ Returns the contents of the buffer as a list of memoryviews.  If
@@ -49,7 +48,7 @@ class DataDescriptor(object):
         If **chunksize** is greater than 1, then returns a memoryview of the
         elements if they are contiguous, or a Tuple otherwise.
         """
-        pass
+        return Stream
 
     def asstreamlist(self):
         """ Returns a list of Stream objects, which should be read sequentially

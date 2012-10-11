@@ -38,6 +38,7 @@ import socket
 from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
 from ndtable.bytei import ByteProvider
 from ndtable.datashape import Fixed, pyobj
+from ndtable.datashape.coretypes import CType
 
 # TODO: rework hierarchy
 class Source(ByteProvider):
@@ -90,6 +91,16 @@ class ByteSource(Source):
 
     def read(self, offset, nbytes):
         return memoryview(self.bits)[offset: offset+nbytes]
+
+    def calculate(self, ntype):
+        if type(ntype) is CType:
+            size = ntype.size()
+            assert len(self.bits) % size == 0, \
+                "Not a multiple of type: %s" % ntype
+            return ntype * Fixed(len(self.bits) / size)
+        else:
+            raise ValueError("Cannot interpret raw bytes as\
+            anything but native type.")
 
     def write(self, offset, wbytes):
         pass

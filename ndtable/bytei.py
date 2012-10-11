@@ -11,7 +11,7 @@ The ByteProvider provides the high-level API operations on those bytes
 that abstracts away the notion of whether the object is contiguous,
 strided, or streamed and can extract or write bytes in any case.
 
-If the ByteDescriptor supports an operation natively then it can perform
+If the DataDescriptor supports an operation natively then it can perform
 it in a single "instruction", if it does not then the byte interface
 will devise a way to do the operation as a sequence of instructions.
 """

@@ -2,9 +2,17 @@
 Scalar layout methods for glueing together array-like structures.
 """
 
-from idx import AutoIndex
+from bisect import bisect_left, insort_left
+from functools import partial
+from collections import defaultdict
 
 # Nominal | Ordinal | Scalar
+
+def index(a, x):
+    i = bisect_left(a, x)
+    if i != len(a) and a[i] == x:
+        return i
+    raise ValueError
 
 def splitl(lst, n):
     return lst[0:n], lst[n], lst[n:-1]
@@ -22,7 +30,7 @@ def stack(c1,c2):
 
     n = abs(i2-s1)
     assert n > 0
-    return c1, c2.scale(n)
+    return [c1], [c2.scale(n)]
 
 class interval(object):
     def __init__(self, inf, sup):
@@ -99,53 +107,64 @@ class Layout(object):
     """
 
     def __init__(self, partitions):
+        self.points = defaultdict(list)
         self.partitions = partitions
 
+        # Build up the partition search, for each dimension
+        for a in partitions:
+            for i, b in enumerate(a.components):
+                insort_left(self.points[i], b.inf)
+
+
     def __getitem__(self, indexer):
-        components = list(enumerate(indexer))
+        access = []
+        for i, idx in enumerate(indexer):
+            access += [bisect_left(self.points[i], idx)]
+        return access
 
     def __repr__(self):
         out = 'Layout:\n'
         for p in self.partitions:
             out += '%r -> %i\n' % (p, id(p.ref))
+
+        out += 'Partitions:\n'
+        out += repr(self.points.items())
         return out
 
 # Low-level calls, never used by the end-user.
-def hstack(a,b):
-    a0, a1, a2 = splitl(a.components, 0)
-    b0, b1, b2 = splitl(b.components, 0)
+def nstack(n, a, b):
+    a0, a1, a2 = splitl(a.components, n)
+    b0, b1, b2 = splitl(b.components, n)
 
     # stack the first axi
     x1, y1 = stack(a1,b1)
 
-    p1 = Spatial(a0 + [x1] + a2, a.ref)
-    p2 = Spatial(b0 + [y1] + b2, b.ref)
+    p1 = Spatial(a0 + x1 + a2, a.ref)
+    p2 = Spatial(b0 + y1 + b2, b.ref)
 
     return Layout([p1, p2])
 
-def vstack(a,b):
-    a0, a1, a2 = splitl(a.components, 1)
-    b0, b1, b2 = splitl(b.components, 1)
-
-    # stack the first axi
-    x1, y1 = stack(a1,b1)
-
-    p1 = Spatial(a0 + [x1] + a2, a.ref)
-    p2 = Spatial(b0 + [y1] + b2, b.ref)
-
-    return Layout([p1, p2])
+vstack = partial(nstack, 0)
+hstack = partial(nstack, 1)
 
 def test_simple():
     alpha = object()
     beta = object()
 
-    a = interval(0,1)
-    b = interval(0,1)
+    a = interval(0,2)
+    b = interval(0,2)
 
     x = Spatial([a,b], alpha)
     y = Spatial([a,b], beta)
 
     #stacked = hstack(x,y)
+    #print 'vstack'
+    #print vstack(x,y)
+
+    #print 'hstack'
+    #print hstack(x,y)
+
     stacked = vstack(x,y)
-    print stacked
-    print stacked[(1,1)]
+
+    result = stacked[(3,1)]
+    import pdb; pdb.set_trace()

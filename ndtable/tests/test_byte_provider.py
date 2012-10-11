@@ -6,15 +6,9 @@ from ndtable.sources.canonical import PythonSource, ByteSource
 
 from nose.tools import assert_raises
 
-def setUp():
-    na = np.ones((2,2), dtype=np.dtype('int32'))
-    na.tofile('foo.npy')
-
-def tearDown():
-    pass
-
 def test_from_bytes():
-    bits = open('foo.npy').read()
+    #bits = np.ones((2,2), dtype=np.dtype('int32')).data
+    bits = bytes('\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00')
 
     b1 = ByteSource(bits)
     b2 = ByteSource(bits)

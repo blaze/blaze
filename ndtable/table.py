@@ -91,10 +91,9 @@ class NDTable(Indexable):
         # equal ) with the number of given providers.
         #assert can_embed(provided_dim, outerdim)
 
-        # Look at the metadata for the provider, see if we can
+        # Look at the information for the provider, see if we can
         # infer whether the given list of providers is regular
-        shapes = [a.calculate(None) for a in providers]
-        #import pdb; pdb.set_trace()
+        shapes = [p.calculate(ntype) for p in providers]
 
         # For example, the following sources would be regular
 
