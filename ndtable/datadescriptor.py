@@ -2,7 +2,7 @@
 
 # A dummy typing system so we can document types of attributes
 def _dummy(*args, **kw): pass
-Enum = Int = Float = Str = Tuple = Bool = _dummy
+Enum = Int = Float = Str = Tuple = Bool = List = _dummy
 
 class DataDescriptor(object):
     """ DataDesciptors are the underlying, low-level references to data
@@ -15,6 +15,10 @@ class DataDescriptor(object):
     """
 
     desctype = Enum("buffer", "buflist", "stream", "streamlist")
+
+    def __init__(self, source, flags):
+        self.source = source
+        self.flags = flags
 
     #------------------------------------------------------------------------
     # Generic adapters
@@ -35,6 +39,7 @@ class DataDescriptor(object):
         """ Returns the contents of the buffer as a list of memoryviews.  If
         **copy** is False, then tries to return just views of data if possible.
         """
+        return List(Buffer)
 
     def asstream(self):
         """ Returns a Python iterable which returns **chunksize** elements
@@ -51,23 +56,29 @@ class DataDescriptor(object):
         (i.e. after exhausting the first stream, the second stream is read,
         etc.)
         """
-        pass
+        return List(Stream)
 
 class Buffer(DataDescriptor):
     """ Describes a region of memory.  Implements the memoryview interface.
     """
-    
+
     desctype = "buffer"
 
     length = Int     # Total length, in bytes, of the buffer
-    format = Str     # Format of each elem, in struct module syntax 
+    format = Str     # Format of each elem, in struct module syntax
     shape = Tuple    # Numpy-style shape tuple
-    strides = Tuple  # 
+    strides = Tuple  #
     readonly = Bool(False)
 
-    # TODO: Add support for event callbacks when certain ranges are 
+    # TODO: Add support for event callbacks when certain ranges are
     # written
     #callbacks = Dict(Tuple, Function)
+
+    def tobytes(self):
+        pass
+
+    def tolist(self):
+        pass
 
 class Stream(DataDescriptor):
     """ Describes a data item that must be retrieved by calling a function
@@ -81,4 +92,8 @@ class Stream(DataDescriptor):
     format = Str
     chunksize = Int(1)  # optional "optimal" number of elements to read
 
+    def read(self, nbytes):
+        pass
 
+    def move(self, dest, src, nbytes):
+        pass

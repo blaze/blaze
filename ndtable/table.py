@@ -89,7 +89,7 @@ class NDTable(Indexable):
 
         # The number of providers must be compatable ( not neccessarily
         # equal ) with the number of given providers.
-        assert can_embed(provided_dim, outerdim)
+        #assert can_embed(provided_dim, outerdim)
 
         # Look at the metadata for the provider, see if we can
         # infer whether the given list of providers is regular

@@ -16,9 +16,8 @@ it in a single "instruction", if it does not then the byte interface
 will devise a way to do the operation as a sequence of instructions.
 """
 
-from byteproto import READ, WRITE, CONTIGIOUS, STRIDED, \
-    CHUNKED, STREAM
 from idx import Indexable
+from byteproto import READ, WRITE
 
 class ByteProvider(Indexable):
 
@@ -41,49 +40,3 @@ class ByteProvider(Indexable):
         # Calculate the length of the buffer assuming given a
         # machine type.
         raise NotImplementedError()
-
-class ByteDescriptor(object):
-    """
-    """
-
-    def __init__(self, source, flags):
-        self.source = source
-        self.flags = flags
-
-    def close(self):
-        pass
-
-    def flush(self):
-        pass
-
-    def move(self, dest, src, count):
-        pass
-
-    def read(self, num):
-        pass
-
-    # Size of the bytes
-    def write(self, n):
-        pass
-
-    # Contiguous Operations
-    # ---------------------
-    def seek(self, offset):
-        pass
-
-    def peek(self, n):
-        # Return bytes from the stream without advancing the position
-        pass
-
-    def tell(self):
-        pass
-
-    # Read element at cursor
-    def read_slice(self, start, stop):
-        pass
-
-    # Write element at cursor
-    def write_slice(self, start, stop):
-        pass
-
-    __next__ = read_slice

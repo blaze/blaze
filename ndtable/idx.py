@@ -63,10 +63,10 @@ class Indexable(object):
     The top abstraction in the Blaze class hierarchy.
 
     An index is a mapping from a domain specification to a collection of
-    byte or subtables.  Indexable objects can be sliced/getitemed to 
+    byte or subtables.  Indexable objects can be sliced/getitemed to
     return some other object in the Blaze system.
     """
-   
+
     #------------------------------------------------------------------------
     # Slice/stride/getitem interface
     #
@@ -96,7 +96,7 @@ class Indexable(object):
     def take(self, indices, unique=None):
         """ Returns a view or copy of the indicated data.  **Indices**
         can be another Indexable or a Python iterable.  If **unique**
-        if True, then implies that no indices are duplicated; if False, 
+        if True, then implies that no indices are duplicated; if False,
         then implies that there are definitely duplicates.  If None, then
         no assumptions can be made about the indices.
 
@@ -125,12 +125,12 @@ class Indexable(object):
     # Defines the mechanisms by which other objects can determine the types
     # of iteration supported by this object.
     #------------------------------------------------------------------------
-    
+
     def returntype(self):
         """ Returns the most efficient/general Data Descriptor this object can
         return.  Returns a value from the list the values defined in
         DataDescriptor.desctype: "buflist", "buffer", "streamlist", or
-        "stream". 
+        "stream".
         """
         raise NotImplementedError
     def __index__(self):
