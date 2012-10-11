@@ -104,6 +104,8 @@ def stack(c1,c2, axis):
     return T, Tinv
 
 class interval(object):
+    """
+    """
     def __init__(self, inf, sup):
         self.inf = inf
         self.sup = sup
@@ -127,7 +129,8 @@ class interval(object):
 # Spatial
 class Spatial(object):
     """
-    A interval partition pointing at a indexable reference.
+    A interval partition pointing at a Indexable reference. In C
+    this would be a pointer, but not necessarily so.
     """
     def __init__(self, components, ref, tinv=None):
         self.ref = ref
@@ -180,7 +183,6 @@ class Linear(object):
 # Referential
 class Categorical(object):
     """
-    A set of key references pointing at a indexable reference.
     """
 
     def __init__(self, mapping, ref):
@@ -212,7 +214,9 @@ class Layout(object):
     # Allow negative indexing
 
     def __init__(self, partitions):
-        self.points = defaultdict(list)
+        self.points     = defaultdict(list)
+        self.ppoints    = defaultdict(list)
+
         self.partitions = partitions
         self.top = None
 
@@ -221,32 +225,37 @@ class Layout(object):
             self.top = self.top or a
             for i, b in enumerate(a.components):
                 # (+1) because it's the infinum
-                insort_left(self.points[i], (a, b.inf+1))
+                insort_left(self.points[i] , a)
+                insort_left(self.ppoints[i], b.inf+1)
 
     def check_bounds(self, indexer):
         pass
 
     def change_coordinates(self, indexer):
+        """
+        Change coordinates into the memory block we're indexing
+        into.
+        """
         indexerl = xrange(len(indexer))
 
         # use xrange/len because we are mutating it
         for i in indexerl:
 
-            # Partition number
             idx = indexer[i]
             space = self.points[i]
+            partitions = self.ppoints[i]
             size = len(space)
-            partition_points = [r[1] for r in space]
 
-            pdx = bisect_left(partition_points, idx)
+            # Partition index
+            pdx = bisect_left(partitions, idx)
 
             # Edge cases
             if pdx <= 0:
-                chart = space[0][0]
+                chart = space[0]
             if pdx >= size:
-                chart = space[-1][0]
+                chart = space[-1]
             else:
-                chart = space[pdx][0]
+                chart = space[pdx]
 
             if chart.transformed:
                 return chart.ref, chart.inverse(indexer)
@@ -312,3 +321,11 @@ def test_simple():
     block, coords = s[[1,0]]
     assert block is alpha
     assert coords == [1,0]
+
+    block, coords = s[[2,0]]
+    assert block is beta
+    assert coords == [0,0]
+
+    block, coords = s[[2,1]]
+    assert block is beta
+    assert coords == [0,1]
