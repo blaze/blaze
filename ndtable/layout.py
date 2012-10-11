@@ -17,6 +17,8 @@ from bisect import bisect_left, insort_left
 
 # Nominal | Ordinal | Scalar
 
+Id = lambda x:x
+
 def ctranslate(factor, axis):
     # (i,j, ...) -> (i + a0 , j + a1, ...)
 
@@ -37,12 +39,6 @@ def ctranslate(factor, axis):
         return ys
 
     return T, Tinv
-
-def index(a, x):
-    i = bisect_left(a, x)
-    if i != len(a) and a[i] == x:
-        return i
-    raise ValueError
 
 def splitl(lst, n):
     return lst[0:n], lst[n], lst[n:-1]
@@ -112,9 +108,10 @@ class Spatial(object):
         coords = t(self.components)
         return Spatial( coords, self.ref, tinv)
 
-    def untransform(self):
-        coords = self.tinv(self.components)
-        return Spatial( coords )
+    # Lift a set of coordinates into the "chart" space
+    def inverse(self, coords):
+        assert self.tinv, "Chart does not have coordinate inverse transform function"
+        return self.tinv(coords)
 
     def __iter__(self):
         return iter(self.components)
@@ -164,31 +161,61 @@ class Layout(object):
     byte providers.
     """
 
+    boundscheck = True
+    # If set to False, layout will to assume that indexing operations
+    # will not cause any IndexErrors to be raised
+
+    wraparound = True
+    # Allow negative indexing
+
     def __init__(self, partitions):
         self.points = defaultdict(list)
         self.partitions = partitions
+        self.top = None
 
         # Build up the partition search, for each dimension
         for a in partitions:
+            self.top = self.top or a
             for i, b in enumerate(a.components):
-                insort_left(self.points[i], b.inf)
+                insort_left(self.points[i], (a, b.inf))
 
+    def check_bounds(self, indexer):
+        pass
+
+    def change_coordinates(self, indexer):
+        access = []
+        indexerl = xrange(len(indexer))
+
+        # use xrange/len because we are mutating it
+        for i in indexerl:
+
+            # Partition number
+            idx = indexer[i]
+            space = self.points[i]
+            size = len(space)
+
+            partition_points = [r[1] for r in space]
+            pdx = bisect_left(partition_points, idx)
+
+            # Edge cases
+            if pdx <= 0:
+                chart = space[0][0]
+            if pdx >= size:
+                chart = space[-1][0]
+            else:
+                chart = space[pdx][0]
+
+            if chart.transformed:
+                return chart.ref, chart.inverse(indexer)
+            else:
+                continue
+
+        # Trivially partitioned
+        return self.top.ref, indexer
 
     def __getitem__(self, indexer):
-        access = []
-        for i, idx in enumerate(indexer):
-            space = self.points[i]
-            # Partition number
-            pdx = bisect_left(space, idx)
-
-            if pdx == len(self.points[i]):
-                # This dimension is not partitioned
-                access += [idx]
-            else:
-                # This dimension is partitioned
-                access += [pdx]
-
-        return access
+        coords = self.change_coordinates(indexer)
+        return coords
 
     def __repr__(self):
         out = 'Layout:\n'
@@ -212,6 +239,7 @@ def nstack(n, a, b):
 
     T, Tinv = stack(a1, b1, list(axis))
     bT = b.transform(T, Tinv)
+    assert bT.tinv
 
     return Layout([a, bT])
 
@@ -229,7 +257,9 @@ def test_simple():
     x = Spatial([a,b], alpha)
     y = Spatial([a,b], beta)
 
-    stacked = vstack(x,y)
+    s = vstack(x,y)
+    subspace, coords = s[[3,1]]
+    assert subspace is beta
 
-    result = stacked[(3,1)]
-    import pdb; pdb.set_trace()
+    subspace, coords = s[[0,0]]
+    assert subspace is alpha
