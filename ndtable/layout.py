@@ -71,7 +71,6 @@ def ctranslate(factor, axis):
         xs = copy(xs)
         for x, j in zip(xrange(len(xs)), axis):
             if j == 1:
-                print xs
                 xs[x] += factor
         return xs
 
@@ -221,13 +220,13 @@ class Layout(object):
         for a in partitions:
             self.top = self.top or a
             for i, b in enumerate(a.components):
-                insort_left(self.points[i], (a, b.inf))
+                # (+1) because it's the infinum
+                insort_left(self.points[i], (a, b.inf+1))
 
     def check_bounds(self, indexer):
         pass
 
     def change_coordinates(self, indexer):
-        access = []
         indexerl = xrange(len(indexer))
 
         # use xrange/len because we are mutating it
@@ -237,8 +236,8 @@ class Layout(object):
             idx = indexer[i]
             space = self.points[i]
             size = len(space)
-
             partition_points = [r[1] for r in space]
+
             pdx = bisect_left(partition_points, idx)
 
             # Edge cases
@@ -302,8 +301,14 @@ def test_simple():
     y = Spatial([a,b], beta)
 
     s = vstack(x,y)
-    subspace, coords = s[[3,1]]
-    assert subspace is beta
+    block, coords = s[[3,1]]
+    assert block is beta
+    assert coords == [1,1]
 
-    subspace, coords = s[[0,0]]
-    assert subspace is alpha
+    block, coords = s[[0,0]]
+    assert block is alpha
+    assert coords == [0,0]
+
+    block, coords = s[[1,0]]
+    assert block is alpha
+    assert coords == [1,0]
