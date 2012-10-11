@@ -177,7 +177,17 @@ class Layout(object):
     def __getitem__(self, indexer):
         access = []
         for i, idx in enumerate(indexer):
-            access += [bisect_left(self.points[i], idx)]
+            space = self.points[i]
+            # Partition number
+            pdx = bisect_left(space, idx)
+
+            if pdx == len(self.points[i]):
+                # This dimension is not partitioned
+                access += [idx]
+            else:
+                # This dimension is partitioned
+                access += [pdx]
+
         return access
 
     def __repr__(self):
@@ -219,7 +229,7 @@ def test_simple():
     x = Spatial([a,b], alpha)
     y = Spatial([a,b], beta)
 
-    stacked = dstack(x,y)
+    stacked = vstack(x,y)
 
     result = stacked[(3,1)]
     import pdb; pdb.set_trace()
