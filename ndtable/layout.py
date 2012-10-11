@@ -1,12 +1,38 @@
 """
 Scalar layout methods for glueing together array-like structures.
+
+If we build a structure ( A U B ) as some union of two blocks of data,
+then we need only a invertible linear transformation which is able to
+map coordinates between the blocks as we drill down into subblocks.
+
+    (i,j) -> (i', j')
+
 """
 
-from bisect import bisect_left, insort_left
+from copy import copy
 from functools import partial
 from collections import defaultdict
+from bisect import bisect_left, insort_left
 
 # Nominal | Ordinal | Scalar
+
+def ctransform(factor, axis):
+    # TODO: Certainly better way to write this...
+    def T(xs):
+        xs = copy(xs)
+        for x, j in zip(xrange(len(xs)), axis):
+            if j:
+                xs[x] *= factor
+        return xs
+
+    def Tinv(ys):
+        ys = copy(ys)
+        for y, j in zip(xrange(len(ys)), axis):
+            if j:
+                ys[y] /= factor
+        return ys
+
+    return T, Tinv
 
 def index(a, x):
     i = bisect_left(a, x)
@@ -30,7 +56,8 @@ def stack(c1,c2):
 
     n = abs(i2-s1)
     assert n > 0
-    return [c1], [c2.scale(n)]
+
+    T, Tinv = ctransform(c1, c2)
 
 class interval(object):
     def __init__(self, inf, sup):
@@ -41,6 +68,9 @@ class interval(object):
         return self.inf <= other < self.sup
 
     def scale(self, n):
+        """
+        Scale coordinates.
+        """
         return interval(self.inf + n, self.sup + n)
 
     def __repr__(self):
@@ -52,7 +82,6 @@ class Spatial(object):
     A interval partition pointing at a indexable reference.
     """
     def __init__(self, components, ref):
-        self.components = components
         self.ref = ref
 
     def __contains__(self, other):
@@ -60,6 +89,13 @@ class Spatial(object):
             if other in component:
                 return True
         return False
+
+    def transform(self, ts):
+        self.t, self.tinv = ts
+        self.components = self.t(self.components)
+
+    def untransform(self, ts):
+        self.components = self.tinv(self.components)
 
     def __getitem__(self, indexer):
         return self.ref[indexer]
@@ -128,7 +164,7 @@ class Layout(object):
             out += '%r -> %i\n' % (p, id(p.ref))
 
         out += 'Partitions:\n'
-        out += repr(self.points.items())
+        out += repr(self.points)
         return out
 
 # Low-level calls, never used by the end-user.

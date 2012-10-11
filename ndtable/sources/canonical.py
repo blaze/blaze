@@ -25,7 +25,7 @@ Abstract               Image               Numpy
 
  Space                 Image               Array
    |                    |                   |
- Subspace              Pixel               Dimension
+ Subspace              Pixel               Axis
    |                    |                   |
  Byte Descriptor       File Descriptor     Memoryview
    |                    |                   |
