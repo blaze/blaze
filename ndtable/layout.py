@@ -10,26 +10,30 @@ map coordinates between the blocks as we drill down into subblocks.
 """
 
 from copy import copy
+from numpy import zeros
 from functools import partial
 from collections import defaultdict
 from bisect import bisect_left, insort_left
 
 # Nominal | Ordinal | Scalar
 
-def ctransform(factor, axis):
+def ctranslate(factor, axis):
+    # (i,j, ...) -> (i + a0 , j + a1, ...)
+
     # TODO: Certainly better way to write this...
     def T(xs):
         xs = copy(xs)
         for x, j in zip(xrange(len(xs)), axis):
-            if j:
-                xs[x] *= factor
+            if j == 1:
+                print xs
+                xs[x] += factor
         return xs
 
     def Tinv(ys):
         ys = copy(ys)
         for y, j in zip(xrange(len(ys)), axis):
             if j:
-                ys[y] /= factor
+                ys[y] -= factor
         return ys
 
     return T, Tinv
@@ -47,7 +51,7 @@ def linearize(spatial):
     # create flat hash map of all indexes
     pass
 
-def stack(c1,c2):
+def stack(c1,c2, axis):
     #   p       q        p   q
     # [1,2] | [1,2] -> [1,2,3,4]
 
@@ -57,7 +61,8 @@ def stack(c1,c2):
     n = abs(i2-s1)
     assert n > 0
 
-    T, Tinv = ctransform(c1, c2)
+    T, Tinv = ctranslate(n, axis)
+    return T, Tinv
 
 class interval(object):
     def __init__(self, inf, sup):
@@ -67,26 +72,35 @@ class interval(object):
     def __contains__(self, other):
         return self.inf <= other < self.sup
 
-    def scale(self, n):
-        """
-        Scale coordinates.
-        """
+    def __iadd__(self, n):
         return interval(self.inf + n, self.sup + n)
+
+    def __imul(self, n):
+        return interval(self.inf * n, self.sup * n)
 
     def __iter__(self):
         yield self.inf
         yield self.sup
 
     def __repr__(self):
-        return '[%i,%i]' % (self.inf, self.sup)
+        return 'i[%i,%i]' % (self.inf, self.sup)
 
 # Spatial
 class Spatial(object):
     """
     A interval partition pointing at a indexable reference.
     """
-    def __init__(self, components, ref):
+    def __init__(self, components, ref, tinv=None):
         self.ref = ref
+
+        if not tinv:
+            self.tinv = None
+            self.transformed = False
+        else:
+            self.tinv = tinv
+            self.transformed = True
+
+        self.components = components
 
     def __contains__(self, other):
         for component in self.components:
@@ -94,12 +108,13 @@ class Spatial(object):
                 return True
         return False
 
-    def transform(self, ts):
-        self.t, self.tinv = ts
-        self.components = self.t(self.components)
+    def transform(self, t, tinv):
+        coords = t(self.components)
+        return Spatial( coords, self.ref, tinv)
 
-    def untransform(self, ts):
-        self.components = self.tinv(self.components)
+    def untransform(self):
+        coords = self.tinv(self.components)
+        return Spatial( coords )
 
     def __iter__(self):
         return iter(self.components)
@@ -176,23 +191,27 @@ class Layout(object):
 
 # Low-level calls, never used by the end-user.
 def nstack(n, a, b):
-    a0, a1, a2 = splitl(a.components, n)
-    b0, b1, b2 = splitl(b.components, n)
+    try:
+        a0, a1, a2 = splitl(a.components, n)
+        b0, b1, b2 = splitl(b.components, n)
+    except IndexError:
+        raise Exception("Axis %i does not exist" % n)
 
-    # stack the first axi
-    x1, y1 = stack(a1,b1)
+    axis = zeros(len(a.components))
+    axis[n] = 1
 
-    p1 = Spatial(a0 + x1 + a2, a.ref)
-    p2 = Spatial(b0 + y1 + b2, b.ref)
+    T, Tinv = stack(a1, b1, list(axis))
+    bT = b.transform(T, Tinv)
 
-    return Layout([p1, p2])
+    return Layout([a, bT])
 
 vstack = partial(nstack, 0)
 hstack = partial(nstack, 1)
+dstack = partial(nstack, 2)
 
 def test_simple():
     alpha = object()
-    beta = object()
+    beta  = object()
 
     a = interval(0,2)
     b = interval(0,2)
@@ -200,14 +219,7 @@ def test_simple():
     x = Spatial([a,b], alpha)
     y = Spatial([a,b], beta)
 
-    #stacked = hstack(x,y)
-    #print 'vstack'
-    #print vstack(x,y)
-
-    #print 'hstack'
-    #print hstack(x,y)
-
-    stacked = vstack(x,y)
+    stacked = dstack(x,y)
 
     result = stacked[(3,1)]
     import pdb; pdb.set_trace()

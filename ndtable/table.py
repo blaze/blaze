@@ -4,7 +4,6 @@ from byteprovider import ByteProvider
 from idx import Indexable, AutoIndex, Space, Subspace, Index
 
 from datashape.unification import union
-from datashape.embedding import can_embed
 
 from datashape.coretypes import DataShape, Fixed
 
@@ -89,7 +88,6 @@ class NDTable(Indexable):
 
         # The number of providers must be compatable ( not neccessarily
         # equal ) with the number of given providers.
-        #assert can_embed(provided_dim, outerdim)
 
         # Look at the information for the provider, see if we can
         # infer whether the given list of providers is regular
@@ -104,13 +102,13 @@ class NDTable(Indexable):
         # TODO: there are other ways this could be true as well,
         # need more sophisticated checker
         regular = reduce(eq, shapes)
+        covers = True
 
         # Indicate whether or not the union of the subspaces covers the
         # inner dimension.
         uni = reduce(union, shapes)
 
         # Does it cover the space?
-        covers = map(can_embed, uni, shape)
 
         for i, provider in enumerate(providers):
             # Make sure we don't go over the outer dimension
@@ -124,8 +122,6 @@ class NDTable(Indexable):
 
             # Can we embed the substructure inside of the of the inner
             # dimension?
-            assert can_embed(substructure, innerdim)
-
             subspaces += [subspace]
 
         # ???
