@@ -99,8 +99,8 @@ class ByteSource(Source):
                 "Not a multiple of type: %s" % ntype
             return ntype * Fixed(len(self.bits) / size)
         else:
-            raise ValueError("Cannot interpret raw bytes as\
-            anything but native type.")
+            raise ValueError(\
+            "Cannot interpret raw bytes as anything but native type.")
 
     def write(self, offset, wbytes):
         pass

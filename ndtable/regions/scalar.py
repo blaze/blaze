@@ -119,15 +119,13 @@ def stack(c1,c2, axis):
 # Scalar Interval
 #------------------------------------------------------------------------
 
+
 class interval(object):
     """
     """
     def __init__(self, inf, sup):
         self.inf = inf
         self.sup = sup
-
-    def __contains__(self, other):
-        return self.inf <= other < self.sup
 
     def __iadd__(self, n):
         return interval(self.inf + n, self.sup + n)
@@ -142,14 +140,21 @@ class interval(object):
     def __repr__(self):
         return 'i[%i,%i]' % (self.inf, self.sup)
 
+def union(i1, i2):
+    return interval(min(i1.inf, i2.inf), max(i1.sup, i2.sup))
+
+class bounds(interval):
+    def __contains__(self, other):
+        return self.inf <= other < self.sup
+
 #------------------------------------------------------------------------
 # Coordinate Mappings
 #------------------------------------------------------------------------
 
 class Chart(object):
     """
-    A interval partition pointing at a Indexable reference. In C
-    this would be a pointer, but not necessarily so.
+    A interval partition pointing at a Indexable reference. In C this
+    would be a pointer, but not necessarily so.
     """
     def __init__(self, components, ref, tinv=None):
         self.ref = ref
@@ -163,12 +168,6 @@ class Chart(object):
 
         self.components = components
 
-    def __contains__(self, other):
-        for component in self.components:
-            if other in component:
-                return True
-        return False
-
     def transform(self, t, tinv):
         """
         Does not mutate existing structure
@@ -176,13 +175,21 @@ class Chart(object):
         coords = t(self.components)
         return Chart( coords, self.ref, tinv)
 
+    def iterdims(self):
+        """
+        Enumerate the components, yielding the dimension index
+        and the component.
+        """
+        return enumerate(self.components)
+
     # Lift a set of coordinates into the "chart" space
     def inverse(self, coords):
         """
         Invert the given coordinates per the inverse transform
         function associated with this chart.
         """
-        assert self.tinv, "Chart does not have coordinate inverse transform function"
+        assert self.tinv, \
+            "Chart does not have coordinate inverse transform function"
         return self.tinv(coords)
 
     def __iter__(self):
@@ -209,11 +216,15 @@ class Layout(object):
     wraparound = True
     # Allow negative indexing
 
-    def __init__(self, partitions):
+    def __init__(self, partitions, ndim):
         self.points     = defaultdict(list)
         self.ppoints    = defaultdict(list)
+        self.bounds     = []
+        self.ndim       = ndim
 
         self.partitions = partitions
+
+        # The zero partition
         self.top = None
 
         # Build up the partition search, for each dimension
@@ -224,17 +235,30 @@ class Layout(object):
                 insort_left(self.points[i] , a)
                 insort_left(self.ppoints[i], b.inf+1)
 
-    def check_bounds(self, indexer):
-        pass
+            # Build the bounds as well
+
+        for i in xrange(ndim):
+            self.bounds = self.bounds_dim(i)
+
+    def iter_components(self, i):
+        """
+        Iterate through the components of each partition.
+        """
+        for a in self.partitions:
+            yield a.components[i]
+
+    def bounds_dim(self, i):
+        return reduce(union, self.iter_components(0))
 
     def change_coordinates(self, indexer):
         """
         Change coordinates into the memory block we're indexing
         into.
         """
-        indexerl = xrange(len(indexer))
 
         # use xrange/len because we are mutating it
+        indexerl = xrange(len(indexer))
+
         for i in indexerl:
 
             idx = indexer[i]
@@ -276,6 +300,13 @@ class Layout(object):
 
 # Low-level calls, never used by the end-user.
 def nstack(n, a, b):
+
+    adim = len(a.components)
+    bdim = len(b.components)
+
+    assert adim == bdim, 'For now must be equal'
+    ndim = adim
+
     try:
         a0, a1, a2 = splitl(a.components, n)
         b0, b1, b2 = splitl(b.components, n)
@@ -289,7 +320,7 @@ def nstack(n, a, b):
     bT = b.transform(T, Tinv)
     assert bT.tinv
 
-    return Layout([a, bT])
+    return Layout([a, bT], ndim)
 
 vstack = partial(nstack, 0)
 hstack = partial(nstack, 1)
