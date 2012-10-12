@@ -352,3 +352,7 @@ def test_horizontal_stack():
     block, coords = s[[0,2]]
     assert block is beta
     assert coords == [0,0]
+
+    block, coords = s[[2,4]]
+    assert block is beta
+    assert coords == [2,2]
