@@ -94,16 +94,36 @@ def ctranslate(factor, axi):
 def ctranspose(axi):
 
     def T(xs):
-        xs = copy(xs)
+        xs = list(xs)
         xs[0] = xs[1]
         return xs
 
-    # Transpose its own inverse
+    # Transpose is its own inverse
     Tinv = T
     return T, Tinv
 
 def cdimshuffle(axi, mapping):
-    pass
+    """
+    f : 2, 0, 1 : [1,2,3] -> [3,1,2]
+    g : 2, 0, 1 : [3,1,2] -> [1,2,3]
+    """
+
+    imapping = invert(mapping)
+
+    def T(xs):
+        zs = list(xs)
+        for j in mapping:
+            zs[j] = xs[j]
+        return zs
+
+    def Tinv(xs):
+        zs = list(xs)
+        for j in mapping:
+            zs[j] = xs[j]
+        return zs
+
+    return T, Tinv
+
 
 def splitl(lst, n):
     return lst[0:n], lst[n], lst[n:-1]
@@ -129,7 +149,6 @@ def stack(c1,c2, axis):
 # Scalar Interval
 #------------------------------------------------------------------------
 
-
 class interval(object):
     """
     """
@@ -140,12 +159,8 @@ class interval(object):
     def __iadd__(self, n):
         return interval(self.inf + n, self.sup + n)
 
-    def __imul(self, n):
+    def __imul__(self, n):
         return interval(self.inf * n, self.sup * n)
-
-    def __iter__(self):
-        yield self.inf
-        yield self.sup
 
     def __repr__(self):
         return 'i[%i,%i]' % (self.inf, self.sup)
@@ -196,9 +211,6 @@ class Chart(object):
         assert self.tinv, \
             "Chart does not have coordinate inverse transform function"
         return self.tinv(coords)
-
-    def __iter__(self):
-        return iter(self.components)
 
     def __getitem__(self, indexer):
         return self.ref[indexer]
@@ -339,6 +351,15 @@ def nstack(n, a, b):
 
     return Layout([a, bT], ndim)
 
-vstack = partial(nstack, 0)
-hstack = partial(nstack, 1)
-dstack = partial(nstack, 2)
+def vstack(a, b):
+    return nstack(0, a, b)
+
+def hstack(a, b):
+    return nstack(1, a, b)
+
+def dstack(a, b):
+    return nstack(2, a, b)
+
+#vstack = partial(nstack, 0)
+#hstack = partial(nstack, 1)
+#dstack = partial(nstack, 2)

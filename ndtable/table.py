@@ -4,7 +4,6 @@ from byteprovider import ByteProvider
 from idx import Indexable, AutoIndex, Space, Subspace, Index
 
 from datashape.unification import union
-
 from datashape.coretypes import DataShape, Fixed
 
 def describe(obj):
