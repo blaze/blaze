@@ -1,5 +1,6 @@
 """
 Scalar layout methods for glueing together array-like structures.
+They let us construct "views" out of multiple structures.
 
 If we build a structure ( A U B ) as some union of two blocks of data,
 then we need only a invertible linear transformation which is able to
@@ -59,29 +60,40 @@ from functools import partial
 from collections import defaultdict
 from bisect import bisect_left, insort_left
 
-# Nominal | Ordinal | Scalar
-
 Id = lambda x:x
 
-def ctranslate(factor, axis):
+#------------------------------------------------------------------------
+# Coordinate Transformations
+#------------------------------------------------------------------------
+
+def ctranslate(factor, axi):
+    """
+    A coordinate translation.
+    """
     # (i,j, ...) -> (i + a0 , j + a1, ...)
 
     # TODO: Certainly better way to write this...
     def T(xs):
         xs = copy(xs)
-        for x, j in zip(xrange(len(xs)), axis):
+        for x, j in zip(xrange(len(xs)), axi):
             if j == 1:
                 xs[x] += factor
         return xs
 
     def Tinv(ys):
         ys = copy(ys)
-        for y, j in zip(xrange(len(ys)), axis):
+        for y, j in zip(xrange(len(ys)), axi):
             if j:
                 ys[y] -= factor
         return ys
 
     return T, Tinv
+
+def ctranspose(axi):
+    pass
+
+def cdimshuffle(axi, mapping):
+    pass
 
 def splitl(lst, n):
     return lst[0:n], lst[n], lst[n:-1]
@@ -102,6 +114,10 @@ def stack(c1,c2, axis):
 
     T, Tinv = ctranslate(n, axis)
     return T, Tinv
+
+#------------------------------------------------------------------------
+# Scalar Interval
+#------------------------------------------------------------------------
 
 class interval(object):
     """
@@ -126,8 +142,11 @@ class interval(object):
     def __repr__(self):
         return 'i[%i,%i]' % (self.inf, self.sup)
 
-# Spatial
-class Spatial(object):
+#------------------------------------------------------------------------
+# Coordinate Mappings
+#------------------------------------------------------------------------
+
+class Chart(object):
     """
     A interval partition pointing at a Indexable reference. In C
     this would be a pointer, but not necessarily so.
@@ -151,11 +170,18 @@ class Spatial(object):
         return False
 
     def transform(self, t, tinv):
+        """
+        Does not mutate existing structure
+        """
         coords = t(self.components)
-        return Spatial( coords, self.ref, tinv)
+        return Chart( coords, self.ref, tinv)
 
     # Lift a set of coordinates into the "chart" space
     def inverse(self, coords):
+        """
+        Invert the given coordinates per the inverse transform
+        function associated with this chart.
+        """
         assert self.tinv, "Chart does not have coordinate inverse transform function"
         return self.tinv(coords)
 
@@ -168,36 +194,6 @@ class Spatial(object):
     def __repr__(self):
         return 'I(%s)' % 'x'.join(map(repr,self.components))
 
-# Linear ( pointer-like references )
-class Linear(object):
-    def __init__(self, origin, ref):
-        self.origin = origin
-        self.ref = ref
-
-    def __contains__(self, other):
-        return
-
-    def __getitem__(self, indexer):
-        return self.mapping.get(indexer)
-
-# Referential
-class Categorical(object):
-    """
-    """
-
-    def __init__(self, mapping, ref):
-        self.labels  = set(mapping.keys())
-        self.mapping = mapping
-        self.ref = ref
-
-    def __contains__(self, other):
-        return other in self.labels
-
-    def __getitem__(self, indexer):
-        return self.mapping.get(indexer)
-
-    def __repr__(self):
-        return 'L(%r)' % list(self.labels)
 
 class Layout(object):
     """
@@ -298,61 +294,3 @@ def nstack(n, a, b):
 vstack = partial(nstack, 0)
 hstack = partial(nstack, 1)
 dstack = partial(nstack, 2)
-
-def test_vertical_stack():
-    alpha = object()
-    beta  = object()
-
-    a = interval(0,2)
-    b = interval(0,2)
-
-    x = Spatial([a,b], alpha)
-    y = Spatial([a,b], beta)
-
-    s = vstack(x,y)
-    block, coords = s[[3,1]]
-    assert block is beta
-    assert coords == [1,1]
-
-    block, coords = s[[0,0]]
-    assert block is alpha
-    assert coords == [0,0]
-
-    block, coords = s[[1,0]]
-    assert block is alpha
-    assert coords == [1,0]
-
-    block, coords = s[[2,0]]
-    assert block is beta
-    assert coords == [0,0]
-
-    block, coords = s[[2,1]]
-    assert block is beta
-    assert coords == [0,1]
-
-def test_horizontal_stack():
-    alpha = object()
-    beta  = object()
-
-    a = interval(0,2)
-    b = interval(0,2)
-
-    x = Spatial([a,b], alpha)
-    y = Spatial([a,b], beta)
-
-    s = hstack(x,y)
-    block, coords = s[[0,0]]
-    assert block is alpha
-    assert coords == [0,0]
-
-    block, coords = s[[0,1]]
-    assert block is alpha
-    assert coords == [0,1]
-
-    block, coords = s[[0,2]]
-    assert block is beta
-    assert coords == [0,0]
-
-    block, coords = s[[2,4]]
-    assert block is beta
-    assert coords == [2,2]
