@@ -90,7 +90,15 @@ def ctranslate(factor, axi):
     return T, Tinv
 
 def ctranspose(axi):
-    pass
+
+    def T(xs):
+        xs = copy(xs)
+        xs[0] = xs[1]
+        return xs
+
+    # Is its own inverse
+    Tinv = T
+    return T, Tinv
 
 def cdimshuffle(axi, mapping):
     pass
@@ -140,12 +148,8 @@ class interval(object):
     def __repr__(self):
         return 'i[%i,%i]' % (self.inf, self.sup)
 
-def union(i1, i2):
+def hull(i1, i2):
     return interval(min(i1.inf, i2.inf), max(i1.sup, i2.sup))
-
-class bounds(interval):
-    def __contains__(self, other):
-        return self.inf <= other < self.sup
 
 #------------------------------------------------------------------------
 # Coordinate Mappings
@@ -235,10 +239,8 @@ class Layout(object):
                 insort_left(self.points[i] , a)
                 insort_left(self.ppoints[i], b.inf+1)
 
-            # Build the bounds as well
-
-        for i in xrange(ndim):
-            self.bounds = self.bounds_dim(i)
+        # Build the bounds as well
+        self.bounds = map(self.bounds_dim, xrange(ndim))
 
     def iter_components(self, i):
         """
@@ -248,7 +250,9 @@ class Layout(object):
             yield a.components[i]
 
     def bounds_dim(self, i):
-        return reduce(union, self.iter_components(0))
+        """
+        """
+        return reduce(hull, self.iter_components(i))
 
     def change_coordinates(self, indexer):
         """
