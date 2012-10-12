@@ -7,7 +7,9 @@ then we need only a invertible linear transformation which is able to
 map coordinates between the blocks as we drill down into
 subblocks::
 
-    (i,j) -> (i', j')
+    f : (i,j) -> (i', j')
+    g : (i',j') -> (i, j)
+    f . g = id
 
 Vertical Stacking
 =================
@@ -54,8 +56,8 @@ Horizontal Stacking
                      (i,j) -> (i, j)
 """
 
-from copy import copy
 from numpy import zeros
+from pprint import pformat
 from functools import partial
 from collections import defaultdict
 from bisect import bisect_left, insort_left
@@ -74,16 +76,16 @@ def ctranslate(factor, axi):
 
     # TODO: Certainly better way to write this...
     def T(xs):
-        xs = copy(xs)
+        xs = list(xs)
         for x, j in zip(xrange(len(xs)), axi):
             if j == 1:
                 xs[x] += factor
         return xs
 
     def Tinv(ys):
-        ys = copy(ys)
+        ys = list(ys)
         for y, j in zip(xrange(len(ys)), axi):
-            if j:
+            if j == 1:
                 ys[y] -= factor
         return ys
 
@@ -96,7 +98,7 @@ def ctranspose(axi):
         xs[0] = xs[1]
         return xs
 
-    # Is its own inverse
+    # Transpose its own inverse
     Tinv = T
     return T, Tinv
 
@@ -157,8 +159,7 @@ def hull(i1, i2):
 
 class Chart(object):
     """
-    A interval partition pointing at a Indexable reference. In C this
-    would be a pointer, but not necessarily so.
+    A interval partition pointing at a Indexable reference.
     """
     def __init__(self, components, ref, tinv=None):
         self.ref = ref
@@ -174,7 +175,7 @@ class Chart(object):
 
     def transform(self, t, tinv):
         """
-        Does not mutate existing structure
+        Returns a new chart with coordinates transformed.
         """
         coords = t(self.components)
         return Chart( coords, self.ref, tinv)
@@ -203,7 +204,7 @@ class Chart(object):
         return self.ref[indexer]
 
     def __repr__(self):
-        return 'I(%s)' % 'x'.join(map(repr,self.components))
+        return 'Chart( %s )' % ' x '.join(map(repr,self.components))
 
 
 class Layout(object):
@@ -221,8 +222,11 @@ class Layout(object):
     # Allow negative indexing
 
     def __init__(self, partitions, ndim):
-        self.points     = defaultdict(list)
+        # The numeric (x,y,z) coordinates of ith partition point
         self.ppoints    = defaultdict(list)
+        # The partition associated with the ith partition point
+        self.points     = defaultdict(list)
+
         self.bounds     = []
         self.ndim       = ndim
 
@@ -254,10 +258,19 @@ class Layout(object):
         """
         return reduce(hull, self.iter_components(i))
 
+    def transform(self, T, tinv):
+        tpoints = defaultdict(list)
+
+        for i, p in self.points.iteritems():
+            tpoints[i] = T(p)
+
+        T(self.bounds)
+
+        return Layout(self.partitions, self.ndim)
+
     def change_coordinates(self, indexer):
         """
-        Change coordinates into the memory block we're indexing
-        into.
+        Change coordinates into the memory block we're indexing into.
         """
 
         # use xrange/len because we are mutating it
@@ -298,8 +311,8 @@ class Layout(object):
         for p in self.partitions:
             out += '%r -> %i\n' % (p, id(p.ref))
 
-        out += 'Partitions:\n'
-        out += repr(self.points)
+        out += '\nPartitions:\n'
+        out += pformat(dict(self.points))
         return out
 
 # Low-level calls, never used by the end-user.

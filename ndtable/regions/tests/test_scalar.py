@@ -1,5 +1,17 @@
 from ndtable.regions.scalar import interval, Chart, vstack, hstack
 
+def test_multiple_charts():
+    alpha = object()
+    beta  = object()
+
+    a = interval(0,2)
+    b = interval(0,2)
+
+    x = Chart([a,b], alpha)
+    y = Chart([a,b], beta)
+
+    s = vstack(x,y)
+
 def test_vertical_stack():
     alpha = object()
     beta  = object()
@@ -64,21 +76,21 @@ def test_horizontal_stack():
     assert block is beta
     assert coords == [2,2]
 
-def test_vertical_stack_3d():
-    alpha = object()
-    beta  = object()
+#def test_third_axis():
+    #alpha = object()
+    #beta  = object()
 
-    a = interval(0,2)
-    b = interval(0,2)
-    c = interval(0,2)
+    #a = interval(0,2)
+    #b = interval(0,2)
+    #c = interval(0,2)
 
-    x = Chart([a,b,c], alpha)
-    y = Chart([a,b,c], beta)
+    #x = Chart([a,b,c], alpha)
+    #y = Chart([a,b,c], beta)
 
-    # -------------
-    s = vstack(x,y)
-    # -------------
+    ## -------------
+    #s = vstack(x,y)
+    ## -------------
 
-    block, coords = s[[0,0,0]]
-    assert block is alpha
-    assert coords == [0,0,0]
+    #block, coords = s[[0,0,0]]
+    #assert block is alpha
+    #assert coords == [0,0,0]
