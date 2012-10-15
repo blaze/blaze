@@ -2,6 +2,7 @@ import os
 import pydot
 from ndtable.expr.nodes import Op, ScalarNode, StringNode
 from subprocess import Popen
+from tempfile import NamedTemporaryFile
 
 def build_graph(node, graph=None):
     top = pydot.Node( node.name )
@@ -18,11 +19,21 @@ def build_graph(node, graph=None):
 
     return node, graph
 
-def view(fname):
-    # Linux
-    p = Popen(['feh', fname])
-    # Macintosh
-    #p = Popen(['open', fname])
+def view(fname, graph):
+    dotstr = graph.to_string()
+
+    with NamedTemporaryFile(delete=True) as tempdot:
+        tempdot.write(dotstr)
+        tempdot.flush()
+
+        p = Popen(['dot','-Tpng',tempdot.name,'-o','%s.png' % fname])
+        p.wait()
+        assert p.returncode == 0
+
+        # Linux
+        p = Popen(['feh', '%s.png' % fname])
+        # Macintosh
+        #p = Popen(['open', fname])
 
 def test_simple():
 
@@ -31,16 +42,8 @@ def test_simple():
     c = ScalarNode(2)
     a.attach(b,c)
 
-    _, graph = build_graph(a, None)
-    dotstr = graph.to_string()
-
-    with open('expr.dot', 'w+') as fd:
-        fd.write(dotstr)
-
-    p = Popen(['dot','-Tpng','expr.dot','-o','expr.png'])
-    p.wait()
-    assert p.returncode == 0
-    view('expr.png')
+    _, graph = build_graph(a)
+    view('s1', graph)
 
 def test_nested():
 
@@ -55,16 +58,8 @@ def test_nested():
 
     c.attach(d,e)
 
-    _, graph = build_graph(a, None)
-    dotstr = graph.to_string()
-
-    with open('expr.dot', 'w+') as fd:
-        fd.write(dotstr)
-
-    p = Popen(['dot','-Tpng','expr.dot','-o','expr.png'])
-    p.wait()
-    assert p.returncode == 0
-    view('expr.png')
+    _, graph = build_graph(a)
+    view('nested', graph)
 
 def test_complex():
 
@@ -83,12 +78,4 @@ def test_complex():
     c.attach(y,z)
 
     _, graph = build_graph(a, None)
-    dotstr = graph.to_string()
-
-    with open('expr.dot', 'w+') as fd:
-        fd.write(dotstr)
-
-    p = Popen(['dot','-Tpng','expr.dot','-o','expr.png'])
-    p.wait()
-    assert p.returncode == 0
-    view('expr.png')
+    view('complex', graph)
