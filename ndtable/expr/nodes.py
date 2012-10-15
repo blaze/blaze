@@ -83,14 +83,17 @@ class StringNode(Literal):
 class Op(Node):
     pass
 
+class NullaryOp(Op):
+    arity = 0
+
 class UnaryOp(Op):
-    pass
+    arity = 1
 
 class BinaryOp(Op):
-    pass
+    arity = 2
 
 class NaryOp(Op):
-    pass
+    arity = -1
 
 class Slice(Op):
     pass

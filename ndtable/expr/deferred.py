@@ -2,18 +2,19 @@
 Core of the deferred expression engine.
 """
 
-from numbers import Number
+from numbers import Number, Integral
 from collections import Iterable
 
 from ndtable.table import NDTable
-from ndtable.expr.nodes import Node, StringNode, ScalarNode, Slice
+from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
+    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
 try:
     import numpy as np
 except ImportError:
-    np = {"integer": numbers.Integral}
+    np = {"integer": Integral}
 
 #------------------------------------------------------------------------
 # Globals
@@ -168,13 +169,23 @@ class DeferredTable(object):
             self.node = Node('init', args, target)
             self.node.depends_on(*depends)
 
-    def generate_node(self, fname, args, kwargs):
-        return Node(fname, args, kwargs)
+    def generate_node(self, arity, fname, args, kwargs):
 
+        if arity == -1:
+            return NaryOp(fname, args, kwargs)
+
+        elif arity == 0:
+            return NullaryOp(fname)
+
+        elif arity == 1:
+            return UnaryOp(fname, args, kwargs)
+
+        elif arity == 2:
+            return BinaryOp(fname, args, kwargs)
 
     # Numpy-compatible shape/flag attributes
     # ======================================
-    # These are evaluated in immediate mode, and do not return a deferred 
+    # These are evaluated in immediate mode, and do not return a deferred
     # graph node.  This implies that stream-generating functions (i.e. nodes
     # whose shape information requires a data evaluation) will actually
     # trigger an eval().
@@ -182,11 +193,11 @@ class DeferredTable(object):
     @property
     def flags(self):
         pass
-    
+
     @property
     def itemsize(self):
         pass
-    
+
     @property
     def strides(self):
         pass
@@ -238,17 +249,17 @@ class DeferredTable(object):
         """ Slicing operations should return graph nodes, while individual
         element access should return bare scalars.
         """
-        if isinstance(ndx, numbers.Integral) or isinstance(ndx, np.integer):
+        if isinstance(ndx, Integral) or isinstance(ndx, np.integer):
             return self._call("__getitem__", (ndx,), {})
         else:
-            return self.generate_node(Slice, ndx)
+            return self.generate_node(-1, Slice, ndx)
 
     # Python Intrinsics
     # -----------------
     for name in PyObject_Intrinsics:
         exec (
             "def __%(name)s__(self,*args, **kwargs):\n"
-            "    return self.generate_node('%(name)s',args, kwargs)"
+            "    return self.generate_node(0, '%(name)s',args, kwargs)"
         ) % locals()
 
     # Unary Prefix
@@ -256,13 +267,13 @@ class DeferredTable(object):
     for name, op in PyObject_UnaryOperators:
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node('%(name)s',args, kwargs)"
+            "    return self.generate_node(1, '%(name)s',args, kwargs)"
         ) % locals()
 
     for name in PyArray_ReadMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node('%(name)s',args, kwargs)"
+            "    return self.generate_node(-1, '%(name)s',args, kwargs)"
         ) % locals()
 
     # Binary Prefix
@@ -270,10 +281,10 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __%(name)s__(self,ob):\n"
-            "    return self.generate_node('%(name)s',args, kwargs)"
+            "    return self.generate_node(2, '%(name)s',args, kwargs)"
             "\n"
             "def __r%(name)s__(self,ob):\n"
-            "    return self.generate_node('%(name)s',args, kwargs)"
+            "    return self.generate_node(2, '%(name)s',args, kwargs)"
             "\n"
         )  % locals()
 
@@ -283,14 +294,14 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self,ob):\n"
-            "    return self.generate_node('%(name)s',args, kwargs)"
+            "    return self.generate_node(2, '%(name)s',args, kwargs)"
             "\n"
         )  % locals()
 
     for name in PyArray_WriteMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node('%(name)s',args, kwargs)"
+            "    return self.generate_node(-1, '%(name)s',args, kwargs)"
         ) % locals()
 
     # Other non-graph methods
@@ -304,4 +315,3 @@ class DeferredTable(object):
 
     def tostring(self, *args, **kw):
         pass
-
