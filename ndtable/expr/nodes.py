@@ -1,4 +1,5 @@
 from collections import deque
+from ndtable.table import NDTable
 
 class Node(object):
     __slots__ = ['fields', 'metadata']
@@ -46,54 +47,6 @@ class Node(object):
                     if isinstance(item, Node):
                         switch(field)
 
-# ============
-# Tree Walking
-# ============
-
-def traverse(node):
-     tree = deque([node])
-     while tree:
-         node = tree.popleft()
-         tree.extend(iter(node))
-         yield node
-
-# ===========
-# Graph Nodes
-# ===========
-
-class ExprGraph(object):
-
-    def __init__(self, top):
-        self.top = top
-
-        # DataTable | Table, so that we maintain closure
-        # throughout the expression evaluation
-        self.target = DataTable
-
-    def eval(self):
-        # Submit to execution engine!
-        pass
-
-    def __iter__(self):
-        return traverse(self.top)
-
-    def to_dot(self):
-        # graphviz stuff
-        pass
-
-class ExprTransformer(object):
-
-    def __init__(self):
-        pass
-
-    def visit(self, tree):
-        # Visit the tree, context switching to the transform
-        # function at each node.
-        tree.__coiter__(self, self.transform)
-
-    def transform(self, node):
-        raise NotImplementedError()
-
 # ===========
 # Values
 # ===========
@@ -128,3 +81,51 @@ class Slice(Op):
 
 class Apply(Op):
     pass
+
+# ============
+# Tree Walking
+# ============
+
+def traverse(node):
+     tree = deque([node])
+     while tree:
+         node = tree.popleft()
+         tree.extend(iter(node))
+         yield node
+
+# ===========
+# Graph Nodes
+# ===========
+
+class ExprGraph(object):
+
+    def __init__(self, top):
+        self.top = top
+
+        # NDTable | Table, so that we maintain closure
+        # throughout the expression evaluation
+        self.target = NDTable
+
+    def eval(self):
+        # Submit to execution engine!
+        pass
+
+    def __iter__(self):
+        return traverse(self.top)
+
+    def to_dot(self):
+        # graphviz stuff
+        pass
+
+class ExprTransformer(object):
+
+    def __init__(self):
+        pass
+
+    def visit(self, tree):
+        # Visit the tree, context switching to the transform
+        # function at each node.
+        tree.__coiter__(self, self.transform)
+
+    def transform(self, node):
+        raise NotImplementedError()

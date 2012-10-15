@@ -2,8 +2,6 @@
 Core of the deferred expression engine.
 """
 
-from functools import wraps
-from operator import eq
 from numbers import Number
 from collections import Iterable
 
@@ -107,6 +105,7 @@ def injest_iterable(graph, arg, depth=0):
                         args.append(StringNode(graph, a))
                     else:
                         raise TypeError("Unknown type")
+                return args
 
         else:
             raise RuntimeError("""
