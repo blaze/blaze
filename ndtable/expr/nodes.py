@@ -2,6 +2,9 @@ from collections import deque
 from ndtable.table import NDTable
 
 class Node(object):
+    """ Represents a node in the expression graph which Blaze compiles into
+    a program for the array VM.
+    """
     # Use __slots__ so we don't incur the full cost of a class
     __slots__ = ['fields', 'metadata', 'listeners']
 
@@ -57,17 +60,20 @@ class Node(object):
                     if isinstance(item, Node):
                         switch(field)
 
+
+
+
 # ===========
 # Values
 # ===========
 
-class Val(Node):
+class Literal(Node):
     pass
 
-class ScalarNode(Val):
+class ScalarNode(Literal):
     pass
 
-class StringNode(Val):
+class StringNode(Literal):
     pass
 
 # ===========
