@@ -11,8 +11,8 @@ def build_graph(node, graph=None):
         graph = pydot.Graph(graph_type='digraph')
         graph.add_node( top )
 
-    for listener in node.listeners:
-        nd, _ = build_graph(listener, graph)
+    for child in node.children:
+        nd, _ = build_graph(child, graph)
         nd = pydot.Node(nd.name)
         graph.add_node( nd )
         graph.add_edge( pydot.Edge(top, nd) )

@@ -6,61 +6,52 @@ class Node(object):
     a program for the array VM.
     """
     # Use __slots__ so we don't incur the full cost of a class
-    __slots__ = ['fields', 'metadata', 'listeners']
+    __slots__ = ['children', 'metadata']
 
-    def __init__(self, *fields):
-        self.fields = fields
-        self.listeners = []
+    def __init__(self, *children):
+        self.children  = children
 
-    def iter_fields(self):
-        for field in self.fields:
-            yield field
+    def iter_children(self):
+        for child in self.children:
+            yield child
 
     @property
     def name(self):
-        if self.fields:
-            return self.__class__.__name__  +  " " + str(self.fields[0])
-        else:
-            return self.__class__.__name__
-
-    def depends_on(self, *depends):
-        self.listeners += depends
-
-    attach = depends_on
+        return self.__class__.__name__
 
     def __iter__(self):
-        for name, field in self.iter_fields():
-            if isinstance(field, Node):
-                yield field
-            elif isinstance(field, list):
-                for item in field:
+        for name, child in self.iter_children():
+            if isinstance(child, Node):
+                yield child
+            elif isinstance(child, list):
+                for item in child:
                     if isinstance(item, Node):
                         yield item
+            else:
+                raise TypeError('Invalid children')
 
     def __coiter__(self, co):
         """
         Tree transformer using coroutines and views.
         """
-        fields = dict(enumerate(self.fields)).viewitems()
+        children = dict(enumerate(self.children)).viewitems()
 
-        def switch(field):
-            changed = co.send(field)
+        def switch(child):
+            changed = co.send(child)
             if changed:
-                fields[idx] = changed
+                children[idx] = changed
             else:
-                del fields[idx]
+                del children[idx]
 
-        for idx, field in fields:
+        for idx, child in children:
 
-            if isinstance(field, Node):
-                switch(field)
+            if isinstance(child, Node):
+                switch(child)
 
-            elif isinstance(field, list):
-                for item in field:
+            elif isinstance(child, list):
+                for item in child:
                     if isinstance(item, Node):
-                        switch(field)
-
-
+                        switch(child)
 
 
 # ===========
@@ -68,7 +59,15 @@ class Node(object):
 # ===========
 
 class Literal(Node):
-    pass
+    # TODO: better word for demarcating the "fusion block"
+    initial = True
+
+class Indexable(Literal):
+    __slots__ = ['children', 'metadata', 'target']
+
+    def __init__(self, args, target):
+        self.children = args
+        self.target = target
 
 class ScalarNode(Literal):
     pass
@@ -81,7 +80,15 @@ class StringNode(Literal):
 # ===========
 
 class Op(Node):
-    pass
+    __slots__ = ['children', 'metadata', 'op']
+
+    def __init__(self, op, operands):
+        self.op = op
+        self.children = operands
+
+    @property
+    def name(self):
+        return self.__class__.__name__
 
 class NullaryOp(Op):
     arity = 0
@@ -96,10 +103,22 @@ class NaryOp(Op):
     arity = -1
 
 class Slice(Op):
-    pass
+    # $0, start, stop, step
+    arity = 4
 
 class Apply(Op):
     pass
+
+# ===========
+# Combinators
+# ===========
+
+class Map(Op):
+    pass
+
+class Reduce(Op):
+    # TODO: better word for demarcating the "fusion block"
+    terminal = True
 
 # ============
 # Tree Walking
@@ -115,26 +134,6 @@ def traverse(node):
 # ===========
 # Graph Nodes
 # ===========
-
-class ExprGraph(object):
-
-    def __init__(self, top):
-        self.top = top
-
-        # NDTable | Table, so that we maintain closure
-        # throughout the expression evaluation
-        self.target = NDTable
-
-    def eval(self):
-        # Submit to execution engine!
-        pass
-
-    def __iter__(self):
-        return traverse(self.top)
-
-    def to_dot(self):
-        # graphviz stuff
-        pass
 
 class ExprTransformer(object):
 

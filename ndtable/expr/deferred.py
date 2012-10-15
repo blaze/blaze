@@ -7,7 +7,7 @@ from numbers import Number, Integral
 
 from ndtable.table import NDTable
 from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
-    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp
+    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Indexable
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -48,7 +48,7 @@ PyObject_UnaryOperators = [
 ]
 
 PyObject_Intrinsics = [
-    'repr', 'str', 'hash', 'len', 'abs', 'complex', 'int', 'long', 'float',
+    'str', 'hash', 'len', 'abs', 'complex', 'int', 'long', 'float',
     'iter', 'oct', 'hex'
 ]
 
@@ -162,12 +162,10 @@ class DeferredTable(object):
         # Auto resolve the graph
 
         if depends is None:
-            fields = injest_iterable(args)
-            self.node = Node('init', *fields)
-            self.node.depends_on(*fields)
+            arguments = injest_iterable(args)
+            self.node = Indexable(arguments, target=target)
         else:
-            self.node = Node('init', args, target)
-            self.node.depends_on(*depends)
+            self.node = Indexable(args, target=target)
 
     def generate_node(self, arity, fname, args=None, kwargs=None):
 
@@ -178,15 +176,16 @@ class DeferredTable(object):
             ret =  NullaryOp(fname)
 
         elif arity == 1:
-            ret =  UnaryOp(fname, args, kwargs)
+            ret =  UnaryOp(fname, args)
 
         elif arity == 2:
-            ret = BinaryOp(fname, args, kwargs)
-
-        # side-effectful graph append
-        ret.depends_on(self.node)
+            ret = BinaryOp(fname, args)
 
         return ret
+
+    @property
+    def children(self):
+        return self.node.children
 
     # Numpy-compatible shape/flag attributes
     # ======================================
@@ -260,8 +259,7 @@ class DeferredTable(object):
             return self.generate_node(-1, Slice, ndx)
 
     def __getslice__(self, start, stop, step):
-        """ Slicing operations should return graph nodes, while individual
-        element access should return bare scalars.
+        """
         """
         args = [start, stop, step]
         return self.generate_node(-1, Slice, args)
@@ -274,32 +272,35 @@ class DeferredTable(object):
         exec (
             "def __%(name)s__(self,*args, **kwargs):\n"
             "    return self.generate_node(1, '%(name)s',args, kwargs)"
+            "\n"
         ) % locals()
 
     # Unary Prefix
     # ------------
     for name, op in PyObject_UnaryOperators:
-
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', args, kwargs)"
+            "    return self.generate_node(1, '%(name)s', self.node)"
+            "\n"
         ) % locals()
 
     for name in PyArray_ReadMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
+            "    args = (self.node,) + args\n"
             "    return self.generate_node(-1, '%(name)s', args, kwargs)"
+            "\n"
         ) % locals()
 
     # Binary Prefix
     # -------------
     for name, op in PyObject_BinaryOperators:
         exec (
-            "def __%(name)s__(self,ob):\n"
-            "    return self.generate_node(2, '%(name)s', self.node, ob)"
+            "def __%(name)s__(self, ob):\n"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])"
             "\n"
-            "def __r%(name)s__(self,ob):\n"
-            "    return self.generate_node(2, '%(name)s', self.node, ob)"
+            "def __r%(name)s__(self, ob):\n"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])"
             "\n"
         )  % locals()
 
@@ -308,15 +309,16 @@ class DeferredTable(object):
 
     for name, op in PyObject_BinaryOperators:
         exec (
-            "def __i%(name)s__(self,ob):\n"
-            "    return self.generate_node(2, '%(name)s', args, kwargs)"
+            "def __i%(name)s__(self, ob):\n"
+            "    return self.generate_node(2, '%(name)s', self.node, ob, kwargs)"
             "\n"
         )  % locals()
 
     for name in PyArray_WriteMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node(-1, '%(name)s',args, kwargs)"
+            "    return self.generate_node(-1, '%(name)s', args, kwargs)"
+            "\n"
         ) % locals()
 
     # Other non-graph methods
