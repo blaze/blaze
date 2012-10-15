@@ -1,24 +1,25 @@
 from ndtable.expr.deferred import DeferredTable
 from ndtable.expr.viz import view, build_graph
 
-#def test_scalar_arguments():
-    #a = DeferredTable([1,2,3])
-    #children = a.node.children
+def test_scalar_arguments():
+    a = DeferredTable([1,2,3])
+    children = a.node.children
 
-    #assert len(children) == 3
+    assert len(children) == 3
 
-#def test_dynamic_arguments():
-    #a = DeferredTable([])
-    #b = DeferredTable([a])
+def test_dynamic_arguments():
+    a = DeferredTable([])
+    b = DeferredTable([a])
 
-    #children = b.node.children
-    #assert len(children[1:]) == 1
+    children = b.node.children
+    assert len(children) == 1
 
-#def test_dynamic_explicit():
-    #a = DeferredTable([])
-    #b = DeferredTable([a], depends=[a])
+def test_dynamic_explicit():
+    a = DeferredTable([])
+    b = DeferredTable([a], depends=[a])
 
-    #children = b.node.children
+    children = b.node.children
+    assert len(children) == 1
 
 def test_simple_ops():
     a = DeferredTable([])
@@ -27,5 +28,6 @@ def test_simple_ops():
     c = a+b
     d = c*b
 
-    _, graph = build_graph(c)
+    _, graph = build_graph(d)
+    #print graph.to_string()
     view('simple', graph)

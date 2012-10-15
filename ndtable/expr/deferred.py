@@ -7,7 +7,7 @@ from numbers import Number, Integral
 
 from ndtable.table import NDTable
 from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
-    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Indexable
+    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Op, Indexable
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -157,15 +157,12 @@ class DeferredTable(object):
         # escape to Tables when we're using DataTables.
         self.target = target
 
-        # Defer the arguments until we injest them
-
-        # Auto resolve the graph
-
         if depends is None:
-            arguments = injest_iterable(args)
-            self.node = Indexable(arguments, target=target)
+            self.node = self
+            self.children = injest_iterable(args)
         else:
-            self.node = Indexable(args, target=target)
+            self.node = self
+            self.children = depends
 
     def generate_node(self, arity, fname, args=None, kwargs=None):
 
@@ -182,10 +179,6 @@ class DeferredTable(object):
             ret = BinaryOp(fname, args)
 
         return ret
-
-    @property
-    def children(self):
-        return self.node.children
 
     # Numpy-compatible shape/flag attributes
     # ======================================
@@ -243,8 +236,7 @@ class DeferredTable(object):
     @property
     def T(self):
         """ Equivalent to .transpose(), which returns a graph node. """
-        pass
-
+        return Op('transpose', self.node)
 
     # Read Operations
     # ===============
@@ -253,16 +245,18 @@ class DeferredTable(object):
         """ Slicing operations should return graph nodes, while individual
         element access should return bare scalars.
         """
+        # TODO: how to represent indexer in graph???
+
         if isinstance(ndx, Integral) or isinstance(ndx, np.integer):
-            return self.generate_node(1, Slice, ndx)
+            return Slice(self.node,ndx)
         else:
-            return self.generate_node(-1, Slice, ndx)
+            return Slice(self.node,ndx)
 
     def __getslice__(self, start, stop, step):
         """
         """
-        args = [start, stop, step]
-        return self.generate_node(-1, Slice, args)
+        ndx = [start, stop, step]
+        return Slice(self.node, ndx)
 
     # Python Intrinsics
     # -----------------
@@ -271,7 +265,7 @@ class DeferredTable(object):
         # the first argument self
         exec (
             "def __%(name)s__(self,*args, **kwargs):\n"
-            "    return self.generate_node(1, '%(name)s',args, kwargs)"
+            "    return self.generate_node(1, '%(name)s', args, kwargs)"
             "\n"
         ) % locals()
 
@@ -297,10 +291,10 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
             "\n"
             "def __r%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
             "\n"
         )  % locals()
 
@@ -310,16 +304,44 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', self.node, ob, kwargs)"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob], kwargs)\n"
             "\n"
         )  % locals()
 
     for name in PyArray_WriteMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node(-1, '%(name)s', args, kwargs)"
+            "    return self.generate_node(-1, '%(name)s', args, kwargs)\n"
             "\n"
         ) % locals()
+
+    @property
+    def name(self):
+        return self.debug_name() # for now
+
+    def debug_name(self):
+        # unholy magic, just for debugging! Returns the variable
+        # name of the object assigned to
+        #
+        #    a = DeferredTable()
+        #    a.name == 'a'
+
+        import sys, gc
+
+        def find_names(obj):
+            frame = sys._getframe(1)
+            while frame is not None:
+                frame.f_locals
+                frame = frame.f_back
+
+            for referrer in gc.get_referrers(obj):
+                if isinstance(referrer, dict):
+                    for k, v in referrer.iteritems():
+                        if v is obj:
+                            if len(k) == 1:
+                                return k
+
+        return find_names(self)
 
     # Other non-graph methods
     # ========================

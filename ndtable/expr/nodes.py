@@ -58,28 +58,28 @@ class Node(object):
 # Values
 # ===========
 
-class Literal(Node):
-    # TODO: better word for demarcating the "fusion block"
-    initial = True
-
-class Indexable(Literal):
+class Indexable(Node):
     __slots__ = ['children', 'metadata', 'target']
 
     def __init__(self, args, target):
         self.children = args
         self.target = target
 
-class ScalarNode(Literal):
+    @property
+    def name(self):
+        return 'Table'
+
+class ScalarNode(Node):
     pass
 
-class StringNode(Literal):
+class StringNode(Node):
     pass
 
 # ===========
 # Operations
 # ===========
 
-class Op(Node):
+class Op(object):
     __slots__ = ['children', 'metadata', 'op']
 
     def __init__(self, op, operands):
@@ -88,7 +88,7 @@ class Op(Node):
 
     @property
     def name(self):
-        return self.__class__.__name__
+        return self.op
 
 class NullaryOp(Op):
     arity = 0

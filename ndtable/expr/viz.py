@@ -1,19 +1,39 @@
-import os
 import pydot
 from ndtable.expr.nodes import Op, ScalarNode, StringNode
+from collections import Counter
 from subprocess import Popen
 from tempfile import NamedTemporaryFile
 
-def build_graph(node, graph=None):
+def build_graph(node, graph=None, context=None, tree=False):
     top = pydot.Node( node.name )
 
     if not graph:
         graph = pydot.Graph(graph_type='digraph')
         graph.add_node( top )
+        context = Counter()
 
     for child in node.children:
-        nd, _ = build_graph(child, graph)
-        nd = pydot.Node(nd.name)
+        nd, _ = build_graph(child, graph, context)
+
+        # Ensure the graph is a tree by adding numbers to the
+        # labels of nodes.
+        if tree:
+
+            if context[nd.name] == 0:
+                # a
+                name = nd.name
+            else:
+                # a1, a2, a3
+                name = nd.name + str(context[nd.name])
+
+            context[nd.name] += 1
+
+        # Ensure the graph is a tree by assigning temporaries to
+        # the repeated values
+        else:
+            name = nd.name
+
+        nd = pydot.Node(name)
         graph.add_node( nd )
         graph.add_edge( pydot.Edge(top, nd) )
 
