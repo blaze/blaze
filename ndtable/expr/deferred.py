@@ -250,21 +250,31 @@ class DeferredTable(object):
         element access should return bare scalars.
         """
         if isinstance(ndx, Integral) or isinstance(ndx, np.integer):
-            return self._call("__getitem__", (ndx,), {})
+            return self.generate_node(1, Slice, ndx)
         else:
             return self.generate_node(-1, Slice, ndx)
+
+    def __getslice__(self, start, stop, step):
+        """ Slicing operations should return graph nodes, while individual
+        element access should return bare scalars.
+        """
+        args = [start, stop, step]
+        return self.generate_node(-1, Slice, args)
 
     # Python Intrinsics
     # -----------------
     for name in PyObject_Intrinsics:
+        # Bound methods are actually just unary functions with
+        # the first argument self
         exec (
             "def __%(name)s__(self,*args, **kwargs):\n"
-            "    return self.generate_node(0, '%(name)s',args, kwargs)"
+            "    return self.generate_node(1, '%(name)s',args, kwargs)"
         ) % locals()
 
     # Unary Prefix
     # ------------
     for name, op in PyObject_UnaryOperators:
+
         exec (
             "def __%(name)s__(self):\n"
             "    return self.generate_node(1, '%(name)s',args, kwargs)"
