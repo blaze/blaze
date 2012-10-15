@@ -5,9 +5,8 @@ Core of the deferred expression engine.
 from numbers import Number
 from collections import Iterable
 
-from ndtable.table import DataTable
+from ndtable.table import NDTable
 from ndtable.expr.nodes import Node, StringNode, ScalarNode, Slice
-
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -16,8 +15,12 @@ try:
 except ImportError:
     np = {"integer": numbers.Integral}
 
-_max_argument_len       = 1000
+#------------------------------------------------------------------------
+# Globals
+#------------------------------------------------------------------------
+
 _max_argument_recursion = 25
+_max_argument_len       = 1000
 _argument_sample        = 100
 
 def set_max_argument_len(val):
@@ -27,6 +30,10 @@ def set_max_argument_len(val):
 def set_max_argument_recursion(val):
     global _max_argument_recursion
     _max_argument_recursion = val
+
+#------------------------------------------------------------------------
+# Method Maps
+#------------------------------------------------------------------------
 
 PyObject_BinaryOperators = [
     ('or','|'),  ('and','&'), ('xor','^'), ('lshift','<<'), ('rshift','>>'),
@@ -62,16 +69,20 @@ PyArray_ReadMethods = [
     'sum', 'swapaxes', 'take', 'trace', 'transpose', 'var', 'view'
 ]
 
+#------------------------------------------------------------------------
+# Graph Construction
+#------------------------------------------------------------------------
 
 def is_homogeneous(it):
     # type() comparisions are cheap pointer arithmetic on
     # PyObject->tp_type, isinstance() calls are expensive since
     # they have travese the whole mro hierarchy
 
-    head = type(it[0])
-    return head, [type(a) == head for a in it]
+    head = it[0]
+    head_type = type(head)
+    return head, [type(a) == head_type for a in it]
 
-def injest_iterable(graph, arg, depth=0):
+def injest_iterable(arg, depth=0):
     # TODO: Should be 1 stack frame per each recursion so we
     # don't blow up Python trying to parse big structures
 
@@ -89,24 +100,30 @@ def injest_iterable(graph, arg, depth=0):
             head, is_homog = is_homogeneous(sample)
             is_hetero = not is_homog
 
-            if is_homog and isinstance(head, Number):
-                return [ScalarNode(graph, a) for a in arg]
-            elif is_homog and isinstance(head, basestring):
-                return [StringNode(graph, a) for a in arg]
+            # Homogenous Arguments
+            # ======================
 
-            # Worst-case, we have a heterogenous list of
-            if is_hetero:
+            if is_homog:
+                if isinstance(head, Number):
+                    return [ScalarNode(a) for a in arg]
+                elif isinstance(head, basestring):
+                    return [StringNode(a) for a in arg]
+
+            # Heterogenous Arguments
+            # ======================
+
+            elif is_hetero:
                 args = []
                 for a in arg:
                     if isinstance(a, Iterable):
-                        sub = injest_iterable(graph, a, depth+1)
+                        sub = injest_iterable(a, depth+1)
                         a.append(sub)
                     elif isinstance(a, Node):
                         args.append(a)
                     elif isinstance(a, Number):
-                        args.append(ScalarNode(graph, a))
+                        args.append(ScalarNode(a))
                     elif isinstance(a, basestring):
-                        args.append(StringNode(graph, a))
+                        args.append(StringNode(a))
                     else:
                         raise TypeError("Unknown type")
                 return args
@@ -116,9 +133,14 @@ def injest_iterable(graph, arg, depth=0):
             "Too many dynamic arguments to build expression
             graph. Consider alternative construction.""")
 
+#------------------------------------------------------------------------
+# Table
+#------------------------------------------------------------------------
+
+# A thin wrapper around a Node object
 class DeferredTable(object):
 
-    def __init__(self, source, target=DataTable, depends=None):
+    def __init__(self, args, target=NDTable, depends=None):
         # We want the operations on the table to be
         # closed ( in the algebraic sense ) so that we don't
         # escape to Tables when we're using DataTables.
@@ -129,13 +151,10 @@ class DeferredTable(object):
         # Auto resolve the graph
 
         if depends is None:
-            self.node = Node('__init__', **{
-                'args'   : injest_iterable(self.node),
-                'target' : target,
-            })
-
+            fields = injest_iterable(args)
+            self.node = Node('init', *fields)
         else:
-            self.node = Node('__init__', source, target)
+            self.node = Node('init', args, target)
             self.node.depends_on(depends)
 
     def generate_node(self, fname, args, kwargs):
@@ -218,7 +237,7 @@ class DeferredTable(object):
     for name in PyObject_Intrinsics:
         exec (
             "def __%(name)s__(self,*args, **kwargs):\n"
-            "    return self.generate_node(%(name)s args, kwargs)"
+            "    return self.generate_node('%(name)s',args, kwargs)"
         ) % locals()
 
     # Unary Prefix
@@ -226,13 +245,13 @@ class DeferredTable(object):
     for name, op in PyObject_UnaryOperators:
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(%(name)s args, kwargs)"
+            "    return self.generate_node('%(name)s',args, kwargs)"
         ) % locals()
 
     for name in PyArray_ReadMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node(%(name)s args, kwargs)"
+            "    return self.generate_node('%(name)s',args, kwargs)"
         ) % locals()
 
     # Binary Prefix
@@ -240,10 +259,10 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __%(name)s__(self,ob):\n"
-            "    return self.generate_node(%(name)s args, kwargs)"
+            "    return self.generate_node('%(name)s',args, kwargs)"
             "\n"
             "def __r%(name)s__(self,ob):\n"
-            "    return self.generate_node(%(name)s args, kwargs)"
+            "    return self.generate_node('%(name)s',args, kwargs)"
             "\n"
         )  % locals()
 
@@ -253,14 +272,14 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self,ob):\n"
-            "    return self.generate_node(%(name)s args, kwargs)"
+            "    return self.generate_node('%(name)s',args, kwargs)"
             "\n"
         )  % locals()
 
     for name in PyArray_WriteMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node(%(name)s args, kwargs)"
+            "    return self.generate_node('%(name)s',args, kwargs)"
         ) % locals()
 
     # Other non-graph methods
