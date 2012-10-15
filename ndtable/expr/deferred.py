@@ -2,8 +2,8 @@
 Core of the deferred expression engine.
 """
 
-from numbers import Number, Integral
 from collections import Iterable
+from numbers import Number, Integral
 
 from ndtable.table import NDTable
 from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
@@ -164,24 +164,29 @@ class DeferredTable(object):
         if depends is None:
             fields = injest_iterable(args)
             self.node = Node('init', *fields)
-            self.node.depends_on(fields)
+            self.node.depends_on(*fields)
         else:
             self.node = Node('init', args, target)
             self.node.depends_on(*depends)
 
-    def generate_node(self, arity, fname, args, kwargs):
+    def generate_node(self, arity, fname, args=None, kwargs=None):
 
         if arity == -1:
-            return NaryOp(fname, args, kwargs)
+            ret = NaryOp(fname, args, kwargs)
 
         elif arity == 0:
-            return NullaryOp(fname)
+            ret =  NullaryOp(fname)
 
         elif arity == 1:
-            return UnaryOp(fname, args, kwargs)
+            ret =  UnaryOp(fname, args, kwargs)
 
         elif arity == 2:
-            return BinaryOp(fname, args, kwargs)
+            ret = BinaryOp(fname, args, kwargs)
+
+        # side-effectful graph append
+        ret.depends_on(self.node)
+
+        return ret
 
     # Numpy-compatible shape/flag attributes
     # ======================================
@@ -277,13 +282,13 @@ class DeferredTable(object):
 
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s',args, kwargs)"
+            "    return self.generate_node(1, '%(name)s', args, kwargs)"
         ) % locals()
 
     for name in PyArray_ReadMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node(-1, '%(name)s',args, kwargs)"
+            "    return self.generate_node(-1, '%(name)s', args, kwargs)"
         ) % locals()
 
     # Binary Prefix
@@ -291,10 +296,10 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __%(name)s__(self,ob):\n"
-            "    return self.generate_node(2, '%(name)s',args, kwargs)"
+            "    return self.generate_node(2, '%(name)s', self.node, ob)"
             "\n"
             "def __r%(name)s__(self,ob):\n"
-            "    return self.generate_node(2, '%(name)s',args, kwargs)"
+            "    return self.generate_node(2, '%(name)s', self.node, ob)"
             "\n"
         )  % locals()
 
@@ -304,7 +309,7 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self,ob):\n"
-            "    return self.generate_node(2, '%(name)s',args, kwargs)"
+            "    return self.generate_node(2, '%(name)s', args, kwargs)"
             "\n"
         )  % locals()
 

@@ -15,16 +15,17 @@ ops = [
     , 'UNARY_POSITIVE'
     , 'UNARY_NEGATIVE'
     , 'UNARY_NOT'
-    , 'UNARY_CONVERT'
     , 'UNARY_INVERT'
-    , 'BINARY_POWER'
-    , 'BINARY_MULTIPLY'
-    , 'BINARY_DIVIDE'
-    , 'BINARY_MODULO'
+
     , 'BINARY_ADD'
+    , 'BINARY_MULTIPLY'
     , 'BINARY_SUBTRACT'
-    , 'BINARY_ALL'
-    , 'BINARY_ANY'
+    , 'BINARY_MODULO'
+    , 'BINARY_POWER'
+    , 'BINARY_DIVIDE'
+    , 'BINARY_AND'
+    , 'BINARY_OR'
+    , 'BINARY_XOR'
 
     , 'INDEX_ELEMENT'
     , 'INDEX_SLICE'
@@ -32,6 +33,8 @@ ops = [
 
     , 'BOUNDSCHECK'
     , 'PROMOTE'
+
+    , 'FFI'
 ]
 
 # Types not in this map would require a promotion operation at
