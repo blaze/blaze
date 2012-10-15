@@ -2,7 +2,8 @@ from collections import deque
 from ndtable.table import NDTable
 
 class Node(object):
-    __slots__ = ['fields', 'metadata']
+    # Use __slots__ so we don't incur the full cost of a class
+    __slots__ = ['fields', 'metadata', 'listeners']
 
     def __init__(self, *fields):
         self.fields = fields
@@ -12,8 +13,17 @@ class Node(object):
         for field in self.fields:
             yield field
 
-    def depends_on(self, depends):
+    @property
+    def name(self):
+        if self.fields:
+            return self.__class__.__name__  +  " " + str(self.fields[0])
+        else:
+            return self.__class__.__name__
+
+    def depends_on(self, *depends):
         self.listeners += depends
+
+    attach = depends_on
 
     def __iter__(self):
         for name, field in self.iter_fields():

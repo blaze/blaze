@@ -137,10 +137,6 @@ class DeferredTable(object):
     def generate_node(self, fname, args, kwargs):
         return Node(fname, args, kwargs)
 
-    @property
-    def size(self):
-        return self._underlying.size
-
     # Read Operations
     # ===============
 
