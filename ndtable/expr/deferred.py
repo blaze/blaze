@@ -89,6 +89,10 @@ def injest_iterable(arg, depth=0):
 
     # tuple, list, dictionary, any recursive combination of them
     if isinstance(arg, Iterable):
+
+        if len(arg) == 0:
+            return []
+
         if len(arg) < _max_argument_len:
             sample = arg[0:_argument_sample]
 
@@ -98,13 +102,15 @@ def injest_iterable(arg, depth=0):
             is_hetero = not is_homog
 
             # Homogenous Arguments
-            # ======================
+            # ====================
 
             if is_homog:
                 if isinstance(head, Number):
                     return [ScalarNode(a) for a in arg]
                 elif isinstance(head, basestring):
                     return [StringNode(a) for a in arg]
+                else:
+                    return arg
 
             # Heterogenous Arguments
             # ======================
@@ -150,6 +156,7 @@ class DeferredTable(object):
         if depends is None:
             fields = injest_iterable(args)
             self.node = Node('init', *fields)
+            self.node.depends_on(fields)
         else:
             self.node = Node('init', args, target)
             self.node.depends_on(depends)
