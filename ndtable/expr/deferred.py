@@ -6,7 +6,14 @@ from numbers import Number
 from collections import Iterable
 
 from ndtable.table import NDTable
-from ndtable.expr.nodes import Node, StringNode, ScalarNode
+from ndtable.expr.nodes import Node, StringNode, ScalarNode, Slice
+
+# conditional import of Numpy; if it doesn't exist, then set up dummy objects
+# for the things we use
+try:
+    import numpy as np
+except ImportError:
+    np = {"integer": numbers.Integral}
 
 #------------------------------------------------------------------------
 # Globals
@@ -49,21 +56,17 @@ PyArray_Intrinsics = [
 ]
 
 PyArray_WriteMethods = [
-    'fill', 'itemset', 'put'
+    'fill', 'itemset', 'put', 'setflags', 'setfield'
 ]
 
 PyArray_ReadMethods = [
-    'all', 'any', 'argmax', 'argmin', 'argsort', 'astype', 'base',
-    'byteswap', 'choose', 'clip', 'compress', 'conj', 'conjugate',
-    'copy', 'ctypes', 'cumprod', 'cumsum', 'data', 'diagonal', 'dot',
-    'dtype', 'dump', 'dumps', 'flags', 'flat', 'flatten', 'getfield',
-    'imag', 'item', 'itemset', 'itemsize', 'max', 'mean',
-    'min', 'nbytes', 'ndim', 'newbyteorder', 'nonzero', 'prod', 'ptp',
-    'ravel', 'real', 'repeat', 'reshape', 'resize', 'round',
-    'searchsorted', 'setasflat', 'setfield', 'setflags', 'shape',
-    'size', 'sort', 'squeeze', 'std', 'strides', 'sum', 'swapaxes',
-    'take', 'tofile', 'tolist', 'tostring', 'trace', 'transpose', 'var',
-    'view'
+    'all', 'any', 'argmax', 'argmin', 'argsort', 'astype', 'base', 'byteswap',
+    'choose', 'clip', 'compress', 'conj', 'conjugate', 'copy', 'ctypes',
+    'cumprod', 'cumsum', 'data', 'diagonal', 'dot', 'dtype', 'dump', 'dumps',
+    'flatten', 'getfield', 'item', 'max', 'mean', 'min', 'nbytes',
+    'newbyteorder', 'nonzero', 'prod', 'ptp', 'ravel', 'repeat', 'reshape',
+    'resize', 'round', 'searchsorted', 'setasflat', 'sort', 'squeeze', 'std',
+    'sum', 'swapaxes', 'take', 'trace', 'transpose', 'var', 'view'
 ]
 
 #------------------------------------------------------------------------
@@ -168,8 +171,77 @@ class DeferredTable(object):
     def generate_node(self, fname, args, kwargs):
         return Node(fname, args, kwargs)
 
+
+    # Numpy-compatible shape/flag attributes
+    # ======================================
+    # These are evaluated in immediate mode, and do not return a deferred 
+    # graph node.  This implies that stream-generating functions (i.e. nodes
+    # whose shape information requires a data evaluation) will actually
+    # trigger an eval().
+
+    @property
+    def flags(self):
+        pass
+    
+    @property
+    def itemsize(self):
+        pass
+    
+    @property
+    def strides(self):
+        pass
+
+    @property
+    def shape(self):
+        pass
+
+    @property
+    def ndim(self):
+        pass
+
+    @property
+    def size(self):
+        pass
+
+    @property
+    def dtype(self):
+        pass
+
+    # Numpy-compatible data attributes
+    # ================================
+
+    @property
+    def imag(self):
+        # TODO: Add an imag() graph operator, and make this call it.
+        pass
+
+    @property
+    def real(self):
+        # TODO: Add a real() graph operator, and make this call it.
+        pass
+
+    @property
+    def flat(self):
+        """ Equivalent to .reshape(), which returns a graph node. """
+        pass
+
+    @property
+    def T(self):
+        """ Equivalent to .transpose(), which returns a graph node. """
+        pass
+
+
     # Read Operations
     # ===============
+
+    def __getitem__(self, ndx):
+        """ Slicing operations should return graph nodes, while individual
+        element access should return bare scalars.
+        """
+        if isinstance(ndx, numbers.Integral) or isinstance(ndx, np.integer):
+            return self._call("__getitem__", (ndx,), {})
+        else:
+            return self.generate_node(Slice, ndx)
 
     # Python Intrinsics
     # -----------------
@@ -220,3 +292,16 @@ class DeferredTable(object):
             "def %(name)s(self, *args, **kwargs):\n"
             "    return self.generate_node('%(name)s',args, kwargs)"
         ) % locals()
+
+    # Other non-graph methods
+    # ========================
+
+    def tofile(self, *args, **kw):
+        pass
+
+    def tolist(self, *args, **kw):
+        pass
+
+    def tostring(self, *args, **kw):
+        pass
+
