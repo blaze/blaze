@@ -5,10 +5,14 @@ class Node(object):
 
     def __init__(self, *fields):
         self.fields = fields
+        self.listeners = []
 
     def iter_fields(self):
         for field in self.fields:
             yield field
+
+    def depends_on(self, depends):
+        self.listeners += depends
 
     def __iter__(self):
         for name, field in self.iter_fields():
@@ -91,23 +95,36 @@ class ExprTransformer(object):
         raise NotImplementedError()
 
 # ===========
-# Expressions
+# Values
 # ===========
 
-class Function(Node):
+class Val(Node):
     pass
 
-class UnaryOp(Node):
+class ScalarNode(Val):
     pass
 
-class BinaryOp(Node):
+class StringNode(Val):
     pass
 
-class NaryOp(Node):
+# ===========
+# Operations
+# ===========
+
+class Op(Node):
     pass
 
-class Slice(Node):
+class UnaryOp(Op):
     pass
 
-class Apply(Node):
+class BinaryOp(Op):
+    pass
+
+class NaryOp(Op):
+    pass
+
+class Slice(Op):
+    pass
+
+class Apply(Op):
     pass

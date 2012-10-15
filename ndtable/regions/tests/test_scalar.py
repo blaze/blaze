@@ -1,4 +1,5 @@
-from ndtable.regions.scalar import interval, Chart, vstack, hstack
+from ndtable.regions.scalar import interval, Chart, vstack,\
+    hstack, dstack
 
 def test_multiple_charts():
     alpha = object()
@@ -11,7 +12,6 @@ def test_multiple_charts():
     y = Chart([a,b], beta)
 
     s = hstack(x,y)
-    t = vstack(x,y)
 
 def test_vertical_stack():
     alpha = object()
@@ -89,9 +89,9 @@ def test_third_axis():
     y = Chart([a,b,c], beta)
 
     # -------------
-    s = vstack(x,y)
+    s = dstack(x,y)
     # -------------
 
     block, coords = s[[0,0,0]]
-    assert block is alpha
+    #assert block is alpha
     assert coords == [0,0,0]

@@ -43,30 +43,30 @@ table1_normal = """N, Record(
 )
 """
 
-def test_hdf5_create_regular():
-    # Concatentation of two regular tables into one Blaze DataTable
+#def test_hdf5_create_regular():
+    ## Concatentation of two regular tables into one Blaze DataTable
 
-    ai = HDF5Source(Table1, path='example.h5/' 'a')
-    bi = HDF5Source(Table1, path='example.h5/' 'b')
+    #ai = HDF5Source(Table1, path='example.h5/' 'a')
+    #bi = HDF5Source(Table1, path='example.h5/' 'b')
 
-    shape = datashape(table1_ds)
-    table = NDTable.from_providers(shape, ai, bi)
+    #shape = datashape(table1_ds)
+    #table = NDTable.from_providers(shape, ai, bi)
 
-    assert table.space.regular
-    assert table.space.covers
+    #assert table.space.regular
+    #assert table.space.covers
 
-def test_hdf5_create_irregular():
-    # Concatentation of two irregular tables into one Blaze DataTable
-    # using a join on the ``name`` column inferred from the outer
-    # datashape.
+#def test_hdf5_create_irregular():
+    ## Concatentation of two irregular tables into one Blaze DataTable
+    ## using a join on the ``name`` column inferred from the outer
+    ## datashape.
 
-    ci = HDF5Source(Table1, path='example.h5/' 'c')
-    di = HDF5Source(Table2, path='example.h5/' 'd')
+    #ci = HDF5Source(Table1, path='example.h5/' 'c')
+    #di = HDF5Source(Table2, path='example.h5/' 'd')
 
-    shape = datashape(table1_ds)
-    table = NDTable.from_providers(shape, ci, di)
+    #shape = datashape(table1_ds)
+    #table = NDTable.from_providers(shape, ci, di)
 
-    assert not table.space.regular
+    #assert not table.space.regular
 
 #def test_hdf5_create_snowflake():
 
@@ -76,14 +76,14 @@ def test_hdf5_create_irregular():
     #shape = datashape(table1_ds)
     #table = NDTable.from_providers(shape, ci, di)
 
-def test_hdf5_indexing():
+#def test_hdf5_indexing():
     # Concatentation of two regular tables into one Blaze DataTable
 
-    ai = HDF5Source(Table1, path='example.h5/' 'a')
-    bi = HDF5Source(Table1, path='example.h5/' 'b')
+    #ai = HDF5Source(Table1, path='example.h5/' 'a')
+    #bi = HDF5Source(Table1, path='example.h5/' 'b')
 
-    shape = datashape(table1_ds)
-    table = NDTable.from_providers(shape, ai, bi)
+    #shape = datashape(table1_ds)
+    #table = NDTable.from_providers(shape, ai, bi)
 
     #result = table[0]
     #import pdb; pdb.set_trace()

@@ -56,6 +56,7 @@ Horizontal Stacking
                      (i,j) -> (i, j)
 """
 
+from copy import copy
 from numpy import zeros
 from pprint import pformat
 from functools import partial
@@ -76,18 +77,18 @@ def ctranslate(factor, axi):
 
     # TODO: Certainly better way to write this...
     def T(xs):
-        xs = list(xs)
-        for x, j in zip(xrange(len(xs)), axi):
+        zs = xs[:]
+        for x, j in zip(xrange(len(zs)), axi):
             if j == 1:
-                xs[x] += factor
-        return xs
+                zs[x] = zs[x] + factor
+        return zs
 
-    def Tinv(ys):
-        ys = list(ys)
-        for y, j in zip(xrange(len(ys)), axi):
+    def Tinv(xs):
+        zs = xs[:]
+        for y, j in zip(xrange(len(zs)), axi):
             if j == 1:
-                ys[y] -= factor
-        return ys
+                zs[y] = zs[y] - factor
+        return zs
 
     return T, Tinv
 
@@ -142,7 +143,9 @@ def stack(c1,c2, axis):
     n = abs(i2-s1)
     assert n > 0
 
-    T, Tinv = ctranslate(n, axis)
+    xs = copy(axis)
+
+    T, Tinv = ctranslate(n, xs)
     return T, Tinv
 
 #------------------------------------------------------------------------
@@ -156,10 +159,10 @@ class interval(object):
         self.inf = inf
         self.sup = sup
 
-    def __iadd__(self, n):
+    def __add__(self, n):
         return interval(self.inf + n, self.sup + n)
 
-    def __imul__(self, n):
+    def __mul__(self, n):
         return interval(self.inf * n, self.sup * n)
 
     def __repr__(self):
@@ -181,6 +184,7 @@ class Chart(object):
 
         if not tinv:
             self.tinv = None
+            # We're at the bottom turtle
             self.transformed = False
         else:
             self.tinv = tinv
@@ -359,7 +363,3 @@ def hstack(a, b):
 
 def dstack(a, b):
     return nstack(2, a, b)
-
-#vstack = partial(nstack, 0)
-#hstack = partial(nstack, 1)
-#dstack = partial(nstack, 2)
