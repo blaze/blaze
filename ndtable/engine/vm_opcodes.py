@@ -1,19 +1,16 @@
 # Binary
-# $OP $R1 $R2
+# $OP $1 $2
 
 # Unary
-# $OP $R1
-
-# Unary
-# $OP $R1
+# $OP $1
 
 # Function
-# $OP $OP $R1
+# $OP $OP $1...
 
 ops = [
-      'MAP'
-    , 'REDUCE'
-    , 'ACCUMULATE'
+      'FUNC_MAP'
+    , 'FUNC_REDUCE'
+    , 'FUNC_ACCUMULATE'
 
     , 'UNARY_POSITIVE'
     , 'UNARY_NEGATIVE'
