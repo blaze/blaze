@@ -6,7 +6,7 @@ def _pytables():
     tr = Rosetta()
     tr.namespace = pytables
 
-    expr = open('rosetta/pytables.py').read()
+    expr = open('rosetta/pytables.table').read()
     stone = tr.visit(parse(expr))
 
     return dict(a.astuple() for a in stone)

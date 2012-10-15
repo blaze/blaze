@@ -1,5 +1,6 @@
 from ndtable.datashape.parse import parse, load
 from ndtable.datashape import *
+from ndtable.datashape.recordclass import RecordClass
 
 from textwrap import dedent
 

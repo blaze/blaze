@@ -17,7 +17,7 @@ def test_dynamic_arguments():
 
 def test_dynamic_explicit():
     a = DeferredTable([])
-    b = DeferredTable([a], depends=a)
+    b = DeferredTable([a], depends=[a])
 
     fields = b.node.fields
     assert fields[0] == 'init'

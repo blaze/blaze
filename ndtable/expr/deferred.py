@@ -79,7 +79,7 @@ def is_homogeneous(it):
     head_type = type(head)
     return head, [type(a) == head_type for a in it]
 
-def injest_iterable(arg, depth=0):
+def injest_iterable(args, depth=0):
     # TODO: Should be 1 stack frame per each recursion so we
     # don't blow up Python trying to parse big structures
 
@@ -88,13 +88,13 @@ def injest_iterable(arg, depth=0):
         "Maximum recursion depth reached while parsing arguments")
 
     # tuple, list, dictionary, any recursive combination of them
-    if isinstance(arg, Iterable):
+    if isinstance(args, Iterable):
 
-        if len(arg) == 0:
+        if len(args) == 0:
             return []
 
-        if len(arg) < _max_argument_len:
-            sample = arg[0:_argument_sample]
+        if len(args) < _max_argument_len:
+            sample = args[0:_argument_sample]
 
             # If the first 100 elements are type homogenous then
             # it's likely the rest of the iterable is.
@@ -106,21 +106,25 @@ def injest_iterable(arg, depth=0):
 
             if is_homog:
                 if isinstance(head, Number):
-                    return [ScalarNode(a) for a in arg]
+                    return [ScalarNode(a) for a in args]
                 elif isinstance(head, basestring):
-                    return [StringNode(a) for a in arg]
+                    return [StringNode(a) for a in args]
+                elif isinstance(head, DeferredTable):
+                    return [a.node for a in args]
                 else:
-                    return arg
+                    return args
 
             # Heterogenous Arguments
             # ======================
 
             elif is_hetero:
                 args = []
-                for a in arg:
+                for a in args:
                     if isinstance(a, Iterable):
                         sub = injest_iterable(a, depth+1)
                         a.append(sub)
+                    elif isinstance(a, DeferredTable):
+                        args.append(a.node)
                     elif isinstance(a, Node):
                         args.append(a)
                     elif isinstance(a, Number):
@@ -159,7 +163,7 @@ class DeferredTable(object):
             self.node.depends_on(fields)
         else:
             self.node = Node('init', args, target)
-            self.node.depends_on(depends)
+            self.node.depends_on(*depends)
 
     def generate_node(self, fname, args, kwargs):
         return Node(fname, args, kwargs)

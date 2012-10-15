@@ -9,7 +9,6 @@ interoperate at the ByteProvider level.
 """
 
 import ast
-from pprint import pprint
 from string import translate
 from ndtable.datashape.parse import Translate, Visitor, op_table
 
