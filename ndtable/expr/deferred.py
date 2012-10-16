@@ -154,14 +154,12 @@ def injest_iterable(args, depth=0):
 #------------------------------------------------------------------------
 
 # A thin wrapper around a Node object
-class DeferredTable(object):
+class Deferred(object):
 
-    def __init__(self, args, target=NDTable, depends=None):
+    def __init__(self, args, depends=None):
         # We want the operations on the table to be
         # closed ( in the algebraic sense ) so that we don't
         # escape to Tables when we're using DataTables.
-        self.target = target
-
         if depends is None:
             self.node = self
             self.children = injest_iterable(args)
@@ -231,18 +229,16 @@ class DeferredTable(object):
 
     @property
     def imag(self):
-        # TODO: Add an imag() graph operator, and make this call it.
-        pass
+        return Op('imag', self.node)
 
     @property
     def real(self):
-        # TODO: Add a real() graph operator, and make this call it.
-        pass
+        return Op('imag', self.node)
 
     @property
     def flat(self):
         """ Equivalent to .reshape(), which returns a graph node. """
-        pass
+        return Op('flat', self.node)
 
     @property
     def T(self):
@@ -365,3 +361,8 @@ class DeferredTable(object):
 
     def tostring(self, *args, **kw):
         pass
+
+
+# For now
+class DeferredTable(Deferred, NDTable):
+    pass

@@ -2,12 +2,16 @@ from abc import ABCMeta
 from collections import deque
 from ndtable.table import NDTable
 
+#------------------------------------------------------------------------
+# Graph Objects
+#------------------------------------------------------------------------
+
 class Node(object):
     """ Represents a node in the expression graph which Blaze compiles into
     a program for the Array VM.
     """
     # Use __slots__ so we don't incur the full cost of a class
-    __slots__ = ['children', 'metadata']
+    __slots__ = ['children']
     __metaclass__ = ABCMeta
 
     def __init__(self, *children):
@@ -20,21 +24,6 @@ class Node(object):
     @property
     def name(self):
         return self.__class__.__name__
-
-    @classmethod
-    def __subclasshook__(cls, other):
-        """
-        If it quacks like a graph, then it is a graph.
-        """
-        if cls is Node:
-            try:
-                getattr(cls, 'name')
-                getattr(cls, 'children')
-                getattr(cls, '__iter__')
-                return True
-            except AttributeError:
-                return False
-        raise NotImplemented
 
     def __iter__(self):
         """
@@ -74,13 +63,12 @@ class Node(object):
                     if isinstance(item, Node):
                         switch(child)
 
-
-# ===========
+#------------------------------------------------------------------------
 # Values
-# ===========
+#------------------------------------------------------------------------
 
 class Literal(Node):
-    __slots__ = ['children', 'metadata', 'vtype']
+    __slots__ = ['children', 'vtype']
 
     def __init__(self, val):
         assert isinstance(val, self.vtype)
@@ -104,12 +92,12 @@ class IndexNode(Literal):
     def name(self):
         return 'Index%s' % str(self.val)
 
-# ===========
+#------------------------------------------------------------------------
 # Operations
-# ===========
+#------------------------------------------------------------------------
 
 class Op(Node):
-    __slots__ = ['children', 'metadata', 'op']
+    __slots__ = ['children', 'op']
 
     def __init__(self, op, operands):
         self.op = op
@@ -135,12 +123,9 @@ class Slice(Op):
     # $0, start, stop, step
     arity = 4
 
-class Apply(Op):
-    pass
-
-# ===========
-# Combinators
-# ===========
+#------------------------------------------------------------------------
+# Functions
+#------------------------------------------------------------------------
 
 class Map(Op):
     pass
@@ -149,9 +134,9 @@ class Reduce(Op):
     # TODO: better word for demarcating the "fusion block"
     terminal = True
 
-# ============
-# Tree Walking
-# ============
+#------------------------------------------------------------------------
+# Traversal
+#------------------------------------------------------------------------
 
 def traverse(node):
      tree = deque([node])
@@ -159,10 +144,6 @@ def traverse(node):
          node = tree.popleft()
          tree.extend(iter(node))
          yield node
-
-# ===========
-# Graph Nodes
-# ===========
 
 class ExprTransformer(object):
 

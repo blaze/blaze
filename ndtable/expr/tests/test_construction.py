@@ -27,7 +27,7 @@ def test_binary_ops():
     b = DeferredTable([])
 
     x = a+b
-    y = x*b
+    y = x*a
 
     dump(y, filename='binary')
 
@@ -54,4 +54,4 @@ def test_scalars():
     b = ScalarNode(1)
 
     x = DeferredTable([a,b])
-    dump(x, filename='indexer')
+    dump(x, filename='scalars')
