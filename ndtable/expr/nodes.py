@@ -107,9 +107,6 @@ class Op(Node):
     def name(self):
         return self.op
 
-class NullaryOp(Op):
-    arity = 0
-
 class UnaryOp(Op):
     arity = 1
 

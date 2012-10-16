@@ -6,9 +6,8 @@ from functools import wraps
 from collections import Iterable
 from numbers import Number, Integral
 
-from ndtable.table import NDTable
 from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
-    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Op, IndexNode
+    Slice, UnaryOp, BinaryOp, NaryOp, Op, IndexNode
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -24,7 +23,7 @@ except ImportError:
 _max_argument_recursion = 25
 _max_argument_len       = 1000
 _argument_sample        = 100
-_perform_typecheck      = 100
+_perform_typecheck      = True
 
 def set_max_argument_len(val):
     global _max_argument_len
@@ -90,7 +89,7 @@ def is_homogeneous(it):
 
     head = it[0]
     head_type = type(head)
-    return head, all([type(a) == head_type for a in it])
+    return head, all(type(a) == head_type for a in it)
 
 def injest_iterable(args, depth=0):
     # TODO: Should be 1 stack frame per each recursion so we
@@ -123,7 +122,7 @@ def injest_iterable(args, depth=0):
                     return [ScalarNode(a) for a in args]
                 elif isinstance(head, basestring):
                     return [StringNode(a) for a in args]
-                elif isinstance(head, DeferredTable):
+                elif isinstance(head, NDTable):
                     return [a.node for a in args]
                 else:
                     return args
@@ -141,7 +140,7 @@ def injest_iterable(args, depth=0):
                     if isinstance(a, (list, tuple)):
                         sub = injest_iterable(a, depth+1)
                         ret.append(sub)
-                    elif isinstance(a, DeferredTable):
+                    elif isinstance(a, NDTable):
                         ret.append(a.node)
                     elif isinstance(a, Node):
                         ret.append(a)
@@ -175,10 +174,6 @@ class ExpressionNode(Node):
 
         if arity == -1:
             return NaryOp(fname, iargs, kwargs)
-
-        elif arity == 0:
-            assert len(iargs) == arity
-            return NullaryOp(fname)
 
         elif arity == 1:
             assert len(iargs) == arity
@@ -352,7 +347,7 @@ class ArrayNode(ExpressionNode):
 #------------------------------------------------------------------------
 
 # A thin wrapper around a Node object
-class DeferredTable(ArrayNode):
+class NDTable(ArrayNode):
 
     def __init__(self, args, depends=None):
         # We want the operations on the table to be
@@ -373,7 +368,7 @@ class DeferredTable(ArrayNode):
         # unholy magic, just for debugging! Returns the variable
         # name of the object assigned to
         #
-        #    a = DeferredTable()
+        #    a = NDTable()
         #    a.name == 'a'
 
         import sys, gc
