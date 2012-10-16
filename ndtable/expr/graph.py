@@ -6,8 +6,10 @@ from functools import wraps
 from collections import Iterable
 from numbers import Number, Integral
 
-from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
-    Slice, UnaryOp, BinaryOp, NaryOp, Op, IndexNode
+from ndtable.expr.nodes import Node, Slice, UnaryOp, BinaryOp, \
+    NaryOp, Op
+
+#from ndtable.expr.ops import Bin
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -387,3 +389,32 @@ class NDTable(ArrayNode):
                                 return k
 
         return find_names(self)
+
+#------------------------------------------------------------------------
+# Values
+#------------------------------------------------------------------------
+
+class Literal(Node):
+    __slots__ = ['children', 'vtype']
+
+    def __init__(self, val):
+        assert isinstance(val, self.vtype)
+        self.val = val
+        self.children = []
+
+    @property
+    def name(self):
+        return str(self.val)
+
+class ScalarNode(Literal):
+    vtype = int
+
+class StringNode(Literal):
+    vtype = str
+
+class IndexNode(Literal):
+    vtype = tuple
+
+    @property
+    def name(self):
+        return 'Index%s' % str(self.val)

@@ -1,6 +1,6 @@
 import pydot
 from cStringIO import StringIO
-from ndtable.expr.nodes import Op, ScalarNode, StringNode
+from ndtable.expr.nodes import Op
 from collections import Counter
 from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile

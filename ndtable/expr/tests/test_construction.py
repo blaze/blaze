@@ -1,5 +1,5 @@
-from ndtable.expr.deferred import NDTable
-from ndtable.expr.nodes import Node, ScalarNode
+from ndtable.expr.nodes import Node
+from ndtable.expr.graph import NDTable, ScalarNode
 from ndtable.expr.viz import dump, build_graph
 
 def test_scalar_arguments():

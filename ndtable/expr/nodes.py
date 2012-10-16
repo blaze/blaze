@@ -64,35 +64,6 @@ class Node(object):
                         switch(child)
 
 #------------------------------------------------------------------------
-# Values
-#------------------------------------------------------------------------
-
-class Literal(Node):
-    __slots__ = ['children', 'vtype']
-
-    def __init__(self, val):
-        assert isinstance(val, self.vtype)
-        self.val = val
-        self.children = []
-
-    @property
-    def name(self):
-        return str(self.val)
-
-class ScalarNode(Literal):
-    vtype = int
-
-class StringNode(Literal):
-    vtype = str
-
-class IndexNode(Literal):
-    vtype = tuple
-
-    @property
-    def name(self):
-        return 'Index%s' % str(self.val)
-
-#------------------------------------------------------------------------
 # Operations
 #------------------------------------------------------------------------
 
