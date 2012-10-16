@@ -1,4 +1,3 @@
-from abc import ABCMeta
 from collections import deque
 from ndtable.table import NDTable
 
@@ -12,7 +11,6 @@ class Node(object):
     """
     # Use __slots__ so we don't incur the full cost of a class
     __slots__ = ['children']
-    __metaclass__ = ABCMeta
 
     def __init__(self, *children):
         self.children  = children
@@ -62,45 +60,6 @@ class Node(object):
                 for item in child:
                     if isinstance(item, Node):
                         switch(child)
-
-#------------------------------------------------------------------------
-# Operations
-#------------------------------------------------------------------------
-
-class Op(Node):
-    __slots__ = ['children', 'op']
-
-    def __init__(self, op, operands):
-        self.op = op
-        self.children = operands
-
-    @property
-    def name(self):
-        return self.op
-
-class UnaryOp(Op):
-    arity = 1
-
-class BinaryOp(Op):
-    arity = 2
-
-class NaryOp(Op):
-    arity = -1
-
-class Slice(Op):
-    # $0, start, stop, step
-    arity = 4
-
-#------------------------------------------------------------------------
-# Functions
-#------------------------------------------------------------------------
-
-class Map(Op):
-    pass
-
-class Reduce(Op):
-    # TODO: better word for demarcating the "fusion block"
-    terminal = True
 
 #------------------------------------------------------------------------
 # Traversal

@@ -1,10 +1,9 @@
-from ndtable.expr.nodes import Node
+from ndtable.expr.viz import dump
 from ndtable.expr.graph import NDTable, ScalarNode
-from ndtable.expr.viz import dump, build_graph
 
 def test_scalar_arguments():
     a = NDTable([1,2,3])
-    children = a.node.children
+    children = a.children
 
     assert len(children) == 3
 
@@ -12,14 +11,14 @@ def test_dynamic_arguments():
     a = NDTable([])
     b = NDTable([a])
 
-    children = b.node.children
+    children = b.children
     assert len(children) == 1
 
 def test_dynamic_explicit():
     a = NDTable([])
     b = NDTable([a], depends=[a])
 
-    children = b.node.children
+    children = b.children
     assert len(children) == 1
 
 def test_binary_ops():

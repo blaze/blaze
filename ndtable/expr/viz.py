@@ -1,9 +1,11 @@
 import pydot
+
 from cStringIO import StringIO
-from ndtable.expr.nodes import Op
 from collections import Counter
 from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile
+
+from ndtable.expr.graph import Op, ScalarNode
 
 def dump(node, ipython=True, filename=None):
     """

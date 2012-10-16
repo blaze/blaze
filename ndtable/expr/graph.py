@@ -6,10 +6,7 @@ from functools import wraps
 from collections import Iterable
 from numbers import Number, Integral
 
-from ndtable.expr.nodes import Node, Slice, UnaryOp, BinaryOp, \
-    NaryOp, Op
-
-#from ndtable.expr.ops import Bin
+from ndtable.expr.nodes import Node
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -125,7 +122,7 @@ def injest_iterable(args, depth=0):
                 elif isinstance(head, basestring):
                     return [StringNode(a) for a in args]
                 elif isinstance(head, NDTable):
-                    return [a.node for a in args]
+                    return [a for a in args]
                 else:
                     return args
 
@@ -143,7 +140,7 @@ def injest_iterable(args, depth=0):
                         sub = injest_iterable(a, depth+1)
                         ret.append(sub)
                     elif isinstance(a, NDTable):
-                        ret.append(a.node)
+                        ret.append(a)
                     elif isinstance(a, Node):
                         ret.append(a)
                     elif isinstance(a, Number):
@@ -192,7 +189,7 @@ class ExpressionNode(Node):
         # the first argument self implicit
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', [self.node])"
+            "    return self.generate_node(1, '%(name)s', [self])"
             "\n"
         ) % locals()
 
@@ -201,7 +198,7 @@ class ExpressionNode(Node):
     for name, op in PyObject_UnaryOperators:
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', [self.node])"
+            "    return self.generate_node(1, '%(name)s', [self])"
             "\n"
         ) % locals()
 
@@ -210,17 +207,17 @@ class ExpressionNode(Node):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
+            "    return self.generate_node(2, '%(name)s', [self, ob])\n"
             "\n"
             "def __r%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
+            "    return self.generate_node(2, '%(name)s', [self, ob])\n"
             "\n"
         )  % locals()
 
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
+            "    return self.generate_node(2, '%(name)s', [self, ob])\n"
             "\n"
         )  % locals()
 
@@ -237,7 +234,7 @@ class ArrayNode(ExpressionNode):
     for name in PyArray_ReadMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    args = (self.node,) + args\n"
+            "    args = (self,) + args\n"
             "    return self.generate_node(-1, '%(name)s', args, kwargs)"
             "\n"
         ) % locals()
@@ -296,21 +293,21 @@ class ArrayNode(ExpressionNode):
 
     @property
     def imag(self):
-        return Op('imag', self.node)
+        return Op('imag', self)
 
     @property
     def real(self):
-        return Op('imag', self.node)
+        return Op('imag', self)
 
     @property
     def flat(self):
         """ Equivalent to .reshape(), which returns a graph node. """
-        return Op('flat', self.node)
+        return Op('flat', self)
 
     @property
     def T(self):
         """ Equivalent to .transpose(), which returns a graph node. """
-        return Op('transpose', self.node)
+        return Op('transpose', self)
 
     # Read Operations
     # ===============
@@ -321,16 +318,16 @@ class ArrayNode(ExpressionNode):
         """
         if isinstance(idx, Integral) or isinstance(idx, np.integer):
             ndx = IndexNode((idx,))
-            return Slice('getitem', [self.node, ndx])
+            return Slice('getitem', [self, ndx])
         else:
             ndx = IndexNode(idx)
-            return Slice('getitem', [self.node, ndx])
+            return Slice('getitem', [self, ndx])
 
     def __getslice__(self, start, stop):
         """
         """
         ndx = IndexNode((start, stop))
-        return Slice('getslice', [self.node, ndx])
+        return Slice('getslice', [self, ndx])
 
     # Other non-graph methods
     # ========================
@@ -344,8 +341,33 @@ class ArrayNode(ExpressionNode):
     def tostring(self, *args, **kw):
         pass
 
+
+class Op(ExpressionNode):
+    __slots__ = ['children', 'op']
+
+    def __init__(self, op, operands):
+        self.op = op
+        self.children = operands
+
+    @property
+    def name(self):
+        return self.op
+
+class UnaryOp(Op):
+    arity = 1
+
+class BinaryOp(Op):
+    arity = 2
+
+class NaryOp(Op):
+    arity = -1
+
+class Slice(Op):
+    # $0, start, stop, step
+    arity = 4
+
 #------------------------------------------------------------------------
-#
+# Table
 #------------------------------------------------------------------------
 
 # A thin wrapper around a Node object
@@ -356,10 +378,8 @@ class NDTable(ArrayNode):
         # closed ( in the algebraic sense ) so that we don't
         # escape to Tables when we're using DataTables.
         if depends is None:
-            self.node = self
             self.children = injest_iterable(args)
         else:
-            self.node = self
             self.children = depends
 
     @property
