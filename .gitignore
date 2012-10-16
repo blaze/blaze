@@ -42,3 +42,25 @@ nosetests.xml
 *.h5
 *.csv
 *.npy
+
+# Graph files
+*.png
+*.dot
+
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
