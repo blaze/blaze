@@ -82,17 +82,20 @@ class Literal(Node):
     def __init__(self, val):
         assert isinstance(val, self.vtype)
         self.val = val
-        self.children = [val]
+        self.children = []
 
     @property
     def name(self):
         return str(self.val)
 
-class ScalarNode(Node):
+class ScalarNode(Literal):
     vtype = int
 
-class StringNode(Node):
+class StringNode(Literal):
     vtype = str
+
+class IndexNode(Literal):
+    vtype = tuple
 
 # ===========
 # Operations

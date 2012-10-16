@@ -1,6 +1,6 @@
 from ndtable.expr.deferred import DeferredTable
 from ndtable.expr.nodes import Node
-from ndtable.expr.viz import view, browser, build_graph
+from ndtable.expr.viz import dump, build_graph
 
 def test_scalar_arguments():
     a = DeferredTable([1,2,3])
@@ -22,12 +22,23 @@ def test_dynamic_explicit():
     children = b.node.children
     assert len(children) == 1
 
-def test_simple_ops():
+def test_binary_ops():
     a = DeferredTable([])
     b = DeferredTable([])
 
-    c = a+b
-    d = c*b
+    x = a+b
+    y = x*b
 
-    _, graph = build_graph(d, tree=True)
-    view('simple', graph)
+    dump(y, filename='binary')
+
+def test_unary_ops():
+    a = DeferredTable([])
+
+    x = abs(a)
+    dump(x, filename='unary')
+
+def test_indexing():
+    a = DeferredTable([])
+
+    x = a[0]
+    dump(x, filename='indexer')

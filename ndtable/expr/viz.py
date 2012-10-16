@@ -61,9 +61,6 @@ def browser(graph):
 
         pngdata = StringIO(p.communicate()[0]).read()
 
-        #data_uri = pngdata.encode("base64").replace("\n", "")
-        #img_tag = '<img alt="sample" src="data:image/png;base64,{0}">'.format(data_uri)
-
     return Image(data=pngdata)
 
 def view(fname, graph):

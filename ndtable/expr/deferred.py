@@ -7,7 +7,7 @@ from numbers import Number, Integral
 
 from ndtable.table import NDTable
 from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
-    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Op
+    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Op, IndexNode
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -252,21 +252,23 @@ class DeferredTable(object):
     # Read Operations
     # ===============
 
-    def __getitem__(self, ndx):
+    def __getitem__(self, idx):
         """ Slicing operations should return graph nodes, while individual
         element access should return bare scalars.
         """
         # TODO: how to represent indexer in graph???
 
-        if isinstance(ndx, Integral) or isinstance(ndx, np.integer):
-            return Slice(self.node, ndx)
+        if isinstance(idx, Integral) or isinstance(idx, np.integer):
+            ndx = IndexNode((idx,))
+            return Slice('getitem', [self.node, ndx])
         else:
-            return Slice(self.node, ndx)
+            ndx = IndexNode(idx)
+            return Slice('getitem', [self.node, ndx])
 
     def __getslice__(self, start, stop, step):
         """
         """
-        ndx = [start, stop, step]
+        ndx = IndexNode((start, stop, step))
         return Slice(self.node, ndx)
 
     # Python Intrinsics
@@ -275,8 +277,8 @@ class DeferredTable(object):
         # Bound methods are actually just unary functions with
         # the first argument self
         exec (
-            "def __%(name)s__(self,*args, **kwargs):\n"
-            "    return self.generate_node(1, '%(name)s', args, kwargs)"
+            "def __%(name)s__(self):\n"
+            "    return self.generate_node(1, '%(name)s', [self.node])"
             "\n"
         ) % locals()
 
@@ -285,7 +287,7 @@ class DeferredTable(object):
     for name, op in PyObject_UnaryOperators:
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', self.node)"
+            "    return self.generate_node(1, '%(name)s', [self.node])"
             "\n"
         ) % locals()
 
