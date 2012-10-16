@@ -58,22 +58,23 @@ class Node(object):
 # Values
 # ===========
 
-class Indexable(Node):
-    __slots__ = ['children', 'metadata', 'target']
+class Literal(Node):
+    __slots__ = ['children', 'metadata', 'vtype']
 
-    def __init__(self, args, target):
-        self.children = args
-        self.target = target
+    def __init__(self, val):
+        assert isinstance(val, self.vtype)
+        self.val = val
+        self.children = [val]
 
     @property
     def name(self):
-        return 'Table'
+        return str(self.val)
 
 class ScalarNode(Node):
-    pass
+    vtype = int
 
 class StringNode(Node):
-    pass
+    vtype = str
 
 # ===========
 # Operations

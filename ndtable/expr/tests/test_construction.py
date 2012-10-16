@@ -1,5 +1,5 @@
 from ndtable.expr.deferred import DeferredTable
-from ndtable.expr.viz import view, build_graph
+from ndtable.expr.viz import view, browser, build_graph
 
 def test_scalar_arguments():
     a = DeferredTable([1,2,3])
@@ -29,5 +29,14 @@ def test_simple_ops():
     d = c*b
 
     _, graph = build_graph(d)
-    #print graph.to_string()
     view('simple', graph)
+
+def test_simple_ops():
+    a = DeferredTable([])
+    b = DeferredTable([])
+
+    c = a+b
+    d = c*b
+
+    _, graph = build_graph(d)
+    browser(graph)

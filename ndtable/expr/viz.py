@@ -1,7 +1,8 @@
 import pydot
+from cStringIO import StringIO
 from ndtable.expr.nodes import Op, ScalarNode, StringNode
 from collections import Counter
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile
 
 def build_graph(node, graph=None, context=None, tree=False):
@@ -38,6 +39,23 @@ def build_graph(node, graph=None, context=None, tree=False):
         graph.add_edge( pydot.Edge(top, nd) )
 
     return node, graph
+
+def browser(graph):
+    from IPython.core.display import Image
+
+    dotstr = graph.to_string()
+
+    with NamedTemporaryFile(delete=True) as tempdot:
+        tempdot.write(dotstr)
+        tempdot.flush()
+        p = Popen(['dot','-Tpng',tempdot.name] ,stdout=PIPE)
+
+        pngdata = StringIO(p.communicate()[0]).read()
+
+        #data_uri = pngdata.encode("base64").replace("\n", "")
+        #img_tag = '<img alt="sample" src="data:image/png;base64,{0}">'.format(data_uri)
+
+    return Image(data=pngdata)
 
 def view(fname, graph):
     dotstr = graph.to_string()

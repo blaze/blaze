@@ -7,7 +7,7 @@ from numbers import Number, Integral
 
 from ndtable.table import NDTable
 from ndtable.expr.nodes import Node, StringNode, ScalarNode,\
-    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Op, Indexable
+    Slice, NullaryOp, UnaryOp, BinaryOp, NaryOp, Op
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
