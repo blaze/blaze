@@ -37,6 +37,9 @@ class Node(object):
         raise NotImplemented
 
     def __iter__(self):
+        """
+        Walk the graph, left to right
+        """
         for name, child in self.iter_children():
             if isinstance(child, Node):
                 yield child
@@ -49,7 +52,7 @@ class Node(object):
 
     def __coiter__(self, co):
         """
-        Tree transformer using coroutines and views.
+        Walk the graph, left to right with a coroutine.
         """
         child_walk = self.iter_children()
         children = dict(enumerate(child_walk)).viewitems()
@@ -96,6 +99,10 @@ class StringNode(Literal):
 
 class IndexNode(Literal):
     vtype = tuple
+
+    @property
+    def name(self):
+        return 'Index%s' % str(self.val)
 
 # ===========
 # Operations

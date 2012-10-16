@@ -1,5 +1,5 @@
 from ndtable.expr.deferred import DeferredTable
-from ndtable.expr.nodes import Node
+from ndtable.expr.nodes import Node, ScalarNode
 from ndtable.expr.viz import dump, build_graph
 
 def test_scalar_arguments():
@@ -41,4 +41,17 @@ def test_indexing():
     a = DeferredTable([])
 
     x = a[0]
+    dump(x, filename='indexer')
+
+def test_slice():
+    a = DeferredTable([])
+
+    x = a[0:1]
+    dump(x, filename='indexer')
+
+def test_scalars():
+    a = ScalarNode(1)
+    b = ScalarNode(1)
+
+    x = DeferredTable([a,b])
     dump(x, filename='indexer')

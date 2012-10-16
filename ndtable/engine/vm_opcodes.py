@@ -8,24 +8,21 @@
 # $OP $OP $1...
 
 ops = [
-      'FUNC_MAP'
-    , 'FUNC_REDUCE'
-    , 'FUNC_ACCUMULATE'
+      'BINARY_ADD'
+    , 'BINARY_SUBTRACT'
+    , 'BINARY_MULTIPLY'
+    , 'BINARY_DIVIDE'
+
+    , 'BINARY_MODULO'
+    , 'BINARY_POWER'
+    , 'BINARY_AND'
+    , 'BINARY_OR'
+    , 'BINARY_XOR'
 
     , 'UNARY_POSITIVE'
     , 'UNARY_NEGATIVE'
     , 'UNARY_NOT'
     , 'UNARY_INVERT'
-
-    , 'BINARY_ADD'
-    , 'BINARY_MULTIPLY'
-    , 'BINARY_SUBTRACT'
-    , 'BINARY_MODULO'
-    , 'BINARY_POWER'
-    , 'BINARY_DIVIDE'
-    , 'BINARY_AND'
-    , 'BINARY_OR'
-    , 'BINARY_XOR'
 
     , 'INDEX_ELEMENT'
     , 'INDEX_SLICE'
@@ -33,6 +30,10 @@ ops = [
 
     , 'BOUNDSCHECK'
     , 'PROMOTE'
+
+    , 'FUNC_MAP'
+    , 'FUNC_REDUCE'
+    , 'FUNC_ACCUMULATE'
 
     , 'FFI'
 ]

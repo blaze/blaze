@@ -256,8 +256,6 @@ class DeferredTable(object):
         """ Slicing operations should return graph nodes, while individual
         element access should return bare scalars.
         """
-        # TODO: how to represent indexer in graph???
-
         if isinstance(idx, Integral) or isinstance(idx, np.integer):
             ndx = IndexNode((idx,))
             return Slice('getitem', [self.node, ndx])
@@ -265,11 +263,11 @@ class DeferredTable(object):
             ndx = IndexNode(idx)
             return Slice('getitem', [self.node, ndx])
 
-    def __getslice__(self, start, stop, step):
+    def __getslice__(self, start, stop):
         """
         """
-        ndx = IndexNode((start, stop, step))
-        return Slice(self.node, ndx)
+        ndx = IndexNode((start, stop))
+        return Slice('getslice', [self.node, ndx])
 
     # Python Intrinsics
     # -----------------
