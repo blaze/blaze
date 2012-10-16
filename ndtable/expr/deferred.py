@@ -2,6 +2,7 @@
 Core of the deferred expression engine.
 """
 
+from functools import wraps
 from collections import Iterable
 from numbers import Number, Integral
 
@@ -23,6 +24,7 @@ except ImportError:
 _max_argument_recursion = 25
 _max_argument_len       = 1000
 _argument_sample        = 100
+_perform_typecheck      = 100
 
 def set_max_argument_len(val):
     global _max_argument_len
@@ -48,7 +50,7 @@ PyObject_UnaryOperators = [
 ]
 
 PyObject_Intrinsics = [
-    'str', 'hash', 'len', 'abs', 'complex', 'int', 'long', 'float',
+    'str', 'hash', 'abs', 'complex', 'int', 'long', 'float',
     'iter', 'oct', 'hex'
 ]
 
@@ -69,6 +71,13 @@ PyArray_ReadMethods = [
     'resize', 'round', 'searchsorted', 'setasflat', 'sort', 'squeeze', 'std',
     'sum', 'swapaxes', 'take', 'trace', 'transpose', 'var', 'view'
 ]
+
+def lift_magic(f):
+    @wraps(f)
+    def fn(*args):
+        iargs = injest_iterable(args)
+        return f(*iargs)
+    return fn
 
 #------------------------------------------------------------------------
 # Graph Construction
@@ -150,22 +159,14 @@ def injest_iterable(args, depth=0):
             graph. Consider alternative construction.""")
 
 #------------------------------------------------------------------------
-# Table
+# Base Classes
 #------------------------------------------------------------------------
 
-# A thin wrapper around a Node object
-class Deferred(object):
-
-    def __init__(self, args, depends=None):
-        # We want the operations on the table to be
-        # closed ( in the algebraic sense ) so that we don't
-        # escape to Tables when we're using DataTables.
-        if depends is None:
-            self.node = self
-            self.children = injest_iterable(args)
-        else:
-            self.node = self
-            self.children = depends
+class ExpressionNode(Node):
+    """
+    A node which supports the full set of PyNumberMethods
+    methods.
+    """
 
     def generate_node(self, arity, fname, args=None, kwargs=None):
 
@@ -173,21 +174,86 @@ class Deferred(object):
         iargs = injest_iterable(args)
 
         if arity == -1:
-            ret = NaryOp(fname, iargs, kwargs)
+            return NaryOp(fname, iargs, kwargs)
 
         elif arity == 0:
             assert len(iargs) == arity
-            ret =  NullaryOp(fname)
+            return NullaryOp(fname)
 
         elif arity == 1:
             assert len(iargs) == arity
-            ret =  UnaryOp(fname, iargs)
+            return UnaryOp(fname, iargs)
 
         elif arity == 2:
             assert len(iargs) == arity
-            ret = BinaryOp(fname, iargs)
+            return BinaryOp(fname, iargs)
 
-        return ret
+    # Python Intrinsics
+    # -----------------
+    for name in PyObject_Intrinsics:
+        # Bound methods are actually just unary functions with
+        # the first argument self implicit
+        exec (
+            "def __%(name)s__(self):\n"
+            "    return self.generate_node(1, '%(name)s', [self.node])"
+            "\n"
+        ) % locals()
+
+    # Unary
+    # -----
+    for name, op in PyObject_UnaryOperators:
+        exec (
+            "def __%(name)s__(self):\n"
+            "    return self.generate_node(1, '%(name)s', [self.node])"
+            "\n"
+        ) % locals()
+
+    # Binary
+    # ------
+    for name, op in PyObject_BinaryOperators:
+        exec (
+            "def __%(name)s__(self, ob):\n"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
+            "\n"
+            "def __r%(name)s__(self, ob):\n"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
+            "\n"
+        )  % locals()
+
+    for name, op in PyObject_BinaryOperators:
+        exec (
+            "def __i%(name)s__(self, ob):\n"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
+            "\n"
+        )  % locals()
+
+
+
+class ArrayNode(ExpressionNode):
+    """
+    A array structure with dimension and length.
+    """
+
+    # Read Operations
+    # ===============
+
+    for name in PyArray_ReadMethods:
+        exec (
+            "def %(name)s(self, *args, **kwargs):\n"
+            "    args = (self.node,) + args\n"
+            "    return self.generate_node(-1, '%(name)s', args, kwargs)"
+            "\n"
+        ) % locals()
+
+    # Write Operations
+    # ===============
+
+    for name in PyArray_WriteMethods:
+        exec (
+            "def %(name)s(self, *args, **kwargs):\n"
+            "    return self.generate_node(-1, '%(name)s', args, kwargs)\n"
+            "\n"
+        ) % locals()
 
     # Numpy-compatible shape/flag attributes
     # ======================================
@@ -222,6 +288,10 @@ class Deferred(object):
 
     @property
     def dtype(self):
+        pass
+
+    def __len__(self):
+        # TODO: needs to query datashape
         pass
 
     # Numpy-compatible data attributes
@@ -265,62 +335,35 @@ class Deferred(object):
         ndx = IndexNode((start, stop))
         return Slice('getslice', [self.node, ndx])
 
-    # Python Intrinsics
-    # -----------------
-    for name in PyObject_Intrinsics:
-        # Bound methods are actually just unary functions with
-        # the first argument self
-        exec (
-            "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', [self.node])"
-            "\n"
-        ) % locals()
+    # Other non-graph methods
+    # ========================
 
-    # Unary Prefix
-    # ------------
-    for name, op in PyObject_UnaryOperators:
-        exec (
-            "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', [self.node])"
-            "\n"
-        ) % locals()
+    def tofile(self, *args, **kw):
+        pass
 
-    for name in PyArray_ReadMethods:
-        exec (
-            "def %(name)s(self, *args, **kwargs):\n"
-            "    args = (self.node,) + args\n"
-            "    return self.generate_node(-1, '%(name)s', args, kwargs)"
-            "\n"
-        ) % locals()
+    def tolist(self, *args, **kw):
+        pass
 
-    # Binary Prefix
-    # -------------
-    for name, op in PyObject_BinaryOperators:
-        exec (
-            "def __%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
-            "\n"
-            "def __r%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
-            "\n"
-        )  % locals()
+    def tostring(self, *args, **kw):
+        pass
 
-    # Write Operations
-    # ===============
+#------------------------------------------------------------------------
+#
+#------------------------------------------------------------------------
 
-    for name, op in PyObject_BinaryOperators:
-        exec (
-            "def __i%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
-            "\n"
-        )  % locals()
+# A thin wrapper around a Node object
+class DeferredTable(ArrayNode):
 
-    for name in PyArray_WriteMethods:
-        exec (
-            "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node(-1, '%(name)s', args, kwargs)\n"
-            "\n"
-        ) % locals()
+    def __init__(self, args, depends=None):
+        # We want the operations on the table to be
+        # closed ( in the algebraic sense ) so that we don't
+        # escape to Tables when we're using DataTables.
+        if depends is None:
+            self.node = self
+            self.children = injest_iterable(args)
+        else:
+            self.node = self
+            self.children = depends
 
     @property
     def name(self):
@@ -349,20 +392,3 @@ class Deferred(object):
                                 return k
 
         return find_names(self)
-
-    # Other non-graph methods
-    # ========================
-
-    def tofile(self, *args, **kw):
-        pass
-
-    def tolist(self, *args, **kw):
-        pass
-
-    def tostring(self, *args, **kw):
-        pass
-
-
-# For now
-class DeferredTable(Deferred, NDTable):
-    pass
