@@ -7,26 +7,31 @@ from tempfile import NamedTemporaryFile
 
 from ndtable.expr.graph import Op, ScalarNode
 
-def dump(node, ipython=True, filename=None):
+def dump(node, ipython=True, filename=None, tree=False):
     """
     Dump the expression graph to either a file or IPython.
     """
-    _, graph = build_graph(node)
+    _, graph = build_graph(node, tree=tree)
     if filename:
         return view(filename, graph)
     elif ipython:
         return browser(graph)
 
 def build_graph(node, graph=None, context=None, tree=False):
-    top = pydot.Node( node.name )
+    top = pydot.Node( id(node), label=node.name )
 
     if not graph:
         graph = pydot.Graph(graph_type='digraph')
         graph.add_node( top )
         context = Counter()
+        context[node.name] += 1
+
+    # Increment the name of the top node
+
+    cluster = pydot.Cluster(str(id(node.children)), label=' ')
 
     for child in node.children:
-        nd, _ = build_graph(child, graph, context)
+        nd, _ = build_graph(child, graph, context, tree=True)
 
         # Ensure the graph is a tree by adding numbers to the
         # labels of nodes.
@@ -45,9 +50,13 @@ def build_graph(node, graph=None, context=None, tree=False):
         else:
             name = nd.name
 
-        nd = pydot.Node(name)
+        nd = pydot.Node(id(nd), label=name)
+        cluster.add_node(nd)
+
         graph.add_node( nd )
         graph.add_edge( pydot.Edge(top, nd) )
+
+    graph.add_subgraph(cluster)
 
     return node, graph
 

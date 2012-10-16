@@ -12,29 +12,24 @@ class Node(object):
     # Use __slots__ so we don't incur the full cost of a class
     __slots__ = ['children']
 
-    def __init__(self, *children):
-        self.children  = children
-
-    def iter_children(self):
-        for child in self.children:
-            yield child
+    def __init__(self, children):
+        self.children = children
 
     @property
     def name(self):
-        return self.__class__.__name__
+        return 'GenericNode'
 
     def __iter__(self):
         """
         Walk the graph, left to right
         """
-        for name, child in self.iter_children():
-            if isinstance(child, Node):
-                yield child
-            elif isinstance(child, list):
-                for item in child:
-                    if isinstance(item, Node):
-                        yield item
+        for a in self.children:
+            if isinstance(a, Node):
+                yield a
+                for b in iter(a):
+                    yield b
             else:
+                import pdb; pdb.set_trace()
                 raise TypeError('Invalid children')
 
     def __coiter__(self, co):
@@ -66,7 +61,7 @@ class Node(object):
 #------------------------------------------------------------------------
 
 def traverse(node):
-     tree = deque([node])
+     tree = deque(node)
      while tree:
          node = tree.popleft()
          tree.extend(iter(node))
