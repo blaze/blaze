@@ -1,12 +1,14 @@
+from abc import ABCMeta
 from collections import deque
 from ndtable.table import NDTable
 
 class Node(object):
     """ Represents a node in the expression graph which Blaze compiles into
-    a program for the array VM.
+    a program for the Array VM.
     """
     # Use __slots__ so we don't incur the full cost of a class
     __slots__ = ['children', 'metadata']
+    __metaclass__ = ABCMeta
 
     def __init__(self, *children):
         self.children  = children
@@ -18,6 +20,21 @@ class Node(object):
     @property
     def name(self):
         return self.__class__.__name__
+
+    @classmethod
+    def __subclasshook__(cls, other):
+        """
+        If it quacks like a graph, then it is a graph.
+        """
+        if cls is Node:
+            try:
+                getattr(cls, 'name')
+                getattr(cls, 'children')
+                getattr(cls, '__iter__')
+                return True
+            except AttributeError:
+                return False
+        raise NotImplemented
 
     def __iter__(self):
         for name, child in self.iter_children():
@@ -34,7 +51,8 @@ class Node(object):
         """
         Tree transformer using coroutines and views.
         """
-        children = dict(enumerate(self.children)).viewitems()
+        child_walk = self.iter_children()
+        children = dict(enumerate(child_walk)).viewitems()
 
         def switch(child):
             changed = co.send(child)
@@ -80,7 +98,7 @@ class StringNode(Node):
 # Operations
 # ===========
 
-class Op(object):
+class Op(Node):
     __slots__ = ['children', 'metadata', 'op']
 
     def __init__(self, op, operands):

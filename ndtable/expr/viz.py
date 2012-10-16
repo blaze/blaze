@@ -5,6 +5,16 @@ from collections import Counter
 from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile
 
+def dump(node, ipython=True, filename=None):
+    """
+    Dump the expression graph to either a file or IPython.
+    """
+    _, graph = build_graph(node)
+    if filename:
+        return view(filename, graph)
+    elif ipython:
+        return browser(graph)
+
 def build_graph(node, graph=None, context=None, tree=False):
     top = pydot.Node( node.name )
 
@@ -29,8 +39,7 @@ def build_graph(node, graph=None, context=None, tree=False):
 
             context[nd.name] += 1
 
-        # Ensure the graph is a tree by assigning temporaries to
-        # the repeated values
+        # Allow cycles or "level-jumping" graphs
         else:
             name = nd.name
 

@@ -81,7 +81,7 @@ def is_homogeneous(it):
 
     head = it[0]
     head_type = type(head)
-    return head, [type(a) == head_type for a in it]
+    return head, all([type(a) == head_type for a in it])
 
 def injest_iterable(args, depth=0):
     # TODO: Should be 1 stack frame per each recursion so we
@@ -105,6 +105,7 @@ def injest_iterable(args, depth=0):
             head, is_homog = is_homogeneous(sample)
             is_hetero = not is_homog
 
+
             # Homogenous Arguments
             # ====================
 
@@ -121,23 +122,27 @@ def injest_iterable(args, depth=0):
             # Heterogenous Arguments
             # ======================
 
+            # TODO: This will be really really slow, certainly
+            # not something we'd want to put in a loop.
+            # Optimize later!
+
             elif is_hetero:
-                args = []
+                ret = []
                 for a in args:
-                    if isinstance(a, Iterable):
+                    if isinstance(a, (list, tuple)):
                         sub = injest_iterable(a, depth+1)
-                        a.append(sub)
+                        ret.append(sub)
                     elif isinstance(a, DeferredTable):
-                        args.append(a.node)
+                        ret.append(a.node)
                     elif isinstance(a, Node):
-                        args.append(a)
+                        ret.append(a)
                     elif isinstance(a, Number):
-                        args.append(ScalarNode(a))
+                        ret.append(ScalarNode(a))
                     elif isinstance(a, basestring):
-                        args.append(StringNode(a))
+                        ret.append(StringNode(a))
                     else:
                         raise TypeError("Unknown type")
-                return args
+                return ret
 
         else:
             raise RuntimeError("""
@@ -166,17 +171,23 @@ class DeferredTable(object):
 
     def generate_node(self, arity, fname, args=None, kwargs=None):
 
+        # TODO: also kwargs when we support such things
+        iargs = injest_iterable(args)
+
         if arity == -1:
-            ret = NaryOp(fname, args, kwargs)
+            ret = NaryOp(fname, iargs, kwargs)
 
         elif arity == 0:
+            assert len(iargs) == arity
             ret =  NullaryOp(fname)
 
         elif arity == 1:
-            ret =  UnaryOp(fname, args)
+            assert len(iargs) == arity
+            ret =  UnaryOp(fname, iargs)
 
         elif arity == 2:
-            ret = BinaryOp(fname, args)
+            assert len(iargs) == arity
+            ret = BinaryOp(fname, iargs)
 
         return ret
 
@@ -248,9 +259,9 @@ class DeferredTable(object):
         # TODO: how to represent indexer in graph???
 
         if isinstance(ndx, Integral) or isinstance(ndx, np.integer):
-            return Slice(self.node,ndx)
+            return Slice(self.node, ndx)
         else:
-            return Slice(self.node,ndx)
+            return Slice(self.node, ndx)
 
     def __getslice__(self, start, stop, step):
         """
@@ -304,7 +315,7 @@ class DeferredTable(object):
     for name, op in PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self.node, ob], kwargs)\n"
+            "    return self.generate_node(2, '%(name)s', [self.node, ob])\n"
             "\n"
         )  % locals()
 
