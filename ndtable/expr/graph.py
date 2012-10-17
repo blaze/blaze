@@ -7,6 +7,8 @@ from collections import Iterable
 from numbers import Number, Integral
 
 from ndtable.expr.nodes import Node
+from ndtable.datashape.unification import unify
+from ndtable.datashape.coretypes import int32, float32
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -22,7 +24,7 @@ except ImportError:
 _max_argument_recursion = 25
 _max_argument_len       = 1000
 _argument_sample        = 100
-_perform_typecheck      = False
+_perform_typecheck      = True
 
 def set_max_argument_len(val):
     global _max_argument_len
@@ -78,6 +80,20 @@ def lift_magic(f):
     return fn
 
 #------------------------------------------------------------------------
+# Deconstructors
+#------------------------------------------------------------------------
+
+def typeof(obj):
+    if type(obj) is IntNode:
+        return int32
+    elif type(obj) is DoubleNode:
+        return float32
+    elif type(obj) is NDTable:
+        return obj.shape
+    else:
+        raise TypeError()
+
+#------------------------------------------------------------------------
 # Graph Construction
 #------------------------------------------------------------------------
 
@@ -117,8 +133,8 @@ def injest_iterable(args, depth=0):
             # ====================
 
             if is_homog:
-                if isinstance(head, Number):
-                    return [ScalarNode(a) for a in args]
+                if isinstance(head, int):
+                    return [IntNode(a) for a in args]
                 elif isinstance(head, basestring):
                     return [StringNode(a) for a in args]
                 elif isinstance(head, NDTable):
@@ -183,7 +199,7 @@ class ExpressionNode(Node):
         # Make sure the graph makes sense given the signature of
         # the function. Does naive type checking.
         if _perform_typecheck:
-            assert op.typecheck(args), "Does not typecheck"
+            op.typecheck(args)
         # Or just let it fail at runtime.
         else:
             pass
@@ -397,25 +413,27 @@ class Op(ExpressionNode):
             # -----------------------------------------------
 
             if free[i]:
-                if type(operand) not in types:
-                    return False
+                if typeof(operand) not in types:
+                    raise TypeError('Signature for %s :: %s does not permit type %s' %
+                        (cls.__name__, cls.signature, typeof(operand)))
 
             if rigid[i]:
-                if env.get(var):
-                    if type(operand) != env.get(var):
-                        return False
+                bound = env.get(var)
 
-            # The value satifies the kind, now check that it is
-            # in the space of allowable domain types.
-            # --------------------------------------------------
-
-                if type(operand) in types:
-                    env[var] = type(operand)
+                if bound:
+                    if typeof(operand) != typeof(bound):
+                        uni = unify(operand, bound)
+                        if uni in types:
+                            env[var] = uni
                 else:
-                    return False
+                    if typeof(operand) in types:
+                        env[var] = typeof(operand)
+                    else:
+                        raise TypeError('Signature for %s :: %s does not permit type %s' %
+                            (cls.__name__, cls.signature, typeof(operand)))
 
         # Type checks!
-        return True
+        return env
 
     @property
     def name(self):
@@ -488,6 +506,12 @@ class Literal(Node):
 
 class ScalarNode(Literal):
     vtype = int
+
+class IntNode(Literal):
+    vtype = int
+
+class DoubleNode(Literal):
+    vtype = float
 
 class StringNode(Literal):
     vtype = str
