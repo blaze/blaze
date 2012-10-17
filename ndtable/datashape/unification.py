@@ -82,7 +82,7 @@ def union(dim1, dim2):
 
 def unify(a,b):
     """
-    Defines the unification of datashapes.
+    Unification of Datashapes.
     """
     ta = type(a)
     tb = type(b)

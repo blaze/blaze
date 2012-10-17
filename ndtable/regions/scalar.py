@@ -59,7 +59,6 @@ Horizontal Stacking
 from copy import copy
 from numpy import zeros
 from pprint import pformat
-from functools import partial
 from collections import defaultdict
 from bisect import bisect_left, insort_left
 

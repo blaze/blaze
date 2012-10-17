@@ -2,7 +2,7 @@ from ndtable.expr.viz import dump
 from ndtable.expr.nodes import Node, traverse
 from ndtable.expr.graph import NDTable, ScalarNode
 
-DEBUG = True
+DEBUG = False
 
 def test_walk():
     e = Node([])

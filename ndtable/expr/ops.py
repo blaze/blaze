@@ -68,6 +68,7 @@ class Mul(BinaryOp):
     nilpotent    = False
     sideffectful = False
 
+
 class Transpose(UnaryOp):
     # -----------------------
     signature = 'a -> a'

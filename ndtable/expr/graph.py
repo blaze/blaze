@@ -4,7 +4,7 @@ Core of the deferred expression engine.
 
 from functools import wraps
 from collections import Iterable
-from numbers import Number, Integral
+from numbers import Integral
 
 from ndtable.expr.nodes import Node
 from ndtable.datashape.unification import unify
@@ -50,8 +50,8 @@ PyObject_UnaryOperators = [
 ]
 
 PyObject_Intrinsics = [
-    'str', 'hash', 'abs', 'complex', 'int', 'long', 'float',
-    'iter', 'oct', 'hex'
+    'str', 'hash', 'abs', 'complex', 'int', 'long', 'float', 'iter',
+    'oct', 'hex'
 ]
 
 PyArray_Intrinsics = [
@@ -187,7 +187,7 @@ def injest_iterable(args, depth=0):
 
         else:
             raise RuntimeError("""
-            "Too many dynamic arguments to build expression
+            Too many dynamic arguments to build expression
             graph. Consider alternative construction.""")
 
 #------------------------------------------------------------------------
@@ -495,6 +495,11 @@ class Op(ExpressionNode):
         dom = tokens[0:-1]
         cod = tokens[-1]
 
+        # Rigid variables are those that appear in multiple times
+        # in the signature
+        #      a -> b -> a -> c
+        #      Rigid a
+        #      Free  b,c
         rigid  = [tokens.count(token)  > 1 for token in dom]
         free   = [tokens.count(token) == 1 for token in dom]
 
