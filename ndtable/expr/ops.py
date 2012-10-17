@@ -22,6 +22,8 @@ numeric    = discrete | continuous
 array_like, tabular_like = xrange(2)
 indexable = set([array_like, tabular_like])
 
+universal = set([top])
+
 #------------------------------------------------------------------------
 # Arity Bases
 #------------------------------------------------------------------------
@@ -42,7 +44,7 @@ class NaryOp(Op):
 class Add(BinaryOp):
     # -----------------------
     signature = 'a -> a -> a'
-    dom = [numeric, numeric]
+    dom = [universal, universal]
     # -----------------------
 
     identity     = zero
@@ -56,7 +58,7 @@ class Add(BinaryOp):
 class Mul(BinaryOp):
     # -----------------------
     signature = 'a -> a -> a'
-    dom = [numeric, numeric]
+    dom = [universal, universal]
     # -----------------------
 
     identity     = one

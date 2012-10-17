@@ -2,8 +2,8 @@ from collections import Counter
 
 def toposort(graph):
     """
-    Sort the expression graph to resolve the order needed to
-    execute operations.
+    Sort the expression graph topologically to resolve the order needed
+    to execute operations.
     """
     result = []
     count = Counter()

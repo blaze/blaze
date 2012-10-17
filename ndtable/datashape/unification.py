@@ -43,7 +43,7 @@ Where this is decomposed coordinate wise.
 
 from numpy import promote_types
 from coretypes import Fixed, Var, TypeVar, Record, \
-    CType, array_like
+    CType, Any, array_like
 
 class Incommensurable(Exception):
     def __init__(self, space, dim):
@@ -55,6 +55,7 @@ class Incommensurable(Exception):
             self.space, self.dim
         )
 
+# TODO: Deprecated
 def broadcast(shape1, shape2):
     """
     Subcase that should be identical to ``np.broadcast``.
@@ -64,6 +65,7 @@ def broadcast(shape1, shape2):
 
     return unify(shape1, shape2)
 
+# TODO: Deprecated
 def union(dim1, dim2):
     """
     General case
@@ -84,6 +86,13 @@ def unify(a,b):
     """
     ta = type(a)
     tb = type(b)
+
+    # --
+
+    if ta == Any or tb == Any:
+        return Any()
+
+    # --
 
     if (ta,tb) == (Fixed, Fixed):
         return Fixed(a.val + b.val)

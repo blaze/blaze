@@ -8,7 +8,7 @@ from numbers import Number, Integral
 
 from ndtable.expr.nodes import Node
 from ndtable.datashape.unification import unify
-from ndtable.datashape.coretypes import int32, float32
+from ndtable.datashape.coretypes import int32, float32, top, Any
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -89,9 +89,15 @@ def typeof(obj):
     elif type(obj) is DoubleNode:
         return float32
     elif type(obj) is NDTable:
-        return obj.shape
+        return top
+    elif type(obj) is Any:
+        return top
     else:
         raise TypeError()
+
+def dynamic(cls):
+    universal = set([top])
+    return all(arg == universal for arg in cls.dom)
 
 #------------------------------------------------------------------------
 # Graph Construction
@@ -135,6 +141,8 @@ def injest_iterable(args, depth=0):
             if is_homog:
                 if isinstance(head, int):
                     return [IntNode(a) for a in args]
+                if isinstance(head, float):
+                    return [DoubleNode(a) for a in args]
                 elif isinstance(head, basestring):
                     return [StringNode(a) for a in args]
                 elif isinstance(head, NDTable):
@@ -163,6 +171,10 @@ def injest_iterable(args, depth=0):
                         ret.append(ScalarNode(a))
                     elif isinstance(a, basestring):
                         ret.append(StringNode(a))
+                    elif isinstance(a, int):
+                        ret.append(IntNode(a))
+                    elif isinstance(a, float):
+                        ret.append(DoubleNode(a))
                     else:
                         raise TypeError("Unknown type")
                 return ret
@@ -178,7 +190,7 @@ def injest_iterable(args, depth=0):
 
 class ExpressionNode(Node):
     """
-    A node which supports the full set of PyNumberMethods
+    A abstract node which supports the full set of PyNumberMethods
     methods.
     """
 
@@ -376,6 +388,9 @@ class ArrayNode(ExpressionNode):
         pass
 
 
+class App(ExpressionNode):
+    __slots__ = ['itype','otype']
+
 class Op(ExpressionNode):
     __slots__ = ['children', 'op']
 
@@ -388,6 +403,10 @@ class Op(ExpressionNode):
         # TODO: unification
 
         if not hasattr(cls, 'signature'):
+            return True
+
+        # A dynamically typed function, just drop out
+        if dynamic(cls):
             return True
 
         tokens = [

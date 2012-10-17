@@ -56,8 +56,9 @@ class Type(type):
 
     def __new__(meta, name, bases, dct):
         cls = type(name, bases, dct)
-        Type.registry[name] = cls
-        return cls
+        if not dct.get('abstract'):
+            Type.registry[name] = cls
+            return cls
 
     @staticmethod
     def register(name, cls):
@@ -162,6 +163,11 @@ class Integer(Primitive):
 
     def __str__(self):
         return str(self.val)
+
+# The "top type", the universal supertype of all datashape
+# objects.
+class Any(object):
+    __metaclass__ = Type
 
 # ==================================================================
 # Base Types
@@ -711,12 +717,12 @@ pyobj      = CType('object')
 # strings.
 string     = CType('string')
 
-na = nan = Null
 Stream = Var(Integer(0), None)
 
-# *the* null record, # since we need
-#   {} is {} = True
+# The null record
 NullRecord = Record()
+na = nan = Null
+top = Any()
 
 Type.register('NA', Null)
 Type.register('Bool', Bool)
