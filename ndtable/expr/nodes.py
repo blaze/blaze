@@ -1,5 +1,4 @@
 from collections import deque
-from ndtable.table import NDTable
 
 #------------------------------------------------------------------------
 # Graph Objects

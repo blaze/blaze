@@ -3,8 +3,8 @@ Core of the deferred expression engine.
 """
 
 from functools import wraps
-from collections import Iterable
 from numbers import Integral
+from collections import Iterable
 
 from ndtable.expr.nodes import Node
 from ndtable.datashape.unification import unify
@@ -90,6 +90,9 @@ class UnknownExpression(Exception):
         return 'Unknown object in expression: %r' % (self.obj,)
 
 def typeof(obj):
+    # TODO: resolve circular dependencies
+    from ndtable.table import NDTable
+
     if type(obj) is IntNode:
         return int32
     elif type(obj) is DoubleNode:
@@ -130,6 +133,9 @@ def injest_iterable(args, depth=0):
 
     # tuple, list, dictionary, any recursive combination of them
     if isinstance(args, Iterable):
+
+        # TODO: resolve circular dependencies
+        from ndtable.table import NDTable
 
         if len(args) == 0:
             return []
@@ -500,8 +506,8 @@ class Op(ExpressionNode):
         #      a -> b -> a -> c
         #      Rigid a
         #      Free  b,c
-        rigid  = [tokens.count(token)  > 1 for token in dom]
-        free   = [tokens.count(token) == 1 for token in dom]
+        rigid = [tokens.count(token)  > 1 for token in dom]
+        free  = [tokens.count(token) == 1 for token in dom]
 
         assert len(dom) == self.arity
         env = {}
@@ -549,46 +555,6 @@ class Slice(Op):
 #------------------------------------------------------------------------
 # Table
 #------------------------------------------------------------------------
-
-# A thin wrapper around a Node object
-class NDTable(ArrayNode):
-
-    def __init__(self, args, depends=None):
-        # We want the operations on the table to be
-        # closed ( in the algebraic sense ) so that we don't
-        # escape to Tables when we're using DataTables.
-        if depends is None:
-            self.children = injest_iterable(args)
-        else:
-            self.children = depends
-
-    @property
-    def name(self):
-        return self.debug_name() # for now
-
-    def debug_name(self):
-        # unholy magic, just for debugging! Returns the variable
-        # name of the object assigned to
-        #
-        #    a = NDTable()
-        #    a.name == 'a'
-
-        import sys, gc
-
-        def find_names(obj):
-            frame = sys._getframe(1)
-            while frame is not None:
-                frame.f_locals
-                frame = frame.f_back
-
-            for referrer in gc.get_referrers(obj):
-                if isinstance(referrer, dict):
-                    for k, v in referrer.iteritems():
-                        if v is obj:
-                            if len(k) == 1:
-                                return k
-
-        return find_names(self)
 
 #------------------------------------------------------------------------
 # Values

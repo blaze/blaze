@@ -6,6 +6,8 @@ from idx import Indexable, AutoIndex, Space, Subspace, Index
 from datashape.unification import union
 from datashape.coretypes import DataShape, Fixed
 
+from ndtable.expr.graph import ArrayNode, injest_iterable
+
 def describe(obj):
 
     if isinstance(obj, DataShape):
@@ -40,20 +42,66 @@ class Table(Indexable):
     """
     pass
 
-class NDTable(Indexable):
-    """
-    A reified Table.
-    """
+#------------------------------------------------------------------------
+# NDTable
+#------------------------------------------------------------------------
+
+# Here's how the multiple inheritance boils down.
+#
+#   Indexable
+#   =========
+#
+#   __getitem__  : function
+#   __getslice__ : function
+#   __index__    : function
+#   index1d      : function
+#   indexnd      : function
+#   query        : function
+#   returntype   : function
+#   slice        : function
+#   take         : function
+#
+#
+#   ArrayNode
+#   =========
+#
+#   children     : attribute
+#   T            : function
+#   __len__      : function
+#   dtype        : function
+#   flags        : function
+#   flat         : function
+#   imag         : function
+#   itemsize     : function
+#   ndim         : function
+#   real         : function
+#   shape        : function
+#   size         : function
+#   strides      : function
+#   tofile       : function
+#   tolist       : function
+#   tostring     : function
+
+class NDTable(Indexable, ArrayNode):
+
     def __init__(self, obj, datashape=None, index=None, metadata=None):
         self.datashape = datashape
         self.metadata  = metadata
-        self.space     = self.cast_space(obj)
 
+        self.children = injest_iterable(obj)
+
+        #self.space     = self.cast_space(obj)
+        self.index = None
+
+        # How do we build an Index from the given graph
+        # elements... still needs some more thought. Disabled for
+        # now.
+        #
         # NDTable always has an index
-        if index is None:
-            self.index = AutoIndex(self.space)
-        elif isinstance(index, Index):
-            self.index = index
+        # if index is None:
+        #     self.index = AutoIndex(self.space)
+        # elif isinstance(index, Index):
+        #     self.index = index
 
     def cast_space(self, obj):
 
