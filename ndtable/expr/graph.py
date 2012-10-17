@@ -370,7 +370,7 @@ class Op(ExpressionNode):
     @classmethod
     def typecheck(cls, operands):
         if not hasattr(cls, 'signature'):
-            return False
+            return True
 
         tokens = [
             tok.strip()
@@ -395,20 +395,22 @@ class Op(ExpressionNode):
             # -----------------------------------------------
 
             if free[i]:
-                pass
+                if type(operand) not in types:
+                    return False
 
             if rigid[i]:
-                if env.get(var) is not None:
-                    return False
+                if env.get(var):
+                    if type(operand) != env.get(var):
+                        return False
 
             # The value satifies the kind, now check that it is
             # in the space of allowable domain types.
             # --------------------------------------------------
 
-            if type(operand) in types:
-                env[var] = type(operand)
-            else:
-                return False
+                if type(operand) in types:
+                    env[var] = type(operand)
+                else:
+                    return False
 
         # Type checks!
         return True
