@@ -2,7 +2,7 @@ from ndtable.expr.viz import dump
 from ndtable.expr.nodes import Node, traverse
 from ndtable.expr.graph import NDTable, ScalarNode
 
-DEBUG = False
+DEBUG = True
 
 def test_walk():
     e = Node([])
@@ -59,7 +59,6 @@ def test_binary_ops():
 
 def test_binary_mixed():
     a = NDTable([])
-    b = NDTable([])
 
     x = a+2
 

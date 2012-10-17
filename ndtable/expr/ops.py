@@ -68,6 +68,18 @@ class Mul(BinaryOp):
     nilpotent    = False
     sideffectful = False
 
+class Transpose(UnaryOp):
+    # -----------------------
+    signature = 'a -> a'
+    dom = [universal, universal]
+    # -----------------------
+
+    identity     = None
+    commutative  = False
+    associative  = False
+    idempotent   = False
+    nilpotent    = True
+    sideffectful = False
 
 #------------------------------------------------------------------------
 # Catelog

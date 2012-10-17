@@ -83,6 +83,12 @@ def lift_magic(f):
 # Deconstructors
 #------------------------------------------------------------------------
 
+class UnknownExpression(Exception):
+    def __init__(self, obj):
+        self.obj = obj
+    def __str__(self):
+        return 'Unknown object in expression: %r' % (self.obj,)
+
 def typeof(obj):
     if type(obj) is IntNode:
         return int32
@@ -95,7 +101,7 @@ def typeof(obj):
     elif type(obj) is App:
         return obj.otype
     else:
-        raise TypeError()
+        raise UnknownExpression(obj)
 
 def dynamic(cls):
     universal = set([top])
@@ -210,9 +216,7 @@ class ExpressionNode(Node):
 
         if arity == 1:
             assert len(iargs) == arity
-            op(fname, iargs)
-
-            return
+            return op(fname, iargs)
 
         if arity == 2:
             assert len(iargs) == arity
@@ -399,13 +403,13 @@ class App(ExpressionNode):
 
     ::
 
-             +----------------+
-             |       +----+   |
-             |    / -|    |   |
-        ival |---+  -| Op | - | -> oval
-             |    \ -|    |   |
-             |       +-----   |
-             +----------------+
+                       +----------------+
+                       |       +----+   |
+                       |    / -|    |   |
+        ival :: op.cod |---+  -| Op |---| -> oval :: op.dom
+                       |    \ -|    |   |
+                       |       +-----   |
+                       +----------------+
 
     """
     __slots__ = ['itype','otype']
@@ -423,13 +427,13 @@ class App(ExpressionNode):
 class Op(ExpressionNode):
     """
     A typed operator taking a set of typed operands. Optionally
-    rejects type-invalid operands
+    rejects operands which are not well-typed.
 
-          a -> b -> c -> d
+              a -> b -> c -> d
 
                     +---+
         op1 :: a -> |   |
-        op2 :: b -> | f | -> f(a,b,c) :: d
+        op2 :: b -> | f | -> * :: d
         op3 :: c -> |   |
                     +---+
     """
@@ -454,9 +458,9 @@ class Op(ExpressionNode):
             env = self.typecheck(operands)
             self.cod = self.infer_codomain(env)
         else:
-            # Otherwise it's the universal supertype, the operand
-            # could return anything. Usefull for when we don't
-            # know much about the operand a priori
+            # Otherwise it's the universal supertype, the operator could
+            # return anything. Usefull for when we don't know much about
+            # the operand a priori
             self.cod = top
 
     def infer_codomain(self, env):
@@ -597,6 +601,15 @@ class Literal(Node):
     def name(self):
         return str(self.val)
 
+class StringNode(Literal):
+    vtype = str
+
+#------------------------------------------------------------------------
+# Scalars
+#------------------------------------------------------------------------
+
+# TODO: more robust!!
+
 class ScalarNode(Literal):
     vtype = int
 
@@ -605,9 +618,6 @@ class IntNode(Literal):
 
 class DoubleNode(Literal):
     vtype = float
-
-class StringNode(Literal):
-    vtype = str
 
 class IndexNode(Literal):
     vtype = tuple
