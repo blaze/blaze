@@ -36,8 +36,7 @@ class Node(object):
         """
         Walk the graph, left to right with a coroutine.
         """
-        child_walk = self.iter_children()
-        children = dict(enumerate(child_walk)).viewitems()
+        children = dict(enumerate(self)).viewitems()
 
         def switch(child):
             changed = co.send(child)

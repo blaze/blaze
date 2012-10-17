@@ -166,21 +166,39 @@ class ExpressionNode(Node):
     methods.
     """
 
+    def eval(self):
+        pass
+
     def generate_node(self, arity, fname, args=None, kwargs=None):
+
+        # TODO: factor out circular imports
+        from ndtable.expr.ops import functions
 
         # TODO: also kwargs when we support such things
         iargs = injest_iterable(args)
 
-        if arity == -1:
-            return NaryOp(fname, iargs, kwargs)
+        #op = functions[fname]
+        op = functions.get(fname, Op)
 
-        elif arity == 1:
-            assert len(iargs) == arity
-            return UnaryOp(fname, iargs)
+        # Make sure the graph makes sense given the signature of
+        # the function. Does naive type checking.
+        if _perform_typecheck:
+            assert op.typecheck(args), "Does not typecheck"
+        # Or just let it fail at runtime.
+        else:
+            pass
 
-        elif arity == 2:
+
+        if arity == 1:
             assert len(iargs) == arity
-            return BinaryOp(fname, iargs)
+            return op(fname, iargs)
+
+        if arity == 2:
+            assert len(iargs) == arity
+            return op(fname, iargs)
+
+        elif arity == -1:
+            return op(fname, iargs, kwargs)
 
     # Python Intrinsics
     # -----------------
@@ -349,18 +367,56 @@ class Op(ExpressionNode):
         self.op = op
         self.children = operands
 
+    @classmethod
+    def typecheck(cls, operands):
+        if not hasattr(cls, 'signature'):
+            return False
+
+        tokens = [
+            tok.strip()
+            for tok in
+            cls.signature.split('->')
+        ]
+
+        dom = tokens[0:-1]
+        cod = tokens[-1]
+
+        rigid  = [tokens.count(token)  > 1 for token in dom]
+        free   = [tokens.count(token) == 1 for token in dom]
+
+        assert len(dom) == cls.arity
+        env = {}
+
+        dom_vars = dom
+
+        for i, (var, types, operand) in enumerate(zip(dom_vars, cls.dom, operands)):
+
+            # Check if the type satisfies the kind constraint
+            # -----------------------------------------------
+
+            if free[i]:
+                pass
+
+            if rigid[i]:
+                if env.get(var) is not None:
+                    return False
+
+            # The value satifies the kind, now check that it is
+            # in the space of allowable domain types.
+            # --------------------------------------------------
+
+            if type(operand) in types:
+                env[var] = type(operand)
+            else:
+                return False
+
+        # Type checks!
+        return True
+
     @property
     def name(self):
         return self.op
 
-class UnaryOp(Op):
-    arity = 1
-
-class BinaryOp(Op):
-    arity = 2
-
-class NaryOp(Op):
-    arity = -1
 
 class Slice(Op):
     # $0, start, stop, step
