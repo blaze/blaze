@@ -55,8 +55,8 @@ def test_binary_ops():
     x = a+b
     y = x*a
 
-    #if DEBUG:
-    dump(y, filename='binary')
+    if DEBUG:
+        dump(y, filename='binary')
 
 def test_unary_ops():
     a = NDTable([])
