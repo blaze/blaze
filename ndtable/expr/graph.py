@@ -92,6 +92,8 @@ def typeof(obj):
         return top
     elif type(obj) is Any:
         return top
+    elif type(obj) is App:
+        return obj.otype
     else:
         raise TypeError()
 
@@ -167,8 +169,6 @@ def injest_iterable(args, depth=0):
                         ret.append(a)
                     elif isinstance(a, Node):
                         ret.append(a)
-                    elif isinstance(a, Number):
-                        ret.append(ScalarNode(a))
                     elif isinstance(a, basestring):
                         ret.append(StringNode(a))
                     elif isinstance(a, int):
@@ -208,18 +208,11 @@ class ExpressionNode(Node):
         #op = functions[fname]
         op = functions.get(fname, Op)
 
-        # Make sure the graph makes sense given the signature of
-        # the function. Does naive type checking.
-        if _perform_typecheck:
-            op.typecheck(args)
-        # Or just let it fail at runtime.
-        else:
-            pass
-
-
         if arity == 1:
             assert len(iargs) == arity
-            return op(fname, iargs)
+            op(fname, iargs)
+
+            return
 
         if arity == 2:
             assert len(iargs) == arity
@@ -267,7 +260,9 @@ class ExpressionNode(Node):
             "\n"
         )  % locals()
 
-
+#------------------------------------------------------------------------
+# Indexables
+#------------------------------------------------------------------------
 
 class ArrayNode(ExpressionNode):
     """
@@ -387,32 +382,110 @@ class ArrayNode(ExpressionNode):
     def tostring(self, *args, **kw):
         pass
 
+#------------------------------------------------------------------------
+# Transformational
+#------------------------------------------------------------------------
 
 class App(ExpressionNode):
+    """
+    The application of an operand producing concrete values.
+
+    For example:
+
+        In[0]: a = 2 + 3
+
+    The resulting value of ``a`` is App( Op(+), 2, 3) the
+    signature of the application is with output type int32.
+
+    ::
+
+             +----------------+
+             |       +----+   |
+             |    / -|    |   |
+        ival |---+  -| Op | - | -> oval
+             |    \ -|    |   |
+             |       +-----   |
+             +----------------+
+
+    """
     __slots__ = ['itype','otype']
 
+    def __init__(self, op, inputs, outputs):
+        self.op = op
+        self.children = [op]
+
+    def nin(self):
+        return len(self.itype)
+
+    def nout(self):
+        return len(self.otype)
+
 class Op(ExpressionNode):
-    __slots__ = ['children', 'op']
+    """
+    A typed operator taking a set of typed operands. Optionally
+    rejects type-invalid operands
+
+          a -> b -> c -> d
+
+                    +---+
+        op1 :: a -> |   |
+        op2 :: b -> | f | -> f(a,b,c) :: d
+        op3 :: c -> |   |
+                    +---+
+    """
+    __slots__ = ['children', 'op', 'cod']
+
+    @property
+    def opaque(self):
+        """
+        We don't know anything about the operator, no types, no argument
+        signature ... we just throw things into and things pop out or it
+        blows up.
+        """
+        return not hasattr(self, 'signature')
 
     def __init__(self, op, operands):
         self.op = op
         self.children = operands
 
-    @classmethod
-    def typecheck(cls, operands):
-        # TODO: unification
+        # Make sure the graph makes sense given the signature of
+        # the function. Does naive type checking and inference.
+        if _perform_typecheck and not self.opaque:
+            env = self.typecheck(operands)
+            self.cod = self.infer_codomain(env)
+        else:
+            # Otherwise it's the universal supertype, the operand
+            # could return anything. Usefull for when we don't
+            # know much about the operand a priori
+            self.cod = top
 
-        if not hasattr(cls, 'signature'):
+    def infer_codomain(self, env):
+        tokens = [
+            tok.strip()
+            for tok in
+            self.signature.split('->')
+        ]
+
+        cod = tokens[-1]
+        return env[cod]
+
+    def typecheck(self, operands):
+        # TODO: commutative operands!
+        # We can use itertools.permutations to permute domains
+
+        if not hasattr(self, 'signature'):
             return True
 
-        # A dynamically typed function, just drop out
-        if dynamic(cls):
-            return True
+        # A dynamically typed function, just drop out before
+        # hitting the expensive type checker since we know the
+        # codomain is dynamic as well.
+        #if dynamic(self):
+            #return True
 
         tokens = [
             tok.strip()
             for tok in
-            cls.signature.split('->')
+            self.signature.split('->')
         ]
 
         dom = tokens[0:-1]
@@ -421,20 +494,20 @@ class Op(ExpressionNode):
         rigid  = [tokens.count(token)  > 1 for token in dom]
         free   = [tokens.count(token) == 1 for token in dom]
 
-        assert len(dom) == cls.arity
+        assert len(dom) == self.arity
         env = {}
 
         dom_vars = dom
 
-        for i, (var, types, operand) in enumerate(zip(dom_vars, cls.dom, operands)):
+        # Naive Type Checker
+        # ==================
 
-            # Check if the type satisfies the kind constraint
-            # -----------------------------------------------
+        for i, (var, types, operand) in enumerate(zip(dom_vars, self.dom, operands)):
 
             if free[i]:
                 if typeof(operand) not in types:
                     raise TypeError('Signature for %s :: %s does not permit type %s' %
-                        (cls.__name__, cls.signature, typeof(operand)))
+                        (self.__name__, self.signature, typeof(operand)))
 
             if rigid[i]:
                 bound = env.get(var)
@@ -449,7 +522,7 @@ class Op(ExpressionNode):
                         env[var] = typeof(operand)
                     else:
                         raise TypeError('Signature for %s :: %s does not permit type %s' %
-                            (cls.__name__, cls.signature, typeof(operand)))
+                            (self.__name__, self.signature, typeof(operand)))
 
         # Type checks!
         return env
@@ -462,6 +535,7 @@ class Op(ExpressionNode):
 class Slice(Op):
     # $0, start, stop, step
     arity = 4
+    opaque = True
 
 #------------------------------------------------------------------------
 # Table

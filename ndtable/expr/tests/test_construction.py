@@ -57,6 +57,15 @@ def test_binary_ops():
     if DEBUG:
         dump(x, filename='binary')
 
+def test_binary_mixed():
+    a = NDTable([])
+    b = NDTable([])
+
+    x = a+2
+
+    if DEBUG:
+        dump(x, filename='binarymixed')
+
 def test_unary_ops():
     a = NDTable([])
 
