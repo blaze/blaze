@@ -203,6 +203,7 @@ class ExpressionNode(nodes.Node):
             "    return self.generate_opnode(1, '%(name)s', [self])"
             "\n"
         ) % locals()
+        del name
 
     # Unary
     # -----
@@ -231,6 +232,7 @@ class ExpressionNode(nodes.Node):
             "    return self.generate_opnode(2, '%(name)s', [self, ob])\n"
             "\n"
         )  % locals()
+        del name
 
 #------------------------------------------------------------------------
 # Indexables
@@ -251,6 +253,7 @@ class ArrayNode(ExpressionNode):
             "    return self.generate_opnode(-1, '%(name)s', args, kwargs)"
             "\n"
         ) % locals()
+        del name
 
     # Write Operations
     # ===============
@@ -261,6 +264,7 @@ class ArrayNode(ExpressionNode):
             "    return self.generate_opnode(-1, '%(name)s', args, kwargs)\n"
             "\n"
         ) % locals()
+        del name
 
     # Numpy-compatible shape/flag attributes
     # ======================================

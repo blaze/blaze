@@ -3,7 +3,7 @@ from ndtable.expr.graph import IntNode
 from ndtable.expr.nodes import Node, traverse
 from ndtable.table import NDTable
 
-DEBUG = False
+DEBUG = True
 
 def test_walk():
     e = Node([])

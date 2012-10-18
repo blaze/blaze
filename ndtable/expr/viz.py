@@ -27,6 +27,7 @@ def build_graph(node, graph=None, context=None, tree=False):
     # Increment the name of the top node
 
     cluster = pydot.Cluster(str(id(node.children)), label=' ')
+    graph.add_subgraph(cluster)
 
     for child in node.children:
         nd, _ = build_graph(child, graph, context, tree=tree)
@@ -54,8 +55,6 @@ def build_graph(node, graph=None, context=None, tree=False):
 
         graph.add_node( nd )
         graph.add_edge( pydot.Edge(top, nd) )
-
-    graph.add_subgraph(cluster)
 
     return node, graph
 

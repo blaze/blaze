@@ -234,3 +234,7 @@ class NDTable(Indexable, ArrayNode):
 
     def __repr__(self):
         return 'NDTable %i' % id(self)
+
+    @property
+    def name(self):
+        return repr(self)
