@@ -67,22 +67,21 @@ def test_unary_ops():
     if DEBUG:
         dump(x, filename='unary')
 
-# TODO: resolve
-#def test_indexing():
-    #a = NDTable([])
+def test_indexing():
+    a = NDTable([])
 
-    #x = a[0]
+    x = a[0]
 
-    #if DEBUG:
-        #dump(x, filename='indexer')
+    if DEBUG:
+        dump(x, filename='indexer')
 
-#def test_slice():
-    #a = NDTable([])
+def test_slice():
+    a = NDTable([])
 
-    #x = a[0:1]
+    x = a[0:1]
 
-    #if DEBUG:
-        #dump(x, filename='indexer')
+    if DEBUG:
+        dump(x, filename='indexer')
 
 def test_scalars():
     a = ScalarNode(1)
