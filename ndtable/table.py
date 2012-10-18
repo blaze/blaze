@@ -51,9 +51,6 @@ class Table(Indexable):
 #   Indexable
 #   =========
 #
-#   __getitem__  : function
-#   __getslice__ : function
-#   __index__    : function
 #   index1d      : function
 #   indexnd      : function
 #   query        : function
@@ -67,7 +64,6 @@ class Table(Indexable):
 #
 #   children     : attribute
 #   T            : function
-#   __len__      : function
 #   dtype        : function
 #   flags        : function
 #   flat         : function
@@ -81,8 +77,33 @@ class Table(Indexable):
 #   tofile       : function
 #   tolist       : function
 #   tostring     : function
+#   __len__      : function
+#   __getitem__  : function
+#   __getslice__ : function
+#   __index__    : function
 
 class NDTable(Indexable, ArrayNode):
+    """
+    The base NDTable. Indexable contains the indexing logic for
+    how to access elements, while ArrayNode contains the graph
+    related logic for building expression trees with this table
+    as an element.
+
+    Parameters:
+
+        obj       : A list of byte providers, other NDTables or
+
+    Optional:
+
+        datashape : Manual datashape specification for the table,
+                    if None then shape will be inferred if
+                    possible.
+
+        index     : The index for the datashape and all nested
+                    structures, if None then AutoIndex is used.
+
+        metadata  : Explicit metadata annotation.
+    """
 
     def __init__(self, obj, datashape=None, index=None, metadata=None):
         self.datashape = datashape
