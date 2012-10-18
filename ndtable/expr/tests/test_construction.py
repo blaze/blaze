@@ -88,6 +88,7 @@ def test_scalars():
     b = IntNode(1)
     c = IntNode(2)
 
-    x = abs((a + b + c + c) * 3)
+    x = abs((a + b + c + 3) * 4)
 
-    dump(x, filename='scalars')
+    if DEBUG:
+        dump(x, filename='scalars')

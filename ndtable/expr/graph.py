@@ -445,7 +445,9 @@ class Op(ExpressionNode):
         # Make sure the graph makes sense given the signature of
         # the function. Does naive type checking and inference.
         if _perform_typecheck and not self.opaque:
-            env = self.typecheck(operands)
+            dom, env = self.typecheck(operands)
+
+            self.dom = dom
             self.cod = self.infer_codomain(env)
         else:
             # Otherwise it's the universal supertype, the operator could
@@ -529,7 +531,8 @@ class Op(ExpressionNode):
                             (self.__class__.__name__, self.signature, typeof(operand)))
 
         # Type checks!
-        return env
+        domt = [env[tok] for tok in dom]
+        return domt, env
 
     @property
     def name(self):
