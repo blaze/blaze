@@ -104,21 +104,6 @@ class Indexable(object):
         """
         raise NotImplementedError
 
-    def __getitem__(self, indexer):
-        if isinstance(indexer, (int, str)):
-            self.index1d(indexer)
-        else:
-            self.indexnd(indexer)
-
-    def __getslice__(self, start, stop, step):
-        pass
-
-    def index1d(self, indexer):
-        raise NotImplementedError()
-
-    def indexnd(self, indexer):
-        raise NotImplementedError()
-
     #------------------------------------------------------------------------
     # Iteration protocol interface
     #
