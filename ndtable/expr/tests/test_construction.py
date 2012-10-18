@@ -3,7 +3,7 @@ from ndtable.expr.graph import IntNode
 from ndtable.expr.nodes import Node, traverse
 from ndtable.table import NDTable
 
-DEBUG = True
+DEBUG = False
 
 def test_walk():
     e = Node([])
@@ -81,7 +81,7 @@ def test_slice():
     x = a[0:1]
 
     if DEBUG:
-        dump(x, filename='indexer')
+        dump(x, filename='slice')
 
 def test_scalars():
     a = IntNode(1)

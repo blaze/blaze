@@ -12,7 +12,7 @@ from ndtable.datashape.coretypes import int32, float32, string, top, Any
 
 # Type checking and unification
 from ndtable.datashape.unification import unify, Incommensurable
-from ndtable.expr.typechecker import typecheck
+from ndtable.expr.typechecker import typecheck, typesystem
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -71,6 +71,8 @@ def typeof(obj):
         return top
     else:
         raise UnknownExpression(obj)
+
+BlazeT = typesystem(unify, top, typeof)
 
 #------------------------------------------------------------------------
 # Graph Construction
@@ -213,6 +215,7 @@ class ExpressionNode(nodes.Node):
             "    return self.generate_opnode(1, '%(name)s', [self])"
             "\n"
         ) % locals()
+        del name
 
     # Binary
     # ------
@@ -459,7 +462,7 @@ class Op(ExpressionNode):
                 self.signature, # type signature
                 operands,       # operands
                 self.dom,       # domain constraints
-                typeof,         # universe
+                BlazeT,         # Blaze type system
                 commutative = self.commutative
             )
 

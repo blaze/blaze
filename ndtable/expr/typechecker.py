@@ -5,14 +5,12 @@ Naive type checking
 from collections import namedtuple
 from itertools import permutations
 
-from ndtable.datashape.coretypes import top
-from ndtable.datashape.unification import unify, Incommensurable
+from ndtable.datashape import coretypes
+from ndtable.datashape.unification import Incommensurable
 
-typeresult = namedtuple('Types', 'env, dom, cod, opaque')
-
-def dynamic(cls):
-    universal = set([top])
-    return all(arg == universal for arg in cls.dom)
+#------------------------------------------------------------------------
+# Type Check Exceptions
+#------------------------------------------------------------------------
 
 class InvalidSignature(Exception):
     def __init__(self, args):
@@ -31,6 +29,17 @@ class TypeCheck(Exception):
             self.operant,
         )
 
+#------------------------------------------------------------------------
+# System Specification
+#------------------------------------------------------------------------
+
+typesystem = namedtuple('TypeSystem', 'unifier, top, fromvalue')
+typeresult = namedtuple('Satisifes', 'env, dom, cod, opaque')
+
+#------------------------------------------------------------------------
+# Core Typechecker
+#------------------------------------------------------------------------
+
 # Some notes on notation:
 #
 #     a -> b -> c
@@ -43,7 +52,11 @@ class TypeCheck(Exception):
 #     def (x : a, y : b) -> c:
 #          ...
 
-def typecheck(signature, operands, domc, universe, commutative=False):
+def dynamic(cls):
+    universal = set([coretypes.top])
+    return all(arg == universal for arg in cls.dom)
+
+def typecheck(signature, operands, domc, system, commutative=False):
     """
     Parameters
         signature : String containing the type signature.
@@ -67,25 +80,26 @@ def typecheck(signature, operands, domc, universe, commutative=False):
               and operands with the constraints.
 
     """
+    top       = system.top
+    unify     = system.unifier
 
     # Commutative type checker can be written in terms of an
     # enumeration of the flat typechecker over the permutations
     # of the operands and domain constraints.
     if commutative:
-        ret = None
         # TODO: write this better after more coffee
         for p in permutations(zip(operands, domc)):
             ops = [q[0] for q in p]
             dcs = [q[1] for q in p]
             try:
-                return typecheck(signature, ops, dcs, universe)
+                return typecheck(signature, ops, dcs, system, commutative=False)
             except TypeCheck:
                 continue
 
-    if callable(universe):
-        typeof = universe
+    if callable(system.fromvalue):
+        typeof = system.fromvalue
     else:
-        typeof = lambda t: universe[t]
+        typeof = lambda t: system.fromvalue[t]
 
     tokens = [
         tok.strip()
@@ -129,10 +143,10 @@ def typecheck(signature, operands, domc, universe, commutative=False):
             if bound:
                 if typeof(operand) != bound:
                     try:
-                        uni = unify(operand, bound)
+                        uni = unify(typeof(operand), bound)
                     except Incommensurable:
                         raise TypeError(
-                            'Cannot unify %s %r' % (type(operand), bound))
+                            'Cannot unify %s %r' % (typeof(operand), bound))
 
                     if uni in types:
                         env[var] = uni
