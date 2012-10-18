@@ -7,6 +7,7 @@ from numbers import Integral
 from collections import Iterable
 
 from ndtable.expr import nodes
+from ndtable.expr import catalog
 from ndtable.datashape.unification import unify
 from ndtable.datashape.coretypes import int32, float32, top, Any
 
@@ -34,43 +35,6 @@ def set_max_argument_recursion(val):
     global _max_argument_recursion
     _max_argument_recursion = val
 
-#------------------------------------------------------------------------
-# Method Maps
-#------------------------------------------------------------------------
-
-PyObject_BinaryOperators = [
-    ('or','|'),  ('and','&'), ('xor','^'), ('lshift','<<'), ('rshift','>>'),
-    ('add','+'), ('sub','-'), ('mul','*'), ('div','/'), ('mod','%'),
-    ('truediv','/'), ('floordiv','//'), ('lt','<'), ('gt','>'), ('le','<='),
-    ('ge','>='), ('eq','=='), ('ne','!=')
-]
-
-PyObject_UnaryOperators = [
-    ('neg','-'), ('pos','+'), ('invert','~')
-]
-
-PyObject_Intrinsics = [
-    'str', 'hash', 'abs', 'complex', 'int', 'long', 'float', 'iter',
-    'oct', 'hex'
-]
-
-PyArray_Intrinsics = [
-    "dtype", "size"
-]
-
-PyArray_WriteMethods = [
-    'fill', 'itemset', 'put', 'setflags', 'setfield'
-]
-
-PyArray_ReadMethods = [
-    'all', 'any', 'argmax', 'argmin', 'argsort', 'astype', 'base', 'byteswap',
-    'choose', 'clip', 'compress', 'conj', 'conjugate', 'copy', 'ctypes',
-    'cumprod', 'cumsum', 'data', 'diagonal', 'dot', 'dtype', 'dump', 'dumps',
-    'flatten', 'getfield', 'item', 'max', 'mean', 'min', 'nbytes',
-    'newbyteorder', 'nonzero', 'prod', 'ptp', 'ravel', 'repeat', 'reshape',
-    'resize', 'round', 'searchsorted', 'setasflat', 'sort', 'squeeze', 'std',
-    'sum', 'swapaxes', 'take', 'trace', 'transpose', 'var', 'view'
-]
 
 def lift_magic(f):
     @wraps(f)
@@ -90,15 +54,16 @@ class UnknownExpression(Exception):
         return 'Unknown object in expression: %r' % (self.obj,)
 
 def typeof(obj):
-    # TODO: resolve circular dependencies
-    from ndtable.table import NDTable
 
     if type(obj) is nodes.IntNode:
         return int32
     elif type(obj) is nodes.DoubleNode:
         return float32
-    elif type(obj) is NDTable:
+
+    # TODO: resolve circular dependencies
+    elif isinstance(obj, ArrayNode):
         return top
+
     elif type(obj) is Any:
         return top
     elif type(obj) is App:
@@ -233,7 +198,7 @@ class ExpressionNode(nodes.Node):
 
     # Python Intrinsics
     # -----------------
-    for name in PyObject_Intrinsics:
+    for name in catalog.PyObject_Intrinsics:
         # Bound methods are actually just unary functions with
         # the first argument self implicit
         exec (
@@ -244,7 +209,7 @@ class ExpressionNode(nodes.Node):
 
     # Unary
     # -----
-    for name, op in PyObject_UnaryOperators:
+    for name, op in catalog.PyObject_UnaryOperators:
         exec (
             "def __%(name)s__(self):\n"
             "    return self.generate_node(1, '%(name)s', [self])"
@@ -253,7 +218,7 @@ class ExpressionNode(nodes.Node):
 
     # Binary
     # ------
-    for name, op in PyObject_BinaryOperators:
+    for name, op in catalog.PyObject_BinaryOperators:
         exec (
             "def __%(name)s__(self, ob):\n"
             "    return self.generate_node(2, '%(name)s', [self, ob])\n"
@@ -263,7 +228,7 @@ class ExpressionNode(nodes.Node):
             "\n"
         )  % locals()
 
-    for name, op in PyObject_BinaryOperators:
+    for name, op in catalog.PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self, ob):\n"
             "    return self.generate_node(2, '%(name)s', [self, ob])\n"
@@ -282,7 +247,7 @@ class ArrayNode(ExpressionNode):
     # Read Operations
     # ===============
 
-    for name in PyArray_ReadMethods:
+    for name in catalog.PyArray_ReadMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
             "    args = (self,) + args\n"
@@ -293,7 +258,7 @@ class ArrayNode(ExpressionNode):
     # Write Operations
     # ===============
 
-    for name in PyArray_WriteMethods:
+    for name in catalog.PyArray_WriteMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
             "    return self.generate_node(-1, '%(name)s', args, kwargs)\n"
