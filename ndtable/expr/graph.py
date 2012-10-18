@@ -1,5 +1,5 @@
 """
-Holds the base classes and the
+Holds the base classes for graph nodes.
 """
 
 from functools import wraps
@@ -11,7 +11,7 @@ from ndtable.expr import catalog
 from ndtable.datashape.coretypes import int32, float32, string, top, Any
 
 # Type checking and unification
-from ndtable.datashape.unification import unify, Incommensurable
+from ndtable.datashape.unification import unify
 from ndtable.expr.typechecker import typecheck, typesystem
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
@@ -57,17 +57,22 @@ class UnknownExpression(Exception):
         return 'Unknown object in expression: %r' % (self.obj,)
 
 def typeof(obj):
+    typ = type(obj)
 
-    if type(obj) is App:
-        return obj.cod
+    # -- special case --
     if isinstance(obj, ArrayNode):
         # TOOD: more enlightened description
         return top
-    if type(obj) is IntNode:
+
+    if typ is App:
+        return obj.cod
+    elif typ is IntNode:
         return int32
-    elif type(obj) is FloatNode:
+    elif typ is FloatNode:
         return float32
-    elif type(obj) is Any:
+    elif typ is StringNode:
+        return string
+    elif typ is Any:
         return top
     else:
         raise UnknownExpression(obj)

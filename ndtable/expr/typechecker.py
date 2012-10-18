@@ -149,6 +149,9 @@ def typecheck(signature, operands, domc, system, commutative=False):
 
                     if uni in types:
                         env[var] = uni
+                    else:
+                        raise TypeError(
+                            'Cannot unify %s %r' % (typeof(operand), bound))
             else:
                 if typeof(operand) in types:
                     env[var] = typeof(operand)

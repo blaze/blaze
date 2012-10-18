@@ -9,11 +9,12 @@ from ndtable.datashape.coretypes import *
 
 one, zero, false, true = xrange(4)
 
-bools     = set([bool_])
 ints      = set([int8, int16, int32, int64])
 uints     = set([uint8, uint16, uint32, uint64])
 floats    = set([float32, float64])
 complexes = set([complex64, complex128])
+bools     = set([bool_])
+string    = set([string])
 
 discrete   = ints | uints
 continuous = floats | complexes
@@ -22,7 +23,7 @@ numeric    = discrete | continuous
 array_like, tabular_like = xrange(2)
 indexable = set([array_like, tabular_like])
 
-universal = set([top]) | numeric | indexable
+universal = set([top]) | numeric | indexable | string
 
 #------------------------------------------------------------------------
 # Arity Bases

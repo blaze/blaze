@@ -1,10 +1,11 @@
 from ndtable.datashape.coretypes import float64
-from ndtable.expr.graph import IntNode, FloatNode
+from ndtable.expr.graph import IntNode, FloatNode, App, StringNode
 from ndtable.expr.nodes import Node, traverse
 from ndtable.expr.viz import dump
 from ndtable.table import NDTable
-from ndtable.expr.graph import App
 
+from nose.tools import assert_raises
+from ndtable.expr.typechecker import TypeCheck
 
 # Print out graphviz to the screen
 DEBUG = False
@@ -105,3 +106,9 @@ def test_preserve_types():
     assert isinstance(x, App)
     assert x.dom == [float64, float64]
     assert x.cod == float64
+
+def test_reject_invalid():
+    b = StringNode('boom')
+
+    with assert_raises(TypeCheck):
+        x = abs(b)
