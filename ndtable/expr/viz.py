@@ -29,7 +29,7 @@ def build_graph(node, graph=None, context=None, tree=False):
     cluster = pydot.Cluster(str(id(node.children)), label=' ')
 
     for child in node.children:
-        nd, _ = build_graph(child, graph, context, tree=True)
+        nd, _ = build_graph(child, graph, context, tree=tree)
 
         # Ensure the graph is a tree by adding numbers to the
         # labels of nodes.
@@ -41,6 +41,7 @@ def build_graph(node, graph=None, context=None, tree=False):
             else:
                 # a1, a2, a3
                 name = nd.name + str(context[nd.name])
+                #name = nd.name + "_" + str(context[nd.name])
 
             context[nd.name] += 1
 

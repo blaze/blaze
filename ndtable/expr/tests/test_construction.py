@@ -86,8 +86,8 @@ def test_slice():
 def test_scalars():
     a = IntNode(1)
     b = IntNode(1)
+    c = IntNode(2)
 
-    x = NDTable([a,b])
+    x = abs((a + b + c + c) * 3)
 
-    if DEBUG:
-        dump(x, filename='scalars')
+    dump(x, filename='scalars')

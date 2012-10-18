@@ -8,7 +8,7 @@ from collections import Iterable
 
 from ndtable.expr import nodes
 from ndtable.expr import catalog
-from ndtable.datashape.unification import unify
+from ndtable.datashape.unification import unify, Incommensurable
 from ndtable.datashape.coretypes import int32, float32, string, top, Any
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
@@ -55,6 +55,8 @@ class UnknownExpression(Exception):
 
 def typeof(obj):
 
+    if type(obj) is App:
+        return obj.cod
     if isinstance(obj, ArrayNode):
         # TOOD: more enlightened description
         return top
@@ -64,8 +66,6 @@ def typeof(obj):
         return float32
     elif type(obj) is Any:
         return top
-    elif type(obj) is App:
-        return obj.otype
     else:
         raise UnknownExpression(obj)
 
@@ -169,7 +169,7 @@ class ExpressionNode(nodes.Node):
     def eval(self):
         pass
 
-    def generate_node(self, arity, fname, args=None, kwargs=None):
+    def generate_opnode(self, arity, fname, args=None, kwargs=None):
 
         # TODO: also kwargs when we support such things
         iargs = injest_iterable(args)
@@ -179,12 +179,12 @@ class ExpressionNode(nodes.Node):
         #op = Op._registry.get(fname, Op)
 
         if arity == 1:
-            assert len(iargs) == arity
-            return op(fname, iargs)
+            iop = op(fname, iargs)
+            return App(iop)
 
         if arity == 2:
-            assert len(iargs) == arity
-            return op(fname, iargs)
+            iop = op(fname, iargs)
+            return App(iop)
 
         elif arity == -1:
             return op(fname, iargs, kwargs)
@@ -196,35 +196,35 @@ class ExpressionNode(nodes.Node):
         # the first argument self implicit
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', [self])"
+            "    return self.generate_opnode(1, '%(name)s', [self])"
             "\n"
         ) % locals()
 
     # Unary
     # -----
-    for name, op in catalog.PyObject_UnaryOperators:
+    for name, _ in catalog.PyObject_UnaryOperators:
         exec (
             "def __%(name)s__(self):\n"
-            "    return self.generate_node(1, '%(name)s', [self])"
+            "    return self.generate_opnode(1, '%(name)s', [self])"
             "\n"
         ) % locals()
 
     # Binary
     # ------
-    for name, op in catalog.PyObject_BinaryOperators:
+    for name, _ in catalog.PyObject_BinaryOperators:
         exec (
             "def __%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self, ob])\n"
+            "    return self.generate_opnode(2, '%(name)s', [self, ob])\n"
             "\n"
             "def __r%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self, ob])\n"
+            "    return self.generate_opnode(2, '%(name)s', [self, ob])\n"
             "\n"
         )  % locals()
 
-    for name, op in catalog.PyObject_BinaryOperators:
+    for name, _ in catalog.PyObject_BinaryOperators:
         exec (
             "def __i%(name)s__(self, ob):\n"
-            "    return self.generate_node(2, '%(name)s', [self, ob])\n"
+            "    return self.generate_opnode(2, '%(name)s', [self, ob])\n"
             "\n"
         )  % locals()
 
@@ -244,7 +244,7 @@ class ArrayNode(ExpressionNode):
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
             "    args = (self,) + args\n"
-            "    return self.generate_node(-1, '%(name)s', args, kwargs)"
+            "    return self.generate_opnode(-1, '%(name)s', args, kwargs)"
             "\n"
         ) % locals()
 
@@ -254,7 +254,7 @@ class ArrayNode(ExpressionNode):
     for name in catalog.PyArray_WriteMethods:
         exec (
             "def %(name)s(self, *args, **kwargs):\n"
-            "    return self.generate_node(-1, '%(name)s', args, kwargs)\n"
+            "    return self.generate_opnode(-1, '%(name)s', args, kwargs)\n"
             "\n"
         ) % locals()
 
@@ -378,15 +378,21 @@ class App(ExpressionNode):
     """
     __slots__ = ['itype','otype']
 
-    def __init__(self, op, inputs, outputs):
-        self.op = op
-        self.children = [op]
+    def __init__(self, operator):
+        self.operator = operator
+        self.children = [operator]
 
-    def nin(self):
-        return len(self.itype)
+    @property
+    def dom(self):
+        return self.operator.dom
 
-    def nout(self):
-        return len(self.otype)
+    @property
+    def cod(self):
+        return self.operator.cod
+
+    @property
+    def name(self):
+        return 'App'
 
 #------------------------------------------------------------------------
 # Op
@@ -507,8 +513,11 @@ class Op(ExpressionNode):
                 bound = env.get(var)
 
                 if bound:
-                    if typeof(operand) != typeof(bound):
-                        uni = unify(operand, bound)
+                    if typeof(operand) != bound:
+                        try:
+                            uni = unify(operand, bound)
+                        except Incommensurable:
+                            raise TypeError( 'Cannot unify %s %r' % (type(operand), bound) )
                         if uni in types:
                             env[var] = uni
                 else:
