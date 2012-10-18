@@ -68,6 +68,20 @@ def typecheck(signature, operands, domc, universe, commutative=False):
 
     """
 
+    # Commutative type checker can be written in terms of an
+    # enumeration of the flat typechecker over the permutations
+    # of the operands and domain constraints.
+    if commutative:
+        ret = None
+        # TODO: write this better after more coffee
+        for p in permutations(zip(operands, domc)):
+            ops = [q[0] for q in p]
+            dcs = [q[1] for q in p]
+            try:
+                return typecheck(signature, ops, dcs, universe)
+            except TypeCheck:
+                continue
+
     if callable(universe):
         typeof = universe
     else:

@@ -233,4 +233,4 @@ class NDTable(Indexable, ArrayNode):
                 self.to_html() + '\n</div>')
 
     def __repr__(self):
-        pass
+        return 'NDTable %i' % id(self)
