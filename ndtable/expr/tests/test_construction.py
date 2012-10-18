@@ -1,5 +1,6 @@
 from ndtable.expr.viz import dump
-from ndtable.expr.nodes import Node, IntNode, traverse
+from ndtable.expr.graph import IntNode
+from ndtable.expr.nodes import Node, traverse
 from ndtable.table import NDTable
 
 DEBUG = False
@@ -59,7 +60,7 @@ def test_binary_mixed():
         dump(x, filename='binarymixed')
 
 def test_unary_ops():
-    a = NDTable([])
+    a = IntNode(1)
 
     x = abs(a)
 

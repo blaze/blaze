@@ -23,7 +23,7 @@ numeric    = discrete | continuous
 array_like, tabular_like = xrange(2)
 indexable = set([array_like, tabular_like])
 
-universal = set([top])
+universal = set([top]) | numeric | indexable
 
 #------------------------------------------------------------------------
 # Arity Bases
@@ -92,7 +92,7 @@ class transpose(UnaryOp):
 class abs(UnaryOp):
     # -----------------------
     signature = 'a -> a'
-    dom = [universal, universal]
+    dom = [numeric, numeric]
     # -----------------------
 
     identity     = one
