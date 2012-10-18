@@ -60,7 +60,7 @@ def typeof(obj):
     elif type(obj) is nodes.DoubleNode:
         return float32
 
-    # TODO: resolve circular dependencies
+    # TODO: circular dependencies
     elif isinstance(obj, ArrayNode):
         return top
 
@@ -99,9 +99,6 @@ def injest_iterable(args, depth=0):
     # tuple, list, dictionary, any recursive combination of them
     if isinstance(args, Iterable):
 
-        # TODO: resolve circular dependencies
-        from ndtable.table import NDTable
-
         if len(args) == 0:
             return []
 
@@ -124,7 +121,7 @@ def injest_iterable(args, depth=0):
                     return [nodes.DoubleNode(a) for a in args]
                 elif isinstance(head, basestring):
                     return [nodes.StringNode(a) for a in args]
-                elif isinstance(head, NDTable):
+                elif isinstance(head, ArrayNode):
                     return [a for a in args]
                 else:
                     return args
@@ -142,7 +139,7 @@ def injest_iterable(args, depth=0):
                     if isinstance(a, (list, tuple)):
                         sub = injest_iterable(a, depth+1)
                         ret.append(sub)
-                    elif isinstance(a, NDTable):
+                    elif isinstance(a, ArrayNode):
                         ret.append(a)
                     elif isinstance(a, basestring):
                         ret.append(nodes.StringNode(a))
@@ -486,7 +483,8 @@ class Op(ExpressionNode):
 
             if free[i]:
                 if typeof(operand) not in types:
-                    raise TypeError('Signature for %s :: %s does not permit type %s' %
+                    raise TypeError(
+                        'Signature for %s :: %s does not permit type %s' %
                         (self.__name__, self.signature, typeof(operand)))
 
             if rigid[i]:
@@ -501,7 +499,8 @@ class Op(ExpressionNode):
                     if typeof(operand) in types:
                         env[var] = typeof(operand)
                     else:
-                        raise TypeError('Signature for %s :: %s does not permit type %s' %
+                        raise TypeError(\
+                            'Signature for %s :: %s does not permit type %s' %
                             (self.__name__, self.signature, typeof(operand)))
 
         # Type checks!
