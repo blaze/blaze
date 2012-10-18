@@ -142,7 +142,9 @@ class NDTable(Indexable, ArrayNode):
     @staticmethod
     def from_providers(shape, *providers):
         """
-        Create a NDTable from a 1D list of byte providers.
+        Internal method to create a NDTable from a 1D list of
+        byte providers. Tries to infer how the providers must be
+        arranged in order to fit into the provided shape.
         """
         subspaces = []
         indexes   = []

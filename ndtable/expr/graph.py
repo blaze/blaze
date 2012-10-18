@@ -6,7 +6,7 @@ from functools import wraps
 from numbers import Integral
 from collections import Iterable
 
-from ndtable.expr.nodes import Node
+from ndtable.expr import nodes
 from ndtable.datashape.unification import unify
 from ndtable.datashape.coretypes import int32, float32, top, Any
 
@@ -93,9 +93,9 @@ def typeof(obj):
     # TODO: resolve circular dependencies
     from ndtable.table import NDTable
 
-    if type(obj) is IntNode:
+    if type(obj) is nodes.IntNode:
         return int32
-    elif type(obj) is DoubleNode:
+    elif type(obj) is nodes.DoubleNode:
         return float32
     elif type(obj) is NDTable:
         return top
@@ -154,11 +154,11 @@ def injest_iterable(args, depth=0):
 
             if is_homog:
                 if isinstance(head, int):
-                    return [IntNode(a) for a in args]
+                    return [nodes.IntNode(a) for a in args]
                 if isinstance(head, float):
-                    return [DoubleNode(a) for a in args]
+                    return [nodes.DoubleNode(a) for a in args]
                 elif isinstance(head, basestring):
-                    return [StringNode(a) for a in args]
+                    return [nodes.StringNode(a) for a in args]
                 elif isinstance(head, NDTable):
                     return [a for a in args]
                 else:
@@ -179,14 +179,14 @@ def injest_iterable(args, depth=0):
                         ret.append(sub)
                     elif isinstance(a, NDTable):
                         ret.append(a)
-                    elif isinstance(a, Node):
-                        ret.append(a)
                     elif isinstance(a, basestring):
-                        ret.append(StringNode(a))
+                        ret.append(nodes.StringNode(a))
                     elif isinstance(a, int):
-                        ret.append(IntNode(a))
+                        ret.append(nodes.IntNode(a))
                     elif isinstance(a, float):
-                        ret.append(DoubleNode(a))
+                        ret.append(nodes.DoubleNode(a))
+                    elif isinstance(a, nodes.Node):
+                        ret.append(a)
                     else:
                         raise TypeError("Unknown type")
                 return ret
@@ -200,7 +200,7 @@ def injest_iterable(args, depth=0):
 # Base Classes
 #------------------------------------------------------------------------
 
-class ExpressionNode(Node):
+class ExpressionNode(nodes.Node):
     """
     A abstract node which supports the full set of PyNumberMethods
     methods.
@@ -368,16 +368,16 @@ class ArrayNode(ExpressionNode):
         element access should return bare scalars.
         """
         if isinstance(idx, Integral) or isinstance(idx, np.integer):
-            ndx = IndexNode((idx,))
+            ndx = nodes.IndexNode((idx,))
             return Slice('getitem', [self, ndx])
         else:
-            ndx = IndexNode(idx)
+            ndx = nodes.IndexNode(idx)
             return Slice('getitem', [self, ndx])
 
     def __getslice__(self, start, stop):
         """
         """
-        ndx = IndexNode((start, stop))
+        ndx = nodes.IndexNode((start, stop))
         return Slice('getslice', [self, ndx])
 
     # Other non-graph methods
@@ -551,48 +551,3 @@ class Slice(Op):
     # $0, start, stop, step
     arity = 4
     opaque = True
-
-#------------------------------------------------------------------------
-# Table
-#------------------------------------------------------------------------
-
-#------------------------------------------------------------------------
-# Values
-#------------------------------------------------------------------------
-
-class Literal(Node):
-    __slots__ = ['children', 'vtype']
-
-    def __init__(self, val):
-        assert isinstance(val, self.vtype)
-        self.val = val
-        self.children = []
-
-    @property
-    def name(self):
-        return str(self.val)
-
-class StringNode(Literal):
-    vtype = str
-
-#------------------------------------------------------------------------
-# Scalars
-#------------------------------------------------------------------------
-
-# TODO: more robust!!
-
-class ScalarNode(Literal):
-    vtype = int
-
-class IntNode(Literal):
-    vtype = int
-
-class DoubleNode(Literal):
-    vtype = float
-
-class IndexNode(Literal):
-    vtype = tuple
-
-    @property
-    def name(self):
-        return 'Index%s' % str(self.val)

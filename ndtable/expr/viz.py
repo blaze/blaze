@@ -5,8 +5,6 @@ from collections import Counter
 from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile
 
-from ndtable.expr.graph import Op, ScalarNode
-
 def dump(node, ipython=True, filename=None, tree=False):
     """
     Dump the expression graph to either a file or IPython.
@@ -89,48 +87,3 @@ def view(fname, graph):
         p = Popen(['feh', '%s.png' % fname])
         # Macintosh
         #p = Popen(['open', fname])
-
-def test_simple():
-
-    a = Op('add')
-    b = ScalarNode(1)
-    c = ScalarNode(2)
-    a.attach(b,c)
-
-    _, graph = build_graph(a)
-    view('s1', graph)
-
-def test_nested():
-
-    a = Op('add')
-    b = ScalarNode(1)
-    c = ScalarNode(2)
-
-    a.attach(b,c)
-
-    d = StringNode('spock')
-    e = StringNode('kirk')
-
-    c.attach(d,e)
-
-    _, graph = build_graph(a)
-    view('nested', graph)
-
-def test_complex():
-
-    a = Op('add')
-
-    w = ScalarNode(0)
-    x = ScalarNode(1)
-    y = ScalarNode(2)
-    z = ScalarNode(3)
-
-    b = Op('xor')
-    c = Op('and')
-
-    a.attach(b,c)
-    b.attach(w,x)
-    c.attach(y,z)
-
-    _, graph = build_graph(a, None)
-    view('complex', graph)

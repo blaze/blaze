@@ -1,6 +1,5 @@
 from ndtable.expr.viz import dump
-from ndtable.expr.nodes import Node, traverse
-from ndtable.expr.graph import ScalarNode
+from ndtable.expr.nodes import Node, IntNode, traverse
 from ndtable.table import NDTable
 
 DEBUG = False
@@ -84,8 +83,8 @@ def test_slice():
         dump(x, filename='indexer')
 
 def test_scalars():
-    a = ScalarNode(1)
-    b = ScalarNode(1)
+    a = IntNode(1)
+    b = IntNode(1)
 
     x = NDTable([a,b])
 
