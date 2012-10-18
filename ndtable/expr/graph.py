@@ -8,8 +8,11 @@ from collections import Iterable
 
 from ndtable.expr import nodes
 from ndtable.expr import catalog
-from ndtable.datashape.unification import unify, Incommensurable
 from ndtable.datashape.coretypes import int32, float32, string, top, Any
+
+# Type checking and unification
+from ndtable.datashape.unification import unify, Incommensurable
+from ndtable.expr.typechecker import typecheck
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -69,10 +72,6 @@ def typeof(obj):
     else:
         raise UnknownExpression(obj)
 
-def dynamic(cls):
-    universal = set([top])
-    return all(arg == universal for arg in cls.dom)
-
 #------------------------------------------------------------------------
 # Graph Construction
 #------------------------------------------------------------------------
@@ -82,6 +81,8 @@ def is_homogeneous(it):
     # PyObject->tp_type, isinstance() calls are expensive since
     # they have travese the whole mro hierarchy
 
+    # Checks Python types for arguments, not to be confused with the
+    # datashape types and the operator types!
     head = it[0]
     head_type = type(head)
     return head, all(type(a) == head_type for a in it)
@@ -167,6 +168,9 @@ class ExpressionNode(nodes.Node):
     """
 
     def eval(self):
+        pass
+
+    def generate_fnnode(self, fname, args=None, kwargs=None):
         pass
 
     def generate_opnode(self, arity, fname, args=None, kwargs=None):
@@ -436,103 +440,33 @@ class Op(ExpressionNode):
         signature ... we just throw things into and things pop out or it
         blows up.
         """
-        return not hasattr(self, 'signature')
+        return self._opaque or (not hasattr(self, 'signature'))
 
     def __init__(self, op, operands):
         self.op = op
         self.children = operands
+        self._opaque = False
 
         # Make sure the graph makes sense given the signature of
         # the function. Does naive type checking and inference.
         if _perform_typecheck and not self.opaque:
-            dom, env = self.typecheck(operands)
 
-            self.dom = dom
-            self.cod = self.infer_codomain(env)
+            result = typecheck(
+                self.signature, # type signature
+                operands,       # operands
+                self.dom,       # domain constraints
+                typeof,         # universe
+                commutative = self.commutative
+            )
+
+            self.dom     = result.dom
+            self.cod     = result.cod
+            self._opaque = result.opaque
         else:
             # Otherwise it's the universal supertype, the operator could
             # return anything. Usefull for when we don't know much about
             # the operand a priori
             self.cod = top
-
-    def infer_codomain(self, env):
-        tokens = [
-            tok.strip()
-            for tok in
-            self.signature.split('->')
-        ]
-
-        cod = tokens[-1]
-        return env[cod]
-
-    def typecheck(self, operands):
-        # TODO: commutative operands!
-        # We can use itertools.permutations to permute domains
-
-        if not hasattr(self, 'signature'):
-            return True
-
-        # A dynamically typed function, just drop out before
-        # hitting the expensive type checker since we know the
-        # codomain is dynamic as well.
-        #if dynamic(self):
-            #return True
-
-        tokens = [
-            tok.strip()
-            for tok in
-            self.signature.split('->')
-        ]
-
-        dom = tokens[0:-1]
-        cod = tokens[-1]
-
-        # Rigid variables are those that appear in multiple times
-        # in the signature
-        #      a -> b -> a -> c
-        #      Rigid a
-        #      Free  b,c
-        rigid = [tokens.count(token)  > 1 for token in dom]
-        free  = [tokens.count(token) == 1 for token in dom]
-
-        assert len(dom) == self.arity
-        env = {}
-
-        dom_vars = dom
-
-        # Naive Type Checker
-        # ==================
-
-        for i, (var, types, operand) in enumerate(zip(dom_vars, self.dom, operands)):
-
-            if free[i]:
-                if typeof(operand) not in types:
-                    raise TypeError(
-                        'Signature for %s :: %s does not permit type %s' %
-                        (self.__class__.__name__, self.signature, typeof(operand)))
-
-            if rigid[i]:
-                bound = env.get(var)
-
-                if bound:
-                    if typeof(operand) != bound:
-                        try:
-                            uni = unify(operand, bound)
-                        except Incommensurable:
-                            raise TypeError( 'Cannot unify %s %r' % (type(operand), bound) )
-                        if uni in types:
-                            env[var] = uni
-                else:
-                    if typeof(operand) in types:
-                        env[var] = typeof(operand)
-                    else:
-                        raise TypeError(
-                            'Signature for %s :: %s does not permit type %s' %
-                            (self.__class__.__name__, self.signature, typeof(operand)))
-
-        # Type checks!
-        domt = [env[tok] for tok in dom]
-        return domt, env
 
     @property
     def name(self):
