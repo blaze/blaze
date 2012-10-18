@@ -1,5 +1,4 @@
 from ndtable.expr.graph import Op
-from operator import itemgetter
 
 # TODO: bad bad
 from ndtable.datashape.coretypes import *
@@ -79,7 +78,7 @@ class mul(BinaryOp):
 class transpose(UnaryOp):
     # -----------------------
     signature = 'a -> a'
-    dom = [universal, universal]
+    dom = [array_like]
     # -----------------------
 
     identity     = None
@@ -95,9 +94,9 @@ class abs(UnaryOp):
     dom = [numeric, numeric]
     # -----------------------
 
-    identity     = one
-    commutative  = True
-    associative  = True
-    idempotent   = False
+    identity     = None
+    commutative  = False
+    associative  = False
+    idempotent   = True
     nilpotent    = False
     sideffectful = False

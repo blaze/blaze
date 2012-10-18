@@ -39,7 +39,7 @@ def unify(a,b):
 # Type System
 #------------------------------------------------------------------------
 
-PythonT = typesystem(unify, object, type)
+PythonT = typesystem(unifier=unify, top=object, fromvalue=type)
 
 #------------------------------------------------------------------------
 # Tests
@@ -59,6 +59,12 @@ def test_simple_bi():
 def test_simple_bi_free():
     res = typecheck('a -> a -> b', [1, 2], [ints, ints], PythonT)
     assert res.opaque == True
+
+def test_simple_bi_domain():
+    res = typecheck('a -> a -> a', [1, 2], [numerics, numerics], PythonT)
+    assert res.dom    == [int, int]
+    assert res.cod    == int
+    assert res.opaque == False
 
 def test_simple_unsatisfiable():
     with assert_raises(TypeError):

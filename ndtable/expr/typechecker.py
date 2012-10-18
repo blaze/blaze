@@ -83,23 +83,24 @@ def typecheck(signature, operands, domc, system, commutative=False):
     top       = system.top
     unify     = system.unifier
 
+    if callable(system.fromvalue):
+        typeof = system.fromvalue
+    else:
+        typeof = lambda t: system.fromvalue[t]
+
     # Commutative type checker can be written in terms of an
     # enumeration of the flat typechecker over the permutations
     # of the operands and domain constraints.
     if commutative:
         # TODO: write this better after more coffee
         for p in permutations(zip(operands, domc)):
-            ops = [q[0] for q in p]
-            dcs = [q[1] for q in p]
+            ops = [q[0] for q in p] # operators, unzip'd
+            dcs = [q[1] for q in p] # domain constraints, unzip'd
             try:
                 return typecheck(signature, ops, dcs, system, commutative=False)
             except TypeCheck:
                 continue
-
-    if callable(system.fromvalue):
-        typeof = system.fromvalue
-    else:
-        typeof = lambda t: system.fromvalue[t]
+        raise TypeCheck(signature, typeof(operands))
 
     tokens = [
         tok.strip()
@@ -117,8 +118,6 @@ def typecheck(signature, operands, domc, system, commutative=False):
     #      Free  b,c
     rigid = [tokens.count(token)  > 1 for token in dom]
     free  = [tokens.count(token) == 1 for token in dom]
-
-    #assert len(dom) == self.arity
 
     env = {}
 

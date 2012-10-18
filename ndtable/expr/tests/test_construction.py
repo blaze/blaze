@@ -1,8 +1,12 @@
-from ndtable.expr.viz import dump
-from ndtable.expr.graph import IntNode
+from ndtable.datashape.coretypes import float64
+from ndtable.expr.graph import IntNode, FloatNode
 from ndtable.expr.nodes import Node, traverse
+from ndtable.expr.viz import dump
 from ndtable.table import NDTable
+from ndtable.expr.graph import App
 
+
+# Print out graphviz to the screen
 DEBUG = False
 
 def test_walk():
@@ -43,8 +47,8 @@ def test_dynamic_arguments():
     assert len(children) == 1
 
 def test_binary_ops():
-    a = NDTable([])
-    b = NDTable([])
+    a = IntNode(1)
+    b = IntNode(2)
 
     x = a+b
 
@@ -52,7 +56,7 @@ def test_binary_ops():
         dump(x, filename='binary')
 
 def test_binary_mixed():
-    a = NDTable([])
+    a = IntNode(1)
 
     x = a+2
 
@@ -92,3 +96,12 @@ def test_scalars():
 
     if DEBUG:
         dump(x, filename='scalars')
+
+def test_preserve_types():
+    a = IntNode(1)
+    b = FloatNode(1.0)
+
+    x = a + b
+    assert isinstance(x, App)
+    assert x.dom == [float64, float64]
+    assert x.cod == float64

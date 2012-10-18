@@ -65,7 +65,7 @@ def typeof(obj):
         return top
     if type(obj) is IntNode:
         return int32
-    elif type(obj) is DoubleNode:
+    elif type(obj) is FloatNode:
         return float32
     elif type(obj) is Any:
         return top
@@ -119,7 +119,7 @@ def injest_iterable(args, depth=0):
                 if isinstance(head, int):
                     return [IntNode(a) for a in args]
                 if isinstance(head, float):
-                    return [DoubleNode(a) for a in args]
+                    return [FloatNode(a) for a in args]
                 elif isinstance(head, basestring):
                     return [StringNode(a) for a in args]
                 elif isinstance(head, ArrayNode):
@@ -147,7 +147,7 @@ def injest_iterable(args, depth=0):
                     elif isinstance(a, int):
                         ret.append(IntNode(a))
                     elif isinstance(a, float):
-                        ret.append(DoubleNode(a))
+                        ret.append(FloatNode(a))
                     elif isinstance(a, nodes.Node):
                         ret.append(a)
                     else:
@@ -466,6 +466,8 @@ class Op(ExpressionNode):
                 commutative = self.commutative
             )
 
+            assert len(result.dom) == self.arity
+
             self.dom     = result.dom
             self.cod     = result.cod
             self._opaque = result.opaque
@@ -511,7 +513,7 @@ class IntNode(Literal):
     vtype = int
     datashape = int32
 
-class DoubleNode(Literal):
+class FloatNode(Literal):
     vtype = float
     datashape = float32
 
