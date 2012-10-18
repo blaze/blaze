@@ -1,4 +1,5 @@
 from ndtable.expr.graph import Op
+from operator import itemgetter
 
 # TODO: bad bad
 from ndtable.datashape.coretypes import *
@@ -30,18 +31,24 @@ universal = set([top])
 
 class UnaryOp(Op):
     arity = 1
+    abstract = True
 
 class BinaryOp(Op):
     arity = 2
+    abstract = True
 
 class NaryOp(Op):
     arity = -1
+    abstract = True
 
 #------------------------------------------------------------------------
 # Basic Scalar Arithmetic
 #------------------------------------------------------------------------
 
-class Add(BinaryOp):
+# TODO: Lowercase so they match up with __NAME__ arguments in the
+# catalog. Does violate PEP8, rethink.
+
+class add(BinaryOp):
     # -----------------------
     signature = 'a -> a -> a'
     dom = [universal, universal]
@@ -55,7 +62,7 @@ class Add(BinaryOp):
     sideffectful = False
 
 
-class Mul(BinaryOp):
+class mul(BinaryOp):
     # -----------------------
     signature = 'a -> a -> a'
     dom = [universal, universal]
@@ -69,7 +76,7 @@ class Mul(BinaryOp):
     sideffectful = False
 
 
-class Transpose(UnaryOp):
+class transpose(UnaryOp):
     # -----------------------
     signature = 'a -> a'
     dom = [universal, universal]
@@ -82,11 +89,15 @@ class Transpose(UnaryOp):
     nilpotent    = True
     sideffectful = False
 
-#------------------------------------------------------------------------
-# Catelog
-#------------------------------------------------------------------------
+class abs(UnaryOp):
+    # -----------------------
+    signature = 'a -> a'
+    dom = [universal, universal]
+    # -----------------------
 
-functions = {
-    'add' : Add,
-    'mul' : Mul,
-}
+    identity     = one
+    commutative  = True
+    associative  = True
+    idempotent   = False
+    nilpotent    = False
+    sideffectful = False

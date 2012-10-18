@@ -1,5 +1,5 @@
 """
-Core of the deferred expression engine.
+Holds the base classes and the
 """
 
 from functools import wraps
@@ -55,15 +55,13 @@ class UnknownExpression(Exception):
 
 def typeof(obj):
 
+    if isinstance(obj, ArrayNode):
+        # TOOD: more enlightened description
+        return top
     if type(obj) is nodes.IntNode:
         return int32
     elif type(obj) is nodes.DoubleNode:
         return float32
-
-    # TODO: circular dependencies
-    elif isinstance(obj, ArrayNode):
-        return top
-
     elif type(obj) is Any:
         return top
     elif type(obj) is App:
@@ -173,14 +171,12 @@ class ExpressionNode(nodes.Node):
 
     def generate_node(self, arity, fname, args=None, kwargs=None):
 
-        # TODO: factor out circular imports
-        from ndtable.expr.ops import functions
-
         # TODO: also kwargs when we support such things
         iargs = injest_iterable(args)
 
-        #op = functions[fname]
-        op = functions.get(fname, Op)
+        # Lookup
+        op = Op._registry[fname]
+        #op = Op._registry.get(fname, Op)
 
         if arity == 1:
             assert len(iargs) == arity
@@ -392,6 +388,25 @@ class App(ExpressionNode):
     def nout(self):
         return len(self.otype)
 
+#------------------------------------------------------------------------
+# Op
+#------------------------------------------------------------------------
+
+class NamedOp(type):
+    """
+    Metaclass to track Op subclasses.
+    """
+
+    def __init__(cls, name, bases, dct):
+        abstract = dct.pop('abstract', False)
+        if not hasattr(cls, '_registry'):
+            cls._registry = {}
+
+        if not abstract:
+            cls._registry[name] = cls
+
+        super(NamedOp, cls).__init__(name, bases, dct)
+
 class Op(ExpressionNode):
     """
     A typed operator taking a set of typed operands. Optionally
@@ -406,6 +421,7 @@ class Op(ExpressionNode):
                     +---+
     """
     __slots__ = ['children', 'op', 'cod']
+    __metaclass__ = NamedOp
 
     @property
     def opaque(self):
@@ -485,7 +501,7 @@ class Op(ExpressionNode):
                 if typeof(operand) not in types:
                     raise TypeError(
                         'Signature for %s :: %s does not permit type %s' %
-                        (self.__name__, self.signature, typeof(operand)))
+                        (self.class__.__name__, self.signature, typeof(operand)))
 
             if rigid[i]:
                 bound = env.get(var)
@@ -499,9 +515,9 @@ class Op(ExpressionNode):
                     if typeof(operand) in types:
                         env[var] = typeof(operand)
                     else:
-                        raise TypeError(\
+                        raise TypeError(
                             'Signature for %s :: %s does not permit type %s' %
-                            (self.__name__, self.signature, typeof(operand)))
+                            (self.__class__.__name__, self.signature, typeof(operand)))
 
         # Type checks!
         return env
