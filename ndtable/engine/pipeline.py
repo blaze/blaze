@@ -1,4 +1,47 @@
+"""
+Defines the Pipeline class which provides a series of transformation
+passes on the graph which result in code generation.
+"""
+
 from collections import Counter
+
+def compose(f, g):
+    return lambda *x: f(g(*x))
+
+#------------------------------------------------------------------------
+# Passes
+#------------------------------------------------------------------------
+
+def do_flow(context, graph):
+    context = dict(context)
+
+    sort = toposort(graph)
+    context['order'] = sort
+
+    return context, graph
+
+def do_environment(context, graph):
+    context = dict(context)
+
+    sort = toposort(graph)
+    context['order'] = sort
+
+    return context, graph
+
+class Pipeline(object):
+    """
+    Code generation pipeline is a series of combinable Pass
+    stages which thread a context and graph object through to
+    produce various intermediate forms.
+    """
+    def __init__(self):
+        self.pipeline = [
+            do_flow,
+            do_environment,
+        ]
+
+    def run_pipeline(self, graph):
+        return reduce(compose, self.pipeline)(graph)
 
 def toposort(graph):
     """

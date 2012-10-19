@@ -411,6 +411,33 @@ class App(ExpressionNode):
         return 'App'
 
 #------------------------------------------------------------------------
+# Function Call
+#------------------------------------------------------------------------
+
+class FunApp(ExpressionNode):
+    """
+    """
+    __slots__ = ['itype','otype']
+
+    def __init__(self, function):
+        self.function = function
+        self.children = [function]
+        self.nin  = len(function.dom)
+        self.nout = len(function.cod)
+
+    @property
+    def dom(self):
+        return self.operator.dom
+
+    @property
+    def cod(self):
+        return self.operator.cod
+
+    @property
+    def name(self):
+        return 'FunApp'
+
+#------------------------------------------------------------------------
 # Op
 #------------------------------------------------------------------------
 
@@ -481,6 +508,39 @@ class Op(ExpressionNode):
             # return anything. Usefull for when we don't know much about
             # the operand a priori
             self.cod = top
+
+    @property
+    def name(self):
+        return self.op
+
+#------------------------------------------------------------------------
+# Functions
+#------------------------------------------------------------------------
+
+class NamedFun(type):
+    """
+    Metaclass to track Fun subclasses.
+    """
+
+    def __init__(cls, name, bases, dct):
+        abstract = dct.pop('abstract', False)
+        if not hasattr(cls, '_registry'):
+            cls._registry = {}
+
+        if not abstract:
+            cls._registry[name] = cls
+
+        super(NamedFun, cls).__init__(name, bases, dct)
+
+class Fun(ExpressionNode):
+    """
+    """
+    __slots__ = ['children', 'fn', 'cod']
+    __metaclass__ = NamedFun
+
+    def __init__(self, fn, arguments):
+        self.fn = fn
+        self.children = arguments
 
     @property
     def name(self):
