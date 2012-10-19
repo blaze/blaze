@@ -1,11 +1,12 @@
+from nose.tools import assert_raises
+
 from ndtable.datashape.coretypes import float64
 from ndtable.expr.graph import IntNode, FloatNode, App, StringNode
 from ndtable.expr.nodes import Node, traverse
+from ndtable.expr.typechecker import TypeCheck
 from ndtable.expr.viz import dump
 from ndtable.table import NDTable
 
-from nose.tools import assert_raises
-from ndtable.expr.typechecker import TypeCheck
 
 # Print out graphviz to the screen
 DEBUG = False

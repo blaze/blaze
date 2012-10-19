@@ -6,7 +6,7 @@ passes on the graph which result in code generation.
 from collections import Counter
 
 def compose(f, g):
-    return lambda *x: f(g(*x))
+    return lambda *x: f(*g(*x))
 
 #------------------------------------------------------------------------
 # Passes
@@ -22,11 +22,16 @@ def do_flow(context, graph):
 
 def do_environment(context, graph):
     context = dict(context)
-
-    sort = toposort(graph)
-    context['order'] = sort
+    context['locals'] = {}
 
     return context, graph
+
+def do_codegen(context, graph):
+    context = dict(context)
+
+    context['output'] = None
+    return context, graph
+
 
 #------------------------------------------------------------------------
 # Pipeline
@@ -39,24 +44,29 @@ class Pipeline(object):
     produce various intermediate forms.
     """
     def __init__(self):
-        self.pipeline = [
+        self.ictx = {}
+        self.pipeline = (
             do_flow,
             do_environment,
-        ]
+            do_codegen,
+        )
 
     def run_pipeline(self, graph):
-        return reduce(compose, self.pipeline)(graph)
+        ictx = self.ictx
+        octx, _ = reduce(compose, self.pipeline)(ictx, graph)
+        return octx['output']
 
 def toposort(graph):
     """
     Sort the expression graph topologically to resolve the order needed
     to execute operations.
     """
+
     result = []
     count = Counter()
 
-    for node in graph:
-        for child in node:
+    for node in iter(graph):
+        for child in iter(node):
             count[child] += 1
 
     sort = [node for node in graph if not count[node]]
@@ -65,7 +75,7 @@ def toposort(graph):
         node = sort.pop()
         result.append(node)
 
-        for child in node:
+        for child in iter(node):
             count[child] -= 1
             if count[child] == 0:
                 sort.append(child)

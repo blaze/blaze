@@ -14,8 +14,8 @@ PyObject_UnaryOperators = [
 ]
 
 PyObject_Intrinsics = [
-    'str', 'abs', 'complex', 'int', 'long', 'float', 'iter',
-    'oct', 'hex'
+    'str', 'abs', 'complex', 'int', 'long', 'float', 'oct', 'hex'
+    'cmp',
 ]
 
 PyArray_Intrinsics = [

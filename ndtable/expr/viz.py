@@ -1,3 +1,7 @@
+"""
+Visualize expression graphs using graphviz.
+"""
+
 import pydot
 
 from cStringIO import StringIO
