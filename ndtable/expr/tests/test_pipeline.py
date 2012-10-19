@@ -1,6 +1,6 @@
 from ndtable.engine.pipeline import toposort, Pipeline
 from ndtable.expr.graph import IntNode, FloatNode
-from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter
+from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter, MorphismPrinter
 
 
 #------------------------------------------------------------------------
@@ -73,5 +73,10 @@ def test_simple_transform_mro():
 
 def test_printer():
     walk = ExprPrinter()
+    walk.visit(x)
+    walk.visit(y)
+
+def test_mprinter():
+    walk = MorphismPrinter()
     walk.visit(x)
     walk.visit(y)
