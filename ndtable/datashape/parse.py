@@ -17,9 +17,7 @@ from coretypes import Integer, TypeVar, Record, Function, \
 class Visitor(object):
 
     def __init__(self):
-        super(Visitor,self).__init__()
         self.namespace = {}
-        self.fallback = self.Unknown
 
     def Unknown(self, tree):
         raise SyntaxError()

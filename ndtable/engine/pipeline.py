@@ -22,7 +22,7 @@ def do_flow(context, graph):
 
 def do_environment(context, graph):
     context = dict(context)
-    context['locals'] = {}
+    context['env'] = {}
 
     return context, graph
 
@@ -32,6 +32,11 @@ def do_codegen(context, graph):
     context['output'] = None
     return context, graph
 
+def do_symbolic_optimizer(context, graph):
+    context = dict(context)
+    sort = toposort(graph)
+
+    return context, graph
 
 #------------------------------------------------------------------------
 # Pipeline
@@ -45,6 +50,8 @@ class Pipeline(object):
     """
     def __init__(self):
         self.ictx = {}
+
+        # sequential pipeline of passes
         self.pipeline = (
             do_flow,
             do_environment,

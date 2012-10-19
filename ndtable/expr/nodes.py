@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, Iterable
 
 #------------------------------------------------------------------------
 # Graph Objects
@@ -65,6 +65,12 @@ class Node(object):
 # Traversal
 #------------------------------------------------------------------------
 
+class NoTransformer(Exception):
+    def __init__(self, args):
+        self.args = args
+    def __str__(self):
+        return 'No transformer for Node: %s' % repr(self.args)
+
 def traverse(node):
      tree = deque(node)
      while tree:
@@ -77,10 +83,17 @@ class ExprTransformer(object):
     def __init__(self):
         pass
 
+    # TODO: more robust!
     def visit(self, tree):
-        # Visit the tree, context switching to the transform
-        # function at each node.
-        tree.__coiter__(self, self.transform)
+        if isinstance(tree, list):
+            return [self.visit(i) for i in tree]
+        else:
+            nodei = tree.__class__.__name__
+            trans = getattr(self,nodei, False)
+            if trans:
+                return trans(tree)
+            else:
+                return self.Unknown(tree)
 
-    def transform(self, node):
-        raise NotImplementedError()
+    def Unknown(self, tree):
+        raise NoTransformer(tree)
