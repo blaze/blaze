@@ -54,6 +54,13 @@ class Node(object):
                     if isinstance(item, Node):
                         switch(child)
 
+    def __hash__(self):
+        # tree hashing, xor with the hash of children
+        h = hash(type(self))
+        for child in self.children:
+            h ^= hash(child)
+        return h
+
 #------------------------------------------------------------------------
 # Traversal
 #------------------------------------------------------------------------

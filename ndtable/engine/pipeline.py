@@ -28,6 +28,10 @@ def do_environment(context, graph):
 
     return context, graph
 
+#------------------------------------------------------------------------
+# Pipeline
+#------------------------------------------------------------------------
+
 class Pipeline(object):
     """
     Code generation pipeline is a series of combinable Pass
@@ -68,6 +72,3 @@ def toposort(graph):
 
     result.reverse()
     return result
-
-def codegen(graph):
-    pass
