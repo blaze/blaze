@@ -97,3 +97,27 @@ class ExprTransformer(object):
 
     def Unknown(self, tree):
         raise NoTransformer(tree)
+
+class MroTransformer(object):
+
+    def __init__(self):
+        pass
+
+    def visit(self, tree):
+        if isinstance(tree, list):
+            return [self.visit(i) for i in tree]
+        else:
+            fn = None
+            for o in tree.__class__.mro():
+                nodei = o.__name__
+                trans = getattr(self, nodei, False)
+                if trans:
+                    fn = trans
+                    break
+            if fn:
+                return fn(tree)
+            else:
+                self.Unknown(tree)
+
+    def Unknown(self, tree):
+        raise NoTransformer(tree)

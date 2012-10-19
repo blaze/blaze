@@ -221,6 +221,7 @@ class ExpressionNode(nodes.Node):
             "\n"
         ) % locals()
         del name
+        del _
 
     # Binary
     # ------
@@ -233,6 +234,8 @@ class ExpressionNode(nodes.Node):
             "    return self.generate_opnode(2, '%(name)s', [self, ob])\n"
             "\n"
         )  % locals()
+        del name
+        del _
 
     for name, _ in catalog.PyObject_BinaryOperators:
         exec (
@@ -241,6 +244,7 @@ class ExpressionNode(nodes.Node):
             "\n"
         )  % locals()
         del name
+        del _
 
 #------------------------------------------------------------------------
 # Indexables
@@ -400,10 +404,12 @@ class App(ExpressionNode):
 
     @property
     def dom(self):
+        """ Domain """
         return self.operator.dom
 
     @property
     def cod(self):
+        """ Codomain """
         return self.operator.cod
 
     @property
@@ -427,10 +433,12 @@ class FunApp(ExpressionNode):
 
     @property
     def dom(self):
+        """ Domain """
         return self.operator.dom
 
     @property
     def cod(self):
+        """ Codomain """
         return self.operator.cod
 
     @property
