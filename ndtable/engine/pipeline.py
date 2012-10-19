@@ -5,12 +5,35 @@ passes on the graph which result in code generation.
 
 from collections import Counter
 
+#------------------------------------------------------------------------
+# Pipeline Combinators
+#------------------------------------------------------------------------
+
 def compose(f, g):
     return lambda *x: f(*g(*x))
 
 #------------------------------------------------------------------------
 # Passes
 #------------------------------------------------------------------------
+
+#             Input
+#               |
+#               |
+# +----------------------+
+# |          pass 1      |
+# +--------|----------|--+
+#        context    graph
+#          |          |
+# +--------|----------|--+
+# |          pass 2      |
+# +--------|----------|--+
+#        context    graph
+#          |          |
+# +--------|----------|--+
+# |          pass 3      |
+# +--------|----------|--+
+#          |          |
+#          +----------+-----> Output
 
 def do_flow(context, graph):
     context = dict(context)
@@ -48,7 +71,7 @@ class Pipeline(object):
     stages which thread a context and graph object through to
     produce various intermediate forms.
     """
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.ictx = {}
 
         # sequential pipeline of passes
@@ -60,7 +83,13 @@ class Pipeline(object):
 
     def run_pipeline(self, graph):
         ictx = self.ictx
-        octx, _ = reduce(compose, self.pipeline)(ictx, graph)
+
+        # Fuse the passes into one functional pipeline that is the
+        # sequential composition with the intermediate ``context`` and
+        # ``graph`` objects threaded through.
+        pipeline = reduce(compose, self.pipeline)
+
+        octx, _ = pipeline(ictx, graph)
         return octx['output']
 
 def toposort(graph):

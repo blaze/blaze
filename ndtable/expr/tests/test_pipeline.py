@@ -1,7 +1,6 @@
 from ndtable.engine.pipeline import toposort, Pipeline
-from ndtable.expr.graph import IntNode
-from ndtable.expr.nodes import ExprTransformer, MroTransformer
-from ndtable.expr.graph import FloatNode
+from ndtable.expr.graph import IntNode, FloatNode
+from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter
 
 
 #------------------------------------------------------------------------
@@ -16,15 +15,12 @@ x = a+(b+c)
 y = a+b+c
 
 #------------------------------------------------------------------------
-# Tests
+# Visitors
 #------------------------------------------------------------------------
 
 class Visitor(ExprTransformer):
 
     def App(self, tree):
-        return self.visit(tree.children)
-
-    def add(self, tree):
         return self.visit(tree.children)
 
     def IntNode(self, tree):
@@ -33,13 +29,23 @@ class Visitor(ExprTransformer):
     def FloatNode(self, tree):
         return float
 
+    def add(self, tree):
+        return self.visit(tree.children)
+
 class MroVisitor(MroTransformer):
 
-    def object(self, tree):
+    def App(self, tree):
+        return self.visit(tree.children)
+
+    def Op(self, tree):
         return self.visit(tree.children)
 
     def Literal(self, tree):
         return True
+
+#------------------------------------------------------------------------
+# Tests
+#------------------------------------------------------------------------
 
 def test_simple_sort():
     lst = toposort(x)
@@ -64,3 +70,8 @@ def test_simple_transform_mro():
     a = walk.visit(x)
 
     assert a == [[True, [[True, True]]]]
+
+def test_printer():
+    walk = ExprPrinter()
+    walk.visit(x)
+    walk.visit(y)
