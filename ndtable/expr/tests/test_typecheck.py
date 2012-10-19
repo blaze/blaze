@@ -83,5 +83,9 @@ def test_complext_unification():
     assert res.cod    == bool
     assert res.opaque == False
 
-def test_commutativity():
-    pass
+# def test_commutativity():
+#     res = typecheck('a -> b -> b', [True, 1], [numerics, bools], PythonT,
+#             commutative=True)
+#     assert res.dom    == [int, bool]
+#     assert res.cod    == bool
+#     assert res.opaque == False

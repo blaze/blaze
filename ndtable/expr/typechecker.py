@@ -93,14 +93,14 @@ def typecheck(signature, operands, domc, system, commutative=False):
     # of the operands and domain constraints.
     if commutative:
         # TODO: write this better after more coffee
-        for p in permutations(zip(operands, domc)):
+        for p in permutations(zip(operands, domc), 2):
             ops = [q[0] for q in p] # operators, unzip'd
             dcs = [q[1] for q in p] # domain constraints, unzip'd
             try:
                 return typecheck(signature, ops, dcs, system, commutative=False)
             except TypeCheck:
                 continue
-        raise TypeCheck(signature, typeof(operands))
+        raise TypeCheck(signature, operands)
 
     tokens = [
         tok.strip()
