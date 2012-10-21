@@ -6,8 +6,7 @@ from functools import wraps
 from numbers import Integral
 from collections import Iterable
 
-from ndtable.expr import nodes
-from ndtable.expr import catalog
+from ndtable.expr import nodes, catalog
 from ndtable.datashape.coretypes import int32, float32, string, top, Any
 
 # Type checking and unification
@@ -76,6 +75,21 @@ def typeof(obj):
         return top
     else:
         raise UnknownExpression(obj)
+
+#------------------------------------------------------------------------
+# Blaze Typesystem
+#------------------------------------------------------------------------
+
+# unify  : the type unification function
+# top    : the top type
+# typeof : the value deconstructor
+
+# Judgements over a type system are uniquely defined by three things:
+#
+#   * a type unifier
+#   * a top type
+#   * a value deconstructor
+#   * universe of first order terms
 
 BlazeT = typesystem(unify, top, typeof)
 

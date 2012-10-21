@@ -3,7 +3,10 @@ Defines the Pipeline class which provides a series of transformation
 passes on the graph which result in code generation.
 """
 
-from collections import Counter
+from functools import partial
+from collections import Counter, defaultdict
+
+from ndtable.datashape.coretypes import _var_generator
 
 #------------------------------------------------------------------------
 # Pipeline Combinators
@@ -11,6 +14,18 @@ from collections import Counter
 
 def compose(f, g):
     return lambda *x: f(*g(*x))
+
+#------------------------------------------------------------------------
+# Uid Generator
+#------------------------------------------------------------------------
+
+# Generate a stream of unique identifiers in the context of the
+# pipeline.
+#   func1, func2...
+#   sym1, sym2...
+
+def uids(prefix):
+    return partial(_var_generator, prefix)
 
 #------------------------------------------------------------------------
 # Passes
@@ -55,9 +70,17 @@ def do_codegen(context, graph):
     context['output'] = None
     return context, graph
 
-def do_symbolic_optimizer(context, graph):
+def do_normalize(context, graph):
     context = dict(context)
-    sort = toposort(graph)
+    return context, graph
+
+def do_minivectorize(context, graph):
+    context = dict(context)
+
+    return context, graph
+
+def do_specialize(context, graph):
+    context = dict(context)
 
     return context, graph
 
@@ -76,9 +99,15 @@ class Pipeline(object):
 
         # sequential pipeline of passes
         self.pipeline = (
+            # Input <--
             do_flow,
+            #  v
             do_environment,
+            #  v
+            do_minivectorize,
+            #  v
             do_codegen,
+            # Output -->
         )
 
     def run_pipeline(self, graph):

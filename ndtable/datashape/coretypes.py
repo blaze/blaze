@@ -13,16 +13,16 @@ from utils import ReverseLookupDict
 
 free_vars = methodcaller('free')
 
-def _var_generator():
+def _var_generator(prefix=None):
     """
     Generate a stream of unique free variables.
     """
     for a in count(0):
         for b in letters:
             if a == 0:
-                yield b
+                yield (prefix or '') + b
             else:
-                yield ''.join([str(a),str(b)])
+                yield (prefix or '') + ''.join([str(a),str(b)])
 
 var_generator = _var_generator()
 
@@ -255,9 +255,9 @@ class Atom(DataShape):
     def __repr__(self):
         return str(self)
 
-# ==================================================================
+#------------------------------------------------------------------------
 # Native Types
-# ==================================================================
+#------------------------------------------------------------------------
 
 class CType(DataShape):
     """
@@ -283,6 +283,13 @@ class CType(DataShape):
     def size(self):
         # TODO: no cheating!
         return dtype(self.name).itemsize
+
+    def to_dtype(self):
+        return dtype(self.name)
+
+    def to_minitype(self):
+        from ndtable.engine.mv import minitypes
+        return minitypes.map_dtype(dtype(self.name))
 
     def __str__(self):
         return str(self.parameters[0])
@@ -317,6 +324,9 @@ class CType(DataShape):
     def byeteorder(self):
         raise NotImplementedError()
 
+#------------------------------------------------------------------------
+# Fixed
+#------------------------------------------------------------------------
 
 class Fixed(Atom):
     """
@@ -338,6 +348,10 @@ class Fixed(Atom):
     def __str__(self):
         return str(self.val)
 
+#------------------------------------------------------------------------
+# Variable
+#------------------------------------------------------------------------
+
 class TypeVar(Atom):
     """
     A free variable in the dimension specifier.
@@ -357,22 +371,6 @@ class TypeVar(Atom):
             return self.symbol == other.symbol
         else:
             return False
-
-class Bitfield(Atom):
-
-    def __init__(self, size):
-        self.size = size.val
-        self.parameters = [size]
-
-class Either(Atom):
-    """
-    Taged union with two slots.
-    """
-
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        self.parameters = [a,b]
 
 # Internal-like range of dimensions, the special case of
 # [0, inf) is aliased to the type Stream.
@@ -430,6 +428,16 @@ class Var(Atom):
     def __str__(self):
         return expr_string('Var', [self.lower, self.upper])
 
+#------------------------------------------------------------------------
+# Derived Dimensions
+#------------------------------------------------------------------------
+
+class Bitfield(Atom):
+
+    def __init__(self, size):
+        self.size = size.val
+        self.parameters = [size]
+
 class Ternary(Atom):
     """
     Ternary expression.
@@ -471,8 +479,19 @@ class Function(Atom):
     def __str__(self):
         return str(self.arg_type) + " -> " + str(self.ret_type)
 
-# Aggregate Types
-# ===============
+#------------------------------------------------------------------------
+# Aggregate
+#------------------------------------------------------------------------
+
+class Either(Atom):
+    """
+    Taged union with two slots.
+    """
+
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+        self.parameters = [a,b]
 
 class Enum(Atom, Sequence):
     """
@@ -728,7 +747,9 @@ Type.register('NA', Null)
 Type.register('Bool', Bool)
 Type.register('Stream', Stream)
 
+#------------------------------------------------------------------------
 # Shorthand
+#------------------------------------------------------------------------
 
 O = pyobj
 b1 = bool_
@@ -757,6 +778,10 @@ c16 = complex128
 c32 = complex256
 
 S = string
+
+#------------------------------------------------------------------------
+# Conversions
+#------------------------------------------------------------------------
 
 # Downcast a datashape object into a Numpy
 # (shape, dtype) tuple if possible.

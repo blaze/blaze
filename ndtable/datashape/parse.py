@@ -5,9 +5,9 @@ Parser for DataShape grammer.
 import imp
 import ast
 import inspect
-from collections import OrderedDict, Iterable
 from operator import add
 from string import maketrans, translate
+from collections import OrderedDict, Iterable
 
 # TODO: Tuple is just enumeration
 from coretypes import Integer, TypeVar, Record, Function, \
@@ -162,6 +162,11 @@ class TranslateModule(Translate):
         right = self.visit(tree.value)
         assert left not in self.namespace
         self.namespace[left] = right
+
+
+#------------------------------------------------------------------------
+# Operator Translation
+#------------------------------------------------------------------------
 
 expr_translator = Translate()
 
