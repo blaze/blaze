@@ -307,10 +307,3 @@ rank x     = 4
 outerdim x = A
 innerdim x = D
 ```
-
-And with a bit more machinery  allow parametric polymorphism.
-
-```python
-product :: (ctensor a b X) -> (ctensor X c d) -> (ctensor a b c d)
-product a b = numpy.outer(a,b)
-```
