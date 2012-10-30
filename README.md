@@ -22,6 +22,25 @@ Introduction
 
 See ``datashape/README.md`` for an introduction to the new type system.
 
+To build documentation:
+
+```bash
+$ cd docs
+$ make
+```
+
+To build project inside of Anaconda:
+
+```
+$ python setup.py install
+```
+
+To run tests:
+
+```python
+python setup.py test
+```
+
 Contributing
 ------------
 
