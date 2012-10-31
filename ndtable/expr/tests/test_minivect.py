@@ -4,7 +4,6 @@ from ndtable.expr.visitor import MroTransformer
 from ndtable.expr.nodes import flat
 from ndtable.table import NDTable, NDArray
 
-
 from unittest2 import skip
 from ndtable.expr.viz import dump
 
@@ -12,11 +11,11 @@ from ndtable.expr.viz import dump
 # Minivect
 #------------------------------------------------------------------------
 
-#from ndtable.engine.mv import LazyLLVMContext, miniast, \
-#    minitypes, specializers, Minivect
+from ndtable.engine.mv import LazyLLVMContext, miniast, \
+   minitypes, specializers, Minivect, get_blaze_pointer
 
-#context = LazyLLVMContext()
-#builder = context.astbuilder
+context = LazyLLVMContext()
+builder = context.astbuilder
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -30,9 +29,8 @@ x = a+b
 # Tests
 #------------------------------------------------------------------------
 
-@skip
 def test_simple_expr():
-    walk = Minivect()
+    walk = Minivect(context)
 
     body = walk.visit(x)
     variables = walk.variables

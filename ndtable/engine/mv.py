@@ -36,7 +36,7 @@ def setup(debug=0):
 # Utils
 #------------------------------------------------------------------------
 
-def get_array_pointer(numpy_array, array_type):
+def get_blaze_pointer(numpy_array, array_type):
     dtype_pointer = array_type.dtype.pointer()
     return numpy_array.ctypes.data_as(convert_to_ctypes(dtype_pointer))
 

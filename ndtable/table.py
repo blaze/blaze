@@ -55,9 +55,16 @@ class NDArray(Indexable, ArrayNode):
             self.children = injest_iterable(obj, force_homog=True)
 
             # TODO: awful hack
+            na = ArraySource(np.array(obj))
             self.space = Space(
-                ArraySource(np.array(obj))
+                na
             )
+            # awful hack
+            self.datashape = na.calculate(None)
+
+    @property
+    def type(self):
+        return self.datashape
 
     @staticmethod
     def from_providers(shape, *providers):
@@ -189,6 +196,10 @@ class NDTable(Indexable, ArrayNode):
             #self.index = AutoIndex(self.space)
         #elif isinstance(index, Index):
             #self.index = index
+
+    @property
+    def type(self):
+        return self.datashape
 
     @staticmethod
     def from_providers(shape, *providers):

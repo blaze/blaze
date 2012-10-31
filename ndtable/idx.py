@@ -7,37 +7,6 @@ from datashape.coretypes import Var, TypeVar, Fixed
 """
 An index describes how we map the entire "space" of indexer objects to
 the range of storage blocks that comprise the NDArray.
-from datashape.coretypes import TypeVar
-
-    special  = Any | All
-    atom     = int | str | special
-    indexer  = atom | slice [atom]
-
-The index may span multiple subspaces of data. Hypothetically we may
-have a table comprised of::
-
-        a    b    c    d
-      +------------------+
-    x |                  |
-      |     HDF5         |
-    y |                  |
-      +------------------+
-    z |     CSV          |
-      +------------------+
-
-A slice across a domain could possibly span multiple subspaces::
-
-        a    b    c    d
-      +------------------+
-    x |                  |
-      |           *      |
-    y |           *      |
-      +-----------*------+
-    z |           *      |
-      +------------------+
-
-Or even more complicated in higher-dimensional cases.
-
 """
 
 class CannotInfer(Exception):
@@ -46,7 +15,6 @@ class CannotInfer(Exception):
 
     def __str__(self):
         return "Cannot infer"
-
 
 def certain(obj, predicate):
     try:
