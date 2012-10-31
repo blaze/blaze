@@ -1,22 +1,6 @@
-
 ======================
 Blaze Concept Overview
 ======================
-
-                        Indexable
-                            |
-                    +-------+------+
-                    |              |
-      Shape --> DataSpace     ByteProvider --> DataDescriptor
-                    |                                |
-          +---------+--------+               +----+--+--+----+
-          |                  |               |    |     |    | 
-       Tabular           ArrayLike         Buffer |   Stream |
-          |                  |                 BufList   StreamList
-     +----+----+        +----+----+
-     |         |        |         |
-   Table    NDTable   Array    NDArray
-
 
 Indexable:
     Any object which supports indexing by scalars to retrieve individual

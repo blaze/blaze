@@ -15,29 +15,27 @@ Dependencies
 All dependencies will be resolved by working in the Anaconda
 environment.
 
-Free community edition is available here: http://continuum.io/downloads.html
+Free community edition is available here: http://continuum.io/downloads.html .
 
 Introduction
 ------------
-
-See ``datashape/README.md`` for an introduction to the new type system.
 
 To build documentation:
 
 ```bash
 $ cd docs
-$ make
+$ make html
 ```
 
 To build project inside of Anaconda:
 
-```
+```bash
 $ python setup.py install
 ```
 
 To run tests:
 
-```python
+```bash
 python setup.py test
 ```
 
