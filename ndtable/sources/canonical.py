@@ -8,37 +8,13 @@ operations needed to produce the bytes as needed.
 They also hint at the memory properties of the underlying
 substrate ( i.e sockets have chunked access, but are not
 seekable ).
-
-Going up and down in the hierarchy of memory-access involves costs.
-Going from contiguous to stream involves seek operations, while going
-from a stream to contiguous involves copying data.
-
-   Seek    Contiguous
-     |        |         ^
-     |     Strided      |
-     v        |         |
-           Stream      Copy
-
-
-Abstract               Image               Numpy
-========               --------            --------
-
- Space                 Image               Array
-   |                    |                   |
- Subspace              Pixel               Axis
-   |                    |                   |
- Byte Descriptor       File Descriptor     Memoryview
-   |                    |                   |
- Byte Provider         PNG Source          Memory Source
-   |                    |                   |
- Physical Substrate    Disk                Memory
-
 """
+
 import socket
 from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
 from ndtable.bytei import ByteProvider
 from ndtable.datashape import Fixed, pyobj
-from ndtable.datashape.coretypes import CType
+from ndtable.datashape.coretypes import CType, from_numpy
 
 # TODO: rework hierarchy
 class Source(ByteProvider):
@@ -52,6 +28,16 @@ class Source(ByteProvider):
         on the source.
         """
         raise NotImplementedError()
+
+class CArraySource(Source):
+    read_capabilities  = CONTIGIOUS | STRIDED | STREAM
+    write_capabilities = CONTIGIOUS | STRIDED | STREAM
+
+    def __init__(self, ca):
+        self.ca = ca
+
+    def calculate(self, ntype):
+        return from_numpy(self.ca.shape, self.ca.dtype)
 
 class PythonSource(Source):
     """

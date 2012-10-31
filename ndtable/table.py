@@ -8,7 +8,12 @@ from datashape.coretypes import DataShape, Fixed
 
 from ndtable.expr.graph import ArrayNode, injest_iterable
 
+from carray import carray
+
 def describe(obj):
+
+    if isinstance(obj, DataShape):
+        return obj
 
     if isinstance(obj, DataShape):
         return obj

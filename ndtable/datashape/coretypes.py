@@ -2,7 +2,10 @@
 This defines the DataShape "type system".
 """
 
+# TODO: preferably not depend on these
+import numpy as np
 from numpy import dtype
+
 from string import letters
 from itertools import count, izip
 from platform import architecture
@@ -807,12 +810,18 @@ def to_numpy(ds):
 # (shape, dtype) tuple if possible.
 # i.e.
 #   5,5,in32 -> ( (5,5), dtype('int32') )
-def to_datashape(shape, dtype):
-    import numpy as np
 
-    # TODO: use rosetta stones
-    ReverseLookupDict({
-        np.int32: int32,
-        np.float: float,
-    })
-    return dtype*shape
+
+numpy_lookup = ReverseLookupDict({
+    np.int32: int32,
+    np.int64: int64,
+    np.float: float,
+    # TOOD: more!
+})
+
+def from_numpy(shape, typ):
+
+    dimensions = map(Fixed, shape)
+    measure    = numpy_lookup[typ.type]
+
+    return reduce(product, dimensions + [measure])
