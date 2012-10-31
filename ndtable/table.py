@@ -27,25 +27,82 @@ def describe(obj):
     elif isinstance(obj, NDTable):
         return obj.datashape
 
+#------------------------------------------------------------------------
+# NDArray
+#------------------------------------------------------------------------
 
-class Array(Indexable):
-    """
-    A numpy array without math functions
-    """
-    pass
+class NDArray(Indexable, ArrayNode):
 
-class NDArray(Indexable):
-    """
-    A numpy array without math functions
-    """
-    pass
+    def __init__(self, obj, datashape=None, metadata=None):
 
-class Table(Indexable):
-    """
-    Deferred evaluation table that constructs the expression
-    graph.
-    """
-    pass
+        self.datashape = datashape
+        self.metadata  = metadata
+
+        if isinstance(obj, Space):
+            self.space = obj
+            self.children = set(self.space.subspaces)
+        else:
+            self.children = injest_iterable(obj)
+
+    @staticmethod
+    def from_providers(shape, *providers):
+        """
+        Internal method to create a NDArray from a 1D list of
+        byte providers. Tries to infer how the providers must be
+        arranged in order to fit into the provided shape.
+        """
+        subspaces = []
+
+        ntype    = shape[-1]
+        outerdim = shape[0]
+        innerdim = shape[1]
+
+        provided_dim = describe(providers)
+
+        # The number of providers must be compatable ( not neccessarily
+        # equal ) with the number of given providers.
+
+        # Look at the information for the provider, see if we can
+        # infer whether the given list of providers is regular
+        shapes = [p.calculate(ntype) for p in providers]
+
+        # For example, the following sources would be regular
+
+        #   A B C         A B C
+        # 1 - - -   +  1  - - -
+        #              2  - - -
+
+        # TODO: there are other ways this could be true as well,
+        # need more sophisticated checker
+        regular = reduce(eq, shapes)
+        covers = True
+
+        # Indicate whether or not the union of the subspaces covers the
+        # inner dimension.
+        uni = reduce(union, shapes)
+
+        # Does it cover the space?
+
+        for i, provider in enumerate(providers):
+            # Make sure we don't go over the outer dimension
+
+            # (+1) because we don't usually consider 0 dimension
+            # as 1
+            assert (i+1) < outerdim
+
+            subspace = Subspace(provider)
+
+            # Can we embed the substructure inside of the of the inner
+            # dimension?
+            subspaces += [subspace]
+
+        # ???
+        metadata = {}
+
+        space = Space(*subspaces)
+        space.annotate(regular, covers)
+
+        return NDArray(space, datashape=shape)
 
 #------------------------------------------------------------------------
 # NDTable
@@ -114,35 +171,22 @@ class NDTable(Indexable, ArrayNode):
         self.datashape = datashape
         self.metadata  = metadata
 
-        self.children = injest_iterable(obj)
-
-        #self.space     = self.cast_space(obj)
-        self.index = None
+        if isinstance(obj, Space):
+            self.space = obj
+            self.children = set(self.space.subspaces)
+        else:
+            self.children = injest_iterable(obj)
 
         # How do we build an Index from the given graph
         # elements... still needs some more thought. Disabled for
         # now.
         #
         # NDTable always has an index
-        # if index is None:
-        #     self.index = AutoIndex(self.space)
-        # elif isinstance(index, Index):
-        #     self.index = index
 
-    def cast_space(self, obj):
-
-        if isinstance(obj, Space):
-            space = obj
-        elif isinstance(obj, Indexable):
-            space = obj
-        elif isinstance(obj, ByteProvider):
-            space = obj
-        elif isinstance(obj, list):
-            space = map(self.add_space, obj)
-        else:
-            raise RuntimeError("Don't know how to cast")
-
-        return space
+        #if index is None:
+            #self.index = AutoIndex(self.space)
+        #elif isinstance(index, Index):
+            #self.index = index
 
     @staticmethod
     def from_providers(shape, *providers):
@@ -157,7 +201,6 @@ class NDTable(Indexable, ArrayNode):
         ntype    = shape[-1]
         outerdim = shape[0]
         innerdim = shape[1]
-
 
         provided_dim = describe(providers)
 
@@ -193,7 +236,6 @@ class NDTable(Indexable, ArrayNode):
             assert (i+1) < outerdim
 
             subspace = Subspace(provider)
-            substructure = subspace.size(ntype)
 
             # Can we embed the substructure inside of the of the inner
             # dimension?

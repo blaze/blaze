@@ -442,6 +442,7 @@ class FunApp(ExpressionNode):
     def __init__(self, function):
         self.function = function
         self.children = [function]
+
         self.nin  = len(function.dom)
         self.nout = len(function.cod)
 

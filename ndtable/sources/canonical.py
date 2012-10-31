@@ -11,10 +11,10 @@ seekable ).
 """
 
 import socket
-from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
 from ndtable.bytei import ByteProvider
 from ndtable.datashape import Fixed, pyobj
 from ndtable.datashape.coretypes import CType, from_numpy
+from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
 
 # TODO: rework hierarchy
 class Source(ByteProvider):
