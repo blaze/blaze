@@ -52,6 +52,10 @@ def specialize(specializer_cls, ast, context):
 #------------------------------------------------------------------------
 
 class Minivect(MroTransformer):
+    """
+    Map between the Blaze graph objects into the Minivect AST.
+    Accumulating the visited variables statefully.
+    """
 
     def __init__(self, context):
         self.builder = context.astbuilder

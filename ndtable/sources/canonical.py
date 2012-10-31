@@ -16,6 +16,8 @@ from ndtable.datashape import Fixed, pyobj
 from ndtable.datashape.coretypes import CType, from_numpy
 from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
 
+from carray import carray
+
 # TODO: rework hierarchy
 class Source(ByteProvider):
 
@@ -38,6 +40,11 @@ class CArraySource(Source):
 
     def calculate(self, ntype):
         return from_numpy(self.ca.shape, self.ca.dtype)
+
+    @classmethod
+    def default(self, datashape):
+        shape, dtype = from_numpy(datashape)
+        return CArraySource(carray([], dtype))
 
 class PythonSource(Source):
     """

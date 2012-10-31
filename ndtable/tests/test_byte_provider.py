@@ -20,8 +20,9 @@ def test_from_carray():
     b1 = CArraySource(c1)
 
     # concat row-wise
-    shape = datashape('4, 2, int64')
+    shape = datashape('2, int64')
     NDTable.from_providers(shape, b1)
+
 
 def test_from_bytes():
     #bits = bytes(np.ones((2,2), dtype=np.dtype('int32')).data)
@@ -33,6 +34,7 @@ def test_from_bytes():
     # concat row-wise
     shape = datashape('4, 2, int32')
     NDTable.from_providers(shape, b1, b2)
+
 
 def test_from_python():
 

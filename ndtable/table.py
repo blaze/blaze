@@ -8,8 +8,6 @@ from datashape.coretypes import DataShape, Fixed
 
 from ndtable.expr.graph import ArrayNode, injest_iterable
 
-from carray import carray
-
 def describe(obj):
 
     if isinstance(obj, DataShape):
@@ -32,15 +30,24 @@ def describe(obj):
 #------------------------------------------------------------------------
 
 class NDArray(Indexable, ArrayNode):
+    """
+    Deferred evaluation array.
+    """
 
     def __init__(self, obj, datashape=None, metadata=None):
 
         self.datashape = datashape
         self.metadata  = metadata
 
-        if isinstance(obj, Space):
+        if isinstance(obj, str):
+            # Create an empty array allocated per the datashape string
+            self.space = None
+            self.children = list(self.space.subspaces)
+
+        elif isinstance(obj, Space):
             self.space = obj
-            self.children = set(self.space.subspaces)
+            self.children = list(self.space.subspaces)
+
         else:
             self.children = injest_iterable(obj)
 
@@ -59,29 +66,12 @@ class NDArray(Indexable, ArrayNode):
 
         provided_dim = describe(providers)
 
-        # The number of providers must be compatable ( not neccessarily
-        # equal ) with the number of given providers.
-
-        # Look at the information for the provider, see if we can
-        # infer whether the given list of providers is regular
         shapes = [p.calculate(ntype) for p in providers]
 
-        # For example, the following sources would be regular
-
-        #   A B C         A B C
-        # 1 - - -   +  1  - - -
-        #              2  - - -
-
-        # TODO: there are other ways this could be true as well,
-        # need more sophisticated checker
         regular = reduce(eq, shapes)
         covers = True
 
-        # Indicate whether or not the union of the subspaces covers the
-        # inner dimension.
         uni = reduce(union, shapes)
-
-        # Does it cover the space?
 
         for i, provider in enumerate(providers):
             # Make sure we don't go over the outer dimension
@@ -91,9 +81,6 @@ class NDArray(Indexable, ArrayNode):
             assert (i+1) < outerdim
 
             subspace = Subspace(provider)
-
-            # Can we embed the substructure inside of the of the inner
-            # dimension?
             subspaces += [subspace]
 
         # ???
