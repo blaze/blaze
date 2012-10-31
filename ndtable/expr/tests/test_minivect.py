@@ -2,9 +2,10 @@ from ndtable.engine.pipeline import Pipeline
 from ndtable.expr.graph import IntNode, FloatNode
 from ndtable.expr.visitor import MroTransformer
 from ndtable.expr.nodes import flat
-from ndtable.table import NDTable
+from ndtable.table import NDTable, NDArray
 
 from unittest2 import skip
+from ndtable.expr.viz import dump
 
 #------------------------------------------------------------------------
 # Minivect
@@ -20,9 +21,8 @@ from unittest2 import skip
 # Sample Graph
 #------------------------------------------------------------------------
 
-a = NDTable([])
-b = NDTable([])
-
+a = NDArray([1])
+b = NDArray([1])
 x = a+b
 
 #------------------------------------------------------------------------

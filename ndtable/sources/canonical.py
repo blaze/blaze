@@ -46,6 +46,21 @@ class CArraySource(Source):
         shape, dtype = from_numpy(datashape)
         return CArraySource(carray([], dtype))
 
+class ArraySource(Source):
+    read_capabilities  = CONTIGIOUS | STRIDED | STREAM
+    write_capabilities = CONTIGIOUS | STRIDED | STREAM
+
+    def __init__(self, na):
+        self.na = na
+
+    def calculate(self, ntype):
+        return from_numpy(self.na.shape, self.na.dtype)
+
+    @classmethod
+    def default(self, datashape):
+        shape, dtype = from_numpy(datashape)
+        return ArraySource(carray([], dtype))
+
 class PythonSource(Source):
     """
     Work with Python lists as if they were byte interfaces.

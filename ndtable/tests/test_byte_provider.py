@@ -10,7 +10,7 @@ import numpy as np
 from ndtable.datashape import datashape
 from ndtable.table import NDTable, NDArray
 from ndtable.sources.canonical import PythonSource, ByteSource,\
-    CArraySource
+    CArraySource, ArraySource
 
 from unittest2 import skip
 
@@ -23,6 +23,14 @@ def test_from_carray():
     shape = datashape('2, int64')
     NDTable.from_providers(shape, b1)
 
+def test_from_numpy():
+
+    c1 = np.array([1,2])
+    b1 = ArraySource(c1)
+
+    # concat row-wise
+    shape = datashape('2, int64')
+    NDTable.from_providers(shape, b1)
 
 def test_from_bytes():
     #bits = bytes(np.ones((2,2), dtype=np.dtype('int32')).data)

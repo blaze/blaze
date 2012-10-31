@@ -91,6 +91,13 @@ class NDArray(Indexable, ArrayNode):
 
         return NDArray(space, datashape=shape)
 
+    def __repr__(self):
+        return 'NDArray %i' % id(self)
+
+    @property
+    def name(self):
+        return repr(self)
+
 #------------------------------------------------------------------------
 # NDTable
 #------------------------------------------------------------------------

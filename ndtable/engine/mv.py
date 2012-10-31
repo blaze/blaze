@@ -8,7 +8,6 @@ from minivect import specializers
 from minivect import minitypes
 from minivect.ctypes_conversion import get_data_pointer, \
     get_pointer, convert_to_ctypes
-from ndtable.datashape.coretypes import var_generator
 
 from ndtable.expr.visitor import MroTransformer
 
