@@ -20,6 +20,14 @@ Free community edition is available here: http://continuum.io/downloads.html .
 Introduction
 ------------
 
+To build project inside of Anaconda:
+
+```bash
+$ git submodule init
+$ git submodule update
+$ python setup.py install
+```
+
 To build documentation:
 
 ```bash
@@ -27,16 +35,11 @@ $ cd docs
 $ make html
 ```
 
-To build project inside of Anaconda:
-
-```bash
-$ python setup.py install
-```
 
 To run tests:
 
 ```bash
-python setup.py test
+$ python setup.py test
 ```
 
 Contributing
