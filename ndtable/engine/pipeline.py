@@ -60,7 +60,9 @@ def do_flow(context, graph):
 
 def do_environment(context, graph):
     context = dict(context)
-    context['env'] = {}
+
+    context['minicontext'] = LazyLLVMContext()
+    context['minibuilder'] = context.astbuilder
 
     return context, graph
 
@@ -70,18 +72,24 @@ def do_codegen(context, graph):
     context['output'] = None
     return context, graph
 
-def do_normalize(context, graph):
-    context = dict(context)
-    return context, graph
-
 def do_minivectorize(context, graph):
     context = dict(context)
+
+    mcontext = context['minicontxt']
+    walk = Minivect(mcontext)
+    body = walk.visit(x)
+
+    context['miniexpr'] = body
 
     return context, graph
 
 def do_specialize(context, graph):
     context = dict(context)
 
+    specializer = specializers.StridedCInnerContigSpecializer
+    specialized_func, (llvm_func, ctypes_func) = specialize(specializer, func)
+
+    context['output'] = None
     return context, graph
 
 #------------------------------------------------------------------------

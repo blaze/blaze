@@ -2,6 +2,7 @@ from ndtable.expr.graph import Op
 
 # TODO: bad bad
 from ndtable.datashape.coretypes import *
+from ndtable.table import NDArray, NDTable
 
 #------------------------------------------------------------------------
 # Domains
@@ -20,7 +21,7 @@ discrete   = ints | uints
 continuous = floats | complexes
 numeric    = discrete | continuous
 
-array_like, tabular_like = xrange(2)
+array_like, tabular_like = NDArray, NDTable
 indexable = set([array_like, tabular_like])
 
 universal = set([top]) | numeric | indexable | string

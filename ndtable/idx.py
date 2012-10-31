@@ -22,9 +22,9 @@ def certain(obj, predicate):
     except CannotInfer:
         return False
 
-# ================
-# Indexable Spaces
-# ================
+#------------------------------------------------------------------------
+# Indexable
+#------------------------------------------------------------------------
 
 class Indexable(object):
     """

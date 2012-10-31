@@ -61,7 +61,7 @@ def typeof(obj):
     # -- special case --
     if isinstance(obj, ArrayNode):
         # TOOD: more enlightened description
-        return top
+        return obj.type
 
     if typ is App:
         return obj.cod
