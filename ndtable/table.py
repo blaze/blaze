@@ -1,3 +1,4 @@
+import numpy as np
 from operator import eq
 
 from byteprovider import ByteProvider
@@ -7,6 +8,8 @@ from datashape.unification import union
 from datashape.coretypes import DataShape, Fixed
 
 from ndtable.expr.graph import ArrayNode, injest_iterable
+
+from ndtable.sources.canonical import ArraySource
 
 def describe(obj):
 
@@ -49,7 +52,12 @@ class NDArray(Indexable, ArrayNode):
             self.children = list(self.space.subspaces)
 
         else:
-            self.children = injest_iterable(obj)
+            self.children = injest_iterable(obj, force_homog=True)
+
+            # TODO: awful hack
+            self.space = Space(
+                ArraySource(np.array(obj))
+            )
 
     @staticmethod
     def from_providers(shape, *providers):

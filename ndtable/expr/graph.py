@@ -108,7 +108,7 @@ def is_homogeneous(it):
     head_type = type(head)
     return head, all(type(a) == head_type for a in it)
 
-def injest_iterable(args, depth=0):
+def injest_iterable(args, depth=0, force_homog=False):
     # TODO: Should be 1 stack frame per each recursion so we
     # don't blow up Python trying to parse big structures
 
@@ -130,6 +130,8 @@ def injest_iterable(args, depth=0):
             head, is_homog = is_homogeneous(sample)
             is_hetero = not is_homog
 
+            if force_homog and not is_homog:
+                raise TypeError("Input is not homogenous.")
 
             # Homogenous Arguments
             # ====================
