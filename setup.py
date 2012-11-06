@@ -1,6 +1,11 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
-from nose.commands import nosetests
+from distutils.core import setup
+
+try:
+    from nose.commands import nosetests
+    testrunner = {'test': nosetests}
+except:
+    testrunner = {}
 
 longdesc = open('README.md').read()
 
@@ -11,11 +16,10 @@ setup(
     author_email='blaze-dev@continuum.io',
     description='Blaze',
     long_description=longdesc,
-    packages=find_packages(),
     install_requires=[''],
     data_files=[],
     entry_points={},
-    cmdclass={'test': nosetests},
+    cmdclass=testrunner,
     license='BSD',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
@@ -29,4 +33,5 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Utilities',
     ],
+    packages=['ndtable'],
 )
