@@ -1,7 +1,7 @@
 import struct
 from ctypes import Structure, c_void_p, c_int
 
-CONTIGIOUS = 1
+CONTIGUOUS = 1
 STRIDED    = 2
 STREAM     = 4
 CHUNKED    = 8

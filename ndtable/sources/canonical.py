@@ -14,7 +14,7 @@ import socket
 from ndtable.bytei import ByteProvider
 from ndtable.datashape import Fixed, pyobj
 from ndtable.datashape.coretypes import CType, from_numpy
-from ndtable.byteproto import CONTIGIOUS, STRIDED, STREAM, READ, WRITE
+from ndtable.byteproto import CONTIGUOUS, STRIDED, STREAM, READ, WRITE
 
 from carray import carray
 
@@ -32,8 +32,8 @@ class Source(ByteProvider):
         raise NotImplementedError()
 
 class CArraySource(Source):
-    read_capabilities  = CONTIGIOUS | STRIDED | STREAM
-    write_capabilities = CONTIGIOUS | STRIDED | STREAM
+    read_capabilities  = CONTIGUOUS
+    write_capabilities = CONTIGUOUS
 
     def __init__(self, ca):
         self.ca = ca
@@ -47,8 +47,8 @@ class CArraySource(Source):
         return CArraySource(carray([], dtype))
 
 class ArraySource(Source):
-    read_capabilities  = CONTIGIOUS | STRIDED | STREAM
-    write_capabilities = CONTIGIOUS | STRIDED | STREAM
+    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
+    write_capabilities = CONTIGUOUS | STRIDED | STREAM
 
     def __init__(self, na):
         self.na = na
@@ -65,8 +65,8 @@ class PythonSource(Source):
     """
     Work with Python lists as if they were byte interfaces.
     """
-    read_capabilities  = CONTIGIOUS | STRIDED | STREAM
-    write_capabilities = CONTIGIOUS | STRIDED | STREAM
+    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
+    write_capabilities = CONTIGUOUS | STRIDED | STREAM
 
     def __init__(self, lst):
         self.lst = lst
@@ -91,8 +91,8 @@ class ByteSource(Source):
     heap.
     """
 
-    read_capabilities  = CONTIGIOUS | STRIDED | STREAM
-    write_capabilities = CONTIGIOUS | STRIDED | STREAM
+    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
+    write_capabilities = CONTIGUOUS | STRIDED | STREAM
 
     def __init__(self, bits):
         self.bits = bytearray(bits)
