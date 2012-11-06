@@ -89,6 +89,15 @@ class Indexable(object):
     def __index__(self):
         raise NotImplementedError()
 
+#------------------------------------------------------------------------
+# Space
+#------------------------------------------------------------------------
+
+# The unordered conglomeration of spaces that comprise a indexable
+# object. This is endowed with structure from the parent object
+# (NDArray, NDTable). it can be iterated over but has no intrinsic
+# order. It merely holds references to the spaces that the charts of
+# indexes use can dig into when given high-level coordinate objects.
 
 class Space(Set):
     """
@@ -101,6 +110,7 @@ class Space(Set):
         self._covers  = None
 
     def annotate(self, regular, covers):
+        # TODO: don't do this
         self._regular = regular
         self._covers  = covers
 

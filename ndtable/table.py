@@ -9,7 +9,7 @@ from datashape.coretypes import DataShape, Fixed
 
 from ndtable.expr.graph import ArrayNode, injest_iterable
 
-from ndtable.sources.canonical import ArraySource
+from ndtable.sources.canonical import CArraySource
 
 def describe(obj):
 
@@ -32,9 +32,77 @@ def describe(obj):
 # NDArray
 #------------------------------------------------------------------------
 
+class Array(Indexable):
+    """
+    Immediete array, does not create a graph. Forces evaluation
+    on every call.
+
+    Parameters:
+
+        obj       : A list of byte providers, other NDTables or
+                    a Python object.
+
+    Optional:
+
+        datashape : Manual datashape specification for the table,
+                    if None then shape will be inferred if
+                    possible.
+
+        metadata  : Explicit metadata annotation.
+
+    """
+
+    def __init__(self, obj, datashape=None, metadata=None):
+
+        self.datashape = datashape
+        self.metadata  = metadata
+
+        if isinstance(obj, str):
+            # Create an empty array allocated per the datashape string
+            self.space = None
+            self.children = list(self.space.subspaces)
+
+        elif isinstance(obj, Space):
+            self.space = obj
+            self.children = list(self.space.subspaces)
+
+        else:
+            self.children = injest_iterable(obj, force_homog=True)
+
+            # When no preference in backend specified, fall back
+            # on CArray.
+            na = CArraySource(np.array(obj))
+            self.space = Space(
+                na
+            )
+            self.datashape = na.calculate(None)
+
+    def __getitem__(self, indexer):
+        if isinstance(indexer, slice):
+            return self.slice(indexer)
+        else:
+            raise NotImplementedError
+
+    def __setitem__(self, indexer, value):
+        if isinstance(indexer, slice):
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    def __iter__(self):
+        raise NotImplementedError
+
+    def __eq__(self):
+        raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Deferred
+#------------------------------------------------------------------------
+
 class NDArray(Indexable, ArrayNode):
     """
-    Deferred evaluation array.
+    Deferred array, operations on this array create a graph built
+    around an ArrayNode.
     """
 
     def __init__(self, obj, datashape=None, metadata=None):
@@ -163,6 +231,7 @@ class NDTable(Indexable, ArrayNode):
     Parameters:
 
         obj       : A list of byte providers, other NDTables or
+                    a Python list.
 
     Optional:
 
@@ -174,6 +243,7 @@ class NDTable(Indexable, ArrayNode):
                     structures, if None then AutoIndex is used.
 
         metadata  : Explicit metadata annotation.
+
     """
 
     def __init__(self, obj, datashape=None, index=None, metadata=None):

@@ -12,10 +12,9 @@ from ndtable.table import NDTable, NDArray
 from ndtable.sources.canonical import PythonSource, ByteSource,\
     CArraySource, ArraySource
 
-from unittest2 import skip
-
 def test_from_carray():
 
+    # the simplest Carray instance
     c1 = ca.carray([1,2], ca.cparams(clevel=0, shuffle=False))
     b1 = CArraySource(c1)
 
@@ -33,6 +32,7 @@ def test_from_numpy():
     NDArray.from_providers(shape, b1)
 
 def test_from_bytes():
+
     #bits = bytes(np.ones((2,2), dtype=np.dtype('int32')).data)
     bits = bytes('\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00')
 
