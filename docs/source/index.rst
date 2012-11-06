@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    desc
+   datashape
 
 
 Indices and tables
