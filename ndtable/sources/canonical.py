@@ -31,22 +31,60 @@ class Source(ByteProvider):
         """
         raise NotImplementedError()
 
+
+#------------------------------------------------------------------------
+# "CArray" byte provider
+#------------------------------------------------------------------------
+
+# The canonical backend
+
 class CArraySource(Source):
     read_capabilities  = CONTIGUOUS
     write_capabilities = CONTIGUOUS
 
     def __init__(self, ca):
+        """
+        CArray object passed directly into the constructor,
+        ostensibly this is just a thin wrapper that consumes a
+        reference.
+        """
         self.ca = ca
 
     def calculate(self, ntype):
+        """
+        Calculate the size of an element of the CArray in terms of the
+        given type. Returns a datashape object with a native type
+        as the tail.
+        """
         return from_numpy(self.ca.shape, self.ca.dtype)
 
     @classmethod
     def default(self, datashape):
+        """
+        Create a CArraySource from a datashape specification,
+        downcasts into Numpy dtype and shape tuples if possible
+        otherwise raises an exception.
+        """
         shape, dtype = from_numpy(datashape)
         return CArraySource(carray([], dtype))
 
+    def read(self, offset, nbytes):
+        """
+        The future read interface for the CArray.
+        """
+        raise NotImplementedError
+
+    def __repr__(self):
+        return 'CArray(ptr=%r)' % id(self.ca)
+
+#------------------------------------------------------------------------
+# Numpy Compat Layer
+#------------------------------------------------------------------------
+
 class ArraySource(Source):
+    """
+    The buffer from a Numpy array used a data source
+    """
     read_capabilities  = CONTIGUOUS | STRIDED | STREAM
     write_capabilities = CONTIGUOUS | STRIDED | STREAM
 
@@ -60,6 +98,10 @@ class ArraySource(Source):
     def default(self, datashape):
         shape, dtype = from_numpy(datashape)
         return ArraySource(carray([], dtype))
+
+#------------------------------------------------------------------------
+# Others
+#------------------------------------------------------------------------
 
 class PythonSource(Source):
     """
