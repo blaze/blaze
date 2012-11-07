@@ -11,4 +11,7 @@ def _pytables():
 
     return dict(a.astuple() for a in stone)
 
-pytables = _pytables()
+try:
+    pytables = _pytables()
+except IOError:
+    pytables = None

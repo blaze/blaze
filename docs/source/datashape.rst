@@ -128,15 +128,17 @@ Compounded variable lengths are **ragged tables**::
 Would permit tables of the form::
 
     1 2 3 7 1
-      4 5 8 1
-      3 1 9
-        1
+    1 4 5 8 1
+    1 3 1 9 0
+    1 2 2 0 0
 
 Or::
 
-    1 3 7
-    1 2
-    1
+    1 7
+    1 1
+    9 3
+
+Under the same signature.
 
 Stream Types
 ------------
