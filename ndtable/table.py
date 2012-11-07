@@ -224,7 +224,6 @@ class NDArray(Indexable, ArrayNode):
 
             na = ArraySource(np.array(obj))
             self.space = Space(na)
-            import pdb; pdb.set_trace()
 
     #------------------------------------------------------------------------
     # Properties
