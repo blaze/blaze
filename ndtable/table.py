@@ -9,7 +9,7 @@ from datashape.coretypes import DataShape, Fixed
 
 from ndtable.expr.graph import ArrayNode, injest_iterable
 
-from ndtable.sources.canonical import CArraySource
+from ndtable.sources.canonical import CArraySource, ArraySource
 
 def describe(obj):
 

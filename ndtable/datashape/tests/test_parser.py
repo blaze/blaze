@@ -4,6 +4,8 @@ from ndtable.datashape.recordclass import RecordClass
 
 from textwrap import dedent
 
+from unittest2 import skip
+
 def test_simple_parse():
     x = parse('800, 600, RGBA')
     y = parse('Enum (1,2)')
@@ -164,6 +166,7 @@ def test_parse_custom_record():
     y = parse(dedent(stock))
     assert x[0].k == y[0].k
 
+@skip
 def test_module_parse():
     mod = load('tests/foo.types')
 

@@ -46,18 +46,18 @@ class Indexable(object):
     #------------------------------------------------------------------------
 
     def slice(self, slice_obj):
-        """ Extracts a subspace from this object. If there is no inner
-        dimension, then this should return a scalar.  Slicing typically
-        preserves the data parallelism of the slicee, and the index-space
-        transform is computable in constant time.
+        """ Extracts a subset of values from this object. If there is
+        no inner dimension, then this should return a scalar. Slicing
+        typically preserves the data parallelism of the slicee, and the
+        index-space transform is computable in constant time.
         """
         raise NotImplementedError
 
     def query(self, query_expr):
-        """ Queries this object and produces a view or an actual copy of
-        data (or a deferred eval object which can produce those).  A query
-        is typically a value-dependent streaming operation and produces
-        an indeterminate number of return values.
+        """ Queries this object and produces a view or an actual copy
+        of data (or a deferred eval object which can produce those). A
+        query is typically a value-dependent streaming operation and
+        produces an indeterminate number of return values.
         """
         raise NotImplementedError
 

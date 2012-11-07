@@ -16,7 +16,6 @@ setup(
     author_email='blaze-dev@continuum.io',
     description='Blaze',
     long_description=longdesc,
-    install_requires=[''],
     data_files=[],
     entry_points={},
     cmdclass=testrunner,
@@ -34,4 +33,5 @@ setup(
         'Topic :: Utilities',
     ],
     packages=['ndtable'],
+    install_requires=[''],
 )
