@@ -105,7 +105,7 @@ Example 2::
 The first example corresponds to a neccessarily square matrix of
 integers while the later permits rectangular forms.
 
-Ragged Length
+Ranged Length
 -------------
 
 Variable length types correspond where the dimension is not
