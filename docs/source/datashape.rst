@@ -176,22 +176,6 @@ constructor::
     MaybeFloat = Either float nan
     MaybeInt   = Either int32 nan
 
-Function Types
---------------
-
-** Work in Progress **
-
-Function types are dimension specifiers that are encoded by
-arbitrary logic. We only specify their argument types are
-return types at the type level. The ``(->)`` is used to specify
-the lambda expression.
-
-For example a two dimensional table where an extra dimension is
-added whose length is a range between the sizes of the first
-two.::
-
-    A, B, ( A, B -> Var(A, B) ), int32 
-
 Pointer Types
 -------------
 
