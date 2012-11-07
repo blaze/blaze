@@ -10,27 +10,48 @@ substrate ( i.e sockets have chunked access, but are not
 seekable ).
 """
 
+import numpy as np
+
 import socket
-from ndtable.bytei import ByteProvider
+
 from ndtable.datashape import Fixed, pyobj
 from ndtable.datashape.coretypes import CType, from_numpy
-from ndtable.byteproto import CONTIGUOUS, STRIDED, STREAM, READ, WRITE
+from ndtable.byteproto import CONTIGUOUS, STRIDED, STREAM
+from ndtable.byteprovider import ByteProvider
 
 from carray import carray
 
-# TODO: rework hierarchy
-class Source(ByteProvider):
+#------------------------------------------------------------------------
+# Numpy Compat Layer
+#------------------------------------------------------------------------
+
+class ArraySource(ByteProvider):
+    """
+    The buffer from a Numpy array used a data source
+
+    Only used for bootstrapping. Will be removed later.
+    """
+
+    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
+    write_capabilities = CONTIGUOUS | STRIDED | STREAM
+
+    def __init__(self, lst):
+        self.na = np.array(lst)
 
     def calculate(self, ntype):
-        """
-        Provide information about the structure of the underlying data
-        that is knowable a priori.
+        return from_numpy(self.na.shape, self.na.dtype)
 
-        May or may not be dependent on the passed ntype value depending
-        on the source.
-        """
-        raise NotImplementedError()
+    @classmethod
+    def empty(self, datashape):
+        shape, dtype = from_numpy(datashape)
+        return ArraySource(np.ndarray(shape, dtype))
 
+    def __repr__(self):
+        return 'NDArray(ptr=%r, dtype=%s, shape=%r)' % (
+            id(self.na),
+            self.na.dtype,
+            self.na.shape,
+        )
 
 #------------------------------------------------------------------------
 # "CArray" byte provider
@@ -38,7 +59,7 @@ class Source(ByteProvider):
 
 # The canonical backend
 
-class CArraySource(Source):
+class CArraySource(ByteProvider):
     read_capabilities  = CONTIGUOUS
     write_capabilities = CONTIGUOUS
 
@@ -50,16 +71,8 @@ class CArraySource(Source):
         """
         self.ca = ca
 
-    def calculate(self, ntype):
-        """
-        Calculate the size of an element of the CArray in terms of the
-        given type. Returns a datashape object with a native type
-        as the tail.
-        """
-        return from_numpy(self.ca.shape, self.ca.dtype)
-
     @classmethod
-    def default(self, datashape):
+    def empty(self, datashape):
         """
         Create a CArraySource from a datashape specification,
         downcasts into Numpy dtype and shape tuples if possible
@@ -77,57 +90,24 @@ class CArraySource(Source):
     def __repr__(self):
         return 'CArray(ptr=%r)' % id(self.ca)
 
-#------------------------------------------------------------------------
-# Numpy Compat Layer
-#------------------------------------------------------------------------
-
-class ArraySource(Source):
+class PythonSource(ByteProvider):
     """
-    The buffer from a Numpy array used a data source
-    """
-    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
-    write_capabilities = CONTIGUOUS | STRIDED | STREAM
-
-    def __init__(self, na):
-        self.na = na
-
-    def calculate(self, ntype):
-        return from_numpy(self.na.shape, self.na.dtype)
-
-    @classmethod
-    def default(self, datashape):
-        shape, dtype = from_numpy(datashape)
-        return ArraySource(carray([], dtype))
-
-#------------------------------------------------------------------------
-# Others
-#------------------------------------------------------------------------
-
-class PythonSource(Source):
-    """
-    Work with Python lists as if they were byte interfaces.
+    Work with a immutable Python list as if it were byte interfaces.
     """
     read_capabilities  = CONTIGUOUS | STRIDED | STREAM
     write_capabilities = CONTIGUOUS | STRIDED | STREAM
 
     def __init__(self, lst):
+        assert isinstance(lst, list)
         self.lst = lst
-
-    def calculate(self, ntype):
-        # Python lists are untyped so discard information about
-        # machine types.
-        return pyobj*Fixed(len(self.lst))
 
     def read(self, offset, nbytes):
         return self.lst[offset:nbytes]
 
-    def write(self, offset, nbytes):
-        return
-
     def __repr__(self):
         return 'PyObject(ptr=%r)' % id(self.lst)
 
-class ByteSource(Source):
+class ByteSource(ByteProvider):
     """
     Allocate a memory block, explicitly outside of the Python
     heap.
@@ -161,7 +141,14 @@ class ByteSource(Source):
     def __dealloc__(self):
         pass
 
-class FileSource(Source):
+    def __repr__(self):
+        return 'Bytes(%s...)' % self.bits[0:10]
+
+#------------------------------------------------------------------------
+# Non Memory Sources
+#------------------------------------------------------------------------
+
+class FileSource(ByteProvider):
     """
     File on local disk.
     """
@@ -188,7 +175,10 @@ class FileSource(Source):
     def __dealloc__(self):
         self.fd.close()
 
-class SocketSource(Source):
+    def __repr__(self):
+        return 'File(fileno=%s, %s)' % (self.fd.fileno, self.fname)
+
+class SocketSource(ByteProvider):
     """
     Stream of bytes over TCP.
     """
@@ -220,7 +210,10 @@ class SocketSource(Source):
     def write(self, nbytes):
         pass
 
-class ImageSource(Source):
+    def __repr__(self):
+        return 'Socket(fileno=%s)' % (self.fd.fileno)
+
+class ImageSource(ByteProvider):
 
     def __init__(self, ifile):
         self.ifile = ifile

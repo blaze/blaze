@@ -10,12 +10,15 @@ READ  = 1
 WRITE = 2
 READWRITE = READ | WRITE
 
+LOCAL  = 1
+REMOTE = 2
+
 class Flags:
-    ACCESS_DEFAULT = 1
+    ACCESS_ALLOC   = 1
     ACCESS_READ    = 2
-    ACCESS_WRITE   = 3
-    ACCESS_COPY    = 4
-    ACCESS_APPEND  = 5
+    ACCESS_WRITE   = 4
+    ACCESS_COPY    = 8
+    ACCESS_APPEND  = 16
 
 class Buffer(Structure):
     _fields_ = [

@@ -30,34 +30,34 @@ def test_getitem():
         # Simple read, forces the manifest bytes
         print nd[i]
 
-# Case 1
-def test_setitem():
-    nd = arr()
+## Case 1
+#def test_setitem():
+    #nd = arr()
 
-    for i in xrange(3):
-        # Simple write, forces the manifest bytes
-        nd[i] = i
+    #for i in xrange(3):
+        ## Simple write, forces the manifest bytes
+        #nd[i] = i
 
-# Case 2
-def test_getslice():
-    nd = arr()
+## Case 2
+#def test_getslice():
+    #nd = arr()
 
-    for i in xrange(3):
-        # Simple read slice
-        nd[0:i] = i
+    #for i in xrange(3):
+        ## Simple read slice
+        #nd[0:i] = i
 
-# Case 3
-def test_setslice():
-    nd = arr()
+## Case 3
+#def test_setslice():
+    #nd = arr()
 
-    for i in xrange(3):
-        # Simple write slice
-        nd[0:i] = i
+    #for i in xrange(3):
+        ## Simple write slice
+        #nd[0:i] = i
 
-# Case 4
-def test_fancyslice():
-    nd = arr()
+## Case 4
+#def test_fancyslice():
+    #nd = arr()
 
-    for i in xrange(3):
-        # Simple read fancy slice
-        nd[i::2]
+    #for i in xrange(3):
+        ## Simple read fancy slice
+        #nd[i::2]

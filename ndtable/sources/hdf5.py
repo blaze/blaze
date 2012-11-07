@@ -1,10 +1,10 @@
 import os
 from tables import openFile, NoSuchNodeError
-from ndtable.sources.canonical import Source
 from ndtable.datashape.recordclass import from_pytables
+from ndtable.byteprovider import ByteProvider
 from ndtable.datashape import Fixed
 
-class HDF5Source(Source):
+class HDF5Source(ByteProvider):
 
     expectedrows = 10000
     compress = 'zlib'
@@ -19,11 +19,6 @@ class HDF5Source(Source):
 
         # TODO: lazy
         self.__alloc__()
-
-    def calculate(self, ntype):
-        # Substitue actual values in infered from the metadata
-        x = self.shape * Fixed(self.fd.nrows)
-        return x
 
     def get_or_create(self, node):
         try:

@@ -1,34 +1,26 @@
-# Ideas:
-#  - https://wiki.continuum.io/Bytes
-#  - stdlib.io
-#  - carray
-
 """
-Byte providers map a subset of the indexer space into low-level
-IO operations.
-
-The ByteProvider provides the high-level API operations on those bytes
-that abstracts away the notion of whether the object is contiguous,
-strided, or streamed and can extract or write bytes in any case.
-
-If the DataDescriptor supports an operation natively then it can perform
-it in a single "instruction", if it does not then the byte interface
-will devise a way to do the operation as a sequence of instructions.
+ByteProvider base class.
 """
 
-from idx import Indexable
 from byteproto import READ, WRITE
 
-class ByteProvider(Indexable):
+class ByteProvider(object):
+    """
 
-    def __init__(self, source):
-        pass
+    The ByteProvider provides the high-level API operations on those bytes
+    that abstracts away the notion of whether the object is contiguous,
+    chunked, or streamed and can extract or write bytes in any case.
+
+    If the DataDescriptor supports an operation natively then it can perform
+    it in a single "instruction", if it does not then the byte interface
+    will devise a way to do the operation as a sequence of instructions.
+    """
 
     def __getitem__(self, indexer):
-        pass
-
-    def __getslice__(self, start, stop, step):
-        pass
+        if isinstance(indexer, slice):
+            return self.slice(indexer)
+        else:
+            raise NotImplementedError
 
     def has_op(self, op, method):
         if op == READ:
@@ -36,7 +28,10 @@ class ByteProvider(Indexable):
         if op == WRITE:
             return method & self.write_capabilities
 
-    def calculate(self, ntype):
-        # Calculate the length of the buffer assuming given a
-        # machine type.
-        raise NotImplementedError()
+    @classmethod
+    def empty(self, datashape):
+        """
+        Create a empty container conforming to the given
+        datashape. Requires the ACCESS_ALLOC flag.
+        """
+        raise NotImplementedError

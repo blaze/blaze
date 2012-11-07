@@ -4,8 +4,8 @@ providers sources. These interfaces would not normally be exposed
 to the end-user.
 """
 
-import carray as ca
 import numpy as np
+import carray as ca
 
 from ndtable.datashape import datashape
 from ndtable.table import NDTable, NDArray

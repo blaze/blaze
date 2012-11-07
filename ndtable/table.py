@@ -10,12 +10,50 @@ from datashape.coretypes import DataShape, Fixed
 from ndtable.expr.graph import ArrayNode, injest_iterable
 
 from ndtable.sources.canonical import CArraySource, ArraySource
+from ndtable.printer import array2string, table2string, generic_repr
+
+#------------------------------------------------------------------------
+# Evaluation Class ( EClass )
+#------------------------------------------------------------------------
+
+MANIFEST = 1
+DELAYED  = 2
+
+# EClass are closed under operations. Operations on Manifest
+# arrays always return other manifest arrays, operations on
+# delayed arrays always return delayed arrays. Mixed operations
+# may or may not be well-defined.
+
+#     EClass := { Manifest, Delayed }
+#
+#     a: EClass, b: EClass, f : x -> y, x: a  |-  f(x) : y
+#     f : x -> y,  x: Manifest  |-  f(x) : Manifest
+#     f : x -> y,  x: Delayed   |-  f(x) : Delayed
+
+# TBD: Constructor have these closure properties?? Think about
+# this more...
+
+# C: (t0, t1) -> Manifest, A: Delayed, B: Delayed,  |- C(A,B) : Manifest
+# C: (t0, t1) -> Delayed, A: Manifest, B: Manifest, |- C(A,B) : # Delayed
+
+
+# This is a metadata space transformation that informs the
+# codomain eclass judgement.
+def infer_eclass(a,b):
+    if (a,b) == (MANIFEST, MANIFEST):
+        return MANIFEST
+    if (a,b) == (MANIFEST, DELAYED):
+        return MANIFEST
+    if (a,b) == (DELAYED, MANIFEST):
+        return MANIFEST
+    if (a,b) == (DELAYED, DELAYED):
+        return DELAYED
 
 #------------------------------------------------------------------------
 # Deconstructors
 #------------------------------------------------------------------------
 
-def describe(obj):
+def cast_arguments(obj):
     """
     Handle different sets of arguments for constructors.
     """
@@ -32,13 +70,14 @@ def describe(obj):
     elif isinstance(obj, NDTable):
         return obj.datashape
 
+
 #------------------------------------------------------------------------
-# NDArray
+# Immediate
 #------------------------------------------------------------------------
 
 class Array(Indexable):
     """
-    Immediete array, does not create a graph. Forces evaluation
+    Immediate array, does not create a graph. Forces evaluation
     on every call.
 
     Parameters:
@@ -56,29 +95,67 @@ class Array(Indexable):
 
     """
 
+    eclass = MANIFEST
+
     def __init__(self, obj, datashape=None, metadata=None):
 
-        self.datashape = datashape
-        self.metadata  = metadata
+        self._datashape = datashape
+        self._metadata  = metadata or {}
+        self.space     = None
 
         if isinstance(obj, str):
             # Create an empty array allocated per the datashape string
             self.space = None
-            self.children = list(self.space.subspaces)
 
         elif isinstance(obj, Space):
             self.space = obj
-            self.children = list(self.space.subspaces)
 
         else:
-            self.children = injest_iterable(obj, force_homog=True)
+            # When no preference in backend specified, fall back on
+            # Numpy and the trivial layout ( one covering space, dot
+            # product stride formula )
+            assert isinstance(obj, list)
 
-            # When no preference in backend specified, fall back
-            # on CArray.
-            na = ArraySource(np.array(obj))
-
+            na = ArraySource(obj)
             self.space = Space(na)
-            self.datashape = na.calculate(None)
+
+            # -- The Future --
+            # The general case, we'll get there eventually...
+            # for now just assume that we're passing in a
+            # Python list that we wrap around Numpy.
+            #self.children = injest_iterable(obj, force_homog=True)
+
+    #------------------------------------------------------------------------
+    # Properties
+    #------------------------------------------------------------------------
+
+    @property
+    def _meta(self):
+        """
+        Intrinsic metadata associated with this class of object
+        """
+        return {
+            'ECLASS': self.eclass,
+        }
+
+    @property
+    def metadata(self):
+        return dict(self._metadata.items() + self._meta.items())
+
+    @property
+    def type(self):
+        """
+        Type deconstructor
+        """
+        return self._datashape
+
+    @property
+    def backends(self):
+        """
+        The storage backends that make up the space behind the
+        Array.
+        """
+        return iter(self.space)
 
     #------------------------------------------------------------------------
     # Basic Slicing
@@ -104,6 +181,15 @@ class Array(Indexable):
     def __eq__(self):
         raise NotImplementedError
 
+    def __str__(self):
+        return array2string(self)
+
+    def __repr__(self):
+        return generic_repr('Array', self, deferred=False)
+
+class Table(Indexable):
+    pass
+
 #------------------------------------------------------------------------
 # Deferred
 #------------------------------------------------------------------------
@@ -114,10 +200,12 @@ class NDArray(Indexable, ArrayNode):
     around an ArrayNode.
     """
 
+    eclass = DELAYED
+
     def __init__(self, obj, datashape=None, metadata=None):
 
-        self.datashape = datashape
-        self.metadata  = metadata
+        self._datashape = datashape
+        self._metadata  = metadata or {}
 
         if isinstance(obj, str):
             # Create an empty array allocated per the datashape string
@@ -129,19 +217,59 @@ class NDArray(Indexable, ArrayNode):
             self.children = list(self.space.subspaces)
 
         else:
+            # When no preference in backend specified, fall back on
+            # Numpy and the trivial layout ( one buffer, dot product
+            # stride formula )
             self.children = injest_iterable(obj, force_homog=True)
 
             na = ArraySource(np.array(obj))
-
             self.space = Space(na)
-            self.datashape = na.calculate(None)
+            import pdb; pdb.set_trace()
 
+    #------------------------------------------------------------------------
+    # Properties
+    #------------------------------------------------------------------------
+
+    @property
+    def _meta(self):
+        return {
+            'ECLASS': self.eclass,
+        }
+
+    @property
+    def metadata(self):
+        return dict(self._metadata.items() + self._meta.items())
+
+    @property
+    def name(self):
+        return repr(self)
+
+    # TODO: deprecate this
     @property
     def type(self):
         """
         Type deconstructor
         """
-        return self.datashape
+        return self._datashape
+
+    @property
+    def datashape(self):
+        """
+        Type deconstructor
+        """
+        return self._datashape
+
+    @property
+    def backends(self):
+        """
+        The storage backends that make up the space behind the
+        Array.
+        """
+        return map(type, self.space)
+
+    #------------------------------------------------------------------------
+    # Alternative Constructors
+    #------------------------------------------------------------------------
 
     @staticmethod
     def from_providers(shape, *providers):
@@ -156,14 +284,15 @@ class NDArray(Indexable, ArrayNode):
         outerdim = shape[0]
         innerdim = shape[1]
 
-        provided_dim = describe(providers)
+        #provided_dim = cast_arguments(providers)
 
-        shapes = [p.calculate(ntype) for p in providers]
+        # TODO: what now?
+        #shapes = [p.calculate(ntype) for p in providers]
 
-        regular = reduce(eq, shapes)
-        covers = True
+        #regular = reduce(eq, shapes)
+        #covers = True
 
-        uni = reduce(union, shapes)
+        #uni = reduce(union, shapes)
 
         for i, provider in enumerate(providers):
             # Make sure we don't go over the outer dimension
@@ -176,16 +305,16 @@ class NDArray(Indexable, ArrayNode):
             subspaces += [subspace]
 
         space = Space(*subspaces)
-        space.annotate(regular, covers)
+        #space.annotate(regular, covers)
 
         return NDArray(space, datashape=shape)
 
-    def __repr__(self):
-        return 'NDArray %i' % id(self)
+    def __str__(self):
+        return array2string(self)
 
-    @property
-    def name(self):
-        return repr(self)
+    def __repr__(self):
+        return generic_repr('NDArray', self, deferred=True)
+
 
 #------------------------------------------------------------------------
 # NDTable
@@ -253,9 +382,11 @@ class NDTable(Indexable, ArrayNode):
 
     """
 
+    eclass = DELAYED
+
     def __init__(self, obj, datashape=None, index=None, metadata=None):
-        self.datashape = datashape
-        self.metadata  = metadata
+        self._datashape = datashape
+        self._metadata  = metadata or {}
 
         if isinstance(obj, Space):
             self.space = obj
@@ -274,12 +405,36 @@ class NDTable(Indexable, ArrayNode):
         #elif isinstance(index, Index):
             #self.index = index
 
+    #------------------------------------------------------------------------
+    # Properties
+    #------------------------------------------------------------------------
+
+    def _meta(self):
+        """
+        Intrinsic metadata associated with this class of object
+        """
+        return {'ECLASS': self.eclass}
+
+    @property
+    def metadata(self):
+        return dict(self._metadata.items() + self._meta.items())
+
     @property
     def type(self):
         """
-        The datashape attached to the object.
         """
-        return self.datashape
+        return self._datashape
+
+    @property
+    def datashape(self):
+        """
+        Type deconstructor
+        """
+        return self._datashape
+
+    #------------------------------------------------------------------------
+    # Construction
+    #------------------------------------------------------------------------
 
     @staticmethod
     def from_providers(shape, *providers):
@@ -295,14 +450,14 @@ class NDTable(Indexable, ArrayNode):
         outerdim = shape[0]
         innerdim = shape[1]
 
-        provided_dim = describe(providers)
+        provided_dim = cast_arguments(providers)
 
         # The number of providers must be compatable ( not neccessarily
         # equal ) with the number of given providers.
 
         # Look at the information for the provider, see if we can
         # infer whether the given list of providers is regular
-        shapes = [p.calculate(ntype) for p in providers]
+        #shapes = [p.calculate(ntype) for p in providers]
 
         # For example, the following sources would be regular
 
@@ -345,8 +500,12 @@ class NDTable(Indexable, ArrayNode):
 
         return NDTable(space, datashape=shape, index=index)
 
-    def index1d(self, point):
-        raise NotImplementedError
+    def __repr__(self):
+        return generic_repr('NDTable', self, deferred=True)
+
+    #------------------------------------------------------------------------
+    # Convenience Methods
+    #------------------------------------------------------------------------
 
     @staticmethod
     def from_sql(dburl, query):
@@ -355,19 +514,3 @@ class NDTable(Indexable, ArrayNode):
     @staticmethod
     def from_csv(fname, *params):
         pass
-
-    # IPython notebook integration
-    def to_html(self):
-        return '<table><th>NDTable!</th></table>'
-
-    def _repr_html_(self):
-        return ('<div style="max-height:1000px;'
-                'max-width:1500px;overflow:auto;">\n' +
-                self.to_html() + '\n</div>')
-
-    def __repr__(self):
-        return 'NDTable %i' % id(self)
-
-    @property
-    def name(self):
-        return repr(self)
