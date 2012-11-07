@@ -120,8 +120,8 @@ class Array(Indexable):
 
         else:
             # When no preference in backend specified, fall back on
-            # Numpy and the trivial layout ( one covering space, dot
-            # product stride formula )
+            # Numpy backend and the trivial layout ( one covering space,
+            # dot product stride formula )
             assert isinstance(obj, list)
 
             na = ArraySource(obj)
@@ -143,13 +143,13 @@ class Array(Indexable):
         """
         Intrinsic metadata associated with this class of object
         """
-        return {
+        return md({
             'ECLASS': self.eclass,
-        }
+        })
 
     @property
     def metadata(self):
-        return dict(self._metadata.items() + self._meta.items())
+        return self._metadata + self._meta
 
     @property
     def type(self):
@@ -247,13 +247,16 @@ class NDArray(Indexable, ArrayNode):
 
     @property
     def _meta(self):
-        return {
+        """
+        Intrinsic metadata associated with this class of object
+        """
+        return md({
             'ECLASS': self.eclass,
-        }
+        })
 
     @property
     def metadata(self):
-        return dict(self._metadata.items() + self._meta.items())
+        return self._metadata + self._meta
 
     @property
     def name(self):
@@ -424,15 +427,18 @@ class NDTable(Indexable, ArrayNode):
     # Properties
     #------------------------------------------------------------------------
 
+    @property
     def _meta(self):
         """
         Intrinsic metadata associated with this class of object
         """
-        return {'ECLASS': self.eclass}
+        return md({
+            'ECLASS': self.eclass,
+        })
 
     @property
     def metadata(self):
-        return dict(self._metadata.items() + self._meta.items())
+        return self._metadata + self._meta
 
     @property
     def type(self):

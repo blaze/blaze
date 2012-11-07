@@ -56,11 +56,11 @@ Horizontal Stacking
                      (i,j) -> (i, j)
 """
 
-from copy import copy
 from numpy import zeros
 from pprint import pformat
 from collections import defaultdict
 from bisect import bisect_left, insort_left
+from numpy import searchsorted
 
 #------------------------------------------------------------------------
 # Coordinate Transformations
