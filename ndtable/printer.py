@@ -5,11 +5,20 @@ from pprint import pformat
 
 def generic_repr(name, obj, deferred):
     """
-    Generic pretty printer for NDTable and NDArray
+    Generic pretty printer for NDTable and NDArray.
+
+    Output is of the form::
+
+        Array(3, int32)
+          values   := [Numpy(ptr=60597776, dtype=int64, shape=(3,))];
+          metadata := Meta(ECLASS=1, );
+          layout   := Identity;
+
     """
     header = "%s(%s)\n" % (name, obj.datashape)
     header += "  values   := %s;\n" % list(obj.backends)
     header += "  metadata := %s;\n" % (pformat(obj.metadata, width=1))
+    header += "  layout   := %s;\n" % obj._layout.desc
 
     # Do we force str() to render and consequently do a read
     # operation?

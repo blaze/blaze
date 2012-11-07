@@ -1,5 +1,24 @@
 from collections import Mapping
 
+# The set of possible facets that are specifiable in the
+# metadata. Most structures will define a subset of these. This
+# is the set over which we will do metadata transformations and
+# unification when performing operations.
+
+facets = frozenset([
+    # ------------     # Numpy
+    'TABLELIKE',
+    'ARRAYLIKE',
+    'ECLASS',          # Evaluation class
+    # ------------     # Numpy
+    'C_CONTIGUOUS',
+    'F_CONTIGUOUS',
+    'OWNDATA',
+    'WRITEABLE',
+    'ALIGNED',
+    'UPDATEIFCOPY',
+])
+
 class metadata(Mapping):
     """
     Immutable container for metadata

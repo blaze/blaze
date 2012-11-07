@@ -321,6 +321,10 @@ class Layout(object):
         coords = self.change_coordinates(indexer)
         return coords
 
+    @property
+    def desc(self):
+        return 'Partitioned(n=%i)' % len(self.points)
+
     def __repr__(self):
         out = 'Layout:\n'
         for p in self.partitions:
@@ -334,8 +338,27 @@ class Layout(object):
 # Identity Layout
 #------------------------------------------------------------------------
 
-class IdentityL(object):
-    change_coordinates = Id
+class IdentityL(Layout):
+    """
+    A trivial space partition. Coordinate transform is the identity
+    function.
+    """
+
+    def __init__(self):
+        self.bounds     = []
+        self.partitions = []
+        self.top = None
+        self.points = {}
+
+    def change_coordinates(self, indexer):
+        """
+        Identity coordinate transform
+        """
+        return indexer
+
+    @property
+    def desc(self):
+        return 'Identity'
 
 #------------------------------------------------------------------------
 # Layout Constructors

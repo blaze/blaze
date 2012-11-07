@@ -14,6 +14,10 @@ from operator import methodcaller
 from collections import Mapping, Sequence
 from utils import ReverseLookupDict
 
+#------------------------------------------------------------------------
+# Free Variables
+#------------------------------------------------------------------------
+
 free_vars = methodcaller('free')
 
 def _var_generator(prefix=None):
@@ -29,6 +33,10 @@ def _var_generator(prefix=None):
 
 var_generator = _var_generator()
 
+#------------------------------------------------------------------------
+# Printing
+#------------------------------------------------------------------------
+
 def expr_string(spine, const_args, outer=None):
     if not outer:
         outer = '()'
@@ -37,6 +45,10 @@ def expr_string(spine, const_args, outer=None):
         return str(spine) + outer[0] + ','.join(map(str,const_args)) + outer[1]
     else:
         return str(spine)
+
+#------------------------------------------------------------------------
+# Argument Munging
+#------------------------------------------------------------------------
 
 def shape_coerce(ob):
     if type(ob) is int:
@@ -51,6 +63,10 @@ def flatten(it):
                 yield b
         else:
             yield a
+
+#------------------------------------------------------------------------
+# Type Metaclass
+#------------------------------------------------------------------------
 
 class Type(type):
     registry = {}
@@ -110,7 +126,7 @@ def expand(ds):
         yield x
 
 # ==================================================================
-# Primitive Types
+# Primitives
 # ==================================================================
 
 class Primitive(object):
@@ -200,7 +216,7 @@ class DataShape(object):
 
     def size(self):
         """
-        In numpy, size would be a integer value. In Blaze the
+        In NumPy, size would be a integer value. In Blaze the
         size is now a symbolic object
 
         A Numpy array of size (2,3) has size
@@ -213,9 +229,7 @@ class DataShape(object):
     def __getitem__(self, index):
         return self.operands[index]
 
-    def __getslice__(self, start, stop):
-        return self.operands[start:stop]
-
+    # TODO these are kind of hackish, remove
     def __rmul__(self, other):
         if not isinstance(other, (DataShape, Primitive)):
             other = shape_coerce(other)
@@ -287,10 +301,22 @@ class CType(DataShape):
         # TODO: no cheating!
         return dtype(self.name).itemsize
 
+    def to_struct(self):
+        """
+        To struct code.
+        """
+        return dtype(self.name).char
+
     def to_dtype(self):
+        """
+        To Numpy dtype.
+        """
         return dtype(self.name)
 
     def to_minitype(self):
+        """
+        To minivect AST node ( through Numpy for now ).
+        """
         from ndtable.engine.mv import minitypes
         return minitypes.map_dtype(dtype(self.name))
 

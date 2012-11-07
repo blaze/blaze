@@ -126,7 +126,7 @@ class Array(Indexable):
 
             na = ArraySource(obj)
             self.space = Space(na)
-            self.layout = IdentityL
+            self._layout = IdentityL()
 
             # -- The Future --
             # The general case, we'll get there eventually...
@@ -237,9 +237,7 @@ class NDArray(Indexable, ArrayNode):
             # Numpy and the trivial layout ( one buffer, dot product
             # stride formula )
             self.children = injest_iterable(obj, force_homog=True)
-
-            na = ArraySource(np.array(obj))
-            self.space = Space(na)
+            self.space = Space(self.children)
 
     #------------------------------------------------------------------------
     # Properties
@@ -296,6 +294,9 @@ class NDArray(Indexable, ArrayNode):
         byte providers. Tries to infer how the providers must be
         arranged in order to fit into the provided shape.
         """
+
+        # TODO: now we just infer how we layout the providers
+        # passed in
         subspaces = []
 
         ntype    = shape[-1]

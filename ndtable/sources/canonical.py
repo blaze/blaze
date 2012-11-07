@@ -47,7 +47,7 @@ class ArraySource(ByteProvider):
         return ArraySource(np.ndarray(shape, dtype))
 
     def __repr__(self):
-        return 'NDArray(ptr=%r, dtype=%s, shape=%r)' % (
+        return 'Numpy(ptr=%r, dtype=%s, shape=%r)' % (
             id(self.na),
             self.na.dtype,
             self.na.shape,
@@ -109,37 +109,22 @@ class PythonSource(ByteProvider):
 
 class ByteSource(ByteProvider):
     """
-    Allocate a memory block, explicitly outside of the Python
-    heap.
+    A raw block of memory layed out in raditional NumPy fashion.
     """
 
     read_capabilities  = CONTIGUOUS | STRIDED | STREAM
     write_capabilities = CONTIGUOUS | STRIDED | STREAM
 
     def __init__(self, bits):
+        # TODO: lazy
         self.bits = bytearray(bits)
+        self.mv   = memoryview(self.bits)
 
     def read(self, offset, nbytes):
-        return memoryview(self.bits)[offset: offset+nbytes]
-
-    def calculate(self, ntype):
-        if type(ntype) is CType:
-            size = ntype.size()
-            assert len(self.bits) % size == 0, \
-                "Not a multiple of type: %s" % ntype
-            return ntype * Fixed(len(self.bits) / size)
-        else:
-            raise ValueError(\
-            "Cannot interpret raw bytes as anything but native type.")
+        return self.mv[offset: offset+nbytes]
 
     def write(self, offset, wbytes):
-        pass
-
-    def __alloc__(self, itemsize, size):
-        pass
-
-    def __dealloc__(self):
-        pass
+        raise NotImplementedError
 
     def __repr__(self):
         return 'Bytes(%s...)' % self.bits[0:10]

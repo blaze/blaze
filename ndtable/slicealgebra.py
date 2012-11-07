@@ -121,10 +121,6 @@ def numpy_get(na, indexer):
 #     return (void*)pointer;
 # }
 
-# Pil is an extension of this but with suboffsets.
-def pil_get(na, indexer):
-    pass
-
 # array_iter_base_init(PyArrayIterObject *it, PyArrayObject *ao)
 # {
 #    int nd, i;

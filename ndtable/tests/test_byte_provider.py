@@ -35,14 +35,11 @@ def test_from_bytes():
 
     #bits = bytes(np.ones((2,2), dtype=np.dtype('int32')).data)
     bits = bytes('\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00')
-
     b1 = ByteSource(bits)
-    b2 = ByteSource(bits)
 
     # concat row-wise
-    shape = datashape('4, 2, int32')
-    NDArray.from_providers(shape, b1, b2)
-
+    shape = datashape('2, 2, int32')
+    nd = NDArray.from_providers(shape, b1)
 
 def test_from_python():
 
