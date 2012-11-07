@@ -84,12 +84,14 @@ class Array(Indexable):
     # Basic Slicing
     #------------------------------------------------------------------------
 
+    # Immediete slicing
     def __getitem__(self, indexer):
         if isinstance(indexer, slice):
             return self.slice(indexer)
         else:
             raise NotImplementedError
 
+    # Immediete slicing ( Side-effectful )
     def __setitem__(self, indexer, value):
         if isinstance(indexer, slice):
             raise NotImplementedError

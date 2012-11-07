@@ -1,7 +1,7 @@
 from ndtable.engine.pipeline import toposort, Pipeline
 from ndtable.expr.graph import IntNode, FloatNode
-from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter, MorphismPrinter
-
+from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter,\
+    MorphismPrinter
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -51,11 +51,13 @@ def test_simple_sort():
     lst = toposort(x)
     assert len(lst) == 6
 
+# Experimental
 def test_simple_pipeline():
     a = toposort(x)
 
     line = Pipeline()
-    output = line.run_pipeline(a)
+
+    #output = line.run_pipeline(a)
 
 def test_simple_transform():
     walk = Visitor()
@@ -70,6 +72,10 @@ def test_simple_transform_mro():
     a = walk.visit(x)
 
     assert a == [[True, [[True, True]]]]
+
+
+# commented because they have IO effects that pollute the test
+# output
 
 # def test_printer():
 #     walk = ExprPrinter()

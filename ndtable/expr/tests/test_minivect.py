@@ -23,12 +23,15 @@ builder = context.astbuilder
 
 a = NDArray([1])
 b = NDArray([1])
-x = a+b
+#x = a+b
 
 #------------------------------------------------------------------------
 # Tests
 #------------------------------------------------------------------------
 
+# Experimental!
+
+@skip
 def test_simple_expr():
     walk = Minivect(context)
 

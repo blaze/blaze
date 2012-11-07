@@ -7,7 +7,7 @@ STREAM    = 4
 STREMLIST = 8
 
 class DataDescriptor(object):
-    """ DataDesciptors are the underlying, low-level references to data
+    """ DataDescriptors are the underlying, low-level references to data
     that is returned by manifest Indexable objects (i.e. objects backed
     by real data of some variety).
 
