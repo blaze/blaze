@@ -1,8 +1,10 @@
-
-
-# A dummy typing system so we can document types of attributes
 def _dummy(*args, **kw): pass
 Enum = Int = Float = Str = Tuple = Bool = List = _dummy
+
+ENUM      = 1
+BUFLIST   = 2
+STREAM    = 4
+STREMLIST = 8
 
 class DataDescriptor(object):
     """ DataDesciptors are the underlying, low-level references to data
@@ -13,8 +15,6 @@ class DataDescriptor(object):
     retrieve data, Blaze preserves the ability to expose data in bulk
     form at as low a level as possible.
     """
-
-    desctype = Enum("buffer", "buflist", "stream", "streamlist")
 
     def __init__(self):
         pass

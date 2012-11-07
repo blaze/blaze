@@ -361,18 +361,15 @@ class ArrayNode(ExpressionNode):
         """ Slicing operations should return graph nodes, while individual
         element access should return bare scalars.
         """
-        if isinstance(idx, Integral) or isinstance(idx, np.integer):
+        if isinstance(idx, slice):
+            ndx = IndexNode((idx.start, idx.stop, idx.step))
+            return Slice('getitem', [self, ndx])
+        elif isinstance(idx, Integral) or isinstance(idx, np.integer):
             ndx = IndexNode((idx,))
             return Slice('getitem', [self, ndx])
         else:
             ndx = IndexNode(idx)
             return Slice('getitem', [self, ndx])
-
-    def __getslice__(self, start, stop):
-        """
-        """
-        ndx = IndexNode((start, stop))
-        return Slice('getslice', [self, ndx])
 
     # Other non-graph methods
     # ========================

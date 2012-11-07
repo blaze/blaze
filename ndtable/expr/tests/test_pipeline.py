@@ -71,12 +71,12 @@ def test_simple_transform_mro():
 
     assert a == [[True, [[True, True]]]]
 
-def test_printer():
-    walk = ExprPrinter()
-    walk.visit(x)
-    walk.visit(y)
-
-def test_mprinter():
-    walk = MorphismPrinter()
-    walk.visit(x)
-    walk.visit(y)
+# def test_printer():
+#     walk = ExprPrinter()
+#     walk.visit(x)
+#     walk.visit(y)
+#
+# def test_mprinter():
+#     walk = MorphismPrinter()
+#     walk.visit(x)
+#     walk.visit(y)

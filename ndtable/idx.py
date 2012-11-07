@@ -9,7 +9,7 @@ An index describes how we map the entire "space" of indexer objects to
 the range of storage blocks that comprise the NDArray.
 """
 
-class CannotInfer(Exception):
+class CannotCast(Exception):
     def __init__(self):
         pass
 
@@ -19,7 +19,7 @@ class CannotInfer(Exception):
 def certain(obj, predicate):
     try:
         return getattr(obj, predicate)
-    except CannotInfer:
+    except CannotCast:
         return False
 
 #------------------------------------------------------------------------
@@ -119,14 +119,14 @@ class Space(Set):
         # Don't guess since, regular=False is not the same as "I
         # don't know yet"
         if self._regular is None:
-            raise CannotInfer()
+            raise CannotCast()
         return self._regular
 
     @property
     def covers(self):
         # don't guess
         if self._covers is None:
-            raise CannotInfer()
+            raise CannotCast()
         return self._covers
 
     def __contains__(self, other):

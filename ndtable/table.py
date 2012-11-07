@@ -11,10 +11,14 @@ from ndtable.expr.graph import ArrayNode, injest_iterable
 
 from ndtable.sources.canonical import CArraySource, ArraySource
 
-def describe(obj):
+#------------------------------------------------------------------------
+# Deconstructors
+#------------------------------------------------------------------------
 
-    if isinstance(obj, DataShape):
-        return obj
+def describe(obj):
+    """
+    Handle different sets of arguments for constructors.
+    """
 
     if isinstance(obj, DataShape):
         return obj
@@ -71,11 +75,14 @@ class Array(Indexable):
 
             # When no preference in backend specified, fall back
             # on CArray.
-            na = CArraySource(np.array(obj))
-            self.space = Space(
-                na
-            )
+            na = ArraySource(np.array(obj))
+
+            self.space = Space(na)
             self.datashape = na.calculate(None)
+
+    #------------------------------------------------------------------------
+    # Basic Slicing
+    #------------------------------------------------------------------------
 
     def __getitem__(self, indexer):
         if isinstance(indexer, slice):
@@ -122,16 +129,16 @@ class NDArray(Indexable, ArrayNode):
         else:
             self.children = injest_iterable(obj, force_homog=True)
 
-            # TODO: awful hack
             na = ArraySource(np.array(obj))
-            self.space = Space(
-                na
-            )
-            # awful hack
+
+            self.space = Space(na)
             self.datashape = na.calculate(None)
 
     @property
     def type(self):
+        """
+        Type deconstructor
+        """
         return self.datashape
 
     @staticmethod
@@ -166,9 +173,6 @@ class NDArray(Indexable, ArrayNode):
             subspace = Subspace(provider)
             subspaces += [subspace]
 
-        # ???
-        metadata = {}
-
         space = Space(*subspaces)
         space.annotate(regular, covers)
 
@@ -185,7 +189,9 @@ class NDArray(Indexable, ArrayNode):
 # NDTable
 #------------------------------------------------------------------------
 
-# Here's how the multiple inheritance boils down.
+# Here's how the multiple inheritance boils down. Going to remove
+# the multiple inheritance at some point because it's not kind
+# for other developers.
 #
 #   Indexable
 #   =========
@@ -218,7 +224,6 @@ class NDArray(Indexable, ArrayNode):
 #   tostring     : function
 #   __len__      : function
 #   __getitem__  : function
-#   __getslice__ : function
 #   __index__    : function
 
 class NDTable(Indexable, ArrayNode):
@@ -269,6 +274,9 @@ class NDTable(Indexable, ArrayNode):
 
     @property
     def type(self):
+        """
+        The datashape attached to the object.
+        """
         return self.datashape
 
     @staticmethod
@@ -324,9 +332,6 @@ class NDTable(Indexable, ArrayNode):
             # dimension?
             subspaces += [subspace]
 
-        # ???
-        metadata = {}
-
         space = Space(*subspaces)
         space.annotate(regular, covers)
 
@@ -339,11 +344,7 @@ class NDTable(Indexable, ArrayNode):
         return NDTable(space, datashape=shape, index=index)
 
     def index1d(self, point):
-        # Which subspace does the point exist in?
-        preimage, x = self.index(point)
-
-        # Return a 0 dimensional
-        preimage.take()
+        raise NotImplementedError
 
     @staticmethod
     def from_sql(dburl, query):
