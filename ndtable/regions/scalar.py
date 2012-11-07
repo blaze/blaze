@@ -62,11 +62,11 @@ from pprint import pformat
 from collections import defaultdict
 from bisect import bisect_left, insort_left
 
-Id = lambda x:x
-
 #------------------------------------------------------------------------
 # Coordinate Transformations
 #------------------------------------------------------------------------
+
+Id = lambda x:x
 
 def ctranslate(factor, axi):
     """
@@ -142,7 +142,7 @@ def stack(c1,c2, axis):
     n = abs(i2-s1)
     assert n > 0
 
-    xs = copy(axis)
+    xs = list(axis)
 
     T, Tinv = ctranslate(n, xs)
     return T, Tinv
@@ -329,6 +329,17 @@ class Layout(object):
         out += '\nPartitions:\n'
         out += pformat(dict(self.points))
         return out
+
+#------------------------------------------------------------------------
+# Identity Layout
+#------------------------------------------------------------------------
+
+class IdentityL(object):
+    change_coordinates = Id
+
+#------------------------------------------------------------------------
+# Layout Constructors
+#------------------------------------------------------------------------
 
 # Low-level calls, never used by the end-user.
 def nstack(n, a, b):

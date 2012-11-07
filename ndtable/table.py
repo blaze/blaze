@@ -6,8 +6,10 @@ from idx import Indexable, AutoIndex, Space, Subspace, Index
 
 from datashape.unification import union
 from datashape.coretypes import DataShape, Fixed
+from ndtable.regions.scalar import IdentityL
 
 from ndtable.expr.graph import ArrayNode, injest_iterable
+from ndtable.metadata import metadata as md
 
 from ndtable.sources.canonical import CArraySource, ArraySource
 from ndtable.printer import array2string, table2string, generic_repr
@@ -100,10 +102,16 @@ class Array(Indexable):
     def __init__(self, obj, datashape=None, metadata=None):
 
         self._datashape = datashape
-        self._metadata  = metadata or {}
-        self.space     = None
+        self._metadata  = metadata or md.empty()
+        self._layout     = None
 
-        if isinstance(obj, str):
+        # The "value space"
+        self.space      = None
+
+        if isinstance(obj, Indexable):
+            infer_eclass(self._meta)
+
+        elif isinstance(obj, str):
             # Create an empty array allocated per the datashape string
             self.space = None
 
@@ -118,6 +126,7 @@ class Array(Indexable):
 
             na = ArraySource(obj)
             self.space = Space(na)
+            self.layout = IdentityL
 
             # -- The Future --
             # The general case, we'll get there eventually...
@@ -144,6 +153,13 @@ class Array(Indexable):
 
     @property
     def type(self):
+        """
+        Type deconstructor
+        """
+        return self._datashape
+
+    @property
+    def datashape(self):
         """
         Type deconstructor
         """
@@ -205,7 +221,7 @@ class NDArray(Indexable, ArrayNode):
     def __init__(self, obj, datashape=None, metadata=None):
 
         self._datashape = datashape
-        self._metadata  = metadata or {}
+        self._metadata  = metadata or md.empty()
 
         if isinstance(obj, str):
             # Create an empty array allocated per the datashape string
@@ -264,7 +280,7 @@ class NDArray(Indexable, ArrayNode):
         The storage backends that make up the space behind the
         Array.
         """
-        return map(type, self.space)
+        return iter(self.space)
 
     #------------------------------------------------------------------------
     # Alternative Constructors
@@ -385,7 +401,7 @@ class NDTable(Indexable, ArrayNode):
 
     def __init__(self, obj, datashape=None, index=None, metadata=None):
         self._datashape = datashape
-        self._metadata  = metadata or {}
+        self._metadata  = metadata or md.empty()
 
         if isinstance(obj, Space):
             self.space = obj
