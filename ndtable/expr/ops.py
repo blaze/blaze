@@ -2,12 +2,12 @@ from ndtable.expr.graph import Op
 
 # TODO: bad bad
 from ndtable.datashape.coretypes import *
-from ndtable.table import NDArray, NDTable
 
 #------------------------------------------------------------------------
 # Domains
 #------------------------------------------------------------------------
 
+NDArray, NDTable = xrange(2)
 one, zero, false, true = xrange(4)
 
 ints      = set([int8, int16, int32, int64])
