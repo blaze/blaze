@@ -4,7 +4,7 @@ from ndtable.datashape.recordclass import RecordClass
 
 from textwrap import dedent
 
-from unittest2 import skip
+from unittest import skip
 
 def test_simple_parse():
     x = parse('800, 600, RGBA')

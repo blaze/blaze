@@ -4,7 +4,7 @@ from ndtable.expr.visitor import MroTransformer
 from ndtable.expr.nodes import flat
 from ndtable.table import NDTable, NDArray
 
-from unittest2 import skip
+from unittest import skip
 from ndtable.expr.viz import dump
 
 #------------------------------------------------------------------------
