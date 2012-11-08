@@ -815,7 +815,7 @@ S = string
 # Downcast a datashape object into a Numpy
 # (shape, dtype) tuple if possible.
 # i.e.
-#   5,5,in32 -> ( (5,5), dtype('int32') )
+#   5, 5, int32 -> ( (5,5), dtype('int32') )
 
 # TODO: numpy structured arrays
 def to_numpy(ds):
@@ -836,7 +836,6 @@ def to_numpy(ds):
 # (shape, dtype) tuple if possible.
 # i.e.
 #   5,5,in32 -> ( (5,5), dtype('int32') )
-
 
 numpy_lookup = ReverseLookupDict({
     np.int32: int32,

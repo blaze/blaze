@@ -103,7 +103,7 @@ class Array(Indexable):
 
         self._datashape = datashape
         self._metadata  = metadata or md.empty()
-        self._layout     = None
+        self._layout    = None
 
         # The "value space"
         self.space      = None
@@ -126,7 +126,7 @@ class Array(Indexable):
 
             na = ArraySource(obj)
             self.space = Space(na)
-            self._layout = IdentityL()
+            self._layout = IdentityL(na)
 
             # -- The Future --
             # The general case, we'll get there eventually...
@@ -179,10 +179,38 @@ class Array(Indexable):
 
     # Immediete slicing
     def __getitem__(self, indexer):
-        if isinstance(indexer, slice):
-            return self.slice(indexer)
-        else:
-            raise NotImplementedError
+        # ---------------
+        # First Transform
+        # ---------------
+
+        # Pass the indexer object through the coordinate
+        # transformations of the layout backend.
+
+        # This returns the ByteProvider block to be operated on and the
+        # coordinates with respect to the block.
+
+        # ===================================
+        block, coords = self._layout[indexer]
+        # ===================================
+
+        # ----------------
+        # Second Transform
+        # ----------------
+
+        # Infer the slicealgebra system we need to use to dig
+        # into the block in question. I.e. for Numpy this is the
+        # general dot product
+
+        # numpy_get(block, coords)
+
+        # ----------------
+        # Third Transform
+        # ----------------
+        # Aggregate the data from the Data Descriptors and pass
+        # them into a new Array object built around the result.
+        # Infer the new coordinates of this resulting block.
+
+        return block
 
     # Immediete slicing ( Side-effectful )
     def __setitem__(self, indexer, value):

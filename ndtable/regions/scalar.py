@@ -344,17 +344,17 @@ class IdentityL(Layout):
     function.
     """
 
-    def __init__(self):
+    def __init__(self, single):
         self.bounds     = []
         self.partitions = []
-        self.top = None
+        self.top = single
         self.points = {}
 
     def change_coordinates(self, indexer):
         """
         Identity coordinate transform
         """
-        return indexer
+        return self.top, indexer
 
     @property
     def desc(self):
