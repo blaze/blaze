@@ -1,5 +1,11 @@
 import struct
-from ctypes import Structure, c_void_p, c_int
+from ctypes import Structure, c_void_p, c_int, sizeof
+
+import llvm.core as lc
+
+#------------------------------------------------------------------------
+# Hinting & Flags
+#------------------------------------------------------------------------
 
 CONTIGUOUS = 1
 STRIDED    = 2
@@ -13,45 +19,54 @@ READWRITE = READ | WRITE
 LOCAL  = 1
 REMOTE = 2
 
-class Flags:
-    ACCESS_ALLOC   = 1
-    ACCESS_READ    = 2
-    ACCESS_WRITE   = 4
-    ACCESS_COPY    = 8
-    ACCESS_APPEND  = 16
+ACCESS_ALLOC   = 1
+ACCESS_READ    = 2
+ACCESS_WRITE   = 4
+ACCESS_COPY    = 8
+ACCESS_APPEND  = 16
 
-class Buffer(Structure):
-    _fields_ = [
-        ('data'     , c_void_p) ,
-        ('offset'   , c_int)    ,
-        ('stride'   , c_int*2)  ,
-        ('itemsize' , c_int)    ,
-        ('flags'    , c_int)    ,
-    ]
+#------------------------------------------------------------------------
+# LLVM Primitives
+#------------------------------------------------------------------------
 
-def BufferList(n):
-    class List(Structure):
-        _fields_ = [
-            ('buffers', Buffer*n)
-        ]
-        def __iter__(self):
-            for b in self.buffers:
-                yield b
+#_plat_bits = struct.calcsize('@P') * 8
+_plat_bits = 64
 
-    return List
+_int1      = lc.Type.int(1)
+_int8      = lc.Type.int(8)
+_int32     = lc.Type.int(32)
+_int64     = lc.Type.int(64)
 
-def StreamList(n):
-    class Stream(Structure):
-        _fields_ = [
-            ('index', c_int),
-            ('next' , c_void_p)
-        ]
-        def __iter__(self):
-            self.index = 0
-            return self
+_intp           = lc.Type.int(_plat_bits)
+_intp_star      = lc.Type.pointer(_intp)
+_void_star      = lc.Type.pointer(lc.Type.int(8))
+_void_star_star = lc.Type.pointer(_void_star)
 
-        def __next__(self):
-            self.index += 1
-            yield self.next
+_float      = lc.Type.float()
+_double     = lc.Type.double()
+_complex64  = lc.Type.struct([_float, _float])
+_complex128 = lc.Type.struct([_double, _double])
 
-    return Stream
+#------------------------------------------------------------------------
+# Buffer
+#------------------------------------------------------------------------
+
+_buffer_struct = lc.Type.struct([
+    _void_star, # data
+    _int8,      # itemsize
+])
+_buffer_object = lc.Type.pointer(_buffer_struct)
+_bufferlist_struct = lambda buf, n: lc.Type.array(buf, n)
+
+#------------------------------------------------------------------------
+# Streams
+#------------------------------------------------------------------------
+
+# TODO
+
+#------------------------------------------------------------------------
+# Utils
+#------------------------------------------------------------------------
+
+def numpy_pointer(numpy_array, ctype=c_void_p):
+    return numpy_array.ctypes.data_as(ctype)
