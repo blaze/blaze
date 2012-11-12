@@ -21,9 +21,9 @@ from llvm.ee import ExecutionEngine
 # | }                                  |   return x;                          |
 # |                                    | }                                    |
 # +------------------------------------+--------------------------------------+
-#                   ^                                      ^
-#                   |         +----------------------------+
-#                   |         |
+#              ^                                     ^
+#              |        +----------------------------+
+#              |        |
 # Maybe a = Nothing | Just a
 #    |
 #    v
@@ -116,7 +116,7 @@ def build_constructor(fn, ty, spine, j):
     for i, arg in enumerate(fn.args):
         idx1 = builder.gep(retval, [const(0), const(0)], next(freev))
         idx2 = builder.gep(idx1, [const(0), const(i)], next(freev))
-        builder.store(const(25), idx2)
+        builder.store(arg, idx2)
     return builder.ret(retval)
 
 def create_instance(mod, spec, ctx):
@@ -166,19 +166,51 @@ def wrap_constructor(func, engine, py_module ,rettype):
     addr = engine.get_pointer_to_function(func)
     return functype(addr)
 
-def debug_ctypes(mod, spine, constructors):
+def debug_ctypes(mod, spine, constructors, rettype=None):
     from bitey.bind import map_llvm_to_ctypes
     from imp import new_module
     engine = ExecutionEngine.new(mod)
-
     py = new_module('')
-    map_llvm_to_ctypes(spine, py)
 
-    return [wrap_constructor(c, engine, py, py.maybe) for c in constructors]
+    if not rettype:
+        map_llvm_to_ctypes(spine, py)
+        rettype = py.maybe
+    else:
+        rettype = rettype
+
+    return [wrap_constructor(c, engine, py, rettype) for c in constructors]
 
 if __name__ == '__main__':
     module = Module.new('adt')
     module.add_library("c")
 
+    from ctypes import Union, Structure, c_int, POINTER, CFUNCTYPE
+
+    class nothingc(Structure):
+        _fields_ = []
+
+    class justc(Structure):
+        _fields_ = [
+            ('x', POINTER(c_int))
+        ]
+
+    class U(Union):
+        _fields_ = [
+            ('just'    , justc) ,
+            ('nothing' , nothingc) ,
+        ]
+
+    class maybec(Structure):
+        _fields_ = [
+            #('tag', POINTER(c_int)),
+            ('val', U),
+        ]
+
     spine, values = create_instance(module, MaybeT, {'a': int, 'b': int})
-    a,b = debug_ctypes(module, spine, values)
+    a,b = debug_ctypes(module, spine, values, maybec)
+
+    assert a(1).val.just.x[0] == 1
+    assert a(25).val.just.x[0] == 25
+    assert a(1000).val.just.x[0] == 1000
+
+    assert b(1000).val.nothing
