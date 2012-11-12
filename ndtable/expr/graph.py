@@ -24,10 +24,14 @@ except ImportError:
 # Globals
 #------------------------------------------------------------------------
 
+OP  = 0 # OP/FUN??
+APP = 1
+VAL = 2
+
 _max_argument_recursion = 25
 _max_argument_len       = 1000
 _argument_sample        = 100
-_perform_typecheck      = True
+_runtime_typecheck      = True
 
 def set_max_argument_len(val):
     global _max_argument_len
@@ -189,6 +193,7 @@ class ExpressionNode(nodes.Node):
     A abstract node which supports the full set of PyNumberMethods
     methods.
     """
+    abstract = True
 
     def generate_fnnode(self, fname, args=None, kwargs=None):
         pass
@@ -267,6 +272,7 @@ class ArrayNode(ExpressionNode):
     """
     A array structure with dimension and length.
     """
+    kind = VAL
 
     # Read Operations
     # ===============
@@ -407,6 +413,7 @@ class App(ExpressionNode):
 
     """
     __slots__ = ['itype','otype']
+    kind = APP
 
     def __init__(self, operator):
         self.operator = operator
@@ -432,8 +439,11 @@ class App(ExpressionNode):
 
 class FunApp(ExpressionNode):
     """
+    Function application.
     """
+
     __slots__ = ['itype','otype']
+    kind = APP
 
     def __init__(self, function):
         self.function = function
@@ -490,6 +500,7 @@ class Op(ExpressionNode):
     """
     __slots__ = ['children', 'op', 'cod']
     __metaclass__ = NamedOp
+    kind = OP
 
     @property
     def opaque(self):
@@ -507,7 +518,7 @@ class Op(ExpressionNode):
 
         # Make sure the graph makes sense given the signature of
         # the function. Does naive type checking and inference.
-        if _perform_typecheck and not self.opaque:
+        if _runtime_typecheck and not self.opaque:
 
             result = typecheck(
                 self.signature, # type signature
@@ -571,6 +582,7 @@ class Fun(ExpressionNode):
 
 class Literal(ExpressionNode):
     __slots__ = ['children', 'vtype']
+    kind      = VAL
 
     def __init__(self, val):
         assert isinstance(val, self.vtype)
@@ -586,33 +598,38 @@ class Literal(ExpressionNode):
 #------------------------------------------------------------------------
 
 class StringNode(Literal):
-    vtype = str
+    vtype     = str
     datashape = string
+    kind      = VAL
 
 #------------------------------------------------------------------------
 # Scalars
 #------------------------------------------------------------------------
 
 class IntNode(Literal):
-    vtype = int
+    vtype     = int
     datashape = int32
+    kind      = VAL
 
 class FloatNode(Literal):
-    vtype = float
+    vtype     = float
     datashape = float32
+    kind      = VAL
 
 #------------------------------------------------------------------------
 # Slices and Indexes
 #------------------------------------------------------------------------
 
 class IndexNode(Literal):
+    arity  = 4 # <INDEXABLE>, <INDEXER>
     vtype = tuple
+    kind  = OP
 
     @property
     def name(self):
         return 'Index%s' % str(self.val)
 
 class Slice(Op):
-    # $0, start, stop, step
-    arity = 4
+    arity  = 4 # <INDEXABLE>, start, stop, step
     opaque = True
+    kind   = OP

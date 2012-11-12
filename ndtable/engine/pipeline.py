@@ -8,8 +8,10 @@ point the two might merge though if we're sufficiently clever...
 """
 
 from llvm.core import Module
+
 from functools import partial
 from collections import Counter, defaultdict
+from itertools import ifilter
 
 from ndtable.datashape.coretypes import _var_generator
 
@@ -19,18 +21,6 @@ from ndtable.datashape.coretypes import _var_generator
 
 def compose(f, g):
     return lambda *x: f(*g(*x))
-
-#------------------------------------------------------------------------
-# Uid Generator
-#------------------------------------------------------------------------
-
-# Generate a stream of unique identifiers in the context of the
-# pipeline.
-#   func1, func2...
-#   sym1, sym2...
-
-def uids(prefix):
-    return partial(_var_generator, prefix)
 
 #------------------------------------------------------------------------
 # Passes
@@ -59,7 +49,7 @@ def do_flow(context, graph):
     context = dict(context)
 
     # Topologically sort the graph
-    sort = toposort(graph)
+    sort = topovals(graph)
 
     # ----------------------
     context['order'] = sort
@@ -140,7 +130,11 @@ class Pipeline(object):
 # Graph Manipulation
 #------------------------------------------------------------------------
 
-def toposort(graph):
+OP  = 0
+APP = 1
+VAL = 2
+
+def toposort(pred, graph):
     """
     Sort the expression graph topologically to resolve the order needed
     to execute operations.
@@ -159,11 +153,13 @@ def toposort(graph):
     result = []
     count = Counter()
 
-    for node in iter(graph):
+    for node in ifilter(pred, graph):
         for child in iter(node):
             count[child] += 1
 
-    sort = [node for node in graph if not count[node]]
+    # Collect all the nodes thats satisfy the selecter property.
+    # For example, all the value nodes or all the op nodes.
+    sort = [node for node in ifilter(pred, graph) if not count[node]]
 
     while sort:
         node = sort.pop()
@@ -176,3 +172,6 @@ def toposort(graph):
 
     result.reverse()
     return result
+
+topovals = partial(toposort, lambda x: x.kind == VAL)
+topops   = partial(toposort, lambda x: x.kind == OP)

@@ -15,70 +15,27 @@ x = a+(b+c)
 y = a+b+c
 
 #------------------------------------------------------------------------
-# Visitors
-#------------------------------------------------------------------------
-
-class Visitor(ExprTransformer):
-
-    def App(self, tree):
-        return self.visit(tree.children)
-
-    def IntNode(self, tree):
-        return int
-
-    def FloatNode(self, tree):
-        return float
-
-    def add(self, tree):
-        return self.visit(tree.children)
-
-class MroVisitor(MroTransformer):
-
-    def App(self, tree):
-        return self.visit(tree.children)
-
-    def Op(self, tree):
-        return self.visit(tree.children)
-
-    def Literal(self, tree):
-        return True
-
-#------------------------------------------------------------------------
 # Tests
 #------------------------------------------------------------------------
 
+OP  = 0
+APP = 1
+VAL = 2
+
 def test_simple_sort():
-    lst = toposort(x)
+    lst = toposort(lambda x: True, x)
     assert len(lst) == 6
 
-# Experimental
+def test_simple_sort_ops():
+    from itertools import ifilter
+    res = ifilter(lambda x: x.kind, x)
+    import pdb; pdb.set_trace()
+
+    lst = toposort(lambda x: x.kind == 0, x)
+    import pdb; pdb.set_trace()
+    assert len(lst) == 3
+
 def test_simple_pipeline():
     line = Pipeline()
-    plan = line.run_pipeline(a)
-
-def test_simple_transform():
-    walk = Visitor()
-    a = walk.visit(x)
-    assert a == [[int, [[int, float]]]]
-
-    b = walk.visit(y)
-    assert b == [[[[int, int]], float]]
-
-def test_simple_transform_mro():
-    walk = MroVisitor()
-    a = walk.visit(x)
-
-    assert a == [[True, [[True, True]]]]
-
-
-# commented because they have IO effects that pollute the test
-# output
-
-# def test_printer():
-#     walk = ExprPrinter()
-#     walk.visit(x)
-#     walk.visit(y)
-#
-# def test_mprinter():
-#     walk = MorphismPrinter()
-#     walk.visit(x) #     walk.visit(y)
+    plan = line.run_pipeline(x)
+    print plan
