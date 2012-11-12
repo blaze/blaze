@@ -73,7 +73,7 @@ dot = partial(generalized_dot, add, mul, 0, 0)
 # ptr = (char *)buf + ( indices dot strides ) = *((typeof(item) *)ptr);
 
 # void *
-# jPyArray_GetPtr(PyArrayObject *obj, npy_intp* ind)
+# PyArray_GetPtr(PyArrayObject *obj, npy_intp* ind)
 # {
 #     int n = obj->nd;
 #     npy_intp *strides = obj->strides;

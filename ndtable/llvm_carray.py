@@ -11,9 +11,11 @@ npy_intp      = lc.Type.int(_sizeof_py_ssize_t * 8)
 char          = lc.Type.int(8)
 PyObject      = _pyobject_head_struct
 PyArrayObject = _numpy_array
+cython_vtab   = lc.Type.struct([])
 
 _carray_struct = lc.Type.struct(_pyobject_head+\
       [
+       cython_vtab,   # -- internal cython --
        _int,          # itemsize;
        _int,          # atomsize;
        _int,          # _chunksize;

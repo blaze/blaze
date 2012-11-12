@@ -96,7 +96,7 @@ def do_plan(context, graph):
 
 # TODO: there is no reason this should be a class, and classes
 # just complicate things and encourage nasty things like
-# inheritance...
+# multiple inheritance...
 
 class Pipeline(object):
     """
@@ -144,16 +144,17 @@ def toposort(graph):
     """
     Sort the expression graph topologically to resolve the order needed
     to execute operations.
-
-         +
-        / \
-       a   +     --> [a, b, c]
-          / \
-         b   c
-             |
-             a
-
     """
+
+    #
+    #     +
+    #    / \
+    #   a   +     --> [a, b, c]
+    #      / \
+    #     b   c
+    #         |
+    #         a
+    #
 
     result = []
     count = Counter()

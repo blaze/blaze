@@ -43,19 +43,6 @@ class MroVisitor(MroTransformer):
     def Literal(self, tree):
         return True
 
-#------------------------------------------------------------------------
-# Tests
-#------------------------------------------------------------------------
-
-def test_simple_sort():
-    lst = toposort(x)
-    assert len(lst) == 6
-
-# Experimental
-def test_simple_pipeline():
-    line = Pipeline()
-    plan = line.run_pipeline(a)
-
 def test_simple_transform():
     walk = Visitor()
     a = walk.visit(x)
