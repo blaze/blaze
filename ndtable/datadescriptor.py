@@ -63,10 +63,10 @@ class Buffer(DataDescriptor):
 
     desctype = "buffer"
 
-    length = Int     # Total length, in bytes, of the buffer
-    format = Str     # Format of each elem, in struct module syntax
-    shape = Tuple    # Numpy-style shape tuple
-    strides = Tuple  #
+    length   = Int     # Total length, in bytes, of the buffer
+    format   = Str     # Format of each elem, in struct module syntax
+    shape    = Tuple    # Numpy-style shape tuple
+    strides  = Tuple  #
     readonly = Bool(False)
 
     # TODO: Add support for event callbacks when certain ranges are
@@ -87,8 +87,8 @@ class Stream(DataDescriptor):
 
     desctype = "stream"
 
-    length = Int
-    format = Str
+    length    = Int
+    format    = Str
     chunksize = Int(1)  # optional "optimal" number of elements to read
 
     def read(self, nbytes):

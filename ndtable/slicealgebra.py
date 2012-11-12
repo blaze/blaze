@@ -15,6 +15,7 @@ from struct import unpack
 from itertools import izip
 from functools import partial
 from operator import add, mul
+from collections import namedtuple
 
 # ==================================================================
 # Math
@@ -72,7 +73,7 @@ dot = partial(generalized_dot, add, mul, 0, 0)
 # ptr = (char *)buf + ( indices dot strides ) = *((typeof(item) *)ptr);
 
 # void *
-# PyArray_GetPtr(PyArrayObject *obj, npy_intp* ind)
+# jPyArray_GetPtr(PyArrayObject *obj, npy_intp* ind)
 # {
 #     int n = obj->nd;
 #     npy_intp *strides = obj->strides;
@@ -254,6 +255,16 @@ def blaze_unary_loop(f, a):
 
 def blaze_ufunc(fn, data, types, ntypes, nin, nout):
     pass
+
+#------------------------------------------------------------------------
+# Mapping Interfaces
+#------------------------------------------------------------------------
+
+interface = namedtuple('slicealgebra', 'get iter')
+
+mappings = {
+    'numpy': interface(numpy_get, numpy_iter)
+}
 
 if __name__ == '__main__':
     a,b = [1,2,3], [4,5,6]

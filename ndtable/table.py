@@ -7,6 +7,7 @@ from idx import Indexable, AutoIndex, Space, Subspace, Index
 from datashape.unification import union
 from datashape.coretypes import DataShape, Fixed
 from ndtable.regions.scalar import IdentityL
+from ndtable.slicealgebra import numpy_get
 
 from ndtable.expr.graph import ArrayNode, injest_iterable
 from ndtable.metadata import metadata as md
@@ -201,7 +202,7 @@ class Array(Indexable):
         # into the block in question. I.e. for Numpy this is the
         # general dot product
 
-        # numpy_get(block, coords)
+        plan = numpy_get(block.na, [coords])
 
         # ----------------
         # Third Transform

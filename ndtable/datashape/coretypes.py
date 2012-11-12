@@ -1,11 +1,12 @@
 """
-This defines the DataShape "type system".
+This defines the DataShape type system.
 """
 
 # TODO: preferably not depend on these
 import numpy as np
 from numpy import dtype
 
+from struct import calcsize
 from string import letters
 from itertools import count, izip
 from platform import architecture
@@ -723,9 +724,8 @@ def right(ds):
 # At the type level these are all singleton types, they take no
 # arguments in their constructors.
 
-word = int(architecture()[0][0:2])
+plat = calcsize('@P') * 8
 
-int_       = CType('int')
 float_     = CType('float')
 long_      = CType('long')
 bool_      = CType('bool')
@@ -733,6 +733,9 @@ double     = CType('double')
 short      = CType('short')
 longdouble = CType('longdbouble')
 char       = CType('char')
+
+int_       = CType('int')
+#int_       = CType('int', plat)
 
 uint       = CType('uint')
 ulong      = CType('ulong')
@@ -769,6 +772,7 @@ Stream = Var(Integer(0), None)
 
 # The null record
 NullRecord = Record()
+
 na = nan = Null
 top = Any()
 

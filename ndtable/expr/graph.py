@@ -190,9 +190,6 @@ class ExpressionNode(nodes.Node):
     methods.
     """
 
-    def eval(self):
-        pass
-
     def generate_fnnode(self, fname, args=None, kwargs=None):
         pass
 

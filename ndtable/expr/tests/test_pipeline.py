@@ -56,8 +56,7 @@ def test_simple_pipeline():
     a = toposort(x)
 
     line = Pipeline()
-
-    #output = line.run_pipeline(a)
+    plan = line.run_pipeline(a)
 
 def test_simple_transform():
     walk = Visitor()
