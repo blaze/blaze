@@ -153,13 +153,11 @@ def toposort(pred, graph):
     result = []
     count = Counter()
 
-    for node in ifilter(pred, graph):
+    for node in graph:
         for child in iter(node):
             count[child] += 1
 
-    # Collect all the nodes thats satisfy the selecter property.
-    # For example, all the value nodes or all the op nodes.
-    sort = [node for node in ifilter(pred, graph) if not count[node]]
+    sort = [node for node in graph if not count[node]]
 
     while sort:
         node = sort.pop()
@@ -171,7 +169,10 @@ def toposort(pred, graph):
                 sort.append(child)
 
     result.reverse()
-    return result
+
+    # Collect all the nodes thats satisfy the selecter property.
+    # For example, all the value nodes or all the op nodes.
+    return list(ifilter(pred, result))
 
 topovals = partial(toposort, lambda x: x.kind == VAL)
 topops   = partial(toposort, lambda x: x.kind == OP)

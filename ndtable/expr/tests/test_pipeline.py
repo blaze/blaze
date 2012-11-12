@@ -1,4 +1,4 @@
-from ndtable.engine.pipeline import toposort, Pipeline
+from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
 from ndtable.expr.graph import IntNode, FloatNode
 from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter,\
     MorphismPrinter
@@ -12,7 +12,7 @@ b = IntNode(2)
 c = FloatNode(3.0)
 
 x = a+(b+c)
-y = a+b+c
+y = a+(b*abs(c))
 
 #------------------------------------------------------------------------
 # Tests
@@ -27,13 +27,53 @@ def test_simple_sort():
     assert len(lst) == 6
 
 def test_simple_sort_ops():
-    from itertools import ifilter
-    res = ifilter(lambda x: x.kind, x)
-    import pdb; pdb.set_trace()
+    lst = topops(y)
+    # We expect this:
 
-    lst = toposort(lambda x: x.kind == 0, x)
-    import pdb; pdb.set_trace()
-    assert len(lst) == 3
+    #  add
+    #  / \
+    # 1  mul
+    #    / \
+    #   2   abs
+    #        |
+    #       3.0
+
+    # To collapse into this:
+
+    #    abs
+    #     |
+    #    mul
+    #     |
+    #    add
+
+    assert lst[0].name == 'abs'
+    assert lst[1].name == 'mul'
+    assert lst[2].name == 'add'
+
+
+def test_simple_sort_vals():
+    lst = topovals(y)
+    # We expect this:
+
+    #  add
+    #  / \
+    # 1  mul
+    #    / \
+    #   2   abs
+    #        |
+    #       3.0
+
+    # To collapse into this:
+
+    #    1
+    #    |
+    #    2
+    #    |
+    #   3.0
+
+    assert lst[0].val == 1
+    assert lst[1].val == 2
+    assert lst[2].val == 3.0
 
 def test_simple_pipeline():
     line = Pipeline()
