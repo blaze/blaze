@@ -8,8 +8,8 @@ from __future__ import division
 
 import sys
 import os.path as path
-import argparse
 import struct
+import argparse
 import math
 import zlib
 import hashlib
@@ -17,8 +17,11 @@ import itertools
 from collections import OrderedDict
 import blosc
 
+""" Adapted to persist a list of buffers by Francesc Alted """
+
 __version__ = '0.3.0-dev'
-__author__ = 'Valentin Haenel <valentin.haenel@gmx.de>'
+__author__ = [ 'Valentin Haenel <valentin.haenel@gmx.de>',
+               'Francesc Alted <francesc@continuum.io>' ]
 
 EXTENSION = '.blp'
 MAGIC = 'blpk'
@@ -32,10 +35,10 @@ DEFAULT_OFFSETS = True
 DEFAULT_OPTIONS = None  # created programatically later on
 DEFAULT_TYPESIZE = 8
 DEFAULT_CLEVEL = 7
-DEAFAULT_SHUFFLE = True
+DEFAULT_SHUFFLE = True
 BLOSC_ARGS = ['typesize', 'clevel', 'shuffle']
 DEFAULT_BLOSC_ARGS = dict(zip(BLOSC_ARGS,
-    (DEFAULT_TYPESIZE, DEFAULT_CLEVEL, DEAFAULT_SHUFFLE)))
+                (DEFAULT_TYPESIZE, DEFAULT_CLEVEL, DEFAULT_SHUFFLE)))
 NORMAL  = 'NORMAL'
 VERBOSE = 'VERBOSE'
 DEBUG   = 'DEBUG'
@@ -48,6 +51,10 @@ SUFFIXES = OrderedDict((
              ("M", 2**20),
              ("G", 2**30),
              ("T", 2**40)))
+
+# Create a list to persist with 1K buffers (1M elements in total)
+LIST_TO_PERSIST = [np.ones(1024).tostring() for x in range(1024)]
+
 
 class Hash(object):
     """ Uniform hash object.
@@ -238,26 +245,6 @@ def create_parser():
             formatter_class=BloscPackCustomFormatter,
             help="alias for 'compress'")
 
-    class CheckNchunksOption(argparse.Action):
-        def __call__(self, parser, namespace, value, option_string=None):
-            if not 1 <= value <= MAX_CHUNKS:
-                error('%s must be 1 <= n <= %d'
-                        % (option_string, MAX_CHUNKS))
-            setattr(namespace, self.dest, value)
-    class CheckChunkSizeOption(argparse.Action):
-        def __call__(self, parser, namespace, value, option_string=None):
-            if value == 'max':
-                value = blosc.BLOSC_MAX_BUFFERSIZE
-            else:
-                try:
-                    # try to get the value as bytes
-                    value = reverse_pretty(value)
-                except ValueError as ve:
-                    error('%s error: %s' % (option_string, ve.message +
-                        " or 'max'"))
-                if value < 0:
-                    error('%s must be > 0 ' % option_string)
-            setattr(namespace, self.dest, value)
     for p in [compress_parser, c_parser]:
         blosc_group = p.add_argument_group(title='blosc settings')
         blosc_group.add_argument('-t', '--typesize',
@@ -276,21 +263,6 @@ def create_parser():
                 default=DEAFAULT_SHUFFLE,
                 dest='shuffle',
                 help='deactivate shuffle')
-        bloscpack_chunking_group = p.add_mutually_exclusive_group()
-        bloscpack_chunking_group.add_argument('-c', '--nchunks',
-                metavar='[1, 2**32-1]',
-                action=CheckNchunksOption,
-                type=int,
-                default=None,
-                help='set desired number of chunks')
-        bloscpack_chunking_group.add_argument('-z', '--chunk-size',
-                metavar='<size>',
-                action=CheckChunkSizeOption,
-                type=str,
-                default=None,
-                dest='chunk_size',
-                help="set desired chunk size or 'max' (default: %s)" %
-                DEFAULT_CHUNK_SIZE)
         bloscpack_group = p.add_argument_group(title='bloscpack settings')
         def join_with_eol(items):
             return ', '.join(items) + '\n'
@@ -310,6 +282,12 @@ def create_parser():
                 default=DEFAULT_OFFSETS,
                 dest='offsets',
                 help='deactivate offsets')
+        p.add_argument('out_file',
+                metavar='<out_file>',
+                type=str,
+                nargs='?',
+                default=None,
+                help='file to compress to')
 
     decompress_parser = subparsers.add_parser('decompress',
             formatter_class=BloscPackCustomFormatter,
@@ -326,27 +304,11 @@ def create_parser():
                 dest='no_check_extension',
                 help='disable checking input file for extension (*.blp)\n' +
                 '(requires use of <out_file>)')
-
-    for p, help_in, help_out in [(compress_parser,
-            'file to be compressed', 'file to compress to'),
-                                 (c_parser,
-            'file to be compressed', 'file to compress to'),
-                                 (decompress_parser,
-            'file to be decompressed', 'file to decompress to'),
-                                 (d_parser,
-            'file to be decompressed', 'file to decompress to'),
-                                  ]:
         p.add_argument('in_file',
                 metavar='<in_file>',
                 type=str,
                 default=None,
-                help=help_in)
-        p.add_argument('out_file',
-                metavar='<out_file>',
-                type=str,
-                nargs='?',
-                default=None,
-                help=help_out)
+                help='file to be decompressed')
 
     return parser
 
@@ -366,7 +328,7 @@ def decode_blosc_header(buffer_):
     Notes
     -----
 
-    The Blosc 1.1.3 header is 16 bytes as follows::
+    The Blosc 1.x header is 16 bytes as follows::
 
         |-0-|-1-|-2-|-3-|-4-|-5-|-6-|-7-|-8-|-9-|-A-|-B-|-C-|-D-|-E-|-F-|
         ^   ^   ^   ^ |     nbytes    |   blocksize   |    ctbytes    |
@@ -401,121 +363,6 @@ class ChecksumMismatch(RuntimeError):
 
 class FileNotFound(IOError):
     pass
-
-def calculate_nchunks(in_file_size, nchunks=None, chunk_size=None):
-    """ Determine chunking for an input file.
-
-    Parameters
-    ----------
-    in_file_size : int
-        the size of the input file
-    nchunks : int, default: None
-        the number of chunks desired by the user
-    chunk_size : int, default: None
-        the desired chunk size
-
-    Returns
-    -------
-    nchunks, chunk_size, last_chunk_size
-
-    nchunks : int
-        the number of chunks
-    chunk_size : int
-        the size of each chunk in bytes
-    last_chunk_size : int
-        the size of the last chunk in bytes
-
-    Raises
-    ------
-    ChunkingException
-        under various error conditions
-
-    Notes
-    -----
-    You must specify either 'nchunks' or 'chunk_size' but not neither or both.
-
-    """
-    if nchunks is not None and chunk_size is not None:
-        raise ValueError(
-                "either specify 'nchunks' or 'chunk_size', but not both")
-    elif nchunks is None and chunk_size is None:
-        raise ValueError(
-                "you must specify either 'nchunks' or 'chunk_size'")
-    elif in_file_size <= 0:
-        raise ValueError(
-                "'in_file_size' must be greater than zero")
-    elif nchunks is not None and chunk_size is None:
-        print_verbose("'nchunks' proposed", level=DEBUG)
-        if nchunks > in_file_size:
-            raise ChunkingException(
-                    "Your value of 'nchunks': %d is " % nchunks +
-                    "greater than the 'in_file size': %d" % in_file_size)
-        elif nchunks <= 0:
-            raise ChunkingException(
-                    "'nchunks' must be greater than zero, not '%d' " % nchunks)
-        quotient, remainder = divmod(in_file_size, nchunks)
-        # WARNING: this is the most horrible piece of code in bloscpack
-        # if you can do better, please, please send me patches
-        # user wants a single chunk
-        if nchunks == 1:
-            chunk_size = 0
-            last_chunk_size = in_file_size
-        # perfect fit
-        elif remainder == 0:
-            chunk_size = quotient
-            last_chunk_size = chunk_size
-        # user wants two chunks
-        elif nchunks == 2:
-            chunk_size = quotient
-            last_chunk_size = in_file_size - chunk_size
-        # multiple chunks, if the nchunks is quite small, we may have a tiny
-        # remainder and hence tiny last chunk
-        else:
-            chunk_size = in_file_size//(nchunks-1)
-            last_chunk_size = in_file_size - chunk_size * (nchunks-1)
-    elif nchunks is None and chunk_size is not None:
-        print_verbose("'chunk_size' proposed", level=DEBUG)
-        if chunk_size > in_file_size:
-            raise ChunkingException(
-                    "Your value of 'chunk_size': %d is " % chunk_size +
-                    "greater than the 'in_file size': %d" % in_file_size)
-        elif chunk_size <= 0:
-            raise ChunkingException(
-                    "'chunk_size' must be greater than zero, not '%d' " %
-                    chunk_size)
-        quotient, remainder = divmod(in_file_size, chunk_size)
-        # the user wants a single chunk
-        if chunk_size == in_file_size:
-            nchunks = 1
-            chunk_size = 0
-            last_chunk_size = in_file_size
-        # no remainder, perfect fit
-        elif remainder == 0:
-            nchunks = quotient
-            last_chunk_size = chunk_size
-        # with a remainder
-        else:
-            nchunks = quotient + 1
-            last_chunk_size = remainder
-    if chunk_size > blosc.BLOSC_MAX_BUFFERSIZE \
-            or last_chunk_size > blosc.BLOSC_MAX_BUFFERSIZE:
-        raise ChunkingException(
-            "Your value of 'nchunks' would lead to chunk sizes bigger than " +
-            "'BLOSC_MAX_BUFFERSIZE', please use something smaller.\n" +
-            "nchunks : %d\n" % nchunks +
-            "chunk_size : %d\n" % chunk_size +
-            "last_chunk_size : %d\n" % last_chunk_size +
-            "BLOSC_MAX_BUFFERSIZE : %d\n" % blosc.BLOSC_MAX_BUFFERSIZE)
-    elif nchunks > MAX_CHUNKS:
-        raise ChunkingException(
-                "nchunks: '%d' is greater than the MAX_CHUNKS: '%d'" %
-                (nchunks, MAX_CHUNKS))
-    print_verbose('nchunks: %d' % nchunks, level=VERBOSE)
-    print_verbose('chunk_size: %s' % double_pretty_size(chunk_size),
-            level=VERBOSE)
-    print_verbose('last_chunk_size: %s' % double_pretty_size(last_chunk_size),
-            level=DEBUG)
-    return nchunks, chunk_size, last_chunk_size
 
 def check_range(name, value, min_, max_):
     """ Check that a variable is in range. """
@@ -705,18 +552,14 @@ def process_compression_args(args):
 
     Returns
     -------
-    in_file : str
-        the input file name
     out_file : str
         the out_file name
     blosc_args : tuple of (int, int, bool)
         typesize, clevel and shuffle
     """
-    in_file = args.in_file
-    out_file = in_file + EXTENSION \
-        if args.out_file is None else args.out_file
+    out_file = args.out_file
     blosc_args = dict((arg, args.__getattribute__(arg)) for arg in BLOSC_ARGS)
-    return in_file, out_file, blosc_args
+    return out_file, blosc_args
 
 def process_decompression_args(args):
     """ Extract and check the decompression args after parsing by argparse.
@@ -732,23 +575,13 @@ def process_decompression_args(args):
     -------
     in_file : str
         the input file name
-    out_file : str
-        the out_file name
     """
     in_file = args.in_file
-    out_file = args.out_file
-    # remove the extension for output file
-    if args.no_check_extension:
-        if out_file is None:
-            error('--no-check-extension requires use of <out_file>')
-    else:
-        if in_file.endswith(EXTENSION):
-            out_file = in_file[:-len(EXTENSION)] \
-                    if args.out_file is None else args.out_file
-        else:
-            error("input file '%s' does not end with '%s'" %
-                    (in_file, EXTENSION))
-    return in_file, out_file
+    # check the extension for input file
+    if not in_file.endswith(EXTENSION):
+         error("input file '%s' does not end with '%s'" %
+               (in_file, EXTENSION))
+    return in_file
 
 def check_files(in_file, out_file, args):
     """ Check files exist/don't exist.
@@ -768,9 +601,9 @@ def check_files(in_file, out_file, args):
         in case any of the files isn't found.
 
     """
-    if not path.exists(in_file):
+    if in_file is not None and not path.exists(in_file):
         raise FileNotFound("input file '%s' does not exist!" % in_file)
-    if path.exists(out_file):
+    if out_file is not None and path.exists(out_file):
         if not args.force:
             raise FileNotFound("output file '%s' exists!" % out_file)
         else:
@@ -785,38 +618,31 @@ def process_nthread_arg(args):
     print_verbose('using %d thread%s' %
             (args.nthreads, 's' if args.nthreads > 1 else ''))
 
-def pack_file(in_file, out_file, blosc_args, nchunks=None, chunk_size=None,
-        offsets=DEFAULT_OFFSETS, checksum=DEFAULT_CHECKSUM):
-    """ Main function for compressing a file.
+def pack_list(in_list, out_file, blosc_args,
+              offsets=DEFAULT_OFFSETS, checksum=DEFAULT_CHECKSUM):
+    """ Main function for compressing a list of buffers.
 
     Parameters
     ----------
-    in_file : str
-        the name of the input file
+    in_list : list
+        the list of buffers
     out_file : str
         the name of the output file
     blosc_args : dict
         dictionary of blosc keyword args
-    nchunks : int, default: None
-        The desired number of chunks.
-    chunk_size : int, default: None
-        The desired chunk size in bytes.
     offsets : bool
         Wheather to include offsets.
     checksum : str
         Which checksum to use.
 
-    Notes
-    -----
-    The parameters 'nchunks' and 'chunk_size' are mutually exclusive. Will be
-    determined automatically if not present.
-
     """
+    # XXX Check for empty lists
     # calculate chunk sizes
-    in_file_size = path.getsize(in_file)
-    print_verbose('input file size: %s' % double_pretty_size(in_file_size))
-    nchunks, chunk_size, last_chunk_size = \
-            calculate_nchunks(in_file_size, nchunks, chunk_size)
+    nchunks = len(in_list)
+    chunk_size = len(in_list[0])
+    last_chunk_size = len(in_list[-1])
+    in_list_size = nchunks * chunk_size + last_chunk_size
+    print_verbose('input file size: %s' % double_pretty_size(in_list_size))
     # calculate header
     options = create_options(offsets=offsets)
     if offsets:
@@ -824,29 +650,27 @@ def pack_file(in_file, out_file, blosc_args, nchunks=None, chunk_size=None,
     # set the checksum impl
     checksum_impl = CHECKSUMS_LOOKUP[checksum]
     raw_bloscpack_header = create_bloscpack_header(
-            options=options,
-            checksum=CHECKSUMS_AVAIL.index(checksum),
-            typesize=blosc_args['typesize'],
-            chunk_size=chunk_size,
-            last_chunk=last_chunk_size,
-            nchunks=nchunks
-            )
+        options=options,
+        checksum=CHECKSUMS_AVAIL.index(checksum),
+        typesize=blosc_args['typesize'],
+        chunk_size=chunk_size,
+        last_chunk=last_chunk_size,
+        nchunks=nchunks
+        )
     print_verbose('raw_bloscpack_header: %s' % repr(raw_bloscpack_header),
-            level=DEBUG)
+                  level=DEBUG)
     # write the chunks to the file
-    with open(in_file, 'rb') as input_fp, \
-         open(out_file, 'wb') as output_fp:
+    with open(out_file, 'wb') as output_fp:
         output_fp.write(raw_bloscpack_header)
         # preallocate space for the offsets
         if offsets:
             output_fp.write(encode_int64(-1) * nchunks)
         # if nchunks == 1 the last_chunk_size is the size of the single chunk
-        for i, bytes_to_read in enumerate((
-                [chunk_size] * (nchunks - 1)) + [last_chunk_size]):
+        for i in xrange(nchunks):
             # store the current position in the file
             if offsets:
                 offsets_storage[i] = output_fp.tell()
-            current_chunk = input_fp.read(bytes_to_read)
+            current_chunk = in_list[i]
             # do compression
             compressed = blosc.compress(current_chunk, **blosc_args)
             # write compressed data
@@ -881,22 +705,20 @@ def pack_file(in_file, out_file, blosc_args, nchunks=None, chunk_size=None,
             output_fp.write(encoded_offsets)
     out_file_size = path.getsize(out_file)
     print_verbose('output file size: %s' % double_pretty_size(out_file_size))
-    print_verbose('compression ratio: %f' % (out_file_size/in_file_size))
+    print_verbose('compression ratio: %f' % (out_file_size/in_list_size))
 
-def unpack_file(in_file, out_file):
-    """ Main function for decompressing a file.
+def unpack_file(in_file):
+    """ Main function for decompressing a file.  Returns a list of buffers.
 
     Parameters
     ----------
     in_file : str
         the name of the input file
-    out_file : str
-        the name of the output file
     """
+    out_list = []
     in_file_size = path.getsize(in_file)
     print_verbose('input file size: %s' % pretty_size(in_file_size))
-    with open(in_file, 'rb') as input_fp, \
-         open(out_file, 'wb') as output_fp:
+    with open(in_file, 'rb') as input_fp:
         # read the bloscpack header
         print_verbose('reading bloscpack header', level=DEBUG)
         bloscpack_header_raw = input_fp.read(BLOSCPACK_HEADER_LENGTH)
@@ -951,13 +773,13 @@ def unpack_file(in_file, out_file):
             # if checksum OK, decompress buffer
             decompressed = blosc.decompress(compressed)
             # write decompressed chunk
-            output_fp.write(decompressed)
-            print_verbose("chunk written, in: %s out: %s" %
-                    (pretty_size(len(compressed)),
-                        pretty_size(len(decompressed))), level=DEBUG)
-    out_file_size = path.getsize(out_file)
-    print_verbose('output file size: %s' % pretty_size(out_file_size))
-    print_verbose('decompression ratio: %f' % (out_file_size/in_file_size))
+            out_list.append(decompressed)
+            print_verbose("chunk append, in: %s out: %s" %
+                          (pretty_size(len(compressed)),
+                           pretty_size(len(decompressed))), level=DEBUG)
+    out_list_size = sum(b for b in out_list)
+    print_verbose('output file size: %s' % pretty_size(out_list_size))
+    print_verbose('decompression ratio: %f' % (out_list_size/in_file_size))
 
 if __name__ == '__main__':
     parser = create_parser()
@@ -984,43 +806,33 @@ if __name__ == '__main__':
         for arg, value in blosc_args.iteritems():
             print_verbose('\t%s: %s' % (arg, value), level=DEBUG)
         try:
-            check_files(in_file, out_file, args)
+            check_files(None, out_file, args)
         except FileNotFound as fnf:
             error(str(fnf))
         process_nthread_arg(args)
-        # mutually exclusivity in parser protects us from both having a value
-        if args.nchunks is None and args.chunk_size is None:
-            # file is larger than the default size... use it
-            in_file_size = path.getsize(in_file)
-            if in_file_size > reverse_pretty(DEFAULT_CHUNK_SIZE):
-                args.chunk_size = reverse_pretty(DEFAULT_CHUNK_SIZE)
-                print_verbose("Using default chunk-size: '%s'" %
-                        DEFAULT_CHUNK_SIZE, level=DEBUG)
-            # file is smaller than the default size, make a single chunk
-            else:
-                args.nchunks = 1
-                print_verbose("File was smaller than the default " +
-                        "chunk-size, using a single chunk")
         try:
-            pack_file(in_file, out_file, blosc_args,
-                    nchunks=args.nchunks,
-                    chunk_size=args.chunk_size,
-                    offsets=args.offsets,
-                    checksum=args.checksum)
+            pack_list(LIST_TO_PERSIST, out_file, blosc_args,
+                      offsets=args.offsets,
+                      checksum=args.checksum)
         except ChunkingException as e:
             error(e.message)
     elif args.subcommand in ['decompress', 'd']:
         print_verbose('getting ready for decompression')
-        in_file, out_file = process_decompression_args(args)
+        in_file = process_decompression_args(args)
         try:
-            check_files(in_file, out_file, args)
+            check_files(in_file, None, args)
         except FileNotFound as fnf:
             error(str(fnf))
         process_nthread_arg(args)
         try:
-            unpack_file(in_file, out_file)
+            out_list = unpack_file(in_file)
         except ValueError as ve:
             error(ve.message)
+        # Compare against the original list
+        for b1,b2 in zip(LIST_TO_PERSIST, out_list):
+            if b1 != b2:
+                raise(ValueError, "Values '%s' and '%s' are not equal" %
+                      (b1, b2))
     else:
         # we should never reach this
         error('You found the easter-egg, please contact the author')
