@@ -111,6 +111,9 @@ class PythonSource(ByteProvider):
         elif self.pytype == float:
             return self.pyobject
 
+        elif self.pytype == str:
+            return self.pyobject
+
         else:
             raise TypeError("Don't know how to cast PythonSource")
 

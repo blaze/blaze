@@ -8,6 +8,7 @@ from collections import Iterable
 
 from ndtable.expr import nodes, catalog
 from ndtable.datashape.coretypes import int32, float32, string, top, Any
+from ndtable.sources.canonical import PythonSource
 
 # Type checking and unification
 from ndtable.datashape.unification import unify
@@ -377,6 +378,7 @@ class ArrayNode(ExpressionNode):
     # Other non-graph methods
     # ========================
 
+    @property
     def data(self):
         pass
 
@@ -596,6 +598,10 @@ class Literal(ExpressionNode):
     def name(self):
         return str(self.val)
 
+    @property
+    def data(self):
+        raise NotImplementedError
+
 #------------------------------------------------------------------------
 # Strings
 #------------------------------------------------------------------------
@@ -604,6 +610,10 @@ class StringNode(Literal):
     vtype     = str
     datashape = string
     kind      = VAL
+
+    @property
+    def data(self):
+        return PythonSource(self.val, type=str)
 
 #------------------------------------------------------------------------
 # Scalars
@@ -614,16 +624,18 @@ class IntNode(Literal):
     datashape = int32
     kind      = VAL
 
+    @property
     def data(self):
-        return IntDescriptor()
+        return PythonSource(self.val, type=int)
 
 class FloatNode(Literal):
     vtype     = float
     datashape = float32
     kind      = VAL
 
+    @property
     def data(self):
-        return
+        return PythonSource(self.val, type=float)
 
 #------------------------------------------------------------------------
 # Slices and Indexes

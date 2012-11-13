@@ -72,7 +72,7 @@ def do_environment(context, graph):
 
 def do_codegen(context, graph):
     context = dict(context)
-    vars = topovals(graph)
+    module = context['llvmmodule']
 
     # ----------------------
     context['kernels'] = {}
