@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 # vim :set ft=py:
 
-""" Command line interface to Blosc via python-blosc """
+""" Command line interface to Blosc via python-blosc.
+
+* Adapted to persist a list of buffers by Francesc Alted.
+
+"""
 
 from __future__ import division
 
@@ -16,8 +20,8 @@ import hashlib
 import itertools
 from collections import OrderedDict
 import blosc
+import numpy as np
 
-""" Adapted to persist a list of buffers by Francesc Alted """
 
 __version__ = '0.3.0-dev'
 __author__ = [ 'Valentin Haenel <valentin.haenel@gmx.de>',
@@ -260,7 +264,7 @@ def create_parser():
                 help='compression level')
         blosc_group.add_argument('-s', '--no-shuffle',
                 action='store_false',
-                default=DEAFAULT_SHUFFLE,
+                default=DEFAULT_SHUFFLE,
                 dest='shuffle',
                 help='deactivate shuffle')
         bloscpack_group = p.add_argument_group(title='bloscpack settings')
@@ -558,6 +562,11 @@ def process_compression_args(args):
         typesize, clevel and shuffle
     """
     out_file = args.out_file
+    if out_file is None:
+        raise ValueError("you need to pass an out_file!")
+    # check the extension for out file
+    if not out_file.endswith(EXTENSION):
+        out_file += EXTENSION
     blosc_args = dict((arg, args.__getattribute__(arg)) for arg in BLOSC_ARGS)
     return out_file, blosc_args
 
@@ -777,9 +786,10 @@ def unpack_file(in_file):
             print_verbose("chunk append, in: %s out: %s" %
                           (pretty_size(len(compressed)),
                            pretty_size(len(decompressed))), level=DEBUG)
-    out_list_size = sum(b for b in out_list)
+    out_list_size = sum(len(b) for b in out_list)
     print_verbose('output file size: %s' % pretty_size(out_list_size))
     print_verbose('decompression ratio: %f' % (out_list_size/in_file_size))
+    return out_list
 
 if __name__ == '__main__':
     parser = create_parser()
@@ -801,7 +811,7 @@ if __name__ == '__main__':
     # compression and decompression handled via subparsers
     if args.subcommand in ['compress', 'c']:
         print_verbose('getting ready for compression')
-        in_file, out_file, blosc_args = process_compression_args(args)
+        out_file, blosc_args = process_compression_args(args)
         print_verbose('blosc args are:', level=DEBUG)
         for arg, value in blosc_args.iteritems():
             print_verbose('\t%s: %s' % (arg, value), level=DEBUG)
