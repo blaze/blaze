@@ -3,6 +3,7 @@ ByteProvider base class.
 """
 
 from byteproto import READ, WRITE
+from datadescriptor import DataDescriptor
 
 class ByteProvider(object):
     """
@@ -16,11 +17,15 @@ class ByteProvider(object):
     will devise a way to do the operation as a sequence of instructions.
     """
 
-    def __getitem__(self, indexer):
-        if isinstance(indexer, slice):
-            return self.slice(indexer)
-        else:
-            raise NotImplementedError
+    def read_desc(self):
+        """ Returns the naive descriptor, which will be
+        speciazlied by execution """
+        raise NotImplementedError
+
+    def write_desc(self):
+        """ Returns the naive descriptor, which will be
+        speciazlied by execution """
+        raise NotImplementedError
 
     def has_op(self, op, method):
         if op == READ:

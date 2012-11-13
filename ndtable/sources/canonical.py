@@ -16,7 +16,7 @@ import socket
 
 from ndtable.datashape import Fixed, pyobj
 from ndtable.datashape.coretypes import CType, from_numpy
-from ndtable.byteproto import CONTIGUOUS, STRIDED, STREAM
+from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM
 from ndtable.byteprovider import ByteProvider
 
 from carray import carray
@@ -32,8 +32,8 @@ class ArraySource(ByteProvider):
     Only used for bootstrapping. Will be removed later.
     """
 
-    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
-    write_capabilities = CONTIGUOUS | STRIDED | STREAM
+    read_capabilities  = CONTIGUOUS | CHUNKED | STREAM
+    write_capabilities = CONTIGUOUS | CHUNKED | STREAM
 
     def __init__(self, lst):
         self.na = np.array(lst)
@@ -64,8 +64,7 @@ class CArraySource(ByteProvider):
     write_capabilities = CONTIGUOUS
 
     def __init__(self, ca):
-        """
-        CArray object passed directly into the constructor,
+        """ CArray object passed directly into the constructor,
         ostensibly this is just a thin wrapper that consumes a
         reference.
         """
@@ -73,8 +72,7 @@ class CArraySource(ByteProvider):
 
     @classmethod
     def empty(self, datashape):
-        """
-        Create a CArraySource from a datashape specification,
+        """ Create a CArraySource from a datashape specification,
         downcasts into Numpy dtype and shape tuples if possible
         otherwise raises an exception.
         """
@@ -82,9 +80,7 @@ class CArraySource(ByteProvider):
         return CArraySource(carray([], dtype))
 
     def read(self, offset, nbytes):
-        """
-        The future read interface for the CArray.
-        """
+        """ The future read interface for the CArray.  """
         raise NotImplementedError
 
     def __repr__(self):
@@ -94,15 +90,29 @@ class PythonSource(ByteProvider):
     """
     Work with a immutable Python list as if it were byte interfaces.
     """
-    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
-    write_capabilities = CONTIGUOUS | STRIDED | STREAM
+    read_capabilities  = CONTIGUOUS | CHUNKED | STREAM
+    write_capabilities = CONTIGUOUS | CHUNKED | STREAM
 
-    def __init__(self, lst):
-        assert isinstance(lst, list)
-        self.lst = lst
+    def __init__(self, pyobject, type=list):
+        self.pytype = type
+        self.pyboject = pyobject
 
     def read(self, offset, nbytes):
-        return self.lst[offset:nbytes]
+        # Array types
+        # ===========
+        if self.pytype == list:
+            return self.lst[offset:nbytes]
+
+        # Simple types
+        # ============
+        elif self.pytype == int:
+            return self.pyobject
+
+        elif self.pytype == float:
+            return self.pyobject
+
+        else:
+            raise TypeError("Don't know how to cast PythonSource")
 
     def __repr__(self):
         return 'PyObject(ptr=%r)' % id(self.lst)
@@ -112,8 +122,8 @@ class ByteSource(ByteProvider):
     A raw block of memory layed out in raditional NumPy fashion.
     """
 
-    read_capabilities  = CONTIGUOUS | STRIDED | STREAM
-    write_capabilities = CONTIGUOUS | STRIDED | STREAM
+    read_capabilities  = CONTIGUOUS | CHUNKED | STREAM
+    write_capabilities = CONTIGUOUS | CHUNKED | STREAM
 
     def __init__(self, bits):
         # TODO: lazy
@@ -138,8 +148,8 @@ class FileSource(ByteProvider):
     File on local disk.
     """
 
-    read_capabilities  = STRIDED | STREAM
-    write_capabilities = STRIDED | STREAM
+    read_capabilities  = CHUNKED | STREAM
+    write_capabilities = CHUNKED | STREAM
 
     def __init__(self, fname, mode='rb+'):
         self.fd = None

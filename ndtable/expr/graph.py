@@ -377,6 +377,9 @@ class ArrayNode(ExpressionNode):
     # Other non-graph methods
     # ========================
 
+    def data(self):
+        pass
+
     def tofile(self, *args, **kw):
         pass
 
@@ -611,10 +614,16 @@ class IntNode(Literal):
     datashape = int32
     kind      = VAL
 
+    def data(self):
+        return IntDescriptor()
+
 class FloatNode(Literal):
     vtype     = float
     datashape = float32
     kind      = VAL
+
+    def data(self):
+        return
 
 #------------------------------------------------------------------------
 # Slices and Indexes

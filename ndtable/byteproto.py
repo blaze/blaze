@@ -8,7 +8,7 @@ import llvm.core as lc
 #------------------------------------------------------------------------
 
 CONTIGUOUS = 1
-STRIDED    = 2
+CHUNKED    = 2
 STREAM     = 4
 CHUNKED    = 8
 

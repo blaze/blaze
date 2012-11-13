@@ -13,6 +13,7 @@ from functools import partial
 from collections import Counter, defaultdict
 from itertools import ifilter
 
+from ndtable.plan import generate
 from ndtable.datashape.coretypes import _var_generator
 
 #------------------------------------------------------------------------
@@ -20,7 +21,7 @@ from ndtable.datashape.coretypes import _var_generator
 #------------------------------------------------------------------------
 
 def compose(f, g):
-    return lambda *x: f(*g(*x))
+    return lambda *x: g(*f(*x))
 
 #------------------------------------------------------------------------
 # Passes
@@ -49,10 +50,12 @@ def do_flow(context, graph):
     context = dict(context)
 
     # Topologically sort the graph
-    sort = topovals(graph)
+    vars = topovals(graph)
+    ops = topops(graph)
 
     # ----------------------
-    context['order'] = sort
+    context['vars'] = vars
+    context['ops']  = ops
     # ----------------------
 
     return context, graph
@@ -62,20 +65,33 @@ def do_environment(context, graph):
 
     # ----------------------
     context['llvmmodule'] = Module.new('blaze')
+    context['hints'] = {}
     # ----------------------
 
     return context, graph
 
 def do_codegen(context, graph):
     context = dict(context)
+    vars = topovals(graph)
+
+    # ----------------------
+    context['kernels'] = {}
+    # ----------------------
 
     return context, graph
 
 def do_plan(context, graph):
     context = dict(context)
 
+    plan = generate(
+        context['ops'],
+        context['vars'],
+        context['kernels'],
+        context['hints'],
+    )
+
     # ----------------------
-    context['output'] = None
+    context['output'] = plan
     # ----------------------
 
     return context, graph
@@ -106,7 +122,7 @@ class Pipeline(object):
             do_environment,
             #  v
             do_codegen,
-            # Output -->
+            #  v
             do_plan,
             # Output -->
         )

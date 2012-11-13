@@ -29,8 +29,8 @@ class DataDescriptor(object):
         **copy** is True, then the memoryview will always expose a new copy of
         the data.
 
-        In the C level implementation of the DataDescriptor interface, this
-        returns a void* pointer to the data.
+        In a C level implementation of the DataDescriptor interface, this
+        returns a (void*) pointer to the data.
         """
         return Buffer
 

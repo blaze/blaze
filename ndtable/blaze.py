@@ -1,8 +1,8 @@
 import os
 import uuid
 from urlparse import urlparse
-from adaptors.canonical import MemoryAdaptor, FileAdaptor, SocketAdaptor
-from ndtable.table import DataTable
+
+# TODO: this is wicked old
 
 class Blaze(object):
     """
@@ -31,5 +31,3 @@ class Blaze(object):
             return byte_interface
         else:
             raise NotImplementedError()
-
-    Table = DataTable

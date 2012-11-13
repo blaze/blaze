@@ -7,7 +7,7 @@ from collections import deque
 
 class Node(object):
     """ Represents a node in the expression graph which Blaze compiles into
-    a program for the Array VM.
+    a program for execution engine.
     """
     # Use __slots__ so we don't incur the full cost of a class
     __slots__ = ['children']

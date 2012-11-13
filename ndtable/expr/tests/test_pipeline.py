@@ -1,5 +1,5 @@
-from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
 from ndtable.expr.graph import IntNode, FloatNode
+from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
 from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter,\
     MorphismPrinter
 
@@ -25,6 +25,8 @@ VAL = 2
 def test_simple_sort():
     lst = toposort(lambda x: True, x)
     assert len(lst) == 6
+    import pdb; pdb.set_trace()
+
 
 def test_simple_sort_ops():
     lst = topops(y)
@@ -78,4 +80,3 @@ def test_simple_sort_vals():
 def test_simple_pipeline():
     line = Pipeline()
     plan = line.run_pipeline(x)
-    print plan
