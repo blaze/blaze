@@ -21,6 +21,7 @@ import itertools
 from collections import OrderedDict
 import blosc
 import numpy as np
+import json
 
 
 __version__ = '0.3.0-dev'
@@ -56,9 +57,12 @@ SUFFIXES = OrderedDict((
              ("G", 2**30),
              ("T", 2**40)))
 
-# Create a list to persist with 1K buffers (1M elements in total)
+# create a list to persist with 1K buffers (1M elements in total)
 LIST_TO_PERSIST = [np.ones(1024).tostring() for x in range(1024)]
 
+# meta info sample to persist with the buffers above
+# beware: only JSON compatible objects supported
+META_TO_PERSIST = {'dtype': 'float64', 'shape': [1024], 'others': []}
 
 class Hash(object):
     """ Uniform hash object.
@@ -627,7 +631,7 @@ def process_nthread_arg(args):
     print_verbose('using %d thread%s' %
             (args.nthreads, 's' if args.nthreads > 1 else ''))
 
-def pack_list(in_list, out_file, blosc_args,
+def pack_list(in_list, meta_info, out_file, blosc_args,
               offsets=DEFAULT_OFFSETS, checksum=DEFAULT_CHECKSUM):
     """ Main function for compressing a list of buffers.
 
@@ -635,6 +639,8 @@ def pack_list(in_list, out_file, blosc_args,
     ----------
     in_list : list
         the list of buffers
+    meta_info : dict
+        dictionary with the associated metainfo
     out_file : str
         the name of the output file
     blosc_args : dict
@@ -712,6 +718,9 @@ def pack_list(in_list, out_file, blosc_args,
             print_verbose("Raw offsets: %s" % repr(encoded_offsets),
                     level=DEBUG)
             output_fp.write(encoded_offsets)
+        # write the metadata at the end
+        output_fp.seek(0, 2)
+        json.dump(meta_info, output_fp)
     out_file_size = path.getsize(out_file)
     print_verbose('output file size: %s' % double_pretty_size(out_file_size))
     print_verbose('compression ratio: %f' % (out_file_size/in_list_size))
@@ -786,10 +795,12 @@ def unpack_file(in_file):
             print_verbose("chunk append, in: %s out: %s" %
                           (pretty_size(len(compressed)),
                            pretty_size(len(decompressed))), level=DEBUG)
+        # we are at the end of the data area. read the metadata appendix.
+        meta_info = json.load(input_fp)
     out_list_size = sum(len(b) for b in out_list)
     print_verbose('output file size: %s' % pretty_size(out_list_size))
     print_verbose('decompression ratio: %f' % (out_list_size/in_file_size))
-    return out_list
+    return out_list, meta_info
 
 if __name__ == '__main__':
     parser = create_parser()
@@ -821,9 +832,8 @@ if __name__ == '__main__':
             error(str(fnf))
         process_nthread_arg(args)
         try:
-            pack_list(LIST_TO_PERSIST, out_file, blosc_args,
-                      offsets=args.offsets,
-                      checksum=args.checksum)
+            pack_list(LIST_TO_PERSIST, META_TO_PERSIST, out_file, blosc_args,
+                      offsets=args.offsets, checksum=args.checksum)
         except ChunkingException as e:
             error(e.message)
     elif args.subcommand in ['decompress', 'd']:
@@ -835,14 +845,21 @@ if __name__ == '__main__':
             error(str(fnf))
         process_nthread_arg(args)
         try:
-            out_list = unpack_file(in_file)
+            out_list, meta_info = unpack_file(in_file)
         except ValueError as ve:
             error(ve.message)
-        # Compare against the original list
+        # Compare out buffers against the originals
         for b1,b2 in zip(LIST_TO_PERSIST, out_list):
             if b1 != b2:
-                raise(ValueError, "Values '%s' and '%s' are not equal" %
-                      (b1, b2))
+                raise ValueError("Values '%s' and '%s' are not equal" %
+                                 (b1, b2))
+        # Compare out metadata against the original
+        for key in META_TO_PERSIST.iterkeys():
+            m1, m2 = META_TO_PERSIST[key], meta_info[key]
+            if m1 != m2:
+                raise ValueError("Values '%s' and '%s' are not equal" %
+                                 (m1, m2))
+        print_verbose("metadata is correct: %s" % meta_info)
     else:
         # we should never reach this
         error('You found the easter-egg, please contact the author')
