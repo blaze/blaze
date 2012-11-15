@@ -25,7 +25,6 @@ VAL = 2
 def test_simple_sort():
     lst = toposort(lambda x: True, x)
     assert len(lst) == 6
-    import pdb; pdb.set_trace()
 
 
 def test_simple_sort_ops():

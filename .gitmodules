@@ -1,6 +1,0 @@
-[submodule "ndtable/vendor/carray"]
-	path = ndtable/vendor/carray
-	url = https://github.com/FrancescAlted/carray.git
-[submodule "ndtable/vendor/minivect"]
-	path = ndtable/vendor/minivect
-	url = https://github.com/markflorisson88/minivect.git

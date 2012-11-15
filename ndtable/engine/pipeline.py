@@ -10,8 +10,8 @@ point the two might merge though if we're sufficiently clever...
 from llvm.core import Module
 
 from functools import partial
-from collections import Counter, defaultdict
 from itertools import ifilter
+from collections import Counter, defaultdict
 
 from ndtable.plan import generate
 from ndtable.datashape.coretypes import _var_generator
