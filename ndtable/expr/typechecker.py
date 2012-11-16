@@ -56,11 +56,11 @@ def dynamic(cls):
     universal = set([coretypes.top])
     return all(arg == universal for arg in cls.dom)
 
-def typeof(context term):
+def typeof(context, term):
     return ty
 
-def tyeqv(context, ty, ty):
-    return True
+def tyeqv(context, ty):
+    return ty
 
 def simplifyty(context, ty):
     return ty

@@ -184,10 +184,24 @@ class Integer(Primitive):
     def __str__(self):
         return str(self.val)
 
-# The "top type", the universal supertype of all datashape
-# objects.
-class Any(object):
+class Dynamic(object):
+    """
+    The dynamic type allows an explicit upcast and downcast from any
+    type to ``?``. This is normally not allowed in most static type
+    systems.
+    """
     __metaclass__ = Type
+
+    def __str__(self):
+        return '?'
+
+    def up(self, ty):
+        pass
+
+    def down(self, ty):
+        pass
+
+Any = Dynamic
 
 # ==================================================================
 # Base Types
