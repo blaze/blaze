@@ -1,21 +1,30 @@
 Blaze
 =====
 
+Blaze is the next-generation of NumPy. It is designed as a foundational
+set of abstractions on which to build out-of-core and distributed
+algorithms over a wide variety of data sources.
+
 Blaze is a work in progress at the moment. The code is quite a distance
 from feature complete. The code is released in an effort to start a
 public discussion with our end users and community.
 
 Blaze is approaching being a usable library, but does not have runnable
-components at the moment. Demos of usage will be available shortly after
-the code is end-to-end complete.
+components at the moment.
 
-Dependencies
-------------
+Installing
+----------
 
-All dependencies will be resolved by working in the Anaconda
-environment.
+If you are interested in the development version of Blaze you can
+obtain the source from Github.
 
-Free community edition is available here: http://continuum.io/downloads.html .
+```bash
+$ git clone git@github.com:ContinuumIO/blaze.git
+```
+
+All dependencies will be resolved by working in the Anaconda environment.
+
+Free Anaconda CE is available here: http://continuum.io/downloads.html.
 
 Introduction
 ------------
@@ -35,7 +44,6 @@ $ cd docs
 $ make html
 ```
 
-
 To run tests:
 
 ```bash
@@ -46,9 +54,11 @@ Contributing
 ------------
 
 Anyone wishing to contribute should join the discussion on the mailing
-list at blaze-dev@continuum.io
+list at: blaze-dev@continuum.io
 
 License
 -------
+
+Blaze development is sponsored by Continuum Analytics.
 
 Released under BSD license. See LICENSE
