@@ -1,22 +1,24 @@
 #########################################################################
 #
-#             License: BSD
-#             Created: August 05, 2010
-#             Author:    Francesc Alted -    francesc@continuum.io
+#         License: BSD
+#         Created: August 05, 2010
+#         Author:  Francesc Alted - francesc@continuum.io
 #
 ########################################################################
 
 
 import sys
-import numpy as np
-import carray as ca
-from carray import utils, attrs, array2string
 import os, os.path
 import struct
 import shutil
 import tempfile
 import json
+
 import cython
+import numpy as np
+
+# carray utilities
+import utils, attrs, array2string
 
 _KB = 1024
 _MB = 1024*_KB
@@ -193,6 +195,8 @@ cdef int true_count(char *data, int nbytes):
 
 #-------------------------------------------------------------
 
+# Made this a public symbol so that we can work with it in C
+# libraries and LLVM
 cdef public class chunk [type chunktype, object chunk]:
     """
     chunk(array, atom, cparams)
@@ -515,13 +519,13 @@ cdef decode_blosc_header(buffer_):
 
     """
 
-    return {'version': decode_byte(buffer_[0]),
-                    'versionlz': decode_byte(buffer_[1]),
-                    'flags': decode_byte(buffer_[2]),
-                    'typesize': decode_byte(buffer_[3]),
-                    'nbytes': decode_uint32(buffer_[4:8]),
-                    'blocksize': decode_uint32(buffer_[8:12]),
-                    'ctbytes': decode_uint32(buffer_[12:16])}
+    return {'version'   : decode_byte(buffer_[0]),
+            'versionlz' : decode_byte(buffer_[1]),
+            'flags'     : decode_byte(buffer_[2]),
+            'typesize'  : decode_byte(buffer_[3]),
+            'nbytes'    : decode_uint32(buffer_[4:8]),
+            'blocksize' : decode_uint32(buffer_[8:12]),
+            'ctbytes'   : decode_uint32(buffer_[12:16])}
 
 
 cdef class chunks(object):
@@ -670,7 +674,7 @@ cdef class chunks(object):
         return chunk_
 
 
-# XXX: Made this a public symbol so that we can work with it in C
+# Made this a public symbol so that we can work with it in C
 # libraries and LLVM
 cdef public class carray [type carraytype, object carray]:
     """
@@ -867,9 +871,9 @@ cdef public class carray [type carraytype, object carray]:
 
         # Check defaults for cparams
         if cparams is None:
-            cparams = ca.cparams()
+            cparams = toplevel.cparams()
 
-        if not isinstance(cparams, ca.cparams):
+        if not isinstance(cparams, toplevel.cparams):
             raise ValueError, "`cparams` param must be an instance of `cparams` class"
 
         # Convert input to an appropriate type
@@ -1097,7 +1101,7 @@ cdef public class carray [type carraytype, object carray]:
             data = json.loads(storagefh.read())
         dtype_ = np.dtype(data["dtype"])
         chunklen = data["chunklen"]
-        cparams = ca.cparams(
+        cparams = toplevel.cparams(
             clevel = data["cparams"]["clevel"],
             shuffle = data["cparams"]["shuffle"])
         expectedlen = data["expectedlen"]
@@ -1646,7 +1650,7 @@ cdef public class carray [type carraytype, object carray]:
         # An boolean expression (case of fancy indexing)
         elif type(key) is str:
             # Evaluate
-            result = ca.eval(key)
+            result = toplevel.eval(key)
             if result.dtype.type != np.bool_:
                 raise IndexError, "only boolean expressions supported"
             if len(result) != self.len:
@@ -1787,7 +1791,7 @@ cdef public class carray [type carraytype, object carray]:
         # An boolean expression (case of fancy indexing)
         elif type(key) is str:
             # Evaluate
-            result = ca.eval(key)
+            result = toplevel.eval(key)
             if result.dtype.type != np.bool_:
                 raise IndexError, "only boolean expressions supported"
             if len(result) != self.len:
