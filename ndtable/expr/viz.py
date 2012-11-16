@@ -2,7 +2,11 @@
 Visualize expression graphs using graphviz.
 """
 
-import pydot
+try:
+    import pydot
+    have_pydot = True
+except ImportError:
+    have_pydot = False
 
 from cStringIO import StringIO
 from collections import Counter
@@ -13,6 +17,9 @@ def dump(node, ipython=True, filename=None, tree=False):
     """
     Dump the expression graph to either a file or IPython.
     """
+    if not have_pydot:
+        return
+
     _, graph = build_graph(node, tree=tree)
     if filename:
         return view(filename, graph)
