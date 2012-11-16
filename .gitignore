@@ -64,3 +64,6 @@ nosetests.xml
 *.exe
 *.out
 *.app
+
+# Cython Extensions
+ndtable/carray/*.[ch]
