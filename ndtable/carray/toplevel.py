@@ -17,10 +17,6 @@ import numpy as np
 import carray as ca
 import math
 
-if ca.numexpr_here:
-    from numexpr.expressions import functions as numexpr_functions
-
-
 def detect_number_of_cores():
     """
     detect_number_of_cores()
@@ -69,8 +65,6 @@ def set_nthreads(nthreads):
 
     """
     nthreads_old = ca.blosc_set_nthreads(nthreads)
-    if ca.numexpr_here:
-        ca.numexpr.set_num_threads(nthreads)
     return nthreads_old
 
 def open(rootdir, mode='a'):

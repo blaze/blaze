@@ -76,8 +76,3 @@ be 'numexpr' or 'python'.  Default is 'numexpr', if installed.  If
 not, then the default is 'python'.
 
 """
-
-# If numexpr is available, use it as default
-if ca.numexpr_here:
-    defaults.eval_vm = "numexpr"
-
