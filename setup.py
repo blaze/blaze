@@ -141,7 +141,7 @@ def_macros = [('DEBUG', 0)]
 numpy_path = get_numpy_include_dirs()[0]
 
 carray_path = 'ndtable.carray'
-blosc_path  = 'ndtable/vendor/blosc/'
+blosc_path  = 'ndtable/include/blosc/'
 
 
 carray_source = [
