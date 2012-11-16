@@ -1,4 +1,8 @@
+# Python
 *.py[cod]
+
+# Vim
+*.sw[pon]
 
 # C extensions
 *.so
@@ -35,9 +39,6 @@ nosetests.xml
 .pydevproject
 .ropeproject
 
-*.swp
-*.swo
-
 # Data files
 *.h5
 *.csv
@@ -64,6 +65,8 @@ nosetests.xml
 *.exe
 *.out
 *.app
+
+# -------------------
 
 # Cython Extensions
 ndtable/carray/*.[ch]

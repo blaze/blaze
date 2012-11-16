@@ -210,13 +210,13 @@ class CleanCommand(Command):
     def run(self):
         for clean_me in self._clean_me:
             try:
-                print('flushing', clean_me)
+                print 'flushing', clean_me
                 os.unlink(clean_me)
             except Exception:
                 pass
         for clean_tree in self._clean_trees:
             try:
-                print('flushing', clean_tree)
+                print 'flushing', clean_tree
                 shutil.rmtree(clean_tree)
             except Exception:
                 pass

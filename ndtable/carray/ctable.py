@@ -79,17 +79,17 @@ class cols(object):
         col = self._cols[name]
         self.update_meta()
         return col
-    
+
     def __str__(self):
         fullrepr = ""
         for name in self.names:
-            fullrepr += "%s : %s" % (name, str(self._cols[name])) 
+            fullrepr += "%s : %s" % (name, str(self._cols[name]))
         return fullrepr
 
     def __repr__(self):
         fullrepr = ""
         for name in self.names:
-            fullrepr += "%s : %s\n" % (name, repr(self._cols[name])) 
+            fullrepr += "%s : %s\n" % (name, repr(self._cols[name]))
         return fullrepr
 
 
@@ -179,7 +179,7 @@ class ctable(object):
         "The directory where this object is saved."
         self.mode = kwargs.get('mode', 'a')
         "The mode in which the object is created/opened."
-        
+
         # Setup the columns accessor
         self.cols = cols(self.rootdir, self.mode)
         "The ctable columns accessor."
@@ -197,7 +197,7 @@ class ctable(object):
 
         # Attach the attrs to this object
         self.attrs = attrs.attrs(self.rootdir, self.mode, _new=_new)
-            
+
         # Cache a structured array of len 1 for ctable[int] acceleration
         self._arr1 = np.empty(shape=(1,), dtype=self.dtype)
 
@@ -270,7 +270,7 @@ class ctable(object):
             if clen >= 0 and clen != len(column):
                 raise ValueError, "all `columns` must have the same length"
             clen = len(column)
- 
+
         self.len = clen
 
     def open_ctable(self):

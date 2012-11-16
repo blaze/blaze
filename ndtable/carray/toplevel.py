@@ -720,9 +720,6 @@ class cparams(object):
         args = ["clevel=%d"%self._clevel, "shuffle=%s"%self._shuffle]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(args))
 
-
-
-
 ## Local Variables:
 ## mode: python
 ## py-indent-offset: 4

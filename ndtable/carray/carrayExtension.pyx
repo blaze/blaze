@@ -18,7 +18,7 @@ import cython
 import numpy as np
 
 # carray utilities
-import utils, attrs, array2string
+import utils, attrs, arrayprint
 
 _KB = 1024
 _MB = 1024*_KB
@@ -54,7 +54,7 @@ from definitions cimport import_array, ndarray, dtype, \
     PyString_FromStringAndSize, \
     Py_BEGIN_ALLOW_THREADS, Py_END_ALLOW_THREADS, \
     PyArray_GETITEM, PyArray_SETITEM, \
-    npy_intp, Py, PyBuffer_FromMemory
+    npy_intp, PyBuffer_FromMemory
 
 #-----------------------------------------------------------------
 
@@ -192,6 +192,53 @@ cdef int true_count(char *data, int nbytes):
         for i from 0 <= i < nbytes:
             count += <int>(data[i])
     return count
+
+#-------------------------------------------------------------
+
+class _cparams(object):
+    """
+    cparams(clevel=5, shuffle=True)
+
+    Class to host parameters for compression and other filters.
+
+    Parameters
+    ----------
+    clevel : int (0 <= clevel < 10)
+        The compression level.
+    shuffle : bool
+        Whether the shuffle filter is active or not.
+
+    Notes
+    -----
+    The shuffle filter may be automatically disable in case it is
+    non-sense to use it (e.g. itemsize == 1).
+
+    """
+
+    @property
+    def clevel(self):
+        """The compression level."""
+        return self._clevel
+
+    @property
+    def shuffle(self):
+        """Shuffle filter is active?"""
+        return self._shuffle
+
+    def __init__(self, clevel=5, shuffle=True):
+        if not isinstance(clevel, int):
+            raise ValueError, "`clevel` must an int."
+        if not isinstance(shuffle, (bool, int)):
+            raise ValueError, "`shuffle` must a boolean."
+        shuffle = bool(shuffle)
+        if clevel < 0:
+            raise ValueError, "clevel must be a positive integer"
+        self._clevel = clevel
+        self._shuffle = shuffle
+
+    def __repr__(self):
+        args = ["clevel=%d"%self._clevel, "shuffle=%s"%self._shuffle]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(args))
 
 #-------------------------------------------------------------
 
@@ -871,9 +918,9 @@ cdef public class carray [type carraytype, object carray]:
 
         # Check defaults for cparams
         if cparams is None:
-            cparams = toplevel.cparams()
+            cparams = _cparams()
 
-        if not isinstance(cparams, toplevel.cparams):
+        if not isinstance(cparams, _cparams):
             raise ValueError, "`cparams` param must be an instance of `cparams` class"
 
         # Convert input to an appropriate type
@@ -1101,7 +1148,7 @@ cdef public class carray [type carraytype, object carray]:
             data = json.loads(storagefh.read())
         dtype_ = np.dtype(data["dtype"])
         chunklen = data["chunklen"]
-        cparams = toplevel.cparams(
+        cparams = _cparams(
             clevel = data["cparams"]["clevel"],
             shuffle = data["cparams"]["shuffle"])
         expectedlen = data["expectedlen"]
@@ -1650,7 +1697,7 @@ cdef public class carray [type carraytype, object carray]:
         # An boolean expression (case of fancy indexing)
         elif type(key) is str:
             # Evaluate
-            result = toplevel.eval(key)
+            result = eval(key)
             if result.dtype.type != np.bool_:
                 raise IndexError, "only boolean expressions supported"
             if len(result) != self.len:
@@ -1791,7 +1838,7 @@ cdef public class carray [type carraytype, object carray]:
         # An boolean expression (case of fancy indexing)
         elif type(key) is str:
             # Evaluate
-            result = toplevel.eval(key)
+            result = eval(key)
             if result.dtype.type != np.bool_:
                 raise IndexError, "only boolean expressions supported"
             if len(result) != self.len:
@@ -2247,7 +2294,7 @@ cdef public class carray [type carraytype, object carray]:
     #     self.flush()
 
     def __str__(self):
-        return array2string(self)
+        return arrayprint.array2string(self)
 
     def __repr__(self):
         snbytes = utils.human_readable_size(self._nbytes)

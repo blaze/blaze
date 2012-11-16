@@ -2,17 +2,9 @@
 # CArray Namespace
 #------------------------------------------------------------------------
 
+# Print array functions (imported from NumPy)
 from arrayprint import (
-   array2string, set_printoptions, get_printoptions)
-
+    array2string, set_printoptions, get_printoptions)
 from carrayExtension import (
-   carray, blosc_version,
-   _blosc_set_nthreads as blosc_set_nthreads
-)
-from ctable import ctable
-from toplevel import (
-   detect_number_of_cores, set_nthreads,
-   open, fromiter, arange, zeros, ones, fill,
-   cparams, eval, walk )
+    carray, blosc_version, _blosc_set_nthreads as blosc_set_nthreads )
 from version import __version__
-from defaults import defaults

@@ -5,7 +5,7 @@ Execution plans, ala SQL.
 # TODO: for bootstrapping
 import math
 import numpy as np
-import carray as ca
+import ndtable.carray as ca
 from ndtable.expr.graph import VAL, OP, APP
 
 from collections import Sequence, OrderedDict, namedtuple
