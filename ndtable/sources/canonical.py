@@ -19,39 +19,7 @@ from ndtable.datashape.coretypes import CType, from_numpy
 from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM
 from ndtable.byteprovider import ByteProvider
 
-from carray import carray
-
-#------------------------------------------------------------------------
-# Numpy Compat Layer
-#------------------------------------------------------------------------
-
-class ArraySource(ByteProvider):
-    """
-    The buffer from a Numpy array used a data source
-
-    Only used for bootstrapping. Will be removed later.
-    """
-
-    read_capabilities  = CONTIGUOUS | CHUNKED | STREAM
-    write_capabilities = CONTIGUOUS | CHUNKED | STREAM
-
-    def __init__(self, lst):
-        self.na = np.array(lst)
-
-    def calculate(self, ntype):
-        return from_numpy(self.na.shape, self.na.dtype)
-
-    @classmethod
-    def empty(self, datashape):
-        shape, dtype = from_numpy(datashape)
-        return ArraySource(np.ndarray(shape, dtype))
-
-    def __repr__(self):
-        return 'Numpy(ptr=%r, dtype=%s, shape=%r)' % (
-            id(self.na),
-            self.na.dtype,
-            self.na.shape,
-        )
+#from ndtable.carray import carray
 
 #------------------------------------------------------------------------
 # "CArray" byte provider
@@ -86,6 +54,36 @@ class CArraySource(ByteProvider):
     def __repr__(self):
         return 'CArray(ptr=%r)' % id(self.ca)
 
+
+class ArraySource(ByteProvider):
+    """
+    The buffer from a Numpy array used a data source
+
+    Only used for bootstrapping. Will be removed later.
+    """
+
+    read_capabilities  = CONTIGUOUS | CHUNKED | STREAM
+    write_capabilities = CONTIGUOUS | CHUNKED | STREAM
+
+    def __init__(self, lst):
+        self.na = np.array(lst)
+
+    def calculate(self, ntype):
+        return from_numpy(self.na.shape, self.na.dtype)
+
+    @classmethod
+    def empty(self, datashape):
+        shape, dtype = from_numpy(datashape)
+        return ArraySource(np.ndarray(shape, dtype))
+
+    def __repr__(self):
+        return 'Numpy(ptr=%r, dtype=%s, shape=%r)' % (
+            id(self.na),
+            self.na.dtype,
+            self.na.shape,
+        )
+
+
 class PythonSource(ByteProvider):
     """
     Work with a immutable Python list as if it were byte interfaces.
@@ -119,6 +117,7 @@ class PythonSource(ByteProvider):
 
     def __repr__(self):
         return 'PyObject(ptr=%r)' % id(self.lst)
+
 
 class ByteSource(ByteProvider):
     """
