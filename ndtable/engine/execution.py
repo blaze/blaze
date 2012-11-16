@@ -11,7 +11,7 @@ import llvm_cbuilder.shortnames as Cn
 from numbapro.vectorize import Vectorize
 
 import numpy as np
-import carray as ca
+import ndtable.carray as ca
 
 LLVM   = 0 # Pure LLVM dispatch
 CTYPES = 1 # Dispatch from Python, invoking C function pointers for calls

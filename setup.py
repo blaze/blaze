@@ -103,12 +103,13 @@ check_import('numpy', min_numpy_version)
 #------------------------------------------------------------------------
 
 #------------------------------------------------------------------------
-# C Compiler Environement
+# C Compiler Environment
 #------------------------------------------------------------------------
 
 # Global variables
 CFLAGS = os.environ.get('CFLAGS', '').split()
 LFLAGS = os.environ.get('LFLAGS', '').split()
+
 lib_dirs = []
 libs = []
 # Include NumPy header dirs
@@ -151,14 +152,14 @@ carray_depends = [
 ]
 
 blosc_source = [
-    blosc_path + "blosc.c"   ,
-    blosc_path + "blosclz.c" ,
+    blosc_path + "blosc.c",
+    blosc_path + "blosclz.c",
     blosc_path + "shuffle.c"
 ]
 
 blosc_depends = [
-    blosc_path + "blosc.h"   ,
-    blosc_path + "blosclz.h" ,
+    blosc_path + "blosc.h",
+    blosc_path + "blosclz.h",
     blosc_path + "shuffle.h"
 ]
 
@@ -187,7 +188,7 @@ extensions = [
 class CleanCommand(Command):
     """Custom distutils command to clean the .so and .pyc files."""
 
-    user_options = [ ]
+    user_options = []
 
     def initialize_options(self):
         self._clean_me = []
@@ -221,7 +222,7 @@ class CleanCommand(Command):
                 pass
 
 #------------------------------------------------------------------------
-# Distutils Setup
+# Setup
 #------------------------------------------------------------------------
 
 longdesc = open('README.md').read()
@@ -252,9 +253,9 @@ setup(
     packages=packages,
     install_requires=[''],
     cmdclass = {
-        'clean'     : CleanCommand,
         'build_ext' : build_ext,
         'test'      : testrunner,
+        'clean'     : CleanCommand,
     },
     ext_modules=extensions,
 )

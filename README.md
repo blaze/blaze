@@ -32,9 +32,7 @@ Introduction
 To build project inside of Anaconda:
 
 ```bash
-$ git submodule init
-$ git submodule update
-$ python setup.py install
+$ python setup.py build_ext --inplace
 ```
 
 To build documentation:
@@ -61,4 +59,4 @@ License
 
 Blaze development is sponsored by Continuum Analytics.
 
-Released under BSD license. See LICENSE
+Released under BSD license. See LICENSE for details.
