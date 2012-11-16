@@ -5,7 +5,7 @@ to the end-user.
 """
 
 import numpy as np
-import carray as ca
+import ndtable.carray as ca
 
 from ndtable.datashape import datashape
 from ndtable.table import NDTable, NDArray
