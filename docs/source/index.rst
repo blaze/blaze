@@ -37,6 +37,7 @@ Contents
    typechecker
    table
    execution
+   releases
    legal
 
 Indices and tables
