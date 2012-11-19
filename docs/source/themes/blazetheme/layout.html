@@ -35,20 +35,11 @@
 
 {% block content %}
       <div class="header">
-        {%- block haikuheader %}
-        {%- if theme_full_logo != "false" %}
-        <a href="{{ pathto('index') }}">
-          <img class="logo" src="{{ pathto('_static/' + logo, 1) }}" alt="Logo"/>
-        </a>
-        {%- else %}
-        {%- if logo -%}
-          <img class="rightlogo" src="{{ pathto('_static/' + logo, 1) }}" alt="Logo"/>
-        {%- endif -%}
-        <h1 class="heading"><a href="{{ pathto('index') }}">
-          <span>{{ shorttitle|e }}</span></a></h1>
-        <h2 class="heading"><span>{{ title|striptags|e }}</span></h2>
-        {%- endif %}
-        {%- endblock %}
+          <h1 class="heading">
+              <a href="{{ pathto('index') }}">
+                  <span>{{ shorttitle|e }}</span>
+              </a>
+        </h1>
       </div>
       <div class="topnav">
       {{ nav() }}
@@ -63,6 +54,5 @@
         {% block body %}{% endblock %}
       </div>
       <div class="bottomnav">
-      {{ nav() }}
       </div>
 {% endblock %}
