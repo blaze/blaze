@@ -5,9 +5,13 @@ Legal
 Blaze is a community project much like Numpy. It is released
 under a permissive BSD license.
 
+The BSD 2-clause license allows you almost unlimited freedom with the
+software so long as you include the BSD copyright notice in it (found
+below).
+
 Continuum Analytics sponsors development on Blaze.
 
-Full License::
+License::
 
     Copyright (c) 2012, Continuum Analytics, Inc.
     All rights reserved.
