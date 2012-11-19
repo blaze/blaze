@@ -1,4 +1,4 @@
-# -* coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Blaze documentation build configuration file, created by
 # sphinx-quickstart on Mon Oct  8 12:29:11 2012.
@@ -17,6 +17,7 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -201,7 +202,7 @@ html_show_copyright = True
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'blazeprodoc'
+htmlhelp_basename = 'blazedoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -220,7 +221,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'blazepro.tex', u'blazepro Documentation',
+  ('index', 'blazepro.tex', u'Blaze Documentation',
    u'Continuum', 'manual'),
 ]
 

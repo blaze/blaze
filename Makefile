@@ -3,6 +3,9 @@
 docs:
 	cd docs; make html
 
+cleandocs:
+	cd docs; make clean
+
 tests:
 	nosetests -s -v --detailed
 	#nosetests --rednose -s -v ndtable
