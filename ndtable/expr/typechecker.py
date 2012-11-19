@@ -4,7 +4,7 @@ Naive type inference for Blaze expressions.
 Some notes on notation::
 
 Type System
-===========
+-----------
 
 A collection of three functions::
 
@@ -21,14 +21,14 @@ This is specified by a namedtuple of the form::
     typesystem = namedtuple('TypeSystem', 'unifier, top, fromvalue')
 
 Dynamic
-=======
+-------
 
 A dynamic type written as ( ? ). It allows explicit down casting
 and upcasting from any type to any type. In Blaze we use this to
 represent opaque types that afford no specialization.
 
 Signatures
-==========
+----------
 
 The signature::
 
@@ -43,7 +43,7 @@ Would be this in Python 3 signature notation::
         pass
 
 Rigid & Free
-============
+------------
 
 Rigid variables are those that appear in multiple times
 in the signature::
@@ -54,7 +54,7 @@ in the signature::
      Free  : [b,c]
 
 Context
-=======
+-------
 
 A context records the lexically-bound variables during the progression
 of the type checking algorithm. It is a stateful object like a memo

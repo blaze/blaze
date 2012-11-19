@@ -83,6 +83,10 @@ class UnknownExpression(Exception):
         return 'Unknown object in expression: %r' % (self.obj,)
 
 def typeof(obj):
+    """
+    BlazeT value deconstructor, maps values to types. Only
+    defined for Blaze types.
+    """
     typ = type(obj)
 
     # -- special case --
@@ -131,6 +135,7 @@ def is_homogeneous(it):
 
     # Checks Python types for arguments, not to be confused with the
     # datashape types and the operator types!
+
     head = it[0]
     head_type = type(head)
     return head, all(type(a) == head_type for a in it)
@@ -515,7 +520,7 @@ class NamedOp(type):
 class Op(ExpressionNode):
     """
     A typed operator taking a set of typed operands. Optionally
-    rejects operands which are not well-typed.
+    rejects operands which are not well-typed::
 
               a -> b -> c -> d
 

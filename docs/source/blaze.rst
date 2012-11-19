@@ -30,7 +30,7 @@ Requirements of Numba for Blaze
     "blocks" of execution that dispatch in serial.
 
     Basically it amounts to very simple execution... much less
-    complex than arbitrary Python code.
+    complex than arbitrary Python code::
         
         store tmp1 call(kernel1 a b)
         store tmp2 call(kernel2 a b)

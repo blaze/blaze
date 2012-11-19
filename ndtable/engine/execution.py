@@ -8,7 +8,11 @@ import llvm_cbuilder.shortnames as Cn
 
 # TODO: proprietary what to do, guess we can always emit the bitcode for
 # a couple simple functions
-from numbapro.vectorize import Vectorize
+try:
+    from numbapro.vectorize import Vectorize
+except ImportError:
+    # XXX: FIX!!!
+    pass
 
 import numpy as np
 import ndtable.carray as ca
@@ -84,7 +88,7 @@ def add1(a):
 
 def generate(pyfn, signature):
     """
-    Generate a pointer to a ufunc with signature:
+    Generate a pointer to a ufunc with signature::
 
         void (*)(void** args, py_ssize_t* dimensions, py_ssize_t* steps, void* data)
 
