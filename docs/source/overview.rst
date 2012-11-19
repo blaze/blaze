@@ -5,7 +5,6 @@ Overview
 .. image:: svg/numpy_plus.png
     :align: center
 
-
 Blaze is the next generation of NumPy, Python’s extremely popular
 array library. Blaze is designed to handle out-of-core computations
 on large datasets that exceeds the system memory capacity, as well as
