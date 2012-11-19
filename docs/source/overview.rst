@@ -1,5 +1,10 @@
-Blaze Documentation
-===================
+========
+Overview
+========
+
+.. image:: images/numpy_plus.png
+    :align: center
+
 
 Blaze is the next generation of NumPy, Python’s extremely popular
 array library. Blaze is designed to handle out-of-core computations
@@ -18,31 +23,4 @@ system for all kinds of data; especially semi-structured, sparse, and
 columnar data. Blaze’s generalized calculation engine can iterate
 over the distributed array or table and dispatch to low-level kernels,
 selected via the dynamic data typing mechanism.
-
-Contents
---------
-
-.. toctree::
-   :maxdepth: 2
-
-   install
-   overview
-   quickstart
-   desc
-   blaze
-   datashape
-   persistence
-   sources
-   graph
-   typechecker
-   table
-   execution
-   legal
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
