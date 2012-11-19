@@ -2,7 +2,7 @@
 Overview
 ========
 
-.. image:: images/numpy_plus.png
+.. image:: svg/numpy_plus.png
     :align: center
 
 
