@@ -27,7 +27,9 @@ sys.path.insert(0, os.path.abspath('..'))
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
-              'sphinx.ext.doctest', 'sphinx.ext.extlinks']
+              'sphinx.ext.doctest', 'sphinx.ext.extlinks',
+              'sphinx.ext.pngmath'
+              ]
 
 # -- Diagrams -----------------------------------------------------------------
 
@@ -188,7 +190,7 @@ html_use_index = True
 #html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-#html_show_sphinx = True
+html_show_sphinx = False
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 html_show_copyright = True

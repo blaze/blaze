@@ -1,5 +1,5 @@
-Blaze Documentation
-===================
+Blaze
+=====
 
 Blaze is the next generation of NumPy, Python’s extremely popular
 array library. Blaze is designed to handle out-of-core computations
