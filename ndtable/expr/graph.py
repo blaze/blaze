@@ -9,18 +9,18 @@ All nodes are one of the following types::
 
 The core graph node types are
 
-    * App
-    * ArrayNode
-    * ExpressionNode
-    * FloatNode
-    * Fun
-    * FunApp
-    * IndexNode
-    * IntNode
-    * Literal
-    * Op
-    * Slice
-    * StringNode
+* App
+* ArrayNode
+* ExpressionNode
+* FloatNode
+* Fun
+* FunApp
+* IndexNode
+* IntNode
+* Literal
+* Op
+* Slice
+* StringNode
 
 """
 

@@ -60,7 +60,7 @@ A context records the lexically-bound variables during the progression
 of the type checking algorithm. It is a stateful object like a memo
 passed through the unifiers.
 
-The context is usually written as $\Gamma$ in the literature.
+The context is usually written as :math:`\Gamma` in the literature.
 
 """
 
