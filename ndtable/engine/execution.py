@@ -247,7 +247,11 @@ def wrap_func(func, engine, py_module ,rettype):
     addr = engine.get_pointer_to_function(func)
     return functype(addr)
 
-def eval_unary():
+#------------------------------------------------------------------------
+# Test
+#------------------------------------------------------------------------
+
+def test_llvm_unary():
     # =========================
     # int32 -> int32 -> int32
     lfunc, ptr = generate(add1, (numba.int32, numba.int32))
@@ -268,17 +272,13 @@ def eval_unary():
         ctypes.c_char_p,
         ctypes.c_int32,
     )
-
     dummy = np.array([]).ctypes.data_as(ctypes.c_char_p)
 
     cfunc = ufn_type(ptr)
     cblufunc(cfunc, dummy, 0, 0, dummy, 1)
 
-#------------------------------------------------------------------------
-# Test
-#------------------------------------------------------------------------
 
-def test_binary():
+def test_c_binary():
     # =========================
     lfunc, _ = generate(add, (numba.int32, numba.int32, numba.int32))
     # =========================
@@ -303,7 +303,7 @@ def test_binary():
 
     assert not np.any(sink[1:]==0)
 
-def test_unary():
+def test_c_unary():
     # =========================
     lfunc, _ = generate(add1, (numba.int32, numba.int32))
     # =========================
@@ -328,6 +328,6 @@ def test_unary():
     assert not np.any(sink[1:]==0)
 
 if __name__ == '__main__':
-    eval_unary()
-    test_binary()
-    test_unary()
+    test_llvm_unary()
+    test_c_binary()
+    test_c_unary()
