@@ -1,5 +1,67 @@
 """
-Naive type checking
+Naive type inference for Blaze expressions.
+
+Some notes on notation::
+
+Type System
+===========
+
+A collection of three functions::
+
+    unifier :: ty -> ty -> ty
+    fromvalue :: value -> ty
+
+And a collection of type objects with two special terms::
+
+    (?)   - dynamic type
+    (top) - top type
+
+This is specified by a namedtuple of the form::
+
+    typesystem = namedtuple('TypeSystem', 'unifier, top, fromvalue')
+
+Dynamic
+=======
+
+A dynamic type written as ( ? ). It allows explicit down casting
+and upcasting from any type to any type. In Blaze we use this to
+represent opaque types that afford no specialization.
+
+Signatures
+==========
+
+The signature::
+
+    a -> b -> c
+
+Stands for a function of two arguments, the first of type a, the second
+of type b and returning a type c.
+
+Would be this in Python 3 signature notation::
+
+    def (x : a, y : b) -> c:
+        pass
+
+Rigid & Free
+============
+
+Rigid variables are those that appear in multiple times
+in the signature::
+
+     f : a -> b -> a -> c
+
+     Rigid : [a]
+     Free  : [b,c]
+
+Context
+=======
+
+A context records the lexically-bound variables during the progression
+of the type checking algorithm. It is a stateful object like a memo
+passed through the unifiers.
+
+The context is usually written as $\Gamma$ in the literature.
+
 """
 
 from collections import namedtuple
@@ -39,18 +101,6 @@ typeresult = namedtuple('Satisifes', 'env, dom, cod, opaque')
 #------------------------------------------------------------------------
 # Core Typechecker
 #------------------------------------------------------------------------
-
-# Some notes on notation:
-#
-#     a -> b -> c
-#
-# Is a function of two arguments, the first of type a, the second
-# of type b and returning a type c.
-#
-# Would be this in Python 3 signature notation:
-#
-#     def (x : a, y : b) -> c:
-#          ...
 
 def dynamic(cls):
     universal = set([coretypes.top])
@@ -120,11 +170,11 @@ def typecheck(signature, operands, domc, system, commutative=False):
     dom = tokens[0:-1]
     cod = tokens[-1]
 
-    # Rigid variables are those that appear in multiple times
-    # in the signature
-    #      a -> b -> a -> c
-    #      Rigid a
-    #      Free  b,c
+    # f : a -> b -> a -> c
+    #
+    # Rigid : [a]
+    # Free  : [b,c]
+
     rigid = [tokens.count(token)  > 1 for token in dom]
     free  = [tokens.count(token) == 1 for token in dom]
 

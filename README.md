@@ -22,7 +22,9 @@ obtain the source from Github.
 $ git clone git@github.com:ContinuumIO/blaze.git
 ```
 
-All dependencies will be resolved by working in the Anaconda environment.
+Many of the dependencies ( llvm, numba, ... ) are non-trivial to
+install. It is recommend that you build Blaze using the Anaconda Python
+distribution.
 
 Free Anaconda CE is available here: http://continuum.io/downloads.html.
 

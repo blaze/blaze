@@ -6,7 +6,6 @@ import textwrap
 from os.path import join
 
 from distutils.core import Command, setup
-from distutils.extension import Extension
 from distutils.sysconfig import get_python_inc, get_config_var
 
 try:

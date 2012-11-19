@@ -1,5 +1,27 @@
 """
 Holds the base classes for graph nodes.
+
+All nodes are one of the following types::
+
+    APP : Application
+    OP  : Operator
+    VAL : Value
+
+The core graph node types are
+
+    * App
+    * ArrayNode
+    * ExpressionNode
+    * FloatNode
+    * Fun
+    * FunApp
+    * IndexNode
+    * IntNode
+    * Literal
+    * Op
+    * Slice
+    * StringNode
+
 """
 
 from functools import wraps
