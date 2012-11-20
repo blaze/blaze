@@ -223,7 +223,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'blazepro.tex', u'Blaze Documentation',
+  ('index', 'blaze.tex', u'Blaze Documentation',
    u'Continuum', 'manual'),
 ]
 
@@ -253,7 +253,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'blazepro', u'blazepro Documentation',
+    ('index', 'blaze', u'Blaze Documentation',
      [u'Continuum'], 1)
 ]
 
@@ -267,8 +267,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'blazepro', u'Blaze Documentation',
-   u'Continuum', 'blazepro', 'One line description of project.',
+  ('index', 'blaze', u'Blaze Documentation',
+   u'Continuum Analytics', 'blaze', 'One line description of project.',
    'Miscellaneous'),
 ]
 

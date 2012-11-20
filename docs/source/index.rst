@@ -34,6 +34,7 @@ Contents
    persistence
    sources
    graph
+   ops
    typechecker
    table
    execution
