@@ -27,30 +27,21 @@ indexable = set([array_like, tabular_like])
 universal = set([top]) | numeric | indexable | string
 
 #------------------------------------------------------------------------
-# Arity Bases
-#------------------------------------------------------------------------
-
-class UnaryOp(Op):
-    arity = 1
-    abstract = True
-
-class BinaryOp(Op):
-    arity = 2
-    abstract = True
-
-class NaryOp(Op):
-    arity = -1
-    abstract = True
-
-#------------------------------------------------------------------------
 # Basic Scalar Arithmetic
 #------------------------------------------------------------------------
 
 # TODO: Lowercase so they match up with __NAME__ arguments in the
 # catalog. Does violate PEP8, rethink.
 
-class add(BinaryOp):
+def arity(op):
+    if isinstance(op, Op):
+        return op.arity
+    else:
+        raise ValueError
+
+class add(Op):
     # -----------------------
+    arity = 2
     signature = 'a -> a -> a'
     dom = [universal, universal]
     # -----------------------
@@ -62,9 +53,9 @@ class add(BinaryOp):
     nilpotent    = False
     sideffectful = False
 
-
-class mul(BinaryOp):
+class mul(Op):
     # -----------------------
+    arity = 2
     signature = 'a -> a -> a'
     dom = [universal, universal]
     # -----------------------
@@ -76,9 +67,9 @@ class mul(BinaryOp):
     nilpotent    = False
     sideffectful = False
 
-
-class transpose(UnaryOp):
+class transpose(Op):
     # -----------------------
+    arity = 1
     signature = 'a -> a'
     dom = [array_like]
     # -----------------------
@@ -90,8 +81,9 @@ class transpose(UnaryOp):
     nilpotent    = True
     sideffectful = False
 
-class abs(UnaryOp):
+class abs(Op):
     # -----------------------
+    arity = 1
     signature = 'a -> a'
     dom = [numeric, numeric]
     # -----------------------

@@ -1,7 +1,6 @@
-from ndtable.expr.graph import IntNode, FloatNode
+from ndtable.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
-from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter,\
-    MorphismPrinter
+from ndtable.expr import ops
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -17,10 +16,6 @@ y = a+(b*abs(c))
 #------------------------------------------------------------------------
 # Tests
 #------------------------------------------------------------------------
-
-OP  = 0
-APP = 1
-VAL = 2
 
 def test_simple_sort():
     lst = toposort(lambda x: True, x)
@@ -47,9 +42,13 @@ def test_simple_sort_ops():
     #     |
     #    add
 
-    assert lst[0].name == 'abs'
-    assert lst[1].name == 'mul'
-    assert lst[2].name == 'add'
+    assert lst[0].__class__ == ops.abs
+    assert lst[1].__class__ == ops.mul
+    assert lst[2].__class__ == ops.add
+
+    assert lst[0].kind == OP
+    assert lst[1].kind == OP
+    assert lst[2].kind == OP
 
 
 def test_simple_sort_vals():

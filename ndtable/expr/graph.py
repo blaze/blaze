@@ -534,15 +534,6 @@ class Op(ExpressionNode):
     __metaclass__ = NamedOp
     kind = OP
 
-    @property
-    def opaque(self):
-        """
-        We don't know anything about the operator, no types, no argument
-        signature ... we just throw things into and things pop out or it
-        blows up.
-        """
-        return self._opaque or (not hasattr(self, 'signature'))
-
     def __init__(self, op, operands):
         self.op = op
         self.children = operands
@@ -572,8 +563,13 @@ class Op(ExpressionNode):
             self.cod = top
 
     @property
-    def name(self):
-        return self.op
+    def opaque(self):
+        """
+        We don't know anything about the operator, no types, no argument
+        signature ... we just throw things into and things pop out or it
+        blows up.
+        """
+        return self._opaque or (not hasattr(self, 'signature'))
 
 #------------------------------------------------------------------------
 # Functions

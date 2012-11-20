@@ -17,6 +17,10 @@ except ImportError:
 import numpy as np
 import ndtable.carray as ca
 
+#------------------------------------------------------------------------
+# Globals
+#------------------------------------------------------------------------
+
 LLVM   = 0 # Pure LLVM dispatch
 CTYPES = 1 # Dispatch from Python, invoking C function pointers for calls
 NUMPY  = 2 # Mock execution using Numpy, for testing.
@@ -189,6 +193,10 @@ def blocked_binary_ufunc(ufn, a, b, sink):
     dimensions = (py_ssize_t * 1)(leftover_count)
     ufn(args, dimensions, steps, data)
 
+#------------------------------------------------------------------------
+# LLVM Unary Dispatch
+#------------------------------------------------------------------------
+
 class Blufunc(CDefinition):
     _name_ = 'blufunc'
     _retty_ = Cn.int
@@ -232,12 +240,10 @@ class Blufunc(CDefinition):
 
         return self.ret(self.constant(Cn.int, 1))
 
-#------------------------------------------------------------------------
-# LLVM Unary Dispatch
-#------------------------------------------------------------------------
 
 def wrap_func(func, engine, py_module ,rettype):
     from bitey.bind import map_llvm_to_ctypes
+
     args = func.type.pointee.args
     ret_type = func.type.pointee.return_type
     ret_ctype = map_llvm_to_ctypes(ret_type, py_module)
