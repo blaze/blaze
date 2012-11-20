@@ -184,13 +184,13 @@ exists.
 
 There are two interfaces to Blaze Tabular objects:
 
-    1) Domain expert interface that allows easy construction, indexing,
-       manipulation and computation.  This is served by the interface and
-       methods on Table objects.
+1) Domain expert interface that allows easy construction, indexing,
+   manipulation and computation.  This is served by the interface and
+   methods on Table objects.
 
-    2) Algorithm writers and developers searching for a unified API that allows
-       coherent communication about the structure of data for optimization. 
-       This is served by the NDTable object.
+2) Algorithm writers and developers searching for a unified API that allows
+   coherent communication about the structure of data for optimization. 
+   This is served by the NDTable object.
 
 It is intended to be *the* glue that holds the PyData ecosystem together.   It
 has an interface for domain experts to query their information and an interface
@@ -276,14 +276,13 @@ Index
 =====
 
 An index is a mapping from a domain specification to a collection of
-byte-interfaces and offsets.  
+byte-interfaces and offsets.
 
 
 ByteProvider
 ============
 
-
-
+TODO
 
 ===============
 Random Thoughts
@@ -302,10 +301,10 @@ compatibility whenever possible.
 
 In addition to the ufuncs defined over NumPy arrays, NumPy defines basically 3
 things that we wish to generalize:
-     
-     * A data-type
-     * A shape
-     * A strides map to a single data-buffer (a linear, formula-based index)
+
+* A data-type
+* A shape
+* A strides map to a single data-buffer (a linear, formula-based index)
 
 These concepts are generalized via the concept of DataDescriptors.
 NumPy-style arrays consist of a single data-segment that can be explained via a

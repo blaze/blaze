@@ -31,6 +31,7 @@ Contents
    desc
    blaze
    datashape
+   memory
    persistence
    sources
    graph

@@ -21,7 +21,7 @@ datatype. These are identical to ``shape`` parameters in numpy. ::
 
     2, int32
 
-Is an length 2 array::
+Is an length 2 array of the form::
 
     array([1, 2])
 
@@ -146,7 +146,7 @@ Stream Types
 A stream is a special case of ``Var`` where the upper bound is
 infinity. It signifies a potentially infinite stream of elements.
 ``Stream(RGBA)`` might be stream of values from a photosensor. Where
-each row represents a measurement at a given time.::
+each row represents a measurement at a given time::
 
     { 101 , 202 , 11  , 32 }
     { 50  , 255 , 11  , 0 }
