@@ -95,7 +95,7 @@ class TypeCheck(Exception):
 # System Specification
 #------------------------------------------------------------------------
 
-typesystem = namedtuple('TypeSystem', 'unifier, top, fromvalue')
+typesystem = namedtuple('TypeSystem', 'unifier, top, dynamic, fromvalue')
 typeresult = namedtuple('Satisifes', 'env, dom, cod, opaque')
 
 #------------------------------------------------------------------------

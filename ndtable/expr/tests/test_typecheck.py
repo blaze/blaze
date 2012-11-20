@@ -39,7 +39,7 @@ def unify(a,b):
 # Type System
 #------------------------------------------------------------------------
 
-PythonT = typesystem(unifier=unify, top=object, fromvalue=type)
+PythonT = typesystem(unifier=unify, top=object, dynamic=None, fromvalue=type)
 
 #------------------------------------------------------------------------
 # Tests
