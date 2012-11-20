@@ -70,3 +70,9 @@ nosetests.xml
 
 # Cython Extensions
 ndtable/carray/*.[ch]
+
+# Sphinx Docs
+docs/_build
+
+# Website
+web/_build

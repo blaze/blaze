@@ -37,7 +37,11 @@ env = Environment(loader=loader)
 
 def build_folder():
     """ Flush and rebuild the _build folder """
-    shutil.rmtree('_build')
+    try:
+        shutil.rmtree('_build')
+    except OSError:
+        pass
+
     os.mkdir('_build')
     shutil.copytree('css', '_build/css')
     shutil.copytree('img', '_build/img')

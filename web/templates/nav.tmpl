@@ -2,24 +2,11 @@
     <div class="navbar-inner">
         <div class="container">
             <ul class="nav">
-
                 {% for name, href, id, icon in navigation_bar %}
                 <li {% if id == active_page %} class="active"{% endif %}>
                     <a href="{{href}}"><i class="icon-{{icon}}"></i> {{name}}</a>
                 </li>
                 {% endfor %}
-
-                <!--
-                <li {% if id == active_page %} class="active"{% endif %}>
-                    <a href="https://github.com/ContinuumIO/blazepro/archive/master.tar.gz "><i class="icon-download"></i> Source</a>
-                </li>
-                <li {% if id == active_page %} class="active"{% endif %}>
-                    <a href="#"><i class="icon-envelope"></i> Mailing List</a>
-                </li>
-                <li {% if id == active_page %} class="active"{% endif %}>
-                    <a href="vision.html"><i class="icon-envelope"></i> Vision</a>
-                </li>
-                -->
             </ul>
         </div>
     </div>
