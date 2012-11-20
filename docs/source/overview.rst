@@ -23,3 +23,27 @@ columnar data. Blaze’s generalized calculation engine can iterate
 over the distributed array or table and dispatch to low-level kernels,
 selected via the dynamic data typing mechanism.
 
+
+.. image:: svg/nested.png
+    :align: center
+
+.. image:: svg/sources.png
+    :align: center
+
+.. image:: svg/codepush.png
+    :align: center
+
+.. image:: svg/datapull.png
+    :align: center
+
+.. image:: svg/graph.png
+    :align: center
+
+.. image:: svg/global.png
+    :align: center
+
+.. image:: svg/distributed.png
+    :align: center
+
+.. image:: svg/temporaries.png
+    :align: center
