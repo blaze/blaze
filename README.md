@@ -34,14 +34,13 @@ Introduction
 To build project inside of Anaconda:
 
 ```bash
-$ python setup.py build_ext --inplace
+$ make build
 ```
 
 To build documentation:
 
 ```bash
-$ cd docs
-$ make html
+$ make docs
 ```
 
 To run tests:

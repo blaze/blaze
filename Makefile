@@ -3,6 +3,9 @@
 docs:
 	cd docs; make html
 
+images:
+	cd docs/source/svg; make
+
 cleandocs:
 	cd docs; make clean
 

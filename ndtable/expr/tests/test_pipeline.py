@@ -1,6 +1,6 @@
+from ndtable.expr import ops
 from ndtable.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
-from ndtable.expr import ops
 
 #------------------------------------------------------------------------
 # Sample Graph
