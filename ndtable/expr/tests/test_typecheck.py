@@ -23,6 +23,9 @@ numerics = ints | floats
 #------------------------------------------------------------------------
 
 def unify(a,b):
+    """
+    Very simple unification.
+    """
 
     if (a,b) == (int, int):
         return int

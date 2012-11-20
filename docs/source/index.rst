@@ -19,19 +19,26 @@ columnar data. Blaze’s generalized calculation engine can iterate
 over the distributed array or table and dispatch to low-level kernels,
 selected via the dynamic data typing mechanism.
 
-Contents
---------
+Overview
+~~~~~~~~
 
 .. toctree::
    :maxdepth: 2
 
    install
-   overview
    quickstart
+   overview
    desc
    blaze
-   datashape
    memory
+
+API Reference
+~~~~~~~~~~~~~
+
+.. toctree::
+   :maxdepth: 1
+
+   datashape
    persistence
    sources
    graph
@@ -42,10 +49,9 @@ Contents
    releases
    legal
 
-Indices and tables
-==================
+Index
+~~~~~
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

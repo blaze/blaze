@@ -1,30 +1,7 @@
 """
 Holds the base classes for graph nodes.
-
-All nodes are one of the following types::
-
-    APP : Application
-    OP  : Operator
-    VAL : Value
-
-The core graph node types are
-
-* App
-* ArrayNode
-* ExpressionNode
-* FloatNode
-* Fun
-* FunApp
-* IndexNode
-* IntNode
-* Literal
-* Op
-* Slice
-* StringNode
-
 """
 
-from functools import wraps
 from numbers import Integral
 from collections import Iterable
 
@@ -64,14 +41,6 @@ def set_max_argument_recursion(val):
     global _max_argument_recursion
     _max_argument_recursion = val
 
-
-def lift_magic(f):
-    @wraps(f)
-    def fn(*args):
-        iargs = injest_iterable(args)
-        return f(*iargs)
-    return fn
-
 #------------------------------------------------------------------------
 # Deconstructors
 #------------------------------------------------------------------------
@@ -86,6 +55,11 @@ def typeof(obj):
     """
     BlazeT value deconstructor, maps values to types. Only
     defined for Blaze types.
+
+    >>> typeof(IntNode(3))
+    int32
+    >>> typeof(Any())
+    top
     """
     typ = type(obj)
 
@@ -111,18 +85,19 @@ def typeof(obj):
 # Blaze Typesystem
 #------------------------------------------------------------------------
 
-# unify  : the type unification function
-# top    : the top type
-# typeof : the value deconstructor
+# unify   : the type unification function
+# top     : the top type
+# dynamic : the dynamic type
+# typeof  : the value deconstructor
 
 # Judgements over a type system are uniquely defined by three things:
 #
-#   * a type unifier
-#   * a top type
-#   * a value deconstructor
-#   * universe of first order terms
+# * a type unifier
+# * a top type
+# * a value deconstructor
+# * universe of first order terms
 
-BlazeT = typesystem(unify, top, typeof)
+BlazeT = typesystem(unify, top, any, typeof)
 
 #------------------------------------------------------------------------
 # Graph Construction
@@ -433,16 +408,6 @@ class App(ExpressionNode):
     The resulting value of ``a`` is App( Op(+), 2, 3) the
     signature of the application is with output type int32.
 
-    ::
-
-                       +----------------+
-                       |       +----+   |
-                       |    / -|    |   |
-        ival :: op.cod |---+  -| Op |---| -> oval :: op.dom
-                       |    \ -|    |   |
-                       |       +-----   |
-                       +----------------+
-
     """
     __slots__ = ['itype','otype']
     kind = APP
@@ -519,17 +484,9 @@ class NamedOp(type):
 
 class Op(ExpressionNode):
     """
-    A typed operator taking a set of typed operands. Optionally
-    rejects operands which are not well-typed::
-
-              a -> b -> c -> d
-
-                    +---+
-        op1 :: a -> |   |
-        op2 :: b -> | f | -> * :: d
-        op3 :: c -> |   |
-                    +---+
+    A typed operator taking a set of typed operands.
     """
+
     __slots__ = ['children', 'op', 'cod']
     __metaclass__ = NamedOp
     kind = OP
