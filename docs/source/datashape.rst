@@ -1,9 +1,11 @@
 Datashapes
 ==========
 
-Datashape is a generalization of dtype and shape into a micro
-type system which lets us describe the high-level structure of
-NDTable and IndexArray objects.
+.. highlight:: erlang
+
+Datashape is a generalization of dtype and shape into a micro type
+system which lets us describe the high-level structure of Table and
+Array objects.
 
 There are primitive machine types which on top of you can build
 composite and dimensionalized structures::
@@ -179,7 +181,7 @@ constructor::
 Pointer Types
 -------------
 
-** Work in Progress **
+**Work in Progress**
 
 Pointers are dimension specifiers like machine types but where
 the data is not in specified by value, but *by reference*. We use
@@ -209,7 +211,7 @@ Pointer to integer on a array server 'bar'::
 Parametric Types
 ----------------
 
-** Work in Progress **
+**Work in Progress**
 
 The natural evolution is to support parametric types.
 
@@ -221,17 +223,3 @@ left side of the constructor.::
 
     # Concrete instance
     Point int32 = {x: int32, y: int32}
-
-Then can be treated atomically as a ``Point(int32)`` in programming
-logic while the underlying machinery is able to substitute in the
-right side object when dealing with concrete values.
-
-For example, high dimensional matrix types::
-
-    ctensor4 A B C D = A, B, C, D, complex64
-
-    x = ctensor4 A B C D
-
-    rank x     = 4
-    outerdim x = A
-    innerdim x = D
