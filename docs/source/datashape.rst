@@ -44,15 +44,10 @@ A type constructor is higher type that produces new named types from
 arguments given. These are called **alias** types, they don't add any
 additional structure they just provide a new name.::
 
-    Dim2       = N, M
-    Quaternion = 4, 4, int32
+    SquareIntMatrix = N, N, int32
 
 Once the types are registered they can be used in dtype expressions just
 like primitive values and also to construct even higher order types.
-
-For example a record of quaternions.::
-
-    {x: Quaternion, y: Quaternion}
 
 Notes. The free variables in a alias are unique only to the
 constructor. For example composing the Dim2 constructor would
@@ -72,8 +67,6 @@ of types keyed by labels. For example a pixel could be
 representeed by::
 
     RGBA = {r: int32, g: int32, b: int32, a: int8}
-
-Most importantly they are heterogenous.
 
 Enumeration Types
 -----------------
@@ -201,7 +194,7 @@ Pointer to a record in local memory::
 
     *{x: int32, y:int32, label: string}
 
-Pointer to integer in a shared memory segement keyed by 'foo'::
+Pointer to integer in a shared memory segment keyed by 'foo'::
 
     *int32 (shm 'foo')
 
@@ -209,12 +202,12 @@ Pointer to integer on a array server 'bar'::
 
     *int32 (rmt array://bar)
 
-Parametric Types
-----------------
+Parameterized Types
+-------------------
 
 **Work in Progress**
 
-The natural evolution is to support parametric types.
+The natural evolution is to support parameterized types.
 
 Which lets us have type constructors with free variables on the
 left side of the constructor.::
