@@ -1,9 +1,11 @@
 from contextlib import contextmanager
 from collections import MutableMapping
 
-# Don't clobber builtins
 @contextmanager
 def nobuiltins():
+    """
+    Don't clobber builtins
+    """
     gls = globals()
     builtins = gls.pop('__builtins__')
     yield

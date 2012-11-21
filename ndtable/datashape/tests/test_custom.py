@@ -30,4 +30,4 @@ def test_custom_csv_like():
     # A csv-like file is a variable-length strings
     p1 = datashape('n, string')
     p2 = datashape('File')
-    assert p1 == p2
+    assert p1._equal(p2)

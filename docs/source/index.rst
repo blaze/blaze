@@ -49,6 +49,7 @@ API Reference
    table
    execution
    releases
+   theory
    legal
 
 Index

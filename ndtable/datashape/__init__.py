@@ -1,5 +1,7 @@
 from parse import parse
-from coretypes import *
+from .coretypes import *
 
-def datashape(s):
+def dshape(s):
     return parse(s)
+
+datashape = dshape

@@ -93,7 +93,7 @@ def test_parse_equality():
     x = parse('800, 600, int64')
     y = parse('800, 600, int64')
 
-    assert x == y
+    assert x._equal(y)
 
 def test_parse_fixed_integer_diff():
     x = parse('1, int32')
