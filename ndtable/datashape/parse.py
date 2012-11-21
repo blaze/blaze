@@ -19,14 +19,43 @@ from operator import add
 from string import maketrans, translate
 from collections import OrderedDict, Iterable
 
-from coretypes import Integer, TypeVar, Record, Function, \
-    Enum, Type, DataShape, Var, Either, Bitfield, Ternary, \
+from coretypes import Integer, TypeVar, Record, \
+    Enum, Type, DataShape, Var, Either, Bitfield, \
     Fixed, Ptr
+
+syntax_error = """
+  File {filename}, line {lineno}
+    {line}
+    {pointer}
+
+DatashapeSyntaxError: msg
+"""
+
+class DatashapeSyntaxError(Exception):
+    """
+    Makes datashape parse errors look like Python SyntaxError.
+    """
+    def __init__(self, lineno, col_offset, filename, text, msg=None):
+        self.lineno     = lineno
+        self.col_offset = col_offset
+        self.filename   = filename
+        self.text       = text
+        self.msg        = msg or 'invalid syntax'
+
+    def __str__(self):
+        return syntax_error.format(**{
+            'filename' : self.filename,
+            'lineno'   : self.lineno,
+            'line'     : self.text,
+            'pointer'  : ' '*self.col_offset + '^',
+            'msg'      : self.msg
+        })
 
 class Visitor(object):
 
-    def __init__(self):
+    def __init__(self, source = None):
         self.namespace = {}
+        self.source = source
 
     def Unknown(self, tree):
         raise SyntaxError()
@@ -41,6 +70,13 @@ class Visitor(object):
                 return trans(tree)
             else:
                 return self.Unknown(tree)
+
+    def error_ast(self, ast_node):
+        if self.source:
+            line = self.source.split('\n')[ast_node.lineno - 1]
+            return DatashapeSyntaxError(ast_node.lineno, ast_node.col_offset, '', line)
+        else:
+            raise SyntaxError()
 
 class Translate(Visitor):
     """
@@ -79,6 +115,7 @@ class Translate(Visitor):
 
     # function call -> Function
     def Call(self, tree):
+        # TODO: don't inline this
         internals = {
             'Record'   : Record,
             'Enum'     : Enum,
@@ -141,14 +178,11 @@ class Translate(Visitor):
             raise SyntaxError()
 
     def BinOp(self, tree):
+        raise self.error_ast(tree)
         if type(tree.op) is ast.RShift:
             left = self.visit(tree.left)
             right = self.visit(tree.right)
             return Function(left, right)
-        elif type(tree.op) is ast.Mod:
-            left = self.visit(tree.left)
-            right = self.visit(tree.right)
-            return Ternary(left, right)
         else:
             raise SyntaxError()
 
@@ -177,13 +211,9 @@ class TranslateModule(Translate):
 # Operator Translation
 #------------------------------------------------------------------------
 
-expr_translator = Translate()
-
 operators = {
     # Function map
     '->' : '>>',
-    # Ternary operator
-    '?'  : '%' ,
     # Pointer operator
     '*'  : '~' ,
 }
@@ -194,19 +224,23 @@ op_table = maketrans(
 )
 
 def parse(expr):
+    expr_translator = Translate(expr)
     expr = translate(expr, op_table)
     past = ast.parse(expr, '<string>', mode='eval')
     return expr_translator.visit(past)
 
-# Load a file of type definition as if it were a python module.
 def load(fname, modname=None):
-    translator = TranslateModule()
+    """
+    # Load a file of datashape definitions as if it were a python module.
+    """
 
     with open(fname, 'r') as fd:
         expr = fd.read()
         expr = translate(expr, op_table)
         past = ast.parse(expr)
-        translator.visit(past)
+
+    translator = TranslateModule(expr)
+    translator.visit(past)
 
     if not modname:
         modname = fname

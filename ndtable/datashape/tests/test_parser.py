@@ -125,17 +125,6 @@ def test_parse_bitfield():
     x = parse('Bitfield(64)')
     assert x[0].size == 64
 
-def test_parse_bool():
-    x = parse('a -> Bool')
-    assert x[0].ret_type is Bool
-
-def test_parse_ternary():
-    x = parse('a ? (b,c)')
-    assert x[0].cond
-
-def test_parse_ternary_function():
-    x = parse('(a -> Bool) ? (b,c)')
-
 def test_parse_custom_record():
 
     class Stock(RecordClass):
@@ -146,7 +135,7 @@ def test_parse_custom_record():
         min    = int64
         volume = float_
 
-        @derived('int64 -> int64 -> int64')
+        @derived('int64')
         def mid(self):
             return (self.min + self.max)/2
 
@@ -155,7 +144,7 @@ def test_parse_custom_record():
       name   = string,
       min    = int64,
       max    = int64,
-      mid    = int64 -> int64 -> int64,
+      mid    = int64,
       volume = float,
       close  = float,
       open   = float,

@@ -154,13 +154,6 @@ class Null(Primitive):
     def __str__(self):
         return expr_string('NA', None)
 
-class Bool(Primitive):
-    """
-    Type level Bool ( i.e. for use in ternary expressions, not the
-    same as the value-level bool ).
-    """
-    pass
-
 class Integer(Primitive):
     """
     Integers, at the top level this means a Fixed dimension, at
@@ -482,47 +475,6 @@ class Bitfield(Atom):
         self.size = size.val
         self.parameters = [size]
 
-class Ternary(Atom):
-    """
-    Ternary expression.
-
-        a ? (b, c)
-        b if a else c
-        With a : x -> Bool
-    """
-
-    def __init__(self, cond, rest):
-        self.cond = cond
-        self.rest = rest
-
-        self.parameters = [cond, rest]
-
-    def free(self):
-        return map(free_vars, self.cond) | free_vars(self.rest)
-
-    def __str__(self):
-        return str(self.cond) + " ? (" + str(self.rest) +  ')'
-
-class Function(Atom):
-    """
-    A arbitrary function to specify the dimension objects. Details of
-    this are in flux. Not sure if embedding lambdas in the datashape is
-    feasible.
-    """
-
-    # Same as Numba notation
-    def __init__(self, argtypes, restype):
-        self.arg_type = argtypes
-        self.ret_type = restype
-
-        self.parameters = [argtypes, restype]
-
-    def free(self):
-        return map(free_vars, self.arg_type) | free_vars(self.ret_type)
-
-    def __str__(self):
-        return str(self.arg_type) + " -> " + str(self.ret_type)
-
 #------------------------------------------------------------------------
 # Aggregate
 #------------------------------------------------------------------------
@@ -791,7 +743,6 @@ na = nan = Null
 top = Any()
 
 Type.register('NA', Null)
-Type.register('Bool', Bool)
 Type.register('Stream', Stream)
 
 #------------------------------------------------------------------------

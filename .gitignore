@@ -45,7 +45,6 @@ nosetests.xml
 *.npy
 
 # Graph files
-*.png
 *.dot
 
 # Object files
