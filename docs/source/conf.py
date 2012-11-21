@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys, os, subprocess
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -30,8 +30,16 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
               'sphinx.ext.doctest', 'sphinx.ext.extlinks',
 
               # Optional
-              'sphinx.ext.pngmath', 'sphinx.ext.graphviz',
+              'sphinx.ext.graphviz',
               ]
+
+# -- Math -----------------------------------------------------------------
+
+try:
+    subprocess.call(["pdflatex", "--version"])
+    extensions += ['sphinx.ext.pngmath']
+except OSError:
+    extensions += ['sphinx.ext.mathjax']
 
 # -- Diagrams -----------------------------------------------------------------
 
