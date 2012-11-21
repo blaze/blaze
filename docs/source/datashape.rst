@@ -326,7 +326,10 @@ the sum type.
 Nullable
 ~~~~~~~~
 
-Nullable types can be written as Sum types.::
+Nullable types are composite types that represent the presence or
+absence of a value.
+
+Example ::
 
     Either int32 null
 
