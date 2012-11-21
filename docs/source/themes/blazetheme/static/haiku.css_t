@@ -314,6 +314,8 @@ pre {
     margin-bottom: 30px;
     padding-left: 20px;
     border-left: 1px solid #CCC;
+    /*font-size: 1.3em;*/
+    font: 15px/19px Inconsolata,"Lucida Console",Terminal,"Courier New",Courier;
 }
 
 hr {

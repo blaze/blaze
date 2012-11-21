@@ -28,6 +28,7 @@ Overview
    install
    quickstart
    overview
+   datashape
    desc
    blaze
    memory
@@ -39,7 +40,6 @@ API Reference
    :maxdepth: 1
 
    types
-   datashape
    persistence
    sources
    graph
