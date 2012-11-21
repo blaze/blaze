@@ -8,7 +8,7 @@ from numpy import dtype
 
 from struct import calcsize
 from string import letters
-from itertools import count, izip
+from itertools import count
 from platform import architecture
 from numbers import Integral
 from operator import methodcaller
@@ -76,6 +76,8 @@ class Type(type):
 
     def __new__(meta, name, bases, dct):
         cls = type(name, bases, dct)
+
+        # Don't register abstract classes
         if not dct.get('abstract'):
             Type._registry[name] = cls
             return cls
@@ -84,47 +86,6 @@ class Type(type):
     def register(name, cls):
         assert name not in Type._registry
         Type._registry[name] = cls
-
-def table_like(ds):
-    return type(ds[-1]) is Record
-
-def array_like(ds):
-    return not table_like(ds)
-
-def expand(ds):
-    """
-    Expand the datashape into a tree like structure of nested
-    structure.
-    """
-    x = ds[0]
-
-    #       o
-    #      /|\
-    #  1 o ... o n
-
-    if isinstance(x, Fixed):
-        y = list(expand(ds[1:]))
-        for a in xrange(0, x.val):
-            yield y
-
-    elif isinstance(x, Enum):
-        y = list(expand(ds[1:]))
-        for a in x.parameters:
-            for b in a:
-                yield y
-
-    #       o
-    #       |
-    #       o
-    #       |
-    #       o
-
-    elif isinstance(x, Record):
-        for a in x.k:
-            yield a
-
-    else:
-        yield x
 
 # ==================================================================
 # Primitives
@@ -257,22 +218,25 @@ class DataShape(object):
         else:
             return ' '.join(map(str, self.operands))
 
+    def _equal(self, other):
+        return all(a==b for a,b in zip(self, other))
+
     def __eq__(self, other):
         if type(other) is DataShape:
-            # Since we're iterable, just enumerate the dimension
-            # specifiers and check them each individually if
-            # every axis equals the other
-            return all( a==b for a,b in izip(self, other) )
-        else:
             return False
+        else:
+            raise TypeError('Cannot non datashape to datashape')
 
     def __repr__(self):
         return str(self)
 
 class Atom(DataShape):
+    """
+    Atoms for arguments to constructors of types, not types in
+    and of themselves. Parser artifacts, if you like.
+    """
     abstract = True
 
-    # Type constructor
     def __init__(self, *parameters):
         self.parameters = parameters
 
@@ -306,7 +270,23 @@ class CType(DataShape):
 
     @classmethod
     def from_str(self, s):
+        """
+        To Numpy dtype.
+
+        >>> CType.from_str('int32')
+        int32
+        """
         return Type._registry[s]
+
+    @classmethod
+    def from_dtype(self, dt):
+        """
+        From Numpy dtype.
+
+        >>> CType.from_dtype(dtype('int32'))
+        int32
+        """
+        return Type._registry(dt.name)
 
     def size(self):
         # TODO: no cheating!
@@ -317,6 +297,7 @@ class CType(DataShape):
         To struct code.
         """
         return dtype(self.name).char
+
 
     def to_dtype(self):
         """
@@ -802,16 +783,20 @@ c32 = complex256
 S = string
 
 #------------------------------------------------------------------------
-# Conversions
+# Numpy Compatability
 #------------------------------------------------------------------------
 
-# Downcast a datashape object into a Numpy
-# (shape, dtype) tuple if possible.
-# i.e.
-#   5, 5, int32 -> ( (5,5), dtype('int32') )
 
 # TODO: numpy structured arrays
 def to_numpy(ds):
+    """
+    Downcast a datashape object into a Numpy (shape, dtype) tuple if
+    possible.
+
+    >>> to_numpy(dshape('5, 5, int32'))
+    (5,5), dtype('int32')
+    """
+
     shape = tuple()
     dtype = None
 
@@ -825,21 +810,57 @@ def to_numpy(ds):
     assert len(shape) > 0 and dtype, "Could not convert"
     return (shape, dtype)
 
-# Upconvert a datashape object into a Numpy
-# (shape, dtype) tuple if possible.
-# i.e.
-#   5,5,in32 -> ( (5,5), dtype('int32') )
 
-numpy_lookup = ReverseLookupDict({
-    np.int32: int32,
-    np.int64: int64,
-    np.float: float,
-    # TOOD: more!
-})
-
-def from_numpy(shape, typ):
+def from_numpy(shape, dt):
+    """
+    Upconvert a datashape object into a Numpy
+    (shape, dtype) tuple if possible.
+    i.e.
+      5,5,in32 -> ( (5,5), dtype('int32') )
+    """
 
     dimensions = map(Fixed, shape)
-    measure    = numpy_lookup[typ.type]
+    measure = CType.from_dtype(dt)
 
     return reduce(product, dimensions + [measure])
+
+def table_like(ds):
+    return type(ds[-1]) is Record
+
+def array_like(ds):
+    return not table_like(ds)
+
+def expand(ds):
+    """
+    Expand the datashape into a tree like structure of nested
+    structure.
+    """
+    x = ds[0]
+
+    #       o
+    #      /|\
+    #  1 o ... o n
+
+    if isinstance(x, Fixed):
+        y = list(expand(ds[1:]))
+        for a in xrange(0, x.val):
+            yield y
+
+    elif isinstance(x, Enum):
+        y = list(expand(ds[1:]))
+        for a in x.parameters:
+            for b in a:
+                yield y
+
+    #       o
+    #       |
+    #       o
+    #       |
+    #       o
+
+    elif isinstance(x, Record):
+        for a in x.k:
+            yield a
+
+    else:
+        yield x
