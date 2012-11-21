@@ -39,6 +39,7 @@ experts. ( Not all are defined for every operator. )
 * ``idempotent``
 * ``absorptive``
 * ``involutive``
+* ``sideffectful``
 
 .. automodule:: ndtable.expr.ops
    :members:
