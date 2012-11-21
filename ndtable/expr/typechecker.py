@@ -9,7 +9,7 @@ Type System
 A collection of three functions::
 
     unifier :: ty -> ty -> ty
-    fromvalue :: value -> ty
+    typeof :: value -> ty
 
 And a collection of type objects with two special terms::
 
@@ -18,7 +18,7 @@ And a collection of type objects with two special terms::
 
 This is specified by a namedtuple of the form::
 
-    typesystem = namedtuple('TypeSystem', 'unifier, top, fromvalue')
+    typesystem = namedtuple('TypeSystem', 'unifier, top, dynamic, typeof')
 
 Dynamic
 -------
@@ -95,7 +95,7 @@ class TypeCheck(Exception):
 # System Specification
 #------------------------------------------------------------------------
 
-typesystem = namedtuple('TypeSystem', 'unifier, top, dynamic, fromvalue')
+typesystem = namedtuple('TypeSystem', 'unifier, top, dynamic, typeof')
 typeresult = namedtuple('Satisifes', 'env, dom, cod, dynamic')
 
 #------------------------------------------------------------------------
@@ -124,8 +124,7 @@ def simplifyty(context, ty):
 def tyeval(signature, operands, domc, system, commutative=False):
     """
 
-    Parameters
-    ----------
+    Parameters:
 
         signature:
             String containing the type signature.
@@ -143,22 +142,19 @@ def tyeval(signature, operands, domc, system, commutative=False):
             Use the commutative checker which attempts to eval all
             permutations of domains to find a satisfiable one.
 
-    Returns
-    -------
+    Returns:
 
-        context:
-
-            The context satisfying the given signature and operands with
-            the constraints.
+        The context satisfying the given signature and operands with
+        the constraints.
 
     """
     top       = system.top
     unify     = system.unifier
 
-    if callable(system.fromvalue):
-        typeof = system.fromvalue
+    if callable(system.typeof):
+        typeof = system.typeof
     else:
-        typeof = lambda t: system.fromvalue[t]
+        typeof = lambda t: system.typeof[t]
 
     # Commutative type checker can be written in terms of an enumeration
     # of the flat tyeval over the permutations of the operands and

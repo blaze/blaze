@@ -56,9 +56,8 @@ class Primitive(object):
 
 class Null(Primitive):
     """
-    Type agnostic missing value.
+    The null datashape.
     """
-
     def __str__(self):
         return expr_string('NA', None)
 
@@ -708,15 +707,17 @@ string     = CType('string')
 
 Stream = Var(Integer(0), None)
 
-# The null record
-NullRecord = Record()
-
 na = Null
 top = Top()
-dynamic = Top()
+dynamic = Dynamic()
+NullRecord = Record()
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
+Type.register('?', Dynamic)
+
+# Top should not be user facing... but for debugging usefull.
+# Type.register('?', Dynamic)
 
 #------------------------------------------------------------------------
 # Shorthand
