@@ -23,7 +23,7 @@ DataDescriptor:
     have the concept of a traditional Numpy dtype to specify the kinds of
     elements they return, but they do not need to implement any slicing,
     broadcasting, or shape-related functionality.
-    
+
     Internally, Blaze tries to use DataDescriptors as much as possible,
     instead of shipping memory around.  Ultimately, kernel functions and other
     low-level parts of the runtime will use DataDescriptors to actually read
@@ -49,7 +49,7 @@ DataSpace:
     space's Shape.  There are no general arithmetic functions (as there are
     with Arrays) and there are no indexing and set-oriented operations (as
     there are with Tables).
-    
+
     DataSpace is Indexable, and so can be generically treated as a 1D array of
     its outermost dimension, but there are no restrictions on the shape or
     type of each element in it.  In the most general case, it would need to be
@@ -84,7 +84,7 @@ NDTable:
     of index space transformations.  Once data has been evaluated, then it
     is cached on the NDTable object.  Operations on NDTables will generally
     return NDTable.
-    
+
     NDTable is intended for library and infrastructure code, and its interface
     is designed with consistency and programmatic handling of errors as the
     primary focus, and command-line usability as secondary.
@@ -135,7 +135,7 @@ Numpy Shapes, Two Ways
 For instance, the classical C/FORTRAN/Numpy N-D array is usually described
 with a shape that is a tuple of integers.  Each integer indicates the number
 of subspaces which are stacked together, and the dimensions of each subspace
-is then specified by the remainder of the shape tuple.  
+is then specified by the remainder of the shape tuple.
 
 There is also a natural geometric interpretation of this.  If the shape tuple
 has length N, then the left-most integer can be interpreted as defining a
@@ -172,8 +172,8 @@ tree-view makes it more apparently how hierarchical and other indexing
 approaches may lead to equally valid and useful mappings over the set of
 values in the leaf nodes.
 
-Tabular, NDTable, and Table
-===========================
+Tables and Arrays
+=================
 
 A Table is a Python object that allows N-dimensional + "named fields"
 indexing.  It is a generalization of NumPy, Pandas, data array, larry, ctable,
