@@ -4,7 +4,7 @@ test the algorithm.
 """
 
 from ndtable.datashape.unification import Incommensurable
-from ndtable.expr.typechecker import typecheck, typesystem
+from ndtable.expr.typechecker import tyeval, typesystem
 from nose.tools import assert_raises
 
 #------------------------------------------------------------------------
@@ -22,7 +22,11 @@ numerics = ints | floats
 # Unification
 #------------------------------------------------------------------------
 
-def unify(a,b):
+class dynamic(object):
+    def __repr__(self):
+        return '?'
+
+def unify(context, a,b):
     """
     Very simple unification.
     """
@@ -42,53 +46,53 @@ def unify(a,b):
 # Type System
 #------------------------------------------------------------------------
 
-PythonT = typesystem(unifier=unify, top=object, dynamic=None, fromvalue=type)
+PythonT = typesystem(unifier=unify, top=object, dynamic=dynamic, fromvalue=type)
 
 #------------------------------------------------------------------------
 # Tests
 #------------------------------------------------------------------------
 
 def test_simple_uni():
-    res = typecheck('a -> a', [1], [ints], PythonT)
+    res = tyeval('a -> a', [1], [ints], PythonT)
     assert res.dom == [int]
     assert res.cod == int
 
 def test_simple_bi():
-    res = typecheck('a -> a -> a', [1, 2], [ints, ints], PythonT)
-    assert res.dom    == [int, int]
-    assert res.cod    == int
-    assert res.opaque == False
+    res = tyeval('a -> a -> a', [1, 2], [ints, ints], PythonT)
+    assert res.dom     == [int, int]
+    assert res.cod     == int
+    assert res.dynamic == False
 
 def test_simple_bi_free():
-    res = typecheck('a -> a -> b', [1, 2], [ints, ints], PythonT)
-    assert res.opaque == True
+    res = tyeval('a -> a -> b', [1, 2], [ints, ints], PythonT)
+    assert res.dynamic == True
 
 def test_simple_bi_domain():
-    res = typecheck('a -> a -> a', [1, 2], [numerics, numerics], PythonT)
-    assert res.dom    == [int, int]
-    assert res.cod    == int
-    assert res.opaque == False
+    res = tyeval('a -> a -> a', [1, 2], [numerics, numerics], PythonT)
+    assert res.dom     == [int, int]
+    assert res.cod     == int
+    assert res.dynamic == False
 
 def test_simple_unsatisfiable():
     with assert_raises(TypeError):
-        res = typecheck('a -> a -> b', [1, False], [ints, ints], PythonT)
+        res = tyeval('a -> a -> b', [1, False], [ints, ints], PythonT)
 
 def test_simple_unification():
-    res = typecheck('a -> a -> a', [1, 3.14], [numerics, numerics], PythonT)
-    assert res.dom    == [float, float]
-    assert res.cod    == float
-    assert res.opaque == False
+    res = tyeval('a -> a -> a', [1, 3.14], [numerics, numerics], PythonT)
+    assert res.dom     == [float, float]
+    assert res.cod     == float
+    assert res.dynamic == False
 
 def test_complext_unification():
-    res = typecheck('a -> b -> a -> b', [1, False, 2], \
+    res = tyeval('a -> b -> a -> b', [1, False, 2], \
             [numerics, bools, numerics, bools], PythonT)
-    assert res.dom    == [int, bool, int]
-    assert res.cod    == bool
-    assert res.opaque == False
+    assert res.dom     == [int, bool, int]
+    assert res.cod     == bool
+    assert res.dynamic == False
 
 # def test_commutativity():
-#     res = typecheck('a -> b -> b', [True, 1], [numerics, bools], PythonT,
+#     res = tyeval('a -> b -> b', [True, 1], [numerics, bools], PythonT,
 #             commutative=True)
-#     assert res.dom    == [int, bool]
-#     assert res.cod    == bool
-#     assert res.opaque == False
+#     assert res.dom     == [int, bool]
+#     assert res.cod     == bool
+#     assert res.dynamic == False

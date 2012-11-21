@@ -81,9 +81,9 @@ class InvalidSignature(Exception):
         return "Invalid Signature '%s'" % (self.args)
 
 class TypeCheck(Exception):
-    def __init__(self, signature, operant):
-        self.signature = signature
-        self.operant   = operant
+    def __init__(self, sig, ty):
+        self.sig = sig
+        self.ty  = ty
 
     def __str__(self):
         return 'Signature %s does not permit type %s' % (
@@ -96,47 +96,60 @@ class TypeCheck(Exception):
 #------------------------------------------------------------------------
 
 typesystem = namedtuple('TypeSystem', 'unifier, top, dynamic, fromvalue')
-typeresult = namedtuple('Satisifes', 'env, dom, cod, opaque')
+typeresult = namedtuple('Satisifes', 'env, dom, cod, dynamic')
 
 #------------------------------------------------------------------------
 # Core Typechecker
 #------------------------------------------------------------------------
 
+def emptycontext():
+    return {'top': top, 'dynamic': dynamic}
+
 def dynamic(cls):
     universal = set([coretypes.top])
     return all(arg == universal for arg in cls.dom)
 
-def typeof(context, term):
-    return ty
+def tyconsist(context, ty1, ty2):
+    raise NotImplementedError
 
-def tyeqv(context, ty):
-    return ty
+def tyeqv(context, ty1, ty2):
+    # Right now this uses the __eq__ method defined on the types
+    # from expr.coretypes which is kind of ugly... factor this
+    # out later.
+    return ty1 == ty2
 
 def simplifyty(context, ty):
     return ty
 
-def typecheck(signature, operands, domc, system, commutative=False):
+def tyeval(signature, operands, domc, system, commutative=False):
     """
+
     Parameters
-        signature : String containing the type signature.
-                    Example "a -> b -> a"
+    ----------
 
-        operands  : The operands to type check against signature.
+        signature:
+            String containing the type signature.
 
-        dom       : The constraints on the space domain to
-                    traverse.
+        operands:
+            The operands to type check against signature.
 
-        universe  : The universe of terms in which to resolve
-                    instances to types.
+        dom:
+            The constraints on the space domain to traverse.
 
-    Optional
-        commutative : Use the commutative checker which attemps to
-                      typecheck all permutations of domains to
-                      find a satisfiable one.
+        universe:
+            The universe of terms in which to resolve instances to types.
 
-    Returns:
-        env : The enviroment satisfying the given signature
-              and operands with the constraints.
+        commutative:
+            Use the commutative checker which attempts to eval all
+            permutations of domains to find a satisfiable one.
+
+    Returns
+    -------
+
+        context:
+
+            The context satisfying the given signature and operands with
+            the constraints.
 
     """
     top       = system.top
@@ -147,16 +160,16 @@ def typecheck(signature, operands, domc, system, commutative=False):
     else:
         typeof = lambda t: system.fromvalue[t]
 
-    # Commutative type checker can be written in terms of an
-    # enumeration of the flat typechecker over the permutations
-    # of the operands and domain constraints.
+    # Commutative type checker can be written in terms of an enumeration
+    # of the flat tyeval over the permutations of the operands and
+    # domain constraints.
     if commutative:
         # TODO: write this better after more coffee
         for p in permutations(zip(operands, domc), 2):
             ops = [q[0] for q in p] # operators, unzip'd
             dcs = [q[1] for q in p] # domain constraints, unzip'd
             try:
-                return typecheck(signature, ops, dcs, system, commutative=False)
+                return tyeval(signature, ops, dcs, system, commutative=False)
             except TypeCheck:
                 continue
         raise TypeCheck(signature, operands)
@@ -178,7 +191,7 @@ def typecheck(signature, operands, domc, system, commutative=False):
     rigid = [tokens.count(token)  > 1 for token in dom]
     free  = [tokens.count(token) == 1 for token in dom]
 
-    env = {}
+    context = {}
 
     dom_vars = dom
 
@@ -196,24 +209,24 @@ def typecheck(signature, operands, domc, system, commutative=False):
             # Need to satisfy the kind constraint and be
             # unifiable in the enviroment context of the
             # other rigid variables.
-            bound = env.get(var)
+            bound = context.get(var)
 
             if bound:
                 if typeof(operand) != bound:
                     try:
-                        uni = unify(typeof(operand), bound)
+                        uni = unify(context, typeof(operand), bound)
                     except Incommensurable:
                         raise TypeError(
                             'Cannot unify %s %r' % (typeof(operand), bound))
 
                     if uni in types:
-                        env[var] = uni
+                        context[var] = uni
                     else:
                         raise TypeError(
                             'Cannot unify %s %r' % (typeof(operand), bound))
             else:
                 if typeof(operand) in types:
-                    env[var] = typeof(operand)
+                    context[var] = typeof(operand)
                 else:
                     raise TypeCheck(signature, typeof(operand))
 
@@ -221,16 +234,16 @@ def typecheck(signature, operands, domc, system, commutative=False):
     # Return the unification of the domain and codomain if
     # the signature is satisfiable.
 
-    domt = [env[tok] for tok in dom]
+    domt = [context[tok] for tok in dom]
     try:
-        codt = env[cod]
-        opaque = False
+        codt = context[cod]
+        dynamic = False
     except KeyError:
         # The codomain is still a free parameter even after
         # unification of the domain, this is normally
         # impossible in Haskell land but we'll allow it here
         # by just returning the top
         codt = top
-        opaque = True
+        dynamic = True
 
-    return typeresult(env, domt, codt, opaque)
+    return typeresult(context, domt, codt, dynamic)

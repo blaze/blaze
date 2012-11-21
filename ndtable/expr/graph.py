@@ -6,12 +6,12 @@ from numbers import Integral
 from collections import Iterable
 
 from ndtable.expr import nodes, catalog
-from ndtable.datashape.coretypes import int_, float_, string, top, Any
+from ndtable.datashape.coretypes import int_, float_, string, top, dynamic
 from ndtable.sources.canonical import PythonSource
 
 # Type checking and unification
 from ndtable.datashape.unification import unify
-from ndtable.expr.typechecker import typecheck, typesystem
+from ndtable.expr.typechecker import tyeval, typesystem
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -499,7 +499,7 @@ class Op(ExpressionNode):
         # the function. Does naive type checking and inference.
         if _runtime_typecheck and not self.opaque:
 
-            result = typecheck(
+            result = tyeval(
                 self.signature, # type signature
                 operands,       # operands
                 self.dom,       # domain constraints
@@ -511,7 +511,7 @@ class Op(ExpressionNode):
 
             self.dom     = result.dom
             self.cod     = result.cod
-            self._opaque = result.opaque
+            self._opaque = result.dynamic
         else:
             # Otherwise it's the universal supertype, the operator could
             # return anything. Usefull for when we don't know much about

@@ -7,63 +7,10 @@ import numpy as np
 from numpy import dtype
 
 from struct import calcsize
-from string import letters
-from itertools import count
 from platform import architecture
 from numbers import Integral
-from operator import methodcaller
 from collections import Mapping, Sequence
 from utils import ReverseLookupDict
-
-#------------------------------------------------------------------------
-# Free Variables
-#------------------------------------------------------------------------
-
-free_vars = methodcaller('free')
-
-def _var_generator(prefix=None):
-    """
-    Generate a stream of unique free variables.
-    """
-    for a in count(0):
-        for b in letters:
-            if a == 0:
-                yield (prefix or '') + b
-            else:
-                yield (prefix or '') + ''.join([str(a),str(b)])
-
-var_generator = _var_generator()
-
-#------------------------------------------------------------------------
-# Printing
-#------------------------------------------------------------------------
-
-def expr_string(spine, const_args, outer=None):
-    if not outer:
-        outer = '()'
-
-    if const_args:
-        return str(spine) + outer[0] + ','.join(map(str,const_args)) + outer[1]
-    else:
-        return str(spine)
-
-#------------------------------------------------------------------------
-# Argument Munging
-#------------------------------------------------------------------------
-
-def shape_coerce(ob):
-    if type(ob) is int:
-        return Integer(ob)
-    else:
-        raise NotImplementedError()
-
-def flatten(it):
-    for a in it:
-        if a.composite:
-            for b in iter(a):
-                yield b
-        else:
-            yield a
 
 #------------------------------------------------------------------------
 # Type Metaclass
@@ -158,7 +105,27 @@ class Dynamic(object):
     def __repr__(self):
         return str(self)
 
-Any = Dynamic
+# Top is kind of an unforunate term because our system is very
+# much *not* a hierarchy nor does it form a lattice, but this is
+# the entrenched term so we use it.
+
+class Top(object):
+    __metaclass__ = Type
+
+    def up(self, ty):
+        raise Exception("Not defined")
+
+    def down(self, ty):
+        if not ty.composite:
+            return ty
+        else:
+            raise Exception("Not defined")
+
+    def __str__(self):
+        return 'top'
+
+    def __repr__(self):
+        return str(self)
 
 # ==================================================================
 # Base Types
@@ -745,7 +712,8 @@ Stream = Var(Integer(0), None)
 NullRecord = Record()
 
 na = Null
-top = Any()
+top = Top()
+dynamic = Top()
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
@@ -864,3 +832,35 @@ def expand(ds):
 
     else:
         yield x
+
+
+#------------------------------------------------------------------------
+# Printing
+#------------------------------------------------------------------------
+
+def expr_string(spine, const_args, outer=None):
+    if not outer:
+        outer = '()'
+
+    if const_args:
+        return str(spine) + outer[0] + ','.join(map(str,const_args)) + outer[1]
+    else:
+        return str(spine)
+
+#------------------------------------------------------------------------
+# Argument Munging
+#------------------------------------------------------------------------
+
+def shape_coerce(ob):
+    if type(ob) is int:
+        return Integer(ob)
+    else:
+        raise NotImplementedError()
+
+def flatten(it):
+    for a in it:
+        if a.composite:
+            for b in iter(a):
+                yield b
+        else:
+            yield a

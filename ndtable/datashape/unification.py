@@ -43,7 +43,7 @@ Where this is decomposed coordinate wise.
 
 from numpy import promote_types
 from coretypes import Fixed, Var, TypeVar, Record, \
-    CType, Any, array_like
+    CType, top, dynamic
 
 class Incommensurable(Exception):
     def __init__(self, space, dim):
@@ -54,16 +54,6 @@ class Incommensurable(Exception):
         return "No way of unifying (%s) (%s)" % (
             self.space, self.dim
         )
-
-# TODO: Deprecated
-def broadcast(shape1, shape2):
-    """
-    Subcase that should be identical to ``np.broadcast``.
-    """
-    assert array_like(shape1)
-    assert array_like(shape2)
-
-    return unify(shape1, shape2)
 
 # TODO: Deprecated
 def union(dim1, dim2):
@@ -80,7 +70,7 @@ def union(dim1, dim2):
     else:
         return z
 
-def unify(a,b):
+def unify(context, a, b):
     """
     Unification of Datashapes.
     """
@@ -89,13 +79,21 @@ def unify(a,b):
 
     # --
 
-    if ta == Any or tb == Any:
-        return Any()
+    # Unification over BlazeT has two zeros
+
+    if ta == top or tb == top:
+        return top
+
+    if ta == dynamic or tb == dynamic:
+        return top
 
     # --
 
     if (ta,tb) == (Fixed, Fixed):
-        return Fixed(a.val + b.val)
+        if a.val == b.val:
+            return Fixed(a.val)
+        else:
+            return Enum(a.val, b.val)
 
     # --
 

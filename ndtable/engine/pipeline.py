@@ -14,7 +14,6 @@ from itertools import ifilter
 from collections import Counter, defaultdict
 
 from ndtable.plan import generate
-from ndtable.datashape.coretypes import _var_generator
 
 #------------------------------------------------------------------------
 # Pipeline Combinators
