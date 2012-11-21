@@ -135,7 +135,6 @@ def injest_iterable(args, depth=0, force_homog=False):
             # If the first 100 elements are type homogenous then
             # it's likely the rest of the iterable is.
             head, is_homog = is_homogeneous(sample)
-            is_hetero = not is_homog
 
             if force_homog and not is_homog:
                 raise TypeError("Input is not homogenous.")
@@ -162,7 +161,7 @@ def injest_iterable(args, depth=0, force_homog=False):
             # not something we'd want to put in a loop.
             # Optimize later!
 
-            elif is_hetero:
+            elif not is_homog:
                 ret = []
                 for a in args:
                     if isinstance(a, (list, tuple)):

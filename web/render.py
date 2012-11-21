@@ -13,7 +13,9 @@ from os.path import abspath, join
 # Page Variables
 #------------------------------------------------------------------------
 
-doc_url  = 'https://ContinuumIO.github.com/blazepro'
+#doc_url  = 'https://ContinuumIO.github.com/blazepro'
+doc_url  = '../../docs/build/html/index.html'
+
 src_url  = 'https://github.com/ContinuumIO/blazepro/downloads'
 mail_url = 'https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev'
 

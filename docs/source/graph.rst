@@ -10,17 +10,17 @@ Node Types
 APP
     Application of a function or operator to a set of values.
 
-OP    
+OP
     Operator a mapping between multiple operands returning a
     single result.
 
-VAL   
+VAL
     A value providing bytes.
 
 Node Instances
 ~~~~~~~~~~~~~~
 
-The core graph node types in Blaze are 
+The core graph node types in Blaze are:
 
 * App
 * ArrayNode
@@ -35,26 +35,39 @@ The core graph node types in Blaze are
 * Slice
 * StringNode
 
+The domain and codomain of an operator are determiend only in the
+context of an application binding.
+
+The domain and codomain of an function are fixed by definition.
 
 .. ditaa::
 
-         +---+
-    Dom -| f |-> Cod 
-         +---+
+                +---+
+           Dom -| f |-> Cod
+                +---+
 
 .. ditaa::
 
-    Dom                             Cod
-              +----------------+
-              |       +----+   |
-    a  ----+  |       |    |   |
-           |  |       |    |   |
-    b  ----+--|-------| Op |---|--> d
-           |  |       |    |   |
-    c  ----+  |       |    |   |
-              |       +----+   |
-              +----------------+
+              +---------+
+    a  ----+  |         |
+           |  |   Op    |
+    b  ----+--|---------|--> d
+           |  |         |
+    c  ----+  |         |
+              +---------+
 
+.. ditaa::
+
+    Dom ---------------------> Cod
+
+             +------------+
+             |    App     |
+    ty --+   |  +------+  |
+         |   |  |      |  |
+    ty --+---|--| Op   |--|--> d
+         |   |  |      |  |
+    ty --+   |  +------+  |
+             +------------+
 
 .. automodule:: ndtable.expr.graph
    :members:

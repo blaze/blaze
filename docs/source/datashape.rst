@@ -1,5 +1,5 @@
-Datashapes
-==========
+Datashape
+=========
 
 .. highlight:: erlang
 
@@ -10,10 +10,11 @@ Array objects.
 There are primitive machine types which on top of you can build
 composite and dimensionalized structures::
 
-    uint32
     int32
+    uint32
+    complex64
     float
-    char
+    pyobj
 
 Fixed Dimensions
 ----------------
