@@ -32,6 +32,7 @@ Overview
    desc
    blaze
    memory
+   format
 
 API Reference
 ~~~~~~~~~~~~~
