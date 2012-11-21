@@ -12,12 +12,12 @@ Overview
 ~~~~~~~~
 
 Just like in traditional NumPy the preferred method of implementing
-generic vector operators through is ad-hoc polymorphism. Numpy's style
+generic vector operators is through ad-hoc polymorphism. Numpy's style
 of ad-hoc polymorphism allows ufunc objects to have different behaviors
 when "viewed" at different types. The runtime system then chooses an
 appropriate implementation for each application of the function, based
-on the types of the arguments. Blaze simply extends this notion to
-data structure data as well as data type ( dtype ).
+on the types of the arguments. Blaze simply extends this specialization
+to data structure as well as data type ( dtype ).
 
 In fact many of the ideas behind datashape are generalizations and
 combinations of notions found in Numpy:
@@ -43,7 +43,7 @@ Blaze favors the other approach in that types do not exist in a
 hierarchy but instead are inferred through constraint generation at
 "compile time". In addition it also permits a weakened version of
 gradual typing through a dynamic type ( denoted ``?`` ) which will allow
-a "escape-hatch" in the type system for expressing types of values which
+a "escape hatch" in the type system for expressing types of values which
 cannot be known until runtime.
 
 The goal of next generation of vector operations over Blaze structures
@@ -113,8 +113,9 @@ Machine Types
 Constructors
 ~~~~~~~~~~~~
 
-Datashape types that are single values are called **unit** types.
-They represent a fixed type. For example ``int32`` or
+Datashape types that are single values are called **unit** types. They
+represent a fixed type that is not dependent on any arguments. For
+example ``int32`` or ``2``.
 
 Datashape types that are comprised of multiple unit types are
 called **composite** types. Example::
@@ -141,6 +142,9 @@ called **parameterized** types.
 Datashape types wihtout free parameters in their constructor are called
 **alias** types. They don't add any additional structure they just
 provide a new name.
+
+The ``int`` and ``float`` types are automatically aliased to the
+either ``int32`` or ``int64`` types depending on the platform.
 
 Once the types are registered they can be used in dtype expressions just
 like primitive values and also to construct even higher order types.
@@ -213,10 +217,10 @@ of types keyed by labels.
 Example 1::
 
     Person = {
-        name: string,
-        age: int,
-        height: int,
-        weight: int
+        name   : string,
+        age    : int,
+        height : int,
+        weight : int
     }
 
 Example 2::
@@ -328,4 +332,3 @@ Nullable types can be written as Sum types.::
 
 ..
     1 + A
-
