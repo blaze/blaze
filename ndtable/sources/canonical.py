@@ -1,13 +1,12 @@
 """
 Toy implementations of the "canonical backends".
 
-These are purely for internal use, are never exposed to the end-user in
-any form. Adaptors simply provide a layer over the low-level IO
+These are purely for internal use, are never exposed to the end-user
+in any form. Adaptors simply provide a layer over the low-level IO
 operations needed to produce the bytes as needed.
 
-They also hint at the memory properties of the underlying
-substrate ( i.e sockets have chunked access, but are not
-seekable ).
+They also hint at the memory properties of the underlying substrate (
+i.e sockets have chunked access, but are not seekable ).
 """
 
 import numpy as np

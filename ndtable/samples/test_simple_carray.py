@@ -28,7 +28,7 @@ def test_getitem():
 
     for i in xrange(3):
         # Simple read, forces the manifest bytes
-        print nd[i]
+        nd[i]
 
 ## Case 1
 #def test_setitem():
