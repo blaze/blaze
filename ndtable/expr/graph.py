@@ -6,7 +6,7 @@ from numbers import Integral
 from collections import Iterable
 
 from ndtable.expr import nodes, catalog
-from ndtable.datashape.coretypes import int32, float32, string, top, Any
+from ndtable.datashape.coretypes import int_, float_, string, top, Any
 from ndtable.sources.canonical import PythonSource
 
 # Type checking and unification
@@ -57,7 +57,7 @@ def typeof(obj):
     defined for Blaze types.
 
     >>> typeof(IntNode(3))
-    int32
+    int64
     >>> typeof(Any())
     top
     """
@@ -71,9 +71,9 @@ def typeof(obj):
     if typ is App:
         return obj.cod
     elif typ is IntNode:
-        return int32
+        return int_
     elif typ is FloatNode:
-        return float32
+        return float_
     elif typ is StringNode:
         return string
     elif typ is Any:
@@ -609,7 +609,7 @@ class StringNode(Literal):
 
 class IntNode(Literal):
     vtype     = int
-    datashape = int32
+    datashape = int_
     kind      = VAL
 
     @property
@@ -618,7 +618,7 @@ class IntNode(Literal):
 
 class FloatNode(Literal):
     vtype     = float
-    datashape = float32
+    datashape = float_
     kind      = VAL
 
     @property

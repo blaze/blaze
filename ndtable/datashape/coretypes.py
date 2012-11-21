@@ -700,7 +700,6 @@ def right(ds):
 
 plat = calcsize('@P') * 8
 
-float_     = CType('float')
 long_      = CType('long')
 bool_      = CType('bool')
 double     = CType('double')
@@ -708,28 +707,45 @@ short      = CType('short')
 longdouble = CType('longdbouble')
 char       = CType('char')
 
-int_       = CType('int')
-#int_       = CType('int', plat)
+if plat == 32:
+    int8  = CType('int', 8)
+    int16 = CType('int', 16)
+    int32 = CType('int', 32)
+    int64 = CType('int', 64)
+    int_  = int32
+
+elif plat == 64:
+    int8  = CType('int', 8)
+    int16 = CType('int', 16)
+    int32 = CType('int', 32)
+    int64 = CType('int', 64)
+    int_  = int64
 
 uint       = CType('uint')
 ulong      = CType('ulong')
 ulonglong  = CType('ulonglong')
 
-int8       = CType('int', 8)
-int16      = CType('int', 16)
-int32      = CType('int', 32)
-int64      = CType('int', 64)
 
 uint8      = CType('uint',  8)
 uint16     = CType('uint', 16)
 uint32     = CType('uint', 32)
 uint64     = CType('uint', 64)
 
-float8       = CType('float', 8)
-float16      = CType('float', 16)
-float32      = CType('float', 32)
-float64      = CType('float', 64)
-float128     = CType('float', 128)
+if plat == 32:
+    float8       = CType('float', 8)
+    float16      = CType('float', 16)
+    float32      = CType('float', 32)
+    float64      = CType('float', 64)
+    float128     = CType('float', 128)
+    float_       = float32
+
+elif plat == 64:
+    float8       = CType('float', 8)
+    float16      = CType('float', 16)
+    float32      = CType('float', 32)
+    float64      = CType('float', 64)
+    float128     = CType('float', 128)
+    float_       = float64
 
 complex64  = CType('complex' , 64)
 complex128 = CType('complex', 128)
@@ -739,7 +755,7 @@ void       = CType('void')
 pyobj      = CType('object')
 
 # TODO: differentiate between fixed-length and variable-length
-# strings.
+# strings once we figure out how to implement this!
 string     = CType('string')
 
 Stream = Var(Integer(0), None)
@@ -747,7 +763,7 @@ Stream = Var(Integer(0), None)
 # The null record
 NullRecord = Record()
 
-na = nan = Null
+na = Null
 top = Any()
 
 Type.register('NA', Null)
