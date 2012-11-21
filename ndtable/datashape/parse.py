@@ -101,8 +101,8 @@ class Translate(Visitor):
 
     # var -> TypeVar
     def Name(self, tree):
-        if tree.id in Type.registry:
-            return Type.registry[tree.id]
+        if tree.id in Type._registry:
+            return Type._registry[tree.id]
         else:
             return TypeVar(tree.id)
 
@@ -123,7 +123,7 @@ class Translate(Visitor):
             'Either'   : Either,
             'Bitfield' : Bitfield,
         }
-        internals.update(Type.registry)
+        internals.update(Type._registry)
 
         fn = self.visit(tree.func)
         args = self.visit(tree.args)

@@ -70,20 +70,20 @@ def flatten(it):
 #------------------------------------------------------------------------
 
 class Type(type):
-    registry = {}
+    _registry = {}
 
     __init__ = NotImplemented
 
     def __new__(meta, name, bases, dct):
         cls = type(name, bases, dct)
         if not dct.get('abstract'):
-            Type.registry[name] = cls
+            Type._registry[name] = cls
             return cls
 
     @staticmethod
     def register(name, cls):
-        assert name not in Type.registry
-        Type.registry[name] = cls
+        assert name not in Type._registry
+        Type._registry[name] = cls
 
 def table_like(ds):
     return type(ds[-1]) is Record
@@ -148,7 +148,7 @@ class Primitive(object):
 
 class Null(Primitive):
     """
-    Type polymorphic missing value.
+    Type agnostic missing value.
     """
 
     def __str__(self):
@@ -220,7 +220,7 @@ class DataShape(object):
 
         if name:
             self.name = name
-            self.__metaclass__.registry[name] = self
+            self.__metaclass__._registry[name] = self
 
     def size(self):
         """
@@ -303,7 +303,7 @@ class CType(DataShape):
 
     @classmethod
     def from_str(self, s):
-        return Type.registry[s]
+        return Type._registry[s]
 
     def size(self):
         # TODO: no cheating!
@@ -507,7 +507,8 @@ class Enum(Atom, Sequence):
 
 class Union(Atom, Sequence):
     """
-    C-style union
+    A union of possible datashapes that may occupy the same
+    position.
     """
 
     def __str__(self):
@@ -581,25 +582,29 @@ class SharedMemory(object):
 
 class Ptr(Atom):
     """
-    Type*
-    Type Addrspace*
 
     Usage:
     ------
-    Pointer to a integer in local memory
+    Pointer to a integer in local memory::
+
         *int32
 
-    Pointer to a 4x4 matrix of integers in local memory
+    Pointer to a 4x4 matrix of integers in local memory::
+
         *(4, 4, int32)
 
-    Pointer to a record in local memory
+    Pointer to a record in local memory::
+
         *{x: int32, y:int32, label: string}
 
-    Pointer to integer in a shared memory segement keyed by 'foo'
+    Pointer to integer in a shared memory segement keyed by 'foo'::
+
         *(int32 (shm 'foo'))
 
-    Pointer to integer on a array server 'bar'
+    Pointer to integer on a array server 'bar'::
+
         *(int32 (rmt array://bar))
+
     """
 
     def __init__(self, pointee, addrspace=None):
