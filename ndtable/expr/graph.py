@@ -520,6 +520,14 @@ class Op(ExpressionNode):
             self.cod = top
 
     @property
+    def nin(self):
+        raise NotImplementedError
+
+    @property
+    def nout(self):
+        raise NotImplementedError
+
+    @property
     def opaque(self):
         """
         We don't know anything about the operator, no types, no argument

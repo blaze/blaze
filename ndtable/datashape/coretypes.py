@@ -185,14 +185,17 @@ class Dynamic(object):
     """
     __metaclass__ = Type
 
-    def __str__(self):
-        return '?'
-
     def up(self, ty):
         pass
 
     def down(self, ty):
         pass
+
+    def __str__(self):
+        return '?'
+
+    def __repr__(self):
+        return str(self)
 
 Any = Dynamic
 
