@@ -8,7 +8,7 @@ Type System
 
 A collection of three functions::
 
-    unifier :: ty -> ty -> ty
+    unifier :: (ty, ty) -> ty
     typeof :: value -> ty
 
 And a collection of type objects with two special terms::
@@ -32,7 +32,7 @@ Signatures
 
 The signature::
 
-    a -> b -> c
+    (a, b) -> c
 
 Stands for a function of two arguments, the first of type a, the second
 of type b and returning a type c.
@@ -57,8 +57,8 @@ Context
 -------
 
 A context records the lexically-bound variables during the progression
-of the type checking algorithm. It is a stateful object like a memo
-passed through the unifiers.
+of the type checking algorithm. It is a stateful dict passed through the
+unifiers.
 
 """
 
@@ -94,8 +94,10 @@ typeresult = namedtuple('Satisifes', 'env, dom, cod, dynamic')
 # Core Typechecker
 #------------------------------------------------------------------------
 
-def emptycontext():
-    return {'top': top, 'dynamic': dynamic}
+def emptycontext(system):
+    topt = system.top
+    dynt = system.dynamic
+    return {'top': topt, 'dynamic': dynt}
 
 def dynamic(cls):
     universal = set([coretypes.top])
@@ -111,7 +113,7 @@ def tyeqv(context, ty1, ty2):
     return ty1 == ty2
 
 def simplifyty(context, ty):
-    return ty
+    raise NotImplementedError
 
 def tyeval(signature, operands, domc, system, commutative=False):
     """
