@@ -17,7 +17,7 @@ of ad-hoc polymorphism allows ufunc objects to have different behaviors
 when "viewed" at different types. The runtime system then chooses an
 appropriate implementation for each application of the function, based
 on the types of the arguments. Blaze simply extends this specialization
-to data structure as well as data type ( dtype ).
+to data structure and data layout as well as data type ( dtype ).
 
 In fact many of the ideas behind datashape are generalizations and
 combinations of notions found in Numpy:
@@ -152,14 +152,14 @@ Blaze does not permit recursive type definitions at this time.
 
 Datashape types are broken into three equivalence classes.
 
-Fixed
+:Fixed:
 
     Fixed types are equal iff their value is equal.::
 
         1 == 1
         1 != 2
 
-CTypes
+:CTypes:
 
     Machine types are equal iff their data type name and width
     are equal.::
@@ -168,12 +168,12 @@ CTypes
         int64 != int32
         int8 != char
 
-Composite
+:Composite:
 
     Composite datashape types are **nominative**, in that the equivalence of
     two types is determined whether the names they are given are equivalent.
     Thus two datashapes that are defined identically are still not equal to
-    each other. ::
+    each other.::
 
         A = 2, int32
         B = 2, int32
@@ -181,11 +181,10 @@ Composite
         A == A # True
         A == B # False
 
-While it is true that structurally equivalent composites are not equally
+While it is true that structurally equivalent composites are not equal
 to each other, it is however necessarily true that the unification of
 two identically defined composite types is structurally identical to the
 two types.
-
 
 Fixed
 ~~~~~
@@ -211,8 +210,8 @@ With the corresponding NumPy array::
 Records
 ~~~~~~~
 
-Record types are struct-like objects which hold a collection
-of types keyed by labels.
+Record types are ordered struct-like objects which hold a collection of
+types keyed by labels.
 
 Example 1::
 
@@ -297,7 +296,8 @@ of this type.
 Tagged Union
 ~~~~~~~~~~~~
 
-A tagged union is a::
+A tagged union is a sum type with two parameters ``left`` and
+``right`` which represent the presence of two possible types::
 
     Either float char
     Either int32 na
@@ -327,9 +327,11 @@ Nullable
 ~~~~~~~~
 
 Nullable types are composite types that represent the presence or
-absence of a value.
+absence of a value of a specific type. Many languages have a natural
+expression of this by allowing all or most types to be nullable
+including including C, SQL, and Java.
 
-Example ::
+For example a nullable int field::
 
     Either int32 null
 

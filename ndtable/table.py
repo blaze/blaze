@@ -4,7 +4,6 @@ from operator import eq
 from byteprovider import ByteProvider
 from idx import Indexable, AutoIndex, Space, Subspace, Index
 
-from datashape.unification import union
 from datashape.coretypes import DataShape, Fixed
 from ndtable.regions.scalar import IdentityL
 from ndtable.slicealgebra import numpy_get
@@ -38,7 +37,6 @@ DELAYED  = 2
 
 # C: (t0, t1) -> Manifest, A: Delayed, B: Delayed,  |- C(A,B) : Manifest
 # C: (t0, t1) -> Delayed, A: Manifest, B: Manifest, |- C(A,B) : # Delayed
-
 
 # This is a metadata space transformation that informs the
 # codomain eclass judgement.
@@ -523,7 +521,7 @@ class NDTable(Indexable, ArrayNode):
 
         # Indicate whether or not the union of the subspaces covers the
         # inner dimension.
-        uni = reduce(union, shapes)
+        #uni = reduce(union, shapes)
 
         # Does it cover the space?
 

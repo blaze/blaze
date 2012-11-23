@@ -55,21 +55,6 @@ class Incommensurable(Exception):
             self.space, self.dim
         )
 
-# TODO: Deprecated
-def union(dim1, dim2):
-    """
-    General case
-    """
-    x  , y  = dim1[0]  , dim2[0]
-    xs , ys = dim1[1:] , dim2[1:]
-
-    z = unify(x,y)
-
-    if xs and ys:
-        return union(xs, ys)*z
-    else:
-        return z
-
 def unify(context, a, b):
     """
     Unification of Datashapes.

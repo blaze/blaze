@@ -60,8 +60,6 @@ A context records the lexically-bound variables during the progression
 of the type checking algorithm. It is a stateful object like a memo
 passed through the unifiers.
 
-The context is usually written as :math:`\Gamma` in the literature.
-
 """
 
 from collections import namedtuple
@@ -74,13 +72,7 @@ from ndtable.datashape.unification import Incommensurable
 # Type Check Exceptions
 #------------------------------------------------------------------------
 
-class InvalidSignature(Exception):
-    def __init__(self, args):
-        self.args = args
-    def __str__(self):
-        return "Invalid Signature '%s'" % (self.args)
-
-class TypeCheck(Exception):
+class TypeCheck(TypeError):
     def __init__(self, sig, ty):
         self.sig = sig
         self.ty  = ty
@@ -148,8 +140,11 @@ def tyeval(signature, operands, domc, system, commutative=False):
         the constraints.
 
     """
-    top       = system.top
-    unify     = system.unifier
+
+    # unpack the named tuple
+    unify = system.unifier
+    topt = system.top
+    dynt = system.dynamic
 
     if callable(system.typeof):
         typeof = system.typeof
@@ -178,11 +173,6 @@ def tyeval(signature, operands, domc, system, commutative=False):
 
     dom = tokens[0:-1]
     cod = tokens[-1]
-
-    # f : a -> b -> a -> c
-    #
-    # Rigid : [a]
-    # Free  : [b,c]
 
     rigid = [tokens.count(token)  > 1 for token in dom]
     free  = [tokens.count(token) == 1 for token in dom]
@@ -226,20 +216,16 @@ def tyeval(signature, operands, domc, system, commutative=False):
                 else:
                     raise TypeCheck(signature, typeof(operand))
 
-
     # Return the unification of the domain and codomain if
     # the signature is satisfiable.
-
     domt = [context[tok] for tok in dom]
     try:
         codt = context[cod]
         dynamic = False
     except KeyError:
         # The codomain is still a free parameter even after
-        # unification of the domain, this is normally
-        # impossible in Haskell land but we'll allow it here
-        # by just returning the top
-        codt = top
+        # unification of the domain, assume dynamic
+        codt = dynt
         dynamic = True
 
     return typeresult(context, domt, codt, dynamic)
