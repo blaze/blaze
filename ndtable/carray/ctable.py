@@ -10,13 +10,14 @@ import sys, math
 
 import numpy as np
 import carray as ca
-from carray import utils, attrs, array2string
 import itertools as it
 from collections import namedtuple
 import json
 import os, os.path
 import shutil
 
+# carray utilities
+import utils, attrs, arrayprint
 
 ROOTDIRS = '__rootdirs__'
 
@@ -211,7 +212,10 @@ class ctable(object):
         # Get the names of the columns
         if names is None:
             if isinstance(columns, np.ndarray):  # ratype case
-                names = list(columns.dtype.names)
+                if columns.dtype.names is None:
+                    raise ValueError("dtype should be structured")
+                else:
+                    names = list(columns.dtype.names)
             else:
                 names = ["f%d"%i for i in range(len(columns))]
         else:
@@ -923,7 +927,7 @@ class ctable(object):
         return (nbytes, cbytes, cratio)
 
     def __str__(self):
-        return array2string(self)
+        return arrayprint.array2string(self)
 
     def __repr__(self):
         nbytes, cbytes, cratio = self._get_stats()

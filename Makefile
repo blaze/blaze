@@ -1,4 +1,6 @@
-.PHONY: docs tests build clean web
+.PHONY: all docs tests build clean web
+
+all: build
 
 build:
 	python setup.py build_ext --inplace

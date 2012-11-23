@@ -48,13 +48,11 @@ IntType = np.dtype(np.int_)
 #-----------------------------------------------------------------
 
 # numpy functions & objects
-from definitions cimport import_array, ndarray, dtype, \
-    malloc, realloc, free, memcpy, memset, strdup, strcmp, \
-    PyString_AsString, PyString_FromString, \
-    PyString_FromStringAndSize, \
-    Py_BEGIN_ALLOW_THREADS, Py_END_ALLOW_THREADS, \
-    PyArray_GETITEM, PyArray_SETITEM, \
-    npy_intp, PyBuffer_FromMemory
+from definitions cimport import_array, ndarray, dtype, malloc, \
+    realloc, free, memcpy, memset, strdup, strcmp, PyString_AsString, \
+    PyString_FromString, PyString_FromStringAndSize, Py_BEGIN_ALLOW_THREADS, \
+    Py_END_ALLOW_THREADS, PyArray_GETITEM, PyArray_SETITEM, npy_intp, \
+    PyBuffer_FromMemory
 
 #-----------------------------------------------------------------
 
