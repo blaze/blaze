@@ -530,55 +530,6 @@ class SharedMemory(object):
         # shmat(shmid, NULL, 0)
         self.bounds = ( 0x0, 0x1 )
 
-class Ptr(Atom):
-    """
-
-    Usage:
-    ------
-    Pointer to a integer in local memory::
-
-        *int32
-
-    Pointer to a 4x4 matrix of integers in local memory::
-
-        *(4, 4, int32)
-
-    Pointer to a record in local memory::
-
-        *{x: int32, y:int32, label: string}
-
-    Pointer to integer in a shared memory segement keyed by 'foo'::
-
-        *(int32 (shm 'foo'))
-
-    Pointer to integer on a array server 'bar'::
-
-        *(int32 (rmt array://bar))
-
-    """
-
-    def __init__(self, pointee, addrspace=None):
-        self.pointee = pointee
-
-        if addrspace:
-            self.addrspace = addrspace
-            self.parameters = [pointee, addrspace]
-        else:
-            self.parameters = [pointee]
-            self.addrspace = LocalMemory()
-
-    @property
-    def byte_bounds(self):
-        return self.addrspace.bounds
-
-    @property
-    def local(self):
-        return isinstance(self.addrspace, LocalMemory())
-
-    @property
-    def remote(self):
-        return isinstance(self.addrspace, RemoteSpace())
-
 # Class derived Records
 # =====================
 # They're just records but can be constructed like Django models.

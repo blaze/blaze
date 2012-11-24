@@ -21,7 +21,7 @@ from collections import OrderedDict, Iterable
 
 from coretypes import Integer, TypeVar, Record, \
     Enum, Type, DataShape, Var, Either, Bitfield, \
-    Fixed, Ptr
+    Fixed
 
 syntax_error = """
   File {filename}, line {lineno}
@@ -164,27 +164,6 @@ class Translate(Visitor):
 
     def Index(self, tree):
         return self.visit(tree.value)
-
-    # " (a,b) -> c " -> Function((a,b), c)
-    def UnaryOp(self, tree):
-        if type(tree.op) is ast.Invert:
-            if hasattr(tree.operand, 'elts'):
-                args = map(self.visit, tree.operand.elts)
-                return Ptr(*args)
-            else:
-                return Ptr(tree.operand.id)
-            assert False
-        else:
-            raise SyntaxError()
-
-    def BinOp(self, tree):
-        raise self.error_ast(tree)
-        if type(tree.op) is ast.RShift:
-            left = self.visit(tree.left)
-            right = self.visit(tree.right)
-            return Function(left, right)
-        else:
-            raise SyntaxError()
 
     def Subscript(self, tree):
         raise NotImplementedError()
