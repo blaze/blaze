@@ -1,8 +1,8 @@
 __version__ = '0.1-dev'
 
 try:
-    from ndtable.datashape import dshape
-    from ndtable.table import Array, Table, NDArray, NDTable
+    from datashape import dshape
+    from table import Array, Table, NDArray, NDTable
 except ImportError as e:
     # prevent weird cyclic import errors from passing silently
     raise RuntimeError("Failed to load, check for cyclic imports ( %s )"
@@ -13,3 +13,6 @@ except ImportError as e:
 array   = Array
 ndarray = NDArray
 dtype   = dshape
+
+# Shorthand namespace dump
+from datashape.shorthand import *

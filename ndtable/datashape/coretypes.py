@@ -31,9 +31,9 @@ class Type(type):
         assert name not in Type._registry
         Type._registry[name] = cls
 
-# ==================================================================
+#------------------------------------------------------------------------
 # Primitives
-# ==================================================================
+#------------------------------------------------------------------------
 
 class Primitive(object):
     composite = False
@@ -600,7 +600,6 @@ long_      = CType('long')
 bool_      = CType('bool')
 double     = CType('double')
 short      = CType('short')
-longdouble = CType('longdbouble')
 char       = CType('char')
 
 if plat == 32:
@@ -610,6 +609,12 @@ if plat == 32:
     int64 = CType('int', 64)
     int_  = int32
 
+    uint8  = CType('uint',  8)
+    uint16 = CType('uint', 16)
+    uint32 = CType('uint', 32)
+    uint64 = CType('uint', 64)
+    uint   = uint32
+
 elif plat == 64:
     int8  = CType('int', 8)
     int16 = CType('int', 16)
@@ -617,18 +622,13 @@ elif plat == 64:
     int64 = CType('int', 64)
     int_  = int64
 
-uint       = CType('uint')
-ulong      = CType('ulong')
-ulonglong  = CType('ulonglong')
-
-
-uint8      = CType('uint',  8)
-uint16     = CType('uint', 16)
-uint32     = CType('uint', 32)
-uint64     = CType('uint', 64)
+    uint8  = CType('uint',  8)
+    uint16 = CType('uint', 16)
+    uint32 = CType('uint', 32)
+    uint64 = CType('uint', 64)
+    uint   = uint64
 
 if plat == 32:
-    float8       = CType('float', 8)
     float16      = CType('float', 16)
     float32      = CType('float', 32)
     float64      = CType('float', 64)
@@ -636,7 +636,6 @@ if plat == 32:
     float_       = float32
 
 elif plat == 64:
-    float8       = CType('float', 8)
     float16      = CType('float', 16)
     float32      = CType('float', 32)
     float64      = CType('float', 64)
@@ -646,6 +645,9 @@ elif plat == 64:
 complex64  = CType('complex' , 64)
 complex128 = CType('complex', 128)
 complex256 = CType('complex', 256)
+
+ulonglong  = CType('ulonglong')
+longdouble = float128
 
 void       = CType('void')
 pyobj      = CType('object')
@@ -667,38 +669,6 @@ Type.register('?', Dynamic)
 
 # Top should not be user facing... but for debugging usefull.
 # Type.register('?', Dynamic)
-
-#------------------------------------------------------------------------
-# Shorthand
-#------------------------------------------------------------------------
-
-O = pyobj
-b1 = bool_
-
-i1 = int8
-i2 = int16
-i4 = int32
-i8 = int64
-
-u1 = uint8
-u2 = uint16
-u4 = uint32
-u8 = uint64
-
-f1 = float8
-f2 = float16
-f4 = float32
-f8 = float64
-f16 = float128
-
-f = float_
-d = double
-
-c8  = complex64
-c16 = complex128
-c32 = complex256
-
-S = string
 
 #------------------------------------------------------------------------
 # Numpy Compatability
