@@ -12,7 +12,7 @@ from ndtable.table import Array
 # We use the Array object which is immediete in all operations.
 
 def arr():
-    return Array([1,2,3], datashape='3, int32')
+    return Array([1,2,3], dshape='3, int32')
 
 #------------------------------------------------------------------------
 # Tests

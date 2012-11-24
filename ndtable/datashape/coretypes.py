@@ -249,7 +249,7 @@ class CType(DataShape):
         >>> CType.from_dtype(dtype('int32'))
         int32
         """
-        return Type._registry(dt.name)
+        return Type._registry[dt.name]
 
     def size(self):
         # TODO: no cheating!
@@ -735,7 +735,6 @@ def from_numpy(shape, dt):
     i.e.
       5,5,in32 -> ( (5,5), dtype('int32') )
     """
-
     dimensions = map(Fixed, shape)
     measure = CType.from_dtype(dt)
 

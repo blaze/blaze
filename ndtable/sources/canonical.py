@@ -13,12 +13,12 @@ import numpy as np
 
 import socket
 
+from ndtable import carray
+
 from ndtable.datashape import Fixed, pyobj
 from ndtable.datashape.coretypes import CType, from_numpy
 from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM
 from ndtable.byteprovider import ByteProvider
-
-#from ndtable.carray import carray
 
 #------------------------------------------------------------------------
 # "CArray" byte provider
@@ -35,7 +35,10 @@ class CArraySource(ByteProvider):
         ostensibly this is just a thin wrapper that consumes a
         reference.
         """
-        self.ca = ca
+        self.ca = carray.carray(ca)
+
+    def infer_datashape(self):
+        return from_numpy(self.ca.shape, self.ca.dtype)
 
     @classmethod
     def empty(self, datashape):

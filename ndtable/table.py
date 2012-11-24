@@ -4,73 +4,22 @@ from operator import eq
 from byteprovider import ByteProvider
 from idx import Indexable, AutoIndex, Space, Subspace, Index
 
-from datashape.coretypes import DataShape, Fixed
-from ndtable.regions.scalar import IdentityL
-from ndtable.slicealgebra import numpy_get
+from datashape.coretypes import DataShape, Fixed, from_numpy
+from regions.scalar import IdentityL
+from slicealgebra import numpy_get
 
-from ndtable.expr.graph import ArrayNode, injest_iterable
-from ndtable.metadata import metadata as md
+from expr.graph import ArrayNode, injest_iterable
+from metadata import metadata as md
 
-from ndtable.sources.canonical import CArraySource, ArraySource
-from ndtable.printer import array2string, table2string, generic_repr
+from sources.canonical import CArraySource, ArraySource
+from printer import array2string, table2string, generic_repr
 
 #------------------------------------------------------------------------
-# Evaluation Class ( EClass )
+# Evaluation Class ( eclass )
 #------------------------------------------------------------------------
 
 MANIFEST = 1
 DELAYED  = 2
-
-# EClass are closed under operations. Operations on Manifest
-# arrays always return other manifest arrays, operations on
-# delayed arrays always return delayed arrays. Mixed operations
-# may or may not be well-defined.
-
-#     EClass := { Manifest, Delayed }
-#
-#     a: EClass, b: EClass, f : x -> y, x: a  |-  f(x) : y
-#     f : x -> y,  x: Manifest  |-  f(x) : Manifest
-#     f : x -> y,  x: Delayed   |-  f(x) : Delayed
-
-# TBD: Constructor have these closure properties?? Think about
-# this more...
-
-# C: (t0, t1) -> Manifest, A: Delayed, B: Delayed,  |- C(A,B) : Manifest
-# C: (t0, t1) -> Delayed, A: Manifest, B: Manifest, |- C(A,B) : # Delayed
-
-# This is a metadata space transformation that informs the
-# codomain eclass judgement.
-def infer_eclass(a,b):
-    if (a,b) == (MANIFEST, MANIFEST):
-        return MANIFEST
-    if (a,b) == (MANIFEST, DELAYED):
-        return MANIFEST
-    if (a,b) == (DELAYED, MANIFEST):
-        return MANIFEST
-    if (a,b) == (DELAYED, DELAYED):
-        return DELAYED
-
-#------------------------------------------------------------------------
-# Deconstructors
-#------------------------------------------------------------------------
-
-def cast_arguments(obj):
-    """
-    Handle different sets of arguments for constructors.
-    """
-
-    if isinstance(obj, DataShape):
-        return obj
-
-    elif isinstance(obj, list):
-        return Fixed(len(obj))
-
-    elif isinstance(obj, tuple):
-        return Fixed(len(obj))
-
-    elif isinstance(obj, NDTable):
-        return obj.datashape
-
 
 #------------------------------------------------------------------------
 # Immediate
@@ -78,8 +27,8 @@ def cast_arguments(obj):
 
 class Array(Indexable):
     """
-    Immediate array, does not create a graph. Forces evaluation
-    on every call.
+    Manifest array, does not create a graph. Forces evaluation on every
+    call.
 
     Parameters:
 
@@ -94,13 +43,18 @@ class Array(Indexable):
 
         metadata  : Explicit metadata annotation.
 
+    Example:
+
+        >>> Array([1,2,3])
+        >>> Array([1,2,3], dshape='3, int32')
+
     """
 
     eclass = MANIFEST
 
-    def __init__(self, obj, datashape=None, metadata=None):
+    def __init__(self, obj, dshape=None, metadata=None):
 
-        self._datashape = datashape
+        self._datashape = dshape
         self._metadata  = metadata or md.empty()
         self._layout    = None
 
@@ -123,9 +77,10 @@ class Array(Indexable):
             # dot product stride formula )
             assert isinstance(obj, list)
 
-            na = ArraySource(obj)
-            self.space = Space(na)
-            self._layout = IdentityL(na)
+            ca = CArraySource(obj)
+            self.space = Space(ca)
+            self._datashape = ca.infer_datashape()
+            self._layout = IdentityL(ca)
 
             # -- The Future --
             # The general case, we'll get there eventually...
@@ -200,7 +155,7 @@ class Array(Indexable):
         # into the block in question. I.e. for Numpy this is the
         # general dot product
 
-        plan = numpy_get(block.na, [coords])
+        plan = block.ca[indexer]
 
         # ----------------
         # Third Transform
@@ -563,3 +518,53 @@ class NDTable(Indexable, ArrayNode):
     @staticmethod
     def from_csv(fname, *params):
         pass
+
+# EClass are closed under operations. Operations on Manifest
+# arrays always return other manifest arrays, operations on
+# delayed arrays always return delayed arrays. Mixed operations
+# may or may not be well-defined.
+
+#     EClass := { Manifest, Delayed }
+#
+#     a: EClass, b: EClass, f : x -> y, x: a  |-  f(x) : y
+#     f : x -> y,  x: Manifest  |-  f(x) : Manifest
+#     f : x -> y,  x: Delayed   |-  f(x) : Delayed
+
+# TBD: Constructor have these closure properties?? Think about
+# this more...
+
+# C: (t0, t1) -> Manifest, A: Delayed, B: Delayed,  |- C(A,B) : Manifest
+# C: (t0, t1) -> Delayed, A: Manifest, B: Manifest, |- C(A,B) : # Delayed
+
+# This is a metadata space transformation that informs the
+# codomain eclass judgement.
+def infer_eclass(a,b):
+    if (a,b) == (MANIFEST, MANIFEST):
+        return MANIFEST
+    if (a,b) == (MANIFEST, DELAYED):
+        return MANIFEST
+    if (a,b) == (DELAYED, MANIFEST):
+        return MANIFEST
+    if (a,b) == (DELAYED, DELAYED):
+        return DELAYED
+
+#------------------------------------------------------------------------
+# Deconstructors
+#------------------------------------------------------------------------
+
+def cast_arguments(obj):
+    """
+    Handle different sets of arguments for constructors.
+    """
+
+    if isinstance(obj, DataShape):
+        return obj
+
+    elif isinstance(obj, list):
+        return Fixed(len(obj))
+
+    elif isinstance(obj, tuple):
+        return Fixed(len(obj))
+
+    elif isinstance(obj, NDTable):
+        return obj.datashape

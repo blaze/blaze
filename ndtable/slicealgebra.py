@@ -12,10 +12,8 @@ linear formula-based index.
 
 import numpy as np
 from struct import unpack
-from itertools import izip
 from functools import partial
 from operator import add, mul
-from collections import namedtuple
 
 # ==================================================================
 # Math
@@ -175,96 +173,6 @@ def numpy_get(na, indexer):
 #                 }                                                          \
 #         }                                                                  \
 # }
-
-
-
-# Classical Numpy ufuncs could be thought of as generators expressions
-# over iterators on the array-like structure.
-
-def numpy_iter(na):
-    pass
-
-def numpy_binary_loop(f, a, b):
-    ai = numpy_iter(a)
-    bi = numpy_iter(b)
-
-    for i, j in izip(ai, bi):
-        yield f(i,j)
-
-def numpy_unary_loop(f, a):
-    ai = numpy_iter(a)
-
-    for i in ai:
-        yield f(i)
-
-# PyUFunc_FromFuncAndData(PyUFuncGenericFunction *func, void **data,
-#                         char *types, int ntypes,
-#                         int nin, int nout, int identity,
-#                         char *name, char *doc, int check_return)
-
-def numpy_ufunc(fn, data, types, ntypes, nin, nout):
-    pass
-
-# ==================================================================
-# General Slice Algebra
-# ==================================================================
-
-# Numpy is a linear mapping between strides and indexers. In numpy the
-# for example the datshape gives (2, 3, int32):
-
-#   With n = 2
-#   With stride[i] = shape[i+1] * ... *shape[n]
-
-# Yields strides
-#   (24, 8)
-
-# The new general form is when our strides become symbolic entities in
-# their own right and instead of being just multiplication, they take on
-# a function corresponding to the datashape. I propose we call these the
-# "traversers" of which strides are a subset.
-
-#   Fixed     ~ (*) -- equiveleant to Numpy
-#   Var       ~
-#   TypeVar   ~
-#   Enum(i)   ~ [ a, b, c, ...][i]
-#   Record(k) ~ { 'a': ds1, 'b': ds2, ... }[k]
-
-# With traverse[i]   = f( datashape[i], datashape[i+1], ... )
-#      traverse[i+1] = f( datashape[i+2], datashape[i+1], ... )
-#      ...
-#      traverse[n]   = f( datashape[n] )
-
-def blaze_get(na, indexer):
-    pass
-
-def blaze_iter():
-    pass
-
-def blaze_binary_loop(f, a, b):
-    ai = blaze_iter(a)
-    bi = blaze_iter(b)
-
-    for i,j in izip(ai, bi):
-        yield f(i,j)
-
-def blaze_unary_loop(f, a):
-    ai = blaze_iter(a)
-
-    for i in ai:
-        yield f(i)
-
-def blaze_ufunc(fn, data, types, ntypes, nin, nout):
-    pass
-
-#------------------------------------------------------------------------
-# Mapping Interfaces
-#------------------------------------------------------------------------
-
-interface = namedtuple('slicealgebra', 'get iter')
-
-mappings = {
-    'numpy': interface(numpy_get, numpy_iter)
-}
 
 if __name__ == '__main__':
     a,b = [1,2,3], [4,5,6]
