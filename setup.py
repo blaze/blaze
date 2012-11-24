@@ -10,10 +10,10 @@ from distutils.sysconfig import get_python_inc, get_config_var
 
 try:
     from nose.commands import nosetests
-    testrunner = {'test': nosetests}
+    testrunner = nosetests
 except:
-    from unittest import TextTestRunner
-    testrunner = {'test': TextTestRunner}
+    from unittest import TextTestRunner as testrunner
+    testrunner = TextTestRunner
 
 #------------------------------------------------------------------------
 # Top Level Packages
