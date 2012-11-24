@@ -2,15 +2,12 @@
 This defines the DataShape type system.
 """
 
-# TODO: preferably not depend on these
-import numpy as np
 from numpy import dtype
 
 from struct import calcsize
-from platform import architecture
 from numbers import Integral
+from platform import architecture
 from collections import Mapping, Sequence
-from utils import ReverseLookupDict
 
 #------------------------------------------------------------------------
 # Type Metaclass

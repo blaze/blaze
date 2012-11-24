@@ -3,7 +3,7 @@ from nose.tools import assert_raises
 from ndtable.datashape.coretypes import float64
 from ndtable.expr.graph import IntNode, FloatNode, App, StringNode
 from ndtable.expr.nodes import Node, traverse
-from ndtable.expr.typechecker import TypeCheck
+from ndtable.expr.typechecker import InvalidTypes
 from ndtable.expr.viz import dump
 from ndtable.table import NDTable
 
@@ -111,5 +111,5 @@ def test_preserve_types():
 def test_reject_invalid():
     b = StringNode('boom')
 
-    with assert_raises(TypeCheck):
+    with assert_raises(InvalidTypes):
         x = abs(b)

@@ -1,5 +1,5 @@
 """
-Naive type inference for Blaze expressions.
+Naive type inference algorithm for Blaze expressions.
 
 Some notes on notation::
 
@@ -23,9 +23,9 @@ This is specified by a namedtuple of the form::
 Dynamic
 -------
 
-A dynamic type written as ( ? ). It allows explicit down casting
-and upcasting from any type to any type. In Blaze we use this to
-represent opaque types that afford no specialization.
+A dynamic type written as ( ``?`` ). It allows explicit down casting and
+upcasting from any type to any type. In Blaze we use this to represent
+opaque types that afford no specialization.
 
 Signatures
 ----------
@@ -57,8 +57,8 @@ Context
 -------
 
 A context records the lexically-bound variables during the progression
-of the type checking algorithm. It is a stateful dict passed through the
-unifiers.
+of the type inference algorithm. It is a stateful dict passed through
+the unifiers.
 
 """
 
@@ -72,7 +72,7 @@ from ndtable.datashape.unification import Incommensurable
 # Type Check Exceptions
 #------------------------------------------------------------------------
 
-class TypeCheck(TypeError):
+class InvalidTypes(TypeError):
     def __init__(self, sig, ty):
         self.sig = sig
         self.ty  = ty
@@ -91,7 +91,7 @@ typesystem = namedtuple('TypeSystem', 'unifier, top, dynamic, typeof')
 typeresult = namedtuple('Satisifes', 'env, dom, cod, dynamic')
 
 #------------------------------------------------------------------------
-# Core Typechecker
+# Core
 #------------------------------------------------------------------------
 
 def emptycontext(system):
@@ -145,17 +145,17 @@ def tyeval(signature, operands, domc, system, commutative=False):
 
     # unpack the named tuple
     unify = system.unifier
-    topt = system.top
-    dynt = system.dynamic
+    topt  = system.top
+    dynt  = system.dynamic
 
     if callable(system.typeof):
         typeof = system.typeof
     else:
         typeof = lambda t: system.typeof[t]
 
-    # Commutative type checker can be written in terms of an enumeration
-    # of the flat tyeval over the permutations of the operands and
-    # domain constraints.
+    # Commutative checker can be written in terms of an enumeration of
+    # the flat tyeval over the permutations of the operands and domain
+    # constraints.
     if commutative:
         # TODO: write this better after more coffee
         for p in permutations(zip(operands, domc), 2):
@@ -163,15 +163,11 @@ def tyeval(signature, operands, domc, system, commutative=False):
             dcs = [q[1] for q in p] # domain constraints, unzip'd
             try:
                 return tyeval(signature, ops, dcs, system, commutative=False)
-            except TypeCheck:
+            except InvalidTypes:
                 continue
-        raise TypeCheck(signature, operands)
+        raise InvalidTypes(signature, operands)
 
-    tokens = [
-        tok.strip()
-        for tok in
-        signature.split('->')
-    ]
+    tokens = [ tok.strip() for tok in signature.split('->') ]
 
     dom = tokens[0:-1]
     cod = tokens[-1]
@@ -179,24 +175,19 @@ def tyeval(signature, operands, domc, system, commutative=False):
     rigid = [tokens.count(token)  > 1 for token in dom]
     free  = [tokens.count(token) == 1 for token in dom]
 
-    context = {}
-
+    context = emptycontext(system)
     dom_vars = dom
-
-    # Naive Type Checker
-    # ==================
 
     for i, (var, types, operand) in enumerate(zip(dom_vars, domc, operands)):
 
         if free[i]:
-            # Need only satisfy the kind constraint
+            # Need only satisfy the constraint
             if typeof(operand) not in types:
-                raise TypeCheck(signature, typeof(operand))
+                raise InvalidTypes(signature, typeof(operand))
 
         if rigid[i]:
-            # Need to satisfy the kind constraint and be
-            # unifiable in the enviroment context of the
-            # other rigid variables.
+            # Need to satisfy the constraint and be unifiable in the
+            # enviroment context of the other rigid variables.
             bound = context.get(var)
 
             if bound:
@@ -216,7 +207,7 @@ def tyeval(signature, operands, domc, system, commutative=False):
                 if typeof(operand) in types:
                     context[var] = typeof(operand)
                 else:
-                    raise TypeCheck(signature, typeof(operand))
+                    raise InvalidTypes(signature, typeof(operand))
 
     # Return the unification of the domain and codomain if
     # the signature is satisfiable.

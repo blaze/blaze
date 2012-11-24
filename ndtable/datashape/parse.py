@@ -1,15 +1,5 @@
 """
-Parser for DataShape grammer.
-
-  t  := bt                 -- DataShape atom
-  ds := (t1,...,tn)        -- Composite Datashape
-
-  bt := C                  -- identifier ( any valid Python variable name )
-       | C(t1,...,tn)      -- n-ary constructor
-       | {t1, t2, t3}      -- Enum
-       | {C: t1, C: t2}    -- Record
-       | int               -- Fixed
-
+Deprecating this in favor of parser.py
 """
 
 import imp

@@ -1,6 +1,37 @@
+"""
+The parser for datashape grammar.
+
+Grammar::
+
+    statement ::= lhs_expression EQUALS rhs_expression
+                | rhs_expression
+
+    lhs_expression ::= lhs_expression SPACE lhs_expression
+                     | NAME
+
+    rhs_expression ::= rhs_expression COMMA rhs_expression
+
+    rhs_expression ::= record
+                     | NAME
+                     | NUMBER
+
+    record ::= LBRACE record_opt RBRACE
+
+    record_opt ::= record_opt COMMA record_opt
+                 | record_item
+                 | empty
+
+    record_item ::= NAME COLON '(' rhs_expression ')'
+                  | NAME COLON NAME
+                  | NAME COLON NUMBER
+
+    empty ::=
+
+"""
+
 import re
 from functools import partial
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 import ply.lex as lex
 import ply.yacc as yacc
@@ -43,7 +74,8 @@ class DatashapeSyntaxError(Exception):
 #------------------------------------------------------------------------
 
 tokens = (
-    'SPACE','NAME','EQUALS', 'COMMA'
+    'SPACE','NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
+    'LBRACE', 'RBRACE'
 )
 
 literals = [
@@ -52,15 +84,17 @@ literals = [
     '(' ,
     ')' ,
     ':' ,
+    '{' ,
+    '}' ,
 ]
 
 t_NAME   = r'[a-zA-Z_][a-zA-Z0-9_]*'
 t_EQUALS = r'='
 t_COMMA  = r','
-
-def t_NEWLINE(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count("\n")
+t_COLON  = r':'
+t_LBRACE = r'\{'
+t_RBRACE = r'\}'
+t_ignore = '\n'
 
 def t_SPACE(t):
     r'\s'
@@ -109,18 +143,54 @@ def p_lhs_expression(p):
     # tuple addition
     p[0] = p[1] + p[3]
 
+def p_lhs_expression_node(p):
+    "lhs_expression : NAME"
+    p[0] = (p[1],)
+
+
 def p_rhs_expression(p):
     'rhs_expression : rhs_expression COMMA rhs_expression'''
     # tuple addition
     p[0] = p[1] + p[3]
 
-def p_lhs_expression_node(p):
-    "lhs_expression : NAME"
+def p_rhs_expression_node1(p):
+    '''rhs_expression : record'''
+    p[0] = p[1]
+
+def p_rhs_expression_node2(p):
+    '''rhs_expression : NAME
+                      | NUMBER'''
     p[0] = (p[1],)
 
-def p_rhs_expression_node(p):
-    "rhs_expression : NAME"
-    p[0] = (p[1],)
+def p_record(p):
+    'record : LBRACE record_opt RBRACE'
+
+    if isinstance(p[2], list):
+        p[0] = p[2]
+    else:
+        p[0] = (p[2],)
+
+def p_record_opt(p):
+    'record_opt : record_opt COMMA record_opt'
+    p[0] = [p[1], p[3]]
+
+def p_record_opt2(p):
+    'record_opt : record_item'
+    p[0] = p[1]
+
+def p_record_opt3(p):
+    'record_opt : empty'
+    pass
+
+def p_record_item1(p):
+    '''record_item : NAME COLON '(' rhs_expression ')'
+                   | NAME COLON NAME
+                   | NAME COLON NUMBER'''
+    p[0] = (p[1], p[3])
+
+def p_empty(t):
+    'empty : '
+    pass
 
 def p_error(p):
     if p:
@@ -185,13 +255,13 @@ preparse = reduce(compose, [
 # Toplevel
 #------------------------------------------------------------------------
 
-def datashape_pprint(ast, level=0):
-    raise NotImplementedError
-
-def datashape_parser(s):
+def datashape_parser(s, debug=False):
     inputs = preparse(s)
     ast = parser.parse(inputs,lexer=lexer)
     return ast
+
+def datashape_pprint(ast, depth=0):
+    raise NotImplementedError
 
 if __name__ == '__main__':
     print datashape_parser('a')
@@ -208,3 +278,47 @@ if __name__ == '__main__':
     print datashape_parser('foo a b = c,   d,   e,   f')
     print datashape_parser('foo b = c,   d,   e,   f')
     print datashape_parser('a b c = d, e')
+    print datashape_parser('a b c = bar, foo')
+    print datashape_parser('800, 600, RGBA')
+    print datashape_parser('Pixel A = A')
+    print datashape_parser('Pixel A = A, B')
+    print datashape_parser('Pixel A = 800, 600, A, A')
+    print datashape_parser('Type A B = 800, 600, A, B')
+    print datashape_parser('Type A B = {}')
+    print datashape_parser('Type A B = {A:B}')
+    print datashape_parser('''
+    Type = {
+        A: B,
+        C: D,
+        E: (A,B),
+    }
+    ''')
+
+    print datashape_parser('''
+    Type a b = {
+        A:B,
+        C:D,
+        E:(A,B),
+    }
+    ''')
+
+    print datashape_parser('''
+    Type = {
+        A:({
+            B: 0,
+            C: 0,
+        })
+    }
+    ''')
+
+    print datashape_parser('''
+    Stock = {
+      name   : string,
+      min    : int64,
+      max    : int64,
+      mid    : int64,
+      volume : float,
+      close  : float,
+      open   : float,
+    }
+    ''')
