@@ -1,5 +1,5 @@
 """
-The parser for datashape grammar.
+The improved parser for Datashape grammar.
 
 Grammar::
 
@@ -147,7 +147,6 @@ def p_lhs_expression_node(p):
     "lhs_expression : NAME"
     p[0] = (p[1],)
 
-
 def p_rhs_expression(p):
     'rhs_expression : rhs_expression COMMA rhs_expression'''
     # tuple addition
@@ -170,7 +169,7 @@ def p_record(p):
     else:
         p[0] = (p[2],)
 
-def p_record_opt(p):
+def p_record_opt1(p):
     'record_opt : record_opt COMMA record_opt'
     p[0] = [p[1], p[3]]
 
@@ -183,8 +182,11 @@ def p_record_opt3(p):
     pass
 
 def p_record_item1(p):
-    '''record_item : NAME COLON '(' rhs_expression ')'
-                   | NAME COLON NAME
+    "record_item : NAME COLON '(' rhs_expression ')' "
+    p[0] = (p[1], p[4])
+
+def p_record_item2(p):
+    '''record_item : NAME COLON NAME
                    | NAME COLON NUMBER'''
     p[0] = (p[1], p[3])
 
