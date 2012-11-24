@@ -28,7 +28,7 @@ syntax_error = """
     {line}
     {pointer}
 
-DatashapeSyntaxError: msg
+DatashapeSyntaxError: {msg}
 """
 
 class DatashapeSyntaxError(Exception):
@@ -212,10 +212,7 @@ class TranslateModule(Translate):
 #------------------------------------------------------------------------
 
 operators = {
-    # Function map
     '->' : '>>',
-    # Pointer operator
-    '*'  : '~' ,
 }
 
 op_table = maketrans(

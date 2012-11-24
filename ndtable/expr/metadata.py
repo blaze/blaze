@@ -1,4 +1,4 @@
-from collections import Mapping
+from collections import Mapping, OrderedDict
 
 # The set of possible facets that are specifiable in the
 # metadata. Most structures will define a subset of these. This
@@ -26,7 +26,7 @@ class metadata(Mapping):
     __slots__ = ['cls', '__internal']
 
     def __init__(self, dct=None):
-        self.__internal = dict()
+        self.__internal = OrderedDict()
 
         if not metadata.cls:
             metadata.cls = frozenset(dir(self))
@@ -57,6 +57,9 @@ class metadata(Mapping):
 
     def __iter__(self):
         return self.__internal.iterkeys()
+
+    def iteritems(self):
+        return self.__internal.items()
 
     def __add__(self, other):
         if not set(self.__internal) & set(other.__internal):
