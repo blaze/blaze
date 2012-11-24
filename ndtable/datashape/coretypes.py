@@ -747,42 +747,6 @@ def table_like(ds):
 def array_like(ds):
     return not table_like(ds)
 
-def expand(ds):
-    """
-    Expand the datashape into a tree like structure of nested
-    structure.
-    """
-    x = ds[0]
-
-    #       o
-    #      /|\
-    #  1 o ... o n
-
-    if isinstance(x, Fixed):
-        y = list(expand(ds[1:]))
-        for a in xrange(0, x.val):
-            yield y
-
-    elif isinstance(x, Enum):
-        y = list(expand(ds[1:]))
-        for a in x.parameters:
-            for b in a:
-                yield y
-
-    #       o
-    #       |
-    #       o
-    #       |
-    #       o
-
-    elif isinstance(x, Record):
-        for a in x.k:
-            yield a
-
-    else:
-        yield x
-
-
 #------------------------------------------------------------------------
 # Printing
 #------------------------------------------------------------------------
