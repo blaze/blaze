@@ -51,15 +51,19 @@ class Array(Indexable):
     """
 
     eclass = MANIFEST
+    _metaheader = [
+        ('MANIFEST' , True),
+    ]
 
     def __init__(self, obj, dshape=None, metadata=None):
 
         self._datashape = dshape
-        self._metadata  = metadata or md.empty()
         self._layout    = None
+        self._metadata  = md.empty(
+            self._metaheader + (metadata or [])
+        )
 
-        # The "value space"
-        self.space      = None
+        self.space = None
 
         if isinstance(obj, Indexable):
             infer_eclass(self._meta)
@@ -91,15 +95,6 @@ class Array(Indexable):
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
-
-    @property
-    def _meta(self):
-        """
-        Intrinsic metadata associated with this class of object
-        """
-        return md({
-            'ECLASS': self.eclass,
-        })
 
     @property
     def metadata(self):
@@ -199,11 +194,16 @@ class NDArray(Indexable, ArrayNode):
     """
 
     eclass = DELAYED
+    _metaheader = [
+        ('MANIFEST' , True),
+    ]
 
     def __init__(self, obj, datashape=None, metadata=None):
 
         self._datashape = datashape
-        self._metadata  = metadata or md.empty()
+        self._metadata  = md.empty(
+            self._metaheader + (metadata or [])
+        )
 
         if isinstance(obj, str):
             # Create an empty array allocated per the datashape string
@@ -226,17 +226,8 @@ class NDArray(Indexable, ArrayNode):
     #------------------------------------------------------------------------
 
     @property
-    def _meta(self):
-        """
-        Intrinsic metadata associated with this class of object
-        """
-        return md({
-            'ECLASS': self.eclass,
-        })
-
-    @property
     def metadata(self):
-        return self._metadata + self._meta
+        return self._meta
 
     @property
     def name(self):
@@ -384,10 +375,15 @@ class NDTable(Indexable, ArrayNode):
     """
 
     eclass = DELAYED
+    _metaheader = [
+        ('DEFERRED' , True),
+    ]
 
     def __init__(self, obj, datashape=None, index=None, metadata=None):
         self._datashape = datashape
-        self._metadata  = metadata or md.empty()
+        self._metadata  = md.empty(
+            self._metaheader + (metadata or [])
+        )
 
         if isinstance(obj, Space):
             self.space = obj
@@ -409,15 +405,6 @@ class NDTable(Indexable, ArrayNode):
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
-
-    @property
-    def _meta(self):
-        """
-        Intrinsic metadata associated with this class of object
-        """
-        return md({
-            'ECLASS': self.eclass,
-        })
 
     @property
     def metadata(self):

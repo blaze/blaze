@@ -191,7 +191,8 @@ class DataShape(object):
             raise TypeError('Cannot non datashape to datashape')
 
     def __repr__(self):
-        return str(self)
+        # emulate numpy
+        return ''.join(["dshape('", str(self), "')"])
 
 class Atom(DataShape):
     """
@@ -730,10 +731,10 @@ def to_numpy(ds):
 
 def from_numpy(shape, dt):
     """
-    Upconvert a datashape object into a Numpy
-    (shape, dtype) tuple if possible.
-    i.e.
-      5,5,in32 -> ( (5,5), dtype('int32') )
+    Upcast a (shape, dtype) tuple if possible.
+
+    >>> from_numpy((5,5), dtype('int32'))
+    dshape('5, 5, int32')
     """
     dimensions = map(Fixed, shape)
     measure = CType.from_dtype(dt)

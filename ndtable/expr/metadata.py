@@ -6,11 +6,10 @@ from collections import Mapping, OrderedDict
 # unification when performing operations.
 
 facets = frozenset([
-    # ------------     # Numpy
     'TABLELIKE',
     'ARRAYLIKE',
-    'ECLASS',          # Evaluation class
-    # ------------     # Numpy
+    'MANIFEST'
+    'DEFERRED'
     'C_CONTIGUOUS',
     'F_CONTIGUOUS',
     'OWNDATA',
@@ -74,5 +73,5 @@ class metadata(Mapping):
         )
 
     @classmethod
-    def empty(cls):
-        return cls(dct={})
+    def empty(cls, header):
+        return cls(dct=dict(header))
