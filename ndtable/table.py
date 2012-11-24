@@ -9,7 +9,7 @@ from regions.scalar import IdentityL
 from slicealgebra import numpy_get
 
 from expr.graph import ArrayNode, injest_iterable
-from metadata import metadata as md
+from expr.metadata import metadata as md
 
 from sources.canonical import CArraySource, ArraySource
 from printer import array2string, table2string, generic_repr

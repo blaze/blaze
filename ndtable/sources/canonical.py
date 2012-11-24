@@ -21,14 +21,14 @@ from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM
 from ndtable.byteprovider import ByteProvider
 
 #------------------------------------------------------------------------
-# "CArray" byte provider
+# Chunked Array
 #------------------------------------------------------------------------
 
-# The canonical backend
-
 class CArraySource(ByteProvider):
-    read_capabilities  = CONTIGUOUS
-    write_capabilities = CONTIGUOUS
+    """ Chunked array is the canonical backend """
+
+    read_capabilities  = CHUNKED
+    write_capabilities = CHUNKED
 
     def __init__(self, ca):
         """ CArray object passed directly into the constructor,
@@ -64,8 +64,8 @@ class ArraySource(ByteProvider):
     Only used for bootstrapping. Will be removed later.
     """
 
-    read_capabilities  = CONTIGUOUS | CHUNKED | STREAM
-    write_capabilities = CONTIGUOUS | CHUNKED | STREAM
+    read_capabilities  = CONTIGUOUS
+    write_capabilities = CONTIGUOUS
 
     def __init__(self, lst):
         self.na = np.array(lst)

@@ -5,7 +5,8 @@ try:
     from ndtable.table import Array, Table, NDArray, NDTable
 except ImportError as e:
     # prevent weird cyclic import errors from passing silently
-    raise RuntimeError("Failed to load, check for cyclic imports.")
+    raise RuntimeError("Failed to load, check for cyclic imports ( %s )"
+        % e.message)
 
 # From numpy compatability, ideally ``import ndtable as np``
 # should be somewhat backwards compatable
