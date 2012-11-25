@@ -1,4 +1,4 @@
-from ndtable.regions.scalar import interval, Chart, vstack,\
+from ndtable.layouts.scalar import interval, Chart, vstack,\
     hstack, dstack
 
 def test_multiple_charts():

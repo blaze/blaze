@@ -5,7 +5,7 @@ from byteprovider import ByteProvider
 from idx import Indexable, AutoIndex, Space, Subspace, Index
 
 from datashape.coretypes import DataShape, Fixed, from_numpy
-from regions.scalar import IdentityL
+from layouts.scalar import IdentityL
 from slicealgebra import numpy_get
 
 from expr.graph import ArrayNode, injest_iterable
