@@ -1,14 +1,20 @@
-from numpy import np
+import numpy as np
 
-def getitem(cc, data, indexer):
+def getitem(cc, indexer, data):
 
+    # Fancy Indexing [...]
     if isinstance(indexer, tuple):
-        if len(indexer) == 2:
-            idx0 = indexer[0]
-            idx1 = indexer[1]
 
-            ix = range(idx0.start, idx0.stop, idx0.step or 1)
-            iy = range(idx1.start, idx1.stop, idx1.step or 1)
+        # Fancy Indexing [(a,b)]
+        if len(indexer) == 2:
+            a = indexer[0]
+            b = indexer[1]
+
+            max1 = data.bounds[0]
+            max2 = data.bounds[1]
+
+            ix = range(a.start or 0, a.stop or max1, a.step or 1)
+            iy = range(a.start or 0, b.stop or max2, b.step or 1)
 
             # TODO: use source.empty() to generalize
             res = np.empty((len(ix), len(iy)))
@@ -18,13 +24,16 @@ def getitem(cc, data, indexer):
                     res[a,b] = data[cc(i,j)]
             return res
 
+        # Fancy Indexing [a]
         elif len(indexer) == 1:
-            return data[cc(*indexer)]
+            return data[cc(indexer)]
+
         else:
             raise NotImplementedError
 
-def setitem(cc, data, indexer, value):
+def setitem(cc, indexer, data, value):
 
+    # [(a,b)]
     if hasattr(indexer, '__iter__'):
         if isinstance(indexer[0], slice):
             if len(indexer) == 2:

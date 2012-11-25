@@ -285,43 +285,40 @@ class Layout(object):
         return Layout(self.partitions, self.ndim)
 
     # TODO: Blocked layout, move outside!
-    def change_coordinates(self, indexer):
-        """
-        Change coordinates into the memory block we're indexing into.
+    #def change_coordinates(self, indexer):
+        #"""
+        #Change coordinates into the memory block we're indexing into.
 
-        """
+        #"""
 
-        # use xrange/len because we are mutating it
-        indexerl = xrange(len(indexer))
+        ## use xrange/len because we are mutating it
+        #indexerl = xrange(len(indexer))
 
-        for i in indexerl:
+        #for i in indexerl:
 
-            idx = indexer[i]
-            space = self.points[i]
-            partitions = self.ppoints[i]
-            size = len(space)
+            #idx = indexer[i]
+            #space = self.points[i]
+            #partitions = self.ppoints[i]
+            #size = len(space)
 
-            # Partition index
-            pdx = bisect_left(partitions, idx)
+            ## Partition index
+            #pdx = bisect_left(partitions, idx)
 
-            # Edge cases
-            if pdx <= 0:
-                chart = space[0]
-            if pdx >= size:
-                chart = space[-1]
-            else:
-                chart = space[pdx]
+            ## Edge cases
+            #if pdx <= 0:
+                #chart = space[0]
+            #if pdx >= size:
+                #chart = space[-1]
+            #else:
+                #chart = space[pdx]
 
-            if chart.transformed:
-                return chart.ref, chart.inverse(indexer)
-            else:
-                continue
+            #if chart.transformed:
+                #return chart.ref, chart.inverse(indexer)
+            #else:
+                #continue
 
-        # Trivially partitioned
-        return self.init.ref, indexer
-
-    # syntatic sugar
-    cc = change_coordinates
+        ## Trivially partitioned
+        #return self.init.ref, indexer
 
     def __getitem__(self, indexer):
         coords = self.change_coordinates(indexer)
