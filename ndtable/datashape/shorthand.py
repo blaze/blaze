@@ -1,7 +1,8 @@
-from .coretypes import pyobj, bool_, int8, int16, int32, int64, \
+from coretypes import pyobj, bool_, int8, int16, int32, int64, \
     uint8, uint16, uint32, uint64, float16, float32,  \
     float64, float128, float_, int_, double, complex64, \
-    complex128, complex128, complex256
+    complex128, complex128, complex256, string, timedelta64, \
+    datetime64
 
 O = pyobj
 b1 = bool_
@@ -28,3 +29,8 @@ d = double
 c8  = complex64
 c16 = complex128
 c32 = complex256
+
+S = string
+
+m8 = timedelta64
+M8 = datetime64

@@ -9,9 +9,8 @@ from operator import add
 from string import maketrans, translate
 from collections import OrderedDict, Iterable
 
-from coretypes import Integer, TypeVar, Record, \
-    Enum, Type, DataShape, Var, Either, Bitfield, \
-    Fixed
+from coretypes import Integer, TypeVar, Record, Enum, Type, DataShape, \
+    Var, Either, Bitfield, Fixed
 
 syntax_error = """
   File {filename}, line {lineno}
@@ -47,9 +46,6 @@ class Visitor(object):
         self.namespace = {}
         self.source = source
 
-    def Unknown(self, tree):
-        raise SyntaxError()
-
     def visit(self, tree):
         if isinstance(tree, Iterable):
             return [self.visit(i) for i in tree]
@@ -60,6 +56,9 @@ class Visitor(object):
                 return trans(tree)
             else:
                 return self.Unknown(tree)
+
+    def Unknown(self, tree):
+        raise self.error_ast(tree)
 
     def error_ast(self, ast_node):
         if self.source:
@@ -73,14 +72,19 @@ class Translate(Visitor):
     Translate PyAST to DataShape types
     """
 
+    # tuple -> DataShape
+    def Tuple(self, tree):
+        def toplevel(elt):
+            if isinstance(elt, ast.Num):
+                return Fixed(elt.n)
+            else:
+                return self.visit(elt)
+        operands = map(toplevel, tree.elts)
+        return DataShape(operands)
+
     def Expression(self, tree):
         operands = self.visit(tree.body),
         return DataShape(operands)
-
-    # list -> Enum
-    def List(self, tree):
-        args = map(self.visit, tree.elts)
-        return Enum(*args)
 
     # int -> Integer
     def Num(self, tree):
@@ -96,14 +100,6 @@ class Translate(Visitor):
         else:
             return TypeVar(tree.id)
 
-    # (f . g) -> Compose
-    def Attribute(self, tree):
-        # Would be a composition operator ( f . g )
-        #a = self.visit(tree.value)
-        #b = tree.attr
-        raise NotImplementedError()
-
-    # function call -> Function
     def Call(self, tree):
         # TODO: don't inline this
         internals = {
@@ -138,31 +134,12 @@ class Translate(Visitor):
             raise NameError(fn.symbol)
 
 
-    # tuple -> DataShape
-    def Tuple(self, tree):
-        def toplevel(elt):
-            if isinstance(elt, ast.Num):
-                return Fixed(elt.n)
-            else:
-                return self.visit(elt)
-        operands = map(toplevel, tree.elts)
-        return DataShape(operands)
-
     def Set(self, tree):
         args = map(self.visit, tree.elts)
         return Enum(*args)
 
     def Index(self, tree):
         return self.visit(tree.value)
-
-    def Subscript(self, tree):
-        raise NotImplementedError()
-
-    def Slice(self, tree):
-        raise NotImplementedError()
-
-    def Lambda(self, tree):
-        raise NotImplementedError()
 
 class TranslateModule(Translate):
 
@@ -180,18 +157,8 @@ class TranslateModule(Translate):
 # Operator Translation
 #------------------------------------------------------------------------
 
-operators = {
-    '->' : '>>',
-}
-
-op_table = maketrans(
-    reduce(add, operators.keys()),
-    reduce(add, operators.values())
-)
-
 def parse(expr):
     expr_translator = Translate(expr)
-    expr = translate(expr, op_table)
     past = ast.parse(expr, '<string>', mode='eval')
     return expr_translator.visit(past)
 

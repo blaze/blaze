@@ -56,6 +56,7 @@ Horizontal Stacking
                      (i,j) -> (i, j)
 """
 
+import math
 from numpy import zeros
 from pprint import pformat
 from collections import defaultdict
@@ -248,11 +249,11 @@ class Layout(object):
         self.partitions = partitions
 
         # The zero partition
-        self.top = None
+        self.init = None
 
         # Build up the partition search, for each dimension
         for a in partitions:
-            self.top = self.top or a
+            self.init = self.init or a
             for i, b in enumerate(a.components):
                 # (+1) because it's the infinum
                 insort_left(self.points[i] , a)
@@ -283,9 +284,11 @@ class Layout(object):
 
         return Layout(self.partitions, self.ndim)
 
+    # TODO: Blocked layout, move outside!
     def change_coordinates(self, indexer):
         """
         Change coordinates into the memory block we're indexing into.
+
         """
 
         # use xrange/len because we are mutating it
@@ -315,7 +318,10 @@ class Layout(object):
                 continue
 
         # Trivially partitioned
-        return self.top.ref, indexer
+        return self.init.ref, indexer
+
+    # syntatic sugar
+    cc = change_coordinates
 
     def __getitem__(self, indexer):
         coords = self.change_coordinates(indexer)
@@ -335,33 +341,171 @@ class Layout(object):
         return out
 
 #------------------------------------------------------------------------
-# Identity Layout
+# Simple Layouts
 #------------------------------------------------------------------------
 
 class IdentityL(Layout):
     """
-    A trivial space partition. Coordinate transform is the identity
-    function.
+    Single block layout. Coordinate transform is just a
+    passthrough. This behaves like NumPy.
     """
 
     def __init__(self, single):
         self.bounds     = []
         self.partitions = []
-        self.top = single
+        self.init = single
         self.points = {}
 
     def change_coordinates(self, indexer):
         """
         Identity coordinate transform
         """
-        return self.top, indexer
+        return self.init, indexer
+
+    @property
+    def desc(self):
+        return 'Identity'
+
+class ChunkL(Layout):
+    """
+    Chunked layout, like CArray.
+    """
+
+    def __init__(self, chunks, leftovers, chunk_dimension):
+        self.bounds     = []
+        self.partitions = []
+
+        self.init = chunks[0]
+        self.lastchunk = chunks[-1]
+        self.leftovers = leftovers
+
+        self.chunk_dimension = chunk_dimension
+        self.points = {}
+
+    def change_coordinates(self, indexer):
+        """
+        Identity coordinate transform
+        """
+        return self.init, indexer
 
     @property
     def desc(self):
         return 'Identity'
 
 #------------------------------------------------------------------------
-# Layout Constructors
+# Fractal Layouts
+#------------------------------------------------------------------------
+
+# Fractal layouts are really really interesting for us because they are
+# data layouts that we could never do with NumPy since it necessarily
+# requires a system for doing more complicated index space transforms.
+
+def rot(n, x, y, rx, ry):
+    if ry == 0:
+        if rx == 1:
+            x = n-1 - x
+            y = n-1 - y
+        x, y = y, x
+    return x,y
+
+def xy2d(order, x, y):
+    n = order / 2
+    d = 0
+    while n > 0:
+        rx = 1 if (x & n) else 0
+        ry = 1 if (y & n) else 0
+        d += n * n * ((3 * rx) ^ ry)
+        x,y = rot(n, x, y, rx, ry)
+        n /= 2
+    return d
+
+class HilbertL(Layout):
+    """
+    Simple Hilbert curve layout. Hilbert curves preserve index locality
+    but are discontinuous.
+
+    Example of a order 4 (H_4) curve over a 2D array::
+
+         0    3    4    5
+         1    2    7    6
+        14   13    8    9
+        15   12   11   10
+
+         +    +---------+
+         |    |         |
+         +----+    +----+
+                   |
+         +----+    +----+
+         |    |         |
+         +    +----+----+
+
+    """
+
+    def __init__(self, init, size):
+        self.bounds     = [size, size]
+        self.partitions = []
+        self.init = init
+        self.points = {}
+        self.order = 2**int(math.ceil(math.log(size, 2)))
+
+    def change_coordinates(self, indexer):
+        assert len(indexer) <= 2, 'Only defined for 2D indexes'
+        x,y = indexer
+        if self.boundscheck:
+            if x >= self.order or y >= self.order:
+                raise IndexError('Outside of bounds')
+        return self.init, xy2d(self.order, x, y)
+
+    @property
+    def desc(self):
+        return 'Hilbert'
+
+#------------------------------------------------------------------------
+# Z-Order
+#------------------------------------------------------------------------
+
+# See http://graphics.stanford.edu/~seander/bithacks.html
+mask1 = 0x0000ffff
+mask2 = 0x55555555
+
+def mask(n):
+    n &= mask1
+    n = (n | (n << 8)) & 0x00FF00FF
+    n = (n | (n << 4)) & 0x0F0F0F0F
+    n = (n | (n << 2)) & 0x33333333
+    n = (n | (n << 1)) & 0x55555555
+    return n
+
+def unmask(n):
+    n &= mask2
+    n = (n ^ (n >> 1)) & 0x33333333
+    n = (n ^ (n >> 2)) & 0x0F0F0F0F
+    n = (n ^ (n >> 4)) & 0x00FF00FF
+    n = (n ^ (n >> 8)) & 0x0000FFFF
+    return n
+
+def encode(x, y):
+    return mask(x) | (mask(y) << 1)
+
+def decode(n):
+    return unmask(n), unmask(n >> 1)
+
+def zorder(x, y):
+   ret = 0
+   for bit in xrange(0, 8):
+       ret |= ( ( ( x & 1 ) << 1 ) | ( y & 1 ) ) << ( bit << 1 )
+       x >>= 1
+       y >>= 1
+   return ret
+
+class ZIndexL(Layout):
+
+    @property
+    def desc(self):
+        return 'Z-Order'
+
+#------------------------------------------------------------------------
+# Block Layout Constructors
 #------------------------------------------------------------------------
 
 # Low-level calls, never used by the end-user.

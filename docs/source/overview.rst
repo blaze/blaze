@@ -47,3 +47,6 @@ via the dynamic data typing mechanism.
 
 .. image:: svg/temporaries.png
     :align: center
+
+.. image:: svg/layout.png
+    :align: center

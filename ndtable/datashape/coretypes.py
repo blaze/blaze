@@ -646,36 +646,36 @@ complex64  = CType('complex' , 64)
 complex128 = CType('complex', 128)
 complex256 = CType('complex', 256)
 
+timedelta64 = CType('timedelta', 64)
+datetime64 = CType('datetime', 64)
+
 ulonglong  = CType('ulonglong')
 longdouble = float128
 
-void       = CType('void')
-pyobj      = CType('object')
+void = CType('void')
+pyobj = CType('object')
 
-# TODO: differentiate between fixed-length and variable-length
-# strings once we figure out how to implement this!
-string     = CType('string')
-
-Stream = Var(Integer(0), None)
+string = CType('string')
 
 na = Null
 top = Top()
 dynamic = Dynamic()
 NullRecord = Record()
 
+Stream = Var(Integer(0), None)
+
 Type.register('NA', Null)
 Type.register('Stream', Stream)
 Type.register('?', Dynamic)
 
 # Top should not be user facing... but for debugging usefull.
-# Type.register('?', Dynamic)
+# Type.register('top', top)
 
 #------------------------------------------------------------------------
 # Numpy Compatability
 #------------------------------------------------------------------------
 
-
-# TODO: numpy structured arrays
+# TODO: numpy structured arrays!
 def to_numpy(ds):
     """
     Downcast a datashape object into a Numpy (shape, dtype) tuple if

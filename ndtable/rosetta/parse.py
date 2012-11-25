@@ -1,16 +1,15 @@
 """
-Rosetta stones are a declarative way of building translation tables
-between multiple Python namespaces. They can be used to map the
-constructs of one numeric Python project to another project.
+Rosetta modules are a translation tables between multiple Python
+namespaces. They can be used to map the constructs of one numeric Python
+project to another project.
 
-This could be used in Blaze to "glue" together different PyData
-projects and make them understand each other's type systems and
-interoperate at the ByteProvider level.
+The goal is "glue" together different PyData projects and make them
+understand each other's type systems and interoperate at the type level
+easing the writing of compatibility layers between them.
 """
 
 import ast
-from string import translate
-from ndtable.datashape.parse import Translate, Visitor, op_table
+from ndtable.datashape.parse import Translate, Visitor
 
 expr_translator = Translate()
 
@@ -49,19 +48,19 @@ class Mapping(object):
 
     def bound(self):
         """
-        Variables that appear in the domain and the codomain.
+        Variables that appear in the domain and the image.
         """
         return set(self.cod.free_vars()) & set(self.dom.free_vars())
 
     def globals(self):
         """
-        Variables that appear in the codomain but not domain.
+        Variables that appear in the image but not domain.
         """
         return set(self.cod.free_vars()) - set(self.dom.free_vars())
 
     def phantom(self):
         """
-        Variables that appear in the domain but not the codomain.
+        Variables that appear in the domain but not the image.
         """
         return set(self.dom.free_vars()) - set(self.cod.free_vars())
 
@@ -102,6 +101,5 @@ class Rosetta(Visitor):
             right = expr_translator.visit(tree.comparators[0])
             return Mapping(left, right)
 
-def parse(expr_string):
-    expr = translate(expr_string, op_table)
+def parse(expr):
     return ast.parse(expr)

@@ -1,12 +1,12 @@
 """
-A generalization of Numpy strides.
+A generalization of NumPy strides.
 
 The "algebra" of slices maps indexer objects down into memory objects.
 Since the Blaze model is based on recursive structuring of data regions
 this may involve several levels of calls to get to "the bottom turtle".
 
 The top is ostensibly a "toy" implementation of the core methods of
-Numpy in pure Python to ensure that our generalization contains Numpy's
+NumPy in pure Python to ensure that our generalization contains NumPy's
 linear formula-based index.
 """
 
