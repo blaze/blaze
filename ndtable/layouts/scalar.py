@@ -237,14 +237,55 @@ class Layout(object):
     wraparound = True
     # Allow negative indexing
 
+    @property
+    def desc(self):
+        return 'Partitioned(n=%i)' % len(self.points)
+
+    def __repr__(self):
+        out = 'Layout:\n'
+        for p in self.partitions:
+            out += '%r -> %i\n' % (p, id(p.ref))
+
+        out += '\nPartitions:\n'
+        out += pformat(dict(self.points))
+        return out
+
+#------------------------------------------------------------------------
+# Simple Layouts
+#------------------------------------------------------------------------
+
+class IdentityL(Layout):
+    """
+    Single block layout. Coordinate transform is just a
+    passthrough. This behaves like NumPy.
+    """
+
+    def __init__(self, single):
+        self.bounds     = []
+        self.partitions = []
+        self.init = single
+        self.points = {}
+
+    def change_coordinates(self, indexer):
+        """
+        Identity coordinate transform
+        """
+        return self.init, indexer
+
+    @property
+    def desc(self):
+        return 'Identity'
+
+class BlockL(Layout):
+
     def __init__(self, partitions, ndim):
         # The numeric (x,y,z) coordinates of ith partition point
-        self.ppoints    = defaultdict(list)
+        self.ppoints = defaultdict(list)
         # The partition associated with the ith partition point
-        self.points     = defaultdict(list)
+        self.points = defaultdict(list)
 
-        self.bounds     = []
-        self.ndim       = ndim
+        self.bounds = []
+        self.ndim   = ndim
 
         self.partitions = partitions
 
@@ -284,84 +325,43 @@ class Layout(object):
 
         return Layout(self.partitions, self.ndim)
 
-    # TODO: Blocked layout, move outside!
-    #def change_coordinates(self, indexer):
-        #"""
-        #Change coordinates into the memory block we're indexing into.
+    #TODO: Blocked layout, move outside!
+    def change_coordinates(self, indexer):
+        """
+        Change coordinates into the memory block we're indexing into.
+        """
+        # use xrange/len because we are mutating it
+        indexerl = xrange(len(indexer))
 
-        #"""
+        for i in indexerl:
 
-        ## use xrange/len because we are mutating it
-        #indexerl = xrange(len(indexer))
+            idx = indexer[i]
+            space = self.points[i]
+            partitions = self.ppoints[i]
+            size = len(space)
 
-        #for i in indexerl:
+            # Partition index
+            pdx = bisect_left(partitions, idx)
 
-            #idx = indexer[i]
-            #space = self.points[i]
-            #partitions = self.ppoints[i]
-            #size = len(space)
+            # Edge cases
+            if pdx <= 0:
+                chart = space[0]
+            if pdx >= size:
+                chart = space[-1]
+            else:
+                chart = space[pdx]
 
-            ## Partition index
-            #pdx = bisect_left(partitions, idx)
+            if chart.transformed:
+                return chart.ref, chart.inverse(indexer)
+            else:
+                continue
 
-            ## Edge cases
-            #if pdx <= 0:
-                #chart = space[0]
-            #if pdx >= size:
-                #chart = space[-1]
-            #else:
-                #chart = space[pdx]
-
-            #if chart.transformed:
-                #return chart.ref, chart.inverse(indexer)
-            #else:
-                #continue
-
-        ## Trivially partitioned
-        #return self.init.ref, indexer
+        # Trivially partitioned
+        return self.init.ref, indexer
 
     def __getitem__(self, indexer):
         coords = self.change_coordinates(indexer)
         return coords
-
-    @property
-    def desc(self):
-        return 'Partitioned(n=%i)' % len(self.points)
-
-    def __repr__(self):
-        out = 'Layout:\n'
-        for p in self.partitions:
-            out += '%r -> %i\n' % (p, id(p.ref))
-
-        out += '\nPartitions:\n'
-        out += pformat(dict(self.points))
-        return out
-
-#------------------------------------------------------------------------
-# Simple Layouts
-#------------------------------------------------------------------------
-
-class IdentityL(Layout):
-    """
-    Single block layout. Coordinate transform is just a
-    passthrough. This behaves like NumPy.
-    """
-
-    def __init__(self, single):
-        self.bounds     = []
-        self.partitions = []
-        self.init = single
-        self.points = {}
-
-    def change_coordinates(self, indexer):
-        """
-        Identity coordinate transform
-        """
-        return self.init, indexer
-
-    @property
-    def desc(self):
-        return 'Identity'
 
 class ChunkL(Layout):
     """
@@ -527,7 +527,7 @@ def nstack(n, a, b):
     bT = b.transform(T, Tinv)
     assert bT.tinv
 
-    return Layout([a, bT], ndim)
+    return BlockL([a, bT], ndim)
 
 def vstack(a, b):
     return nstack(0, a, b)
