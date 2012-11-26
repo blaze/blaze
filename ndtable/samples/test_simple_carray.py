@@ -37,13 +37,13 @@ def test_getitem():
         ## Simple write, forces the manifest bytes
         #nd[i] = i
 
-## Case 2
-#def test_getslice():
-    #nd = arr()
+# Case 2
+def test_getslice():
+    nd = arr()
 
-    #for i in xrange(3):
-        ## Simple read slice
-        #nd[0:i] = i
+    for i in xrange(3):
+        # Simple read slice
+        nd[0:i] = i
 
 ## Case 3
 #def test_setslice():

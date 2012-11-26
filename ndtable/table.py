@@ -95,6 +95,20 @@ class Array(Indexable):
                 # dimension
                 self._layout = ChunkedL(data, cdimension=0)
 
+    @staticmethod
+    def _from_providers(*providers):
+        """
+        Internal method to create a NDArray from a 1D list of byte
+        providers. Tries to infer the simplest layout of how the
+        providers fit together.
+        """
+        subspaces = [Subspace(provider) for provider in providers]
+        space = Space(*subspaces)
+
+        # TODO: more robust
+        shape = providers[0].infer_datashape(providers[0])
+        return Array(space, dshape=shape)
+
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
@@ -168,9 +182,9 @@ class NDArray(Indexable, ArrayNode):
         ('ARRAYLIKE', True),
     ]
 
-    def __init__(self, obj, datashape=None, metadata=None):
+    def __init__(self, obj, dshape=None, metadata=None, layout=None):
 
-        self._datashape = datashape
+        self._datashape = dshape
         self._metadata  = md.empty(
             self._metaheader + (metadata or [])
         )
@@ -184,12 +198,40 @@ class NDArray(Indexable, ArrayNode):
             self.space = obj
             self.children = list(self.space.subspaces)
 
+        if isinstance(obj, Indexable):
+            infer_eclass(self._meta)
+
         else:
             # When no preference in backend specified, fall back on
             # Numpy and the trivial layout ( one buffer, dot product
             # stride formula )
+
+            # Graph Nodes as input
+            # ====================
             self.children = injest_iterable(obj, force_homog=True)
             self.space = Space(self.children)
+
+            if not dshape:
+                # The user just passed in a raw data source, try
+                # and infer how it should be layed out or fail
+                # back on dynamic types.
+                self._datashape = CArraySource.infer_datashape(obj)
+            else:
+                # The user overlayed their custom dshape on this
+                # data, check if it makes sense
+                self._datashape = CArraySource.check_datashape(obj,
+                    given_dshape=dshape)
+
+            # Raw Data as input
+            # ====================
+
+            #data = CArraySource(obj)
+            #self.space = Space(data)
+
+            #if not layout:
+                ## CArrays are always chunked on the first
+                ## dimension
+                #self._layout = ChunkedL(data, cdimension=0)
 
     def __str__(self):
         raise NotImplementedError
@@ -245,7 +287,7 @@ class NDArray(Indexable, ArrayNode):
 
         # TODO: more robust
         shape = providers[0].infer_datashape(providers[0])
-        return NDArray(space, datashape=shape)
+        return NDArray(space, dshape=shape)
 
 
 #------------------------------------------------------------------------
