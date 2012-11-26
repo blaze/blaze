@@ -3,7 +3,7 @@
 # Simple use case for connecting CArray API and Blaze
 # Byte Providers.
 
-from ndtable.table import Array
+from ndtable import Array, dshape
 
 #------------------------------------------------------------------------
 # Case
@@ -12,7 +12,7 @@ from ndtable.table import Array
 # We use the Array object which is immediete in all operations.
 
 def arr():
-    return Array([1,2,3], dshape='3, int32')
+    return Array([1,2,3], '3, int32')
 
 #------------------------------------------------------------------------
 # Tests
@@ -38,12 +38,12 @@ def test_getitem():
         #nd[i] = i
 
 # Case 2
-def test_getslice():
-    nd = arr()
+#def test_getslice():
+    #nd = arr()
 
-    for i in xrange(3):
-        # Simple read slice
-        nd[0:i] = i
+    #for i in xrange(3):
+        ## Simple read slice
+        #nd[0:i] = i
 
 ## Case 3
 #def test_setslice():

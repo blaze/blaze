@@ -10,7 +10,7 @@ import socket
 from ndtable import carray
 
 from ndtable.datashape import Fixed, dynamic, string, pyobj
-from ndtable.datashape.coretypes import from_numpy
+from ndtable.datashape.coretypes import from_numpy, to_numpy
 from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from ndtable.byteprovider import ByteProvider
 
@@ -31,10 +31,15 @@ class CArraySource(ByteProvider):
         ostensibly this is just a thin wrapper that consumes a
         reference.
         """
-        self.ca = carray.carray(ca)
+
+        if isinstance(ca, carray.carray):
+            self.ca = ca
+        else:
+            self.ca = carray.carray(ca)
 
     @property
     def nchunks(self):
+        """ Number of chunks """
         return self.ca.nchunks
 
     @property

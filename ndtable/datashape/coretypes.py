@@ -81,19 +81,13 @@ class Integer(Primitive):
     def __str__(self):
         return str(self.val)
 
-class Dynamic(object):
+class Dynamic(Primitive):
     """
     The dynamic type allows an explicit upcast and downcast from any
     type to ``?``. This is normally not allowed in most static type
     systems.
     """
     __metaclass__ = Type
-
-    def up(self, ty):
-        pass
-
-    def down(self, ty):
-        pass
 
     def __str__(self):
         return '?'
@@ -106,17 +100,8 @@ class Dynamic(object):
 # much *not* a hierarchy nor does it form a lattice, but this is
 # the entrenched term so we use it.
 
-class Top(object):
+class Top(Primitive):
     __metaclass__ = Type
-
-    def up(self, ty):
-        raise Exception("Not defined")
-
-    def down(self, ty):
-        if not ty.composite:
-            return ty
-        else:
-            raise Exception("Not defined")
 
     def __str__(self):
         return 'top'

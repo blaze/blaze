@@ -4,7 +4,8 @@ from operator import eq
 from byteprovider import ByteProvider
 from idx import Indexable, Space, Subspace, Index
 
-from datashape.coretypes import DataShape, Fixed
+from datashape import DataShape, Fixed, dshape as _dshape
+
 from layouts.scalar import ChunkedL
 from layouts.query import retrieve
 from slicealgebra import numpy_get
@@ -64,6 +65,14 @@ class Array(Indexable):
         )
 
         self.space = None
+
+        if isinstance(dshape, str):
+            # run it through the parser
+            dshape = _dshape(dshape)
+
+        # Don't explictly check the dshape since we want to allow the
+        # user to pass in anything that conforms to the dshape protocol
+        # instead of requiring them to subclass.
 
         # TODO: more robust
         if isinstance(obj, Indexable):
