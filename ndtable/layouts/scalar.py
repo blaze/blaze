@@ -2,58 +2,6 @@
 Scalar layout methods for glueing together array-like structures.
 They let us construct "views" out of multiple structures.
 
-If we build a structure ( A U B ) as some union of two blocks of data,
-then we need only a invertible linear transformation which is able to
-map coordinates between the blocks as we drill down into
-subblocks::
-
-    f : (i,j) -> (i', j')
-    g : (i',j') -> (i, j)
-    f . g = id
-
-Vertical Stacking
-=================
-
-::
-
-      Block 1            Block 2
-
-      1 2 3 4            1 2 3 4
-    0 - - - -  vstack  0 * * * *
-    1 - - - -          1 * * * *
-
-              \     /
-
-               1 2 3 4
-             0 - - - - + --- Transform =
-             1 - - - -       (i,j) -> (i, j)
-             2 * * * * + --- Transform =
-             3 * * * *       (i,j) -> (i-2, j)
-
-
-Horizontal Stacking
-===================
-
-::
-      Block 1            Block 2
-
-      1 2 3 4            1 2 3 4
-    0 - - - -  hstack  0 * * * *
-    1 - - - -          1 * * * *
-
-              \     /
-
-               1 2 3 4
-             0 - - * *
-             1 - - * *
-             2 - - * *
-             3 - - * *
-               |   |
-               |   |
-               |   + Transform =
-               |     (i,j) -> (i-2, j)
-               + --- Transform =
-                     (i,j) -> (i, j)
 """
 
 import math
@@ -272,7 +220,7 @@ class IdentityL(Layout):
     def desc(self):
         return 'Identity'
 
-class BlockL(Layout):
+class MultichunkL(Layout):
 
     def __init__(self, partitions, ndim):
         # The numeric (x,y,z) coordinates of ith partition point
@@ -496,7 +444,6 @@ class ZIndexL(Layout):
 # Block Layout Constructors
 #------------------------------------------------------------------------
 
-# Low-level calls, never used by the end-user.
 def nstack(n, a, b):
 
     adim = len(a.components)
@@ -518,7 +465,7 @@ def nstack(n, a, b):
     bT = b.transform(T, Tinv)
     assert bT.tinv
 
-    return BlockL([a, bT], ndim)
+    return MultichunkL([a, bT], ndim)
 
 def vstack(a, b):
     return nstack(0, a, b)
