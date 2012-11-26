@@ -65,6 +65,7 @@ class Array(Indexable):
 
         self.space = None
 
+        # TODO: more robust
         if isinstance(obj, Indexable):
             infer_eclass(self._meta)
 
@@ -84,8 +85,10 @@ class Array(Indexable):
             else:
                 # The user overlayed their custom dshape on this
                 # data, check if it makes sense
-                self._datashape = CArraySource.check_datashape(obj,
-                    given_dshape=dshape)
+                if CArraySource.check_datashape(obj, given_dshape=dshape):
+                    self._datashape = dshape
+                else:
+                    raise ValueError("Datashape is inconsistent with source")
 
             data = CArraySource(obj)
             self.space = Space(data)
