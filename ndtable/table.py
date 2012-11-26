@@ -6,6 +6,7 @@ from idx import Indexable, Space, Subspace, Index
 
 from datashape.coretypes import DataShape, Fixed
 from layouts.scalar import ChunkedL
+from layouts.query import retrieve
 from slicealgebra import numpy_get
 
 from expr.graph import ArrayNode, injest_iterable
@@ -126,37 +127,8 @@ class Array(Indexable):
 
     # Immediete slicing
     def __getitem__(self, indexer):
-        # ---------------
-        # First Transform
-        # ---------------
-
-        # Pass the indexer object through the coordinate
-        # transformations of the layout backend.
-
-        # This returns the ByteProvider block to be operated on and the
-        # coordinates with respect to the block.
-
-        # ===================================
-        #block, coords = self._layout[indexer]
-        # ===================================
-
-        # ----------------
-        # Second Transform
-        # ----------------
-
-        # Infer the slicealgebra system we need to use to dig
-        # into the block in question. I.e. for Numpy this is the
-        # general dot product
-
-        #plan = block.ca[indexer]
-
-        # ----------------
-        # Third Transform
-        # ----------------
-        # Aggregate the data from the Data Descriptors and pass
-        # them into a new Array object built around the result.
-        # Infer the new coordinates of this resulting block.
-        pass
+        cc = self._layout.change_coordinates
+        return retrieve(cc, indexer, None)
 
     # Immediete slicing ( Side-effectful )
     def __setitem__(self, indexer, value):
@@ -354,7 +326,7 @@ class NDTable(Indexable, ArrayNode):
         )
 
         if isinstance(obj, Space):
-            self.space = obj
+            self._space = obj
             self.children = set(self.space.subspaces)
         else:
             self.children = injest_iterable(obj)
@@ -395,69 +367,17 @@ class NDTable(Indexable, ArrayNode):
     # Construction
     #------------------------------------------------------------------------
 
+
     @staticmethod
-    def from_providers(shape, *providers):
+    def _from_providers(*providers):
         """
-        Internal method to create a NDTable from a 1D list of
-        byte providers. Tries to infer how the providers must be
-        arranged in order to fit into the provided shape.
+        Injest providers and cast them into columns.
         """
-        subspaces = []
-        indexes   = []
-
-        ntype    = shape[-1]
-        outerdim = shape[0]
-        innerdim = shape[1]
-
-        provided_dim = cast_arguments(providers)
-
-        # The number of providers must be compatable ( not neccessarily
-        # equal ) with the number of given providers.
-
-        # Look at the information for the provider, see if we can
-        # infer whether the given list of providers is regular
-        #shapes = [p.calculate(ntype) for p in providers]
-
-        # For example, the following sources would be regular
-
-        #   A B C         A B C
-        # 1 - - -   +  1  - - -
-        #              2  - - -
-
-        # TODO: there are other ways this could be true as well,
-        # need more sophisticated checker
-        regular = reduce(eq, shapes)
-        covers = True
-
-        # Indicate whether or not the union of the subspaces covers the
-        # inner dimension.
-        #uni = reduce(union, shapes)
-
-        # Does it cover the space?
-
-        for i, provider in enumerate(providers):
-            # Make sure we don't go over the outer dimension
-
-            # (+1) because we don't usually consider 0 dimension
-            # as 1
-            assert (i+1) < outerdim
-
-            subspace = Subspace(provider)
-
-            # Can we embed the substructure inside of the of the inner
-            # dimension?
-            subspaces += [subspace]
-
+        subspaces = [Subspace(provider) for provider in providers]
         space = Space(*subspaces)
-        space.annotate(regular, covers)
 
-        # Build the index for the space
-        index = AutoIndex(shape, space)
-
-        # this is perhaps IO side-effectful
-        index.build()
-
-        return NDTable(space, datashape=shape, index=index)
+        shape = providers[0].infer_datashape(providers[0])
+        return NDTable(space, datashape=shape)
 
     def __repr__(self):
         return generic_repr('NDTable', self, deferred=True)

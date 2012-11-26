@@ -22,7 +22,9 @@ def retrieve(cc, indexer, data):
 
     """
 
-    if isinstance(indexer, tuple):
+    if isinstance(indexer, int):
+        return getitem(cc, indexer, data)
+    elif isinstance(indexer, tuple):
         if len(indexer) == 1:
             return getitem(cc, indexer, data)
         elif len(indexer) == 2:
@@ -53,7 +55,12 @@ def getslice(cc, indexer, data):
     return res
 
 def getitem(cc, indexer, data):
-    datum = data[cc(indexer)]
+    # local coordinates
+    elt, lc = cc(indexer)
+
+    # Read from the generic interface in terms of the local
+    # coordinates.
+    datum = elt.read(elt, lc)
     res = np.array(datum)
     return res
 

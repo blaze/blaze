@@ -25,10 +25,9 @@ def arr():
 # Case 0
 def test_getitem():
     nd = arr()
-
-    for i in xrange(3):
-        # Simple read, forces the manifest bytes
-        nd[i]
+    assert nd[0] == 1
+    assert nd[1] == 2
+    assert nd[2] == 3
 
 ## Case 1
 #def test_setitem():

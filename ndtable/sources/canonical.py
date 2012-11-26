@@ -11,7 +11,7 @@ from ndtable import carray
 
 from ndtable.datashape import Fixed, dynamic, string, pyobj
 from ndtable.datashape.coretypes import from_numpy
-from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM
+from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from ndtable.byteprovider import ByteProvider
 
 #------------------------------------------------------------------------
@@ -24,6 +24,7 @@ class CArraySource(ByteProvider):
 
     read_capabilities  = CHUNKED
     write_capabilities = CHUNKED
+    access_capabilities = ACCESS_ALLOC
 
     def __init__(self, ca):
         """ CArray object passed directly into the constructor,
@@ -82,9 +83,12 @@ class CArraySource(ByteProvider):
         shape, dtype = from_numpy(dshape)
         return CArraySource(carray([], dtype))
 
-    def read(self, offset, nbytes):
-        """ The future read interface for the CArray.  """
-        raise NotImplementedError
+    def read(self, elt, key):
+        """ CArray extension supports reading directly from high-level
+        coordinates """
+        # disregards elt since this logic is implemented lower
+        # level in the Cython extension _getrange
+        return self.ca.__getitem__(key)
 
     def __repr__(self):
         return 'CArray(ptr=%r)' % id(self.ca)

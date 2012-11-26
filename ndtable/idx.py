@@ -203,12 +203,6 @@ class AutoIndex(Index):
         self.space = space
         self.mapping = dict(enumerate(space.subspaces))
 
-    def build(self):
-        space = self.space
-
-    def __index__(self):
-        pass
-
     @property
     def start(self):
         return self.mapping[0]
