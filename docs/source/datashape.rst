@@ -122,20 +122,23 @@ Datashape types that are comprised of unbound free variables are called
     A, B, int32
 
 A type constructor is higher type that produces new named types from
-arguments given. Example::
+arguments given. Example
 
-    # alias
-    SquareIntMatrix = N, N, int32
-
-    # parameterized
-    SquareMatrix T = N, N, T
 
 Datashape types with free parameters in their constructor are called
 **parameterized** types.
 
+::
+
+    SquareIntMatrix = N, N, int32
+
 Datashape types wihtout free parameters in their constructor are called
 **alias** types. They don't add any additional structure they just
 provide a new name.
+
+::
+
+    SquareMatrix T = N, N, T
 
 The ``int`` and ``float`` types are automatically aliased to the either
 ``int32`` or ``int64`` types depending on the platform.
