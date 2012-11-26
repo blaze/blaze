@@ -1,13 +1,10 @@
 """
 Django style class declarations mapping onto Record datashape
 types.
-
-Also provides a mapping between HDF5 in terms of Blaze subset
-that lets PyTables and Blaze interoperate.
 """
 
 from numpy import dtype
-from coretypes import Record, Type, DataShape, Atom, to_numpy
+from coretypes import Record, Type, DataShape, to_numpy
 
 class DeclMeta(type):
     def __new__(meta, name, bases, namespace):

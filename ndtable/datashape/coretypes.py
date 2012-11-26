@@ -140,18 +140,6 @@ class DataShape(object):
             self.name = name
             self.__metaclass__._registry[name] = self
 
-    def size(self):
-        """
-        In NumPy, size would be a integer value. In Blaze the
-        size is now a symbolic object
-
-        A Numpy array of size (2,3) has size
-            np.prod([2,3]) = 6
-        A NDTable of datashape (a,b,2,3,int32) has size
-            6*a*b
-        """
-        pass
-
     def __getitem__(self, index):
         return self.operands[index]
 
@@ -173,6 +161,7 @@ class DataShape(object):
             return ' '.join(map(str, self.operands))
 
     def _equal(self, other):
+        """ Structural equality """
         return all(a==b for a,b in zip(self, other))
 
     def __eq__(self, other):
