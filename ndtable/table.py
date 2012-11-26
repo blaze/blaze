@@ -32,21 +32,21 @@ class Array(Indexable):
 
     Parameters:
 
-        obj       : A list of byte providers, other NDTables or
-                    a Python object.
+        :obj: A list of byte providers, other NDTables or a Python object.
 
     Optional:
 
-        datashape : Manual datashape specification for the table,
+        :datashape: Manual datashape specification for the table,
                     if None then shape will be inferred if
                     possible.
 
-        metadata  : Explicit metadata annotation.
+        :metadata: Explicit metadata annotation.
 
-    Example:
+    Usage:
 
         >>> Array([1,2,3])
         >>> Array([1,2,3], dshape='3, int32')
+        >>> Array([1,2,3], dshape('3, 3, int32'))
 
     """
 
