@@ -16,8 +16,8 @@ The core of Blaze is a generic N-dimensional array/table object with
 a very general “data type” and “data shape” to a robust type
 system for all kinds of data; especially semi-structured, sparse, and
 columnar data. Blaze’s generalized calculation engine can iterate
-over the distributed array or table and dispatch to low-level kernels,
-selected via the dynamic data typing mechanism.
+over the distributed array or table and dispatch to low-level kernels
+specialized for the layout and type of the data.
 
 Overview
 ~~~~~~~~

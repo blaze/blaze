@@ -3,6 +3,8 @@
 all: build
 
 build:
+	# TODO: hack
+	cython ndtable/carray/carrayExtension.pyx
 	python setup.py build_ext --inplace
 
 docs:

@@ -31,6 +31,18 @@ class CArraySource(ByteProvider):
         """
         self.ca = carray.carray(ca)
 
+    @property
+    def nchunks(self):
+        return self.ca.nchunks
+
+    @property
+    def partitions(self):
+        """
+        Return the partitions of elemenets in the array. The data
+        bounds of each chunk.
+        """
+        return self.ca.partitions
+
     @classmethod
     def infer_datashape(self, source):
         """

@@ -768,7 +768,8 @@ cdef public class carray [type carraytype, object carray]:
 
     """
 
-    cdef int itemsize, atomsize, _chunksize, _chunklen, leftover
+    cdef int itemsize, atomsize
+    cdef int _chunksize, _chunklen, leftover
     cdef int nrowsinbuf, _row
     cdef int sss_mode, wheretrue_mode, where_mode
     cdef npy_intp startb, stopb
@@ -795,7 +796,20 @@ cdef public class carray [type carraytype, object carray]:
 
     property leftovers:
         def __get__(self):
+            # Pointer to the leftovers chunk
             return self.lastchunkarr.ctypes.data
+
+    property nchunks:
+        def __get__(self):
+            return cython.cdiv(self._nbytes, <npy_intp>self._chunksize)
+
+    property partitions:
+        def __get__(self):
+            # Return a sequence of tuples indicating the bounds
+            # of each of the chunks.
+            nchunks = cython.cdiv(self._nbytes, <npy_intp>self._chunksize)
+            chunklen = cython.cdiv(self._chunksize, self.atomsize)
+            return [(i*chunklen,(i+1)*chunklen) for i in xrange(nchunks)]
 
     # -- End Stephen Hacks --
 

@@ -364,15 +364,10 @@ class ChunkedL(Layout):
     Chunked layout, like CArray.
     """
 
-    def __init__(self, chunks, leftovers, chunk_dimension):
-        self.bounds     = []
-        self.partitions = []
-
-        self.init = chunks[0]
-        self.lastchunk = chunks[-1]
-        self.leftovers = leftovers
-
-        self.chunk_dimension = chunk_dimension
+    def __init__(self, init, cdimension):
+        self.init = init
+        self.partitions = init.partitions
+        self.chunk_dimension = cdimension
         self.points = {}
 
     def change_coordinates(self, indexer):

@@ -102,7 +102,7 @@ class attrs(object):
                 "Cannot remove an attribute when in 'r'ead-only mode")
         del self.attrs[name]
         self._update_meta()
-    
+
     def __iter__(self):
         return self.attrs.iteritems()
 
@@ -114,7 +114,7 @@ class attrs(object):
             return "*no attrs*"
         fullrepr = ""
         for name in self.attrs:
-            fullrepr += "%s : %s" % (name, self.attrs[name]) 
+            fullrepr += "%s : %s" % (name, self.attrs[name])
         return fullrepr
 
     def __repr__(self):
@@ -122,5 +122,5 @@ class attrs(object):
             return str(self)
         fullrepr = ""
         for name in self.attrs:
-            fullrepr += "%s : %r\n" % (name, self.attrs[name]) 
+            fullrepr += "%s : %r\n" % (name, self.attrs[name])
         return fullrepr

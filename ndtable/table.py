@@ -77,11 +77,12 @@ class Array(Indexable):
         else:
             if not dshape:
                 # The user just passed in a raw data source, try
-                # and infer how it should be layed out
+                # and infer how it should be layed out or fail
+                # back on dynamic types.
                 self._datashape = CArraySource.infer_datashape(obj)
             else:
                 # The user overlayed their custom dshape on this
-                # data, does it make sense?
+                # data, check if it makes sense
                 self._datashape = CArraySource.check_datashape(obj,
                     given_dshape=dshape)
 
@@ -89,13 +90,9 @@ class Array(Indexable):
             self.space = Space(data)
 
             if not layout:
-                self._layout = ChunkedL(data)
-
-            # -- The Future --
-            # The general case, we'll get there eventually...
-            # for now just assume that we're passing in a
-            # Python list that we wrap around CArray.
-            #self.children = injest_iterable(obj, force_homog=True)
+                # CArrays are always chunked on the first
+                # dimension
+                self._layout = ChunkedL(data, cdimension=0)
 
     #------------------------------------------------------------------------
     # Properties
