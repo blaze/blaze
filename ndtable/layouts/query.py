@@ -4,7 +4,7 @@ import numpy as np
 # Manifest Data Retrieval
 #------------------------------------------------------------------------
 
-def retrieve(cc, indexer, data):
+def retrieve(cc, indexer):
     """
     Top dispatcher for data retrieval performs the checks to
     determine what the user passed in to the brackets as an
@@ -23,20 +23,20 @@ def retrieve(cc, indexer, data):
     """
 
     if isinstance(indexer, int):
-        return getitem(cc, indexer, data)
+        return getitem(cc, indexer)
     elif isinstance(indexer, tuple):
         if len(indexer) == 1:
-            return getitem(cc, indexer, data)
+            return getitem(cc, indexer)
         elif len(indexer) == 2:
-            return getslice(cc, indexer, data)
+            return getslice(cc, indexer)
         else:
             raise NotImplementedError
     elif isinstance(indexer, tuple):
-        return getlabel(cc, indexer, data)
+        return getlabel(cc, indexer)
     else:
         raise NotImplementedError
 
-def getslice(cc, indexer, data):
+def getslice(cc, indexer):
     a = indexer[0]
     b = indexer[1]
 
@@ -51,10 +51,11 @@ def getslice(cc, indexer, data):
 
     for a, i in enumerate(ix):
         for b, j in enumerate(iy):
-            res[a,b] = data[cc(i,j)]
+            elt, lc = cc(indexer)
+            res[a,b] = elt[cc(i,j)]
     return res
 
-def getitem(cc, indexer, data):
+def getitem(cc, indexer):
     # local coordinates
     elt, lc = cc(indexer)
 
@@ -64,48 +65,15 @@ def getitem(cc, indexer, data):
     res = np.array(datum)
     return res
 
-def getlabel(cc, indexer, data):
+def getlabel(cc, indexer):
     pass
 
 #------------------------------------------------------------------------
 # Manifest Data Write
 #------------------------------------------------------------------------
 
-def write(cc, indexer, data, value):
-
-    # [(a,b)]
-    if hasattr(indexer, '__iter__'):
-        if isinstance(indexer[0], slice):
-            if len(indexer) == 2:
-                idx0 = indexer[0]
-                idx1 = indexer[1]
-
-                max1 = data.bounds1
-                max2 = data.bounds1
-
-                ix = range(idx0.start or 0, idx0.stop or max1, idx0.step or 1)
-                iy = range(idx1.start or 0, idx1.stop or max2, idx1.step or 1)
-
-                if hasattr(value, '__iter__'):
-                    viter = iter(value)
-
-                    for a, i in enumerate(ix):
-                        for b, j in enumerate(iy):
-                            data[cc(i,j)] = next(viter)
-
-                else:
-                    for a, i in enumerate(ix):
-                        for b, j in enumerate(iy):
-                            data[cc(i,j)] = value
-
-            elif len(indexer) == 1:
-                data[cc(*indexer)] = value
-            else:
-                raise NotImplementedError
-        else:
-            data[cc(*indexer)] = value
-    else:
-        data[cc(*indexer)] = value
+def write(cc, indexer, value):
+    pass
 
 #------------------------------------------------------------------------
 # Deferred Data Access

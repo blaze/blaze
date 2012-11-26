@@ -7,4 +7,4 @@ def test_simple():
     layout = ContinuousL(a)
     indexer = (0,)
 
-    retrieve(layout.change_coordinates, indexer, a)
+    retrieve(layout.change_coordinates, indexer)

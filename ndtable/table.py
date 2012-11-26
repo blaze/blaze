@@ -128,7 +128,7 @@ class Array(Indexable):
     # Immediete slicing
     def __getitem__(self, indexer):
         cc = self._layout.change_coordinates
-        return retrieve(cc, indexer, None)
+        return retrieve(cc, indexer)
 
     # Immediete slicing ( Side-effectful )
     def __setitem__(self, indexer, value):
