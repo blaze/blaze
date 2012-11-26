@@ -24,6 +24,7 @@ pages = [
     ("Documentation" , doc_url       , 'docs'   , 'book')     ,
     ("Source"        , src_url       , 'source' , 'download') ,
     ("Vision"        , 'vision.html' , 'vision' , 'star')     ,
+    ("People"        , 'people.html' , 'people' , 'user')     ,
     ("Mailing List"  , mail_url      , 'mail'   , 'envelope') ,
 ]
 
@@ -79,4 +80,5 @@ if __name__ == '__main__':
     bfolder = build_folder()
     render_page(bfolder, 'index')
     render_page(bfolder, 'vision')
+    render_page(bfolder, 'people')
     print 'Done'
