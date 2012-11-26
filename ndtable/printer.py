@@ -12,6 +12,19 @@ def set_printoptions(**kwargs):
 
     np_setprintoptions(**kwargs)
 
+def generic_str(obj, deferred):
+    # Do we force str() to render and consequently do a read
+    # operation?
+
+    if deferred:
+        str_repr = '<Deferred>'
+    else:
+        str_repr = ''
+        for provider in obj.backends:
+            str_repr += provider.repr_data()
+
+    return str_repr
+
 def generic_repr(name, obj, deferred):
     """
     Generic pretty printer for NDTable and NDArray.
@@ -33,14 +46,8 @@ def generic_repr(name, obj, deferred):
     else:
         header = ''
 
-    # Do we force str() to render and consequently do a read
-    # operation?
-    if deferred:
-        fullrepr = header + '<Deferred>'
-    else:
-        fullrepr = header
-        for provider in obj.backends:
-            fullrepr += provider.repr_data()
+    # Show the data below
+    fullrepr = header + generic_str(obj, deferred)
 
     return fullrepr
 

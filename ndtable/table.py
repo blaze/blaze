@@ -14,7 +14,7 @@ from expr.graph import ArrayNode, injest_iterable
 from expr.metadata import metadata as md
 
 from sources.canonical import CArraySource, ArraySource
-from printer import generic_repr
+from printer import generic_str, generic_repr
 
 #------------------------------------------------------------------------
 # Evaluation Class ( eclass )
@@ -170,7 +170,7 @@ class Array(Indexable):
         raise NotImplementedError
 
     def __str__(self):
-        raise NotImplementedError
+        return generic_str(self, deferred=False)
 
     def __repr__(self):
         return generic_repr('Array', self, deferred=False)
