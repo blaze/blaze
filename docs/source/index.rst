@@ -42,6 +42,7 @@ API Reference
 
    types
    persistence
+   layout
    sources
    graph
    ops
