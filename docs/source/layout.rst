@@ -8,9 +8,10 @@ of memory that may or may not be contigious.
 - Chunked
 - Multichunks
 
-If we build a structure ( A U B ) as some union of two chunks of data,
-then we need only have a invertible linear transformation which is able
-to map coordinates between the chunks as we drill down into them.
+If we build a composite block structure as some union of two
+multiple blocks of data, then we need only have a invertible linear
+transformation which is able to map coordinates between the local
+coordinates of the chunks as we pull bytes from them.
 
 ::
 
@@ -92,3 +93,5 @@ Combining Chunks
                       (i,j) -> (i, j)
 
 
+.. automodule:: ndtable.layouts.scalar
+   :members:

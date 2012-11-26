@@ -1,7 +1,6 @@
 """
-Scalar layout methods for glueing together array-like structures.
-They let us construct "views" out of multiple structures.
-
+Scalar layouts are arangements of scalar matrix data on to blocks
+of memory that may or may not be contigious.
 """
 
 import math
@@ -47,14 +46,16 @@ def ctranspose(axi):
         xs[0] = xs[1]
         return xs
 
-    # Transpose is its own inverse
+    # Transpose is self inverse
     Tinv = T
     return T, Tinv
 
 def cdimshuffle(axi, mapping):
     """
-    f : 2, 0, 1 : [1,2,3] -> [3,1,2]
-    g : 2, 0, 1 : [3,1,2] -> [1,2,3]
+    Example::
+
+        f : 2, 0, 1 : [1,2,3] -> [3,1,2]
+        g : 2, 0, 1 : [3,1,2] -> [1,2,3]
     """
 
     imapping = invert(mapping)
@@ -72,7 +73,6 @@ def cdimshuffle(axi, mapping):
         return zs
 
     return T, Tinv
-
 
 def splitl(lst, n):
     return lst[0:n], lst[n], lst[n:-1]
@@ -441,9 +441,10 @@ class ZIndexL(Layout):
         return 'Z-Order'
 
 #------------------------------------------------------------------------
-# Block Layout Constructors
+# Block Combinations
 #------------------------------------------------------------------------
 
+# Low-level calls, never used by the end-user.
 def nstack(n, a, b):
 
     adim = len(a.components)

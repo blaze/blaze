@@ -209,97 +209,11 @@ class Index(object):
 
         raise NotImplemented
 
-class HierichalIndex(Index):
-    """
-    A hierarchal index a panel with multiple index levels represented by
-    tuples.::
-
-        i   j  |        A         B
-        -----------------------------
-        one 1  |  -0.040130 -1.471796
-            2  |  -0.027718 -0.752819
-            3  |  -1.166752  0.395943
-        two 1  |  -1.057556 -0.012255
-            2  |   1.839669  0.185417
-            3  |   1.084758  0.594895
-
-    The mapping is not ( in general ) injective. For example indexing
-    into ['one'] or ['1'] will perform a SELECT like query on the tables
-    contained in the level.
-
-    Internally the representation of this would would be::
-
-        i : 0, 0, 1, 1, 2, 2, 3, 3
-        j : 0, 1, 0, 1, 0, 1, 0, 1
-
-    Which endows the structure with lexicographical order.
-    """
-
-    ordered   = False
-    monotonic = False
-    injective = False
-
-    def __init__(self, tuples):
-        # XXX
-        self.levels = 2
-
-    def levels(self):
-        return self.levels
-
-class FilenameIndex(Index):
-    """
-    Take a collection of subspaces and enumerate them in the
-    order of the 'name' parameter on the byte provider'. If the
-    ByteProvider does not provide one, a exception is raised.
-
-    For example a collection of files::
-
-        /003_sensor.csv
-        /001_sensor.csv
-        /002_sensor.csv
-        /010_sensor.csv
-
-    Would produce index::
-
-        {
-            0: File(name='/001_sensor.csv')
-            1: File(name='/002_sensor.csv')
-            2: File(name='/003_sensor.csv')
-            3: File(name='/010_sensor.csv')
-        }
-
-    This provides a total monotonic ordering.
-    """
-
-    ordered   = True
-    monotonic = True
-    injective = True
-
-    def __init__(self, space):
-        try:
-            self.mapping = sorted(space, self.compare)
-        except KeyError:
-            raise Exception("Subspace does not contain 'name' key")
-
-    @staticmethod
-    def compare(a, b):
-        return a.name > b.name
 
 class AutoIndex(Index):
     """
     Take a collection of subspaces and just create the outer
-    index by enumerating them in the order passed to
-    DataTable.
-
-    Passing in a collection of Python objects would just
-    enumerate the Raw ByteProviders.
-
-        {
-            0: PyObject(ptr=31304808),
-            1: PyObject(ptr=31305528),
-        }
-
-    This provides a total monotonic ordering.
+    index by enumerating them.
     """
 
     ordered   = True
@@ -329,28 +243,3 @@ class AutoIndex(Index):
     @property
     def end(self):
         return self.mapping[1]
-
-    def __repr__(self):
-        return 'arange(%r, %r)' % (
-            self.start,
-            self.end
-        )
-
-class GeneratingIndex(Index):
-    """
-    Create a index from a Python generating function.
-    """
-
-    def __init__(self, genfn, *args):
-        self.index = 0
-        self.mapping = genfn(*args)
-
-        self.monotonic = args.get('monotonic')
-        self.ordered   = args.get('ordered')
-        self.injective = args.get('injective')
-
-    def __repr__(self):
-        return 'arange(%r, %r)' % (
-            self.start,
-            self.end
-        )
