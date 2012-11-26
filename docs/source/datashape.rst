@@ -126,19 +126,15 @@ arguments given. Example
 
 
 Datashape types with free parameters in their constructor are called
-**parameterized** types.
+**parameterized** types. Example::
 
-::
-
-    SquareIntMatrix = N, N, int32
+    SquareMatrix T = N, N, T
 
 Datashape types wihtout free parameters in their constructor are called
 **alias** types. They don't add any additional structure they just
-provide a new name.
+provide a new name. Example::
 
-::
-
-    SquareMatrix T = N, N, T
+    SquareIntMatrix = N, N, int32
 
 The ``int`` and ``float`` types are automatically aliased to the either
 ``int32`` or ``int64`` types depending on the platform.
@@ -290,8 +286,8 @@ of this type.
     (a + ... + b) * int32
 
 
-Tagged Union
-~~~~~~~~~~~~
+Tagged Unions
+~~~~~~~~~~~~~
 
 A tagged union is a sum type with two parameters ``left`` and
 ``right`` which represent the presence of two possible types::

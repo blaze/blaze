@@ -6,7 +6,6 @@ from numpy import dtype
 
 from struct import calcsize
 from numbers import Integral
-from platform import architecture
 from collections import Mapping, Sequence
 
 #------------------------------------------------------------------------
@@ -42,6 +41,7 @@ class Type(type):
 
 class Primitive(object):
     composite = False
+    __metaclass__ = Type
 
     def __init__(self, *parameters):
         self.parameters = parameters
@@ -92,7 +92,6 @@ class Dynamic(Primitive):
     type to ``?``. This is normally not allowed in most static type
     systems.
     """
-    __metaclass__ = Type
 
     def __str__(self):
         return '?'
@@ -101,18 +100,17 @@ class Dynamic(Primitive):
         # emulate numpy
         return ''.join(["dshape('", str(self), "')"])
 
-# Top is kind of an unforunate term because our system is very
-# much *not* a hierarchy nor does it form a lattice, but this is
-# the entrenched term so we use it.
+# Top is kind of an unfortunate term because our system is very much
+# *not* a hierarchy, but this is the entrenched term so we use it.
 
 class Top(Primitive):
-    __metaclass__ = Type
 
     def __str__(self):
         return 'top'
 
     def __repr__(self):
-        return str(self)
+        # emulate numpy
+        return ''.join(["dshape('", str(self), "')"])
 
 # ==================================================================
 # Base Types
@@ -168,11 +166,12 @@ class DataShape(object):
         if type(other) is DataShape:
             return False
         else:
-            raise TypeError('Cannot non datashape to datashape')
+            raise TypeError('Cannot compare non-datashape to datashape')
 
     def __repr__(self):
         # emulate numpy
         return ''.join(["dshape('", str(self), "')"])
+
 
 class Atom(DataShape):
     """
@@ -394,16 +393,6 @@ class Var(Atom):
         return expr_string('Var', [self.lower, self.upper])
 
 #------------------------------------------------------------------------
-# Derived Dimensions
-#------------------------------------------------------------------------
-
-class Bitfield(Atom):
-
-    def __init__(self, size):
-        self.size = size.val
-        self.parameters = [size]
-
-#------------------------------------------------------------------------
 # Aggregate
 #------------------------------------------------------------------------
 
@@ -485,39 +474,15 @@ class Record(DataShape, Mapping):
         return len(self.k)
 
     def __str__(self):
-        return 'Record ( ' + ''.join([('%s = %s, ' % (k,v)) for k,v in zip(self.k, self.v)]) + ')'
+        # Prints out something like this:
+        #   {a : int32, b: float32, ... }
+        return ('{ '
+            + ''.join([
+                ('%s : %s, ' % (k,v)) for k,v in zip(self.k, self.v)
+        ]) + '}')
 
     def __repr__(self):
         return 'Record ' + repr(self.d)
-
-# Memory Types
-# ============
-
-class RemoteSpace(object):
-    def __init__(self, blaze_uri):
-        pass
-
-class LocalMemory(object):
-    def __init__(self):
-        self.bounds = ( 0x0, 0xffffffffffffffff )
-
-class SharedMemory(object):
-    def __init__(self, key):
-        # something like:
-        # shmid = shmget(key)
-        # shmat(shmid, NULL, 0)
-        self.bounds = ( 0x0, 0x1 )
-
-# Class derived Records
-# =====================
-# They're just records but can be constructed like Django models.
-
-def derived(sig):
-    from parse import parse
-    sig = parse(sig)
-    def a(fn):
-        return sig
-    return a
 
 # Constructions
 # =============
@@ -556,9 +521,7 @@ def fst(ds):
 def snd(ds):
     return ds[1:]
 
-# Coproduct is the dual to the (,) operator. It constructs sum
-# types ( ie A + B ).
-def coprod(A, B):
+def sum(A, B):
     return Either(A,B)
 
 # left  :: A + B -> A
@@ -648,14 +611,13 @@ Type.register('NA', Null)
 Type.register('Stream', Stream)
 Type.register('?', Dynamic)
 
-# Top should not be user facing... but for debugging usefull.
+# Top should not be user facing... but for debugging useful
 # Type.register('top', top)
 
 #------------------------------------------------------------------------
-# Numpy Compatability
+# NumPY Compatibility
 #------------------------------------------------------------------------
 
-# TODO: numpy structured arrays!
 def to_numpy(ds):
     """
     Downcast a datashape object into a Numpy (shape, dtype) tuple if

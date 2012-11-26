@@ -1,6 +1,6 @@
-from ndtable.datashape.parse import parse, load
 from ndtable.datashape import *
-from ndtable.datashape.record import RecordDecl
+from ndtable.datashape.parse import parse, load
+from ndtable.datashape.record import RecordDecl, derived
 
 from textwrap import dedent
 
@@ -121,13 +121,9 @@ def test_parse_either():
     assert x[0].a == int64
     assert x[0].b is na
 
-def test_parse_bitfield():
-    x = parse('Bitfield(64)')
-    assert x[0].size == 64
-
 def test_parse_custom_record():
 
-    class Stock(RecordDecl):
+    class Stock1(RecordDecl):
         name   = string
         open   = float_
         close  = float_
@@ -139,21 +135,23 @@ def test_parse_custom_record():
         def mid(self):
             return (self.min + self.max)/2
 
-    stock = """
-    Record(
-      name   = string,
-      min    = int64,
-      max    = int64,
-      mid    = int64,
-      volume = float,
-      close  = float,
-      open   = float,
-    )
-    """
+    assert Stock1.mid
 
-    x = parse('Stock')
-    y = parse(dedent(stock))
-    assert x[0].k == y[0].k
+def test_parse_custom_record_infer():
+
+    class Stock2(RecordDecl):
+        name   = string
+        open   = float_
+        close  = float_
+        max    = int64
+        min    = int64
+        volume = float_
+
+        @derived()
+        def mid(self):
+            return (self.min + self.max)/2
+
+    assert Stock2.mid
 
 @skip
 def test_module_parse():

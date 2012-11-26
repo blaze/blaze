@@ -4,7 +4,8 @@ types.
 """
 
 from numpy import dtype
-from coretypes import Record, Type, DataShape, to_numpy
+from coretypes import Record, Type, DataShape
+from parse import parse
 
 class DeclMeta(type):
     def __new__(meta, name, bases, namespace):
@@ -20,7 +21,7 @@ class DeclMeta(type):
             if hasattr(cls, 'fields'):
                 # Side-effectful operation to register the alias
                 # with the parser
-                rcd = Record(**cls.fields)
+                rcd = Record(**dict(cls.fields, **cls._derived))
                 Type.register(name, rcd)
         return cls
 
@@ -29,11 +30,11 @@ class RecordDecl(object):
     Record object, declared as class. Provied to the datashape
     parser through the metaclass.
     """
-    fields = {}
     __metaclass__ = DeclMeta
 
     def construct(cls, fields):
-        cls.fields = cls.fields.copy()
+        cls.fields = {}
+        cls._derived = {}
         for name, value in fields.items():
             if isinstance(value, DataShape):
                 cls.add(name, value)
@@ -53,3 +54,11 @@ class RecordDecl(object):
             self.fields.iteritems()
         ])
         return n
+
+def derived(sig=None):
+    def wrapper(fn):
+        if sig is not None:
+            return parse(sig)
+        else:
+            raise NotImplementedError
+    return wrapper
