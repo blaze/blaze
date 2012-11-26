@@ -1,12 +1,6 @@
 """
-Toy implementations of the "canonical backends".
-
-These are purely for internal use, are never exposed to the end-user
-in any form. Adaptors simply provide a layer over the low-level IO
-operations needed to produce the bytes as needed.
-
-They also hint at the memory properties of the underlying substrate (
-i.e sockets have chunked access, but are not seekable ).
+Toy implementations of the byte backends, the substrate that
+abstracts between raw bytes and data points.
 """
 
 import numpy as np
@@ -16,7 +10,7 @@ import socket
 from ndtable import carray
 
 from ndtable.datashape import Fixed, pyobj
-from ndtable.datashape.coretypes import CType, from_numpy
+from ndtable.datashape.coretypes import from_numpy
 from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM
 from ndtable.byteprovider import ByteProvider
 
@@ -45,7 +39,12 @@ class CArraySource(ByteProvider):
         lists, etc) try our best to infer what the datashape
         should be in the context of this datasource.
         """
-        return from_numpy(self.ca.shape, self.ca.dtype)
+        if isinstance(source, np.ndarray):
+            return from_numpy(source.shape, source.dtype)
+        elif isinstance(source, list):
+            # TODO: um yeah, we'd don't actually want to do this
+            cast = np.array(source)
+            return from_numpy(cast.shape, cast.dtype)
 
     @classmethod
     def check_datashape(self, source, given_dshape):
@@ -53,15 +52,16 @@ class CArraySource(ByteProvider):
         Does the user specified dshape make sense for the given
         source.
         """
+        # TODO
         return True
 
     @classmethod
-    def empty(self, datashape):
+    def empty(self, dshape):
         """ Create a CArraySource from a datashape specification,
         downcasts into Numpy dtype and shape tuples if possible
         otherwise raises an exception.
         """
-        shape, dtype = from_numpy(datashape)
+        shape, dtype = from_numpy(dshape)
         return CArraySource(carray([], dtype))
 
     def read(self, offset, nbytes):

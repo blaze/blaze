@@ -75,11 +75,6 @@ class Array(Indexable):
             self.space = obj
 
         else:
-            # When no preference in backend specified, fall back on
-            # Numpy backend and the trivial layout ( one covering space,
-            # dot product stride formula )
-            assert isinstance(obj, list)
-
             if not dshape:
                 # The user just passed in a raw data source, try
                 # and infer how it should be layed out
