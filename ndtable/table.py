@@ -172,7 +172,7 @@ class Array(Indexable):
         raise NotImplementedError
 
     def __str__(self):
-        return array2string(self)
+        raise NotImplementedError
 
     def __repr__(self):
         return generic_repr('Array', self, deferred=False)
@@ -193,6 +193,7 @@ class NDArray(Indexable, ArrayNode):
     eclass = DELAYED
     _metaheader = [
         ('MANIFEST' , True),
+        ('ARRAYLIKE', True),
     ]
 
     def __init__(self, obj, datashape=None, metadata=None):
@@ -217,6 +218,13 @@ class NDArray(Indexable, ArrayNode):
             # stride formula )
             self.children = injest_iterable(obj, force_homog=True)
             self.space = Space(self.children)
+
+    def __str__(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return generic_repr('NDArray', self, deferred=True)
+
 
     #------------------------------------------------------------------------
     # Properties
@@ -253,16 +261,12 @@ class NDArray(Indexable, ArrayNode):
         """
         return iter(self.space)
 
-    #------------------------------------------------------------------------
-    # Alternative Constructors
-    #------------------------------------------------------------------------
-
     @staticmethod
     def _from_providers(*providers):
         """
-        Internal method to create a NDArray from a 1D list of
-        byte providers. Tries to infer how the providers must be
-        arranged in order to fit into the provided shape.
+        Internal method to create a NDArray from a 1D list of byte
+        providers. Tries to infer the simplest layout of how the
+        providers fit together.
         """
         subspaces = [Subspace(provider) for provider in providers]
         space = Space(*subspaces)
@@ -270,12 +274,6 @@ class NDArray(Indexable, ArrayNode):
         # TODO: more robust
         shape = providers[0].infer_datashape(providers[0])
         return NDArray(space, datashape=shape)
-
-    def __str__(self):
-        return array2string(self)
-
-    def __repr__(self):
-        return generic_repr('NDArray', self, deferred=True)
 
 
 #------------------------------------------------------------------------

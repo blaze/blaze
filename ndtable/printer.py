@@ -1,7 +1,16 @@
-# TODO: Talk with Francesc he has a robust array printer in
-# carray we can use.
-
 from pprint import pformat
+from carray import array2string, set_printoptions as np_setprintoptions
+
+_show_details = True
+
+def set_printoptions(**kwargs):
+    global _show_details
+    details = kwargs.pop('details', None)
+
+    if details is not None:
+        _show_details = details
+
+    np_setprintoptions(**kwargs)
 
 def generic_repr(name, obj, deferred):
     """
@@ -15,18 +24,23 @@ def generic_repr(name, obj, deferred):
           layout   := Identity;
 
     """
-    header = "%s\n" % (name)
-    header += "  datashape := %s \n" % str(obj._datashape)
-    header += "  values    := %s \n"  % list(obj.backends)
-    header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
-    header += "  layout    := %s \n"  % obj._layout.desc
+    if _show_details:
+        header = "%s\n" % (name)
+        header += "  datashape := %s \n" % str(obj._datashape)
+        header += "  values    := %s \n"  % list(obj.backends)
+        header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
+        header += "  layout    := %s \n"  % obj._layout.desc
+    else:
+        header = ''
 
     # Do we force str() to render and consequently do a read
     # operation?
     if deferred:
         fullrepr = header + '<Deferred>'
     else:
-        fullrepr = header + str(obj)
+        fullrepr = header
+        for provider in obj.backends:
+            fullrepr += provider.repr_data()
 
     return fullrepr
 
