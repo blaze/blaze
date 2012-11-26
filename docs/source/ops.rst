@@ -14,9 +14,9 @@ Operators also have a variety of properties that optionally can be used
 to be inform specializtion and expression graph rewriting for domain
 experts. ( Not all are defined for every operator. )
 
-* ``signature`` 
+* ``signature``
     Map signature
-* ``dom`` 
+* ``dom``
     Domain
 * ``cod``
     Codomain
@@ -25,12 +25,12 @@ experts. ( Not all are defined for every operator. )
 * ``nout``
     Number of elements in the codomain
 * ``associative``
-* ``commutative``  
-* ``leftidentity``  
-* ``rightidentity`` 
+* ``commutative``
+* ``leftidentity``
+* ``rightidentity``
 * ``identity``
-* ``leftzero``     
-* ``rightzero``     
+* ``leftzero``
+* ``rightzero``
 * ``zero``
 * ``leftinverse``
 * ``rightinverse``
