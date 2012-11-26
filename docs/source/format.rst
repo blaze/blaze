@@ -3,10 +3,36 @@ Persistent formats
 ==================
 
 Blaze is designed to work with data that is both in memory and disk in
-a transparent way.  When working with objects on-disk and the program
-exits, their data can be used to restore the original data containers.
+a transparent way.  The goals of the formats described here are:
 
-There are two internal formats (both based in Bloscpack format [1]_):
+1. Allow to work with data directly on disk, exactly on the same way
+that data in memory.
+
+2. The persistence layer should support the same access capabilities
+than Blaze objects including: modifying, appending and removing data, as
+well as direct access to data (in the same way than RAM).
+
+3. Transparent data compression must be possible.
+
+4. User metadata addition must be possible too.
+
+5. And last but not least, the data should be easily 'shardeable' for
+optimal behaviour in distributed storage.  Providing a format that is
+already 'shared' by default would represent a big advantage for us.
+
+These points, in combination with a distributed filesystem, and
+combined with a system that would be aware of the physical topology of
+the underlying infrastructure would allow to largely avoid the need
+for a Disco/Hadoop infrastructure, permitting much better flexibility
+and performance.
+
+The data files will be made of a series of chunks put together using
+the Blosc metacompressor by default.  Blosc being a metacompressor,
+means that it can use different compressors and filters, while
+leveraging its blocking and multithreading capabilities.
+
+Initially, two internal formats (both based in Bloscpack format [1]_)
+will be supported:
 
 :Monolithic:
     All data chunks and metadata go into one single file.
@@ -17,12 +43,13 @@ There are two internal formats (both based in Bloscpack format [1]_):
     directory hanging from the same root directory.
 
 Each flavor has its own pros and cons.  For the monolithic approach,
-the objects are more portable, take less space (more specifically,
-less inodes), but data on them cannot be modifyied.  The chunked
-approach allows data to be modifyied and objects to be enlarged or
-shrunk, but data is spread in different files in the file system, so
-consuming more space (and inodes) and making the transport a bit more
-difficult (the root directory should be packed first).
+the objects are more portable and take less space (and, more
+specifically, less inodes), but data on them cannot be modified
+(although this can be surmounted in some cases, see below).  The
+chunked approach allows data to be modified and objects to be enlarged
+or shrunk, but data is spread in different files in the file system,
+so consuming more space (and inodes) and making the transport a bit
+more difficult (the root directory should be packed first).
 
 
 .. [1] https://github.com/esc/bloscpack
@@ -142,11 +169,14 @@ Description of the metadata section
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section goes after the header, and it is just a JSON serialized
-version of the metadata that is to be saved.  JSON has its
-limitations, so only a subset of Python structures can be saved.
-Please check
-http://docs.python.org/2/library/json.html#json.JSONEncoder for the
-list of objects supported.
+version of the metadata that is to be saved.  As JSON has its
+limitations as any other serializer, only a subset of Python
+structures can be stored, so probably some additional object handling
+must be done prior to serialize some metadata.
+
+Example of metadata stored:
+
+  {'dtype': 'float64', 'shape': [1024], 'others': []}
 
 Description of the offsets entries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,20 +195,143 @@ chunk. The layout of the file is then::
 
     |-bloscpack-header-|-offset-|-offset-|...|-chunk-|-chunk-|...|
 
+Description of the chunk format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The header for the Blosc chunk has this format (Blosc 1.0 on)::
+
+    |-0-|-1-|-2-|-3-|-4-|-5-|-6-|-7-|-8-|-9-|-A-|-B-|-C-|-D-|-E-|-F-|
+      ^   ^   ^   ^ |     nbytes    |   blocksize   |    ctbytes    |
+      |   |   |   |
+      |   |   |   +--typesize
+      |   |   +------flags
+      |   +----------blosclz version
+      +--------------blosc version
+
+Following the header there will come the compressed data itself.
+Blosc ensures that the compressed buffer will not take more space than
+the original one + 16 bytes (the length of the header).
+
+At the end of each blosc chunk some empty space could be added (this
+can be parametrized) in order to allow the modification of some data
+elements inside each block.  The reason for the additional space is
+that, as these chunks will be typically compressed, when modifying
+some element of the chunk it is not guaranteed that the resulting
+chunk will fit in the same space than the old one.  Having this
+provision of a small empty space at the end of each chunk will allow
+for storing the modified chunks in many cases, without a need to save
+the entire file on a different part of the disk.
+
 Overhead
 ~~~~~~~~
 
-Depending on which configuration for the file is used a constant, or linear
-overhead may be added to the file. The Bloscpack header adds 32 bytes in any
-case. If the data is non-compressible, Blosc will add 16 bytes of header to
-each chunk. If used, both the checksum and the offsets will add overhead to the
-file. The offsets add 8 bytes per chunk and the checksum adds a fixed constant
-value which depends on the checksum to each chunk. For example, 32 bytes for
-the ``adler32`` checksum.
+Depending on which configuration for the file is used a constant, or
+linear overhead may be added to the file. The Bloscpack header adds 32
+bytes in any case. If the data is non-compressible, Blosc will add 16
+bytes of header to each chunk. If used, both the checksum and the
+offsets will add overhead to the file. The offsets add 8 bytes per
+chunk and the checksum adds a fixed constant value which depends on
+the checksum to each chunk. For example, 32 bytes for the ``adler32``
+checksum.
+
+Also, depending on the number of reserved bytes at the end of each
+chunk (the default is to not reserve them), that will add another
+overhead to the final size. 
 
 
 Chunked format
 ==============
 
-(To be done)
+The layout
+----------
 
+For every dataset, it will be created a directory, with a
+user-provided name that, for generality, we will call it `root` here.
+The root will have another couple of subdirectories, named data and
+meta::
+
+        root  (the name of the dataset)
+        /  \
+     data  meta
+
+The `data` directory will contain the actual data of the dataset,
+while the `meta` will contain the metainformation (dtype, shape,
+chunkshape, compression level, filters...).
+
+The `data` layout
+-----------------
+
+Data will be stored by what is called a `superchunk`, and each
+superchunk will use exactly one file.  The size of each superchunk
+will be decided automatically by default, but it could be specified by
+the user too.
+
+Each of these directories will contain one or more superchunks for
+storing the actual data.  Every data superchunk will be named after
+its sequential number.  For example::
+
+    $ ls data
+    __1__.bin  __2__.bin  __3__.bin  __4__.bin ... __1030__.bin
+
+This structure of separate superchunk files allows for two things:
+
+1. Datasets can be enlarged and shrink very easily
+2. Horizontal sharding in a distributed system is possible (and cheap!)
+
+At its time, the `data` directory might contain other subdirectories
+that are meant for storing components for a 'nested' dtype (i.e. an
+structured array, stored in column-wise order)::
+
+        data  (the root for a nested datatype)
+        /  \     \
+     col1  col2  col3
+          /  \
+        sc1  sc3
+
+This structure allows for quick access to specific chunks of columns
+without a need to load the complete dataset in memory.
+
+The `superchunk` layout
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The layout of the binary superchunk data files is the same as the
+bloscpack format referred in the ``Monolithic format`` section.  In
+particular, one can also add some empty bytes at the end of every
+chunk for allowing the modification of the superchunk in-place
+(i.e. avoiding the copy in another place of the filesystem).
+
+The `meta` files
+----------------
+
+Here there can be as many files as necessary.  The format for every
+file will be JSON, so caution should be used for ensuring that all the
+metadata can be serialized and deserialized in this format.  There
+could be three (or more, in the future) files:
+
+The `sizes` file
+~~~~~~~~~~~~~~~~
+
+This contains the shape of the dataset, as well as the uncompressed
+size (``nbytes``) and the compressed size (``cbytes``).  For example::
+
+    $ cat meta/sizes
+    {"shape": [10000000], "nbytes": 80000000, "cbytes": 17316745}
+
+The `storage` file
+~~~~~~~~~~~~~~~~~~
+
+Here comes the information about the data type, defaults and how data
+is being stored.  Example::
+
+    $ cat myarray/meta/storage
+    {"dtype": "float64", "cparams": {"shuffle": true, "clevel": 5},
+     "chunklen": 16384, "dflt": 0.0, "expectedlen": 10000000}
+
+The `attributes` file
+~~~~~~~~~~~~~~~~~~~~~
+
+In this file it comes additional user information.  Example::
+
+    $ cat myarray/meta/attributes
+    {"temperature": 11.4, "scale": "Celsius",
+     "coords": {"lat": 40.1, "lon": 0.5}}
