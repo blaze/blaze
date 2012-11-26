@@ -31,9 +31,10 @@ Custom DShapes
 
 ::
 
-    from ndtable import Table, RecordClass, int32, string
+    from ndtable import Table, RecordDecl
+    from ndtable import int32, string
 
-    class Stock(RecordClass):
+    class CustomStock(RecordDecl):
         name   = string
         max    = int32
         min    = int32
@@ -41,9 +42,8 @@ Custom DShapes
         def mid(self):
             return (self.min + self.max)/2
 
-    ds = dshape(Stock)
 
-::
-
-    >>> ds
+    >>> CustomStock
     {name:string, max: int32, min: int32, mid: int32}
+
+    >>> a = Table([('GOOG', 120, 153)], CustomStock)
