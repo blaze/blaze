@@ -43,6 +43,8 @@ Custom DShapes
             return (self.min + self.max)/2
 
 
+::
+
     >>> CustomStock
     {name:string, max: int32, min: int32, mid: int32}
 

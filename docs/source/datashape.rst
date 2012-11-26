@@ -108,7 +108,7 @@ Constructors
 ~~~~~~~~~~~~
 
 Datashape types that are single values are called **unit** types. They
-represent a fixed type that is not dependent on any arguments. For
+represent a fixed type that is not dependent on any parameters. For
 example ``int32`` or ``2``.
 
 Datashape types that are comprised of multiple unit types are
@@ -130,15 +130,15 @@ arguments given. Example::
     # parameterized
     SquareMatrix T = N, N, T
 
-Datashape types with free parameters in their constructor are
-called **parameterized** types.
+Datashape types with free parameters in their constructor are called
+**parameterized** types.
 
 Datashape types wihtout free parameters in their constructor are called
 **alias** types. They don't add any additional structure they just
 provide a new name.
 
-The ``int`` and ``float`` types are automatically aliased to the
-either ``int32`` or ``int64`` types depending on the platform.
+The ``int`` and ``float`` types are automatically aliased to the either
+``int32`` or ``int64`` types depending on the platform.
 
 Once the types are registered they can be used in dtype expressions just
 like primitive values and also to construct even higher order types.
