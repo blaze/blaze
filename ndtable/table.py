@@ -5,7 +5,7 @@ from byteprovider import ByteProvider
 from idx import Indexable, AutoIndex, Space, Subspace, Index
 
 from datashape.coretypes import DataShape, Fixed, from_numpy
-from layouts.scalar import IdentityL
+from layouts.scalar import ChunkedL
 from slicealgebra import numpy_get
 
 from expr.graph import ArrayNode, injest_iterable
@@ -55,10 +55,9 @@ class Array(Indexable):
         ('MANIFEST' , True),
     ]
 
-    def __init__(self, obj, dshape=None, metadata=None):
+    def __init__(self, obj, dshape=None, metadata=None, layout=None):
 
         self._datashape = dshape
-        self._layout    = None
         self._metadata  = md.empty(
             self._metaheader + (metadata or [])
         )
@@ -81,24 +80,31 @@ class Array(Indexable):
             # dot product stride formula )
             assert isinstance(obj, list)
 
-            ca = CArraySource(obj)
-            self.space = Space(ca)
-            self._datashape = ca.infer_datashape()
-            self._layout = IdentityL(ca)
+            if not dshape:
+                # The user just passed in a raw data source, try
+                # and infer how it should be layed out
+                self._datashape = CArraySource.infer_datashape(obj)
+            else:
+                # The user overlayed their custom dshape on this
+                # data, does it make sense?
+                self._datashape = CArraySource.check_datashape(obj,
+                    given_dshape=dshape)
+
+            data = CArraySource(obj)
+            self.space = Space(data)
+
+            if not layout:
+                self._layout = ChunkedL(data)
 
             # -- The Future --
             # The general case, we'll get there eventually...
             # for now just assume that we're passing in a
-            # Python list that we wrap around Numpy.
+            # Python list that we wrap around CArray.
             #self.children = injest_iterable(obj, force_homog=True)
 
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
-
-    @property
-    def metadata(self):
-        return self._metadata + self._meta
 
     @property
     def type(self):

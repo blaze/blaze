@@ -37,8 +37,23 @@ class CArraySource(ByteProvider):
         """
         self.ca = carray.carray(ca)
 
-    def infer_datashape(self):
+    @classmethod
+    def infer_datashape(self, source):
+        """
+        The user has only provided us with a Python object (
+        could be a buffer interface, a string, a list, list of
+        lists, etc) try our best to infer what the datashape
+        should be in the context of this datasource.
+        """
         return from_numpy(self.ca.shape, self.ca.dtype)
+
+    @classmethod
+    def check_datashape(self, source, given_dshape):
+        """
+        Does the user specified dshape make sense for the given
+        source.
+        """
+        return True
 
     @classmethod
     def empty(self, datashape):

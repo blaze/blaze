@@ -237,10 +237,6 @@ class Layout(object):
     wraparound = True
     # Allow negative indexing
 
-    @property
-    def desc(self):
-        return 'Partitioned(n=%i)' % len(self.points)
-
     def __repr__(self):
         out = 'Layout:\n'
         for p in self.partitions:
@@ -363,7 +359,7 @@ class BlockL(Layout):
         coords = self.change_coordinates(indexer)
         return coords
 
-class ChunkL(Layout):
+class ChunkedL(Layout):
     """
     Chunked layout, like CArray.
     """

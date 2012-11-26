@@ -11,7 +11,9 @@ def test_multiple_charts():
     x = Chart([a,b], alpha)
     y = Chart([a,b], beta)
 
+    # -------------
     s = hstack(x,y)
+    # -------------
 
 def test_vertical_stack():
     alpha = object()

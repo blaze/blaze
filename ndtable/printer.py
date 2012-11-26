@@ -18,7 +18,7 @@ def generic_repr(name, obj, deferred):
     header = "%s\n" % (name)
     header += "  datashape := %s \n" % str(obj._datashape)
     header += "  values    := %s \n"  % list(obj.backends)
-    header += "  metadata  := %s \n"  % (pformat(obj.metadata, width=1))
+    header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
     header += "  layout    := %s \n"  % obj._layout.desc
 
     # Do we force str() to render and consequently do a read
