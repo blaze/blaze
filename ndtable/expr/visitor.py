@@ -20,9 +20,6 @@ class ExprPrinter(object):
 
     def visit(self, tree):
 
-        if self.indent == 0:
-            print '\n===================='
-
         if tree.children:
             print ('    '*self.indent) + tree.__class__.__name__
             self.indent += 1
@@ -30,35 +27,6 @@ class ExprPrinter(object):
             self.indent -= 1
         else:
             print ('    '*self.indent) + tree.__class__.__name__
-
-    def Unknown(self, tree):
-        raise NoVisitor(tree)
-
-class MorphismPrinter(object):
-
-    # TODO: more robust!
-    def __init__(self):
-        self.indent = 0
-
-    def visit(self, tree):
-
-        if self.indent == 0:
-            print '\n===================='
-
-        if tree.children:
-            if hasattr(tree, 'cod'):
-                print ('    '*self.indent) + tree.__class__.__name__ + " :: " + str(tree.cod)
-            else:
-                print ('    '*self.indent) + tree.__class__.__name__
-
-            self.indent += 1
-            [self.visit(i) for i in tree.children]
-            self.indent -= 1
-        else:
-            if hasattr(tree, 'cod'):
-                print ('    '*self.indent) + tree.__class__.__name__ + " :: " + str(tree.cod)
-            else:
-                print ('    '*self.indent) + tree.__class__.__name__
 
     def Unknown(self, tree):
         raise NoVisitor(tree)

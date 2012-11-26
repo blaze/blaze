@@ -1,7 +1,6 @@
 from ndtable.engine.pipeline import toposort, Pipeline
 from ndtable.expr.graph import IntNode, FloatNode
-from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter,\
-    MorphismPrinter
+from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter
 
 #------------------------------------------------------------------------
 # Sample Graph
