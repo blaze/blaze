@@ -31,7 +31,7 @@ Custom DShapes
 
 ::
 
-    from ndtable import Table, RecordDecl
+    from ndtable import Table, RecordDecl, derived
     from ndtable import int32, string
 
     class CustomStock(RecordDecl):
@@ -39,6 +39,7 @@ Custom DShapes
         max    = int32
         min    = int32
 
+        @derived
         def mid(self):
             return (self.min + self.max)/2
 

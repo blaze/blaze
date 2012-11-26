@@ -121,9 +121,8 @@ Datashape types that are comprised of unbound free variables are called
 
     A, B, int32
 
-A type constructor is higher type that produces new named types from
-arguments given. Example
-
+A **type operator** is higher type that produces maps each choice
+of parameter to a concrete type.
 
 Datashape types with free parameters in their constructor are called
 **parameterized** types. Example::
@@ -224,8 +223,8 @@ Example 2::
         a: int8
     }
 
-Enumeration Types
------------------
+Enumeration
+-----------
 
 A enumeration specifies a number of fixed dimensions
 sequentially::
@@ -286,11 +285,11 @@ of this type.
     (a + ... + b) * int32
 
 
-Tagged Unions
-~~~~~~~~~~~~~
+Variants
+~~~~~~~~
 
-A tagged union is a sum type with two parameters ``left`` and
-``right`` which represent the presence of two possible types::
+A **variant** type is a sum type with two tagged parameters ``left`` and
+``right`` which represent two possible types::
 
     Either float char
     Either int32 na
@@ -303,26 +302,23 @@ A tagged union is a sum type with two parameters ``left`` and
 Union
 ~~~~~
 
-A union is syntactic sugar for repeated construction of application
-composition of Either to a variable number of types. Unions behave like
-unions in C and permit a collection of heterogeneous types within the
-same context::
+A **union** or **untagged union** is a variant type permitting a
+variable number of variants. Unions behave like unions in C and permit a
+collection of heterogeneous types within the same context::
 
     Union int8 int16 int32 int64
-
-This construction is always well-defined because of the associativity of
-the sum type.
 
 ..
     A + B + C ...
 
-Nullable
-~~~~~~~~
+Options
+~~~~~~~
 
-Nullable types are composite types that represent the presence or
-absence of a value of a specific type. Many languages have a natural
-expression of this by allowing all or most types to be nullable
-including including C, SQL, and Java.
+Option types are variant types with the null datashape as one of the
+parameters, representing the presence of absence of a value of a
+specific types. Many languages have a natural expression of this by
+allowing all or most types to be nullable including including C, SQL,
+and Java.
 
 For example a nullable int field::
 
