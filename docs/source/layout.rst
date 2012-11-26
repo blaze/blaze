@@ -7,6 +7,8 @@ of memory that may or may not be contigious.
 
 - Chunked
 - Multichunks
+- Continuous
+- Strided
 
 If we build a composite block structure as some union of two
 multiple blocks of data, then we need only have a invertible linear
@@ -15,7 +17,7 @@ coordinates of the chunks as we pull bytes from them.
 
 ::
 
-    ChunkedL(dim=0)
+    Chunked(dim=0)
     +---------+
     |         |
     |---------|
@@ -24,7 +26,7 @@ coordinates of the chunks as we pull bytes from them.
 
 ::
 
-    ChunkedL(dim=1)
+    Chunked(dim=1)
     +---------+
     |    |    |
     |    |    |
