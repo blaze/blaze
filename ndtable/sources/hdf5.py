@@ -1,6 +1,6 @@
 import os
 from tables import openFile, NoSuchNodeError
-from ndtable.datashape.recordclass import from_pytables
+from ndtable.datashape.record import from_pytables
 from ndtable.byteprovider import ByteProvider
 from ndtable.datashape import Fixed
 

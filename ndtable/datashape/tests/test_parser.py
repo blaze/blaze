@@ -1,6 +1,6 @@
 from ndtable.datashape.parse import parse, load
 from ndtable.datashape import *
-from ndtable.datashape.recordclass import RecordClass
+from ndtable.datashape.record import RecordDecl
 
 from textwrap import dedent
 
@@ -127,7 +127,7 @@ def test_parse_bitfield():
 
 def test_parse_custom_record():
 
-    class Stock(RecordClass):
+    class Stock(RecordDecl):
         name   = string
         open   = float_
         close  = float_

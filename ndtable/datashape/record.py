@@ -6,44 +6,16 @@ Also provides a mapping between HDF5 in terms of Blaze subset
 that lets PyTables and Blaze interoperate.
 """
 
-from tables import IsDescription
-
-from utils import ReverseLookupDict
-from coretypes import Record, Type, DataShape, Atom
-from ndtable import rosetta
-
-def pytables_deconstruct(col):
-    name, atom = col
-    try:
-        stem = rosetta.pytables[type(atom)]
-    except KeyError:
-        raise Exception('Could not cast')
-    return name, stem
-
-def from_pytables(description):
-    fields = dict(
-        pytables_deconstruct(field) for field in
-        description.columns.iteritems()
-    )
-    return Record(**fields)
-
-def to_pytables(record):
-    fields = [
-        pytable_rosetta[field] for field in record.fields
-        if isinstance(field, Atom)
-    ]
-
-    substructs = [
-        to_pytables(field) for field in record.fields
-        if isinstance(field, DataShape)
-    ]
-
-    return type('Description', IsDescription, fields + substructs)
+from numpy import dtype
+from coretypes import Record, Type, DataShape, Atom, to_numpy
 
 class DeclMeta(type):
     def __new__(meta, name, bases, namespace):
-        abstract = namespace.pop('abstract', False)
-        if abstract:
+        abstract = namespace.pop('__abstract', False)
+        # for tests
+        dummy = namespace.pop('__dummy', False)
+
+        if abstract or dummy:
             cls = type(name, bases, namespace)
         else:
             cls = type.__new__(meta, name, bases, namespace)
@@ -55,18 +27,13 @@ class DeclMeta(type):
                 Type.register(name, rcd)
         return cls
 
-    def construct(cls, fields):
-        pass
-
-class Decl(object):
-    __metaclass__ = DeclMeta
-
-class RecordClass(Decl):
+class RecordDecl(object):
     """
     Record object, declared as class. Provied to the datashape
     parser through the metaclass.
     """
     fields = {}
+    __metaclass__ = DeclMeta
 
     def construct(cls, fields):
         cls.fields = cls.fields.copy()
@@ -77,3 +44,15 @@ class RecordClass(Decl):
     @classmethod
     def add(cls, name, field):
         cls.fields[name] = field
+
+    @classmethod
+    def to_numpy(self):
+        """
+        Convert a record class definition into a structured array
+        dtype
+        """
+        n = dtype([
+            (label, ty.to_dtype()) for label, ty in
+            self.fields.iteritems()
+        ])
+        return n
