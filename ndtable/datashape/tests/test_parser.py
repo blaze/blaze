@@ -121,7 +121,7 @@ def test_parse_either():
     assert x[0].a == int64
     assert x[0].b is na
 
-def test_parse_custom_record():
+def test_custom_record():
 
     class Stock1(RecordDecl):
         name   = string
@@ -137,7 +137,7 @@ def test_parse_custom_record():
 
     assert Stock1.mid
 
-def test_parse_custom_record_infer():
+def test_custom_record_infer():
 
     class Stock2(RecordDecl):
         name   = string

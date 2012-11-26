@@ -18,4 +18,4 @@ dtype   = dshape
 from datashape.shorthand import *
 
 # Record class declarations
-from datashape.record import RecordDecl
+from datashape.record import RecordDecl, derived
