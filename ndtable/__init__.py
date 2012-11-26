@@ -1,12 +1,12 @@
 __version__ = '0.1-dev'
 
-try:
-    from datashape import dshape
-    from table import Array, Table, NDArray, NDTable
-except ImportError as e:
-    # prevent weird cyclic import errors from passing silently
-    raise ImportError, "Failed to load, check for cyclic imports ( %s )"%\
-        e.message
+#try:
+from datashape import dshape
+from table import Array, Table, NDArray, NDTable
+#except ImportError as e:
+    ## prevent weird cyclic import errors from passing silently
+    #raise ImportError, "Failed to load, check for cyclic imports ( %s )"%\
+        #e.message
 
 # From numpy compatability, ideally ``import ndtable as np``
 # should be somewhat backwards compatable

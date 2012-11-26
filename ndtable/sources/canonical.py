@@ -9,7 +9,7 @@ import socket
 
 from ndtable import carray
 
-from ndtable.datashape import Fixed, pyobj
+from ndtable.datashape import Fixed, dynamic, string, pyobj
 from ndtable.datashape.coretypes import from_numpy
 from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM
 from ndtable.byteprovider import ByteProvider
@@ -19,7 +19,8 @@ from ndtable.byteprovider import ByteProvider
 #------------------------------------------------------------------------
 
 class CArraySource(ByteProvider):
-    """ Chunked array is the canonical backend """
+    """ Chunked array is the default storage engine for Blaze arrays
+    when no layout is specified. """
 
     read_capabilities  = CHUNKED
     write_capabilities = CHUNKED
@@ -43,8 +44,8 @@ class CArraySource(ByteProvider):
         """
         return self.ca.partitions
 
-    @classmethod
-    def infer_datashape(self, source):
+    @staticmethod
+    def infer_datashape(source):
         """
         The user has only provided us with a Python object (
         could be a buffer interface, a string, a list, list of
@@ -57,15 +58,20 @@ class CArraySource(ByteProvider):
             # TODO: um yeah, we'd don't actually want to do this
             cast = np.array(source)
             return from_numpy(cast.shape, cast.dtype)
+        else:
+            return dynamic
 
-    @classmethod
-    def check_datashape(self, source, given_dshape):
+    @staticmethod
+    def check_datashape(source, given_dshape):
         """
         Does the user specified dshape make sense for the given
         source.
         """
         # TODO
         return True
+
+    def repr_data(self):
+        return carray.array2string(self.ca)
 
     @classmethod
     def empty(self, dshape):
@@ -97,8 +103,22 @@ class ArraySource(ByteProvider):
     def __init__(self, lst):
         self.na = np.array(lst)
 
-    def calculate(self, ntype):
-        return from_numpy(self.na.shape, self.na.dtype)
+    @staticmethod
+    def infer_datashape(source):
+        """
+        The user has only provided us with a Python object (
+        could be a buffer interface, a string, a list, list of
+        lists, etc) try our best to infer what the datashape
+        should be in the context of this datasource.
+        """
+        if isinstance(source, np.ndarray):
+            return from_numpy(source.shape, source.dtype)
+        elif isinstance(source, list):
+            # TODO: um yeah, we'd don't actually want to do this
+            cast = np.array(source)
+            return from_numpy(cast.shape, cast.dtype)
+        else:
+            return dynamic
 
     @classmethod
     def empty(self, datashape):
@@ -123,6 +143,11 @@ class PythonSource(ByteProvider):
     def __init__(self, pyobject, type=list):
         self.pytype = type
         self.pyboject = pyobject
+
+    @staticmethod
+    def infer_datashape(source):
+        # TODO: more robust
+        return pyobj
 
     def read(self, offset, nbytes):
         # Array types
@@ -163,6 +188,14 @@ class ByteSource(ByteProvider):
 
     def read(self, offset, nbytes):
         return self.mv[offset: offset+nbytes]
+
+    @staticmethod
+    def infer_datashape(source):
+        """
+        Just passing in bytes probably means string unless
+        dshape otherwise specified.
+        """
+        return string
 
     def write(self, offset, wbytes):
         raise NotImplementedError

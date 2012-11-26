@@ -99,7 +99,8 @@ class Dynamic(object):
         return '?'
 
     def __repr__(self):
-        return str(self)
+        # emulate numpy
+        return ''.join(["dshape('", str(self), "')"])
 
 # Top is kind of an unforunate term because our system is very
 # much *not* a hierarchy nor does it form a lattice, but this is

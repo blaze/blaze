@@ -288,7 +288,7 @@ class ChunkedL(Layout):
         return 'Chunked(dim=%i)' % self.cdimension
 
 
-class MultichunkL(Layout):
+class MultichunkedL(Layout):
     """
     MultichunkL is a layout to contain multiple possibly unaligned
     chunks. It is enough to track the partition points of the
@@ -382,7 +382,7 @@ class MultichunkL(Layout):
 
     @property
     def desc(self):
-        return 'MultichunkL(points=%r)' % self.points
+        return 'Multichunked(points=%r)' % self.points
 
 #------------------------------------------------------------------------
 # Fractal Layouts
@@ -521,7 +521,7 @@ def nstack(n, a, b):
     bT = b.transform(T, Tinv)
     assert bT.tinv
 
-    return MultichunkL([a, bT], ndim)
+    return MultichunkedL([a, bT], ndim)
 
 def vstack(a, b):
     return nstack(0, a, b)

@@ -2,9 +2,9 @@ import numpy as np
 from operator import eq
 
 from byteprovider import ByteProvider
-from idx import Indexable, AutoIndex, Space, Subspace, Index
+from idx import Indexable, Space, Subspace, Index
 
-from datashape.coretypes import DataShape, Fixed, from_numpy
+from datashape.coretypes import DataShape, Fixed
 from layouts.scalar import ChunkedL
 from slicealgebra import numpy_get
 
@@ -12,7 +12,7 @@ from expr.graph import ArrayNode, injest_iterable
 from expr.metadata import metadata as md
 
 from sources.canonical import CArraySource, ArraySource
-from printer import array2string, table2string, generic_repr
+from printer import generic_repr
 
 #------------------------------------------------------------------------
 # Evaluation Class ( eclass )
@@ -137,7 +137,7 @@ class Array(Indexable):
         # coordinates with respect to the block.
 
         # ===================================
-        block, coords = self._layout[indexer]
+        #block, coords = self._layout[indexer]
         # ===================================
 
         # ----------------
@@ -148,7 +148,7 @@ class Array(Indexable):
         # into the block in question. I.e. for Numpy this is the
         # general dot product
 
-        plan = block.ca[indexer]
+        #plan = block.ca[indexer]
 
         # ----------------
         # Third Transform
@@ -156,8 +156,7 @@ class Array(Indexable):
         # Aggregate the data from the Data Descriptors and pass
         # them into a new Array object built around the result.
         # Infer the new coordinates of this resulting block.
-
-        return block
+        pass
 
     # Immediete slicing ( Side-effectful )
     def __setitem__(self, indexer, value):
@@ -259,44 +258,17 @@ class NDArray(Indexable, ArrayNode):
     #------------------------------------------------------------------------
 
     @staticmethod
-    def from_providers(shape, *providers):
+    def _from_providers(*providers):
         """
         Internal method to create a NDArray from a 1D list of
         byte providers. Tries to infer how the providers must be
         arranged in order to fit into the provided shape.
         """
-
-        # TODO: now we just infer how we layout the providers
-        # passed in
-        subspaces = []
-
-        ntype    = shape[-1]
-        outerdim = shape[0]
-        innerdim = shape[1]
-
-        #provided_dim = cast_arguments(providers)
-
-        # TODO: what now?
-        #shapes = [p.calculate(ntype) for p in providers]
-
-        #regular = reduce(eq, shapes)
-        #covers = True
-
-        #uni = reduce(union, shapes)
-
-        for i, provider in enumerate(providers):
-            # Make sure we don't go over the outer dimension
-
-            # (+1) because we don't usually consider 0 dimension
-            # as 1
-            assert (i+1) < outerdim
-
-            subspace = Subspace(provider)
-            subspaces += [subspace]
-
+        subspaces = [Subspace(provider) for provider in providers]
         space = Space(*subspaces)
-        #space.annotate(regular, covers)
 
+        # TODO: more robust
+        shape = providers[0].infer_datashape(providers[0])
         return NDArray(space, datashape=shape)
 
     def __str__(self):

@@ -1,37 +1,70 @@
 import numpy as np
 
-def getitem(cc, indexer, data):
+#------------------------------------------------------------------------
+# Manifest Data Retrieval
+#------------------------------------------------------------------------
 
-    # Fancy Indexing [...]
+def retrieve(cc, indexer, data):
+    """
+    Top dispatcher for data retrieval performs the checks to
+    determine what the user passed in to the brackets as an
+    indexer.
+
+    Parameters
+    ----------
+
+        :cc: Coordinate transform function
+
+        :indexer: Outer indexer passed from user.
+
+        :data: The byte provider to read bytes (if ``MANIFEST``) or
+               schedule a read operation ( if ``DEFERRED``).
+
+    """
+
     if isinstance(indexer, tuple):
-
-        # Fancy Indexing [(a,b)]
-        if len(indexer) == 2:
-            a = indexer[0]
-            b = indexer[1]
-
-            max1 = data.bounds[0]
-            max2 = data.bounds[1]
-
-            ix = range(a.start or 0, a.stop or max1, a.step or 1)
-            iy = range(a.start or 0, b.stop or max2, b.step or 1)
-
-            # TODO: use source.empty() to generalize
-            res = np.empty((len(ix), len(iy)))
-
-            for a, i in enumerate(ix):
-                for b, j in enumerate(iy):
-                    res[a,b] = data[cc(i,j)]
-            return res
-
-        # Fancy Indexing [a]
-        elif len(indexer) == 1:
-            return data[cc(indexer)]
-
+        if len(indexer) == 1:
+            return getitem(cc, indexer, data)
+        elif len(indexer) == 2:
+            return getslice(cc, indexer, data)
         else:
             raise NotImplementedError
+    elif isinstance(indexer, tuple):
+        return getlabel(cc, indexer, data)
+    else:
+        raise NotImplementedError
 
-def setitem(cc, indexer, data, value):
+def getslice(cc, indexer, data):
+    a = indexer[0]
+    b = indexer[1]
+
+    max1 = data.bounds[0]
+    max2 = data.bounds[1]
+
+    ix = range(a.start or 0, a.stop or max1, a.step or 1)
+    iy = range(a.start or 0, b.stop or max2, b.step or 1)
+
+    # TODO: use source.empty() to generalize
+    res = np.empty((len(ix), len(iy)))
+
+    for a, i in enumerate(ix):
+        for b, j in enumerate(iy):
+            res[a,b] = data[cc(i,j)]
+    return res
+
+def getitem(cc, indexer, data):
+    datum = data[cc(indexer)]
+    res = np.array(datum)
+    return res
+
+def getlabel(cc, indexer, data):
+    pass
+
+#------------------------------------------------------------------------
+# Manifest Data Write
+#------------------------------------------------------------------------
+
+def write(cc, indexer, data, value):
 
     # [(a,b)]
     if hasattr(indexer, '__iter__'):
@@ -66,3 +99,7 @@ def setitem(cc, indexer, data, value):
             data[cc(*indexer)] = value
     else:
         data[cc(*indexer)] = value
+
+#------------------------------------------------------------------------
+# Deferred Data Access
+#------------------------------------------------------------------------
