@@ -106,28 +106,6 @@ class Space(Set):
 
     def __init__(self, *subspaces):
         self.subspaces = subspaces
-        self._regular = None
-        self._covers  = None
-
-    def annotate(self, regular, covers):
-        # TODO: don't do this
-        self._regular = regular
-        self._covers  = covers
-
-    @property
-    def regular(self):
-        # Don't guess since, regular=False is not the same as "I
-        # don't know yet"
-        if self._regular is None:
-            raise CannotCast()
-        return self._regular
-
-    @property
-    def covers(self):
-        # don't guess
-        if self._covers is None:
-            raise CannotCast()
-        return self._covers
 
     def __contains__(self, other):
         return other in self.subspaces
@@ -227,11 +205,6 @@ class AutoIndex(Index):
 
     def build(self):
         space = self.space
-
-        if space.regular and space.covers:
-            pass
-        elif space.regular:
-            pass
 
     def __index__(self):
         pass
