@@ -1,6 +1,8 @@
 """
 Scalar layouts are arangements of scalar matrix data on to blocks
-of memory that may or may not be contigious.
+of memory that may or may not be contigious. The only requirement
+of a layout is that there be some unique way of distinguishing an
+"initial element" in the container from which to orient.
 """
 
 import math
@@ -74,6 +76,9 @@ def cdimshuffle(axi, mapping):
 
     return T, Tinv
 
+def crorate(self):
+    pass
+
 def splitl(lst, n):
     return lst[0:n], lst[n], lst[n:-1]
 
@@ -81,7 +86,10 @@ def linearize(spatial):
     # create flat hash map of all indexes
     pass
 
-def stack(c1,c2, axis):
+def stack_transforms(c1,c2, axis):
+    """
+    Stack two intervals to form a large interval
+    """
     #   p       q        p   q
     # [1,2] | [1,2] -> [1,2,3,4]
 
@@ -100,24 +108,37 @@ def stack(c1,c2, axis):
 # Scalar Interval
 #------------------------------------------------------------------------
 
-class interval(object):
+class Interval(object):
     """
+    A mathematical interval uniquely defined by two parameters
+
+    Parameters
+
+        :inf: lower bound
+
+        :sup: upper bound
     """
     def __init__(self, inf, sup):
         self.inf = inf
         self.sup = sup
 
     def __add__(self, n):
-        return interval(self.inf + n, self.sup + n)
+        """
+        Shift the interval
+        """
+        return Interval(self.inf + n, self.sup + n)
 
     def __mul__(self, n):
-        return interval(self.inf * n, self.sup * n)
+        """
+        Dilate the interval
+        """
+        return Interval(self.inf * n, self.sup * n)
 
     def __repr__(self):
         return 'i[%i,%i]' % (self.inf, self.sup)
 
 def hull(i1, i2):
-    return interval(min(i1.inf, i2.inf), max(i1.sup, i2.sup))
+    return Interval(min(i1.inf, i2.inf), max(i1.sup, i2.sup))
 
 #------------------------------------------------------------------------
 # Coordinate Mappings
@@ -185,23 +206,13 @@ class Layout(object):
     wraparound = True
     # Allow negative indexing
 
-    def __repr__(self):
-        out = 'Layout:\n'
-        for p in self.partitions:
-            out += '%r -> %i\n' % (p, id(p.ref))
-
-        out += '\nPartitions:\n'
-        out += pformat(dict(self.points))
-        return out
-
 #------------------------------------------------------------------------
-# Simple Layouts
+# Continuous Layouts
 #------------------------------------------------------------------------
 
-class IdentityL(Layout):
+class ContinuousL(Layout):
     """
-    Single block layout. Coordinate transform is just a
-    passthrough. This behaves like NumPy.
+    A single block with. Coordinate transform is just a passthrough.
     """
 
     def __init__(self, single):
@@ -220,7 +231,70 @@ class IdentityL(Layout):
     def desc(self):
         return 'Identity'
 
+class StridedL(Layout):
+    """
+    Single strided layout. This behaves like strided NumPy arrays.
+    """
+
+    def __init__(self, init, strides=None):
+        self.bounds     = []
+        self.partitions = []
+        self.init = init
+        self.strides = strides
+        self.points = {}
+
+    def change_coordinates(self, indexer):
+        """
+        Identity coordinate transform
+        """
+        raise NotImplementedError
+
+    @property
+    def desc(self):
+        return 'Strided(%r)' % self.strides
+
+#------------------------------------------------------------------------
+# Chunked Layouts
+#------------------------------------------------------------------------
+
+class ChunkedL(Layout):
+    """
+    Chunked layout, like CArray.
+
+    Parameters
+    ----------
+
+        :init: Initial block
+
+        :cdimension: Dimension along which chunks are aligned.
+                     CArraySource uses 0 by default.
+
+    """
+
+    def __init__(self, init, cdimension):
+        self.init = init
+        self.partitions = init.partitions
+        self.cdimension = cdimension
+        self.points = {}
+
+    def change_coordinates(self, indexer):
+        """
+        Identity coordinate transform
+        """
+        return self.init, indexer
+
+    @property
+    def desc(self):
+        return 'Chunked(dim=%i)' % self.cdimension
+
+
 class MultichunkL(Layout):
+    """
+    MultichunkL is a layout to contain multiple possibly unaligned
+    chunks. It is enough to track the partition points of the
+    array in arbitrary dimensions and then binary sort across
+    each dimension in order to resolve partition locations.
+    """
 
     def __init__(self, partitions, ndim):
         # The numeric (x,y,z) coordinates of ith partition point
@@ -269,10 +343,9 @@ class MultichunkL(Layout):
 
         return Layout(self.partitions, self.ndim)
 
-    #TODO: Blocked layout, move outside!
     def change_coordinates(self, indexer):
         """
-        Change coordinates into the memory block we're indexing into.
+        Change coordinates into the block we're indexing into.
         """
         # use xrange/len because we are mutating it
         indexerl = xrange(len(indexer))
@@ -300,33 +373,16 @@ class MultichunkL(Layout):
             else:
                 continue
 
-        # Trivially partitioned
         return self.init.ref, indexer
 
+    # TODO: use byte interfaces!
     def __getitem__(self, indexer):
         coords = self.change_coordinates(indexer)
         return coords
 
-class ChunkedL(Layout):
-    """
-    Chunked layout, like CArray.
-    """
-
-    def __init__(self, init, cdimension):
-        self.init = init
-        self.partitions = init.partitions
-        self.chunk_dimension = cdimension
-        self.points = {}
-
-    def change_coordinates(self, indexer):
-        """
-        Identity coordinate transform
-        """
-        return self.init, indexer
-
     @property
     def desc(self):
-        return 'Identity'
+        return 'MultichunkL(points=%r)' % self.points
 
 #------------------------------------------------------------------------
 # Fractal Layouts
@@ -444,7 +500,6 @@ class ZIndexL(Layout):
 # Block Combinations
 #------------------------------------------------------------------------
 
-# Low-level calls, never used by the end-user.
 def nstack(n, a, b):
 
     adim = len(a.components)
@@ -462,7 +517,7 @@ def nstack(n, a, b):
     axis = zeros(len(a.components))
     axis[n] = 1
 
-    T, Tinv = stack(a1, b1, list(axis))
+    T, Tinv = stack_transforms(a1, b1, list(axis))
     bT = b.transform(T, Tinv)
     assert bT.tinv
 

@@ -1,12 +1,12 @@
-from ndtable.layouts.scalar import interval, Chart, vstack,\
+from ndtable.layouts.scalar import Interval, Chart, vstack,\
     hstack, dstack
 
 def test_multiple_charts():
     alpha = object()
     beta  = object()
 
-    a = interval(0,2)
-    b = interval(0,2)
+    a = Interval(0,2)
+    b = Interval(0,2)
 
     x = Chart([a,b], alpha)
     y = Chart([a,b], beta)
@@ -19,8 +19,8 @@ def test_vertical_stack():
     alpha = object()
     beta  = object()
 
-    a = interval(0,2)
-    b = interval(0,2)
+    a = Interval(0,2)
+    b = Interval(0,2)
 
     x = Chart([a,b], alpha)
     y = Chart([a,b], beta)
@@ -53,8 +53,8 @@ def test_horizontal_stack():
     alpha = object()
     beta  = object()
 
-    a = interval(0,2)
-    b = interval(0,2)
+    a = Interval(0,2)
+    b = Interval(0,2)
 
     x = Chart([a,b], alpha)
     y = Chart([a,b], beta)
@@ -83,9 +83,9 @@ def test_third_axis():
     alpha = object()
     beta  = object()
 
-    a = interval(0,2)
-    b = interval(0,2)
-    c = interval(0,2)
+    a = Interval(0,2)
+    b = Interval(0,2)
+    c = Interval(0,2)
 
     x = Chart([a,b,c], alpha)
     y = Chart([a,b,c], beta)
