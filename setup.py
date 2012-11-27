@@ -178,6 +178,14 @@ extensions = [
         extra_compile_args=CFLAGS,
         define_macros=def_macros,
    ),
+
+   Extension( 'ndtable.engine.driver',
+        ['ndtable/engine/driver.pyx'],
+        include_dirs=[
+            blosc_path,
+            numpy_path,
+        ],
+   )
 ]
 
 #------------------------------------------------------------------------
