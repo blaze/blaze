@@ -107,7 +107,7 @@ def test_parse_ctypes():
     y = parse('800, 600, PyObject')
 
 def test_parse_vars():
-    x = parse('Var(1,2)')
+    x = parse('Range(1,2)')
 
     assert x[0].lower == 1
     assert x[0].upper == 2
@@ -137,6 +137,7 @@ def test_custom_record():
 
     assert Stock1.mid
 
+@skip
 def test_custom_record_infer():
 
     class Stock2(RecordDecl):

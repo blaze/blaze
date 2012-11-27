@@ -2,7 +2,7 @@ from abc import ABCMeta
 from numbers import Integral
 from collections import Set, Mapping, Sequence
 from itertools import count
-from datashape.coretypes import Var, TypeVar, Fixed
+from datashape.coretypes import Fixed, dynamic
 
 """
 An index describes how we map the entire "space" of indexer objects to
@@ -134,7 +134,7 @@ class Subspace(object):
         if isinstance(itemsize, Integral):
             return Fixed(self.underlying.calculate(itemsize))
         else:
-            return TypeVar('x0')
+            return dynamic
 
     def __repr__(self):
         return repr(self.underlying)

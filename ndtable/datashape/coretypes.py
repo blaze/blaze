@@ -61,7 +61,7 @@ class Null(Primitive):
     The null datashape.
     """
     def __str__(self):
-        return expr_string('NA', None)
+        return expr_string('null', None)
 
 class Integer(Primitive):
     """
@@ -248,13 +248,6 @@ class CType(DataShape):
         """
         return dtype(self.name)
 
-    def to_minitype(self):
-        """
-        To minivect AST node ( through Numpy for now ).
-        """
-        from ndtable.engine.mv import minitypes
-        return minitypes.map_dtype(dtype(self.name))
-
     def __str__(self):
         return str(self.parameters[0])
 
@@ -338,7 +331,7 @@ class TypeVar(Atom):
 
 # Internal-like range of dimensions, the special case of
 # [0, inf) is aliased to the type Stream.
-class Var(Atom):
+class Range(Atom):
     """
     Range type representing a bound or unbound interval of
     of possible Fixed dimensions.
@@ -390,7 +383,7 @@ class Var(Atom):
             return self.a
 
     def __str__(self):
-        return expr_string('Var', [self.lower, self.upper])
+        return expr_string('Range', [self.lower, self.upper])
 
 #------------------------------------------------------------------------
 # Aggregate
@@ -488,12 +481,8 @@ class Record(DataShape, Mapping):
 # =============
 
 # Right now we only have one operator (,) which constructs
-# product types ( ie A * B ). We call these dimensions.
+# product types ( ie A * B ).
 
-# It is neccesarry that if forall z = x * y then
-#   fst(z) * snd(z) = z
-
-# product :: A -> B -> A * B
 def product(A,B):
     if A.composite and B.composite:
         f = A.operands
@@ -513,29 +502,12 @@ def product(A,B):
 
     return DataShape(operands=(f+g))
 
-# fst :: A * B -> A
-def fst(ds):
-    return ds[0]
+#------------------------------------------------------------------------
+# Unit Types
+#------------------------------------------------------------------------
 
-# snd :: A * B -> B
-def snd(ds):
-    return ds[1:]
-
-def sum(A, B):
-    return Either(A,B)
-
-# left  :: A + B -> A
-def left(ds):
-    return ds.parameters[0]
-
-# right :: A + B -> B
-def right(ds):
-    return ds.parameters[1]
-
-# Machines Types
-# ==============
 # At the type level these are all singleton types, they take no
-# arguments in their constructors.
+# arguments in their constructors and have no internal structure.
 
 plat = calcsize('@P') * 8
 
@@ -605,17 +577,17 @@ top = Top()
 dynamic = Dynamic()
 NullRecord = Record()
 
-Stream = Var(Integer(0), None)
+Stream = Range(Integer(0), None)
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
 Type.register('?', Dynamic)
 
 # Top should not be user facing... but for debugging useful
-# Type.register('top', top)
+Type.register('top', top)
 
 #------------------------------------------------------------------------
-# NumPY Compatibility
+# NumPy Compatibility
 #------------------------------------------------------------------------
 
 def to_numpy(ds):
