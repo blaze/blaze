@@ -42,8 +42,8 @@ hierarchies of types with an explicit pre-ordering.
 Blaze favors the other approach in that types do not exist in a
 hierarchy but instead are inferred through constraint generation at
 "compile time". In addition it also permits a weakened version of
-gradual typing through a dynamic type ( denoted ``?`` ) which will allow
-a "escape hatch" in the type system for expressing types of values which
+gradual typing through a dynamic type ( denoted ``?`` ) which allows a
+"escape hatch" in the type system for expressing types of values which
 cannot be known until runtime.
 
 The goal of next generation of vector operations over Blaze structures
@@ -51,19 +51,16 @@ aim to allow a richer and more declarative way of phrasing operations
 over semi-structured data. While types are a necessary part of writing
 efficient code, the ideal type system is one which disappears entirely!
 
-Machine Types
-~~~~~~~~~~~~~
+Unit Types
+~~~~~~~~~~
 
-+----------------+
-| long           |
-+----------------+
-| double         |
-+----------------+
-| short          |
-+----------------+
-| longdouble     |
-+----------------+
-| char           |
+Datashape types that are single values are called **unit** types. They
+represent a fixed type that has no internal structure. For example
+``int32`` or ``2``.
+
+In Blaze there are two classes of units **measures** and **dimensions**.
+Measures are units of data, while dimensions are units of shape.
+
 +----------------+
 | int8           |
 +----------------+
@@ -97,22 +94,83 @@ Machine Types
 +----------------+
 | complex256     |
 +----------------+
-| void           |
+| long           |
++----------------+
+| double         |
++----------------+
+| short          |
++----------------+
+| longdouble     |
++----------------+
+| char           |
 +----------------+
 | bool           |
 +----------------+
 | pyobj          |
 +----------------+
 
+Products
+--------
+
+A comma between two types signifies a product type. Product types
+correspond to branching possibilities of types.
+
+The product operator ``(,)`` is used to construct product types.
+It is a type constructor of two arguments.
+
+Example::
+
+    a, b
+
+It is also left associative, namely::
+
+    ((a, b), c) = a, b, c
+
+The product operator has the additional constraint that the first
+operator cannot be a measure. This permits types of the form::
+
+    a, int32
+    a, b, int32
+
+But forbids types of the form::
+
+    int32, a
+    int32, int32
+
+There is a algebraic relation between product types and sum types
+( discussed below ).
+
+Fixed
+~~~~~
+
+The unit shape type is a **dimension** unit type. They are represented
+as just integer values at the top level of the datatype. These are
+identical to ``shape`` parameters in NumPy. ::
+
+    2, int32
+
+Is an equivalent to the shape and dtype of a NumPy array of the form::
+
+    array([1, 2], dtype('int32'))
+
+A 2 by 3 matrix of integers has datashape::
+
+    2, 3, int32
+
+With the corresponding NumPy array::
+
+    array([[ 1,  2,  3],
+           [ 4,  5,  6]])
+
 Constructors
 ~~~~~~~~~~~~
 
-Datashape types that are single values are called **unit** types. They
-represent a fixed type that is not dependent on any parameters. For
-example ``int32`` or ``2``.
-
 Datashape types that are comprised of multiple unit types are
-called **composite** types. Example::
+called **composite** types. The product operator discussed above
+yields composite types. Example::
+
+A **type operator** is higher type that maps each choice of parameter to
+a concrete type instance.
 
     2, int32
 
@@ -121,28 +179,26 @@ Datashape types that are comprised of unbound free variables are called
 
     A, B, int32
 
-A **type operator** is higher type that produces maps each choice
-of parameter to a concrete type.
-
 Datashape types with free parameters in their constructor are called
 **parameterized** types. Example::
 
     SquareMatrix T = N, N, T
 
-Datashape types wihtout free parameters in their constructor are called
-**alias** types. They don't add any additional structure they just
-provide a new name. Example::
+Datashape types without free parameters in their constructor are called
+**alias** types. Alias types don't add any additional structure they just
+ascribe a new name. Example::
 
     SquareIntMatrix = N, N, int32
 
-The ``int`` and ``float`` types are automatically aliased to the either
-``int32`` or ``int64`` types depending on the platform.
+For example, the ``int`` and ``float`` types are automatically aliased
+to the either ``int32`` or ``int64`` types depending on the platform.
 
 Once the types are registered they can be used in dtype expressions just
 like primitive values and also to construct even higher order types.
-Blaze does not permit recursive type definitions at this time.
 
-Datashape types are broken into three equivalence classes.
+Blaze does not permit recursive type definitions.
+
+Datashape types are split into three equivalence classes.
 
 :Fixed:
 
@@ -178,32 +234,12 @@ to each other, it is however necessarily true that the unification of
 two identically defined composite types is structurally identical to the
 two types.
 
-Fixed
-~~~~~
-
-Fixed dimensions are just integer values at the top level of the
-datatype. These are identical to ``shape`` parameters in NumPy. ::
-
-    2, int32
-
-Is an equivalent to a Numpy array of the form::
-
-    array([1, 2], dtype('int32'))
-
-A 2 by 3 matrix of integers has datashape::
-
-    2, 3, int32
-
-With the corresponding NumPy array::
-
-    array([[ 1,  2,  3],
-           [ 4,  5,  6]])
-
 Records
 ~~~~~~~
 
 Record types are ordered struct-like objects which hold a collection of
-types keyed by labels.
+types keyed by labels. Records are also an in the class of **measure**
+types.
 
 Example 1::
 
@@ -223,11 +259,14 @@ Example 2::
         a: int8
     }
 
+Composite datashapes that terminate in record types are called
+**table-like**, while any other termianting type is called
+**array-like**.
+
 Enumeration
 -----------
 
-A enumeration specifies a number of fixed dimensions
-sequentially::
+A enumeration specifies a number of fixed dimensions sequentially. Example::
 
     {1,2,4,2,1}, int32
 
@@ -247,8 +286,9 @@ The above could describe a structure of the form::
 Variadic
 ~~~~~~~~
 
-Variadic types expression unknown, but fixed dimensions which are scoped
-within the type signature.
+Variadic types expression unknown, but fixed dimensions which are
+expressed as free variables scoped within the type signature. The
+variable is referred to as **type variable** or ``TypeVar``.
 
 For example the type capable of expressing all square two dimensional
 matrices could be written as::
@@ -260,51 +300,41 @@ can be written as::
 
     A, B, int32
 
-
 ..
-    (1 + 2 + ... + A) * (1 + 2 + ... B ) * int32
+    (1x + 2x + ... + Ax) * (1y + 2y + ... By)
 
-Ranges
-~~~~~~
+Sums
+----
 
-Ranges are unknown fixed dimensions within a lower and upper
-bound.
+A **sum type** is a type representing a collection of heterogeneously
+typed values. There are four instances of sum types in Blaze's type
+system:
 
-Example 1::
-
-    Var(1,5)
-
-The lower bound must be greater than 0. The upper bound must be
-greater than the lower, but may also be unbounded ( i.e. ``inf`` ).
-
-A case where a range has no upper bound signifies a potentially infinite
-**stream** of values. Specialized kernels are needed to deal with data
-of this type.
-
-..
-    (a + ... + b) * int32
-
+* Variants
+* Unions
+* Options
+* Ranges
 
 Variants
 ~~~~~~~~
 
 A **variant** type is a sum type with two tagged parameters ``left`` and
-``right`` which represent two possible types::
+``right`` which represent two possible types. We use the keyword
+``Either`` to represent the type operator. Examples::
 
     Either float char
     Either int32 na
     Either {1,2} {4,5}
 
 ..
-    left, right
-    forward, backward
+    1 + B + C ...
 
 Union
 ~~~~~
 
 A **union** or **untagged union** is a variant type permitting a
 variable number of variants. Unions behave like unions in C and permit a
-collection of heterogeneous types within the same context::
+collection of heterogeneous typed values::
 
     Union int8 int16 int32 int64
 
@@ -326,3 +356,36 @@ For example a nullable int field::
 
 ..
     1 + A
+
+Ranges
+~~~~~~
+
+Ranges are sum types over shape instead of data.
+
+Ranges are heterogeneously fixed dimensions within a lower and upper
+bound.
+
+Example 1::
+
+    Var(1,5)
+
+The lower bound must be greater than 0. The upper bound must be
+greater than the lower, but may also be unbounded ( i.e. ``inf`` ).
+
+..
+    (1 + 1 + 1 .. + 1)
+
+Stream
+~~~~~~
+
+Ranges are sum types over shape instead of data.
+
+A case where a ``Range`` has no upper bound signifies a potentially infinite
+**stream** of values. Specialized kernels are needed to deal with data
+of this type.
+
+The difference between a stream and a TypeVar is that TypeVar are scoped
+within the datashape expression whereas ``Stream`` objects are not.
+
+..
+    (1 + 1 + ...)
