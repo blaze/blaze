@@ -4,6 +4,7 @@ from time import time
 import numpy as np
 cimport numpy as np
 import cython
+from libc.math cimport sqrt
 
 # Initialize numpy library
 np.import_array()
@@ -11,6 +12,7 @@ np.import_array()
 # Main function for calculating ED distance between the query, Q, and current
 # data, T.  Note that Q is already sorted by absolute z-normalization value,
 # |z_norm(Q[i])|
+@cython.cdivision(True)
 cdef double distance(double *Q, double *T, int m , double mean,
                      double std, int *order, double bsf):
     cdef int i
@@ -23,6 +25,7 @@ cdef double distance(double *Q, double *T, int m , double mean,
     return sum_
 
 @cython.boundscheck(False)
+@cython.cdivision(True)
 def ed(datafile, queryfile, count=None):
     """Get the best euclidean distance of `queryfile` in `datafile`.
 
@@ -114,20 +117,16 @@ def ed(datafile, queryfile, count=None):
             ex2 += IT[m-1] * IT[m-1]
             mean = ex / m
             std = ex2 / m
-            std = np.sqrt(std - mean * mean)
+            std = sqrt(std - mean * mean)
             # Update the ex and ex2 values
             ex = ex - IT[j]
             ex2 = ex2 - IT[j] * IT[j]
 
-            # t1 = time()
-            # mean = IT.mean()
-            # std = IT.std()
-            #print "time mean/std:", time()-t1
             # Calculate ED distance
             t1 = time()
             dist = distance(<double*>Q.data, <double*>IT.data,
                             m, mean, std, <int*>order.data, bsf)
-            #print "time dist:", time()-t1
+
             if dist < bsf:
                 bsf = dist
                 loc = (i - m) + j + 1
@@ -135,11 +134,11 @@ def ed(datafile, queryfile, count=None):
         # Copy the upper part of T to the lower part
         if prevm == m:
             T[:m] = T[m:]
-        # if i > 100*m:
+        # if i > 1000*m:
         #     break
 
     fp.close()
-    dist = np.sqrt(bsf)
+    dist = sqrt(bsf)
     t2 = time()
 
     print "Location : ", loc
