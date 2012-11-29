@@ -47,9 +47,10 @@ def ed(datafile, queryfile, count=None):
     cdef np.npy_intp loc = 0    # answer: location of the best-so-far match
     cdef np.npy_intp i, j
     cdef double d
-    cdef int m
+    cdef int m, prevm
     cdef np.npy_intp fsize, nelements
     cdef double mean, std
+    cdef double ex, ex2
     cdef double dist = 0
 
     t0 = time()
@@ -88,19 +89,38 @@ def ed(datafile, queryfile, count=None):
 
     # Bootstrap the process by reading the first m elements
     T[:m] = np.fromfile(fp, 'f8', m)
+    # Prepare the ex and ex2 values for the inner loop (j) below
+    LT = T[:m-1]
+    ex = LT.sum()
+    ex2 = (LT * LT).sum()
 
     bsf = np.inf
     # Read data file, m elements at a time
     for i in range(m, nelements, m):
         #print "i, m:", i, m
+        prevm = m
         if i + m > nelements:
             m = nelements - i
-        T[m:] = np.fromfile(fp, 'f8', m)
+            # Recalculate the ex and ex2 values
+            LT = T[:m-1]
+            ex = LT.sum()
+            ex2 = (LT * LT).sum()
+        T[prevm:prevm+m] = np.fromfile(fp, 'f8', m)
         for j in range(m):
             IT = T[j:j+m]
-            t1 = time()
-            mean = IT.mean()
-            std = IT.std()
+            # Update the ex and ex2 values
+            ex += IT[m-1]
+            ex2 += IT[m-1] * IT[m-1]
+            mean = ex / m
+            std = ex2 / m
+            std = np.sqrt(std - mean * mean)
+            # Update the ex and ex2 values
+            ex = ex - IT[j]
+            ex2 = ex2 - IT[j] * IT[j]
+
+            # t1 = time()
+            # mean = IT.mean()
+            # std = IT.std()
             #print "time mean/std:", time()-t1
             # Calculate ED distance
             t1 = time()
@@ -109,9 +129,11 @@ def ed(datafile, queryfile, count=None):
             #print "time dist:", time()-t1
             if dist < bsf:
                 bsf = dist
-                loc = (i - m) + j +1
+                loc = (i - m) + j + 1
+
         # Copy the upper part of T to the lower part
-        T[:m] = T[m:]
+        if prevm == m:
+            T[:m] = T[m:]
         # if i > 2*m:
         #     break
 
