@@ -98,8 +98,10 @@ class BlockPlan(object):
     def generate(self):
         if len(self.operands) == 1:
             return self.generate1()
-        else:
+        elif len(self.operands) == 2:
             return self.generate2()
+        else:
+            raise NotImplementedError
 
     def generate2(self):
         return zip(
@@ -186,13 +188,26 @@ def _generate(nodes, _locals, _retvals, tmpvars):
         if blocked:
             # XXX
             dummy_size = '4096'
+
+            # 2 blocked arguments
+            block1 = next(tmpvars)
+            block2 = next(tmpvars)
+
             tmpvar = next(tmpvars)
+
             _retvals[op] = tmpvar
 
             bplan = BlockPlan(largs, align=PAGE)
-            for a,b in bplan.generate():
-                yield Instruction('alloca_chunk', tmpvar, dummy_size)
-                yield Instruction(op.__class__.__name__, None, *(largs + [tmpvar]))
+
+            yield Instruction('alloca', block1, str(PAGESIZE))
+            yield Instruction('alloca', block2, str(PAGESIZE))
+
+            for i, (a,b) in enumerate(bplan.generate()):
+                # put actual FFI calls here...
+                yield Instruction('blosc_load', block1, str(i))
+                yield Instruction('blosc_load', block2, str(i))
+
+                yield Instruction(op.__class__.__name__, tmpvar, block1, block2)
 
         # blocked execution ( scalar operations, in-core array expressions)
         else:
