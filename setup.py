@@ -178,13 +178,9 @@ extensions = [
         extra_compile_args=CFLAGS,
         define_macros=def_macros,
    ),
-
-   Extension( 'ndtable.engine.driver',
-        ['ndtable/engine/driver.pyx'],
-        include_dirs=[
-            blosc_path,
-            numpy_path,
-        ],
+   Extension(
+        "ucr_dtw.ucr", ["ucr-dtw/ucr.pyx"],
+        include_dirs = [numpy_path]
    )
 ]
 
@@ -259,10 +255,10 @@ setup(
     ],
     packages=packages,
     install_requires=[''],
+    ext_modules=extensions,
     cmdclass = {
         'build_ext' : build_ext,
         'test'      : testrunner,
         'clean'     : CleanCommand,
     },
-    ext_modules=extensions,
 )

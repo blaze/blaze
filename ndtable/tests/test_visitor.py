@@ -55,16 +55,3 @@ def test_simple_transform_mro():
     a = walk.visit(x)
 
     assert a == [[True, [[True, True]]]]
-
-
-# commented because they have IO effects that pollute the test
-# output
-
-# def test_printer():
-#     walk = ExprPrinter()
-#     walk.visit(x)
-#     walk.visit(y)
-#
-# def test_mprinter():
-#     walk = MorphismPrinter()
-#     walk.visit(x) #     walk.visit(y)
