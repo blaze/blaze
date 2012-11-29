@@ -29,8 +29,6 @@ Overview
    quickstart
    overview
    datashape
-   desc
-   blaze
    memory
    format
 
@@ -50,7 +48,6 @@ API Reference
    table
    execution
    releases
-   theory
    legal
 
 Index
