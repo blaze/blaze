@@ -3,6 +3,7 @@ import os.path
 from time import time
 import numpy as np
 cimport numpy as np
+import cython
 
 # Initialize numpy library
 np.import_array()
@@ -21,7 +22,7 @@ cdef double distance(double *Q, double *T, int m , double mean,
             return sum_
     return sum_
 
-
+@cython.boundscheck(False)
 def ed(datafile, queryfile, count=None):
     """Get the best euclidean distance of `queryfile` in `datafile`.
 
@@ -40,9 +41,9 @@ def ed(datafile, queryfile, count=None):
     and `dist` is the distance.
     
     """
-    cdef np.ndarray Q           # query array
-    cdef np.ndarray T, IT       # arrays of current data
-    cdef np.ndarray order       # ordering of query by |z(q_i)|
+    cdef np.ndarray[np.npy_float64, ndim=1] Q        # query array
+    cdef np.ndarray[np.npy_float64, ndim=1] T, IT    # arrays of current data
+    cdef np.ndarray[np.npy_intp, ndim=1] order       # ordering of query by |z(q_i)|
     cdef double bsf             # best-so-far
     cdef np.npy_intp loc = 0    # answer: location of the best-so-far match
     cdef np.npy_intp i, j
@@ -134,7 +135,7 @@ def ed(datafile, queryfile, count=None):
         # Copy the upper part of T to the lower part
         if prevm == m:
             T[:m] = T[m:]
-        # if i > 2*m:
+        # if i > 100*m:
         #     break
 
     fp.close()
