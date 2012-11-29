@@ -69,8 +69,10 @@ class Instruction(object):
         self.ret = ret
 
     def __repr__(self):
+        # with output types
         if self.ret:
             return self.ret + ' = ' + ' '.join((self.op,) + self.args)
+        # purely side effectful
         else:
             return ' '.join((self.op,) + self.args)
 
@@ -113,9 +115,6 @@ class BlockPlan(object):
         if last < o.dd.nbytes:
             yield (last, o.dd.nbytes)
 
-def _generate_const():
-    pass
-
 def tmps():
     for i in string.letters:
         yield '%' + i
@@ -129,8 +128,10 @@ def _generate(nodes, _locals, _retvals):
             if arg.kind == APP:
                 largs.append(_retvals[arg.operator])
             if arg.kind == VAL:
+                # constants
                 if issubclass(arg.vtype, (int, long, float)):
                     largs.append(str(arg.data.pyobject))
+                # variables
                 else:
                     _locals[op.val]
 
@@ -139,7 +140,7 @@ def _generate(nodes, _locals, _retvals):
 
         _retvals[op] = tmpvar
         yield Instruction('alloca', tmpvar, dummy_size)
-        yield Instruction(op.__class__.__name__, tmpvar, *largs)
+        yield Instruction(op.__class__.__name__, None, *(largs + [tmpvar]))
 
 def generate(graph, variables, kernels):
     # The variables come in topologically sorted, so we just

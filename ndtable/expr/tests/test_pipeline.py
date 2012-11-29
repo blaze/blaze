@@ -1,6 +1,7 @@
 from ndtable.expr import ops
 from ndtable.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
+from pprint import pprint
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -78,4 +79,17 @@ def test_simple_sort_vals():
 def test_simple_pipeline():
     line = Pipeline()
     plan = line.run_pipeline(x)
-    print plan
+    print '\n'
+    print pprint(plan, width=1)
+
+    plan = line.run_pipeline(y)
+    print '\n'
+    print pprint(plan, width=1)
+
+    plan = line.run_pipeline(x+y)
+    print '\n'
+    print pprint(plan, width=1)
+
+    plan = line.run_pipeline(x*(y+2)+3)
+    print '\n'
+    print pprint(plan, width=1)
