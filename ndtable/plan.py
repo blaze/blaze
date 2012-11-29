@@ -3,7 +3,6 @@ Execution plans.
 """
 import string
 import numpy as np
-from itertools import izip
 from mmap import PAGESIZE
 from pprint import pprint
 
@@ -87,7 +86,7 @@ class BlockPlan(object):
         if align == L2:
             self.align = L2SIZE
         elif align == L3:
-            self.align = L2SIZE
+            self.align = L3SIZE
         elif align == PAGE:
             self.align = PAGESIZE
         else:
@@ -129,7 +128,8 @@ def _generate(nodes, _locals, _retvals, tmpvars):
             if arg.kind == VAL:
                 # arrays & tables
                 if isinstance(arg, Indexable):
-                    # Read the data descriptor for the
+                    # Read the data descriptor for the array or
+                    # table in question.
                     largs.append(arg.data.read_desc())
                 # variables
                 elif isinstance(arg.val, (int, long, float)):
@@ -138,7 +138,8 @@ def _generate(nodes, _locals, _retvals, tmpvars):
                 else:
                     _locals[op.val]
 
-        dummy_size = '1024'
+        # XXX
+        dummy_size = '4096'
         tmpvar = next(tmpvars)
 
         _retvals[op] = tmpvar

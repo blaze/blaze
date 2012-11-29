@@ -101,6 +101,6 @@ def test_simple_pipeline():
     print '\n'
     print pprint(plan, width=1)
 
-    plan = line.run_pipeline(d+d+d)
+    plan = line.run_pipeline((d+d)+(d+d))
     print '\n'
     print pprint(plan, width=1)

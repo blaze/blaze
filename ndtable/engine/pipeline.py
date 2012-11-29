@@ -151,22 +151,10 @@ OP  = 0
 APP = 1
 VAL = 2
 
-def toposort(pred, graph):
+def khan_sort(pred, graph):
     """
-    Sort the expression graph topologically to resolve the order needed
-    to execute operations.
+    See: Kahn, Arthur B. (1962), "Topological sorting of large networks"
     """
-
-    #
-    #     +
-    #    / \
-    #   a   +     --> [a, b, c]
-    #      / \
-    #     b   c
-    #         |
-    #         a
-    #
-
     result = []
     count = Counter()
 
@@ -190,6 +178,33 @@ def toposort(pred, graph):
     # Collect all the nodes thats satisfy the selecter property.
     # For example, all the value nodes or all the op nodes.
     return list(ifilter(pred, result))
+
+def tarjan_sort(pred, graph):
+    raise NotImplementedError
+
+def toposort(pred, graph, algorithm='khan'):
+    """
+    Sort the expression graph topologically to resolve the order needed
+    to execute operations.
+
+    """
+
+    #
+    #     +
+    #    / \
+    #   a   +     --> [a, b, c, d]
+    #      / \
+    #     b   c
+    #         |
+    #         d
+    #
+
+    if algorithm == 'khan':
+        return khan_sort(pred, graph)
+    if algorithm == 'tarjan':
+        return tarjan_sort(pred, graph)
+    else:
+        raise NotImplementedError
 
 topovals = partial(toposort, lambda x: x.kind == VAL)
 topops   = partial(toposort, lambda x: x.kind == OP)
