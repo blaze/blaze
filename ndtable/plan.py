@@ -9,6 +9,7 @@ from pprint import pprint
 from collections import namedtuple
 from ndtable.expr.graph import OP, APP, VAL
 from ndtable.idx import Indexable
+from ndtable.byteproto import CONTIGUOUS, READ
 
 L2SIZE = 2**17
 L3SIZE = 2**20
@@ -95,10 +96,19 @@ class BlockPlan(object):
         self.operands = operands
 
     def generate(self):
+        if len(self.operands) == 1:
+            return self.generate1()
+        else:
+            return self.generate2()
+
+    def generate2(self):
         return zip(
             list(self.chunk_for(self.operands[0])),
             list(self.chunk_for(self.operands[1]))
         )
+
+    def generate1(self):
+        return list(self.chunk_for(self.operands[0]))
 
     def chunk_for(self, o):
         """ Generate a list of blocksizes for the operand given the total
@@ -106,14 +116,22 @@ class BlockPlan(object):
         """
         last = 0
 
+        # it's a tiny chunk thats less than the alignment, so
+        # it's trivial
+        if o.nbytes < self.align:
+            yield (0, o.nbytes)
+            raise StopIteration
+
         # aligned chunks
-        for csize in xrange(0, o.dd.nbytes, self.align):
+        for csize in xrange(0, o.nbytes, self.align):
             last = csize
             yield (last, csize)
 
         # leftovers
-        if last < o.dd.nbytes:
-            yield (last, o.dd.nbytes)
+        if last < o.nbytes:
+            yield (last, o.nbytes)
+        else:
+            raise StopIteration
 
 def tmps():
     for i in string.letters:
@@ -121,30 +139,69 @@ def tmps():
 
 def _generate(nodes, _locals, _retvals, tmpvars):
     for op in nodes:
+        blocked = False
         largs = []
+
         for arg in op.children:
+
             if arg.kind == APP:
                 largs.append(_retvals[arg.operator])
-            if arg.kind == VAL:
-                # arrays & tables
+
+            elif arg.kind == VAL:
+                #-----------------
+                # Arrays & Tables
+                #-----------------
                 if isinstance(arg, Indexable):
                     # Read the data descriptor for the array or
                     # table in question.
-                    largs.append(arg.data.read_desc())
-                # variables
+
+                    # If the ByteProvider supports contigious
+                    # reading then we're in luck just do the
+                    # operation in core
+                    if arg.data.has_op(CONTIGUOUS, READ):
+                        largs.append(arg.data.read_desc())
+
+                    # Otherwise we have to figure out the
+                    # BlockPlan ( term from Travis ) to figure
+                    # out how to shuffle bytes chunkwise given
+                    # the bounds and chunk alignment of the data
+                    # descriptor
+                    else:
+                        blocked = True
+                        largs.append(arg.data.read_desc())
+
+                #-----------
+                # Constants
+                #-----------
                 elif isinstance(arg.val, (int, long, float)):
                     largs.append(str(arg.data.pyobject))
-                # variables
+
+                #-------------------
+                # Named Expressions
+                #-------------------
                 else:
                     _locals[op.val]
 
-        # XXX
-        dummy_size = '4096'
-        tmpvar = next(tmpvars)
+        # blocked execution ( out-of-core array expressions )
+        if blocked:
+            # XXX
+            dummy_size = '4096'
+            tmpvar = next(tmpvars)
+            _retvals[op] = tmpvar
 
-        _retvals[op] = tmpvar
-        yield Instruction('alloca', tmpvar, dummy_size)
-        yield Instruction(op.__class__.__name__, None, *(largs + [tmpvar]))
+            bplan = BlockPlan(largs, align=PAGE)
+            for a,b in bplan.generate():
+                yield Instruction('alloca_chunk', tmpvar, dummy_size)
+                yield Instruction(op.__class__.__name__, None, *(largs + [tmpvar]))
+
+        # blocked execution ( scalar operations, in-core array expressions)
+        else:
+            # XXX
+            dummy_size = '4096'
+            tmpvar = next(tmpvars)
+            _retvals[op] = tmpvar
+            yield Instruction('alloca', tmpvar, dummy_size)
+            yield Instruction(op.__class__.__name__, None, *(largs + [tmpvar]))
 
 def generate(graph, variables, kernels):
     # The variables come in topologically sorted, so we just

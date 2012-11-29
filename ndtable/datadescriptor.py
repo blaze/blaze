@@ -16,9 +16,10 @@ class DataDescriptor(object):
     form at as low a level as possible.
     """
 
-    def __init__(self, id):
+    def __init__(self, id, nbytes):
         # XXX: whatever, just something unique for now
         self.id = id
+        self.nbytes = nbytes
 
     def __str__(self):
         return self.id
