@@ -2,6 +2,7 @@
 Holds the base classes for graph nodes.
 """
 
+from uuid import uuid4
 from numbers import Integral
 from collections import Iterable
 
@@ -494,6 +495,10 @@ class Op(ExpressionNode):
         self.op = op
         self.children = operands
         self._opaque = False
+
+        # minor hack until we get graph level numbering of
+        # expression objects
+        self.uuid = str(uuid4())
 
         # Make sure the graph makes sense given the signature of
         # the function. Does naive type checking and inference.

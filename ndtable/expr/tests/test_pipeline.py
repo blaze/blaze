@@ -78,3 +78,4 @@ def test_simple_sort_vals():
 def test_simple_pipeline():
     line = Pipeline()
     plan = line.run_pipeline(x)
+    print plan

@@ -112,9 +112,9 @@ class Top(Primitive):
         # emulate numpy
         return ''.join(["dshape('", str(self), "')"])
 
-# ==================================================================
+#------------------------------------------------------------------------
 # Base Types
-# ==================================================================
+#------------------------------------------------------------------------
 
 class DataShape(object):
     __metaclass__ = Type
@@ -477,11 +477,9 @@ class Record(DataShape, Mapping):
     def __repr__(self):
         return 'Record ' + repr(self.d)
 
+#------------------------------------------------------------------------
 # Constructions
-# =============
-
-# Right now we only have one operator (,) which constructs
-# product types ( ie A * B ).
+#------------------------------------------------------------------------
 
 def product(A,B):
     if A.composite and B.composite:

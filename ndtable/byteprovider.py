@@ -17,6 +17,9 @@ class ByteProvider(object):
     will devise a way to do the operation as a sequence of instructions.
     """
 
+    def getbuffer(self):
+        raise NotImplementedError
+
     def read_desc(self):
         """ Returns the naive descriptor, which will be
         speciazlied by execution """

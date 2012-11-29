@@ -1,93 +1,162 @@
 """
-Execution plans, ala SQL.
+Execution plans.
 """
-
-# TODO: for bootstrapping
-import math
+import string
 import numpy as np
-import ndtable.carray as ca
-from ndtable.expr.graph import VAL, OP, APP
+from itertools import izip
+from mmap import PAGESIZE
+from pprint import pprint
 
-from collections import Sequence, OrderedDict, namedtuple
+from collections import namedtuple
+from ndtable.expr.graph import OP, APP, VAL
 
-READ  = 1
-WRITE = 2
+L2SIZE = 2**17
+L3SIZE = 2**20
 
-def traverse(x):
-    if isinstance(x, dict):
-        for a in x.k:
-            yield a
-    else:
-        yield x
+L2   = 1
+L3   = 2
+PAGE = 3
 
-#------------------------------------------------------------------------
-# Execution Plans
-#------------------------------------------------------------------------
+map_kernels = {
+    ('add', 'i', 'i'): ''
+}
 
-class Operation(object):
+reduce_kernels = {
+    ('sum', 'i', 'i'): ''
+}
 
-    def __init__(self, kernel, descriptors, seq=False, csections=None):
-        self.ordered = False
-
-        self.sequential = seq
-        self.parallel = not self.sequential
-
-        # later...
-        #if self.parallel:
-            #self.csections = []
+special_kernels = {
+}
 
 #------------------------------------------------------------------------
-# Ops
+# Toy Kernels
 #------------------------------------------------------------------------
 
-def coerce_descriptor(kernel, operands):
-    """
-    Coerce a descriptor into what the kernel desires. Produces a
-    sequence of operations that load that load the bytes into a
-    collection of temporaries if the underlying medium doesn't
-    support the optimal operation ( i.e casting a Stream into a
-    Contigious ).
+def add_scalars(a,b,o):
+    res = np.empty(1, o)
+    np.add(a,b,res)
+    return res
 
-        s : Stream(1,2,3) :: Contigious =
+def add_incore(dd_a, ds_a, dd_b, ds_b, ds_o):
+    res = np.empty(ds_o)
+    np.add(ds_a.getbuffer(), ds_b.getbuffer(), res)
+    return res
 
-            [
-                tmp = allocate(3, int32),
-                tmp <- read(s),
-                tmp <- read(s),
-                tmp <- read(s)
-            ]
+# chunks = [((0,1024), (0, 1024))], a range for each of the
+# operands
+def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
+    res = np.empty(ds_o) # may be a scalar
 
-    If the descriptor is optimal this does nothing.
-    """
-    # XXX
-    return operands
+    for ca_start, ca_end, cb_start, cb_end in chunks:
+        np.add(
+            ds_a.getchunk(ca_start, ca_end),
+            ds_b.getchunk(cb_start, cb_end),
+        res)
 
-def generate(ops, vars, kernels, hints):
-    """ Generate the execution plan for retrieval of data and
-    execution of kernels """
-    _vars = {}
+    return res
 
-    for var in vars:
-        if var.kind == VAL:
-            descriptor = var.data
-            _vars[var] = descriptor
+#------------------------------------------------------------------------
+# Plans
+#------------------------------------------------------------------------
 
-    for op in ops:
-        kernel = kernels[op]
-        lvars = coerce_descriptor(kernel, *ops)
-        # XXX -- kernel specialization here --
+class Instruction(object):
+    def __init__(self, op, ret=None, *args):
+        '%1 = op ...'
 
-        yield Operation(kernel, lvars)
+        self.op = op
+        self.args = args
 
-def showplan(plan, indent=0):
-    """
-    Pretty print the execution plan with ordering.
+        self.ret = ret
 
-    S add
-    S mul
-    S abs
+    def __repr__(self):
+        if self.ret:
+            return self.ret + ' = ' + ' '.join((self.op,) + self.args)
+        else:
+            return ' '.join((self.op,) + self.args)
 
-    """
-    for operation in plan:
-        flag = 'P' if (operation.parallel) else 'S'
-        return (' '*indent) + flag + ( + showplan(operation))
+class Constant(object):
+    def __init__(self, val):
+        self.val = val
+
+class BlockPlan(object):
+
+    def __init__(self, operands, align=L2):
+        if align == L2:
+            self.align = L2SIZE
+        elif align == L3:
+            self.align = L2SIZE
+        elif align == PAGE:
+            self.align = PAGESIZE
+        else:
+            raise NotImplementedError
+
+        self.operands = operands
+
+    def generate(self):
+        return zip(
+            list(self.chunk_for(self.operands[0])),
+            list(self.chunk_for(self.operands[1]))
+        )
+
+    def chunk_for(self, o):
+        """ Generate a list of blocksizes for the operand given the total
+        number of bytes specified by the byte descriptor.
+        """
+        last = 0
+
+        # aligned chunks
+        for csize in xrange(0, o.dd.nbytes, self.align):
+            last = csize
+            yield (last, csize)
+
+        # leftovers
+        if last < o.dd.nbytes:
+            yield (last, o.dd.nbytes)
+
+def _generate_const():
+    pass
+
+def tmps():
+    for i in string.letters:
+        yield '%' + i
+
+tmp = tmps()
+
+def _generate(nodes, _locals, _retvals):
+    for op in nodes:
+        largs = []
+        for arg in op.children:
+            if arg.kind == APP:
+                largs.append(_retvals[arg.operator])
+            if arg.kind == VAL:
+                if issubclass(arg.vtype, (int, long, float)):
+                    largs.append(str(arg.data.pyobject))
+                else:
+                    _locals[op.val]
+
+        dummy_size = '1024'
+        tmpvar = next(tmp)
+
+        _retvals[op] = tmpvar
+        yield Instruction('alloca', tmpvar, dummy_size)
+        yield Instruction(op.__class__.__name__, tmpvar, *largs)
+
+def generate(graph, variables, kernels):
+    # The variables come in topologically sorted, so we just
+    # have to preserve that order
+    _locals = {}
+    _retvals = {}
+    res = list(_generate(graph, _locals, _retvals))
+    return res
+
+def explain(plan):
+    pass
+
+dd_t = namedtuple('datadescriptor', 'nbytes, nchunks, chunksize')
+op_t = namedtuple('operand', 'dd')
+
+if __name__ == '__main__':
+    op1 = op_t(dd_t(5000, 0, 0))
+    op2 = op_t(dd_t(5000, 0, 0))
+
+    print BlockPlan([op1, op2], align=PAGE).generate()

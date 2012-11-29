@@ -69,13 +69,16 @@ def do_environment(context, graph):
 
     return context, graph
 
-def do_codegen(context, graph):
+def do_aterms(context, graph):
     context = dict(context)
-    module = context['llvmmodule']
 
     # ----------------------
-    context['kernels'] = {}
+    context['atermexpr'] = {}
     # ----------------------
+
+    # Hold references to the kernels that are indicated by the
+    # expression specialization
+    context['kernels'] = {}
 
     return context, graph
 
@@ -86,7 +89,6 @@ def do_plan(context, graph):
         context['ops'],
         context['vars'],
         context['kernels'],
-        context['hints'],
     )
 
     # ----------------------
@@ -120,7 +122,7 @@ class Pipeline(object):
             #  v
             do_environment,
             #  v
-            do_codegen,
+            do_aterms,
             #  v
             do_plan,
             # Output -->

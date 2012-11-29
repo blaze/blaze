@@ -151,7 +151,7 @@ class PythonSource(ByteProvider):
 
     def __init__(self, pyobject, type=list):
         self.pytype = type
-        self.pyboject = pyobject
+        self.pyobject = pyobject
 
     @staticmethod
     def infer_datashape(source):
@@ -171,7 +171,6 @@ class PythonSource(ByteProvider):
 
         elif self.pytype == float:
             return self.pyobject
-
         elif self.pytype == str:
             return self.pyobject
 
@@ -179,7 +178,7 @@ class PythonSource(ByteProvider):
             raise TypeError("Don't know how to cast PythonSource")
 
     def __repr__(self):
-        return 'PyObject(ptr=%r)' % id(self.lst)
+        return 'PyObject(obj=%r, type=%r)' % (self.pyobject, self.pytype)
 
 
 class ByteSource(ByteProvider):

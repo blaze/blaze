@@ -12,7 +12,7 @@ manipulated by Stratego rewriters.
 ::
 
     t : bt                 -- basic term
-      | bt {ty,...,m1,...} -- annotated term
+      | bt {ty,m1,...}     -- annotated term
 
     bt : C                 -- constant
        | C(t1,...,tn)      -- n-ary constructor
