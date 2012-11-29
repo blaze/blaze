@@ -1,0 +1,13 @@
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <ul class="nav">
+                {% for name, href, id, icon in navigation_bar %}
+                <li {% if id == active_page %} class="active"{% endif %}>
+                    <a href="{{href}}"><i class="icon-{{icon}}"></i> {{name}}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>

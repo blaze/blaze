@@ -1,0 +1,4 @@
+# Here is our sample types
+
+A = 1, 2, int32
+B = X, Y, RGBA

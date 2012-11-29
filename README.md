@@ -1,21 +1,63 @@
 Blaze
 =====
 
-Blaze is coming soon! Look for updates around the end of November.
+Blaze is the next-generation of NumPy. It is designed as a foundational
+set of abstractions on which to build out-of-core and distributed
+algorithms over a wide variety of data sources.
 
-Blaze will be a free open source project, released under a BSD like license.
+Blaze is a work in progress at the moment. The code is quite a distance
+from feature complete. The code is released in an effort to start a
+public discussion with our end users and community.
 
-For more information and design principles, download and build the documentation:
+Blaze is approaching being a usable library, but does not have runnable
+components at the moment.
+
+Installing
+----------
+
+If you are interested in the development version of Blaze you can
+obtain the source from Github.
 
 ```bash
-$ git clone https://github.com/ContinuumIO/blaze
-$ cd docs
-$ make html
+$ git clone git@github.com:ContinuumIO/blaze.git
 ```
 
-Or see the presentation from PyData: https://speakerdeck.com/sdiehl/blaze-next-generation-numpy
+Many of the dependencies ( llvm, numba, ... ) are non-trivial to
+install. It is highly recommend that you build Blaze using the Anaconda
+Python distribution.
 
-For a discussion of the underlying theory behind Blaze see the papers:
+Free Anaconda CE is available here: http://continuum.io/anacondace.html .
 
-* [Chapel Language Specification](http://chapel.cray.com/spec/spec-0.775.pdf)
-* [Regular, shape-polymorphic, parallel arrays in Haskell](http://www.cse.unsw.edu.au/~chak/papers/repa.pdf)
+Introduction
+------------
+
+To build project inside of Anaconda:
+
+```bash
+$ make build
+```
+
+To build documentation:
+
+```bash
+$ make docs
+```
+
+To run tests:
+
+```bash
+$ python setup.py test
+```
+
+Contributing
+------------
+
+Anyone wishing to contribute should join the discussion on the mailing
+list at: blaze-dev@continuum.io
+
+License
+-------
+
+Blaze development is sponsored by Continuum Analytics.
+
+Released under BSD license. See LICENSE for details.

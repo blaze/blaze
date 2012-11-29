@@ -1,1 +1,77 @@
-docs/build
+# Python
+*.py[cod]
+
+# Vim
+*.sw[pon]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Project Files
+.mr.developer.cfg
+.project
+.pydevproject
+.ropeproject
+
+# Data files
+*.h5
+*.csv
+*.npy
+
+# Graph files
+*.dot
+
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# -------------------
+
+# Cython Extensions
+ndtable/carray/*.[ch]
+
+# Sphinx Docs
+docs/_build
+
+# Website
+web/_build
