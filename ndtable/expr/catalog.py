@@ -33,7 +33,7 @@ PyArray_WriteMethods = [
 PyArray_ReadMethods = [
     'all', 'any', 'argmax', 'argmin', 'argsort', 'astype', 'base', 'byteswap',
     'choose', 'clip', 'compress', 'conj', 'conjugate', 'copy', 'ctypes',
-    'cumprod', 'cumsum', 'data', 'diagonal', 'dot', 'dtype', 'dump', 'dumps',
+    'cumprod', 'cumsum', 'diagonal', 'dot', 'dtype', 'dump', 'dumps',
     'flatten', 'getfield', 'item', 'max', 'mean', 'min', 'nbytes',
     'newbyteorder', 'nonzero', 'prod', 'ptp', 'ravel', 'repeat', 'reshape',
     'resize', 'round', 'searchsorted', 'setasflat', 'sort', 'squeeze', 'std',

@@ -11,7 +11,7 @@ from llvm.core import Module
 
 from functools import partial
 from itertools import ifilter
-from collections import Counter, defaultdict
+from collections import Counter
 
 from ndtable.plan import generate
 

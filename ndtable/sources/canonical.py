@@ -13,6 +13,7 @@ from ndtable.datashape import Fixed, dynamic, string, pyobj
 from ndtable.datashape.coretypes import from_numpy, to_numpy
 from ndtable.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from ndtable.byteprovider import ByteProvider
+from ndtable.datadescriptor import DataDescriptor
 
 #------------------------------------------------------------------------
 # Chunked Array
@@ -36,6 +37,9 @@ class CArraySource(ByteProvider):
             self.ca = ca
         else:
             self.ca = carray.carray(ca)
+
+    def read_desc(self):
+        return DataDescriptor('carray_dd')
 
     @property
     def nchunks(self):

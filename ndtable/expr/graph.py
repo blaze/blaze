@@ -32,7 +32,7 @@ VAL = 2
 _max_argument_recursion = 25
 _max_argument_len       = 1000
 _argument_sample        = 100
-_runtime_typecheck      = True
+_runtime_typecheck      = False
 
 def set_max_argument_len(val):
     global _max_argument_len
@@ -379,10 +379,6 @@ class ArrayNode(ExpressionNode):
 
     # Other non-graph methods
     # ========================
-
-    @property
-    def data(self):
-        pass
 
     def tofile(self, *args, **kw):
         pass

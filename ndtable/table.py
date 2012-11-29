@@ -214,14 +214,13 @@ class NDArray(Indexable, ArrayNode):
             infer_eclass(self._meta)
 
         else:
-            # When no preference in backend specified, fall back on
-            # Numpy and the trivial layout ( one buffer, dot product
-            # stride formula )
-
             # Graph Nodes as input
             # ====================
-            self.children = injest_iterable(obj, force_homog=True)
-            self.space = Space(self.children)
+
+            # XXX
+            #self.children = injest_iterable(obj, force_homog=True)
+            #self.space = Space(self.children)
+
 
             if not dshape:
                 # The user just passed in a raw data source, try
@@ -234,16 +233,19 @@ class NDArray(Indexable, ArrayNode):
                 self._datashape = CArraySource.check_datashape(obj,
                     given_dshape=dshape)
 
+            self.children = []
+            self.vtype = self._datashape
+
             # Raw Data as input
             # ====================
 
-            #data = CArraySource(obj)
-            #self.space = Space(data)
+            self.data = data = CArraySource(obj)
+            self.space = Space(data)
 
-            #if not layout:
-                ## CArrays are always chunked on the first
-                ## dimension
-                #self._layout = ChunkedL(data, cdimension=0)
+            if not layout:
+                # CArrays are always chunked on the first
+                # dimension
+                self._layout = ChunkedL(data, cdimension=0)
 
     def __str__(self):
         raise NotImplementedError

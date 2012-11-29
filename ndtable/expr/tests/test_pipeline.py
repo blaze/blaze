@@ -1,4 +1,5 @@
 from ndtable.expr import ops
+from ndtable.table import NDArray
 from ndtable.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
 from pprint import pprint
@@ -13,6 +14,8 @@ c = FloatNode(3.0)
 
 x = a+(b+c)
 y = a+(b*abs(c))
+
+d = NDArray([1,2,3])
 
 #------------------------------------------------------------------------
 # Tests
@@ -91,5 +94,13 @@ def test_simple_pipeline():
     print pprint(plan, width=1)
 
     plan = line.run_pipeline(x*(y+2)+3)
+    print '\n'
+    print pprint(plan, width=1)
+
+    plan = line.run_pipeline(d+d)
+    print '\n'
+    print pprint(plan, width=1)
+
+    plan = line.run_pipeline(d+d+d)
     print '\n'
     print pprint(plan, width=1)

@@ -16,8 +16,15 @@ class DataDescriptor(object):
     form at as low a level as possible.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, id):
+        # XXX: whatever, just something unique for now
+        self.id = id
+
+    def __str__(self):
+        return self.id
+
+    def __repr__(self):
+        return self.id
 
     #------------------------------------------------------------------------
     # Generic adapters

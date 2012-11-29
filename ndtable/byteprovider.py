@@ -5,6 +5,9 @@ ByteProvider base class.
 from byteproto import READ, WRITE
 from datadescriptor import DataDescriptor
 
+class NoDataDescriptor(Exception):
+    pass
+
 class ByteProvider(object):
     """
 
@@ -23,7 +26,7 @@ class ByteProvider(object):
     def read_desc(self):
         """ Returns the naive descriptor, which will be
         speciazlied by execution """
-        raise NotImplementedError
+        raise NoDataDescriptor()
 
     def write_desc(self):
         """ Returns the naive descriptor, which will be

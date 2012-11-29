@@ -9,6 +9,7 @@ from pprint import pprint
 
 from collections import namedtuple
 from ndtable.expr.graph import OP, APP, VAL
+from ndtable.idx import Indexable
 
 L2SIZE = 2**17
 L3SIZE = 2**20
@@ -74,7 +75,7 @@ class Instruction(object):
             return self.ret + ' = ' + ' '.join((self.op,) + self.args)
         # purely side effectful
         else:
-            return ' '.join((self.op,) + self.args)
+            return ' '.join([self.op,] + map(repr, self.args))
 
 class Constant(object):
     def __init__(self, val):
@@ -119,24 +120,26 @@ def tmps():
     for i in string.letters:
         yield '%' + i
 
-tmp = tmps()
-
-def _generate(nodes, _locals, _retvals):
+def _generate(nodes, _locals, _retvals, tmpvars):
     for op in nodes:
         largs = []
         for arg in op.children:
             if arg.kind == APP:
                 largs.append(_retvals[arg.operator])
             if arg.kind == VAL:
-                # constants
-                if issubclass(arg.vtype, (int, long, float)):
+                # arrays & tables
+                if isinstance(arg, Indexable):
+                    # Read the data descriptor for the
+                    largs.append(arg.data.read_desc())
+                # variables
+                elif isinstance(arg.val, (int, long, float)):
                     largs.append(str(arg.data.pyobject))
                 # variables
                 else:
                     _locals[op.val]
 
         dummy_size = '1024'
-        tmpvar = next(tmp)
+        tmpvar = next(tmpvars)
 
         _retvals[op] = tmpvar
         yield Instruction('alloca', tmpvar, dummy_size)
@@ -147,7 +150,8 @@ def generate(graph, variables, kernels):
     # have to preserve that order
     _locals = {}
     _retvals = {}
-    res = list(_generate(graph, _locals, _retvals))
+
+    res = list(_generate(graph, _locals, _retvals, tmps()))
     return res
 
 def explain(plan):
