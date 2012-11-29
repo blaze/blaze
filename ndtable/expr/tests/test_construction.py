@@ -6,7 +6,7 @@ from ndtable.expr.nodes import Node, traverse
 from ndtable.expr.typechecker import InvalidTypes
 from ndtable.expr.viz import dump
 from ndtable.table import NDTable
-
+from unittest import skip
 
 # Print out graphviz to the screen
 DEBUG = False
@@ -99,6 +99,7 @@ def test_scalars():
     if DEBUG:
         dump(x, filename='scalars')
 
+@skip
 def test_preserve_types():
     a = IntNode(1)
     b = FloatNode(1.0)
@@ -108,6 +109,7 @@ def test_preserve_types():
     assert x.dom == [float64, float64]
     assert x.cod == float64
 
+@skip
 def test_reject_invalid():
     b = StringNode('boom')
 
