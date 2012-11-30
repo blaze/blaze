@@ -179,7 +179,7 @@ extensions = [
         define_macros=def_macros,
    ),
    Extension(
-        "ucr_dtw.ucr", ["ucr-dtw/ucr.pyx"],
+        "ucr_dtw.ucr", ["ucr_dtw/ucr.pyx"],
         include_dirs = [numpy_path]
    )
 ]
