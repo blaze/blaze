@@ -248,7 +248,7 @@ and push to grow this ecosystem rapidly.
 
 At the heart of Table is a delayed-evaluation system (like SymPy, Theano, and
 a host of other tools).  As a result, every operation actually returns a node
-of a simple, directed graph of functions and arguments (also analagous to
+of a simple, directed graph of functions and arguments (also analogous to
 DyND).  However, as far as possible, these nodes will propagate meta-data and
 meta-compute (such as dtype, and shape, and index-iterator parameters so that
 the eventual calculation framework can reason about how to manage the
@@ -283,7 +283,7 @@ Buffer:
     Random-access capable, suited for data parallel approaches.  Compatible
     with Numpy and with Python memoryviews.  Generally refers to a single
     contiguous region of memory or file pointer on disk (although the strides
-    may be heterogenous).  Has some underlying C-compatible data type as
+    may be heterogeneous).  Has some underlying C-compatible data type as
     its element specification, and also has some flags (such as Writable,
     etc.)
 
@@ -294,7 +294,7 @@ Stream:
     in which to read data.
     
 BufferList:
-    A list of discontiguous Buffer objects.  Has many of the same properties
+    A list of noncontiguous Buffer objects.  Has many of the same properties
     of the Buffer, most significantly, can be accessed in parallel.
 
 StreamList:
