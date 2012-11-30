@@ -623,7 +623,7 @@ cdef class chunks(object):
             leftover = (self.len % len(lastchunkarr)) * atomsize
             if leftover:
                 # Fill lastchunk with data on disk
-                scomp = self.read_chunk(self.nchunks)
+                scomp = read_chunk(self, self.nchunks)
                 compressed = PyString_AsString(scomp)
                 with nogil:
                     ret = blosc_decompress(compressed, lastchunk, chunksize)
@@ -656,7 +656,7 @@ cdef class chunks(object):
             # Hit!
             return self.chunk_cached
         else:
-            scomp = self.read_chunk(nchunk)
+            scomp = read_chunk(self, nchunk)
             # Data chunk should be compressed already
             chunk_ = chunk(scomp, self.dtype, self.cparams,
                                          _memory=False, _compr=True)
@@ -2321,11 +2321,26 @@ cdef public class carray [type carraytype, object carray]:
         fullrepr = header + str(self)
         return fullrepr
 
+cpdef public object read_chunk(carray ca, int nchunk):
+    """
+    Self-contained function pointers which take a carray as an
+    argument and return the nth chunk
+    """
 
+    # This requires the GIL to be held but there is no reason we
+    # couldn't write one that didn't
+    """Read a chunk and return it in compressed form."""
+    dname = "__%d%s" % (nchunk, EXTENSION)
+    schunkfile = os.path.join(ca.datadir, dname)
 
-## Local Variables:
-## mode: python
-## py-indent-offset: 2
-## tab-width: 2
-## fill-column: 78
-## End:
+    with open(schunkfile, 'rb') as schunk:
+        bloscpack_header = schunk.read(BLOSCPACK_HEADER_LENGTH)
+        blosc_header_raw = schunk.read(BLOSC_HEADER_LENGTH)
+        blosc_header = decode_blosc_header(blosc_header_raw)
+        ctbytes = blosc_header['ctbytes']
+        nbytes = blosc_header['nbytes']
+        # seek back BLOSC_HEADER_LENGTH bytes in file relative to current
+        # position
+        schunk.seek(-BLOSC_HEADER_LENGTH, 1)
+        scomp = schunk.read(ctbytes)
+    return scomp
