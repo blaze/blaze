@@ -37,6 +37,9 @@ class ATerm(object):
     def __str__(self):
         return str(self.label)
 
+    def __repr__(self):
+        return str(self)
+
 class AAppl(object):
     def __init__(self, spine, args):
         self.spine = spine
@@ -44,6 +47,9 @@ class AAppl(object):
 
     def __str__(self):
         return str(self.spine) + cat(self.args, '(', ')')
+
+    def __repr__(self):
+        return str(self)
 
 class AAnnotation(object):
     def __init__(self, bt, ty=None, m=None):
@@ -87,12 +93,18 @@ class AAnnotation(object):
     def __str__(self):
         return str(self.bt) + '{' + str(self.annotations) + '}'
 
+    def __repr__(self):
+        return str(self)
+
 class AString(object):
     def __init__(self, s):
         self.s = s
 
     def __str__(self):
         return repr(self.s)
+
+    def __repr__(self):
+        return str(self)
 
 class AInt(object):
     def __init__(self, n):
@@ -101,6 +113,9 @@ class AInt(object):
     def __str__(self):
         return str(self.n)
 
+    def __repr__(self):
+        return str(self)
+
 class AFloat(object):
     def __init__(self, n):
         self.n = n
@@ -108,12 +123,18 @@ class AFloat(object):
     def __str__(self):
         return str(self.n)
 
+    def __repr__(self):
+        return str(self)
+
 class AList(object):
     def __init__(self, *elts):
         self.elts = elts
 
     def __str__(self):
         return cat(self.elts, '[', ']')
+
+    def __repr__(self):
+        return str(self)
 
 #------------------------------------------------------------------------
 # Utils
@@ -135,3 +156,5 @@ if __name__ == '__main__':
     print aterm['foobar']
     print aterm.matches('*;fizzy,b')
     print aterm
+
+    apl = AAppl(ATerm('foo'), [a,b])
