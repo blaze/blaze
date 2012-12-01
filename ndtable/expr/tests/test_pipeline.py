@@ -86,21 +86,21 @@ def test_simple_pipeline():
     print pprint(plan, width=1)
 
     plan = line.run_pipeline(y)
-    #print '\n'
-    #print pprint(plan, width=1)
+    print '\n'
+    print pprint(plan, width=1)
 
     plan = line.run_pipeline(x+y)
-    #print '\n'
-    #print pprint(plan, width=1)
+    print '\n'
+    print pprint(plan, width=1)
 
     plan = line.run_pipeline(x*(y+2)+3)
-    #print '\n'
-    #print pprint(plan, width=1)
+    print '\n'
+    print pprint(plan, width=1)
 
     plan = line.run_pipeline(d+d)
-    #print '\n'
-    #print pprint(plan, width=1)
+    print '\n'
+    print pprint(plan, width=1)
 
     plan = line.run_pipeline((d+d)+(d+d))
-    #print '\n'
-    #print pprint(plan, width=1)
+    print '\n'
+    print pprint(plan, width=1)

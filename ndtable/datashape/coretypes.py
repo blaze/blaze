@@ -98,7 +98,7 @@ class Dynamic(Primitive):
 
     def __repr__(self):
         # emulate numpy
-        return ''.join(["dshape('", str(self), "')"])
+        return ''.join(["dshape(\"", str(self), "\")"])
 
 # Top is kind of an unfortunate term because our system is very much
 # *not* a hierarchy, but this is the entrenched term so we use it.
@@ -110,7 +110,7 @@ class Top(Primitive):
 
     def __repr__(self):
         # emulate numpy
-        return ''.join(["dshape('", str(self), "')"])
+        return ''.join(["dshape(\"", str(self), "\")"])
 
 #------------------------------------------------------------------------
 # Base Types
@@ -169,9 +169,7 @@ class DataShape(object):
             raise TypeError('Cannot compare non-datashape to datashape')
 
     def __repr__(self):
-        # emulate numpy
-        return ''.join(["dshape('", str(self), "')"])
-
+        return ''.join(["dshape(\"", str(self), "\")"])
 
 class Atom(DataShape):
     """

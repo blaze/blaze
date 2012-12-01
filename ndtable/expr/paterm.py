@@ -59,7 +59,7 @@ class AAnnotation(object):
 
     @property
     def annotations(self):
-        terms = map(ATerm, self.meta)
+        terms = map(ATerm, (self.ty,) + self.meta)
         return AList(*terms)
 
     def __contains__(self, key):
@@ -141,20 +141,6 @@ class AList(object):
 #------------------------------------------------------------------------
 
 def cat(terms, l, r):
+    """ Concatenate str representations with commas and left and right
+    delimiters. """
     return l + ','.join(map(str, terms)) + r
-
-if __name__ == '__main__':
-    a = ATerm('a')
-    b = ATerm('b')
-    lst =  AList(a,b)
-    annot = ('contig', 'fizzy', 'b')
-    aterm = AAnnotation(lst, int, annot)
-
-    print aterm['type']
-    print aterm['a']
-    print aterm['type']
-    print aterm['foobar']
-    print aterm.matches('*;fizzy,b')
-    print aterm
-
-    apl = AAppl(ATerm('foo'), [a,b])

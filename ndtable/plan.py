@@ -1,35 +1,17 @@
 """
-Execution plans.
+Execute raw graph to ATerm after inference but before evaluation.
 """
+
 import string
 import numpy as np
-from mmap import PAGESIZE
-from pprint import pprint
 
 from collections import namedtuple
 from ndtable.expr.graph import Literal, OP, APP, VAL
 from ndtable.idx import Indexable
 from ndtable.byteproto import CONTIGUOUS, READ
-from ndtable.expr.paterm import AAppl, ATerm
+
+from ndtable.expr.paterm import AAppl, ATerm, AAnnotation
 from ndtable.expr.visitor import MroTransformer
-
-L2SIZE = 2**17
-L3SIZE = 2**20
-
-L2   = 1
-L3   = 2
-PAGE = 3
-
-map_kernels = {
-    ('add', 'i', 'i'): ''
-}
-
-reduce_kernels = {
-    ('sum', 'i', 'i'): ''
-}
-
-special_kernels = {
-}
 
 #------------------------------------------------------------------------
 # Toy Kernels
@@ -45,8 +27,6 @@ def add_incore(dd_a, ds_a, dd_b, ds_b, ds_o):
     np.add(ds_a.getbuffer(), ds_b.getbuffer(), res)
     return res
 
-# chunks = [((0,1024), (0, 1024))], a range for each of the
-# operands
 def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
     res = np.empty(ds_o) # may be a scalar
 
@@ -61,18 +41,6 @@ def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
 #------------------------------------------------------------------------
 # Plans
 #------------------------------------------------------------------------
-
-class GenericInstruction(object):
-    def __init__(self, op, ret=None, *args):
-        self.op = op
-        self.args = args
-
-    def __repr__(self):
-        return ' '.join([self.op,] + map(repr, self.args))
-
-class Constant(object):
-    def __init__(self, val):
-        self.val = val
 
 class BlazeVisitor(MroTransformer):
     def __init__(self):
@@ -91,7 +59,11 @@ class BlazeVisitor(MroTransformer):
         return ATerm(graph.val)
 
     def Indexable(self, graph):
-        return ATerm(graph.data)
+        return AAnnotation(
+            #ATerm(graph.data),
+            'array',
+            ty=ATerm(repr(graph.datashape))
+        )
 
 
 def generate(graph, variables, kernels):
