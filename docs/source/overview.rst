@@ -11,12 +11,12 @@ Blaze is a Generalization of NumPy
 .. image:: svg/numpy_plus.png
     :align: center
 
-We would like the NDTable to be a Generalization of NumPy.  Whether this means
+We would like the NDTable to be a Generalization of Numpy.  Whether this means
 that the NDTable augments or replaces NumPy (on the Python side) in the future
-has yet to be determined.  For now, it will augment NumPy and provide
+has yet to be determined.  For now, it will augment Numpy and provide
 compatibility whenever possible.
 
-In addition to the ufuncs defined over NumPy arrays, NumPy defines basically 3
+In addition to the ufuncs defined over NumPy arrays, Numpy defines basically 3
 things that we wish to generalize:
 
 * A data-type

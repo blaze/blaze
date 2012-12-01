@@ -2,7 +2,7 @@
 Types
 =====
 
-.. Later this will be usefull
+.. Later this will be useful
 
 .. graphviz::
 
