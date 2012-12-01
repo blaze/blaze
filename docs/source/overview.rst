@@ -8,15 +8,15 @@ Blaze is a Generalization of NumPy
 .. TODO: This section in particular is an expression of older thoughts and 
    ideas about the NDTable and the object hierarchy.
 
-.. image:: svg/numpy_plus.png
+.. image:: svg/NumPy_plus.png
     :align: center
 
-We would like the NDTable to be a Generalization of Numpy.  Whether this means
+We would like the NDTable to be a Generalization of NumPy.  Whether this means
 that the NDTable augments or replaces NumPy (on the Python side) in the future
-has yet to be determined.  For now, it will augment Numpy and provide
+has yet to be determined.  For now, it will augment NumPy and provide
 compatibility whenever possible.
 
-In addition to the ufuncs defined over NumPy arrays, Numpy defines basically 3
+In addition to the ufuncs defined over NumPy arrays, NumPy defines basically 3
 things that we wish to generalize:
 
 * A data-type
@@ -72,9 +72,9 @@ New Concepts
 
 Datashape:
     A generalization of the "tuple of integral sizes" approach found in
-    Numpy, C, and FORTRAN.  The Shape tuple consists of a variety of Primitive
+    NumPy, C, and FORTRAN.  The Shape tuple consists of a variety of Primitive
     and Complex dimension specifiers, including Fixed integers (corresponding
-    to Numpy fixed-length dimensions), Variable-length dimensions, Union,
+    to NumPy fixed-length dimensions), Variable-length dimensions, Union,
     Enum, Bitfield, and CType (for traditional C data types).  Most
     significantly, there is also a Record shape type, which is composed of
     additional specifiers for its named fields.  It is the Record Shape which
@@ -109,7 +109,7 @@ Indexable:
     Any object which supports indexing by scalars to retrieve individual
     elements, and slicing (indexing by more complex objects, usually Tuples)
     to retrieve subsets or subspaces.  There is no concept of "shape" here in
-    the classical Numpy sense; an Indexable should be considered to be
+    the classical NumPy sense; an Indexable should be considered to be
     one-dimensional.  However, there is no restriction nor guarantee on the
     type and size of its elements.
 
@@ -126,7 +126,7 @@ DataSpace:
     The most fundamental and most general multi-dimensional object in Blaze.
     It has a "shape", although it should be noted that the Blaze Shape object
     is a very rich structure, beyond the standard "list of strides and
-    offsets" which exists in Numpy and other dense, matrix-oriented libraries.
+    offsets" which exists in NumPy and other dense, matrix-oriented libraries.
 
     The methods and operations available on DataSpace are related to
     selection, query, and reshape of the coordinate structure defined by the
@@ -143,13 +143,13 @@ DataDescriptor:
     A wrapper or reference to concrete data in memory, on disk, or elsewhere
     that is directly accessible by the low-level Blaze runtime.  Consists of
     buffers and streams (or lists of buffers or of streams).  Buffers are like
-    Numpy arrays or Python memoryviews, and can potentially be strided views
+    NumPy arrays or Python memoryviews, and can potentially be strided views
     of contiguous memory.  Streams are like character devices in the Unix
     model, with a few additional parameters for optimal chunked reading.
 
     DataDescriptors themselves are not Indexable; they should be thought of as
     a glorified "pointer" to bulk data, or a handle for a stream.  They do
-    have the concept of a traditional Numpy dtype to specify the kinds of
+    have the concept of a traditional NumPy dtype to specify the kinds of
     elements they return, but they do not need to implement any slicing,
     broadcasting, or shape-related functionality.
 
@@ -160,10 +160,10 @@ DataDescriptor:
     adapt their inner loops to the layout of the data.
 
 
-Numpy Shapes, Two Ways
+NumPy Shapes, Two Ways
 ----------------------
 
-For instance, the classical C/FORTRAN/Numpy N-D array is usually
+For instance, the classical C/FORTRAN/NumPy N-D array is usually
 described with a shape that is a tuple of integers. Each integer
 indicates the number of subspaces which are stacked together, and the
 dimensions of each subspace is then specified by the remainder of the
@@ -195,7 +195,7 @@ Another, somewhat unorthodox, view is to consider the coordinate space
 not as a multi-dimensional dense cube, but rather as a hierarchical
 tree of indices. Each tree node has an ordered set of child nodes, and
 every set of child nodes is numbered starting at 0. (The actual data
-is located in the terminal leaf nodes of the tree.) The Numpy-style
+is located in the terminal leaf nodes of the tree.) The NumPy-style
 selection of "planes" of subspaces, e.g. a[:, 2, :], is akin to
 selecting all the child nodes of a certain index number (in this case,
 2) at a specific layer or level of the tree from the root.
@@ -281,7 +281,7 @@ Buffers, and List of Streams.
 
 Buffer:
     Random-access capable, suited for data parallel approaches.  Compatible
-    with Numpy and with Python memoryviews.  Generally refers to a single
+    with NumPy and with Python memoryviews.  Generally refers to a single
     contiguous region of memory or file pointer on disk (although the strides
     may be heterogeneous).  Has some underlying C-compatible data type as
     its element specification, and also has some flags (such as Writable,
