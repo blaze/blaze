@@ -2,7 +2,7 @@
 Graph
 =====
 
-All nodes are one of the following types::
+All nodes are one of the following types:
 
 Node Types
 ~~~~~~~~~~
@@ -35,7 +35,7 @@ The core graph node types in Blaze are:
 * Slice
 * StringNode
 
-The domain and codomain of an operator are determiend only in the
+The domain and codomain of an operator are determined only in the
 context of an application binding.
 
 The domain and codomain of an function are fixed by definition.

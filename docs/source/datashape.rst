@@ -260,7 +260,7 @@ Example 2::
     }
 
 Composite datashapes that terminate in record types are called
-**table-like**, while any other termianting type is called
+**table-like**, while any other terminating type is called
 **array-like**.
 
 Enumeration

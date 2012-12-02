@@ -3,7 +3,7 @@ Memory Layout
 =============
 
 A chunked array behaves similar to a Numpy array but is composed
-of multiple discontigious buffers in memory.
+of multiple noncontiguous buffers in memory.
 
 The chunks are bits of data compressed as a whole, but that can be
 decompressed partially in order to improve the fetching of small parts

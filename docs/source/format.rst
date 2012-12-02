@@ -16,8 +16,8 @@ well as direct access to data (in the same way than RAM).
 
 4. User metadata addition must be possible too.
 
-5. And last but not least, the data should be easily 'shardeable' for
-optimal behaviour in distributed storage.  Providing a format that is
+5. And last but not least, the data should be easily 'shardable' for
+optimal behavior in distributed storage.  Providing a format that is
 already 'shared' by default would represent a big advantage for us.
 
 These points, in combination with a distributed filesystem, and

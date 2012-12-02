@@ -2,7 +2,7 @@
 Operators
 =========
 
-Operators are graph nodes taking homogeonously typed arguments and
+Operators are graph nodes taking homogeneously typed arguments and
 returning a value prescribed by the input types. Just like NumPy
 they are generally type and shape ad-hoc polymorphic.
 
@@ -11,7 +11,7 @@ operator to is determined by the typechecker as a function of the
 input types of the operator.
 
 Operators also have a variety of properties that optionally can be used
-to be inform specializtion and expression graph rewriting for domain
+to be inform specialization and expression graph rewriting for domain
 experts. ( Not all are defined for every operator. )
 
 * ``signature``
