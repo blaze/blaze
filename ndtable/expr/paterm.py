@@ -59,7 +59,7 @@ class AAppl(object):
         assert len(self.args) == len(args), 'Pattern argument mismatch'
 
         # success
-        if self.spine.label == spine:
+        if spine.islower() or self.spine.label == spine:
             _vars = {}
             argm = [b.islower() or a._matches(b) for a,b in zip(self.args, args)]
 

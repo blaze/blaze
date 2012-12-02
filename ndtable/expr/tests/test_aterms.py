@@ -18,14 +18,24 @@ def test_simple():
 def test_query_metadata():
     a = ATerm('a')
     b = ATerm('b')
-    lst =  AAppl(ATerm('f'), [a,b])
+    Add = ATerm('Add')
+
+    lst =  AAppl(Add, [a,b])
     annot = ('foo', 'bar')
     aterm = AAnnotation(lst, int, annot)
 
     #------------------
 
-    match = matches(('f(x,y);*'), aterm)
+    match = matches('Add(x,y);*', aterm)
 
+    match['x'] == a
+    match['y'] == b
+
+    #------------------
+
+    match = matches('f(x,y);*', aterm)
+
+    match['f'] == Add
     match['x'] == a
     match['y'] == b
 
@@ -64,4 +74,5 @@ def test_simple_rewrite():
         elif isinstance(t, AAppl):
             return All(matcher)(t)
 
-    assert All(matcher)(term3) #assert Innermost(matcher)(term)
+    assert All(matcher)(term3)
+    #assert Innermost(matcher)(term)
