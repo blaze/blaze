@@ -71,9 +71,25 @@ def test_simple_rewrite():
 
     def matcher(t):
         if isinstance(t, ATerm):
-            return 1
+            return t
         elif isinstance(t, AAppl):
             return All(matcher)(t)
 
     assert All(matcher)(term3)
     #assert Innermost(matcher)(term)
+
+def test_matching_rewriter():
+    a = ATerm('a')
+    b = ATerm('b')
+    F = ATerm('F')
+
+    term  = AAppl(F, [a,b])
+
+    def matcher(t):
+        m = matches('F(x,y);*', t)
+        if m:
+            return AAppl(F, [m['y'], m['x']])
+        else:
+            return t
+
+    assert repr(Bottomup(matcher)(term)) == 'F(b,a)'

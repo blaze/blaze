@@ -207,6 +207,20 @@ class Choice(object):
         except STFail:
             return self.right(s)
 
+class Ternary(object):
+    def __init__(self, s1, s2, s3):
+        self.s1 = s1
+        self.s2 = s2
+        self.s3 = s3
+
+    def __call__(self, o):
+        try:
+            val = self.s1(o)
+        except STFail:
+            return self.s2(val)
+        else:
+            return self.s3(val)
+
 class Fwd(object):
 
     def __init__(self):
@@ -255,8 +269,8 @@ class Some(object):
                 try:
                     largs.append(self.s(a))
                 except STFail:
-                    pass
-            return AAppl(o.spine, map(self.s, o.args))
+                    largs.append(a)
+            return AAppl(o.spine, largs)
         else:
             raise STFail()
 
