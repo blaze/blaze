@@ -53,6 +53,9 @@ class AAppl(object):
         self.args = args
 
     def _matches(self, query):
+        if query == '*':
+            return True
+
         spine, args, _ = sep.split(query)
         args = args.split(',')
 
@@ -90,7 +93,7 @@ class AAnnotation(object):
     @property
     def annotations(self):
         terms = map(ATerm, (self.ty,) + tuple(self.meta))
-        return AList(*terms)
+        return cat(terms, '{', '}')
 
     def __contains__(self, key):
         if key == 'type':
@@ -104,10 +107,7 @@ class AAnnotation(object):
         else:
             return key in self.meta
 
-    def _matches(self, query):
-        value, meta = query.replace(' ','').split(';')
-        meta = meta.split(',')
-
+    def _matches(self, value, meta):
         if value == '*':
             vmatch = True
         else:
@@ -125,7 +125,7 @@ class AAnnotation(object):
 
     def __str__(self):
         if self.ty or self.meta:
-            return str(self.bt) + '{' + str(self.annotations) + '}'
+            return str(self.bt) + self.annotations
         else:
             return str(self.bt)
 
@@ -319,14 +319,18 @@ class ChoiceL(object):
 # Pattern Matching
 #------------------------------------------------------------------------
 
-def matches(pattern, term, ntuple=None):
+def matches(pattern, term):
     """
     Collapse terms with as-patterns.
     """
-    if ntuple:
-        return ntuple(term._matches(pattern))
+
+    value, meta = pattern.replace(' ','').split(';')
+    meta = meta.split(',')
+
+    if isinstance(term, AAnnotation):
+        return term._matches(value, meta)
     else:
-        return term._matches(pattern)
+        return term._matches(value)
 
 #------------------------------------------------------------------------
 # Utils

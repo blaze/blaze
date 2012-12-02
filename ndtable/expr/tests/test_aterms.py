@@ -10,10 +10,11 @@ def test_simple():
 
     assert aterm['type']
     assert not aterm['a']
-    #assert matches('*;fizzy,b', aterm)
     assert aterm
 
     apl = AAppl(ATerm('foo'), [a,b])
+
+    assert matches('*;*', apl)
 
 def test_query_metadata():
     a = ATerm('a')
