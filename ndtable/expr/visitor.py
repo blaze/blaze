@@ -14,19 +14,19 @@ class NoVisitor(Exception):
 
 class ExprPrinter(object):
 
-    # TODO: more robust!
     def __init__(self):
         self.indent = 0
 
     def visit(self, tree):
 
         if tree.children:
-            print ('    '*self.indent) + tree.__class__.__name__
+            print ('\t'*self.indent) + tree.__class__.__name__
             self.indent += 1
-            [self.visit(i) for i in tree.children]
+            for node in [self.visit(i) for i in tree.children]:
+                print node
             self.indent -= 1
         else:
-            print ('    '*self.indent) + tree.__class__.__name__
+            return ('\t'*self.indent) + tree.__class__.__name__
 
     def Unknown(self, tree):
         raise NoVisitor(tree)

@@ -23,8 +23,12 @@ manipulated by Stratego rewriters.
 
 """
 
+import re
+from functools import partial
 from collections import OrderedDict
 from metadata import metadata
+
+sep = re.compile("[\(.*\)]")
 
 #------------------------------------------------------------------------
 # Terms
@@ -37,6 +41,9 @@ class ATerm(object):
     def __str__(self):
         return str(self.label)
 
+    def _matches(self, query):
+        return self.label == query
+
     def __repr__(self):
         return str(self)
 
@@ -44,6 +51,29 @@ class AAppl(object):
     def __init__(self, spine, args):
         self.spine = spine
         self.args = args
+
+    def _matches(self, query):
+        spine, args, _ = sep.split(query)
+        args = args.split(',')
+
+        assert len(self.args) == len(args), 'Pattern argument mismatch'
+
+        # success
+        if self.spine.label == spine:
+            _vars = {}
+            argm = [b.islower() or a._matches(b) for a,b in zip(self.args, args)]
+
+            if spine.islower():
+                _vars[spine] = self.spine
+
+            for i, arg in enumerate(args):
+                if argm[i]:
+                    _vars[arg] = self.args[i]
+
+            return _vars
+
+        else:
+            return False
 
     def __str__(self):
         return str(self.spine) + cat(self.args, '(', ')')
@@ -55,11 +85,11 @@ class AAnnotation(object):
     def __init__(self, bt, ty=None, m=None):
         self.bt = bt
         self.ty = ty or None
-        self.meta = m or ()
+        self.meta = set(m or [])
 
     @property
     def annotations(self):
-        terms = map(ATerm, (self.ty,) + self.meta)
+        terms = map(ATerm, (self.ty,) + tuple(self.meta))
         return AList(*terms)
 
     def __contains__(self, key):
@@ -74,24 +104,30 @@ class AAnnotation(object):
         else:
             return key in self.meta
 
-    def matches(self, query):
+    def _matches(self, query):
         value, meta = query.replace(' ','').split(';')
         meta = meta.split(',')
 
         if value == '*':
             vmatch = True
         else:
-            vmatch = self.bt == query
+            vmatch = self.bt._matches(value)
 
-        if meta == '*':
+        if meta == ['*']:
             mmatch = True
         else:
-            mmatch = [a in self for a in meta]
+            mmatch = all(a in self for a in meta)
 
-        return vmatch and all(mmatch)
+        if vmatch and mmatch:
+            return vmatch
+        else:
+            return False
 
     def __str__(self):
-        return str(self.bt) + '{' + str(self.annotations) + '}'
+        if self.ty or self.meta:
+            return str(self.bt) + '{' + str(self.annotations) + '}'
+        else:
+            return str(self.bt)
 
     def __repr__(self):
         return str(self)
@@ -135,6 +171,162 @@ class AList(object):
 
     def __repr__(self):
         return str(self)
+
+
+#------------------------------------------------------------------------
+# Strategic Rewrite Combinators
+#------------------------------------------------------------------------
+
+Id = lambda s: s
+
+def Fail():
+    raise STFail()
+
+class STFail(Exception):
+    pass
+
+compose = lambda f, g: lambda x: f(g(x))
+
+class Fail(object):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, o):
+        raise STFail()
+
+class Choice(object):
+    def __init__(self, left=None, right=None):
+        self.left = left
+        self.right = right
+        assert left and right, 'Must provide two arguments to Choice'
+
+    def __call__(self, s):
+        try:
+            return self.left(s)
+        except STFail:
+            return self.right(s)
+
+class Fwd(object):
+
+    def __init__(self):
+        self.p = None
+
+    def define(self, p):
+        self.p = p
+
+    def __call__(self, s):
+        if self.p:
+            return self.p(s)
+        else:
+            raise NotImplementedError('Forward declaration, not declared')
+
+class Repeat(object):
+    def __init__(self, p):
+        self.p = p
+
+    def __call__(self, s):
+        val = s
+        while True:
+            try:
+                val = self.p(val)
+            except STFail:
+                break
+        return val
+
+class All(object):
+    def __init__(self, s):
+        self.s = s
+
+    def __call__(self, o):
+        if isinstance(o, AAppl):
+            return AAppl(o.spine, map(self.s, o.args))
+        else:
+            return o
+
+class Some(object):
+    def __init__(self, s):
+        self.s = s
+
+    def __call__(self, o):
+        if isinstance(o, AAppl):
+            largs = []
+            for a in o.args:
+                try:
+                    largs.append(self.s(a))
+                except STFail:
+                    pass
+            return AAppl(o.spine, map(self.s, o.args))
+        else:
+            raise STFail()
+
+class Seq(object):
+    def __init__(self, s1, s2):
+        self.s1 = s1
+        self.s2 = s2
+
+    def __call__(self, o):
+        return self.s2(self.s1(o))
+
+class Try(object):
+    def __init__(self, s):
+        self.s = s
+
+    def __call__(self, o):
+        try:
+            return self.s(o)
+        except STFail:
+            return o
+
+class Topdown(object):
+    def __init__(self, s):
+        self.s = s
+
+    def __call__(self, o):
+        val = self.s(o)
+        return All(self)(val)
+
+class Bottomup(object):
+    def __init__(self, s):
+        self.s = s
+
+    def __call__(self, o):
+        val = All(self)(o)
+        return self.s(val)
+
+class Innermost(object):
+    def __init__(self, s):
+        self.s = s
+
+    def __call__(self, o):
+        return Bottomup(Try(Seq(self.s, self)))(o)
+
+class SeqL(object):
+    def __init__(self, *sx):
+        self.lx = reduce(compose,sx)
+
+    def __call__(self, o):
+        return self.lx(o)
+
+class ChoiceL(object):
+    def __init__(self, *sx):
+        self.sx = reduce(compose,sx)
+
+    def __call__(self, o):
+        return self.sx(o)
+
+#------------------------------------------------------------------------
+# Pattern Matching
+#------------------------------------------------------------------------
+
+def matches(pattern, term, ntuple=None):
+    """
+    Collapse terms with as-patterns.
+    """
+    if ntuple:
+        return ntuple(term._matches(pattern))
+    else:
+        return term._matches(pattern)
 
 #------------------------------------------------------------------------
 # Utils
