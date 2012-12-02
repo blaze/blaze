@@ -26,15 +26,6 @@ CTYPES = 1 # Dispatch from Python, invoking C function pointers for calls
 NUMPY  = 2 # Mock execution using Numpy, for testing.
 
 #------------------------------------------------------------------------
-# Execution
-#------------------------------------------------------------------------
-
-# A rough analogoue of CArray's eval function
-
-def eval(plan, engine=LLVM):
-    pass
-
-#------------------------------------------------------------------------
 # Types
 #------------------------------------------------------------------------
 
