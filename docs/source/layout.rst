@@ -95,5 +95,5 @@ Combining Chunks
                       (i,j) -> (i, j)
 
 
-.. automodule:: ndtable.layouts.scalar
+.. automodule:: blaze.layouts.scalar
    :members:
