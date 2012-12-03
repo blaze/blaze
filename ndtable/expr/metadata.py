@@ -1,4 +1,5 @@
 from collections import Mapping, OrderedDict
+from utils import Symbol as S
 
 # The set of possible facets that are specifiable in the
 # metadata. Most structures will define a subset of these. This
@@ -6,16 +7,16 @@ from collections import Mapping, OrderedDict
 # unification when performing operations.
 
 facets = frozenset([
-    'TABLELIKE',
-    'ARRAYLIKE',
-    'MANIFEST'
-    'DEFERRED'
-    'C_CONTIGUOUS',
-    'F_CONTIGUOUS',
-    'OWNDATA',
-    'WRITEABLE',
-    'ALIGNED',
-    'UPDATEIFCOPY',
+    S('tablelike'),
+    S('arraylike'),
+    S('manifest'),
+    S('deferred'),
+    S('c_contigious'),
+    S('f_contigious'),
+    S('owndata'),
+    S('writeable'),
+    S('aligned'),
+    S('update_if_copied'),
 ])
 
 class metadata(Mapping):

@@ -41,11 +41,10 @@ Examples::
     Mul(Add(1,2), x)
 
 """
-
 import re
 from functools import partial
 from collections import OrderedDict
-from metadata import metadata
+from ndtable.expr.metadata import metadata
 
 sep = re.compile("[\(.*\)]")
 

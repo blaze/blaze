@@ -4,14 +4,14 @@ from operator import eq
 from byteprovider import ByteProvider
 from idx import Indexable, Space, Subspace, Index
 
-from datashape import DataShape, Fixed, dshape as _dshape
+from datashape import DataShape, Fixed, dynamic, dshape as _dshape
 
 from layouts.scalar import ChunkedL
 from layouts.query import retrieve
 from slicealgebra import numpy_get
 
 from expr.graph import ArrayNode, injest_iterable
-from expr.metadata import metadata as md
+from ndtable.expr.metadata import metadata as md
 
 from sources.canonical import CArraySource, ArraySource
 from printer import generic_str, generic_repr
@@ -246,11 +246,10 @@ class NDArray(Indexable, ArrayNode):
                 self._layout = ChunkedL(data, cdimension=0)
 
     def __str__(self):
-        raise NotImplementedError
+        return generic_str(self, deferred=True)
 
     def __repr__(self):
         return generic_repr('NDArray', self, deferred=True)
-
 
     #------------------------------------------------------------------------
     # Properties
@@ -373,8 +372,8 @@ class NDTable(Indexable, ArrayNode):
         ('DEFERRED' , True),
     ]
 
-    def __init__(self, obj, datashape=None, index=None, metadata=None):
-        self._datashape = datashape
+    def __init__(self, obj, dshape=None, index=None, metadata=None):
+        self._datashape = dshape
         self._metadata  = md.empty(
             self._metaheader + (metadata or [])
         )
@@ -386,6 +385,21 @@ class NDTable(Indexable, ArrayNode):
             spaces = injest_iterable(obj)
             self.space = Space(*spaces)
             self.children = set(self.space.subspaces)
+
+        # Resolve the shape
+        # -----------------
+        if not dshape:
+            # The user just passed in a raw data source, try
+            # and infer how it should be layed out or fail
+            # back on dynamic types.
+            self._datashape = CArraySource.infer_datashape(obj)
+        else:
+            # The user overlayed their custom dshape on this
+            # data, check if it makes sense
+            if CArraySource.check_datashape(obj, given_dshape=dshape):
+                self._datashape = dshape
+            else:
+                raise ValueError("Datashape is inconsistent with source")
 
         self._layout = None
 
