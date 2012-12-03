@@ -78,6 +78,8 @@ cdef extern from "blosc.h":
     void blosc_cbuffer_versions(void *cbuffer, int *version, int *versionlz)
     void blosc_set_blocksize(size_t blocksize)
 
+cdef extern from "Python.h":
+    ctypedef unsigned int Py_uintptr_t
 
 #----------------------------------------------------------------------------
 
@@ -271,7 +273,7 @@ cdef public class chunk [type chunktype, object chunk]:
     @property
     def pointer(self):
         if self.memory:
-                return <int>self.data+BLOSCPACK_HEADER_LENGTH
+            return <Py_uintptr_t> self.data+BLOSCPACK_HEADER_LENGTH
         else:
             raise RuntimeError("Not in memory")
 
