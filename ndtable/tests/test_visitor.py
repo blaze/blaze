@@ -1,6 +1,5 @@
-from ndtable.engine.pipeline import toposort, Pipeline
 from ndtable.expr.graph import IntNode, FloatNode
-from ndtable.expr.visitor import ExprTransformer, MroTransformer, ExprPrinter
+from ndtable.expr.visitor import ExprVisitor, MroVisitor
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -17,7 +16,7 @@ y = a+b+c
 # Visitors
 #------------------------------------------------------------------------
 
-class Visitor(ExprTransformer):
+class Visitor(ExprVisitor):
 
     def App(self, tree):
         return self.visit(tree.children)
@@ -31,7 +30,7 @@ class Visitor(ExprTransformer):
     def Add(self, tree):
         return self.visit(tree.children)
 
-class MroVisitor(MroTransformer):
+class MroVisitor(MroVisitor):
 
     def App(self, tree):
         return self.visit(tree.children)

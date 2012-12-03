@@ -38,7 +38,7 @@ class ExprPrinter(object):
 # TODO: call these visitors instead of transformers (and write transformer
 # TODO: counterparts?)
 
-class ExprTransformer(object):
+class ExprVisitor(object):
 
     # TODO: more robust!
     def visit(self, tree):
@@ -55,7 +55,7 @@ class ExprTransformer(object):
     def Unknown(self, tree):
         raise NoVisitor(tree)
 
-class MroTransformer(object):
+class MroVisitor(object):
 
     def visit(self, tree):
         if isinstance(tree, list):

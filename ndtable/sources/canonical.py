@@ -268,7 +268,9 @@ class SocketSource(ByteProvider):
         self.setsockopt(self.SOL_SOCKET, self.SO_REUSEADDR, 1)
         self.socket.connect((self.host, self.port))
 
-    def __dealloc__(self): self.socket.close()
+    def __dealloc__(self):
+        self.socket.close()
+
     def read(self, nbytes):
         msg = bytearray(nbytes)
         view = memoryview(msg)

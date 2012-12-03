@@ -11,7 +11,7 @@ from ndtable.idx import Indexable
 from ndtable.byteproto import CONTIGUOUS, READ
 
 from ndtable.expr.paterm import AAppl, ATerm, AAnnotation
-from ndtable.expr.visitor import MroTransformer
+from ndtable.expr.visitor import MroVisitor
 
 #------------------------------------------------------------------------
 # Toy Kernels
@@ -42,7 +42,7 @@ def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
 # Plans
 #------------------------------------------------------------------------
 
-class BlazeVisitor(MroTransformer):
+class BlazeVisitor(MroVisitor):
     def __init__(self):
         pass
 
