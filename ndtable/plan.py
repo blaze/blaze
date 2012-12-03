@@ -66,7 +66,7 @@ class BlazeVisitor(MroTransformer):
         )
 
 
-def generate(graph, variables, kernels):
+def generate(graph, variables):
     # The variables come in topologically sorted, so we just
     # have to preserve that order
 

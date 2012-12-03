@@ -84,10 +84,6 @@ def do_aterms(context, graph):
     context['atermexpr'] = {}
     # ----------------------
 
-    # Hold references to the kernels that are indicated by the
-    # expression specialization
-    context['kernels'] = {}
-
     return context, graph
 
 def do_plan(context, graph):
@@ -96,7 +92,6 @@ def do_plan(context, graph):
     plan = generate(
         context['ops'],
         context['vars'],
-        context['kernels'],
     )
 
     # ----------------------
