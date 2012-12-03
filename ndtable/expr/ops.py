@@ -66,7 +66,12 @@ def arity(op):
     else:
         raise ValueError
 
-class Add(Op):
+class ArithmeticOp(Op):
+    "Base for unary and binary arithmetic operations"
+
+    is_arithmetic = True
+
+class Add(ArithmeticOp):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
@@ -80,7 +85,7 @@ class Add(Op):
     nilpotent    = False
     sideffectful = False
 
-class Mul(Op):
+class Mul(ArithmeticOp):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
