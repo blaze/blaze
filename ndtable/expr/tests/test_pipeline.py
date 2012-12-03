@@ -86,34 +86,34 @@ def test_simple_pipeline():
     plan = line.run_pipeline(x)
 
     if DEBUG:
-        print pprint(plan, width=1)
+        pprint(plan, width=1)
 
     plan = line.run_pipeline(y)
 
     if DEBUG:
-        print pprint(plan, width=1)
+        pprint(plan, width=1)
 
     plan = line.run_pipeline(x+y)
 
     if DEBUG:
-        print pprint(plan, width=1)
+        pprint(plan, width=1)
 
     plan = line.run_pipeline(x*(y+2)+3)
 
     if DEBUG:
-        print pprint(plan, width=1)
+        pprint(plan, width=1)
 
     plan = line.run_pipeline(d+d)
 
     if DEBUG:
-        print pprint(plan, width=1)
+        pprint(plan, width=1)
 
     plan = line.run_pipeline((d+d)+(d+d))
 
     if DEBUG:
-        print pprint(plan, width=1)
+        pprint(plan, width=1)
 
     plan = line.run_pipeline((d*d)*(d*d))
 
     if DEBUG:
-        print pprint(plan, width=1)
+        pprint(plan, width=1)

@@ -22,6 +22,8 @@ class Symbol:
             raise True
         return self.__name != other.__name
 
+    # We require that these be unique in sets and dicts, ergo
+    # same hash.
     def __hash__(self):
         return self.__hash
 
