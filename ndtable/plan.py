@@ -50,10 +50,13 @@ class BlazeVisitor(MroVisitor):
         return self.visit(graph.children[0])
 
     def Op(self, graph):
-        return AAppl(
-            graph.__class__.__name__,
-            self.visit(graph.children)
-        )
+        opname = graph.__class__.__name__
+
+        if graph.is_arithmetic:
+            return AAppl(ATerm('Arithmetic'),
+                         [opname] +  self.visit(graph.children))
+        else:
+            return AAppl(opname, self.visit(graph.children))
 
     def Literal(self, graph):
         return ATerm(graph.val)
