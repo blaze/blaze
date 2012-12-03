@@ -2,5 +2,5 @@
 Sources
 =======
 
-.. automodule:: ndtable.sources.canonical
+.. automodule:: blaze.sources.canonical
    :members:

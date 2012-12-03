@@ -27,6 +27,6 @@ Types
       Atom -> Ptr;
    }
 
-.. automodule:: ndtable.datashape.coretypes
+.. automodule:: blaze.datashape.coretypes
    :members:
    :undoc-members:

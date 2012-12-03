@@ -19,7 +19,7 @@ except:
 # Top Level Packages
 #------------------------------------------------------------------------
 
-packages = ['ndtable']
+packages = ['blaze']
 
 #------------------------------------------------------------------------
 # Minimum Versions
@@ -139,12 +139,12 @@ def_macros = [('DEBUG', 0)]
 
 numpy_path = get_numpy_include_dirs()[0]
 
-carray_path = 'ndtable.carray'
-blosc_path  = 'ndtable/include/blosc/'
+carray_path = 'blaze.carray'
+blosc_path  = 'blaze/include/blosc/'
 
 
 carray_source = [
-    "ndtable/carray/carrayExtension.pyx"
+    "blaze/carray/carrayExtension.pyx"
 ]
 
 carray_depends = [

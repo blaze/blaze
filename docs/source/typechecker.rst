@@ -24,5 +24,5 @@ Stages
     Dispatch
 
 
-.. automodule:: ndtable.expr.typechecker
+.. automodule:: blaze.expr.typechecker
    :members:

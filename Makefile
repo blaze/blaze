@@ -19,7 +19,7 @@ cleandocs:
 
 tests:
 	nosetests -s -v --detailed
-	#nosetests --rednose -s -v ndtable
+	#nosetests --rednose -s -v blaze
 
 
 clean:

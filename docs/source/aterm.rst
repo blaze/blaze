@@ -2,5 +2,5 @@
 ATerm
 =====
 
-.. automodule:: ndtable.expr.paterm
+.. automodule:: blaze.expr.paterm
    :members:
