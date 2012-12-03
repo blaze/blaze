@@ -60,8 +60,7 @@ class BlazeVisitor(MroTransformer):
 
     def Indexable(self, graph):
         return AAnnotation(
-            #ATerm(graph.data),
-            'array',
+            AAppl(ATerm('Array'), [ATerm(id(graph.data))]),
             ty=ATerm(repr(graph.datashape))
         )
 
