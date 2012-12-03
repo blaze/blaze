@@ -4,10 +4,35 @@ from ndtable.expr.graph import Op
 from ndtable.datashape.coretypes import *
 
 #------------------------------------------------------------------------
+# Symbols
+#------------------------------------------------------------------------
+
+class Symbol:
+    def __init__(self, name):
+        self.__name = name
+        self.__hash = hash(self.__name)
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.__name == other.__name
+
+    def __ne__(self, other):
+        if not isinstance(other, self.__class__):
+            raise True
+        return self.__name != other.__name
+
+    def __hash__(self):
+        return self.__hash
+
+    def __repr__(self):
+        return self.__name
+
+#------------------------------------------------------------------------
 # Domains
 #------------------------------------------------------------------------
 
-NDArray, NDTable = xrange(2)
+Array, Table = Symbol('Array'), Symbol('Table')
 one, zero, false, true = xrange(4)
 
 ints      = set([int8, int16, int32, int64])
@@ -21,7 +46,7 @@ discrete   = ints | uints
 continuous = floats | complexes
 numeric    = discrete | continuous
 
-array_like, tabular_like = NDArray, NDTable
+array_like, tabular_like = Array, Table
 indexable = set([array_like, tabular_like])
 
 universal = set([top]) | numeric | indexable | string
@@ -39,7 +64,7 @@ def arity(op):
     else:
         raise ValueError
 
-class add(Op):
+class Add(Op):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
@@ -53,7 +78,7 @@ class add(Op):
     nilpotent    = False
     sideffectful = False
 
-class mul(Op):
+class Mul(Op):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
@@ -67,7 +92,7 @@ class mul(Op):
     nilpotent    = False
     sideffectful = False
 
-class transpose(Op):
+class Transpose(Op):
     # -----------------------
     arity = 1
     signature = 'a -> a'
@@ -81,7 +106,7 @@ class transpose(Op):
     nilpotent    = True
     sideffectful = False
 
-class abs(Op):
+class Abs(Op):
     # -----------------------
     arity = 1
     signature = 'a -> a'

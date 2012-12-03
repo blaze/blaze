@@ -48,9 +48,9 @@ def test_simple_sort_ops():
     #     |
     #    add
 
-    assert lst[0].__class__ == ops.abs
-    assert lst[1].__class__ == ops.mul
-    assert lst[2].__class__ == ops.add
+    assert lst[0].__class__ == ops.Abs
+    assert lst[1].__class__ == ops.Mul
+    assert lst[2].__class__ == ops.Add
 
     assert lst[0].kind == OP
     assert lst[1].kind == OP

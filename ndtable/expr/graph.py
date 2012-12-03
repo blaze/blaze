@@ -206,8 +206,8 @@ class ExpressionNode(nodes.Node):
         # TODO: also kwargs when we support such things
         iargs = injest_iterable(args)
 
-        # Lookup
-        op = Op._registry[fname]
+        # Lookup by capitalized name
+        op = Op._registry[fname.capitalize()]
         #op = Op._registry.get(fname, Op)
 
         if arity == 1:

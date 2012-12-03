@@ -2,7 +2,7 @@ import numpy as np
 
 from ndtable.expr.ops import array_like
 from ndtable.expr.paterm import ATerm, AAppl, AInt
-from ndtable.rts.ffi import install, lift
+from ndtable.rts.ffi import install, lift, _dispatch
 
 def test_lift():
 
@@ -23,8 +23,6 @@ def test_install():
     # Anywhere an add is term is found replace with the simple NumPy
     # dispatch.
     install('Add(a,b);*',nadd,costfn)
-
-    from ndtable.rts.ffi import _dispatch
 
     expr = AAppl(ATerm('Add'), [AInt(1), AInt(2)])
     fn, cost = _dispatch.dispatcher.dispatch(expr)

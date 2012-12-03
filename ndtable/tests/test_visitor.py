@@ -28,7 +28,7 @@ class Visitor(ExprTransformer):
     def FloatNode(self, tree):
         return float
 
-    def add(self, tree):
+    def Add(self, tree):
         return self.visit(tree.children)
 
 class MroVisitor(MroTransformer):
