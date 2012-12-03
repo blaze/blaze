@@ -4,7 +4,7 @@ from ndtable.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from ndtable.engine.pipeline import toposort, topops, topovals, Pipeline
 from pprint import pprint
 
-DEBUG = True
+DEBUG = False
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -81,30 +81,39 @@ def test_simple_sort_vals():
     assert lst[1].val == 2
     assert lst[2].val == 3.0
 
+
 def test_simple_pipeline():
     line = Pipeline()
     plan = line.run_pipeline(x)
 
+    # Add(1,Mul(2,Abs(3.0)))
     if DEBUG:
         pprint(plan, width=1)
 
     plan = line.run_pipeline(y)
 
+    # Add(Add(1,Add(2,3.0)),Add(1,Mul(2,Abs(3.0))))
     if DEBUG:
         pprint(plan, width=1)
 
     plan = line.run_pipeline(x+y)
 
+    # Add(Mul(Add(1,Add(2,3.0)),Add(Add(1,Mul(2,Abs(3.0))),2)),3)
     if DEBUG:
         pprint(plan, width=1)
 
     plan = line.run_pipeline(x*(y+2)+3)
 
+    # Add(Array(39558864){dshape("3 int64")},Array(39558864){dshape("3 int64")})
     if DEBUG:
         pprint(plan, width=1)
 
     plan = line.run_pipeline(d+d)
 
+    # Add(
+    #   Add(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
+    # , Add(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
+    # )
     if DEBUG:
         pprint(plan, width=1)
 
@@ -113,6 +122,11 @@ def test_simple_pipeline():
     if DEBUG:
         pprint(plan, width=1)
 
+
+    # Mul(
+    #   Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
+    # , Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
+    # )
     plan = line.run_pipeline((d*d)*(d*d))
 
     if DEBUG:

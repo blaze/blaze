@@ -35,8 +35,7 @@ class ExprPrinter(object):
 # Transformers
 #------------------------------------------------------------------------
 
-# TODO: call these visitors instead of transformers (and write transformer
-# TODO: counterparts?)
+# TODO: write transformer counterparts?
 
 class ExprVisitor(object):
 

@@ -1,15 +1,23 @@
 """
-Extended ATerm grammar which distinguishes between different
-annotation formats:
+Python implementation of ATerm. Just a pretty printer for now.
 
-    - type
-    - metadata
-    - metacompute
+In our slight modification of ATerm we require that the first
+annotation of a Term be its datashape type and the following
+annotations stand for metadata. For example, an variable ``x``
+which stands
 
-Still a strict subset of ATerm so it can be parsed and
-manipulated by Stratego rewriters.
+Type::
 
-::
+    Array(2928121){dshape('2,2,int32')}
+
+Type and Metadata::
+
+    Array(2928121){dshape('2,2,int32'), contigious, corder}
+
+Nevertheless, it is still a strict subset of ATerm so it can be parsed
+and manipulated by Stratego rewriters.
+
+Grammar::
 
     t : bt                 -- basic term
       | bt {ty,m1,...}     -- annotated term
@@ -20,6 +28,17 @@ manipulated by Stratego rewriters.
        | "ccc"             -- quoted string
        | int               -- integer
        | real              -- floating point number
+
+Examples::
+
+    >>> AInt(1)
+    1
+    >>> ATerm('x')
+    x
+    >>> AAppl(ATerm('Add'), [AInt(1), AInt(2)])
+    Add(1,2)
+    >>> AAppl(ATerm('Mul'),[AAppl(ATerm('Add'),[AInt(1),AInt(2)]),ATerm('x')])
+    Mul(Add(1,2), x)
 
 """
 

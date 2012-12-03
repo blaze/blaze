@@ -40,6 +40,7 @@ API Reference
 
    types
    persistence
+   aterm
    layout
    sources
    graph

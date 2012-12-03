@@ -1,4 +1,3 @@
-from ndtable.expr.paterm import AAppl, ATerm, AList, AAnnotation
 from ndtable.expr.paterm import *
 
 def test_simple():
