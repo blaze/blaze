@@ -1,34 +1,7 @@
-from ndtable.expr.graph import Op
+from graph import Op
+from ndtable.datashape import coretypes as C
 
-# TODO: bad bad
-from ndtable.datashape.coretypes import *
-
-#------------------------------------------------------------------------
-# Symbols
-#------------------------------------------------------------------------
-
-class Symbol:
-    def __init__(self, name):
-        self.__name = name
-        self.__hash = hash(self.__name)
-
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return False
-        return self.__name == other.__name
-
-    def __ne__(self, other):
-        if not isinstance(other, self.__class__):
-            raise True
-        return self.__name != other.__name
-
-    # We require that these be unique in sets and dicts, ergo
-    # same hash.
-    def __hash__(self):
-        return self.__hash
-
-    def __repr__(self):
-        return self.__name
+from utils import Symbol
 
 #------------------------------------------------------------------------
 # Domains
@@ -37,12 +10,12 @@ class Symbol:
 Array, Table = Symbol('Array'), Symbol('Table')
 one, zero, false, true = xrange(4)
 
-ints      = set([int8, int16, int32, int64])
-uints     = set([uint8, uint16, uint32, uint64])
-floats    = set([float32, float64])
-complexes = set([complex64, complex128])
-bools     = set([bool_])
-string    = set([string])
+ints      = set([C.int8, C.int16, C.int32, C.int64])
+uints     = set([C.uint8, C.uint16, C.uint32, C.uint64])
+floats    = set([C.float32, C.float64])
+complexes = set([C.complex64, C.complex128])
+bools     = set([C.bool_])
+string    = set([C.string])
 
 discrete   = ints | uints
 continuous = floats | complexes
@@ -51,7 +24,7 @@ numeric    = discrete | continuous
 array_like, tabular_like = Array, Table
 indexable = set([array_like, tabular_like])
 
-universal = set([top]) | numeric | indexable | string
+universal = set([C.top]) | numeric | indexable | string
 
 #------------------------------------------------------------------------
 # Basic Scalar Arithmetic

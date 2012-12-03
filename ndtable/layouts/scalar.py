@@ -206,6 +206,21 @@ class Layout(object):
     wraparound = True
     # Allow negative indexing
 
+class DeferredLayout(object):
+    """
+    Layout deferred until evaluation
+    """
+    def __init__(self, *args, **kwargs):
+        self.args   = args
+        self.kwargs = kwargs
+
+    def change_coordinates(self, indexer):
+        raise NotImplementedError
+
+    @property
+    def desc(self):
+        return 'DeferredLayout()'
+
 #------------------------------------------------------------------------
 # Continuous Layouts
 #------------------------------------------------------------------------

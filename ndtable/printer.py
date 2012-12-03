@@ -37,14 +37,23 @@ def generic_repr(name, obj, deferred):
           layout   := Identity;
 
     """
-    if _show_details:
-        header = "%s\n" % (name)
-        header += "  datashape := %s \n" % str(obj._datashape)
-        header += "  values    := %s \n"  % list(obj.backends)
-        header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
-        header += "  layout    := %s \n"  % obj._layout.desc
+
+    if deferred:
+        if _show_details:
+            header = "%s\n" % (name)
+            header += "  datashape := %s \n" % str(obj._datashape)
+            header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
+        else:
+            header = ''
     else:
-        header = ''
+        if _show_details:
+            header = "%s\n" % (name)
+            header += "  datashape := %s \n" % str(obj._datashape)
+            header += "  values    := %s \n"  % list(obj.backends)
+            header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
+            header += "  layout    := %s \n"  % obj._layout.desc
+        else:
+            header = ''
 
     # Show the data below
     fullrepr = header + generic_str(obj, deferred)

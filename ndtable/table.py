@@ -64,7 +64,6 @@ class Array(Indexable):
             self._metaheader + (metadata or [])
         )
 
-        self.space = None
 
         if isinstance(dshape, str):
             # run it through the parser
@@ -220,7 +219,6 @@ class NDArray(Indexable, ArrayNode):
             # XXX
             #self.children = injest_iterable(obj, force_homog=True)
             #self.space = Space(self.children)
-
 
             if not dshape:
                 # The user just passed in a raw data source, try
@@ -382,21 +380,14 @@ class NDTable(Indexable, ArrayNode):
         )
 
         if isinstance(obj, Space):
-            self._space = obj
+            self.space = obj
             self.children = set(self.space.subspaces)
         else:
-            self.children = injest_iterable(obj)
+            spaces = injest_iterable(obj)
+            self.space = Space(*spaces)
+            self.children = set(self.space.subspaces)
 
-        # How do we build an Index from the given graph
-        # elements... still needs some more thought. Disabled for
-        # now.
-        #
-        # NDTable always has an index
-
-        #if index is None:
-            #self.index = AutoIndex(self.space)
-        #elif isinstance(index, Index):
-            #self.index = index
+        self._layout = None
 
     #------------------------------------------------------------------------
     # Properties
@@ -418,6 +409,14 @@ class NDTable(Indexable, ArrayNode):
         Type deconstructor
         """
         return self._datashape
+
+    @property
+    def backends(self):
+        """
+        The storage backends that make up the space behind the
+        Array.
+        """
+        return iter(self.space)
 
     #------------------------------------------------------------------------
     # Construction
@@ -469,6 +468,7 @@ class NDTable(Indexable, ArrayNode):
 
 # This is a metadata space transformation that informs the
 # codomain eclass judgement.
+
 def infer_eclass(a,b):
     if (a,b) == (MANIFEST, MANIFEST):
         return MANIFEST

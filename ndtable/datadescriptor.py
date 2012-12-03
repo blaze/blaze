@@ -1,10 +1,10 @@
-def _dummy(*args, **kw): pass
-Enum = Int = Float = Str = Tuple = Bool = List = _dummy
+def _dummy(*args, **kw):
+    pass
+Int = Float = Str = Tuple = Bool = List = _dummy
 
-ENUM      = 1
-BUFLIST   = 2
-STREAM    = 4
-STREMLIST = 8
+#------------------------------------------------------------------------
+# Data Descriptor
+#------------------------------------------------------------------------
 
 class DataDescriptor(object):
     """ DataDescriptors are the underlying, low-level references to data
@@ -40,13 +40,13 @@ class DataDescriptor(object):
         In a C level implementation of the DataDescriptor interface, this
         returns a (void*) pointer to the data.
         """
-        return Buffer
+        raise NotImplementedError
 
     def asbuflist(self, copy=False):
         """ Returns the contents of the buffer as a list of memoryviews.  If
         **copy** is False, then tries to return just views of data if possible.
         """
-        return List(Buffer)
+        raise NotImplementedError
 
     def asstream(self):
         """ Returns a Python iterable which returns **chunksize** elements
@@ -56,19 +56,22 @@ class DataDescriptor(object):
         If **chunksize** is greater than 1, then returns a memoryview of the
         elements if they are contiguous, or a Tuple otherwise.
         """
-        return Stream
+        raise NotImplementedError
 
     def asstreamlist(self):
         """ Returns a list of Stream objects, which should be read sequentially
         (i.e. after exhausting the first stream, the second stream is read,
         etc.)
         """
-        return List(Stream)
+        raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Python Reference Implementations
+#------------------------------------------------------------------------
 
 class Buffer(DataDescriptor):
-    """ Describes a region of memory.  Implements the memoryview interface.
+    """ Describes a region of memory. Implements the memoryview interface.
     """
-
     desctype = "buffer"
 
     length   = Int     # Total length, in bytes, of the buffer
@@ -92,7 +95,6 @@ class Stream(DataDescriptor):
     to load data into memory.  Represents a scan over data.  The returned
     data is a copy and should be considered to be owned by the caller.
     """
-
     desctype = "stream"
 
     length    = Int
