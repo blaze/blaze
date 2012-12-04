@@ -26,14 +26,18 @@ class Type(type):
             return cls
 
     @staticmethod
-    def register(name, cls):
-        # Don't clober existing types.
+    def register(name, type):
+        # Don't clobber existing types.
         # TODO: more sophisticated ways of namespacing these.
         if name in Type._registry:
             raise TypeError('There is another type registered with name %s'\
                 % name)
 
-        Type._registry[name] = cls
+        Type._registry[name] = type
+
+    @classmethod
+    def lookup_type(cls, name):
+        return cls._registry[name]
 
 #------------------------------------------------------------------------
 # Primitives
@@ -507,51 +511,40 @@ def product(A, B):
 
 plat = calcsize('@P') * 8
 
+int_       = CType('int')
 long_      = CType('long')
 bool_      = CType('bool')
+float_     = CType('float')
 double     = CType('double')
 short      = CType('short')
 char       = CType('char')
 
-if plat == 32:
-    int8  = CType('int', 8)
-    int16 = CType('int', 16)
-    int32 = CType('int', 32)
-    int64 = CType('int', 64)
-    int_  = int32
+int8       = CType('int', 8)
+int16      = CType('int', 16)
+int32      = CType('int', 32)
+int64      = CType('int', 64)
 
-    uint8  = CType('uint',  8)
-    uint16 = CType('uint', 16)
-    uint32 = CType('uint', 32)
-    uint64 = CType('uint', 64)
-    uint   = uint32
+uint8      = CType('uint',  8)
+uint16     = CType('uint', 16)
+uint32     = CType('uint', 32)
+uint64     = CType('uint', 64)
 
-elif plat == 64:
-    int8  = CType('int', 8)
-    int16 = CType('int', 16)
-    int32 = CType('int', 32)
-    int64 = CType('int', 64)
-    int_  = int64
+float16    = CType('float', 16)
+float32    = CType('float', 32)
+float64    = CType('float', 64)
+float128   = CType('float', 128)
 
-    uint8  = CType('uint',  8)
-    uint16 = CType('uint', 16)
-    uint32 = CType('uint', 32)
-    uint64 = CType('uint', 64)
-    uint   = uint64
-
-if plat == 32:
-    float16      = CType('float', 16)
-    float32      = CType('float', 32)
-    float64      = CType('float', 64)
-    float128     = CType('float', 128)
-    float_       = float32
-
-elif plat == 64:
-    float16      = CType('float', 16)
-    float32      = CType('float', 32)
-    float64      = CType('float', 64)
-    float128     = CType('float', 128)
-    float_       = float64
+# NOTE: Naming these 'int' and 'float' is a *really* bad idea.
+# NOTE: People expect 'float' to be a native float. This is also
+# NOTE: inconsistent with Numba.
+# if plat == 32:
+#     int_ = int32
+#     uint = uint32
+#     float_ = float32
+# else:
+#     int_ = int64
+#     uint = uint64
+#     float_ = float64
 
 complex64  = CType('complex' , 64)
 complex128 = CType('complex', 128)
