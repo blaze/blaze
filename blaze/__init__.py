@@ -19,3 +19,5 @@ from datashape.shorthand import *
 
 # Record class declarations
 from datashape.record import RecordDecl, derived
+
+from blaze.error import *

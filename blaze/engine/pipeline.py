@@ -14,6 +14,7 @@ from itertools import ifilter
 from collections import Counter
 
 from blaze.plan import generate
+from blaze.engine import llvm_execution
 
 #------------------------------------------------------------------------
 # Constants
@@ -86,21 +87,22 @@ def do_aterms(context, graph):
 
     return context, graph
 
-def do_plan(context, graph):
+def do_convert_to_aterm(context, graph):
     "Convert the graph to an ATerm graph. See blaze/expr/paterm.py"
     context = dict(context)
 
-    leafs, plan = generate(
+    operands, plan = generate(
         context['ops'],
         context['vars'],
     )
 
     # ----------------------
-    context['leafs'] = leafs
+    context['operands'] = operands
     context['output'] = plan
     # ----------------------
 
     return context, graph
+
 
 #------------------------------------------------------------------------
 # Pipeline
@@ -129,7 +131,7 @@ class Pipeline(object):
             #  v
             do_aterms,
             #  v
-            do_plan,
+            do_convert_to_aterm,
             # Output -->
         )
 

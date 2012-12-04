@@ -47,6 +47,23 @@ class GraphToAst(visitor.ExprVisitor):
     def Unknown(self, tree):
         return self.ufunc_builder.register_operand(tree)
 
+
+def build_executor(pyast_function, operands):
+    "Build a ufunc and an wrapping executor from a Python AST"
+    vectorizer = Vectorize(pyast_function)
+    vectorizer.add(*[minitype(op) for op in operands])
+    ufunc = vectorizer.build_ufunc()
+
+    operands_dtypes = map(get_dtype, operands)
+    # TODO: this should be part of the blaze graph
+    result_dtype = reduce(np.promote_types, operands_dtypes)
+
+    # TODO: build an executor tree and substitute where we can evaluate
+    executor = executors.ElementwiseLLVMExecutor(
+        ufunc, operands_dtypes, result_dtype)
+
+    return executor
+
 class ATermToAst(visitor.ExprVisitor):
     """
     Convert an aterm graph to a Python AST.
@@ -57,24 +74,58 @@ class ATermToAst(visitor.ExprVisitor):
         'mul': ast.Mult,
     }
 
+    nesting_level = 0
+
     def __init__(self):
         super(ATermToAst, self).__init__()
         self.ufunc_builder = UFuncBuilder()
 
+    def set_executor(self, aterm, executor_id):
+        aterm
+
+    def register(self, result):
+        if self.nesting_level == 0:
+            # Bottom of graph that we can handle
+            operands = self.ufunc_builder.operands
+            pyast_function = self.ufunc_builder.build_ufunc_ast(pyast)
+            executor = build_executor(pyast_function, operands)
+
+
     def AAppl(self, app):
+        "Look for unops, binops and reductions we can handle"
         if paterm.matches('Arithmetic;*', app.spine):
             opname = app.args[0].lower()
             op = self.opname_to_astop.get(opname, None)
             args = app.args[1:]
-            if op is not None:
-                if len(args) == 2:
-                    left, right = self.visit(args)
-                    return ast.BinOp(left=left, op=op(), right=right)
+            if op is not None and len(args) == 2:
+                self.nesting_level += 1
+                left, right = self.visit(args)
+                self.nesting_level -= 1
 
-        return self.Unknown(app)
+                result = ast.BinOp(left=left, op=op(), right=right)
+                return self.register(result)
 
-    def Unknown(self, tree):
-        return self.ufunc_builder.register_operand(tree)
+        return self.unhandled(app)
+
+    def AInt(self, constant):
+        return ast.Num(n=constant.n)
+
+    AFloat = AInt
+
+    def unhandled(self, aterm, children=()):
+        "An term we can't handle, scan for sub-trees"
+        nesting_level = self.nesting_level
+        state = self.ufunc_builder.save()
+
+        self.nesting_level = 0
+        self.visit(childrem)
+        self.nesting_level = nesting_level
+        self.ufunc_builder.restore(state)
+
+        if self.nesting_level:
+            self.ufunc_builder.register_operand(tree)
+
+        return aterm
 
 
 def getsource(ast):
@@ -94,6 +145,29 @@ def minitype(blaze_obj):
     dtype = get_dtype(blaze_obj)
     return minitypes.map_dtype(dtype)
 
+#def convert_graph(lazy_blaze_graph):
+#    """
+#    >>> a = NDArray([1, 2, 3, 4], datashape('2, 2, int'))
+#    >>> operands, ast_func = convert_graph(a + a)
+#
+#    >>> print getsource(ast_func)
+#    def ufunc0(op0, op1):
+#        return (op0 + op1)
+#    >>> print operands
+#    [Array(4346842064){True}, Array(4346842064){True}]
+#    """
+#    # Convert blaze graph to ATerm graph
+#    p = pipeline.Pipeline()
+#    context = p.run_pipeline_context(lazy_blaze_graph)
+#
+#    # Convert to ast
+#    aterm_operands, pyast_function = convert_aterm(context, context['output'])
+#
+#    global_id = lambda aterm: aterm.bt.args[0]
+#    operands = [operands[global_id(aterm_op)] for aterm_op in aterm_operands]
+#
+#    return operands, pyast_function
+
 def convert_aterm(context, aterm_graph):
     """
     Convert an aterm graph to a Python AST.
@@ -104,56 +178,11 @@ def convert_aterm(context, aterm_graph):
     pyast_function = visitor.ufunc_builder.build_ufunc_ast(pyast)
     return operands, pyast_function
 
-def convert_graph(lazy_blaze_graph):
-    """
-    >>> a = NDArray([1, 2, 3, 4], datashape('2, 2, int'))
-    >>> operands, ast_func = convert_graph(a + a)
-
-    >>> print getsource(ast_func)
-    def ufunc0(op0, op1):
-        return (op0 + op1)
-    >>> print operands
-    [Array(4346842064){True}, Array(4346842064){True}]
-    """
-    # Convert blaze graph to ATerm graph
-    p = pipeline.Pipeline()
-    context = p.run_pipeline_context(lazy_blaze_graph)
-
-    operands = {}
-    for leaf in context['leafs']:
-        if isinstance(leaf, blaze.idx.Indexable):
-            operands[leaf.global_id()] = leaf
-
-    # Convert to ast
-    #context['aterm_graph'] =
-    aterm_operands, pyast_function = convert_aterm(context, context['output'])
-
-    global_id = lambda aterm: aterm.bt.args[0]
-    operands = [operands[global_id(aterm_op)] for aterm_op in aterm_operands]
-
-    return operands, pyast_function
-
-def execute_graph(lazy_blaze_graph):
+def substitute_llvm_executors(aterm_graph):
     """
     >>> execute_graph(a + a)
     """
     operands, pyast_function = convert_graph(lazy_blaze_graph)
-    #if not all(isinstance(op.data, canonical.CArraySource) for op in operands):
-    #    raise NotImplemented("Non-chunked sources")
-
-    vectorizer = Vectorize(pyast_function)
-    vectorizer.add(*[minitype(op) for op in operands])
-    ufunc = vectorizer.build_ufunc()
-
-    operands_dtypes = map(get_dtype, operands)
-    # TODO: this should be part of the blaze graph
-    result_dtype = reduce(np.promote_types, operands_dtypes)
-
-    # TODO: build an executor tree and substitute where we can evaluate
-    executor = executors.ElementwiseLLVMExecutor(
-             ufunc, operands_dtypes, result_dtype)
-
-    return executor
 
 
 if __name__ == '__main__':
