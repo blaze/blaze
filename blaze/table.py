@@ -216,8 +216,8 @@ class NDArray(Indexable, ArrayNode):
             else:
                 # The user overlayed their custom dshape on this
                 # data, check if it makes sense
-                self._datashape = CArraySource.check_datashape(obj,
-                    given_dshape=dshape)
+                CArraySource.check_datashape(obj, given_dshape=dshape)
+                self._datashape = dshape
 
             self.children = []
             self.vtype = self._datashape
