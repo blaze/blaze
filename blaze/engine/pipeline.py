@@ -87,14 +87,16 @@ def do_aterms(context, graph):
     return context, graph
 
 def do_plan(context, graph):
+    "Convert the graph to an ATerm graph. See blaze/expr/paterm.py"
     context = dict(context)
 
-    plan = generate(
+    leafs, plan = generate(
         context['ops'],
         context['vars'],
     )
 
     # ----------------------
+    context['leafs'] = leafs
     context['output'] = plan
     # ----------------------
 
@@ -131,7 +133,7 @@ class Pipeline(object):
             # Output -->
         )
 
-    def run_pipeline(self, graph):
+    def run_pipeline_context(self, graph):
         """
         Run the graph through the pipeline, spit out a LLVM
         module.
@@ -143,7 +145,11 @@ class Pipeline(object):
         # ``graph`` objects threaded through.
         pipeline = reduce(compose, self.pipeline)
 
-        octx, _ = pipeline(ictx, graph)
+        context, _ = pipeline(ictx, graph)
+        return context
+
+    def run_pipeline(self, graph):
+        octx = self.run_pipeline_context(graph)
         return octx['output']
 
 #------------------------------------------------------------------------
