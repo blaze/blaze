@@ -6,6 +6,8 @@
 from numpy import dtype
 from string import letters
 
+DEBUG = True
+
 #------------------------------------------------------------------------
 # Syntax
 #------------------------------------------------------------------------
@@ -317,7 +319,9 @@ def atnf(self):
 
 def infer(env, term):
     t = tyeval(term, env)
-    print ('%s : %s' % (str(term), pprint(t)))
+    if DEBUG:
+        print ('%s :: %s' % (str(term), pprint(t)))
+    return t
 
 #------------------------------------------------------------------------
 # Syntax Buidlers
@@ -344,3 +348,71 @@ def union(*xs):
 # product types
 def product(x,y):
     return App(App(Atom("product"), x), y)
+
+# uncurred type constructors, behave like Python
+def uncurry1(*xs):
+    t1 = TypeVar()
+    return Function(t1, product_t)
+
+def uncurry2(*xs):
+    t1 = TypeVar()
+    t2 = TypeVar()
+    return Function(t1, Function(t2, product_t))
+
+if __name__ == '__main__':
+
+    # Product Types
+    #--------------
+
+    p1 = TypeVar()
+    p2 = TypeVar()
+
+    product_t = TypeCon("x", (p1, p2))
+
+    # Sum Types
+    #----------
+
+    p1 = TypeVar()
+    p2 = TypeVar()
+
+    sum_t     = TypeCon("+", (p1, p2))
+
+    dynamic = TypeCon("dynamic", [])
+    null = TypeCon("null", [])
+
+    BlazeEnv = {
+        "product" : uncurry2(product_t),
+        "sum"     : uncurry2(sum_t),
+        "?"       : dynamic,
+        #"null'    : dynamic,
+    }
+
+    # -- Example 1 --
+
+    #x = lam(['x', 'y'], product(Atom('x'), Atom('y'))),
+    x = lam(['x', 'y'], product(Atom('x'), Atom('y')))
+    inferred = infer(BlazeEnv,x)
+
+    assert pprint(inferred) == '(a -> (b -> (c x d)))'
+
+    # -- Example 2 --
+
+    x = app(
+        lam(['x', 'y', 'z'], product(Atom('x'), Atom('z'))),
+        [Atom('1')]
+    )
+    inferred = infer(BlazeEnv,x)
+    assert pprint(inferred) == '(a -> (b -> (b x int)))'
+
+    # -- Example 3 --
+
+    x = app(Atom("product"), [Atom("?"), Atom("1")])
+    inferred = infer(BlazeEnv, x)
+
+    assert pprint(inferred) == '(? x int)'
+
+    # -- Example 3 --
+
+    x = app(Atom("sum"), [Atom("?"), Atom("1")])
+    inferred = infer(BlazeEnv, x)
+    assert pprint(inferred) == '(? + int)'
