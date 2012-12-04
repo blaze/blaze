@@ -20,8 +20,9 @@ cdef double distance(double *Q, double *T, npy_intp j, int m, double mean,
                      double std, npy_intp *order, double bsf):
     cdef int i
     cdef double x, sum_ = 0
+    cdef double istd = 1. / std
     for i in range(m):
-        x = (T[order[i]+j] - mean) / std
+        x = (T[order[i]+j] - mean) * istd
         sum_ += (x - Q[i]) * (x - Q[i])
         if sum_ >= bsf:
             break
