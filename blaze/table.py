@@ -10,7 +10,7 @@ from layouts.scalar import ChunkedL
 from layouts.query import retrieve
 
 from expr.graph import ArrayNode, injest_iterable
-from blaze.expr.metadata import metadata as md
+from blaze.expr import metadata as md
 
 from sources.canonical import CArraySource, ArraySource
 from printer import generic_str, generic_repr
@@ -53,15 +53,14 @@ class Array(Indexable):
 
     eclass = MANIFEST
     _metaheader = [
-        ('MANIFEST' , True),
+        md.manifest,
+        md.arraylike,
     ]
 
     def __init__(self, obj, dshape=None, metadata=None, layout=None):
 
         self._datashape = dshape
-        self._metadata  = md.empty(
-            self._metaheader + (metadata or [])
-        )
+        self._metadata  = Array._metaheader + (metadata or [])
 
         if isinstance(dshape, str):
             # run it through the parser
@@ -180,16 +179,14 @@ class NDArray(Indexable, ArrayNode):
 
     eclass = DELAYED
     _metaheader = [
-        ('MANIFEST' , True),
-        ('ARRAYLIKE', True),
+        md.manifest,
+        md.arraylike,
     ]
 
     def __init__(self, obj, dshape=None, metadata=None, layout=None):
 
         self._datashape = dshape
-        self._metadata  = md.empty(
-            self._metaheader + (metadata or [])
-        )
+        self._metadata  = NDArray._metaheader + (metadata or [])
 
         if isinstance(obj, str):
             # Create an empty array allocated per the datashape string
@@ -247,7 +244,7 @@ class NDArray(Indexable, ArrayNode):
     #------------------------------------------------------------------------
 
     @property
-    def metadata(self):
+    def mteretadata(self):
         return self._meta
 
     @property
@@ -352,14 +349,13 @@ class NDTable(Indexable, ArrayNode):
 
     eclass = DELAYED
     _metaheader = [
-        ('DEFERRED' , True),
+        md.deferred,
+        md.tablelike,
     ]
 
     def __init__(self, obj, dshape=None, index=None, metadata=None):
         self._datashape = dshape
-        self._metadata  = md.empty(
-            self._metaheader + (metadata or [])
-        )
+        self._metadata  = NDTable._metaheader + (metadata or [])
 
         # Resolve the values
         # ------------------
@@ -391,10 +387,6 @@ class NDTable(Indexable, ArrayNode):
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
-
-    @property
-    def metadata(self):
-        return self._metadata + self._meta
 
     @property
     def datashape(self):

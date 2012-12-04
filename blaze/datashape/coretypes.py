@@ -479,7 +479,7 @@ class Record(DataShape, Mapping):
 # Constructions
 #------------------------------------------------------------------------
 
-def product(A,B):
+def product(A, B):
     if A.composite and B.composite:
         f = A.operands
         g = B.operands

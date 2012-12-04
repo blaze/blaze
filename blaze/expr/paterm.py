@@ -43,7 +43,6 @@ Examples::
 import re
 from functools import partial
 from collections import OrderedDict
-from blaze.expr.metadata import metadata
 
 sep = re.compile("[\(.*\)]")
 
