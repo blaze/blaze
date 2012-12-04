@@ -4,7 +4,9 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 ext_modules = [ Extension(
-    "ucr", ["ucr.pyx"],
+    "ucr",
+    sources = ["ucr.pyx", "dtw.c"],
+    depends = ["dtw.h"],
     include_dirs = [numpy.get_include()])
     ]
 
