@@ -4,9 +4,9 @@
 
 PyObject_BinaryOperators = [
     ('or','|'),  ('and','&'), ('xor','^'), ('lshift','<<'), ('rshift','>>'),
-    ('add','+'), ('sub','-'), ('mul','*'), ('div','/'), ('mod','%'),
-    ('truediv','/'), ('floordiv','//'), ('lt','<'), ('gt','>'), ('le','<='),
-    ('ge','>='), ('eq','=='), ('ne','!=')
+    ('add','+'), ('sub','-'), ('mul','*'), ('div','/'), ('pow','**'),
+    ('mod','%'), ('truediv','/'), ('floordiv','//'), ('lt','<'), ('gt','>'),
+    ('le','<='), ('ge','>='), ('eq','=='), ('ne','!=')
 ]
 
 PyObject_UnaryOperators = [

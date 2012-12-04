@@ -41,6 +41,8 @@ class ArithmeticOp(Op):
 
     is_arithmetic = True
 
+
+
 class Add(ArithmeticOp):
     # -----------------------
     arity = 2
@@ -68,6 +70,21 @@ class Mul(ArithmeticOp):
     idempotent   = False
     nilpotent    = False
     sideffectful = False
+
+class Pow(Op):
+    # -----------------------
+    arity = 2
+    signature = 'a -> a -> a'
+    dom = [universal, numeric]
+    # -----------------------
+
+    identity     = one
+    commutative  = True
+    associative  = True
+    idempotent   = False
+    nilpotent    = False
+    sideffectful = False
+
 
 class Transpose(Op):
     # -----------------------

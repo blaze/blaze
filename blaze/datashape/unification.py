@@ -24,7 +24,7 @@ class Incommensurable(Exception):
             self.space, self.dim
         )
 
-def unify(context, a, b):
+def unify(a, b):
     """
     Unification of Datashapes.
     """

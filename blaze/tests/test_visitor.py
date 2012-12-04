@@ -41,7 +41,7 @@ class MroVisitor(MroVisitor):
     def Literal(self, tree):
         return True
 
-def test_simple_transform():
+def test_simple_visitor():
     walk = Visitor()
     a = walk.visit(x)
     assert a == [[int, [[int, float]]]]
@@ -49,7 +49,7 @@ def test_simple_transform():
     b = walk.visit(y)
     assert b == [[[[int, int]], float]]
 
-def test_simple_transform_mro():
+def test_simple_visitor_mro():
     walk = MroVisitor()
     a = walk.visit(x)
 

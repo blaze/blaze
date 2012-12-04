@@ -61,13 +61,14 @@ def typeof(obj):
     int64
     >>> typeof(Any())
     top
+    >>> typeof(NDArray([1,2,3]))
+    dshape("3, int64")
     """
     typ = type(obj)
 
     # -- special case --
     if isinstance(obj, ArrayNode):
-        # TOOD: more enlightened description
-        return obj.type
+        return obj.datashape
 
     if typ is App:
         return obj.cod
@@ -77,7 +78,7 @@ def typeof(obj):
         return float_
     elif typ is StringNode:
         return string
-    elif typ is Any:
+    elif typ is dynamic:
         return top
     else:
         raise UnknownExpression(obj)
@@ -198,9 +199,6 @@ class ExpressionNode(nodes.Node):
     """
     abstract = True
 
-    def generate_fnnode(self, fname, args=None, kwargs=None):
-        pass
-
     def generate_opnode(self, arity, fname, args=None, kwargs=None):
 
         # TODO: also kwargs when we support such things
@@ -208,7 +206,6 @@ class ExpressionNode(nodes.Node):
 
         # Lookup by capitalized name
         op = Op._registry[fname.capitalize()]
-        #op = Op._registry.get(fname, Op)
 
         if arity == 1:
             iop = op(fname, iargs)
@@ -220,6 +217,9 @@ class ExpressionNode(nodes.Node):
 
         elif arity == -1:
             return op(fname, iargs, kwargs)
+
+    def generate_fnnode(self, fname, args=None, kwargs=None):
+        pass
 
     # Python Intrinsics
     # -----------------
@@ -566,10 +566,6 @@ class Fun(ExpressionNode):
     def __init__(self, fn, arguments):
         self.fn = fn
         self.children = arguments
-
-    @property
-    def name(self):
-        return self.op
 
 #------------------------------------------------------------------------
 # Values

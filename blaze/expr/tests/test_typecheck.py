@@ -26,7 +26,7 @@ class dynamic(object):
     def __repr__(self):
         return '?'
 
-def unify(context, a,b):
+def unify(a,b):
     """
     Very simple unification.
     """

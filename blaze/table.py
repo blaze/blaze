@@ -123,13 +123,6 @@ class Array(Indexable):
     #------------------------------------------------------------------------
 
     @property
-    def type(self):
-        """
-        Type deconstructor
-        """
-        return self._datashape
-
-    @property
     def datashape(self):
         """
         Type deconstructor
@@ -260,14 +253,6 @@ class NDArray(Indexable, ArrayNode):
     @property
     def name(self):
         return repr(self)
-
-    # TODO: deprecate this
-    @property
-    def type(self):
-        """
-        Type deconstructor
-        """
-        return self._datashape
 
     @property
     def datashape(self):
@@ -412,12 +397,6 @@ class NDTable(Indexable, ArrayNode):
         return self._metadata + self._meta
 
     @property
-    def type(self):
-        """
-        """
-        return self._datashape
-
-    @property
     def datashape(self):
         """
         Type deconstructor
@@ -427,15 +406,13 @@ class NDTable(Indexable, ArrayNode):
     @property
     def backends(self):
         """
-        The storage backends that make up the space behind the
-        Array.
+        The storage backends that make up the space behind the Array.
         """
         return iter(self.space)
 
     #------------------------------------------------------------------------
     # Construction
     #------------------------------------------------------------------------
-
 
     @staticmethod
     def _from_providers(*providers):

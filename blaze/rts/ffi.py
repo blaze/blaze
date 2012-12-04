@@ -18,6 +18,7 @@ class NoDispatch(Exception):
     def __str__(self):
         return "No implementation for '%r'" % self.aterm
 
+# WARNING, this is mutable
 class Dispatcher(object):
 
     def __init__(self):

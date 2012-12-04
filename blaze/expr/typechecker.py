@@ -87,11 +87,11 @@ class InvalidTypes(TypeError):
 # System Specification
 #------------------------------------------------------------------------
 
-typesystem = namedtuple('TypeSystem', 'unifier, top, dynamic, typeof')
-typeresult = namedtuple('Satisifes', 'env, dom, cod, dynamic')
+typesystem    = namedtuple('TypeSystem', 'unifier, top, dynamic, typeof')
+typejudgement = namedtuple('Judgement', 'env, dom, cod, dynamic')
 
 #------------------------------------------------------------------------
-# Core
+# Utils
 #------------------------------------------------------------------------
 
 def emptycontext(system):
@@ -102,6 +102,10 @@ def emptycontext(system):
 def dynamic(cls):
     universal = set([coretypes.top])
     return all(arg == universal for arg in cls.dom)
+
+#------------------------------------------------------------------------
+# Inference
+#------------------------------------------------------------------------
 
 def tyconsist(context, ty1, ty2):
     raise NotImplementedError
@@ -120,19 +124,19 @@ def tyeval(signature, operands, domc, system, commutative=False):
 
     Parameters:
 
-        signature:
+        :signature:
             String containing the type signature.
 
-        operands:
+        :operands:
             The operands to type check against signature.
 
-        dom:
+        :domc:
             The constraints on the space domain to traverse.
 
-        universe:
-            The universe of terms in which to resolve instances to types.
+        :system:
+            The type system over which to evaluate.
 
-        commutative:
+        :commutative:
             Use the commutative checker which attempts to eval all
             permutations of domains to find a satisfiable one.
 
@@ -187,13 +191,13 @@ def tyeval(signature, operands, domc, system, commutative=False):
 
         if rigid[i]:
             # Need to satisfy the constraint and be unifiable in the
-            # enviroment context of the other rigid variables.
+            # environment context of the other rigid variables.
             bound = context.get(var)
 
             if bound:
                 if typeof(operand) != bound:
                     try:
-                        uni = unify(context, typeof(operand), bound)
+                        uni = unify(typeof(operand), bound)
                     except Incommensurable:
                         raise TypeError(
                             'Cannot unify %s %r' % (typeof(operand), bound))
@@ -221,4 +225,4 @@ def tyeval(signature, operands, domc, system, commutative=False):
         codt = dynt
         dynamic = True
 
-    return typeresult(context, domt, codt, dynamic)
+    return typejudgement(context, domt, codt, dynamic)
