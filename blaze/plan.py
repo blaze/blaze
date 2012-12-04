@@ -44,7 +44,7 @@ def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
 
 class BlazeVisitor(MroVisitor):
     def __init__(self):
-        pass
+        self.leafs = []
 
     def App(self, graph):
         return self.visit(graph.children[0])
@@ -59,9 +59,11 @@ class BlazeVisitor(MroVisitor):
             return AAppl(opname, self.visit(graph.children))
 
     def Literal(self, graph):
+        self.leafs.append(graph.val)
         return ATerm(graph.val)
 
     def Indexable(self, graph):
+        self.leafs.append(graph)
         return AAnnotation(
             AAppl(ATerm('Array'), [ATerm(id(graph.data))]),
             ty=ATerm(repr(graph.datashape))
@@ -73,4 +75,5 @@ def generate(graph, variables):
     # have to preserve that order
 
     visitor = BlazeVisitor()
-    return visitor.visit(graph[-1])
+    result = visitor.visit(graph[-1])
+    return visitor.leafs, result

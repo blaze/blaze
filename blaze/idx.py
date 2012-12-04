@@ -89,6 +89,11 @@ class Indexable(object):
     def __index__(self):
         raise NotImplementedError()
 
+    def global_id(self):
+        "Get a unique global id for this source"
+        # TODO: make it global :)
+        return id(self)
+
 #------------------------------------------------------------------------
 # Space
 #------------------------------------------------------------------------

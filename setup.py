@@ -181,7 +181,11 @@ extensions = [
    Extension(
         "ucr_dtw.ucr", ["ucr_dtw/ucr.pyx"],
         include_dirs = [numpy_path]
-   )
+   ),
+   Extension(
+       "blaze.engine.executors", ["blaze/engine/executors.pyx"],
+       include_dirs = [numpy_path],
+   ),
 ]
 
 #------------------------------------------------------------------------
