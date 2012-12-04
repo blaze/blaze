@@ -78,9 +78,9 @@ class Pow(Op):
     dom = [universal, numeric]
     # -----------------------
 
-    identity     = one
-    commutative  = True
-    associative  = True
+    identity     = zero
+    commutative  = False
+    associative  = False
     idempotent   = False
     nilpotent    = False
     sideffectful = False
