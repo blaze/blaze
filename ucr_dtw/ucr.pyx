@@ -126,7 +126,7 @@ def ed(datafile, queryfile, count=None):
 
             if dist < bsf:
                 bsf = dist
-                loc = (i - m) + j + 1
+                loc = (i - m) + j
 
             # Update the ex and ex2 values
             ex -= T[j]
