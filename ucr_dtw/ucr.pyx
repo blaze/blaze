@@ -121,7 +121,6 @@ def ed(datafile, queryfile, count=None):
             std = sqrt(std - mean * mean)
 
             # Calculate ED distance
-            t1 = time()
             dist = distance(<double*>Q.data, <double*>T.data, j,
                             m, mean, std, <int*>order.data, bsf)
 
