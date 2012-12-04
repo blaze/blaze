@@ -18,10 +18,10 @@ cdef double distance(double *Q, double *T, int m , double mean,
     cdef int i
     cdef double x, sum_ = 0
     for i in range(m):
-        x = (T[order[i]]-mean)/std
-        sum_ += (x-Q[i])*(x-Q[i])
-        if sum_ < bsf:
-            return sum_
+        x = (T[order[i]] - mean) / std
+        sum_ += (x - Q[i]) * (x - Q[i])
+        if sum_ >= bsf:
+            break
     return sum_
 
 @cython.boundscheck(False)
@@ -75,11 +75,10 @@ def ed(datafile, queryfile, count=None):
     std = Q.std()
 
     # Do z_normalixation on query data
-    for i in range(m):
-         Q[i] = (Q[i] - mean)/std
+    Q = (Q - mean) / std
 
     # Sort the query data
-    order = np.argsort(Q)
+    order = np.argsort(np.abs(Q))
     order = order[::-1].copy()   # reverse the order (from high to low)
     Q = Q[order]
 
@@ -101,7 +100,6 @@ def ed(datafile, queryfile, count=None):
     bsf = np.inf
     # Read data file, m elements at a time
     for i in range(m, nelements, m):
-        #print "i, m:", i, m
         prevm = m
         if i + m > nelements:
             m = nelements - i
@@ -119,8 +117,8 @@ def ed(datafile, queryfile, count=None):
             std = ex2 / m
             std = sqrt(std - mean * mean)
             # Update the ex and ex2 values
-            ex = ex - IT[j]
-            ex2 = ex2 - IT[j] * IT[j]
+            ex -= IT[0]
+            ex2 -= IT[0] * IT[0]
 
             # Calculate ED distance
             t1 = time()
@@ -130,12 +128,9 @@ def ed(datafile, queryfile, count=None):
             if dist < bsf:
                 bsf = dist
                 loc = (i - m) + j + 1
-
         # Copy the upper part of T to the lower part
         if prevm == m:
             T[:m] = T[m:]
-        # if i > 1000*m:
-        #     break
 
     fp.close()
     dist = sqrt(bsf)
