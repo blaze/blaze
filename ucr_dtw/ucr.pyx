@@ -9,16 +9,19 @@ from libc.math cimport sqrt
 # Initialize numpy library
 np.import_array()
 
+ctypedef np.npy_intp npy_intp
+ctypedef np.npy_float64 npy_float64
+
 # Main function for calculating ED distance between the query, Q, and current
 # data, T.  Note that Q is already sorted by absolute z-normalization value,
 # |z_norm(Q[i])|
 @cython.cdivision(True)
-cdef double distance(double *Q, double *T, int m , double mean,
-                     double std, int *order, double bsf):
+cdef double distance(double *Q, double *T, npy_intp j, int m, double mean,
+                     double std, npy_intp *order, double bsf):
     cdef int i
     cdef double x, sum_ = 0
     for i in range(m):
-        x = (T[order[i]] - mean) / std
+        x = (T[order[i]+j] - mean) / std
         sum_ += (x - Q[i]) * (x - Q[i])
         if sum_ >= bsf:
             break
@@ -44,15 +47,15 @@ def ed(datafile, queryfile, count=None):
     and `dist` is the distance.
     
     """
-    cdef np.ndarray[np.npy_float64, ndim=1] Q        # query array
-    cdef np.ndarray[np.npy_float64, ndim=1] T, IT    # arrays of current data
-    cdef np.ndarray[np.npy_intp, ndim=1] order       # ordering of query by |z(q_i)|
+    cdef np.ndarray[npy_float64, ndim=1] Q    # query array
+    cdef np.ndarray[npy_float64, ndim=1] T    # arrays of current data
+    cdef np.ndarray[npy_intp, ndim=1] order   # ordering of query by |z(q_i)|
     cdef double bsf             # best-so-far
-    cdef np.npy_intp loc = 0    # answer: location of the best-so-far match
-    cdef np.npy_intp i, j
+    cdef npy_intp loc = 0    # answer: location of the best-so-far match
+    cdef npy_intp i, j
     cdef double d
     cdef int m, prevm
-    cdef np.npy_intp fsize, nelements
+    cdef npy_intp fsize, nelements
     cdef double mean, std
     cdef double ex, ex2
     cdef double dist = 0
@@ -109,25 +112,26 @@ def ed(datafile, queryfile, count=None):
             ex2 = (LT * LT).sum()
         T[prevm:prevm+m] = np.fromfile(fp, 'f8', m)
         for j in range(m):
-            IT = T[j:j+m]
             # Update the ex and ex2 values
-            ex += IT[m-1]
-            ex2 += IT[m-1] * IT[m-1]
+            ex += T[j+m-1]
+            ex2 += T[j+m-1] * T[j+m-1]
             mean = ex / m
             std = ex2 / m
             std = sqrt(std - mean * mean)
-            # Update the ex and ex2 values
-            ex -= IT[0]
-            ex2 -= IT[0] * IT[0]
 
             # Calculate ED distance
             t1 = time()
-            dist = distance(<double*>Q.data, <double*>IT.data,
+            dist = distance(<double*>Q.data, <double*>T.data, j,
                             m, mean, std, <int*>order.data, bsf)
 
             if dist < bsf:
                 bsf = dist
                 loc = (i - m) + j + 1
+
+            # Update the ex and ex2 values
+            ex -= T[j]
+            ex2 -= T[j] * T[j]
+
         # Copy the upper part of T to the lower part
         if prevm == m:
             T[:m] = T[m:]
