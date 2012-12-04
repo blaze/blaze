@@ -68,7 +68,7 @@ nosetests.xml
 # -------------------
 
 # Cython Extensions
-ndtable/carray/*.[ch]
+blaze/carray/*.[ch]
 
 # Sphinx Docs
 docs/_build

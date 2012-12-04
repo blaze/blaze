@@ -69,5 +69,5 @@ The domain and codomain of an function are fixed by definition.
     ty --+   |  +------+  |
              +------------+
 
-.. automodule:: ndtable.expr.graph
+.. automodule:: blaze.expr.graph
    :members:

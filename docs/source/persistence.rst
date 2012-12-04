@@ -2,5 +2,5 @@
 Persistence
 ===========
 
-.. automodule:: ndtable.persistence.bloscpack
+.. automodule:: blaze.persistence.bloscpack
    :members:

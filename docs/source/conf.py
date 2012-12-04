@@ -81,8 +81,8 @@ sys.path.append(os.path.abspath('..'))
 sys.path.append(os.path.abspath('../..'))
 
 import re
-import ndtable
-from ndtable import __version__ as release
+import blaze
+from blaze import __version__ as release
 
 if 'dev' in release:
     release = release[:release.find('dev') + 3]
