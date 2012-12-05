@@ -249,6 +249,10 @@ class CType(DataShape):
         """
         To Numpy dtype.
         """
+        if self.name == "int":
+            return dtype("i")
+        if self.name == "float":
+            return dtype("f")
         return dtype(self.name)
 
     def __str__(self):

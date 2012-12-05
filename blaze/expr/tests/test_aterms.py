@@ -3,13 +3,13 @@ from blaze.expr.paterm import *
 def test_simple():
     a = ATerm('a')
     b = ATerm('b')
-    lst =  AList(a,b)
     annot = ('contig', 'fizzy', 'b')
-    aterm = AAnnotation(lst, int, annot)
+    annotation = AAnnotation(int, annot)
+    lst = AList(a, b, annotation=annotation)
 
-    assert aterm['type']
-    assert not aterm['a']
-    assert aterm
+    assert annotation['type']
+    assert not annotation['a']
+    assert annotation
 
     apl = AAppl(ATerm('foo'), [a,b])
 
@@ -20,9 +20,9 @@ def test_query_metadata():
     b = ATerm('b')
     Add = ATerm('Add')
 
-    lst =  AAppl(Add, [a,b])
     annot = ('foo', 'bar')
-    aterm = AAnnotation(lst, int, annot)
+    annotation = AAnnotation(int, annot)
+    aterm = AAppl(Add, [a,b], annotation=annotation)
 
     #------------------
 

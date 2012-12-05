@@ -42,6 +42,11 @@ def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
 # Plans
 #------------------------------------------------------------------------
 
+def annotation(graph, *metadata):
+    metadata = (id(graph),) + metadata
+    annotation = AAnnotation(ty=ATerm(repr(graph.datashape)), )
+    return annotation
+
 class BlazeVisitor(MroVisitor):
     def __init__(self):
         self.operands = []
@@ -54,19 +59,18 @@ class BlazeVisitor(MroVisitor):
 
         if graph.is_arithmetic:
             return AAppl(ATerm('Arithmetic'),
-                         [opname] +  self.visit(graph.children))
+                         [opname] +  self.visit(graph.children),
+                         annotation=annotation(graph))
         else:
-            return AAppl(opname, self.visit(graph.children))
+            return AAppl(opname, self.visit(graph.children),
+                         annotation=annotation(graph))
 
     def Literal(self, graph):
-        return ATerm(graph.val)
+        return ATerm(graph.val, annotation=annotation(graph))
 
     def Indexable(self, graph):
         self.operands.append(graph)
-        return AAnnotation(
-            AAppl(ATerm('Array'), [ATerm(id(graph.data))]),
-            ty=ATerm(repr(graph.datashape))
-        )
+        return AAppl(ATerm('Array'), [], annotation=annotation(graph))
 
 
 def generate(graph, variables):

@@ -56,13 +56,24 @@ class ATermBase(object):
     # Specifies child attributes
     _fields = []
 
+    def __init__(self, annotation=None):
+        self.annotation = annotation
+
+    @property
+    def metastr(self):
+        if self.annotation:
+            return str(self.annotation)
+        else:
+            return ''
+
 class ATerm(ATermBase):
 
-    def __init__(self, label):
+    def __init__(self, label, **kwargs):
+        super(ATerm, self).__init__(**kwargs)
         self.label = label
 
     def __str__(self):
-        return str(self.label)
+        return str(self.label) + self.metastr
 
     def _matches(self, query):
         return self.label == query
@@ -74,7 +85,8 @@ class AAppl(ATermBase):
 
     _fields = ['spine', 'args']
 
-    def __init__(self, spine, args):
+    def __init__(self, spine, args, **kwargs):
+        super(AAppl, self).__init__(**kwargs)
         self.spine = spine
         self.args = args
 
@@ -105,19 +117,24 @@ class AAppl(ATermBase):
             return False
 
     def __str__(self):
-        return str(self.spine) + cat(self.args, '(', ')')
+        return str(self.spine) + cat(self.args, '(', ')') + self.metastr
 
     def __repr__(self):
         return str(self)
 
 class AAnnotation(ATermBase):
 
-    _fields = ['bt']
-
-    def __init__(self, bt, ty=None, m=None):
-        self.bt = bt
+    def __init__(self, ty=None, annotations=None):
         self.ty = ty or None
-        self.meta = set(m or [])
+
+        if annotations is not None:
+            # Convert annotations to aterms
+            annotations = list(annotations)
+            for i, annotation in enumerate(annotations):
+                if not isinstance(annotation, ATermBase):
+                    annotations[i] = ATerm(annotation)
+
+        self.meta = set(annotations or [])
 
     @property
     def annotations(self):
@@ -153,50 +170,51 @@ class AAnnotation(ATermBase):
             return False
 
     def __str__(self):
-        if self.ty or self.meta:
-            return str(self.bt) + self.annotations
-        else:
-            return str(self.bt)
+        return self.annotations
 
     def __repr__(self):
         return str(self)
 
 class AString(ATermBase):
-    def __init__(self, s):
+    def __init__(self, s, **kwargs):
+        super(AString, self).__init__(**kwargs)
         self.s = s
 
     def __str__(self):
-        return repr(self.s)
+        return repr(self.s) + self.metastr
 
     def __repr__(self):
         return str(self)
 
 class AInt(ATermBase):
-    def __init__(self, n):
+    def __init__(self, n, **kwargs):
+        super(AInt, self).__init__(**kwargs)
         self.n = n
 
     def __str__(self):
-        return str(self.n)
+        return str(self.n) + self.metastr
 
     def __repr__(self):
         return str(self)
 
 class AFloat(ATermBase):
-    def __init__(self, n):
+    def __init__(self, n, **kwargs):
+        super(AFloat, self).__init__(**kwargs)
         self.n = n
 
     def __str__(self):
-        return str(self.n)
+        return str(self.n) + self.metastr
 
     def __repr__(self):
         return str(self)
 
 class AList(ATermBase):
-    def __init__(self, *elts):
+    def __init__(self, *elts, **kwargs):
+        super(AList, self).__init__(**kwargs)
         self.elts = elts
 
     def __str__(self):
-        return cat(self.elts, '[', ']')
+        return cat(self.elts, '[', ']') + self.metastr
 
     def __repr__(self):
         return str(self)
