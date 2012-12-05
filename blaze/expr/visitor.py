@@ -99,6 +99,66 @@ class GraphTransformer(GraphVisitor):
 
         return tree
 
+class GraphTranslator(GraphTransformer):
+    """
+    Similar to GraphTransformer, but it allows easy translation of the graph
+    to other forms of graph, while mutating the graph at the same time.
+
+    Example:
+
+        We want to translate a portion of our graph to a Python AST, and
+        replace the translated part of the graph with a single graph node
+        reflecting this transformation.
+
+            1) In each translatable node, set 'self.result = PythonAstNode()'.
+               Read results of children by reading 'self.result' after visiting
+               the respective children.
+
+            2) For every translatable non-root node, return None to delete
+               the node.
+
+            3) At the root of the translatable sub-graph, return the node we
+               want in our graph.
+    """
+
+    def set_resultlist(self, results):
+        if len(results) == 0:
+            results = None
+        elif len(results) == 1:
+            results = results[0]
+
+        self.result = results
+
+    def visit(self, tree):
+        self.result = None
+        if isinstance(tree, list):
+            children = []
+            results = []
+            for child in tree:
+                child = self.visit(child)
+                if child is not None:
+                    children.append(child)
+                if self.result is not None:
+                    results.append(self.result)
+
+            self.set_resultlist(results)
+            return [c for c in children if c is not None]
+        else:
+            return self.visit_node(tree)
+
+    def visitchildren(self, tree):
+        results = []
+        for fieldname in tree._fields:
+            field = getattr(tree, fieldname)
+            result = self.visit(field)
+            setattr(tree, fieldname, result)
+
+            if self.result is not None:
+                results.append(self.result)
+
+        self.set_resultlist(results)
+        return tree
+
 
 class MroVisitor(object):
 

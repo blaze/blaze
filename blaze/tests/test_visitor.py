@@ -96,6 +96,29 @@ def test_transformers():
     assert Visitor().visit(result) == [[int, [[int, int]]]]
     assert Transformer2().visit([a, c]) == [int]
 
+#------------------------------------------------------------------------
+# Transformers
+#------------------------------------------------------------------------
+
+class Translator(visitor.GraphTranslator):
+
+    def App(self, tree):
+        self.visitchildren(tree)
+        return None
+
+    def IntNode(self, node):
+        self.result = int
+        return None
+
+    def FloatNode(self, node):
+        self.result = float
+        return None
+
+
+def test_translators():
+    t = Translator()
+    assert t.visit(a + (b + c)) is None
+    assert t.result == [int, [int, float]]
 
 if __name__ == '__main__':
     test_transformers()
