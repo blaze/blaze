@@ -492,12 +492,11 @@ class Op(ExpressionNode):
     __metaclass__ = NamedOp
     kind = OP
 
-    is_arithmetic = False
-
     def __init__(self, op, operands):
         self.op = op
         self.children = operands
         self._opaque = False
+        self.datashape = coretypes.promote(*operands)
 
         # minor hack until we get graph level numbering of
         # expression objects

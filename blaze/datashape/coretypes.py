@@ -2,6 +2,7 @@
 This defines the DataShape type system.
 """
 
+import numpy as np
 from numpy import dtype
 
 import datetime
@@ -664,6 +665,13 @@ def expr_string(spine, const_args, outer=None):
 #------------------------------------------------------------------------
 # Argument Munging
 #------------------------------------------------------------------------
+
+def promote(*operands):
+    "Compute the promoted datashape, uses NumPy..."
+    dtypes = [to_dtype(op.datashape) for op in operands]
+    result_dtype = reduce(np.promote_types, dtypes)
+    datashape = CType.from_dtype(result_dtype)
+    return datashape
 
 def shape_coerce(ob):
     if type(ob) is int:

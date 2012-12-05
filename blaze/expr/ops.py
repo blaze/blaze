@@ -2,6 +2,7 @@ import numpy as np
 
 from graph import Op
 from blaze.datashape import coretypes as C
+from blaze.datashape.coretypes import promote
 
 from utils import Symbol
 
@@ -32,35 +33,11 @@ universal = set([C.top]) | numeric | indexable | string
 # Basic Scalar Arithmetic
 #------------------------------------------------------------------------
 
-def arity(op):
-    if isinstance(op, Op):
-        return op.arity
-    else:
-        raise ValueError
-
-def promote(*operands):
-    "Compute the promoted datashape, uses NumPy..."
-    dtypes = [C.to_dtype(op.datashape) for op in operands]
-    result_dtype = reduce(np.promote_types, dtypes)
-    datashape = C.CType.from_dtype(result_dtype)
-    return datashape
-
-class ArithmeticOp(Op):
-    "Base for unary and binary arithmetic operations"
-
-    is_arithmetic = True
-
-class BinaryArithmeticOp(ArithmeticOp):
-
-    def __init__(self, op, operands):
-        super(BinaryArithmeticOp, self).__init__(op, operands)
-        self.datashape = promote(*operands)
-
-class Add(BinaryArithmeticOp):
+class Add(Op):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
-    dom = [universal, universal]
+    dom = [numeric, numeric]
     # -----------------------
 
     identity     = zero
@@ -70,11 +47,13 @@ class Add(BinaryArithmeticOp):
     nilpotent    = False
     sideffectful = False
 
-class Mul(BinaryArithmeticOp):
+    is_arithmetic = True
+
+class Mul(Op):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
-    dom = [universal, universal]
+    dom = [numeric, numeric]
     # -----------------------
 
     identity     = one
@@ -84,11 +63,13 @@ class Mul(BinaryArithmeticOp):
     nilpotent    = False
     sideffectful = False
 
+    is_arithmetic = True
+
 class Pow(Op):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
-    dom = [universal, numeric]
+    dom = [numeric, numeric]
     # -----------------------
 
     identity     = zero
@@ -98,9 +79,7 @@ class Pow(Op):
     nilpotent    = False
     sideffectful = False
 
-    def __init__(self, op, operands):
-        super(Pow, self).__init__(op, operands)
-        self.datashape = promote(*operands)
+    is_arithmetic = True
 
 class Transpose(Op):
     # -----------------------
@@ -116,6 +95,8 @@ class Transpose(Op):
     nilpotent    = True
     sideffectful = False
 
+    is_arithmetic = True
+
 class Abs(Op):
     # -----------------------
     arity = 1
@@ -130,8 +111,4 @@ class Abs(Op):
     nilpotent    = False
     sideffectful = False
 
-    def __init__(self, op, operands):
-        super(Abs, self).__init__(op, operands)
-        self.datashape = operands[0].datashape
-
-
+    is_arithmetic = True
