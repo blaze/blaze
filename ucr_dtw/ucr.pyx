@@ -392,11 +392,11 @@ def dtw(datafile, queryfile, R, count=None):
                                 # summed here.
                                 if lb_k > lb_k2:
                                     cb[m-1] = cb1[m-1]
-                                    for k in range(m-2, 0, -1):
+                                    for k in range(m-2, -1, -1):
                                         cb[k] = cb[k+1]+cb1[k]
                                 else:
                                     cb[m-1] = cb2[m-1]
-                                    for k in range(m-2, 0, -1):
+                                    for k in range(m-2, -1, -1):
                                         cb[k] = cb[k+1]+cb2[k]
 
                                 # Compute DTW and early abandoning if possible
