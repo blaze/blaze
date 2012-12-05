@@ -52,8 +52,9 @@ $ python setup.py test
 Contributing
 ------------
 
-Anyone wishing to contribute should join the discussion on the mailing
-list at: blaze-dev@continuum.io
+Anyone wishing to contribute should join the discussion on the
+[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev)
+mailing list at: blaze-dev@continuum.io
 
 License
 -------
