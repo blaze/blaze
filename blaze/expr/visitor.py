@@ -28,6 +28,9 @@ class ExprPrinter(object):
         else:
             return ('\t'*self.indent) + tree.__class__.__name__
 
+    def Unknown(self, tree):
+        raise NoVisitor(tree)
+
 #------------------------------------------------------------------------
 # Transformers
 #------------------------------------------------------------------------
@@ -36,7 +39,7 @@ class ExprPrinter(object):
 
 class BasicGraphVisitor(object):
     """
-    Visit an aterm graph. Each term must have a handler or _unknown is called.
+    Visit an aterm graph. Each term must have a handler or Unknown is called.
     """
 
     # TODO: more robust!
@@ -55,6 +58,9 @@ class BasicGraphVisitor(object):
             return self.visit_node(tree)
 
     def _unknown(self, tree):
+        return self.Unknown(tree)
+
+    def Unknown(self, tree):
         raise NoVisitor(tree)
 
 class GraphVisitor(BasicGraphVisitor):
@@ -174,4 +180,7 @@ class MroVisitor(object):
             if fn:
                 return fn(tree)
             else:
-                self._unknown(tree)
+                self.Unknown(tree)
+
+    def Unknown(self, tree):
+        raise NoVisitor(tree)
