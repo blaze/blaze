@@ -51,11 +51,6 @@ class SkipSomeVisitor(GraphVisitor):
     def FloatNode(self, tree):
         self.found.append(float)
 
-class Transformer(visitor.GraphTransformer):
-
-    def FloatNode(self, node):
-        return IntNode(3)
-
 
 def test_simple_visitor():
     walk = Visitor()
@@ -76,12 +71,31 @@ def test_graph_visitor():
     v.visit(x)
     assert v.found == [float], v.found
 
+#------------------------------------------------------------------------
+# Transformers
+#------------------------------------------------------------------------
+
+class Transformer(visitor.GraphTransformer):
+
+    def FloatNode(self, node):
+        return IntNode(3)
+
+class Transformer2(visitor.GraphTransformer):
+
+    def IntNode(self, node):
+        return int
+
+    def FloatNode(self, node):
+        return None
+
 def test_transformers():
     t = Transformer()
     x = a + (b + c)
     result = t.visit(x)
 
     assert Visitor().visit(result) == [[int, [[int, int]]]]
+    assert Transformer2().visit([a, c]) == [int]
+
 
 if __name__ == '__main__':
     test_transformers()

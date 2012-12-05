@@ -43,16 +43,19 @@ class BasicGraphVisitor(object):
     """
 
     # TODO: more robust!
+    def visit_node(self, tree):
+        nodei = tree.__class__.__name__
+        trans = getattr(self, nodei, False)
+        if trans:
+            return trans(tree)
+        else:
+            return self._unknown(tree)
+
     def visit(self, tree):
         if isinstance(tree, list):
             return [self.visit(i) for i in tree]
         else:
-            nodei = tree.__class__.__name__
-            trans = getattr(self,nodei, False)
-            if trans:
-                return trans(tree)
-            else:
-                return self._unknown(tree)
+            return self.visit_node(tree)
 
     def _unknown(self, tree):
         return self.Unknown(tree)
@@ -80,6 +83,13 @@ class GraphTransformer(GraphVisitor):
 
     def _unknown(self, tree):
         return self.visitchildren(tree)
+
+    def visit(self, tree):
+        if isinstance(tree, list):
+            result = [self.visit(i) for i in tree]
+            return [x for x in result if x is not None]
+        else:
+            return self.visit_node(tree)
 
     def visitchildren(self, tree):
         for fieldname in tree._fields:
