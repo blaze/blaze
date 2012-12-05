@@ -185,7 +185,10 @@ def ed(datafile, queryfile, count=None):
 
     return (loc, dist)
 
+
 # Main function for DTW
+@cython.boundscheck(False)
+@cython.cdivision(True)
 def dtw(datafile, queryfile, R, count=None):
     """Get the best DTW distance of `queryfile` in `datafile`.
 
