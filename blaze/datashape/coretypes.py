@@ -162,7 +162,7 @@ class DataShape(object):
         if self.name:
             return self.name
         else:
-            return ' '.join(map(str, self.operands))
+            return ', '.join(map(str, self.operands))
 
     def _equal(self, other):
         """ Structural equality """

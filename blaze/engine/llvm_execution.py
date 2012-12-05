@@ -66,14 +66,18 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         self.ufunc_builder = UFuncBuilder()
         self.executors = executors
 
-    def register(self, result):
+    def register(self, graph, result):
         if self.nesting_level == 0:
             # Bottom of graph that we can handle
             operands = self.ufunc_builder.operands
             pyast_function = self.ufunc_builder.build_ufunc_ast(result)
-            executor = build_executor(pyast_function, operands)
-            appl = paterm.AAppl(paterm.ATerm('Executor'), operands)
-            appl = paterm.AAnnotation(appl, 'numba', [id(executor)])
+            py_ufunc = self.ufunc_builder.compile_to_pyfunc(pyast_function)
+
+            executor = build_executor(py_ufunc, operands, graph)
+            self.executors[id(executor)] = executor
+            annotation = paterm.AAnnotation('numba', [id(executor)])
+            appl = paterm.AAppl(paterm.ATerm('Executor'), operands,
+                                annotation=annotation)
             return appl
 
         self.result = result
@@ -94,7 +98,7 @@ class ATermToAstTranslator(visitor.GraphTranslator):
 
                 left, right = self.result
                 result = ast.BinOp(left=left, op=op(), right=right)
-                return self.register(result)
+                return self.register(app, result)
 
         return self.unhandled(app)
 
@@ -125,20 +129,20 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         return aterm
 
 
-def build_executor(pyast_function, operands):
+def build_executor(py_ufunc, operands, aterm_subgraph_root):
     "Build a ufunc and an wrapping executor from a Python AST"
-    vectorizer = Vectorize(pyast_function)
-    vectorizer.add(*[minitype(op) for op in operands])
-    ufunc = vectorizer.build_ufunc()
+    result_dtype = get_dtype(aterm_subgraph_root)
+    operand_dtypes = map(get_dtype, operands)
 
-    operands_dtypes = map(get_dtype, operands)
-    # TODO: this should be part of the blaze graph
-    result_dtype = reduce(np.promote_types, operands_dtypes)
+    vectorizer = Vectorize(py_ufunc)
+    vectorizer.add(restype=minitype(result_dtype),
+                   argtypes=map(minitype, operand_dtypes))
+    ufunc = vectorizer.build_ufunc()
 
     # TODO: build an executor tree and substitute where we can evaluate
     executor = executors.ElementwiseLLVMExecutor(
         ufunc,
-        operands_dtypes,
+        operand_dtypes,
         result_dtype,
     )
 
@@ -148,13 +152,13 @@ def getsource(ast):
     from meta import asttools
     return asttools.dump_python_source(ast).strip()
 
-def minitype(blaze_obj):
-    """
-    Get the numba/minivect type from a blaze object (NDArray or whatnot).
-    This should be a direct mapping. Even better would be to unify the two
-    typesystems...
-    """
-    dtype = coretypes.to_dtype(blaze_obj)
+def get_dtype(aterm):
+    type_repr = aterm.annotation['type']
+    dshape = datashape(type_repr.s)
+    dtype = coretypes.to_dtype(dshape)
+    return dtype
+
+def minitype(dtype):
     return minitypes.map_dtype(dtype)
 
 def substitute_llvm_executors(aterm_graph, executors):

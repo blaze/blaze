@@ -1,35 +1,42 @@
 cimport cpython
 cimport libc.stdlib
-cimport numpy as np
+cimport numpy as cnp
+from cpython cimport PyObject, Py_INCREF
+
 import numpy as np
 
 cdef extern from "numpy/arrayobject.h":
     object PyArray_NewFromDescr(
-            type subtype, object descr, int nd,
-            np.npy_intp* dims, np.npy_intp* strides,
-            void* data, int flags, object obj)
+            PyObject *subtype, object descr, int nd,
+            cnp.npy_intp* dims, cnp.npy_intp* strides,
+            void* data, int flags, PyObject *obj)
 
-cdef class Executor(object):
-    cdef execute(self, void **data_pointers, void *out, size_t size):
-        "Execute a kernel over the data"
+cnp.import_array()
 
 cdef build_fake_array(dtype):
-    cdef np.npy_intp shape = 0
-    cdef np.npy_intp strides = dtype.itemsize
-    cdef int flags = np.NPY_C_CONTIGUOUS | np.NPY_WRITEABLE
+    cdef cnp.npy_intp shape = 0
+    cdef cnp.npy_intp strides = dtype.itemsize
+    cdef int flags = cnp.NPY_C_CONTIGUOUS | cnp.NPY_WRITEABLE
+
+    # PyArray_NewFromDescr will steal our reference
+    Py_INCREF(dtype)
 
     array = PyArray_NewFromDescr(
-        <type> np.ndarray,                     # subtype
+        <PyObject *> np.ndarray,        # subtype
         dtype,                          # descr
         1,                              # ndim
         &shape,                         # shape
         &strides,                       # strides
         <void *> 1,                     # data
         flags,                          # flags
-        None,                           # parent
+        NULL,                           # obj
     )
 
     return array
+
+cdef class Executor(object):
+    cdef execute(self, void **data_pointers, void *out, size_t size):
+        "Execute a kernel over the data"
 
 cdef class ElementwiseLLVMExecutor(Executor):
     cdef object ufunc, result_dtype
@@ -64,13 +71,26 @@ cdef class ElementwiseLLVMExecutor(Executor):
         cdef size_t itemsize
 
         for i, operand in enumerate(self.operands):
-            (<np.ndarray> self.operands[i]).data = <char *> data_pointers[i]
+            (<cnp.ndarray> self.operands[i]).data = <char *> data_pointers[i]
 
         if out == NULL:
             if self.lhs_data == NULL:
                 self.allocate_empty_lhs(size)
             out = self.lhs_data
 
-        (<np.ndarray> self.lhs_array).data = <char *> out
+        (<cnp.ndarray> self.lhs_array).data = <char *> out
 
         self.ufunc(*self.operands, out=self.lhs_array)
+
+
+def execution(Executor executor, operands):
+    cdef void **data_pointers = stdlib.malloc(len(operands) * sizeof(void *))
+    if data_pointers == NULL:
+        raise MemoryError
+
+    try:
+        for operand in operands:
+            operand.data
+    finally:
+        free(data_pointers)
+
