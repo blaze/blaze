@@ -234,10 +234,11 @@ double lb_keogh_cumulative(int* order, double *t, double *uo, double *lo, double
     double lb = 0;
     double x, d;
     int i;
+    double istd = 1. / std;
 
     for (i = 0; i < len && lb < best_so_far; i++)
     {
-        x = (t[(order[i]+j)] - mean) / std;
+        x = (t[(order[i]+j)] - mean) * istd;
         d = 0;
         if (x > uo[i])
             d = dist(x,uo[i]);
