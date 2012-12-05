@@ -16,6 +16,11 @@ cimport numpy as np
 import cython
 from libc.math cimport sqrt, floor
 
+# Some shortcuts for useful types
+ctypedef np.npy_int npy_int
+ctypedef np.npy_intp npy_intp
+ctypedef np.npy_float64 npy_float64
+
 #-----------------------------------------------------------------
 
 # DTW routines
@@ -26,16 +31,16 @@ cdef extern from "dtw.h":
     double lb_kim_hierarchy(double *t, double *q, int j, int len, double mean,
                             double std, double bsf)
 
-    double lb_keogh_cumulative(int* order, double *t, double *uo, double *lo,
+    double lb_keogh_cumulative(int *order, double *t, double *uo, double *lo,
                                double *cb, int j, int len, double mean,
                                double std, double best_so_far)
 
-    double lb_keogh_data_cumulative(int* order, double *tz, double *qo,
+    double lb_keogh_data_cumulative(int *order, double *tz, double *qo,
                                     double *cb, double *l, double *u,
                                     int len, double mean, double std,
                                     double best_so_far)
 
-    double dtw_distance(double* A, double* B, double *cb, int m, int r,
+    double dtw_distance(double *A, double *B, double *cb, int m, int r,
                         double bsf)
 
 #-----------------------------------------------------------------
@@ -44,8 +49,6 @@ cdef extern from "dtw.h":
 # Initialize numpy library
 np.import_array()
 
-ctypedef np.npy_intp npy_intp
-ctypedef np.npy_float64 npy_float64
 
 # Main function for calculating ED distance between the query, Q, and current
 # data, T.  Note that Q is already sorted by absolute z-normalization value,
@@ -157,7 +160,7 @@ def ed(datafile, queryfile, count=None):
 
             # Calculate ED distance
             dist = distance(<double*>Q.data, <double*>T.data, j,
-                            m, mean, std, <int*>order.data, bsf)
+                            m, mean, std, <npy_intp*>order.data, bsf)
 
             if dist < bsf:
                 bsf = dist
@@ -206,7 +209,7 @@ def dtw(datafile, queryfile, R, count=None):
     cdef:
         double bsf          # best-so-far
         np.ndarray[npy_float64, ndim=1] q,t    # data array and query array
-        np.ndarray[npy_intp, ndim=1] order     # new order of the query
+        np.ndarray[npy_int, ndim=1] order      # new order of the query
         np.ndarray[npy_float64, ndim=1] u, l, qo, uo, lo, tz, cb, cb1, cb2
         np.ndarray[npy_float64, ndim=1] u_d, l_d
         double d
@@ -227,6 +230,7 @@ def dtw(datafile, queryfile, R, count=None):
         # The starting index of the data in current chunk of size EPOCH
         npy_intp I
         object done = False
+        object order_
 
     t1 = time()
 
@@ -274,8 +278,9 @@ def dtw(datafile, queryfile, R, count=None):
     lower_upper_lemire(<double*>q.data, m, r, <double*>l.data, <double*>u.data)
 
     # Sort the query one time by abs(z-norm(q[i]))
-    order = np.argsort(np.abs(q))
-    order = order[::-1].copy()   # reverse the order (from high to low)
+    order_ = np.argsort(np.abs(q))
+    # Reverse the order (from high to low) and convert to native ints
+    order = order_[::-1].astype(np.intc)
     # Also create another arrays for keeping sorted envelop
     qo = q[order]
     uo = u[order]
@@ -364,7 +369,7 @@ def dtw(datafile, queryfile, R, count=None):
                         # z_normalization of t will be computed on the fly.
                         # uo, lo are envelop of the query.
                         lb_k = lb_keogh_cumulative(
-                            <npy_intp*>order.data, <double*>t.data,
+                            <int*>order.data, <double*>t.data,
                             <double*>uo.data, <double*>lo.data,
                             <double*>cb1.data, j, m, mean, std, bsf)
                         if lb_k < bsf:
@@ -380,7 +385,7 @@ def dtw(datafile, queryfile, R, count=None):
                             # l_buff, u_buff are big envelop for all data in
                             # this chunk.
                             lb_k2 = lb_keogh_data_cumulative(
-                                <npy_intp*>order.data, <double*>tz.data,
+                                <int*>order.data, <double*>tz.data,
                                 <double*>qo.data, <double*>cb2.data,
                                 <double*>l_buff.data + I,
                                 <double*>u_buff.data + I,
