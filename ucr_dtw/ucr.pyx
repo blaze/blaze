@@ -225,7 +225,7 @@ def dtw(datafile, queryfile, R, count=None):
         # ex2 (sum square), will be restarted for reducing the floating point
         # error.
         int EPOCH = 100000
-        double ex , ex2 , mean, std
+        double ex , ex2 , mean, std, istd
         double t1, t2
         double dist=0, lb_kim=0, lb_k=0, lb_k2=0
         np.ndarray[npy_float64, ndim=1] buffer_, u_buff, l_buff
@@ -380,8 +380,9 @@ def dtw(datafile, queryfile, R, count=None):
                             # z_normalization of t.  Note that for better
                             # optimization, this can merge to the previous
                             # function.
+                            istd = 1. / std
                             for k in range(m):
-                                tz[k] = (t[(k+j)] - mean) / std
+                                tz[k] = (t[(k+j)] - mean) * istd
 
                             # Use another lb_keogh to prune. qo is the sorted
                             # query. tz is unsorted z_normalized data.
