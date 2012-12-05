@@ -11,6 +11,7 @@ class Node(object):
     """
     # Use __slots__ so we don't incur the full cost of a class
     __slots__ = ['children']
+    _fields = ['children']
 
     def __init__(self, children):
         self.children = children

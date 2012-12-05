@@ -14,7 +14,6 @@ from itertools import ifilter
 from collections import Counter
 
 from blaze.plan import generate
-from blaze.engine import llvm_execution
 
 #------------------------------------------------------------------------
 # Constants

@@ -50,7 +50,14 @@ sep = re.compile("[\(.*\)]")
 # Terms
 #------------------------------------------------------------------------
 
-class ATerm(object):
+class ATermBase(object):
+    "Base for aterms"
+
+    # Specifies child attributes
+    _fields = []
+
+class ATerm(ATermBase):
+
     def __init__(self, label):
         self.label = label
 
@@ -63,7 +70,10 @@ class ATerm(object):
     def __repr__(self):
         return str(self)
 
-class AAppl(object):
+class AAppl(ATermBase):
+
+    _fields = ['spine', 'args']
+
     def __init__(self, spine, args):
         self.spine = spine
         self.args = args
@@ -100,7 +110,10 @@ class AAppl(object):
     def __repr__(self):
         return str(self)
 
-class AAnnotation(object):
+class AAnnotation(ATermBase):
+
+    _fields = ['bt']
+
     def __init__(self, bt, ty=None, m=None):
         self.bt = bt
         self.ty = ty or None
@@ -148,7 +161,7 @@ class AAnnotation(object):
     def __repr__(self):
         return str(self)
 
-class AString(object):
+class AString(ATermBase):
     def __init__(self, s):
         self.s = s
 
@@ -158,7 +171,7 @@ class AString(object):
     def __repr__(self):
         return str(self)
 
-class AInt(object):
+class AInt(ATermBase):
     def __init__(self, n):
         self.n = n
 
@@ -168,7 +181,7 @@ class AInt(object):
     def __repr__(self):
         return str(self)
 
-class AFloat(object):
+class AFloat(ATermBase):
     def __init__(self, n):
         self.n = n
 
@@ -178,7 +191,7 @@ class AFloat(object):
     def __repr__(self):
         return str(self)
 
-class AList(object):
+class AList(ATermBase):
     def __init__(self, *elts):
         self.elts = elts
 

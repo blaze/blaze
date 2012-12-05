@@ -64,7 +64,7 @@ def build_executor(pyast_function, operands):
 
     return executor
 
-class ATermToAst(visitor.ExprVisitor):
+class ATermToAst(visitor.BasicGraphVisitor):
     """
     Convert an aterm graph to a Python AST.
     """

@@ -37,7 +37,10 @@ class ExprPrinter(object):
 
 # TODO: write transformer counterparts?
 
-class ExprVisitor(object):
+class BasicGraphVisitor(object):
+    """
+    Visit an aterm graph. Each term must have a handler or Unknown is called.
+    """
 
     # TODO: more robust!
     def visit(self, tree):
@@ -49,10 +52,43 @@ class ExprVisitor(object):
             if trans:
                 return trans(tree)
             else:
-                return self.Unknown(tree)
+                return self._unknown(tree)
+
+    def _unknown(self, tree):
+        return self.Unknown(tree)
 
     def Unknown(self, tree):
         raise NoVisitor(tree)
+
+class GraphVisitor(BasicGraphVisitor):
+    """
+    Similar to BasicGraphVisitor, but visits the children of unhandled terms.
+    """
+
+    def _unknown(self, tree):
+        return self.visitchildren(tree)
+
+    def visitchildren(self, tree):
+        for fieldname in tree._fields:
+            field = getattr(tree, fieldname)
+            self.visit(field)
+
+class GraphTransformer(GraphVisitor):
+    """
+    Similar to GraphVisitor, but return values replace the terms in the graph.
+    """
+
+    def _unknown(self, tree):
+        return self.visitchildren(tree)
+
+    def visitchildren(self, tree):
+        for fieldname in tree._fields:
+            field = getattr(tree, fieldname)
+            result = self.visit(field)
+            setattr(tree, fieldname, result)
+
+        return tree
+
 
 class MroVisitor(object):
 
