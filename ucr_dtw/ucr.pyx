@@ -203,13 +203,12 @@ def dtw(datafile, queryfile, R, count=None):
     and `dist` is the distance.
     
     """
-    cdef double bsf          # best-so-far
-    cdef np.ndarray[npy_float64, ndim=1] q,t    # data array and query array
-    cdef np.ndarray[npy_intp, ndim=1] order     # new order of the query
-    cdef np.ndarray[npy_float64, ndim=1] u, l, qo, uo, lo, tz, cb, cb1, cb2
-    cdef np.ndarray[npy_float64, ndim=1] u_d, l_d
-
     cdef:
+        double bsf          # best-so-far
+        np.ndarray[npy_float64, ndim=1] q,t    # data array and query array
+        np.ndarray[npy_intp, ndim=1] order     # new order of the query
+        np.ndarray[npy_float64, ndim=1] u, l, qo, uo, lo, tz, cb, cb1, cb2
+        np.ndarray[npy_float64, ndim=1] u_d, l_d
         double d
         npy_intp i, j
         npy_intp loc = 0
@@ -265,7 +264,7 @@ def dtw(datafile, queryfile, R, count=None):
     cb2 = np.zeros(m, dtype="f8")
     u_d = np.empty(m, dtype="f8")
     l_d = np.empty(m, dtype="f8")
-    t = np.empty(m, dtype="f8")
+    t = np.empty(m*2, dtype="f8")
     tz = np.empty(m, dtype="f8")
     buffer_ = np.empty(EPOCH, dtype="f8")
     u_buff = np.empty(EPOCH, dtype="f8")
@@ -293,20 +292,29 @@ def dtw(datafile, queryfile, R, count=None):
     eleread = 0
 
     while not done:
+        if eleread + (m - 1) > nelements:
+            m = nelements - eleread - 1
         # Read first m-1 points
         if it == 0:
-            buffer_ = np.fromfile(fp, 'f8', m-1)
+            buffer_[:m-1] = np.fromfile(fp, 'f8', m-1)
             eleread += m-1  # XXX
         else:
             buffer_[:m-1] = buffer_[EPOCH-m+1:]
 
         # Read buffer of size EPOCH or when all data has been read.
-        buffer_[m-1:] = np.fromfile(fp, 'f8', EPOCH-(m-1))
-        eleread += EPOCH - (m-1)
-        ep = EPOCH   # XXX
+        #print "m:", m, buffer_.size, EPOCH
+        etoread = EPOCH - (m-1)
+        if eleread + etoread > nelements:
+            etoread = nelements - eleread
+        buffer_[m-1:etoread+(m-1)] = np.fromfile(fp, 'f8', etoread)
+        eleread += etoread
+        if eleread < nelements:
+            ep = etoread + (m-1)
+        else:
+            # When there is nothing to read, the loop is end.
+            break
 
         # Data are read in chunk of size EPOCH.
-        # When there is nothing to read, the loop is end.
         if ep < EPOCH:
             done = True
         else:
