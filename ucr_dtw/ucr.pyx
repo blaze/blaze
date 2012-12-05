@@ -223,7 +223,7 @@ def dtw(datafile, queryfile, R, count=None):
         double t1, t2
         double dist=0, lb_kim=0, lb_k=0, lb_k2=0
         np.ndarray[npy_float64, ndim=1] buffer_, u_buff, l_buff
-        npy_intp fsize, nelements, eleread
+        npy_intp fsize, nelements, eleread, etoread
         # The starting index of the data in current chunk of size EPOCH
         npy_intp I
         object done = False
@@ -292,8 +292,10 @@ def dtw(datafile, queryfile, R, count=None):
     eleread = 0
 
     while not done:
+        # Protection agains queries larger than the input data
         if eleread + (m - 1) > nelements:
             m = nelements - eleread - 1
+
         # Read first m-1 points
         if it == 0:
             buffer_[:m-1] = np.fromfile(fp, 'f8', m-1)
@@ -302,20 +304,16 @@ def dtw(datafile, queryfile, R, count=None):
             buffer_[:m-1] = buffer_[EPOCH-m+1:]
 
         # Read buffer of size EPOCH or when all data has been read.
-        #print "m:", m, buffer_.size, EPOCH
         etoread = EPOCH - (m-1)
         if eleread + etoread > nelements:
             etoread = nelements - eleread
         buffer_[m-1:etoread+(m-1)] = np.fromfile(fp, 'f8', etoread)
         eleread += etoread
-        if eleread < nelements:
-            ep = etoread + (m-1)
-        else:
-            # When there is nothing to read, the loop is end.
-            break
+        ep = etoread + (m-1)
 
         # Data are read in chunk of size EPOCH.
-        if ep < EPOCH:
+        # When there is nothing to read, the loop is end.
+        if ep <= (m-1):
             done = True
         else:
             lower_upper_lemire(<double*>buffer_.data, ep, r,
@@ -377,10 +375,10 @@ def dtw(datafile, queryfile, R, count=None):
                             for k in range(m):
                                 tz[k] = (t[(k+j)] - mean) / std
 
-                            # Use another lb_keogh to prune qo is the sorted
+                            # Use another lb_keogh to prune. qo is the sorted
                             # query. tz is unsorted z_normalized data.
                             # l_buff, u_buff are big envelop for all data in
-                            # this chunk
+                            # this chunk.
                             lb_k2 = lb_keogh_data_cumulative(
                                 <npy_intp*>order.data, <double*>tz.data,
                                 <double*>qo.data, <double*>cb2.data,
