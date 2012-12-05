@@ -4,6 +4,7 @@ This defines the DataShape type system.
 
 from numpy import dtype
 
+import datetime
 from struct import calcsize
 from numbers import Integral
 from collections import Mapping, Sequence
@@ -502,6 +503,29 @@ def product(A, B):
 
     return DataShape(operands=(f+g))
 
+def from_python_scalar(scalar):
+    "Return a ctype for a python scalar"
+    if isinstance(scalar, int):
+        return int_
+    elif isinstance(scalar, float):
+        return double
+    elif isinstance(scalar, complex):
+        return complex128
+    elif isinstance(scalar, (str, unicode)):
+        return string
+    elif isinstance(scalar, datetime.timedelta):
+        return timedelta64
+    elif isinstance(scalar, datetime.datetime):
+        return datetime64
+    else:
+        return pyobj
+
+def to_dtype(ds):
+    # This is probably wrong...
+    if isinstance(ds, CType):
+        return ds.to_dtype()
+    return ds.operands[-1].to_dtype()
+
 #------------------------------------------------------------------------
 # Unit Types
 #------------------------------------------------------------------------
@@ -557,7 +581,7 @@ ulonglong  = CType('ulonglong')
 longdouble = float128
 
 void = CType('void')
-pyobj = CType('object')
+object_ = pyobj = CType('object')
 
 string = CType('string')
 

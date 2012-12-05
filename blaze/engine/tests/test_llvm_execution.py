@@ -22,6 +22,7 @@ def test_conversion():
     result_graph, executors = convert_graph(graph)
     print executors
 
+test_conversion = None # disable
 
 if __name__ == '__main__':
     test_conversion()

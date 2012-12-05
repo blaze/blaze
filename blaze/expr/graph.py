@@ -7,6 +7,7 @@ from numbers import Integral
 from collections import Iterable
 
 from blaze.expr import nodes, catalog
+from blaze.datashape import coretypes
 from blaze.datashape.coretypes import int_, float_, string, top, dynamic
 from blaze.sources.canonical import PythonSource
 
@@ -199,24 +200,24 @@ class ExpressionNode(nodes.Node):
     """
     abstract = True
 
-    def generate_opnode(self, arity, fname, args=None, kwargs=None):
+    def generate_opnode(self, arity, func_name, args=None, kwargs=None):
 
         # TODO: also kwargs when we support such things
         iargs = injest_iterable(args)
 
         # Lookup by capitalized name
-        op = Op._registry[fname.capitalize()]
+        op = Op._registry[func_name.capitalize()]
 
         if arity == 1:
-            iop = op(fname, iargs)
+            iop = op(func_name, iargs)
             return App(iop)
 
         if arity == 2:
-            iop = op(fname, iargs)
+            iop = op(func_name, iargs)
             return App(iop)
 
         elif arity == -1:
-            return op(fname, iargs, kwargs)
+            return op(func_name, iargs, kwargs)
 
     def generate_fnnode(self, fname, args=None, kwargs=None):
         pass
@@ -412,6 +413,10 @@ class App(ExpressionNode):
         self.operator = operator
         self.children = [operator]
 
+        # TODO: implement for all operators
+        self.datashape = getattr(operator, 'datashape', None)
+        # self.datashape = operator.datashape
+
     @property
     def dom(self):
         """ Domain """
@@ -579,6 +584,7 @@ class Literal(ExpressionNode):
         assert isinstance(val, self.vtype)
         self.val = val
         self.children = []
+        self.datashape = coretypes.from_python_scalar(val)
 
     @property
     def name(self):
@@ -597,6 +603,8 @@ class StringNode(Literal):
     datashape = string
     kind      = VAL
 
+    datashape = coretypes.string
+
     @property
     def data(self):
         return PythonSource(self.val, type=str)
@@ -610,6 +618,8 @@ class IntNode(Literal):
     datashape = int_
     kind      = VAL
 
+    datashape = coretypes.int_
+
     @property
     def data(self):
         return PythonSource(self.val, type=int)
@@ -618,6 +628,8 @@ class FloatNode(Literal):
     vtype     = float
     datashape = float_
     kind      = VAL
+
+    datashape = coretypes.double
 
     @property
     def data(self):

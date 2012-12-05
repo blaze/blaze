@@ -1,3 +1,5 @@
+import numpy as np
+
 from graph import Op
 from blaze.datashape import coretypes as C
 
@@ -36,14 +38,25 @@ def arity(op):
     else:
         raise ValueError
 
+def promote(*operands):
+    "Compute the promoted datashape, uses NumPy..."
+    dtypes = [C.to_dtype(op.datashape) for op in operands]
+    result_dtype = reduce(np.promote_types, dtypes)
+    datashape = C.CType.from_dtype(result_dtype)
+    return datashape
+
 class ArithmeticOp(Op):
     "Base for unary and binary arithmetic operations"
 
     is_arithmetic = True
 
+class BinaryArithmeticOp(ArithmeticOp):
 
+    def __init__(self, op, operands):
+        super(BinaryArithmeticOp, self).__init__(op, operands)
+        self.datashape = promote(*operands)
 
-class Add(ArithmeticOp):
+class Add(BinaryArithmeticOp):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
@@ -57,7 +70,7 @@ class Add(ArithmeticOp):
     nilpotent    = False
     sideffectful = False
 
-class Mul(ArithmeticOp):
+class Mul(BinaryArithmeticOp):
     # -----------------------
     arity = 2
     signature = 'a -> a -> a'
@@ -85,6 +98,9 @@ class Pow(Op):
     nilpotent    = False
     sideffectful = False
 
+    def __init__(self, op, operands):
+        super(Pow, self).__init__(op, operands)
+        self.datashape = promote(*operands)
 
 class Transpose(Op):
     # -----------------------
@@ -113,3 +129,9 @@ class Abs(Op):
     idempotent   = True
     nilpotent    = False
     sideffectful = False
+
+    def __init__(self, op, operands):
+        super(Abs, self).__init__(op, operands)
+        self.datashape = operands[0].datashape
+
+

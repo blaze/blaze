@@ -12,6 +12,7 @@ import blaze.idx
 from blaze.expr import visitor
 from blaze.expr import ops
 from blaze.expr import paterm
+from blaze.datashape import coretypes
 from blaze.engine import pipeline
 from blaze.engine import executors
 from blaze.sources import canonical
@@ -48,25 +49,6 @@ class GraphToAst(visitor.BasicGraphVisitor):
         return self.ufunc_builder.register_operand(tree)
 
 
-def build_executor(pyast_function, operands):
-    "Build a ufunc and an wrapping executor from a Python AST"
-    vectorizer = Vectorize(pyast_function)
-    vectorizer.add(*[minitype(op) for op in operands])
-    ufunc = vectorizer.build_ufunc()
-
-    operands_dtypes = map(get_dtype, operands)
-    # TODO: this should be part of the blaze graph
-    result_dtype = reduce(np.promote_types, operands_dtypes)
-
-    # TODO: build an executor tree and substitute where we can evaluate
-    executor = executors.ElementwiseLLVMExecutor(
-        ufunc,
-        operands_dtypes,
-        result_dtype,
-    )
-
-    return executor
-
 class ATermToAstTranslator(visitor.GraphTranslator):
     """
     Convert an aterm graph to a Python AST.
@@ -83,9 +65,6 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         super(ATermToAstTranslator, self).__init__()
         self.ufunc_builder = UFuncBuilder()
         self.executors = executors
-
-    def set_executor(self, aterm, executor_id):
-        aterm
 
     def register(self, result):
         if self.nesting_level == 0:
@@ -146,13 +125,28 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         return aterm
 
 
+def build_executor(pyast_function, operands):
+    "Build a ufunc and an wrapping executor from a Python AST"
+    vectorizer = Vectorize(pyast_function)
+    vectorizer.add(*[minitype(op) for op in operands])
+    ufunc = vectorizer.build_ufunc()
+
+    operands_dtypes = map(get_dtype, operands)
+    # TODO: this should be part of the blaze graph
+    result_dtype = reduce(np.promote_types, operands_dtypes)
+
+    # TODO: build an executor tree and substitute where we can evaluate
+    executor = executors.ElementwiseLLVMExecutor(
+        ufunc,
+        operands_dtypes,
+        result_dtype,
+    )
+
+    return executor
+
 def getsource(ast):
     from meta import asttools
     return asttools.dump_python_source(ast).strip()
-
-def get_dtype(blaze_obj):
-    # This is probably wrong...
-    return blaze_obj.datashape.operands[-1].to_dtype()
 
 def minitype(blaze_obj):
     """
@@ -160,7 +154,7 @@ def minitype(blaze_obj):
     This should be a direct mapping. Even better would be to unify the two
     typesystems...
     """
-    dtype = get_dtype(blaze_obj)
+    dtype = coretypes.to_dtype(blaze_obj)
     return minitypes.map_dtype(dtype)
 
 def substitute_llvm_executors(aterm_graph, executors):

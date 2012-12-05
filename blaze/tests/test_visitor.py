@@ -92,8 +92,8 @@ def test_transformers():
     t = Transformer()
     x = a + (b + c)
     result = t.visit(x)
-
     assert Visitor().visit(result) == [[int, [[int, int]]]]
+
     assert Transformer2().visit([a, c]) == [int]
 
 #------------------------------------------------------------------------
