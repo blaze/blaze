@@ -2,5 +2,5 @@
 Execution
 =========
 
-.. automodule:: ndtable.engine.execution
+.. automodule:: blaze.engine.execution
    :members:

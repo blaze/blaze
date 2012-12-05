@@ -2,5 +2,5 @@
 Tables
 ======
 
-.. automodule:: ndtable.table
+.. automodule:: blaze.table
    :members:

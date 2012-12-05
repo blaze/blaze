@@ -7,7 +7,7 @@ Blaze Arrays
 
 ::
 
-    from ndtable import Array, dshape
+    from blaze import Array, dshape
     ds = dshape('2, 2, int')
 
     a = Array([1,2,3,4], ds)
@@ -31,8 +31,8 @@ Custom DShapes
 
 ::
 
-    from ndtable import Table, RecordDecl, derived
-    from ndtable import int32, string
+    from blaze import Table, RecordDecl, derived
+    from blaze import int32, string
 
     class CustomStock(RecordDecl):
         name   = string
