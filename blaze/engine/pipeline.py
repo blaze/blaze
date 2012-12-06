@@ -1,10 +1,8 @@
+# -*- coding: utf-8 -*-
+
 """
 Defines the Pipeline class which provides a series of transformation
 passes on the graph which result in code generation.
-
-This is fundamentally quite different from the Numba pipeline in that we
-start with a graph object and start generating LLVM immedietely. At some
-point the two might merge though if we're sufficiently clever...
 """
 
 from llvm.core import Module
@@ -31,25 +29,40 @@ def compose(f, g):
     return lambda *x: g(*f(*x))
 
 #------------------------------------------------------------------------
-# Passes
+# Pre/Post Conditions
 #------------------------------------------------------------------------
 
-#             Input
-#               |
-#               |
+#------------------------------------------------------------------------
+# Passes
+#------------------------------------------------------------------------
+#
+#                  Input
+#                     |
 # +----------------------+
 # |          pass 1      |
 # +--------|----------|--+
-#        context    graph
+#        context     ast
+#          |          |
+#   postcondition     |
+#          |          |
+#   precondition      |
 #          |          |
 # +--------|----------|--+
 # |          pass 2      |
 # +--------|----------|--+
-#        context    graph
+#        context     ast
+#          |          |
+#   postcondition     |
+#                     |
+#   precondition      |
+#          |          |
 #          |          |
 # +--------|----------|--+
 # |          pass 3      |
 # +--------|----------|--+
+#        context     ast
+#          |          |
+#   precondition      |
 #          |          |
 #          +----------+-----> Output
 
@@ -77,15 +90,6 @@ def do_environment(context, graph):
 
     return context, graph
 
-def do_aterms(context, graph):
-    context = dict(context)
-
-    # ----------------------
-    context['atermexpr'] = {}
-    # ----------------------
-
-    return context, graph
-
 def do_convert_to_aterm(context, graph):
     "Convert the graph to an ATerm graph. See blaze/expr/paterm.py"
     context = dict(context)
@@ -101,7 +105,6 @@ def do_convert_to_aterm(context, graph):
     # ----------------------
 
     return context, graph
-
 
 #------------------------------------------------------------------------
 # Pipeline
@@ -123,27 +126,22 @@ class Pipeline(object):
 
         # sequential pipeline of passes
         self.pipeline = (
-            # Input <--
             do_flow,
-            #  v
             do_environment,
-            #  v
-            do_aterms,
-            #  v
             do_convert_to_aterm,
-            # Output -->
         )
 
     def run_pipeline_context(self, graph):
         """
-        Run the graph through the pipeline, spit out a LLVM
-        module.
+        Run the graph through the pipeline
         """
         ictx = self.ictx
 
         # Fuse the passes into one functional pipeline that is the
         # sequential composition with the intermediate ``context`` and
         # ``graph`` objects threaded through.
+
+        # pipeline = stn ∘  ... ∘  st2 ∘ st1
         pipeline = reduce(compose, self.pipeline)
 
         context, _ = pipeline(ictx, graph)
@@ -192,7 +190,6 @@ def toposort(pred, graph, algorithm='khan'):
     """
     Sort the expression graph topologically to resolve the order needed
     to execute operations.
-
     """
 
     #

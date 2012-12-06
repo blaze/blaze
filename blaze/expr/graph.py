@@ -8,8 +8,8 @@ from collections import Iterable
 
 from blaze.expr import nodes, catalog
 from blaze.datashape import coretypes
-from blaze.datashape.coretypes import int_, float_, string, top, dynamic
 from blaze.sources.canonical import PythonSource
+from blaze.datashape.coretypes import int_, float_, string, top, dynamic
 
 # Type checking and unification
 from blaze.datashape.unification import unify
@@ -44,7 +44,7 @@ def set_max_argument_recursion(val):
     _max_argument_recursion = val
 
 #------------------------------------------------------------------------
-# Deconstructors
+# Exceptions
 #------------------------------------------------------------------------
 
 class UnknownExpression(Exception):
@@ -52,6 +52,15 @@ class UnknownExpression(Exception):
         self.obj = obj
     def __str__(self):
         return 'Unknown object in expression: %r' % (self.obj,)
+
+class DeferredDatashape(Exception):
+    def __str__(self):
+        return 'Datashape deferred until eval()'
+
+#------------------------------------------------------------------------
+# Deconstructors
+#------------------------------------------------------------------------
+
 
 def typeof(obj):
     """
@@ -83,6 +92,11 @@ def typeof(obj):
         return top
     else:
         raise UnknownExpression(obj)
+
+def all_simple(operands):
+    """ Determine if all the operands are simple numeric types """
+    simple_types = set([IntNode, FloatNode])
+    return all(type(op) in simple_types for op in operands)
 
 #------------------------------------------------------------------------
 # Blaze Typesystem
@@ -402,8 +416,7 @@ class App(ExpressionNode):
 
         In[0]: a = 2 + 3
 
-    The resulting value of ``a`` is App( Op(+), 2, 3) the
-    signature of the application is with output type int32.
+    The resulting value of ``a`` is App( Op(+), 2, 3).
 
     """
     __slots__ = ['itype','otype']
@@ -413,9 +426,7 @@ class App(ExpressionNode):
         self.operator = operator
         self.children = [operator]
 
-        # TODO: implement for all operators
-        self.datashape = getattr(operator, 'datashape', None)
-        # self.datashape = operator.datashape
+        self.datashape = operator.datashape
 
     @property
     def dom(self):
@@ -495,8 +506,16 @@ class Op(ExpressionNode):
     def __init__(self, op, operands):
         self.op = op
         self.children = operands
+        self.operands = operands
         self._opaque = False
-        self.datashape = coretypes.promote(*operands)
+
+        # If all the operands to the expression are simple
+        # numeric types then go ahead and determine what the
+        # datashape of this operator is before we hit eval().
+
+        # Examples:
+        #    IntNode, IntNode
+        #    IntNode, FloatNode
 
         # minor hack until we get graph level numbering of
         # expression objects
@@ -541,6 +560,16 @@ class Op(ExpressionNode):
         blows up.
         """
         return self._opaque or (not hasattr(self, 'signature'))
+
+    @property
+    def datashape(self):
+        """ If possible determine the datashape before we even
+        hit eval(). This is possible for simple types.
+        """
+        if all_simple(self.operands) and self.is_arithmetic:
+            return coretypes.promote(*self.operands)
+        else:
+            return dynamic
 
 #------------------------------------------------------------------------
 # Functions

@@ -4,7 +4,7 @@ def test_simple():
     a = ATerm('a')
     b = ATerm('b')
     annot = ('contig', 'fizzy', 'b')
-    annotation = AAnnotation(int, annot)
+    annotation = AAnnotation(annot)
     lst = AList(a, b, annotation=annotation)
 
     assert annotation['type']
@@ -21,7 +21,7 @@ def test_query_metadata():
     Add = ATerm('Add')
 
     annot = ('foo', 'bar')
-    annotation = AAnnotation(int, annot)
+    annotation = AAnnotation(annot)
     aterm = AAppl(Add, [a,b], annotation=annotation)
 
     #------------------
@@ -45,9 +45,6 @@ def test_query_metadata():
     assert match
 
     #------------------
-
-    match = matches(('*;fizz'), aterm)
-    assert not match
 
 def test_simple_rewrite():
     a = ATerm('a')

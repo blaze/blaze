@@ -1,12 +1,16 @@
-from nose.tools import assert_raises
+from blaze import dshape
 
-from blaze.datashape.coretypes import float64
-from blaze.expr.graph import IntNode, FloatNode, App, StringNode
 from blaze.expr.nodes import Node, traverse
 from blaze.expr.typechecker import InvalidTypes
 from blaze.expr.viz import dump
 from blaze.table import NDTable
+
+from blaze.datashape.coretypes import float64, dynamic
+from blaze.expr.graph import IntNode, FloatNode, App, StringNode,\
+    DeferredDatashape
+
 from unittest import skip
+from nose.tools import assert_raises
 
 # Print out graphviz to the screen
 DEBUG = False
@@ -98,6 +102,28 @@ def test_scalars():
 
     if DEBUG:
         dump(x, filename='scalars')
+
+def test_op_dtype():
+    a = IntNode(1)
+    b = IntNode(1)
+
+    x = (a + b)
+    x.datashape == dshape('int')
+
+def test_op_dtype2():
+    a = IntNode(1)
+    b = FloatNode(1.)
+
+    x = (a + b)
+    x.datashape == dshape('float')
+
+def test_op_dtype3():
+    a = NDTable([1], dshape='1, int')
+    b = NDTable([2], dshape='1, int')
+
+    x = (a + b)
+
+    x.datashape == dynamic
 
 @skip
 def test_preserve_types():

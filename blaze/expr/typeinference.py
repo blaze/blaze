@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Adapted from ML type inference algorithms. See:
-#    "Types and Programming Languages", Benjamin C. Pierce (2012)
+#    "Types and Programming Languages", Benjamin C. Pierce (2002)
 
 from numpy import dtype
 from string import letters

@@ -667,7 +667,14 @@ def expr_string(spine, const_args, outer=None):
 #------------------------------------------------------------------------
 
 def promote(*operands):
-    "Compute the promoted datashape, uses NumPy..."
+    """
+    Compute the promoted datashape, uses NumPy...
+
+    >>> promote(IntNode(1), Op(IntNode(2))
+    int
+    >>> promote(FloatNode(1), Op(IntNode(2))
+    float
+    """
     dtypes = [to_dtype(op.datashape) for op in operands]
     result_dtype = reduce(np.promote_types, dtypes)
     datashape = CType.from_dtype(result_dtype)
