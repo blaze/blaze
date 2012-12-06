@@ -1,6 +1,8 @@
 from copy import copy
 from collections import deque
 
+from blaze.engine import pipeline
+
 #------------------------------------------------------------------------
 # Graph Objects
 #------------------------------------------------------------------------
@@ -18,7 +20,6 @@ class Node(object):
 
     def eval(self):
         "Evaluates the expression graph"
-        from blaze.engine import pipeline
         p = pipeline.Pipeline()
         return p.execute(self)
 

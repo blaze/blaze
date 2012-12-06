@@ -1,12 +1,23 @@
 """
-Blaze storage backend. We follow the same conventions as CPython
-in that we use the arena model of memory.
+Blaze storage backend. We follow the same conventions as CPython in that
+we use the arena model of memory.
 
-Design Principles:
+It does the mallocs of data as needed to shuffle blocks efficiently for
+data that is passed to Numba. It is also one place for safe management
+of blocks of data from SQL, Disk, IOPro, etc to allocate on to rather
+than having every adaptor define memory wherever it feels like calling
+malloc.
+
+:Inspiration:
+
+    http://svn.python.org/projects/python/trunk/Python/pyarena.c
+
+:Design Principles:
 
 - Will write a Cython wrapper that should be drop in
   replacable for ``libc.stdlib.malloc``.
--
+
+- Will almost certainly migrate this to C / Cython
 
 """
 

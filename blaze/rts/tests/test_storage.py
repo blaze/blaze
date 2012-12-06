@@ -2,13 +2,24 @@ from ctypes import c_char
 from blaze.rts.storage import Heap, Arena, address_of_buffer,\
     allocate_numpy, allocate_raw, finalize
 
-import iopro
 import numpy as np
 
 from StringIO import StringIO
 from string import letters
 
-from numba.decorators import autojit
+from unittest import skipIf
+
+try:
+    from numba.decorators import autojit
+    have_numba = True
+except ImportError:
+    have_numba = False
+
+try:
+    import iopro
+    have_iopro = True
+except ImportError:
+    have_iopro = False
 
 def test_address_mmap():
     # never actually do this
@@ -38,6 +49,11 @@ def test_free():
     # Blocks get merged when free'd so that align blocks
     assert addr3 == addr2
 
+#------------------------------------------------------------------------
+# IOPro Prototype
+#------------------------------------------------------------------------
+
+@skipIf(not have_iopro, "iopro not installed")
 def test_iopro():
     # this is kind of stupid right now because it does a copy,
     # but Tight IOPro integration will be a priority...
@@ -59,6 +75,11 @@ def test_iopro():
 
     finalize(h)
 
+#------------------------------------------------------------------------
+# Numba Prototype
+#------------------------------------------------------------------------
+
+@skipIf(not have_numba, "numba not installed")
 def test_numba():
 
     @autojit
