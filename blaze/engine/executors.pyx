@@ -71,9 +71,10 @@ cdef class ElementwiseLLVMExecutor(Executor):
             (<cnp.ndarray> self.operands[i]).data = <char *> data_pointers[i]
 
         if out == NULL:
-            if self.lhs_data == NULL:
-                self.allocate_empty_lhs(size)
-            out = self.lhs_data
+            raise NotImplementedError
+            #if self.lhs_data == NULL:
+            #    self.allocate_empty_lhs(size)
+            #out = self.lhs_data
 
         (<cnp.ndarray> self.lhs_array).data = <char *> out
 
@@ -93,7 +94,7 @@ def execute(Executor executor, operands, out_operand):
     cdef void *lhs_data
 
     operands.append(out_operand)
-    descriptors = [op.read_desc() for op in operands]
+    descriptors = [op.data.read_desc() for op in operands]
 
     nbtyes = descriptors[0].nbytes
     assert all(desc.nbytes == nbtyes for desc in descriptors)
@@ -104,8 +105,8 @@ def execute(Executor executor, operands, out_operand):
 
     try:
         # TODO: assert the chunks have equal sizes
-        for paired_chunks in zip(desc.asbuflist() for desc in descriptors):
-            lhs_chunk = paired_chunks.pop()
+        for paired_chunks in zip(*[desc.asbuflist() for desc in descriptors]):
+            paired_chunks, lhs_chunk = paired_chunks[:-1], paired_chunks[-1]
             for i, chunk in enumerate(paired_chunks):
                 data_pointers[i] = <void *> <Py_uintptr_t> chunk.pointer
 

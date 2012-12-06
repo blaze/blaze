@@ -13,6 +13,7 @@ class ExecutionPipeline(object):
 
     def __init__(self):
         self.pipeline = [
+            build_operand_dict,
             try_llvm,
             execute,
         ]
@@ -26,12 +27,18 @@ class ExecutionPipeline(object):
             aterm_graph = substitutor(pipeline_context, aterm_graph)
 
         # TODO: Match recursively to see whether we handled the entire graph
-        full_substitution = aterm_graph.matches('Executor;*')
-        if not full_substitution:
+        #full_substitution = aterm_graph.matches('Executor;*')
+        #if not full_substitution:
             # TODO: find and pretty-print faulty sub-expression
-            raise blaze.ExecutionError("Unable to execute (sub-)expression")
+        #    raise blaze.ExecutionError("Unable to execute (sub-)expression")
 
         return pipeline_context['result']
+
+def build_operand_dict(pipeline_context, aterm_graph):
+    operands = pipeline_context['operands']
+    operand_dict = dict((id(op), op) for op in operands)
+    pipeline_context['operand_dict'] = operand_dict
+    return aterm_graph
 
 def try_llvm(pipeline_context, aterm_graph):
     "Substitute executors for the parts of the graph we can handle"
@@ -41,8 +48,9 @@ def try_llvm(pipeline_context, aterm_graph):
 
 def execute(pipeline_context, aterm_graph):
     "Execute the executor graph"
+    operands = pipeline_context['operand_dict']
     executors = pipeline_context['executors']
-    visitor = dispatch.ExecutorDispatcher(executors)
+    visitor = dispatch.ExecutorDispatcher(operands, executors)
     result = visitor.visit(aterm_graph)
     pipeline_context['result'] = result
     return aterm_graph

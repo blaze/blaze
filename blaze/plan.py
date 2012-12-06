@@ -71,7 +71,8 @@ class BlazeVisitor(MroVisitor):
 
         return AAppl(
             ATerm('Slice'),
-            [start or ATerm('None'),
+            [self.visit(array),
+             start or ATerm('None'),
              stop or ATerm('None'),
              step or ATerm('None')],
             annotation=annotation(graph, graph.op)

@@ -34,7 +34,7 @@ def test_execution():
     graph = a + b * c
     a[:] = graph
 
-    print a
+    print list(a.data.ca)
 
 if __name__ == '__main__':
 #    test_conversion()

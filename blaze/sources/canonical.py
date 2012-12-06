@@ -14,6 +14,7 @@ from blaze.datashape.coretypes import from_numpy, to_numpy
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from blaze.byteprovider import ByteProvider
 from blaze.datadescriptor import DataDescriptor
+from blaze import datadescriptor
 
 #------------------------------------------------------------------------
 # Chunked Array
@@ -39,7 +40,8 @@ class CArraySource(ByteProvider):
             self.ca = carray.carray(ca)
 
     def read_desc(self):
-        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca)
+        return datadescriptor.CArrayDataDescriptor(
+                    'carray_dd', self.ca.nbytes, self.ca)
 
     @property
     def nchunks(self):
