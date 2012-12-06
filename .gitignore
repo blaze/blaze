@@ -2,7 +2,7 @@
 *.py[cod]
 
 # Vim
-*.sw[pon]
+*.sw[ponm]
 
 # C extensions
 *.so
@@ -69,6 +69,8 @@ nosetests.xml
 
 # Cython Extensions
 blaze/carray/*.[ch]
+blaze/engine/*.[ch]
+blaze/expr/*.[ch]
 
 # Sphinx Docs
 docs/_build
