@@ -33,7 +33,6 @@ VAL = 2
 _max_argument_recursion = 25
 _max_argument_len       = 1000
 _argument_sample        = 100
-_runtime_typecheck      = False
 
 def set_max_argument_len(val):
     global _max_argument_len
@@ -523,26 +522,6 @@ class Op(ExpressionNode):
 
         # Make sure the graph makes sense given the signature of
         # the function. Does naive type checking and inference.
-        if _runtime_typecheck and not self.opaque:
-
-            result = tyeval(
-                self.signature, # type signature
-                operands,       # operands
-                self.dom,       # domain constraints
-                BlazeT,         # Blaze type system
-                commutative = self.commutative
-            )
-
-            assert len(result.dom) == self.arity
-
-            self.dom     = result.dom
-            self.cod     = result.cod
-            self._opaque = result.dynamic
-        else:
-            # Otherwise it's the universal supertype, the operator could
-            # return anything. Usefull for when we don't know much about
-            # the operand a priori
-            self.cod = top
 
     @property
     def nin(self):
