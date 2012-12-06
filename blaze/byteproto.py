@@ -1,7 +1,5 @@
-import struct
-from ctypes import Structure, c_void_p, c_int, sizeof
-
-import llvm.core as lc
+"""
+"""
 
 #------------------------------------------------------------------------
 # Hinting & Flags

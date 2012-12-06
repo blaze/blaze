@@ -1,8 +1,18 @@
-class error(Exception):
-    "Base class for blaze exceptions"
+
+class ChunkingException(BaseException):
+    pass
+
+class NoSuchChecksum(ValueError):
+    pass
+
+class ChecksumMismatch(RuntimeError):
+    pass
+
+class FileNotFound(IOError):
+    pass
 
 # for Numba
-class ExecutionError(error):
+class ExecutionError(Exception):
     """
     Raised when we are unable to execute a certain lazy or immediate
     expression.

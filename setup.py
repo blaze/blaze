@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-import sys, os
+# Hugo's trick for using just the develop command from setuptools
+import sys
+if 'develop' in sys.argv:
+    import setuptools
+
+import os
 import shutil
 import textwrap
 from os.path import join
