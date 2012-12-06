@@ -2,7 +2,7 @@ import numpy as np
 from operator import eq
 
 from byteprovider import ByteProvider
-from idx import Indexable, Space, Subspace, Index
+from idx import Space, Subspace, Index
 
 from datashape import DataShape, Fixed, dynamic, dshape as _dshape
 
@@ -21,6 +21,78 @@ from printer import generic_str, generic_repr
 
 MANIFEST = 1
 DELAYED  = 2
+
+#------------------------------------------------------------------------
+# Indexable
+#------------------------------------------------------------------------
+
+class Indexable(object):
+    """
+    The top abstraction in the Blaze class hierarchy.
+
+    An index is a mapping from a domain specification to a collection of
+    byte or subtables.  Indexable objects can be sliced/getitemed to
+    return some other object in the Blaze system.
+    """
+
+    #------------------------------------------------------------------------
+    # Slice/stride/getitem interface
+    #
+    # Define explicit indexing operations, as distinguished from operator
+    # overloads, so that we can more easily guard, test, and validate
+    # indexing calls based on their semantic intent, and not merely based
+    # on the type of the operand.  Such dispatch may be done in the overloaded
+    # operators, but that is a matter of syntactic sugar for end-user benefit.
+    #------------------------------------------------------------------------
+
+    def slice(self, slice_obj):
+        """ Extracts a subset of values from this object. If there is
+        no inner dimension, then this should return a scalar. Slicing
+        typically preserves the data parallelism of the slicee, and the
+        index-space transform is computable in constant time.
+        """
+        raise NotImplementedError
+
+    def query(self, query_expr):
+        """ Queries this object and produces a view or an actual copy
+        of data (or a deferred eval object which can produce those). A
+        query is typically a value-dependent streaming operation and
+        produces an indeterminate number of return values.
+        """
+        raise NotImplementedError
+
+    def take(self, indices, unique=None):
+        """ Returns a view or copy of the indicated data.  **Indices**
+        can be another Indexable or a Python iterable.  If **unique**
+        if True, then implies that no indices are duplicated; if False,
+        then implies that there are definitely duplicates.  If None, then
+        no assumptions can be made about the indices.
+
+        take() differs from slice() in that indices may be duplicated.
+        """
+        raise NotImplementedError
+
+    #------------------------------------------------------------------------
+    # Iteration protocol interface
+    #
+    # Defines the mechanisms by which other objects can determine the types
+    # of iteration supported by this object.
+    #------------------------------------------------------------------------
+
+    def returntype(self):
+        """ Returns the most efficient/general Data Descriptor this object can
+        return.  Returns a value from the list the values defined in
+        DataDescriptor.desctype: "buflist", "buffer", "streamlist", or
+        "stream".
+        """
+        raise NotImplementedError
+    def __index__(self):
+        raise NotImplementedError()
+
+    def global_id(self):
+        "Get a unique global id for this source"
+        # TODO: make it global :)
+        return id(self)
 
 #------------------------------------------------------------------------
 # Immediate
@@ -48,7 +120,6 @@ class Array(Indexable):
         >>> Array([1,2,3])
         >>> Array([1,2,3], dshape='3, int32')
         >>> Array([1,2,3], dshape('3, 3, int32'))
-
     """
 
     eclass = MANIFEST

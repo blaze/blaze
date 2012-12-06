@@ -35,7 +35,7 @@ def test_free():
 
     addr3, block2, c2ptr = allocate_raw(h, 5)
 
-    # Blocks get merged in arenas
+    # Blocks get merged when free'd so that align blocks
     assert addr3 == addr2
 
 def test_iopro():
@@ -50,6 +50,9 @@ def test_iopro():
 
     addr, block = allocate_numpy(h, data.dtype, data.shape)
     block[:] = data[:]
+
+    assert not block.flags['OWNDATA']
+    assert block.ctypes.data == addr
 
     assert len(h._arenas) == 1
     assert block.nbytes < h._lengths[0]

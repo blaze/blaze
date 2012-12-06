@@ -6,8 +6,9 @@ import string
 import numpy as np
 
 from collections import namedtuple
+
 from blaze.expr.graph import Literal, OP, APP, VAL
-from blaze.idx import Indexable
+from blaze.table import Indexable
 from blaze.byteproto import CONTIGUOUS, READ
 
 from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString
