@@ -87,9 +87,6 @@ class Integer(Primitive):
         assert isinstance(i, Integral)
         self.val = i
 
-    def free(self):
-        return set([])
-
     def __eq__(self, other):
         if type(other) is Integer:
             return self.val == other.val
@@ -335,9 +332,6 @@ class TypeVar(Atom):
     def __init__(self, symbol):
         self.symbol = symbol
 
-    def free(self):
-        return set([self.symbol])
-
     def __str__(self):
         return str(self.symbol)
 
@@ -465,9 +459,6 @@ class Record(DataShape, Mapping):
     @property
     def names(self):
         return self.k
-
-    def free(self):
-        return set(self.k)
 
     def __eq__(self, other):
         if isinstance(other, Record):
