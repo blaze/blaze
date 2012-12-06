@@ -10,7 +10,7 @@ from blaze.expr.graph import Literal, OP, APP, VAL
 from blaze.idx import Indexable
 from blaze.byteproto import CONTIGUOUS, READ
 
-from blaze.expr.paterm import AAppl, ATerm, AAnnotation
+from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString
 from blaze.expr.visitor import MroVisitor
 
 #------------------------------------------------------------------------
@@ -44,7 +44,7 @@ def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
 
 def annotation(graph, *metadata):
     metadata = (id(graph),) + metadata
-    annotation = AAnnotation(ty=ATerm(repr(graph.datashape)), )
+    annotation = AAnnotation(AString(str(graph.datashape)), metadata)
     return annotation
 
 class BlazeVisitor(MroVisitor):

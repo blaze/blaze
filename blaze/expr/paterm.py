@@ -134,7 +134,7 @@ class AAnnotation(ATermBase):
                 if not isinstance(annotation, ATermBase):
                     annotations[i] = ATerm(annotation)
 
-        self.meta = set(annotations or [])
+        self.meta = annotations or []
 
     @property
     def annotations(self):

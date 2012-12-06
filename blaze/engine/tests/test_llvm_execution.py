@@ -21,6 +21,7 @@ def test_conversion():
     graph = a + b * c
     result_graph, executors = convert_graph(graph)
     print executors
+    print result_graph
 
 
 if __name__ == '__main__':
