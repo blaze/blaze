@@ -2,7 +2,13 @@
 Cython bindings for libAterm, a small no-dependency C library for
 manipulating and parsing ATerm expressions.
 
-Downloadable: http://strategoxt.org/Tools/ATermLibrary
+Docs
+----
+* http://strategoxt.org/Tools/ATermLibrary
+* http://www.meta-environment.org/doc/books/technology/aterm-guide/aterm-guide.html
+
+Download
+--------
 
 Debian     : apt-get install libaterm
 Arch Linux : pacman -S libaterm
@@ -138,7 +144,7 @@ cdef class PyATerm:
             return False
 
     def __repr__(self):
-        return 'aterm('%s')' % ATwriteToString(self.a)
+        return "aterm('%s')" % ATwriteToString(self.a)
 
 cdef void error(char *format, va_list args) with gil:
     raise Exception(format)
@@ -157,3 +163,6 @@ ATsetAbortHandler(error)
 
 def aterm(str s):
     return PyATerm(s)
+
+def matches(str s, PyATerm term):
+    return term.matches(s)
