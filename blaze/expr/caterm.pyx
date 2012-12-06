@@ -1,4 +1,15 @@
-from libc.stdlib cimport malloc, free
+"""
+Cython bindings for libAterm, a small no-dependency C library for
+manipulating and parsing ATerm expressions.
+
+Downloadable: http://strategoxt.org/Tools/ATermLibrary
+
+Debian     : apt-get install libaterm
+Arch Linux : pacman -S libaterm
+Mac        : ftp://ftp.stratego-language.org/pub/stratego/StrategoXT/strategoxt-0.17/macosx/aterm-2.5-macosx.tar.gz
+Windows    : ftp://ftp.stratego-language.org/pub/stratego/StrategoXT/strategoxt-0.17/cygwin/aterm-2.5-cygwin.tar.gz
+
+"""
 
 cdef extern from "stdarg.h":
     ctypedef struct va_list:
@@ -63,6 +74,8 @@ cdef extern from "aterm1.h":
         ATfalse = 0
         ATtrue  = 1
 
+    ATerm ATisEqual(ATerm t1, ATerm t2)
+
 cdef ATerm ATEmpty
 
 cdef class PyATerm:
@@ -91,7 +104,31 @@ cdef class PyATerm:
         else:
             return ATwriteToString(value)
 
+    #def __richcmp__(self, other, int op):
+        #cdef ATbool res
+        #res = ATmatch(self.a, pattern)
+
+       #if op == 2:
+           #if isinstance(other, PyATerm):
+               #res = ATisEqual(self.a, other.a)
+
+        #if res == ATtrue:
+            #return True
+        #if res == ATfalse:
+            #return False
+
     def matches(self, char* pattern):
+        """
+        Matches against ATerm patterns.
+
+        >>> ATerm('x').matches('<term>')
+        # True
+
+        Alas, no metadata annotation ... at least out of the box.
+        Ergo the reason for my half baked query language. Think
+        I can roll it in here though
+
+        """
         cdef ATbool res
         res = ATmatch(self.a, pattern)
 
@@ -101,10 +138,12 @@ cdef class PyATerm:
             return False
 
     def __repr__(self):
-        return ATwriteToString(self.a)
+        return 'aterm('%s')' % ATwriteToString(self.a)
 
 cdef void error(char *format, va_list args) with gil:
     raise Exception(format)
+
+# -- init --
 
 cdef ATerm bottomOfStack
 ATinit(1, [], &bottomOfStack)
@@ -113,6 +152,8 @@ ATinit(1, [], &bottomOfStack)
 ATsetErrorHandler(error)
 ATsetWarningHandler(error)
 ATsetAbortHandler(error)
+
+# -- toplevel --
 
 def aterm(str s):
     return PyATerm(s)

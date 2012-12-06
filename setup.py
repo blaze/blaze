@@ -190,6 +190,12 @@ extensions = [
        "blaze.cutils", ["blaze/cutils.pyx"],
        include_dirs = [numpy_path],
    ),
+   Extension(
+       "blaze.expr.caterm", ["blaze/expr/caterm.pyx"],
+       include_dirs = [],
+       libraries = ['ATerm'],
+       #extra_objects=['/usr/lib/libATerm.so'],
+   ),
 ]
 
 #------------------------------------------------------------------------

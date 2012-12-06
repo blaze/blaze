@@ -4,6 +4,15 @@ The RTS dispatcher. The logic that determines the most suitable
 execution backend for a given ATerm expression.
 
     - Numba ( canonical )
+    - numexpr
+    - numpy
+    - libc
+    - Pandas?
+
+    ...
+
+    - User defined Python functions with datashape annotations
+      and/or inferred.
 
 The Numba backend is special in that the dispatcher will then feed
 *the same aterm* down it is matching on, into Numba code generator to
