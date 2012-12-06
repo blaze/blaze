@@ -1,7 +1,24 @@
+"""
+
+The RTS dispatcher. The logic that determines the most suitable
+execution backend for a given ATerm expression.
+
+    - Numba ( canonical )
+
+The Numba backend is special in that the dispatcher will then feed
+*the same aterm* down it is matching on, into Numba code generator to
+actually build the kernel to execute.
+
+The rest of the backends may requires some aterm munging to get
+them into a form that is executable. I.e. casting into NumPy ( if
+possible ), converting to a Numexpr expression, etc.
+
+"""
 from functools import wraps
 from threading import local
 from thread import allocate_lock
 from blaze.expr.paterm import matches
+from blaze.error import NoDispatch
 
 from ctypes import CFUNCTYPE
 
@@ -9,14 +26,9 @@ from ctypes import CFUNCTYPE
 # Globals
 #------------------------------------------------------------------------
 
+# Make sure that this isn't a moving target!
 _dispatch = local()
 runtime_frozen = allocate_lock()
-
-class NoDispatch(Exception):
-    def __init__(self, aterm):
-        self.aterm = aterm
-    def __str__(self):
-        return "No implementation for '%r'" % self.aterm
 
 # WARNING, this is mutable
 class Dispatcher(object):
