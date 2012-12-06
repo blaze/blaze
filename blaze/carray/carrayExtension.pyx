@@ -256,8 +256,8 @@ cdef public class chunk [type chunktype, object chunk]:
 
     # To save space, keep these variables under a minimum
     cdef char typekind, isconstant
-    cdef int atomsize, itemsize, blocksize
-    cdef int nbytes, cbytes, cdbytes
+    cdef public int atomsize, itemsize, blocksize
+    cdef public int nbytes, cbytes, cdbytes
     cdef int true_count
     cdef char *data
     cdef object atom, constant, dobject
@@ -770,7 +770,7 @@ cdef public class carray [type carraytype, object carray]:
 
     """
 
-    cdef int itemsize, atomsize
+    cdef int atomsize
     cdef int _chunksize, _chunklen, leftover
     cdef int nrowsinbuf, _row
     cdef int sss_mode, wheretrue_mode, where_mode
@@ -792,6 +792,7 @@ cdef public class carray [type carraytype, object carray]:
     cdef ndarray blockcache
     cdef char *datacache
 
+    cdef public int itemsize
     cdef public object chunks
 
     # -- Begin Stephen Hacks --
@@ -803,6 +804,7 @@ cdef public class carray [type carraytype, object carray]:
 
     property nchunks:
         def __get__(self):
+            # TODO: do we need to handle the last chunk specially?
             return cython.cdiv(self._nbytes, <npy_intp>self._chunksize)
 
     property partitions:
@@ -814,6 +816,10 @@ cdef public class carray [type carraytype, object carray]:
             return [(i*chunklen,(i+1)*chunklen) for i in xrange(nchunks)]
 
     # -- End Stephen Hacks --
+
+    property leftover_array:
+        def __get__(self):
+            return self.lastchunkarr
 
     property attrs:
         "The attribute accessor."

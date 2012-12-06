@@ -39,7 +39,7 @@ class CArraySource(ByteProvider):
             self.ca = carray.carray(ca)
 
     def read_desc(self):
-        return DataDescriptor('carray_dd', self.ca.nbytes)
+        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca)
 
     @property
     def nchunks(self):

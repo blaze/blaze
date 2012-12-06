@@ -1,3 +1,5 @@
+import numpy as np
+
 from blaze.expr import visitor
 from blaze.engine import executors
 
@@ -14,7 +16,16 @@ class ExecutorDispatcher(visitor.BasicGraphVisitor):
         self.executors = executors
 
     def Executor(self, node):
-        backend, executor_id = node.annotation.meta
+        """
+        Executor(op1, op2, ..., opN, lhs_op?){'backend', executor_id, has_lhs}
+        """
+        backend, executor_id, has_lhs = node.annotation.meta
         executor = self.executors[executor_id]
         operands = self.visitchildren(node)
-        executors.execute(executor, operands)
+        if has_lhs:
+            lhs_op = operands.pop()
+        else:
+            # FIXME: !
+            raise NotImplementedError
+
+        executors.execute(executor, operands, lhs_op)

@@ -69,7 +69,7 @@ class DataDescriptor(object):
 # Python Reference Implementations
 #------------------------------------------------------------------------
 
-class Buffer(DataDescriptor):
+class Buffer(object):
     """ Describes a region of memory. Implements the memoryview interface.
     """
     desctype = "buffer"
@@ -106,3 +106,43 @@ class Stream(DataDescriptor):
 
     def move(self, dest, src, nbytes):
         pass
+
+
+#------------------------------------------------------------------------
+# Data descriptor implementations
+#------------------------------------------------------------------------
+
+class Chunk(object):
+
+    pointer  = Int     # Data pointer to first element, Py_uintptr_t
+    shape    = Tuple   # Numpy-style shape tuple
+    strides  = Tuple   # Strides of the chunk
+    itemsize = Int     # dtype itemsize
+    readonly = Bool(False)
+
+    def __init__(self, pointer, shape, strides, itemsize):
+        super(Chunk, self).__init__()
+        self.pointer = pointer
+        self.shape = shape
+        self.strides = strides
+        self.itemsize = itemsize
+
+class CArrayDataDescriptor(DataDescriptor):
+
+    def __init__(self, id, nbytes, carray):
+        super(CArrayDataDescriptor, self).__init__(id, nbytes)
+        self.carray = carray
+        self.itemsize = carray.itemsize
+
+    def build_chunk(self, pointer, length):
+        return Chunk(pointer, (length,), (self.itemsize,), self.itemsize)
+
+    def asbuflist(self, copy=False):
+        # TODO: incorporate shape in the chunks
+        for chunk in self.carray.chunks:
+            yield self.build_chunk(chunk.pointer, chunk.nbytes / self.itemsize)
+
+        leftover_array = self.carray.leftover_array
+        if leftover_array is not None:
+            yield self.build_chunk(leftover_array.ctypes.data,
+                                   leftover_array.shape[0])
