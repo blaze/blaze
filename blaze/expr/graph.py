@@ -52,7 +52,7 @@ class UnknownExpression(Exception):
     def __str__(self):
         return 'Unknown object in expression: %r' % (self.obj,)
 
-class DeferredDatashape(Exception):
+class NotSimple(Exception):
     def __str__(self):
         return 'Datashape deferred until eval()'
 
@@ -96,20 +96,6 @@ def all_simple(operands):
     """ Determine if all the operands are simple numeric types """
     simple_types = set([IntNode, FloatNode])
     return all(type(op) in simple_types for op in operands)
-
-def all_numpy_compat(operands):
-    all_arrays = all(isinstance(op, ArrayNode)  for op in operands)
-
-    if not all_arrays:
-        return False
-    else:
-        # Stupid way of doing this but it works, check to see if the
-        # datashape types are numpy compatible by trying to convert
-        # them all.
-        try:
-            return [coretypes.to_numpy(o.datashape) for o in operands]
-        except coretypes.NotNumpyCompatible:
-            return False
 
 #------------------------------------------------------------------------
 # Blaze Typesystem
@@ -355,10 +341,6 @@ class ArrayNode(ExpressionNode):
     def size(self):
         pass
 
-    @property
-    def dtype(self):
-        pass
-
     def __len__(self):
         # TODO: needs to query datashape
         pass
@@ -413,6 +395,9 @@ class ArrayNode(ExpressionNode):
     def tostring(self, *args, **kw):
         pass
 
+    def simple_type(self):
+        return self._datashape
+
 #------------------------------------------------------------------------
 # Application
 #------------------------------------------------------------------------
@@ -434,7 +419,11 @@ class App(ExpressionNode):
     def __init__(self, operator):
         self.operator = operator
         self.children = [operator]
-        self.datashape = operator.datashape
+
+    def simple_type(self):
+        # If the operator is a simple type return then the App of
+        # it is also has simple_type, or it raises NotSimple.
+        return self.operator.simple_type()
 
     @property
     def dom(self):
@@ -549,8 +538,7 @@ class Op(ExpressionNode):
         """
         return self._opaque or (not hasattr(self, 'signature'))
 
-    @property
-    def datashape(self):
+    def simple_type(self):
         """ If possible determine the datashape before we even
         hit eval(). This is possible only for simple types.
 
@@ -562,19 +550,11 @@ class Op(ExpressionNode):
             X, 2, int32
 
         """
-        # More complex logic for later...
-        #if all_simple(self.operands) and self.is_arithmetic:
-            #return coretypes.promote(*self.operands)
-        #elif all_numpy_compat(self.operands):
-            #return coretypes.promote(*self.operands)
-        #else:
-            #return dynamic
-
-        # stop gap measure for now
-        try:
+        # Get the the simple types for each of the operands.
+        if self.is_arithmetic:
             return coretypes.promote(*self.operands)
-        except coretypes.NotNumpyCompatible:
-            return dynamic
+        else:
+            assert NotSimple()
 
 #------------------------------------------------------------------------
 # Functions
@@ -617,7 +597,9 @@ class Literal(ExpressionNode):
         assert isinstance(val, self.vtype)
         self.val = val
         self.children = []
-        self.datashape = coretypes.from_python_scalar(val)
+
+    def simple_type(self):
+        return coretypes.from_python_scalar(self.val)
 
     @property
     def name(self):

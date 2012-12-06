@@ -14,37 +14,22 @@ from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString
 from blaze.expr.visitor import MroVisitor
 
 #------------------------------------------------------------------------
-# Toy Kernels
-#------------------------------------------------------------------------
-
-def add_scalars(a,b,o):
-    res = np.empty(1, o)
-    np.add(a,b,res)
-    return res
-
-def add_incore(dd_a, ds_a, dd_b, ds_b, ds_o):
-    res = np.empty(ds_o)
-    np.add(ds_a.getbuffer(), ds_b.getbuffer(), res)
-    return res
-
-def add_outcore(dd_a, ds_a, dd_b, ds_b, ds_o, chunks):
-    res = np.empty(ds_o) # may be a scalar
-
-    for ca_start, ca_end, cb_start, cb_end in chunks:
-        np.add(
-            ds_a.getchunk(ca_start, ca_end),
-            ds_b.getchunk(cb_start, cb_end),
-        res)
-
-    return res
-
-#------------------------------------------------------------------------
 # Plans
 #------------------------------------------------------------------------
 
+# Annotate with simple_type() which will pull the simple type of
+# the App, Op, or Literal node before we even hit eval(). This is
+# a stop gap measure because right we're protoyping this without
+# having the types annotated on the graph that we're using for
+# Numba code generation. It's still probably a good idea to have
+# this knowledge available if we have it though!
+
 def annotation(graph, *metadata):
     metadata = (id(graph),) + metadata
-    annotation = AAnnotation(AString(str(graph.datashape)), metadata)
+    # was originally .datashape but this is a reserved attribute
+    # so moved to a new simple_type() method that wraps around
+    # promote()
+    annotation = AAnnotation(AString(str(graph.simple_type())), metadata)
     return annotation
 
 class BlazeVisitor(MroVisitor):

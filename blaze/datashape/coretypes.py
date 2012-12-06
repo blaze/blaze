@@ -10,6 +10,15 @@ from struct import calcsize
 from numbers import Integral
 from collections import Mapping, Sequence
 
+from blaze.error import NotNumpyCompatible
+
+
+try:
+    from numba.minivect import minitypes
+    have_minivect = True
+except ImportError:
+    have_minivect = False
+
 #------------------------------------------------------------------------
 # Type Metaclass
 #------------------------------------------------------------------------
@@ -128,16 +137,16 @@ class DataShape(object):
     composite = False
     name = False
 
-    def __init__(self, operands=None, name=None):
+    def __init__(self, parameters=None, name=None):
 
-        if type(operands) is DataShape:
-            self.operands = operands
+        if type(parameters) is DataShape:
+            self.paramaeters = parameters
 
-        elif len(operands) > 0:
-            self.operands = tuple(flatten(operands))
+        elif len(parameters) > 0:
+            self.parameters = tuple(flatten(parameters))
             self.composite = True
         else:
-            self.operands = tuple()
+            self.parameters = tuple()
             self.composite = False
 
         if name:
@@ -145,7 +154,7 @@ class DataShape(object):
             self.__metaclass__._registry[name] = self
 
     def __getitem__(self, index):
-        return self.operands[index]
+        return self.parameters[index]
 
     # TODO these are kind of hackish, remove
     def __rmul__(self, other):
@@ -162,7 +171,7 @@ class DataShape(object):
         if self.name:
             return self.name
         else:
-            return ', '.join(map(str, self.operands))
+            return ', '.join(map(str, self.parameters))
 
     def _equal(self, other):
         """ Structural equality """
@@ -245,11 +254,15 @@ class CType(DataShape):
         """
         return dtype(self.name).char
 
-
     def to_dtype(self):
         """
         To Numpy dtype.
         """
+        # special cases because of NumPy weirdness
+        # >>> dtype('i')
+        # dtype('int32')
+        # >>> dtype('int')
+        # dtype('int64')
         if self.name == "int":
             return dtype("i")
         if self.name == "float":
@@ -302,7 +315,6 @@ class Fixed(Atom):
         assert isinstance(i, Integral)
         self.val = i
         self.parameters = [self.val]
-        self.operands = [self.val]
 
     def __eq__(self, other):
         if type(other) is Fixed:
@@ -491,25 +503,27 @@ class Record(DataShape, Mapping):
 
 def product(A, B):
     if A.composite and B.composite:
-        f = A.operands
-        g = B.operands
+        f = A.parameters
+        g = B.parameters
 
     elif A.composite:
-        f = A.operands
+        f = A.parameters
         g = (B,)
 
     elif B.composite:
         f = (A,)
-        g = B.operands
+        g = B.parameters
 
     else:
         f = (A,)
         g = (B,)
 
-    return DataShape(operands=(f+g))
+    return DataShape(parameters=(f+g))
 
 def from_python_scalar(scalar):
-    "Return a ctype for a python scalar"
+    """
+    Return a datashape ctype for a python scalar.
+    """
     if isinstance(scalar, int):
         return int_
     elif isinstance(scalar, float):
@@ -524,12 +538,6 @@ def from_python_scalar(scalar):
         return datetime64
     else:
         return pyobj
-
-def to_dtype(ds):
-    # This is probably wrong...
-    if isinstance(ds, CType):
-        return ds.to_dtype()
-    return ds.operands[-1].to_dtype()
 
 #------------------------------------------------------------------------
 # Unit Types
@@ -605,11 +613,84 @@ Type.register('?', Dynamic)
 Type.register('top', top)
 
 #------------------------------------------------------------------------
+# Extraction
+#------------------------------------------------------------------------
+
+#  Dimensions
+#      |
+#  ----------
+#  1, 2, 3, 4,  int32
+#               -----
+#                 |
+#              Measure
+
+def extract_dims(ds):
+    """ Discard measure information and just return the
+    dimensions
+    """
+    if isinstance(ds, CType):
+        raise Exception("No Dimensions")
+    return ds.parameters[0:-2]
+
+def extract_measure(ds):
+    """ Discard shape information and just return the measure
+    """
+    if isinstance(ds, CType):
+        return ds
+    return ds.parameters[-1]
+
+#------------------------------------------------------------------------
+# Minivect Compatibility
+#------------------------------------------------------------------------
+
+def to_minitype(ds):
+    # To minitype through NumPy. Discards dimension information.
+    return minitypes.map_dtype(to_numpy(extract_measure(ds)))
+
+def to_minivect(ds):
+    raise NotImplementedError
+    #return (shape, minitype)
+
+#------------------------------------------------------------------------
 # NumPy Compatibility
 #------------------------------------------------------------------------
 
-class NotNumpyCompatible(Exception):
-    pass
+def to_dtype(ds):
+    """ Throw away the shape information and just return the
+    measure as NumPy dtype instance."""
+    return to_numpy(extract_measure(ds))
+
+def promote(*operands):
+    """
+    Take an arbitrary number of graph nodes and produce the promoted
+    dtype by discarding all shape information and just looking at the
+    measures.
+
+    ::
+
+        5, 5,  | int   |
+        2, 5,  | int   |
+        1, 3,  | float |
+
+    >>> promote(IntNode(1), Op(IntNode(2))
+    int
+    >>> promote(FloatNode(1), Op(IntNode(2))
+    float
+    """
+
+    # Looks something like this...
+
+    # (ArrayNode, IntNode...) -> (dshape('2, int', dshape('int'))
+    # (dshape('2, int', dshape('int')) -> (dshape('int', dshape('int'))
+    # (dshape('2, int', dshape('int')) -> (dtype('int', dtype('int'))
+
+    types    = (op.simple_type() for op in operands)
+    measures = (extract_measure(t) for t in types)
+    dtypes   = (to_numpy(m) for m in measures)
+
+    promoted = reduce(np.promote_types, dtypes)
+    datashape = CType.from_dtype(promoted)
+    return datashape
 
 def to_numpy(ds):
     """
@@ -620,6 +701,9 @@ def to_numpy(ds):
     (5,5), dtype('int32')
     """
 
+    if isinstance(ds, CType):
+        return ds.to_dtype()
+
     shape = tuple()
     dtype = None
 
@@ -627,8 +711,10 @@ def to_numpy(ds):
     for dim in ds:
         if isinstance(dim, (Fixed, Integer)):
             shape += (dim,)
-        if isinstance(dim, CType):
+        elif isinstance(dim, CType):
             dtype = dim.to_dtype()
+        else:
+            raise NotNumpyCompatible()
 
     if len(shape) < 0 or dtype == None:
         raise NotNumpyCompatible()
@@ -642,16 +728,16 @@ def from_numpy(shape, dt):
     >>> from_numpy((5,5), dtype('int32'))
     dshape('5, 5, int32')
     """
-    dimensions = map(Fixed, shape)
+    dt = dtype(dt)
+
+    if shape == ():
+        dimensions = []
+    else:
+        dimensions = map(Fixed, shape)
+
     measure = CType.from_dtype(dt)
 
     return reduce(product, dimensions + [measure])
-
-def table_like(ds):
-    return type(ds[-1]) is Record
-
-def array_like(ds):
-    return not table_like(ds)
 
 #------------------------------------------------------------------------
 # Printing
@@ -670,20 +756,6 @@ def expr_string(spine, const_args, outer=None):
 # Argument Munging
 #------------------------------------------------------------------------
 
-def promote(*operands):
-    """
-    Compute the promoted datashape, uses NumPy...
-
-    >>> promote(IntNode(1), Op(IntNode(2))
-    int
-    >>> promote(FloatNode(1), Op(IntNode(2))
-    float
-    """
-    dtypes = [to_dtype(op.datashape) for op in operands]
-    result_dtype = reduce(np.promote_types, dtypes)
-    datashape = CType.from_dtype(result_dtype)
-    return datashape
-
 def shape_coerce(ob):
     if type(ob) is int:
         return Integer(ob)
@@ -697,3 +769,10 @@ def flatten(it):
                 yield b
         else:
             yield a
+
+
+def table_like(ds):
+    return type(ds[-1]) is Record
+
+def array_like(ds):
+    return not table_like(ds)

@@ -24,7 +24,7 @@ class DatashapeSyntaxError(Exception):
     """
     Makes datashape parse errors look like Python SyntaxError.
     """
-    def __init__(self, lineno, col_offset, filename, text, msg=None):
+    def __init__(self, filename, lineno, col_offset, text, msg=None):
         self.lineno     = lineno
         self.col_offset = col_offset
         self.filename   = filename
@@ -63,7 +63,7 @@ class Visitor(object):
     def error_ast(self, ast_node):
         if self.source:
             line = self.source.split('\n')[ast_node.lineno - 1]
-            return DatashapeSyntaxError(ast_node.lineno, ast_node.col_offset, '', line)
+            return DatashapeSyntaxError('<stdin>', ast_node.lineno, ast_node.col_offset, line)
         else:
             raise SyntaxError()
 
@@ -160,8 +160,8 @@ def parse(expr):
     expr_translator = Translate(expr)
     try:
         past = ast.parse(expr, '<string>', mode='eval')
-    except SyntaxError:
-        raise SyntaxError("Invalid datashape %s" % str(expr))
+    except SyntaxError as e:
+        raise DatashapeSyntaxError(*e.args[1])
     return expr_translator.visit(past)
 
 def load(fname, modname=None):

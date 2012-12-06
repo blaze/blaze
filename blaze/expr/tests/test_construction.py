@@ -7,7 +7,7 @@ from blaze.table import NDArray, NDTable
 
 from blaze.datashape.coretypes import float64, dynamic
 from blaze.expr.graph import IntNode, FloatNode, App, StringNode,\
-    DeferredDatashape
+    NotSimple
 
 from unittest import skip
 from nose.tools import assert_raises
@@ -103,19 +103,27 @@ def test_scalars():
     if DEBUG:
         dump(x, filename='scalars')
 
+#------------------------------------------------------------------------
+# Simple Types
+#------------------------------------------------------------------------
+
+# Check that at least for simple types we can pull simple numpy
+# dtypes out of the expression without any complicated logic
+# needed. Just np.promote_types all the way down.
+
 def test_op_dtype():
     a = IntNode(1)
     b = IntNode(1)
 
     x = (a + b)
-    x.datashape == dshape('int')
+    x.simple_type() == dshape('int')
 
 def test_op_dtype2():
     a = IntNode(1)
     b = FloatNode(1.)
 
     x = (a + b)
-    x.datashape == dshape('float')
+    x.simple_type() == dshape('float')
 
 def test_op_dtype3():
     a = NDTable([1], dshape='1, int')
@@ -123,7 +131,26 @@ def test_op_dtype3():
 
     x = (a + b)
 
-    x.datashape == dshape('int')
+    x.simple_type() == dshape('int')
+
+def test_op_dtype4():
+    a = NDTable([1], dshape='1, int')
+    b = NDTable([2], dshape='1, int')
+
+    x = (a + b)
+
+    x.simple_type() == dshape('int')
+
+def test_op_dtype5():
+    a = NDTable([1], dshape='x, int')
+    b = NDTable([2], dshape='1, int')
+
+    x = (a + b)
+
+    #with assert_raises(NotSimple):
+    x.simple_type()
+
+#------------------------------------------------------------------------
 
 @skip
 def test_preserve_types():

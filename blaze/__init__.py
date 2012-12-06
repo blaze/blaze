@@ -20,4 +20,8 @@ from datashape.shorthand import *
 # Record class declarations
 from datashape.record import RecordDecl, derived
 
+# The compatability wrappers
+from datashape.coretypes import to_numpy, from_numpy
+
+# Errors
 from blaze.error import *
