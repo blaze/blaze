@@ -79,7 +79,7 @@ class Pow(Op):
     nilpotent    = False
     sideffectful = False
 
-    is_arithmetic = True
+    is_math = True
 
 class Transpose(Op):
     # -----------------------
@@ -95,8 +95,6 @@ class Transpose(Op):
     nilpotent    = True
     sideffectful = False
 
-    is_arithmetic = True
-
 class Abs(Op):
     # -----------------------
     arity = 1
@@ -111,4 +109,4 @@ class Abs(Op):
     nilpotent    = False
     sideffectful = False
 
-    is_arithmetic = True
+    is_math = True
