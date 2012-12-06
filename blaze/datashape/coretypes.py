@@ -686,7 +686,7 @@ def promote(*operands):
     # (dshape('2, int', dshape('int')) -> (dshape('int', dshape('int'))
     # (dshape('2, int', dshape('int')) -> (dtype('int', dtype('int'))
 
-    types    = (op.simple_type() for op in operands)
+    types    = (op.simple_type() for op in operands if op is not None)
     measures = (extract_measure(t) for t in types)
     dtypes   = (to_numpy(m) for m in measures)
 

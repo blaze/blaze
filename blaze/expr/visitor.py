@@ -3,7 +3,7 @@ Graph visitors.
 """
 
 class NoVisitor(Exception):
-    def __init__(self, args):
+    def __init__(self, *args):
         self.args = args
     def __str__(self):
         return 'No transformer for Node: %s' % repr(self.args)

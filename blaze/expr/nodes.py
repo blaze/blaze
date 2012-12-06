@@ -16,6 +16,12 @@ class Node(object):
     def __init__(self, children):
         self.children = children
 
+    def eval(self):
+        "Evaluates the expression graph"
+        from blaze.engine import pipeline
+        p = pipeline.Pipeline()
+        return p.execute(self)
+
     def __iter__(self):
         """
         Walk the graph, left to right
@@ -25,6 +31,8 @@ class Node(object):
                 yield a
                 for b in iter(a):
                     yield b
+            elif a is None:
+                pass
             else:
                 raise TypeError('Invalid children')
 

@@ -1,9 +1,12 @@
 cimport cpython
-cimport libc.stdlib
+from libc.stdlib cimport malloc, free
 cimport numpy as cnp
 from cpython cimport PyObject, Py_INCREF
 
 import numpy as np
+
+cdef extern from "Python.h":
+    ctypedef unsigned int Py_uintptr_t
 
 cdef extern from "numpy/arrayobject.h":
     object PyArray_NewFromDescr(
@@ -55,12 +58,6 @@ cdef class ElementwiseLLVMExecutor(Executor):
 
         self.lhs_array = build_fake_array(result_dtype)
 
-    cdef allocate_empty_lhs(self, size_t size):
-        cdef size_t itemsize = self.result_dtype.itemsize
-        self.lhs_data = libc.stdlib.malloc(itemsize * size)
-        if self.lhs_data == NULL:
-            raise MemoryError()
-
     cdef execute(self, void **data_pointers, void *out, size_t size):
         """
         Execute a kernel over the data
@@ -69,28 +66,61 @@ cdef class ElementwiseLLVMExecutor(Executor):
         """
         cdef int i
         cdef size_t itemsize
+        cdef cnp.ndarray op
 
         for i, operand in enumerate(self.operands):
-            (<cnp.ndarray> self.operands[i]).data = <char *> data_pointers[i]
+            op = self.operands[i]
+            op.data = <char *> data_pointers[i]
+            op.shape[0] = size
 
         if out == NULL:
-            if self.lhs_data == NULL:
-                self.allocate_empty_lhs(size)
-            out = self.lhs_data
+            raise NotImplementedError
+            #if self.lhs_data == NULL:
+            #    self.allocate_empty_lhs(size)
+            #out = self.lhs_data
 
-        (<cnp.ndarray> self.lhs_array).data = <char *> out
+        op = self.lhs_array
+        op.data = <char *> out
+        op.shape[0] = size
 
+        #print self.operands
+        #print self.lhs_array
         self.ufunc(*self.operands, out=self.lhs_array)
 
 
-def execution(Executor executor, operands):
-    cdef void **data_pointers = stdlib.malloc(len(operands) * sizeof(void *))
+def execute(Executor executor, operands, out_operand):
+    """
+    TODO: Implement a real algorithm that:
+
+        1) Schedules chunks in a sensible manner
+        2) Intersects differently shaped regions
+        3) Takes into account dimensionalities > 1
+    """
+    cdef int i
+    cdef void **data_pointers
+    cdef void *lhs_data
+
+    operands.append(out_operand)
+    descriptors = [op.data.read_desc() for op in operands]
+
+    nbtyes = descriptors[0].nbytes
+    assert all(desc.nbytes == nbtyes for desc in descriptors)
+
+    data_pointers = <void **> malloc(len(operands) * sizeof(void *))
     if data_pointers == NULL:
         raise MemoryError
 
     try:
-        for operand in operands:
-            operand.data
+        # TODO: assert the chunks have equal sizes
+        for paired_chunks in zip(*[desc.asbuflist() for desc in descriptors]):
+            paired_chunks, lhs_chunk = paired_chunks[:-1], paired_chunks[-1]
+            for i, chunk in enumerate(paired_chunks):
+                print hex(chunk.pointer)
+                data_pointers[i] = <void *> <Py_uintptr_t> chunk.pointer
+
+            print hex(lhs_chunk.pointer)
+            print lhs_chunk.shape[0]
+            lhs_data = <void *> <Py_uintptr_t> lhs_chunk.pointer
+            executor.execute(data_pointers, lhs_data, lhs_chunk.shape[0])
     finally:
         free(data_pointers)
-

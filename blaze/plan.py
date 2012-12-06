@@ -7,8 +7,8 @@ import numpy as np
 
 from collections import namedtuple
 
-from blaze.expr.graph import Literal, OP, APP, VAL
-from blaze.table import Indexable
+#from blaze.expr.graph import Literal, OP, APP, VAL
+#from blaze.table import Indexable
 from blaze.byteproto import CONTIGUOUS, READ
 
 from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString
@@ -45,7 +45,7 @@ class BlazeVisitor(MroVisitor):
 
         if graph.is_arithmetic:
             return AAppl(ATerm('Arithmetic'),
-                         [opname] +  self.visit(graph.children),
+                         [opname] + self.visit(graph.children),
                          annotation=annotation(graph))
         else:
             return AAppl(opname, self.visit(graph.children),
@@ -58,11 +58,38 @@ class BlazeVisitor(MroVisitor):
         self.operands.append(graph)
         return AAppl(ATerm('Array'), [], annotation=annotation(graph))
 
+    def Slice(self, graph):
+        # Slice(start, stop, step){id(graph), 'get'|'set'}
+        array, start, stop, step = graph.operands
+
+        if start:
+            start = self.visit(start)
+        if stop:
+            stop = self.visit(stop)
+        if step:
+            step = self.visit(step)
+
+        return AAppl(
+            ATerm('Slice'),
+            [self.visit(array),
+             start or ATerm('None'),
+             stop or ATerm('None'),
+             step or ATerm('None')],
+            annotation=annotation(graph, graph.op)
+        )
+
+    def IndexNode(self, graph):
+        return AAppl(ATerm('Index'), self.visit(graph.operands),
+                     annotation=annotation(graph, graph.op))
+
+    def Assign(self, graph):
+        return AAppl(ATerm('Assign'), self.visit(graph.operands),
+                     annotation=annotation(graph))
 
 def generate(graph, variables):
-    # The variables come in topologically sorted, so we just
-    # have to preserve that order
+    ## The variables come in topologically sorted, so we just
+    ## have to preserve that order
 
     visitor = BlazeVisitor()
-    result = visitor.visit(graph[-1])
+    result = visitor.visit(graph) #[-1])
     return visitor.operands, result

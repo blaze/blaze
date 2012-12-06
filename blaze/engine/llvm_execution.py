@@ -66,16 +66,27 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         self.ufunc_builder = UFuncBuilder()
         self.executors = executors
 
-    def register(self, graph, result):
+    def register(self, graph, result, lhs=None):
+        if lhs is not None:
+            assert self.nesting_level == 0
+
         if self.nesting_level == 0:
             # Bottom of graph that we can handle
             operands = self.ufunc_builder.operands
             pyast_function = self.ufunc_builder.build_ufunc_ast(result)
+            print getsource(pyast_function)
             py_ufunc = self.ufunc_builder.compile_to_pyfunc(pyast_function)
 
             executor = build_executor(py_ufunc, operands, graph)
             self.executors[id(executor)] = executor
-            annotation = paterm.AAnnotation('numba', [id(executor)])
+
+            if lhs is not None:
+                operands.append(lhs)
+
+            annotation = paterm.AAnnotation(
+                ty=None,
+                annotations=['numba', id(executor), bool(lhs)]
+            )
             appl = paterm.AAppl(paterm.ATerm('Executor'), operands,
                                 annotation=annotation)
             return appl
@@ -85,8 +96,52 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         # Delete this node
         return None
 
+    def match_assignment(self, app):
+        assert self.nesting_level == 0
+
+        lhs, rhs = app.args
+
+        #
+        ### Visit rhs
+        #
+        self.nesting_level += 1
+        self.visit(rhs)
+        rhs_result = self.result
+        self.nesting_level -= 1
+
+        #
+        ### Visit lhs
+        #
+        # TODO: extend paterm.matches
+        is_simple = (lhs.spine.label == 'Slice' and
+                     lhs.args[0].spine.label == 'Array' and
+                     all(v.label == "None" for v in lhs.args[1:]))
+        if is_simple:
+            self.nesting_level += 1
+            lhs = self.visit(lhs)
+            self.nesting_level -= 1
+            self.ufunc_builder.operands.pop() # pop LHS from operands
+        else:
+            # LHS is complicated, let someone else (or ourselves!) execute
+            # it independently
+            # self.nesting_level is 0 at this point, so it will be registered
+            # independently
+            state = self.ufunc_builder.save()
+            lhs = self.visit(lhs)
+            lhs_result = self.result
+            self.ufunc_builder.restore(state)
+
+        #
+        ### Build and return kernel if the rhs was an expression we could handle
+        #
+        if rhs_result:
+            return self.register(app, rhs_result, lhs=lhs)
+        else:
+            app.args = [lhs, rhs]
+            return app
+
     def AAppl(self, app):
-        "Look for unops, binops and reductions we can handle"
+        "Look for unops, binops and reductions and anything else we can handle"
         if paterm.matches('Arithmetic;*', app.spine):
             opname = app.args[0].lower()
             op = self.opname_to_astop.get(opname, None)
@@ -99,6 +154,12 @@ class ATermToAstTranslator(visitor.GraphTranslator):
                 left, right = self.result
                 result = ast.BinOp(left=left, op=op(), right=right)
                 return self.register(app, result)
+        elif paterm.matches('Slice;*', app.spine):
+            array, start, stop, step = app.args
+            if all(paterm.matches("None;*", op) for op in (start, stop, step)):
+                return self.visit(array)
+        elif paterm.matches("Assign;*", app.spine):
+            return self.match_assignment(app)
 
         return self.unhandled(app)
 
