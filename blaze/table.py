@@ -357,6 +357,10 @@ class NDTable(Indexable, ArrayNode):
         self._datashape = dshape
         self._metadata  = NDTable._metaheader + (metadata or [])
 
+        if isinstance(dshape, str):
+            # run it through the parser
+            dshape = _dshape(dshape)
+
         # Resolve the values
         # ------------------
         if isinstance(obj, Space):

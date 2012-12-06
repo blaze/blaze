@@ -158,7 +158,10 @@ class TranslateModule(Translate):
 
 def parse(expr):
     expr_translator = Translate(expr)
-    past = ast.parse(expr, '<string>', mode='eval')
+    try:
+        past = ast.parse(expr, '<string>', mode='eval')
+    except SyntaxError:
+        raise SyntaxError("Invalid datashape %s" % str(expr))
     return expr_translator.visit(past)
 
 def load(fname, modname=None):

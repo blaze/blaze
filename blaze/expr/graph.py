@@ -97,6 +97,20 @@ def all_simple(operands):
     simple_types = set([IntNode, FloatNode])
     return all(type(op) in simple_types for op in operands)
 
+def all_numpy_compat(operands):
+    all_arrays = all(isinstance(op, ArrayNode)  for op in operands)
+
+    if not all_arrays:
+        return False
+    else:
+        # Stupid way of doing this but it works, check to see if the
+        # datashape types are numpy compatible by trying to convert
+        # them all.
+        try:
+            return [coretypes.to_numpy(o.datashape) for o in operands]
+        except coretypes.NotNumpyCompatible:
+            return False
+
 #------------------------------------------------------------------------
 # Blaze Typesystem
 #------------------------------------------------------------------------
@@ -120,10 +134,6 @@ BlazeT = typesystem(unify, top, any, typeof)
 #------------------------------------------------------------------------
 
 def is_homogeneous(it):
-    # type() comparisions are cheap pointer arithmetic on
-    # PyObject->tp_type, isinstance() calls are expensive since
-    # they have travese the whole mro hierarchy
-
     # Checks Python types for arguments, not to be confused with the
     # datashape types and the operator types!
 
@@ -424,7 +434,6 @@ class App(ExpressionNode):
     def __init__(self, operator):
         self.operator = operator
         self.children = [operator]
-
         self.datashape = operator.datashape
 
     @property
@@ -543,11 +552,28 @@ class Op(ExpressionNode):
     @property
     def datashape(self):
         """ If possible determine the datashape before we even
-        hit eval(). This is possible for simple types.
+        hit eval(). This is possible only for simple types.
+
+        Possible::
+
+            2, 2, int32
+
+        Example Not Possible::
+            X, 2, int32
+
         """
-        if all_simple(self.operands) and self.is_arithmetic:
+        # More complex logic for later...
+        #if all_simple(self.operands) and self.is_arithmetic:
+            #return coretypes.promote(*self.operands)
+        #elif all_numpy_compat(self.operands):
+            #return coretypes.promote(*self.operands)
+        #else:
+            #return dynamic
+
+        # stop gap measure for now
+        try:
             return coretypes.promote(*self.operands)
-        else:
+        except coretypes.NotNumpyCompatible:
             return dynamic
 
 #------------------------------------------------------------------------

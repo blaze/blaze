@@ -608,6 +608,9 @@ Type.register('top', top)
 # NumPy Compatibility
 #------------------------------------------------------------------------
 
+class NotNumpyCompatible(Exception):
+    pass
+
 def to_numpy(ds):
     """
     Downcast a datashape object into a Numpy (shape, dtype) tuple if
@@ -620,14 +623,15 @@ def to_numpy(ds):
     shape = tuple()
     dtype = None
 
-    assert isinstance(ds, DataShape)
+    #assert isinstance(ds, DataShape)
     for dim in ds:
-        if isinstance(dim, Integer):
+        if isinstance(dim, (Fixed, Integer)):
             shape += (dim,)
         if isinstance(dim, CType):
-            dtype += (dim,)
+            dtype = dim.to_dtype()
 
-    assert len(shape) > 0 and dtype, "Could not convert"
+    if len(shape) < 0 or dtype == None:
+        raise NotNumpyCompatible()
     return (shape, dtype)
 
 

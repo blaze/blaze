@@ -3,7 +3,7 @@ from blaze import dshape
 from blaze.expr.nodes import Node, traverse
 from blaze.expr.typechecker import InvalidTypes
 from blaze.expr.viz import dump
-from blaze.table import NDTable
+from blaze.table import NDArray, NDTable
 
 from blaze.datashape.coretypes import float64, dynamic
 from blaze.expr.graph import IntNode, FloatNode, App, StringNode,\
@@ -123,7 +123,7 @@ def test_op_dtype3():
 
     x = (a + b)
 
-    x.datashape == dynamic
+    x.datashape == dshape('int')
 
 @skip
 def test_preserve_types():
