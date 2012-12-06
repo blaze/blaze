@@ -1,9 +1,13 @@
 Blaze
 =====
 
+![](https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png)
+
 Blaze is the next-generation of NumPy. It is designed as a foundational
 set of abstractions on which to build out-of-core and distributed
 algorithms over a wide variety of data sources.
+
+![](https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png)
 
 Blaze is a work in progress at the moment. The code is quite a distance
 from feature complete. The code is released in an effort to start a
