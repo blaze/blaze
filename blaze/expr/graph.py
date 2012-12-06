@@ -92,11 +92,6 @@ def typeof(obj):
     else:
         raise UnknownExpression(obj)
 
-def all_simple(operands):
-    """ Determine if all the operands are simple numeric types """
-    simple_types = set([IntNode, FloatNode])
-    return all(type(op) in simple_types for op in operands)
-
 #------------------------------------------------------------------------
 # Blaze Typesystem
 #------------------------------------------------------------------------
@@ -423,7 +418,12 @@ class App(ExpressionNode):
     def simple_type(self):
         # If the operator is a simple type return then the App of
         # it is also has simple_type, or it raises NotSimple.
-        return self.operator.simple_type()
+
+        ty = self.operator.simple_type()
+        if coretypes.is_simple(ty):
+            return ty
+        else:
+            raise NotSimple()
 
     @property
     def dom(self):
@@ -551,10 +551,11 @@ class Op(ExpressionNode):
 
         """
         # Get the the simple types for each of the operands.
-        if self.is_arithmetic:
-            return coretypes.promote(*self.operands)
+        if not all(coretypes.is_simple(
+            op.simple_type()) for op in self.operands):
+            raise NotSimple()
         else:
-            assert NotSimple()
+            return coretypes.promote(*self.operands)
 
 #------------------------------------------------------------------------
 # Functions

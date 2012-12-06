@@ -3,6 +3,12 @@
 from blaze import NDArray, dshape
 from blaze.engine.pipeline import Pipeline
 
+from unittest import skip
+
+# XXX Disabling until adding typeinference.py to Pipeline, this is not
+# solveable in terms of classical numpy promotion.
+
+@skip
 def test_simple_unify():
     A = NDArray([0], dshape('s, t, int'))
     B = NDArray([0], dshape('u, v, int'))

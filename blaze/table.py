@@ -1,3 +1,12 @@
+"""
+The toplevel modules containing the core Blaze datastructures.
+
+    * NDArray
+    * NDTable
+    * Table
+    * Array
+
+"""
 import numpy as np
 from operator import eq
 
@@ -10,7 +19,7 @@ from layouts.scalar import ChunkedL
 from layouts.query import retrieve
 
 from expr.graph import ArrayNode, injest_iterable
-from blaze.expr import metadata as md
+from expr import metadata as md
 
 from sources.canonical import CArraySource, ArraySource
 from printer import generic_str, generic_repr
@@ -507,26 +516,6 @@ class NDTable(Indexable, ArrayNode):
     def from_csv(fname, *params):
         pass
 
-# EClass are closed under operations. Operations on Manifest
-# arrays always return other manifest arrays, operations on
-# delayed arrays always return delayed arrays. Mixed operations
-# may or may not be well-defined.
-
-#     EClass := { Manifest, Delayed }
-#
-#     a: EClass, b: EClass, f : x -> y, x: a  |-  f(x) : y
-#     f : x -> y,  x: Manifest  |-  f(x) : Manifest
-#     f : x -> y,  x: Delayed   |-  f(x) : Delayed
-
-# TBD: Constructor have these closure properties?? Think about
-# this more...
-
-# C: (t0, t1) -> Manifest, A: Delayed, B: Delayed,  |- C(A,B) : Manifest
-# C: (t0, t1) -> Delayed, A: Manifest, B: Manifest, |- C(A,B) : # Delayed
-
-# This is a metadata space transformation that informs the
-# codomain eclass judgement.
-
 def infer_eclass(a,b):
     if (a,b) == (MANIFEST, MANIFEST):
         return MANIFEST
@@ -538,7 +527,7 @@ def infer_eclass(a,b):
         return DELAYED
 
 #------------------------------------------------------------------------
-# Deconstructors
+# Argument Munging
 #------------------------------------------------------------------------
 
 def cast_arguments(obj):

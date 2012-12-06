@@ -147,8 +147,8 @@ def test_op_dtype5():
 
     x = (a + b)
 
-    #with assert_raises(NotSimple):
-    x.simple_type()
+    with assert_raises(NotSimple):
+        x.simple_type()
 
 #------------------------------------------------------------------------
 

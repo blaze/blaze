@@ -637,6 +637,19 @@ def extract_measure(ds):
         return ds
     return ds.parameters[-1]
 
+def is_simple(ds):
+    # Unit Type
+    if not ds.composite:
+        if isinstance(ds, (Fixed, Integer, CType)):
+            return True
+
+    # Composite Type
+    else:
+        for dim in ds:
+            if not isinstance(dim, (Fixed, Integer, CType)):
+                return False
+        return True
+
 #------------------------------------------------------------------------
 # Minivect Compatibility
 #------------------------------------------------------------------------
