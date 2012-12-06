@@ -17,6 +17,10 @@ malloc.
 - Will write a Cython wrapper that should be drop in
   replacable for ``libc.stdlib.malloc``.
 
+- Be able to at least integrate with GPU memory, Siu will
+  probably have more insight on how this shoudl be designed than
+  me.
+
 - Will almost certainly migrate this to C / Cython
 
 """
@@ -229,6 +233,9 @@ def allocate_carray(heap, dtype, chunksize):
     arena, start, new_stop = block
 
     return address, np.frombuffer(arena.block)
+
+def numpy_pointer(numpy_array, ctype=ctypes.c_void_p):
+    return numpy_array.ctypes.data_as(ctype)
 
 #------------------------------------------------------------------------
 # Finalizers
