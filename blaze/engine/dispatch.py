@@ -28,7 +28,7 @@ class ExecutorDispatcher(visitor.BasicGraphVisitor):
             id = node.annotation.meta[0]
             return self.arrays[id.label]
         else:
-            assert  paterm.matches("Executor;*", node.spine)
+            assert  paterm.matches("Executor;*", node.spine), node
 
             backend, executor_id, has_lhs = node.annotation.meta
             executor = self.executors[executor_id.label]

@@ -66,9 +66,12 @@ cdef class ElementwiseLLVMExecutor(Executor):
         """
         cdef int i
         cdef size_t itemsize
+        cdef cnp.ndarray op
 
         for i, operand in enumerate(self.operands):
-            (<cnp.ndarray> self.operands[i]).data = <char *> data_pointers[i]
+            op = self.operands[i]
+            op.data = <char *> data_pointers[i]
+            op.shape[0] = size
 
         if out == NULL:
             raise NotImplementedError
@@ -76,8 +79,12 @@ cdef class ElementwiseLLVMExecutor(Executor):
             #    self.allocate_empty_lhs(size)
             #out = self.lhs_data
 
-        (<cnp.ndarray> self.lhs_array).data = <char *> out
+        op = self.lhs_array
+        op.data = <char *> out
+        op.shape[0] = size
 
+        #print self.operands
+        #print self.lhs_array
         self.ufunc(*self.operands, out=self.lhs_array)
 
 
@@ -108,8 +115,11 @@ def execute(Executor executor, operands, out_operand):
         for paired_chunks in zip(*[desc.asbuflist() for desc in descriptors]):
             paired_chunks, lhs_chunk = paired_chunks[:-1], paired_chunks[-1]
             for i, chunk in enumerate(paired_chunks):
+                print hex(chunk.pointer)
                 data_pointers[i] = <void *> <Py_uintptr_t> chunk.pointer
 
+            print hex(lhs_chunk.pointer)
+            print lhs_chunk.shape[0]
             lhs_data = <void *> <Py_uintptr_t> lhs_chunk.pointer
             executor.execute(data_pointers, lhs_data, lhs_chunk.shape[0])
     finally:

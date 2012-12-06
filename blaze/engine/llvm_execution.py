@@ -74,6 +74,7 @@ class ATermToAstTranslator(visitor.GraphTranslator):
             # Bottom of graph that we can handle
             operands = self.ufunc_builder.operands
             pyast_function = self.ufunc_builder.build_ufunc_ast(result)
+            print getsource(pyast_function)
             py_ufunc = self.ufunc_builder.compile_to_pyfunc(pyast_function)
 
             executor = build_executor(py_ufunc, operands, graph)
@@ -111,24 +112,24 @@ class ATermToAstTranslator(visitor.GraphTranslator):
         #
         ### Visit lhs
         #
-        is_simple = not paterm.matches("Array;*", lhs.spine)
+        # TODO: extend paterm.matches
+        is_simple = (lhs.spine.label == 'Slice' and
+                     lhs.args[0].spine.label == 'Array' and
+                     all(v.label == "None" for v in lhs.args[1:]))
         if is_simple:
-            # register LHS as operand
             self.nesting_level += 1
+            lhs = self.visit(lhs)
+            self.nesting_level -= 1
+            self.ufunc_builder.operands.pop() # pop LHS from operands
         else:
             # LHS is complicated, let someone else (or ourselves!) execute
             # it independently
             # self.nesting_level is 0 at this point, so it will be registered
             # independently
             state = self.ufunc_builder.save()
-
-        lhs = self.visit(lhs)
-        lhs_result = self.result
-
-        if is_simple:
-            self.nesting_level -= 1
-        else:
-            state = self.ufunc_builder.restore(state)
+            lhs = self.visit(lhs)
+            lhs_result = self.result
+            self.ufunc_builder.restore(state)
 
         #
         ### Build and return kernel if the rhs was an expression we could handle

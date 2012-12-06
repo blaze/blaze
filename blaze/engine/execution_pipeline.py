@@ -26,12 +26,6 @@ class ExecutionPipeline(object):
         for substitutor in self.pipeline:
             aterm_graph = substitutor(pipeline_context, aterm_graph)
 
-        # TODO: Match recursively to see whether we handled the entire graph
-        #full_substitution = aterm_graph.matches('Executor;*')
-        #if not full_substitution:
-            # TODO: find and pretty-print faulty sub-expression
-        #    raise blaze.ExecutionError("Unable to execute (sub-)expression")
-
         return pipeline_context['result']
 
 def build_operand_dict(pipeline_context, aterm_graph):

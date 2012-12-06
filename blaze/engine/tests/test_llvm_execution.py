@@ -27,14 +27,15 @@ def test_conversion():
     assert str(result_graph.annotation) == "{numba,%d}" % executor_id
 
 def test_execution():
-    a = NDArray([1, 2, 3, 4], datashape('2, 2, float32'))
-    b = NDArray([5, 6, 7, 8], datashape('2, 2, float32'))
-    c = NDArray([9, 10, 11, 12], datashape('2, 2, float32'))
+    a = NDArray([1, 2, 3, 4], datashape('4, float32'))
+    b = NDArray([5, 6, 7, 8], datashape('4, float32'))
+    c = NDArray([9, 10, 11, 12], datashape('4, float32'))
+    out = NDArray([0, 0, 0, 0], datashape('4, float32'))
 
     graph = a + b * c
-    a[:] = graph
+    out[:] = graph
 
-    print list(a.data.ca)
+    print list(out.data.ca)
 
 if __name__ == '__main__':
 #    test_conversion()
