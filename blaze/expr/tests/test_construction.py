@@ -150,6 +150,22 @@ def test_op_dtype5():
     with assert_raises(NotSimple):
         x.simple_type()
 
+def test_op_dtype6():
+    a = NDTable([1], dshape='x, int')
+    b = NDTable([2], dshape='x, float')
+
+    x = (a + b)
+
+    with assert_raises(NotSimple):
+        x.simple_type()
+
+def test_op_dtype7():
+    a = NDTable([1], dshape='1, 2, int')
+    b = NDTable([2], dshape='2, 3, float')
+
+    x = (a + b)
+    x.simple_type() == dshape('float')
+
 #------------------------------------------------------------------------
 
 @skip
