@@ -2,6 +2,8 @@ import numpy as np
 
 from blaze.expr import visitor
 from blaze.engine import executors
+from blaze.engine import llvm_execution
+
 
 class ExecutorDispatcher(visitor.BasicGraphVisitor):
     """

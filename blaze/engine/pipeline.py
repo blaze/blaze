@@ -95,7 +95,7 @@ def do_convert_to_aterm(context, graph):
     context = dict(context)
 
     operands, plan = generate(
-        context['ops'],
+        graph, #context['ops'],
         context['vars'],
     )
 
@@ -150,6 +150,15 @@ class Pipeline(object):
     def run_pipeline(self, graph):
         octx = self.run_pipeline_context(graph)
         return octx['output']
+
+    def execute(self, graph):
+        "Create an execution plan and evaluate the expression"
+        from blaze.engine import execution_pipeline
+
+        context = self.run_pipeline_context(graph)
+        aterm_graph = context['output']
+        p = execution_pipeline.ExecutionPipeline()
+        p.run_pipeline(context, aterm_graph)
 
 #------------------------------------------------------------------------
 # Graph Manipulation

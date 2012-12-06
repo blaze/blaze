@@ -361,22 +361,47 @@ class ArrayNode(ExpressionNode):
         """ Equivalent to .transpose(), which returns a graph node. """
         return Op('transpose', self)
 
-    # Read Operations
+    # {get,set}item Operations
     # ===============
+
+    def getitem(self, idx, context='get'):
+        if isinstance(idx, slice):
+            result = Slice(context, [self,
+                                     intnode(idx.start),
+                                     intnode(idx.stop),
+                                     intnode(idx.step)])
+        elif isinstance(idx, Integral) or isinstance(idx, np.integer):
+            result = IndexNode(context, [self, idx])
+        else:
+            # TODO: detect other forms
+            ndx = IndexNode(idx)
+            result = Slice(context, [self, ndx])
+
+        return result
 
     def __getitem__(self, idx):
         """ Slicing operations should return graph nodes, while individual
         element access should return bare scalars.
         """
-        if isinstance(idx, slice):
-            ndx = IndexNode((idx.start, idx.stop, idx.step))
-            return Slice('getitem', [self, ndx])
-        elif isinstance(idx, Integral) or isinstance(idx, np.integer):
-            ndx = IndexNode((idx,))
-            return Slice('getitem', [self, ndx])
-        else:
-            ndx = IndexNode(idx)
-            return Slice('getitem', [self, ndx])
+        return self.getitem(idx)
+
+    def __setitem__(self, idx, value):
+        """
+        This first creates a slice node in the expression graph to avoid
+        an unnecessary RHS temporary. Evaluation is then immediate. We need
+        this in order to avoid creating complicated dependence graphs:
+
+            t = a + b
+            a[...] = t
+            result = t.eval()    # 't' refers to original 'a' and 'b'
+                                 # we need to substitute the updated 'a'
+                                 # for the original for this evaluation!
+        """
+        if not isinstance(value, nodes.Node):
+            raise NotImplementedError("setitem with non-blaze rhs")
+        result = self.getitem(idx, context='set')
+        result = Assign('assign', [result, value])
+        result.eval()
 
     # Other non-graph methods
     # ========================
@@ -392,6 +417,14 @@ class ArrayNode(ExpressionNode):
 
     def simple_type(self):
         return self._datashape
+
+def intnode(value_or_graph):
+    if value_or_graph is None:
+        return None
+    elif isinstance(value_or_graph, nodes.Node):
+        return value_or_graph
+    else:
+        return IntNode(value_or_graph)
 
 #------------------------------------------------------------------------
 # Application
@@ -555,7 +588,7 @@ class Op(ExpressionNode):
         """
         # Get the the simple types for each of the operands.
         if not all(coretypes.is_simple(
-            op.simple_type()) for op in self.operands):
+            op.simple_type()) for op in self.operands if op is not None):
             raise NotSimple()
         else:
             return coretypes.promote(*self.operands)
@@ -658,8 +691,8 @@ class FloatNode(Literal):
 # Slices and Indexes
 #------------------------------------------------------------------------
 
-class IndexNode(Literal):
-    arity  = 4 # <INDEXABLE>, <INDEXER>
+class IndexNode(Op):
+    arity  = 2 # <INDEXABLE>, <INDEXER>
     vtype = tuple
     kind  = OP
 
@@ -670,4 +703,8 @@ class IndexNode(Literal):
 class Slice(Op):
     arity  = 4 # <INDEXABLE>, start, stop, step
     opaque = True
+    kind   = OP
+
+class Assign(Op):
+    arity  = 2
     kind   = OP
