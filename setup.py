@@ -186,6 +186,10 @@ extensions = [
        "blaze.engine.executors", ["blaze/engine/executors.pyx"],
        include_dirs = [numpy_path],
    ),
+   Extension(
+       "blaze.cutils", ["blaze/cutils.pyx"],
+       include_dirs = [numpy_path],
+   ),
 ]
 
 #------------------------------------------------------------------------

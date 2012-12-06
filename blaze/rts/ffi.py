@@ -62,7 +62,7 @@ def install(matcher, fn, cost):
 
     # This is the forward facing interface to installing
     # functions, users should never be accessing the dispatcher
-    # directly
+    # directly since it's mutable and ugly...
     with runtime_frozen:
         _dispatch.dispatcher.install(matcher, fn, cost)
 

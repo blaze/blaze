@@ -22,10 +22,10 @@ def test_install():
 
     # Anywhere an add is term is found replace with the simple NumPy
     # dispatch.
-    install('Add(a,b);*',nadd,costfn)
+    install('FizzPop(a,b);*',nadd,costfn)
 
-    expr = AAppl(ATerm('Add'), [AInt(1), AInt(2)])
+    expr = AAppl(ATerm('FizzPop'), [AInt(1), AInt(2)])
     fn, cost = _dispatch.dispatcher.dispatch(expr)
 
-    assert fn == nadd
+    assert fn.fn == nadd.fn
     assert cost == 0
