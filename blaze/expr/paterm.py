@@ -97,7 +97,8 @@ class AAppl(ATermBase):
         spine, args, _ = sep.split(query)
         args = args.split(',')
 
-        assert len(self.args) == len(args), 'Pattern argument mismatch'
+        if len(self.args) != len(args):
+            return False
 
         # success
         if spine.islower() or self.spine.label == spine:

@@ -3,7 +3,6 @@ This defines the DataShape type system.
 """
 
 import numpy as np
-from numpy import dtype
 
 import datetime
 from struct import calcsize
@@ -11,7 +10,6 @@ from numbers import Integral
 from collections import Mapping, Sequence
 
 from blaze.error import NotNumpyCompatible
-
 
 try:
     from numba.minivect import minitypes
@@ -246,13 +244,13 @@ class CType(DataShape):
 
     def size(self):
         # TODO: no cheating!
-        return dtype(self.name).itemsize
+        return np.dtype(self.name).itemsize
 
     def to_struct(self):
         """
         To struct code.
         """
-        return dtype(self.name).char
+        return np.dtype(self.name).char
 
     def to_dtype(self):
         """
@@ -264,10 +262,10 @@ class CType(DataShape):
         # >>> dtype('int')
         # dtype('int64')
         if self.name == "int":
-            return dtype("i")
+            return np.dtype("i")
         if self.name == "float":
-            return dtype("f")
-        return dtype(self.name)
+            return np.dtype("f")
+        return np.dtype(self.name)
 
     def __str__(self):
         return str(self.parameters[0])
@@ -728,7 +726,7 @@ def from_numpy(shape, dt):
     >>> from_numpy((5,5), dtype('int32'))
     dshape('5, 5, int32')
     """
-    dt = dtype(dt)
+    dt = np.dtype(dt)
 
     if shape == ():
         dimensions = []
