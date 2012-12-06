@@ -5,8 +5,6 @@ Defines the Pipeline class which provides a series of transformation
 passes on the graph which result in code generation.
 """
 
-from llvm.core import Module
-
 from functools import partial
 from itertools import ifilter
 from collections import Counter
@@ -25,8 +23,20 @@ VAL = 2
 # Pipeline Combinators
 #------------------------------------------------------------------------
 
+# vacuously true condition
+Id = lambda x:x
+
 def compose(f, g):
     return lambda *x: g(*f(*x))
+
+# condition composition combinator <>, is the ``id`` function if pre and
+# post condition holds, otherwise terminates is a ``const`` that returns
+# the error and misbehaving condition.
+
+# pipeline = (post ∘ stl ∘ pre) <> (post ∘ st2 ∘ pre) <> ...
+def compose_constrained(f, g, pre, post):
+    """Compose with pre and post condition checks """
+    return lambda *x: post(*g(*f(*pre(*x))))
 
 #------------------------------------------------------------------------
 # Pre/Post Conditions
@@ -56,7 +66,6 @@ def compose(f, g):
 #                     |
 #   precondition      |
 #          |          |
-#          |          |
 # +--------|----------|--+
 # |          pass 3      |
 # +--------|----------|--+
@@ -66,6 +75,10 @@ def compose(f, g):
 #          |          |
 #          +----------+-----> Output
 
+
+# TODO: Probably not necessary as Mark points out we can just do
+# innermost evaluation... for one of the 27 backends we considered this
+# probably seemed like a good idea though. :)
 def do_flow(context, graph):
     context = dict(context)
 
@@ -84,7 +97,6 @@ def do_environment(context, graph):
     context = dict(context)
 
     # ----------------------
-    context['llvmmodule'] = Module.new('blaze')
     context['hints'] = {}
     # ----------------------
 
@@ -109,10 +121,6 @@ def do_convert_to_aterm(context, graph):
 #------------------------------------------------------------------------
 # Pipeline
 #------------------------------------------------------------------------
-
-# TODO: there is no reason this should be a class, and classes
-# just complicate things and encourage nasty things like
-# multiple inheritance...
 
 class Pipeline(object):
     """
