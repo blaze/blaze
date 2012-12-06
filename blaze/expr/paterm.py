@@ -39,6 +39,47 @@ Examples::
     >>> AAppl(ATerm('Mul'),[AAppl(ATerm('Add'),[AInt(1),AInt(2)]),ATerm('x')])
     Mul(Add(1,2), x)
 
+
+Pattern Matching::
+
+    >>> matches('foo;*', ATerm('foo'))
+    True
+
+    >>> matches('1;*', AInt('1'))
+    True
+
+    >>> matches('1;*', AInt('2'))
+    True
+
+Value Capturing::
+
+Pattern matching can als also be used to capture free variables
+in the matched expressions. The result is also "truthy" so it
+will match as a boolean True as well.
+
+    >>> fn = AAppl(ATerm('F'), [ATerm('a')])
+    # Upper case variables are bound terms, lower case variables
+    # are free
+
+    # Fixed spine
+    >>> matches('F(x,y);*', AAppl(ATerm('F'), [ATerm('a'), ATerm('b')]))
+    {'y': b, 'x': a}
+
+    # Pattern match includes spine
+    >>> matches('f(x,y);*', AAppl(ATerm('F'), [ATerm('a'), ATerm('b')]))
+    {'y': b, 'x': a, 'f': F}
+
+Annotation Matching::
+
+>>> at = ATerm('x', annotation=AAnnotation(AString("foo")))
+>>> matches('*;foo', at)
+True
+
+>>> matches('x;bar', at)
+
+
+# TODO: recursive pattern matching
+
 """
 import re
 from functools import partial
@@ -191,6 +232,12 @@ class AInt(ATermBase):
     def __init__(self, n, **kwargs):
         super(AInt, self).__init__(**kwargs)
         self.n = n
+
+    def _matches(self, value):
+        if value.islower():
+            return True
+        else:
+            return self.n == int(value)
 
     def __str__(self):
         return str(self.n) + self.metastr
