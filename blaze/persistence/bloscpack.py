@@ -2,9 +2,14 @@
 # -*- coding: utf-8 -*-
 # vim :set ft=py:
 
-""" Command line interface to Blosc via python-blosc.
+""" Simple interface for persistence using the Bloscpack format.
 
-* Adapted to persist a list of buffers by Francesc Alted.
+It can store and retrieve a list of data buffers and metadata into a
+file on disk.  The format tries to adhere to the Bloscpack ([1]_)
+specification.  This is currently in-flux, so not recommended for
+production purposes yet.
+
+.. [1] https://github.com/esc/bloscpack
 
 """
 
