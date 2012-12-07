@@ -15,6 +15,7 @@ import numpy as np
 cimport numpy as np
 import cython
 from libc.math cimport sqrt, floor
+from blaze import carray as ca
 
 # Some shortcuts for useful types
 ctypedef np.npy_int npy_int
@@ -90,19 +91,20 @@ def ed(datafile, queryfile, count=None):
     cdef np.ndarray[npy_float64, ndim=1] T    # arrays of current data
     cdef np.ndarray[npy_intp, ndim=1] order   # ordering of query by |z(q_i)|
     cdef double bsf             # best-so-far
-    cdef npy_intp loc = 0    # answer: location of the best-so-far match
+    cdef npy_intp loc = 0       # answer: location of the best-so-far match
     cdef npy_intp i, j
     cdef double d
     cdef int m, prevm
-    cdef npy_intp fsize, nelements
+    cdef npy_intp fsize, nelements, eleread
     cdef double mean, std
     cdef double ex, ex2
     cdef double dist = 0
+    cdef object querydata, data
 
     t0 = time()
 
-    fsize = os.path.getsize(queryfile)
-    nelements = fsize // np.dtype('f8').itemsize
+    querydata = ca.carray(rootdir=queryfile)
+    nelements = querydata.size
     if count is None:
         m = nelements
     elif count > nelements:
@@ -112,7 +114,7 @@ def ed(datafile, queryfile, count=None):
 
     # Read the query data from input file and calculate its statistic such as
     # mean, std
-    Q = np.fromfile(queryfile, 'f8', m)
+    Q = querydata[:m]
     mean = Q.mean()
     std = Q.std()
 
@@ -128,12 +130,12 @@ def ed(datafile, queryfile, count=None):
     # modulo (circulation) in distance calculation)
     T = np.empty(2*m, dtype="f8")
 
-    fsize = os.path.getsize(datafile)
-    nelements = fsize // T.dtype.itemsize
-    fp = open(datafile, 'r')
+    data = ca.carray(rootdir=datafile)
+    nelements = data.size
 
     # Bootstrap the process by reading the first m elements
-    T[:m] = np.fromfile(fp, 'f8', m)
+    T[:m] = data[:m]
+    eleread = m
     # Prepare the ex and ex2 values for the inner loop (j) below
     LT = T[:m-1]
     ex = LT.sum()
@@ -149,7 +151,8 @@ def ed(datafile, queryfile, count=None):
             LT = T[:m-1]
             ex = LT.sum()
             ex2 = (LT * LT).sum()
-        T[prevm:prevm+m] = np.fromfile(fp, 'f8', m)
+        T[prevm:prevm+m] = data[eleread:eleread+m]
+        eleread +=m
         for j in range(m):
             # Update the ex and ex2 values
             ex += T[j+m-1]
@@ -174,7 +177,6 @@ def ed(datafile, queryfile, count=None):
         if prevm == m:
             T[:m] = T[m:]
 
-    fp.close()
     dist = sqrt(bsf)
     t2 = time()
 
@@ -237,8 +239,8 @@ def dtw(datafile, queryfile, R, count=None):
 
     t1 = time()
 
-    fsize = os.path.getsize(queryfile)
-    nelements = fsize // np.dtype('f8').itemsize
+    querydata = ca.carray(rootdir=queryfile)
+    nelements = querydata.size
     if count is None:
         m = nelements
     elif count > nelements:
@@ -253,7 +255,7 @@ def dtw(datafile, queryfile, R, count=None):
 
     # Read the query data from input file and calculate its statistic such as
     # mean, std
-    q = np.fromfile(queryfile, 'f8', m)
+    q = querydata[:]
     mean = q.mean()
     std = q.std()
 
@@ -294,20 +296,19 @@ def dtw(datafile, queryfile, R, count=None):
     j = 0          # the starting index of the data in the circular array, t
     ex = ex2 = 0
 
-    fsize = os.path.getsize(datafile)
-    nelements = fsize // t.dtype.itemsize
-    fp = open(datafile, 'r')
+    data = ca.carray(rootdir=datafile)
+    nelements = data.size
     eleread = 0
 
     while not done:
-        # Protection agains queries larger than the input data
+        # Protection against queries larger than the input data
         if eleread + (m - 1) > nelements:
             m = nelements - eleread - 1
 
         # Read first m-1 points
         if it == 0:
-            buffer_[:m-1] = np.fromfile(fp, 'f8', m-1)
-            eleread += m-1  # XXX
+            buffer_[:m-1] = data[:m-1]
+            eleread += m-1
         else:
             buffer_[:m-1] = buffer_[EPOCH-m+1:]
 
@@ -315,7 +316,7 @@ def dtw(datafile, queryfile, R, count=None):
         etoread = EPOCH - (m-1)
         if eleread + etoread > nelements:
             etoread = nelements - eleread
-        buffer_[m-1:etoread+(m-1)] = np.fromfile(fp, 'f8', etoread)
+        buffer_[m-1:etoread+(m-1)] = data[eleread:eleread+etoread]
         eleread += etoread
         ep = etoread + (m-1)
 
@@ -438,7 +439,6 @@ def dtw(datafile, queryfile, R, count=None):
                 it += 1
 
     i = it * (EPOCH-m+1) + ep
-    fp.close()
     dist = sqrt(bsf)
 
     t2 = time()
