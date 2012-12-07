@@ -3,9 +3,9 @@
 #------------------------------------------------------------------------
 
 # Print array functions (imported from NumPy)
-from .arrayprint import (
+from arrayprint import (
     array2string, set_printoptions, get_printoptions)
-from .carrayExtension import (
+from carrayExtension import (
     carray,
     chunk,
     # _cparams as cparams,

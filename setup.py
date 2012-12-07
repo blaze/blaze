@@ -144,7 +144,6 @@ def_macros = [('DEBUG', 0)]
 
 numpy_path = get_numpy_include_dirs()[0]
 
-carray_path = 'blaze.carray'
 blosc_path  = 'blaze/include/blosc/'
 
 
@@ -168,7 +167,8 @@ blosc_depends = [
 ]
 
 extensions = [
-    Extension( carray_path + ".carrayExtension",
+    Extension(
+        "blaze.carray.carrayExtension",
         include_dirs=[
             blosc_path,
             numpy_path,
