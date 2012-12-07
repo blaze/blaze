@@ -4,6 +4,8 @@ from collections import Set, Mapping, Sequence
 from itertools import count
 from datashape.coretypes import Fixed, dynamic
 
+from numpy import searchsorted, lexsort
+
 """
 An index describes how we map the entire "space" of indexer objects to
 the range of storage blocks that comprise the NDArray.

@@ -121,7 +121,6 @@ class Chunk(object):
     readonly = Bool(False)
 
     def __init__(self, pointer, shape, strides, itemsize):
-        super(Chunk, self).__init__()
         self.pointer = pointer
         self.shape = shape
         self.strides = strides

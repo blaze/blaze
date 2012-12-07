@@ -10,6 +10,16 @@ def retrieve(cc, indexer):
     determine what the user passed in to the brackets as an
     indexer.
 
+    Handles the various objects that can be passed into brackets
+    on an Indexable.
+
+        * [1]
+        * [1,2]
+        * [1:10:2]
+        * [(1:10:2, 1:10:2)]
+        * ['foo']
+        * ['foo', 1:10]
+
     Parameters
     ----------
 

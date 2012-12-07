@@ -17,9 +17,13 @@ malloc.
 - Will write a Cython wrapper that should be drop in
   replacable for ``libc.stdlib.malloc``.
 
-- Be able to at least integrate with GPU memory, Siu will
-  probably have more insight on how this shoudl be designed than
-  me.
+- Be able to do zero copy network transfers straight into arena
+  buffers from ZeroMQ and MPI.
+
+- Be able store the data on the GPU while executing Numba GPU kernels.
+  The problem is the same as a "distributed memory" problem over since we
+  have two storage substrates Siu will probably have more insight on how
+  this should be designed.
 
 - Will almost certainly migrate this to C / Cython
 
