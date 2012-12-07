@@ -8,8 +8,9 @@ from .arrayprint import (
 from .carrayExtension import (
     carray,
     chunk,
-    _cparams as cparams,
-    blosc_version, _blosc_set_nthreads as blosc_set_nthreads )
+    # _cparams as cparams,
+    # blosc_version, _blosc_set_nthreads as blosc_set_nthreads
+    )
 #from .toplevel import open
 #from .ctable import ctable
 from .version import __version__
