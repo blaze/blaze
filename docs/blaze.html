@@ -1,0 +1,112 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Requirements of Numba for Blaze &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Memory Layout" href="memory.html" />
+    <link rel="prev" title="Blaze Concept Overview" href="desc.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="desc.html">Blaze Concept Overview</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="memory.html">Memory Layout</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="requirements-of-numba-for-blaze">
+<h1>Requirements of Numba for Blaze<a class="headerlink" href="#requirements-of-numba-for-blaze" title="Permalink to this headline">¶</a></h1>
+<ul>
+<li><p class="first">Irregular Arrays</p>
+<blockquote>
+<div><p>Ability to generate loops around chunked data arrays, where data is
+shuffled in and out of memory through various seeks and calls on
+data descriptor objects. Numpy &amp; Minivect assume array is in memory
+at the time of execution, but the general case of Blaze is that the
+array is either on disk or from a remote source.</p>
+<p>Current Numba pipeline assumes that array objects essentially look like
+existing Numpy arrays but this is not an assumption that holds in Blaze.</p>
+<p>Numba doesn&#8217;t need to support these cases itself ( that&#8217;s what Blaze
+should do ) but at the same time the pipeline should be factorable
+enough that Blaze can use the Numba pipeline for codegen instead
+of rolling another codegen path.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Types</p>
+<blockquote>
+<div><p>Blaze has it&#8217;s own type inference engine what it calls &#8220;unification&#8221;
+for coercing datashape objects together. Numba kernel execution
+ideally shouldn&#8217;t require use of Numpy types.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Agnostic backend for code generation</p>
+<blockquote>
+<div><p>Blaze doesn&#8217;t build AST or Python in the process of building an
+execution plan, it will generate a flexible graph and a collection of
+&#8220;blocks&#8221; of execution that dispatch in serial.</p>
+<p>Basically it amounts to very simple execution... much less
+complex than arbitrary Python code:</p>
+<div class="highlight-python"><pre>store tmp1 call(kernel1 a b)
+store tmp2 call(kernel2 a b)
+store tmp3 call(kernel3 tmp2 tmp2)
+store tmp4 call(kernel4 tmp3 tmp3)
+store result tmp2
+ret result</pre>
+</div>
+<p>Blaze is capable of building up the storage and shuffling of bytes
+around but should invoke Numba kernels so as not to reimplement the
+same technolgoy as Numba.</p>
+</div></blockquote>
+</li>
+</ul>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

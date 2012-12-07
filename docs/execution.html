@@ -1,0 +1,82 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Execution &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Release Notes" href="releases.html" />
+    <link rel="prev" title="Tables" href="table.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="table.html">Tables</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="releases.html">Release Notes</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-blaze.engine.execution">
+<span id="execution"></span><h1>Execution<a class="headerlink" href="#module-blaze.engine.execution" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="blaze.engine.execution.blocked_binary_ufunc">
+<tt class="descclassname">blaze.engine.execution.</tt><tt class="descname">blocked_binary_ufunc</tt><big>(</big><em>ufn</em>, <em>a</em>, <em>b</em>, <em>sink</em><big>)</big><a class="headerlink" href="#ndtable.engine.execution.blocked_binary_ufunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a ufunc over arguments.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.engine.execution.generate">
+<tt class="descclassname">blaze.engine.execution.</tt><tt class="descname">generate</tt><big>(</big><em>pyfn</em>, <em>signature</em><big>)</big><a class="headerlink" href="#ndtable.engine.execution.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a pointer to a ufunc with signature:</p>
+<p>void (*)(void** args, py_ssize_t* dimensions, py_ssize_t* steps, void* data)</p>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Types &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Persistence" href="persistence.html" />
+    <link rel="prev" title="Persistent formats" href="format.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="format.html">Persistent formats</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="persistence.html">Persistence</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="types">
+<h1>Types<a class="headerlink" href="#types" title="Permalink to this headline">¶</a></h1>
+<p class="graphviz">
+<img src="_images/graphviz-94854c2a66471cddad15e145eb01e36053b3d40b.png" alt="digraph foo {
+   Dynamic;
+   Primitive -&gt; Null;
+   Primitive -&gt; Integer;
+
+   DataShape -&gt; Atom;
+   DataShape -&gt; CType;
+
+   Atom -&gt; Fixed;
+   Atom -&gt; TypeVar;
+   Atom -&gt; Var;
+   Atom -&gt; BitField;
+
+   Atom -&gt; Enum;
+   Atom -&gt; Union;
+
+   DataShape -&gt; Record;
+
+   Atom -&gt; Ptr;
+}" />
+</p>
+<span class="target" id="module-blaze.datashape.coretypes"></span><p>This defines the DataShape type system.</p>
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Atom">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Atom</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Atom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Atoms for arguments to constructors of types, not types in
+and of themselves. Parser artifacts, if you like.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Atom.abstract">
+<tt class="descname">abstract</tt><em class="property"> = True</em><a class="headerlink" href="#blaze.datashape.coretypes.Atom.abstract" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.CType">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">CType</tt><big>(</big><em>ctype</em>, <em>size=None</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.CType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Symbol for a sized type mapping uniquely to a native type.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.CType.byeteorder">
+<tt class="descname">byeteorder</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.byeteorder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.CType.char">
+<tt class="descname">char</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.char" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="blaze.datashape.coretypes.CType.from_dtype">
+<em class="property">classmethod </em><tt class="descname">from_dtype</tt><big>(</big><em>dt</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType.from_dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>From Numpy dtype.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">CType</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">(</span><span class="s">&#39;int32&#39;</span><span class="p">))</span>
+<span class="go">int32</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="blaze.datashape.coretypes.CType.from_str">
+<em class="property">classmethod </em><tt class="descname">from_str</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType.from_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>To Numpy dtype.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">CType</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="s">&#39;int32&#39;</span><span class="p">)</span>
+<span class="go">int32</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.CType.kind">
+<tt class="descname">kind</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.kind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.CType.num">
+<tt class="descname">num</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.num" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="blaze.datashape.coretypes.CType.size">
+<tt class="descname">size</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType.size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.CType.str">
+<tt class="descname">str</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="blaze.datashape.coretypes.CType.to_dtype">
+<tt class="descname">to_dtype</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType.to_dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>To Numpy dtype.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="blaze.datashape.coretypes.CType.to_struct">
+<tt class="descname">to_struct</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType.to_struct" title="Permalink to this definition">¶</a></dt>
+<dd><p>To struct code.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.CType.type">
+<tt class="descname">type</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.DataShape">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">DataShape</tt><big>(</big><em>operands=None</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.DataShape" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="blaze.datashape.coretypes.DataShape.composite">
+<tt class="descname">composite</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.datashape.coretypes.DataShape.composite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.DataShape.name">
+<tt class="descname">name</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.datashape.coretypes.DataShape.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Dynamic">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Dynamic</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Dynamic" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dynamic type allows an explicit upcast and downcast from any
+type to <tt class="docutils literal"><span class="pre">?</span></tt>. This is normally not allowed in most static type
+systems.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Either">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Either</tt><big>(</big><em>a</em>, <em>b</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Either" title="Permalink to this definition">¶</a></dt>
+<dd><p>Taged union with two slots.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Enum">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Enum</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Enum" title="Permalink to this definition">¶</a></dt>
+<dd><p>A finite enumeration of Fixed dimensions that a datashape is over,
+in order.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Fixed">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Fixed</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Fixed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixed dimension.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Integer">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Integer</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Integer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integers, at the top level this means a Fixed dimension, at
+level of constructor it just means integer in the sense of
+of just an integer value.</p>
+<dl class="method">
+<dt id="blaze.datashape.coretypes.Integer.free">
+<tt class="descname">free</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Integer.free" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Null">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Null</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Null" title="Permalink to this definition">¶</a></dt>
+<dd><p>The null datashape.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Primitive">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Primitive</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Primitive" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="blaze.datashape.coretypes.Primitive.composite">
+<tt class="descname">composite</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.datashape.coretypes.Primitive.composite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Range">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Range</tt><big>(</big><em>a</em>, <em>b=False</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range type representing a bound or unbound interval of
+of possible Fixed dimensions.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Range.lower">
+<tt class="descname">lower</tt><a class="headerlink" href="#blaze.datashape.coretypes.Range.lower" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Range.upper">
+<tt class="descname">upper</tt><a class="headerlink" href="#blaze.datashape.coretypes.Range.upper" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Record">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Record</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Record" title="Permalink to this definition">¶</a></dt>
+<dd><p>A composite data structure with fields mapped to types.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Record.fields">
+<tt class="descname">fields</tt><a class="headerlink" href="#blaze.datashape.coretypes.Record.fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="blaze.datashape.coretypes.Record.free">
+<tt class="descname">free</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Record.free" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Record.names">
+<tt class="descname">names</tt><a class="headerlink" href="#blaze.datashape.coretypes.Record.names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Top">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Top</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Top" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Type">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Type</tt><a class="headerlink" href="#ndtable.datashape.coretypes.Type" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="staticmethod">
+<dt id="blaze.datashape.coretypes.Type.register">
+<em class="property">static </em><tt class="descname">register</tt><big>(</big><em>name</em>, <em>cls</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Type.register" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.TypeVar">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">TypeVar</tt><big>(</big><em>symbol</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.TypeVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>A free variable in the dimension specifier.</p>
+<dl class="method">
+<dt id="blaze.datashape.coretypes.TypeVar.free">
+<tt class="descname">free</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.TypeVar.free" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Union">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Union</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.Union" title="Permalink to this definition">¶</a></dt>
+<dd><p>A union of possible datashapes that may occupy the same
+position.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.array_like">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">array_like</tt><big>(</big><em>ds</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.array_like" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.expr_string">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">expr_string</tt><big>(</big><em>spine</em>, <em>const_args</em>, <em>outer=None</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.expr_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.flatten">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">flatten</tt><big>(</big><em>it</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.flatten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.from_numpy">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">from_numpy</tt><big>(</big><em>shape</em>, <em>dt</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.from_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upcast a (shape, dtype) tuple if possible.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">from_numpy</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="n">dtype</span><span class="p">(</span><span class="s">&#39;int32&#39;</span><span class="p">))</span>
+<span class="go">dshape(&#39;5, 5, int32&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.na">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">na</tt><a class="headerlink" href="#ndtable.datashape.coretypes.na" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#blaze.datashape.coretypes.Null" title="ndtable.datashape.coretypes.Null"><tt class="xref py py-class docutils literal"><span class="pre">Null</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.product">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">product</tt><big>(</big><em>A</em>, <em>B</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.product" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.shape_coerce">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">shape_coerce</tt><big>(</big><em>ob</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.shape_coerce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.table_like">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">table_like</tt><big>(</big><em>ds</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.table_like" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="blaze.datashape.coretypes.to_numpy">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">to_numpy</tt><big>(</big><em>ds</em><big>)</big><a class="headerlink" href="#ndtable.datashape.coretypes.to_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downcast a datashape object into a Numpy (shape, dtype) tuple if
+possible.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dshape</span><span class="p">(</span><span class="s">&#39;5, 5, int32&#39;</span><span class="p">))</span>
+<span class="go">(5,5), dtype(&#39;int32&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

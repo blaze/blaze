@@ -1,0 +1,197 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Type Checking &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Tables" href="table.html" />
+    <link rel="prev" title="Operators" href="ops.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="ops.html">Operators</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="table.html">Tables</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="type-checking">
+<h1>Type Checking<a class="headerlink" href="#type-checking" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="stages">
+<h2>Stages<a class="headerlink" href="#stages" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>::</dt>
+<dd><dl class="first docutils">
+<dt>Graph Construction</dt>
+<dd><div class="first line-block">
+<div class="line"><br /></div>
+</div>
+<p class="last">v</p>
+</dd>
+<dt>Constraint Generation</dt>
+<dd><div class="first line-block">
+<div class="line"><br /></div>
+</div>
+<p class="last">v</p>
+</dd>
+<dt>Unification</dt>
+<dd><div class="first line-block">
+<div class="line"><br /></div>
+</div>
+<p class="last">v</p>
+</dd>
+<dt>Annotation</dt>
+<dd><div class="first line-block">
+<div class="line"><br /></div>
+</div>
+<p class="last">v</p>
+</dd>
+<dt>Execution Plan</dt>
+<dd><div class="first line-block">
+<div class="line"><br /></div>
+</div>
+<p class="last">v</p>
+</dd>
+</dl>
+<p class="last">Dispatch</p>
+</dd>
+</dl>
+<span class="target" id="module-blaze.expr.typechecker"></span><p>Naive type inference algorithm for Blaze expressions.</p>
+<p>Some notes on notation:</p>
+<div class="section" id="type-system">
+<h3>Type System<a class="headerlink" href="#type-system" title="Permalink to this headline">¶</a></h3>
+<p>A collection of three functions:</p>
+<div class="highlight-python"><pre>unifier :: (ty, ty) -&gt; ty
+typeof :: value -&gt; ty</pre>
+</div>
+<p>And a collection of type objects with two special terms:</p>
+<div class="highlight-python"><pre>(?)   - dynamic type
+(top) - top type</pre>
+</div>
+<p>This is specified by a namedtuple of the form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">typesystem</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;TypeSystem&#39;</span><span class="p">,</span> <span class="s">&#39;unifier, top, dynamic, typeof&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="dynamic">
+<h3>Dynamic<a class="headerlink" href="#dynamic" title="Permalink to this headline">¶</a></h3>
+<p>A dynamic type written as ( <tt class="docutils literal"><span class="pre">?</span></tt> ). It allows explicit down casting and
+upcasting from any type to any type. In Blaze we use this to represent
+opaque types that afford no specialization.</p>
+</div>
+<div class="section" id="signatures">
+<h3>Signatures<a class="headerlink" href="#signatures" title="Permalink to this headline">¶</a></h3>
+<p>The signature:</p>
+<div class="highlight-python"><pre>(a, b) -&gt; c</pre>
+</div>
+<p>Stands for a function of two arguments, the first of type a, the second
+of type b and returning a type c.</p>
+<p>Would be this in Python 3 signature notation:</p>
+<div class="highlight-python"><pre>def (x : a, y : b) -&gt; c:
+    pass</pre>
+</div>
+</div>
+<div class="section" id="rigid-free">
+<h3>Rigid &amp; Free<a class="headerlink" href="#rigid-free" title="Permalink to this headline">¶</a></h3>
+<p>Rigid variables are those that appear in multiple times
+in the signature:</p>
+<div class="highlight-python"><pre>f : a -&gt; b -&gt; a -&gt; c
+
+Rigid : [a]
+Free  : [b,c]</pre>
+</div>
+</div>
+<div class="section" id="context">
+<h3>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h3>
+<p>A context records the lexically-bound variables during the progression
+of the type inference algorithm. It is a stateful dict passed through
+the unifiers.</p>
+<dl class="function">
+<dt id="blaze.expr.typechecker.tyeval">
+<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">tyeval</tt><big>(</big><em>signature</em>, <em>operands</em>, <em>domc</em>, <em>system</em>, <em>commutative=False</em><big>)</big><a class="headerlink" href="#ndtable.expr.typechecker.tyeval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>signature:</dt>
+<dd>String containing the type signature.</dd>
+<dt>operands:</dt>
+<dd>The operands to type check against signature.</dd>
+<dt>dom:</dt>
+<dd>The constraints on the space domain to traverse.</dd>
+<dt>universe:</dt>
+<dd>The universe of terms in which to resolve instances to types.</dd>
+<dt>commutative:</dt>
+<dd>Use the commutative checker which attempts to eval all
+permutations of domains to find a satisfiable one.</dd>
+</dl>
+</div></blockquote>
+<p>Returns:</p>
+<blockquote>
+<div>The context satisfying the given signature and operands with
+the constraints.</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.typechecker.typeresult">
+<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typeresult</tt><a class="headerlink" href="#ndtable.expr.typechecker.typeresult" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">Satisifes</span></tt></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.typechecker.typesystem">
+<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typesystem</tt><a class="headerlink" href="#ndtable.expr.typechecker.typesystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">TypeSystem</span></tt></p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

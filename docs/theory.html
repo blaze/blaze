@@ -1,0 +1,150 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Deeper Theory &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Legal" href="legal.html" />
+    <link rel="prev" title="Release Notes" href="releases.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="releases.html">Release Notes</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="legal.html">Legal</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="deeper-theory">
+<h1>Deeper Theory<a class="headerlink" href="#deeper-theory" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="product-types">
+<h2>Product Types<a class="headerlink" href="#product-types" title="Permalink to this headline">¶</a></h2>
+<p>The product operator <tt class="docutils literal"><span class="pre">(,)</span></tt> is used to construct product types.
+It is a type constructor of two arguments.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+</pre></div>
+</div>
+<p>Since the convienent in Python, but confusing in math notation we&#8217;ll use
+the <img class="math" src="_images/math/b88c462e5d9319a7d2181ad94863658fa0a24736.png" alt="\otimes"/> to denote product types. Product tyeps have
+the following algebraic properties.</p>
+<dl class="docutils">
+<dt>Associativity:</dt>
+<dd><div class="first last math">
+<p><img src="_images/math/6cb9b8078b36139e4816edc5690ae28ac1eac67d.png" alt="(A \otimes B) \otimes C = A \otimes (B \otimes C)"/></p>
+</div></dd>
+<dt>Identity element:</dt>
+<dd><div class="first last math">
+<p><img src="_images/math/1f60d2f7f7325266127edd5579ef91aad01e553d.png" alt="A \otimes \text{null} = A"/></p>
+</div></dd>
+</dl>
+<p>The product operator has the additional constraint that the first
+operator cannot be a measure. This permits types of the form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a</span><span class="p">,</span> <span class="n">int32</span>
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>But forbids types of the form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">int32</span><span class="p">,</span> <span class="n">a</span>
+<span class="n">int32</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>There is a algebraic relation between product types and sum types
+( discussed below ).</p>
+</div>
+<div class="section" id="sum-types">
+<h2>Sum Types<a class="headerlink" href="#sum-types" title="Permalink to this headline">¶</a></h2>
+<p>Sum types describe values that could be of one of several types.</p>
+<p>Sum types have the following algebraic properties including:</p>
+<p>Associativity:</p>
+<blockquote>
+<div><div class="math">
+<p><img src="_images/math/1f79cb0cf07a13ab3133b92ece01fca013c23562.png" alt="(A + B) + C = A + (B + C)"/></p>
+</div></div></blockquote>
+<p>Commutativity:</p>
+<blockquote>
+<div><div class="math">
+<p><img src="_images/math/f8a543e467e904254a94e356aaa4391e77cb25fc.png" alt="A + B = B + A"/></p>
+</div></div></blockquote>
+<p>Identity:</p>
+<blockquote>
+<div><div class="math">
+<p><img src="_images/math/bf15e34c9bba7e547df2d5c32bbf672781d8fe5a.png" alt="A + \text{top} = \text{top} + A"/></p>
+</div></div></blockquote>
+<p>The dynamic type collapses sum types.</p>
+<blockquote>
+<div><div class="math">
+<p><img src="_images/math/0d055c7421300898ae78c276115aae855d34485e.png" alt="a + \text{?} &amp;= \text{?} \\
+\text{?} + a &amp;= \text{?}"/></p>
+</div></div></blockquote>
+</div>
+<div class="section" id="closure-of-products">
+<h2>Closure of Products<a class="headerlink" href="#closure-of-products" title="Permalink to this headline">¶</a></h2>
+<p>Our type system has the additional constraint that our types are
+specified into two classes measures and dimensions. We have
+closure of the product operation with the following exception:</p>
+</div>
+<div class="section" id="products-of-sums">
+<h2>Products of Sums<a class="headerlink" href="#products-of-sums" title="Permalink to this headline">¶</a></h2>
+<p>Just like in normal arithmetic Sum and Product operations are
+distributive.</p>
+<p>Applying the above algebraic properties we find that our intuition
+of unions as expressions of repeated sum types can be derived
+algebraically:</p>
+<div class="math">
+<p><img src="_images/math/74f470a2e18ee861c68c6e50919135cc0b79deaf.png" alt="(A + B) \otimes ( C + D ) =
+( A \otimes C ) + ( A \otimes D ) +
+( B \otimes C ) + ( B \otimes D )"/></p>
+</div><div class="highlight-python"><pre>Either (Either a b) (Either c d) = Union (a,c) (a,d) (b,c) (b,d)</pre>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

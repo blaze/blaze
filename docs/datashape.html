@@ -1,0 +1,429 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Datashape &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Memory Layout" href="memory.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="overview.html">Overview</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="memory.html">Memory Layout</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="datashape">
+<h1>Datashape<a class="headerlink" href="#datashape" title="Permalink to this headline">¶</a></h1>
+<p>Datashape is a generalization of <tt class="docutils literal"><span class="pre">dtype</span></tt> and <tt class="docutils literal"><span class="pre">shape</span></tt> into a micro
+type system which lets us overlay high level structure on existing
+data in Table and Array objects that can inform better code
+generation and scheduling.</p>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Just like in traditional NumPy the preferred method of implementing
+generic vector operators is through ad-hoc polymorphism. Numpy&#8217;s style
+of ad-hoc polymorphism allows ufunc objects to have different behaviors
+when &#8220;viewed&#8221; at different types. The runtime system then chooses an
+appropriate implementation for each application of the function, based
+on the types of the arguments. Blaze simply extends this specialization
+to data structure and data layout as well as data type ( dtype ).</p>
+<p>In fact many of the ideas behind datashape are generalizations and
+combinations of notions found in Numpy:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Numpy</th>
+<th class="head">Blaze</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Broadcasting</td>
+<td>Unification</td>
+</tr>
+<tr class="row-odd"><td>Shape</td>
+<td rowspan="2">Datashape</td>
+</tr>
+<tr class="row-even"><td>Dtype</td>
+</tr>
+<tr class="row-odd"><td>Ufunc</td>
+<td>Gufunc</td>
+</tr>
+</tbody>
+</table>
+<p>Datashapes in Blaze do not form a hierarchy or permit subtyping. This
+differs from type systems found in other languages like OCaml and Julia
+which achieve a measure of type polymorphism through the construction of
+hierarchies of types with an explicit pre-ordering.</p>
+<p>Blaze favors the other approach in that types do not exist in a
+hierarchy but instead are inferred through constraint generation at
+&#8220;compile time&#8221;. In addition it also permits a weakened version of
+gradual typing through a dynamic type ( denoted <tt class="docutils literal"><span class="pre">?</span></tt> ) which allows a
+&#8220;escape hatch&#8221; in the type system for expressing types of values which
+cannot be known until runtime.</p>
+<p>The goal of next generation of vector operations over Blaze structures
+aim to allow a richer and more declarative way of phrasing operations
+over semi-structured data. While types are a necessary part of writing
+efficient code, the ideal type system is one which disappears entirely!</p>
+</div>
+<div class="section" id="unit-types">
+<h2>Unit Types<a class="headerlink" href="#unit-types" title="Permalink to this headline">¶</a></h2>
+<p>Datashape types that are single values are called <strong>unit</strong> types. They
+represent a fixed type that has no internal structure. For example
+<tt class="docutils literal"><span class="pre">int32</span></tt> or <tt class="docutils literal"><span class="pre">2</span></tt>.</p>
+<p>In Blaze there are two classes of units <strong>measures</strong> and <strong>dimensions</strong>.
+Measures are units of data, while dimensions are units of shape.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="100%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>int8</td>
+</tr>
+<tr class="row-even"><td>int16</td>
+</tr>
+<tr class="row-odd"><td>int32</td>
+</tr>
+<tr class="row-even"><td>int64</td>
+</tr>
+<tr class="row-odd"><td>uint</td>
+</tr>
+<tr class="row-even"><td>uint8</td>
+</tr>
+<tr class="row-odd"><td>uint16</td>
+</tr>
+<tr class="row-even"><td>uint32</td>
+</tr>
+<tr class="row-odd"><td>uint64</td>
+</tr>
+<tr class="row-even"><td>float16</td>
+</tr>
+<tr class="row-odd"><td>float32</td>
+</tr>
+<tr class="row-even"><td>float64</td>
+</tr>
+<tr class="row-odd"><td>float128</td>
+</tr>
+<tr class="row-even"><td>complex64</td>
+</tr>
+<tr class="row-odd"><td>complex128</td>
+</tr>
+<tr class="row-even"><td>complex256</td>
+</tr>
+<tr class="row-odd"><td>long</td>
+</tr>
+<tr class="row-even"><td>double</td>
+</tr>
+<tr class="row-odd"><td>short</td>
+</tr>
+<tr class="row-even"><td>longdouble</td>
+</tr>
+<tr class="row-odd"><td>char</td>
+</tr>
+<tr class="row-even"><td>bool</td>
+</tr>
+<tr class="row-odd"><td>pyobj</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="products">
+<h3>Products<a class="headerlink" href="#products" title="Permalink to this headline">¶</a></h3>
+<p>A comma between two types signifies a product type. Product types
+correspond to branching possibilities of types.</p>
+<p>The product operator <tt class="docutils literal"><span class="pre">(,)</span></tt> is used to construct product types.
+It is a type constructor of two arguments.</p>
+<p>Example:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+</pre></div>
+</div>
+<p>It is also left associative, namely:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">c</span><span class="p">)</span> <span class="o">=</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span>
+</pre></div>
+</div>
+<p>The product operator has the additional constraint that the first
+operator cannot be a measure. This permits types of the form:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="n">a</span><span class="p">,</span> <span class="n">int32</span>
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>But forbids types of the form:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="n">int32</span><span class="p">,</span> <span class="n">a</span>
+<span class="n">int32</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>There is a algebraic relation between product types and sum types
+( discussed below ).</p>
+</div>
+</div>
+<div class="section" id="fixed">
+<h2>Fixed<a class="headerlink" href="#fixed" title="Permalink to this headline">¶</a></h2>
+<p>The unit shape type is a <strong>dimension</strong> unit type. They are represented
+as just integer values at the top level of the datatype. These are
+identical to <tt class="docutils literal"><span class="pre">shape</span></tt> parameters in NumPy.</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="mi">2</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>Is an equivalent to the shape and dtype of a NumPy array of the form:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nf">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="p">(</span><span class="n">&#39;int32&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>A 2 by 3 matrix of integers has datashape:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>With the corresponding NumPy array:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nf">array</span><span class="p">([[</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span>  <span class="mi">3</span><span class="p">],</span>
+       <span class="p">[</span> <span class="mi">4</span><span class="p">,</span>  <span class="mi">5</span><span class="p">,</span>  <span class="mi">6</span><span class="p">]])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="constructors">
+<h2>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h2>
+<p>Datashape types that are comprised of multiple unit types are
+called <strong>composite</strong> types. The product operator discussed above
+yields composite types. Example:</p>
+<p>A <strong>type operator</strong> is higher type that maps each choice of parameter to
+a concrete type instance.</p>
+<blockquote>
+<div>2, int32</div></blockquote>
+<p>Datashape types that are comprised of unbound free variables are called
+<strong>variadic</strong> types. Example:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">A</span><span class="p">,</span> <span class="nv">B</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>Datashape types with free parameters in their constructor are called
+<strong>parameterized</strong> types. Example:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">SquareMatrix</span> <span class="nv">T</span> <span class="o">=</span> <span class="nv">N</span><span class="p">,</span> <span class="nv">N</span><span class="p">,</span> <span class="nv">T</span>
+</pre></div>
+</div>
+<p>Datashape types without free parameters in their constructor are called
+<strong>alias</strong> types. Alias types don&#8217;t add any additional structure they just
+ascribe a new name. Example:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">SquareIntMatrix</span> <span class="o">=</span> <span class="nv">N</span><span class="p">,</span> <span class="nv">N</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>For example, the <tt class="docutils literal"><span class="pre">int</span></tt> and <tt class="docutils literal"><span class="pre">float</span></tt> types are automatically aliased
+to the either <tt class="docutils literal"><span class="pre">int32</span></tt> or <tt class="docutils literal"><span class="pre">int64</span></tt> types depending on the platform.</p>
+<p>Once the types are registered they can be used in dtype expressions just
+like primitive values and also to construct even higher order types.</p>
+<p>Blaze does not permit recursive type definitions.</p>
+<p>Datashape types are split into three equivalence classes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Fixed:</th><td class="field-body"><p class="first">Fixed types are equal iff their value is equal.:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="mi">1</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="mi">1</span> <span class="o">!=</span> <span class="mi">2</span>
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">CTypes:</th><td class="field-body"><p class="first">Machine types are equal iff their data type name and width
+are equal.:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="n">int32</span> <span class="o">==</span> <span class="n">int32</span>
+<span class="n">int64</span> <span class="o">!=</span> <span class="n">int32</span>
+<span class="n">int8</span> <span class="o">!=</span> <span class="n">char</span>
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Composite:</th><td class="field-body"><p class="first">Composite datashape types are <strong>nominative</strong>, in that the equivalence of
+two types is determined whether the names they are given are equivalent.
+Thus two datashapes that are defined identically are still not equal to
+each other.:</p>
+<div class="last highlight-erlang"><pre>A = 2, int32
+B = 2, int32
+
+A == A # True
+A == B # False</pre>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>While it is true that structurally equivalent composites are not equal
+to each other, it is however necessarily true that the unification of
+two identically defined composite types is structurally identical to the
+two types.</p>
+</div>
+<div class="section" id="records">
+<h2>Records<a class="headerlink" href="#records" title="Permalink to this headline">¶</a></h2>
+<p>Record types are ordered struct-like objects which hold a collection of
+types keyed by labels. Records are also an in the class of <strong>measure</strong>
+types.</p>
+<p>Example 1:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">Person</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span>   <span class="p">:</span> <span class="n">string</span><span class="p">,</span>
+    <span class="n">age</span>    <span class="p">:</span> <span class="n">int</span><span class="p">,</span>
+    <span class="n">height</span> <span class="p">:</span> <span class="n">int</span><span class="p">,</span>
+    <span class="n">weight</span> <span class="p">:</span> <span class="n">int</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Example 2:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">RGBA</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nn">r</span><span class="p">:</span> <span class="n">int32</span><span class="p">,</span>
+    <span class="nn">g</span><span class="p">:</span> <span class="n">int32</span><span class="p">,</span>
+    <span class="nn">b</span><span class="p">:</span> <span class="n">int32</span><span class="p">,</span>
+    <span class="nn">a</span><span class="p">:</span> <span class="n">int8</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Composite datashapes that terminate in record types are called
+<strong>table-like</strong>, while any other terminating type is called
+<strong>array-like</strong>.</p>
+<div class="section" id="enumeration">
+<h3>Enumeration<a class="headerlink" href="#enumeration" title="Permalink to this headline">¶</a></h3>
+<p>A enumeration specifies a number of fixed dimensions sequentially. Example:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>The above could describe a structure of the form:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="p">[</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="variadic">
+<h2>Variadic<a class="headerlink" href="#variadic" title="Permalink to this headline">¶</a></h2>
+<p>Variadic types expression unknown, but fixed dimensions which are
+expressed as free variables scoped within the type signature. The
+variable is referred to as <strong>type variable</strong> or <tt class="docutils literal"><span class="pre">TypeVar</span></tt>.</p>
+<p>For example the type capable of expressing all square two dimensional
+matrices could be written as:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">A</span><span class="p">,</span> <span class="nv">A</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>A type capable of rectangular variable length arrays of integers
+can be written as:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">A</span><span class="p">,</span> <span class="nv">B</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<div class="section" id="sums">
+<h3>Sums<a class="headerlink" href="#sums" title="Permalink to this headline">¶</a></h3>
+<p>A <strong>sum type</strong> is a type representing a collection of heterogeneously
+typed values. There are four instances of sum types in Blaze&#8217;s type
+system:</p>
+<ul class="simple">
+<li>Variants</li>
+<li>Unions</li>
+<li>Options</li>
+<li>Ranges</li>
+</ul>
+</div>
+</div>
+<div class="section" id="variants">
+<h2>Variants<a class="headerlink" href="#variants" title="Permalink to this headline">¶</a></h2>
+<p>A <strong>variant</strong> type is a sum type with two tagged parameters <tt class="docutils literal"><span class="pre">left</span></tt> and
+<tt class="docutils literal"><span class="pre">right</span></tt> which represent two possible types. We use the keyword
+<tt class="docutils literal"><span class="pre">Either</span></tt> to represent the type operator. Examples:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">Either</span> <span class="nb">float</span> <span class="n">char</span>
+<span class="nv">Either</span> <span class="n">int32</span> <span class="n">na</span>
+<span class="nv">Either</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">}</span> <span class="p">{</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="union">
+<h2>Union<a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h2>
+<p>A <strong>union</strong> or <strong>untagged union</strong> is a variant type permitting a
+variable number of variants. Unions behave like unions in C and permit a
+collection of heterogeneous typed values:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">Union</span> <span class="n">int8</span> <span class="n">int16</span> <span class="n">int32</span> <span class="n">int64</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<p>Option types are variant types with the null datashape as one of the
+parameters, representing the presence of absence of a value of a
+specific types. Many languages have a natural expression of this by
+allowing all or most types to be nullable including including C, SQL,
+and Java.</p>
+<p>For example a nullable int field:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">Either</span> <span class="n">int32</span> <span class="n">null</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="ranges">
+<h2>Ranges<a class="headerlink" href="#ranges" title="Permalink to this headline">¶</a></h2>
+<p>Ranges are sum types over shape instead of data.</p>
+<p>Ranges are heterogeneously fixed dimensions within a lower and upper
+bound.</p>
+<p>Example 1:</p>
+<div class="highlight-erlang"><div class="highlight"><pre><span class="nv">Var</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The lower bound must be greater than 0. The upper bound must be
+greater than the lower, but may also be unbounded ( i.e. <tt class="docutils literal"><span class="pre">inf</span></tt> ).</p>
+</div>
+<div class="section" id="stream">
+<h2>Stream<a class="headerlink" href="#stream" title="Permalink to this headline">¶</a></h2>
+<p>Ranges are sum types over shape instead of data.</p>
+<p>A case where a <tt class="docutils literal"><span class="pre">Range</span></tt> has no upper bound signifies a potentially infinite
+<strong>stream</strong> of values. Specialized kernels are needed to deal with data
+of this type.</p>
+<p>The difference between a stream and a TypeVar is that TypeVar are scoped
+within the datashape expression whereas <tt class="docutils literal"><span class="pre">Stream</span></tt> objects are not.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

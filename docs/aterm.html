@@ -1,0 +1,117 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ATerm &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Layouts" href="layout.html" />
+    <link rel="prev" title="Persistence" href="persistence.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="persistence.html">Persistence</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="layout.html">Layouts</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-blaze.expr.paterm">
+<span id="aterm"></span><h1>ATerm<a class="headerlink" href="#module-blaze.expr.paterm" title="Permalink to this headline">¶</a></h1>
+<p>Python implementation of ATerm. Just a pretty printer for now.</p>
+<p>In our slight modification of ATerm we require that the first
+annotation of a Term be its datashape type and the following
+annotations stand for metadata. For example, an variable <tt class="docutils literal"><span class="pre">x</span></tt>
+which stands</p>
+<p>Type:</p>
+<div class="highlight-python"><pre>Array(2928121){dshape('2,2,int32')}</pre>
+</div>
+<p>Type and Metadata:</p>
+<div class="highlight-python"><pre>Array(2928121){dshape('2,2,int32'), contigious, corder}</pre>
+</div>
+<p>Nevertheless, it is still a strict subset of ATerm so it can be parsed
+and manipulated by Stratego rewriters.</p>
+<p>Grammar:</p>
+<div class="highlight-python"><pre>t : bt                 -- basic term
+  | bt {ty,m1,...}     -- annotated term
+
+bt : C                 -- constant
+   | C(t1,...,tn)      -- n-ary constructor
+   | [t1,...,tn]       -- list
+   | "ccc"             -- quoted string
+   | int               -- integer
+   | real              -- floating point number</pre>
+</div>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">AInt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">x</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;Add&#39;</span><span class="p">),</span> <span class="p">[</span><span class="n">AInt</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">AInt</span><span class="p">(</span><span class="mi">2</span><span class="p">)])</span>
+<span class="go">Add(1,2)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;Mul&#39;</span><span class="p">),[</span><span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;Add&#39;</span><span class="p">),[</span><span class="n">AInt</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="n">AInt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)])</span>
+<span class="go">Mul(Add(1,2), x)</span>
+</pre></div>
+</div>
+<dl class="function">
+<dt id="blaze.expr.paterm.cat">
+<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">cat</tt><big>(</big><em>terms</em>, <em>l</em>, <em>r</em><big>)</big><a class="headerlink" href="#ndtable.expr.paterm.cat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Concatenate str representations with commas and left and right
+delimiters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.expr.paterm.matches">
+<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">matches</tt><big>(</big><em>pattern</em>, <em>term</em><big>)</big><a class="headerlink" href="#ndtable.expr.paterm.matches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collapse terms with as-patterns.</p>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

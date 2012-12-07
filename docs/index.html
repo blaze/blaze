@@ -1,0 +1,150 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Blaze &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="#" />
+    <link rel="next" title="Install" href="install.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="#">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        <a class="uplink" href="#">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="install.html">Install</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="blaze">
+<h1>Blaze<a class="headerlink" href="#blaze" title="Permalink to this headline">¶</a></h1>
+<p>Blaze is the next generation of NumPy, Python’s extremely popular
+array library. Blaze is designed to handle out-of-core computations
+on large datasets that exceeds the system memory capacity, as well as
+distributed and streaming data.</p>
+<p>Blaze will allow analysts and scientists to productively write robust
+and efficient code, without getting bogged down in the details of how
+to distribute computation, or worse, how to transport and convert data
+between databases, formats, proprietary data warehouses, and other
+silos.</p>
+<p>The core of Blaze is a generic N-dimensional Array and Table objects
+with an associated type system for expressing all kinds of data
+types and layouts; especially semi-structured, sparse, and columnar
+data. Blaze’s generalized calculation engine can iterate over the
+distributed array or table and dispatch to low-level kernels specialized
+for the layout and type of the data.</p>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#installing">Installing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#introduction">Introduction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#blaze-arrays">Blaze Arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#custom-dshapes">Custom DShapes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#blaze-is-a-generalization-of-numpy">Blaze is a Generalization of NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#numpy-shapes-two-ways">NumPy Shapes, Two Ways</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datashape.html">Datashape</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#unit-types">Unit Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#fixed">Fixed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#constructors">Constructors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#records">Records</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#variadic">Variadic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#variants">Variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#union">Union</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#ranges">Ranges</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape.html#stream">Stream</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="memory.html">Memory Layout</a></li>
+<li class="toctree-l1"><a class="reference internal" href="format.html">Persistent formats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="format.html#monolithic-format">Monolithic format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="format.html#chunked-format">Chunked format</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">Persistence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aterm.html">ATerm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="layout.html">Layouts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sources.html">Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">Graph</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="typechecker.html">Type Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="table.html">Tables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legal.html">Legal</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="index">
+<h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

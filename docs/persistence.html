@@ -1,0 +1,344 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Persistence &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Sources" href="sources.html" />
+    <link rel="prev" title="Types" href="types.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="types.html">Types</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="sources.html">Sources</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-blaze.persistence.bloscpack">
+<span id="persistence"></span><h1>Persistence<a class="headerlink" href="#module-blaze.persistence.bloscpack" title="Permalink to this headline">¶</a></h1>
+<p>Command line interface to Blosc via python-blosc.</p>
+<ul class="simple">
+<li>Adapted to persist a list of buffers by Francesc Alted.</li>
+</ul>
+<dl class="class">
+<dt id="blaze.persistence.bloscpack.BloscPackCustomFormatter">
+<em class="property">class </em><tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">BloscPackCustomFormatter</tt><big>(</big><em>prog</em>, <em>indent_increment=2</em>, <em>max_help_position=24</em>, <em>width=None</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.BloscPackCustomFormatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Custom HelpFormatter.</p>
+<p>Basically a combination and extension of ArgumentDefaultsHelpFormatter and
+RawTextHelpFormatter. Adds default values to argument help, but only if the
+default is not in [None, True, False]. Also retains all whitespace as it
+is.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.persistence.bloscpack.Hash">
+<em class="property">class </em><tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">Hash</tt><big>(</big><em>name</em>, <em>size</em>, <em>function</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.Hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uniform hash object.</p>
+<dl class="docutils">
+<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>the name of the hash</dd>
+<dt>size <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the length of the digest in bytes</dd>
+<dt>function <span class="classifier-delimiter">:</span> <span class="classifier">callable</span></dt>
+<dd>the hash function implementation</dd>
+</dl>
+<p>The &#8216;function&#8217; argument should return the raw bytes as string.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.check_files">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">check_files</tt><big>(</big><em>in_file</em>, <em>out_file</em>, <em>args</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.check_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check files exist/don&#8217;t exist.</p>
+<dl class="docutils">
+<dt>in_file <span class="classifier-delimiter">:</span> <span class="classifier">str:</span></dt>
+<dd>the input file</dd>
+<dt>out_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>the output file</dd>
+<dt>args <span class="classifier-delimiter">:</span> <span class="classifier">parser args</span></dt>
+<dd>any additional arguments from the parser</dd>
+</dl>
+<dl class="docutils">
+<dt>FileNotFound</dt>
+<dd>in case any of the files isn&#8217;t found.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.check_range">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">check_range</tt><big>(</big><em>name</em>, <em>value</em>, <em>min_</em>, <em>max_</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.check_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that a variable is in range.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.create_bloscpack_header">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">create_bloscpack_header</tt><big>(</big><em>format_version=2</em>, <em>options='00000000'</em>, <em>checksum=0</em>, <em>typesize=0</em>, <em>chunk_size=-1</em>, <em>last_chunk=-1</em>, <em>nchunks=-1</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.create_bloscpack_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the bloscpack header string.</p>
+<dl class="docutils">
+<dt>format_version <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the version format for the compressed file</dd>
+<dt>options <span class="classifier-delimiter">:</span> <span class="classifier">bitfield (string of 0s and 1s)</span></dt>
+<dd>the options for this file</dd>
+<dt>checksum <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the checksum to be used</dd>
+<dt>typesize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the typesize used for blosc in the chunks</dd>
+<dt>chunk_size <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the size of a regular chunk</dd>
+<dt>last_chunk <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the size of the last chunk</dd>
+<dt>nchunks <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the number of chunks</dd>
+</dl>
+<dl class="docutils">
+<dt>bloscpack_header <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>the header as string</dd>
+</dl>
+<p>See the file &#8216;header_rfc.rst&#8217; distributed with the source code for
+details on the header format.</p>
+<dl class="docutils">
+<dt>ValueError</dt>
+<dd>if any of the arguments have an invalid value</dd>
+<dt>TypeError</dt>
+<dd>if any of the arguments have the wrong type</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.create_options">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">create_options</tt><big>(</big><em>offsets=True</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.create_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the options bitfield.</p>
+<p>offsets : bool</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.create_parser">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">create_parser</tt><big>(</big><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.create_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and return the parser.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.decode_blosc_header">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">decode_blosc_header</tt><big>(</big><em>buffer_</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.decode_blosc_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and decode header from compressed Blosc buffer.</p>
+<dl class="docutils">
+<dt><a href="#id1"><span class="problematic" id="id2">buffer_</span></a> <span class="classifier-delimiter">:</span> <span class="classifier">string of bytes</span></dt>
+<dd>the compressed buffer</dd>
+</dl>
+<dl class="docutils">
+<dt>settings <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>a dict containing the settings from Blosc</dd>
+</dl>
+<p>The Blosc 1.x header is 16 bytes as follows:</p>
+<div class="highlight-python"><pre>|-0-|-1-|-2-|-3-|-4-|-5-|-6-|-7-|-8-|-9-|-A-|-B-|-C-|-D-|-E-|-F-|
+^   ^   ^   ^ |     nbytes    |   blocksize   |    ctbytes    |
+|   |   |   |
+|   |   |   +--typesize
+|   |   +------flags
+|   +----------versionlz
++--------------version</pre>
+</div>
+<p>The first four are simply bytes, the last three are are each unsigned ints
+(uint32) each occupying 4 bytes. The header is always little-endian.
+&#8216;ctbytes&#8217; is the length of the buffer including header and nbytes is the
+length of the data when uncompressed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.decode_bloscpack_header">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">decode_bloscpack_header</tt><big>(</big><em>buffer_</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.decode_bloscpack_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the magic marker exists and return number of chunks.</p>
+<dl class="docutils">
+<dt><a href="#id3"><span class="problematic" id="id4">buffer_</span></a> <span class="classifier-delimiter">:</span> <span class="classifier">str of length 32 (but probably any sequence would work)</span></dt>
+<dd>the header</dd>
+</dl>
+<dl class="docutils">
+<dt>format_version <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the version format for the compressed file</dd>
+<dt>options <span class="classifier-delimiter">:</span> <span class="classifier">bitfield (string of 0s and 1s)</span></dt>
+<dd>the options for this file</dd>
+<dt>checksum <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the checksum to be used</dd>
+<dt>typesize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the typesize used for blosc in the chunks</dd>
+<dt>chunk_size <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the size of a regular chunk</dd>
+<dt>last_chunk <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the size of the last chunk</dd>
+<dt>nchunks <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the number of chunks</dd>
+<dt>RESERVED <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>the RESERVED field from the header, should be zero</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.decode_options">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">decode_options</tt><big>(</big><em>options</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.decode_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the options bitfield.</p>
+<dl class="docutils">
+<dt>options <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>the options bitfield</dd>
+</dl>
+<p>options : dict mapping str -&gt; bool</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.double_pretty_size">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">double_pretty_size</tt><big>(</big><em>size_in_bytes</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.double_pretty_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pretty print filesize including size in bytes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.error">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">error</tt><big>(</big><em>message</em>, <em>exit_code=1</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print message and exit with desired code.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.hashlib_hash">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">hashlib_hash</tt><big>(</big><em>func</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.hashlib_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for hashlib hashes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.pack_list">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">pack_list</tt><big>(</big><em>in_list</em>, <em>meta_info</em>, <em>out_file</em>, <em>blosc_args</em>, <em>offsets=True</em>, <em>checksum='adler32'</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.pack_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function for compressing a list of buffers.</p>
+<dl class="docutils">
+<dt>in_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>the list of buffers</dd>
+<dt>meta_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>dictionary with the associated metainfo</dd>
+<dt>out_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>the name of the output file</dd>
+<dt>blosc_args <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>dictionary of blosc keyword args</dd>
+<dt>offsets <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Wheather to include offsets.</dd>
+<dt>checksum <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Which checksum to use.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.pretty_size">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">pretty_size</tt><big>(</big><em>size_in_bytes</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.pretty_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pretty print filesize.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.print_verbose">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">print_verbose</tt><big>(</big><em>message</em>, <em>level='VERBOSE'</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.print_verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print message with desired verbosity level.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.process_compression_args">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">process_compression_args</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.process_compression_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract and check the compression args after parsing by argparse.</p>
+<dl class="docutils">
+<dt>args <span class="classifier-delimiter">:</span> <span class="classifier">argparse.Namespace</span></dt>
+<dd>the parsed command line arguments</dd>
+</dl>
+<dl class="docutils">
+<dt>out_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>the out_file name</dd>
+<dt>blosc_args <span class="classifier-delimiter">:</span> <span class="classifier">tuple of (int, int, bool)</span></dt>
+<dd>typesize, clevel and shuffle</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.process_decompression_args">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">process_decompression_args</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.process_decompression_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract and check the decompression args after parsing by argparse.</p>
+<p>Warning: may call sys.exit()</p>
+<dl class="docutils">
+<dt>args <span class="classifier-delimiter">:</span> <span class="classifier">argparse.Namespace</span></dt>
+<dd>the parsed command line arguments</dd>
+</dl>
+<dl class="docutils">
+<dt>in_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>the input file name</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.process_nthread_arg">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">process_nthread_arg</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.process_nthread_arg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract and set nthreads.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.reverse_pretty">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">reverse_pretty</tt><big>(</big><em>readable</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.reverse_pretty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverse pretty printed file size.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.unpack_file">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">unpack_file</tt><big>(</big><em>in_file</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.unpack_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function for decompressing a file.  Returns a list of buffers.</p>
+<dl class="docutils">
+<dt>in_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>the name of the input file</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.persistence.bloscpack.zlib_hash">
+<tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">zlib_hash</tt><big>(</big><em>func</em><big>)</big><a class="headerlink" href="#ndtable.persistence.bloscpack.zlib_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for zlib hashes.</p>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

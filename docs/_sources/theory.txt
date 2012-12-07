@@ -1,0 +1,93 @@
+=============
+Deeper Theory
+=============
+
+Product Types
+~~~~~~~~~~~~~
+
+The product operator ``(,)`` is used to construct product types.
+It is a type constructor of two arguments.
+
+Example::
+
+    a, b
+
+Since the convienent in Python, but confusing in math notation we'll use
+the :math:`\otimes` to denote product types. Product tyeps have
+the following algebraic properties.
+
+Associativity:
+    .. math::
+        (A \otimes B) \otimes C = A \otimes (B \otimes C)
+
+Identity element:
+    .. math::
+        A \otimes \text{null} = A
+
+The product operator has the additional constraint that the first
+operator cannot be a measure. This permits types of the form::
+
+    a, int32
+    a, b, int32
+
+But forbids types of the form::
+
+    int32, a
+    int32, int32
+
+There is a algebraic relation between product types and sum types
+( discussed below ).
+
+Sum Types
+~~~~~~~~~
+
+Sum types describe values that could be of one of several types.
+
+Sum types have the following algebraic properties including:
+
+Associativity:
+
+    .. math::
+        (A + B) + C = A + (B + C)
+
+Commutativity:
+
+    .. math::
+        A + B = B + A
+
+Identity:
+
+    .. math::
+        A + \text{top} = \text{top} + A
+
+The dynamic type collapses sum types.
+
+    .. math::
+        a + \text{?} &= \text{?} \\
+        \text{?} + a &= \text{?}
+
+Closure of Products
+~~~~~~~~~~~~~~~~~~~
+
+Our type system has the additional constraint that our types are
+specified into two classes measures and dimensions. We have
+closure of the product operation with the following exception:
+
+Products of Sums
+~~~~~~~~~~~~~~~~
+
+Just like in normal arithmetic Sum and Product operations are
+distributive.
+
+Applying the above algebraic properties we find that our intuition
+of unions as expressions of repeated sum types can be derived
+algebraically:
+
+.. math::
+    (A + B) \otimes ( C + D ) =
+    ( A \otimes C ) + ( A \otimes D ) +
+    ( B \otimes C ) + ( B \otimes D )
+
+::
+
+    Either (Either a b) (Either c d) = Union (a,c) (a,d) (b,c) (b,d)
