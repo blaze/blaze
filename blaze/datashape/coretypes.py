@@ -560,18 +560,6 @@ float32    = CType('float', 32)
 float64    = CType('float', 64)
 float128   = CType('float', 128)
 
-# NOTE: Naming these 'int' and 'float' is a *really* bad idea.
-# NOTE: People expect 'float' to be a native float. This is also
-# NOTE: inconsistent with Numba.
-# if plat == 32:
-#     int_ = int32
-#     uint = uint32
-#     float_ = float32
-# else:
-#     int_ = int64
-#     uint = uint64
-#     float_ = float64
-
 complex64  = CType('complex' , 64)
 complex128 = CType('complex', 128)
 complex256 = CType('complex', 256)
@@ -641,6 +629,21 @@ def is_simple(ds):
                 return False
         return True
 
+def promote_cvals(*vals):
+    """
+    Promote Python values into the most general dshape containing
+    all of them. Only defined over simple CType instances.
+
+    >>> promote_vals(1,2.)
+    dshape("float64")
+    >>> promote_vals(1,2,3j)
+    dshape("complex128")
+    """
+
+    promoted = np.result_type(*vals)
+    datashape = CType.from_dtype(promoted)
+    return datashape
+
 #------------------------------------------------------------------------
 # Minivect Compatibility
 #------------------------------------------------------------------------
@@ -690,7 +693,7 @@ def promote(*operands):
     measures = (extract_measure(t) for t in types)
     dtypes   = (to_numpy(m) for m in measures)
 
-    promoted = reduce(np.promote_types, dtypes)
+    promoted = np.result_type(*dtypes)
     datashape = CType.from_dtype(promoted)
     return datashape
 
