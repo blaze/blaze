@@ -48,7 +48,7 @@ min_cython_version = '0.16'
 # The minimum version of NumPy required
 min_numpy_version = '1.5'
 # The minimum version of llvmpy required
-min_numpy_version = '0.8.4'
+min_llvmpy_version = '0.8.4'
 # The minimum version of Numba required
 min_numba_version = '0.5'
 
@@ -210,7 +210,7 @@ extensions = [
    ),
    Extension(
        "blaze.expr.caterm", ["blaze/expr/caterm.pyx"],
-       include_dirs = [],
+       include_dirs = [join(sys.prefix, 'include')],
        libraries = ['ATerm'],
        #extra_objects=['/usr/lib/libATerm.so'],
    ),
