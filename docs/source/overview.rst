@@ -8,7 +8,7 @@ Blaze is a Generalization of NumPy
 .. TODO: This section in particular is an expression of older thoughts and 
    ideas about the NDTable and the object hierarchy.
 
-.. image:: svg/NumPy_plus.png
+.. image:: svg/numpy_plus.png
     :align: center
 
 We would like the NDTable to be a Generalization of NumPy.  Whether this means
