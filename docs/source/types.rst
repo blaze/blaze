@@ -1,12 +1,59 @@
-=====
-Types
-=====
+==========
+Core Types
+==========
 
-.. Later this will be useful
+Relations of Types
+~~~~~~~~~~~~~~~~~~
+
+Arrows denotes commensurability, not hierarchy.
 
 .. graphviz::
 
-   digraph foo {
+   digraph relation {
+        Type -> Fixed;
+        Type -> CType;
+        Type -> Top;
+        Type -> Dynamic;
+
+        Type -> Sum;
+        Type -> Product;
+        Type -> Enum;
+
+        Sum -> Either;
+        Sum -> Union;
+        Sum -> Range;
+        Sum -> Option;
+
+        Range -> Stream;
+   }
+
+Structural Relations
+~~~~~~~~~~~~~~~~~~~~
+
+.. graphviz::
+
+   digraph structural {
+        Type -> Unit;
+        Type -> Aggregate;
+
+        Unit -> Fixed;
+        Unit -> CType;
+        Unit -> Top;
+        Unit -> Dynamic;
+        Unit -> Null;
+
+        Aggregate -> Sum;
+        Aggregate -> Product;
+        Aggregate -> Record;
+        Aggregate -> Enum;
+   }
+
+Implementation
+~~~~~~~~~~~~~~
+
+.. graphviz::
+
+   digraph top {
       Dynamic;
       Primitive -> Null;
       Primitive -> Integer;
@@ -16,16 +63,17 @@ Types
 
       Atom -> Fixed;
       Atom -> TypeVar;
-      Atom -> Var;
-      Atom -> BitField;
+      Atom -> Range;
 
       Atom -> Enum;
       Atom -> Union;
 
       DataShape -> Record;
-
-      Atom -> Ptr;
    }
+
+
+API
+~~~
 
 .. automodule:: blaze.datashape.coretypes
    :members:

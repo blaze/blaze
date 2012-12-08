@@ -1,6 +1,7 @@
 """
 The toplevel modules containing the core Blaze datastructures.
 
+    * Indexable
     * NDArray
     * NDTable
     * Table

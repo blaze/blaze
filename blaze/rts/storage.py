@@ -1,6 +1,7 @@
 """
-Blaze storage backend. We follow the same conventions as CPython in that
-we use the arena model of memory.
+Blaze storage backend, structured collection of unboxed memory. We
+follow the same conventions as CPython in that we use the arena model of
+memory.
 
 It does the mallocs of data as needed to shuffle blocks efficiently for
 data that is passed to Numba. It is also one place for safe management

@@ -8,6 +8,7 @@ import datetime
 from struct import calcsize
 from numbers import Integral
 from collections import Mapping, Sequence
+from functools import total_ordering
 
 from blaze.error import NotNumpyCompatible
 
@@ -23,8 +24,6 @@ except ImportError:
 
 class Type(type):
     _registry = {}
-
-    __init__ = NotImplemented
 
     def __new__(meta, name, bases, dct):
         cls = type(name, bases, dct)
@@ -78,13 +77,18 @@ class Null(Primitive):
 
 class Integer(Primitive):
     """
-    Integers, at the top level this means a Fixed dimension, at
-    level of constructor it just means integer in the sense of
-    of just an integer value.
+    Integers at the level of constructor it just means integer in the
+    sense of of just an integer value to a constructor.
+
+    ::
+
+        1, int32   # 1 is Fixed
+        Range(1,5) # 1 is Integer
+
     """
 
     def __init__(self, i):
-        assert isinstance(i, Integral)
+        assert isinstance(i, int)
         self.val = i
 
     def __eq__(self, other):
@@ -99,8 +103,7 @@ class Integer(Primitive):
 class Dynamic(Primitive):
     """
     The dynamic type allows an explicit upcast and downcast from any
-    type to ``?``. This is normally not allowed in most static type
-    systems.
+    type to ``?``.
     """
 
     def __str__(self):
@@ -110,10 +113,8 @@ class Dynamic(Primitive):
         # emulate numpy
         return ''.join(["dshape(\"", str(self), "\")"])
 
-# Top is kind of an unfortunate term because our system is very much
-# *not* a hierarchy, but this is the entrenched term so we use it.
-
 class Top(Primitive):
+    """ The top type """
 
     def __str__(self):
         return 'top'
@@ -127,10 +128,11 @@ class Top(Primitive):
 #------------------------------------------------------------------------
 
 class DataShape(object):
-    __metaclass__ = Type
+    """ The Datashape class, implementation for generic composite
+    datashape objects """
 
+    __metaclass__ = Type
     composite = False
-    name = False
 
     def __init__(self, parameters=None, name=None):
 
@@ -147,6 +149,8 @@ class DataShape(object):
         if name:
             self.name = name
             self.__metaclass__._registry[name] = self
+        else:
+            self.name = None
 
     def __getitem__(self, index):
         return self.parameters[index]
@@ -199,7 +203,7 @@ class Atom(DataShape):
         return str(self)
 
 #------------------------------------------------------------------------
-# Native Types
+# CType
 #------------------------------------------------------------------------
 
 class CType(DataShape):
@@ -301,6 +305,7 @@ class CType(DataShape):
 # Fixed
 #------------------------------------------------------------------------
 
+@total_ordering
 class Fixed(Atom):
     """
     Fixed dimension.
@@ -317,6 +322,12 @@ class Fixed(Atom):
         else:
             return False
 
+    def __gt__(self, other):
+        if type(other) is Fixed:
+            return self.val > other.val
+        else:
+            return False
+
     def __str__(self):
         return str(self.val)
 
@@ -326,7 +337,7 @@ class Fixed(Atom):
 
 class TypeVar(Atom):
     """
-    A free variable in the dimension specifier.
+    A free variable in the dimension specifier. Not user facing.
     """
 
     def __init__(self, symbol):
@@ -341,8 +352,6 @@ class TypeVar(Atom):
         else:
             return False
 
-# Internal-like range of dimensions, the special case of
-# [0, inf) is aliased to the type Stream.
 class Range(Atom):
     """
     Range type representing a bound or unbound interval of
@@ -403,7 +412,10 @@ class Range(Atom):
 
 class Either(Atom):
     """
-    Taged union with two slots.
+    A datashape for values that take on two different but fixed
+    types called tags ``left`` and ``right``. The tag
+    deconstructors for this type are :func:`inl` and
+    :func:`inr`.
     """
 
     def __init__(self, a, b):
@@ -411,15 +423,20 @@ class Either(Atom):
         self.b = b
         self.parameters = [a,b]
 
+    def __eq__(self, other):
+        return False
+
 class Enum(Atom, Sequence):
     """
-    A finite enumeration of Fixed dimensions that a datashape is over,
-    in order.
+    A finite enumeration of Fixed dimensions.
     """
 
     def __str__(self):
         # Use c-style enumeration syntax
         return expr_string('', self.parameters, '{}')
+
+    def __eq__(self, other):
+        return False
 
     def __getitem__(self, index):
         return self.parameters[index]
@@ -429,8 +446,8 @@ class Enum(Atom, Sequence):
 
 class Union(Atom, Sequence):
     """
-    A union of possible datashapes that may occupy the same
-    position.
+    A untagged union is a datashape for a value that may hold
+    several but fixed datashapes.
     """
 
     def __str__(self):
@@ -509,24 +526,11 @@ def product(A, B):
 
     return DataShape(parameters=(f+g))
 
-def from_python_scalar(scalar):
-    """
-    Return a datashape ctype for a python scalar.
-    """
-    if isinstance(scalar, int):
-        return int_
-    elif isinstance(scalar, float):
-        return double
-    elif isinstance(scalar, complex):
-        return complex128
-    elif isinstance(scalar, (str, unicode)):
-        return string
-    elif isinstance(scalar, datetime.timedelta):
-        return timedelta64
-    elif isinstance(scalar, datetime.datetime):
-        return datetime64
-    else:
-        return pyobj
+def inr(ty):
+    return ty.a
+
+def inl(ty):
+    return ty.b
 
 #------------------------------------------------------------------------
 # Unit Types
@@ -590,7 +594,7 @@ Type.register('?', Dynamic)
 Type.register('top', top)
 
 #------------------------------------------------------------------------
-# Extraction
+# Deconstructors
 #------------------------------------------------------------------------
 
 #  Dimensions
@@ -643,6 +647,29 @@ def promote_cvals(*vals):
     promoted = np.result_type(*vals)
     datashape = CType.from_dtype(promoted)
     return datashape
+
+#------------------------------------------------------------------------
+# Python Compatibility
+#------------------------------------------------------------------------
+
+def from_python_scalar(scalar):
+    """
+    Return a datashape ctype for a python scalar.
+    """
+    if isinstance(scalar, int):
+        return int_
+    elif isinstance(scalar, float):
+        return double
+    elif isinstance(scalar, complex):
+        return complex128
+    elif isinstance(scalar, (str, unicode)):
+        return string
+    elif isinstance(scalar, datetime.timedelta):
+        return timedelta64
+    elif isinstance(scalar, datetime.datetime):
+        return datetime64
+    else:
+        return pyobj
 
 #------------------------------------------------------------------------
 # Minivect Compatibility
