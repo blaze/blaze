@@ -18,6 +18,19 @@ Python distribution.
 
 Free Anaconda CE is available here: http://continuum.io/anacondace.html .
 
+Dependencies
+~~~~~~~~~~~~
+
+You will need to have the `ATerm library <http://strategoxt.org/Tools/ATermLibrary>`_ installed in order to build Blaze.  Installation instructions:
+
+::
+
+    Debian     : apt-get install libaterm
+    Arch Linux : pacman -S libaterm
+    Mac        : brew install aterm   or  port install libaterm
+    Windows    : ftp://ftp.stratego-language.org/pub/stratego/StrategoXT/strategoxt-0.17/cygwin/aterm-2.5-cygwin.tar.gz
+    Other      : ftp://ftp.stratego-language.org/pub/stratego/StrategoXT/strategoxt-0.17/aterm-2.5.tar.gz 
+
 Introduction
 ~~~~~~~~~~~~
 
