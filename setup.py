@@ -24,7 +24,20 @@ except:
 # Top Level Packages
 #------------------------------------------------------------------------
 
-packages = ['blaze']
+packages = [
+    'blaze',
+    'blaze.carray',
+    'blaze.datashape',
+    'blaze.dist',
+    'blaze.engine',
+    'blaze.expr',
+    'blaze.include',
+    'blaze.layouts',
+    'blaze.persistence',
+    'blaze.rosetta',
+    'blaze.rts',
+    'blaze.sources',
+]
 
 #------------------------------------------------------------------------
 # Minimum Versions
