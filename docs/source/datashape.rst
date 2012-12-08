@@ -11,7 +11,7 @@ generation and scheduling.
 Overview
 ~~~~~~~~
 
-Just like in traditional NumPy the preferred method of implementing
+Just like in traditional NumPy, the preferred method of implementing
 generic vector operators is through ad-hoc polymorphism. Numpy's style
 of ad-hoc polymorphism allows ufunc objects to have different behaviors
 when "viewed" at different types. The runtime system then chooses an
@@ -58,7 +58,7 @@ Datashape types that are single values are called **unit** types. They
 represent a fixed type that has no internal structure. For example
 ``int32`` or ``2``.
 
-In Blaze there are two classes of units **measures** and **dimensions**.
+In Blaze there are two classes of units: **measures** and **dimensions**.
 Measures are units of data, while dimensions are units of shape.
 
 +----------------+
