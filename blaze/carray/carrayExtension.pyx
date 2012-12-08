@@ -710,7 +710,8 @@ cdef class carray:
 
   """
 
-  cdef int itemsize, atomsize, _chunksize, _chunklen, leftover
+  cdef public int itemsize, atomsize
+  cdef int _chunksize, _chunklen, leftover
   cdef int nrowsinbuf, _row
   cdef int sss_mode, wheretrue_mode, where_mode
   cdef npy_intp startb, stopb
@@ -722,7 +723,8 @@ cdef class carray:
   cdef char *lastchunk
   cdef object lastchunkarr, where_arr, arr1
   cdef object _cparams, _dflt
-  cdef object _dtype, chunks
+  cdef object _dtype
+  cdef public object chunks
   cdef object _rootdir, datadir, metadir, _mode
   cdef object _attrs
   cdef ndarray iobuf, where_buf
@@ -748,6 +750,10 @@ cdef class carray:
       nchunks = cython.cdiv(self._nbytes, <npy_intp>self._chunksize)
       chunklen = cython.cdiv(self._chunksize, self.atomsize)
       return [(i*chunklen,(i+1)*chunklen) for i in xrange(nchunks)]
+
+  property leftover_array:
+      def __get__(self):
+          return self.lastchunkarr
 
   property attrs:
     "The attribute accessor."

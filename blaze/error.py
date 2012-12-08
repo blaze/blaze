@@ -1,4 +1,3 @@
-
 class ChunkingException(BaseException):
     pass
 
