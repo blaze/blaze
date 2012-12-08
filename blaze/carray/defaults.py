@@ -13,7 +13,7 @@ Feel free to change them for better adapting to your needs.
 
 """
 
-import carray as ca
+import blaze.carray as ca
 
 
 class Defaults(object):

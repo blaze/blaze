@@ -12,7 +12,7 @@ Download
 
 Debian     : apt-get install libaterm
 Arch Linux : pacman -S libaterm
-Mac        : ftp://ftp.stratego-language.org/pub/stratego/StrategoXT/strategoxt-0.17/macosx/aterm-2.5-macosx.tar.gz
+Mac        : brew install aterm
 Windows    : ftp://ftp.stratego-language.org/pub/stratego/StrategoXT/strategoxt-0.17/cygwin/aterm-2.5-cygwin.tar.gz
 
 """
