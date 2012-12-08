@@ -22,7 +22,9 @@ from layouts.query import retrieve
 from expr.graph import ArrayNode, injest_iterable
 from expr import metadata as md
 
-from sources.canonical import CArraySource, ArraySource
+from sources.chunked import CArraySource
+from sources.canonical import ArraySource
+
 from printer import generic_str, generic_repr
 
 #------------------------------------------------------------------------
@@ -96,6 +98,7 @@ class Indexable(object):
         "stream".
         """
         raise NotImplementedError
+
     def __index__(self):
         raise NotImplementedError()
 
@@ -184,20 +187,6 @@ class Array(Indexable):
                 # dimension
                 self._layout = ChunkedL(data, cdimension=0)
 
-    @staticmethod
-    def _from_providers(*providers):
-        """
-        Internal method to create a NDArray from a 1D list of byte
-        providers. Tries to infer the simplest layout of how the
-        providers fit together.
-        """
-        subspaces = [Subspace(provider) for provider in providers]
-        space = Space(*subspaces)
-
-        # TODO: more robust
-        shape = providers[0].infer_datashape(providers[0])
-        return Array(space, dshape=shape)
-
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
@@ -244,6 +233,25 @@ class Array(Indexable):
 
     def __repr__(self):
         return generic_repr('Array', self, deferred=False)
+
+    #------------------------------------------------------------------------
+    # Internal Methods
+    #------------------------------------------------------------------------
+
+    @staticmethod
+    def _from_providers(*providers):
+        """
+        Internal method to create a NDArray from a 1D list of byte
+        providers. Tries to infer the simplest layout of how the
+        providers fit together.
+        """
+        subspaces = [Subspace(provider) for provider in providers]
+        space = Space(*subspaces)
+
+        # TODO: more robust
+        shape = providers[0].infer_datashape(providers[0])
+        return Array(space, dshape=shape)
+
 
 class Table(Indexable):
     pass
@@ -323,10 +331,6 @@ class NDArray(Indexable, ArrayNode):
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
-
-    @property
-    def mteretadata(self):
-        return self._meta
 
     @property
     def name(self):

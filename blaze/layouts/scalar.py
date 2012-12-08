@@ -5,6 +5,7 @@ of a layout is that there be some unique way of distinguishing an
 "initial element" in the container from which to orient.
 """
 
+import abc
 import math
 from numpy import zeros
 from pprint import pformat
@@ -198,37 +199,49 @@ class Layout(object):
     arbitrary getitem/getslice operations given a data layout of
     byte providers.
     """
+    __metaclass__ = abc.ABCMeta
 
-    boundscheck = True
-    # If set to False, layout will to assume that indexing operations
-    # will not cause any IndexErrors to be raised
-
-    wraparound = True
-    # Allow negative indexing
-
-class DeferredLayout(object):
-    """
-    Layout deferred until evaluation
-    """
-    def __init__(self, *args, **kwargs):
-        self.args   = args
-        self.kwargs = kwargs
-
+    @abc.abstractmethod
     def change_coordinates(self, indexer):
         raise NotImplementedError
 
-    @property
+    @abc.abstractproperty
     def desc(self):
-        return 'DeferredLayout()'
+        """ String description of the Layout instance with the
+        parameters passed to the constructor """
+        raise NotImplementedError
+
+    @abc.abstractproperty
+    def wraparound(self):
+        """ Allow negative indexing """
+        return True
+
+    @abc.abstractproperty
+    def boundscheck(self):
+        """
+        If set to False, layout will to assume that indexing operations
+        will not cause any IndexErrors to be raised
+        """
+        return False
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Layout:
+            if any("change_coordinates" in B.__dict__ for B in C.__mro__):
+                return True
+        return NotImplemented
 
 #------------------------------------------------------------------------
-# Continuous Layouts
+# Contiguous Layouts
 #------------------------------------------------------------------------
 
-class ContinuousL(Layout):
+
+class ContiguousL(Layout):
     """
     A single block with. Coordinate transform is just a passthrough.
     """
+    wraparound = False
+    boundscheck = False
 
     def __init__(self, single):
         self.bounds     = []
@@ -285,6 +298,8 @@ class ChunkedL(Layout):
                      CArraySource uses 0 by default.
 
     """
+    wraparound = False
+    boundscheck = False
 
     def __init__(self, init, cdimension):
         self.init = init
@@ -310,6 +325,8 @@ class MultichunkedL(Layout):
     array in arbitrary dimensions and then binary sort across
     each dimension in order to resolve partition locations.
     """
+    wraparound = False
+    boundscheck = False
 
     def __init__(self, partitions, ndim):
         # The numeric (x,y,z) coordinates of ith partition point

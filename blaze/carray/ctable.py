@@ -9,7 +9,7 @@
 import sys, math
 
 import numpy as np
-import carray as ca
+import blaze.carray as ca
 import itertools as it
 from collections import namedtuple
 import json

@@ -156,7 +156,7 @@ def test_custom_record_infer():
 
 @skip
 def test_module_parse():
-    mod = load('tests/foo.types')
+    mod = load('tests/foo.ds')
 
     assert 'A' in dir(mod)
     assert type(mod.B) is DataShape

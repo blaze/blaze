@@ -9,8 +9,9 @@ import blaze.carray as ca
 
 from blaze.datashape import dshape
 from blaze.table import NDArray, Array
-from blaze.sources.canonical import PythonSource, ByteSource, \
-    CArraySource, ArraySource
+
+from blaze.sources.chunked import CArraySource
+from blaze.sources.canonical import PythonSource, ByteSource, ArraySource
 
 # TODO: move NDArray -> Array
 

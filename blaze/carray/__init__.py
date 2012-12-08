@@ -12,5 +12,7 @@ from carrayExtension import (
     # blosc_version, _blosc_set_nthreads as blosc_set_nthreads
     )
 from toplevel import cparams, open
-#from .ctable import ctable
 from version import __version__
+
+# doesn't work for reasons I don't understand
+#from ctable import ctable

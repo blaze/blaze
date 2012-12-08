@@ -1,6 +1,8 @@
 from blaze.layouts.scalar import Interval, Chart, vstack,\
     hstack, dstack
 
+from unittest import skip
+
 def test_multiple_charts():
     alpha = object()
     beta  = object()
@@ -30,23 +32,23 @@ def test_vertical_stack():
     # -------------
 
     block, coords = s[[3,1]]
-    assert block is beta
+    assert block == beta
     assert coords == [1,1]
 
     block, coords = s[[0,0]]
-    assert block is alpha
+    assert block == alpha
     assert coords == [0,0]
 
     block, coords = s[[1,0]]
-    assert block is alpha
+    assert block == alpha
     assert coords == [1,0]
 
     block, coords = s[[2,0]]
-    assert block is beta
+    assert block == beta
     assert coords == [0,0]
 
     block, coords = s[[2,1]]
-    assert block is beta
+    assert block == beta
     assert coords == [0,1]
 
 def test_horizontal_stack():
@@ -64,19 +66,19 @@ def test_horizontal_stack():
     # -------------
 
     block, coords = s[[0,0]]
-    assert block is alpha
+    assert block == alpha
     assert coords == [0,0]
 
     block, coords = s[[0,1]]
-    assert block is alpha
+    assert block == alpha
     assert coords == [0,1]
 
     block, coords = s[[0,2]]
-    assert block is beta
+    assert block == beta
     assert coords == [0,0]
 
     block, coords = s[[2,4]]
-    assert block is beta
+    assert block == beta
     assert coords == [2,2]
 
 def test_third_axis():
@@ -95,5 +97,5 @@ def test_third_axis():
     # -------------
 
     block, coords = s[[0,0,0]]
-    #assert block is alpha
+    #assert block == alpha
     assert coords == [0,0,0]

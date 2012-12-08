@@ -23,3 +23,6 @@ from datashape.coretypes import to_numpy, from_numpy
 
 # Errors
 from blaze.error import *
+
+# For Ilan
+from blaze.testing import runner as test

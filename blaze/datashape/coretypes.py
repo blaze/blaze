@@ -712,7 +712,7 @@ def promote(*operands):
 
     # Looks something like this...
 
-    # (ArrayNode, IntNode...) -> (dshape('2, int', dshape('int'))
+    # (ArrayNode, IntNode...) -> (dshape('2, int'), dshape('int'))
     # (dshape('2, int', dshape('int')) -> (dshape('int', dshape('int'))
     # (dshape('2, int', dshape('int')) -> (dtype('int', dtype('int'))
 
