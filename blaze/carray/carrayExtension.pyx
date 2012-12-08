@@ -9,8 +9,8 @@
 
 import sys
 import numpy as np
-import carray as ca
-from carray import utils, attrs, array2string
+import blaze.carray as ca
+from blaze.carray import utils, attrs, array2string
 import os, os.path
 import struct
 import shutil
@@ -53,7 +53,7 @@ from definitions cimport import_array, ndarray, dtype, \
      PyString_FromStringAndSize, \
      Py_BEGIN_ALLOW_THREADS, Py_END_ALLOW_THREADS, \
      PyArray_GETITEM, PyArray_SETITEM, \
-     npy_intp
+     npy_intp, PyBuffer_FromMemory, Py_uintptr_t
 
 #-----------------------------------------------------------------
 
@@ -207,8 +207,8 @@ cdef class chunk:
 
   # To save space, keep these variables under a minimum
   cdef char typekind, isconstant
-  cdef int atomsize, itemsize, blocksize
-  cdef int nbytes, cbytes, cdbytes
+  cdef public int atomsize, itemsize, blocksize
+  cdef public int nbytes, cbytes, cdbytes
   cdef int true_count
   cdef char *data
   cdef object atom, constant, dobject
@@ -385,6 +385,21 @@ cdef class chunk:
     if step > 1:
       return array[::step]
     return array
+
+  @property
+  def pointer(self):
+      if self.memory:
+          return <Py_uintptr_t> self.data+BLOSCPACK_HEADER_LENGTH
+      else:
+          raise RuntimeError("Not in memory")
+
+  @property
+  def viewof(self):
+      if self.memory:
+          return PyBuffer_FromMemory(<void*>self.data, <Py_ssize_t>self.cdbytes)
+      else:
+          raise RuntimeError("Not in memory")
+
 
   def __setitem__(self, object key, object value):
     """__setitem__(self, key, value) -> None."""
@@ -715,6 +730,24 @@ cdef class carray:
   cdef int idxcache
   cdef ndarray blockcache
   cdef char *datacache
+
+  property leftovers:
+    def __get__(self):
+      # Pointer to the leftovers chunk
+      return self.lastchunkarr.ctypes.data
+
+  property nchunks:
+    def __get__(self):
+      # TODO: do we need to handle the last chunk specially?
+      return cython.cdiv(self._nbytes, <npy_intp>self._chunksize)
+
+  property partitions:
+    def __get__(self):
+      # Return a sequence of tuples indicating the bounds
+      # of each of the chunks.
+      nchunks = cython.cdiv(self._nbytes, <npy_intp>self._chunksize)
+      chunklen = cython.cdiv(self._chunksize, self.atomsize)
+      return [(i*chunklen,(i+1)*chunklen) for i in xrange(nchunks)]
 
   property attrs:
     "The attribute accessor."

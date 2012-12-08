@@ -14,7 +14,7 @@ import os, os.path
 import glob
 import itertools as it
 import numpy as np
-import carray as ca
+#import blaze.carray as ca
 import math
 
 def detect_number_of_cores():
@@ -712,7 +712,7 @@ class cparams(object):
             raise ValueError, "`shuffle` must a boolean."
         shuffle = bool(shuffle)
         if clevel < 0:
-            raiseValueError, "clevel must be a positive integer"
+            raise ValueError, "clevel must be a positive integer"
         self._clevel = clevel
         self._shuffle = shuffle
 

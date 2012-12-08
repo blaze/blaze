@@ -11,6 +11,6 @@ from carrayExtension import (
     # _cparams as cparams,
     # blosc_version, _blosc_set_nthreads as blosc_set_nthreads
     )
-#from .toplevel import open
+from toplevel import cparams, open
 #from .ctable import ctable
-from .version import __version__
+from version import __version__

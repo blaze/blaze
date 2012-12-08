@@ -87,6 +87,8 @@ cdef extern from "Python.h":
   # Functions for buffers
   object PyBuffer_FromMemory(void *ptr, Py_ssize_t size)
 
+  ctypedef unsigned int Py_uintptr_t
+
 
 #-----------------------------------------------------------------------------
 
