@@ -5,7 +5,7 @@ Overview
 Blaze is a Generalization of NumPy
 ----------------------------------
 
-.. TODO: This section in particular is an expression of older thoughts and 
+.. TODO: This section in particular is an expression of older thoughts and
    ideas about the NDTable and the object hierarchy.
 
 .. image:: svg/numpy_plus.png
@@ -27,7 +27,7 @@ These concepts are generalized via the concept of DataDescriptors.
 NumPy-style arrays consist of a single data-segment that can be explained via a
 linear indexing function with strides as the coefficients.  In addition to
 serving as a dispatch mechanism for functions, the dtype also participates in
-indexing operations via the itemsize, and structure data-types. 
+indexing operations via the itemsize, and structure data-types.
 
 NumPy is a pointer to memory with "indexing" information provided by strides.
 While we don't typically think of NumPy arrays as having an "index", the
@@ -41,12 +41,12 @@ about the details of how this lays out (just as today most users of NumPy don't
 care about the strides).  However, algorithm writers will care a great deal
 about the actual data-layout of an NDTable and want to process the elements of
 an array in the easiest possible way.  The ByteProvider and DataDescriptor
-interfaces allow algorithm writers to get at this information.    
+interfaces allow algorithm writers to get at this information.
 
 One concept which will remain true is that some algorithms will work faster and
 more optimally with data laid out in a certain way.  As a result, an NDTable
 may have several data-layouts to choose from which can be selected as needed
-for optimization. 
+for optimization.
 
 .. image:: svg/distributed.png
     :align: center
@@ -217,7 +217,7 @@ indexing.  It is a generalization of NumPy, Pandas, data array, larry, ctable,
 and CArray, and is meant to serve as a foundational abstraction on which to
 build out-of-core and distributed algorithms by focusing attention away from
 moving data to the code and rather layering interpretation on top of data that
-exists. 
+exists.
 
 .. image:: svg/codepush.png
     :align: center
@@ -232,19 +232,19 @@ There are two interfaces to Blaze Tabular objects:
    methods on Table objects.
 
 2) Algorithm writers and developers searching for a unified API that allows
-   coherent communication about the structure of data for optimization. 
+   coherent communication about the structure of data for optimization.
    This is served by the NDTable object.
 
 It is intended to be *the* glue that holds the PyData ecosystem together.   It
 has an interface for domain experts to query their information and an interface
 for algorithm writers to create out-of-core algorithms against.   The long-term
 goal is for NDTable to be the interface that *all* PyData projects interact
-with. 
+with.
 
 It is the calculations / operations that can be done with a Table that will
 ultimately matter and define whether or not it gets used in the Python
 ecosystem.  We need to make it easy to create these calculations and algorithms
-and push to grow this ecosystem rapidly.  
+and push to grow this ecosystem rapidly.
 
 At the heart of Table is a delayed-evaluation system (like SymPy, Theano, and
 a host of other tools).  As a result, every operation actually returns a node
@@ -252,7 +252,7 @@ of a simple, directed graph of functions and arguments (also analogous to
 DyND).  However, as far as possible, these nodes will propagate meta-data and
 meta-compute (such as dtype, and shape, and index-iterator parameters so that
 the eventual calculation framework can reason about how to manage the
-calculation. 
+calculation.
 
 .. image:: svg/graph.png
     :align: center
@@ -292,7 +292,7 @@ Stream:
     Flags and C-compatible elements types just like Buffers, but has actual
     data read functions.  Stream metadata includes hinting for optimal chunks
     in which to read data.
-    
+
 BufferList:
     A list of noncontiguous Buffer objects.  Has many of the same properties
     of the Buffer, most significantly, can be accessed in parallel.
