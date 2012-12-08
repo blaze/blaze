@@ -15,7 +15,7 @@ from os.path import abspath, join
 
 doc_url  = 'docs/index.html'
 
-src_url  = 'https://github.com/ContinuumIO/blazepro/downloads'
+src_url  = 'https://github.com/ContinuumIO/blaze/downloads'
 mail_url = 'https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev'
 
 pages = [
