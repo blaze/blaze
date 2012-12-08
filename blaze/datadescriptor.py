@@ -1,6 +1,4 @@
-def _dummy(*args, **kw):
-    pass
-Int = Float = Str = Tuple = Bool = List = _dummy
+import byteproto as proto
 
 #------------------------------------------------------------------------
 # Data Descriptor
@@ -69,19 +67,22 @@ class DataDescriptor(object):
 # Python Reference Implementations
 #------------------------------------------------------------------------
 
+# struct Buffer {
+#     int length;
+#     char* format;
+#     int* shape;
+#     int* strides;
+#     int readonly;
+# }
+
 class Buffer(object):
     """ Describes a region of memory. Implements the memoryview interface.
     """
     desctype = "buffer"
 
-    length   = Int     # Total length, in bytes, of the buffer
-    format   = Str     # Format of each elem, in struct module syntax
-    shape    = Tuple    # Numpy-style shape tuple
-    strides  = Tuple  #
-    readonly = Bool(False)
-
     # TODO: Add support for event callbacks when certain ranges are
     # written
+    # TODO: Why do we want this? ~Stephen
     #callbacks = Dict(Tuple, Function)
 
     def tobytes(self):
@@ -90,6 +91,13 @@ class Buffer(object):
     def tolist(self):
         pass
 
+# struct Stream {
+#     int length;
+#     char* format;
+#     int chunksize;
+#     int (*next)();
+# }
+
 class Stream(DataDescriptor):
     """ Describes a data item that must be retrieved by calling a function
     to load data into memory.  Represents a scan over data.  The returned
@@ -97,28 +105,19 @@ class Stream(DataDescriptor):
     """
     desctype = "stream"
 
-    length    = Int
-    format    = Str
-    chunksize = Int(1)  # optional "optimal" number of elements to read
-
-    def read(self, nbytes):
-        pass
-
-    def move(self, dest, src, nbytes):
-        pass
-
-
 #------------------------------------------------------------------------
 # Data descriptor implementations
 #------------------------------------------------------------------------
 
-class Chunk(object):
+# struct Chunk {
+#     int pointer;
+#     int* shape;
+#     int* strides;
+#     int itemsize;
+#     int readonly;
+# }
 
-    pointer  = Int     # Data pointer to first element, Py_uintptr_t
-    shape    = Tuple   # Numpy-style shape tuple
-    strides  = Tuple   # Strides of the chunk
-    itemsize = Int     # dtype itemsize
-    readonly = Bool(False)
+class Chunk(object):
 
     def __init__(self, pointer, shape, strides, itemsize):
         self.pointer = pointer
@@ -138,9 +137,12 @@ class CArrayDataDescriptor(DataDescriptor):
 
     def asbuflist(self, copy=False):
         # TODO: incorporate shape in the chunks
+
+        # main chunks
         for chunk in self.carray.chunks:
             yield self.build_chunk(chunk.pointer, chunk.nbytes / self.itemsize)
 
+        # main leftovers
         leftover_array = self.carray.leftover_array
         if leftover_array is not None:
             yield self.build_chunk(leftover_array.ctypes.data,
