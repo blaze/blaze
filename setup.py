@@ -5,6 +5,8 @@ import sys
 if 'develop' in sys.argv:
     import setuptools
 
+#------------------------------------------------------------------------
+
 import os
 import shutil
 import textwrap
@@ -201,18 +203,17 @@ extensions = [
         include_dirs = [numpy_path]
    ),
    Extension(
-       "blaze.engine.executors", ["blaze/engine/executors.pyx"],
-       include_dirs = [numpy_path],
+        "blaze.engine.executors", ["blaze/engine/executors.pyx"],
+        include_dirs = [numpy_path],
    ),
    Extension(
-       "blaze.cutils", ["blaze/cutils.pyx"],
-       include_dirs = [numpy_path],
+        "blaze.cutils", ["blaze/cutils.pyx"],
+        include_dirs = [numpy_path],
    ),
    Extension(
-       "blaze.expr.caterm", ["blaze/expr/caterm.pyx"],
-       include_dirs = [join(sys.prefix, 'include')],
-       libraries = ['ATerm'],
-       #extra_objects=['/usr/lib/libATerm.so'],
+        "blaze.expr.caterm", ["blaze/expr/caterm.pyx"],
+        include_dirs = [join(sys.prefix, 'include')],
+        libraries = ['ATerm'],
    ),
 ]
 

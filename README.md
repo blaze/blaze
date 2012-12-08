@@ -30,6 +30,8 @@ Many of the dependencies ( llvm, numba, ... ) are non-trivial to
 install. It is highly recommend that you build Blaze using the Anaconda
 Python distribution.
 
+Free Anaconda CE is available here: http://continuum.io/anacondace.html .
+
 Using Anaconda's package manager:
 
 ```bash
@@ -37,8 +39,6 @@ $ conda install ply
 $ conda install blosc
 $ conda install aterm
 ```
-
-Free Anaconda CE is available here: http://continuum.io/anacondace.html .
 
 Introduction
 ------------
