@@ -130,7 +130,7 @@ experts. ( Not all are defined for every operator. )</p>
 </ul>
 <span class="target" id="module-blaze.expr.ops"></span><dl class="class">
 <dt id="blaze.expr.ops.Abs">
-<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Abs</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#ndtable.expr.ops.Abs" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Abs</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#blaze.expr.ops.Abs" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="blaze.expr.ops.Abs.arity">
 <tt class="descname">arity</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.expr.ops.Abs.arity" title="Permalink to this definition">¶</a></dt>
@@ -148,7 +148,7 @@ experts. ( Not all are defined for every operator. )</p>
 
 <dl class="attribute">
 <dt id="blaze.expr.ops.Abs.dom">
-<tt class="descname">dom</tt><em class="property"> = [set([dshape(&quot;complex128&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float32&quot;), dshape(&quot;int8&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex64&quot;), dshape(&quot;int32&quot;), dshape(&quot;int64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;float64&quot;)]), set([dshape(&quot;complex128&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float32&quot;), dshape(&quot;int8&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex64&quot;), dshape(&quot;int32&quot;), dshape(&quot;int64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;float64&quot;)])]</em><a class="headerlink" href="#blaze.expr.ops.Abs.dom" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">dom</tt><em class="property"> = [set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)]), set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)])]</em><a class="headerlink" href="#blaze.expr.ops.Abs.dom" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -159,6 +159,11 @@ experts. ( Not all are defined for every operator. )</p>
 <dl class="attribute">
 <dt id="blaze.expr.ops.Abs.identity">
 <tt class="descname">identity</tt><em class="property"> = None</em><a class="headerlink" href="#blaze.expr.ops.Abs.identity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Abs.is_math">
+<tt class="descname">is_math</tt><em class="property"> = True</em><a class="headerlink" href="#blaze.expr.ops.Abs.is_math" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -180,7 +185,7 @@ experts. ( Not all are defined for every operator. )</p>
 
 <dl class="class">
 <dt id="blaze.expr.ops.Add">
-<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Add</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#ndtable.expr.ops.Add" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Add</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#blaze.expr.ops.Add" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="blaze.expr.ops.Add.arity">
 <tt class="descname">arity</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.expr.ops.Add.arity" title="Permalink to this definition">¶</a></dt>
@@ -198,7 +203,7 @@ experts. ( Not all are defined for every operator. )</p>
 
 <dl class="attribute">
 <dt id="blaze.expr.ops.Add.dom">
-<tt class="descname">dom</tt><em class="property"> = [set([dshape(&quot;top&quot;), dshape(&quot;uint32&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int8&quot;), dshape(&quot;int32&quot;), dshape(&quot;int16&quot;), dshape(&quot;uint16&quot;), dshape(&quot;float32&quot;), dshape(&quot;string&quot;), dshape(&quot;int64&quot;), dshape(&quot;uint64&quot;), Table, Array, dshape(&quot;uint8&quot;), dshape(&quot;complex64&quot;), dshape(&quot;float64&quot;)]), set([dshape(&quot;top&quot;), dshape(&quot;uint32&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int8&quot;), dshape(&quot;int32&quot;), dshape(&quot;int16&quot;), dshape(&quot;uint16&quot;), dshape(&quot;float32&quot;), dshape(&quot;string&quot;), dshape(&quot;int64&quot;), dshape(&quot;uint64&quot;), Table, Array, dshape(&quot;uint8&quot;), dshape(&quot;complex64&quot;), dshape(&quot;float64&quot;)])]</em><a class="headerlink" href="#blaze.expr.ops.Add.dom" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">dom</tt><em class="property"> = [set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)]), set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)])]</em><a class="headerlink" href="#blaze.expr.ops.Add.dom" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -209,6 +214,11 @@ experts. ( Not all are defined for every operator. )</p>
 <dl class="attribute">
 <dt id="blaze.expr.ops.Add.identity">
 <tt class="descname">identity</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.expr.ops.Add.identity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Add.is_arithmetic">
+<tt class="descname">is_arithmetic</tt><em class="property"> = True</em><a class="headerlink" href="#blaze.expr.ops.Add.is_arithmetic" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -229,19 +239,8 @@ experts. ( Not all are defined for every operator. )</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="blaze.expr.ops.ArithmeticOp">
-<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">ArithmeticOp</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#ndtable.expr.ops.ArithmeticOp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base for unary and binary arithmetic operations</p>
-<dl class="attribute">
-<dt id="blaze.expr.ops.ArithmeticOp.is_arithmetic">
-<tt class="descname">is_arithmetic</tt><em class="property"> = True</em><a class="headerlink" href="#blaze.expr.ops.ArithmeticOp.is_arithmetic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="blaze.expr.ops.Mul">
-<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Mul</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#ndtable.expr.ops.Mul" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Mul</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#blaze.expr.ops.Mul" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="blaze.expr.ops.Mul.arity">
 <tt class="descname">arity</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.expr.ops.Mul.arity" title="Permalink to this definition">¶</a></dt>
@@ -259,7 +258,7 @@ experts. ( Not all are defined for every operator. )</p>
 
 <dl class="attribute">
 <dt id="blaze.expr.ops.Mul.dom">
-<tt class="descname">dom</tt><em class="property"> = [set([dshape(&quot;top&quot;), dshape(&quot;uint32&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int8&quot;), dshape(&quot;int32&quot;), dshape(&quot;int16&quot;), dshape(&quot;uint16&quot;), dshape(&quot;float32&quot;), dshape(&quot;string&quot;), dshape(&quot;int64&quot;), dshape(&quot;uint64&quot;), Table, Array, dshape(&quot;uint8&quot;), dshape(&quot;complex64&quot;), dshape(&quot;float64&quot;)]), set([dshape(&quot;top&quot;), dshape(&quot;uint32&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int8&quot;), dshape(&quot;int32&quot;), dshape(&quot;int16&quot;), dshape(&quot;uint16&quot;), dshape(&quot;float32&quot;), dshape(&quot;string&quot;), dshape(&quot;int64&quot;), dshape(&quot;uint64&quot;), Table, Array, dshape(&quot;uint8&quot;), dshape(&quot;complex64&quot;), dshape(&quot;float64&quot;)])]</em><a class="headerlink" href="#blaze.expr.ops.Mul.dom" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">dom</tt><em class="property"> = [set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)]), set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)])]</em><a class="headerlink" href="#blaze.expr.ops.Mul.dom" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -270,6 +269,11 @@ experts. ( Not all are defined for every operator. )</p>
 <dl class="attribute">
 <dt id="blaze.expr.ops.Mul.identity">
 <tt class="descname">identity</tt><em class="property"> = 0</em><a class="headerlink" href="#blaze.expr.ops.Mul.identity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Mul.is_arithmetic">
+<tt class="descname">is_arithmetic</tt><em class="property"> = True</em><a class="headerlink" href="#blaze.expr.ops.Mul.is_arithmetic" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -290,13 +294,63 @@ experts. ( Not all are defined for every operator. )</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="blaze.expr.ops.Symbol">
-<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Symbol</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#ndtable.expr.ops.Symbol" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.expr.ops.Pow">
+<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Pow</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#blaze.expr.ops.Pow" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="blaze.expr.ops.Pow.arity">
+<tt class="descname">arity</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.expr.ops.Pow.arity" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.associative">
+<tt class="descname">associative</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.expr.ops.Pow.associative" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.commutative">
+<tt class="descname">commutative</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.expr.ops.Pow.commutative" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.dom">
+<tt class="descname">dom</tt><em class="property"> = [set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)]), set([dshape(&quot;int64&quot;), dshape(&quot;uint8&quot;), dshape(&quot;uint16&quot;), dshape(&quot;uint32&quot;), dshape(&quot;float64&quot;), dshape(&quot;uint64&quot;), dshape(&quot;int8&quot;), dshape(&quot;float32&quot;), dshape(&quot;int16&quot;), dshape(&quot;complex128&quot;), dshape(&quot;int32&quot;), dshape(&quot;complex64&quot;)])]</em><a class="headerlink" href="#blaze.expr.ops.Pow.dom" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.idempotent">
+<tt class="descname">idempotent</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.expr.ops.Pow.idempotent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.identity">
+<tt class="descname">identity</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.expr.ops.Pow.identity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.is_math">
+<tt class="descname">is_math</tt><em class="property"> = True</em><a class="headerlink" href="#blaze.expr.ops.Pow.is_math" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.nilpotent">
+<tt class="descname">nilpotent</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.expr.ops.Pow.nilpotent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.sideffectful">
+<tt class="descname">sideffectful</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.expr.ops.Pow.sideffectful" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.expr.ops.Pow.signature">
+<tt class="descname">signature</tt><em class="property"> = 'a -&gt; a -&gt; a'</em><a class="headerlink" href="#blaze.expr.ops.Pow.signature" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="blaze.expr.ops.Transpose">
-<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Transpose</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#ndtable.expr.ops.Transpose" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">Transpose</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#blaze.expr.ops.Transpose" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="blaze.expr.ops.Transpose.arity">
 <tt class="descname">arity</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.expr.ops.Transpose.arity" title="Permalink to this definition">¶</a></dt>
@@ -343,11 +397,6 @@ experts. ( Not all are defined for every operator. )</p>
 <dd></dd></dl>
 
 </dd></dl>
-
-<dl class="function">
-<dt id="blaze.expr.ops.arity">
-<tt class="descclassname">blaze.expr.ops.</tt><tt class="descname">arity</tt><big>(</big><em>op</em><big>)</big><a class="headerlink" href="#ndtable.expr.ops.arity" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </div>
 

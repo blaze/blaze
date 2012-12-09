@@ -1,7 +1,7 @@
 Datashape
 =========
 
-.. highlight:: erlang
+.. highlight:: ocaml
 
 Datashape is a generalization of ``dtype`` and ``shape`` into a micro
 type system which lets us overlay high level structure on existing
@@ -11,7 +11,7 @@ generation and scheduling.
 Overview
 ~~~~~~~~
 
-Just like in traditional NumPy the preferred method of implementing
+Just like in traditional NumPy, the preferred method of implementing
 generic vector operators is through ad-hoc polymorphism. Numpy's style
 of ad-hoc polymorphism allows ufunc objects to have different behaviors
 when "viewed" at different types. The runtime system then chooses an
@@ -58,8 +58,7 @@ Datashape types that are single values are called **unit** types. They
 represent a fixed type that has no internal structure. For example
 ``int32`` or ``2``.
 
-In Blaze there are two classes of units **measures** and **dimensions**.
-Measures are units of data, while dimensions are units of shape.
+The native bit types or **CType** objects are unit types.
 
 +----------------+
 | int8           |
@@ -109,6 +108,15 @@ Measures are units of data, while dimensions are units of shape.
 | pyobj          |
 +----------------+
 
+In Blaze there are two classes of units: **measures** and
+**dimensions**. Measures are units of data, while dimensions are
+units of shape. The combination of measure and dimension in datashape
+constructors uniquely describe the space of possible values or
+**dataspace** of a table or array object.
+
+Dataspace mappings which preserve values ( i.e. homomorphisms ) are
+called **index-space transformations**.
+
 Products
 --------
 
@@ -116,7 +124,8 @@ A comma between two types signifies a product type. Product types
 correspond to branching possibilities of types.
 
 The product operator ``(,)`` is used to construct product types.
-It is a type constructor of two arguments.
+It is a type constructor of two arguments with a special infix
+sugar.
 
 Example::
 
@@ -136,6 +145,16 @@ But forbids types of the form::
 
     int32, a
     int32, int32
+
+::
+
+    Dimensions
+        |
+    ----------
+       a, b,     int32
+                 -----
+                   |
+                Measure
 
 There is a algebraic relation between product types and sum types
 ( discussed below ).
@@ -170,7 +189,7 @@ called **composite** types. The product operator discussed above
 yields composite types. Example::
 
 A **type operator** is higher type that maps each choice of parameter to
-a concrete type instance.
+a concrete type instance.::
 
     2, int32
 
@@ -226,8 +245,8 @@ Datashape types are split into three equivalence classes.
         A = 2, int32
         B = 2, int32
 
-        A == A # True
-        A == B # False
+        A == A
+        A != B
 
 While it is true that structurally equivalent composites are not equal
 to each other, it is however necessarily true that the unification of
@@ -239,7 +258,8 @@ Records
 
 Record types are ordered struct-like objects which hold a collection of
 types keyed by labels. Records are also an in the class of **measure**
-types.
+types. Records are sugard to look like Python dictionaries but
+are themselves type constructors of variable number of type arguments.
 
 Example 1::
 
@@ -259,9 +279,39 @@ Example 2::
         a: int8
     }
 
+Records are themselves types declaration so they can be nested,
+but cannot be self-referential:
+
+Example 2::
+
+    Point = {
+        x : int,
+        y : int
+    }
+
+    Space = {
+        a: Point,
+        b: Point
+    }
+
+Or equivelantly::
+
+    Space = {
+        a: ({ x: int, y: int }),
+        b: ({ x: int, y: int })
+    }
+
 Composite datashapes that terminate in record types are called
 **table-like**, while any other terminating type is called
 **array-like**.
+
+Example of array-like::
+
+    foo = 2, 3, int32
+
+Example of table-like::
+
+    bar = {x:int, y:float}
 
 Enumeration
 -----------
@@ -300,6 +350,11 @@ can be written as::
 
     A, B, int32
 
+Type variables can also be free measure quantities, representing
+shaped but type-generic datashapes::
+
+    TwoByTwo T = 2, 2, T
+
 ..
     (1x + 2x + ... + Ax) * (1y + 2y + ... By)
 
@@ -334,7 +389,11 @@ Union
 
 A **union** or **untagged union** is a variant type permitting a
 variable number of variants. Unions behave like unions in C and permit a
-collection of heterogeneous typed values::
+variable number of heterogeneous typed values::
+
+    Union int8 string
+
+::
 
     Union int8 int16 int32 int64
 
@@ -350,9 +409,16 @@ specific types. Many languages have a natural expression of this by
 allowing all or most types to be nullable including including C, SQL,
 and Java.
 
-For example a nullable int field::
+Option types are only defined for type arguments of unit
+measures and Records.
 
-    Either int32 null
+For example a optional int field::
+
+    Option int32
+
+Or a optional record::
+
+    Option {x:int, y:float, s:string}
 
 ..
     1 + A
@@ -360,14 +426,21 @@ For example a nullable int field::
 Ranges
 ~~~~~~
 
-Ranges are sum types over shape instead of data.
+Ranges are sum types over intervals of Fixed dimensions types.
 
 Ranges are heterogeneously fixed dimensions within a lower and upper
 bound.
 
 Example 1::
 
-    Var(1,5)
+    Range(1,5)
+
+A single argument to range is assumes a lower bound of 0.
+
+The set of values of integer arrays with dimension less than or equal to
+1000 x 1000 is given by the datashape::
+
+    Range(1000), Range(1000), int32
 
 The lower bound must be greater than 0. The upper bound must be
 greater than the lower, but may also be unbounded ( i.e. ``inf`` ).
@@ -383,9 +456,6 @@ Ranges are sum types over shape instead of data.
 A case where a ``Range`` has no upper bound signifies a potentially infinite
 **stream** of values. Specialized kernels are needed to deal with data
 of this type.
-
-The difference between a stream and a TypeVar is that TypeVar are scoped
-within the datashape expression whereas ``Stream`` objects are not.
 
 ..
     (1 + 1 + ...)

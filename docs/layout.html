@@ -29,7 +29,7 @@
     <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
     <link rel="next" title="Sources" href="sources.html" />
-    <link rel="prev" title="Persistence" href="persistence.html" /> 
+    <link rel="prev" title="ATerm" href="aterm.html" /> 
   </head>
   <body>
       <div class="header">
@@ -42,7 +42,7 @@
       <div class="topnav">
       
         <p>
-        «&#160;&#160;<a href="persistence.html">Persistence</a>
+        «&#160;&#160;<a href="aterm.html">ATerm</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
@@ -134,7 +134,7 @@ of a layout is that there be some unique way of distinguishing an
 &#8220;initial element&#8221; in the container from which to orient.</p>
 <dl class="class">
 <dt id="blaze.layouts.scalar.Chart">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Chart</tt><big>(</big><em>components</em>, <em>ref</em>, <em>tinv=None</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.Chart" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Chart</tt><big>(</big><em>components</em>, <em>ref</em>, <em>tinv=None</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Chart" title="Permalink to this definition">¶</a></dt>
 <dd><p>A interval partition pointing at a Indexable reference.</p>
 <dl class="method">
 <dt id="blaze.layouts.scalar.Chart.inverse">
@@ -160,7 +160,7 @@ and the component.</p>
 
 <dl class="class">
 <dt id="blaze.layouts.scalar.ChunkedL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ChunkedL</tt><big>(</big><em>init</em>, <em>cdimension</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.ChunkedL" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ChunkedL</tt><big>(</big><em>init</em>, <em>cdimension</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ChunkedL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Chunked layout, like CArray.</p>
 <blockquote>
 <div><table class="docutils field-list" frame="void" rules="none">
@@ -184,12 +184,12 @@ CArraySource uses 0 by default.</td>
 </dd></dl>
 
 <dl class="class">
-<dt id="blaze.layouts.scalar.ContinuousL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ContinuousL</tt><big>(</big><em>single</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.ContinuousL" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.layouts.scalar.ContiguousL">
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ContiguousL</tt><big>(</big><em>single</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ContiguousL" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single block with. Coordinate transform is just a passthrough.</p>
 <dl class="method">
-<dt id="blaze.layouts.scalar.ContinuousL.change_coordinates">
-<tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ContinuousL.change_coordinates" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.layouts.scalar.ContiguousL.change_coordinates">
+<tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ContiguousL.change_coordinates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Identity coordinate transform</p>
 </dd></dl>
 
@@ -197,7 +197,7 @@ CArraySource uses 0 by default.</td>
 
 <dl class="class">
 <dt id="blaze.layouts.scalar.HilbertL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">HilbertL</tt><big>(</big><em>init</em>, <em>size</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.HilbertL" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">HilbertL</tt><big>(</big><em>init</em>, <em>size</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.HilbertL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple Hilbert curve layout. Hilbert curves preserve index locality
 but are discontinuous.</p>
 <p>Example of a order 4 (H_4) curve over a 2D array:</p>
@@ -218,7 +218,7 @@ but are discontinuous.</p>
 
 <dl class="class">
 <dt id="blaze.layouts.scalar.Interval">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Interval</tt><big>(</big><em>inf</em>, <em>sup</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.Interval" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Interval</tt><big>(</big><em>inf</em>, <em>sup</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Interval" title="Permalink to this definition">¶</a></dt>
 <dd><p>A mathematical interval uniquely defined by two parameters</p>
 <p>Parameters</p>
 <blockquote>
@@ -237,24 +237,39 @@ but are discontinuous.</p>
 
 <dl class="class">
 <dt id="blaze.layouts.scalar.Layout">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Layout</tt><a class="headerlink" href="#ndtable.layouts.scalar.Layout" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Layout</tt><a class="headerlink" href="#blaze.layouts.scalar.Layout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Layout&#8217;s build the Index objects neccessary to perform
 arbitrary getitem/getslice operations given a data layout of
 byte providers.</p>
+<dl class="attribute">
+<dt id="blaze.layouts.scalar.Layout.boundscheck">
+<tt class="descname">boundscheck</tt><a class="headerlink" href="#blaze.layouts.scalar.Layout.boundscheck" title="Permalink to this definition">¶</a></dt>
+<dd><p>If set to False, layout will to assume that indexing operations
+will not cause any IndexErrors to be raised</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.layouts.scalar.Layout.desc">
+<tt class="descname">desc</tt><a class="headerlink" href="#blaze.layouts.scalar.Layout.desc" title="Permalink to this definition">¶</a></dt>
+<dd><p>String description of the Layout instance with the
+parameters passed to the constructor</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.layouts.scalar.Layout.wraparound">
+<tt class="descname">wraparound</tt><a class="headerlink" href="#blaze.layouts.scalar.Layout.wraparound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allow negative indexing</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="blaze.layouts.scalar.MultichunkedL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">MultichunkedL</tt><big>(</big><em>partitions</em>, <em>ndim</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.MultichunkedL" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">MultichunkedL</tt><big>(</big><em>partitions</em>, <em>ndim</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.MultichunkedL" title="Permalink to this definition">¶</a></dt>
 <dd><p>MultichunkL is a layout to contain multiple possibly unaligned
 chunks. It is enough to track the partition points of the
 array in arbitrary dimensions and then binary sort across
 each dimension in order to resolve partition locations.</p>
-<dl class="method">
-<dt id="blaze.layouts.scalar.MultichunkedL.bounds_dim">
-<tt class="descname">bounds_dim</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.MultichunkedL.bounds_dim" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="blaze.layouts.scalar.MultichunkedL.change_coordinates">
 <tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.MultichunkedL.change_coordinates" title="Permalink to this definition">¶</a></dt>
@@ -271,7 +286,7 @@ each dimension in order to resolve partition locations.</p>
 
 <dl class="class">
 <dt id="blaze.layouts.scalar.StridedL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">StridedL</tt><big>(</big><em>init</em>, <em>strides=None</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.StridedL" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">StridedL</tt><big>(</big><em>init</em>, <em>strides=None</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.StridedL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Single strided layout. This behaves like strided NumPy arrays.</p>
 <dl class="method">
 <dt id="blaze.layouts.scalar.StridedL.change_coordinates">
@@ -283,7 +298,7 @@ each dimension in order to resolve partition locations.</p>
 
 <dl class="function">
 <dt id="blaze.layouts.scalar.cdimshuffle">
-<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">cdimshuffle</tt><big>(</big><em>axi</em>, <em>mapping</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.cdimshuffle" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">cdimshuffle</tt><big>(</big><em>axi</em>, <em>mapping</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.cdimshuffle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Example:</p>
 <p>f : 2, 0, 1 : [1,2,3] -&gt; [3,1,2]
 g : 2, 0, 1 : [3,1,2] -&gt; [1,2,3]</p>
@@ -291,13 +306,13 @@ g : 2, 0, 1 : [3,1,2] -&gt; [1,2,3]</p>
 
 <dl class="function">
 <dt id="blaze.layouts.scalar.ctranslate">
-<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ctranslate</tt><big>(</big><em>factor</em>, <em>axi</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.ctranslate" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ctranslate</tt><big>(</big><em>factor</em>, <em>axi</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ctranslate" title="Permalink to this definition">¶</a></dt>
 <dd><p>A coordinate translation.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="blaze.layouts.scalar.stack_transforms">
-<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">stack_transforms</tt><big>(</big><em>c1</em>, <em>c2</em>, <em>axis</em><big>)</big><a class="headerlink" href="#ndtable.layouts.scalar.stack_transforms" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">stack_transforms</tt><big>(</big><em>c1</em>, <em>c2</em>, <em>axis</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.stack_transforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stack two intervals to form a large interval</p>
 </dd></dl>
 

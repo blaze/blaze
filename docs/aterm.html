@@ -58,28 +58,27 @@
 <p>Python implementation of ATerm. Just a pretty printer for now.</p>
 <p>In our slight modification of ATerm we require that the first
 annotation of a Term be its datashape type and the following
-annotations stand for metadata. For example, an variable <tt class="docutils literal"><span class="pre">x</span></tt>
-which stands</p>
-<p>Type:</p>
+annotations stand for metadata. For example, an Array.</p>
+<p><strong>Type</strong>:</p>
 <div class="highlight-python"><pre>Array(2928121){dshape('2,2,int32')}</pre>
 </div>
-<p>Type and Metadata:</p>
+<p><strong>Type and Metadata</strong>:</p>
 <div class="highlight-python"><pre>Array(2928121){dshape('2,2,int32'), contigious, corder}</pre>
 </div>
 <p>Nevertheless, it is still a strict subset of ATerm so it can be parsed
 and manipulated by Stratego rewriters.</p>
-<p>Grammar:</p>
+<p><strong>Grammar</strong>:</p>
 <div class="highlight-python"><pre>t : bt                 -- basic term
   | bt {ty,m1,...}     -- annotated term
 
 bt : C                 -- constant
    | C(t1,...,tn)      -- n-ary constructor
    | [t1,...,tn]       -- list
-   | "ccc"             -- quoted string
+   | "ccc"             -- quoted string ( explicit double quotes )
    | int               -- integer
    | real              -- floating point number</pre>
 </div>
-<p>Examples:</p>
+<p><strong>Examples</strong>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">AInt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="go">1</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
@@ -90,16 +89,206 @@ bt : C                 -- constant
 <span class="go">Mul(Add(1,2), x)</span>
 </pre></div>
 </div>
+<p><strong>Pattern Matching</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;foo;*&#39;</span><span class="p">,</span> <span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;1;*&#39;</span><span class="p">,</span> <span class="n">AInt</span><span class="p">(</span><span class="s">&#39;1&#39;</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;1;*&#39;</span><span class="p">,</span> <span class="n">AInt</span><span class="p">(</span><span class="s">&#39;2&#39;</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p><strong>Value Capturing</strong></p>
+<p>Pattern matching can als also be used to capture free variables
+in the matched expressions. The result is also &#8220;truthy&#8221; so it
+will match as a boolean True as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fn</span> <span class="o">=</span> <span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;F&#39;</span><span class="p">),</span> <span class="p">[</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">),</span> <span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">)])</span>
+<span class="go"># Upper case variables are bound terms, lower case variables</span>
+<span class="go"># are free</span>
+
+<span class="go"># Fixed spine</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;F(x,y);*&#39;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+<span class="go">{&#39;y&#39;: b, &#39;x&#39;: a}</span>
+
+<span class="go"># Pattern match includes spine</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;f(x,y);*&#39;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+<span class="go">{&#39;y&#39;: b, &#39;x&#39;: a, &#39;f&#39;: F}</span>
+</pre></div>
+</div>
+<p><strong>Annotation Matching</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">at</span> <span class="o">=</span> <span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">AAnnotation</span><span class="p">(</span><span class="n">AString</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;*;foo&#39;</span><span class="p">,</span> <span class="n">at</span><span class="p">)</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;x;bar&#39;</span><span class="p">,</span> <span class="n">at</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Tools</strong></p>
+<p>Using the aterm-utils there are a variety of tools to working
+with and transform aterm expressions.</p>
+<p>For example this expression can be pretty printed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Mul</span><span class="p">(</span><span class="n">Add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>$ cat input | pp-aterm --max-term-size 2
+Mul(
+  Add(1, 2)
+, x()
+)</pre>
+</div>
+<dl class="class">
+<dt id="blaze.expr.paterm.AAnnotation">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AAnnotation</tt><big>(</big><em>ty=None</em>, <em>annotations=None</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AAnnotation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="blaze.expr.paterm.AAnnotation.annotations">
+<tt class="descname">annotations</tt><a class="headerlink" href="#blaze.expr.paterm.AAnnotation.annotations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.AAppl">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AAppl</tt><big>(</big><em>spine</em>, <em>args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AAppl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.AFloat">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AFloat</tt><big>(</big><em>n</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AFloat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.AInt">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AInt</tt><big>(</big><em>n</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AInt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.AList">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AList</tt><big>(</big><em>*elts</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.AString">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AString</tt><big>(</big><em>s</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AString" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.ATerm">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">ATerm</tt><big>(</big><em>label</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.ATerm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.ATermBase">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">ATermBase</tt><big>(</big><em>annotation=None</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.ATermBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base for aterms</p>
+<dl class="attribute">
+<dt id="blaze.expr.paterm.ATermBase.metastr">
+<tt class="descname">metastr</tt><a class="headerlink" href="#blaze.expr.paterm.ATermBase.metastr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.All">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">All</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.All" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Bottomup">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Bottomup</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Bottomup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Choice">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Choice</tt><big>(</big><em>left=None</em>, <em>right=None</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Choice" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.ChoiceL">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">ChoiceL</tt><big>(</big><em>*sx</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.ChoiceL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Fail">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Fail</tt><a class="headerlink" href="#blaze.expr.paterm.Fail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Fwd">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Fwd</tt><a class="headerlink" href="#blaze.expr.paterm.Fwd" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="blaze.expr.paterm.Fwd.define">
+<tt class="descname">define</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Fwd.define" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="function">
-<dt id="blaze.expr.paterm.cat">
-<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">cat</tt><big>(</big><em>terms</em>, <em>l</em>, <em>r</em><big>)</big><a class="headerlink" href="#ndtable.expr.paterm.cat" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.expr.paterm.Id">
+<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Id</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Innermost">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Innermost</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Innermost" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Repeat">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Repeat</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Repeat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="blaze.expr.paterm.STFail">
+<em class="property">exception </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">STFail</tt><a class="headerlink" href="#blaze.expr.paterm.STFail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Seq">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Seq</tt><big>(</big><em>s1</em>, <em>s2</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Seq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.SeqL">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">SeqL</tt><big>(</big><em>*sx</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.SeqL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Some">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Some</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Some" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Ternary">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Ternary</tt><big>(</big><em>s1</em>, <em>s2</em>, <em>s3</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Ternary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Topdown">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Topdown</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Topdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="blaze.expr.paterm.Try">
+<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Try</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Try" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="blaze.expr.paterm.arepr">
+<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">arepr</tt><big>(</big><em>terms</em>, <em>l</em>, <em>r</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.arepr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Concatenate str representations with commas and left and right
 delimiters.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="blaze.expr.paterm.compose">
+<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">compose</tt><big>(</big><em>f</em>, <em>g</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.compose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="blaze.expr.paterm.matches">
-<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">matches</tt><big>(</big><em>pattern</em>, <em>term</em><big>)</big><a class="headerlink" href="#ndtable.expr.paterm.matches" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">matches</tt><big>(</big><em>pattern</em>, <em>term</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.matches" title="Permalink to this definition">¶</a></dt>
 <dd><p>Collapse terms with as-patterns.</p>
 </dd></dl>
 

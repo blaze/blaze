@@ -146,22 +146,26 @@ of the type inference algorithm. It is a stateful dict passed through
 the unifiers.</p>
 <dl class="function">
 <dt id="blaze.expr.typechecker.tyeval">
-<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">tyeval</tt><big>(</big><em>signature</em>, <em>operands</em>, <em>domc</em>, <em>system</em>, <em>commutative=False</em><big>)</big><a class="headerlink" href="#ndtable.expr.typechecker.tyeval" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">tyeval</tt><big>(</big><em>signature</em>, <em>operands</em>, <em>domc</em>, <em>system</em>, <em>commutative=False</em><big>)</big><a class="headerlink" href="#blaze.expr.typechecker.tyeval" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parameters:</p>
 <blockquote>
-<div><dl class="docutils">
-<dt>signature:</dt>
-<dd>String containing the type signature.</dd>
-<dt>operands:</dt>
-<dd>The operands to type check against signature.</dd>
-<dt>dom:</dt>
-<dd>The constraints on the space domain to traverse.</dd>
-<dt>universe:</dt>
-<dd>The universe of terms in which to resolve instances to types.</dd>
-<dt>commutative:</dt>
-<dd>Use the commutative checker which attempts to eval all
-permutations of domains to find a satisfiable one.</dd>
-</dl>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">signature:</th><td class="field-body">String containing the type signature.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">operands:</th><td class="field-body">The operands to type check against signature.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">domc:</th><td class="field-body">The constraints on the space domain to traverse.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">system:</th><td class="field-body">The type system over which to evaluate.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">commutative:</th><td class="field-body">Use the commutative checker which attempts to eval all
+permutations of domains to find a satisfiable one.</td>
+</tr>
+</tbody>
+</table>
 </div></blockquote>
 <p>Returns:</p>
 <blockquote>
@@ -170,14 +174,14 @@ the constraints.</div></blockquote>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="blaze.expr.typechecker.typeresult">
-<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typeresult</tt><a class="headerlink" href="#ndtable.expr.typechecker.typeresult" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">Satisifes</span></tt></p>
+<dt id="blaze.expr.typechecker.typejudgement">
+<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typejudgement</tt><a class="headerlink" href="#blaze.expr.typechecker.typejudgement" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">Judgement</span></tt></p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="blaze.expr.typechecker.typesystem">
-<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typesystem</tt><a class="headerlink" href="#ndtable.expr.typechecker.typesystem" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typesystem</tt><a class="headerlink" href="#blaze.expr.typechecker.typesystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">TypeSystem</span></tt></p>
 </dd></dl>
 

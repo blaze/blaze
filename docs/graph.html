@@ -91,13 +91,12 @@ context of an application binding.</p>
 <span class="target" id="module-blaze.expr.graph"></span><p>Holds the base classes for graph nodes.</p>
 <dl class="class">
 <dt id="blaze.expr.graph.App">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">App</tt><big>(</big><em>operator</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.App" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">App</tt><big>(</big><em>operator</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.App" title="Permalink to this definition">¶</a></dt>
 <dd><p>The application of an operand producing concrete values.</p>
 <p>For example:</p>
 <blockquote>
 <div>In[0]: a = 2 + 3</div></blockquote>
-<p>The resulting value of <tt class="docutils literal"><span class="pre">a</span></tt> is App( Op(+), 2, 3) the
-signature of the application is with output type int32.</p>
+<p>The resulting value of <tt class="docutils literal"><span class="pre">a</span></tt> is App( Op(+), 2, 3).</p>
 <dl class="attribute">
 <dt id="blaze.expr.graph.App.cod">
 <tt class="descname">cod</tt><a class="headerlink" href="#blaze.expr.graph.App.cod" title="Permalink to this definition">¶</a></dt>
@@ -114,7 +113,7 @@ signature of the application is with output type int32.</p>
 
 <dl class="class">
 <dt id="blaze.expr.graph.ArrayNode">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">ArrayNode</tt><big>(</big><em>children</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.ArrayNode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">ArrayNode</tt><big>(</big><em>children</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.ArrayNode" title="Permalink to this definition">¶</a></dt>
 <dd><p>A array structure with dimension and length.</p>
 <dl class="attribute">
 <dt id="blaze.expr.graph.ArrayNode.T">
@@ -132,19 +131,19 @@ signature of the application is with output type int32.</p>
 
 <dl class="class">
 <dt id="blaze.expr.graph.ExpressionNode">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">ExpressionNode</tt><big>(</big><em>children</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.ExpressionNode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">ExpressionNode</tt><big>(</big><em>children</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.ExpressionNode" title="Permalink to this definition">¶</a></dt>
 <dd><p>A abstract node which supports the full set of PyNumberMethods
 methods.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="blaze.expr.graph.Fun">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">Fun</tt><big>(</big><em>fn</em>, <em>arguments</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.Fun" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">Fun</tt><big>(</big><em>fn</em>, <em>arguments</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.Fun" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
 <dt id="blaze.expr.graph.FunApp">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">FunApp</tt><big>(</big><em>function</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.FunApp" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">FunApp</tt><big>(</big><em>function</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.FunApp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function application.</p>
 <dl class="attribute">
 <dt id="blaze.expr.graph.FunApp.cod">
@@ -162,19 +161,19 @@ methods.</p>
 
 <dl class="class">
 <dt id="blaze.expr.graph.NamedFun">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">NamedFun</tt><big>(</big><em>name</em>, <em>bases</em>, <em>dct</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.NamedFun" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">NamedFun</tt><big>(</big><em>name</em>, <em>bases</em>, <em>dct</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.NamedFun" title="Permalink to this definition">¶</a></dt>
 <dd><p>Metaclass to track Fun subclasses.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="blaze.expr.graph.NamedOp">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">NamedOp</tt><big>(</big><em>name</em>, <em>bases</em>, <em>dct</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.NamedOp" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">NamedOp</tt><big>(</big><em>name</em>, <em>bases</em>, <em>dct</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.NamedOp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Metaclass to track Op subclasses.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="blaze.expr.graph.Op">
-<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">Op</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.Op" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">Op</tt><big>(</big><em>op</em>, <em>operands</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.Op" title="Permalink to this definition">¶</a></dt>
 <dd><p>A typed operator taking a set of typed operands.</p>
 <dl class="attribute">
 <dt id="blaze.expr.graph.Op.opaque">
@@ -184,17 +183,34 @@ signature ... we just throw things into and things pop out or it
 blows up.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="blaze.expr.graph.Op.simple_type">
+<tt class="descname">simple_type</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.expr.graph.Op.simple_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>If possible determine the datashape before we even
+hit eval(). This is possible only for simple types.</p>
+<p>Possible:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Example Not Possible::</dt>
+<dd>X, 2, int32</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="function">
 <dt id="blaze.expr.graph.typeof">
-<tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">typeof</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#ndtable.expr.graph.typeof" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.expr.graph.</tt><tt class="descname">typeof</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#blaze.expr.graph.typeof" title="Permalink to this definition">¶</a></dt>
 <dd><p>BlazeT value deconstructor, maps values to types. Only
 defined for Blaze types.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">typeof</span><span class="p">(</span><span class="n">IntNode</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
 <span class="go">int64</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">typeof</span><span class="p">(</span><span class="n">Any</span><span class="p">())</span>
 <span class="go">top</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">typeof</span><span class="p">(</span><span class="n">NDArray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]))</span>
+<span class="go">dshape(&quot;3, int64&quot;)</span>
 </pre></div>
 </div>
 </dd></dl>
