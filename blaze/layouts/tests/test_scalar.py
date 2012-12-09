@@ -3,9 +3,16 @@ from blaze.layouts.scalar import Interval, Chart, vstack,\
 
 from unittest import skip
 
+# dummy space
+class Space(object):
+    def __init__(self, n):
+        self.n = n
+    def __eq__(self, other):
+        return self.n == other.n
+
 def test_multiple_charts():
-    alpha = object()
-    beta  = object()
+    alpha = Space(1)
+    beta  = Space(2)
 
     a = Interval(0,2)
     b = Interval(0,2)
@@ -18,8 +25,8 @@ def test_multiple_charts():
     # -------------
 
 def test_vertical_stack():
-    alpha = object()
-    beta  = object()
+    alpha = Space(1)
+    beta  = Space(2)
 
     a = Interval(0,2)
     b = Interval(0,2)
@@ -52,8 +59,8 @@ def test_vertical_stack():
     assert coords == [0,1]
 
 def test_horizontal_stack():
-    alpha = object()
-    beta  = object()
+    alpha = Space(1)
+    beta  = Space(2)
 
     a = Interval(0,2)
     b = Interval(0,2)
@@ -82,8 +89,8 @@ def test_horizontal_stack():
     assert coords == [2,2]
 
 def test_third_axis():
-    alpha = object()
-    beta  = object()
+    alpha = Space(1)
+    beta  = Space(2)
 
     a = Interval(0,2)
     b = Interval(0,2)
@@ -97,5 +104,5 @@ def test_third_axis():
     # -------------
 
     block, coords = s[[0,0,0]]
-    #assert block == alpha
+    assert block == alpha
     assert coords == [0,0,0]

@@ -77,15 +77,8 @@ def cdimshuffle(axi, mapping):
 
     return T, Tinv
 
-def crorate(self):
-    pass
-
 def splitl(lst, n):
     return lst[0:n], lst[n], lst[n:-1]
-
-def linearize(spatial):
-    # create flat hash map of all indexes
-    pass
 
 def stack_transforms(c1,c2, axis):
     """
@@ -354,15 +347,11 @@ class MultichunkedL(Layout):
         self.bounds = map(self.bounds_dim, xrange(ndim))
 
     def iter_components(self, i):
-        """
-        Iterate through the components of each partition.
-        """
-        for a in self.partitions:
-            yield a.components[i]
+        """ Iterate through the components of each partition.  """
+
+        return [a.components[i] for a in self.partitions]
 
     def bounds_dim(self, i):
-        """
-        """
         return reduce(hull, self.iter_components(i))
 
     def transform(self, T, tinv):
