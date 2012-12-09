@@ -1,3 +1,6 @@
+# TODO assertsion for the output'd values... right now they have
+# pointer addresses so its hard to do string matching
+
 from blaze.expr import ops
 from blaze.table import NDArray
 from blaze.expr.graph import IntNode, FloatNode, VAL, OP, APP
@@ -165,7 +168,7 @@ def test_complex_pipeline1():
     if DEBUG:
         pprint(plan, width=1)
 
-def test_complex_pipeline1():
+def test_complex_pipeline2():
     a = NDArray([1,2,3])
     b = NDArray([1,2,3])
     c = NDArray([1,2,3])

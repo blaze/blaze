@@ -88,12 +88,9 @@ For example this expression can be pretty printed::
 
 ::
 
-    $ cat input | pp-aterm --max-term-size 1
+    $ cat input | pp-aterm --max-term-size 2
     Mul(
-      Add(
-        1
-      , 2
-      )
+      Add(1, 2)
     , x()
     )
 
@@ -112,7 +109,7 @@ sep = re.compile("[\(.*\)]")
 #------------------------------------------------------------------------
 
 class ATermBase(object):
-    "Base for aterms"
+    """ Base for aterms """
 
     # Specifies child attributes
     _fields = []
@@ -179,7 +176,7 @@ class AAppl(ATermBase):
             return False
 
     def __str__(self):
-        return str(self.spine) + cat(self.args, '(', ')') + self.metastr
+        return str(self.spine) + arepr(self.args, '(', ')') + self.metastr
 
     def __repr__(self):
         return str(self)
@@ -201,7 +198,7 @@ class AAnnotation(ATermBase):
     @property
     def annotations(self):
         terms = map(ATerm, (self.ty,) + tuple(self.meta))
-        return cat(terms, '{', '}')
+        return arepr(terms, '{', '}')
 
     def __contains__(self, key):
         if key == 'type':
@@ -285,14 +282,14 @@ class AList(ATermBase):
         self.elts = elts
 
     def __str__(self):
-        return cat(self.elts, '[', ']') + self.metastr
+        return arepr(self.elts, '[', ']') + self.metastr
 
     def __repr__(self):
         return str(self)
 
 
 #------------------------------------------------------------------------
-# Strategic Rewrite Combinators
+# Rewrite Combinators
 #------------------------------------------------------------------------
 
 Id = lambda s: s
@@ -468,7 +465,7 @@ def matches(pattern, term):
 # Utils
 #------------------------------------------------------------------------
 
-def cat(terms, l, r):
+def arepr(terms, l, r):
     """ Concatenate str representations with commas and left and right
     delimiters. """
     return l + ','.join(map(str, terms)) + r
