@@ -136,7 +136,7 @@ def test_simple_pipeline():
     if DEBUG:
         pprint(plan, width=1)
 
-def test_complex_pipeline():
+def test_complex_pipeline1():
     a = NDArray([1,2,3])
     b = NDArray([1,2,3])
     c = NDArray([1,2,3])
@@ -161,6 +161,58 @@ def test_complex_pipeline():
     #   ){dshape("int64"), 40077552}
     # , 2{dshape("int"), 40090448}
     # ){dshape("int64"), 40077744}
+
+    if DEBUG:
+        pprint(plan, width=1)
+
+def test_complex_pipeline1():
+    a = NDArray([1,2,3])
+    b = NDArray([1,2,3])
+    c = NDArray([1,2,3])
+    d = NDArray([1,2,3])
+
+    f = ((a*b)+(c*d))
+    g = f**(a+b)
+
+    line = Pipeline()
+    plan = line.run_pipeline(f+g)
+
+    #   Arithmetic(
+    #     Add()
+    #   , Arithmetic(
+    #       Add()
+    #     , Arithmetic(
+    #         Mul()
+    #       , Array(){dshape("3, int64"), 61582152}
+    #       , Array(){dshape("3, int64"), 61469976}
+    #       ){dshape("int64"), 61526768}
+    #     , Arithmetic(
+    #         Mul()
+    #       , Array(){dshape("3, int64"), 61524520}
+    #       , Array(){dshape("3, int64"), 61531056}
+    #       ){dshape("int64"), 61526864}
+    #     ){dshape("int64"), 61527152}
+    #   , Pow(
+    #       Arithmetic(
+    #         Add()
+    #       , Arithmetic(
+    #           Mul()
+    #         , Array(){dshape("3, int64"), 61582152}
+    #         , Array(){dshape("3, int64"), 61469976}
+    #         ){dshape("int64"), 61526768}
+    #       , Arithmetic(
+    #           Mul()
+    #         , Array(){dshape("3, int64"), 61524520}
+    #         , Array(){dshape("3, int64"), 61531056}
+    #         ){dshape("int64"), 61526864}
+    #       ){dshape("int64"), 61527152}
+    #     , Arithmetic(
+    #         Add()
+    #       , Array(){dshape("3, int64"), 61582152}
+    #       , Array(){dshape("3, int64"), 61469976}
+    #       ){dshape("int64"), 61528304}
+    #     ){dshape("int64"), 61528496}
+    #   ){dshape("int64"), 61528592}
 
     if DEBUG:
         pprint(plan, width=1)
