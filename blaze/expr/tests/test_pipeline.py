@@ -3,6 +3,9 @@ from blaze.table import NDArray
 from blaze.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from blaze.engine.pipeline import toposort, topops, topovals, Pipeline
 from pprint import pprint
+from difflib import ndiff
+
+from unittest import skip
 
 DEBUG = False
 
@@ -23,11 +26,12 @@ d = NDArray([1,2,3])
 # Tests
 #------------------------------------------------------------------------
 
+@skip
 def test_simple_sort():
     lst = toposort(lambda x: True, x)
     assert len(lst) == 6
 
-
+@skip
 def test_simple_sort_ops():
     lst = topops(y)
     # We expect this:
@@ -128,6 +132,35 @@ def test_simple_pipeline():
     # , Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
     # )
     plan = line.run_pipeline((d*d)*(d*d))
+
+    if DEBUG:
+        pprint(plan, width=1)
+
+def test_complex_pipeline():
+    a = NDArray([1,2,3])
+    b = NDArray([1,2,3])
+    c = NDArray([1,2,3])
+    d = NDArray([1,2,3])
+
+    line = Pipeline()
+    plan = line.run_pipeline(((a*b)+(c*d))**2)
+
+    # Pow(
+    #   Arithmetic(
+    #     Add
+    #   , Arithmetic(
+    #       Mul
+    #     , Array(){dshape("3,int64"), 40127160}
+    #     , Array(){dshape("3,int64"), 40015272}
+    #     ){dshape("int64"), 40076400}
+    #   , Arithmetic(
+    #       Mul
+    #     , Array{dshape("3,int64"), 40069816}
+    #     , Array{dshape("3,int64"), 40080448}
+    #     ){dshape("int64"), 40076016}
+    #   ){dshape("int64"), 40077552}
+    # , 2{dshape("int"), 40090448}
+    # ){dshape("int64"), 40077744}
 
     if DEBUG:
         pprint(plan, width=1)

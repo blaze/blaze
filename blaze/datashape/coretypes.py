@@ -22,6 +22,10 @@ except ImportError:
 # Type Metaclass
 #------------------------------------------------------------------------
 
+# Clases of unit types.
+DIMENSION = 1
+MEASURE   = 2
+
 class Type(type):
     _registry = {}
 
@@ -127,6 +131,11 @@ class Top(Primitive):
 # Base Types
 #------------------------------------------------------------------------
 
+# TODO: figure out consistent spelling for this
+#
+#   - DataShape
+#   - Datashape
+
 class DataShape(object):
     """ The Datashape class, implementation for generic composite
     datashape objects """
@@ -170,7 +179,7 @@ class DataShape(object):
         if self.name:
             return self.name
         else:
-            return ', '.join(map(str, self.parameters))
+            return (', '.join(map(str, self.parameters)))
 
     def _equal(self, other):
         """ Structural equality """
@@ -183,7 +192,9 @@ class DataShape(object):
             raise TypeError('Cannot compare non-datashape to datashape')
 
     def __repr__(self):
-        return ''.join(["dshape(\"", str(self), "\")"])
+        # need double quotes to form valid aterm, also valid
+        # Python
+        return ''.join(["dshape(\"", doublequote(str(self)), "\")"])
 
 class Atom(DataShape):
     """
@@ -210,6 +221,7 @@ class CType(DataShape):
     """
     Symbol for a sized type mapping uniquely to a native type.
     """
+    cls = MEASURE
 
     def __init__(self, ctype, size=None):
         if size:
@@ -412,10 +424,9 @@ class Range(Atom):
 
 class Either(Atom):
     """
-    A datashape for values that take on two different but fixed
-    types called tags ``left`` and ``right``. The tag
-    deconstructors for this type are :func:`inl` and
-    :func:`inr`.
+    A datashape for tagged union of values that can take on two
+    different, but fixed, types called tags ``left`` and ``right``. The
+    tag deconstructors for this type are :func:`inl` and :func:`inr`.
     """
 
     def __init__(self, a, b):
@@ -425,6 +436,16 @@ class Either(Atom):
 
     def __eq__(self, other):
         return False
+
+class Option(Atom):
+    """
+    A sum type for nullable measures unit types. Can be written
+    as a tagged union with with ``left`` as ``null`` and
+    ``right`` as a measure.
+    """
+
+    def __init__(self, ty):
+        self.parameters = [ty]
 
 class Enum(Atom, Sequence):
     """
@@ -787,6 +808,12 @@ def expr_string(spine, const_args, outer=None):
 #------------------------------------------------------------------------
 # Argument Munging
 #------------------------------------------------------------------------
+
+def doublequote(s):
+    if '"' not in s:
+        return '"%s"' % s
+    else:
+        return s
 
 def shape_coerce(ob):
     if type(ob) is int:

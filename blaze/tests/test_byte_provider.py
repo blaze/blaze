@@ -33,6 +33,13 @@ def test_from_bytes():
 
     nd = Array._from_providers(b1)
 
+def test_from_bytes():
+    #bits = bytes(np.ones((2,2), dtype=np.dtype('int32')).data)
+    bits = b'\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01'
+    b1 = ByteSource(bits)
+
+    nd = Array._from_providers(b1)
+
 def test_from_python():
     b1 = PythonSource([1,2])
     b2 = PythonSource([3,4])

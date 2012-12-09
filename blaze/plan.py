@@ -9,6 +9,7 @@ from collections import namedtuple
 
 #from blaze.expr.graph import Literal, OP, APP, VAL
 #from blaze.table import Indexable
+from blaze.datashape.coretypes import DataShape
 from blaze.byteproto import CONTIGUOUS, READ
 
 from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString
@@ -25,13 +26,35 @@ from blaze.expr.visitor import MroVisitor
 # Numba code generation. It's still probably a good idea to have
 # this knowledge available if we have it though!
 
+def annotate_dshape(ds):
+    """
+    Convert a datashape instance into Aterm annotation
+
+    >>> ds = dshape('2, 2, int32')
+    >>> anno = dshape_anno(ds)
+    dshape("2, 2, int32")
+    >>> type(anno)
+    <class 'AAppl'>
+    """
+
+    assert isinstance(ds, DataShape)
+    return AAppl(ATerm('dshape'), [AString(str(ds))])
+
 def annotation(graph, *metadata):
+    # Metadata holds a reference to the graph node, not really
+    # what we want but fine for now...
     metadata = (id(graph),) + metadata
+
     # was originally .datashape but this is a reserved attribute
     # so moved to a new simple_type() method that wraps around
     # promote()
-    annotation = AAnnotation(AString(str(graph.simple_type())), metadata)
+    anno = annotate_dshape(graph.simple_type())
+    annotation = AAnnotation(anno, metadata)
     return annotation
+
+#------------------------------------------------------------------------
+#
+#------------------------------------------------------------------------
 
 class BlazeVisitor(MroVisitor):
     def __init__(self):
@@ -86,10 +109,13 @@ class BlazeVisitor(MroVisitor):
         return AAppl(ATerm('Assign'), self.visit(graph.operands),
                      annotation=annotation(graph))
 
-def generate(graph, variables):
-    ## The variables come in topologically sorted, so we just
-    ## have to preserve that order
+#------------------------------------------------------------------------
+# Toplevel
+#------------------------------------------------------------------------
 
+# Run a graph through the Blaze visitor
+
+def generate(graph, variables):
     visitor = BlazeVisitor()
-    result = visitor.visit(graph) #[-1])
+    result = visitor.visit(graph)
     return visitor.operands, result

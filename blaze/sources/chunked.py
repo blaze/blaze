@@ -1,3 +1,8 @@
+"""
+Wrappers around chunked arrays ( carray ) supporting both
+in-memory and on-disk storage.
+"""
+
 from blaze import carray
 
 from blaze.byteprovider import ByteProvider
@@ -19,16 +24,12 @@ class CArraySource(ByteProvider):
     write_capabilities = CHUNKED
     access_capabilities = ACCESS_ALLOC
 
-    def __init__(self, ca):
+    def __init__(self, ca, rootdir=None):
         """ CArray object passed directly into the constructor,
         ostensibly this is just a thin wrapper that consumes a
         reference.
         """
-
-        if isinstance(ca, carray.carray):
-            self.ca = ca
-        else:
-            self.ca = carray.carray(ca)
+        self.ca = carray.carray(ca, rootdir=rootdir)
 
     def read_desc(self):
         return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca)
@@ -49,10 +50,10 @@ class CArraySource(ByteProvider):
     @staticmethod
     def infer_datashape(source):
         """
-        The user has only provided us with a Python object (
-        could be a buffer interface, a string, a list, list of
-        lists, etc) try our best to infer what the datashape
-        should be in the context of this datasource.
+        The user has only provided us with a Python object ( could be
+        a buffer interface, a string, a list, list of lists, etc) try
+        our best to infer what the datashape should be in the context of
+        what it would mean as a CArray.
         """
         if isinstance(source, np.ndarray):
             return from_numpy(source.shape, source.dtype)

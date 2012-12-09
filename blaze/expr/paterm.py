@@ -5,18 +5,18 @@ In our slight modification of ATerm we require that the first
 annotation of a Term be its datashape type and the following
 annotations stand for metadata. For example, an Array.
 
-Type::
+**Type**::
 
     Array(2928121){dshape('2,2,int32')}
 
-Type and Metadata::
+**Type and Metadata**::
 
     Array(2928121){dshape('2,2,int32'), contigious, corder}
 
 Nevertheless, it is still a strict subset of ATerm so it can be parsed
 and manipulated by Stratego rewriters.
 
-Grammar::
+**Grammar**::
 
     t : bt                 -- basic term
       | bt {ty,m1,...}     -- annotated term
@@ -24,11 +24,11 @@ Grammar::
     bt : C                 -- constant
        | C(t1,...,tn)      -- n-ary constructor
        | [t1,...,tn]       -- list
-       | "ccc"             -- quoted string
+       | "ccc"             -- quoted string ( explicit double quotes )
        | int               -- integer
        | real              -- floating point number
 
-Examples::
+**Examples**::
 
     >>> AInt(1)
     1
@@ -40,7 +40,7 @@ Examples::
     Mul(Add(1,2), x)
 
 
-Pattern Matching::
+**Pattern Matching**::
 
     >>> matches('foo;*', ATerm('foo'))
     True
@@ -51,36 +51,56 @@ Pattern Matching::
     >>> matches('1;*', AInt('2'))
     True
 
-Value Capturing::
+**Value Capturing**
 
 Pattern matching can als also be used to capture free variables
 in the matched expressions. The result is also "truthy" so it
-will match as a boolean True as well.
+will match as a boolean True as well::
 
-    >>> fn = AAppl(ATerm('F'), [ATerm('a')])
+    >>> fn = AAppl(ATerm('F'), [ATerm('a'), ATerm('b')])
     # Upper case variables are bound terms, lower case variables
     # are free
 
     # Fixed spine
-    >>> matches('F(x,y);*', AAppl(ATerm('F'), [ATerm('a'), ATerm('b')]))
+    >>> matches('F(x,y);*', fn)
     {'y': b, 'x': a}
 
     # Pattern match includes spine
-    >>> matches('f(x,y);*', AAppl(ATerm('F'), [ATerm('a'), ATerm('b')]))
+    >>> matches('f(x,y);*', fn)
     {'y': b, 'x': a, 'f': F}
 
-Annotation Matching::
+**Annotation Matching**::
 
->>> at = ATerm('x', annotation=AAnnotation(AString("foo")))
->>> matches('*;foo', at)
-True
+    >>> at = ATerm('x', annotation=AAnnotation(AString("foo")))
+    >>> matches('*;foo', at)
+    True
 
->>> matches('x;bar', at)
+    >>> matches('x;bar', at)
 
+**Tools**
+
+Using the aterm-utils there are a variety of tools to working
+with and transform aterm expressions.
+
+For example this expression can be pretty printed::
+
+    Mul(Add(1,2), x)
+
+::
+
+    $ cat input | pp-aterm --max-term-size 1
+    Mul(
+      Add(
+        1
+      , 2
+      )
+    , x()
+    )
+
+"""
 
 # TODO: recursive pattern matching
 
-"""
 import re
 from functools import partial
 from collections import OrderedDict
@@ -220,10 +240,13 @@ class AAnnotation(ATermBase):
 class AString(ATermBase):
     def __init__(self, s, **kwargs):
         super(AString, self).__init__(**kwargs)
+
+        # must be ascii
+        assert isinstance(s, str)
         self.s = s
 
     def __str__(self):
-        return repr(self.s) + self.metastr
+        return '"%s"' % (self.s + self.metastr)
 
     def __repr__(self):
         return str(self)

@@ -4,16 +4,9 @@ manipulating and parsing ATerm expressions.
 
 Docs
 ----
+
 * http://strategoxt.org/Tools/ATermLibrary
 * http://www.meta-environment.org/doc/books/technology/aterm-guide/aterm-guide.html
-
-Download
---------
-
-Debian     : apt-get install libaterm
-Arch Linux : pacman -S libaterm
-Mac        : brew install aterm
-Windows    : ftp://ftp.stratego-language.org/pub/stratego/StrategoXT/strategoxt-0.17/cygwin/aterm-2.5-cygwin.tar.gz
 
 """
 

@@ -191,9 +191,9 @@ class ATermToAstTranslator(visitor.GraphTranslator):
 
 
 def build_executor(py_ufunc, operands, aterm_subgraph_root):
-    "Build a ufunc and an wrapping executor from a Python AST"
-    result_dtype = get_dtype(aterm_subgraph_root)
-    operand_dtypes = map(get_dtype, operands)
+    """ Build a ufunc and an wrapping executor from a Python AST """
+    result_dtype = unannotate_dtype(aterm_subgraph_root)
+    operand_dtypes = map(unannotate_dtype, operands)
 
     vectorizer = Vectorize(py_ufunc)
     vectorizer.add(restype=minitype(result_dtype),
@@ -213,9 +213,20 @@ def getsource(ast):
     from meta import asttools
     return asttools.dump_python_source(ast).strip()
 
-def get_dtype(aterm):
-    type_repr = aterm.annotation['type']
-    dshape = datashape(type_repr.s)
+def unannotate_dtype(aterm):
+    """ Takes a term with a datashape annotation and returns the NumPy
+    dtype associate with it
+
+    >>> term
+    x{dshape("2, 2, int32")}
+    >>> unannotate_dtype(term)
+    int32
+    """
+    # unpack the annotation {'s': 'int32'}
+    unpack = paterm.matches('dshape(s);*', aterm.annotation['type'])
+    ds_str = unpack['s']
+    dshape = datashape(ds_str.s)
+
     dtype = coretypes.to_dtype(dshape)
     return dtype
 
