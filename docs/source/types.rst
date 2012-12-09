@@ -48,6 +48,16 @@ Structural Relations
         Aggregate -> Enum;
    }
 
+.. graphviz::
+
+   digraph structural_unit {
+        Top -> Dimension;
+        Top -> Measure;
+
+        Dimension -> Fixed;
+        Measure -> CType;
+   }
+
 Implementation
 ~~~~~~~~~~~~~~
 

@@ -19,7 +19,7 @@ Blaze Arrays
     Array
       datashape := 2 2 int64
       values    := [CArray(ptr=36111200)]
-      metadata  := Meta(MANIFEST=True, )
+      metadata  := [manifest]
       layout    := Chunked(dim=0)
 
     [[1, 2],
