@@ -211,7 +211,7 @@ class Array(Indexable):
         """
         Size of the Array.
         """
-        return self._datashape.parameters[0].val
+        return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
     def backends(self):
@@ -349,7 +349,7 @@ class NDArray(Indexable, ArrayNode):
         """
         Size of the NDArray.
         """
-        return self._datashape.parameters[0].val
+        return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
     def backends(self):
@@ -482,7 +482,7 @@ class NDTable(Indexable, ArrayNode):
         """
         Size of the NDTable.
         """
-        return self._datashape.parameters[0].val
+        return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
     def backends(self):
