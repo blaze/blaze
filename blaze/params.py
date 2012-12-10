@@ -2,7 +2,7 @@ from collections import Mapping, OrderedDict
 
 defaults = {
     'clevel'        : 5,
-    'shuffle'       : False,
+    'shuffle'       : True,
     'format_flavor' : 'chunked',
     #'storage'       : None,
 }
