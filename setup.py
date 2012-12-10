@@ -215,6 +215,11 @@ extensions = [
         include_dirs = [join(sys.prefix, 'include')],
         libraries = ['ATerm'],
    ),
+   Extension(
+        "blaze.datashape.cdatashape", ["blaze/datashape/datashape.c"],
+        include_dirs = [],
+        define_macros=[('DEBUG', 1)]
+   ),
 ]
 
 #------------------------------------------------------------------------
