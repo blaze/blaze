@@ -1,13 +1,28 @@
 from collections import Mapping, OrderedDict
 
+defaults = {
+    'clevel'        : 5,
+    'shuffle'       : False,
+    'format_flavor' : 'chunked',
+    #'storage'       : None,
+}
+
 class params(Mapping):
     """
     Container for parameters
+
+    Usage:
+
+    >>> params(clevel=4)
+    params(shuffle=False, clevel=4, format_flavor=chunked)
+    >>> params(clevel=4, storage='tmpdir')
+    params(shuffle=False, clevel=4, format_flavor=chunked, storage=tmpdir)
+
     """
     __slots__ = ['cls', '__internal']
 
     def __init__(self, **kw):
-        self.__internal = OrderedDict(kw)
+        self.__internal = dict(defaults, **kw)
 
         if not params.cls:
             params.cls = frozenset(dir(self))
