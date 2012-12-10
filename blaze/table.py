@@ -141,52 +141,60 @@ class Array(Indexable):
         md.arraylike,
     ]
 
-    def __init__(self, obj, dshape=None, metadata=None,
-            layout=None, params=None):
+    def __init__(self, obj, dshape=None, metadata=None, layout=None,
+            params=None):
 
-        self._datashape = dshape
-        self._metadata  = Array._metaheader + (metadata or [])
+        data = None
 
-        if isinstance(dshape, str):
-            # run it through the parser
-            dshape = _dshape(dshape)
+        # Values
+        # ------
+        # Mimic NumPy behavior in that we have a variety of
+        # possible arguments to the first argument which result
+        # in different behavior for the values.
 
-        # Don't explictly check the dshape since we want to allow the
-        # user to pass in anything that conforms to the dshape protocol
-        # instead of requiring them to subclass.
+        if isinstance(obj, list):
+            data = obj
 
-        # TODO: more robust
-        if isinstance(obj, Indexable):
-            infer_eclass(self._meta)
+        #if isinstance(obj, datashape):
+            #data = None
 
-        elif isinstance(obj, str):
-            # Create an empty array allocated per the datashape string
-            self.space = None
+        # Datashape
+        # ---------
 
-        elif isinstance(obj, Space):
-            self.space = obj
-
+        if not dshape:
+            # The user just passed in a raw data source, try
+            # and infer how it should be layed out or fail
+            # back on dynamic types.
+            self._datashape = dshape = CArraySource.infer_datashape(obj)
         else:
-            if not dshape:
-                # The user just passed in a raw data source, try
-                # and infer how it should be layed out or fail
-                # back on dynamic types.
-                self._datashape = CArraySource.infer_datashape(obj)
-            else:
-                # The user overlayed their custom dshape on this
-                # data, check if it makes sense
-                if CArraySource.check_datashape(obj, given_dshape=dshape):
-                    self._datashape = dshape
-                else:
-                    raise ValueError("Datashape is inconsistent with source")
+            # The user overlayed their custom dshape on this
+            # data, check if it makes sense
+            CArraySource.check_datashape(obj, given_dshape=dshape)
+            self._datashape = dshape
 
-            self.data = CArraySource(obj, params)
-            self.space = Space(self.data)
+        # children graph nodes
+        self.children = []
 
-            if not layout:
-                # CArrays are always chunked on the first
-                # dimension
-                self._layout = ChunkedL(self.data, cdimension=0)
+        self.data = CArraySource(obj, params)
+        self.space = Space(self.data)
+
+        # Layout
+        # ------
+
+        if layout:
+            self._layout = layout
+        elif not layout:
+            self._layout = ChunkedL(self.data, cdimension=0)
+
+        # Metadata
+        # --------
+
+        self._metadata  = NDArray._metaheader + (metadata or [])
+
+        # Parameters
+        # ----------
+        self.params = params
+
 
     #------------------------------------------------------------------------
     # Properties
@@ -234,24 +242,6 @@ class Array(Indexable):
 
     def __repr__(self):
         return generic_repr('Array', self, deferred=False)
-
-    #------------------------------------------------------------------------
-    # Internal Methods
-    #------------------------------------------------------------------------
-
-    @staticmethod
-    def _from_providers(*providers):
-        """
-        Internal method to create a NDArray from a 1D list of byte
-        providers. Tries to infer the simplest layout of how the
-        providers fit together.
-        """
-        subspaces = [Subspace(provider) for provider in providers]
-        space = Space(*subspaces)
-
-        # TODO: more robust
-        shape = providers[0].infer_datashape(providers[0])
-        return Array(space, dshape=shape)
 
 
 class Table(Indexable):
@@ -323,8 +313,8 @@ class NDArray(Indexable, ArrayNode):
 
         self._metadata  = NDArray._metaheader + (metadata or [])
 
-        # Disk Backing
-        # ------------
+        # Parameters
+        # ----------
         self.params = params
 
 
@@ -356,21 +346,6 @@ class NDArray(Indexable, ArrayNode):
         Array.
         """
         return iter(self.space)
-
-    @staticmethod
-    def _from_providers(*providers):
-        """
-        Internal method to create a NDArray from a 1D list of byte
-        providers. Tries to infer the simplest layout of how the
-        providers fit together.
-        """
-        subspaces = [Subspace(provider) for provider in providers]
-        space = Space(*subspaces)
-
-        # TODO: more robust
-        shape = providers[0].infer_datashape(providers[0])
-        return NDArray(space, dshape=shape)
-
 
 #------------------------------------------------------------------------
 # NDTable
@@ -496,21 +471,6 @@ class NDTable(Indexable, ArrayNode):
         The storage backends that make up the space behind the Array.
         """
         return iter(self.space)
-
-    #------------------------------------------------------------------------
-    # Construction
-    #------------------------------------------------------------------------
-
-    @staticmethod
-    def _from_providers(*providers):
-        """
-        Injest providers and cast them into columns.
-        """
-        subspaces = [Subspace(provider) for provider in providers]
-        space = Space(*subspaces)
-
-        shape = providers[0].infer_datashape(providers[0])
-        return NDTable(space, datashape=shape)
 
     def __repr__(self):
         return generic_repr('NDTable', self, deferred=True)

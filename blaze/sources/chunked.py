@@ -29,13 +29,14 @@ class CArraySource(ByteProvider):
         ostensibly this is just a thin wrapper that consumes a
         reference.
         """
-        # need at least one of the two
-        assert (data is not None) or (dshape is not None)
+        # need at least one of the three
+        assert (data is not None) or (dshape is not None) or \
+               (params.get('storage'))
 
         # TODO: clean up ugly conditionals
 
         if params:
-            rootdir = params.get('rootdir')
+            rootdir = params.get('storage')
             # compatabaility
             cparams = carray.cparams(
                 params.get('clevel'),
