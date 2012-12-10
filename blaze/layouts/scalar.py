@@ -17,7 +17,6 @@ from numpy import searchsorted
 # Coordinate Transformations
 #------------------------------------------------------------------------
 
-Id = lambda x:x
 
 def ctranslate(factor, axi):
     """

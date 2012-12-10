@@ -273,56 +273,60 @@ class NDArray(Indexable, ArrayNode):
         md.arraylike,
     ]
 
-    def __init__(self, obj, dshape=None, metadata=None,
-            layout=None, rootdir=None):
+    def __init__(self, obj, dshape=None, metadata=None, layout=None,
+            rootdir=None):
 
-        self._datashape = dshape
+        data = None
+
+        # Values
+        # ------
+        # Mimic NumPy behavior in that we have a variety of
+        # possible arguments to the first argument which result
+        # in different behavior for the values.
+
+        if isinstance(obj, list):
+            data = obj
+
+        #if isinstance(obj, datashape):
+            #data = None
+
+        # Datashape
+        # ---------
+
+        if not dshape:
+            # The user just passed in a raw data source, try
+            # and infer how it should be layed out or fail
+            # back on dynamic types.
+            self._datashape = dshape = CArraySource.infer_datashape(obj)
+        else:
+            # The user overlayed their custom dshape on this
+            # data, check if it makes sense
+            CArraySource.check_datashape(obj, given_dshape=dshape)
+            self._datashape = dshape
+
+        # children graph nodes
+        self.children = []
+
+        self.data = CArraySource(obj, rootdir)
+        self.space = Space(self.data)
+
+        # Layout
+        # ------
+
+        if layout:
+            self._layout = layout
+        elif not layout:
+            self._layout = ChunkedL(self.data, cdimension=0)
+
+        # Metadata
+        # --------
+
         self._metadata  = NDArray._metaheader + (metadata or [])
 
-        if isinstance(obj, str):
-            # Create an empty array allocated per the datashape string
-            self.space = None
-            self.children = list(self.space.subspaces)
+        # Disk Backing
+        # ------------
+        self.rootdir = rootdir
 
-        elif isinstance(obj, Space):
-            self.space = obj
-            self.children = list(self.space.subspaces)
-
-        if isinstance(obj, Indexable):
-            infer_eclass(self._meta)
-
-        else:
-            # Graph Nodes as input
-            # ====================
-
-            # XXX
-            #self.children = injest_iterable(obj, force_homog=True)
-            #self.space = Space(self.children)
-
-            if not dshape:
-                # The user just passed in a raw data source, try
-                # and infer how it should be layed out or fail
-                # back on dynamic types.
-                self._datashape = CArraySource.infer_datashape(obj)
-            else:
-                # The user overlayed their custom dshape on this
-                # data, check if it makes sense
-                CArraySource.check_datashape(obj, given_dshape=dshape)
-                self._datashape = dshape
-
-            self.children = []
-            self.vtype = self._datashape
-
-            # Raw Data as input
-            # ====================
-
-            self.data = CArraySource(obj, rootdir)
-            self.space = Space(self.data)
-
-            if not layout:
-                # CArrays are always chunked on the first
-                # dimension
-                self._layout = ChunkedL(self.data, cdimension=0)
 
     def __str__(self):
         return generic_str(self, deferred=True)
