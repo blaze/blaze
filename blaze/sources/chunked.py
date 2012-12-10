@@ -32,16 +32,24 @@ class CArraySource(ByteProvider):
         # need at least one of the two
         assert (data is not None) or (dshape is not None)
 
+        # TODO: clean up ugly conditionals
+
         if params:
             rootdir = params.get('rootdir')
+            # compatabaility
+            cparams = carray.cparams(
+                params.get('clevel'),
+                params.get('shuffle'),
+            )
         else:
             rootdir = None
+            cparams = None
 
         if dshape:
             dtype = to_numpy(dshape)
             self.ca = carray.carray(data, dtype, rootdir=rootdir)
         else:
-            self.ca = carray.carray(data, rootdir=rootdir)
+            self.ca = carray.carray(data, rootdir=rootdir, cparams=cparams)
 
     @classmethod
     def empty(self, dshape):
