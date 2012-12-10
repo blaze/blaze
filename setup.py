@@ -199,9 +199,9 @@ extensions = [
         define_macros=def_macros,
    ),
    Extension(
-        "ucr_dtw.ucr",
-        sources = ["ucr_dtw/ucr.pyx", "ucr_dtw/dtw.c"],
-        depends = ["dtw.h"],
+        "blaze.ts.ucr_dtw.ucr",
+        sources = ["blaze/ts/ucr_dtw/ucr.pyx", "blaze/ts/ucr_dtw/dtw.c"],
+        depends = ["blaze/ts/ucr_dtw/dtw.h"],
         include_dirs = [numpy_path]
    ),
    Extension(

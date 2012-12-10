@@ -2,7 +2,7 @@
 import os.path
 import numpy as np
 import blaze
-from ucr_dtw import ucr
+from blaze.ts.ucr_dtw import ucr
 
 
 # Convert txt file into Blaze native format
