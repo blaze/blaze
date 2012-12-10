@@ -19,6 +19,10 @@ def open(uri=None):
             source = CArraySource(params=parms)
         #elif uri.scheme == 'tcp':
             #byte_interface = SocketSource()
+        else:
+            # Default is to treak the URI as a regular path
+            parms = params(storage=uri.path)
+            source = CArraySource(params=parms)
 
     # Don't want a deferred array (yet)
     # return NDArray(source)
