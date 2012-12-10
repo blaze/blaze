@@ -86,7 +86,7 @@ cdef extern from "aterm1.h":
         ATtrue  = 1
 
 cdef extern from "utils.h":
-    int AT_arity(ATerm t)
+    int subterms(ATerm t)
     ATerm* next_subterm(ATerm t, int i)
 
 # singleton empty ATerm
@@ -118,7 +118,7 @@ cdef class PyATerm:
         return ATgetType(self.a)
 
     def __iter__(self):
-        cdef int arity = AT_arity(self.a)
+        cdef int arity = subterms(self.a)
         cdef ATerm* ptr
         accum = []
 

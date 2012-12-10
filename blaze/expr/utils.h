@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <aterm2.h>
 
-int AT_arity(ATerm t) {
+// Extract the number of subterms in a given ATerm expression.
+int subterms(ATerm t) {
     Symbol sym;
     int arity;
 

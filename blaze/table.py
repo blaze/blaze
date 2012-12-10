@@ -141,7 +141,8 @@ class Array(Indexable):
         md.arraylike,
     ]
 
-    def __init__(self, obj, dshape=None, metadata=None, layout=None):
+    def __init__(self, obj, dshape=None, metadata=None,
+            layout=None, rootdir=None):
 
         self._datashape = dshape
         self._metadata  = Array._metaheader + (metadata or [])
@@ -179,13 +180,13 @@ class Array(Indexable):
                 else:
                     raise ValueError("Datashape is inconsistent with source")
 
-            data = CArraySource(obj)
-            self.space = Space(data)
+            self.data = CArraySource(obj, rootdir)
+            self.space = Space(self.data)
 
             if not layout:
                 # CArrays are always chunked on the first
                 # dimension
-                self._layout = ChunkedL(data, cdimension=0)
+                self._layout = ChunkedL(self.data, cdimension=0)
 
     #------------------------------------------------------------------------
     # Properties
@@ -272,7 +273,8 @@ class NDArray(Indexable, ArrayNode):
         md.arraylike,
     ]
 
-    def __init__(self, obj, dshape=None, metadata=None, layout=None):
+    def __init__(self, obj, dshape=None, metadata=None,
+            layout=None, rootdir=None):
 
         self._datashape = dshape
         self._metadata  = NDArray._metaheader + (metadata or [])
@@ -314,13 +316,13 @@ class NDArray(Indexable, ArrayNode):
             # Raw Data as input
             # ====================
 
-            self.data = data = CArraySource(obj)
-            self.space = Space(data)
+            self.data = CArraySource(obj, rootdir)
+            self.space = Space(self.data)
 
             if not layout:
                 # CArrays are always chunked on the first
                 # dimension
-                self._layout = ChunkedL(data, cdimension=0)
+                self._layout = ChunkedL(self.data, cdimension=0)
 
     def __str__(self):
         return generic_str(self, deferred=True)
@@ -508,18 +510,6 @@ class NDTable(Indexable, ArrayNode):
 
     def __repr__(self):
         return generic_repr('NDTable', self, deferred=True)
-
-    #------------------------------------------------------------------------
-    # Convenience Methods
-    #------------------------------------------------------------------------
-
-    @staticmethod
-    def from_sql(dburl, query):
-        pass
-
-    @staticmethod
-    def from_csv(fname, *params):
-        pass
 
 def infer_eclass(a,b):
     if (a,b) == (MANIFEST, MANIFEST):
