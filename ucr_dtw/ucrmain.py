@@ -1,4 +1,6 @@
+
 import os.path
+import numpy as np
 import blaze
 from ucr_dtw import ucr
 
@@ -13,6 +15,8 @@ convert("Data.txt", "Data")
 convert("Query.txt", "Query")
 convert("Query2.txt", "Query2")
 
+
+# Do the search using the native Blaze format
 #ucr.ed("Data", "Query", 128)
-#ucr.dtw("Data", "Query", 0.1, 128)
-ucr.dtw("Data", "Query2", 0.1, 128)
+ucr.dtw("Data", "Query", 0.1, 128)
+#ucr.dtw("Data", "Query2", 0.1, 128)
