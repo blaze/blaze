@@ -59,7 +59,3 @@ class params(Mapping):
         return 'params({keys})'.format(
             keys=''.join('%s=%s, ' % (k,v) for k,v in self.__internal.items())
         )
-
-    @classmethod
-    def empty(cls, header):
-        return cls(dct=dict(header))

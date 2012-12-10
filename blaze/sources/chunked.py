@@ -24,13 +24,18 @@ class CArraySource(ByteProvider):
     write_capabilities = CHUNKED
     access_capabilities = ACCESS_ALLOC
 
-    def __init__(self, data=None, dshape=None, rootdir=None):
+    def __init__(self, data=None, dshape=None, params=None):
         """ CArray object passed directly into the constructor,
         ostensibly this is just a thin wrapper that consumes a
         reference.
         """
         # need at least one of the two
         assert (data is not None) or (dshape is not None)
+
+        if params:
+            rootdir = params.get('rootdir')
+        else:
+            rootdir = None
 
         if dshape:
             dtype = to_numpy(dshape)

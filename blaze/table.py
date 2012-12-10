@@ -142,7 +142,7 @@ class Array(Indexable):
     ]
 
     def __init__(self, obj, dshape=None, metadata=None,
-            layout=None, rootdir=None):
+            layout=None, params=None):
 
         self._datashape = dshape
         self._metadata  = Array._metaheader + (metadata or [])
@@ -180,7 +180,7 @@ class Array(Indexable):
                 else:
                     raise ValueError("Datashape is inconsistent with source")
 
-            self.data = CArraySource(obj, rootdir)
+            self.data = CArraySource(obj, params)
             self.space = Space(self.data)
 
             if not layout:
@@ -274,7 +274,7 @@ class NDArray(Indexable, ArrayNode):
     ]
 
     def __init__(self, obj, dshape=None, metadata=None, layout=None,
-            rootdir=None):
+            params=None):
 
         data = None
 
@@ -307,7 +307,7 @@ class NDArray(Indexable, ArrayNode):
         # children graph nodes
         self.children = []
 
-        self.data = CArraySource(obj, rootdir)
+        self.data = CArraySource(obj, params)
         self.space = Space(self.data)
 
         # Layout
@@ -325,7 +325,7 @@ class NDArray(Indexable, ArrayNode):
 
         # Disk Backing
         # ------------
-        self.rootdir = rootdir
+        self.params = params
 
 
     def __str__(self):
