@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include <aterm2.h>
 
 // Extract the number of subterms in a given ATerm expression.

@@ -162,12 +162,18 @@ cdef class PyATerm:
         if res == ATfalse:
             return False
 
-    def matches(self, char* pattern):
+    def matches(self, char* pattern, capture=None):
         """
         Matches against ATerm patterns.
 
         >>> ATerm('x').matches('<term>')
         True
+        >>> aterm('f(1)').matches('<appl(1)>', [APPL])
+        ('f',)
+        >>> aterm('f("bar")').matches('f(<str>)', [STR])
+        ('bar',)
+        >>> aterm('f("bar", "awk")').matches('f(<str>, <str>)', [STR, STR])
+        ('bar', 'awk')
 
         Alas, no metadata annotation ... at least out of the box.
         Ergo the reason for my half baked query language. Think
@@ -175,12 +181,38 @@ cdef class PyATerm:
         """
 
         cdef ATbool res
-        res = ATmatch(self.a, pattern)
+        cdef char *c1, *c2, *c3, *c4, *c5
+        #cdef ATerm *a1, *a2, *a3, *a4, *a5
 
-        if res == ATtrue:
-            return True
-        if res == ATfalse:
-            return False
+        #if len(pattern) > 0:
+            #raise ValueError("Empty pattern match")
+
+        if capture is None:
+            res = ATmatch(self.a, pattern)
+
+            if res == ATtrue:
+                return True
+            if res == ATfalse:
+                return False
+
+        # yeah, good stuff
+        elif len(capture) == 1:
+            res = ATmatch(self.a, pattern, &c1)
+            return (c1,)
+        elif len(capture) == 2:
+            res = ATmatch(self.a, pattern, &c1, &c2)
+            return (c1,c2)
+        elif len(capture) == 3:
+            res = ATmatch(self.a, pattern, &c1, &c2, &c3)
+            return (c1,c2,c3)
+        elif len(capture) == 4:
+            res = ATmatch(self.a, pattern, &c1, &c2, &c3, &c4)
+            return (c1,c2,c3,c4)
+        elif len(capture) == 5:
+            res = ATmatch(self.a, pattern, &c1, &c2, &c3, &c4, &c5)
+            return (c1,c2,c3,c4,c5)
+        else:
+            raise ValueError("Up to 5 captures variables")
 
     def __repr__(self):
         return "aterm('%s')" % ATwriteToString(self.a)
@@ -223,6 +255,7 @@ LIST        = AT_LIST
 PLACEHOLDER = AT_PLACEHOLDER
 BLOB        = AT_BLOB
 SYMBOL      = AT_SYMBOL
+STR         = BLOB
 
 #------------------------------------------------------------------------
 # Toplevel
