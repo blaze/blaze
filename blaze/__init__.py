@@ -9,6 +9,8 @@ array   = Array
 ndarray = NDArray
 dtype   = dshape
 
+from params import params
+
 # Install the Blaze library of dispatch functions
 import lib
 
