@@ -26,6 +26,40 @@ Blaze Arrays
      [3, 4]]
 
 
+Disk Backed Array
+~~~~~~~~~~~~~~~~~
+
+::
+
+    import numpy as np
+    from blaze import Array, dshape, params
+
+    >>> data = np.zeros(4).reshape(2,2)
+    >>> Array(data, dshape('(2,2), float64'), params=params(storage='a'))
+    Array
+      datashape := 2, 2, float64
+      values    := [CArray(ptr=56992176)]
+      metadata  := [manifest,
+     arraylike]
+      layout    := Chunked(dim=0)
+    [[ 0.  0.]
+     [ 0.  0.]]
+
+::
+
+    from blaze import open
+
+    >>> open('carray://a')
+    Array
+      datashape := 2, 2, float64
+      values    := [CArray(ptr=56992176)]
+      metadata  := [manifest,
+     arraylike]
+      layout    := Chunked(dim=0)
+    [[ 0.  0.]
+     [ 0.  0.]]
+
+
 Custom DShapes
 ~~~~~~~~~~~~~~
 
@@ -51,13 +85,4 @@ Custom DShapes
 
     >>> a = Table([('GOOG', 120, 153)], CustomStock)
 
-Disk Backed Array
-~~~~~~~~~~~~~~~~~
 
-::
-
-    import numpy as np
-    from blaze import Array, dshape, params
-
-    data = np.zeros(4).reshape(2,2)
-    Array(data, dshape('(2,2), float64'), params=params(storage='a'))
