@@ -152,11 +152,11 @@ class Array(Indexable):
         # possible arguments to the first argument which result
         # in different behavior for the values.
 
-        if isinstance(obj, list):
-            data = obj
+        if isinstance(obj, CArraySource):
+            self.data = obj
+        else:
+            self.data = CArraySource(obj, params=params)
 
-        #if isinstance(obj, datashape):
-            #data = None
 
         # Datashape
         # ---------
@@ -175,7 +175,6 @@ class Array(Indexable):
         # children graph nodes
         self.children = []
 
-        self.data = CArraySource(obj, params)
         self.space = Space(self.data)
 
         # Layout
@@ -206,6 +205,13 @@ class Array(Indexable):
         Type deconstructor
         """
         return self._datashape
+
+    @property
+    def size(self):
+        """
+        Size of the Array.
+        """
+        return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
     def backends(self):
@@ -274,11 +280,11 @@ class NDArray(Indexable, ArrayNode):
         # possible arguments to the first argument which result
         # in different behavior for the values.
 
-        if isinstance(obj, list):
-            data = obj
+        if isinstance(obj, CArraySource):
+            self.data = obj
+        else:
+            self.data = CArraySource(obj, params)
 
-        #if isinstance(obj, datashape):
-            #data = None
 
         # Datashape
         # ---------
@@ -297,7 +303,6 @@ class NDArray(Indexable, ArrayNode):
         # children graph nodes
         self.children = []
 
-        self.data = CArraySource(obj, params)
         self.space = Space(self.data)
 
         # Layout
@@ -338,6 +343,13 @@ class NDArray(Indexable, ArrayNode):
         Type deconstructor
         """
         return self._datashape
+
+    @property
+    def size(self):
+        """
+        Size of the NDArray.
+        """
+        return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
     def backends(self):
@@ -464,6 +476,13 @@ class NDTable(Indexable, ArrayNode):
         Type deconstructor
         """
         return self._datashape
+
+    @property
+    def size(self):
+        """
+        Size of the NDTable.
+        """
+        return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
     def backends(self):

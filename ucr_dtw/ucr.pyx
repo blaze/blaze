@@ -15,7 +15,7 @@ import numpy as np
 cimport numpy as np
 import cython
 from libc.math cimport sqrt, floor
-from blaze import carray as ca
+import blaze
 
 # Some shortcuts for useful types
 ctypedef np.npy_int npy_int
@@ -103,7 +103,7 @@ def ed(datafile, queryfile, count=None):
 
     t0 = time()
 
-    querydata = ca.carray(rootdir=queryfile)
+    querydata = blaze.open(queryfile)
     nelements = querydata.size
     if count is None:
         m = nelements
@@ -130,7 +130,7 @@ def ed(datafile, queryfile, count=None):
     # modulo (circulation) in distance calculation)
     T = np.empty(2*m, dtype="f8")
 
-    data = ca.carray(rootdir=datafile)
+    data = blaze.open(datafile)
     nelements = data.size
 
     # Bootstrap the process by reading the first m elements
@@ -239,7 +239,7 @@ def dtw(datafile, queryfile, R, count=None):
 
     t1 = time()
 
-    querydata = ca.carray(rootdir=queryfile)
+    querydata = blaze.open(queryfile)
     nelements = querydata.size
     if count is None:
         m = nelements
@@ -296,7 +296,7 @@ def dtw(datafile, queryfile, R, count=None):
     j = 0          # the starting index of the data in the circular array, t
     ex = ex2 = 0
 
-    data = ca.carray(rootdir=datafile)
+    data = blaze.open(datafile)
     nelements = data.size
     eleread = 0
 

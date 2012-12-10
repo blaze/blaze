@@ -87,6 +87,8 @@ class CArraySource(ByteProvider):
         """
         if isinstance(source, np.ndarray):
             return from_numpy(source.shape, source.dtype)
+        elif isinstance(source, CArraySource):
+            return from_numpy(source.ca.shape, source.ca.dtype)
         elif isinstance(source, list):
             # TODO: um yeah, we'd don't actually want to do this
             cast = np.array(source)

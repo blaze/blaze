@@ -10,6 +10,7 @@ ndarray = NDArray
 dtype   = dshape
 
 from params import params
+from toplevel import open
 
 # Install the Blaze library of dispatch functions
 import lib

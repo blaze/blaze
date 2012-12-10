@@ -34,6 +34,8 @@ def retrieve(cc, indexer):
 
     if isinstance(indexer, int):
         return getitem(cc, indexer)
+    elif isinstance(indexer, slice):
+        return getitem(cc, indexer)
     elif isinstance(indexer, tuple):
         if len(indexer) == 1:
             return getitem(cc, indexer)
