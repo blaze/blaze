@@ -155,7 +155,7 @@ class Array(Indexable):
         if isinstance(obj, CArraySource):
             self.data = obj
         else:
-            self.data = CArraySource(obj, params)
+            self.data = CArraySource(obj, params=params)
 
 
         # Datashape
