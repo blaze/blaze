@@ -78,8 +78,9 @@ cdef extern from "aterm1.h":
     void ATsetErrorHandler(void (*handler)(char *format, va_list args))
     void ATsetAbortHandler(void (*handler)(char *format, va_list args))
 
-    ATerm ATisEqual(ATerm t1, ATerm t2)
-    ATerm AT_isDeepEqual(ATerm t1, ATerm t2)
+    ATbool ATisEqual(ATerm t1, ATerm t2)
+    ATbool AT_isDeepEqual(ATerm t1, ATerm t2)
+    ATbool ATisEqualModuloAnnotations(ATerm t1, ATerm t2)
 
     ctypedef enum ATbool:
         ATfalse = 0
@@ -97,6 +98,7 @@ cdef ATerm ATEmpty
 #------------------------------------------------------------------------
 
 cdef class PyATerm:
+
     cdef ATerm a
     cdef char* _repr
 
@@ -111,7 +113,7 @@ cdef class PyATerm:
                 self.a = a
                 self._repr = ATwriteToString(self.a)
         elif isinstance(pattern, int):
-            self.a = <ATerm>(<int>pattern)
+            self.a = <ATerm?>(<int>pattern)
 
     @property
     def typeof(self):
@@ -128,31 +130,37 @@ cdef class PyATerm:
 
         return iter(accum)
 
-    def __setitem__(self, char* key, char* value):
+    def aset(self, char* key, char* value):
+        """ Return a new ATerm annotated with the given key,
+        value pair """
         cdef ATerm label = ATreadFromString(key)
         cdef ATerm anno = ATreadFromString(value)
-        self.a = ATsetAnnotation(self.a, label, anno)
+        cdef ATerm copy = ATsetAnnotation(self.a, label, anno)
+        return PyATerm(<int>copy)
 
-    def __getitem__(self, char* key):
+    def aget(self, char* key):
+        """ Query a annotation of the term.  """
         cdef ATerm label = ATreadFromString(key)
         cdef ATerm value = ATgetAnnotation(self.a, label)
         if value == ATEmpty:
-            raise KeyError(key)
+            raise NoAnnotation(key)
         else:
             return ATwriteToString(value)
 
-    #def __richcmp__(self, other, int op):
-        #cdef ATbool res
-        #res = ATmatch(self.a, pattern)
+    def __richcmp__(PyATerm self, PyATerm other, int op):
+        cdef ATbool res
 
-       #if op == 2:
-           #if isinstance(other, PyATerm):
-               #res = ATisEqual(self.a, other.a)
+        if op == 2:
+            if isinstance(other, PyATerm):
+                res = ATisEqual(self.a, other.a)
+        else:
+            # TODO: lexicographic ordering from aterm2.h
+            raise NotImplementedError
 
-        #if res == ATtrue:
-            #return True
-        #if res == ATfalse:
-            #return False
+        if res == ATtrue:
+            return True
+        if res == ATfalse:
+            return False
 
     def matches(self, char* pattern):
         """
@@ -177,11 +185,14 @@ cdef class PyATerm:
     def __repr__(self):
         return "aterm('%s')" % ATwriteToString(self.a)
 
+#------------------------------------------------------------------------
+# Error Handling
+#------------------------------------------------------------------------
+
 cdef void error(char *format, va_list args) with gil:
     raise Exception(format)
 
-# -- init --
-
+# execute at module init 
 cdef ATerm bottomOfStack
 ATinit(1, [], &bottomOfStack)
 
@@ -189,6 +200,16 @@ ATinit(1, [], &bottomOfStack)
 ATsetErrorHandler(error)
 ATsetWarningHandler(error)
 ATsetAbortHandler(error)
+
+#------------------------------------------------------------------------
+# Exceptions
+#------------------------------------------------------------------------
+
+class InvalidATerm(SyntaxError):
+    pass
+
+class NoAnnotation(KeyError):
+    pass
 
 #------------------------------------------------------------------------
 # Constants
