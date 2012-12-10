@@ -20,7 +20,7 @@ def open(uri=None):
         #elif uri.scheme == 'tcp':
             #byte_interface = SocketSource()
         else:
-            # Default is to treak the URI as a regular path
+            # Default is to treat the URI as a regular path
             parms = params(storage=uri.path)
             source = CArraySource(params=parms)
 

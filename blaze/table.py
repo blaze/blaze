@@ -207,6 +207,13 @@ class Array(Indexable):
         return self._datashape
 
     @property
+    def size(self):
+        """
+        Size of the Array.
+        """
+        return self._datashape.parameters[0].val
+
+    @property
     def backends(self):
         """
         The storage backends that make up the space behind the
@@ -338,6 +345,13 @@ class NDArray(Indexable, ArrayNode):
         return self._datashape
 
     @property
+    def size(self):
+        """
+        Size of the NDArray.
+        """
+        return self._datashape.parameters[0].val
+
+    @property
     def backends(self):
         """
         The storage backends that make up the space behind the
@@ -462,6 +476,13 @@ class NDTable(Indexable, ArrayNode):
         Type deconstructor
         """
         return self._datashape
+
+    @property
+    def size(self):
+        """
+        Size of the NDTable.
+        """
+        return self._datashape.parameters[0].val
 
     @property
     def backends(self):
