@@ -2,8 +2,8 @@ Data Descriptors
 ================
 
 DataDescriptors are the underlying, low-level references to data
-that is returned by manifest Indexable objects (i.e. objects backed
-by real data of some variety).
+that are used to inform how a kernel executes and loads data
+during execution.
 
 - Python implementation
 - C Implemention
