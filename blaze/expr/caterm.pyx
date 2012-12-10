@@ -166,7 +166,7 @@ cdef class PyATerm:
         """
         Matches against ATerm patterns.
 
-        >>> ATerm('x').matches('<term>')
+        >>> aterm('x').matches('<term>')
         True
         >>> aterm('f(1)').matches('<appl(1)>', [APPL])
         ('f',)
