@@ -1,9 +1,10 @@
-import os
+import os, os.path
 import uuid
 
 from urlparse import urlparse
 from params import params
-from adaptors.chunked import CArraySource
+from sources.chunked import CArraySource
+from table import NDArray, Array
 
 def open(uri=None):
 
@@ -13,9 +14,13 @@ def open(uri=None):
         uri = urlparse(uri)
 
         if uri.scheme == 'carray':
-            params(storage=uri.netloc)
-            source = CArraySource(params=params)
+            path = os.path.join(uri.netloc, uri.path[1:])
+            parms = params(storage=path)
+            source = CArraySource(params=parms)
         #elif uri.scheme == 'tcp':
             #byte_interface = SocketSource()
 
-    #return NDArray
+    # Don't want a deferred array (yet)
+    # return NDArray(source)
+    return Array(source)
+

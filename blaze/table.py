@@ -152,11 +152,11 @@ class Array(Indexable):
         # possible arguments to the first argument which result
         # in different behavior for the values.
 
-        if isinstance(obj, list):
-            data = obj
+        if isinstance(obj, CArraySource):
+            self.data = obj
+        else:
+            self.data = CArraySource(obj, params)
 
-        #if isinstance(obj, datashape):
-            #data = None
 
         # Datashape
         # ---------
@@ -175,7 +175,6 @@ class Array(Indexable):
         # children graph nodes
         self.children = []
 
-        self.data = CArraySource(obj, params)
         self.space = Space(self.data)
 
         # Layout
@@ -274,11 +273,11 @@ class NDArray(Indexable, ArrayNode):
         # possible arguments to the first argument which result
         # in different behavior for the values.
 
-        if isinstance(obj, list):
-            data = obj
+        if isinstance(obj, CArraySource):
+            self.data = obj
+        else:
+            self.data = CArraySource(obj, params)
 
-        #if isinstance(obj, datashape):
-            #data = None
 
         # Datashape
         # ---------
@@ -297,7 +296,6 @@ class NDArray(Indexable, ArrayNode):
         # children graph nodes
         self.children = []
 
-        self.data = CArraySource(obj, params)
         self.space = Space(self.data)
 
         # Layout
