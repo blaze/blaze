@@ -2,7 +2,7 @@ import numpy as np
 
 from blaze.expr.ops import array_like
 from blaze.expr.paterm import ATerm, AAppl, AInt
-from blaze.rts.ffi import install, lift, _dispatch
+from blaze.rts.ffi import install, lift, lookup
 
 def test_lift():
 
@@ -25,7 +25,7 @@ def test_install():
     install('FizzPop(a,b);*',nadd,costfn)
 
     expr = AAppl(ATerm('FizzPop'), [AInt(1), AInt(2)])
-    fn, cost = _dispatch.dispatcher.dispatch(expr)
+    fn, cost = lookup(expr)
 
     assert fn.fn == nadd.fn
     assert cost == 0

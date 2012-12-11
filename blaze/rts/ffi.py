@@ -50,7 +50,7 @@ class Dispatcher(object):
         self.funs[fn] = matcher
         self.costs[fn] = cost
 
-    def dispatch(self, aterm):
+    def lookup(self, aterm):
         # canidate functions, functions matching the signature of
         # the term
         c = [f for f, sig in self.funs.iteritems() if matches(sig, aterm)]
@@ -86,6 +86,9 @@ def install(matcher, fn, cost):
     # directly since it's mutable and ugly...
     with runtime_frozen:
         _dispatch.dispatcher.install(matcher, fn, cost)
+
+def lookup(aterm):
+    return _dispatch.dispatcher.lookup(aterm)
 
 #------------------------------------------------------------------------
 # Functions

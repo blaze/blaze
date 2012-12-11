@@ -9,7 +9,7 @@ from functools import partial
 from itertools import ifilter
 from collections import Counter
 
-from blaze.plan import BlazeVisitor
+from blaze.plan import BlazeVisitor, InstructionGen
 
 #------------------------------------------------------------------------
 # Constants
@@ -157,7 +157,7 @@ def build_ufunc(context, graph):
             return (op0 + (op1 * op2))
 
     Which can be executed by the runtime through the
-    ElementwiseLLVMExecutor. We stash it in the 'kernels' parameter in
+    ElementwiseLLVMExecutor. We stash it in the 'ufunc' parameter in
     the context. It's preferable to build these, otherwise it would
     involve multiple numpy ufuncs dispatches.
 
@@ -194,14 +194,19 @@ def do_plan(context, graph):
 
     ::
         vars %a %b %c
-        %0 := Elemwise{np.mul,nogil}(%b, %c)
-        %0 := Elemwise{np.add,nogil,inplace}(%0, %a)
+        %0 = Elemwise{np.mul,nogil}(%b, %c)
+        %0 = Elemwise{np.add,nogil,inplace}(%0, %a)
         ret %0
 
     """
     context = dict(context)
 
-    return context, graph
+    aterm_graph = context['aterm_graph']
+
+    ivisitor = InstructionGen(have_numbapro=False)
+    plan = ivisitor.visit(aterm_graph)
+
+    return context, plan
 
 #------------------------------------------------------------------------
 # Pipeline
@@ -241,8 +246,9 @@ class Pipeline(object):
         # pipeline = stn ∘  ... ∘  st2 ∘ st1
         pipeline = reduce(compose, self.pipeline)
 
-        context, _ = pipeline(self.init, graph)
-        return context, context['output']
+        context, plan = pipeline(self.init, graph)
+        return context, context['aterm_graph']
+        #return context, plan
 
 #------------------------------------------------------------------------
 # Graph Manipulation

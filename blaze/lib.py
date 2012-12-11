@@ -20,19 +20,25 @@ zerocost = lambda x: 0
 #              ( i.e. it waits on a disk or socket )
 
 install(
-    'Add(a,b) ; contig',
+    'Add(a,b);*',
     PythonF(np.add.types, np.add, False),
     zerocost
 )
 
 install(
-    'Mul(a,b) ; contig',
+    'Mul(a,b);*',
     PythonF(np.multiply.types, np.multiply, False),
     zerocost
 )
 
 install(
-    'Abs(a) ; contig',
+    'Pow(a,b);*',
+    PythonF(np.power.types, np.power, False),
+    zerocost
+)
+
+install(
+    'Abs(a);*',
     PythonF(np.abs.types, np.abs, False),
     zerocost
 )

@@ -534,7 +534,6 @@ class Op(ExpressionNode):
     kind = OP
 
     is_arithmetic = False
-    is_math = False
 
     def __init__(self, op, operands):
         self.op = op
