@@ -59,7 +59,7 @@ cdef extern from "aterm1.h":
 
     int ATprintf(char *format, ...)
     int ATfprintf(int stream, char *format, ...)
-    char *ATwriteToString(ATerm t)
+    char* ATwriteToString(ATerm t)
 
     ATerm ATmake(char *pattern, ...)
     ATerm ATmakeTerm(ATerm pat, ...)
@@ -88,7 +88,8 @@ cdef extern from "aterm1.h":
 
 cdef extern from "utils.h":
     int subterms(ATerm t)
-    ATerm* next_subterm(ATerm t, int i)
+    ATerm * next_subterm(ATerm t, int i)
+    ATerm * annotations(ATerm t)
 
 # singleton empty ATerm
 cdef ATerm ATEmpty
@@ -130,6 +131,10 @@ cdef class PyATerm:
 
         return iter(accum)
 
+    @property
+    def annotation(self):
+        return PyATerm(<int>annotations(self.a))
+
     def aset(self, char* key, char* value):
         """ Return a new ATerm annotated with the given key,
         value pair """
@@ -146,6 +151,10 @@ cdef class PyATerm:
             raise NoAnnotation(key)
         else:
             return ATwriteToString(value)
+
+    def amatch(self, char* pattern):
+        """ Pattern match on annotations """
+        pass
 
     def __richcmp__(PyATerm self, PyATerm other, int op):
         cdef ATbool res
