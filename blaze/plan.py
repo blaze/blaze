@@ -160,6 +160,8 @@ class InstructionGen(MroVisitor):
             spine = op
         elif isinstance(op, AAppl):
             spine = op.spine.label
+        elif isinstance(op, AString):
+            spine = op.s
         else:
             raise NotImplementedError
 
@@ -237,7 +239,7 @@ class BlazeVisitor(MroVisitor):
 
         if graph.is_arithmetic:
             return AAppl(ATerm('Arithmetic'),
-                         [opname] + self.visit(graph.children),
+                         [AString(opname)] + self.visit(graph.children),
                          annotation=annotation(graph))
         else:
             return AAppl(opname, self.visit(graph.children),

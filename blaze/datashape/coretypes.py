@@ -196,6 +196,10 @@ class DataShape(object):
         # Python
         return ''.join(["dshape(\"", doublequote(str(self)), "\")"])
 
+    @property
+    def shape(self):
+        return self.parameters[:-1]
+
 class Atom(DataShape):
     """
     Atoms for arguments to constructors of types, not types in

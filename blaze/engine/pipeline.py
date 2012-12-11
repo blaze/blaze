@@ -11,6 +11,12 @@ from collections import Counter
 
 from blaze.plan import BlazeVisitor, InstructionGen
 
+try:
+    import numbapro
+    have_numbapro = True
+except ImportError:
+    have_numbapro = False
+
 #------------------------------------------------------------------------
 # Constants
 #------------------------------------------------------------------------
@@ -176,6 +182,8 @@ def build_ufunc(context, graph):
     # Build the custom ufuncs using the ExecutionPipeline
     from blaze.engine import execution_pipeline
 
+    # NOTE: the purpose of the execution pipeline is for every component to
+    # cooperate, not just numba
     p = execution_pipeline.ExecutionPipeline()
     p.run_pipeline(context, aterm_graph)
 
@@ -195,7 +203,7 @@ def do_plan(context, graph):
     ::
         vars %a %b %c
         %0 = Elemwise[np.mul,nogil](%b, %c)
-        %0 = Elemwise[np.add,nogil,inplace](%0, %a)
+        %0 = Elemwise[np.add,nogil,inplace](%a, %0)
         ret %0
 
     """
@@ -203,7 +211,7 @@ def do_plan(context, graph):
 
     aterm_graph = context['aterm_graph']
 
-    ivisitor = InstructionGen(have_numbapro=False)
+    ivisitor = InstructionGen(have_numbapro=have_numbapro)
     plan = ivisitor.visit(aterm_graph)
     context['instructions'] = ivisitor.instructions
 
@@ -227,7 +235,7 @@ class Pipeline(object):
     """
 
     def __init__(self, *args, **kwargs):
-        defaults = { 'have_numbapro': False }
+        defaults = { 'have_numbapro': False } # have_numbapro }
         self.init = dict(defaults, **kwargs)
 
         # sequential pipeline of passes
@@ -235,6 +243,7 @@ class Pipeline(object):
             do_environment,
             do_convert_to_aterm,
             do_types,
+            build_ufunc,
             do_plan,
         ]
 

@@ -49,6 +49,19 @@ class GraphToAst(visitor.BasicGraphVisitor):
         return self.ufunc_builder.register_operand(tree)
 
 
+def get_datashape(dshape_aterm):
+    "Assemble datashape from aterm dshape"
+    args = []
+    for arg in dshape_aterm.args:
+        if isinstance(arg, paterm.AInt):
+            args.append(arg.n)
+        elif isinstance(arg, paterm.AString):
+            args.append(arg.s)
+        else:
+            raise NotImplementedError
+
+    return datashape(*args)
+
 class ATermToAstTranslator(visitor.GraphTranslator):
     """
     Convert an aterm graph to a Python AST.
@@ -74,7 +87,7 @@ class ATermToAstTranslator(visitor.GraphTranslator):
             # Bottom of graph that we can handle
             operands = self.ufunc_builder.operands
             pyast_function = self.ufunc_builder.build_ufunc_ast(result)
-            print getsource(pyast_function)
+            # print getsource(pyast_function)
             py_ufunc = self.ufunc_builder.compile_to_pyfunc(pyast_function)
 
             executor = build_executor(py_ufunc, operands, graph)
@@ -140,41 +153,48 @@ class ATermToAstTranslator(visitor.GraphTranslator):
             app.args = [lhs, rhs]
             return app
 
+    def handle_arithmetic(self, app, op):
+        self.nesting_level += 1
+        self.visit(app.args[1:])
+        self.nesting_level -= 1
+
+        left, right = self.result
+        result = ast.BinOp(left=left, op=op(), right=right)
+        return self.register(app, result)
+
     def AAppl(self, app):
         "Look for unops, binops and reductions and anything else we can handle"
         if paterm.matches('Arithmetic;*', app.spine):
-            opname = app.args[0].lower()
+            opname = app.args[0].s.lower()
             op = self.opname_to_astop.get(opname, None)
-            args = app.args[1:]
-            if op is not None and len(args) == 2:
-                self.nesting_level += 1
-                self.visit(args)
-                self.nesting_level -= 1
+            type = get_datashape(app.annotation.ty)
+            is_array = type.shape or self.nesting_level
+            if op is not None and is_array and len(app.args) == 3: # args = [op, lhs, rhs]
+                return self.handle_arithmetic(app, op)
 
-                left, right = self.result
-                result = ast.BinOp(left=left, op=op(), right=right)
-                return self.register(app, result)
         elif paterm.matches('Slice;*', app.spine):
             array, start, stop, step = app.args
             if all(paterm.matches("None;*", op) for op in (start, stop, step)):
                 return self.visit(array)
+
         elif paterm.matches("Assign;*", app.spine):
             return self.match_assignment(app)
+
+        elif paterm.matches("Array;*", app.spine) and self.nesting_level:
+            self.maybe_operand(app)
+            return None
 
         return self.unhandled(app)
 
     def AInt(self, constant):
-        return ast.Num(n=constant.n)
+        self.result = ast.Num(n=constant.n)
+        return constant
 
     AFloat = AInt
 
     def maybe_operand(self, aterm):
         if self.nesting_level:
             self.result = self.ufunc_builder.register_operand(aterm)
-
-    def Array(self, array):
-        self.maybe_operand(aterm)
-        return array
 
     def unhandled(self, aterm):
         "An term we can't handle, scan for sub-trees"

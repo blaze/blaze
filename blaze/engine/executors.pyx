@@ -149,6 +149,8 @@ cdef class ElementwiseLLVMExecutor(Executor):
 # we're dealing with ufuncs over operands that look like CArray objects
 
 # TODO: one that doesn't assume chunking for NumPy
+# Note Mark: why? a length-one loop isn't going to add any overhead
+
 # TODO: much later a loop that deals with some of the more
 # general datashapes
 
@@ -179,11 +181,11 @@ def execute(Executor executor, operands, out_operand):
         for paired_chunks in zip(*[desc.asbuflist() for desc in descriptors]):
             paired_chunks, lhs_chunk = paired_chunks[:-1], paired_chunks[-1]
             for i, chunk in enumerate(paired_chunks):
-                print hex(chunk.pointer)
+                #print hex(chunk.pointer)
                 data_pointers[i] = <void *> <Py_uintptr_t> chunk.pointer
 
-            print hex(lhs_chunk.pointer)
-            print lhs_chunk.shape[0]
+            #print hex(lhs_chunk.pointer)
+            #print lhs_chunk.shape[0]
             lhs_data = <void *> <Py_uintptr_t> lhs_chunk.pointer
             executor.execute(data_pointers, lhs_data, lhs_chunk.shape[0])
     finally:
