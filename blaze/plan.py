@@ -7,12 +7,10 @@ import numpy as np
 
 from collections import namedtuple
 
-#from blaze.expr.graph import Literal, OP, APP, VAL
-#from blaze.table import Indexable
 from blaze.datashape.coretypes import DataShape
 from blaze.byteproto import CONTIGUOUS, READ
 
-from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString
+from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString, AInt, AFloat
 from blaze.expr.visitor import MroVisitor
 
 #------------------------------------------------------------------------
@@ -56,10 +54,15 @@ def annotation(graph, *metadata):
 # ATerm -> Instructions
 #------------------------------------------------------------------------
 
+class Constant(object):
+    def __init__(self, n):
+        self.n = n
+    def __repr__(self):
+        return 'const(%s)' % self.n
+
 class Var(object):
     def __init__(self, key):
         self.key = key
-
     def __repr__(self):
         return self.key
 
@@ -79,6 +82,7 @@ class Instruction(object):
         else:
             return ' '.join([self.fn,] + map(repr, self.args))
 
+
 class InstructionGen(MroVisitor):
     """ Map ATerm into linear instructions, unlike ATerm this
     does not preserve the information contained in the expression
@@ -93,6 +97,7 @@ class InstructionGen(MroVisitor):
 
     def AAppl(self, term):
         label = term.spine.label
+        import pdb; pdb.set_trace()
 
         if label == 'Arithmetic':
             return self._Arithmetic(term)
@@ -102,12 +107,6 @@ class InstructionGen(MroVisitor):
             return self._Assign(term)
         else:
             raise NotImplementedError
-
-    def AInt(self, term):
-        return
-
-    def ATerm(self, term):
-        return
 
     def _Arithmetic(self, term):
         # All the function signatures are of the form
@@ -168,6 +167,7 @@ class InstructionGen(MroVisitor):
         fargs = [self.vartable[a] for a in args]
         inst = Instruction(str(fn.fn), fargs)
 
+        # push the temporary for the result in the vartable
         key = ('%' + str(self.n))
         self.vartable[term] = key
         self.n += 1
@@ -183,6 +183,17 @@ class InstructionGen(MroVisitor):
 
     def _Assign(self, term):
         pass
+
+    def AInt(self, term):
+        self.vartable[term] = Constant(term.n)
+        return
+
+    def AFloat(self, term):
+        self.vartable[term] = Constant(term.n)
+        return
+
+    def ATerm(self, term):
+        return
 
 #------------------------------------------------------------------------
 # Graph -> ATerm
@@ -209,7 +220,12 @@ class BlazeVisitor(MroVisitor):
                          annotation=annotation(graph))
 
     def Literal(self, graph):
-        return ATerm(graph.val, annotation=annotation(graph))
+        if graph.vtype == int:
+            return AInt(graph.val, annotation=annotation(graph))
+        if graph.vtype == float:
+            return AFloat(graph.val, annotation=annotation(graph))
+        else:
+            return ATerm(graph.val, annotation=annotation(graph))
 
     def Indexable(self, graph):
         self.operands.append(graph)

@@ -1,5 +1,6 @@
 import numpy as np
 from blaze.rts.ffi import PythonF, install
+from blaze.engine import executors
 
 zerocost = lambda x: 0
 
