@@ -22,7 +22,7 @@ def test_install():
 
     # Anywhere an add is term is found replace with the simple NumPy
     # dispatch.
-    install('FizzPop(a,b);*',nadd,costfn)
+    install('FizzPop(<term>,<term>)',nadd,costfn)
 
     expr = AAppl(ATerm('FizzPop'), [AInt(1), AInt(2)])
     fn, cost = lookup(expr)

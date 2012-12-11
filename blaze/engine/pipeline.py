@@ -97,13 +97,6 @@ def do_environment(context, graph):
     # manually toggling numba support because it can crash if its not on
     # a test case that matches up with numba
 
-    # TODO: better way to do this
-    #try:
-        #import numbapro
-        #have_numbapro = True
-    #except ImportError:
-        #have_numbapro = False
-
     # ----------------------
     #context['have_numbapro'] = have_numbapro
     # ----------------------

@@ -28,6 +28,7 @@ from threading import local
 from thread import allocate_lock
 from blaze.expr.paterm import matches
 from blaze.error import NoDispatch
+from blaze.expr import caterm
 
 from ctypes import CFUNCTYPE
 
@@ -51,9 +52,14 @@ class Dispatcher(object):
         self.costs[fn] = cost
 
     def lookup(self, aterm):
+        # convert into a C ATerm
+        ct = caterm.aterm(str(aterm))
+
         # canidate functions, functions matching the signature of
         # the term
-        c = [f for f, sig in self.funs.iteritems() if matches(sig, aterm)]
+
+        # Use the C libraries better pattern matching library
+        c = [f for f, sig in self.funs.iteritems() if ct.matches(sig)]
 
         if len(c) == 0:
             raise NoDispatch(aterm)

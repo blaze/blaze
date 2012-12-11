@@ -157,15 +157,15 @@ class InstructionGen(MroVisitor):
         # not good: AAppl('x')
 
         if isinstance(op, basestring):
-            spine = op
+            label = op
         elif isinstance(op, AAppl):
-            spine = op.spine.label
-        elif isinstance(op, AString):
-            spine = op.s
+            label = op.spine.label
+        elif isinstance(op, ATerm):
+            label = op.label
         else:
             raise NotImplementedError
 
-        if spine in {'Slice', 'Assign'}:
+        if label in {'Slice', 'Assign'}:
             return []
 
         if self.numbapro:
@@ -239,10 +239,10 @@ class BlazeVisitor(MroVisitor):
 
         if graph.is_arithmetic:
             return AAppl(ATerm('Arithmetic'),
-                         [AString(opname)] + self.visit(graph.children),
+                         [ATerm(opname)] + self.visit(graph.children),
                          annotation=annotation(graph))
         else:
-            return AAppl(opname, self.visit(graph.children),
+            return AAppl(ATerm(opname), self.visit(graph.children),
                          annotation=annotation(graph))
 
     def Literal(self, graph):

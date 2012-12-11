@@ -27,26 +27,26 @@ zerocost = lambda x: 0
 # etc...
 
 install(
-    'Add(a,b);*',
+    'Add(<term>,<term>)',
     PythonF(np.add.types, np.add, False),
     zerocost
 )
 
 
 install(
-    'Mul(a,b);*',
+    'Mul(<term>,<term>)',
     PythonF(np.multiply.types, np.multiply, False),
     zerocost
 )
 
 install(
-    'Pow(a,b);*',
+    'Pow(<term>,<term>)',
     PythonF(np.power.types, np.power, False),
     zerocost
 )
 
 install(
-    'Abs(a);*',
+    'Abs(<term>)',
     PythonF(np.abs.types, np.abs, False),
     zerocost
 )

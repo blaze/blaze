@@ -105,8 +105,6 @@ def test_simple_pipeline():
 
     ctx, plan = line.run_pipeline(x+y)
 
-    #------------------------------------------------------------------------
-
     # ATerm
     # -----
     # Add(Mul(Add(1,Add(2,3.0)),Add(Add(1,Mul(2,Abs(3.0))),2)),3)
