@@ -145,6 +145,7 @@ class AAppl(ATermBase):
 
     def __init__(self, spine, args, **kwargs):
         super(AAppl, self).__init__(**kwargs)
+        assert isinstance(spine, ATerm)
         self.spine = spine
         self.args = args
 
