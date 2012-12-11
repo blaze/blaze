@@ -36,6 +36,7 @@ def test_execution():
     out[:] = graph
 
     print list(out.data.ca)
+    assert list(out.data.ca) == [46, 62, 80, 100]
 
 if __name__ == '__main__':
 #    test_conversion()
