@@ -41,6 +41,60 @@ cdef class Executor(object):
     cdef execute(self, void **data_pointers, void *out, size_t size):
         "Execute a kernel over the data"
 
+#------------------------------------------------------------------------
+# NumPy
+#------------------------------------------------------------------------
+
+cdef class ElementwiseNumpyExecutor(Executor):
+    cdef object ufunc, result_dtype
+    cdef list operands, dtypes
+    cdef object lhs_array
+    cdef void *lhs_data
+
+    def __init__(self, ufunc, dtypes, result_dtype):
+        self.ufunc = ufunc
+        self.result_dtype = result_dtype
+
+        self.operands = []
+        for dtype in dtypes:
+            array = build_fake_array(dtype)
+            self.operands.append(array)
+
+        self.lhs_array = build_fake_array(result_dtype)
+
+    cdef execute(self, void **data_pointers, void *out, size_t size):
+        """
+        Execute a kernel over the data
+
+        TODO: strides, reductions
+        """
+        cdef int i
+        cdef size_t itemsize
+        cdef cnp.ndarray op
+
+        for i, operand in enumerate(self.operands):
+            op = self.operands[i]
+            op.data = <char *> data_pointers[i]
+            op.shape[0] = size
+
+        if out == NULL:
+            raise NotImplementedError
+            #if self.lhs_data == NULL:
+            #    self.allocate_empty_lhs(size)
+            #out = self.lhs_data
+
+        op = self.lhs_array
+        op.data = <char *> out
+        op.shape[0] = size
+
+        #print self.operands
+        #print self.lhs_array
+        self.ufunc(*self.operands, out=self.lhs_array)
+
+#------------------------------------------------------------------------
+# Numba
+#------------------------------------------------------------------------
+
 cdef class ElementwiseLLVMExecutor(Executor):
     cdef object ufunc, result_dtype
     cdef list operands, dtypes
@@ -87,6 +141,16 @@ cdef class ElementwiseLLVMExecutor(Executor):
         #print self.lhs_array
         self.ufunc(*self.operands, out=self.lhs_array)
 
+#------------------------------------------------------------------------
+#
+#------------------------------------------------------------------------
+
+# This is the toplevel command that the RTS will specialize to when
+# we're dealing with ufuncs over operands that look like CArray objects
+
+# TODO: one that doesn't assume chunking for NumPy
+# TODO: much later a loop that deals with some of the more
+# general datashapes
 
 def execute(Executor executor, operands, out_operand):
     """

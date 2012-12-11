@@ -236,12 +236,3 @@ def minitype(dtype):
 def substitute_llvm_executors(aterm_graph, executors):
     translator = ATermToAstTranslator(executors)
     return translator.visit(aterm_graph)
-
-if __name__ == '__main__':
-    a = NDArray([1, 2, 3, 4], datashape('2, 2, int'))
-    ops, funcdef = convert_graph(a + a)
-#    print getsource(funcdef)
-#    print result
-
-#    import doctest
-#    doctest.testmod()

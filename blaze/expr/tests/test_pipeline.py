@@ -91,31 +91,31 @@ def test_simple_sort_vals():
 
 def test_simple_pipeline():
     line = Pipeline()
-    plan = line.run_pipeline(x)
+    _, plan = line.run_pipeline(x)
 
     # Add(1,Mul(2,Abs(3.0)))
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(y)
+    _, plan = line.run_pipeline(y)
 
     # Add(Add(1,Add(2,3.0)),Add(1,Mul(2,Abs(3.0))))
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(x+y)
+    _, plan = line.run_pipeline(x+y)
 
     # Add(Mul(Add(1,Add(2,3.0)),Add(Add(1,Mul(2,Abs(3.0))),2)),3)
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(x*(y+2)+3)
+    _, plan = line.run_pipeline(x*(y+2)+3)
 
     # Add(Array(39558864){dshape("3 int64")},Array(39558864){dshape("3 int64")})
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(d+d)
+    _, plan = line.run_pipeline(d+d)
 
     # Add(
     #   Add(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
@@ -124,7 +124,7 @@ def test_simple_pipeline():
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline((d+d)+(d+d))
+    _, plan = line.run_pipeline((d+d)+(d+d))
 
     if DEBUG:
         pprint(plan, width=1)
@@ -134,7 +134,7 @@ def test_simple_pipeline():
     #   Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
     # , Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
     # )
-    plan = line.run_pipeline((d*d)*(d*d))
+    _, plan = line.run_pipeline((d*d)*(d*d))
 
     if DEBUG:
         pprint(plan, width=1)
@@ -146,7 +146,7 @@ def test_complex_pipeline1():
     d = NDArray([1,2,3])
 
     line = Pipeline()
-    plan = line.run_pipeline(((a*b)+(c*d))**2)
+    _, plan = line.run_pipeline(((a*b)+(c*d))**2)
 
     # Pow(
     #   Arithmetic(
@@ -178,7 +178,7 @@ def test_complex_pipeline2():
     g = f**(a+b)
 
     line = Pipeline()
-    plan = line.run_pipeline(f+g)
+    _, plan = line.run_pipeline(f+g)
 
     #   Arithmetic(
     #     Add()

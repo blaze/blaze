@@ -6,8 +6,8 @@ from blaze.engine import pipeline, llvm_execution
 def convert_graph(lazy_blaze_graph):
     # Convert blaze graph to ATerm graph
     p = pipeline.Pipeline()
-    context = p.run_pipeline_context(lazy_blaze_graph)
-    aterm_graph = context['output']
+    context, aterm_graph = p.run_pipeline(lazy_blaze_graph)
+
     executors = {}
     aterm_graph = llvm_execution.substitute_llvm_executors(aterm_graph,
                                                            executors)

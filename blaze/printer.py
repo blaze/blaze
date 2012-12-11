@@ -42,7 +42,7 @@ def generic_repr(name, obj, deferred):
         if _show_details:
             header = "%s\n" % (name)
             header += "  datashape := %s \n" % str(obj._datashape)
-            header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
+            header += "  metadata  := %s \n"  % obj._metadata
         else:
             header = ''
     else:
@@ -50,7 +50,7 @@ def generic_repr(name, obj, deferred):
             header = "%s\n" % (name)
             header += "  datashape := %s \n" % str(obj._datashape)
             header += "  values    := %s \n"  % list(obj.backends)
-            header += "  metadata  := %s \n"  % (pformat(obj._metadata, width=1))
+            header += "  metadata  := %s \n"  % obj._metadata
             header += "  layout    := %s \n"  % obj._layout.desc
         else:
             header = ''

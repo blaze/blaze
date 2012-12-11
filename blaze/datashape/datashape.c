@@ -135,6 +135,10 @@ Dshape_dealloc(DshapeObject* self)
 static PyObject *
 Dshape_kind(DshapeObject *self)
 {
+    if(self->ty == NULL) {
+        return Py_None;
+    }
+
     return PyInt_FromLong(self->ty->kind);
 }
 
@@ -193,15 +197,34 @@ static PyTypeObject PyDshapeType = {
 
 /*---------------------------------------------------------*/
 
+#define Dshape_SET(ds, t) ((DshapeObject *)ds)->ty = t;
+
+int
+Dshape_Check(PyObject *ds)
+{
+    return (Py_TYPE(ds) == &PyDshapeType);
+}
+
+int
+Dshape_Set(PyObject *ds, type_t *t)
+{
+    if (Dshape_Check(ds)) {
+        ((DshapeObject *)ds)->ty = t;
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 static PyObject *
 Py_Nil(PyObject *self)
 {
+    PyObject *ds;
     type_t *t = null_type();
-    DshapeObject *ds;
 
     PyObject *args = PyTuple_New(0);
     ds = PyObject_CallObject((PyObject *) &PyDshapeType, args);
-    ds->ty = t;
+    Dshape_Set(ds, t);
 
     return (PyObject*)ds;
 }
@@ -209,12 +232,12 @@ Py_Nil(PyObject *self)
 static PyObject *
 Py_Dynamic(PyObject *self)
 {
+    PyObject *ds;
     type_t *t = dynamic_type();
-    DshapeObject *ds;
 
     PyObject *args = PyTuple_New(0);
     ds = PyObject_CallObject((PyObject *) &PyDshapeType, args);
-    ds->ty = t;
+    Dshape_Set(ds, t);
 
     return (PyObject*)ds;
 }

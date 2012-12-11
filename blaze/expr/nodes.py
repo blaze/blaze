@@ -2,6 +2,7 @@ from copy import copy
 from collections import deque
 
 from blaze.engine import pipeline
+from blaze.rts.execution import execplan
 
 #------------------------------------------------------------------------
 # Graph Objects
@@ -19,14 +20,19 @@ class Node(object):
         self.children = children
 
     def eval(self):
-        "Evaluates the expression graph"
-        p = pipeline.Pipeline()
-        return p.execute(self)
+        """ Evaluates the expression graph """
+
+        # setup a default pipeline
+        line = pipeline.Pipeline()
+
+        # generate the plan
+        ctx, plan = line.run_pipeline(self)
+
+        # submit to the runtime for the result
+        return execplan(ctx, plan)
 
     def __iter__(self):
-        """
-        Walk the graph, left to right
-        """
+        """ Walk the graph, left to right """
         for a in self.children:
             if isinstance(a, Node):
                 yield a

@@ -23,24 +23,33 @@ VAL = 2
 # Pipeline Combinators
 #------------------------------------------------------------------------
 
-# vacuously true condition
-Id = lambda x:x
-
 def compose(f, g):
     return lambda *x: g(*f(*x))
 
-# condition composition combinator <>, is the ``id`` function if pre and
-# post condition holds, otherwise terminates is a ``const`` that returns
-# the error and misbehaving condition.
+# monadic bind combinator <>, is the ``id`` function if pre and post
+# condition holds, otherwise terminates is a ``const`` that returns the
+# error and misbehaving condition.
 
+def bind(self, f, x):
+    if x is None:
+        return None
+    else:
+        if f(x):
+            return x
+        else:
+            return None
+
+# Compose with pre and post condition checks
 # pipeline = (post ∘ stl ∘ pre) <> (post ∘ st2 ∘ pre) <> ...
 def compose_constrained(f, g, pre, post):
-    """Compose with pre and post condition checks """
     return lambda *x: post(*g(*f(*pre(*x))))
 
 #------------------------------------------------------------------------
 # Pre/Post Conditions
 #------------------------------------------------------------------------
+
+# vacuously true condition
+Id = lambda x:x
 
 #------------------------------------------------------------------------
 # Passes
@@ -84,11 +93,9 @@ def do_flow(context, graph):
 
     # Topologically sort the graph
     vars = topovals(graph)
-    ops = topops(graph)
 
     # ----------------------
     context['vars'] = vars
-    context['ops']  = ops
     # ----------------------
 
     return context, graph
@@ -103,11 +110,13 @@ def do_environment(context, graph):
     return context, graph
 
 def do_convert_to_aterm(context, graph):
-    "Convert the graph to an ATerm graph. See blaze/expr/paterm.py"
+    """Convert the graph to an ATerm graph
+    See blaze/expr/paterm.py
+    """
     context = dict(context)
 
     operands, plan = generate(
-        graph, #context['ops'],
+        graph,
         context['vars'],
     )
 
@@ -118,33 +127,42 @@ def do_convert_to_aterm(context, graph):
 
     return context, graph
 
+def do_plan(context, graph):
+    """ Take the ATerm expression graph and do inner-most
+    evaluation to generate a linear sequence of instructions from
+    that together with the table of inputs and outputs forms the
+    execution plan.
+    """
+    context = dict(context)
+
 #------------------------------------------------------------------------
 # Pipeline
 #------------------------------------------------------------------------
 
 class Pipeline(object):
     """
-    Code generation pipeline is a series of combinable Pass
-    stages which thread a context and graph object through to
-    produce various intermediate forms resulting in an execution
-    plan.
+    Plan generation pipeline is a series of combinable Pass stages
+    which thread a context and graph object through to produce various
+    intermediate forms resulting in an execution plan.
+
+    The plan is a sequential series of instructions to concrete
+    functions for the RTS to execute.
     """
+
     def __init__(self, *args, **kwargs):
-        self.ictx = {}
+        self.init = {}
 
         # sequential pipeline of passes
-        self.pipeline = (
+        self.pipeline = [
             do_flow,
             do_environment,
             do_convert_to_aterm,
-        )
+        ]
 
-    def run_pipeline_context(self, graph):
+    def run_pipeline(self, graph, plan=False):
         """
         Run the graph through the pipeline
         """
-        ictx = self.ictx
-
         # Fuse the passes into one functional pipeline that is the
         # sequential composition with the intermediate ``context`` and
         # ``graph`` objects threaded through.
@@ -152,21 +170,8 @@ class Pipeline(object):
         # pipeline = stn ∘  ... ∘  st2 ∘ st1
         pipeline = reduce(compose, self.pipeline)
 
-        context, _ = pipeline(ictx, graph)
-        return context
-
-    def run_pipeline(self, graph):
-        octx = self.run_pipeline_context(graph)
-        return octx['output']
-
-    def execute(self, graph):
-        "Create an execution plan and evaluate the expression"
-        from blaze.engine import execution_pipeline
-
-        context = self.run_pipeline_context(graph)
-        aterm_graph = context['output']
-        p = execution_pipeline.ExecutionPipeline()
-        p.run_pipeline(context, aterm_graph)
+        context, _ = pipeline(self.init, graph)
+        return context, context['output']
 
 #------------------------------------------------------------------------
 # Graph Manipulation
@@ -225,6 +230,10 @@ def toposort(pred, graph, algorithm='khan'):
         return tarjan_sort(pred, graph)
     else:
         raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Sorters
+#------------------------------------------------------------------------
 
 topovals = partial(toposort, lambda x: x.kind == VAL)
 topops   = partial(toposort, lambda x: x.kind == OP)
