@@ -4,14 +4,13 @@ Script for performing queries on large time series by using UCR ED and DTW algs.
 
 
 from time import time
-import os.path
-import numpy as np
 import blaze
 from blaze.ts.ucr_dtw import ucr
 
 
 # Convert txt file into Blaze native format
 def convert(filetxt, storage):
+    import os.path
     if not os.path.exists(storage):
         blaze.Array(np.loadtxt(filetxt),
                     params=blaze.params(storage=storage))
@@ -29,11 +28,10 @@ query2 = blaze.open("Query2")
 print "Total Blaze arrays open time :", round(time()-t0, 4)
 
 t0 = time()
-# Do the search using the native Blaze format
+# Do different searches using ED/DTW with native Blaze arrays
 #loc, dist = ucr.ed(data, query, 128)
 loc, dist = ucr.dtw(data, query, 0.1, 128, verbose=False)
 #loc, dist = ucr.dtw(data, query2, 0.1, 128)
-t1 = time()
 
 print "Location : ", loc
 print "Distance : ", dist
