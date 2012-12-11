@@ -85,26 +85,18 @@ Id = lambda x:x
 #          +----------+-----> Output
 
 
-# TODO: Probably not necessary as Mark points out we can just do
-# innermost evaluation... for one of the 27 backends we considered this
-# probably seemed like a good idea though. :)
-def do_flow(context, graph):
-    context = dict(context)
-
-    # Topologically sort the graph
-    vars = topovals(graph)
-
-    # ----------------------
-    context['vars'] = vars
-    # ----------------------
-
-    return context, graph
-
 def do_environment(context, graph):
     context = dict(context)
 
+    # TODO: better way to do this
+    try:
+        import numbapro
+        have_numbapro = True
+    except ImportError:
+        have_numbapro = False
+
     # ----------------------
-    context['hints'] = {}
+    context['have_numbapro'] = have_numbapro
     # ----------------------
 
     return context, graph
@@ -112,17 +104,26 @@ def do_environment(context, graph):
 def do_convert_to_aterm(context, graph):
     """Convert the graph to an ATerm graph
     See blaze/expr/paterm.py
+
+    ::
+        a + b
+
+    ::
+        Arithmetic(
+          Add
+        , Array(){dshape("3, int64"), 45340864}
+        , Array(){dshape("3, int64"), 45340864}
+        ){dshape("3, int64"), 45264432}
+
     """
     context = dict(context)
+    vars = topovals(graph)
 
-    operands, plan = generate(
-        graph,
-        context['vars'],
-    )
+    operands, aterm_graph = generate(graph, vars)
 
     # ----------------------
     context['operands'] = operands
-    context['output'] = plan
+    context['output'] = aterm_graph
     # ----------------------
 
     return context, graph
@@ -132,8 +133,21 @@ def do_plan(context, graph):
     evaluation to generate a linear sequence of instructions from
     that together with the table of inputs and outputs forms the
     execution plan.
+
+    Example::
+
+    ::
+        a + b * c
+
+    ::
+        vars %a %b %c
+        %0 := Elemwise{np.mul,nogil}(%b, %c)
+        %0 := Elemwise{np.add,nogil,inplace}(%0, %a)
+        ret %0
+
     """
     context = dict(context)
+    return context, graph
 
 #------------------------------------------------------------------------
 # Pipeline
@@ -154,9 +168,9 @@ class Pipeline(object):
 
         # sequential pipeline of passes
         self.pipeline = [
-            do_flow,
             do_environment,
             do_convert_to_aterm,
+            do_plan,
         ]
 
     def run_pipeline(self, graph, plan=False):

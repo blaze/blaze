@@ -2,7 +2,6 @@ from copy import copy
 from collections import deque
 
 from blaze.engine import pipeline
-from blaze.rts.execution import execplan
 
 #------------------------------------------------------------------------
 # Graph Objects
@@ -21,6 +20,7 @@ class Node(object):
 
     def eval(self):
         """ Evaluates the expression graph """
+        from blaze.rts.execution import execplan
 
         # setup a default pipeline
         line = pipeline.Pipeline()
