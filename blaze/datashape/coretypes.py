@@ -766,14 +766,16 @@ def to_numpy(ds):
 
     #assert isinstance(ds, DataShape)
     for dim in ds:
-        if isinstance(dim, (Fixed, Integer)):
+        if isinstance(dim, Integer):
             shape += (dim,)
+        elif isinstance(dim, Fixed):
+            shape += (dim.val,)
         elif isinstance(dim, CType):
             dtype = dim.to_dtype()
         else:
             raise NotNumpyCompatible()
 
-    if len(shape) < 0 or dtype == None:
+    if len(shape) < 0 or type(dtype) != np.dtype:
         raise NotNumpyCompatible()
     return (shape, dtype)
 

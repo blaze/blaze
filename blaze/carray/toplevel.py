@@ -15,6 +15,7 @@ import glob
 import itertools as it
 import numpy as np
 #import blaze.carray as ca
+from carrayExtension import carray
 import math
 
 def detect_number_of_cores():
@@ -243,8 +244,8 @@ def fill(shape, dflt=None, dtype=np.float, **kwargs):
     expectedlen = kwargs.pop("expectedlen", length)
     if dtype.kind == "V" and dtype.shape == ():
         raise ValueError, "fill does not support ctables objects"
-    obj = ca.carray([], dtype=dtype, dflt=dflt, expectedlen=expectedlen,
-                    **kwargs)
+    obj = carray([], dtype=dtype, dflt=dflt, expectedlen=expectedlen,
+                 **kwargs)
     chunklen = obj.chunklen
 
     # Then fill it
