@@ -25,22 +25,23 @@ ctypedef np.npy_float64 npy_float64
 # DTW routines
 cdef extern from "dtw.h":
 
-    void lower_upper_lemire(double *t, int len, int r, double *l, double *u)
+    void lower_upper_lemire(double *t, int len, int r, double *l,
+                            double *u) nogil
 
     double lb_kim_hierarchy(double *t, double *q, int j, int len, double mean,
-                            double std, double bsf)
+                            double std, double bsf) nogil
 
     double lb_keogh_cumulative(int *order, double *t, double *uo, double *lo,
                                double *cb, int j, int len, double mean,
-                               double std, double best_so_far)
+                               double std, double best_so_far) nogil
 
     double lb_keogh_data_cumulative(int *order, double *tz, double *qo,
                                     double *cb, double *l, double *u,
                                     int len, double mean, double std,
-                                    double best_so_far)
+                                    double best_so_far) nogil
 
     double dtw_distance(double *A, double *B, double *cb, int m, int r,
-                        double bsf)
+                        double bsf) nogil
 
 #-----------------------------------------------------------------
 
@@ -54,7 +55,7 @@ np.import_array()
 # |z_norm(Q[i])|
 @cython.cdivision(True)
 cdef double distance(double *Q, double *T, npy_intp j, int m, double mean,
-                     double std, npy_intp *order, double bsf):
+                     double std, npy_intp *order, double bsf) nogil:
     cdef int i
     cdef double x, sum_ = 0
     cdef double istd = 1. / std
