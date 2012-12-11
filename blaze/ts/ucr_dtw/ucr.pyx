@@ -10,12 +10,10 @@
 
 import sys
 import os.path
-from time import time
 import numpy as np
 cimport numpy as np
 import cython
 from libc.math cimport sqrt, floor
-import blaze
 
 # Some shortcuts for useful types
 ctypedef np.npy_int npy_int
@@ -69,16 +67,16 @@ cdef double distance(double *Q, double *T, npy_intp j, int m, double mean,
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def ed(datafile, queryfile, count=None):
-    """Get the best euclidean distance of `queryfile` in `datafile`.
+def ed(data, querydata, count=None):
+    """Get the best euclidean distance of `querydata` in `data`.
 
     Parameters
     ----------
-    `datafile` is the name of the file where the data to be queried is
+    `data` is the Array where the data to be queried is
 
-    `queryfile` is the name of the file where the query data is
+    `querydata` is the Array where the query data is
 
-    `count` is the number of elements to query.  If None, then the total
+    `count` is the number of elements to query (int).  If None, then the total
     length of the query array is used.
 
     Returns
@@ -87,28 +85,25 @@ def ed(datafile, queryfile, count=None):
     and `dist` is the distance.
     
     """
-    cdef np.ndarray[npy_float64, ndim=1] Q    # query array
-    cdef np.ndarray[npy_float64, ndim=1] T    # arrays of current data
-    cdef np.ndarray[npy_intp, ndim=1] order   # ordering of query by |z(q_i)|
-    cdef double bsf             # best-so-far
-    cdef npy_intp loc = 0       # answer: location of the best-so-far match
-    cdef npy_intp i, j
-    cdef double d
-    cdef int m, prevm
-    cdef npy_intp fsize, nelements, eleread
-    cdef double mean, std
-    cdef double ex, ex2
-    cdef double dist = 0
-    cdef object querydata, data
+    cdef:
+        np.ndarray[npy_float64, ndim=1] Q    # query array
+        np.ndarray[npy_float64, ndim=1] T    # arrays of current data
+        np.ndarray[npy_intp, ndim=1] order   # ordering of query by |z(q_i)|
+        double bsf             # best-so-far
+        npy_intp loc = 0       # answer: location of the best-so-far match
+        npy_intp i, j
+        double d
+        int m, prevm
+        npy_intp fsize, nelements, eleread
+        double mean, std
+        double ex, ex2
+        double dist = 0
 
-    t0 = time()
-
-    querydata = blaze.open(queryfile)
     nelements = querydata.size
     if count is None:
         m = nelements
     elif count > nelements:
-        raise ValueError("count is larger than the values in queryfile")
+        raise ValueError("count is larger than the values in query array")
     else:
         m = count
 
@@ -130,7 +125,6 @@ def ed(datafile, queryfile, count=None):
     # modulo (circulation) in distance calculation)
     T = np.empty(2*m, dtype="f8")
 
-    data = blaze.open(datafile)
     nelements = data.size
 
     # Bootstrap the process by reading the first m elements
@@ -178,12 +172,6 @@ def ed(datafile, queryfile, count=None):
             T[:m] = T[m:]
 
     dist = sqrt(bsf)
-    t2 = time()
-
-    print "Location : ", loc
-    print "Distance : ", dist
-    print "Data Scanned : ", i + m
-    print "Time spent: %.3fs" % (time()-t0,)
 
     return (loc, dist)
 
@@ -191,14 +179,14 @@ def ed(datafile, queryfile, count=None):
 # Main function for DTW
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def dtw(datafile, queryfile, R, count=None):
-    """Get the best DTW distance of `queryfile` in `datafile`.
+def dtw(data, querydata, R, count=None, verbose=True):
+    """Get the best DTW distance of `querydata` in `data`.
 
     Parameters
     ----------
-    `datafile` is the name of the file where the data to be queried is
+    `data` is the Array where the data to be queried is
 
-    `queryfile` is the name of the file where the query data is
+    `querydata` is the Array where the query data is
 
     `R` is the warping window (double)
 
@@ -228,7 +216,6 @@ def dtw(datafile, queryfile, R, count=None):
         # error.
         int EPOCH = 100000
         double ex , ex2 , mean, std, istd
-        double t1, t2
         double dist=0, lb_kim=0, lb_k=0, lb_k2=0
         np.ndarray[npy_float64, ndim=1] buffer_, u_buff, l_buff
         npy_intp fsize, nelements, eleread, etoread
@@ -237,14 +224,11 @@ def dtw(datafile, queryfile, R, count=None):
         object done = False
         object order_
 
-    t1 = time()
-
-    querydata = blaze.open(queryfile)
     nelements = querydata.size
     if count is None:
         m = nelements
     elif count > nelements:
-        raise ValueError("count is larger than the values in queryfile")
+        raise ValueError("count is larger than the values in query array")
     else:
         m = count
 
@@ -296,7 +280,6 @@ def dtw(datafile, queryfile, R, count=None):
     j = 0          # the starting index of the data in the circular array, t
     ex = ex2 = 0
 
-    data = blaze.open(datafile)
     nelements = data.size
     eleread = 0
 
@@ -330,7 +313,7 @@ def dtw(datafile, queryfile, R, count=None):
 
             # Just for printing a dot for approximate a million point.  Not
             # much accurate.
-            if (it % (1000000 / (EPOCH-m+1)) == 0):
+            if verbose and (it % (1000000 / (EPOCH-m+1)) == 0):
                 sys.stderr.write(".")
 
             # Do main task here.
@@ -441,21 +424,13 @@ def dtw(datafile, queryfile, R, count=None):
     i = it * (EPOCH-m+1) + ep
     dist = sqrt(bsf)
 
-    t2 = time()
-    print "\n"
-
-    # Note that loc and i are npy_intp
-    print "Location : ", loc
-    print "Distance : ", dist
-    print "Data Scanned : ", i
-    print "Total Execution Time : ", (t2-t1), "sec"
-
-    print "\n"
-    print "Pruned by LB_Kim    : %6.2f%%" % ((<double>kim / i)*100,)
-    print "Pruned by LB_Keogh  : %6.2f%%" % ((<double>keogh / i)*100,)
-    print "Pruned by LB_Keogh2 : %6.2f%%" % ((<double>keogh2 / i)*100,)
-    print "DTW Calculation     : %6.2f%%" % (
-        100-((<double>kim+keogh+keogh2)/i*100),)
+    if verbose:
+        print "\n"
+        print "Pruned by LB_Kim    : %6.2f%%" % ((<double>kim / i)*100,)
+        print "Pruned by LB_Keogh  : %6.2f%%" % ((<double>keogh / i)*100,)
+        print "Pruned by LB_Keogh2 : %6.2f%%" % ((<double>keogh2 / i)*100,)
+        print "DTW Calculation     : %6.2f%%" % (
+            100-((<double>kim+keogh+keogh2)/i*100),)
 
     return (loc, dist)
 
