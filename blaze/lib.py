@@ -3,7 +3,12 @@ from blaze.rts.ffi import PythonF, install
 from blaze.engine import executors
 from numexpr import evaluate
 
-zerocost = lambda x: 0
+# evaluating this function over a term has a cost, in the future this
+# might be things like calculations for FLOPs associated with the
+# operation. Could be a function of the shape of the term Most of the
+# BLAS functions can calculated a priori
+
+zerocost = lambda term: 0
 
 #------------------------------------------------------------------------
 # Preinstalled Functions
@@ -25,6 +30,12 @@ zerocost = lambda x: 0
 # TODO: right now these consume everything but later we'll add functions
 # which specialize on metadata for contigious, chunked, streams,
 # etc...
+
+install(
+    'Add(Array(),Array())',
+    PythonF(np.add.types, lambda: None, False),
+    zerocost
+)
 
 install(
     'Add(<term>,<term>)',

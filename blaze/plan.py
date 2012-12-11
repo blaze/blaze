@@ -113,6 +113,9 @@ class InstructionGen(MroVisitor):
 
     """
 
+    # TODO: markf comments: this gives us an all-or-nothing approach
+    # either "all-numba" or "all-something else". FIX this
+
     def __init__(self, have_numbapro):
         self.numbapro = have_numbapro
 
@@ -127,6 +130,8 @@ class InstructionGen(MroVisitor):
             return self._Arithmetic(term)
         elif label == 'Array':
             return self._Array(term)
+        elif label == 'Slice':
+            return self._Slice(term)
         elif label == 'Assign':
             return self._Assign(term)
         else:
@@ -150,23 +155,8 @@ class InstructionGen(MroVisitor):
         normal_term = AAppl(ATerm(op), args)
         # --
 
-        # ugly hack because construction of AAppl is inconsistent
-        # and code is written against the inconsistency :(
-        #
-        # good:     AAppl(ATerm('x'), ...)
-        # not good: AAppl('x')
-
-        if isinstance(op, basestring):
-            label = op
-        elif isinstance(op, AAppl):
-            label = op.spine.label
-        elif isinstance(op, ATerm):
-            label = op.label
-        else:
-            raise NotImplementedError
-
-        if label in {'Slice', 'Assign'}:
-            return []
+        assert isinstance(op, ATerm)
+        label = op.label
 
         if self.numbapro:
             pass
@@ -208,6 +198,9 @@ class InstructionGen(MroVisitor):
         return Var(key)
 
     def _Assign(self, term):
+        pass
+
+    def _Slice(self, term):
         pass
 
     def AInt(self, term):

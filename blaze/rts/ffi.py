@@ -1,5 +1,4 @@
 """
-
 The RTS dispatcher. The logic that determines the most suitable
 execution backend for a given function over ATerm operands.
 
