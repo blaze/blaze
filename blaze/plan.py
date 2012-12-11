@@ -77,7 +77,8 @@ class Instruction(object):
     def __repr__(self):
         # with output types
         if self.lhs:
-            return self.lhs + ' = ' + ' '.join((self.fn,) + self.args)
+            return self.lhs + ' = ' + \
+            ' '.join([self.fn,] + map(repr, self.args))
         # purely side effectful
         else:
             return ' '.join([self.fn,] + map(repr, self.args))
@@ -86,7 +87,31 @@ class Instruction(object):
 class InstructionGen(MroVisitor):
     """ Map ATerm into linear instructions, unlike ATerm this
     does not preserve the information contained in the expression
-    graph, information is discarded. """
+    graph, information is discarded.
+
+    Maintains a stack as the nodes are visited, the instructions
+    for the innermost term are top on the stack. The temporaries
+    are mapped through the vartable.
+
+    ::
+
+        a + b * c
+
+    ::
+
+        instructions = [
+            %3 = <ufunc 'multiply'> %1 %2,
+            %4 = <ufunc 'add'> %0 %3
+        ]
+
+        vartable = {
+            Array(){dshape("2, 2, int32"),54490464}   : '%0',
+            Array(){dshape("2, 2, float32"),54490176} : '%1',
+            Array(){dshape("2, 2, int32"),54491184}   : '%2',
+            ...
+        }
+
+    """
 
     def __init__(self, have_numbapro):
         self.numbapro = have_numbapro
@@ -97,7 +122,6 @@ class InstructionGen(MroVisitor):
 
     def AAppl(self, term):
         label = term.spine.label
-        import pdb; pdb.set_trace()
 
         if label == 'Arithmetic':
             return self._Arithmetic(term)
@@ -165,13 +189,13 @@ class InstructionGen(MroVisitor):
 
         fn, cost = lookup(normal_term)
         fargs = [self.vartable[a] for a in args]
-        inst = Instruction(str(fn.fn), fargs)
 
         # push the temporary for the result in the vartable
         key = ('%' + str(self.n))
         self.vartable[term] = key
         self.n += 1
 
+        inst = Instruction(str(fn.fn), fargs, lhs=key)
         self.instructions.append(inst)
         return inst
 

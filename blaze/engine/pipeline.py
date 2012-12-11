@@ -162,7 +162,7 @@ def build_ufunc(context, graph):
     involve multiple numpy ufuncs dispatches.
 
     ::
-        %0 := ElemwiseLLVM{ufunc1}(%0, %a)
+        %0 := ElemwiseLLVM[ufunc1](%a, %b, %c)
 
     """
     context = dict(context)
@@ -194,8 +194,8 @@ def do_plan(context, graph):
 
     ::
         vars %a %b %c
-        %0 = Elemwise{np.mul,nogil}(%b, %c)
-        %0 = Elemwise{np.add,nogil,inplace}(%0, %a)
+        %0 = Elemwise[np.mul,nogil](%b, %c)
+        %0 = Elemwise[np.add,nogil,inplace](%0, %a)
         ret %0
 
     """
@@ -205,8 +205,9 @@ def do_plan(context, graph):
 
     ivisitor = InstructionGen(have_numbapro=False)
     plan = ivisitor.visit(aterm_graph)
-    i = ivisitor.instructions
-    print i
+    context['instructions'] = ivisitor.instructions
+
+    print ivisitor.instructions
 
     return context, plan
 

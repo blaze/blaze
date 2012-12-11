@@ -1,6 +1,7 @@
 import numpy as np
 from blaze.rts.ffi import PythonF, install
 from blaze.engine import executors
+from numexpr import evaluate
 
 zerocost = lambda x: 0
 
@@ -31,6 +32,7 @@ install(
     zerocost
 )
 
+
 install(
     'Mul(a,b);*',
     PythonF(np.multiply.types, np.multiply, False),
@@ -48,3 +50,13 @@ install(
     PythonF(np.abs.types, np.abs, False),
     zerocost
 )
+
+# These needn't neccessarily be NumPy functions!
+
+numexpr_add = lambda a,b: evaluate('a+b')
+
+# install(
+#     'Add(a,b);*',
+#     PythonF(np.add.types, numexpr_add, False),
+#     zerocost
+# )
