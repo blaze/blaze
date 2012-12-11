@@ -9,29 +9,6 @@ class NoVisitor(Exception):
         return 'No transformer for Node: %s' % repr(self.args)
 
 #------------------------------------------------------------------------
-# Pretty Printing
-#------------------------------------------------------------------------
-
-class ExprPrinter(object):
-
-    def __init__(self):
-        self.indent = 0
-
-    def visit(self, tree):
-
-        if tree.children:
-            print ('\t'*self.indent) + tree.__class__.__name__
-            self.indent += 1
-            for node in [self.visit(i) for i in tree.children]:
-                print node
-            self.indent -= 1
-        else:
-            return ('\t'*self.indent) + tree.__class__.__name__
-
-    def Unknown(self, tree):
-        raise NoVisitor(tree)
-
-#------------------------------------------------------------------------
 # Transformers
 #------------------------------------------------------------------------
 

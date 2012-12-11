@@ -9,7 +9,7 @@ from functools import partial
 from itertools import ifilter
 from collections import Counter
 
-from blaze.plan import generate
+from blaze.plan import BlazeVisitor
 
 #------------------------------------------------------------------------
 # Constants
@@ -88,15 +88,18 @@ Id = lambda x:x
 def do_environment(context, graph):
     context = dict(context)
 
+    # manually toggling numba support because it can crash if its not on
+    # a test case that matches up with numba
+
     # TODO: better way to do this
-    try:
-        import numbapro
-        have_numbapro = True
-    except ImportError:
-        have_numbapro = False
+    #try:
+        #import numbapro
+        #have_numbapro = True
+    #except ImportError:
+        #have_numbapro = False
 
     # ----------------------
-    context['have_numbapro'] = have_numbapro
+    #context['have_numbapro'] = have_numbapro
     # ----------------------
 
     return context, graph
@@ -119,20 +122,70 @@ def do_convert_to_aterm(context, graph):
     context = dict(context)
     vars = topovals(graph)
 
-    operands, aterm_graph = generate(graph, vars)
+    visitor = BlazeVisitor()
+    aterm_graph = visitor.visit(graph)
+    operands = visitor.operands
 
     # ----------------------
     context['operands'] = operands
+    context['aterm_graph'] = aterm_graph
+
+    # TODO: remove
     context['output'] = aterm_graph
     # ----------------------
 
     return context, graph
 
+def do_types(context, graph):
+    context = dict(context)
+
+    # Resolve TypeVars using typeinference.py, not needed right
+    # now because we're only doing simple numpy-like things
+
+    return context, graph
+
+def build_ufunc(context, graph):
+    """
+    Using Numba we can take ATerm expressions and build custom
+    ufuncs on the fly if we have NumbaPro.
+
+    ::
+        a + b * c
+
+    ::
+        def ufunc1(op0, op1, op2):
+            return (op0 + (op1 * op2))
+
+    Which can be executed by the runtime through the
+    ElementwiseLLVMExecutor. We stash it in the 'kernels' parameter in
+    the context. It's preferable to build these, otherwise it would
+    involve multiple numpy ufuncs dispatches.
+
+    ::
+        %0 := ElemwiseLLVM{ufunc1}(%0, %a)
+
+    """
+    context = dict(context)
+
+    # if no numbapro then just a passthrough
+    if not context['have_numbapro']:
+        return context, graph
+
+    aterm_graph = context['aterm_graph']
+
+    # Build the custom ufuncs using the ExecutionPipeline
+    from blaze.engine import execution_pipeline
+
+    p = execution_pipeline.ExecutionPipeline()
+    p.run_pipeline(context, aterm_graph)
+
+    return context, graph
+
 def do_plan(context, graph):
-    """ Take the ATerm expression graph and do inner-most
-    evaluation to generate a linear sequence of instructions from
-    that together with the table of inputs and outputs forms the
-    execution plan.
+    """ Take the ATerm expression graph and do inner-most evaluation to
+    generate a linear sequence of instructions from that together with
+    the table of inputs and outputs, built kernels forms the execution
+    plan.
 
     Example::
 
@@ -147,6 +200,7 @@ def do_plan(context, graph):
 
     """
     context = dict(context)
+
     return context, graph
 
 #------------------------------------------------------------------------
@@ -155,21 +209,24 @@ def do_plan(context, graph):
 
 class Pipeline(object):
     """
-    Plan generation pipeline is a series of combinable Pass stages
+    Plan generation pipeline is a series of composable pass stages
     which thread a context and graph object through to produce various
     intermediate forms resulting in an execution plan.
 
     The plan is a sequential series of instructions to concrete
-    functions for the RTS to execute.
+    functions calls ( ufuncs, numba ufuncs, Python functions ) for the
+    runtime to execute serially.
     """
 
     def __init__(self, *args, **kwargs):
-        self.init = {}
+        defaults = { 'have_numbapro': False }
+        self.init = dict(defaults, **kwargs)
 
         # sequential pipeline of passes
         self.pipeline = [
             do_environment,
             do_convert_to_aterm,
+            do_types,
             do_plan,
         ]
 

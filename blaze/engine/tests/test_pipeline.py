@@ -219,3 +219,6 @@ def test_complex_pipeline2():
 
     if DEBUG:
         pprint(plan, width=1)
+
+if __name__ == '__main__':
+    test_simple_pipeline()

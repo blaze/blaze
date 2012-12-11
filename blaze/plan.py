@@ -56,7 +56,17 @@ def annotation(graph, *metadata):
 #
 #------------------------------------------------------------------------
 
+class InstructionGen(MroVisitor):
+    """ Map ATerm into linear instructions, unlike ATerm this
+    does not preserve the information contained in the expression
+    graph, information is discarded. """
+
+    def AAppl(self):
+        pass
+
 class BlazeVisitor(MroVisitor):
+    """ Map Blaze graph objects into ATerm """
+
     def __init__(self):
         self.operands = []
 
@@ -108,14 +118,3 @@ class BlazeVisitor(MroVisitor):
     def Assign(self, graph):
         return AAppl(ATerm('Assign'), self.visit(graph.operands),
                      annotation=annotation(graph))
-
-#------------------------------------------------------------------------
-# Toplevel
-#------------------------------------------------------------------------
-
-# Run a graph through the Blaze visitor
-
-def generate(graph, variables):
-    visitor = BlazeVisitor()
-    result = visitor.visit(graph)
-    return visitor.operands, result
