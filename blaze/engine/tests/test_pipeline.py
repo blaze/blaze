@@ -91,31 +91,49 @@ def test_simple_sort_vals():
 
 def test_simple_pipeline():
     line = Pipeline()
-    plan = line.run_pipeline(x)
+    _, plan = line.run_pipeline(x)
 
     # Add(1,Mul(2,Abs(3.0)))
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(y)
+    ctx, plan = line.run_pipeline(y)
 
     # Add(Add(1,Add(2,3.0)),Add(1,Mul(2,Abs(3.0))))
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(x+y)
+    ctx, plan = line.run_pipeline(x+y)
 
+    #------------------------------------------------------------------------
+
+    # ATerm
+    # -----
     # Add(Mul(Add(1,Add(2,3.0)),Add(Add(1,Mul(2,Abs(3.0))),2)),3)
+
+    # Instructions
+    # ------------
+    #   %0 = <ufunc 'add'> const(2) const(3.0)
+    #   %1 = <ufunc 'add'> const(1) '%0'
+    #   %2 = <ufunc 'absolute'> const(3.0)
+    #   %3 = <ufunc 'multiply'> const(2) '%2'
+    #   %4 = <ufunc 'add'> const(1) '%3'
+    #   %5 = <ufunc 'add'> '%4' const(2)
+    #   %6 = <ufunc 'multiply'> '%1' '%5'
+    #   %7 = <ufunc 'add'> '%6' const(3)
+
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(x*(y+2)+3)
+    ctx, plan = line.run_pipeline(x*(y+2)+3)
+
+    #------------------------------------------------------------------------
 
     # Add(Array(39558864){dshape("3 int64")},Array(39558864){dshape("3 int64")})
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline(d+d)
+    ctx, plan = line.run_pipeline(d+d)
 
     # Add(
     #   Add(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
@@ -124,7 +142,7 @@ def test_simple_pipeline():
     if DEBUG:
         pprint(plan, width=1)
 
-    plan = line.run_pipeline((d+d)+(d+d))
+    ctx, plan = line.run_pipeline((d+d)+(d+d))
 
     if DEBUG:
         pprint(plan, width=1)
@@ -134,7 +152,7 @@ def test_simple_pipeline():
     #   Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
     # , Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
     # )
-    plan = line.run_pipeline((d*d)*(d*d))
+    ctx, plan = line.run_pipeline((d*d)*(d*d))
 
     if DEBUG:
         pprint(plan, width=1)
@@ -146,7 +164,7 @@ def test_complex_pipeline1():
     d = NDArray([1,2,3])
 
     line = Pipeline()
-    plan = line.run_pipeline(((a*b)+(c*d))**2)
+    _, plan = line.run_pipeline(((a*b)+(c*d))**2)
 
     # Pow(
     #   Arithmetic(
@@ -178,7 +196,7 @@ def test_complex_pipeline2():
     g = f**(a+b)
 
     line = Pipeline()
-    plan = line.run_pipeline(f+g)
+    _, plan = line.run_pipeline(f+g)
 
     #   Arithmetic(
     #     Add()
@@ -219,3 +237,6 @@ def test_complex_pipeline2():
 
     if DEBUG:
         pprint(plan, width=1)
+
+if __name__ == '__main__':
+    test_simple_pipeline()

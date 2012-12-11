@@ -1,5 +1,9 @@
 __version__ = '0.1-dev'
 
+# Install the Blaze library of dispatch functions, must be called
+# early
+import lib
+
 from datashape import dshape
 from table import Array, Table, NDArray, NDTable
 
@@ -11,9 +15,6 @@ dtype   = dshape
 
 from params import params
 from toplevel import open
-
-# Install the Blaze library of dispatch functions
-import lib
 
 # Shorthand namespace dump
 from datashape.shorthand import *

@@ -132,7 +132,9 @@ class Array(Indexable):
 
         >>> Array([1,2,3])
         >>> Array([1,2,3], dshape='3, int32')
-        >>> Array([1,2,3], dshape('3, 3, int32'))
+        >>> Array([1,2,3], dshape('3, int32'))
+        >>> Array([1,2,3], params=params(clevel=3, storage='a'))
+
     """
 
     eclass = MANIFEST
@@ -211,6 +213,8 @@ class Array(Indexable):
         """
         Size of the Array.
         """
+        # TODO: need to generalize, not every Array will look
+        # like Numpy
         return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
@@ -349,6 +353,8 @@ class NDArray(Indexable, ArrayNode):
         """
         Size of the NDArray.
         """
+        # TODO: need to generalize, not every Array will look
+        # like Numpy
         return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property
@@ -482,6 +488,8 @@ class NDTable(Indexable, ArrayNode):
         """
         Size of the NDTable.
         """
+        # TODO: need to generalize, not every Array will look
+        # like Numpy
         return sum(i.val for i in self._datashape.parameters[:-1])
 
     @property

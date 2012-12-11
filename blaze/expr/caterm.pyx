@@ -9,6 +9,7 @@ Docs
 * http://www.meta-environment.org/doc/books/technology/aterm-guide/aterm-guide.html
 
 """
+from libc.stdlib cimport malloc, free
 
 cdef extern from "stdarg.h":
     ctypedef struct va_list:
@@ -59,7 +60,7 @@ cdef extern from "aterm1.h":
 
     int ATprintf(char *format, ...)
     int ATfprintf(int stream, char *format, ...)
-    char *ATwriteToString(ATerm t)
+    char* ATwriteToString(ATerm t)
 
     ATerm ATmake(char *pattern, ...)
     ATerm ATmakeTerm(ATerm pat, ...)
@@ -88,7 +89,8 @@ cdef extern from "aterm1.h":
 
 cdef extern from "utils.h":
     int subterms(ATerm t)
-    ATerm* next_subterm(ATerm t, int i)
+    ATerm * next_subterm(ATerm t, int i)
+    ATerm * annotations(ATerm t)
 
 # singleton empty ATerm
 cdef ATerm ATEmpty
@@ -130,6 +132,10 @@ cdef class PyATerm:
 
         return iter(accum)
 
+    @property
+    def annotations(self):
+        return PyATerm(<int>annotations(self.a))
+
     def aset(self, char* key, char* value):
         """ Return a new ATerm annotated with the given key,
         value pair """
@@ -146,6 +152,34 @@ cdef class PyATerm:
             raise NoAnnotation(key)
         else:
             return ATwriteToString(value)
+
+    def amatch(self, char* pattern):
+        """ Pattern match on annotations """
+        for a in self.annotations:
+            return a.matches(pattern)
+
+    def amatch_all(self, list patterns):
+        """ Pattern match on annotations """
+        cdef char **cp = <char**>malloc(len(patterns) * sizeof(char*))
+
+        try:
+            for i,p in enumerate(patterns):
+                cp[i] = <char*>patterns[i]
+
+            for i in xrange(len(patterns)):
+                matches = False
+                for a in self.annotations:
+                    matches |= a.matches(cp[i])
+
+                # if not the nfall out
+                if not matches:
+                    return False
+
+            # matched all patterns
+            return True
+
+        finally:
+            free(cp)
 
     def __richcmp__(PyATerm self, PyATerm other, int op):
         cdef ATbool res

@@ -2,12 +2,13 @@ from blaze import *
 from blaze.datashape import datashape
 from blaze.engine import pipeline, llvm_execution
 
+from unittest import skip
 
 def convert_graph(lazy_blaze_graph):
     # Convert blaze graph to ATerm graph
-    p = pipeline.Pipeline()
-    context = p.run_pipeline_context(lazy_blaze_graph)
-    aterm_graph = context['output']
+    p = pipeline.Pipeline(have_numbapro=True)
+    context, aterm_graph = p.run_pipeline(lazy_blaze_graph)
+
     executors = {}
     aterm_graph = llvm_execution.substitute_llvm_executors(aterm_graph,
                                                            executors)
@@ -39,5 +40,6 @@ def test_execution():
     assert list(out.data.ca) == [46, 62, 80, 100]
 
 if __name__ == '__main__':
-#    test_conversion()
-    test_execution()
+    # XXX: huh, if I run these both it seems to segfault
+   test_conversion()
+    #test_execution()

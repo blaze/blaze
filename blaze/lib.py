@@ -1,5 +1,7 @@
 import numpy as np
 from blaze.rts.ffi import PythonF, install
+from blaze.engine import executors
+from numexpr import evaluate
 
 zerocost = lambda x: 0
 
@@ -19,20 +21,42 @@ zerocost = lambda x: 0
 #   :mayblock: Whether calling this function may block a thread.
 #              ( i.e. it waits on a disk or socket )
 
+
+# TODO: right now these consume everything but later we'll add functions
+# which specialize on metadata for contigious, chunked, streams,
+# etc...
+
 install(
-    'Add(a,b) ; contig',
+    'Add(a,b);*',
     PythonF(np.add.types, np.add, False),
     zerocost
 )
 
+
 install(
-    'Mul(a,b) ; contig',
+    'Mul(a,b);*',
     PythonF(np.multiply.types, np.multiply, False),
     zerocost
 )
 
 install(
-    'Abs(a) ; contig',
+    'Pow(a,b);*',
+    PythonF(np.power.types, np.power, False),
+    zerocost
+)
+
+install(
+    'Abs(a);*',
     PythonF(np.abs.types, np.abs, False),
     zerocost
 )
+
+# These needn't neccessarily be NumPy functions!
+
+numexpr_add = lambda a,b: evaluate('a+b')
+
+# install(
+#     'Add(a,b);*',
+#     PythonF(np.add.types, numexpr_add, False),
+#     zerocost
+# )

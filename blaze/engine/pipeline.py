@@ -9,7 +9,7 @@ from functools import partial
 from itertools import ifilter
 from collections import Counter
 
-from blaze.plan import generate
+from blaze.plan import BlazeVisitor, InstructionGen
 
 #------------------------------------------------------------------------
 # Constants
@@ -23,24 +23,33 @@ VAL = 2
 # Pipeline Combinators
 #------------------------------------------------------------------------
 
-# vacuously true condition
-Id = lambda x:x
-
 def compose(f, g):
     return lambda *x: g(*f(*x))
 
-# condition composition combinator <>, is the ``id`` function if pre and
-# post condition holds, otherwise terminates is a ``const`` that returns
-# the error and misbehaving condition.
+# monadic bind combinator <>, is the ``id`` function if pre and post
+# condition holds, otherwise terminates is a ``const`` that returns the
+# error and misbehaving condition.
 
+def bind(self, f, x):
+    if x is None:
+        return None
+    else:
+        if f(x):
+            return x
+        else:
+            return None
+
+# Compose with pre and post condition checks
 # pipeline = (post ∘ stl ∘ pre) <> (post ∘ st2 ∘ pre) <> ...
 def compose_constrained(f, g, pre, post):
-    """Compose with pre and post condition checks """
     return lambda *x: post(*g(*f(*pre(*x))))
 
 #------------------------------------------------------------------------
 # Pre/Post Conditions
 #------------------------------------------------------------------------
+
+# vacuously true condition
+Id = lambda x:x
 
 #------------------------------------------------------------------------
 # Passes
@@ -76,47 +85,131 @@ def compose_constrained(f, g, pre, post):
 #          +----------+-----> Output
 
 
-# TODO: Probably not necessary as Mark points out we can just do
-# innermost evaluation... for one of the 27 backends we considered this
-# probably seemed like a good idea though. :)
-def do_flow(context, graph):
-    context = dict(context)
-
-    # Topologically sort the graph
-    vars = topovals(graph)
-    ops = topops(graph)
-
-    # ----------------------
-    context['vars'] = vars
-    context['ops']  = ops
-    # ----------------------
-
-    return context, graph
-
 def do_environment(context, graph):
     context = dict(context)
 
+    # manually toggling numba support because it can crash if its not on
+    # a test case that matches up with numba
+
+    # TODO: better way to do this
+    #try:
+        #import numbapro
+        #have_numbapro = True
+    #except ImportError:
+        #have_numbapro = False
+
     # ----------------------
-    context['hints'] = {}
+    #context['have_numbapro'] = have_numbapro
     # ----------------------
 
     return context, graph
 
 def do_convert_to_aterm(context, graph):
-    "Convert the graph to an ATerm graph. See blaze/expr/paterm.py"
-    context = dict(context)
+    """Convert the graph to an ATerm graph
+    See blaze/expr/paterm.py
 
-    operands, plan = generate(
-        graph, #context['ops'],
-        context['vars'],
-    )
+    ::
+        a + b
+
+    ::
+        Arithmetic(
+          Add
+        , Array(){dshape("3, int64"), 45340864}
+        , Array(){dshape("3, int64"), 45340864}
+        ){dshape("3, int64"), 45264432}
+
+    """
+    context = dict(context)
+    vars = topovals(graph)
+
+    visitor = BlazeVisitor()
+    aterm_graph = visitor.visit(graph)
+    operands = visitor.operands
 
     # ----------------------
     context['operands'] = operands
-    context['output'] = plan
+    context['aterm_graph'] = aterm_graph
+
+    # TODO: remove
+    context['output'] = aterm_graph
     # ----------------------
 
     return context, graph
+
+def do_types(context, graph):
+    context = dict(context)
+
+    # Resolve TypeVars using typeinference.py, not needed right
+    # now because we're only doing simple numpy-like things
+
+    return context, graph
+
+def build_ufunc(context, graph):
+    """
+    Using Numba we can take ATerm expressions and build custom
+    ufuncs on the fly if we have NumbaPro.
+
+    ::
+        a + b * c
+
+    ::
+        def ufunc1(op0, op1, op2):
+            return (op0 + (op1 * op2))
+
+    Which can be executed by the runtime through the
+    ElementwiseLLVMExecutor. We stash it in the 'ufunc' parameter in
+    the context. It's preferable to build these, otherwise it would
+    involve multiple numpy ufuncs dispatches.
+
+    ::
+        %0 := ElemwiseLLVM[ufunc1](%a, %b, %c)
+
+    """
+    context = dict(context)
+
+    # if no numbapro then just a passthrough
+    if not context['have_numbapro']:
+        return context, graph
+
+    aterm_graph = context['aterm_graph']
+
+    # Build the custom ufuncs using the ExecutionPipeline
+    from blaze.engine import execution_pipeline
+
+    p = execution_pipeline.ExecutionPipeline()
+    p.run_pipeline(context, aterm_graph)
+
+    return context, graph
+
+def do_plan(context, graph):
+    """ Take the ATerm expression graph and do inner-most evaluation to
+    generate a linear sequence of instructions from that together with
+    the table of inputs and outputs, built kernels forms the execution
+    plan.
+
+    Example::
+
+    ::
+        a + b * c
+
+    ::
+        vars %a %b %c
+        %0 = Elemwise[np.mul,nogil](%b, %c)
+        %0 = Elemwise[np.add,nogil,inplace](%0, %a)
+        ret %0
+
+    """
+    context = dict(context)
+
+    aterm_graph = context['aterm_graph']
+
+    ivisitor = InstructionGen(have_numbapro=False)
+    plan = ivisitor.visit(aterm_graph)
+    context['instructions'] = ivisitor.instructions
+
+    print ivisitor.instructions
+
+    return context, plan
 
 #------------------------------------------------------------------------
 # Pipeline
@@ -124,27 +217,31 @@ def do_convert_to_aterm(context, graph):
 
 class Pipeline(object):
     """
-    Code generation pipeline is a series of combinable Pass
-    stages which thread a context and graph object through to
-    produce various intermediate forms resulting in an execution
-    plan.
+    Plan generation pipeline is a series of composable pass stages
+    which thread a context and graph object through to produce various
+    intermediate forms resulting in an execution plan.
+
+    The plan is a sequential series of instructions to concrete
+    functions calls ( ufuncs, numba ufuncs, Python functions ) for the
+    runtime to execute serially.
     """
+
     def __init__(self, *args, **kwargs):
-        self.ictx = {}
+        defaults = { 'have_numbapro': False }
+        self.init = dict(defaults, **kwargs)
 
         # sequential pipeline of passes
-        self.pipeline = (
-            do_flow,
+        self.pipeline = [
             do_environment,
             do_convert_to_aterm,
-        )
+            do_types,
+            do_plan,
+        ]
 
-    def run_pipeline_context(self, graph):
+    def run_pipeline(self, graph, plan=False):
         """
         Run the graph through the pipeline
         """
-        ictx = self.ictx
-
         # Fuse the passes into one functional pipeline that is the
         # sequential composition with the intermediate ``context`` and
         # ``graph`` objects threaded through.
@@ -152,21 +249,9 @@ class Pipeline(object):
         # pipeline = stn ∘  ... ∘  st2 ∘ st1
         pipeline = reduce(compose, self.pipeline)
 
-        context, _ = pipeline(ictx, graph)
-        return context
-
-    def run_pipeline(self, graph):
-        octx = self.run_pipeline_context(graph)
-        return octx['output']
-
-    def execute(self, graph):
-        "Create an execution plan and evaluate the expression"
-        from blaze.engine import execution_pipeline
-
-        context = self.run_pipeline_context(graph)
-        aterm_graph = context['output']
-        p = execution_pipeline.ExecutionPipeline()
-        p.run_pipeline(context, aterm_graph)
+        context, plan = pipeline(self.init, graph)
+        return context, context['aterm_graph']
+        #return context, plan
 
 #------------------------------------------------------------------------
 # Graph Manipulation
@@ -225,6 +310,10 @@ def toposort(pred, graph, algorithm='khan'):
         return tarjan_sort(pred, graph)
     else:
         raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Sorters
+#------------------------------------------------------------------------
 
 topovals = partial(toposort, lambda x: x.kind == VAL)
 topops   = partial(toposort, lambda x: x.kind == OP)
