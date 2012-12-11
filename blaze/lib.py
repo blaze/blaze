@@ -19,6 +19,11 @@ zerocost = lambda x: 0
 #   :mayblock: Whether calling this function may block a thread.
 #              ( i.e. it waits on a disk or socket )
 
+
+# TODO: right now these consume everything but later we'll add functions
+# which specialize on metadata for contigious, chunked, streams,
+# etc...
+
 install(
     'Add(a,b);*',
     PythonF(np.add.types, np.add, False),

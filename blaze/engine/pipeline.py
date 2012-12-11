@@ -205,6 +205,9 @@ def do_plan(context, graph):
 
     ivisitor = InstructionGen(have_numbapro=False)
     plan = ivisitor.visit(aterm_graph)
+    i = ivisitor.instructions
+    import pdb; pdb.set_trace()
+    print i
 
     return context, plan
 

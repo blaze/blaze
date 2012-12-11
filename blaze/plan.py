@@ -56,18 +56,25 @@ def annotation(graph, *metadata):
 # ATerm -> Instructions
 #------------------------------------------------------------------------
 
+class Var(object):
+    def __init__(self, key):
+        self.key = key
+
+    def __repr__(self):
+        return self.key
+
 class Instruction(object):
-    def __init__(self, fn, lhs=None, *args):
+    def __init__(self, fn, args=None, lhs=None):
         """ %lhs = fn{props}(arguments) """
 
         self.fn = fn
-        self.args = args
+        self.args = args or []
         self.lhs = lhs
 
     def __repr__(self):
         # with output types
-        if self.ret:
-            return self.ret + ' = ' + ' '.join((self.fn,) + self.args)
+        if self.lhs:
+            return self.lhs + ' = ' + ' '.join((self.fn,) + self.args)
         # purely side effectful
         else:
             return ' '.join([self.fn,] + map(repr, self.args))
@@ -80,9 +87,29 @@ class InstructionGen(MroVisitor):
     def __init__(self, have_numbapro):
         self.numbapro = have_numbapro
 
-    def AAppl(self, term):
-        from blaze.rts.ffi import lookup
+        self.n = 0
+        self.vartable = {}
+        self.instructions = []
 
+    def AAppl(self, term):
+        label = term.spine.label
+
+        if label == 'Arithmetic':
+            return self._Arithmetic(term)
+        elif label == 'Array':
+            return self._Array(term)
+        elif label == 'Assign':
+            return self._Assign(term)
+        else:
+            raise NotImplementedError
+
+    def AInt(self, term):
+        return
+
+    def ATerm(self, term):
+        return
+
+    def _Arithmetic(self, term):
         # All the function signatures are of the form
         #
         #     Add(a,b)
@@ -131,10 +158,31 @@ class InstructionGen(MroVisitor):
         # Returns either a ForeignF ( reference to a external C
         # library ) or a PythonF, a Python callable. These can be
         # anything, numpy ufuncs, numexpr, pandas, cmath whatever
-        x = lookup(normal_term)
+        from blaze.rts.ffi import lookup
 
-        # wrap it upin a instruction
-        return []
+        # visit the innermost arguments, push those arguments on
+        # the instruction list first
+        self.visit(args)
+
+        fn, cost = lookup(normal_term)
+        fargs = [self.vartable[a] for a in args]
+        inst = Instruction(str(fn.fn), fargs)
+
+        key = ('%' + str(self.n))
+        self.vartable[term] = key
+        self.n += 1
+
+        self.instructions.append(inst)
+        return inst
+
+    def _Array(self, term):
+        key = ('%' + str(self.n))
+        self.vartable[term] = key
+        self.n += 1
+        return Var(key)
+
+    def _Assign(self, term):
+        pass
 
 #------------------------------------------------------------------------
 # Graph -> ATerm
