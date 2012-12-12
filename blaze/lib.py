@@ -1,5 +1,7 @@
 import numpy as np
-from blaze.rts.ffi import PythonFn, install
+from math import sqrt
+
+from blaze.rts.ffi import PythonFn, install, lift
 from blaze.engine import executors
 from numexpr import evaluate
 
@@ -31,6 +33,7 @@ zerocost = lambda term: 0
 # which specialize on metadata for contigious, chunked, streams,
 # etc...
 
+
 install(
     'Add(<term>,<term>)',
     PythonFn(np.add.types, np.add, False),
@@ -54,6 +57,10 @@ install(
     PythonFn(np.abs.types, np.abs, False),
     zerocost
 )
+
+@lift('Sqrt(<int>)')
+def pyadd(a):
+    return sqrt(a)
 
 # ==============
 # --- Future ---
