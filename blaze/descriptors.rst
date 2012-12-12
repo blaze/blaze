@@ -27,25 +27,92 @@ Signatures::
     |   Kernel    |
     +-------------+
 
-Two types of uses for data descriptors.
+The Kernel knows about the algorithm, and hence knows what data access pattern
+will give the best locality. Dimensional information needs to be available to
+the kernel.
 
-Case A: ( Numpy + Numba )
-    How do I find the existing data
+Then:
 
-    What is the start pointer, what are the strides?
+    The runtime handling reading and writing to the source. The runtime (the data
+    descriptor) further exposes data descriptors that can return bulk data in the
+    form of multi-dimensional tiles or chunks. Special cases such as 1D chunks simply
+    have extent 1 in other dimensions. A special case like a NumPy array simply
+    returns the entire array as the multi-dimensional chunk.
 
-    In this case *all* the memory needed for the kernel to execute
-    are available on the Blaze heap before execution begins.
+    Kernels pull data by specifying item indices, for which the data descriptor
+    computes the right chunk (if chunking is used), and computes the remaining
+    shape and the multi-dimensional strides to be used for computation on that chunk.
 
-Case B: ( Custom Python + C )
-    How do I pull the data myself inside the kernel.
+    After writing to a chunk, the chunk must be committed to allow write-back, compression,
+    etc.
 
-    Kernel needs a read() function which pulls bytes from the Source
-    attached the datadescriptor
+| Two types of uses for data descriptors.
+|
+| Case A: ( Numpy + Numba )
+|     How do I find the existing data
+|
+|     What is the start pointer, what are the strides?
+|
+|     In this case *all* the memory needed for the kernel to execute
+|     are available on the Blaze heap before execution begins.
+|
+| NOTE: Case A) is a special case of case B). A chunk iterator with a single iteration would suffice.
+|
+| Case B: ( Custom Python + C )
+|     How do I pull the data myself inside the kernel.
+|
+|     Kernel needs a read() function which pulls bytes from the Source
+|     attached the datadescriptor
+|
+|     In this case *none* of the memory is preloaded, the kernel allocates
+|     it as needed by loading it from disk, file, etc.
+|
+| NOTE: read() is suitable for some operations, but not things like reductions or anything requiring
+|       some sense of dimensionality
 
-    In this case *none* of the memory is preloaded, the kernel allocates
-    it as needed by loading it from disk, file, etc.
+Matrix multiplication:
 
+    i = 0
+    while (i < ddescA->shape[0]) {
+        j = 0
+        while (j < ddescB->shape[1]) {
+            k = 0;
+
+            ddescC->read_chunk(&chunkC, i, j)
+            while (k < ddescA.shape[1]) {
+                ddescA->read_chunk(&chunkA, i, k)
+                ddescB->read_chunk(&chunkB, k, j)
+
+
+                // NOTE: chunk->shape[i] does not extend beyond shape[i]
+                end_i = min(chunkA->shape[0], chunkC.shape[0])
+                end_j = min(chunkB->shape[1], chunkC->shape[1])
+                end_k = min(chunkA->shape[1], chunkB->shape[0])
+
+                matmul(chunkA->data, chunkB->data, chunkC->data, end_i, end_j, end_k)
+                chunkC->commit()
+
+                i = end_i
+                j = end_j
+                k = end_k
+            }
+        }
+    }
+
+    void matmul(float \*A, float \*B, float \*C, end_i, end_j, end_k) {
+        /* Tiled matmul \*/
+        for (i0 = 0; i0 < B; i0 += B)
+            for (j0 = 0; j0 < B; j0 += B)
+                for (k0 = 0; k0 < B; k0 += B)
+                    for (i = i0; i < min(i0 + B, end_i); i++)
+                        for (j = i0; j < min(j0 + B, end_j); j++)
+                            for (k = k0; k < min(k0 + B, end_k); k++)
+                                // Use pointer arithmetic and strength reduction
+                                C[i, j] += A[i, k] * B[k, j];
+    }
+
+
+NOTE: I think data should be pulled and computed on demand in all cases.
 
 Case A
 ======

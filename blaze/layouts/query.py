@@ -49,23 +49,28 @@ def retrieve(cc, indexer):
         raise NotImplementedError
 
 def getslice(cc, indexer):
-    a = indexer[0]
-    b = indexer[1]
+    # Shortcut for accessing data in carray container
+    # (this needs to be more general?)
+    elt, lc = cc(indexer)
+    return elt.ca[lc]
 
-    max1 = data.bounds[0]
-    max2 = data.bounds[1]
+    # a = indexer[0]
+    # b = indexer[1]
 
-    ix = range(a.start or 0, a.stop or max1, a.step or 1)
-    iy = range(a.start or 0, b.stop or max2, b.step or 1)
+    # max1 = data.bounds[0]
+    # max2 = data.bounds[1]
 
-    # TODO: use source.empty() to generalize
-    res = np.empty((len(ix), len(iy)))
+    # ix = range(a.start or 0, a.stop or max1, a.step or 1)
+    # iy = range(a.start or 0, b.stop or max2, b.step or 1)
 
-    for a, i in enumerate(ix):
-        for b, j in enumerate(iy):
-            elt, lc = cc(indexer)
-            res[a,b] = elt[cc(i,j)]
-    return res
+    # # TODO: use source.empty() to generalize
+    # res = np.empty((len(ix), len(iy)))
+
+    # for a, i in enumerate(ix):
+    #     for b, j in enumerate(iy):
+    #         elt, lc = cc(indexer)
+    #         res[a,b] = elt[cc(i,j)]
+    # return res
 
 def getitem(cc, indexer):
     # local coordinates
@@ -85,7 +90,11 @@ def getlabel(cc, indexer):
 #------------------------------------------------------------------------
 
 def write(cc, indexer, value):
-    pass
+    # Shortcut for accessing data in carray container
+    # (this needs to be more general?)
+    elt, lc = cc(indexer)
+    elt.ca[lc] = value
+
 
 #------------------------------------------------------------------------
 # Deferred Data Access

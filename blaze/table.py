@@ -17,7 +17,7 @@ from idx import Space, Subspace, Index
 from datashape import DataShape, Fixed, dynamic, dshape as _dshape
 
 from layouts.scalar import ChunkedL
-from layouts.query import retrieve
+from layouts.query import retrieve, write
 
 from expr.graph import ArrayNode, injest_iterable
 from expr import metadata as md
@@ -236,10 +236,8 @@ class Array(Indexable):
 
     # Immediete slicing ( Side-effectful )
     def __setitem__(self, indexer, value):
-        if isinstance(indexer, slice):
-            raise NotImplementedError
-        else:
-            raise NotImplementedError
+        cc = self._layout.change_coordinates
+        write(cc, indexer, value)
 
     def __iter__(self):
         raise NotImplementedError
