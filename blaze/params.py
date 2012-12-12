@@ -1,10 +1,12 @@
+
 from collections import Mapping, OrderedDict
+from blaze import carray
 
 defaults = {
     'clevel'        : 5,
     'shuffle'       : True,
     'format_flavor' : 'chunked',
-    #'storage'       : None,
+    'storage'       : None,
 }
 
 class params(Mapping):
@@ -59,3 +61,18 @@ class params(Mapping):
         return 'params({keys})'.format(
             keys=''.join('%s=%s, ' % (k,v) for k,v in self.__internal.items())
         )
+
+
+def to_cparams(params):
+    """Convert params to cparams.  roodir and format_flavor also extracted."""
+    cparams = {}; rootdir = format_flavor = None
+    for key, val in params.iteritems():
+        if key == 'storage':
+            rootdir = val
+            continue
+        if key == 'format_flavor':
+            format_flavor = val
+            continue
+        cparams[key] = val
+    return carray.cparams(**cparams), rootdir, format_flavor
+        

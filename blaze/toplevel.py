@@ -2,7 +2,7 @@ import os, os.path
 import uuid
 
 from urlparse import urlparse
-from params import params
+from params import params, to_cparams
 from sources.chunked import CArraySource
 from table import NDArray, Array
 from blaze.datashape.coretypes import from_numpy, to_numpy
@@ -34,13 +34,25 @@ def zeros(dshape, params=None):
     """ Create an Array and fill it with zeros.
     """
     shape, dtype = to_numpy(dshape)
-    source = CArraySource(carray.zeros(shape, dtype), params=params)
-    return Array(source)
+    cparams, rootdir, format_flavor = to_cparams(params)
+    if rootdir is not None:
+        carray.zeros(shape, dtype, rootdir=rootdir, cparams=cparams)
+        return open(rootdir)
+    else:
+        source = CArraySource(carray.zeros(shape, dtype, cparams=cparams),
+                              params=params)
+        return Array(source)
 
 def ones(dshape, params=None):
     """ Create an Array and fill it with ones.
     """
     shape, dtype = to_numpy(dshape)
-    source = CArraySource(carray.ones(shape, dtype), params=params)
-    return Array(source)
+    cparams, rootdir, format_flavor = to_cparams(params)
+    if rootdir is not None:
+        carray.ones(shape, dtype, rootdir=rootdir, cparams=cparams)
+        return open(rootdir)
+    else:
+        source = CArraySource(carray.ones(shape, dtype, cparams=cparams),
+                              params=params)
+        return Array(source)
 
