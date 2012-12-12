@@ -123,6 +123,12 @@ class InstructionGen(MroVisitor):
         self.vartable = {}
         self.instructions = []
 
+    def var(self, term):
+        key = ('%' + str(self.n))
+        self.vartable[term] = key
+        self.n += 1
+        return key
+
     def AAppl(self, term):
         label = term.spine.label
 
@@ -183,18 +189,14 @@ class InstructionGen(MroVisitor):
         fargs = [self.vartable[a] for a in args]
 
         # push the temporary for the result in the vartable
-        key = ('%' + str(self.n))
-        self.vartable[term] = key
-        self.n += 1
+        key = self.var(term)
 
         inst = Instruction(str(fn.fn), fargs, lhs=key)
         self.instructions.append(inst)
         return inst
 
     def _Array(self, term):
-        key = ('%' + str(self.n))
-        self.vartable[term] = key
-        self.n += 1
+        key = self.var(term)
         return Var(key)
 
     def _Assign(self, term):

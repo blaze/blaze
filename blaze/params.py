@@ -1,5 +1,3 @@
-
-from collections import Mapping, OrderedDict
 from blaze import carray
 
 defaults = {
@@ -9,7 +7,7 @@ defaults = {
     'storage'       : None,
 }
 
-class params(Mapping):
+class params(object):
     """
     Container for parameters
 
@@ -55,7 +53,7 @@ class params(Mapping):
         return self.__internal.iterkeys()
 
     def iteritems(self):
-        return self.__internal.items()
+        return self.__internal.iteritems()
 
     def __repr__(self):
         return 'params({keys})'.format(
