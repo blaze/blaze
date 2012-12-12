@@ -10,6 +10,7 @@ class Space(object):
     def __eq__(self, other):
         return self.n == other.n
 
+@skip
 def test_multiple_charts():
     alpha = Space(1)
     beta  = Space(2)
@@ -24,6 +25,7 @@ def test_multiple_charts():
     s = hstack(x,y)
     # -------------
 
+@skip
 def test_vertical_stack():
     alpha = Space(1)
     beta  = Space(2)
@@ -58,6 +60,7 @@ def test_vertical_stack():
     assert block == beta
     assert coords == [0,1]
 
+@skip
 def test_horizontal_stack():
     alpha = Space(1)
     beta  = Space(2)
@@ -88,6 +91,7 @@ def test_horizontal_stack():
     assert block == beta
     assert coords == [2,2]
 
+@skip
 def test_third_axis():
     alpha = Space(1)
     beta  = Space(2)

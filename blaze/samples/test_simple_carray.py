@@ -1,5 +1,3 @@
-# Deliverable #1
-
 # Simple use case for connecting CArray API and Blaze
 # Byte Providers.
 
@@ -30,33 +28,36 @@ def test_getitem():
     assert nd[2] == 3
 
 ## Case 1
-#def test_setitem():
-    #nd = arr()
+def test_setitem():
+    nd = arr()
 
-    #for i in xrange(3):
-        ## Simple write, forces the manifest bytes
-        #nd[i] = i
+    for i in xrange(3):
+        # Simple write, forces the manifest bytes
+        nd[i] = i
+
+    assert(list(nd.data.ca) == range(3))
 
 # Case 2
-#def test_getslice():
-    #nd = arr()
+def test_getslice():
+    nd = arr()
 
-    #for i in xrange(3):
-        ## Simple read slice
-        #nd[0:i] = i
+    for i in xrange(3):
+        # Simple read slice
+        len(nd[0:i]) == i
 
 ## Case 3
-#def test_setslice():
-    #nd = arr()
+def test_setslice():
+    nd = arr()
 
-    #for i in xrange(3):
-        ## Simple write slice
-        #nd[0:i] = i
+    for i in xrange(3):
+        # Simple write slice
+        nd[0:i] = i
+        assert list(nd.data.ca)[0:i] == [i]*i
 
 ## Case 4
-#def test_fancyslice():
-    #nd = arr()
+def test_fancyslice():
+    nd = arr()
 
-    #for i in xrange(3):
-        ## Simple read fancy slice
-        #nd[i::2]
+    for i in xrange(3):
+        # Simple read fancy slice
+        nd[i::2]

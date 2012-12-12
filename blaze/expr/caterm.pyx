@@ -10,6 +10,10 @@ Docs
 
 """
 from libc.stdlib cimport malloc, free
+from copy import copy
+
+cdef extern from "Python.h":
+    char* PyString_AsString(object string)
 
 cdef extern from "stdarg.h":
     ctypedef struct va_list:
@@ -196,7 +200,7 @@ cdef class PyATerm:
         if res == ATfalse:
             return False
 
-    def matches(self, char* pattern, capture=None):
+    def matches(self, pattern, capture=None):
         """
         Matches against ATerm patterns.
 
@@ -213,6 +217,8 @@ cdef class PyATerm:
         Ergo the reason for my half baked query language. Think
         I can roll it in here though
         """
+        cdef object pcopy = copy(pattern)[:]
+        cdef char* cpattern = PyString_AsString(pattern)
 
         cdef ATbool res
         cdef char *c1, *c2, *c3, *c4, *c5
@@ -222,7 +228,7 @@ cdef class PyATerm:
             #raise ValueError("Empty pattern match")
 
         if capture is None:
-            res = ATmatch(self.a, pattern)
+            res = ATmatch(self.a, cpattern)
 
             if res == ATtrue:
                 return True
