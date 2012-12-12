@@ -27,6 +27,9 @@ class params(object):
         if not params.cls:
             params.cls = frozenset(dir(self))
 
+    def get(self, key):
+        return self.__internal.get(key)
+
     def __setattr__(self, key, value):
         if key == 'cls' or key == '__internal' or '_params' in key:
             super(params, self).__setattr__(key, value)
@@ -35,7 +38,7 @@ class params(object):
         return value
 
     def __getattr__(self, key):
-        if key in self.cls:
+        if key == 'cls' or key == '__internal' or '_params' in key:
             super(params, self).__getattr__(key)
         else:
             return self.__internal[key]

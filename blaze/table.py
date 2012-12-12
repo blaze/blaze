@@ -154,11 +154,10 @@ class Array(Indexable):
         # possible arguments to the first argument which result
         # in different behavior for the values.
 
-        if isinstance(obj, CArraySource):
+        if isinstance(obj, ByteProvider):
             self.data = obj
         else:
             self.data = CArraySource(obj, params=params)
-
 
         # Datashape
         # ---------
@@ -185,7 +184,7 @@ class Array(Indexable):
         if layout:
             self._layout = layout
         elif not layout:
-            self._layout = ChunkedL(self.data, cdimension=0)
+            self._layout = self.data.default_layout()
 
         # Metadata
         # --------

@@ -4,6 +4,8 @@ import uuid
 from urlparse import urlparse
 from params import params, to_cparams
 from sources.chunked import CArraySource
+from sources.sql import SqliteSource
+
 from table import NDArray, Array
 from blaze.datashape.coretypes import from_numpy, to_numpy
 from blaze import carray
@@ -19,6 +21,10 @@ def open(uri=None):
             path = os.path.join(uri.netloc, uri.path[1:])
             parms = params(storage=path)
             source = CArraySource(params=parms)
+        elif uri.scheme == 'sqlite':
+            path = os.path.join(uri.netloc, uri.path[1:])
+            parms = params(storage=path)
+            source = SqliteSource(params=parms)
         #elif uri.scheme == 'tcp':
             #byte_interface = SocketSource()
         else:
@@ -55,4 +61,3 @@ def ones(dshape, params=None):
         source = CArraySource(carray.ones(shape, dtype, cparams=cparams),
                               params=params)
         return Array(source)
-

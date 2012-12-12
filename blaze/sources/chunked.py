@@ -10,6 +10,7 @@ from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from blaze.datadescriptor import CArrayDataDescriptor
 from blaze.datashape.coretypes import dynamic, from_numpy, to_numpy
 from blaze.params import params, to_cparams
+from blaze.layouts.scalar import ChunkedL
 
 import numpy as np
 
@@ -57,8 +58,13 @@ class CArraySource(ByteProvider):
         shape, dtype = from_numpy(dshape)
         return CArraySource(carray([], dtype))
 
+    # Get a READ descriptor the source
     def read_desc(self):
         return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca)
+
+    # Return the layout of the dataa
+    def default_layout(self):
+        return ChunkedL(self, cdimension=0)
 
     @property
     def nchunks(self):
