@@ -70,7 +70,7 @@ Then:
 | NOTE: read() is suitable for some operations, but not things like reductions or anything requiring
 |       some sense of dimensionality
 
-Matrix multiplication:
+Matrix multiplication::
 
     i = 0
     while (i < ddescA->shape[0]) {

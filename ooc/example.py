@@ -13,13 +13,13 @@ for d in ('a', 'b', 'out'):
 
 # Create simple inputs
 t0 = time()
-a = blaze.ones(blaze.dshape('2, 2000, float64'),
+a = blaze.ones(blaze.dshape('2000, 2000, float64'),
                params=blaze.params(storage='a'))
 print "Time for matrix a creation : ", round(time()-t0, 3)
 t0 = time()
-b = blaze.ones(blaze.dshape('2000, 2, float64'),
+b = blaze.ones(blaze.dshape('2000, 3000, float64'),
                params=blaze.params(storage='b'))
-print "Time for matrix be creation : ", round(time()-t0, 3)
+print "Time for matrix b creation : ", round(time()-t0, 3)
 
 # Do the dot product
 t0 = time()
