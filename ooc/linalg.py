@@ -18,7 +18,7 @@ import blaze
 
 
 # The default size for OOC operation
-OOC_BUFFER_SIZE = 2**22
+OOC_BUFFER_SIZE = 2**25
 
 
 def dot(a, b, out=None, outname='out'):
