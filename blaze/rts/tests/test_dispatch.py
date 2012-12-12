@@ -4,28 +4,15 @@ from blaze.expr.ops import array_like
 from blaze.expr.paterm import ATerm, AAppl, AInt
 from blaze.rts.ffi import install, lift, lookup
 
-def test_lift():
-
-    # Simple function takes two array-like arguments yields an
-    # array-like result.
-    @lift('x -> x -> x', {'x': array_like})
-    def nadd(a,b,o):
-        return np.add(a,b,o)
+from unittest import skip
 
 def test_install():
 
-    @lift('x -> x -> x', {'x': array_like})
-    def nadd(a,b,o):
-        return np.add(a,b,o)
-
-    costfn = lambda x: 0
-
-    # Anywhere an add is term is found replace with the simple NumPy
-    # dispatch.
-    install('FizzPop(<term>,<term>)',nadd,costfn)
-
-    expr = AAppl(ATerm('FizzPop'), [AInt(1), AInt(2)])
+    expr = AAppl(ATerm('Add'), [AInt(1), AInt(2)])
     fn, cost = lookup(expr)
 
-    assert fn.fn == nadd.fn
+    assert fn.fn == np.add
     assert cost == 0
+
+if __name__ == '__main__':
+    test_install()

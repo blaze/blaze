@@ -30,20 +30,24 @@ def test_getitem():
     assert nd[2] == 3
 
 ## Case 1
-#def test_setitem():
-    #nd = arr()
+def test_setitem():
+    nd = arr()
 
-    #for i in xrange(3):
-        ## Simple write, forces the manifest bytes
-        #nd[i] = i
+    for i in xrange(3):
+        # Simple write, forces the manifest bytes
+        nd[i] = i
+
+    print nd.data.ca
 
 # Case 2
-#def test_getslice():
-    #nd = arr()
+def test_getslice():
+    nd = arr()
 
-    #for i in xrange(3):
-        ## Simple read slice
-        #nd[0:i] = i
+    for i in xrange(3):
+        # Simple read slice
+        nd[0:i] = i
+
+    print nd
 
 ## Case 3
 #def test_setslice():

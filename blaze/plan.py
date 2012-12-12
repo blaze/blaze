@@ -170,7 +170,7 @@ class InstructionGen(MroVisitor):
             # ==================================================
 
         # otherwise, go find us implementation for how to execute
-        # Returns either a ForeignF ( reference to a external C
+        # Returns either a ExternalF ( reference to a external C
         # library ) or a PythonF, a Python callable. These can be
         # anything, numpy ufuncs, numexpr, pandas, cmath whatever
         from blaze.rts.ffi import lookup

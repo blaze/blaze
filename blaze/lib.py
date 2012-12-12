@@ -1,12 +1,12 @@
 import numpy as np
-from blaze.rts.ffi import PythonF, install
+from blaze.rts.ffi import PythonFn, install
 from blaze.engine import executors
 from numexpr import evaluate
 
 # evaluating this function over a term has a cost, in the future this
 # might be things like calculations for FLOPs associated with the
 # operation. Could be a function of the shape of the term Most of the
-# BLAS functions can calculated a priori
+# costs of BLAS functions can calculated a priori
 
 zerocost = lambda term: 0
 
@@ -32,37 +32,52 @@ zerocost = lambda term: 0
 # etc...
 
 install(
-    'Add(Array(),Array())',
-    PythonF(np.add.types, lambda: None, False),
-    zerocost
-)
-
-install(
     'Add(<term>,<term>)',
-    PythonF(np.add.types, np.add, False),
+    PythonFn(np.add.types, np.add, False),
     zerocost
 )
-
 
 install(
     'Mul(<term>,<term>)',
-    PythonF(np.multiply.types, np.multiply, False),
+    PythonFn(np.multiply.types, np.multiply, False),
     zerocost
 )
 
 install(
     'Pow(<term>,<term>)',
-    PythonF(np.power.types, np.power, False),
+    PythonFn(np.power.types, np.power, False),
     zerocost
 )
 
 install(
     'Abs(<term>)',
-    PythonF(np.abs.types, np.abs, False),
+    PythonFn(np.abs.types, np.abs, False),
     zerocost
 )
 
-# These needn't neccessarily be NumPy functions!
+# ==============
+# --- Future ---
+# ==============
+
+# Specialized just for arrays
+# ---------------------------
+#
+# install(
+#     'Add(Array(),Array())',
+#     PythonF(np.add.types, np.add, False),
+#     zerocost
+# )
+
+# Specialized just for contigious arrays
+# --------------------------------------
+#
+# install(
+#     'Add(Array(){contigious},Array(){contigious})',
+#     PythonF(np.add.types, np.add, False),
+#     zerocost
+# )
+
+# These also needn't neccessarily be NumPy functions!
 
 numexpr_add = lambda a,b: evaluate('a+b')
 

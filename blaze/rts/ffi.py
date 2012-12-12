@@ -20,8 +20,8 @@ actually build the kernel to execute.
 The rest of the backends may requires some aterm munging to get
 them into a form that is executable. I.e. casting into NumPy ( if
 possible ), converting to a Numexpr expression, etc.
-
 """
+
 from functools import wraps
 from threading import local
 from thread import allocate_lock
@@ -74,14 +74,18 @@ _dispatch.dispatcher = Dispatcher()
 # Installling Functions
 #------------------------------------------------------------------------
 
-def lift(signature, constraints, mayblock=True):
+zerocost = lambda term: 0
+
+def lift(signature, **params):
     """ Lift a Python callable into Blaze with the given
     signature """
     def outer(pyfn):
-        return PythonF(signature, pyfn, mayblock)
+        assert callable(pyfn), "Lifted function must be callable"
+        libcall = PythonFn(signature, pyfn, **params)
+        install(signature, libcall)
     return outer
 
-def install(matcher, fn, cost):
+def install(matcher, fn, cost=None):
     """ Install a function in the Blaze runtime, specializes
     based on the matcher. Assign the cost function to the
     selection of the function."""
@@ -90,7 +94,8 @@ def install(matcher, fn, cost):
     # functions, users should never be accessing the dispatcher
     # directly since it's mutable and ugly...
     with runtime_frozen:
-        _dispatch.dispatcher.install(matcher, fn, cost)
+        costfn = cost or zerocost
+        _dispatch.dispatcher.install(matcher, fn, costfn)
 
 def lookup(aterm):
     return _dispatch.dispatcher.lookup(aterm)
@@ -99,10 +104,11 @@ def lookup(aterm):
 # Functions
 #------------------------------------------------------------------------
 
-class PythonF(object):
+# A function in the Python interpreter
+class PythonFn(object):
     gil = True
 
-    def __init__(self, signature, fn, mayblock):
+    def __init__(self, signature, fn, mayblock=False):
         self.fn = fn
         self.mayblock = mayblock
         self.signature = signature
@@ -111,7 +117,8 @@ class PythonF(object):
     def ptr(self):
         raise NotImplementedError
 
-class ForeignF(object):
+# A function external to Python interpreter
+class ExternalFn(object):
 
     def __init__(self, signature, ptr, gil, mayblock):
         self.ptr = ptr
