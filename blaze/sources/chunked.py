@@ -9,6 +9,7 @@ from blaze.byteprovider import ByteProvider
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from blaze.datadescriptor import CArrayDataDescriptor
 from blaze.datashape.coretypes import dynamic, from_numpy, to_numpy
+from blaze.params import params, to_cparams
 
 import numpy as np
 
@@ -36,12 +37,7 @@ class CArraySource(ByteProvider):
         # TODO: clean up ugly conditionals
 
         if params:
-            rootdir = params.get('storage')
-            # compatabaility
-            cparams = carray.cparams(
-                params.get('clevel'),
-                params.get('shuffle'),
-            )
+            cparams, rootdir, format_flavor = to_cparams(params)
         else:
             rootdir = None
             cparams = None

@@ -75,4 +75,3 @@ def to_cparams(params):
             continue
         cparams[key] = val
     return carray.cparams(**cparams), rootdir, format_flavor
-        

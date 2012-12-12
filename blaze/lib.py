@@ -33,6 +33,9 @@ zerocost = lambda term: 0
 # which specialize on metadata for contigious, chunked, streams,
 # etc...
 
+@lift('Sqrt(<int>)')
+def pyadd(a):
+    return sqrt(a)
 
 install(
     'Add(<term>,<term>)',
@@ -57,10 +60,6 @@ install(
     PythonFn(np.abs.types, np.abs, False),
     zerocost
 )
-
-@lift('Sqrt(<int>)')
-def pyadd(a):
-    return sqrt(a)
 
 # ==============
 # --- Future ---
