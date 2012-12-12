@@ -71,8 +71,8 @@ class Instruction(object):
         """ %lhs = fn{props}(arguments) """
 
         self.fn = fn
-        self.args = args or []
         self.lhs = lhs
+        self.args = args or []
 
     def __repr__(self):
         # with output types
@@ -83,6 +83,8 @@ class Instruction(object):
         else:
             return ' '.join([self.fn,] + map(repr, self.args))
 
+
+# TODO: naive constant folding
 
 class InstructionGen(MroVisitor):
     """ Map ATerm into linear instructions, unlike ATerm this
@@ -120,12 +122,19 @@ class InstructionGen(MroVisitor):
         self.numbapro = have_numbapro
 
         self.n = 0
-        self.vartable = {}
-        self.instructions = []
+        self._vartable = {}
+        self._instructions = []
+
+    def result(self):
+        return self._instructions
+
+    @property
+    def vars(self):
+        return self._vartable
 
     def var(self, term):
         key = ('%' + str(self.n))
-        self.vartable[term] = key
+        self._vartable[term] = key
         self.n += 1
         return key
 
@@ -186,14 +195,14 @@ class InstructionGen(MroVisitor):
         self.visit(args)
 
         fn, cost = lookup(normal_term)
-        fargs = [self.vartable[a] for a in args]
+        fargs = [self._vartable[a] for a in args]
 
         # push the temporary for the result in the vartable
         key = self.var(term)
 
+        # build the instruction & push it on the stack
         inst = Instruction(str(fn.fn), fargs, lhs=key)
-        self.instructions.append(inst)
-        return inst
+        self._instructions.append(inst)
 
     def _Array(self, term):
         key = self.var(term)
@@ -206,11 +215,11 @@ class InstructionGen(MroVisitor):
         pass
 
     def AInt(self, term):
-        self.vartable[term] = Constant(term.n)
+        self._vartable[term] = Constant(term.n)
         return
 
     def AFloat(self, term):
-        self.vartable[term] = Constant(term.n)
+        self._vartable[term] = Constant(term.n)
         return
 
     def ATerm(self, term):
@@ -267,8 +276,8 @@ class BlazeVisitor(MroVisitor):
             ATerm('Slice'),
             [self.visit(array),
              start or ATerm('None'),
-             stop or ATerm('None'),
-             step or ATerm('None')],
+             stop  or ATerm('None'),
+             step  or ATerm('None')],
             annotation=annotation(graph, graph.op)
         )
 

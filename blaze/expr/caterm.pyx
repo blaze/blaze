@@ -57,7 +57,6 @@ cdef extern from "aterm1.h":
     ctypedef int *FILE
 
     void ATinit (int argc, char *argv[], ATerm *bottomOfStack)
-    ATerm ATmake(char *pattern, ...)
     ATbool ATmatch(ATerm t, char *pattern, ...)
 
     int ATgetType(ATerm t)
@@ -218,7 +217,7 @@ cdef class PyATerm:
         I can roll it in here though
         """
         cdef object pcopy = copy(pattern)[:]
-        cdef char* cpattern = PyString_AsString(pattern)
+        cdef char* cpattern = PyString_AsString(pcopy)
 
         cdef ATbool res
         cdef char *c1, *c2, *c3, *c4, *c5
@@ -264,7 +263,7 @@ cdef class PyATerm:
 cdef void error(char *format, va_list args) with gil:
     raise Exception(format)
 
-# execute at module init 
+# execute at module init
 cdef ATerm bottomOfStack
 ATinit(1, [], &bottomOfStack)
 
@@ -304,13 +303,28 @@ STR         = BLOB
 def aterm(str s):
     return PyATerm(s)
 
-#cpdef make(str s, int nr, ...):
-    #cdef va_list args
-    #cdef ATerm at
+def make(template, params=None):
+    cdef char* ctemplate = PyString_AsString(template)
 
-    #va_start(args, <void*>nr)
-    #ATmakeTerm(ATerm pat, ...)
-    #va_end(args)
+    cdef ATerm a1, a2, a3, a4, a5
+    cdef ATerm res
+
+    if len(params) == 0:
+        raise ValueError("Use aterm() for construction with no arguments")
+    if len(params) == 1:
+        pa1 = PyATerm(params[0])
+        res = ATmake(template, pa1.a)
+    if len(params) == 2:
+        pa1 = PyATerm(params[0])
+        pa2 = PyATerm(params[1])
+        res = ATmake(template, pa1.a, pa2.a)
+    if len(params) == 3:
+        pa1 = PyATerm(params[0])
+        pa2 = PyATerm(params[1])
+        pa3 = PyATerm(params[2])
+        res = ATmake(template, pa1.a, pa2.a, pa3.a)
+
+    return PyATerm(<int>res)
 
 def matches(str s, PyATerm term):
     return term.matches(s)

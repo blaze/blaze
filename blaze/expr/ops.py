@@ -7,7 +7,7 @@ from blaze.datashape.coretypes import promote
 from utils import Symbol
 
 #------------------------------------------------------------------------
-# Domains
+# Domain Constraint
 #------------------------------------------------------------------------
 
 Array, Table = Symbol('Array'), Symbol('Table')
@@ -32,6 +32,8 @@ universal = set([C.top]) | numeric | indexable | string
 #------------------------------------------------------------------------
 # Basic Scalar Arithmetic
 #------------------------------------------------------------------------
+
+# These are abstract graph nodes for Operations.
 
 class Add(Op):
     # -----------------------

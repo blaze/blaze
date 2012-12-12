@@ -206,9 +206,9 @@ def do_plan(context, graph):
 
     ivisitor = InstructionGen(have_numbapro=have_numbapro)
     plan = ivisitor.visit(aterm_graph)
-    context['instructions'] = ivisitor.instructions
 
-    print ivisitor.instructions
+    context['instructions'] = ivisitor.result()
+    print ivisitor.result()
 
     return context, plan
 

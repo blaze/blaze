@@ -45,4 +45,3 @@ if __name__ == '__main__':
     # XXX: huh, if I run these both it seems to segfault
 #   test_conversion()
    test_execution()
-
