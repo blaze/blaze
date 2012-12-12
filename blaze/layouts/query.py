@@ -52,7 +52,6 @@ def getslice(cc, indexer):
     # Shortcut for accessing data in carray container
     # (this needs to be more general?)
     elt, lc = cc(indexer)
-    import pdb; pdb.set_trace()
     return elt.ca[lc]
 
     # a = indexer[0]
