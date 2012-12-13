@@ -1,49 +1,69 @@
 from lldescriptors cimport *
 from cpython cimport *
 
-class Chunk(object):
+from lldescriptors import *
 
-    def __init__(self, pointer, shape, strides, itemsize):
-        self.pointer = pointer
-        self.shape = shape
-        self.strides = strides
-        self.itemsize = itemsize
+from blaze.carray import carrayExtension as carray
 
-class CArrayDataDescriptor(DataDescriptor):
+cdef class CArrayChunkIterator(ChunkIterator):
+    def __cinit__(self, data_obj, datashape, *args, **kwargs):
+        super(CArrayChunkIterator, self).__init__(data_obj, datashape)
+        self.iterator.next = carray_chunk_next
+        self.iterator.commit = carray_chunk_commit
 
-    def __init__(self, id, nbytes, carray):
-        super(CArrayDataDescriptor, self).__init__(id, nbytes)
-        self.carray = carray
-        self.itemsize = carray.itemsize
+    def __iter__(self):
+        cdef Chunk chunk = Chunk()
+        cdef CChunk cchunk
 
-    def build_chunk(self, pointer, length):
-        return Chunk(pointer, (length,), (self.itemsize,), self.itemsize)
+        while True:
+            self.iterator.next(&self.iterator, &cchunk)
+            if cchunk.data == NULL:
+                break
 
-    def asbuflist(self, copy=False):
-        # TODO: incorporate shape in the chunks
+            chunk.chunk = cchunk
+            yield chunk
 
-        # main chunks
-        for chunk in self.carray.chunks:
-            yield self.build_chunk(chunk.pointer, chunk.nbytes / self.itemsize)
 
-        # main leftovers
-        leftover_array = self.carray.leftover_array
-        if leftover_array is not None:
-            yield self.build_chunk(leftover_array.ctypes.data,
-                                   leftover_array.shape[0])
+cdef void carray_chunk_next(CChunkIterator *info, CChunk *chunk):
+    cdef Py_uintptr_t data
 
-cdef class CArrayTileIndexer(object):
-    def __cinit__(self, datasource, datashape, *args, **kwargs):
-        self.datasource = datasource
-        self.datashape = datashape
-        self.indexer.index = carray_tile_read
-        self.indexer.commit = carray_tile_commit
-
-cdef void carray_tile_read(CTileIndexer *info, Py_ssize_t *indices,
-                           CTile *out_tile):
     carray = <object> <PyObject *> info.meta.source
+    if info.cur_chunk_idx < carray.nchunks:
+        carray_chunk = carray.chunks[info.cur_chunk_idx]
 
+        # decompress chunk
+        arr = carray_chunk[:]
+    elif info.cur_chunk_idx == carray.nchunks:
+        arr = carray.leftover_array
+    else:
+        chunk.data = NULL
+        # chunk.size = 0
+        return
 
-cdef void carray_tile_commit(CTileIndexer *info, Py_ssize_t *indices,
-                             CTile *in_tile):
-    pass
+    chunk.data = <void *> <Py_uintptr_t> arr.ctypes.data
+    chunk.size = arr.shape[0]
+    chunk.stride = arr.strides[0]
+    chunk.chunk_index = info.cur_chunk_idx
+
+    # Keep decompressed memory alive
+    Py_INCREF(arr)
+    chunk.obj = <PyObject *> arr
+    chunk.extra = <void *> carray_chunk
+
+    info.cur_chunk_idx += 1
+
+cdef void carray_chunk_commit(CChunkIterator *info, CChunk *chunk):
+    carray_obj = <object> <PyObject *> info.meta.source
+    if chunk.chunk_index < carray_obj.nchunks:
+        # compress chunk and replace previous chunk
+        carray_chunk = <object> chunk.extra
+        arr = <object> chunk.obj
+        carray.chunks[chunk.chunk_index] = carray.chunk(arr, arr.dtype,
+                                                        carray_obj.cparams)
+
+    carray_chunk_dispose(info, chunk)
+
+cdef void carray_chunk_dispose(CChunkIterator *info, CChunk *chunk):
+    # Decref previously set live object
+    Py_XDECREF(chunk.obj)
+    chunk.obj = NULL

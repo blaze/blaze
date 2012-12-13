@@ -7,6 +7,12 @@ in the future).
 # See lldescriptors.pxd for type definitions
 #------------------------------------------------------------------------
 
+cdef class lldatadesc(object):
+
+    def __init__(self, data_obj, datashape):
+        self.data_obj = data_obj
+        self.datashape = datashape
+
 cdef class Tile(object):
     """
     Tiles exposed to Python

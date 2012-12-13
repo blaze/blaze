@@ -1,14 +1,23 @@
+from cpython cimport *
+
 DEF MAX_NDIM = 8
 
 cdef extern from "Python.h":
     ctypedef unsigned int Py_uintptr_t
 
 #------------------------------------------------------------------------
-# C-level Chunk or Tile Data Descriptor.
+# C-level Chunk or Tile Data Descriptors
 #------------------------------------------------------------------------
+ctypedef public struct CChunk:
+    void *data
+    Py_ssize_t size
+    Py_ssize_t stride
+    size_t chunk_index
+    PyObject *obj # object to keep alive for the duration of the use
+    void *extra   # miscellaneous data
+
 ctypedef public struct CTile:
     int ndim
-    bint inplace
     void *data
     Py_ssize_t shape[MAX_NDIM]
     Py_ssize_t strides[MAX_NDIM]
@@ -20,13 +29,29 @@ ctypedef public struct IndexerMetaData:
     # Borrowed reference to data shape
     void *datashape
 
+cdef class Chunk(object):
+    cdef CChunk chunk
+
+cdef class Tile(object):
+    cdef CTile tile
+
 #------------------------------------------------------------------------
-# C-level Indexers on scalars or bulk data (tiles)
+# C-level iterators and indexers on scalars or bulk data (tiles)
 #------------------------------------------------------------------------
+
+# Read chunks in sequence. After use, a written chunk must be committed, and a
+# chunk that was only read must be disposed of.
+ctypedef public struct CChunkIterator:
+    void (*next)(CChunkIterator *info, CChunk *chunk)
+    void (*commit)(CChunkIterator *info, CChunk *chunk)
+    void (*dispose)(CChunkIterator *info, CChunk *chunk)
+
+    IndexerMetaData meta
+    size_t cur_chunk_idx
 
 # global coordinates -> scalar
 ctypedef public struct CIndexer:
-    void (*index_read)(CIndexer *info, Py_ssize_t *indices, void *out)
+    void (*index_read)(CIndexer *info, Py_ssize_t *indices, void *datum)
     void (*index_write)(CIndexer *info, Py_ssize_t *indices, void *datum)
     IndexerMetaData meta
 
@@ -41,13 +66,15 @@ ctypedef public struct CTileIndexer:
     IndexerMetaData meta
 
 #------------------------------------------------------------------------
-# Python and Cython level exposures
+# Python and Cython level exposures of iterators and indexers
 #------------------------------------------------------------------------
 
-cdef class TileIndexer(object):
-    cdef CIndexer indexer
-    cdef object datasource
+cdef class lldatadesc(object):
+    cdef object data_obj
     cdef object datashape
 
-cdef class Tile(object):
-    cdef CTile tile
+cdef class ChunkIterator(lldatadesc):
+    cdef CChunkIterator iterator
+
+cdef class TileIndexer(lldatadesc):
+    cdef CIndexer indexer
