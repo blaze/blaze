@@ -29,7 +29,7 @@ class DataDescriptor(object):
     # Generic adapters
     #------------------------------------------------------------------------
 
-    def asbuffer(self, copy=False):
+    def asstrided(self, copy=False):
         """ Returns the buffer as a memoryview. If **copy** is False, then the
         memoryview just references the underlying data if possible.  If
         **copy** is True, then the memoryview will always expose a new copy of
@@ -40,12 +40,26 @@ class DataDescriptor(object):
         """
         raise NotImplementedError
 
-    def asbuflist(self, copy=False):
-        """ Returns the contents of the buffer as a list of memoryviews.  If
-        **copy** is False, then tries to return just views of data if possible.
+    def as_tile_indexer(self, copy=False):
+        """ Returns the contents of the buffer as an indexer returning
+        N-dimensional memoryviews.
+
+        A 1D chunk is a degenerate tile
+
+        If **copy** is False, then tries to return just views of
+        data if possible.
         """
         raise NotImplementedError
 
+    def asindex(self):
+        """ Returns an indexer that can index the source with given
+        coordinates
+
+        """
+
+    # NOTE: Buffered streams can be thought of as 1D tiles.
+    # TODO: Remove stream interface and expose tiling properties in graph
+    # TODO: metadata
     def asstream(self):
         """ Returns a Python iterable which returns **chunksize** elements
         at a time from the buffer.  This is identical to the iterable interface
@@ -57,7 +71,7 @@ class DataDescriptor(object):
         raise NotImplementedError
 
     def asstreamlist(self):
-        """ Returns a list of Stream objects, which should be read sequentially
+        """ Returns an iterable of Stream objects, which should be read sequentially
         (i.e. after exhausting the first stream, the second stream is read,
         etc.)
         """
@@ -127,7 +141,6 @@ class SqlDataDescriptor(DataDescriptor):
     def asbuffer(self, copy=False):
         self.conn.execute(self.query)
         return self.conn.fetchone()
-
 
 class Chunk(object):
 
