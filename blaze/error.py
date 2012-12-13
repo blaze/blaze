@@ -24,6 +24,10 @@ class NoDispatch(Exception):
     def __str__(self):
         return "No implementation for '%r'" % self.aterm
 
+# for the RTS
+class InvalidLibraryDefinton(Exception):
+    pass
+
 class NotNumpyCompatible(Exception):
     """
     Raised when we try to convert a datashape into a NumPy dtype

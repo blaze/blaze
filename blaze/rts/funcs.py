@@ -33,6 +33,7 @@ from blaze.expr.graph import Fun
 
 from functools import wraps
 from threading import local
+from blaze.error import InvalidLibraryDefinton
 from inspect import getargspec
 from ctypes import CFUNCTYPE
 
@@ -92,7 +93,7 @@ _dispatch.dispatcher = Dispatcher()
 
 zerocost = lambda term: 0
 
-def lift(signature, typesig, **params):
+def lift(signature, typesig, constraints=None, **params):
     """ Lift a Python callable into Blaze with the given
     signature. Splice a function graph node constructor in its
     place.
@@ -104,9 +105,16 @@ def lift(signature, typesig, **params):
 
     def outer(pyfn):
         assert callable(pyfn), "Lifted function must be callable"
+        fname = pyfn.func_name
+
+        try:
+            caterm.aterm(signature)
+        except caterm.InvalidATerm as e:
+            raise InvalidLibraryDefinton(*e.args + (fname,))
+
+        # #effectful
         libcall = PythonFn(signature, pyfn)
         install(signature, libcall)
-        fname = pyfn.func_name
 
         sig = getargspec(pyfn)
         nargs = len(sig.args)
@@ -119,11 +127,12 @@ def lift(signature, typesig, **params):
         cod = params.pop('cod', dynamic)
 
         return type(pyfn.func_name, (Fun,), {
-            'nargs'   : nargs,
-            'fn'      : pyfn,
-            'fname'   : fname,
-            'typesig' : typesig,
-            'cod'     : cod
+            'nargs'       : nargs,
+            'fn'          : pyfn,
+            'fname'       : fname,
+            'typesig'     : typesig,
+            'cod'         : cod,
+            'constraints' : constraints,
         })
 
     return outer

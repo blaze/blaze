@@ -113,7 +113,7 @@ cdef class PyATerm:
         if isinstance(pattern, basestring):
             a = ATreadFromString(pattern)
             if a == ATEmpty:
-                raise Exception('Invalid ATerm: %s' % pattern)
+                raise InvalidATerm(pattern)
             else:
                 self.a = a
                 self._repr = ATwriteToString(self.a)
@@ -256,21 +256,6 @@ cdef class PyATerm:
     def __repr__(self):
         return "aterm('%s')" % ATwriteToString(self.a)
 
-#------------------------------------------------------------------------
-# Error Handling
-#------------------------------------------------------------------------
-
-cdef void error(char *format, va_list args) with gil:
-    raise Exception(format)
-
-# execute at module init
-cdef ATerm bottomOfStack
-ATinit(1, [], &bottomOfStack)
-
-# Register error handlers
-ATsetErrorHandler(error)
-ATsetWarningHandler(error)
-ATsetAbortHandler(error)
 
 #------------------------------------------------------------------------
 # Exceptions
@@ -281,6 +266,22 @@ class InvalidATerm(SyntaxError):
 
 class NoAnnotation(KeyError):
     pass
+
+#------------------------------------------------------------------------
+# Error Handling
+#------------------------------------------------------------------------
+
+cdef void error(char *format, va_list args) with gil:
+    raise InvalidATerm(format)
+
+# execute at module init
+cdef ATerm bottomOfStack
+ATinit(1, [], &bottomOfStack)
+
+# Register error handlers
+ATsetErrorHandler(error)
+ATsetWarningHandler(error)
+ATsetAbortHandler(error)
 
 #------------------------------------------------------------------------
 # Constants

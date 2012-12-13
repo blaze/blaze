@@ -1,5 +1,5 @@
 from collections import Mapping, OrderedDict
-from utils import Symbol as S
+from blaze.expr.utils import Symbol as S
 
 # The set of possible facets that are specifiable in the
 # metadata. Most structures will define a subset of these. This

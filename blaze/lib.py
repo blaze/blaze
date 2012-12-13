@@ -2,10 +2,13 @@ import numpy as np
 from math import sqrt
 
 from blaze.datashape import dshape
-from blaze.rts.ffi import PythonFn, install, lift
+from blaze.rts.funcs import PythonFn, install, lift
 from blaze.engine import executors
 from numexpr import evaluate
 from blaze.ts.ucr_dtw import ucr
+
+from blaze.expr.ops import array_like
+from blaze.metadata import aligned
 
 # evaluating this function over a term has a cost, in the future this
 # might be things like calculations for FLOPs associated with the
@@ -15,25 +18,40 @@ from blaze.ts.ucr_dtw import ucr
 zerocost = lambda term: 0
 
 #------------------------------------------------------------------------
-# Preinstalled Functions
+# Function Library
 #------------------------------------------------------------------------
 
-# These are side-effectful functions which install the core
-# functions into the RTS dispatcher.
 
-# The signature for PythonF
+# Anatomy of a Blaze Function Def
+# -------------------------------
 
-#   :signature: ATerm pattern matching signature
-
-#   :fn: Python callable instance
-
-#   :mayblock: Whether calling this function may block a thread.
-#              ( i.e. it waits on a disk or socket )
-
-
-# TODO: right now these consume everything but later we'll add functions
-# which specialize on metadata for contigious, chunked, streams,
-# etc...
+#   ATerm Pattern Matcher
+#            |                      +-- Type Signature
+#            |                      |
+#            v                      v
+# @lift('Mul(<term>,<term>)', '(a,a) -> a', {
+#     'types'   : {'a': array_like},     <- Type Constraints
+#     'metadata': {'a': aligned, local}, <- Metadata Constraint
+# }, costfn)
+# def multiply(a, b):
+#     return np.multipy(a, b)
+#    |                     |
+#    +---------------------+
+#    Function Implementation
+#
+#
+# If we were to "read" this definition in English. It would read:
+#
+#  > Here is a function called Mul, it matches any expression of two
+#  > graph nodes. In addition the two graph nodes must be of the same
+#  > datashapes (a) or unify/broadcast to the same type (a,a). It
+#  > returns a result of the same type of the operands. In addition the
+#  > two arguments must have metadata annotating them both as aligned
+#  > memory and in system local memory. If the expression in question
+#  > matches these criterion than I can tell you that you can perfom
+#  > this operation in (n*m) FLOPS where n and m are the size of your
+#  > input array, if you can't find a better implementaion than that use
+#  > this function implementation!
 
 @lift('Sqrt(<int>)', 'a -> float32')
 def pyadd(a):
@@ -43,30 +61,30 @@ def pyadd(a):
 def dtw(d1, d2, s, n):
     return ucr.dtw(d1, d2, s, n)
 
+@lift('Add(<term>,<term>)', '(a,a) -> a')
+def add(a, b):
+    return np.add(a, a)
 
-install(
-    'Add(<term>,<term>)',
-    PythonFn(np.add.types, np.add, False),
-    zerocost
-)
+@lift('Mul(<term>,<term>)', '(a,a)-> a', {
+    'types'   : {'a': array_like},
+    'metadata': {},
+})
+def multiply(a, b):
+    return np.multipy(a, b)
 
-install(
-    'Mul(<term>,<term>)',
-    PythonFn(np.multiply.types, np.multiply, False),
-    zerocost
-)
+@lift('Pow(<term>,<term>)', '(a,a) -> a', {
+    'types'   : {'a': array_like},
+    'metadata': {},
+})
+def power(a, b):
+    return np.power(a, b)
 
-install(
-    'Pow(<term>,<term>)',
-    PythonFn(np.power.types, np.power, False),
-    zerocost
-)
-
-install(
-    'Abs(<term>)',
-    PythonFn(np.abs.types, np.abs, False),
-    zerocost
-)
+@lift('Abs(<term>', 'a -> a', {
+    'types'   : {'a': array_like},
+    'metadata': {},
+})
+def abs(a, b):
+    return np.abs(a, b)
 
 # ==============
 # --- Future ---

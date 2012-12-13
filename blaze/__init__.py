@@ -2,7 +2,7 @@ __version__ = '0.1-dev'
 
 # Install the Blaze library of dispatch functions, must be called
 # early
-import lib
+from lib import *
 
 from datashape import dshape
 from table import Array, Table, NDArray, NDTable

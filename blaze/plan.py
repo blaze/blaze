@@ -188,7 +188,7 @@ class InstructionGen(MroVisitor):
         # Returns either a ExternalF ( reference to a external C
         # library ) or a PythonF, a Python callable. These can be
         # anything, numpy ufuncs, numexpr, pandas, cmath whatever
-        from blaze.rts.ffi import lookup
+        from blaze.rts.funcs import lookup
 
         # visit the innermost arguments, push those arguments on
         # the instruction list first
