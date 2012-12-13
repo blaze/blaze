@@ -165,7 +165,7 @@ class ATermToAstTranslator(visitor.GraphTranslator):
     def AAppl(self, app):
         "Look for unops, binops and reductions and anything else we can handle"
         if paterm.matches('Arithmetic;*', app.spine):
-            opname = app.args[0].s.lower()
+            opname = app.args[0].label.lower()
             op = self.opname_to_astop.get(opname, None)
             type = get_datashape(app.annotation.ty)
             is_array = type.shape or self.nesting_level

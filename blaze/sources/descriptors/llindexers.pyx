@@ -1,7 +1,7 @@
 from lldescriptors cimport *
 from cpython cimport *
 
-from lldescriptors import *
+#from lldescriptors import *
 
 from blaze.carray import carrayExtension as carray
 
