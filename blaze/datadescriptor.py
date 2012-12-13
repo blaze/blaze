@@ -117,6 +117,18 @@ class Stream(DataDescriptor):
 #     int readonly;
 # }
 
+class SqlDataDescriptor(DataDescriptor):
+
+    def __init__(self, id, conn, query):
+        self.id = id
+        self.conn = conn
+        self.query = query
+
+    def asbuffer(self, copy=False):
+        self.conn.execute(self.query)
+        return self.conn.fetchone()
+
+
 class Chunk(object):
 
     def __init__(self, pointer, shape, strides, itemsize):
@@ -124,6 +136,7 @@ class Chunk(object):
         self.shape = shape
         self.strides = strides
         self.itemsize = itemsize
+
 
 class CArrayDataDescriptor(DataDescriptor):
 

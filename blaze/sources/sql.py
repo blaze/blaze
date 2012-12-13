@@ -2,6 +2,7 @@ import sqlite3
 
 from blaze.byteprovider import ByteProvider
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_READ
+from blaze.datadescriptor import SqlDataDescriptor
 
 from blaze.layouts.categorical import Simple
 
@@ -24,8 +25,8 @@ class SqliteSource(ByteProvider):
         sqlite3.register_adapter(ty, con)
         sqlite3.register_converter(name, decon)
 
-    def read_desc(self):
-        return SqliteDataDescriptor('sqlite_dd', None, self.conn)
+    def read_desc(self, query):
+        return SqlDataDescriptor('sqlite_dd', None, self.conn)
 
     def repr_data(self):
         return '<Deferred>'
