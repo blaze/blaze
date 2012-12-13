@@ -4,6 +4,7 @@ from math import sqrt
 from blaze.rts.ffi import PythonFn, install, lift
 from blaze.engine import executors
 from numexpr import evaluate
+from blaze.ts.ucr_dtw import ucr
 
 # evaluating this function over a term has a cost, in the future this
 # might be things like calculations for FLOPs associated with the
@@ -36,6 +37,10 @@ zerocost = lambda term: 0
 @lift('Sqrt(<int>)')
 def pyadd(a):
     return sqrt(a)
+
+@lift('dtw(Array(), Array(), <term>, <term>)')
+def dtw(a):
+    return ucr.dtw(a)
 
 install(
     'Add(<term>,<term>)',
