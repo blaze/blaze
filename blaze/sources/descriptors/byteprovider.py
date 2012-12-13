@@ -2,7 +2,7 @@
 ByteProvider base class.
 """
 
-from byteproto import READ, WRITE
+from blaze.byteproto import READ, WRITE
 from datadescriptor import DataDescriptor
 
 class NoDataDescriptor(Exception):

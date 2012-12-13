@@ -1,4 +1,4 @@
-import byteproto as proto
+from blaze import byteproto as proto
 
 #------------------------------------------------------------------------
 # Data Descriptor

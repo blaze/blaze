@@ -5,7 +5,7 @@ in-memory and on-disk storage.
 
 from blaze import carray
 
-from blaze.byteprovider import ByteProvider
+from blaze.sources.descriptors.byteprovider import ByteProvider
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from blaze.datadescriptor import CArrayDataDescriptor
 from blaze.datashape.coretypes import dynamic, from_numpy, to_numpy

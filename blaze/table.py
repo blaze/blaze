@@ -11,7 +11,7 @@ The toplevel modules containing the core Blaze datastructures.
 import numpy as np
 from operator import eq
 
-from byteprovider import ByteProvider
+from blaze.sources.descriptors.byteprovider import ByteProvider
 from idx import Space, Subspace, Index
 
 from datashape import DataShape, Fixed, dynamic, dshape as _dshape
