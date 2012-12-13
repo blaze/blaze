@@ -1,4 +1,5 @@
 from blaze import byteproto as proto
+from . import lldescriptors, llindexers
 
 #------------------------------------------------------------------------
 # Data Descriptor
@@ -14,10 +15,11 @@ class DataDescriptor(object):
     form at as low a level as possible.
     """
 
-    def __init__(self, id, nbytes):
+    def __init__(self, id, nbytes, datashape):
         # XXX: whatever, just something unique for now
         self.id = id
         self.nbytes = nbytes
+        self.datashape = datashape
 
     def __str__(self):
         return self.id
@@ -28,6 +30,8 @@ class DataDescriptor(object):
     #------------------------------------------------------------------------
     # Generic adapters
     #------------------------------------------------------------------------
+
+    # From (roughly) least to most preferable
 
     def asstrided(self, copy=False):
         """ Returns the buffer as a memoryview. If **copy** is False, then the
@@ -40,6 +44,12 @@ class DataDescriptor(object):
         """
         raise NotImplementedError
 
+
+    def asindex(self):
+        """ Returns an indexer that can index the source with given
+        coordinates
+        """
+
     def as_tile_indexer(self, copy=False):
         """ Returns the contents of the buffer as an indexer returning
         N-dimensional memoryviews.
@@ -51,11 +61,10 @@ class DataDescriptor(object):
         """
         raise NotImplementedError
 
-    def asindex(self):
-        """ Returns an indexer that can index the source with given
-        coordinates
-
+    def as_chunked_iterator(self, copy=False):
+        """Return a ChunkIterator
         """
+        raise NotImplementedError
 
     # NOTE: Buffered streams can be thought of as 1D tiles.
     # TODO: Remove stream interface and expose tiling properties in graph
@@ -142,34 +151,14 @@ class SqlDataDescriptor(DataDescriptor):
         self.conn.execute(self.query)
         return self.conn.fetchone()
 
-class Chunk(object):
-
-    def __init__(self, pointer, shape, strides, itemsize):
-        self.pointer = pointer
-        self.shape = shape
-        self.strides = strides
-        self.itemsize = itemsize
-
-
 class CArrayDataDescriptor(DataDescriptor):
 
-    def __init__(self, id, nbytes, carray):
-        super(CArrayDataDescriptor, self).__init__(id, nbytes)
+    def __init__(self, id, nbytes, datashape, carray):
+        super(CArrayDataDescriptor, self).__init__(id, nbytes, datashape)
         self.carray = carray
         self.itemsize = carray.itemsize
 
-    def build_chunk(self, pointer, length):
-        return Chunk(pointer, (length,), (self.itemsize,), self.itemsize)
-
-    def asbuflist(self, copy=False):
-        # TODO: incorporate shape in the chunks
-
-        # main chunks
-        for chunk in self.carray.chunks:
-            yield self.build_chunk(chunk.pointer, chunk.nbytes / self.itemsize)
-
-        # main leftovers
-        leftover_array = self.carray.leftover_array
-        if leftover_array is not None:
-            yield self.build_chunk(leftover_array.ctypes.data,
-                                   leftover_array.shape[0])
+    def as_chunked_iterator(self, copy=False):
+        """Return a ChunkIterator
+        """
+        return llindexers.CArrayChunkIterator(self.carray, self.datashape)

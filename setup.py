@@ -209,6 +209,16 @@ extensions = [
         include_dirs = [numpy_path],
    ),
    Extension(
+       "blaze.sources.descriptors.lldescriptors",
+       ["blaze/sources/descriptors/lldescriptors.pyx"],
+       include_dirs = [],
+   ),
+   Extension(
+       "blaze.sources.descriptors.llindexers",
+       ["blaze/sources/descriptors/llindexers.pyx"],
+       include_dirs = [],
+   ),
+   Extension(
         "blaze.cutils", ["blaze/cutils.pyx"],
         include_dirs = [numpy_path],
    ),

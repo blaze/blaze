@@ -13,6 +13,25 @@ cdef class lldatadesc(object):
         self.data_obj = data_obj
         self.datashape = datashape
 
+cdef class ChunkIterator(lldatadesc):
+
+    def __cinit__(self, data_obj, datashape, *args, **kwargs):
+        super(ChunkIterator, self).__init__(data_obj, datashape)
+        self.iterator.meta.source = <void *> data_obj
+        self.iterator.meta.datashape = <void *> datashape
+
+    def __iter__(self):
+        cdef Chunk chunk = Chunk()
+        cdef CChunk cchunk
+
+        while True:
+            self.iterator.next(&self.iterator, &cchunk)
+            if cchunk.data == NULL:
+                break
+
+            chunk.chunk = cchunk
+            yield chunk
+
 cdef class Tile(object):
     """
     Tiles exposed to Python

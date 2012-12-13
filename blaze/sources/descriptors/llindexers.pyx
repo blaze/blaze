@@ -5,23 +5,16 @@ from lldescriptors import *
 
 from blaze.carray import carrayExtension as carray
 
+#------------------------------------------------------------------------
+# carray chunk iterators and indexers
+#------------------------------------------------------------------------
+
 cdef class CArrayChunkIterator(ChunkIterator):
+
     def __cinit__(self, data_obj, datashape, *args, **kwargs):
         super(CArrayChunkIterator, self).__init__(data_obj, datashape)
         self.iterator.next = carray_chunk_next
         self.iterator.commit = carray_chunk_commit
-
-    def __iter__(self):
-        cdef Chunk chunk = Chunk()
-        cdef CChunk cchunk
-
-        while True:
-            self.iterator.next(&self.iterator, &cchunk)
-            if cchunk.data == NULL:
-                break
-
-            chunk.chunk = cchunk
-            yield chunk
 
 
 cdef void carray_chunk_next(CChunkIterator *info, CChunk *chunk):

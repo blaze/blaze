@@ -7,7 +7,7 @@ from blaze import carray
 
 from blaze.sources.descriptors.byteprovider import ByteProvider
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
-from blaze.datadescriptor import CArrayDataDescriptor
+from blaze.sources.descriptors.datadescriptor import CArrayDataDescriptor
 from blaze.datashape.coretypes import dynamic, from_numpy, to_numpy
 from blaze.params import params, to_cparams
 from blaze.layouts.scalar import ChunkedL
@@ -60,7 +60,8 @@ class CArraySource(ByteProvider):
 
     # Get a READ descriptor the source
     def read_desc(self):
-        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca)
+        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca,
+                                    self.dshape)
 
     # Return the layout of the dataa
     def default_layout(self):
