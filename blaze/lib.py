@@ -79,41 +79,9 @@ def multiply(a, b):
 def power(a, b):
     return np.power(a, b)
 
-@lift('Abs(<term>', 'a -> a', {
+@lift('Abs(<term>)', 'a -> a', {
     'types'   : {'a': array_like},
     'metadata': {},
 })
 def abs(a, b):
     return np.abs(a, b)
-
-# ==============
-# --- Future ---
-# ==============
-
-# Specialized just for arrays
-# ---------------------------
-#
-# install(
-#     'Add(Array(),Array())',
-#     PythonF(np.add.types, np.add, False),
-#     zerocost
-# )
-
-# Specialized just for contigious arrays
-# --------------------------------------
-#
-# install(
-#     'Add(Array(){contigious},Array(){contigious})',
-#     PythonF(np.add.types, np.add, False),
-#     zerocost
-# )
-
-# These also needn't neccessarily be NumPy functions!
-
-numexpr_add = lambda a,b: evaluate('a+b')
-
-# install(
-#     'Add(a,b);*',
-#     PythonF(np.add.types, numexpr_add, False),
-#     zerocost
-# )
