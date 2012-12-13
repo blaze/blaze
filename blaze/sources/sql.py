@@ -15,7 +15,7 @@ class SqliteSource(ByteProvider):
         #assert (data is not None) or (dshape is not None) or \
                #(params.get('storage'))
 
-        if 'storage' in params:
+        if 'storage' in params and params.storage:
             self.conn = sqlite3.connect(params.storage)
         else:
             self.conn = sqlite3.connect(':memory:')
@@ -26,6 +26,9 @@ class SqliteSource(ByteProvider):
 
     def read_desc(self):
         return SqliteDataDescriptor('sqlite_dd', None, self.conn)
+
+    def repr_data(self):
+        return '<Deferred>'
 
     # Return the layout of the dataa
     def default_layout(self):

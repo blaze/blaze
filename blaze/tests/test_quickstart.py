@@ -35,3 +35,7 @@ def test_custom_dshape():
             return (self.min + self.max)/2
 
     a = Array([('GOOG', 120, 153)], CustomStock)
+
+def test_sqlite():
+    from blaze import open
+    a = open('sqlite://')

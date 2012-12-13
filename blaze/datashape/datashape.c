@@ -23,8 +23,8 @@
 
 typedef enum
 {
-   NIL, PARAM, TYPEVAR, DYNAMIC, CTYPE, PRODUCT, RANGE, EITHER,
-   OPTION, UNION, ENUM, RECORD
+   NIL, PARAM, TYPEVAR, DYNAMIC, CTYPE, FIXED, PRODUCT, RANGE,
+   EITHER, OPTION, UNION, ENUM, RECORD
 } kind_t;
 
 #define kindof(t) (kind_t)((type_t*)(t)->kind)

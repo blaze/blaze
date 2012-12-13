@@ -2,7 +2,10 @@ from blaze.layouts import Layout
 
 class Simple(Layout):
 
-    def change_coordinates(self):
+    boundscheck = False
+    wraparound = False
+
+    def desc(self):
         pass
 
     def change_coordinates(self):
