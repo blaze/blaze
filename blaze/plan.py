@@ -236,7 +236,10 @@ class BlazeVisitor(MroVisitor):
         self.operands = []
 
     def App(self, graph):
-        return self.visit(graph.children[0])
+        return self.visit(graph.operator)
+
+    def Fun(self, graph):
+        return self.visit(graph.children)
 
     def Op(self, graph):
         opname = graph.__class__.__name__

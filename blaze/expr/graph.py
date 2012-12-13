@@ -29,6 +29,7 @@ except ImportError:
 OP  = 0 # OP/FUN??
 APP = 1
 VAL = 2
+FUN = 3
 
 _max_argument_recursion = 25
 _max_argument_len       = 1000
@@ -613,13 +614,23 @@ class NamedFun(type):
 
 class Fun(ExpressionNode):
     """
+    A generic function application. Normally constructed by
+    @lift'ing a function into the Blaze runtime.
     """
     __slots__ = ['children', 'fn', 'cod']
     __metaclass__ = NamedFun
+    kind      = FUN
 
-    def __init__(self, fn, arguments):
-        self.fn = fn
-        self.children = arguments
+    # nargs, fn, fname are spliced in at construction
+
+    def __init__(self, *arguments):
+        if len(arguments) != self.nargs:
+            raise TypeError('%s exepected at most %i args' % (self.fname, self.nargs))
+        self.children = []
+        self.cod = self.cod
+
+    def simple_type(self):
+        return self.cod
 
 #------------------------------------------------------------------------
 # Values

@@ -24,6 +24,7 @@ except ImportError:
 OP  = 0
 APP = 1
 VAL = 2
+FUN = 3
 
 #------------------------------------------------------------------------
 # Pipeline Combinators
@@ -319,3 +320,4 @@ def toposort(pred, graph, algorithm='khan'):
 
 topovals = partial(toposort, lambda x: x.kind == VAL)
 topops   = partial(toposort, lambda x: x.kind == OP)
+topfuns  = partial(toposort, lambda x: x.kind == FUN)

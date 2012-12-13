@@ -1,6 +1,7 @@
 import numpy as np
 from math import sqrt
 
+from blaze.datashape import dshape
 from blaze.rts.ffi import PythonFn, install, lift
 from blaze.engine import executors
 from numexpr import evaluate
@@ -34,13 +35,14 @@ zerocost = lambda term: 0
 # which specialize on metadata for contigious, chunked, streams,
 # etc...
 
-@lift('Sqrt(<int>)')
+@lift('Sqrt(<int>)', 'a -> float32')
 def pyadd(a):
     return sqrt(a)
 
-@lift('dtw(Array(), Array(), <term>, <term>)')
-def dtw(a):
-    return ucr.dtw(a)
+@lift('dtw(Array(), Array(), <term>, <term>)', '(a,a,float,int) -> b')
+def dtw(d1, d2, s, n):
+    return ucr.dtw(d1, d2, s, n)
+
 
 install(
     'Add(<term>,<term>)',

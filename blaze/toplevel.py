@@ -1,5 +1,4 @@
 import os, os.path
-import uuid
 
 from urlparse import urlparse
 from params import params, to_cparams

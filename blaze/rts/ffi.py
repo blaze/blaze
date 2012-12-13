@@ -22,13 +22,18 @@ them into a form that is executable. I.e. casting into NumPy ( if
 possible ), converting to a Numexpr expression, etc.
 """
 
-from functools import wraps
-from threading import local
+
 from thread import allocate_lock
 from blaze.expr.paterm import matches
 from blaze.error import NoDispatch
 from blaze.expr import caterm
+from blaze.datashape.coretypes import dynamic
 
+from blaze.expr.graph import Fun
+
+from functools import wraps
+from threading import local
+from inspect import getargspec
 from ctypes import CFUNCTYPE
 
 #------------------------------------------------------------------------
@@ -41,6 +46,15 @@ runtime_frozen = allocate_lock()
 
 # WARNING, this is mutable
 class Dispatcher(object):
+    """
+    The dispatcher is a global object which holds the patterns
+    for all functions known to Blaze, it runs through them all
+    and determines which function
+
+        a) match a given expression
+        b) minimizes the cost of execution
+
+    """
 
     def __init__(self):
         self.funs  = {}
@@ -51,13 +65,15 @@ class Dispatcher(object):
         self.costs[fn] = cost
 
     def lookup(self, aterm):
-        # convert into a C ATerm
+        # convert into a C ATerm, inefficent but whatever
         ct = caterm.aterm(str(aterm))
 
         # canidate functions, functions matching the signature of
         # the term
 
-        # Use the C libraries better pattern matching library
+        # Use the C libraries better pattern matching library,
+        # find a function in the Blaze library that matches the
+        # given aterm
         c = [f for f, sig in self.funs.iteritems() if ct.matches(sig)]
 
         if len(c) == 0:
@@ -76,13 +92,40 @@ _dispatch.dispatcher = Dispatcher()
 
 zerocost = lambda term: 0
 
-def lift(signature, **params):
+def lift(signature, typesig, **params):
     """ Lift a Python callable into Blaze with the given
-    signature """
+    signature. Splice a function graph node constructor in its
+    place.
+
+    This will ttransparently let the user lift functions in
+    to the runtime and construct lazy graphs with what looks like
+    immediate functions.
+    """
+
     def outer(pyfn):
         assert callable(pyfn), "Lifted function must be callable"
-        libcall = PythonFn(signature, pyfn, **params)
+        libcall = PythonFn(signature, pyfn)
         install(signature, libcall)
+        fname = pyfn.func_name
+
+        sig = getargspec(pyfn)
+        nargs = len(sig.args)
+
+        # Return a new Fun() class that is a graph node
+        # constructor.
+
+        # Either we have a codomain annotation or we default to
+        # the dynamic type.
+        cod = params.pop('cod', dynamic)
+
+        return type(pyfn.func_name, (Fun,), {
+            'nargs'   : nargs,
+            'fn'      : pyfn,
+            'fname'   : fname,
+            'typesig' : typesig,
+            'cod'     : cod
+        })
+
     return outer
 
 def install(matcher, fn, cost=None):
