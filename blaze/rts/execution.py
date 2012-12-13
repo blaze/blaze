@@ -28,6 +28,35 @@
 # - Later: handle kernel fusion
 # - Much Later: handle GPU access & thread control
 
-def execplan(context, plan):
-    """ Take an execution plan and execute it """
-    pass
+from blaze.rts.storage import Heap
+
+# =================================
+# The main Blaze RTS execution loop
+# =================================
+
+# Invokes Executor functions and handles memory management from external
+# sources to allocate on, IOPro allocators, SQL Queries, ZeroMQ...
+
+# TOOD: write in Cython
+def execplan(context, plan, symbols):
+    """ Takes a list of of instructions from the Pipeline and
+    then allocates the necessary memory needed for the
+    intermediates are temporaries """
+
+    h = Heap()
+    ret = None
+    last = plan[-1]
+
+    for instruction in plan:
+        ops = [symbols[sym] for sym in symbols]
+        dds = [op.asbuflist() for op in ops]
+        dss = [op.datashape() for op in ops]
+
+        if instruction.lhs:
+            h.allocate(instruction.lhs.size())
+            ret = instruction(dds, dss)
+        else:
+            instruction(dds, dss)
+
+    h.finalize()
+    return ret
