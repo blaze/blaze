@@ -1,4 +1,9 @@
 from blaze.layouts import Layout
 
 class Simple(Layout):
-    pass
+
+    def change_coordinates(self):
+        pass
+
+    def change_coordinates(self):
+        pass
