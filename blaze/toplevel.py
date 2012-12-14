@@ -13,6 +13,18 @@ from blaze import carray, dshape as _dshape
 import numpy as np
 
 def open(uri=None):
+    """Open a Blaze object via an `uri` (Uniform Resource Identifier).
+    
+    Parameters
+    ----------
+    uri : str
+        Specifies the URI for the Blaze object.  It can be a regular file too.
+
+    Returns
+    -------
+    out : an Array object.
+
+    """
 
     if uri is None:
         source = CArraySource()
@@ -43,6 +55,18 @@ def open(uri=None):
 
 def zeros(dshape, params=None):
     """ Create an Array and fill it with zeros.
+
+    Parameters
+    ----------
+    dshape : str, blaze.dshape instance
+        Specifies the datashape of the outcome object.
+    params : blaze.params object
+        Any parameter supported by the backend library.
+
+    Returns
+    -------
+    out : an Array object.
+
     """
     if isinstance(dshape, basestring):
         dshape = _dshape(dshape)
@@ -58,6 +82,18 @@ def zeros(dshape, params=None):
 
 def ones(dshape, params=None):
     """ Create an Array and fill it with ones.
+
+    Parameters
+    ----------
+    dshape : str, blaze.dshape instance
+        Specifies the datashape of the outcome object.
+    params : blaze.params object
+        Any parameter supported by the backend library.
+
+    Returns
+    -------
+    out : an Array object.
+
     """
     if isinstance(dshape, basestring):
         dshape = _dshape(dshape)
@@ -73,6 +109,22 @@ def ones(dshape, params=None):
 
 def fromiter(iterable, dshape, params=None):
     """ Create an Array and fill it with values from `iterable`.
+
+    Parameters
+    ----------
+    iterable : iterable object
+        An iterable object providing data for the carray.
+    dshape : str, blaze.dshape instance
+        Specifies the datashape of the outcome object.  Only 1d shapes
+        are supported right now. When the `iterator` should return an
+        unknown number of items, a ``TypeVar`` can be used.
+    params : blaze.params object
+        Any parameter supported by the backend library.
+
+    Returns
+    -------
+    out : an Array object.
+
     """
     if isinstance(dshape, basestring):
         dshape = _dshape(dshape)
