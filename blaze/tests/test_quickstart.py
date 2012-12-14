@@ -23,12 +23,12 @@ def test_simple_persistence():
     shutil.rmtree(td)
 
 def test_ones():
-    from blaze import ones
+    from blaze import ones, params
 
     a = ones('10, float64', params=params(clevel=5))
 
 def test_fromiter():
-    from blaze import fromiter
+    from blaze import fromiter, params
 
     a = fromiter(xrange(10), 'x, float64', params=params(clevel=5))
 
