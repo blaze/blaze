@@ -161,16 +161,14 @@ def fromiter(iterable, dtype, count, **kwargs):
     dtype = np.dtype(dtype)
     if dtype.kind == "V":
         # A ctable
-        obj = ca.ctable(np.array([], dtype=dtype),
-                        expectedlen=expectedlen,
-                        **kwargs)
+        obj = ctable(np.array([], dtype=dtype),
+                     expectedlen=expectedlen, **kwargs)
         chunklen = sum(obj.cols[name].chunklen
                        for name in obj.names) // len(obj.names)
     else:
         # A carray
-        obj = ca.carray(np.array([], dtype=dtype),
-                        expectedlen=expectedlen,
-                        **kwargs)
+        obj = carray(np.array([], dtype=dtype),
+                     expectedlen=expectedlen, **kwargs)
         chunklen = obj.chunklen
 
     # Then fill it

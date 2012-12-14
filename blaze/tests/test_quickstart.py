@@ -22,6 +22,16 @@ def test_simple_persistence():
     # Remove everything under the temporary dir
     shutil.rmtree(td)
 
+def test_ones():
+    from blaze import ones
+
+    a = ones('10, float64', params=params(clevel=5))
+
+def test_fromiter():
+    from blaze import fromiter
+
+    a = fromiter(xrange(10), 'x, float64', params=params(clevel=5))
+
 def test_custom_dshape():
     from blaze import Array, RecordDecl
     from blaze import int32, string

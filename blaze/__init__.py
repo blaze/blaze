@@ -14,7 +14,7 @@ ndarray = NDArray
 dtype   = dshape
 
 from params import params
-from toplevel import open, zeros, ones
+from toplevel import open, zeros, ones, fromiter
 
 # Shorthand namespace dump
 from datashape.shorthand import *

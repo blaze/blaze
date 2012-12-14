@@ -7,7 +7,7 @@ from sources.sql import SqliteSource
 from sources.chunked import CArraySource
 
 from table import NDArray, Array
-from blaze.datashape.coretypes import from_numpy, to_numpy
+from blaze.datashape.coretypes import from_numpy, to_numpy, TypeVar, Fixed
 from blaze import carray, dshape as _dshape
 
 import numpy as np
@@ -69,6 +69,34 @@ def ones(dshape, params=None):
     else:
         source = CArraySource(carray.ones(shape, dtype, cparams=cparams),
                               params=params)
+        return Array(source)
+
+def fromiter(iterable, dshape, params=None):
+    """ Create an Array and fill it with values from `iterable`.
+    """
+    if isinstance(dshape, basestring):
+        dshape = _dshape(dshape)
+    shape, dtype = dshape.parameters[:-1], dshape.parameters[-1]
+    # Check the shape part
+    if len(shape) > 1:
+        raise ValueError("shape can be only 1-dimensional")
+    length = shape[0]
+    count = -1
+    if type(length) == TypeVar:
+        count = -1
+    elif type(length) == Fixed:
+        count = length.val
+
+    dtype = dtype.to_dtype()
+    # Now, create the Array itself (using the carray backend)
+    cparams, rootdir, format_flavor = to_cparams(params or _params())
+    if rootdir is not None:
+        carray.fromiter(iterable, dtype, count=count,
+                        rootdir=rootdir, cparams=cparams)
+        return open(rootdir)
+    else:
+        ica = carray.fromiter(iterable, dtype, count=count, cparams=cparams)
+        source = CArraySource(ica, params=params)
         return Array(source)
 
 def loadtxt(filetxt, storage):
