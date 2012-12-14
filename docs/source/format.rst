@@ -18,7 +18,8 @@ well as direct access to data (in the same way than RAM).
 
 5. And last but not least, the data should be easily 'shardable' for
 optimal behavior in distributed storage.  Providing a format that is
-already 'shared' by default would represent a big advantage for us.
+already 'sharded' by default would represent a big advantage for
+allowing spreading a Blaze object among different nodes.
 
 These points, in combination with a distributed filesystem, and
 combined with a system that would be aware of the physical topology of

@@ -81,3 +81,12 @@ Custom DShapes
     {name:string, max: int32, min: int32, mid: int32}
 
     >>> a = Table([('GOOG', 120, 153)], CustomStock)
+
+
+.. Uncomment this when a way to remove the 'toplevel' from description
+.. would be found...
+.. Top level functions
+.. ~~~~~~~~~~~~~~~~~~~
+
+.. .. automodule:: blaze.toplevel
+..    :members:
