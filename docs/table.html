@@ -74,7 +74,7 @@
 </div></blockquote>
 <dl class="class">
 <dt id="blaze.table.Array">
-<em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">Array</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em><big>)</big><a class="headerlink" href="#blaze.table.Array" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">Array</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.table.Array" title="Permalink to this definition">¶</a></dt>
 <dd><p>Manifest array, does not create a graph. Forces evaluation on every
 call.</p>
 <p>Parameters:</p>
@@ -106,7 +106,8 @@ possible.</td>
 <p>Usage:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;3, int32&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="p">(</span><span class="s">&#39;3, 3, int32&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="p">(</span><span class="s">&#39;3, int32&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <dl class="attribute">
@@ -120,6 +121,12 @@ Array.</p>
 <dt id="blaze.table.Array.datashape">
 <tt class="descname">datashape</tt><a class="headerlink" href="#blaze.table.Array.datashape" title="Permalink to this definition">¶</a></dt>
 <dd><p>Type deconstructor</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.table.Array.size">
+<tt class="descname">size</tt><a class="headerlink" href="#blaze.table.Array.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size of the Array.</p>
 </dd></dl>
 
 </dd></dl>
@@ -179,7 +186,7 @@ no assumptions can be made about the indices.</p>
 
 <dl class="class">
 <dt id="blaze.table.NDArray">
-<em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">NDArray</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em><big>)</big><a class="headerlink" href="#blaze.table.NDArray" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">NDArray</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.table.NDArray" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deferred array, operations on this array create a graph built
 around an ArrayNode.</p>
 <dl class="attribute">
@@ -193,6 +200,12 @@ Array.</p>
 <dt id="blaze.table.NDArray.datashape">
 <tt class="descname">datashape</tt><a class="headerlink" href="#blaze.table.NDArray.datashape" title="Permalink to this definition">¶</a></dt>
 <dd><p>Type deconstructor</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.table.NDArray.size">
+<tt class="descname">size</tt><a class="headerlink" href="#blaze.table.NDArray.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size of the NDArray.</p>
 </dd></dl>
 
 </dd></dl>
@@ -232,6 +245,12 @@ possible.</dd>
 <dt id="blaze.table.NDTable.datashape">
 <tt class="descname">datashape</tt><a class="headerlink" href="#blaze.table.NDTable.datashape" title="Permalink to this definition">¶</a></dt>
 <dd><p>Type deconstructor</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.table.NDTable.size">
+<tt class="descname">size</tt><a class="headerlink" href="#blaze.table.NDTable.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size of the NDTable.</p>
 </dd></dl>
 
 </dd></dl>

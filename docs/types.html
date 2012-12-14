@@ -232,6 +232,11 @@ datashape objects</p>
 <tt class="descname">composite</tt><em class="property"> = False</em><a class="headerlink" href="#blaze.datashape.coretypes.DataShape.composite" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.DataShape.shape">
+<tt class="descname">shape</tt><a class="headerlink" href="#blaze.datashape.coretypes.DataShape.shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -271,6 +276,11 @@ sense of of just an integer value to a constructor.</p>
 </pre></div>
 </div>
 </dd></dl>
+
+<dl class="exception">
+<dt id="blaze.datashape.coretypes.NotShaped">
+<em class="property">exception </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">NotShaped</tt><a class="headerlink" href="#blaze.datashape.coretypes.NotShaped" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="class">
 <dt id="blaze.datashape.coretypes.Null">
@@ -369,6 +379,11 @@ several but fixed datashapes.</p>
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="blaze.datashape.coretypes.broadcast">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">broadcast</tt><big>(</big><em>*operands</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.broadcast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="blaze.datashape.coretypes.doublequote">
 <tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">doublequote</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.doublequote" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -442,8 +457,7 @@ dimensions</p>
 <dt id="blaze.datashape.coretypes.promote">
 <tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">promote</tt><big>(</big><em>*operands</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.promote" title="Permalink to this definition">¶</a></dt>
 <dd><p>Take an arbitrary number of graph nodes and produce the promoted
-dtype by discarding all shape information and just looking at the
-measures.</p>
+dtype ( and shape in the case of Arrays ) in Numpy Fashion.</p>
 <div class="highlight-python"><pre>5, 5,  | int   |
 2, 5,  | int   |
 1, 3,  | float |</pre>

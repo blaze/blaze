@@ -28,7 +28,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Types" href="types.html" />
+    <link rel="next" title="Core Types" href="types.html" />
     <link rel="prev" title="Memory Layout" href="memory.html" /> 
   </head>
   <body>
@@ -46,7 +46,7 @@
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="types.html">Types</a>&#160;&#160;»
+        <a href="types.html">Core Types</a>&#160;&#160;»
         </p>
 
       </div>
@@ -68,7 +68,8 @@ well as direct access to data (in the same way than RAM).</p>
 </ol>
 <p>5. And last but not least, the data should be easily &#8216;shardable&#8217; for
 optimal behavior in distributed storage.  Providing a format that is
-already &#8216;shared&#8217; by default would represent a big advantage for us.</p>
+already &#8216;sharded&#8217; by default would represent a big advantage for
+allowing spreading a Blaze object among different nodes.</p>
 <p>These points, in combination with a distributed filesystem, and
 combined with a system that would be aware of the physical topology of
 the underlying infrastructure would allow to largely avoid the need
