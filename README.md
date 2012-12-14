@@ -13,8 +13,10 @@ Blaze is a work in progress at the moment. The code is quite a distance
 from feature complete. The code is released in an effort to start a
 public discussion with our end users and community.
 
-Blaze is approaching being a usable library, but does not have runnable
-components at the moment.
+Documentation
+-------------
+
+* [0.1 Dev Docs](http://blaze.pydata.org/docs/)
 
 Installing
 ----------
