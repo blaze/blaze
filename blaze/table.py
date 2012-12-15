@@ -20,7 +20,7 @@ from layouts.scalar import ChunkedL
 from layouts.query import retrieve, write
 
 from expr.graph import ArrayNode, injest_iterable
-from expr import metadata as md
+import metadata as md
 
 from sources.chunked import CArraySource
 from sources.canonical import ArraySource
