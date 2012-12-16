@@ -7,11 +7,11 @@ annotations stand for metadata. For example, an Array.
 
 **Type**::
 
-    Array(2928121){dshape('2,2,int32')}
+    Array(2928121){dshape("2,2,int32")}
 
 **Type and Metadata**::
 
-    Array(2928121){dshape('2,2,int32'), contigious, corder}
+    Array(2928121){dshape("2,2,int32"), contigious, corder}
 
 Nevertheless, it is still a strict subset of ATerm so it can be parsed
 and manipulated by Stratego rewriters.
