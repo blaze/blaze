@@ -28,9 +28,10 @@ Overview
    install
    quickstart
    overview
-   datashape
-   memory
    format
+   memory
+   datashape
+   typechecker
 
 API Reference
 ~~~~~~~~~~~~~
@@ -38,6 +39,7 @@ API Reference
 .. toctree::
    :maxdepth: 1
 
+   toplevel
    types
    persistence
    aterm
@@ -45,9 +47,7 @@ API Reference
    sources
    graph
    ops
-   typechecker
    table
-   execution
    releases
    legal
 
