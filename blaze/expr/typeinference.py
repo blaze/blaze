@@ -325,15 +325,56 @@ def pprint(ty):
 # Toplevel
 #------------------------------------------------------------------------
 
-def atnf(self):
-    """ algebraic type normal form """
-    pass
-
 def infer(env, term):
+    """
+    Parameters
+    ----------
+    env : dict
+        environment of lexically-bound variables with types
+    term: object
+        environment of lexically-bound variables with types
+
+    Returns
+    -------
+
+    Usage
+    -----
+    """
     t = tyeval(term, env)
     if DEBUG:
         print ('%s :: %s' % (str(term), pprint(t)))
     return t
+
+def beta(node):
+    """ beta reduction"""
+    pass
+
+def eta(node):
+    """ eta reduction"""
+    pass
+
+def atnf(node):
+    """ algebraic type normal form
+
+    This is confluent until unless we permit recursive types, which we
+    don't::
+
+        (a + (b + c))  ~>  ((a + b) + c)
+        (a * (b * c))  ~>  ((a * b) * c)
+        ((a + b) * c)  ~>  (a * c) + (b * c)
+    """
+
+    if isinstance(node, Atom):
+        return node
+
+    elif isinstance(node, App):
+        if node.fn == 'sum':
+            raise NotImplementedError
+        elif node.fn == 'product':
+            raise NotImplementedError
+
+    elif isinstance(node, Lambda):
+        return atnf(node.body)
 
 #------------------------------------------------------------------------
 # Syntax Buidlers
@@ -351,7 +392,8 @@ def lam(vars, body):
         body = Lambda(v, body)
     return body
 
-sumt = lambda x,y: App(App(Atom("sum"), x), y)
+def sumt(x,y):
+    return App(App(Atom("sum"), x), y)
 
 # disjoint unions
 def union(*xs):
@@ -361,8 +403,8 @@ def union(*xs):
 def product(x,y):
     return App(App(Atom("product"), x), y)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     var1 = TypeVar()
     var2 = TypeVar()
 
@@ -381,10 +423,8 @@ if __name__ == '__main__':
 
     # -- Example 1 --
 
-    #x = lam(['x', 'y'], product(Atom('x'), Atom('y'))),
     x = lam(['x', 'y'], product(Atom('x'), Atom('y')))
     inferred = infer(env,x)
-
     assert pprint(inferred) == '(a -> (b -> (b x a)))'
 
     # -- Example 2 --
@@ -400,7 +440,6 @@ if __name__ == '__main__':
 
     x = app(Atom("product"), [Atom("?"), Atom("1")])
     inferred = infer(env, x)
-
     assert pprint(inferred) == '(? x int)'
 
     # -- Example 3 --

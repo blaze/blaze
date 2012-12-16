@@ -13,7 +13,7 @@ from blaze.datashape.coretypes import int_, float_, string, top, dynamic
 
 # Type checking and unification
 from blaze.datashape.unification import unify
-from blaze.expr.typechecker import tyeval, typesystem
+from blaze.expr.typechecker import typesystem
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
