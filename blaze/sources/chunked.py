@@ -4,6 +4,7 @@ in-memory and on-disk storage.
 """
 
 from blaze import carray
+from blaze.carray.ctable import ctable
 
 from blaze.sources.descriptors.byteprovider import ByteProvider
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
@@ -19,18 +20,32 @@ import numpy as np
 #------------------------------------------------------------------------
 
 class CArraySource(ByteProvider):
-    """ Chunked array is the default storage engine for Blaze arrays
-    when no layout is specified. """
+    """
+    A chunked array source.
+
+    Parameters
+    ----------
+    data : object (optional)
+    dshape: dshape
+        The datashape describing the array
+    params : params
+        Specifies the parameters of the chunked array
+
+           * clevel - compression level
+           * shuffle - shuffle filter
+           * format_flavor - ``monolithic`` | ``chunked``
+           * storage - The directory hosting the carray
+
+    Returns
+    -------
+    out : a carray/ctable object or None (if not objects are found)
+    """
 
     read_capabilities  = CHUNKED
     write_capabilities = CHUNKED
     access_capabilities = ACCESS_ALLOC
 
     def __init__(self, data=None, dshape=None, params=None):
-        """ CArray object passed directly into the constructor,
-        ostensibly this is just a thin wrapper that consumes a
-        reference.
-        """
         # need at least one of the three
         assert (data is not None) or (dshape is not None) or \
                (params.get('storage'))
@@ -40,8 +55,7 @@ class CArraySource(ByteProvider):
         if params:
             cparams, rootdir, format_flavor = to_cparams(params)
         else:
-            rootdir = None
-            cparams = None
+            rootdir,cparams = None, None
 
         if dshape:
             dtype = to_numpy(dshape)
@@ -148,27 +162,50 @@ class CTableSource(ByteProvider):
     write_capabilities = CHUNKED
     access_capabilities = ACCESS_ALLOC
 
-    def __init__(self, data, rootdir=None):
-        """ CArray object passed directly into the constructor,
-        ostensibly this is just a thin wrapper that consumes a
-        reference.
-        """
-        self.ca = carray.ctable(np.empty(data, dtype="i4,f8"))
+    def __init__(self, data=None, dshape=None, params=None):
+        # need at least one of the three
+        assert (data is not None) or (dshape is not None) or \
+               (params.get('storage'))
+
+        # If no storage backend then we need to allocate a
+        # in-memory container
+        if not params.storage:
+            if isinstance(data, list):
+                shape, dtype = to_numpy(dshape)
+                data = np.array(data, dtype)
+            else:
+                shape, dtype = to_numpy(dshape)
+                data = np.empty(shape, dtype)
+
+        if params:
+            cparams, rootdir, format_flavor = to_cparams(params)
+        else:
+            rootdir,cparams = None, None
+
+        if dshape:
+            dtype = to_numpy(dshape)
+            self.ca = ctable(data, dtype, rootdir=rootdir)
+        else:
+            self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
 
     # Descriptors
     # -----------
 
     def read_desc(self):
-        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca)
+        # TODO
+        return CArrayDataDescriptor('ctable_dd', self.ca.nbytes, self.ca)
+
+    # Return the layout of the dataa
+    def default_layout(self):
+        # TODO: this isn't true
+        return ChunkedL(self, cdimension=0)
+
+    @property
+    def partitions(self):
+        return self.ca.partitions
 
     @staticmethod
     def infer_datashape(source):
-        """
-        The user has only provided us with a Python object ( could be
-        a buffer interface, a string, a list, list of lists, etc) try
-        our best to infer what the datashape should be in the context of
-        what it would mean as a CTable.
-        """
         if isinstance(source, np.ndarray):
             return from_numpy(source.shape, source.dtype)
         elif isinstance(source, list):
@@ -178,14 +215,15 @@ class CTableSource(ByteProvider):
         else:
             return dynamic
 
+    @staticmethod
+    def check_datashape(source, given_dshape):
+        # TODO
+        return True
+
     def repr_data(self):
         return carray.table2string(self.ca)
 
     def read(self, elt, key):
-        """ CArray extension supports reading directly from high-level
-        coordinates """
-        # disregards elt since this logic is implemented lower
-        # level in the Cython extension _getrange
         return self.ca.__getitem__(key)
 
     def __repr__(self):

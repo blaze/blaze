@@ -33,7 +33,7 @@ def generic_repr(name, obj, deferred):
 
         Array(3, int32)
           values   := [Numpy(ptr=60597776, dtype=int64, shape=(3,))];
-          metadata := Meta(ECLASS=1, );
+          metadata := [contigious]
           layout   := Identity;
 
     """
@@ -49,7 +49,7 @@ def generic_repr(name, obj, deferred):
         if _show_details:
             header = "%s\n" % (name)
             header += "  datashape := %s \n" % str(obj._datashape)
-            header += "  values    := %s \n"  % list(obj.backends)
+            header += "  values    := %s \n"  % list(obj.space)
             header += "  metadata  := %s \n"  % obj._metadata
             header += "  layout    := %s \n"  % obj._layout.desc
         else:

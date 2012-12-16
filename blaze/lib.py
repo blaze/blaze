@@ -4,6 +4,8 @@ from math import sqrt
 from blaze.datashape import dshape
 from blaze.rts.funcs import PythonFn, install, lift
 from blaze.engine import executors
+from blaze import metadata as md
+
 from numexpr import evaluate
 
 from blaze.expr.ops import array_like
@@ -22,7 +24,6 @@ zerocost = lambda term: 0
 #------------------------------------------------------------------------
 # Function Library
 #------------------------------------------------------------------------
-
 
 # Anatomy of a Blaze Function Def
 # -------------------------------
@@ -65,8 +66,8 @@ def dtw(d1, d2, s, n):
     return ucr.dtw(d1, d2, s, n)
 
 @lift('dot(Array(), Array())', '(a,a) -> a', {
-    'types' : {'a': array_like},
-    'metadata': {},
+    'types'    : {'a' : array_like},
+    'metadata' : {'a' : md.c_contigious},
 })
 def dot(a1, a2):
     return linalg.dot(a1, a2)
@@ -83,6 +84,7 @@ def add(a, b):
 })
 def multiply(a, b):
     return np.multipy(a, b)
+
 
 @lift('Pow(<term>,<term>)', '(a,a) -> a', {
     'types'   : {'a': array_like},
