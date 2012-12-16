@@ -6,20 +6,20 @@ Blaze is designed to work with data that is both in memory and disk in
 a transparent way.  The goals of the formats described here are:
 
 1. Allow to work with data directly on disk, exactly on the same way
-that data in memory.
+   that data in memory.
 
 2. The persistence layer should support the same access capabilities
-than Blaze objects including: modifying, appending and removing data, as
-well as direct access to data (in the same way than RAM).
+   than Blaze objects including: modifying, appending and removing data,
+   as  well as direct access to data (in the same way than RAM).
 
 3. Transparent data compression must be possible.
 
 4. User metadata addition must be possible too.
 
 5. And last but not least, the data should be easily 'shardable' for
-optimal behavior in distributed storage.  Providing a format that is
-already 'sharded' by default would represent a big advantage for
-allowing spreading a Blaze object among different nodes.
+   optimal behavior in distributed storage.  Providing a format that is
+   already 'sharded' by default would represent a big advantage for
+   allowing spreading a Blaze object among different nodes.
 
 These points, in combination with a distributed filesystem, and
 combined with a system that would be aware of the physical topology of
