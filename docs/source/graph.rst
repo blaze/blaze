@@ -40,34 +40,5 @@ context of an application binding.
 
 The domain and codomain of an function are fixed by definition.
 
-.. ditaa::
-
-                +---+
-           Dom -| f |-> Cod
-                +---+
-
-.. ditaa::
-
-              +---------+
-    a  ----+  |         |
-           |  |   Op    |
-    b  ----+--|---------|--> d
-           |  |         |
-    c  ----+  |         |
-              +---------+
-
-.. ditaa::
-
-    Dom ---------------------> Cod
-
-             +------------+
-             |    App     |
-    ty --+   |  +------+  |
-         |   |  |      |  |
-    ty --+---|--| Op   |--|--> d
-         |   |  |      |  |
-    ty --+   |  +------+  |
-             +------------+
-
 .. automodule:: blaze.expr.graph
    :members:
