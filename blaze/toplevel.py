@@ -14,7 +14,7 @@ import numpy as np
 
 def open(uri=None):
     """Open a Blaze object via an `uri` (Uniform Resource Identifier).
-    
+
     Parameters
     ----------
     uri : str
