@@ -479,15 +479,7 @@ greater than the lower, but may also be unbounded ( i.e. <tt class="docutils lit
 <p>Ranges are sum types over shape instead of data.</p>
 <p>A case where a <tt class="docutils literal"><span class="pre">Range</span></tt> has no upper bound signifies a potentially infinite
 <strong>stream</strong> of values. Specialized kernels are needed to deal with data
-of this type. Stream is implemented as an alias type with the
-upper bound of Range being <tt class="docutils literal"><span class="pre">inf</span></tt>:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Stream</span><span class="o">,</span> <span class="n">int32</span>
-</pre></div>
-</div>
-<p>This instance will expand out into:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">inf</span><span class="o">),</span> <span class="n">int32</span>
-</pre></div>
-</div>
+of this type.</p>
 </div>
 </div>
 

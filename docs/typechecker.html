@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Type Checking &mdash; Blaze 0.1-dev documentation</title>
+    <title>Type Inference &mdash; Blaze 0.1-dev documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -28,8 +28,8 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Tables" href="table.html" />
-    <link rel="prev" title="Operators" href="ops.html" /> 
+    <link rel="next" title="Toplevel" href="toplevel.html" />
+    <link rel="prev" title="Datashape" href="datashape.html" /> 
   </head>
   <body>
       <div class="header">
@@ -42,67 +42,46 @@
       <div class="topnav">
       
         <p>
-        «&#160;&#160;<a href="ops.html">Operators</a>
+        «&#160;&#160;<a href="datashape.html">Datashape</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="table.html">Tables</a>&#160;&#160;»
+        <a href="toplevel.html">Toplevel</a>&#160;&#160;»
         </p>
 
       </div>
       <div class="content">
         
         
-  <div class="section" id="type-checking">
-<h1>Type Checking<a class="headerlink" href="#type-checking" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="stages">
-<h2>Stages<a class="headerlink" href="#stages" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
-<dt>::</dt>
-<dd><dl class="first docutils">
-<dt>Graph Construction</dt>
-<dd><div class="first line-block">
-<div class="line"><br /></div>
+  <div class="section" id="type-inference">
+<h1>Type Inference<a class="headerlink" href="#type-inference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="type-variables">
+<h2>Type Variables<a class="headerlink" href="#type-variables" title="Permalink to this headline">¶</a></h2>
+<p>Type variables are free paramaters standing for type or ranges of types.
+A concrete type is fixed type in the base type system.</p>
+<p>The goal of inference is to resolve the relationships between type
+variables and concrete variables within the context of a of an
+expression but without the need for explicit annotation.</p>
 </div>
-<p class="last">v</p>
-</dd>
-<dt>Constraint Generation</dt>
-<dd><div class="first line-block">
-<div class="line"><br /></div>
+<div class="section" id="signatures">
+<h2>Signatures<a class="headerlink" href="#signatures" title="Permalink to this headline">¶</a></h2>
+<p>The signature:</p>
+<div class="highlight-python"><pre>(a, b) -&gt; c</pre>
 </div>
-<p class="last">v</p>
-</dd>
-<dt>Unification</dt>
-<dd><div class="first line-block">
-<div class="line"><br /></div>
+<p>stands for a function of two arguments, the first of type <tt class="docutils literal"><span class="pre">a</span></tt>, the second
+of type <tt class="docutils literal"><span class="pre">b</span></tt> and returning type <tt class="docutils literal"><span class="pre">c</span></tt>.</p>
+<p>Would be this in Python 3 signature notation:</p>
+<div class="highlight-python"><pre>def (x : a, y : b) -&gt; c:
+    pass</pre>
 </div>
-<p class="last">v</p>
-</dd>
-<dt>Annotation</dt>
-<dd><div class="first line-block">
-<div class="line"><br /></div>
 </div>
-<p class="last">v</p>
-</dd>
-<dt>Execution Plan</dt>
-<dd><div class="first line-block">
-<div class="line"><br /></div>
-</div>
-<p class="last">v</p>
-</dd>
-</dl>
-<p class="last">Dispatch</p>
-</dd>
-</dl>
-<span class="target" id="module-blaze.expr.typechecker"></span><p>Naive type inference algorithm for Blaze expressions.</p>
-<p>Some notes on notation:</p>
 <div class="section" id="type-system">
-<h3>Type System<a class="headerlink" href="#type-system" title="Permalink to this headline">¶</a></h3>
-<p>A collection of three functions:</p>
+<h2>Type System<a class="headerlink" href="#type-system" title="Permalink to this headline">¶</a></h2>
+<p>A type system in Blaze is collection of three functions:</p>
 <div class="highlight-python"><pre>unifier :: (ty, ty) -&gt; ty
 typeof :: value -&gt; ty</pre>
 </div>
-<p>And a collection of type objects with two special terms:</p>
+<p>And a collection of type objects with two special types:</p>
 <div class="highlight-python"><pre>(?)   - dynamic type
 (top) - top type</pre>
 </div>
@@ -110,79 +89,123 @@ typeof :: value -&gt; ty</pre>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">typesystem</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;TypeSystem&#39;</span><span class="p">,</span> <span class="s">&#39;unifier, top, dynamic, typeof&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>The type system over Blaze expression expressions is referred to
+as <tt class="docutils literal"><span class="pre">BlazeT</span></tt>.</p>
 </div>
 <div class="section" id="dynamic">
-<h3>Dynamic<a class="headerlink" href="#dynamic" title="Permalink to this headline">¶</a></h3>
+<h2>Dynamic<a class="headerlink" href="#dynamic" title="Permalink to this headline">¶</a></h2>
 <p>A dynamic type written as ( <tt class="docutils literal"><span class="pre">?</span></tt> ). It allows explicit down casting and
 upcasting from any type to any type. In Blaze we use this to represent
 opaque types that afford no specialization.</p>
 </div>
-<div class="section" id="signatures">
-<h3>Signatures<a class="headerlink" href="#signatures" title="Permalink to this headline">¶</a></h3>
-<p>The signature:</p>
-<div class="highlight-python"><pre>(a, b) -&gt; c</pre>
-</div>
-<p>Stands for a function of two arguments, the first of type a, the second
-of type b and returning a type c.</p>
-<p>Would be this in Python 3 signature notation:</p>
-<div class="highlight-python"><pre>def (x : a, y : b) -&gt; c:
-    pass</pre>
-</div>
-</div>
 <div class="section" id="rigid-free">
-<h3>Rigid &amp; Free<a class="headerlink" href="#rigid-free" title="Permalink to this headline">¶</a></h3>
-<p>Rigid variables are those that appear in multiple times
-in the signature:</p>
-<div class="highlight-python"><pre>f : a -&gt; b -&gt; a -&gt; c
+<h2>Rigid &amp; Free<a class="headerlink" href="#rigid-free" title="Permalink to this headline">¶</a></h2>
+<p>Rigid type variables are those that appear in multiple times in the
+signature:</p>
+<div class="highlight-python"><pre>f : (a -&gt; b -&gt; a) -&gt; c
 
 Rigid : [a]
 Free  : [b,c]</pre>
 </div>
 </div>
 <div class="section" id="context">
-<h3>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h3>
+<h2>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
 <p>A context records the lexically-bound variables during the progression
 of the type inference algorithm. It is a stateful dict passed through
 the unifiers.</p>
+</div>
+<div class="section" id="constraints">
+<h2>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<div class="section" id="module-blaze.expr.typechecker">
+<span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.expr.typechecker" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="blaze.expr.typechecker.tyeval">
-<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">tyeval</tt><big>(</big><em>signature</em>, <em>operands</em>, <em>domc</em>, <em>system</em>, <em>commutative=False</em><big>)</big><a class="headerlink" href="#blaze.expr.typechecker.tyeval" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
-<blockquote>
-<div><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">signature:</th><td class="field-body">String containing the type signature.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">operands:</th><td class="field-body">The operands to type check against signature.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">domc:</th><td class="field-body">The constraints on the space domain to traverse.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">system:</th><td class="field-body">The type system over which to evaluate.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">commutative:</th><td class="field-body">Use the commutative checker which attempts to eval all
-permutations of domains to find a satisfiable one.</td>
-</tr>
-</tbody>
-</table>
-</div></blockquote>
-<p>Returns:</p>
+<dt id="blaze.expr.typechecker.infer">
+<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">infer</tt><big>(</big><em>signature</em>, <em>expression</em>, <em>constrs</em>, <em>system</em>, <em>commutative=False</em><big>)</big><a class="headerlink" href="#blaze.expr.typechecker.infer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type inference</p>
+<dl class="docutils">
+<dt>signature <span class="classifier-delimiter">:</span> <span class="classifier">str,</span></dt>
+<dd>String containing the type signature.</dd>
+<dt>expression <span class="classifier-delimiter">:</span> <span class="classifier">object</span></dt>
+<dd>expression to resolve types of</dd>
+<dt>constrs <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>The constraints/bounds on the typevars signature.</dd>
+<dt>system <span class="classifier-delimiter">:</span> <span class="classifier">TypeSystem</span></dt>
+<dd>The type system over which to evaluate.</dd>
+<dt>commutative <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Use the commutative checker which attempts to eval all
+permutations of domains in commutative operators to
+find a judgement.</dd>
+</dl>
 <blockquote>
 <div>The context satisfying the given signature and operands with
 the constraints.</div></blockquote>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="blaze.expr.typechecker.typejudgement">
-<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typejudgement</tt><a class="headerlink" href="#blaze.expr.typechecker.typejudgement" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">Judgement</span></tt></p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="blaze.expr.typechecker.typesystem">
 <tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typesystem</tt><a class="headerlink" href="#blaze.expr.typechecker.typesystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">TypeSystem</span></tt></p>
+</dd></dl>
+
+<span class="target" id="module-blaze.expr.typeinference"></span><dl class="function">
+<dt id="blaze.expr.typeinference.atnf">
+<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">atnf</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.atnf" title="Permalink to this definition">¶</a></dt>
+<dd><p>algebraic type normal form</p>
+<p>This is confluent until unless we permit recursive types, which we
+don&#8217;t:</p>
+<div class="highlight-python"><pre>(a + (b + c))  ~&gt;  ((a + b) + c)
+(a * (b * c))  ~&gt;  ((a * b) * c)
+((a + b) * c)  ~&gt;  (a * c) + (b * c)</pre>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.expr.typeinference.beta">
+<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">beta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.beta" title="Permalink to this definition">¶</a></dt>
+<dd><p>beta reduction</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.expr.typeinference.eta">
+<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">eta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.eta" title="Permalink to this definition">¶</a></dt>
+<dd><p>eta reduction</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.expr.typeinference.infer">
+<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">infer</tt><big>(</big><em>env</em>, <em>term</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.infer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>env <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>environment of lexically-bound variables with types</dd>
+<dt>term: object</dt>
+<dd>environment of lexically-bound variables with types</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-blaze.expr.signatures"></span><p>Convert between type signatures between Blaze and NumPy</p>
+<dl class="docutils">
+<dt>::</dt>
+<dd>NumPy: ii -&gt; i
+Blaze: (a,a) -&gt; a</dd>
+</dl>
+<dl class="function">
+<dt id="blaze.expr.signatures.sig_parse">
+<tt class="descclassname">blaze.expr.signatures.</tt><tt class="descname">sig_parse</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.signatures.sig_parse" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>s <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>signature string to be parsed</dd>
+</dl>
+<dl class="docutils">
+<dt>out <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
+<dd>outputted variable strings</dd>
+</dl>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;(a,a) -&gt; a&#39;</span><span class="p">)</span>
+<span class="go">([SVar(a), SVar(a)], [SVar(a)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;ii-&gt;i&#39;</span><span class="p">)</span>
+<span class="go">([SVar(i), SVar(i)], [SVar(y)])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </div>

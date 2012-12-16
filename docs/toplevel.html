@@ -1,0 +1,129 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Toplevel &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Core Types" href="types.html" />
+    <link rel="prev" title="Type Inference" href="typechecker.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="typechecker.html">Type Inference</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="types.html">Core Types</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-blaze.toplevel">
+<span id="toplevel"></span><h1>Toplevel<a class="headerlink" href="#module-blaze.toplevel" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="blaze.toplevel.fromiter">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">fromiter</tt><big>(</big><em>iterable</em>, <em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.fromiter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an Array and fill it with values from <cite>iterable</cite>.</p>
+<dl class="docutils">
+<dt>iterable <span class="classifier-delimiter">:</span> <span class="classifier">iterable object</span></dt>
+<dd>An iterable object providing data for the carray.</dd>
+<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
+<dd>Specifies the datashape of the outcome object.  Only 1d shapes
+are supported right now. When the <cite>iterator</cite> should return an
+unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVar</span></tt> can be used.</dd>
+<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
+<dd>Any parameter supported by the backend library.</dd>
+</dl>
+<p>out : an Array object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.loadtxt">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">loadtxt</tt><big>(</big><em>filetxt</em>, <em>storage</em><big>)</big><a class="headerlink" href="#blaze.toplevel.loadtxt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert txt file into Blaze native format</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.ones">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">ones</tt><big>(</big><em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.ones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an Array and fill it with ones.</p>
+<dl class="docutils">
+<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
+<dd>Specifies the datashape of the outcome object.</dd>
+<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
+<dd>Any parameter supported by the backend library.</dd>
+</dl>
+<p>out : an Array object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.open">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">open</tt><big>(</big><em>uri=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a Blaze object via an <cite>uri</cite> (Uniform Resource Identifier).</p>
+<dl class="docutils">
+<dt>uri <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Specifies the URI for the Blaze object.  It can be a regular file too.</dd>
+</dl>
+<p>out : an Array object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.zeros">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">zeros</tt><big>(</big><em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.zeros" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an Array and fill it with zeros.</p>
+<dl class="docutils">
+<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
+<dd>Specifies the datashape of the outcome object.</dd>
+<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
+<dd>Any parameter supported by the backend library.</dd>
+</dl>
+<p>out : an Array object.</p>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

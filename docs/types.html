@@ -29,7 +29,7 @@
     <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
     <link rel="next" title="Persistence" href="persistence.html" />
-    <link rel="prev" title="Persistent formats" href="format.html" /> 
+    <link rel="prev" title="Type Inference" href="typechecker.html" /> 
   </head>
   <body>
       <div class="header">
@@ -42,7 +42,7 @@
       <div class="topnav">
       
         <p>
-        «&#160;&#160;<a href="format.html">Persistent formats</a>
+        «&#160;&#160;<a href="typechecker.html">Type Inference</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
@@ -277,11 +277,6 @@ sense of of just an integer value to a constructor.</p>
 </div>
 </dd></dl>
 
-<dl class="exception">
-<dt id="blaze.datashape.coretypes.NotShaped">
-<em class="property">exception </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">NotShaped</tt><a class="headerlink" href="#blaze.datashape.coretypes.NotShaped" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="class">
 <dt id="blaze.datashape.coretypes.Null">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Null</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Null" title="Permalink to this definition">¶</a></dt>
@@ -379,11 +374,6 @@ several but fixed datashapes.</p>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="blaze.datashape.coretypes.broadcast">
-<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">broadcast</tt><big>(</big><em>*operands</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.broadcast" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
 <dt id="blaze.datashape.coretypes.doublequote">
 <tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">doublequote</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.doublequote" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -457,7 +447,8 @@ dimensions</p>
 <dt id="blaze.datashape.coretypes.promote">
 <tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">promote</tt><big>(</big><em>*operands</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.promote" title="Permalink to this definition">¶</a></dt>
 <dd><p>Take an arbitrary number of graph nodes and produce the promoted
-dtype ( and shape in the case of Arrays ) in Numpy Fashion.</p>
+dtype by discarding all shape information and just looking at the
+measures.</p>
 <div class="highlight-python"><pre>5, 5,  | int   |
 2, 5,  | int   |
 1, 3,  | float |</pre>
