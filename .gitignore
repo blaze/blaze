@@ -69,8 +69,12 @@ nosetests.xml
 
 # Cython Extensions
 blaze/carray/*.[ch]
+blaze/cutils.c
 blaze/engine/*.[ch]
 blaze/expr/*.[ch]
+blaze/sources/descriptors/lldescriptors.[ch]
+blaze/sources/descriptors/llindexers.c
+blaze/ts/ucr_dtw/ucr.c
 
 # Sphinx Docs
 docs/_build
