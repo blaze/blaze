@@ -56,6 +56,15 @@ Disk Backed Array
     [[ 0.  0.]
      [ 0.  0.]]
 
+Iterators
+~~~~~~~~~
+
+::
+
+
+    from blaze import fromiter, params
+    a = fromiter(xrange(10), 'x, float64', params=params(clevel=5))
+
 
 Custom DShapes
 ~~~~~~~~~~~~~~
@@ -82,6 +91,8 @@ Custom DShapes
 
     >>> a = Table([('GOOG', 120, 153)], CustomStock)
 
+
+.. XXX: Added a dedicated toplevel page
 
 .. Uncomment this when a way to remove the 'toplevel' from description
 .. would be found...
