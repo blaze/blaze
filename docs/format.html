@@ -28,8 +28,8 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Type Inference" href="typechecker.html" />
-    <link rel="prev" title="Memory Layout" href="memory.html" /> 
+    <link rel="next" title="Memory Layout" href="memory.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
   </head>
   <body>
       <div class="header">
@@ -42,11 +42,11 @@
       <div class="topnav">
       
         <p>
-        «&#160;&#160;<a href="memory.html">Memory Layout</a>
+        «&#160;&#160;<a href="overview.html">Overview</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="typechecker.html">Type Inference</a>&#160;&#160;»
+        <a href="memory.html">Memory Layout</a>&#160;&#160;»
         </p>
 
       </div>
@@ -57,19 +57,19 @@
 <h1>Persistent formats<a class="headerlink" href="#persistent-formats" title="Permalink to this headline">¶</a></h1>
 <p>Blaze is designed to work with data that is both in memory and disk in
 a transparent way.  The goals of the formats described here are:</p>
-<p>1. Allow to work with data directly on disk, exactly on the same way
-that data in memory.</p>
-<p>2. The persistence layer should support the same access capabilities
-than Blaze objects including: modifying, appending and removing data, as
-well as direct access to data (in the same way than RAM).</p>
-<ol class="arabic simple" start="3">
+<ol class="arabic simple">
+<li>Allow to work with data directly on disk, exactly on the same way
+that data in memory.</li>
+<li>The persistence layer should support the same access capabilities
+than Blaze objects including: modifying, appending and removing data,
+as  well as direct access to data (in the same way than RAM).</li>
 <li>Transparent data compression must be possible.</li>
 <li>User metadata addition must be possible too.</li>
-</ol>
-<p>5. And last but not least, the data should be easily &#8216;shardable&#8217; for
+<li>And last but not least, the data should be easily &#8216;shardable&#8217; for
 optimal behavior in distributed storage.  Providing a format that is
 already &#8216;sharded&#8217; by default would represent a big advantage for
-allowing spreading a Blaze object among different nodes.</p>
+allowing spreading a Blaze object among different nodes.</li>
+</ol>
 <p>These points, in combination with a distributed filesystem, and
 combined with a system that would be aware of the physical topology of
 the underlying infrastructure would allow to largely avoid the need

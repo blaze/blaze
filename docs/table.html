@@ -28,7 +28,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Execution" href="execution.html" />
+    <link rel="next" title="Release Notes" href="releases.html" />
     <link rel="prev" title="Operators" href="ops.html" /> 
   </head>
   <body>
@@ -46,7 +46,7 @@
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="execution.html">Execution</a>&#160;&#160;»
+        <a href="releases.html">Release Notes</a>&#160;&#160;»
         </p>
 
       </div>
@@ -212,29 +212,11 @@ Array.</p>
 
 <dl class="class">
 <dt id="blaze.table.NDTable">
-<em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">NDTable</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>index=None</em>, <em>metadata=None</em><big>)</big><a class="headerlink" href="#blaze.table.NDTable" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">NDTable</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.table.NDTable" title="Permalink to this definition">¶</a></dt>
 <dd><p>The base NDTable. Indexable contains the indexing logic for
 how to access elements, while ArrayNode contains the graph
 related logic for building expression trees with this table
 as an element.</p>
-<p>Parameters:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>obj <span class="classifier-delimiter">:</span> <span class="classifier">A list of byte providers, other NDTables or</span></dt>
-<dd>a Python list.</dd>
-</dl>
-</div></blockquote>
-<p>Optional:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>datashape <span class="classifier-delimiter">:</span> <span class="classifier">Manual datashape specification for the table,</span></dt>
-<dd>if None then shape will be inferred if
-possible.</dd>
-<dt>index <span class="classifier-delimiter">:</span> <span class="classifier">The index for the datashape and all nested</span></dt>
-<dd>structures, if None then AutoIndex is used.</dd>
-</dl>
-<p>metadata  : Explicit metadata annotation.</p>
-</div></blockquote>
 <dl class="attribute">
 <dt id="blaze.table.NDTable.backends">
 <tt class="descname">backends</tt><a class="headerlink" href="#blaze.table.NDTable.backends" title="Permalink to this definition">¶</a></dt>

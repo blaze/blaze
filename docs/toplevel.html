@@ -93,13 +93,24 @@ unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVa
 
 <dl class="function">
 <dt id="blaze.toplevel.open">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">open</tt><big>(</big><em>uri=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.open" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">open</tt><big>(</big><em>uri=None</em>, <em>mode='a'</em><big>)</big><a class="headerlink" href="#blaze.toplevel.open" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open a Blaze object via an <cite>uri</cite> (Uniform Resource Identifier).</p>
 <dl class="docutils">
 <dt>uri <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
 <dd>Specifies the URI for the Blaze object.  It can be a regular file too.</dd>
+<dt>mode <span class="classifier-delimiter">:</span> <span class="classifier">the open mode (string)</span></dt>
+<dd><p class="first">Specifies the mode in which the object is opened.  The supported
+values are:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>&#8216;r&#8217; for read-only</li>
+<li>&#8216;w&#8217; for emptying the previous underlying data</li>
+<li>&#8216;a&#8217; for allowing read/write on top of existing data</li>
+</ul>
+</div></blockquote>
+</dd>
 </dl>
-<p>out : an Array object.</p>
+<p>out : an Array or Table object.</p>
 </dd></dl>
 
 <dl class="function">
