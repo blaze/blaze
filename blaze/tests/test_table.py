@@ -16,8 +16,7 @@ def test_all_construct():
     a.datashape._equal(expected_ds)
 
 
-    data = np.zeros((2,),dtype=[('A', 'i4'),('B', 'f4'),('C', 'S')])
-    a = NDTable(data)
+    a = NDTable([(1, 1)])
     str(a)
     repr(a)
     a.datashape._equal(expected_ds)
@@ -26,3 +25,6 @@ def test_all_construct():
     #str(a)
     #repr(a)
     #a.datashape._equal(expected_ds)
+
+def test_record():
+    data = NDTable([(1, 2.1)], '1, Record(x=int32, y=float)')

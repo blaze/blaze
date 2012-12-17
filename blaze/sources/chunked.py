@@ -1,6 +1,6 @@
 """
-Wrappers around chunked arrays ( carray ) supporting both
-in-memory and on-disk storage.
+Wrappers around chunked arrays ( carray ) supporting both in-memory and
+on-disk storage.
 """
 
 from blaze import carray
@@ -35,10 +35,6 @@ class CArraySource(ByteProvider):
            * shuffle - shuffle filter
            * format_flavor - ``monolithic`` | ``chunked``
            * storage - The directory hosting the carray
-
-    Returns
-    -------
-    out : a carray/ctable object or None (if not objects are found)
     """
 
     read_capabilities  = CHUNKED
@@ -50,8 +46,8 @@ class CArraySource(ByteProvider):
         assert (data is not None) or (dshape is not None) or \
                (params.get('storage'))
 
-        # TODO: clean up ugly conditionals
-
+        # Extract the relevant carray parameters from the more
+        # general Blaze params object.
         if params:
             cparams, rootdir, format_flavor = to_cparams(params)
         else:
@@ -151,12 +147,27 @@ class CArraySource(ByteProvider):
         return 'CArray(ptr=%r)' % id(self.ca)
 
 #------------------------------------------------------------------------
-# Chunked Columns
+# Chunked Tables
 #------------------------------------------------------------------------
 
 class CTableSource(ByteProvider):
-    """ Chunked array is the default storage engine for Blaze arrays
-    when no layout is specified. """
+    """
+    A chunked table source.
+
+    Parameters
+    ----------
+    data : object (optional)
+    dshape: dshape
+        The datashape describing the table
+    params : params
+        Specifies the parameters of the chunked table
+
+           * clevel - compression level
+           * shuffle - shuffle filter
+           * format_flavor - ``monolithic`` | ``chunked``
+           * storage - The directory hosting the ctable
+
+    """
 
     read_capabilities  = CHUNKED
     write_capabilities = CHUNKED
@@ -167,29 +178,25 @@ class CTableSource(ByteProvider):
         assert (data is not None) or (dshape is not None) or \
                (params.get('storage'))
 
-        # If no storage backend then we need to allocate a
-        # in-memory container
-        if params and not params.storage:
-            if isinstance(data, list):
-                shape, dtype = to_numpy(dshape)
-                data = np.array(data, dtype)
-            else:
-                shape, dtype = to_numpy(dshape)
-                data = np.empty(shape, dtype)
-
+        # Extract the relevant carray parameters from the more
+        # general Blaze params object.
         if params:
             cparams, rootdir, format_flavor = to_cparams(params)
         else:
             rootdir,cparams = None, None
 
+        # Extract the relevant carray parameters from the more
+        # general Blaze params object.
         if dshape:
             shape, dtype = to_numpy(dshape)
-            self.ca = ctable(data, rootdir=rootdir)
+            self.ca = ctable(data, dtype=dtype, rootdir=rootdir)
         else:
             self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
 
-    # Descriptors
-    # -----------
+    @classmethod
+    def empty(self, dshape):
+        shape, dtype = from_numpy(dshape)
+        return CTableSource(carray([[]], dtype))
 
     def read_desc(self):
         # TODO
