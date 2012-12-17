@@ -169,7 +169,7 @@ class CTableSource(ByteProvider):
 
         # If no storage backend then we need to allocate a
         # in-memory container
-        if not params.storage:
+        if params and not params.storage:
             if isinstance(data, list):
                 shape, dtype = to_numpy(dshape)
                 data = np.array(data, dtype)
@@ -183,8 +183,8 @@ class CTableSource(ByteProvider):
             rootdir,cparams = None, None
 
         if dshape:
-            dtype = to_numpy(dshape)
-            self.ca = ctable(data, dtype, rootdir=rootdir)
+            shape, dtype = to_numpy(dshape)
+            self.ca = ctable(data, rootdir=rootdir)
         else:
             self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
 
@@ -202,7 +202,8 @@ class CTableSource(ByteProvider):
 
     @property
     def partitions(self):
-        return self.ca.partitions
+        # TODO: look at the cols partitions
+        return []
 
     @staticmethod
     def infer_datashape(source):

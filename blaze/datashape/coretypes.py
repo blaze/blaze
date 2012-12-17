@@ -502,6 +502,14 @@ class Record(DataShape, Mapping):
     def names(self):
         return self.k
 
+    def to_dtype(self):
+        """
+        To Numpy record dtype.
+        """
+        dk = self.k
+        dv = map(to_dtype, self.v)
+        return np.dtype(zip(dk, dv))
+
     def __eq__(self, other):
         if isinstance(other, Record):
             return self.d == other.d
@@ -772,6 +780,8 @@ def to_numpy(ds):
             shape += (dim.val,)
         elif isinstance(dim, CType):
             dtype = dim.to_dtype()
+        elif isinstance(dim, Record):
+            dtype = dim.to_dtype()
         else:
             raise NotNumpyCompatible()
 
@@ -787,14 +797,19 @@ def from_numpy(shape, dt):
     >>> from_numpy((5,5), dtype('int32'))
     dshape('5, 5, int32')
     """
-    dt = np.dtype(dt)
+    dtype = np.dtype(dt)
 
     if shape == ():
         dimensions = []
     else:
         dimensions = map(Fixed, shape)
 
-    measure = CType.from_dtype(dt)
+    if dtype.fields:
+        # Convert the record into a dict of keys to CType
+        rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
+        measure = Record(**dict(rec))
+    else:
+        measure = CType.from_dtype(dtype)
 
     return reduce(product, dimensions + [measure])
 

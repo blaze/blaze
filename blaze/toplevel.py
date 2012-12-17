@@ -12,17 +12,27 @@ from blaze import carray, dshape as _dshape
 
 import numpy as np
 
-def open(uri=None):
+# TODO: we'd like to distinguish between opening in Deferred or
+# Immediete mode
+
+def open(uri=None, mode='a'):
     """Open a Blaze object via an `uri` (Uniform Resource Identifier).
 
     Parameters
     ----------
     uri : str
         Specifies the URI for the Blaze object.  It can be a regular file too.
+    mode : the open mode (string)
+        Specifies the mode in which the object is opened.  The supported
+        values are:
+
+          * 'r' for read-only
+          * 'w' for emptying the previous underlying data
+          * 'a' for allowing read/write on top of existing data
 
     Returns
     -------
-    out : an Array object.
+    out : an Array or Table object.
 
     """
     ARRAY = 1
