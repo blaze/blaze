@@ -19,7 +19,7 @@ try:
     from nose.commands import nosetests
     testrunner = nosetests
 except:
-    from unittest import TextTestRunner as testrunner
+    from unittest import TextTestRunner
     testrunner = TextTestRunner
 
 #------------------------------------------------------------------------
