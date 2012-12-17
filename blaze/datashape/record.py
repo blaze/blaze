@@ -1,6 +1,5 @@
 """
-Django style class declarations mapping onto Record datashape
-types.
+Django style class declarations mapping onto Record datashape types.
 """
 
 from numpy import dtype
@@ -27,8 +26,8 @@ class DeclMeta(type):
 
 class RecordDecl(object):
     """
-    Record object, declared as class. Provied to the datashape
-    parser through the metaclass.
+    Record object, declared as class. Provied to the datashape parser
+    through the metaclass.
     """
     __metaclass__ = DeclMeta
 
@@ -44,10 +43,9 @@ class RecordDecl(object):
         cls.fields[name] = field
 
     @classmethod
-    def to_numpy(self):
+    def to_dtype(self):
         """
-        Convert a record class definition into a structured array
-        dtype
+        Convert a record class definition into a structured array dtype
         """
         n = dtype([
             (label, ty.to_dtype()) for label, ty in

@@ -33,7 +33,7 @@ def test_fromiter():
     a = fromiter(xrange(10), 'x, float64', params=params(clevel=5))
 
 def test_custom_dshape():
-    from blaze import Array, RecordDecl
+    from blaze import NDTable, RecordDecl
     from blaze import int32, string
 
     class CustomStock(RecordDecl):
@@ -44,7 +44,9 @@ def test_custom_dshape():
         def mid(self):
             return (self.min + self.max)/2
 
-    a = Array([('GOOG', 120, 153)], CustomStock)
+        __dummy = True
+
+    a = NDTable([('GOOG', 120, 153)], CustomStock)
 
 def test_sqlite():
     from blaze import open

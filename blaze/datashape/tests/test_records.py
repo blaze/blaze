@@ -9,5 +9,5 @@ class Simple(RecordDecl):
     __dummy = True
 
 def test_to_numpy():
-    converted = Simple.to_numpy()
+    converted = Simple.to_dtype()
     assert converted == dtype([('foo', '<i4'), ('bar', '<f4')])

@@ -769,6 +769,10 @@ def to_numpy(ds):
     if isinstance(ds, CType):
         return ds.to_dtype()
 
+    # XXX: fix circular deps for DeclMeta
+    if hasattr(ds, 'to_dtype'):
+        return None, ds.to_dtype()
+
     shape = tuple()
     dtype = None
 

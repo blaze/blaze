@@ -38,6 +38,9 @@ DELAYED  = 2
 # Indexable
 #------------------------------------------------------------------------
 
+# TODO: Indexable seems to be historical design notes, none of it
+# is used in live code
+
 class Indexable(object):
     """
     The top abstraction in the Blaze class hierarchy.
@@ -99,9 +102,6 @@ class Indexable(object):
         """
         raise NotImplementedError
 
-    def __index__(self):
-        raise NotImplementedError()
-
     def global_id(self):
         "Get a unique global id for this source"
         # TODO: make it global :)
@@ -116,24 +116,28 @@ class Array(Indexable):
     Manifest array, does not create a graph. Forces evaluation on every
     call.
 
-    Parameters:
+    Parameters
+    ----------
 
-        :obj: A list of byte providers, other NDTables or a Python object.
+        obj : A list of byte providers, other NDTables or a Python object.
 
-    Optional:
+    Optional
+    --------
 
-        :datashape: Manual datashape specification for the table,
-                    if None then shape will be inferred if
-                    possible.
+        datashape : dshape
+            Manual datashape specification for the table, if None then
+            shape will be inferred if possible.
+        metadata :
+            Manual datashape specification for the table, if None then
+            shape will be inferred if possible.
 
-        :metadata: Explicit metadata annotation.
-
-    Usage:
+    Usage
+    -----
 
         >>> Array([1,2,3])
         >>> Array([1,2,3], dshape='3, int32')
         >>> Array([1,2,3], dshape('3, int32'))
-        >>> Array([1,2,3], params=params(clevel=3, storage='a'))
+        >>> Array([1,2,3], params=params(clevel=3, storage='file'))
 
     """
 
@@ -250,10 +254,6 @@ class Array(Indexable):
 
     def __repr__(self):
         return generic_repr('Array', self, deferred=False)
-
-
-class Table(Indexable, ArrayNode):
-    pass
 
 
 class NDArray(Indexable, ArrayNode):
@@ -399,19 +399,13 @@ class NDArray(Indexable, ArrayNode):
 #   tostring     : function
 #   __len__      : function
 #   __getitem__  : function
-#   __index__    : function
 
-class NDTable(Indexable, ArrayNode):
-    """
-    The base NDTable. Indexable contains the indexing logic for
-    how to access elements, while ArrayNode contains the graph
-    related logic for building expression trees with this table
-    as an element.
-    """
 
-    eclass = DELAYED
+class Table(Indexable):
+
+    eclass = MANIFEST
     _metaheader = [
-        md.deferred,
+        md.manifest,
         md.tablelike,
     ]
 
@@ -465,9 +459,74 @@ class NDTable(Indexable, ArrayNode):
         # ----------
         self.params = params
 
+
+class NDTable(Indexable, ArrayNode):
+    """
+    The base NDTable. Indexable contains the indexing logic for
+    how to access elements, while ArrayNode contains the graph
+    related logic for building expression trees with this table
+    as an element.
+    """
+
+    eclass = DELAYED
+    _metaheader = [
+        md.deferred,
+        md.tablelike,
+    ]
+
     #------------------------------------------------------------------------
     # Properties
     #------------------------------------------------------------------------
+
+    def __init__(self, obj, dshape=None, metadata=None, layout=None,
+            params=None):
+
+        # Datashape
+        # ---------
+
+        if isinstance(dshape, basestring):
+            dshape = _dshape(dshape)
+
+        if not dshape:
+            # The user just passed in a raw data source, try
+            # and infer how it should be layed out or fail
+            # back on dynamic types.
+            self._datashape = dshape = CTableSource.infer_datashape(obj)
+        else:
+            # The user overlayed their custom dshape on this
+            # data, check if it makes sense
+            CTableSource.check_datashape(obj, given_dshape=dshape)
+            self._datashape = dshape
+
+        # Source
+        # ------
+
+        if isinstance(obj, ByteProvider):
+            self.data = obj
+        else:
+            self.data = CTableSource(obj, dshape=dshape, params=params)
+
+        # children graph nodes
+        self.children = []
+
+        self.space = Space(self.data)
+
+        # Layout
+        # ------
+
+        if layout:
+            self._layout = layout
+        elif not layout:
+            self._layout = self.data.default_layout()
+
+        # Metadata
+        # --------
+
+        self._metadata  = NDTable._metaheader + (metadata or [])
+
+        # Parameters
+        # ----------
+        self.params = params
 
     @property
     def datashape(self):
@@ -504,24 +563,3 @@ def infer_eclass(a,b):
         return MANIFEST
     if (a,b) == (DELAYED, DELAYED):
         return DELAYED
-
-#------------------------------------------------------------------------
-# Argument Munging
-#------------------------------------------------------------------------
-
-def cast_arguments(obj):
-    """
-    Handle different sets of arguments for constructors.
-    """
-
-    if isinstance(obj, DataShape):
-        return obj
-
-    elif isinstance(obj, list):
-        return Fixed(len(obj))
-
-    elif isinstance(obj, tuple):
-        return Fixed(len(obj))
-
-    elif isinstance(obj, NDTable):
-        return obj.datashape

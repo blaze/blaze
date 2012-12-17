@@ -20,7 +20,7 @@ def generic_str(obj, deferred):
         str_repr = '<Deferred>'
     else:
         str_repr = ''
-        for provider in obj.backends:
+        for provider in list(obj.space):
             str_repr += provider.repr_data()
 
     return str_repr
