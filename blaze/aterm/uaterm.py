@@ -342,7 +342,7 @@ class ATermParser(object):
 
         if not parser:
             self.lexer = lex.lex()
-            self.parser = yacc.yacc(tabmodule='atokens', outputdir="blaze/expr")
+            self.parser = yacc.yacc(tabmodule='atokens', outputdir="blaze/aterm")
         else:
             self.parser = parser
 
