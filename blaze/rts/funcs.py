@@ -24,8 +24,8 @@ possible ), converting to a Numexpr expression, etc.
 
 
 from thread import allocate_lock
-from blaze.aterm.uaterm import ATermParser
 from blaze.error import NoDispatch
+from blaze.aterm import parse, match
 from blaze.datashape.coretypes import dynamic
 
 from blaze.expr.graph import Fun
@@ -72,11 +72,9 @@ class Dispatcher(object):
         # find a function in the Blaze library that matches the
         # given aterm
 
-        parser = ATermParser()
-
         matched = []
         for f, sig in self.funs.iteritems():
-            ismatch, _ = parser.matches(sig, str(aterm))
+            ismatch, _ = match(sig, str(aterm))
             if ismatch:
                 matched.append(f)
 
@@ -110,10 +108,8 @@ def lift(signature, typesig, constraints=None, **params):
         assert callable(pyfn), "Lifted function must be callable"
         fname = pyfn.func_name
 
-        parser = ATermParser()
-
         try:
-            parser.parse(signature)
+            parse(signature)
         except ATermSyntaxError as e:
             raise InvalidLibraryDefinton(*e.args + (fname,))
 

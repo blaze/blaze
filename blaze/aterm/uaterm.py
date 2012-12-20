@@ -335,34 +335,36 @@ def has_prop(term, prop):
 
 #--------------------------------
 
-class ATermParser(object):
+def _init():
+    global parser
+    if not parser:
+        lexer = lex.lex()
+        parser = yacc.yacc(tabmodule='atokens', outputdir="blaze/aterm")
+    else:
+        parser = parser
+    return parser
 
-    def __init__(self):
-        global parser
+def parse(pattern):
+    parser = _init()
+    return parser.parse(pattern)
 
-        if not parser:
-            self.lexer = lex.lex()
-            self.parser = yacc.yacc(tabmodule='atokens', outputdir="blaze/aterm")
-        else:
-            self.parser = parser
+def match(pattern, subject, *captures):
+    parser = _init()
 
-    def parse(self, pattern):
-        return self.parser.parse(pattern)
+    captures = []
 
-    def matches(self, pattern, subject, *captures):
-        captures = []
+    p = parser.parse(pattern)
+    s = parser.parse(subject)
 
-        p = self.parser.parse(pattern)
-        s = self.parser.parse(subject)
+    for matches, capture in aterm_zip(p,s):
+        if not matches:
+            return False, []
+        elif matches and capture:
+            captures += [capture]
+    return True, captures
 
-        for matches, capture in aterm_zip(p,s):
-            if not matches:
-                return False, []
-            elif matches and capture:
-                captures += [capture]
-        return True, captures
+def make(pattern, *values):
+    parser = _init()
 
-
-    def make(self, pattern, *values):
-        p = self.parser.parse(pattern)
-        return list(aterm_azip(p,list(values)))
+    p = parser.parse(pattern)
+    return list(aterm_azip(p,list(values)))
