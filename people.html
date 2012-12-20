@@ -22,11 +22,30 @@
       }
 
       .navbar {
+        font-family: serif;
+        font-weight: bold;
+      }
+
+      li.active a {
       }
 
       h1,h2 {
         font-weight: normal;
       }
+
+     .center {
+         text-align: center;
+     }
+
+    .navbar-inner {	
+      -webkit-border-radius: 0;
+      -moz-border-radius: 0;
+      border-radius: 0;
+    }
+
+    .navbar .container {
+      width: auto;
+    }
 
     </style>
     <link href="css/bootstrap-responsive.css" rel="stylesheet">
@@ -39,36 +58,46 @@
 
   <body>
 
-    <div class="navbar navbar-fixed-top">
+    <div class="navbar navbar-inverse navbar-fixed-top">
     <div class="navbar-inner">
         <div class="container">
-            <ul class="nav">
-                
-                <li >
-                    <a href="index.html"><i class="icon-home"></i> Blaze</a>
-                </li>
-                
-                <li >
-                    <a href="docs/index.html"><i class="icon-book"></i> Documentation</a>
-                </li>
-                
-                <li >
-                    <a href="https://github.com/ContinuumIO/blaze/downloads"><i class="icon-download"></i> Source</a>
-                </li>
-                
-                <li >
-                    <a href="vision.html"><i class="icon-star"></i> Vision</a>
-                </li>
-                
-                <li  class="active">
-                    <a href="people.html"><i class="icon-user"></i> People</a>
-                </li>
-                
-                <li >
-                    <a href="https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
-                </li>
-                
-            </ul>
+
+           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </a>
+
+            <div class="nav-collapse">
+                <ul class="nav">
+                    
+                    <li >
+                        <a href="index.html"><i class="icon-home icon-white"></i> Blaze</a>
+                    </li>
+                    
+                    <li >
+                        <a href="docs/index.html"><i class="icon-book icon-white"></i> Documentation</a>
+                    </li>
+                    
+                    <li >
+                        <a href="https://github.com/ContinuumIO/blaze/downloads"><i class="icon-download icon-white"></i> Source</a>
+                    </li>
+                    
+                    <li >
+                        <a href="vision.html"><i class="icon-star icon-white"></i> Vision</a>
+                    </li>
+                    
+                    <li  class="active">
+                        <a href="people.html"><i class="icon-user icon-white"></i> People</a>
+                    </li>
+                    
+                    <li >
+                        <a href="https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope icon-white"></i> Mailing List</a>
+                    </li>
+                    
+                </ul>
+            </div>
+
         </div>
     </div>
 </div>
