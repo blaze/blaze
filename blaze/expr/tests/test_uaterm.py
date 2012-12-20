@@ -1,0 +1,43 @@
+print parser.parse('f')
+print parser.parse('f(x)')
+print parser.parse('f(x,y)')
+print parser.parse('(x,y)')
+print parser.parse('f(x,f(x,y))')
+print parser.parse('f(1,2,3)')
+print parser.parse('f([1,2,3])')
+print parser.parse('(1,2,3)')
+
+print parser.parse('f(x,y){abc, foo}')
+print parser.parse('f(x,y){abc, foo, awk}')
+print parser.parse('f(x,y{fizzbang})')
+print parser.parse('f{x}')
+print parser.parse('f{[(a,b),(c,d)]}')
+
+print parser.parse('[1,2, 3]')
+print parser.parse('["foo"]')
+print parser.parse('[1, 2, 3.14]')
+print parser.parse('[a,b,c,f(b),f(b,1),1.2,1.3]')
+print parser.parse('[c,f(b,1),a,b,f(b),1.3,1.2]')
+print parser.parse('[[1,2],[1]]')
+print parser.parse('[]{[a,a]}')
+print parser.parse('f(<int>,<real>,<placeholder>,<str>)')
+print parser.parse('f(<list>,[])')
+print parser.parse('<appl(1,2)>')
+print parser.parse('<term>{[a,b]}')
+
+
+print matches('x', 'x')
+print matches('x', 'y')
+print matches('x{foo}', 'x{foo}')
+
+print matches('f(x,y)', 'f(x,y)')
+print matches('f(x,g(x,y))', 'f(x,g(x,y))')
+print matches('f(<int>,g(x,y))', 'f(1,g(x,y))')
+print matches('f(<int>,g(x,y))', 'f(1,g(x,y))')
+print matches('f(1,<appl(x,y)>)', 'f(1,g(x,y))')
+print matches('f(1,<appl(x,<term>)>)', 'f(1,g(x,3))')
+
+
+print make('f(<int>)', aint(1))
+print make('f(x, y, g(<int>,<int>))', aint(1), aint(2))
+print make('<appl(x,y)>', aterm('x', None))
