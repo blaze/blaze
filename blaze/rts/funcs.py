@@ -24,7 +24,7 @@ possible ), converting to a Numexpr expression, etc.
 
 
 from thread import allocate_lock
-from blaze.expr.uaterm import ATermParser
+from blaze.aterm.uaterm import ATermParser
 from blaze.error import NoDispatch
 from blaze.datashape.coretypes import dynamic
 

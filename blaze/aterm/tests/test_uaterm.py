@@ -1,4 +1,4 @@
-from blaze.expr.uaterm import *
+from blaze.aterm.uaterm import *
 
 def test_parser_sanity():
     parser = ATermParser()
