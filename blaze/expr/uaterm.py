@@ -1,11 +1,11 @@
+import re
 from functools import partial
 from collections import namedtuple, OrderedDict
 
 import ply.lex as lex
 import ply.yacc as yacc
 
-# ATerm implementations
-from blaze.expr import paterm
+parser = None
 
 #------------------------------------------------------------------------
 # Errors
@@ -20,7 +20,7 @@ syntax_error = """
 ATermSyntaxError: {msg}
 """
 
-class AtermSyntaxError(Exception):
+class AtermSyntaxError(SyntaxError):
     """
     Makes aterm parse errors look like Python SyntaxError.
     """
@@ -32,13 +32,13 @@ class AtermSyntaxError(Exception):
         self.msg        = msg or 'invalid syntax'
 
     def __str__(self):
-        return syntax_error.format(**{
-            'filename' : self.filename,
-            'lineno'   : self.lineno,
-            'line'     : self.text,
-            'pointer'  : ' '*self.col_offset + '^',
-            'msg'      : self.msg
-        })
+        return syntax_error.format(
+            filename = self.filename,
+            lineno   = self.lineno,
+            line     = self.text,
+            pointer  = ' '*self.col_offset + '^',
+            msg      = self.msg
+        )
 
 #------------------------------------------------------------------------
 # AST Nodes
@@ -69,16 +69,17 @@ placeholders = {
     #'list' : alist
 }
 
+unquote = re.compile('"(?:[^\']*)\'|"([^"]*)"')
+
 #------------------------------------------------------------------------
 # Lexer
 #------------------------------------------------------------------------
 
 tokens = (
-    'NAME', 'INT', 'DOUBLE', 'QUOTE', 'PLACEHOLDER'
+    'NAME', 'INT', 'DOUBLE', 'QUOTE', 'PLACEHOLDER', 'STRING'
 )
 
 literals = [
-    '=' ,
     ',' ,
     '(' ,
     ')' ,
@@ -112,12 +113,15 @@ def t_INT(t):
         t.value = 0
     return t
 
+def t_STRING(t):
+    r'"([^"\\]|\\.)*"'
+    t.value = t.value.encode('ascii')
+    t.value = unquote.findall(t.value)[0]
+    return t
+
 def t_error(t):
     print("Unknown token '%s'" % t.value[0])
     t.lexer.skip(1)
-
-# Build the lexer
-lexer = lex.lex()
 
 # Top of the parser
 def p_expr1(p):
@@ -212,8 +216,8 @@ def p_tuple_value2(p):
 #--------------------------------
 
 def p_string(p):
-    "string : QUOTE NAME QUOTE"
-    p[0] = astr(p[2])
+    "string : STRING"
+    p[0] = astr(p[1])
 
 #--------------------------------
 
@@ -242,13 +246,18 @@ def p_error(p):
             p.lexer.lexdata,
         )
     else:
-        print("Syntax error at EOF")
-        raise AtermSyntaxError(
-            p.lineno,
-            p.lexpos,
-            '<stdin>',
-            p.lexer.lexdata,
-        )
+        raise SyntaxError("Syntax error at EOF")
+
+
+#--------------------------------
+
+def init(xs):
+    for x in xs:
+        return x
+
+def tail(xs):
+    for x in reversed(xs):
+        return x
 
 def aterm_iter(term):
     if isinstance(term, (aint, areal, astr)):
@@ -303,7 +312,7 @@ def aterm_azip(a, elts):
 
     elif isinstance(a, aappl):
         # ugly
-        yield aappl(a.spine, [list(aterm_azip(ai,elts))[0] for ai in a.args])
+        yield aappl(a.spine, [init(aterm_azip(ai,elts)) for ai in a.args])
 
     elif isinstance(a, aterm):
         yield a
@@ -312,7 +321,7 @@ def aterm_azip(a, elts):
         # <appl(...)>
         if a.args:
             # ugly
-            yield aappl(elts.pop(), [list(aterm_azip(ai,elts))[0] for ai in a.args])
+            yield aappl(elts.pop(), [init(aterm_azip(ai,elts)) for ai in a.args])
         # <term>
         else:
             yield elts.pop()
@@ -326,23 +335,34 @@ def has_prop(term, prop):
 
 #--------------------------------
 
-parser = yacc.yacc()
+class ATermParser(object):
 
-def matches(pattern, subject, *captures):
-    captures = []
+    def __init__(self):
+        global parser
 
-    p = parser.parse(pattern)
-    s = parser.parse(subject)
+        if not parser:
+            self.lexer = lex.lex()
+            self.parser = yacc.yacc(tabmodule='atokens', outputdir="blaze/expr")
+        else:
+            self.parser = parser
 
-    for matches, capture in aterm_zip(p,s):
-        if not matches:
-            return False, []
-        elif matches and capture:
-            captures += [capture]
-    return True, captures
+    def parse(self, pattern):
+        return self.parser.parse(pattern)
+
+    def matches(self, pattern, subject, *captures):
+        captures = []
+
+        p = self.parser.parse(pattern)
+        s = self.parser.parse(subject)
+
+        for matches, capture in aterm_zip(p,s):
+            if not matches:
+                return False, []
+            elif matches and capture:
+                captures += [capture]
+        return True, captures
 
 
-def make(pattern, *values):
-    p = parser.parse(pattern)
-
-    return list(aterm_azip(p,list(values)))
+    def make(self, pattern, *values):
+        p = self.parser.parse(pattern)
+        return list(aterm_azip(p,list(values)))
