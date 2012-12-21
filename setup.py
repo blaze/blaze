@@ -2,8 +2,8 @@
 
 # Hugo's trick for using just the develop command from setuptools
 import sys
-if 'develop' in sys.argv:
-    import setuptools
+#if 'develop' in sys.argv:
+#    import setuptools
 
 #------------------------------------------------------------------------
 
@@ -16,9 +16,10 @@ from distutils.core import Command, setup
 from distutils.sysconfig import get_python_inc, get_config_var
 
 try:
-    from nose.commands import nosetests
-    testrunner = nosetests
-except:
+    #from nose.commands import nosetests
+    # testrunner = nosetests
+    raise ImportError
+except ImportError:
     from unittest import TextTestRunner
     testrunner = TextTestRunner
 
