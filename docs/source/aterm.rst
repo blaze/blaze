@@ -178,9 +178,8 @@ deconstruct and pluck values of out aterms while rewriting.
 :`<str>`: Matches str terms
 :`<term>`: Matches all terms
 :`<placeholder>`: Matches all placeholder terms
-:`<appl(...)>`: Matches all application to the specific arguments, ... is not
-    aterm syntax. See below
-
+:`<appl(...)>`: Matches all application to the specific arguments, ``(...)`` is not
+    aterm syntax. See examples below.
 
 The result a pattern match is a 2-tuple containing a boolean
 indicating whether the match succeeded and a list containing the
@@ -188,18 +187,28 @@ capture valued.
 
 ::
 
-    >>> parse('x', 'x')
+    >>> match('x', 'x')
     (True, [])
 
 ::
 
-    >>> parse('<term>', 'x')
+    >>> match('x', 'y')
+    (False, [])
+
+::
+
+    >>> match('f(<int>,<int>)', 'f(1,2)')
+    (True, [aint(val=1), aint(val=2)])
+
+::
+
+    >>> match('<term>', 'x')
     (True, [aterm(term='x', annotation=None)])
 
 ::
 
-    >>> parse('f(<int>)', 'f(1)')
-    (True, [aint(val=1)]
+    >>> match('f(<real>)', 'f(1)')
+    (False, [])
 
 ::
 
@@ -208,8 +217,77 @@ capture valued.
      [aint(val=2),
       aappl(spine=aterm(term='Succ', annotation=None), args=[aint(val=3)])])
 
-Parser
-~~~~~~
+::
 
-.. automodule:: blaze.aterm.uaterm
-   :members:
+    >>> match('<appl(x,3)>', 'f(x,3)'
+    (True, [aterm(term='f', annotation=None)])
+
+
+For those coming from other languages, an analogy is uesfull. The
+match operator in Prolog is written with `?`.
+
+.. code-block:: prolog
+
+    ?- x = x.
+    true
+    ?- x = y.
+    false
+
+Or often used to define functions which operate over pattern
+matched variables collected on the LHS to free variables on the
+RHS. For example in Prolog:
+
+.. code-block:: prolog
+
+    fact(0) => 0
+    fact(n) => n*fact(n-1);
+
+Or in ML:
+
+.. code-block:: ocaml
+
+    fun fact(1) = 1
+      | fact(n) = n*fact(n-1);
+
+Or in Haskell:
+
+.. code-block:: haskell
+
+    fact 0 = 1
+    fact n = n * fact (n-1)
+
+
+Motivating Examples
+~~~~~~~~~~~~~~~~~~~
+
+::
+
+    aterm = namedtuple('aterm', ('term', 'annotation'))
+    astr  = namedtuple('astr', ('val',))
+    aint  = namedtuple('aint', ('val',))
+    areal = namedtuple('areal', ('val',))
+    aappl = namedtuple('aappl', ('spine', 'args'))
+    atupl = namedtuple('atupl', ('args'))
+    aplaceholder = namedtuple('aplaceholder', ('type','args'))
+
+    # Lets try and match f(x,y) using pure Python
+    def match_simple(term):
+        if isinstance(term, appl):
+            if isinstance(term.args[0], aterm):
+                if isinstance(term.args[1], aterm):
+                    if term.args[0].term == 'x':
+                        if term.args[0].term == 'y':
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+    # Compared to
+    match('f(x,y)', 'f(x,y)')
