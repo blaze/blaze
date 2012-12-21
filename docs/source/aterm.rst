@@ -219,7 +219,7 @@ capture valued.
 
 ::
 
-    >>> match('<appl(x,3)>', 'f(x,3)'
+    >>> match('<appl(x,3)>', 'f(x,3)')
     (True, [aterm(term='f', annotation=None)])
 
 
@@ -276,7 +276,7 @@ Motivating Examples
             if isinstance(term.args[0], aterm):
                 if isinstance(term.args[1], aterm):
                     if term.args[0].term == 'x':
-                        if term.args[0].term == 'y':
+                        if term.args[1].term == 'y':
                             return True
                         else:
                             return False
