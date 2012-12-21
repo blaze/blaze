@@ -293,6 +293,7 @@ def aterm_zip(a, b):
         # <appl(...)>
         if a.args:
             if isinstance(b, aappl):
+                yield True, b.spine
                 for ai, bi in zip(a.args, b.args):
                     for a in aterm_zip(ai,bi):
                         yield a
