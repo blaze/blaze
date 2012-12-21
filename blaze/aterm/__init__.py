@@ -1,1 +1,1 @@
-from uaterm import parse, match, make
+from uaterm import parse, match, make, AtermSyntaxError

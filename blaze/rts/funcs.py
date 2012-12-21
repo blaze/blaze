@@ -25,7 +25,7 @@ possible ), converting to a Numexpr expression, etc.
 
 from thread import allocate_lock
 from blaze.error import NoDispatch
-from blaze.aterm import parse, match
+from blaze.aterm import parse, match, AtermSyntaxError
 from blaze.datashape.coretypes import dynamic
 
 from blaze.expr.graph import Fun
@@ -110,7 +110,7 @@ def lift(signature, typesig, constraints=None, **params):
 
         try:
             parse(signature)
-        except ATermSyntaxError as e:
+        except AtermSyntaxError as e:
             raise InvalidLibraryDefinton(*e.args + (fname,))
 
         # #effectful
