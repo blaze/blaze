@@ -39,7 +39,6 @@ Using Anaconda's package manager:
 ```bash
 $ conda install ply
 $ conda install blosc
-$ conda install aterm
 ```
 
 Introduction
