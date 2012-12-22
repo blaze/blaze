@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
-# Hugo's trick for using just the develop command from setuptools
-import sys
-#if 'develop' in sys.argv:
-#    import setuptools
-
 #------------------------------------------------------------------------
 
 import os
+import sys
 import shutil
 import textwrap
 from os.path import join
@@ -15,13 +11,8 @@ from os.path import join
 from distutils.core import Command, setup
 from distutils.sysconfig import get_python_inc, get_config_var
 
-try:
-    #from nose.commands import nosetests
-    # testrunner = nosetests
-    raise ImportError
-except ImportError:
-    from unittest import TextTestRunner
-    testrunner = TextTestRunner
+from unittest import TextTestRunner
+testrunner = TextTestRunner
 
 #------------------------------------------------------------------------
 # Top Level Packages
@@ -29,6 +20,7 @@ except ImportError:
 
 packages = [
     'blaze',
+    'blaze.aterm',
     'blaze.carray',
     'blaze.datashape',
     'blaze.dist',
