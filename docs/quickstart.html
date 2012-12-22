@@ -103,6 +103,13 @@
 </pre></div>
 </div>
 </div>
+<div class="section" id="iterators">
+<h2>Iterators<a class="headerlink" href="#iterators" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">fromiter</span><span class="p">,</span> <span class="n">params</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">fromiter</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="s">&#39;x, float64&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="custom-dshapes">
 <h2>Custom DShapes<a class="headerlink" href="#custom-dshapes" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">Table</span><span class="p">,</span> <span class="n">RecordDecl</span><span class="p">,</span> <span class="n">derived</span>

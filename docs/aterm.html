@@ -53,245 +53,257 @@
       <div class="content">
         
         
-  <div class="section" id="module-blaze.expr.paterm">
-<span id="aterm"></span><h1>ATerm<a class="headerlink" href="#module-blaze.expr.paterm" title="Permalink to this headline">¶</a></h1>
-<p>Python implementation of ATerm. Just a pretty printer for now.</p>
-<p>In our slight modification of ATerm we require that the first
-annotation of a Term be its datashape type and the following
-annotations stand for metadata. For example, an Array.</p>
-<p><strong>Type</strong>:</p>
-<div class="highlight-python"><pre>Array(2928121){dshape("2,2,int32")}</pre>
-</div>
-<p><strong>Type and Metadata</strong>:</p>
-<div class="highlight-python"><pre>Array(2928121){dshape("2,2,int32"), contigious, corder}</pre>
-</div>
-<p>Nevertheless, it is still a strict subset of ATerm so it can be parsed
-and manipulated by Stratego rewriters.</p>
-<p><strong>Grammar</strong>:</p>
+  <div class="section" id="aterm">
+<h1>ATerm<a class="headerlink" href="#aterm" title="Permalink to this headline">¶</a></h1>
+<p>The Blaze python implementation of ATerm is designed to bring some of
+the conveniences of pattern matching and rewriting capabilities of
+languages like ML and Haskell into the Python world.</p>
+<p>The ATerm representation of expression graphs forms the flexible
+intermediate form that Blaze expressions can be manipulated with
+in order to do optimization passes and execution dispatch.</p>
+<div class="section" id="grammar">
+<h2>Grammar<a class="headerlink" href="#grammar" title="Permalink to this headline">¶</a></h2>
+<p>The ATerm spec is overseen by</p>
+<p>The <tt class="docutils literal"><span class="pre">blaze.aterm</span></tt> is conforming implementation of the specification
+with the exception that we exclude Binary Large Objects <tt class="docutils literal"><span class="pre">blob</span></tt> objects
+are not present due to limitations in Python and limited usefullness in
+Blaze.</p>
+<p>The abstract grammar for ATerm is shown below.</p>
 <div class="highlight-python"><pre>t : bt                 -- basic term
   | bt {ty,m1,...}     -- annotated term
 
 bt : C                 -- constant
    | C(t1,...,tn)      -- n-ary constructor
+   | (t1,...,tn)       -- n-ary tuple
    | [t1,...,tn]       -- list
    | "ccc"             -- quoted string ( explicit double quotes )
    | int               -- integer
    | real              -- floating point number</pre>
 </div>
-<p><strong>Examples</strong>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">AInt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="go">1</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
-<span class="go">x</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;Add&#39;</span><span class="p">),</span> <span class="p">[</span><span class="n">AInt</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">AInt</span><span class="p">(</span><span class="mi">2</span><span class="p">)])</span>
-<span class="go">Add(1,2)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;Mul&#39;</span><span class="p">),[</span><span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;Add&#39;</span><span class="p">),[</span><span class="n">AInt</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="n">AInt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]),</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)])</span>
-<span class="go">Mul(Add(1,2), x)</span>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>Example of ATerm expressions by category</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Integer:</th><td class="field-body">Integer terms (<tt class="docutils literal"><span class="pre">1</span></tt>)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Real:</th><td class="field-body">Real terms (<tt class="docutils literal"><span class="pre">2.718</span></tt>)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">String:</th><td class="field-body">String terms (<tt class="docutils literal"><span class="pre">&quot;foo&quot;</span></tt>)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Term:</th><td class="field-body">Variable terms (<tt class="docutils literal"><span class="pre">x</span></tt>)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Application:</th><td class="field-body">Application of terms to other subterms (<tt class="docutils literal"><span class="pre">f(x,y)</span></tt>)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">List:</th><td class="field-body">A ordered list of subterms (<tt class="docutils literal"><span class="pre">[1,2,3]</span></tt>)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Tuple:</th><td class="field-body">A ordered tuple of subterms (<tt class="docutils literal"><span class="pre">(1,2,3)</span></tt>)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Placeholder:</th><td class="field-body">A placeholder for use in <tt class="docutils literal"><span class="pre">match</span></tt> and <tt class="docutils literal"><span class="pre">make</span></tt> commands (<tt class="docutils literal"><span class="pre">&lt;int&gt;</span></tt>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Simple Term</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>x
 </pre></div>
 </div>
-<p><strong>Pattern Matching</strong>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;foo;*&#39;</span><span class="p">,</span> <span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">))</span>
-<span class="go">True</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;1;*&#39;</span><span class="p">,</span> <span class="n">AInt</span><span class="p">(</span><span class="s">&#39;1&#39;</span><span class="p">))</span>
-<span class="go">True</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;1;*&#39;</span><span class="p">,</span> <span class="n">AInt</span><span class="p">(</span><span class="s">&#39;2&#39;</span><span class="p">))</span>
-<span class="go">True</span>
+<div class="highlight-text"><div class="highlight"><pre>foo
 </pre></div>
 </div>
-<p><strong>Value Capturing</strong></p>
-<p>Pattern matching can als also be used to capture free variables
-in the matched expressions. The result is also &#8220;truthy&#8221; so it
-will match as a boolean True as well:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fn</span> <span class="o">=</span> <span class="n">AAppl</span><span class="p">(</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;F&#39;</span><span class="p">),</span> <span class="p">[</span><span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">),</span> <span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">)])</span>
-<span class="go"># Upper case variables are bound terms, lower case variables</span>
-<span class="go"># are free</span>
-
-<span class="go"># Fixed spine</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;F(x,y);*&#39;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
-<span class="go">{&#39;y&#39;: b, &#39;x&#39;: a}</span>
-
-<span class="go"># Pattern match includes spine</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;f(x,y);*&#39;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
-<span class="go">{&#39;y&#39;: b, &#39;x&#39;: a, &#39;f&#39;: F}</span>
+<p><strong>Integers</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>1
 </pre></div>
 </div>
-<p><strong>Annotation Matching</strong>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">at</span> <span class="o">=</span> <span class="n">ATerm</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">AAnnotation</span><span class="p">(</span><span class="n">AString</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">)))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;*;foo&#39;</span><span class="p">,</span> <span class="n">at</span><span class="p">)</span>
-<span class="go">True</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">matches</span><span class="p">(</span><span class="s">&#39;x;bar&#39;</span><span class="p">,</span> <span class="n">at</span><span class="p">)</span>
+<p><strong>Reals</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>3.14159
 </pre></div>
 </div>
-<p><strong>Tools</strong></p>
-<p>Using the aterm-utils there are a variety of tools to working
-with and transform aterm expressions.</p>
-<p>For example this expression can be pretty printed:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Mul</span><span class="p">(</span><span class="n">Add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
+<p><strong>Strings</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>&quot;foo&quot;
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$ cat input | pp-aterm --max-term-size 2
-Mul(
-  Add(1, 2)
-, x()
-)</pre>
+<div class="highlight-text"><div class="highlight"><pre>&quot;foo \&quot;bar\&quot; fizz&quot;
+</pre></div>
 </div>
-<dl class="class">
-<dt id="blaze.expr.paterm.AAnnotation">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AAnnotation</tt><big>(</big><em>ty=None</em>, <em>annotations=None</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AAnnotation" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
-<dt id="blaze.expr.paterm.AAnnotation.annotations">
-<tt class="descname">annotations</tt><a class="headerlink" href="#blaze.expr.paterm.AAnnotation.annotations" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<p>Strings must use double quotes, and can escape inner quotes using
+backslash.</p>
+<p><strong>Application</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>f(x,y)
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre>f(1,g(2,3))
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre>Add(1,2)
+</pre></div>
+</div>
+<p>In the above example the operand being applied is referred to as
+the <tt class="docutils literal"><span class="pre">spine</span></tt> of the application with <tt class="docutils literal"><span class="pre">arguments</span></tt>.</p>
+<p><strong>Annotations</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>x{prop}
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre>x{prop1, prop2}
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre>f(x{prop1}, y{prop2})
+</pre></div>
+</div>
+<p>Annotations can contain any number of comma seperated aterm expression
+with the restriction that annotations cannot themselves be annotated.</p>
+<p><strong>Lists</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>[1,2,3]
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre>[3.141, 1, foo]
+</pre></div>
+</div>
+<p><strong>Tuples</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>(1, 2.718, 3.141)
+</pre></div>
+</div>
+<div class="highlight-text"><div class="highlight"><pre>(foo, bar)
+</pre></div>
+</div>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze.aterm</span> <span class="kn">import</span> <span class="n">parse</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">make</span>
+</pre></div>
+</div>
+<p><strong>Parser</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">aterm(term=&#39;x&#39;, annotation=None)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;f(x,y)&#39;</span><span class="p">)</span>
+<span class="go">aappl(spine=aterm(term=&#39;f&#39;, annotation=None), args=[aterm(term=&#39;x&#39;, annotation=None), aterm(term=&#39;y&#39;, annotation=None)])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;x{prop1}&#39;</span><span class="p">)</span>
+<span class="go">aterm(term=aterm(term=&#39;x&#39;, annotation=None), annotation=(aterm(term=&#39;prop1&#39;, annotation=None),))</span>
+</pre></div>
+</div>
+<p><strong>Matching</strong></p>
+<p>Pattern matching is the action of determening whether a given aterm
+expression conforms to pattern. It is similar in notion to regex. The
+pattern may also contain placeholder objects which can be used to
+deconstruct and pluck values of out aterms while rewriting.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><cite>&lt;int&gt;</cite>:</th><td class="field-body">Matches int terms</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><cite>&lt;real&gt;</cite>:</th><td class="field-body">Matches real number terms</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><cite>&lt;str&gt;</cite>:</th><td class="field-body">Matches str terms</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><cite>&lt;term&gt;</cite>:</th><td class="field-body">Matches all terms</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><cite>&lt;placeholder&gt;</cite>:</th><td class="field-body">Matches all placeholder terms</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><cite>&lt;appl(...)&gt;</cite>:</th><td class="field-body">Matches all application to the specific arguments, <tt class="docutils literal"><span class="pre">(...)</span></tt> is not
+aterm syntax. See examples below.</td>
+</tr>
+</tbody>
+</table>
+<p>The result a pattern match is a 2-tuple containing a boolean
+indicating whether the match succeeded and a list containing the
+capture valued.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">(True, [])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">)</span>
+<span class="go">(False, [])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;f(&lt;int&gt;,&lt;int&gt;)&#39;</span><span class="p">,</span> <span class="s">&#39;f(1,2)&#39;</span><span class="p">)</span>
+<span class="go">(True, [aint(val=1), aint(val=2)])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;&lt;term&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">(True, [aterm(term=&#39;x&#39;, annotation=None)])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;f(&lt;real&gt;)&#39;</span><span class="p">,</span> <span class="s">&#39;f(1)&#39;</span><span class="p">)</span>
+<span class="go">(False, [])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;Add(Succ(&lt;int&gt;), &lt;term&gt;)&#39;</span><span class="p">,</span> <span class="s">&#39;Add(Succ(2), Succ(3))&#39;</span><span class="p">)</span>
+<span class="go">(True,</span>
+<span class="go"> [aint(val=2),</span>
+<span class="go">  aappl(spine=aterm(term=&#39;Succ&#39;, annotation=None), args=[aint(val=3)])])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;&lt;appl(x,3)&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;f(x,3)&#39;</span><span class="p">)</span>
+<span class="go">(True, [aterm(term=&#39;f&#39;, annotation=None)])</span>
+</pre></div>
+</div>
+<p>For those coming from other languages, an analogy is uesfull. The
+match operator in Prolog is written with <cite>?</cite>.</p>
+<div class="highlight-prolog"><div class="highlight"><pre><span class="s-Atom">?-</span> <span class="s-Atom">x</span> <span class="o">=</span> <span class="s-Atom">x</span><span class="p">.</span>
+<span class="s-Atom">true</span>
+<span class="s-Atom">?-</span> <span class="s-Atom">x</span> <span class="o">=</span> <span class="s-Atom">y</span><span class="p">.</span>
+<span class="s-Atom">false</span>
+</pre></div>
+</div>
+<p>Or often used to define functions which operate over pattern
+matched variables collected on the LHS to free variables on the
+RHS. For example in Prolog:</p>
+<div class="highlight-prolog"><div class="highlight"><pre><span class="nf">fact</span><span class="p">(</span><span class="m">0</span><span class="p">)</span> <span class="s-Atom">=&gt;</span> <span class="m">0</span>
+<span class="nf">fact</span><span class="p">(</span><span class="s-Atom">n</span><span class="p">)</span> <span class="s-Atom">=&gt;</span> <span class="s-Atom">n</span><span class="o">*</span><span class="nf">fact</span><span class="p">(</span><span class="s-Atom">n</span><span class="o">-</span><span class="m">1</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Or in ML:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">fun</span> <span class="n">fact</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span> <span class="o">=</span> <span class="mi">1</span>
+  <span class="o">|</span> <span class="n">fact</span><span class="o">(</span><span class="n">n</span><span class="o">)</span> <span class="o">=</span> <span class="n">n</span><span class="o">*</span><span class="n">fact</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">);</span>
+</pre></div>
+</div>
+<p>Or in Haskell:</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span class="nf">fact</span> <span class="mi">0</span> <span class="ow">=</span> <span class="mi">1</span>
+<span class="nf">fact</span> <span class="n">n</span> <span class="ow">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fact</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="motivating-examples">
+<h2>Motivating Examples<a class="headerlink" href="#motivating-examples" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">aterm</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;aterm&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;term&#39;</span><span class="p">,</span> <span class="s">&#39;annotation&#39;</span><span class="p">))</span>
+<span class="n">astr</span>  <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;astr&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;val&#39;</span><span class="p">,))</span>
+<span class="n">aint</span>  <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;aint&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;val&#39;</span><span class="p">,))</span>
+<span class="n">areal</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;areal&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;val&#39;</span><span class="p">,))</span>
+<span class="n">aappl</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;aappl&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;spine&#39;</span><span class="p">,</span> <span class="s">&#39;args&#39;</span><span class="p">))</span>
+<span class="n">atupl</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;atupl&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;args&#39;</span><span class="p">))</span>
+<span class="n">aplaceholder</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;aplaceholder&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="s">&#39;args&#39;</span><span class="p">))</span>
 
-</dd></dl>
+<span class="c"># Lets try and match f(x,y) using pure Python</span>
+<span class="k">def</span> <span class="nf">match_simple</span><span class="p">(</span><span class="n">term</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">appl</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">aterm</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">aterm</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">term</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">term</span> <span class="o">==</span> <span class="s">&#39;x&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">term</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">term</span> <span class="o">==</span> <span class="s">&#39;y&#39;</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="bp">True</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="bp">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
 
-<dl class="class">
-<dt id="blaze.expr.paterm.AAppl">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AAppl</tt><big>(</big><em>spine</em>, <em>args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AAppl" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.AFloat">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AFloat</tt><big>(</big><em>n</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AFloat" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.AInt">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AInt</tt><big>(</big><em>n</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AInt" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.AList">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AList</tt><big>(</big><em>*elts</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AList" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.AString">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">AString</tt><big>(</big><em>s</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.AString" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.ATerm">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">ATerm</tt><big>(</big><em>label</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.ATerm" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.ATermBase">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">ATermBase</tt><big>(</big><em>annotation=None</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.ATermBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base for aterms</p>
-<dl class="attribute">
-<dt id="blaze.expr.paterm.ATermBase.metastr">
-<tt class="descname">metastr</tt><a class="headerlink" href="#blaze.expr.paterm.ATermBase.metastr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.All">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">All</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.All" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Bottomup">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Bottomup</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Bottomup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Choice">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Choice</tt><big>(</big><em>left=None</em>, <em>right=None</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Choice" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.ChoiceL">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">ChoiceL</tt><big>(</big><em>*sx</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.ChoiceL" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Fail">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Fail</tt><a class="headerlink" href="#blaze.expr.paterm.Fail" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Fwd">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Fwd</tt><a class="headerlink" href="#blaze.expr.paterm.Fwd" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="blaze.expr.paterm.Fwd.define">
-<tt class="descname">define</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Fwd.define" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.expr.paterm.Id">
-<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Id</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Id" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Innermost">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Innermost</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Innermost" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Repeat">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Repeat</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Repeat" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="exception">
-<dt id="blaze.expr.paterm.STFail">
-<em class="property">exception </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">STFail</tt><a class="headerlink" href="#blaze.expr.paterm.STFail" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Seq">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Seq</tt><big>(</big><em>s1</em>, <em>s2</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Seq" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.SeqL">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">SeqL</tt><big>(</big><em>*sx</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.SeqL" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Some">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Some</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Some" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Ternary">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Ternary</tt><big>(</big><em>s1</em>, <em>s2</em>, <em>s3</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Ternary" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Topdown">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Topdown</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Topdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="blaze.expr.paterm.Try">
-<em class="property">class </em><tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">Try</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.Try" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="blaze.expr.paterm.arepr">
-<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">arepr</tt><big>(</big><em>terms</em>, <em>l</em>, <em>r</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.arepr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Concatenate str representations with commas and left and right
-delimiters.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.expr.paterm.compose">
-<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">compose</tt><big>(</big><em>f</em>, <em>g</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.compose" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="blaze.expr.paterm.matches">
-<tt class="descclassname">blaze.expr.paterm.</tt><tt class="descname">matches</tt><big>(</big><em>pattern</em>, <em>term</em><big>)</big><a class="headerlink" href="#blaze.expr.paterm.matches" title="Permalink to this definition">¶</a></dt>
-<dd><p>Collapse terms with as-patterns.</p>
-</dd></dl>
-
+<span class="c"># Compared to</span>
+<span class="n">match</span><span class="p">(</span><span class="s">&#39;f(x,y)&#39;</span><span class="p">,</span> <span class="s">&#39;f(x,y)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
 </div>
 
 

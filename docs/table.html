@@ -77,37 +77,22 @@
 <em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">Array</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.table.Array" title="Permalink to this definition">¶</a></dt>
 <dd><p>Manifest array, does not create a graph. Forces evaluation on every
 call.</p>
-<p>Parameters:</p>
 <blockquote>
-<div><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">obj:</th><td class="field-body">A list of byte providers, other NDTables or a Python object.</td>
-</tr>
-</tbody>
-</table>
-</div></blockquote>
-<p>Optional:</p>
+<div>obj : A list of byte providers, other NDTables or a Python object.</div></blockquote>
 <blockquote>
-<div><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">datashape:</th><td class="field-body">Manual datashape specification for the table,
-if None then shape will be inferred if
-possible.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">metadata:</th><td class="field-body">Explicit metadata annotation.</td>
-</tr>
-</tbody>
-</table>
+<div><dl class="docutils">
+<dt>datashape <span class="classifier-delimiter">:</span> <span class="classifier">dshape</span></dt>
+<dd>Manual datashape specification for the table, if None then
+shape will be inferred if possible.</dd>
+<dt>metadata :</dt>
+<dd>Manual datashape specification for the table, if None then
+shape will be inferred if possible.</dd>
+</dl>
 </div></blockquote>
-<p>Usage:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;3, int32&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="p">(</span><span class="s">&#39;3, int32&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s">&#39;file&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <dl class="attribute">
@@ -235,12 +220,6 @@ as an element.</p>
 <dd><p>Size of the NDTable.</p>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.table.cast_arguments">
-<tt class="descclassname">blaze.table.</tt><tt class="descname">cast_arguments</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#blaze.table.cast_arguments" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handle different sets of arguments for constructors.</p>
 </dd></dl>
 
 </div>
