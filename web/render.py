@@ -15,16 +15,17 @@ from os.path import abspath, join
 
 doc_url  = 'docs/index.html'
 
-src_url  = 'https://github.com/ContinuumIO/blaze/downloads'
-mail_url = 'https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev'
+src_url  = 'http://github.com/ContinuumIO/blaze'
+mail_url = 'http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev'
 
 pages = [
-    ("Blaze"         , 'index.html'  , 'index'  , 'home')     ,
-    ("Documentation" , doc_url       , 'docs'   , 'book')     ,
-    ("Source"        , src_url       , 'source' , 'download') ,
-    ("Vision"        , 'vision.html' , 'vision' , 'star')     ,
-    ("People"        , 'people.html' , 'people' , 'user')     ,
-    ("Mailing List"  , mail_url      , 'mail'   , 'envelope') ,
+    ("Blaze"         , 'index.html'   , 'index'  , 'home'),
+    ("Documentation" , doc_url        , 'docs'   , 'book'),
+    ("Examples"      , 'examples.html', 'examples', 'ok'),
+    ("Source"        , src_url        , 'source' , 'download') ,
+    ("Vision"        , 'vision.html'  , 'vision' , 'star'),
+    ("People"        , 'people.html'  , 'people' , 'user'),
+    ("Mailing List"  , mail_url       , 'mail'   , 'envelope'),
 ]
 
 defaultmpl = 'default'
@@ -80,4 +81,5 @@ if __name__ == '__main__':
     render_page(bfolder, 'index')
     render_page(bfolder, 'vision')
     render_page(bfolder, 'people')
+    render_page(bfolder, 'examples')
     print 'Done'

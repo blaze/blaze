@@ -58,14 +58,14 @@ zerocost = lambda term: 0
 
 #------------------------------------------------------------------------
 
-@lift('dtw(Array(), Array(), <term>, <term>)', '(a,a,float,int) -> b', {
+@lift('dtw(<term>, <term>, <term>, <term>)', '(a,a,float,int) -> b', {
     'types' : {'a': array_like},
     'metadata': {},
 })
 def dtw(d1, d2, s, n):
     return ucr.dtw(d1, d2, s, n)
 
-@lift('dot(Array(), Array())', '(a,a) -> a', {
+@lift('dot(<term>, <term>)', '(a,a) -> a', {
     'types'    : {'a' : array_like},
     'metadata' : {'a' : md.c_contigious},
 })

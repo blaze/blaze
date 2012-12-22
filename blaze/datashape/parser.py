@@ -110,7 +110,7 @@ def t_error(t):
     t.lexer.skip(1)
 
 # Build the lexer
-lexer = lex.lex()
+#lexer = lex.lex()
 
 #------------------------------------------------------------------------
 # Parser
@@ -205,9 +205,6 @@ def p_error(p):
     else:
         print("Syntax error at EOF")
 
-# Build the parser
-parser = yacc.yacc()
-
 #------------------------------------------------------------------------
 # Whitespace Preprocessor
 #------------------------------------------------------------------------
@@ -267,3 +264,12 @@ def datashape_pprint(ast, depth=0):
 
 def dparse(s):
     return datashape_parser(s)
+
+class DatashapeParser(object):
+
+    def __init__(self):
+        self.lexer = lex.lex()
+        self.parser = yacc.yacc(tabmodule='dtokens',outputdir="blaze/expr")
+
+    def parse(self, pattern):
+        return self.parser.parse(pattern)

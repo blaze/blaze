@@ -24,9 +24,8 @@ possible ), converting to a Numexpr expression, etc.
 
 
 from thread import allocate_lock
-from blaze.expr.paterm import matches
 from blaze.error import NoDispatch
-from blaze.expr import caterm
+from blaze.aterm import parse, match, AtermSyntaxError
 from blaze.datashape.coretypes import dynamic
 
 from blaze.expr.graph import Fun
@@ -66,22 +65,24 @@ class Dispatcher(object):
         self.costs[fn] = cost
 
     def lookup(self, aterm):
-        # convert into a C ATerm, inefficent but whatever
-        ct = caterm.aterm(str(aterm))
-
         # canidate functions, functions matching the signature of
         # the term
 
         # Use the C libraries better pattern matching library,
         # find a function in the Blaze library that matches the
         # given aterm
-        c = [f for f, sig in self.funs.iteritems() if ct.matches(sig)]
 
-        if len(c) == 0:
+        matched = []
+        for f, sig in self.funs.iteritems():
+            ismatch, _ = match(sig, str(aterm))
+            if ismatch:
+                matched.append(f)
+
+        if len(matched) == 0:
             raise NoDispatch(aterm)
 
         # the canidate which has the minimal cost function
-        costs = [(f, self.costs[f](aterm)) for f in c]
+        costs = [(f, self.costs[f](aterm)) for f in matched]
 
         return min(costs, key=lambda x: x[1])
 
@@ -108,8 +109,8 @@ def lift(signature, typesig, constraints=None, **params):
         fname = pyfn.func_name
 
         try:
-            caterm.aterm(signature)
-        except caterm.InvalidATerm as e:
+            parse(signature)
+        except AtermSyntaxError as e:
             raise InvalidLibraryDefinton(*e.args + (fname,))
 
         # #effectful

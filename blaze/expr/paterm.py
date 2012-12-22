@@ -1,10 +1,4 @@
 """
-Python implementation of ATerm. Just a pretty printer for now.
-
-In our slight modification of ATerm we require that the first
-annotation of a Term be its datashape type and the following
-annotations stand for metadata. For example, an Array.
-
 **Type**::
 
     Array(2928121){dshape("2,2,int32")}
