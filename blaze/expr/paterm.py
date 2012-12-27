@@ -443,6 +443,7 @@ class ChoiceL(object):
 # Pattern Matching
 #------------------------------------------------------------------------
 
+# TODO: deprecated
 def matches(pattern, term):
     """
     Collapse terms with as-patterns.

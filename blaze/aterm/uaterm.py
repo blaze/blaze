@@ -1,6 +1,6 @@
+import os
 import re
-from functools import partial
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 import ply.lex as lex
 import ply.yacc as yacc
@@ -280,10 +280,13 @@ def aterm_zip(a, b):
         yield a.val == b.val, None
 
     elif isinstance(a, aappl) and isinstance(b, aappl):
-        yield a.spine == b.spine, None
-        for ai, bi in zip(a.args, b.args):
-            for aj in aterm_zip(ai,bi):
-                yield aj
+        if len(a.args) == len(b.args):
+            yield a.spine == b.spine, None
+            for ai, bi in zip(a.args, b.args):
+                for aj in aterm_zip(ai,bi):
+                    yield aj
+        else:
+            yield False, None
 
     elif isinstance(a, aterm) and isinstance(b, aterm):
         yield a.term == b.term, None
@@ -305,15 +308,15 @@ def aterm_zip(a, b):
     else:
         yield False, None
 
-def aterm_azip(a, elts):
-    elts = elts[:]
+
+# left-to-right substitution
+def aterm_splice(a, elts):
 
     if isinstance(a, (aint, areal, astr)):
         yield a
 
     elif isinstance(a, aappl):
-        # ugly
-        yield aappl(a.spine, [init(aterm_azip(ai,elts)) for ai in a.args])
+        yield aappl(a.spine, [init(aterm_splice(ai,elts)) for ai in a.args])
 
     elif isinstance(a, aterm):
         yield a
@@ -321,8 +324,8 @@ def aterm_azip(a, elts):
     elif isinstance(a, aplaceholder):
         # <appl(...)>
         if a.args:
-            # ugly
-            yield aappl(elts.pop(), [init(aterm_azip(ai,elts)) for ai in a.args])
+            spine = elts.pop()
+            yield aappl(spine, [init(aterm_splice(ai,elts)) for ai in a.args])
         # <term>
         else:
             yield elts.pop()
@@ -339,8 +342,12 @@ def has_prop(term, prop):
 def _init():
     global parser
     if not parser:
-        lexer = lex.lex()
-        parser = yacc.yacc(tabmodule='atokens', outputdir="blaze/aterm")
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+
+        lexer = lex.lex(lextab="alex")
+        parser = yacc.yacc(tabmodule='ayacc',outputdir=dir_path,debug=0,
+            write_tables=0)
     else:
         parser = parser
     return parser
@@ -364,8 +371,19 @@ def match(pattern, subject, *captures):
             captures += [capture]
     return True, captures
 
-def make(pattern, *values):
+def matches(pattern, subject):
+    #parser = _init()
+
+    p = pattern
+    s = subject
+
+    for matches, capture in aterm_zip(p,s):
+        if not matches:
+            return False
+    return True
+
+def build(pattern, *values):
     parser = _init()
 
     p = parser.parse(pattern)
-    return list(aterm_azip(p,list(values)))
+    return list(aterm_splice(p,list(values)))

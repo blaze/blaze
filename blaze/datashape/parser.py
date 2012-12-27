@@ -29,9 +29,10 @@ Grammar::
 
 """
 
+import os
 import re
 from functools import partial
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 import ply.lex as lex
 import ply.yacc as yacc
@@ -254,22 +255,21 @@ preparse = reduce(compose, [
 # Toplevel
 #------------------------------------------------------------------------
 
-def datashape_parser(s, debug=False):
-    inputs = preparse(s)
-    ast = parser.parse(inputs,lexer=lexer)
-    return ast
+# TODO: deprecated??
+# def datashape_parser(s, debug=False):
+#     inputs = preparse(s)
+#     ast = parser.parse(inputs,lexer=lexer)
+#     return ast
 
 def datashape_pprint(ast, depth=0):
     raise NotImplementedError
 
-def dparse(s):
-    return datashape_parser(s)
+def make_parser():
+    path = os.path.abspath(__file__)
+    dir_path = os.path.dirname(path)
 
-class DatashapeParser(object):
+    lexer = lex.lex(lextab="dshape_lexer")
+    parser = yacc.yacc(tabmodule='dshape_yacc',outputdir=dir_path,debug=0,
+        write_tables=0)
 
-    def __init__(self):
-        self.lexer = lex.lex()
-        self.parser = yacc.yacc(tabmodule='dtokens',outputdir="blaze/expr")
-
-    def parse(self, pattern):
-        return self.parser.parse(pattern)
+    return parser
