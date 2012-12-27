@@ -17,13 +17,6 @@ from blaze.expr.visitor import MroVisitor
 # Plans
 #------------------------------------------------------------------------
 
-# Annotate with simple_type() which will pull the simple type of
-# the App, Op, or Literal node before we even hit eval(). This is
-# a stop gap measure because right we're protoyping this without
-# having the types annotated on the graph that we're using for
-# Numba code generation. It's still probably a good idea to have
-# this knowledge available if we have it though!
-
 def annotate_dshape(ds):
     """
     Convert a datashape instance into Aterm annotation
@@ -37,18 +30,6 @@ def annotate_dshape(ds):
 
     assert isinstance(ds, DataShape)
     return AAppl(ATerm('dshape'), [AString(str(ds))])
-
-def annotation(graph, *metadata):
-    # Metadata holds a reference to the graph node, not really
-    # what we want but fine for now...
-    metadata = (id(graph),) + metadata
-
-    # was originally .datashape but this is a reserved attribute
-    # so moved to a new simple_type() method that wraps around
-    # promote()
-    anno = annotate_dshape(graph.simple_type())
-    annotation = AAnnotation(anno, metadata)
-    return annotation
 
 class Constant(object):
     def __init__(self, n):
@@ -143,48 +124,18 @@ class InstructionGen(MroVisitor):
     def AAppl(self, term):
         label = term.spine.label
 
-        if label == 'Arithmetic':
-            return self._Arithmetic(term)
-        elif label == 'Array':
+        if label == 'Array':
             return self._Array(term)
         elif label == 'Slice':
             return self._Slice(term)
         elif label == 'Assign':
             return self._Assign(term)
         else:
-            raise NotImplementedError
+            return self._Op(term)
 
-    def _Arithmetic(self, term):
-        # All the function signatures are of the form
-        #
-        #     Add(a,b)
-        #
-        # But the aterm expression for LLVM is expected to be
-        #
-        #     Arithmetic(Add, ...)
-        #
-        # so we do this ugly hack to get the signature back to
-        # standard form
-
-        # -- hack --
-        op   = term.args[0]
-        args = term.args[1:]
-        normal_term = AAppl(ATerm(op), args)
-        # --
-
-        assert isinstance(op, ATerm)
-        label = op.label
-
-        if self.numbapro:
-            pass
-            # ==================================================
-            # TODO: right here is where we would call the
-            # ExecutionPipeline and build a numba ufunc kernel
-            # if we have numbapro. We would pass in the original
-            # ``term`` object which is still of the expected form:
-            #
-            #      Arithmetic(Add, ...)
-            # ==================================================
+    def _Op(self, term):
+        spine = term.spine
+        args  = term.args
 
         # otherwise, go find us implementation for how to execute
         # Returns either a ExternalF ( reference to a external C
@@ -194,9 +145,9 @@ class InstructionGen(MroVisitor):
 
         # visit the innermost arguments, push those arguments on
         # the instruction list first
-        self.visit(args)
+        self.visit(term.args)
 
-        fn, cost = lookup(normal_term)
+        fn, cost = lookup(term)
         fargs = [self._vartable[a] for a in args]
 
         # push the temporary for the result in the vartable
@@ -245,26 +196,19 @@ class BlazeVisitor(MroVisitor):
 
     def Op(self, graph):
         opname = graph.__class__.__name__
-
-        if graph.is_arithmetic:
-            return AAppl(ATerm('Arithmetic'),
-                         [ATerm(opname)] + self.visit(graph.children),
-                         annotation=annotation(graph))
-        else:
-            return AAppl(ATerm(opname), self.visit(graph.children),
-                         annotation=annotation(graph))
+        return AAppl(ATerm(opname), self.visit(graph.children))
 
     def Literal(self, graph):
         if graph.vtype == int:
-            return AInt(graph.val, annotation=annotation(graph))
+            return AInt(graph.val)
         if graph.vtype == float:
-            return AFloat(graph.val, annotation=annotation(graph))
+            return AFloat(graph.val)
         else:
-            return ATerm(graph.val, annotation=annotation(graph))
+            return ATerm(graph.val)
 
     def Indexable(self, graph):
         self.operands.append(graph)
-        return AAppl(ATerm('Array'), [], annotation=annotation(graph))
+        return AAppl(ATerm('Array'), [])
 
     def Slice(self, graph):
         # Slice(start, stop, step){id(graph), 'get'|'set'}
@@ -283,13 +227,10 @@ class BlazeVisitor(MroVisitor):
              start or ATerm('None'),
              stop  or ATerm('None'),
              step  or ATerm('None')],
-            annotation=annotation(graph, graph.op)
         )
 
     def IndexNode(self, graph):
-        return AAppl(ATerm('Index'), self.visit(graph.operands),
-                     annotation=annotation(graph, graph.op))
+        return AAppl(ATerm('Index'), self.visit(graph.operands))
 
     def Assign(self, graph):
-        return AAppl(ATerm('Assign'), self.visit(graph.operands),
-                     annotation=annotation(graph))
+        return AAppl(ATerm('Assign'), self.visit(graph.operands))

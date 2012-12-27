@@ -725,38 +725,6 @@ def to_dtype(ds):
     measure as NumPy dtype instance."""
     return to_numpy(extract_measure(ds))
 
-def promote(*operands):
-    """
-    Take an arbitrary number of graph nodes and produce the promoted
-    dtype by discarding all shape information and just looking at the
-    measures.
-
-    ::
-
-        5, 5,  | int   |
-        2, 5,  | int   |
-        1, 3,  | float |
-
-    >>> promote(IntNode(1), Op(IntNode(2))
-    int
-    >>> promote(FloatNode(1), Op(IntNode(2))
-    float
-    """
-
-    # Looks something like this...
-
-    # (ArrayNode, IntNode...) -> (dshape('2, int'), dshape('int'))
-    # (dshape('2, int', dshape('int')) -> (dshape('int', dshape('int'))
-    # (dshape('2, int', dshape('int')) -> (dtype('int', dtype('int'))
-
-    types    = (op.simple_type() for op in operands if op is not None)
-    measures = (extract_measure(t) for t in types)
-    dtypes   = (to_numpy(m) for m in measures)
-
-    promoted = np.result_type(*dtypes)
-    datashape = CType.from_dtype(promoted)
-    return datashape
-
 def to_numpy(ds):
     """
     Downcast a datashape object into a Numpy (shape, dtype) tuple if

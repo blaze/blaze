@@ -7,8 +7,7 @@ import numpy as np
 
 from blaze import dshape
 from blaze.datashape.coretypes import NotNumpyCompatible,\
-    to_numpy, from_numpy, extract_dims, extract_measure, \
-    promote
+    to_numpy, from_numpy, extract_dims, extract_measure
 
 from nose.tools import assert_raises
 
@@ -42,23 +41,6 @@ def test_not_compat():
 
     with assert_raises(NotNumpyCompatible):
         to_numpy(dshape('Range(0, 3), int32'))
-
-def test_promote():
-    from blaze.expr.graph import IntNode, FloatNode
-
-    # ----------------------------------
-    x,y = IntNode(1), FloatNode(1.)
-    res = promote(x,y)
-
-    # TODO: check if this is platform specific
-    assert res == blaze.float64
-    # ----------------------------------
-    x,y = IntNode(1), IntNode(1)
-    res = promote(x,y)
-
-    assert res == blaze.int32
-    # ----------------------------------
-
 
 #------------------------------------------------------------------------
 # From NumPy

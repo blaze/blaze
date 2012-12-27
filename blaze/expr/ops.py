@@ -2,7 +2,6 @@ import numpy as np
 
 from graph import Op
 from blaze.datashape import coretypes as C
-from blaze.datashape.coretypes import promote
 
 from utils import Symbol
 

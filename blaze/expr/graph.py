@@ -13,6 +13,8 @@ Holds the Blaze expression objects.
 * FunApp
 * IndexNode
 
+These form the function terms in the ATerm representation of the
+graph.
 """
 
 from numbers import Integral
@@ -21,7 +23,7 @@ from collections import Iterable
 from blaze.expr import nodes, catalog
 from blaze.datashape import coretypes
 from blaze.sources.canonical import PythonSource
-from blaze.datashape.coretypes import int_, float_, string, top, dynamic
+from blaze.datashape.coretypes import int_, float_, string
 from blaze.metadata import manifest, all_prop
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
@@ -32,13 +34,17 @@ except ImportError:
     np = {"integer": Integral}
 
 #------------------------------------------------------------------------
-# Globals
+# Kinds
 #------------------------------------------------------------------------
 
 OP  = 0
 APP = 1
 VAL = 2
 FUN = 3
+
+#------------------------------------------------------------------------
+# Settings
+#------------------------------------------------------------------------
 
 _max_argument_recursion = 25
 _max_argument_len       = 1000
@@ -365,9 +371,6 @@ class ArrayNode(ExpressionNode):
     def tostring(self, *args, **kw):
         pass
 
-    def simple_type(self):
-        return self._datashape
-
 def intnode(value_or_graph):
     if value_or_graph is None:
         return None
@@ -397,16 +400,6 @@ class App(ExpressionNode):
     def __init__(self, operator):
         self.operator = operator
         self.children = [operator]
-
-    def simple_type(self):
-        # If the operator is a simple type return then the App of
-        # it is also has simple_type, or it raises NotSimple.
-
-        ty = self.operator.simple_type()
-        if coretypes.is_simple(ty):
-            return ty
-        else:
-            raise NotSimple()
 
     @property
     def dom(self):
@@ -491,42 +484,6 @@ class Op(ExpressionNode):
         self.operands = operands
         self._opaque = False
 
-    @property
-    def nin(self):
-        raise NotImplementedError
-
-    @property
-    def nout(self):
-        raise NotImplementedError
-
-    @property
-    def opaque(self):
-        """
-        We don't know anything about the operator, no types, no argument
-        signature ... we just throw things into and things pop out or it
-        blows up.
-        """
-        return self._opaque or (not hasattr(self, 'signature'))
-
-    def simple_type(self):
-        """ If possible determine the datashape before we even
-        hit eval(). This is possible only for simple types.
-
-        Possible::
-
-            2, 2, int32
-
-        Example Not Possible::
-            X, 2, int32
-
-        """
-        # Get the the simple types for each of the operands.
-        if not all(coretypes.is_simple(
-            op.simple_type()) for op in self.operands if op is not None):
-            raise NotSimple()
-        else:
-            return coretypes.promote(*self.operands)
-
 #------------------------------------------------------------------------
 # Functions
 #------------------------------------------------------------------------
@@ -548,15 +505,12 @@ class Fun(ExpressionNode):
         _manifest = all_prop(arguments, manifest)
 
         if _manifest:
-            self.fn.im_func(*arguments)
+            pass
 
         elif not _manifest: # lazy
             # Just execute it if manifest
             self.children = []
             self.cod = self.cod
-
-    def simple_type(self):
-        return self.cod
 
 #------------------------------------------------------------------------
 # Values
@@ -570,25 +524,18 @@ class Literal(ExpressionNode):
         self.val = val
         self.children = []
 
-    def simple_type(self):
-        return coretypes.from_python_scalar(self.val)
-
     @property
     def name(self):
         return str(self.val)
-
-    @property
-    def data(self):
-        raise NotImplementedError
 
 #------------------------------------------------------------------------
 # Strings
 #------------------------------------------------------------------------
 
 class StringNode(Literal):
+    kind      = VAL
     vtype     = str
     datashape = string
-    kind      = VAL
 
     datashape = coretypes.string
 
@@ -612,9 +559,9 @@ class IntNode(Literal):
         return PythonSource(self.val, type=int)
 
 class FloatNode(Literal):
+    kind      = VAL
     vtype     = float
     datashape = float_
-    kind      = VAL
 
     datashape = coretypes.double
 
@@ -627,19 +574,19 @@ class FloatNode(Literal):
 #------------------------------------------------------------------------
 
 class IndexNode(Op):
+    kind  = OP
     arity  = 2 # <INDEXABLE>, <INDEXER>
     vtype = tuple
-    kind  = OP
 
     @property
     def name(self):
         return 'Index%s' % str(self.val)
 
 class Slice(Op):
+    kind   = OP
     arity  = 4 # <INDEXABLE>, start, stop, step
     opaque = True
-    kind   = OP
 
 class Assign(Op):
-    arity  = 2
     kind   = OP
+    arity  = 2
