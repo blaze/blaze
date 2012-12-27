@@ -6,7 +6,7 @@ from blaze.datashape import coretypes as C
 from utils import Symbol
 
 #------------------------------------------------------------------------
-# Domain Constraint
+# Domain Constraints
 #------------------------------------------------------------------------
 
 Array, Table = Symbol('Array'), Symbol('Table')
@@ -37,7 +37,7 @@ universal = set([C.top]) | numeric | indexable | string
 class Add(Op):
     # -----------------------
     arity = 2
-    signature = 'a -> a -> a'
+    signature = '(a,a) -> a'
     dom = [numeric, numeric]
     # -----------------------
 
@@ -48,12 +48,10 @@ class Add(Op):
     nilpotent    = False
     sideffectful = False
 
-    is_arithmetic = True
-
 class Mul(Op):
     # -----------------------
     arity = 2
-    signature = 'a -> a -> a'
+    signature = '(a,a) -> a'
     dom = [numeric, numeric]
     # -----------------------
 
@@ -64,12 +62,10 @@ class Mul(Op):
     nilpotent    = False
     sideffectful = False
 
-    is_arithmetic = True
-
 class Pow(Op):
     # -----------------------
     arity = 2
-    signature = 'a -> a -> a'
+    signature = '(a,b) -> a'
     dom = [numeric, numeric]
     # -----------------------
 
@@ -79,8 +75,6 @@ class Pow(Op):
     idempotent   = False
     nilpotent    = False
     sideffectful = False
-
-    is_arithmetic = True
 
 class Transpose(Op):
     # -----------------------
@@ -109,5 +103,3 @@ class Abs(Op):
     idempotent   = True
     nilpotent    = False
     sideffectful = False
-
-    is_arithmetic = True

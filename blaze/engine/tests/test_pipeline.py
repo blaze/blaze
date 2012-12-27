@@ -10,7 +10,7 @@ from difflib import ndiff
 
 from unittest import skip
 
-DEBUG = False
+DEBUG = True
 
 #------------------------------------------------------------------------
 # Sample Graph

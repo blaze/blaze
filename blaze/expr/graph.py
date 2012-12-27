@@ -452,6 +452,7 @@ class FunApp(ExpressionNode):
 # Op
 #------------------------------------------------------------------------
 
+# TODO: remove metaclass
 class NamedOp(type):
     """
     Metaclass to track Op subclasses.
@@ -482,7 +483,6 @@ class Op(ExpressionNode):
         self.op = op
         self.children = operands
         self.operands = operands
-        self._opaque = False
 
 #------------------------------------------------------------------------
 # Functions
@@ -511,6 +511,9 @@ class Fun(ExpressionNode):
             # Just execute it if manifest
             self.children = []
             self.cod = self.cod
+
+    def __call__(self):
+        pass
 
 #------------------------------------------------------------------------
 # Values
@@ -585,8 +588,15 @@ class IndexNode(Op):
 class Slice(Op):
     kind   = OP
     arity  = 4 # <INDEXABLE>, start, stop, step
-    opaque = True
 
 class Assign(Op):
     kind   = OP
     arity  = 2
+
+#------------------------------------------------------------------------
+# Control Flow
+#------------------------------------------------------------------------
+
+class IfElse(Op):
+    kind   = OP
+    arity  = 3

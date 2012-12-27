@@ -136,11 +136,6 @@ class InstructionGen(MroVisitor):
     def _Op(self, term):
         spine = term.spine
         args  = term.args
-
-        # otherwise, go find us implementation for how to execute
-        # Returns either a ExternalF ( reference to a external C
-        # library ) or a PythonF, a Python callable. These can be
-        # anything, numpy ufuncs, numexpr, pandas, cmath whatever
         from blaze.rts.funcs import lookup
 
         # visit the innermost arguments, push those arguments on

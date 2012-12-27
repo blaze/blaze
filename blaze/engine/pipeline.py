@@ -153,9 +153,7 @@ def do_plan(context, graph):
     plan = igen.plan()
 
     context['plan'] = plan
-    print plan
-
-    return context, plan
+    return context, graph
 
 #------------------------------------------------------------------------
 # Pipeline
