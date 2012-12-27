@@ -10,6 +10,7 @@ from blaze.expr import nodes, catalog
 from blaze.datashape import coretypes
 from blaze.sources.canonical import PythonSource
 from blaze.datashape.coretypes import int_, float_, string, top, dynamic
+from blaze.metadata import manifest, all_prop
 
 # Type checking and unification
 from blaze.datashape.unification import unify
@@ -597,37 +598,29 @@ class Op(ExpressionNode):
 # Functions
 #------------------------------------------------------------------------
 
-class NamedFun(type):
-    """
-    Metaclass to track Fun subclasses.
-    """
-
-    def __init__(cls, name, bases, dct):
-        abstract = dct.pop('abstract', False)
-        if not hasattr(cls, '_registry'):
-            cls._registry = {}
-
-        if not abstract:
-            cls._registry[name] = cls
-
-        super(NamedFun, cls).__init__(name, bases, dct)
-
 class Fun(ExpressionNode):
     """
     A generic function application. Normally constructed by
     @lift'ing a function into the Blaze runtime.
     """
-    __slots__ = ['children', 'fn', 'cod']
-    __metaclass__ = NamedFun
-    kind      = FUN
+    kind = FUN
 
     # nargs, fn, fname are spliced in at construction
 
     def __init__(self, *arguments):
         if len(arguments) != self.nargs:
             raise TypeError('%s exepected at most %i args' % (self.fname, self.nargs))
-        self.children = []
-        self.cod = self.cod
+
+        # Are all the arguments manifest indexable objects
+        _manifest = all_prop(arguments, manifest)
+
+        if _manifest:
+            self.fn.im_func(*arguments)
+
+        elif not _manifest: # lazy
+            # Just execute it if manifest
+            self.children = []
+            self.cod = self.cod
 
     def simple_type(self):
         return self.cod
@@ -637,8 +630,7 @@ class Fun(ExpressionNode):
 #------------------------------------------------------------------------
 
 class Literal(ExpressionNode):
-    __slots__ = ['children', 'vtype']
-    kind      = VAL
+    kind = VAL
 
     def __init__(self, val):
         assert isinstance(val, self.vtype)

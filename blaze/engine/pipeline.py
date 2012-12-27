@@ -15,15 +15,6 @@ except ImportError:
     have_numbapro = False
 
 #------------------------------------------------------------------------
-# Constants
-#------------------------------------------------------------------------
-
-OP  = 0
-APP = 1
-VAL = 2
-FUN = 3
-
-#------------------------------------------------------------------------
 # Pipeline Combinators
 #------------------------------------------------------------------------
 
@@ -92,12 +83,7 @@ Id = lambda x:x
 def do_environment(context, graph):
     context = dict(context)
 
-    # manually toggling numba support because it can crash if its not on
-    # a test case that matches up with numba
-
-    # ----------------------
-    #context['have_numbapro'] = have_numbapro
-    # ----------------------
+    # TODO:
 
     return context, graph
 
@@ -119,6 +105,8 @@ def do_convert_to_aterm(context, graph):
     context = dict(context)
     vars = topovals(graph)
 
+    # walk the blaze Graph objects ( Python objects inherting
+    # derived expr.node.Node ) map them into a ATerm expression
     visitor = BlazeVisitor()
     aterm_graph = visitor.visit(graph)
     operands = visitor.operands
@@ -126,9 +114,6 @@ def do_convert_to_aterm(context, graph):
     # ----------------------
     context['operands'] = operands
     context['aterm_graph'] = aterm_graph
-
-    # TODO: remove
-    context['output'] = aterm_graph
     # ----------------------
 
     return context, graph
@@ -138,45 +123,6 @@ def do_types(context, graph):
 
     # Resolve TypeVars using typeinference.py, not needed right
     # now because we're only doing simple numpy-like things
-
-    return context, graph
-
-def build_ufunc(context, graph):
-    """
-    Using Numba we can take ATerm expressions and build custom
-    ufuncs on the fly if we have NumbaPro.
-
-    ::
-        a + b * c
-
-    ::
-        def ufunc1(op0, op1, op2):
-            return (op0 + (op1 * op2))
-
-    Which can be executed by the runtime through the
-    ElementwiseLLVMExecutor. We stash it in the 'ufunc' parameter in
-    the context. It's preferable to build these, otherwise it would
-    involve multiple numpy ufuncs dispatches.
-
-    ::
-        %0 := ElemwiseLLVM[ufunc1](%a, %b, %c)
-
-    """
-    context = dict(context)
-
-    # if no numbapro then just a passthrough
-    if not context['have_numbapro']:
-        return context, graph
-
-    aterm_graph = context['aterm_graph']
-
-    # Build the custom ufuncs using the ExecutionPipeline
-    from blaze.engine import execution_pipeline
-
-    # NOTE: the purpose of the execution pipeline is for every component to
-    # cooperate, not just numba
-    p = execution_pipeline.ExecutionPipeline()
-    p.run_pipeline(context, aterm_graph)
 
     return context, graph
 
@@ -202,11 +148,12 @@ def do_plan(context, graph):
 
     aterm_graph = context['aterm_graph']
 
-    ivisitor = InstructionGen(have_numbapro=have_numbapro)
-    plan = ivisitor.visit(aterm_graph)
+    igen = InstructionGen(have_numbapro=have_numbapro)
+    igen.visit(aterm_graph) # effectful
+    plan = igen.plan()
 
-    context['instructions'] = ivisitor.result()
-    print ivisitor.result()
+    context['plan'] = plan
+    print plan
 
     return context, plan
 
@@ -225,7 +172,7 @@ class Pipeline(object):
     runtime to execute serially.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         defaults = { 'have_numbapro': False } # have_numbapro }
         self.init = dict(defaults, **kwargs)
 
@@ -234,7 +181,6 @@ class Pipeline(object):
             do_environment,
             do_convert_to_aterm,
             do_types,
-            build_ufunc,
             do_plan,
         ]
 
@@ -250,5 +196,5 @@ class Pipeline(object):
         pipeline = reduce(compose, self.pipeline)
 
         context, plan = pipeline(self.init, graph)
-        return context, context['aterm_graph']
+        return context, context['plan']
         #return context, plan

@@ -50,10 +50,6 @@ def annotation(graph, *metadata):
     annotation = AAnnotation(anno, metadata)
     return annotation
 
-#------------------------------------------------------------------------
-# ATerm -> Instructions
-#------------------------------------------------------------------------
-
 class Constant(object):
     def __init__(self, n):
         self.n = n
@@ -83,6 +79,15 @@ class Instruction(object):
         else:
             return ' '.join([self.fn,] + map(repr, self.args))
 
+# TODO: plan file should be serializable and in the context of a
+# symbol table uniquely defines the computation
+
+class Plan(object):
+    def __init__(self, instructions):
+        self.instructions = instructions
+
+    def __repr__(self):
+        return pformat(self.instructions)
 
 # TODO: naive constant folding
 
@@ -115,9 +120,6 @@ class InstructionGen(MroVisitor):
 
     """
 
-    # TODO: markf comments: this gives us an all-or-nothing approach
-    # either "all-numba" or "all-something else". FIX this
-
     def __init__(self, have_numbapro):
         self.numbapro = have_numbapro
 
@@ -125,7 +127,7 @@ class InstructionGen(MroVisitor):
         self._vartable = {}
         self._instructions = []
 
-    def result(self):
+    def plan(self):
         return self._instructions
 
     @property

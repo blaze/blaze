@@ -553,13 +553,3 @@ class NDTable(Indexable, ArrayNode):
 
     def __repr__(self):
         return generic_repr('NDTable', self, deferred=True)
-
-def infer_eclass(a,b):
-    if (a,b) == (MANIFEST, MANIFEST):
-        return MANIFEST
-    if (a,b) == (MANIFEST, DELAYED):
-        return MANIFEST
-    if (a,b) == (DELAYED, MANIFEST):
-        return MANIFEST
-    if (a,b) == (DELAYED, DELAYED):
-        return DELAYED
