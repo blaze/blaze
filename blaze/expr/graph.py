@@ -1,8 +1,20 @@
 """
-Holds the base classes for graph nodes.
+Holds the Blaze expression objects.
+
+* App
+* Op
+* ArrayNode
+* IntNode
+* FloatNode
+* StringNode
+* Assign
+* ExpressionNode
+* Fun
+* FunApp
+* IndexNode
+
 """
 
-from uuid import uuid4
 from numbers import Integral
 from collections import Iterable
 
@@ -11,10 +23,6 @@ from blaze.datashape import coretypes
 from blaze.sources.canonical import PythonSource
 from blaze.datashape.coretypes import int_, float_, string, top, dynamic
 from blaze.metadata import manifest, all_prop
-
-# Type checking and unification
-from blaze.datashape.unification import unify
-from blaze.expr.typechecker import typesystem
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -27,7 +35,7 @@ except ImportError:
 # Globals
 #------------------------------------------------------------------------
 
-OP  = 0 # OP/FUN??
+OP  = 0
 APP = 1
 VAL = 2
 FUN = 3
@@ -48,69 +56,9 @@ def set_max_argument_recursion(val):
 # Exceptions
 #------------------------------------------------------------------------
 
-class UnknownExpression(Exception):
-    def __init__(self, obj):
-        self.obj = obj
-    def __str__(self):
-        return 'Unknown object in expression: %r' % (self.obj,)
-
 class NotSimple(Exception):
     def __str__(self):
         return 'Datashape deferred until eval()'
-
-#------------------------------------------------------------------------
-# Deconstructors
-#------------------------------------------------------------------------
-
-
-def typeof(obj):
-    """
-    BlazeT value deconstructor, maps values to types. Only
-    defined for Blaze types.
-
-    >>> typeof(IntNode(3))
-    int64
-    >>> typeof(Any())
-    top
-    >>> typeof(NDArray([1,2,3]))
-    dshape("3, int64")
-    """
-    typ = type(obj)
-
-    # -- special case --
-    if isinstance(obj, ArrayNode):
-        return obj.datashape
-
-    if typ is App:
-        return obj.cod
-    elif typ is IntNode:
-        return int_
-    elif typ is FloatNode:
-        return float_
-    elif typ is StringNode:
-        return string
-    elif typ is dynamic:
-        return top
-    else:
-        raise UnknownExpression(obj)
-
-#------------------------------------------------------------------------
-# Blaze Typesystem
-#------------------------------------------------------------------------
-
-# unify   : the type unification function
-# top     : the top type
-# dynamic : the dynamic type
-# typeof  : the value deconstructor
-
-# Judgements over a type system are uniquely defined by three things:
-#
-# * a type unifier
-# * a top type
-# * a value deconstructor
-# * universe of first order terms
-
-BlazeT = typesystem(unify, top, any, typeof)
 
 #------------------------------------------------------------------------
 # Graph Construction
@@ -542,21 +490,6 @@ class Op(ExpressionNode):
         self.children = operands
         self.operands = operands
         self._opaque = False
-
-        # If all the operands to the expression are simple
-        # numeric types then go ahead and determine what the
-        # datashape of this operator is before we hit eval().
-
-        # Examples:
-        #    IntNode, IntNode
-        #    IntNode, FloatNode
-
-        # minor hack until we get graph level numbering of
-        # expression objects
-        self.uuid = str(uuid4())
-
-        # Make sure the graph makes sense given the signature of
-        # the function. Does naive type checking and inference.
 
     @property
     def nin(self):
