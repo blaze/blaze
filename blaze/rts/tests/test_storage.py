@@ -1,5 +1,5 @@
 from ctypes import c_char
-from blaze.rts.storage import Heap, Arena, address_of_buffer,\
+from blaze.rts.heap import Heap, Arena, address_of_buffer,\
     allocate_numpy, allocate_raw, finalize
 
 import numpy as np

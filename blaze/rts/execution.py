@@ -28,7 +28,7 @@
 # - Later: handle kernel fusion
 # - Much Later: handle GPU access & thread control
 
-from blaze.rts.storage import Heap
+from blaze.rts.heap import Heap
 
 # =================================
 # The main Blaze RTS execution loop

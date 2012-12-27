@@ -3,8 +3,8 @@
 
 from blaze.expr import ops
 from blaze.table import NDArray
+from blaze.engine.pipeline import Pipeline
 from blaze.expr.graph import IntNode, FloatNode, VAL, OP, APP
-from blaze.engine.pipeline import toposort, topops, topovals, Pipeline
 from pprint import pprint
 from difflib import ndiff
 
@@ -24,70 +24,6 @@ x = a+(b+c)
 y = a+(b*abs(c))
 
 d = NDArray([1,2,3])
-
-#------------------------------------------------------------------------
-# Tests
-#------------------------------------------------------------------------
-
-@skip
-def test_simple_sort():
-    lst = toposort(lambda x: True, x)
-    assert len(lst) == 6
-
-@skip
-def test_simple_sort_ops():
-    lst = topops(y)
-    # We expect this:
-
-    #  add
-    #  / \
-    # 1  mul
-    #    / \
-    #   2   abs
-    #        |
-    #       3.0
-
-    # To collapse into this:
-
-    #    abs
-    #     |
-    #    mul
-    #     |
-    #    add
-
-    assert lst[0].__class__ == ops.Abs
-    assert lst[1].__class__ == ops.Mul
-    assert lst[2].__class__ == ops.Add
-
-    assert lst[0].kind == OP
-    assert lst[1].kind == OP
-    assert lst[2].kind == OP
-
-
-def test_simple_sort_vals():
-    lst = topovals(y)
-    # We expect this:
-
-    #  add
-    #  / \
-    # 1  mul
-    #    / \
-    #   2   abs
-    #        |
-    #       3.0
-
-    # To collapse into this:
-
-    #    1
-    #    |
-    #    2
-    #    |
-    #   3.0
-
-    assert lst[0].val == 1
-    assert lst[1].val == 2
-    assert lst[2].val == 3.0
-
 
 def test_simple_pipeline():
     line = Pipeline()
