@@ -13,8 +13,8 @@ from blaze.expr import visitor
 from blaze.expr import ops
 from blaze.expr import paterm
 from blaze.datashape import coretypes
-from blaze.engine import pipeline
-from blaze.engine import executors
+from blaze.compile import pipeline
+from blaze.compile import executors
 from blaze.sources import canonical
 
 from blaze.datashape import datashape

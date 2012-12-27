@@ -6,7 +6,7 @@ passes on the graph which result in code generation.
 """
 
 from blaze.plan import BlazeVisitor, InstructionGen
-from blaze.engine.toposort import topovals
+from blaze.compile.toposort import topovals
 
 try:
     import numbapro

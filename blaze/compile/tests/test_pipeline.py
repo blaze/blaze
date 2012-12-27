@@ -3,7 +3,7 @@
 
 from blaze.expr import ops
 from blaze.table import NDArray
-from blaze.engine.pipeline import Pipeline
+from blaze.compile.pipeline import Pipeline
 from blaze.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from pprint import pprint
 from difflib import ndiff

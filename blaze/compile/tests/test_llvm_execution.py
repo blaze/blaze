@@ -1,6 +1,6 @@
 from blaze import *
 from blaze.datashape import datashape
-from blaze.engine import pipeline, llvm_execution
+from blaze.compile import pipeline, llvm_execution
 
 from unittest import skip
 

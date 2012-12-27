@@ -39,7 +39,7 @@ from math import sqrt
 
 from blaze.datashape import dshape
 from blaze.rts.funcs import PythonFn, install, lift
-from blaze.engine import executors
+from blaze.compile import executors
 from blaze import metadata as md
 
 from numexpr import evaluate

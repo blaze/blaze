@@ -1,6 +1,6 @@
 from blaze import dshape
 
-from blaze.expr.nodes import Node, traverse
+from blaze.expr.nodes import Node
 from blaze.expr.typechecker import InvalidTypes
 from blaze.expr.viz import dump
 from blaze.table import NDArray, NDArray
@@ -26,22 +26,6 @@ def test_walk():
 
     if DEBUG:
         dump(a, filename='walk', tree=True)
-
-def test_traverse():
-    e = Node([])
-    d = Node([])
-    b = Node([d])
-    c = Node([e])
-    a = Node([b,c])
-
-    [n for n in traverse(a)]
-
-    if DEBUG:
-        dump(a, filename='walk', tree=True)
-
-def test_scalar_arguments():
-    a = NDArray([1,2,3])
-    children = a.children
 
 @skip
 def test_dynamic_arguments():

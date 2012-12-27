@@ -1,8 +1,3 @@
-from copy import copy
-from collections import deque
-
-from blaze.engine import pipeline
-
 #------------------------------------------------------------------------
 # Graph Objects
 #------------------------------------------------------------------------
@@ -20,6 +15,7 @@ class Node(object):
 
     def eval(self):
         """ Evaluates the expression graph """
+        from blaze.engine import pipeline
         from blaze.rts.execution import execplan
 
         # setup a default pipeline
@@ -76,55 +72,3 @@ class Node(object):
     @property
     def name(self):
         return 'GenericNode'
-
-#------------------------------------------------------------------------
-# Traversal
-#------------------------------------------------------------------------
-
-def traverse(node):
-     tree = deque(node)
-     while tree:
-         node = tree.popleft()
-         tree.extend(iter(node))
-         yield node
-
-#------------------------------------------------------------------------
-# Coiterators
-#------------------------------------------------------------------------
-
-def coiter(obj, co):
-    """ Prefix form of __coiter__ """
-    return obj.__coiter__(co)
-
-def flat(tree, depth=0):
-    """
-    Flatten a non-cyclic iterable
-
-    Usage:
-        flatten([[[[1,2],3],[4,5]]) = [1,2,3,4,5]
-    """
-    try:
-        for x in tree:
-            for y in flat(x, depth+1):
-                yield y
-    except TypeError:
-        yield tree
-
-#------------------------------------------------------------------------
-# Functors
-#------------------------------------------------------------------------
-
-#          fmap f
-#    a              f(a)
-#   / \              / \
-#  b   c     =    f(b) f(c)
-#     /  \             /  \
-#    d    e         f(d)   f(e)
-
-def fmap(f, tree):
-    """ Functor for trees """
-    # this is trivial because all nodes use __slots__
-    x1 = copy(tree)
-    for x in tree:
-        x1.children = fmap(f, x1.children)
-    return x1
