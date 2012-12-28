@@ -24,7 +24,7 @@ packages = [
     'blaze.carray',
     'blaze.datashape',
     'blaze.dist',
-    'blaze.engine',
+    'blaze.compile',
     'blaze.expr',
     'blaze.include',
     'blaze.layouts',
@@ -198,7 +198,7 @@ extensions = [
         include_dirs = [numpy_path]
    ),
    Extension(
-        "blaze.engine.executors", ["blaze/engine/executors.pyx"],
+        "blaze.compile.executors", ["blaze/compile/executors.pyx"],
         include_dirs = [numpy_path],
    ),
    Extension(
