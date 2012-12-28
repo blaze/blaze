@@ -2,16 +2,16 @@ import ast
 
 import numpy as np
 
-import numba
-from numba import decorators
-from numba.ufunc_builder import UFuncBuilder
-from numba.minivect import minitypes
+#import numba
+#from numba import decorators
+#from numba.ufunc_builder import UFuncBuilder
+#from numba.minivect import minitypes
 
 import blaze
 import blaze.idx
 from blaze.expr import visitor
 from blaze.expr import ops
-from blaze.expr import paterm
+#from blaze.expr import paterm
 from blaze.datashape import coretypes
 from blaze.compile import pipeline
 from blaze.compile import executors
@@ -20,7 +20,7 @@ from blaze.sources import canonical
 from blaze.datashape import datashape
 from blaze import Table, NDTable, Array, NDArray
 
-from numbapro.vectorize import Vectorize
+#from numbapro.vectorize import Vectorize
 
 class GraphToAst(visitor.BasicGraphVisitor):
     """

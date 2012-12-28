@@ -97,9 +97,7 @@ class InstructionGen(MroVisitor):
 
     """
 
-    def __init__(self, have_numbapro):
-        self.numbapro = have_numbapro
-
+    def __init__(self):
         self.n = 0
         self._vartable = {}
         self._instructions = []

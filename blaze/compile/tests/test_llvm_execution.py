@@ -4,6 +4,7 @@ from blaze.compile import pipeline, llvm_execution
 
 from unittest import skip
 
+@skip("Unstable")
 def convert_graph(lazy_blaze_graph):
     # Convert blaze graph to ATerm graph
     p = pipeline.Pipeline(have_numbapro=True)

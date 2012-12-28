@@ -8,12 +8,6 @@ passes on the graph which result in code generation.
 from blaze.plan import BlazeVisitor, InstructionGen
 from blaze.compile.toposort import topovals
 
-try:
-    import numbapro
-    have_numbapro = True
-except ImportError:
-    have_numbapro = False
-
 #------------------------------------------------------------------------
 # Pipeline Combinators
 #------------------------------------------------------------------------
@@ -148,7 +142,7 @@ def do_plan(context, graph):
 
     aterm_graph = context['aterm_graph']
 
-    igen = InstructionGen(have_numbapro=have_numbapro)
+    igen = InstructionGen()
     igen.visit(aterm_graph) # effectful
     plan = igen.plan()
 
@@ -170,9 +164,9 @@ class Pipeline(object):
     runtime to execute serially.
     """
 
-    def __init__(self, **kwargs):
-        defaults = { 'have_numbapro': False } # have_numbapro }
-        self.init = dict(defaults, **kwargs)
+    def __init__(self, **params):
+        defaults = {}
+        self.init = dict(defaults, **params)
 
         # sequential pipeline of passes
         self.pipeline = [
