@@ -1,7 +1,6 @@
 from blaze import dshape
 
 from blaze.expr.nodes import Node
-from blaze.expr.typechecker import InvalidTypes
 from blaze.expr.viz import dump
 from blaze.table import NDArray, NDArray
 

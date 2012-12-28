@@ -39,29 +39,6 @@ class Node(object):
             else:
                 raise TypeError('Invalid children')
 
-    def __coiter__(self, co):
-        """
-        Walk the graph, left to right with a coroutine.
-        """
-        children = dict(enumerate(self)).viewitems()
-
-        def switch(child):
-            changed = co.send(child)
-            if changed:
-                children[idx] = changed
-            else:
-                del children[idx]
-
-        for idx, child in children:
-
-            if isinstance(child, Node):
-                switch(child)
-
-            elif isinstance(child, list):
-                for item in child:
-                    if isinstance(item, Node):
-                        switch(child)
-
     #def __hash__(self):
         ## tree hashing, xor with the hash of children
         #h = hash(type(self))
