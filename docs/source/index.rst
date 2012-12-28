@@ -28,10 +28,11 @@ Overview
    install
    quickstart
    overview
+   vision
    format
    memory
    datashape
-   typechecker
+   extending
 
 API Reference
 ~~~~~~~~~~~~~
@@ -42,6 +43,7 @@ API Reference
    toplevel
    types
    persistence
+   typeinference
    aterm
    layout
    sources
