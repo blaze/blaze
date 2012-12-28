@@ -27,7 +27,7 @@ from thread import allocate_lock
 from blaze.error import NoDispatch
 from blaze.aterm import parse, match, AtermSyntaxError
 from blaze.datashape.coretypes import dynamic
-from blaze.metadata import manifest, all_prop
+from blaze.metadata import all_prop
 
 from blaze.expr.graph import Fun
 
@@ -38,7 +38,6 @@ from functools import wraps
 from threading import local
 from blaze.error import InvalidLibraryDefinton
 from inspect import getargspec
-from ctypes import CFUNCTYPE
 
 #------------------------------------------------------------------------
 # Globals
@@ -137,6 +136,7 @@ def lift(signature, typesig, constraints=None, **params):
             'constraints' : constraints,
         })
 
+        @wraps(pyfn)
         def inner(*args):
             # differentiate execution based on whether the
             # arguments are manifest or deferred.
@@ -150,7 +150,7 @@ def lift(signature, typesig, constraints=None, **params):
             else:
                 # Return a new Fun() class that is a graph node
                 # constructor.
-                return fun
+                return fun(args)
 
         return inner
 

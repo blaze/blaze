@@ -427,9 +427,6 @@ class Fun(ExpressionNode):
             raise TypeError('%s exepected at most %i args' % (self.fname, self.nargs))
         self.children = arguments
 
-    def __call__(self):
-        pass
-
     @property
     def name(self):
         return str(self.fname)
@@ -440,7 +437,6 @@ class Fun(ExpressionNode):
 
 class Literal(ExpressionNode):
     kind = VAL
-    eclass = eclass.manifest
 
     def __init__(self, val):
         assert isinstance(val, self.vtype)
@@ -460,7 +456,6 @@ class StringNode(Literal):
     vtype     = str
     datashape = string
     eclass    = eclass.manifest
-
     datashape = coretypes.string
 
     @property
@@ -476,7 +471,6 @@ class IntNode(Literal):
     datashape = int_
     kind      = VAL
     eclass    = eclass.manifest
-
     datashape = coretypes.int_
 
     @property
@@ -488,8 +482,7 @@ class FloatNode(Literal):
     vtype     = float
     datashape = float_
     eclass    = eclass.manifest
-
-    datashape = coretypes.double
+    datashape = coretypes.float_
 
     @property
     def data(self):
