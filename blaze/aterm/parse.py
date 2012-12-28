@@ -262,8 +262,6 @@ def make_parser():
         parser = parser
     return parser
 
-_init = make_parser
-
 def parse(pattern):
-    parser = _init()
+    parser = make_parser()
     return parser.parse(pattern)

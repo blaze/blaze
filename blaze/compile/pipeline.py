@@ -89,7 +89,7 @@ def do_environment(context, graph):
 
 def do_convert_to_aterm(context, graph):
     """Convert the graph to an ATerm graph
-    See blaze/expr/paterm.py
+    See blaze.aterm
 
     ::
         a + b
