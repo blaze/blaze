@@ -1,0 +1,101 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Vision &mdash; Blaze 0.1-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/theme_extras.js"></script>
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Persistent formats" href="format.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
+  </head>
+  <body>
+      <div class="header">
+          <h1 class="heading">
+              <a href="index.html">
+                  <span>Blaze 0.1-dev documentation</span>
+              </a>
+        </h1>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        «&#160;&#160;<a href="overview.html">Overview</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="format.html">Persistent formats</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="vision">
+<h1>Vision<a class="headerlink" href="#vision" title="Permalink to this headline">¶</a></h1>
+<p>Blaze is a generalization of NumPy to multiple byte segments, arbitrary
+data-types, and heterogeneous shapes. These generalizations allow Blaze
+to be the foundation for a new generation of large-scale computing
+algorithms and systems.</p>
+<p>Blaze has an array-oriented type system that dresses raw bytes in a
+global address space at run-time with meta-information that informs how
+segments can be referenced and how the data will be used in computation.
+It is a system for allowing information held in bytes to be typed and
+indexed as N-dimensional arrays and tables. These bytes can then be used
+in calculations composed of a single expression or an entire program and
+then executed on heterogeneous hardware (multiple nodes, multiple cores,
+and multiple GPUs). The run-time library and type-system is extensible
+to handle computations of all kinds.</p>
+<p>Just as NumPy is the center of an ecosystem of singe-node, in-memory
+tools that use the NumPy array as a common shared abstraction around
+a single pointer to memory, Blaze is the center of an ecosystem
+of multiple-node, multiple-segment, and multiple calculation-unit
+algorithms and programs. The common meme in effective use of Blaze is
+that developers should think about their data and the operations that
+should be done on their data in an array-oriented fashion, and that code
+should be moved to data as much as possible.</p>
+<p>To enable this, Blaze has a compiler to create machine code based on the
+LLVM infrastructure. It also has a family of adapters to data-storage
+formats of all kinds so that expert time can be spent processing data
+and not converting data from one format to another. A blaze-program
+makes reference to data URLs, or builds up arrays from computed
+results. These arrays or tables of information are then operated on by
+expressions that create resulting output. The expressions are lazily
+evaluated until results are needed at which time computation is broken
+down and scheduled on the available hardware as close to the data as
+possible &#8212; either automatically or using directives provided by the
+programmer.</p>
+</div>
+
+
+      </div>
+      <div class="bottomnav">
+      </div>
+
+    <div class="footer">
+        &copy; Copyright 2012, Continuum Analytics.
+    </div>
+  </body>
+</html>

@@ -450,24 +450,6 @@ dimensions</p>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="blaze.datashape.coretypes.promote">
-<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">promote</tt><big>(</big><em>*operands</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.promote" title="Permalink to this definition">¶</a></dt>
-<dd><p>Take an arbitrary number of graph nodes and produce the promoted
-dtype by discarding all shape information and just looking at the
-measures.</p>
-<div class="highlight-python"><pre>5, 5,  | int   |
-2, 5,  | int   |
-1, 3,  | float |</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">promote</span><span class="p">(</span><span class="n">IntNode</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">Op</span><span class="p">(</span><span class="n">IntNode</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-<span class="go">int</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">promote</span><span class="p">(</span><span class="n">FloatNode</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">Op</span><span class="p">(</span><span class="n">IntNode</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-<span class="go">float</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
 <dt id="blaze.datashape.coretypes.promote_cvals">
 <tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">promote_cvals</tt><big>(</big><em>*vals</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.promote_cvals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Promote Python values into the most general dshape containing

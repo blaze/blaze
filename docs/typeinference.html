@@ -28,8 +28,8 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/theme_extras.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Toplevel" href="toplevel.html" />
-    <link rel="prev" title="Datashape" href="datashape.html" /> 
+    <link rel="next" title="ATerm" href="aterm.html" />
+    <link rel="prev" title="Persistence" href="persistence.html" /> 
   </head>
   <body>
       <div class="header">
@@ -42,11 +42,11 @@
       <div class="topnav">
       
         <p>
-        «&#160;&#160;<a href="datashape.html">Datashape</a>
+        «&#160;&#160;<a href="persistence.html">Persistence</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="toplevel.html">Toplevel</a>&#160;&#160;»
+        <a href="aterm.html">ATerm</a>&#160;&#160;»
         </p>
 
       </div>
@@ -117,37 +117,8 @@ the unifiers.</p>
 <div class="section" id="constraints">
 <h2>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
 <p>TODO</p>
-<div class="section" id="module-blaze.expr.typechecker">
-<span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.expr.typechecker" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
-<dt id="blaze.expr.typechecker.infer">
-<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">infer</tt><big>(</big><em>signature</em>, <em>expression</em>, <em>constrs</em>, <em>system</em>, <em>commutative=False</em><big>)</big><a class="headerlink" href="#blaze.expr.typechecker.infer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Type inference</p>
-<dl class="docutils">
-<dt>signature <span class="classifier-delimiter">:</span> <span class="classifier">str,</span></dt>
-<dd>String containing the type signature.</dd>
-<dt>expression <span class="classifier-delimiter">:</span> <span class="classifier">object</span></dt>
-<dd>expression to resolve types of</dd>
-<dt>constrs <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>The constraints/bounds on the typevars signature.</dd>
-<dt>system <span class="classifier-delimiter">:</span> <span class="classifier">TypeSystem</span></dt>
-<dd>The type system over which to evaluate.</dd>
-<dt>commutative <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Use the commutative checker which attempts to eval all
-permutations of domains in commutative operators to
-find a judgement.</dd>
-</dl>
-<blockquote>
-<div>The context satisfying the given signature and operands with
-the constraints.</div></blockquote>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="blaze.expr.typechecker.typesystem">
-<tt class="descclassname">blaze.expr.typechecker.</tt><tt class="descname">typesystem</tt><a class="headerlink" href="#blaze.expr.typechecker.typesystem" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">TypeSystem</span></tt></p>
-</dd></dl>
-
+<div class="section" id="api">
+<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
 <span class="target" id="module-blaze.expr.typeinference"></span><dl class="function">
 <dt id="blaze.expr.typeinference.atnf">
 <tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">atnf</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.atnf" title="Permalink to this definition">¶</a></dt>
