@@ -74,7 +74,17 @@ def dot(a1, a2):
 
 @lift('Add(<term>,<term>)', '(a,a) -> a')
 def add(a, b):
-    return np.add(a, a)
+    from blaze import zeros
+
+    ds_a, dd_a = a
+    ds_b, dd_b = b
+    out = zeros(ds_a)
+
+    iters = [desc.as_chunked_iterator() for desc in [dd_a, dd_b]]
+    for a,b in zip(*iters):
+        import pdb; pdb.set_trace()
+    return out
+
 
 @lift('Mul(<term>,<term>)', '(a,a)-> a', {
     'types'   : {'a': array_like},

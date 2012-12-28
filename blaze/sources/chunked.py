@@ -56,8 +56,10 @@ class CArraySource(ByteProvider):
         if dshape:
             dtype = to_numpy(dshape)
             self.ca = carray.carray(data, dtype, rootdir=rootdir)
+            self.dshape = dshape
         else:
             self.ca = carray.carray(data, rootdir=rootdir, cparams=cparams)
+            self.dshape = from_numpy(self.ca.shape, self.ca.dtype)
 
     @classmethod
     def empty(self, dshape):
@@ -70,8 +72,8 @@ class CArraySource(ByteProvider):
 
     # Get a READ descriptor the source
     def read_desc(self):
-        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.ca,
-                                    self.dshape)
+        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.dshape,
+                self.ca)
 
     # Return the layout of the dataa
     def default_layout(self):

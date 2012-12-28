@@ -11,8 +11,9 @@ The toplevel modules containing the core Blaze datastructures.
 import numpy as np
 from operator import eq
 
+from blaze.eclass import eclass
+from blaze.idx import Space, Subspace, Index
 from blaze.sources.descriptors.byteprovider import ByteProvider
-from idx import Space, Subspace, Index
 
 from datashape import DataShape, Fixed, dynamic, dshape as _dshape
 
@@ -26,13 +27,6 @@ from sources.chunked import CArraySource, CTableSource
 from sources.canonical import ArraySource
 
 from printer import generic_str, generic_repr
-
-#------------------------------------------------------------------------
-# Evaluation Class ( eclass )
-#------------------------------------------------------------------------
-
-MANIFEST = 1
-DELAYED  = 2
 
 #------------------------------------------------------------------------
 # Indexable
@@ -141,7 +135,7 @@ class Array(Indexable):
 
     """
 
-    eclass = MANIFEST
+    eclass = eclass.manifest
     _metaheader = [
         md.manifest,
         md.arraylike,
@@ -200,6 +194,15 @@ class Array(Indexable):
         # ----------
         self.params = params
 
+    def _asdeferred(self):
+        """ Convert a manifest array into a deferred array """
+        return NDArray(
+            self.data,
+            dshape   = self._datashape,
+            metadata = self._metadata,
+            layout   = self._layout,
+            params   = self.params
+        )
 
     #------------------------------------------------------------------------
     # Properties
@@ -262,7 +265,7 @@ class NDArray(Indexable, ArrayNode):
     around an ArrayNode.
     """
 
-    eclass = DELAYED
+    eclass = eclass.delayed
     _metaheader = [
         md.manifest,
         md.arraylike,
@@ -403,7 +406,7 @@ class NDArray(Indexable, ArrayNode):
 
 class Table(Indexable):
 
-    eclass = MANIFEST
+    eclass = eclass.manifest
     _metaheader = [
         md.manifest,
         md.tablelike,
@@ -468,7 +471,7 @@ class NDTable(Indexable, ArrayNode):
     as an element.
     """
 
-    eclass = DELAYED
+    eclass = eclass.delayed
     _metaheader = [
         md.deferred,
         md.tablelike,

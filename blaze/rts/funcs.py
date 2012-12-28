@@ -27,8 +27,12 @@ from thread import allocate_lock
 from blaze.error import NoDispatch
 from blaze.aterm import parse, match, AtermSyntaxError
 from blaze.datashape.coretypes import dynamic
+from blaze.metadata import manifest, all_prop
 
 from blaze.expr.graph import Fun
+
+from blaze.eclass import all_manifest
+from blaze.rts.immediete import ieval
 
 from functools import wraps
 from threading import local
@@ -120,14 +124,11 @@ def lift(signature, typesig, constraints=None, **params):
         sig = getargspec(pyfn)
         nargs = len(sig.args)
 
-        # Return a new Fun() class that is a graph node
-        # constructor.
-
         # Either we have a codomain annotation or we default to
         # the dynamic type.
         cod = params.pop('cod', dynamic)
 
-        return type(pyfn.func_name, (Fun,), {
+        fun = type(pyfn.func_name, (Fun,), {
             'nargs'       : nargs,
             'fn'          : pyfn,
             'fname'       : fname,
@@ -135,6 +136,23 @@ def lift(signature, typesig, constraints=None, **params):
             'cod'         : cod,
             'constraints' : constraints,
         })
+
+        def inner(*args):
+            # differentiate execution based on whether the
+            # arguments are manifest or deferred.
+
+            #allmanifest = all_prop(args, manifest)
+            allmanifest = all_manifest(args)
+
+            if allmanifest:
+                # do immediete evaluation
+                return ieval(pyfn, args)
+            else:
+                # Return a new Fun() class that is a graph node
+                # constructor.
+                return fun
+
+        return inner
 
     return outer
 

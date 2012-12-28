@@ -176,31 +176,31 @@ class BlazeVisitor(MroVisitor):
     def __init__(self):
         self.operands = []
 
-    def App(self, graph):
-        return self.visit(graph.operator)
+    def App(self, node):
+        return self.visit(node.operator)
 
-    def Fun(self, graph):
-        return self.visit(graph.children)
+    def Fun(self, node):
+        return self.visit(node.children)
 
-    def Op(self, graph):
-        opname = graph.__class__.__name__
-        return aappl(aterm(opname), self.visit(graph.children))
+    def Op(self, node):
+        opname = node.__class__.__name__
+        return aappl(aterm(opname), self.visit(node.children))
 
-    def Literal(self, graph):
-        if graph.vtype == int:
-            return aint(graph.val)
-        if graph.vtype == float:
-            return areal(graph.val)
+    def Literal(self, node):
+        if node.vtype == int:
+            return aint(node.val)
+        if node.vtype == float:
+            return areal(node.val)
         else:
-            return aterm(graph.val)
+            return aterm(node.val)
 
-    def Indexable(self, graph):
-        self.operands.append(graph)
+    def Indexable(self, node):
+        self.operands.append(node)
         return aappl(aterm('Array'), [])
 
-    def Slice(self, graph):
-        # Slice(start, stop, step){id(graph), 'get'|'set'}
-        array, start, stop, step = graph.operands
+    def Slice(self, node):
+        # Slice(start, stop, step){id(node), 'get'|'set'}
+        array, start, stop, step = node.operands
 
         if start:
             start = self.visit(start)
@@ -217,8 +217,8 @@ class BlazeVisitor(MroVisitor):
              step  or aterm('None')],
         )
 
-    def IndexNode(self, graph):
-        return aappl(aterm('Index'), self.visit(graph.operands))
+    def IndexNode(self, node):
+        return aappl(aterm('Index'), self.visit(node.operands))
 
-    def Assign(self, graph):
-        return aappl(aterm('Assign'), self.visit(graph.operands))
+    def Assign(self, node):
+        return aappl(aterm('Assign'), self.visit(node.operands))

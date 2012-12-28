@@ -23,7 +23,8 @@ class Node(object):
         ctx, plan = line.run_pipeline(self)
 
         # submit to the runtime for the result
-        return execplan(ctx, plan)
+        #return execplan(ctx, plan)
+        return ctx, plan
 
     def __iter__(self):
         """ Walk the graph, left to right """
