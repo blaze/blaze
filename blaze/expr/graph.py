@@ -20,11 +20,11 @@ graph.
 from numbers import Integral
 from collections import Iterable
 
+from blaze.eclass import eclass
 from blaze.expr import nodes, catalog
 from blaze.datashape import coretypes
 from blaze.sources.canonical import PythonSource
 from blaze.datashape.coretypes import int_, float_, string
-from blaze.metadata import manifest, all_prop
 
 # conditional import of Numpy; if it doesn't exist, then set up dummy objects
 # for the things we use
@@ -169,9 +169,6 @@ class ExpressionNode(nodes.Node):
         op = Op._registry[func_name.capitalize()]
         iop = op(func_name, iargs)
         return App(iop)
-
-    def generate_fnnode(self, fname, args=None, kwargs=None):
-        pass
 
     # Python Intrinsics
     # -----------------
@@ -389,24 +386,6 @@ class App(ExpressionNode):
         return 'App'
 
 #------------------------------------------------------------------------
-# Function Call
-#------------------------------------------------------------------------
-
-class FunApp(ExpressionNode):
-    """
-    Function application.
-    """
-    kind = APP
-
-    def __init__(self, function):
-        self.function = function
-        self.children = [function]
-
-    @property
-    def name(self):
-        return 'FunApp'
-
-#------------------------------------------------------------------------
 # Op
 #------------------------------------------------------------------------
 
@@ -436,6 +415,8 @@ class Op(ExpressionNode):
     is_arithmetic = False
 
     def __init__(self, op, operands):
+        # TODO: this op parameter is hackish, I don't like it.
+        # It's the one thing keeping the metaclass existing
         self.op = op
         self.children = operands
         self.operands = operands
@@ -453,23 +434,17 @@ class Fun(ExpressionNode):
 
     # nargs, fn, fname are spliced in at construction
 
-    def __init__(self, *arguments):
+    def __init__(self, arguments):
         if len(arguments) != self.nargs:
             raise TypeError('%s exepected at most %i args' % (self.fname, self.nargs))
-
-        # Are all the arguments manifest indexable objects
-        _manifest = all_prop(arguments, manifest)
-
-        if _manifest:
-            pass
-
-        elif not _manifest: # lazy
-            # Just execute it if manifest
-            self.children = []
-            self.cod = self.cod
+        self.children = arguments
 
     def __call__(self):
         pass
+
+    @property
+    def name(self):
+        return str(self.fname)
 
 #------------------------------------------------------------------------
 # Values
@@ -495,6 +470,7 @@ class StringNode(Literal):
     kind      = VAL
     vtype     = str
     datashape = string
+    eclass    = eclass.manifest
 
     datashape = coretypes.string
 
@@ -510,6 +486,7 @@ class IntNode(Literal):
     vtype     = int
     datashape = int_
     kind      = VAL
+    eclass    = eclass.manifest
 
     datashape = coretypes.int_
 
@@ -521,6 +498,7 @@ class FloatNode(Literal):
     kind      = VAL
     vtype     = float
     datashape = float_
+    eclass    = eclass.manifest
 
     datashape = coretypes.double
 
