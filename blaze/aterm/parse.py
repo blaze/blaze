@@ -1,15 +1,33 @@
-import os
+"""
+ATerm parser
+
+t : bt                 -- basic term
+  | bt {ty,m1,...}     -- annotated term
+
+bt : C                 -- constant
+   | C(t1,...,tn)      -- n-ary constructor
+   | (t1,...,tn)       -- n-ary tuple
+   | [t1,...,tn]       -- list
+   | "ccc"             -- quoted string ( explicit double quotes )
+   | int               -- integer
+   | real              -- floating point number
+"""
+
 import re
-from collections import namedtuple
+import os
 
 import ply.lex as lex
 import ply.yacc as yacc
 
-parser = None
+from terms import *
+
+DEBUG = True
 
 #------------------------------------------------------------------------
 # Errors
 #------------------------------------------------------------------------
+
+parser = None
 
 syntax_error = """
 
@@ -20,7 +38,7 @@ syntax_error = """
 ATermSyntaxError: {msg}
 """
 
-class AtermSyntaxError(SyntaxError):
+class AtermSyntaxError(Exception):
     """
     Makes aterm parse errors look like Python SyntaxError.
     """
@@ -41,42 +59,11 @@ class AtermSyntaxError(SyntaxError):
         )
 
 #------------------------------------------------------------------------
-# AST Nodes
-#------------------------------------------------------------------------
-
-aterm = namedtuple('aterm', ('term', 'annotation'))
-astr  = namedtuple('astr', ('val',))
-aint  = namedtuple('aint', ('val',))
-areal = namedtuple('areal', ('val',))
-aappl = namedtuple('aappl', ('spine', 'args'))
-atupl = namedtuple('atupl', ('args'))
-aplaceholder = namedtuple('aplaceholder', ('type','args'))
-
-INT  = 0
-STR  = 1
-BLOB = 2
-TERM = 3
-APPL = 4
-LIST = 5
-
-placeholders = {
-    'appl': aappl,
-    'str': astr,
-    'int': aint,
-    'real': areal,
-    'term': (aterm, aappl, astr, aint, areal),
-    'placeholder': aplaceholder,
-    #'list' : alist
-}
-
-unquote = re.compile('"(?:[^\']*)\'|"([^"]*)"')
-
-#------------------------------------------------------------------------
 # Lexer
 #------------------------------------------------------------------------
 
 tokens = (
-    'NAME', 'INT', 'DOUBLE', 'QUOTE', 'PLACEHOLDER', 'STRING'
+    'NAME', 'INT', 'DOUBLE', 'PLACEHOLDER', 'STRING'
 )
 
 literals = [
@@ -92,8 +79,9 @@ literals = [
 ]
 
 t_NAME   = r'[a-zA-Z_][a-zA-Z0-9_]*'
-t_QUOTE  = r'"'
 t_ignore = '\x20\x09\x0A\x0D'
+
+unquote = re.compile('"(?:[^\']*)\'|"([^"]*)"')
 
 def t_DOUBLE(t):
     r'\d+\.(\d+)?'
@@ -179,7 +167,10 @@ def p_appl(p):
 
 def p_appl_value1(p):
     "appl_value : expr"
-    p[0] = [p[1]]
+    if p[1]:
+        p[0] = [p[1]]
+    else:
+        p[0] = []
 
 def p_appl_value2(p):
     "appl_value : appl_value ',' appl_value"
@@ -189,11 +180,14 @@ def p_appl_value2(p):
 
 def p_list(p):
     "list : '[' list_value ']' "
-    p[0] = p[2]
+    p[0] = alist(p[2])
 
 def p_list_value1(p):
     "list_value : expr"
-    p[0] = [p[1]]
+    if p[1]:
+        p[0] = [p[1]]
+    else:
+        p[0] = []
 
 def p_list_value2(p):
     "list_value : list_value ',' list_value"
@@ -202,12 +196,15 @@ def p_list_value2(p):
 #--------------------------------
 
 def p_tuple(p):
-    "tuple : '(' list_value ')' "
+    "tuple : '(' tuple_value ')' "
     p[0] = atupl(p[2])
 
 def p_tuple_value1(p):
     "tuple_value : expr"
-    p[0] = [p[1]]
+    if p[1]:
+        p[0] = [p[1]]
+    else:
+        p[0] = []
 
 def p_tuple_value2(p):
     "tuple_value : tuple_value ',' tuple_value"
@@ -248,98 +245,11 @@ def p_error(p):
     else:
         raise SyntaxError("Syntax error at EOF")
 
+#------------------------------------------------------------------------
+# Toplevel
+#------------------------------------------------------------------------
 
-#--------------------------------
-
-def init(xs):
-    for x in xs:
-        return x
-
-def tail(xs):
-    for x in reversed(xs):
-        return x
-
-def aterm_iter(term):
-    if isinstance(term, (aint, areal, astr)):
-        yield term.val
-
-    elif isinstance(term, aappl):
-        yield term.spine
-        for arg in term.args:
-            for t in aterm_iter(arg):
-                yield arg
-
-    elif isinstance(term, aterm):
-        yield term.term
-
-    else:
-        raise NotImplementedError
-
-def aterm_zip(a, b):
-    if isinstance(a, (aint, areal, astr)) and isinstance(b, (aint, areal, astr)):
-        yield a.val == b.val, None
-
-    elif isinstance(a, aappl) and isinstance(b, aappl):
-        if len(a.args) == len(b.args):
-            yield a.spine == b.spine, None
-            for ai, bi in zip(a.args, b.args):
-                for aj in aterm_zip(ai,bi):
-                    yield aj
-        else:
-            yield False, None
-
-    elif isinstance(a, aterm) and isinstance(b, aterm):
-        yield a.term == b.term, None
-        yield a.annotation == b.annotation, None
-
-    elif isinstance(a, aplaceholder):
-        # <appl(...)>
-        if a.args:
-            if isinstance(b, aappl):
-                yield True, b.spine
-                for ai, bi in zip(a.args, b.args):
-                    for a in aterm_zip(ai,bi):
-                        yield a
-            else:
-                yield False, None
-        # <term>
-        else:
-            yield isinstance(b, placeholders[a.type]), b
-    else:
-        yield False, None
-
-
-# left-to-right substitution
-def aterm_splice(a, elts):
-
-    if isinstance(a, (aint, areal, astr)):
-        yield a
-
-    elif isinstance(a, aappl):
-        yield aappl(a.spine, [init(aterm_splice(ai,elts)) for ai in a.args])
-
-    elif isinstance(a, aterm):
-        yield a
-
-    elif isinstance(a, aplaceholder):
-        # <appl(...)>
-        if a.args:
-            spine = elts.pop()
-            yield aappl(spine, [init(aterm_splice(ai,elts)) for ai in a.args])
-        # <term>
-        else:
-            yield elts.pop()
-    else:
-        raise NotImplementedError
-
-#--------------------------------
-
-def has_prop(term, prop):
-    return prop in term.annotation
-
-#--------------------------------
-
-def _init():
+def make_parser():
     global parser
     if not parser:
         path = os.path.abspath(__file__)
@@ -352,38 +262,8 @@ def _init():
         parser = parser
     return parser
 
+_init = make_parser
+
 def parse(pattern):
     parser = _init()
     return parser.parse(pattern)
-
-def match(pattern, subject, *captures):
-    parser = _init()
-
-    captures = []
-
-    p = parser.parse(pattern)
-    s = parser.parse(subject)
-
-    for matches, capture in aterm_zip(p,s):
-        if not matches:
-            return False, []
-        elif matches and capture:
-            captures += [capture]
-    return True, captures
-
-def matches(pattern, subject):
-    #parser = _init()
-
-    p = pattern
-    s = subject
-
-    for matches, capture in aterm_zip(p,s):
-        if not matches:
-            return False
-    return True
-
-def build(pattern, *values):
-    parser = _init()
-
-    p = parser.parse(pattern)
-    return list(aterm_splice(p,list(values)))
