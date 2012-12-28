@@ -167,17 +167,8 @@ class ExpressionNode(nodes.Node):
 
         # Lookup by capitalized name
         op = Op._registry[func_name.capitalize()]
-
-        if arity == 1:
-            iop = op(func_name, iargs)
-            return App(iop)
-
-        if arity == 2:
-            iop = op(func_name, iargs)
-            return App(iop)
-
-        elif arity == -1:
-            return op(func_name, iargs, kwargs)
+        iop = op(func_name, iargs)
+        return App(iop)
 
     def generate_fnnode(self, fname, args=None, kwargs=None):
         pass
@@ -385,31 +376,13 @@ def intnode(value_or_graph):
 
 class App(ExpressionNode):
     """
-    The application of an operand producing concrete values.
-
-    For example:
-
-        In[0]: a = 2 + 3
-
-    The resulting value of ``a`` is App( Op(+), 2, 3).
-
+    Operator application.
     """
-    __slots__ = ['itype','otype']
     kind = APP
 
     def __init__(self, operator):
         self.operator = operator
         self.children = [operator]
-
-    @property
-    def dom(self):
-        """ Domain """
-        return self.operator.dom
-
-    @property
-    def cod(self):
-        """ Codomain """
-        return self.operator.cod
 
     @property
     def name(self):
@@ -423,26 +396,11 @@ class FunApp(ExpressionNode):
     """
     Function application.
     """
-
-    __slots__ = ['itype','otype']
     kind = APP
 
     def __init__(self, function):
         self.function = function
         self.children = [function]
-
-        self.nin  = len(function.dom)
-        self.nout = len(function.cod)
-
-    @property
-    def dom(self):
-        """ Domain """
-        return self.operator.dom
-
-    @property
-    def cod(self):
-        """ Codomain """
-        return self.operator.cod
 
     @property
     def name(self):
@@ -472,8 +430,6 @@ class Op(ExpressionNode):
     """
     A typed operator taking a set of typed operands.
     """
-
-    __slots__ = ['children', 'op', 'cod']
     __metaclass__ = NamedOp
     kind = OP
 

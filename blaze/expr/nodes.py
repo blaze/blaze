@@ -6,8 +6,6 @@ class Node(object):
     """ Represents a node in the expression graph which Blaze compiles into
     a program for execution engine.
     """
-    # Use __slots__ so we don't incur the full cost of a class
-    __slots__ = ['children']
     _fields = ['children']
 
     def __init__(self, children):
@@ -15,7 +13,7 @@ class Node(object):
 
     def eval(self):
         """ Evaluates the expression graph """
-        from blaze.engine import pipeline
+        from blaze.compile import pipeline
         from blaze.rts.execution import execplan
 
         # setup a default pipeline

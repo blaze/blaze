@@ -45,7 +45,6 @@ def execplan(context, plan, symbols):
 
     h = Heap()
     ret = None
-    last = plan[-1]
 
     for instruction in plan:
         ops = [symbols[sym] for sym in symbols]

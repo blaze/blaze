@@ -1,5 +1,3 @@
-import numpy as np
-
 from graph import Op
 from blaze.datashape import coretypes as C
 
