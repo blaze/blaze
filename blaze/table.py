@@ -8,25 +8,19 @@ The toplevel modules containing the core Blaze datastructures.
     * Array
 
 """
-import numpy as np
-from operator import eq
+import blaze.metadata as md
 
+from blaze.idx import Space
 from blaze.eclass import eclass
-from blaze.idx import Space, Subspace, Index
 from blaze.sources.descriptors.byteprovider import ByteProvider
+from blaze.printer import generic_str, generic_repr
 
-from datashape import DataShape, Fixed, dynamic, dshape as _dshape
+from blaze.datashape import dshape as _dshape
+from blaze.expr.graph import ArrayNode, injest_iterable
 
-from layouts.scalar import ChunkedL
-from layouts.query import retrieve, write
-
-from expr.graph import ArrayNode, injest_iterable
-import metadata as md
-
-from sources.chunked import CArraySource, CTableSource
-from sources.canonical import ArraySource
-
-from printer import generic_str, generic_repr
+from blaze.layouts.scalar import ChunkedL
+from blaze.layouts.query import retrieve, write
+from blaze.sources.chunked import CArraySource, CTableSource
 
 #------------------------------------------------------------------------
 # Indexable
@@ -245,12 +239,6 @@ class Array(Indexable):
     def __setitem__(self, indexer, value):
         cc = self._layout.change_coordinates
         write(cc, indexer, value)
-
-    def __iter__(self):
-        raise NotImplementedError
-
-    def __eq__(self):
-        raise NotImplementedError
 
     def __str__(self):
         return generic_str(self, deferred=False)

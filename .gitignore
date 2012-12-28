@@ -46,6 +46,7 @@ nosetests.xml
 
 # Graph files
 *.dot
+./*.png
 
 # Object files
 *.o

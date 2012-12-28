@@ -162,12 +162,17 @@ class ExpressionNode(nodes.Node):
 
     def generate_opnode(self, arity, func_name, args=None, kwargs=None):
 
-        # TODO: also kwargs when we support such things
         iargs = injest_iterable(args)
 
+        # TODO: better solution, resolve circular import
+        from blaze.expr import ops
+
         # Lookup by capitalized name
-        op = Op._registry[func_name.capitalize()]
-        iop = op(func_name, iargs)
+        op = getattr(ops, func_name.capitalize())
+        iop = op(func_name.capitalize(), iargs)
+
+        #op.__proto__
+
         return App(iop)
 
     # Python Intrinsics
@@ -389,27 +394,10 @@ class App(ExpressionNode):
 # Op
 #------------------------------------------------------------------------
 
-# TODO: remove metaclass
-class NamedOp(type):
-    """
-    Metaclass to track Op subclasses.
-    """
-
-    def __init__(cls, name, bases, dct):
-        abstract = dct.pop('abstract', False)
-        if not hasattr(cls, '_registry'):
-            cls._registry = {}
-
-        if not abstract:
-            cls._registry[name] = cls
-
-        super(NamedOp, cls).__init__(name, bases, dct)
-
 class Op(ExpressionNode):
     """
     A typed operator taking a set of typed operands.
     """
-    __metaclass__ = NamedOp
     kind = OP
 
     is_arithmetic = False
@@ -452,6 +440,7 @@ class Fun(ExpressionNode):
 
 class Literal(ExpressionNode):
     kind = VAL
+    eclass = eclass.manifest
 
     def __init__(self, val):
         assert isinstance(val, self.vtype)
