@@ -256,7 +256,8 @@ def make_parser():
         dir_path = os.path.dirname(path)
 
         lexer = lex.lex(lextab="alex")
-        parser = yacc.yacc(tabmodule='ayacc',outputdir=dir_path)
+        parser = yacc.yacc(tabmodule='ayacc',outputdir=dir_path,
+                write_tables=0)
     else:
         parser = parser
     return parser
