@@ -2,16 +2,12 @@
 Execute raw graph to ATerm after inference but before evaluation.
 """
 
-import string
-import numpy as np
+from pprint import pformat
 
-from collections import namedtuple
-
-from blaze.datashape.coretypes import DataShape
-from blaze.byteproto import CONTIGUOUS, READ
-
-from blaze.expr.paterm import AAppl, ATerm, AAnnotation, AString, AInt, AFloat
+from blaze.rts.funcs import lookup
 from blaze.expr.visitor import MroVisitor
+from blaze.datashape.coretypes import DataShape
+from blaze.aterm import aappl, aterm, astr, aint, areal
 
 #------------------------------------------------------------------------
 # Plans
@@ -29,7 +25,7 @@ def annotate_dshape(ds):
     """
 
     assert isinstance(ds, DataShape)
-    return AAppl(ATerm('dshape'), [AString(str(ds))])
+    return aappl(aterm('dshape'), [astr(str(ds))])
 
 class Constant(object):
     def __init__(self, n):
@@ -122,7 +118,7 @@ class InstructionGen(MroVisitor):
         return key
 
     def AAppl(self, term):
-        label = term.spine.label
+        label = term.spine.term
 
         if label == 'Array':
             return self._Array(term)
@@ -136,7 +132,6 @@ class InstructionGen(MroVisitor):
     def _Op(self, term):
         spine = term.spine
         args  = term.args
-        from blaze.rts.funcs import lookup
 
         # visit the innermost arguments, push those arguments on
         # the instruction list first
@@ -163,11 +158,11 @@ class InstructionGen(MroVisitor):
         pass
 
     def AInt(self, term):
-        self._vartable[term] = Constant(term.n)
+        self._vartable[term] = Constant(term.val)
         return
 
-    def AFloat(self, term):
-        self._vartable[term] = Constant(term.n)
+    def AReal(self, term):
+        self._vartable[term] = Constant(term.val)
         return
 
     def ATerm(self, term):
@@ -191,19 +186,19 @@ class BlazeVisitor(MroVisitor):
 
     def Op(self, graph):
         opname = graph.__class__.__name__
-        return AAppl(ATerm(opname), self.visit(graph.children))
+        return aappl(aterm(opname), self.visit(graph.children))
 
     def Literal(self, graph):
         if graph.vtype == int:
-            return AInt(graph.val)
+            return aint(graph.val)
         if graph.vtype == float:
-            return AFloat(graph.val)
+            return areal(graph.val)
         else:
-            return ATerm(graph.val)
+            return aterm(graph.val)
 
     def Indexable(self, graph):
         self.operands.append(graph)
-        return AAppl(ATerm('Array'), [])
+        return aappl(aterm('Array'), [])
 
     def Slice(self, graph):
         # Slice(start, stop, step){id(graph), 'get'|'set'}
@@ -216,16 +211,16 @@ class BlazeVisitor(MroVisitor):
         if step:
             step = self.visit(step)
 
-        return AAppl(
-            ATerm('Slice'),
+        return aappl(
+            aterm('Slice'),
             [self.visit(array),
-             start or ATerm('None'),
-             stop  or ATerm('None'),
-             step  or ATerm('None')],
+             start or aterm('None'),
+             stop  or aterm('None'),
+             step  or aterm('None')],
         )
 
     def IndexNode(self, graph):
-        return AAppl(ATerm('Index'), self.visit(graph.operands))
+        return aappl(aterm('Index'), self.visit(graph.operands))
 
     def Assign(self, graph):
-        return AAppl(ATerm('Assign'), self.visit(graph.operands))
+        return aappl(aterm('Assign'), self.visit(graph.operands))
