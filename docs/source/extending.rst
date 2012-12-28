@@ -10,8 +10,8 @@ Blaze type system.
 
 TODO
 
-Custom Tablefuncs
-=================
+Custom Functions
+================
 
 Guide to install your own custom tablefunc objects into the Blaze
 runtime.
@@ -35,7 +35,6 @@ Memory Allocation
 -----------------
 
 TODO
-
 
 Custom Backends
 =================
