@@ -400,11 +400,7 @@ class Op(ExpressionNode):
     """
     kind = OP
 
-    is_arithmetic = False
-
     def __init__(self, op, operands):
-        # TODO: this op parameter is hackish, I don't like it.
-        # It's the one thing keeping the metaclass existing
         self.op = op
         self.children = operands
         self.operands = operands
