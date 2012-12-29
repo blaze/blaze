@@ -5,6 +5,9 @@ all: build
 build:
 	python setup.py build_ext --inplace
 
+tests:
+	nosetests -s -v --detailed blaze
+
 docs:
 	cd docs; make html
 
@@ -16,11 +19,6 @@ web:
 
 cleandocs:
 	cd docs; make clean
-
-tests:
-	nosetests -s -v --detailed
-	#nosetests --rednose -s -v blaze
-
 
 clean:
 	python setup.py clean
