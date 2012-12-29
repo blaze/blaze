@@ -229,7 +229,6 @@ def p_error(p):
 #------------------------------------------------------------------------
 
 def load_parser(debug=False):
-
     if debug:
         from ply import lex, yacc
         path = os.path.abspath(__file__)
