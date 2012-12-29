@@ -1,4 +1,4 @@
-from parse import parse, make_parser, AtermSyntaxError
+from parse import parse, AtermSyntaxError
 from matching import match, build
 from terms import (
     aterm,

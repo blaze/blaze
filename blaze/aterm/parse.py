@@ -15,11 +15,18 @@ bt : C                 -- constant
 
 import re
 import os
+import sys
 
-import ply.lex as lex
-import ply.yacc as yacc
+from functools import partial
 
 from terms import *
+
+# Precompiled modules
+import alex
+import ayacc
+
+from blaze.plyhacks import yaccfrom, lexfrom
+from blaze.error import CustomSyntaxError
 
 DEBUG = True
 
@@ -27,36 +34,8 @@ DEBUG = True
 # Errors
 #------------------------------------------------------------------------
 
-parser = None
-
-syntax_error = """
-
-  File {filename}, line {lineno}
-    {line}
-    {pointer}
-
-ATermSyntaxError: {msg}
-"""
-
-class AtermSyntaxError(Exception):
-    """
-    Makes aterm parse errors look like Python SyntaxError.
-    """
-    def __init__(self, lineno, col_offset, filename, text, msg=None):
-        self.lineno     = lineno
-        self.col_offset = col_offset
-        self.filename   = filename
-        self.text       = text
-        self.msg        = msg or 'invalid syntax'
-
-    def __str__(self):
-        return syntax_error.format(
-            filename = self.filename,
-            lineno   = self.lineno,
-            line     = self.text,
-            pointer  = ' '*self.col_offset + '^',
-            msg      = self.msg
-        )
+class AtermSyntaxError(CustomSyntaxError):
+    pass
 
 #------------------------------------------------------------------------
 # Lexer
@@ -249,19 +228,38 @@ def p_error(p):
 # Toplevel
 #------------------------------------------------------------------------
 
-def make_parser():
-    global parser
-    if not parser:
+def load_parser(debug=False):
+
+    if debug:
+        from ply import lex, yacc
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
-
-        lexer = lex.lex(lextab="alex")
+        lexer = lex.lex(lextab="alex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='ayacc',outputdir=dir_path,
-                write_tables=0, debug=0)
+                write_tables=0, debug=0, optimize=1)
     else:
-        parser = parser
-    return parser
+        module = sys.modules[__name__]
+        lexer = lexfrom(module, alex)
+        parser = yaccfrom(module, ayacc, lexer)
+
+        # curry the lexer into the parser
+        return partial(parser.parse, lexer=lexer)
 
 def parse(pattern):
-    parser = make_parser()
-    return parser.parse(pattern)
+    parser = load_parser()
+    return parser(pattern)
+
+
+if __name__ == '__main__':
+    import readline
+    parser = load_parser()
+    readline.parse_and_bind('')
+
+    while True:
+        try:
+            line = raw_input('>> ')
+            print parse(line)
+        except EOFError:
+            break
+        except Exception as e:
+            print e

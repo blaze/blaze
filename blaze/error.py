@@ -34,3 +34,34 @@ class NotNumpyCompatible(Exception):
     but it cannot be ceorced.
     """
     pass
+
+syntax_error = """
+
+  File {filename}, line {lineno}
+    {line}
+    {pointer}
+
+{error}: {msg}
+"""
+
+class CustomSyntaxError(Exception):
+    """
+    Makes datashape parse errors look like Python SyntaxError.
+    """
+    def __init__(self, lineno, col_offset, filename, text, msg=None):
+        self.lineno     = lineno
+        self.col_offset = col_offset
+        self.filename   = filename
+        self.text       = text
+        self.msg        = msg or 'invalid syntax'
+        raise NotImplementedError
+
+    def __str__(self):
+        return syntax_error.format(
+            filename = self.filename,
+            lineno   = self.lineno,
+            line     = self.text,
+            pointer  = ' '*self.col_offset + '^',
+            msg      = self.msg,
+            error    = self.__class__.__name__,
+        )

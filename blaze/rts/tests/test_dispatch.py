@@ -29,4 +29,3 @@ def test_deferred_func():
     y = NDArray([1,2,3])
 
     val = add(x,y)
-    import pdb; pdb.set_trace()

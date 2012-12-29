@@ -31,44 +31,24 @@ Grammar::
 
 import os
 import re
+import sys
+
 from functools import partial
 from collections import namedtuple
 
-import ply.lex as lex
-import ply.yacc as yacc
+# Precompiled modules
+import dlex
+import dyacc
+
+from blaze.plyhacks import yaccfrom, lexfrom
+from blaze.error import CustomSyntaxError
 
 #------------------------------------------------------------------------
 # Errors
 #------------------------------------------------------------------------
 
-syntax_error = """
-
-  File {filename}, line {lineno}
-    {line}
-    {pointer}
-
-DatashapeSyntaxError: {msg}
-"""
-
-class DatashapeSyntaxError(Exception):
-    """
-    Makes datashape parse errors look like Python SyntaxError.
-    """
-    def __init__(self, lineno, col_offset, filename, text, msg=None):
-        self.lineno     = lineno
-        self.col_offset = col_offset
-        self.filename   = filename
-        self.text       = text
-        self.msg        = msg or 'invalid syntax'
-
-    def __str__(self):
-        return syntax_error.format(**{
-            'filename' : self.filename,
-            'lineno'   : self.lineno,
-            'line'     : self.text,
-            'pointer'  : ' '*self.col_offset + '^',
-            'msg'      : self.msg
-        })
+class DatashapeSyntaxError(CustomSyntaxError):
+    pass
 
 #------------------------------------------------------------------------
 # Lexer
@@ -109,9 +89,6 @@ def t_NUMBER(t):
 def t_error(t):
     print("Unknown token '%s'" % t.value[0])
     t.lexer.skip(1)
-
-# Build the lexer
-#lexer = lex.lex()
 
 #------------------------------------------------------------------------
 # Parser
@@ -255,21 +232,37 @@ preparse = reduce(compose, [
 # Toplevel
 #------------------------------------------------------------------------
 
-# TODO: deprecated??
-# def datashape_parser(s, debug=False):
-#     inputs = preparse(s)
-#     ast = parser.parse(inputs,lexer=lexer)
-#     return ast
+def load_parser(debug=False):
+    if debug:
+        from ply import lex, yacc
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
+        parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
+                write_tables=0, debug=0, optimize=1)
+    else:
+        module = sys.modules[__name__]
+        lexer = lexfrom(module, dlex)
+        parser = yaccfrom(module, dyacc, lexer)
 
-def datashape_pprint(ast, depth=0):
-    raise NotImplementedError
+        # curry the lexer into the parser
+        return partial(parser.parse, lexer=lexer)
 
-def make_parser():
-    path = os.path.abspath(__file__)
-    dir_path = os.path.dirname(path)
+def parse(pattern):
+    parser = load_parser()
+    return parser(preparse(pattern))
 
-    lexer = lex.lex(lextab="dshape_lexer")
-    parser = yacc.yacc(tabmodule='dshape_yacc',outputdir=dir_path,debug=0,
-        write_tables=0)
 
-    return parser
+if __name__ == '__main__':
+    import readline
+    parser = load_parser()
+    readline.parse_and_bind('')
+
+    while True:
+        try:
+            line = raw_input('>> ')
+            print parse(line)
+        except EOFError:
+            break
+        except Exception as e:
+            print e

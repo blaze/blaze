@@ -1,5 +1,5 @@
 from parse import parse
-from .coretypes import *
+from coretypes import *
 
 def dshape(o):
     if isinstance(o, str):

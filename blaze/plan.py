@@ -167,8 +167,10 @@ class InstructionGen(MroVisitor):
         return
 
 #------------------------------------------------------------------------
-# Graph -> ATerm
+# Internal Blaze Graph -> ATerm
 #------------------------------------------------------------------------
+
+# TODO: Visit on KIND instead of class!
 
 class BlazeVisitor(MroVisitor):
     """ Map Blaze graph objects into ATerm """

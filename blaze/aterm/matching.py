@@ -1,4 +1,4 @@
-from parse import make_parser
+from parse import parse
 from terms import *
 
 placeholders = {
@@ -81,12 +81,10 @@ def aterm_splice(a, elts):
         raise NotImplementedError
 
 def match(pattern, subject, *captures):
-    parser = make_parser()
-
     captures = []
 
-    p = parser.parse(pattern)
-    s = parser.parse(subject)
+    p = parse(pattern)
+    s = parse(subject)
 
     for matches, capture in aterm_zip(p,s):
         if not matches:
@@ -105,7 +103,5 @@ def matches(pattern, subject):
     return True
 
 def build(pattern, values):
-    parser = make_parser()
-
-    p = parser.parse(pattern)
+    p = parse(pattern)
     return list(aterm_splice(p,values))
