@@ -24,7 +24,6 @@ Using Anaconda's package manager:
 
     $ conda install ply
     $ conda install blosc
-    $ conda install aterm
 
 Introduction
 ~~~~~~~~~~~~
