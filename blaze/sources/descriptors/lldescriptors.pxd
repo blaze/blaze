@@ -36,33 +36,35 @@ cdef class Tile(object):
     cdef CTile tile
 
 #------------------------------------------------------------------------
-# C-level iterators and indexers on scalars or bulk data (tiles)
+# C-level iterators and indexers on scalars or bulk data (chunks/tiles)
 #------------------------------------------------------------------------
 
 # Read chunks in sequence. After use, a written chunk must be committed, and a
 # chunk that was only read must be disposed of.
 ctypedef public struct CChunkIterator:
-    void (*next)(CChunkIterator *info, CChunk *chunk)
-    void (*commit)(CChunkIterator *info, CChunk *chunk)
-    void (*dispose)(CChunkIterator *info, CChunk *chunk)
+    int (*next)(CChunkIterator *info, CChunk *chunk) except -1
+    int (*commit)(CChunkIterator *info, CChunk *chunk) except -1
+    int (*dispose)(CChunkIterator *info, CChunk *chunk) except -1
 
     IndexerMetaData meta
     size_t cur_chunk_idx
 
 # global coordinates -> scalar
 ctypedef public struct CIndexer:
-    void (*index_read)(CIndexer *info, Py_ssize_t *indices, void *datum)
-    void (*index_write)(CIndexer *info, Py_ssize_t *indices, void *datum)
+    int (*index_read)(CIndexer *info, Py_ssize_t *indices,
+                      void *datum) except -1
+    int (*index_write)(CIndexer *info, Py_ssize_t *indices,
+                       void *datum) except -1
     IndexerMetaData meta
 
-ctypedef void (*tile_read_t)(CTileIndexer *info, Py_ssize_t *indices,
-                             CTile *out_tile)
-ctypedef void (*tile_commit_t)(CTileIndexer *info, Py_ssize_t *indices,
-                               CTile *in_tile)
+ctypedef int (*tile_read_t)(CTileIndexer *info, Py_ssize_t *indices,
+                            CTile *out_tile) except -1
+
 # global coordinates -> ND tile
 ctypedef public struct CTileIndexer:
     tile_read_t index
-    tile_commit_t commit
+    tile_read_t commit
+    tile_read_t dispose
     IndexerMetaData meta
 
 #------------------------------------------------------------------------
@@ -77,4 +79,7 @@ cdef class ChunkIterator(lldatadesc):
     cdef CChunkIterator iterator
 
 cdef class TileIndexer(lldatadesc):
+    cdef CTileIndexer indexer
+
+cdef class DataIndexer(lldatadesc):
     cdef CIndexer indexer
