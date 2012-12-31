@@ -25,6 +25,9 @@ from datashape.record import RecordDecl, derived
 # The compatability wrappers
 from datashape.coretypes import to_numpy, from_numpy
 
+# Out of core algorithms
+from blaze.algo import *
+
 # Errors
 from blaze.error import *
 

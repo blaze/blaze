@@ -206,12 +206,12 @@ cdef class chunk:
   """
 
   # To save space, keep these variables under a minimum
-  cdef char typekind, isconstant
-  cdef public int atomsize, itemsize, blocksize
-  cdef public int nbytes, cbytes, cdbytes
-  cdef int true_count
-  cdef char *data
-  cdef object atom, constant, dobject
+  #cdef char typekind, isconstant
+  #cdef public int atomsize, itemsize, blocksize
+  #cdef public int nbytes, cbytes, cdbytes
+  #cdef int true_count
+  #cdef char *data
+  #cdef object atom, constant, dobject
 
   property dtype:
     "The NumPy dtype for this chunk."

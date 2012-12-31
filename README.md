@@ -10,26 +10,26 @@ the structure of NumPy itself.
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png">
 </p>
 
-Our goal is to allow easy expression of low level computation kernels (
-C, Fortran, Numba ) and data transformations on large datasets.
+Our goal is to allow easy composition of low level computation kernels
+( C, Fortran, Numba ) to form complex data transformations on large
+datasets.
 
-In Blaze computations are described in a high-level language ( Python )
-but executed on a low-level runtime outside of Python. Allowing the easy
-mapping of high-level expertise to data while not sacrificing low-level
-performance. Blaze aims to bring Python and Blaze into the massively
-multicore arena, allowing it to able to leverage many CPU and GPU cores
-across computers, virtual machines and cloud services.
+In Blaze computations are described in a high-level language ( Python
+) but executed on a low-level runtime outside of Python. Allowing the
+easy mapping of high-level expertise to data while not sacrificing
+low-level performance. Blaze aims to bring Python and NumPy into the
+massively-multicore arena, allowing it to able to leverage many CPU and
+GPU cores across computers, virtual machines and cloud services.
 
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
 </p>
 
 The general parallelization and distributed scheduling problem is
-extremely difficult and under active research we do not aim to solve
-all the scheduling problems associated with parallel and distributed
-scheduling. Instead of solving the problem in its full generality aim to
-provide a compact set of abstractions to express general transformations
-between code and data as well as a framework for expressing distributed
+extremely difficult and under active research, as such we do not aim to
+solve the problem in its full generality. We aim to provide a compact
+set of abstractions and types to express general transformations between
+code and data in addition to a framework for exploring distributed
 computations.
 
 Simultaneously, in reality most analysts and scientific-computing users
@@ -37,8 +37,8 @@ spend a large portion of their time combating practical, operational
 issues, such as cleaning data, matching data formats, and navigating
 heterogeneous technology environments. Blaze aims to tackle this
 problem in its entirely and become a "glue project" allowing many
-different users of other PyData projects ( Pandas, Theano, Numba, ) to
-interoperate.
+different users of other PyData projects ( Pandas, Theano, Numba, SciPy,
+Scikit-Learn) to interoperate.
 
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png">
