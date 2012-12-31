@@ -1,13 +1,51 @@
 Blaze
 =====
 
-![](https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png)
+**Blaze** is the next-generation of NumPy. It is designed as a
+foundational set of abstractions on which to build out-of-core and
+distributed algorithms over a wide variety of data sources and to extend
+the structure of NumPy itself.
 
-Blaze is the next-generation of NumPy. It is designed as a foundational
-set of abstractions on which to build out-of-core and distributed
-algorithms over a wide variety of data sources.
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png">
+</p>
 
-![](https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png)
+Our goal is to allow easy expression of low level computation kernels (
+C, Fortran, Numba ) and data transformations on large datasets.
+
+In Blaze computations are described in a high-level language ( Python )
+but executed on a low-level runtime outside of Python. Allowing the easy
+mapping of high-level expertise to data while not sacrificing low-level
+performance. Blaze aims to bring Python and Blaze into the massively
+multicore arena, allowing it to able to leverage many CPU and GPU cores
+across computers, virtual machines and cloud services.
+
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
+</p>
+
+The general parallelization and distributed scheduling problem is
+extremely difficult and under active research we do not aim to solve
+all the scheduling problems associated with parallel and distributed
+scheduling. Instead of solving the problem in its full generality aim to
+provide a compact set of abstractions to express general transformations
+between code and data as well as a framework for expressing distributed
+computations.
+
+Simultaneously, in reality most analysts and scientific-computing users
+spend a large portion of their time combating practical, operational
+issues, such as cleaning data, matching data formats, and navigating
+heterogeneous technology environments. Blaze aims to tackle this
+problem in its entirely and become a "glue project" allowing many
+different users of other PyData projects ( Pandas, Theano, Numba, ) to
+interoperate.
+
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png">
+</p>
+
+Status
+------
 
 Blaze is a work in progress at the moment. The code is quite a distance
 from feature complete. The code is released in an effort to start a
