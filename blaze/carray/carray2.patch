@@ -1,0 +1,98 @@
+diff --git a/blaze/carray/carrayExtension.h b/blaze/carray/carrayExtension.h
+new file mode 100644
+index 0000000..4f7ac2e
+--- /dev/null
++++ b/blaze/carray/carrayExtension.h
+@@ -0,0 +1,51 @@
++#ifndef __PYX_HAVE__blaze__carray__carrayExtension
++#define __PYX_HAVE__blaze__carray__carrayExtension
++
++struct object;
++
++/* "blaze/carray/carrayExtension.pxd":5
++ * import_array()
++ * 
++ * cdef public class chunk [object object, type type]:             # <<<<<<<<<<<<<<
++ *     cdef char typekind, isconstant
++ *     cdef public int atomsize, itemsize, blocksize
++ */
++struct object {
++  PyObject_HEAD
++  struct __pyx_vtabstruct_5blaze_6carray_15carrayExtension_chunk *__pyx_vtab;
++  char typekind;
++  char isconstant;
++  int atomsize;
++  int itemsize;
++  int blocksize;
++  int nbytes;
++  int cbytes;
++  int cdbytes;
++  int true_count;
++  char *data;
++  PyObject *atom;
++  PyObject *constant;
++  PyObject *dobject;
++};
++
++#ifndef __PYX_HAVE_API__blaze__carray__carrayExtension
++
++#ifndef __PYX_EXTERN_C
++  #ifdef __cplusplus
++    #define __PYX_EXTERN_C extern "C"
++  #else
++    #define __PYX_EXTERN_C extern
++  #endif
++#endif
++
++__PYX_EXTERN_C DL_IMPORT(PyTypeObject) type;
++
++#endif /* !__PYX_HAVE_API__blaze__carray__carrayExtension */
++
++#if PY_MAJOR_VERSION < 3
++PyMODINIT_FUNC initcarrayExtension(void);
++#else
++PyMODINIT_FUNC PyInit_carrayExtension(void);
++#endif
++
++#endif /* !__PYX_HAVE__blaze__carray__carrayExtension */
+diff --git a/blaze/carray/carrayExtension.pxd b/blaze/carray/carrayExtension.pxd
+new file mode 100644
+index 0000000..aca01ec
+--- /dev/null
++++ b/blaze/carray/carrayExtension.pxd
+@@ -0,0 +1,12 @@
++from definitions cimport ndarray
++
++cdef public class chunk [object object, type type]:
++    cdef char typekind, isconstant
++    cdef public int atomsize, itemsize, blocksize
++    cdef public int nbytes, cbytes, cdbytes
++    cdef int true_count
++    cdef char *data
++    cdef object atom, constant, dobject
++
++    cdef void _getitem(self, int start, int stop, char *dest)
++    cdef compress_data(self, ndarray array, object cparams, object _memory)
+diff --git a/blaze/carray/carrayExtension.pyx b/blaze/carray/carrayExtension.pyx
+index 2841831..90068e0 100644
+--- a/blaze/carray/carrayExtension.pyx
++++ b/blaze/carray/carrayExtension.pyx
+@@ -206,12 +206,12 @@ cdef class chunk:
+   """
+ 
+   # To save space, keep these variables under a minimum
+-  cdef char typekind, isconstant
+-  cdef public int atomsize, itemsize, blocksize
+-  cdef public int nbytes, cbytes, cdbytes
+-  cdef int true_count
+-  cdef char *data
+-  cdef object atom, constant, dobject
++  #cdef char typekind, isconstant
++  #cdef public int atomsize, itemsize, blocksize
++  #cdef public int nbytes, cbytes, cdbytes
++  #cdef int true_count
++  #cdef char *data
++  #cdef object atom, constant, dobject
+ 
+   property dtype:
+     "The NumPy dtype for this chunk."
