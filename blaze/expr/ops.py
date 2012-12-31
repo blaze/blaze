@@ -44,7 +44,6 @@ class Add(Op):
     associative  = True
     idempotent   = False
     nilpotent    = False
-    sideffectful = False
 
 class Mul(Op):
     # -----------------------
@@ -58,7 +57,6 @@ class Mul(Op):
     associative  = True
     idempotent   = False
     nilpotent    = False
-    sideffectful = False
 
 class Pow(Op):
     # -----------------------
@@ -72,7 +70,6 @@ class Pow(Op):
     associative  = False
     idempotent   = False
     nilpotent    = False
-    sideffectful = False
 
 class Transpose(Op):
     # -----------------------
@@ -86,7 +83,6 @@ class Transpose(Op):
     associative  = False
     idempotent   = False
     nilpotent    = True
-    sideffectful = False
 
 class Abs(Op):
     # -----------------------
@@ -100,4 +96,3 @@ class Abs(Op):
     associative  = False
     idempotent   = True
     nilpotent    = False
-    sideffectful = False

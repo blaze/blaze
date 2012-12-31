@@ -248,7 +248,10 @@ def load_parser(debug=False):
         # curry the lexer into the parser
         return partial(parser.parse, lexer=lexer)
 
-def parse(pattern):
+class Module(object):
+    pass
+
+def parse(pattern, modules=[]):
     parser = load_parser()
     return parser(preparse(pattern))
 

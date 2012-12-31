@@ -235,7 +235,7 @@ def load_parser(debug=False):
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="alex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='ayacc',outputdir=dir_path,
-                write_tables=0, debug=0, optimize=1)
+                write_tables=1, debug=0, optimize=1)
     else:
         module = sys.modules[__name__]
         lexer = lexfrom(module, alex)
@@ -254,10 +254,18 @@ if __name__ == '__main__':
     parser = load_parser()
     readline.parse_and_bind('')
 
+    last = None
     while True:
         try:
             line = raw_input('>> ')
-            print parse(line)
+            if line == ':reload':
+                print 'Rebuilding parser...'
+                continue
+            elif line == ':show':
+                print repr(last)
+            else:
+                last = parse(line)
+                print last
         except EOFError:
             break
         except Exception as e:
