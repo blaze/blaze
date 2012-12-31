@@ -29,7 +29,7 @@ $ git clone git@github.com:ContinuumIO/blaze.git
 ```
 
 Many of the dependencies ( llvm, numba, ... ) are non-trivial to
-install. It is highly recommend that you build Blaze using the Anaconda
+install. It is **highly recommend** that you build Blaze using the Anaconda
 Python distribution.
 
 Free Anaconda CE is available here: http://continuum.io/anacondace.html .
@@ -60,6 +60,62 @@ To run tests:
 
 ```bash
 $ python setup.py test
+```
+
+Alternative Installation
+------------------------
+
+If you desire not to use Anaconda it is possible to build Blaze using
+standard Python tools. This method is not recommended.
+
+1) After you have checked out the Blaze source, create a virtualenv
+under the root of the Blaze repo.
+
+```bash
+$ virtualenv venv --distribute --no-site-packages 
+$ . venv/bin/activate
+```
+
+2) Pull the Conda package manager for use inside of your virtualenv.
+
+```bash
+git clone git@github.com:ContinuumIO/conda.git
+```
+
+3) Build and install conda.
+
+```bash
+cd conda
+python setup.sh install
+cd ..
+```
+
+4) Create a directory in your virtualenv to mimic the behavior of
+Anaconda and allow Continuum signed packages to be installed.
+
+```bash
+mkdir venv/pkgs
+```
+
+5) Add ``conda`` to your path.
+
+```bash
+$ PATH=venv/bin:$PATH
+```
+
+6) Use Anaconda to resolve Blaze dependencies.
+
+```bash
+conda install ply
+conda install blosc
+conda install numpy
+conda install cython
+```
+
+7) From inside the Blaze directory run the Makefile.
+
+```bash
+make build
 ```
 
 Contributing
