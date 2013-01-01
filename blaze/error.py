@@ -1,3 +1,15 @@
+__all__ = ['ChunkingException',
+           'NoSuchChecksum',
+           'ChecksumMismatch',
+           'FileNotFound',
+           'ExecutionError',
+           'NoDispatch',
+           'InvalidLibraryDefinition',
+           'NotNumpyCompatible',
+           'syntax_error',
+           'CustomSyntaxError'
+            ]
+
 class ChunkingException(BaseException):
     pass
 
@@ -25,7 +37,7 @@ class NoDispatch(Exception):
         return "No implementation for '%r'" % self.aterm
 
 # for the RTS
-class InvalidLibraryDefinton(Exception):
+class InvalidLibraryDefinition(Exception):
     pass
 
 class NotNumpyCompatible(Exception):
