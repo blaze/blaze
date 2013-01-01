@@ -6,12 +6,13 @@ on-disk storage.
 from blaze import carray
 from blaze.carray.ctable import ctable
 
-from blaze.sources.descriptors.byteprovider import ByteProvider
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
-from blaze.sources.descriptors.datadescriptor import CArrayDataDescriptor
 from blaze.datashape.coretypes import dynamic, from_numpy, to_numpy
 from blaze.params import params, to_cparams
 from blaze.layouts.scalar import ChunkedL
+
+from blaze.desc.byteprovider import ByteProvider
+from blaze.desc.datadescriptor import CArrayDataDescriptor
 
 import numpy as np
 

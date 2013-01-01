@@ -3,7 +3,7 @@ Byte provider instances, the substrate that abstracts between raw bytes
 and units of data.
 """
 
-from blaze.sources.descriptors.byteprovider import ByteProvider
+from blaze.desc.byteprovider import ByteProvider
 from blaze.datashape import Fixed, dynamic, string, pyobj
 from blaze.datashape.coretypes import from_numpy, to_numpy
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC

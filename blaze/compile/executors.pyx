@@ -4,13 +4,13 @@ cimport numpy as cnp
 from cpython cimport PyObject, Py_INCREF
 #from blaze.engine import numba_kernels
 
-from blaze.sources.descriptors cimport lldescriptors
+from blaze.desc cimport lldescriptors
 
 #------------------------------------------------------------------------
 # NumPy Utilities
 #------------------------------------------------------------------------
 
-import numba
+#import numba
 import numpy as np
 
 cdef extern from "Python.h":

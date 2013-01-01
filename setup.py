@@ -202,13 +202,13 @@ extensions = [
         include_dirs = [numpy_path],
    ),
    Extension(
-       "blaze.sources.descriptors.lldescriptors",
-       ["blaze/sources/descriptors/lldescriptors.pyx"],
+       "blaze.desc.lldescriptors",
+       ["blaze/desc/lldescriptors.pyx"],
        include_dirs = [],
    ),
    Extension(
-       "blaze.sources.descriptors.llindexers",
-       ["blaze/sources/descriptors/llindexers.pyx"],
+       "blaze.desc.llindexers",
+       ["blaze/desc/llindexers.pyx"],
        include_dirs = [],
    ),
    Extension(

@@ -12,7 +12,7 @@ import blaze.metadata as md
 
 from blaze.idx import Space
 from blaze.eclass import eclass
-from blaze.sources.descriptors.byteprovider import ByteProvider
+from blaze.desc.byteprovider import ByteProvider
 from blaze.printer import generic_str, generic_repr
 
 from blaze.datashape import dshape as _dshape

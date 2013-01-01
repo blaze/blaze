@@ -1,6 +1,6 @@
 import sqlite3
 
-from blaze.sources.descriptors.byteprovider import ByteProvider
+from blaze.desc.byteprovider import ByteProvider
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_READ
 #from blaze.datadescriptor import SqlDataDescriptor
 
