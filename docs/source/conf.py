@@ -46,12 +46,12 @@ except OSError:
 # TODO: check about the legal requirements of putting this in the
 # tree. sphinx-ditaa is BSD so should be fine...
 
-#try:
-    #sys.path.append(os.path.abspath('sphinxext'))
-    #extensions += ['sphinxext.ditaa']
-    #diagrams = True
-#except ImportError:
-    #diagrams = False
+try:
+    sys.path.append(os.path.abspath('sphinxext'))
+    extensions += ['sphinxext.ditaa']
+    diagrams = True
+except ImportError:
+    diagrams = False
 
 # -----------------------------------------------------------------------------
 
