@@ -11,44 +11,44 @@
     <link href="css/bootstrap.css" rel="stylesheet">
     <style type="text/css">
 
-      html {
-          overflow-y: scroll;
-      }
-
-      body {
-        font-family: serif;
-        padding-top: 120px;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: underline;
-      }
-
-      .navbar {
-        font-family: serif;
-        font-weight: bold;
-      }
-
-      li.active a {
-      }
-
-      h1,h2 {
-        font-weight: normal;
-      }
-
-     .center {
-         text-align: center;
-     }
-
-    .navbar-inner {	
-      -webkit-border-radius: 0;
-      -moz-border-radius: 0;
-      border-radius: 0;
+    html {
+        overflow-y: scroll;
     }
 
-    .navbar .container {
-      width: auto;
+    body {
+      font-family: serif;
+      padding-top: 120px;
+    }
+
+    body {
+      padding-top: 20px;
+      padding-bottom: 40px;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .container-narrow {
+      margin: 0 auto;
+      max-width: 1000px;
+    }
+
+    .container-narrow > hr {
+      margin: 15px 0;
+    }
+
+    .jumbotron {
+      margin: 60px 0;
+      text-align: center;
+    }
+    .jumbotron h1 {
+      font-size: 72px;
+      line-height: 1;
+    }
+    .jumbotron .btn {
+      font-size: 21px;
+      padding: 14px 24px;
     }
 
     </style>
@@ -62,17 +62,19 @@
 
   <body>
 
-    {{ nav }}
-
     <a href="https://github.com/ContinuumIO/blaze"><img style="position: fixed; top: 0; right: 0; border: 0; z-index: 1040" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
 
-    <div class="container">
+    <div class="container-narrow">
+
+        {{ nav }}
+
+        <hr/>
 
         {{ content }}
 
         <hr/>
 
-        <div id="footer">
+        <div class="footer">
             © Copyright 2012, Continuum Analytics.
         </div>
 

@@ -1,23 +1,12 @@
-<div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
+<div class="masthead">
+  <ul class="nav nav-pills pull-right">
 
-           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-            </a>
+      {% for name, href, id, icon in navigation_bar %}
+      <li {% if id == active_page %} class="active"{% endif %}>
+          <a href="{{href}}"><i class="icon-{{icon}}"></i> {{name}}</a>
+      </li>
+      {% endfor %}
 
-            <div class="nav-collapse">
-                <ul class="nav">
-                    {% for name, href, id, icon in navigation_bar %}
-                    <li {% if id == active_page %} class="active"{% endif %}>
-                        <a href="{{href}}"><i class="icon-{{icon}} icon-white"></i> {{name}}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-
-        </div>
-    </div>
+  </ul>
+  <h3 class="muted"><img src="img/logo.svg" />Blaze</h3>
 </div>
