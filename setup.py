@@ -230,6 +230,12 @@ extensions = [
         sources = ["blaze/algo/mean.pyx"],
         include_dirs = [numpy_path]
    ),
+
+   Extension(
+        "blaze.algo.std",
+        sources = ["blaze/algo/std.pyx"],
+        include_dirs = [numpy_path]
+   ),
 ]
 
 #------------------------------------------------------------------------

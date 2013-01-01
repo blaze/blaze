@@ -1,15 +1,12 @@
-#------------------------------------------------------------------------
-# Out-Of-Core Mean
-#------------------------------------------------------------------------
+import cython
+
+import numpy as np
+cimport numpy as np
 
 from blaze import Table
 from blaze.carray import carrayExtension as carray
 from blaze.carray.carrayExtension cimport chunk
 
-import numpy as np
-cimport numpy as np
-import cython
-from numpy cimport PyArray_DIMS
 
 np.import_array()
 nan = np.nan
@@ -19,6 +16,21 @@ nan = np.nan
 #------------------------------------------------------------------------
 
 def mean(table, col):
+    """ Columnwise out of core mean
+
+    Parameters
+    ----------
+    table : Table
+        A Blaze Table object
+    col : str
+        String indicating a column name.
+
+    Returns
+    -------
+    out : float
+        mean
+
+    """
     cdef chunk chunk_
     cdef np.npy_intp nchunk, nchunks
     cdef np.float32_t result = 0
@@ -49,8 +61,10 @@ def mean(table, col):
         return np.float32(nan)
 
 #------------------------------------------------------------------------
-# NA Experiments 
+# NA Experiments
 #------------------------------------------------------------------------
+
+# Experimental, don't use!
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -60,7 +74,7 @@ def mean_float(np.ndarray[np.float32_t, ndim=1] a, Py_ssize_t _count=0):
     cdef np.float32_t asum = 0, ai
     cdef Py_ssize_t i0
     cdef np.npy_intp *dim
-    dim = PyArray_DIMS(a)
+    dim = np.PyArray_DIMS(a)
     cdef Py_ssize_t n0 = dim[0]
 
     with nogil:
@@ -83,7 +97,7 @@ def mean_int(np.ndarray[np.int32_t, ndim=1] a, int lower, int upper, Py_ssize_t 
     cdef Py_ssize_t size
     cdef Py_ssize_t i0
     cdef np.npy_intp *dim
-    dim = PyArray_DIMS(a)
+    dim = np.PyArray_DIMS(a)
     cdef Py_ssize_t n0 = dim[0]
     size = n0
 

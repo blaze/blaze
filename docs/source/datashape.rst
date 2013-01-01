@@ -51,62 +51,12 @@ aim to allow a richer and more declarative way of phrasing operations
 over semi-structured data. While types are a necessary part of writing
 efficient code, the ideal type system is one which disappears entirely!
 
-Unit Types
-~~~~~~~~~~
+Units
+-----
 
 Datashape types that are single values are called **unit** types. They
 represent a fixed type that has no internal structure. For example
-``int32`` or ``2``.
-
-The native bit types or **CType** objects are unit types.
-
-+----------------+
-| int8           |
-+----------------+
-| int16          |
-+----------------+
-| int32          |
-+----------------+
-| int64          |
-+----------------+
-| uint           |
-+----------------+
-| uint8          |
-+----------------+
-| uint16         |
-+----------------+
-| uint32         |
-+----------------+
-| uint64         |
-+----------------+
-| float16        |
-+----------------+
-| float32        |
-+----------------+
-| float64        |
-+----------------+
-| float128       |
-+----------------+
-| complex64      |
-+----------------+
-| complex128     |
-+----------------+
-| complex256     |
-+----------------+
-| long           |
-+----------------+
-| double         |
-+----------------+
-| short          |
-+----------------+
-| longdouble     |
-+----------------+
-| char           |
-+----------------+
-| bool           |
-+----------------+
-| pyobj          |
-+----------------+
+``int32``.
 
 In Blaze there are two classes of units: **measures** and
 **dimensions**. Measures are units of data, while dimensions are
@@ -116,6 +66,57 @@ constructors uniquely describe the space of possible values or
 
 Dataspace mappings which preserve values ( i.e. homomorphisms ) are
 called **index-space transformations**.
+
+Bit Types
+~~~~~~~~~
+
+The native bit types or **CType** objects are unit types standing for
+unboxed machine types. These inherit the notation from NumPy.
+
+==========  =========================================================
+Bit type    Description
+==========  =========================================================
+bool        Boolean (True or False) stored as a byte
+int         Platform integer (normally either ``int32`` or ``int64``)
+int8        Byte (-128 to 127)
+int16       Integer (-32768 to 32767)
+int32       Integer (-2147483648 to 2147483647)
+int64       Integer (9223372036854775808 to 9223372036854775807)
+uint8       Unsigned integer (0 to 255)
+uint16      Unsigned integer (0 to 65535)
+uint32      Unsigned integer (0 to 4294967295)
+uint64      Unsigned integer (0 to 18446744073709551615)
+float       Shorthand for ``float64``.
+float16     Half precision float: sign bit, 5 bits exponent,
+            10 bits mantissa
+float32     Single precision float: sign bit, 8 bits exponent,
+            23 bits mantissa
+float64     Double precision float: sign bit, 11 bits exponent,
+            52 bits mantissa
+complex     Shorthand for ``complex128``.
+complex64   Complex number, represented by two 32-bit floats (real
+            and imaginary components)
+complex128  Complex number, represented by two 64-bit floats (real
+            and imaginary components)
+==========  =========================================================
+
+
+Blaze also adds a variety of bit-like types which are implemented
+a subset of specialized storage and computation backends.
+
+
+==========  =========================================================
+Bit type    Description
+==========  =========================================================
+double      Fixed point precision
+varchar     Variable length string
+blob        Binary large object
+==========  =========================================================
+
+Endianness
+~~~~~~~~~~
+
+TODO
 
 Products
 --------
@@ -184,19 +185,29 @@ With the corresponding NumPy array::
 Constructors
 ~~~~~~~~~~~~
 
-Datashape types that are comprised of multiple unit types are
-called **composite** types. The product operator discussed above
-yields composite types. Example::
+A type constructor is a parameterized type definition for specifying
+polymorphic types. Polymorphic types specify containers that are capable
+of holding values of many different types conforming to the intermix of
+the constructors.
 
-A **type operator** is higher type that maps each choice of parameter to
-a concrete type instance.::
+The **kind** of a argument specifies the signature of the constructor in
+relation to its parameters.
+
+::
+
+    K = * | K -> K
+
+For example type constructor with no parameters has the base
+kind ``(*)``, a type constructor with two parameters has kind ``(*
+-> *)``.
+
+By supplying a type constructor with one or more **concrete types**, new
+**type instances** can be constructed and added to the system. Datashape
+types that are comprised of multiple unit types are called **composite**
+types. The product operator discussed above yields composite types.
+Example::
 
     2, int32
-
-Datashape types that are comprised of unbound free variables are called
-**variadic** types. Example::
-
-    A, B, int32
 
 Datashape types with free parameters in their constructor are called
 **parameterized** types. Example::
@@ -207,13 +218,11 @@ Datashape types without free parameters in their constructor are called
 **alias** types. Alias types don't add any additional structure they just
 ascribe a new name. Example::
 
-    SquareIntMatrix = N, N, int32
+    AliasType N = N, N, int32
 
-For example, the ``int`` and ``float`` types are automatically aliased
-to the either ``int32`` or ``int64`` types depending on the platform.
-
-Once the types are registered they can be used in dtype expressions just
-like primitive values and also to construct even higher order types.
+Datashape types can be **anonymous** or labeled. Once a type is
+registered it can be used in dshape expressions just like primitive
+values and to construct even higher order types.
 
 Blaze does not permit recursive type definitions.
 
@@ -221,15 +230,15 @@ Datashape types are split into three equivalence classes.
 
 :Fixed:
 
-    Fixed types are equal iff their value is equal.::
+    Fixed types are equal iff their value is equal::
 
         1 == 1
         1 != 2
 
 :CTypes:
 
-    Machine types are equal iff their data type name and width
-    are equal.::
+    Bit types are equal iff their data type name and width
+    are equal::
 
         int32 == int32
         int64 != int32
@@ -240,7 +249,7 @@ Datashape types are split into three equivalence classes.
     Composite datashape types are **nominative**, in that the equivalence of
     two types is determined whether the names they are given are equivalent.
     Thus two datashapes that are defined identically are still not equal to
-    each other.::
+    each other::
 
         A = 2, int32
         B = 2, int32
@@ -307,11 +316,11 @@ Composite datashapes that terminate in record types are called
 
 Example of array-like::
 
-    foo = 2, 3, int32
+    ArrayLike = 2, 3, int32
 
 Example of table-like::
 
-    bar = {x:int, y:float}
+    TableLike = {x:int, y:float}
 
 Enumeration
 -----------
@@ -320,40 +329,65 @@ A enumeration specifies a number of fixed dimensions sequentially. Example::
 
     {1,2,4,2,1}, int32
 
-The above could describe a structure of the form::
+The above could describe a Python structure of the form::
 
     [
         [1],
-        [1,1],
-        [1,1,1,1],
-        [1,1],
-        [1]
+        [1,2],
+        [1,3,2,9],
+        [3,2],
+        [3]
     ]
 
 ..
     (1 + 2 + 4 + 2 + 1) * int32
 
-Variadic
-~~~~~~~~
+Type Variables
+~~~~~~~~~~~~~~
 
-Variadic types expression unknown, but fixed dimensions which are
-expressed as free variables scoped within the type signature. The
-variable is referred to as **type variable** or ``TypeVar``.
+**Variable types** a seperate class of types expressed as free variables
+scoped within the type signature signifying a range of types. Type
+variables that occur once in a type signature are referred to as
+**free**, while type variables that appear multiple types are **rigid**.
 
 For example the type capable of expressing all square two dimensional
-matrices could be written as::
+matrices could be written as a combination of rigid type vars::
 
     A, A, int32
 
 A type capable of rectangular variable length arrays of integers
-can be written as::
+can be written as two free type vars::
 
     A, B, int32
 
-Type variables can also be free measure quantities, representing
-shaped but type-generic datashapes::
+Type variables are reduced through scope of constructors and
+unified into one of two classes:
 
-    TwoByTwo T = 2, 2, T
+* **dimension-generic**
+* **measure-generic**
+
+::
+
+    DimGen T = T, int
+    TypGen T = 2, T
+
+A type signature may only be either dimension-generic or
+measure-generic. Attempting to use a type variable in both will
+raise an Exception. For example in the following signature the
+type variable T is unified in both arguments to the type
+constructor ``Either``::
+
+    Sig T = Either (2, 2, T) (3, 3, T)
+
+Not all declarations of type variables are well-defined. For example
+it is not possible to expression a Range type in terms of variable. An
+instance like this would require a immensely more sophisticated type
+system.
+
+::
+    
+    InvalidSig1 T = Range(0, T)
+    InvalidSig2 T = Range(0, T)
 
 ..
     (1x + 2x + ... + Ax) * (1y + 2y + ... By)
@@ -365,13 +399,15 @@ A **sum type** is a type representing a collection of heterogeneously
 typed values. There are four instances of sum types in Blaze's type
 system:
 
-* Variants
-* Unions
-* Options
-* Ranges
+* :ref:`variant`
+* :ref:`union`
+* :ref:`option`
+* :ref:`range`
 
-Variants
-~~~~~~~~
+.. _variant:
+
+Variant
+~~~~~~~
 
 A **variant** type is a sum type with two tagged parameters ``left`` and
 ``right`` which represent two possible types. We use the keyword
@@ -383,6 +419,8 @@ A **variant** type is a sum type with two tagged parameters ``left`` and
 
 ..
     1 + B + C ...
+
+.. _union:
 
 Union
 ~~~~~
@@ -400,31 +438,37 @@ variable number of heterogeneous typed values::
 ..
     A + B + C ...
 
-Options
-~~~~~~~
+.. _option:
 
-Option types are variant types with the null datashape as one of the
-parameters, representing the presence of absence of a value of a
-specific types. Many languages have a natural expression of this by
-allowing all or most types to be nullable including including C, SQL,
-and Java.
+Option
+~~~~~~
 
-Option types are only defined for type arguments of unit
-measures and Records.
+A Option is a tagged union representing with the left projection being
+the presence of a value while the right projection being the absence of
+a values. For example in C, all types can be nulled by using ``NULL``
+reference.
 
 For example a optional int field::
 
     Option int32
 
-Or a optional record::
+Indicates the presense or absense of a integer. For example a (``5,
+Option int32``) array could be model the Python data structure:
 
-    Option {x:int, y:float, s:string}
+::
+
+    [1, 2, 3, na, na]
+
+Option types are only defined for type arguments of unit measures and
+Records.
 
 ..
     1 + A
 
-Ranges
-~~~~~~
+.. _range:
+
+Range
+~~~~~
 
 Ranges are sum types over intervals of Fixed dimensions types.
 
@@ -459,3 +503,40 @@ of this type.
 
 ..
     (1 + 1 + ...)
+
+
+Grammar
+~~~~~~~
+
+.. code-block:: text
+
+    NAME   = [a-zA-Z_][a-zA-Z0-9_]*
+    EQUALS = "='
+    COMMA  = ",'
+    COLON  = ":'
+    LBRACE = "{'
+    RBRACE = "}'
+
+    statement ::= lhs_expression EQUALS rhs_expression
+                | rhs_expression
+
+    lhs_expression ::= lhs_expression SPACE lhs_expression
+                     | NAME
+
+    rhs_expression ::= rhs_expression COMMA rhs_expression
+
+    rhs_expression ::= record
+                     | NAME
+                     | NUMBER
+
+    record ::= LBRACE record_opt RBRACE
+
+    record_opt ::= record_opt COMMA record_opt
+                 | record_item
+                 | empty
+
+    record_item ::= NAME COLON '(' rhs_expression ')'
+                  | NAME COLON NAME
+                  | NAME COLON NUMBER
+
+    empty ::=

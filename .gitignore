@@ -73,8 +73,7 @@ blaze/carray/*.[ch]
 blaze/cutils.c
 blaze/engine/*.[ch]
 blaze/expr/*.[ch]
-blaze/sources/descriptors/lldescriptors.[ch]
-blaze/sources/descriptors/llindexers.c
+blaze/desc/*.[ch]
 blaze/ts/ucr_dtw/ucr.c
 
 # Sphinx Docs

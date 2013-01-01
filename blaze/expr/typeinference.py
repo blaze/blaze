@@ -326,19 +326,16 @@ def pprint(ty):
 #------------------------------------------------------------------------
 
 def infer(env, term):
-    """
+    """ Infer
+
     Parameters
     ----------
+
     env : dict
         environment of lexically-bound variables with types
     term: object
-        environment of lexically-bound variables with types
+        type signature
 
-    Returns
-    -------
-
-    Usage
-    -----
     """
     t = tyeval(term, env)
     if DEBUG:

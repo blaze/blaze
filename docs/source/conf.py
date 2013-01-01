@@ -33,13 +33,21 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
               'sphinx.ext.graphviz',
               ]
 
-# -- Math -----------------------------------------------------------------
+# -- Math ---------------------------------------------------------------------
 
 try:
     subprocess.call(["pdflatex", "--version"])
     extensions += ['sphinx.ext.pngmath']
 except OSError:
     extensions += ['sphinx.ext.mathjax']
+
+# -- Docstrings ---------------------------------------------------------------
+
+try:
+    import numpydoc
+    extensions += ['numpydoc']
+except ImportError:
+    pass
 
 # -- Diagrams -----------------------------------------------------------------
 

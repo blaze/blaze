@@ -2,6 +2,7 @@
 Convert between type signatures between Blaze and NumPy
 
 ::
+
     NumPy: ii -> i
     Blaze: (a,a) -> a
 
@@ -16,18 +17,14 @@ sepr = re.compile(r'(\w+(?=\))|\w)')
 mapr = re.compile(r"(.*)->(.*)")
 whitespace = re.compile(r'\s')
 
-class SVar(object):
-    def __init__(self, var):
-        self.var = var
-    def __repr__(self):
-        return 'SVar(%s)' % self.var
-
 #------------------------------------------------------------------------
 # Toplevel
 #------------------------------------------------------------------------
 
 def sig_parse(s):
-    """
+    """Signature parse
+
+
     Parameters
     ----------
     s : str
@@ -41,9 +38,10 @@ def sig_parse(s):
     Usage
     -----
     >>> parse('(a,a) -> a')
-    ([SVar(a), SVar(a)], [SVar(a)])
+    (['a', 'a'], ['a'])
     >>> parse('ii->i')
-    ([SVar(i), SVar(i)], [SVar(y)])
+    (['i','i'], ['i'])
+
     """
     # strip redundent whitespace
     s = whitespace.sub('', s)

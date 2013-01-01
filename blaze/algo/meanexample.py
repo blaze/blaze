@@ -26,12 +26,17 @@ t = blaze.open('ctable://example1')
 # operations chunkwise from disk.
 
 t0 = time()
-print blaze.mean(t, 'f0')
-print "IO Optimized mean", round(time()-t0, 6)
+#print blaze.mean(t, 'f0')
+#print "IO Optimized mean", round(time()-t0, 6)
 
 # Using NumPy is just going to through the iterator protocol on
 # carray which isn't going to efficient.
 
 t0 = time()
-print np.mean(t.data.ca['f0'])
-print "NumPy mean", round(time()-t0, 6)
+#print np.mean(t.data.ca['f0'])
+#print "NumPy mean", round(time()-t0, 6)
+
+
+t0 = time()
+print blaze.std(t, 'f0')
+#print "IO Optimized std", round(time()-t0, 6)
