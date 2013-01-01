@@ -73,7 +73,7 @@
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
     </ul>
-    <h3 class="muted"><img src="_static/img/logo.svg">Blaze</h3>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
 
   <hr>
@@ -84,9 +84,22 @@
 <ul>
 <li><a class="reference internal" href="#">ATerm</a><ul>
 <li><a class="reference internal" href="#grammar">Grammar</a></li>
-<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#types">Types</a><ul>
+<li><a class="reference internal" href="#constants">Constants</a></li>
+<li><a class="reference internal" href="#integers">Integers</a></li>
+<li><a class="reference internal" href="#reals">Reals</a></li>
+<li><a class="reference internal" href="#strings">Strings</a></li>
+<li><a class="reference internal" href="#application">Application</a></li>
+<li><a class="reference internal" href="#annotations">Annotations</a></li>
+<li><a class="reference internal" href="#lists">Lists</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#usage">Usage</a></li>
-<li><a class="reference internal" href="#motivating-examples">Motivating Examples</a></li>
+<li><a class="reference internal" href="#pattern-matching">Pattern Matching</a><ul>
+<li><a class="reference internal" href="#pretty-printing">Pretty Printing</a></li>
+<li><a class="reference internal" href="#motivation">Motivation</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -123,8 +136,8 @@ bt : C                 -- constant
    | real              -- floating point number</pre>
 </div>
 </div>
-<div class="section" id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="types">
+<h2>Types<a class="headerlink" href="#types" title="Permalink to this headline">¶</a></h2>
 <p>Example of ATerm expressions by category</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -136,9 +149,9 @@ bt : C                 -- constant
 </tr>
 <tr class="field-odd field"><th class="field-name">String:</th><td class="field-body">String terms (<tt class="docutils literal"><span class="pre">&quot;foo&quot;</span></tt>)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Term:</th><td class="field-body">Variable terms (<tt class="docutils literal"><span class="pre">x</span></tt>)</td>
+<tr class="field-even field"><th class="field-name">Constants:</th><td class="field-body">Variable terms (<tt class="docutils literal"><span class="pre">x</span></tt>)</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Application:</th><td class="field-body">Application of terms to other subterms (<tt class="docutils literal"><span class="pre">f(x,y)</span></tt>)</td>
+<tr class="field-odd field"><th class="field-name">Application:</th><td class="field-body">Application of constant terms to other subterms (<tt class="docutils literal"><span class="pre">f(x,y)</span></tt>)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">List:</th><td class="field-body">A ordered list of subterms (<tt class="docutils literal"><span class="pre">[1,2,3]</span></tt>)</td>
 </tr>
@@ -148,22 +161,31 @@ bt : C                 -- constant
 </tr>
 </tbody>
 </table>
-<p><strong>Simple Term</strong></p>
+<div class="section" id="constants">
+<h3>Constants<a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h3>
+<p>Constant symbols are simply letters. These are completely
+context-free, they have no meaning in and of themselves.</p>
 <div class="highlight-text"><div class="highlight"><pre>x
 </pre></div>
 </div>
 <div class="highlight-text"><div class="highlight"><pre>foo
 </pre></div>
 </div>
-<p><strong>Integers</strong></p>
+</div>
+<div class="section" id="integers">
+<h3>Integers<a class="headerlink" href="#integers" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-text"><div class="highlight"><pre>1
 </pre></div>
 </div>
-<p><strong>Reals</strong></p>
+</div>
+<div class="section" id="reals">
+<h3>Reals<a class="headerlink" href="#reals" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-text"><div class="highlight"><pre>3.14159
 </pre></div>
 </div>
-<p><strong>Strings</strong></p>
+</div>
+<div class="section" id="strings">
+<h3>Strings<a class="headerlink" href="#strings" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-text"><div class="highlight"><pre>&quot;foo&quot;
 </pre></div>
 </div>
@@ -172,7 +194,9 @@ bt : C                 -- constant
 </div>
 <p>Strings must use double quotes, and can escape inner quotes using
 backslash.</p>
-<p><strong>Application</strong></p>
+</div>
+<div class="section" id="application">
+<h3>Application<a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-text"><div class="highlight"><pre>f(x,y)
 </pre></div>
 </div>
@@ -184,7 +208,9 @@ backslash.</p>
 </div>
 <p>In the above example the operand being applied is referred to as
 the <tt class="docutils literal"><span class="pre">spine</span></tt> of the application with <tt class="docutils literal"><span class="pre">arguments</span></tt>.</p>
-<p><strong>Annotations</strong></p>
+</div>
+<div class="section" id="annotations">
+<h3>Annotations<a class="headerlink" href="#annotations" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-text"><div class="highlight"><pre>x{prop}
 </pre></div>
 </div>
@@ -196,7 +222,9 @@ the <tt class="docutils literal"><span class="pre">spine</span></tt> of the appl
 </div>
 <p>Annotations can contain any number of comma seperated aterm expression
 with the restriction that annotations cannot themselves be annotated.</p>
-<p><strong>Lists</strong></p>
+</div>
+<div class="section" id="lists">
+<h3>Lists<a class="headerlink" href="#lists" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-text"><div class="highlight"><pre>[1,2,3]
 </pre></div>
 </div>
@@ -211,29 +239,45 @@ with the restriction that annotations cannot themselves be annotated.</p>
 </pre></div>
 </div>
 </div>
+</div>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze.aterm</span> <span class="kn">import</span> <span class="n">parse</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">make</span>
+<p>The aterm library provides three common operations that are used
+for construction and deconstruction aterm expressions.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze.aterm</span> <span class="kn">import</span> <span class="n">parse</span><span class="p">,</span> <span class="n">match</span><span class="p">,</span> <span class="n">build</span>
 </pre></div>
 </div>
-<p><strong>Parser</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">parse:</th><td class="field-body">Maps strings into ATerm expressions.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">match:</th><td class="field-body">Deconstructs ATerm expressions using pattern matching.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">build:</th><td class="field-body">Constructs ATerm expressions using pattern matching.</td>
+</tr>
+</tbody>
+</table>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
-<span class="go">aterm(term=&#39;x&#39;, annotation=None)</span>
+<span class="go">x</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;f(x,y)&#39;</span><span class="p">)</span>
-<span class="go">aappl(spine=aterm(term=&#39;f&#39;, annotation=None), args=[aterm(term=&#39;x&#39;, annotation=None), aterm(term=&#39;y&#39;, annotation=None)])</span>
+<span class="go">f(x,y)</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;x{prop1}&#39;</span><span class="p">)</span>
-<span class="go">aterm(term=aterm(term=&#39;x&#39;, annotation=None), annotation=(aterm(term=&#39;prop1&#39;, annotation=None),))</span>
+<span class="go">x{(prop1,)}</span>
 </pre></div>
 </div>
-<p><strong>Matching</strong></p>
-<p>Pattern matching is the action of determening whether a given aterm
-expression conforms to pattern. It is similar in notion to regex. The
-pattern may also contain placeholder objects which can be used to
-deconstruct and pluck values of out aterms while rewriting.</p>
+</div>
+<div class="section" id="pattern-matching">
+<h2>Pattern Matching<a class="headerlink" href="#pattern-matching" title="Permalink to this headline">¶</a></h2>
+<p>Pattern matching is the action of determining whether a given aterm
+expression conforms to pattern, similar in notion to regex. The pattern
+may also contain placeholder objects which can be used to deconstruct
+and pluck values of out aterms while rewriting.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -265,11 +309,11 @@ capture valued.</p>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;f(&lt;int&gt;,&lt;int&gt;)&#39;</span><span class="p">,</span> <span class="s">&#39;f(1,2)&#39;</span><span class="p">)</span>
-<span class="go">(True, [aint(val=1), aint(val=2)])</span>
+<span class="go">(True, [1,2])</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;&lt;term&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">)</span>
-<span class="go">(True, [aterm(term=&#39;x&#39;, annotation=None)])</span>
+<span class="go">(True, [x])</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;f(&lt;real&gt;)&#39;</span><span class="p">,</span> <span class="s">&#39;f(1)&#39;</span><span class="p">)</span>
@@ -277,16 +321,14 @@ capture valued.</p>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;Add(Succ(&lt;int&gt;), &lt;term&gt;)&#39;</span><span class="p">,</span> <span class="s">&#39;Add(Succ(2), Succ(3))&#39;</span><span class="p">)</span>
-<span class="go">(True,</span>
-<span class="go"> [aint(val=2),</span>
-<span class="go">  aappl(spine=aterm(term=&#39;Succ&#39;, annotation=None), args=[aint(val=3)])])</span>
+<span class="go">(True, [2, Succ(3)]</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">match</span><span class="p">(</span><span class="s">&#39;&lt;appl(x,3)&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;f(x,3)&#39;</span><span class="p">)</span>
-<span class="go">(True, [aterm(term=&#39;f&#39;, annotation=None)])</span>
+<span class="go">(True, [f])</span>
 </pre></div>
 </div>
-<p>For those coming from other languages, an analogy is uesfull. The
+<p>For those coming from other languages, an analogy is useful. The
 match operator in Prolog is written with <cite>?</cite>.</p>
 <div class="highlight-prolog"><div class="highlight"><pre><span class="s-Atom">?-</span> <span class="s-Atom">x</span> <span class="o">=</span> <span class="s-Atom">x</span><span class="p">.</span>
 <span class="s-Atom">true</span>
@@ -311,9 +353,77 @@ RHS. For example in Prolog:</p>
 <span class="nf">fact</span> <span class="n">n</span> <span class="ow">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fact</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
+<div class="section" id="pretty-printing">
+<h3>Pretty Printing<a class="headerlink" href="#pretty-printing" title="Permalink to this headline">¶</a></h3>
+<p>The Stratego Project provides a command line pretty printer ( <a class="reference external" href="http://releases.strategoxt.org/strategoxt-manual/unstable/manual/chunk-b">http://releases.strategoxt.org/strategoxt-manual/unstable/manual/chunk-b</a> ook/ref-pp-aterm.html )
+for printing generic ATerm expressions.</p>
+<p>In addition for dealing with highly annotated expressions the
+hierarchal printer can be more human readable. (<tt class="docutils literal"><span class="pre">+</span></tt>) indicates
+branching in the expression tree while (<tt class="docutils literal"><span class="pre">key</span> <span class="pre">:</span> <span class="pre">value</span></tt>) pairs
+indicate annotations with metadata and type information.</p>
+<div class="highlight-text"><div class="highlight"><pre>+ Appl
+    type: (5, 5, int32, 5, 5, int32) -&gt; 5, 5, int32
+    identity: 0
+    elementwise: True
+    associative: True
+    idempotent: True
+    inplace: False
+    Term: abs
+    Arguments:
+      + Array
+          type: 5, 5, int32
+          local: True
+          corder: True
+          layout: chunked
+      + Array
+          type: 5, 5, int32
+          local: True
+          corder: True
+          layout: chunked
+</pre></div>
 </div>
-<div class="section" id="motivating-examples">
-<h2>Motivating Examples<a class="headerlink" href="#motivating-examples" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="motivation">
+<h3>Motivation<a class="headerlink" href="#motivation" title="Permalink to this headline">¶</a></h3>
+<p>ATerm is itself language agnostic, it is merely a human readable
+AST format. For example the following C program can have many
+different ATerm representations.</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="kt">int</span> <span class="nf">main</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+  <span class="kt">float</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">;</span>
+
+  <span class="n">x</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+  <span class="n">y</span> <span class="o">=</span> <span class="mf">2.5</span> <span class="o">/</span> <span class="n">x</span><span class="p">;</span>
+  <span class="n">z</span> <span class="o">=</span> <span class="mf">2.5</span> <span class="o">+</span> <span class="n">x</span><span class="p">;</span>
+  <span class="n">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Program</span> <span class="p">(</span>
+  <span class="p">[</span> <span class="n">Function</span><span class="p">(</span>
+      <span class="n">Type</span><span class="p">(</span><span class="s">&quot;int&quot;</span><span class="p">)</span>
+    <span class="p">,</span> <span class="s">&quot;main&quot;</span>
+    <span class="p">,</span> <span class="p">[]</span>
+    <span class="p">,</span> <span class="n">Body</span> <span class="p">(</span>
+        <span class="p">[</span> <span class="n">Decl</span><span class="p">(</span><span class="n">Type</span><span class="p">(</span><span class="s">&quot;int&quot;</span><span class="p">),</span> <span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">])</span>
+        <span class="p">,</span> <span class="n">Decl</span><span class="p">(</span><span class="n">Type</span><span class="p">(</span><span class="s">&quot;float&quot;</span><span class="p">),</span> <span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">,</span> <span class="s">&quot;z&quot;</span><span class="p">])</span>
+        <span class="p">]</span>
+      <span class="p">,</span> <span class="p">[</span> <span class="n">Assign</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="n">Const</span><span class="p">(</span><span class="s">&quot;10&quot;</span><span class="p">))</span>
+        <span class="p">,</span> <span class="n">Assign</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">,</span> <span class="n">Expr</span><span class="p">(</span><span class="n">Const</span><span class="p">(</span><span class="s">&quot;2.5&quot;</span><span class="p">),</span> <span class="n">BinOp</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">),</span> <span class="n">Expr</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">)))</span>
+        <span class="p">,</span> <span class="n">Assign</span><span class="p">(</span><span class="s">&quot;z&quot;</span><span class="p">,</span> <span class="n">Expr</span><span class="p">(</span><span class="n">Const</span><span class="p">(</span><span class="s">&quot;2.5&quot;</span><span class="p">),</span> <span class="n">BinOp</span><span class="p">(</span><span class="s">&quot;+&quot;</span><span class="p">),</span> <span class="n">Expr</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">)))</span>
+        <span class="p">,</span> <span class="n">Expr</span><span class="p">(</span><span class="s">&quot;print&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">Expr</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">),</span> <span class="n">Expr</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">),</span> <span class="n">Expr</span><span class="p">(</span><span class="s">&quot;z&quot;</span><span class="p">)])</span>
+        <span class="p">]</span>
+      <span class="p">)</span>
+    <span class="p">)</span>
+  <span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Pattern matching using classical Visitor and expression traversal can be
+quite verbose. Pattern matching allows us to abstract this logic down
+into a more declarative form allowing us to build more powerful and
+declarative tools for manipulating syntax trees.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">aterm</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;aterm&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;term&#39;</span><span class="p">,</span> <span class="s">&#39;annotation&#39;</span><span class="p">))</span>
 <span class="n">astr</span>  <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;astr&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;val&#39;</span><span class="p">,))</span>
 <span class="n">aint</span>  <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;aint&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;val&#39;</span><span class="p">,))</span>
@@ -344,6 +454,7 @@ RHS. For example in Prolog:</p>
 <span class="c"># Compared to</span>
 <span class="n">match</span><span class="p">(</span><span class="s">&#39;f(x,y)&#39;</span><span class="p">,</span> <span class="s">&#39;f(x,y)&#39;</span><span class="p">)</span>
 </pre></div>
+</div>
 </div>
 </div>
 </div>

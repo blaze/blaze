@@ -73,7 +73,7 @@
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
     </ul>
-    <h3 class="muted"><img src="_static/img/logo.svg">Blaze</h3>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
   </div>
 
   <hr>
@@ -82,7 +82,11 @@
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
-<li><a class="reference internal" href="#">Memory Layout</a></li>
+<li><a class="reference internal" href="#">Memory Layout</a><ul>
+<li><a class="reference internal" href="#arrays">Arrays</a></li>
+<li><a class="reference internal" href="#tables">Tables</a></li>
+</ul>
+</li>
 </ul>
 
          </ul>
@@ -91,6 +95,8 @@
           
   <div class="section" id="memory-layout">
 <h1>Memory Layout<a class="headerlink" href="#memory-layout" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="arrays">
+<h2>Arrays<a class="headerlink" href="#arrays" title="Permalink to this headline">¶</a></h2>
 <p>A chunked array behaves similar to a Numpy array but is composed
 of multiple noncontiguous buffers in memory.</p>
 <p>The chunks are bits of data compressed as a whole, but that can be
@@ -98,14 +104,17 @@ decompressed partially in order to improve the fetching of small parts
 of the array. This chunked nature of the carray objects, together with
 a buffered I/O, makes appends very cheap and fetches reasonably fast
 (although the modification of values can be an expensive operation).</p>
+<img alt="_images/memory1.png" class="align-center" src="_images/memory1.png" />
+<img alt="_images/memory2.png" class="align-center" src="_images/memory2.png" />
 <p>The compression/decompression process is carried out internally by
 Blosc, a high-performance compressor that is optimized for binary data.
 That ensures maximum performance for I/O operation.</p>
-<p>The first 16 bytes in the buffer are the header of the chunk. The
-first four are simply bytes, the last three are are each unsigned ints
-(uint32) each occupying 4 bytes. The header is always little-endian.
-&#8216;ctbytes&#8217; is the length of the buffer including header and nbytes is the
-length of the data when uncompressed.</p>
+<img alt="_images/memory3.png" class="align-center" src="_images/memory3.png" />
+</div>
+<div class="section" id="tables">
+<h2>Tables<a class="headerlink" href="#tables" title="Permalink to this headline">¶</a></h2>
+<img alt="_images/interface.png" class="align-center" src="_images/interface.png" />
+</div>
 </div>
 
 
