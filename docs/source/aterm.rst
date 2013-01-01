@@ -155,7 +155,7 @@ Usage
 -----
 
 The aterm library provides three common operations that are used
-for construction and deconstrution aterm expressions. 
+for construction and deconstruction aterm expressions. 
 
 ::
 
@@ -185,10 +185,10 @@ for construction and deconstrution aterm expressions.
 Pattern Matching
 ----------------
 
-Pattern matching is the action of determening whether a given aterm
-expression conforms to pattern. It is similar in notion to regex. The
-pattern may also contain placeholder objects which can be used to
-deconstruct and pluck values of out aterms while rewriting.
+Pattern matching is the action of determining whether a given aterm
+expression conforms to pattern, similar in notion to regex. The pattern
+may also contain placeholder objects which can be used to deconstruct
+and pluck values of out aterms while rewriting.
 
 
 :`<int>`: Matches int terms
@@ -240,7 +240,7 @@ capture valued.
     (True, [f])
 
 
-For those coming from other languages, an analogy is uesfull. The
+For those coming from other languages, an analogy is useful. The
 match operator in Prolog is written with `?`.
 
 .. code-block:: prolog
@@ -273,6 +273,38 @@ Or in Haskell:
     fact 0 = 1
     fact n = n * fact (n-1)
 
+Pretty Printing
+~~~~~~~~~~~~~~~
+
+The Stratego Project provides a command line pretty printer ( http://releases.strategoxt.org/strategoxt-manual/unstable/manual/chunk-b ook/ref-pp-aterm.html )
+for printing generic ATerm expressions.
+
+In addition for dealing with highly annotated expressions the
+hierarchal printer can be more human readable. (``+``) indicates
+branching in the expression tree while (``key : value``) pairs
+indicate annotations with metadata and type information.
+
+.. code-block:: text
+
+    + Appl
+        type: (5, 5, int32, 5, 5, int32) -> 5, 5, int32 
+        identity: 0
+        elementwise: True
+        associative: True
+        idempotent: True
+        inplace: False
+        Term: abs
+        Arguments:
+          + Array
+              type: 5, 5, int32
+              local: True
+              corder: True
+              layout: chunked
+          + Array
+              type: 5, 5, int32
+              local: True
+              corder: True
+              layout: chunked
 
 Motivation
 ~~~~~~~~~~
