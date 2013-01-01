@@ -320,9 +320,9 @@ different ATerm representations.
       int x;
       float y, z;
 
-      x = 10;
-      y = 2.5 / x;
-      z = 2.5 + x;
+      x = 1;
+      y = 2.0 / x;
+      z = 3.0 + x;
       print(x, y, z);
     }
 
@@ -337,9 +337,9 @@ different ATerm representations.
             [ Decl(Type("int"), ["x"])
             , Decl(Type("float"), ["y", "z"])
             ]
-          , [ Assign("x", Const("10"))
-            , Assign("y", Expr(Const("2.5"), BinOp("/"), Expr("x")))
-            , Assign("z", Expr(Const("2.5"), BinOp("+"), Expr("x")))
+          , [ Assign("x", Const("1"))
+            , Assign("y", Expr(Const("2.0"), BinOp("/"), Expr("x")))
+            , Assign("z", Expr(Const("3.0"), BinOp("+"), Expr("x")))
             , Expr("print", [Expr("x"), Expr("y"), Expr("z")])
             ]
           )

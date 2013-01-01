@@ -80,9 +80,6 @@ TODO
 API
 ~~~
 
-.. automodule:: blaze.expr.typechecker
-   :members:
-
 .. automodule:: blaze.expr.typeinference
    :members:
 
