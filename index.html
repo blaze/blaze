@@ -11,44 +11,38 @@
     <link href="css/bootstrap.css" rel="stylesheet">
     <style type="text/css">
 
-      html {
-          overflow-y: scroll;
-      }
-
-      body {
-        font-family: serif;
-        padding-top: 120px;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: underline;
-      }
-
-      .navbar {
-        font-family: serif;
-        font-weight: bold;
-      }
-
-      li.active a {
-      }
-
-      h1,h2 {
-        font-weight: normal;
-      }
-
-     .center {
-         text-align: center;
-     }
-
-    .navbar-inner {	
-      -webkit-border-radius: 0;
-      -moz-border-radius: 0;
-      border-radius: 0;
+    html {
+        overflow-y: scroll;
     }
 
-    .navbar .container {
-      width: auto;
+    h1 {
+        font-family: serif;
+    }
+
+    body {
+      padding-top: 120px;
+    }
+
+    body {
+      padding-top: 20px;
+      padding-bottom: 40px;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .jumbotron {
+      margin: 60px 0;
+      text-align: center;
+    }
+    .jumbotron h1 {
+      font-size: 72px;
+      line-height: 1;
+    }
+    .jumbotron .btn {
+      font-size: 21px;
+      padding: 14px 24px;
     }
 
     </style>
@@ -62,75 +56,80 @@
 
   <body>
 
-    <div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
-
-           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-            </a>
-
-            <div class="nav-collapse">
-                <ul class="nav">
-                    
-                    <li  class="active">
-                        <a href="index.html"><i class="icon-home icon-white"></i> Blaze</a>
-                    </li>
-                    
-                    <li >
-                        <a href="docs/index.html"><i class="icon-book icon-white"></i> Documentation</a>
-                    </li>
-                    
-                    <li >
-                        <a href="examples.html"><i class="icon-ok icon-white"></i> Examples</a>
-                    </li>
-                    
-                    <li >
-                        <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download icon-white"></i> Source</a>
-                    </li>
-                    
-                    <li >
-                        <a href="vision.html"><i class="icon-star icon-white"></i> Vision</a>
-                    </li>
-                    
-                    <li >
-                        <a href="people.html"><i class="icon-user icon-white"></i> People</a>
-                    </li>
-                    
-                    <li >
-                        <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope icon-white"></i> Mailing List</a>
-                    </li>
-                    
-                </ul>
-            </div>
-
-        </div>
-    </div>
-</div>
-
     <a href="https://github.com/ContinuumIO/blaze"><img style="position: fixed; top: 0; right: 0; border: 0; z-index: 1040" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
 
     <div class="container">
 
-        <div class="container">
+        <div class="masthead">
+  <ul class="nav nav-pills pull-right">
 
-    <h1>Blaze</h1>
+      
+      <li  class="active">
+          <a href="index.html"><i class="icon-home"></i> Blaze</a>
+      </li>
+      
+      <li >
+          <a href="docs/index.html"><i class="icon-book"></i> Documentation</a>
+      </li>
+      
+      <li >
+          <a href="examples.html"><i class="icon-ok"></i> Examples</a>
+      </li>
+      
+      <li >
+          <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+      </li>
+      
+      <li >
+          <a href="vision.html"><i class="icon-star"></i> Vision</a>
+      </li>
+      
+      <li >
+          <a href="people.html"><i class="icon-user"></i> People</a>
+      </li>
+      
+      <li >
+          <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+      </li>
+      
+
+  </ul>
+  <h3 class="muted"><img src="img/logo.svg" />Blaze</h3>
+</div>
+
+        <hr/>
+
+        <div class="jumbotron">
+    <h1>
+       Blaze
+    </h1>
+    <p class="lead">Blaze is the next generation of NumPy from <a href="http://continuum.io">Continuum Analytics</a>.</p>
+
+</div>
+
+<div class="container">
 
     <div class="row-fluid">
-        <p class="lead">Blaze is the next generation of NumPy from <a href="http://continuum.io">Continuum Analytics</a>.</p>
         <p class="lead">Blaze is an expressive, compact set of foundational
     abstractions for writing parallel computation over semi-structured data,
     of arbitrary formats and distributed across arbitrary networks.
         </p>
     </div>
 
+    <hr>
+
     <div class="row-fluid">
+
+
         <h2>Source</h2>
+
+        <p>To obtain the latest develoment build from Github run.</p>
+
         <pre class="span6">$ git clone https://github.com/ContinuumIO/blaze.git
 $ cd blaze</pre>
     </div>
+
+    <hr>
 
     <div class="row-fluid">
         <h2>License</h2>
@@ -143,7 +142,7 @@ $ cd blaze</pre>
 
         <hr/>
 
-        <div id="footer">
+        <div class="footer">
             © Copyright 2012, Continuum Analytics.
         </div>
 
