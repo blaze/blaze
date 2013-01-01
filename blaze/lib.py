@@ -48,8 +48,18 @@ from blaze.metadata import aligned
 
 from blaze.ts.ucr_dtw import ucr
 #from blaze.ooc import linalg
+__all__ = [ 'zerocost',
+            'lift',
+            'abs',
+            'dot',
+            'dtw',
+            'multiply',
+            'power'
+            ]
+
 
 zerocost = lambda term: 0
+
 
 #------------------------------------------------------------------------
 # Function Library
