@@ -36,7 +36,7 @@ from blaze.rts.immediete import ieval
 
 from functools import wraps
 from threading import local
-from blaze.error import InvalidLibraryDefinton
+from blaze.error import InvalidLibraryDefinition
 from inspect import getargspec
 
 #------------------------------------------------------------------------
@@ -114,7 +114,7 @@ def lift(signature, typesig, constraints=None, **params):
         try:
             parse(signature)
         except AtermSyntaxError as e:
-            raise InvalidLibraryDefinton(*e.args + (fname,))
+            raise InvalidLibraryDefinition(*e.args + (fname,))
 
         # #effectful
         libcall = PythonFn(signature, pyfn)
