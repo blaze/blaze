@@ -20,9 +20,11 @@ testrunner = TextTestRunner
 
 packages = [
     'blaze',
+    'blaze.algo',
     'blaze.aterm',
     'blaze.carray',
     'blaze.datashape',
+    'blaze.desc',
     'blaze.dist',
     'blaze.compile',
     'blaze.expr',
@@ -32,6 +34,8 @@ packages = [
     'blaze.rosetta',
     'blaze.rts',
     'blaze.sources',
+    'blaze.ts',
+    'blaze.ts.ucr_dtw',
 ]
 
 #------------------------------------------------------------------------
