@@ -11,7 +11,7 @@ intermediate form that Blaze expressions can be manipulated with
 in order to do optimization passes and execution dispatch.
 
 Grammar
-~~~~~~~
+-------
 
 The ATerm spec is overseen by
 
@@ -37,21 +37,25 @@ The abstract grammar for ATerm is shown below.
        | int               -- integer
        | real              -- floating point number
 
-Examples
-~~~~~~~~
+Types
+-----
 
 Example of ATerm expressions by category
 
 :Integer: Integer terms (``1``)
 :Real: Real terms (``2.718``)
 :String: String terms (``"foo"``)
-:Term: Variable terms (``x``)
-:Application: Application of terms to other subterms (``f(x,y)``)
+:Constants: Variable terms (``x``)
+:Application: Application of constant terms to other subterms (``f(x,y)``)
 :List: A ordered list of subterms (``[1,2,3]``)
 :Tuple: A ordered tuple of subterms (``(1,2,3)``)
 :Placeholder: A placeholder for use in ``match`` and ``make`` commands (``<int>``)
 
-**Simple Term**
+Constants
+~~~~~~~~~
+
+Constant symbols are simply letters. These are completely
+context-free, they have no meaning in and of themselves.
 
 .. code-block:: text
 
@@ -61,19 +65,22 @@ Example of ATerm expressions by category
 
     foo
 
-**Integers**
+Integers
+~~~~~~~~
 
 .. code-block:: text
 
     1
 
-**Reals**
+Reals
+~~~~~
 
 .. code-block:: text
 
     3.14159
 
-**Strings**
+Strings
+~~~~~~~
 
 .. code-block:: text
 
@@ -86,7 +93,8 @@ Example of ATerm expressions by category
 Strings must use double quotes, and can escape inner quotes using
 backslash.
 
-**Application**
+Application
+~~~~~~~~~~~
 
 .. code-block:: text
 
@@ -103,7 +111,8 @@ backslash.
 In the above example the operand being applied is referred to as
 the ``spine`` of the application with ``arguments``.
 
-**Annotations**
+Annotations
+~~~~~~~~~~~
 
 .. code-block:: text
 
@@ -120,7 +129,8 @@ the ``spine`` of the application with ``arguments``.
 Annotations can contain any number of comma seperated aterm expression
 with the restriction that annotations cannot themselves be annotated.
 
-**Lists**
+Lists
+~~~~~
 
 .. code-block:: text
 
@@ -140,32 +150,40 @@ with the restriction that annotations cannot themselves be annotated.
 
    (foo, bar)
 
+
 Usage
-~~~~~
+-----
+
+The aterm library provides three common operations that are used
+for construction and deconstrution aterm expressions. 
 
 ::
 
-    from blaze.aterm import parse, match, make
+    from blaze.aterm import parse, match, build
 
-**Parser**
+:parse: Maps strings into ATerm expressions.
+:match: Deconstructs ATerm expressions using pattern matching.
+:build: Constructs ATerm expressions using pattern matching.
+
 
 ::
 
     >>> parse('x')
-    aterm(term='x', annotation=None)
+    x
 
 ::
 
     >>> parse('f(x,y)')
-    aappl(spine=aterm(term='f', annotation=None), args=[aterm(term='x', annotation=None), aterm(term='y', annotation=None)])
+    f(x,y)
 
 ::
 
     >>> parse('x{prop1}')
-    aterm(term=aterm(term='x', annotation=None), annotation=(aterm(term='prop1', annotation=None),))
+    x{(prop1,)}
 
 
-**Matching**
+Pattern Matching
+----------------
 
 Pattern matching is the action of determening whether a given aterm
 expression conforms to pattern. It is similar in notion to regex. The
@@ -185,6 +203,7 @@ The result a pattern match is a 2-tuple containing a boolean
 indicating whether the match succeeded and a list containing the
 capture valued.
 
+
 ::
 
     >>> match('x', 'x')
@@ -198,12 +217,12 @@ capture valued.
 ::
 
     >>> match('f(<int>,<int>)', 'f(1,2)')
-    (True, [aint(val=1), aint(val=2)])
+    (True, [1,2])
 
 ::
 
     >>> match('<term>', 'x')
-    (True, [aterm(term='x', annotation=None)])
+    (True, [x])
 
 ::
 
@@ -213,14 +232,12 @@ capture valued.
 ::
 
     >>> match('Add(Succ(<int>), <term>)', 'Add(Succ(2), Succ(3))')
-    (True,
-     [aint(val=2),
-      aappl(spine=aterm(term='Succ', annotation=None), args=[aint(val=3)])])
+    (True, [2, Succ(3)]
 
 ::
 
     >>> match('<appl(x,3)>', 'f(x,3)')
-    (True, [aterm(term='f', annotation=None)])
+    (True, [f])
 
 
 For those coming from other languages, an analogy is uesfull. The
@@ -257,8 +274,51 @@ Or in Haskell:
     fact n = n * fact (n-1)
 
 
-Motivating Examples
-~~~~~~~~~~~~~~~~~~~
+Motivation
+~~~~~~~~~~
+
+ATerm is itself language agnostic, it is merely a human readable
+AST format. For example the following C program can have many
+different ATerm representations.
+
+.. code-block:: c
+
+    int main ()
+    {
+      int x;
+      float y, z;
+
+      x = 10;
+      y = 2.5 / x;
+      z = 2.5 + x;
+      print(x, y, z);
+    }
+
+.. code-block:: python
+
+    Program (
+      [ Function(
+          Type("int")
+        , "main"
+        , []
+        , Body (
+            [ Decl(Type("int"), ["x"])
+            , Decl(Type("float"), ["y", "z"])
+            ]
+          , [ Assign("x", Const("10"))
+            , Assign("y", Expr(Const("2.5"), BinOp("/"), Expr("x")))
+            , Assign("z", Expr(Const("2.5"), BinOp("+"), Expr("x")))
+            , Expr("print", [Expr("x"), Expr("y"), Expr("z")])
+            ]
+          )
+        )
+      ]
+    )
+
+Pattern matching using classical Visitor and expression traversal can be
+quite verbose. Pattern matching allows us to abstract this logic down
+into a more declarative form allowing us to build more powerful and
+declarative tools for manipulating syntax trees.
 
 ::
 
