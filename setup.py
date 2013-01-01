@@ -282,7 +282,6 @@ setup(
     description='Blaze',
     long_description=longdesc,
     data_files=[],
-    entry_points={},
     license='BSD',
     platforms = ['any'],
     classifiers=[
@@ -298,7 +297,6 @@ setup(
         'Topic :: Utilities',
     ],
     packages=packages,
-    install_requires=[''],
     ext_modules=extensions,
     cmdclass = {
         'build_ext' : build_ext,
