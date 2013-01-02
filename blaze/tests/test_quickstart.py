@@ -47,7 +47,3 @@ def test_custom_dshape():
         __dummy = True
 
     a = NDTable([('GOOG', 120, 153)], CustomStock)
-
-def test_sqlite():
-    from blaze import open
-    a = open('sqlite://')
