@@ -26,13 +26,6 @@ from blaze.datashape import coretypes
 from blaze.sources.canonical import PythonSource
 from blaze.datashape.coretypes import int_, float_, string
 
-# conditional import of Numpy; if it doesn't exist, then set up dummy objects
-# for the things we use
-try:
-    import numpy as np
-except ImportError:
-    np = {"integer": Integral}
-
 #------------------------------------------------------------------------
 # Kinds
 #------------------------------------------------------------------------
@@ -285,10 +278,6 @@ class ArrayNode(ExpressionNode):
     def size(self):
         pass
 
-    def __len__(self):
-        # TODO: needs to query datashape
-        pass
-
     # Numpy-compatible data attributes
     # ================================
 
@@ -319,7 +308,7 @@ class ArrayNode(ExpressionNode):
                                      intnode(idx.start),
                                      intnode(idx.stop),
                                      intnode(idx.step)])
-        elif isinstance(idx, Integral) or isinstance(idx, np.integer):
+        elif isinstance(idx, Integral):
             result = IndexNode(context, [self, idx])
         else:
             # TODO: detect other forms
