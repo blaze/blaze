@@ -141,16 +141,10 @@ It is also left associative, namely::
 
     ((a, b), c) = a, b, c
 
-The product operator has the additional constraint that the first
-operator cannot be a measure. This permits types of the form::
 
-    a, int32
-    a, b, int32
-
-But forbids types of the form::
-
-    int32, a
-    int32, int32
+The outer element a product type is referred to as a **measure**
+while the other elements of the product are referred to as
+**dimensions**.
 
 ::
 
@@ -162,21 +156,33 @@ But forbids types of the form::
                    |
                 Measure
 
+The product operator has the additional constraint that the first
+operator cannot be a measure. This permits types of the form::
+
+    1, int32
+    1, 1, int32
+
+But forbids types of the form::
+
+    int32, 1
+    int32, int32
+
 There is a algebraic relation between product types and sum types
 ( discussed below ).
 
 Fixed
 ~~~~~
 
-The unit shape type is a **dimension** unit type. They are represented
+The unit shape type is a dimension unit type. They are represented
 as just integer values at the top level of the datatype. These are
-identical to ``shape`` parameters in NumPy. ::
+identical to ``shape`` parameters in NumPy. For example::
 
     2, int32
 
-Is an equivalent to the shape and dtype of a NumPy array of the form::
+The previous signature Is an equivalent to the shape and dtype of a
+NumPy array of the form::
 
-    array([1, 2], dtype('int32'))
+    ndarray(dtype('int32'), shape=(1,2))
 
 A 2 by 3 matrix of integers has datashape::
 
@@ -184,8 +190,7 @@ A 2 by 3 matrix of integers has datashape::
 
 With the corresponding NumPy array::
 
-    array([[ 1,  2,  3],
-           [ 4,  5,  6]])
+    ndarray(dtype('int32'), shape=(2,3))
 
 Constructors
 ~~~~~~~~~~~~
@@ -365,8 +370,8 @@ can be written as two free type vars::
 
     A, B, int32
 
-Type variables are reduced through scope of constructors and
-unified into one of two classes:
+Type variables are reduced through scope of constructors and unified
+into one of two classes:
 
 * **dimension-generic**
 * **measure-generic**
@@ -376,13 +381,16 @@ unified into one of two classes:
     DimGen T = T, int
     TypGen T = 2, T
 
-A type signature may only be either dimension-generic or
-measure-generic. Attempting to use a type variable in both will
-raise an Exception. For example in the following signature the
-type variable T is unified in both arguments to the type
-constructor ``Either``::
+For example in the following signature the type variable T is unified in
+both arguments to the type constructor ``Either``::
 
     Sig T = Either (2, 2, T) (3, 3, T)
+
+A type signature may only be either dimension-generic or
+measure-generic. Attempting to use a type variable in both will raise an
+exception ``AmbigiousTypeVariable``. For example::
+
+    Sig T = Either (2, 2, T) (T, 2, int)
 
 Not all declarations of type variables are well-defined. For example
 it is not possible to expression a Range type in terms of variable. An
@@ -392,7 +400,6 @@ system.
 ::
     
     InvalidSig1 T = Range(0, T)
-    InvalidSig2 T = Range(0, T)
 
 ..
     (1x + 2x + ... + Ax) * (1y + 2y + ... By)
