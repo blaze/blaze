@@ -12,6 +12,60 @@ np.import_array()
 nan = np.nan
 
 #------------------------------------------------------------------------
+# Columwise Std
+#------------------------------------------------------------------------
+
+def std(table, col):
+    """ Columnwise out of core standard devaiation
+
+    Parameters
+    ----------
+    table : Table
+        A Blaze Table object
+    col : str
+        String indicating a column name.
+
+    Returns
+    -------
+    out : float
+        standard deviation
+
+    """
+    cdef chunk chunk_
+    cdef np.npy_intp nchunk, nchunks
+    col = table.data.ca[col]
+
+    cdef np.float32_t asum = 0
+    cdef np.float32_t amean = 0
+    cdef Py_ssize_t count = 0
+
+    leftover = (col.len % len(col.leftover_array)) * col.atomsize
+    nchunks = col.nchunks
+
+    for nchunk in range(0, nchunks):
+      chunk_ = col.chunks[nchunk]
+
+      if chunk_.isconstant:
+        asum += chunk_.constant * col.chunklen
+      else:
+        asum += chunk_[:].sum(dtype=col.dtype)
+
+      count += cython.cdiv(chunk_.nbytes, chunk_.atomsize)
+
+    if col.leftovers:
+      leftover = col.len - nchunks * col.chunklen
+      asum += col.leftover_array[:leftover].sum(dtype=col.dtype)
+      count += leftover
+
+    if count > 0:
+        amean = asum / count
+        print asum, count, amean
+        print asum / count - (amean * amean)
+        return np.float64(np.sqrt((asum / count) - (amean * amean)))
+    else:
+        return np.float64(nan)
+
+#------------------------------------------------------------------------
 # Columwise Mean
 #------------------------------------------------------------------------
 

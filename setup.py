@@ -220,16 +220,9 @@ extensions = [
         include_dirs = [],
         define_macros=[('DEBUG', 1)]
    ),
-
    Extension(
-        "blaze.algo.mean",
-        sources = ["blaze/algo/mean.pyx"],
-        include_dirs = [numpy_path]
-   ),
-
-   Extension(
-        "blaze.algo.std",
-        sources = ["blaze/algo/std.pyx"],
+        "blaze.algo.stats",
+        sources = ["blaze/algo/stats.pyx"],
         include_dirs = [numpy_path]
    ),
 ]
