@@ -202,10 +202,6 @@ extensions = [
         include_dirs = [numpy_path]
    ),
    Extension(
-        "blaze.compile.executors", ["blaze/compile/executors.pyx"],
-        include_dirs = [numpy_path],
-   ),
-   Extension(
        "blaze.desc.lldescriptors",
        ["blaze/desc/lldescriptors.pyx"],
        include_dirs = [],
