@@ -95,17 +95,31 @@
 <dt id="blaze.toplevel.fromiter">
 <tt class="descclassname">blaze.toplevel.</tt><tt class="descname">fromiter</tt><big>(</big><em>iterable</em>, <em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.fromiter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an Array and fill it with values from <cite>iterable</cite>.</p>
-<dl class="docutils">
-<dt>iterable <span class="classifier-delimiter">:</span> <span class="classifier">iterable object</span></dt>
-<dd>An iterable object providing data for the carray.</dd>
-<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
-<dd>Specifies the datashape of the outcome object.  Only 1d shapes
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>iterable</strong> : iterable object</p>
+<blockquote>
+<div><p>An iterable object providing data for the carray.</p>
+</div></blockquote>
+<p><strong>dshape</strong> : str, blaze.dshape instance</p>
+<blockquote>
+<div><p>Specifies the datashape of the outcome object.  Only 1d shapes
 are supported right now. When the <cite>iterator</cite> should return an
-unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVar</span></tt> can be used.</dd>
-<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
-<dd>Any parameter supported by the backend library.</dd>
-</dl>
-<p>out : an Array object.</p>
+unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVar</span></tt> can be used.</p>
+</div></blockquote>
+<p><strong>params</strong> : blaze.params object</p>
+<blockquote>
+<div><p>Any parameter supported by the backend library.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last"><strong>out</strong> : an Array object.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -118,48 +132,83 @@ unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVa
 <dt id="blaze.toplevel.ones">
 <tt class="descclassname">blaze.toplevel.</tt><tt class="descname">ones</tt><big>(</big><em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.ones" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an Array and fill it with ones.</p>
-<dl class="docutils">
-<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
-<dd>Specifies the datashape of the outcome object.</dd>
-<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
-<dd>Any parameter supported by the backend library.</dd>
-</dl>
-<p>out : an Array object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>dshape</strong> : str, blaze.dshape instance</p>
+<blockquote>
+<div><p>Specifies the datashape of the outcome object.</p>
+</div></blockquote>
+<p><strong>params</strong> : blaze.params object</p>
+<blockquote>
+<div><p>Any parameter supported by the backend library.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last"><strong>out</strong> : an Array object.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="blaze.toplevel.open">
 <tt class="descclassname">blaze.toplevel.</tt><tt class="descname">open</tt><big>(</big><em>uri=None</em>, <em>mode='a'</em><big>)</big><a class="headerlink" href="#blaze.toplevel.open" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open a Blaze object via an <cite>uri</cite> (Uniform Resource Identifier).</p>
-<dl class="docutils">
-<dt>uri <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Specifies the URI for the Blaze object.  It can be a regular file too.</dd>
-<dt>mode <span class="classifier-delimiter">:</span> <span class="classifier">the open mode (string)</span></dt>
-<dd><p class="first">Specifies the mode in which the object is opened.  The supported
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>uri</strong> : str</p>
+<blockquote>
+<div><p>Specifies the URI for the Blaze object.  It can be a regular file too.</p>
+</div></blockquote>
+<p><strong>mode</strong> : the open mode (string)</p>
+<blockquote>
+<div><p>Specifies the mode in which the object is opened.  The supported
 values are:</p>
-<blockquote class="last">
+<blockquote>
 <div><ul class="simple">
 <li>&#8216;r&#8217; for read-only</li>
 <li>&#8216;w&#8217; for emptying the previous underlying data</li>
 <li>&#8216;a&#8217; for allowing read/write on top of existing data</li>
 </ul>
 </div></blockquote>
-</dd>
-</dl>
-<p>out : an Array or Table object.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last"><strong>out</strong> : an Array or Table object.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="blaze.toplevel.zeros">
 <tt class="descclassname">blaze.toplevel.</tt><tt class="descname">zeros</tt><big>(</big><em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.zeros" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an Array and fill it with zeros.</p>
-<dl class="docutils">
-<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
-<dd>Specifies the datashape of the outcome object.</dd>
-<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
-<dd>Any parameter supported by the backend library.</dd>
-</dl>
-<p>out : an Array object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>dshape</strong> : str, blaze.dshape instance</p>
+<blockquote>
+<div><p>Specifies the datashape of the outcome object.</p>
+</div></blockquote>
+<p><strong>params</strong> : blaze.params object</p>
+<blockquote>
+<div><p>Any parameter supported by the backend library.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last"><strong>out</strong> : an Array object.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

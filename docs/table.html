@@ -113,24 +113,15 @@
 <em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">Array</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.table.Array" title="Permalink to this definition">¶</a></dt>
 <dd><p>Manifest array, does not create a graph. Forces evaluation on every
 call.</p>
-<blockquote>
-<div>obj : A list of byte providers, other NDTables or a Python object.</div></blockquote>
-<blockquote>
-<div><dl class="docutils">
-<dt>datashape <span class="classifier-delimiter">:</span> <span class="classifier">dshape</span></dt>
-<dd>Manual datashape specification for the table, if None then
-shape will be inferred if possible.</dd>
-<dt>metadata :</dt>
-<dd>Manual datashape specification for the table, if None then
-shape will be inferred if possible.</dd>
-</dl>
-</div></blockquote>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;3, int32&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="p">(</span><span class="s">&#39;3, int32&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s">&#39;file&#39;</span><span class="p">))</span>
-</pre></div>
-</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><strong>obj</strong> : A list of byte providers, other NDTables or a Python object.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
 <dl class="attribute">
 <dt id="blaze.table.Array.backends">
 <tt class="descname">backends</tt><a class="headerlink" href="#blaze.table.Array.backends" title="Permalink to this definition">¶</a></dt>
@@ -159,6 +150,7 @@ Array.</p>
 <p>An index is a mapping from a domain specification to a collection of
 byte or subtables.  Indexable objects can be sliced/getitemed to
 return some other object in the Blaze system.</p>
+<p class="rubric">Methods</p>
 <dl class="method">
 <dt id="blaze.table.Indexable.global_id">
 <tt class="descname">global_id</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.table.Indexable.global_id" title="Permalink to this definition">¶</a></dt>
@@ -210,6 +202,7 @@ no assumptions can be made about the indices.</p>
 <em class="property">class </em><tt class="descclassname">blaze.table.</tt><tt class="descname">NDArray</tt><big>(</big><em>obj</em>, <em>dshape=None</em>, <em>metadata=None</em>, <em>layout=None</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.table.NDArray" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deferred array, operations on this array create a graph built
 around an ArrayNode.</p>
+<p class="rubric">Methods</p>
 <dl class="attribute">
 <dt id="blaze.table.NDArray.backends">
 <tt class="descname">backends</tt><a class="headerlink" href="#blaze.table.NDArray.backends" title="Permalink to this definition">¶</a></dt>
@@ -238,6 +231,7 @@ Array.</p>
 how to access elements, while ArrayNode contains the graph
 related logic for building expression trees with this table
 as an element.</p>
+<p class="rubric">Methods</p>
 <dl class="attribute">
 <dt id="blaze.table.NDTable.backends">
 <tt class="descname">backends</tt><a class="headerlink" href="#blaze.table.NDTable.backends" title="Permalink to this definition">¶</a></dt>

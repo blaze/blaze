@@ -83,8 +83,12 @@
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
 <li><a class="reference internal" href="#">Datashape</a><ul>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#unit-types">Unit Types</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#units">Units</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bit-types">Bit Types</a></li>
+<li><a class="reference internal" href="#endianness">Endianness</a><ul>
 <li><a class="reference internal" href="#products">Products</a></li>
 </ul>
 </li>
@@ -94,15 +98,16 @@
 <li><a class="reference internal" href="#enumeration">Enumeration</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#variadic">Variadic</a><ul>
+<li><a class="reference internal" href="#type-variables">Type Variables</a><ul>
 <li><a class="reference internal" href="#sums">Sums</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#variants">Variants</a></li>
+<li><a class="reference internal" href="#variant">Variant</a></li>
 <li><a class="reference internal" href="#union">Union</a></li>
-<li><a class="reference internal" href="#options">Options</a></li>
-<li><a class="reference internal" href="#ranges">Ranges</a></li>
+<li><a class="reference internal" href="#option">Option</a></li>
+<li><a class="reference internal" href="#range">Range</a></li>
 <li><a class="reference internal" href="#stream">Stream</a></li>
+<li><a class="reference internal" href="#grammar">Grammar</a></li>
 </ul>
 </li>
 </ul>
@@ -128,7 +133,7 @@ on the types of the arguments. Blaze simply extends this specialization
 to data structure and data layout as well as data type ( dtype ).</p>
 <p>In fact many of the ideas behind datashape are generalizations and
 combinations of notions found in Numpy:</p>
-<table border="1" class="docutils">
+<table border="1" class="table-bordered docutils">
 <colgroup>
 <col width="50%" />
 <col width="50%" />
@@ -166,66 +171,11 @@ cannot be known until runtime.</p>
 aim to allow a richer and more declarative way of phrasing operations
 over semi-structured data. While types are a necessary part of writing
 efficient code, the ideal type system is one which disappears entirely!</p>
-</div>
-<div class="section" id="unit-types">
-<h2>Unit Types<a class="headerlink" href="#unit-types" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="units">
+<h3>Units<a class="headerlink" href="#units" title="Permalink to this headline">¶</a></h3>
 <p>Datashape types that are single values are called <strong>unit</strong> types. They
 represent a fixed type that has no internal structure. For example
-<tt class="docutils literal"><span class="pre">int32</span></tt> or <tt class="docutils literal"><span class="pre">2</span></tt>.</p>
-<p>The native bit types or <strong>CType</strong> objects are unit types.</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="100%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>int8</td>
-</tr>
-<tr class="row-even"><td>int16</td>
-</tr>
-<tr class="row-odd"><td>int32</td>
-</tr>
-<tr class="row-even"><td>int64</td>
-</tr>
-<tr class="row-odd"><td>uint</td>
-</tr>
-<tr class="row-even"><td>uint8</td>
-</tr>
-<tr class="row-odd"><td>uint16</td>
-</tr>
-<tr class="row-even"><td>uint32</td>
-</tr>
-<tr class="row-odd"><td>uint64</td>
-</tr>
-<tr class="row-even"><td>float16</td>
-</tr>
-<tr class="row-odd"><td>float32</td>
-</tr>
-<tr class="row-even"><td>float64</td>
-</tr>
-<tr class="row-odd"><td>float128</td>
-</tr>
-<tr class="row-even"><td>complex64</td>
-</tr>
-<tr class="row-odd"><td>complex128</td>
-</tr>
-<tr class="row-even"><td>complex256</td>
-</tr>
-<tr class="row-odd"><td>long</td>
-</tr>
-<tr class="row-even"><td>double</td>
-</tr>
-<tr class="row-odd"><td>short</td>
-</tr>
-<tr class="row-even"><td>longdouble</td>
-</tr>
-<tr class="row-odd"><td>char</td>
-</tr>
-<tr class="row-even"><td>bool</td>
-</tr>
-<tr class="row-odd"><td>pyobj</td>
-</tr>
-</tbody>
-</table>
+<tt class="docutils literal"><span class="pre">int32</span></tt>.</p>
 <p>In Blaze there are two classes of units: <strong>measures</strong> and
 <strong>dimensions</strong>. Measures are units of data, while dimensions are
 units of shape. The combination of measure and dimension in datashape
@@ -233,6 +183,109 @@ constructors uniquely describe the space of possible values or
 <strong>dataspace</strong> of a table or array object.</p>
 <p>Dataspace mappings which preserve values ( i.e. homomorphisms ) are
 called <strong>index-space transformations</strong>.</p>
+</div>
+</div>
+<div class="section" id="bit-types">
+<h2>Bit Types<a class="headerlink" href="#bit-types" title="Permalink to this headline">¶</a></h2>
+<p>The native bit types or <strong>CType</strong> objects are unit types standing for
+unboxed machine types. These inherit the notation from NumPy.</p>
+<table border="1" class="table-striped docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Bit type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>bool</td>
+<td>Boolean (True or False) stored as a byte</td>
+</tr>
+<tr class="row-odd"><td>int</td>
+<td>Platform integer (normally either <tt class="docutils literal"><span class="pre">int32</span></tt> or <tt class="docutils literal"><span class="pre">int64</span></tt>)</td>
+</tr>
+<tr class="row-even"><td>int8</td>
+<td>Byte (-128 to 127)</td>
+</tr>
+<tr class="row-odd"><td>int16</td>
+<td>Integer (-32768 to 32767)</td>
+</tr>
+<tr class="row-even"><td>int32</td>
+<td>Integer (-2147483648 to 2147483647)</td>
+</tr>
+<tr class="row-odd"><td>int64</td>
+<td>Integer (9223372036854775808 to 9223372036854775807)</td>
+</tr>
+<tr class="row-even"><td>uint8</td>
+<td>Unsigned integer (0 to 255)</td>
+</tr>
+<tr class="row-odd"><td>uint16</td>
+<td>Unsigned integer (0 to 65535)</td>
+</tr>
+<tr class="row-even"><td>uint32</td>
+<td>Unsigned integer (0 to 4294967295)</td>
+</tr>
+<tr class="row-odd"><td>uint64</td>
+<td>Unsigned integer (0 to 18446744073709551615)</td>
+</tr>
+<tr class="row-even"><td>float</td>
+<td>Shorthand for <tt class="docutils literal"><span class="pre">float64</span></tt>.</td>
+</tr>
+<tr class="row-odd"><td>float16</td>
+<td>Half precision float: sign bit, 5 bits exponent,
+10 bits mantissa</td>
+</tr>
+<tr class="row-even"><td>float32</td>
+<td>Single precision float: sign bit, 8 bits exponent,
+23 bits mantissa</td>
+</tr>
+<tr class="row-odd"><td>float64</td>
+<td>Double precision float: sign bit, 11 bits exponent,
+52 bits mantissa</td>
+</tr>
+<tr class="row-even"><td>complex</td>
+<td>Shorthand for <tt class="docutils literal"><span class="pre">complex128</span></tt>.</td>
+</tr>
+<tr class="row-odd"><td>complex64</td>
+<td>Complex number, represented by two 32-bit floats (real
+and imaginary components)</td>
+</tr>
+<tr class="row-even"><td>complex128</td>
+<td>Complex number, represented by two 64-bit floats (real
+and imaginary components)</td>
+</tr>
+</tbody>
+</table>
+<p>Blaze also adds a variety of bit-like types which are implemented
+a subset of specialized storage and computation backends.</p>
+<table border="1" class="table-striped docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Bit type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>double</td>
+<td>Fixed point precision</td>
+</tr>
+<tr class="row-odd"><td>varchar</td>
+<td>Variable length string</td>
+</tr>
+<tr class="row-even"><td>blob</td>
+<td>Binary large object</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="endianness">
+<h2>Endianness<a class="headerlink" href="#endianness" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
 <div class="section" id="products">
 <h3>Products<a class="headerlink" href="#products" title="Permalink to this headline">¶</a></h3>
 <p>A comma between two types signifies a product type. Product types
@@ -296,17 +349,24 @@ identical to <tt class="docutils literal"><span class="pre">shape</span></tt> pa
 </div>
 <div class="section" id="constructors">
 <h2>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h2>
-<p>Datashape types that are comprised of multiple unit types are
-called <strong>composite</strong> types. The product operator discussed above
-yields composite types. Example:</p>
-<p>A <strong>type operator</strong> is higher type that maps each choice of parameter to
-a concrete type instance.:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="mi">2</span><span class="o">,</span> <span class="n">int32</span>
+<p>A type constructor is a parameterized type definition for specifying
+polymorphic types. Polymorphic types specify containers that are capable
+of holding values of many different types conforming to the intermix of
+the constructors.</p>
+<p>The <strong>kind</strong> of a argument specifies the signature of the constructor in
+relation to its parameters.</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">K</span> <span class="o">=</span> <span class="o">*</span> <span class="o">|</span> <span class="nc">K</span> <span class="o">-&gt;</span> <span class="nc">K</span>
 </pre></div>
 </div>
-<p>Datashape types that are comprised of unbound free variables are called
-<strong>variadic</strong> types. Example:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">A</span><span class="o">,</span> <span class="nc">B</span><span class="o">,</span> <span class="n">int32</span>
+<p>For example type constructor with no parameters has the base
+kind <tt class="docutils literal"><span class="pre">(*)</span></tt>, a type constructor with two parameters has kind <tt class="docutils literal"><span class="pre">(*</span>
+<span class="pre">-&gt;</span> <span class="pre">*)</span></tt>.</p>
+<p>By supplying a type constructor with one or more <strong>concrete types</strong>, new
+<strong>type instances</strong> can be constructed and added to the system. Datashape
+types that are comprised of multiple unit types are called <strong>composite</strong>
+types. The product operator discussed above yields composite types.
+Example:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="mi">2</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
 <p>Datashape types with free parameters in their constructor are called
@@ -317,28 +377,27 @@ a concrete type instance.:</p>
 <p>Datashape types without free parameters in their constructor are called
 <strong>alias</strong> types. Alias types don&#8217;t add any additional structure they just
 ascribe a new name. Example:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">SquareIntMatrix</span> <span class="o">=</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">N</span><span class="o">,</span> <span class="n">int32</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">AliasType</span> <span class="nc">N</span> <span class="o">=</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">N</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
-<p>For example, the <tt class="docutils literal"><span class="pre">int</span></tt> and <tt class="docutils literal"><span class="pre">float</span></tt> types are automatically aliased
-to the either <tt class="docutils literal"><span class="pre">int32</span></tt> or <tt class="docutils literal"><span class="pre">int64</span></tt> types depending on the platform.</p>
-<p>Once the types are registered they can be used in dtype expressions just
-like primitive values and also to construct even higher order types.</p>
+<p>Datashape types can be <strong>anonymous</strong> or labeled. Once a type is
+registered it can be used in dshape expressions just like primitive
+values and to construct even higher order types.</p>
 <p>Blaze does not permit recursive type definitions.</p>
 <p>Datashape types are split into three equivalence classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Fixed:</th><td class="field-body"><p class="first">Fixed types are equal iff their value is equal.:</p>
+<tr class="field-odd field"><th class="field-name">Fixed:</th><td class="field-body"><p class="first">Fixed types are equal iff their value is equal:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="mi">1</span> <span class="o">==</span> <span class="mi">1</span>
 <span class="mi">1</span> <span class="o">!=</span> <span class="mi">2</span>
 </pre></div>
 </div>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">CTypes:</th><td class="field-body"><p class="first">Machine types are equal iff their data type name and width
-are equal.:</p>
+<tr class="field-even field"><th class="field-name">CTypes:</th><td class="field-body"><p class="first">Bit types are equal iff their data type name and width
+are equal:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="n">int32</span> <span class="o">==</span> <span class="n">int32</span>
 <span class="n">int64</span> <span class="o">!=</span> <span class="n">int32</span>
 <span class="n">int8</span> <span class="o">!=</span> <span class="kt">char</span>
@@ -349,7 +408,7 @@ are equal.:</p>
 <tr class="field-odd field"><th class="field-name">Composite:</th><td class="field-body"><p class="first">Composite datashape types are <strong>nominative</strong>, in that the equivalence of
 two types is determined whether the names they are given are equivalent.
 Thus two datashapes that are defined identically are still not equal to
-each other.:</p>
+each other:</p>
 <div class="last highlight-ocaml"><div class="highlight"><pre><span class="nc">A</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="n">int32</span>
 <span class="nc">B</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="n">int32</span>
 
@@ -415,11 +474,11 @@ but cannot be self-referential:</p>
 <strong>table-like</strong>, while any other terminating type is called
 <strong>array-like</strong>.</p>
 <p>Example of array-like:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">foo</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="n">int32</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">ArrayLike</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
 <p>Example of table-like:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">bar</span> <span class="o">=</span> <span class="o">{</span><span class="n">x</span><span class="o">:</span><span class="kt">int</span><span class="o">,</span> <span class="n">y</span><span class="o">:</span><span class="kt">float</span><span class="o">}</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">TableLike</span> <span class="o">=</span> <span class="o">{</span><span class="n">x</span><span class="o">:</span><span class="kt">int</span><span class="o">,</span> <span class="n">y</span><span class="o">:</span><span class="kt">float</span><span class="o">}</span>
 </pre></div>
 </div>
 <div class="section" id="enumeration">
@@ -428,36 +487,58 @@ but cannot be self-referential:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="o">{</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">1</span><span class="o">},</span> <span class="n">int32</span>
 </pre></div>
 </div>
-<p>The above could describe a structure of the form:</p>
+<p>The above could describe a Python structure of the form:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="o">[</span>
     <span class="o">[</span><span class="mi">1</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">1</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+    <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">],</span>
+    <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">9</span><span class="o">],</span>
+    <span class="o">[</span><span class="mi">3</span><span class="o">,</span><span class="mi">2</span><span class="o">],</span>
+    <span class="o">[</span><span class="mi">3</span><span class="o">]</span>
 <span class="o">]</span>
 </pre></div>
 </div>
 </div>
 </div>
-<div class="section" id="variadic">
-<h2>Variadic<a class="headerlink" href="#variadic" title="Permalink to this headline">¶</a></h2>
-<p>Variadic types expression unknown, but fixed dimensions which are
-expressed as free variables scoped within the type signature. The
-variable is referred to as <strong>type variable</strong> or <tt class="docutils literal"><span class="pre">TypeVar</span></tt>.</p>
+<div class="section" id="type-variables">
+<h2>Type Variables<a class="headerlink" href="#type-variables" title="Permalink to this headline">¶</a></h2>
+<p><strong>Variable types</strong> a seperate class of types expressed as free variables
+scoped within the type signature signifying a range of types. Type
+variables that occur once in a type signature are referred to as
+<strong>free</strong>, while type variables that appear multiple types are <strong>rigid</strong>.</p>
 <p>For example the type capable of expressing all square two dimensional
-matrices could be written as:</p>
+matrices could be written as a combination of rigid type vars:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">A</span><span class="o">,</span> <span class="nc">A</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
 <p>A type capable of rectangular variable length arrays of integers
-can be written as:</p>
+can be written as two free type vars:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">A</span><span class="o">,</span> <span class="nc">B</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
-<p>Type variables can also be free measure quantities, representing
-shaped but type-generic datashapes:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">TwoByTwo</span> <span class="nc">T</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span>
+<p>Type variables are reduced through scope of constructors and
+unified into one of two classes:</p>
+<ul class="simple">
+<li><strong>dimension-generic</strong></li>
+<li><strong>measure-generic</strong></li>
+</ul>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">DimGen</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">T</span><span class="o">,</span> <span class="kt">int</span>
+<span class="nc">TypGen</span> <span class="nc">T</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span>
+</pre></div>
+</div>
+<p>A type signature may only be either dimension-generic or
+measure-generic. Attempting to use a type variable in both will
+raise an Exception. For example in the following signature the
+type variable T is unified in both arguments to the type
+constructor <tt class="docutils literal"><span class="pre">Either</span></tt>:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Sig</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Either</span> <span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span> <span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
+</pre></div>
+</div>
+<p>Not all declarations of type variables are well-defined. For example
+it is not possible to expression a Range type in terms of variable. An
+instance like this would require a immensely more sophisticated type
+system.</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">InvalidSig1</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
+<span class="nc">InvalidSig2</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
 </pre></div>
 </div>
 <div class="section" id="sums">
@@ -466,15 +547,15 @@ shaped but type-generic datashapes:</p>
 typed values. There are four instances of sum types in Blaze&#8217;s type
 system:</p>
 <ul class="simple">
-<li>Variants</li>
-<li>Unions</li>
-<li>Options</li>
-<li>Ranges</li>
+<li><a class="reference internal" href="#variant"><em>Variant</em></a></li>
+<li><a class="reference internal" href="#union"><em>Union</em></a></li>
+<li><a class="reference internal" href="#option"><em>Option</em></a></li>
+<li><a class="reference internal" href="#range"><em>Range</em></a></li>
 </ul>
 </div>
 </div>
-<div class="section" id="variants">
-<h2>Variants<a class="headerlink" href="#variants" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="variant">
+<span id="id1"></span><h2>Variant<a class="headerlink" href="#variant" title="Permalink to this headline">¶</a></h2>
 <p>A <strong>variant</strong> type is a sum type with two tagged parameters <tt class="docutils literal"><span class="pre">left</span></tt> and
 <tt class="docutils literal"><span class="pre">right</span></tt> which represent two possible types. We use the keyword
 <tt class="docutils literal"><span class="pre">Either</span></tt> to represent the type operator. Examples:</p>
@@ -485,7 +566,7 @@ system:</p>
 </div>
 </div>
 <div class="section" id="union">
-<h2>Union<a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2>Union<a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h2>
 <p>A <strong>union</strong> or <strong>untagged union</strong> is a variant type permitting a
 variable number of variants. Unions behave like unions in C and permit a
 variable number of heterogeneous typed values:</p>
@@ -496,26 +577,26 @@ variable number of heterogeneous typed values:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="options">
-<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
-<p>Option types are variant types with the null datashape as one of the
-parameters, representing the presence of absence of a value of a
-specific types. Many languages have a natural expression of this by
-allowing all or most types to be nullable including including C, SQL,
-and Java.</p>
-<p>Option types are only defined for type arguments of unit
-measures and Records.</p>
+<div class="section" id="option">
+<span id="id3"></span><h2>Option<a class="headerlink" href="#option" title="Permalink to this headline">¶</a></h2>
+<p>A Option is a tagged union representing with the left projection being
+the presence of a value while the right projection being the absence of
+a values. For example in C, all types can be nulled by using <tt class="docutils literal"><span class="pre">NULL</span></tt>
+reference.</p>
 <p>For example a optional int field:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Option</span> <span class="n">int32</span>
 </pre></div>
 </div>
-<p>Or a optional record:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Option</span> <span class="o">{</span><span class="n">x</span><span class="o">:</span><span class="kt">int</span><span class="o">,</span> <span class="n">y</span><span class="o">:</span><span class="kt">float</span><span class="o">,</span> <span class="n">s</span><span class="o">:</span><span class="kt">string</span><span class="o">}</span>
+<p>Indicates the presense or absense of a integer. For example a (<tt class="docutils literal"><span class="pre">5,</span>
+<span class="pre">Option</span> <span class="pre">int32</span></tt>) array could be model the Python data structure:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="o">[</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="n">na</span><span class="o">,</span> <span class="n">na</span><span class="o">]</span>
 </pre></div>
 </div>
+<p>Option types are only defined for type arguments of unit measures and
+Records.</p>
 </div>
-<div class="section" id="ranges">
-<h2>Ranges<a class="headerlink" href="#ranges" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="range">
+<span id="id4"></span><h2>Range<a class="headerlink" href="#range" title="Permalink to this headline">¶</a></h2>
 <p>Ranges are sum types over intervals of Fixed dimensions types.</p>
 <p>Ranges are heterogeneously fixed dimensions within a lower and upper
 bound.</p>
@@ -538,6 +619,41 @@ greater than the lower, but may also be unbounded ( i.e. <tt class="docutils lit
 <p>A case where a <tt class="docutils literal"><span class="pre">Range</span></tt> has no upper bound signifies a potentially infinite
 <strong>stream</strong> of values. Specialized kernels are needed to deal with data
 of this type.</p>
+</div>
+<div class="section" id="grammar">
+<h2>Grammar<a class="headerlink" href="#grammar" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-text"><div class="highlight"><pre>NAME   = [a-zA-Z_][a-zA-Z0-9_]*
+EQUALS = &quot;=&#39;
+COMMA  = &quot;,&#39;
+COLON  = &quot;:&#39;
+LBRACE = &quot;{&#39;
+RBRACE = &quot;}&#39;
+
+statement ::= lhs_expression EQUALS rhs_expression
+            | rhs_expression
+
+lhs_expression ::= lhs_expression SPACE lhs_expression
+                 | NAME
+
+rhs_expression ::= rhs_expression COMMA rhs_expression
+
+rhs_expression ::= record
+                 | NAME
+                 | NUMBER
+
+record ::= LBRACE record_opt RBRACE
+
+record_opt ::= record_opt COMMA record_opt
+             | record_item
+             | empty
+
+record_item ::= NAME COLON &#39;(&#39; rhs_expression &#39;)&#39;
+              | NAME COLON NAME
+              | NAME COLON NUMBER
+
+empty ::=
+</pre></div>
+</div>
 </div>
 </div>
 

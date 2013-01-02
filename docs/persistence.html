@@ -93,13 +93,13 @@
 <span id="persistence"></span><h1>Persistence<a class="headerlink" href="#module-blaze.persistence.bloscpack" title="Permalink to this headline">¶</a></h1>
 <p>Simple interface for persistence using the Bloscpack format.</p>
 <p>It can store and retrieve a list of data buffers and metadata into a
-file on disk.  The format tries to adhere to the Bloscpack (<a class="footnote-reference" href="#id2" id="id1">[1]</a>)
+file on disk.  The format tries to adhere to the Bloscpack (<a class="reference internal" href="#r1">[R1]</a>)
 specification.  This is currently in-flux, so not recommended for
 production purposes yet.</p>
-<table class="docutils footnote" frame="void" id="id2" rules="none">
+<table class="docutils citation" frame="void" id="r1" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td><a class="reference external" href="https://github.com/esc/bloscpack">https://github.com/esc/bloscpack</a></td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id1">[R1]</a></td><td><a class="reference external" href="https://github.com/esc/bloscpack">https://github.com/esc/bloscpack</a></td></tr>
 </tbody>
 </table>
 <dl class="class">
@@ -110,20 +110,34 @@ production purposes yet.</p>
 RawTextHelpFormatter. Adds default values to argument help, but only if the
 default is not in [None, True, False]. Also retains all whitespace as it
 is.</p>
+<p class="rubric">Methods</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="blaze.persistence.bloscpack.Hash">
 <em class="property">class </em><tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">Hash</tt><big>(</big><em>name</em>, <em>size</em>, <em>function</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.Hash" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uniform hash object.</p>
-<dl class="docutils">
-<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>the name of the hash</dd>
-<dt>size <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the length of the digest in bytes</dd>
-<dt>function <span class="classifier-delimiter">:</span> <span class="classifier">callable</span></dt>
-<dd>the hash function implementation</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>the name of the hash</p>
+</div></blockquote>
+<p><strong>size</strong> : int</p>
+<blockquote>
+<div><p>the length of the digest in bytes</p>
+</div></blockquote>
+<p><strong>function</strong> : callable</p>
+<blockquote class="last">
+<div><p>the hash function implementation</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
 <p>The &#8216;function&#8217; argument should return the raw bytes as string.</p>
 </dd></dl>
 
@@ -131,18 +145,32 @@ is.</p>
 <dt id="blaze.persistence.bloscpack.check_files">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">check_files</tt><big>(</big><em>in_file</em>, <em>out_file</em>, <em>args</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.check_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check files exist/don&#8217;t exist.</p>
-<dl class="docutils">
-<dt>in_file <span class="classifier-delimiter">:</span> <span class="classifier">str:</span></dt>
-<dd>the input file</dd>
-<dt>out_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>the output file</dd>
-<dt>args <span class="classifier-delimiter">:</span> <span class="classifier">parser args</span></dt>
-<dd>any additional arguments from the parser</dd>
-</dl>
-<dl class="docutils">
-<dt>FileNotFound</dt>
-<dd>in case any of the files isn&#8217;t found.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>in_file</strong> : str:</p>
+<blockquote>
+<div><p>the input file</p>
+</div></blockquote>
+<p><strong>out_file</strong> : str</p>
+<blockquote>
+<div><p>the output file</p>
+</div></blockquote>
+<p><strong>args</strong> : parser args</p>
+<blockquote>
+<div><p>any additional arguments from the parser</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first"><strong>FileNotFound</strong> :</p>
+<blockquote class="last">
+<div><p>in case any of the files isn&#8217;t found.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -155,41 +183,75 @@ is.</p>
 <dt id="blaze.persistence.bloscpack.create_bloscpack_header">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">create_bloscpack_header</tt><big>(</big><em>format_version=2</em>, <em>options='00000000'</em>, <em>checksum=0</em>, <em>typesize=0</em>, <em>chunk_size=-1</em>, <em>last_chunk=-1</em>, <em>nchunks=-1</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.create_bloscpack_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the bloscpack header string.</p>
-<dl class="docutils">
-<dt>format_version <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the version format for the compressed file</dd>
-<dt>options <span class="classifier-delimiter">:</span> <span class="classifier">bitfield (string of 0s and 1s)</span></dt>
-<dd>the options for this file</dd>
-<dt>checksum <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the checksum to be used</dd>
-<dt>typesize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the typesize used for blosc in the chunks</dd>
-<dt>chunk_size <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the size of a regular chunk</dd>
-<dt>last_chunk <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the size of the last chunk</dd>
-<dt>nchunks <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the number of chunks</dd>
-</dl>
-<dl class="docutils">
-<dt>bloscpack_header <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>the header as string</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>format_version</strong> : int</p>
+<blockquote>
+<div><p>the version format for the compressed file</p>
+</div></blockquote>
+<p><strong>options</strong> : bitfield (string of 0s and 1s)</p>
+<blockquote>
+<div><p>the options for this file</p>
+</div></blockquote>
+<p><strong>checksum</strong> : int</p>
+<blockquote>
+<div><p>the checksum to be used</p>
+</div></blockquote>
+<p><strong>typesize</strong> : int</p>
+<blockquote>
+<div><p>the typesize used for blosc in the chunks</p>
+</div></blockquote>
+<p><strong>chunk_size</strong> : int</p>
+<blockquote>
+<div><p>the size of a regular chunk</p>
+</div></blockquote>
+<p><strong>last_chunk</strong> : int</p>
+<blockquote>
+<div><p>the size of the last chunk</p>
+</div></blockquote>
+<p><strong>nchunks</strong> : int</p>
+<blockquote>
+<div><p>the number of chunks</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>bloscpack_header</strong> : string</p>
+<blockquote>
+<div><p>the header as string</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><p class="first"><strong>ValueError</strong> :</p>
+<blockquote>
+<div><p>if any of the arguments have an invalid value</p>
+</div></blockquote>
+<p><strong>TypeError</strong> :</p>
+<blockquote class="last">
+<div><p>if any of the arguments have the wrong type</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
 <p>See the file &#8216;header_rfc.rst&#8217; distributed with the source code for
 details on the header format.</p>
-<dl class="docutils">
-<dt>ValueError</dt>
-<dd>if any of the arguments have an invalid value</dd>
-<dt>TypeError</dt>
-<dd>if any of the arguments have the wrong type</dd>
-</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="blaze.persistence.bloscpack.create_options">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">create_options</tt><big>(</big><em>offsets=True</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.create_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the options bitfield.</p>
-<p>offsets : bool</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><strong>offsets</strong> : bool</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -202,14 +264,25 @@ details on the header format.</p>
 <dt id="blaze.persistence.bloscpack.decode_blosc_header">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">decode_blosc_header</tt><big>(</big><em>buffer_</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.decode_blosc_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read and decode header from compressed Blosc buffer.</p>
-<dl class="docutils">
-<dt><a href="#id3"><span class="problematic" id="id4">buffer_</span></a> <span class="classifier-delimiter">:</span> <span class="classifier">string of bytes</span></dt>
-<dd>the compressed buffer</dd>
-</dl>
-<dl class="docutils">
-<dt>settings <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>a dict containing the settings from Blosc</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>buffer_</strong> : string of bytes</p>
+<blockquote>
+<div><p>the compressed buffer</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>settings</strong> : dict</p>
+<blockquote class="last">
+<div><p>a dict containing the settings from Blosc</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
 <p>The Blosc 1.x header is 16 bytes as follows:</p>
 <div class="highlight-python"><pre>|-0-|-1-|-2-|-3-|-4-|-5-|-6-|-7-|-8-|-9-|-A-|-B-|-C-|-D-|-E-|-F-|
 ^   ^   ^   ^ |     nbytes    |   blocksize   |    ctbytes    |
@@ -229,39 +302,73 @@ length of the data when uncompressed.</p>
 <dt id="blaze.persistence.bloscpack.decode_bloscpack_header">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">decode_bloscpack_header</tt><big>(</big><em>buffer_</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.decode_bloscpack_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check that the magic marker exists and return number of chunks.</p>
-<dl class="docutils">
-<dt><a href="#id5"><span class="problematic" id="id6">buffer_</span></a> <span class="classifier-delimiter">:</span> <span class="classifier">str of length 32 (but probably any sequence would work)</span></dt>
-<dd>the header</dd>
-</dl>
-<dl class="docutils">
-<dt>format_version <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the version format for the compressed file</dd>
-<dt>options <span class="classifier-delimiter">:</span> <span class="classifier">bitfield (string of 0s and 1s)</span></dt>
-<dd>the options for this file</dd>
-<dt>checksum <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the checksum to be used</dd>
-<dt>typesize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the typesize used for blosc in the chunks</dd>
-<dt>chunk_size <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the size of a regular chunk</dd>
-<dt>last_chunk <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the size of the last chunk</dd>
-<dt>nchunks <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the number of chunks</dd>
-<dt>RESERVED <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>the RESERVED field from the header, should be zero</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>buffer_</strong> : str of length 32 (but probably any sequence would work)</p>
+<blockquote>
+<div><p>the header</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>format_version</strong> : int</p>
+<blockquote>
+<div><p>the version format for the compressed file</p>
+</div></blockquote>
+<p><strong>options</strong> : bitfield (string of 0s and 1s)</p>
+<blockquote>
+<div><p>the options for this file</p>
+</div></blockquote>
+<p><strong>checksum</strong> : int</p>
+<blockquote>
+<div><p>the checksum to be used</p>
+</div></blockquote>
+<p><strong>typesize</strong> : int</p>
+<blockquote>
+<div><p>the typesize used for blosc in the chunks</p>
+</div></blockquote>
+<p><strong>chunk_size</strong> : int</p>
+<blockquote>
+<div><p>the size of a regular chunk</p>
+</div></blockquote>
+<p><strong>last_chunk</strong> : int</p>
+<blockquote>
+<div><p>the size of the last chunk</p>
+</div></blockquote>
+<p><strong>nchunks</strong> : int</p>
+<blockquote>
+<div><p>the number of chunks</p>
+</div></blockquote>
+<p><strong>RESERVED</strong> : int</p>
+<blockquote class="last">
+<div><p>the RESERVED field from the header, should be zero</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="blaze.persistence.bloscpack.decode_options">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">decode_options</tt><big>(</big><em>options</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.decode_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse the options bitfield.</p>
-<dl class="docutils">
-<dt>options <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>the options bitfield</dd>
-</dl>
-<p>options : dict mapping str -&gt; bool</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>options</strong> : str</p>
+<blockquote>
+<div><p>the options bitfield</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last"><strong>options</strong> : dict mapping str -&gt; bool</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -286,20 +393,38 @@ length of the data when uncompressed.</p>
 <dt id="blaze.persistence.bloscpack.pack_list">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">pack_list</tt><big>(</big><em>in_list</em>, <em>meta_info</em>, <em>out_file</em>, <em>blosc_args</em>, <em>offsets=True</em>, <em>checksum='adler32'</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.pack_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main function for compressing a list of buffers.</p>
-<dl class="docutils">
-<dt>in_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
-<dd>the list of buffers</dd>
-<dt>meta_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>dictionary with the associated metainfo</dd>
-<dt>out_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>the name of the output file</dd>
-<dt>blosc_args <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>dictionary of blosc keyword args</dd>
-<dt>offsets <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Wheather to include offsets.</dd>
-<dt>checksum <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Which checksum to use.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>in_list</strong> : list</p>
+<blockquote>
+<div><p>the list of buffers</p>
+</div></blockquote>
+<p><strong>meta_info</strong> : dict</p>
+<blockquote>
+<div><p>dictionary with the associated metainfo</p>
+</div></blockquote>
+<p><strong>out_file</strong> : str</p>
+<blockquote>
+<div><p>the name of the output file</p>
+</div></blockquote>
+<p><strong>blosc_args</strong> : dict</p>
+<blockquote>
+<div><p>dictionary of blosc keyword args</p>
+</div></blockquote>
+<p><strong>offsets</strong> : bool</p>
+<blockquote>
+<div><p>Wheather to include offsets.</p>
+</div></blockquote>
+<p><strong>checksum</strong> : str</p>
+<blockquote class="last">
+<div><p>Which checksum to use.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -318,16 +443,28 @@ length of the data when uncompressed.</p>
 <dt id="blaze.persistence.bloscpack.process_compression_args">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">process_compression_args</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.process_compression_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract and check the compression args after parsing by argparse.</p>
-<dl class="docutils">
-<dt>args <span class="classifier-delimiter">:</span> <span class="classifier">argparse.Namespace</span></dt>
-<dd>the parsed command line arguments</dd>
-</dl>
-<dl class="docutils">
-<dt>out_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>the out_file name</dd>
-<dt>blosc_args <span class="classifier-delimiter">:</span> <span class="classifier">tuple of (int, int, bool)</span></dt>
-<dd>typesize, clevel and shuffle</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>args</strong> : argparse.Namespace</p>
+<blockquote>
+<div><p>the parsed command line arguments</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>out_file</strong> : str</p>
+<blockquote>
+<div><p>the out_file name</p>
+</div></blockquote>
+<p><strong>blosc_args</strong> : tuple of (int, int, bool)</p>
+<blockquote class="last">
+<div><p>typesize, clevel and shuffle</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -335,14 +472,24 @@ length of the data when uncompressed.</p>
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">process_decompression_args</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.process_decompression_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract and check the decompression args after parsing by argparse.</p>
 <p>Warning: may call sys.exit()</p>
-<dl class="docutils">
-<dt>args <span class="classifier-delimiter">:</span> <span class="classifier">argparse.Namespace</span></dt>
-<dd>the parsed command line arguments</dd>
-</dl>
-<dl class="docutils">
-<dt>in_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>the input file name</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>args</strong> : argparse.Namespace</p>
+<blockquote>
+<div><p>the parsed command line arguments</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>in_file</strong> : str</p>
+<blockquote class="last">
+<div><p>the input file name</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -361,10 +508,18 @@ length of the data when uncompressed.</p>
 <dt id="blaze.persistence.bloscpack.unpack_file">
 <tt class="descclassname">blaze.persistence.bloscpack.</tt><tt class="descname">unpack_file</tt><big>(</big><em>in_file</em><big>)</big><a class="headerlink" href="#blaze.persistence.bloscpack.unpack_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main function for decompressing a file.  Returns a list of buffers.</p>
-<dl class="docutils">
-<dt>in_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>the name of the input file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>in_file</strong> : str</p>
+<blockquote class="last">
+<div><p>the name of the input file</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">

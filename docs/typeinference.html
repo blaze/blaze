@@ -90,7 +90,7 @@
 <li><a class="reference internal" href="#rigid-free">Rigid &amp; Free</a></li>
 <li><a class="reference internal" href="#context">Context</a></li>
 <li><a class="reference internal" href="#constraints">Constraints</a><ul>
-<li><a class="reference internal" href="#api">API</a></li>
+<li><a class="reference internal" href="#module-blaze.expr.typeinference">API</a></li>
 </ul>
 </li>
 </ul>
@@ -165,9 +165,9 @@ the unifiers.</p>
 <div class="section" id="constraints">
 <h2>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
 <p>TODO</p>
-<div class="section" id="api">
-<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
-<span class="target" id="module-blaze.expr.typeinference"></span><dl class="function">
+<div class="section" id="module-blaze.expr.typeinference">
+<span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.expr.typeinference" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
 <dt id="blaze.expr.typeinference.atnf">
 <tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">atnf</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.atnf" title="Permalink to this definition">¶</a></dt>
 <dd><p>algebraic type normal form</p>
@@ -194,37 +194,51 @@ don&#8217;t:</p>
 <dl class="function">
 <dt id="blaze.expr.typeinference.infer">
 <tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">infer</tt><big>(</big><em>env</em>, <em>term</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.infer" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>env <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>environment of lexically-bound variables with types</dd>
-<dt>term: object</dt>
-<dd>environment of lexically-bound variables with types</dd>
-</dl>
+<dd><p>Infer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>env</strong> : dict</p>
+<blockquote>
+<div><p>environment of lexically-bound variables with types</p>
+</div></blockquote>
+<p><strong>term: object</strong> :</p>
+<blockquote class="last">
+<div><p>type signature</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <span class="target" id="module-blaze.expr.signatures"></span><p>Convert between type signatures between Blaze and NumPy</p>
-<dl class="docutils">
-<dt>::</dt>
-<dd>NumPy: ii -&gt; i
-Blaze: (a,a) -&gt; a</dd>
-</dl>
+<div class="highlight-python"><pre>NumPy: ii -&gt; i
+Blaze: (a,a) -&gt; a</pre>
+</div>
 <dl class="function">
 <dt id="blaze.expr.signatures.sig_parse">
 <tt class="descclassname">blaze.expr.signatures.</tt><tt class="descname">sig_parse</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.signatures.sig_parse" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>s <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>signature string to be parsed</dd>
-</dl>
-<dl class="docutils">
-<dt>out <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
-<dd>outputted variable strings</dd>
-</dl>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;(a,a) -&gt; a&#39;</span><span class="p">)</span>
-<span class="go">([SVar(a), SVar(a)], [SVar(a)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s">&#39;ii-&gt;i&#39;</span><span class="p">)</span>
-<span class="go">([SVar(i), SVar(i)], [SVar(y)])</span>
-</pre></div>
-</div>
+<dd><p>Signature parse</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>s</strong> : str</p>
+<blockquote>
+<div><p>signature string to be parsed</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>out</strong> : tuple</p>
+<blockquote class="last">
+<div><p>outputted variable strings</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
