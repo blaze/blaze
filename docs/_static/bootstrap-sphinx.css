@@ -11,6 +11,13 @@ body {
   padding-bottom: 40px;
 }
 
+table.docutils {
+    border: 1px solid #ccc !important;
+    border-collapse: none !important;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
 .center {
     text-align: center;
 }
