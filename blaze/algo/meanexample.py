@@ -38,10 +38,15 @@ t0 = time()
 print np.mean(t.data.ca['f0'])
 print "NumPy mean", round(time()-t0, 6)
 
-print '-------------------'
+print '==================='
 
 t0 = time()
+#assert blaze.std(t, 'f0') == 28867.513458037913
 print blaze.std(t, 'f0')
 print "Chunked std", round(time()-t0, 6)
 
 print '-------------------'
+
+t0 = time()
+print np.std(t.data.ca['f0'])
+print "NumPy std", round(time()-t0, 6)

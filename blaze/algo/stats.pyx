@@ -1,5 +1,4 @@
 import cython
-
 import numpy as np
 cimport numpy as np
 
@@ -7,13 +6,28 @@ from blaze import Table
 from blaze.carray import carrayExtension as carray
 from blaze.carray.carrayExtension cimport chunk
 
-
 np.import_array()
 nan = np.nan
 
 #------------------------------------------------------------------------
-# Columwise Std
+# Columwise Standard Deviation
 #------------------------------------------------------------------------
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef sqsum(np.ndarray[np.int32_t, ndim=1] a):
+    cdef:
+        Py_ssize_t i0
+        np.npy_intp *dim
+        Py_ssize_t length = a.shape[0]
+        np.float32_t asum, assum = 0, ai
+
+    for i from 0 <= i < length:
+        ai = a[i]
+        asum += ai
+        assum += ai * ai
+
+    return np.float32(asum), np.float32(assum)
 
 def std(table, col):
     """ Columnwise out of core standard devaiation
@@ -37,31 +51,39 @@ def std(table, col):
 
     cdef np.float32_t asum = 0
     cdef np.float32_t amean = 0
+    cdef np.float32_t asumsq = 0
     cdef Py_ssize_t count = 0
 
     leftover = (col.len % len(col.leftover_array)) * col.atomsize
     nchunks = col.nchunks
 
-    for nchunk in range(0, nchunks):
-      chunk_ = col.chunks[nchunk]
+    for nchunk from 0 <= nchunk < nchunks:
+        chunk_ = col.chunks[nchunk]
 
-      if chunk_.isconstant:
-        asum += chunk_.constant * col.chunklen
-      else:
-        asum += chunk_[:].sum(dtype=col.dtype)
+        if chunk_.isconstant:
+            it = chunk_.constant * col.chunklen
+            asum += it
+            asumsq += (it * 2) * col.chunklen
+        else:
+            _asum, _assum = sqsum(chunk_[:])
+            asum   += _asum
+            asumsq += _assum
 
-      count += cython.cdiv(chunk_.nbytes, chunk_.atomsize)
+        count += cython.cdiv(chunk_.nbytes, chunk_.atomsize)
 
     if col.leftovers:
-      leftover = col.len - nchunks * col.chunklen
-      asum += col.leftover_array[:leftover].sum(dtype=col.dtype)
-      count += leftover
+        leftover = col.len - nchunks * col.chunklen
+        leftover_arr = col.leftover_array[:leftover]
+
+        _asum, _assum = sqsum(leftover_arr)
+        asum   += _asum
+        asumsq += _assum
+
+        count += leftover
 
     if count > 0:
         amean = asum / count
-        print asum, count, amean
-        print asum / count - (amean * amean)
-        return np.float64(np.sqrt((asum / count) - (amean * amean)))
+        return np.sqrt((asumsq / count) - (amean * amean))
     else:
         return np.float64(nan)
 
@@ -94,20 +116,20 @@ def mean(table, col):
     leftover = (col.len % len(col.leftover_array)) * col.atomsize
     nchunks = col.nchunks
 
-    for nchunk in range(0, nchunks):
-      chunk_ = col.chunks[nchunk]
+    for nchunk from 0 <= nchunk < nchunks:
+        chunk_ = col.chunks[nchunk]
 
-      if chunk_.isconstant:
-        result += chunk_.constant * col.chunklen
-      else:
-        result += chunk_[:].sum(dtype=col.dtype)
+        if chunk_.isconstant:
+            result += chunk_.constant * col.chunklen
+        else:
+            result += chunk_[:].sum(dtype=col.dtype)
 
-      count += cython.cdiv(chunk_.nbytes, chunk_.atomsize)
+        count += cython.cdiv(chunk_.nbytes, chunk_.atomsize)
 
     if col.leftovers:
-      leftover = col.len - nchunks * col.chunklen
-      result += col.leftover_array[:leftover].sum(dtype=col.dtype)
-      count += leftover
+        leftover = col.len - nchunks * col.chunklen
+        result += col.leftover_array[:leftover].sum(dtype=col.dtype)
+        count += leftover
 
     if count > 0:
         return np.float32(result / count)

@@ -1,2 +1,3 @@
-from mean import mean
-from std import std
+__all__ = ['mean', 'std']
+
+from stats import mean, std
