@@ -147,6 +147,8 @@ def p_record(p):
     else:
         p[0] = (p[2],)
 
+# { x: int; y: int }
+# TODO: change comma to semicolon, removes need for braces
 def p_record_opt1(p):
     'record_opt : record_opt COMMA record_opt'
     p[0] = [p[1], p[3]]

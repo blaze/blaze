@@ -1,8 +1,12 @@
 import os
-from tables import openFile, NoSuchNodeError
 from blaze.datashape.record import from_pytables
-from blaze.sources.descriptors.byteprovider import ByteProvider
+from blaze.desc.byteprovider import ByteProvider
 from blaze.datashape import Fixed
+
+try:
+    from tables import openFile, NoSuchNodeError
+except ImportError:
+    pass
 
 class HDF5Source(ByteProvider):
 
