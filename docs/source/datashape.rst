@@ -22,6 +22,8 @@ to data structure and data layout as well as data type ( dtype ).
 In fact many of the ideas behind datashape are generalizations and
 combinations of notions found in Numpy:
 
+.. cssclass:: table-bordered
+
 +----------------+----------------+
 | Numpy          | Blaze          |
 +================+================+
@@ -73,6 +75,8 @@ Bit Types
 The native bit types or **CType** objects are unit types standing for
 unboxed machine types. These inherit the notation from NumPy.
 
+.. cssclass:: table-striped
+
 ==========  =========================================================
 Bit type    Description
 ==========  =========================================================
@@ -104,6 +108,7 @@ complex128  Complex number, represented by two 64-bit floats (real
 Blaze also adds a variety of bit-like types which are implemented
 a subset of specialized storage and computation backends.
 
+.. cssclass:: table-striped
 
 ==========  =========================================================
 Bit type    Description
