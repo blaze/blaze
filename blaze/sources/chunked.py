@@ -181,6 +181,10 @@ class CTableSource(ByteProvider):
         assert (data is not None) or (dshape is not None) or \
                (params.get('storage'))
 
+        if isinstance(data, ctable):
+            self.ca = data
+            return
+
         # Extract the relevant carray parameters from the more
         # general Blaze params object.
         if params:

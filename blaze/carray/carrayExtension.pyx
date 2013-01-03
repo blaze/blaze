@@ -195,6 +195,7 @@ cdef int true_count(char *data, int nbytes):
 
 #-------------------------------------------------------------
 
+# For member defintions see carrayExtension.pxd ~Stephen
 cdef class chunk:
   """
   chunk(array, atom, cparams)
@@ -204,14 +205,6 @@ cdef class chunk:
   This class is meant to be used only by the `carray` class.
 
   """
-
-  # To save space, keep these variables under a minimum
-  #cdef char typekind, isconstant
-  #cdef public int atomsize, itemsize, blocksize
-  #cdef public int nbytes, cbytes, cdbytes
-  #cdef int true_count
-  #cdef char *data
-  #cdef object atom, constant, dobject
 
   property dtype:
     "The NumPy dtype for this chunk."

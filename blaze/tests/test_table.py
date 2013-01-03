@@ -1,4 +1,3 @@
-import numpy as np
 from blaze import dshape
 from blaze import NDTable, Table, NDArray, Array
 

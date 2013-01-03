@@ -94,11 +94,11 @@ def open(rootdir, mode='a'):
     # First try with a carray
     obj = None
     try:
-        obj = ca.carray(rootdir=rootdir, mode=mode)
+        obj = carray(rootdir=rootdir, mode=mode)
     except IOError:
         # Not a carray.  Now with a ctable
         try:
-            obj = ca.ctable(rootdir=rootdir, mode=mode)
+            obj = ctable(rootdir=rootdir, mode=mode)
         except IOError:
             # Not a ctable
             pass
@@ -135,6 +135,7 @@ def fromiter(iterable, dtype, count, **kwargs):
     iterables).
 
     """
+    from ctable import ctable
 
     # Check for a true iterable
     if not hasattr(iterable, "next"):
@@ -654,10 +655,10 @@ def walk(dir, classname=None, mode='a'):
     for node in glob.glob(names):
         if os.path.isdir(node):
             try:
-                obj = ca.carray(rootdir=node, mode=mode)
+                obj = carray(rootdir=node, mode=mode)
             except:
                 try:
-                    obj = ca.ctable(rootdir=node, mode=mode)
+                    obj = ctable(rootdir=node, mode=mode)
                 except:
                     obj = None
                     dirs.append(node)

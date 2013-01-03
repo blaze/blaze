@@ -9,12 +9,15 @@
 import sys, math
 
 import numpy as np
-import blaze.carray as ca
+#import blaze.carray as ca
 import itertools as it
 from collections import namedtuple
 import json
 import os, os.path
 import shutil
+
+from carrayExtension import carray
+from toplevel import cparams
 
 # carray utilities
 import utils, attrs, arrayprint
@@ -40,7 +43,7 @@ class cols(object):
         self.names = [str(name) for name in data['names']]
         # Initialize the cols by instatiating the carrays
         for name, dir_ in data['dirs'].items():
-            self._cols[str(name)] = ca.carray(rootdir=dir_, mode=self.mode)
+            self._cols[str(name)] = carray(rootdir=dir_, mode=self.mode)
 
     def update_meta(self):
         """Update metainfo about directories on-disk."""
@@ -175,7 +178,7 @@ class ctable(object):
     def __init__(self, columns=None, names=None, **kwargs):
 
         # Important optional params
-        self._cparams = kwargs.get('cparams', ca.cparams())
+        self._cparams = kwargs.get('cparams', cparams())
         self.rootdir = kwargs.get('rootdir', None)
         "The directory where this object is saved."
         self.mode = kwargs.get('mode', 'a')
@@ -234,7 +237,7 @@ class ctable(object):
         # Guess the kind of columns input
         calist, nalist, ratype = False, False, False
         if type(columns) in (tuple, list):
-            calist = [type(v) for v in columns] == [ca.carray for v in columns]
+            calist = [type(v) for v in columns] == [carray for v in columns]
             nalist = [type(v) for v in columns] == [np.ndarray for v in columns]
         elif isinstance(columns, np.ndarray):
             ratype = hasattr(columns.dtype, "names")
@@ -246,7 +249,7 @@ class ctable(object):
         if not (calist or nalist or ratype):
             # Try to convert the elements to carrays
             try:
-                columns = [ca.carray(col) for col in columns]
+                columns = [carray(col) for col in columns]
                 calist = True
             except:
                 raise ValueError, "`columns` input is not supported"
@@ -267,9 +270,9 @@ class ctable(object):
                 if column.dtype == np.void:
                     raise ValueError,(
                         "`columns` elements cannot be of type void")
-                column = ca.carray(column, **kwargs)
+                column = carray(column, **kwargs)
             elif ratype:
-                column = ca.carray(columns[name], **kwargs)
+                column = carray(columns[name], **kwargs)
             self.cols[name] = column
             if clen >= 0 and clen != len(column):
                 raise ValueError, "all `columns` must have the same length"
@@ -320,14 +323,14 @@ class ctable(object):
         # Guess the kind of rows input
         calist, nalist, sclist, ratype = False, False, False, False
         if type(rows) in (tuple, list):
-            calist = [type(v) for v in rows] == [ca.carray for v in rows]
+            calist = [type(v) for v in rows] == [carray for v in rows]
             nalist = [type(v) for v in rows] == [np.ndarray for v in rows]
             if not (calist or nalist):
                 # Try with a scalar list
                 sclist = True
         elif isinstance(rows, np.ndarray):
             ratype = hasattr(rows.dtype, "names")
-        elif isinstance(rows, ca.ctable):
+        elif isinstance(rows, ctable):
             # Convert int a list of carrays
             rows = [rows[name] for name in self.names]
             calist = True
@@ -448,12 +451,12 @@ class ctable(object):
         if isinstance(newcol, np.ndarray):
             if 'cparams' not in kwargs:
                 kwargs['cparams'] = self.cparams
-            newcol = ca.carray(newcol, **kwargs)
+            newcol = carray(newcol, **kwargs)
         elif type(newcol) in (list, tuple):
             if 'cparams' not in kwargs:
                 kwargs['cparams'] = self.cparams
-            newcol = ca.carray(newcol, **kwargs)
-        elif type(newcol) != ca.carray:
+            newcol = carray(newcol, **kwargs)
+        elif type(newcol) != carray:
             raise ValueError(
                 """`newcol` type not supported""")
 

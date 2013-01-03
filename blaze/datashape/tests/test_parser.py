@@ -24,7 +24,7 @@ def test_compound_record1():
     assert type(p[1]) is Record
 
 def test_compound_record2():
-    p = parse('''{ a: { b: int, y: int }}''')
+    p = parse('''{ a: { x: int, y: int }, b: {w: int, u: int } }''')
     assert type(p[0]) is Record
 
 def test_free_variables():
