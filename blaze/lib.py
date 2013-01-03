@@ -53,6 +53,7 @@ __all__ = [ 'zerocost',
             'abs',
             'dot',
             'dtw',
+            'add',
             'multiply',
             'power'
             ]
@@ -91,7 +92,7 @@ def add(a, b):
 
     iters = [desc.as_chunked_iterator() for desc in [dd_a, dd_b]]
     for a,b in zip(*iters):
-        import pdb; pdb.set_trace()
+        pass
     return out
 
 

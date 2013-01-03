@@ -1,7 +1,7 @@
 from blaze.aterm import parse
 from blaze.rts.funcs import lookup
 
-from blaze import NDArray, Array, add
+from blaze import NDArray, Array
 from blaze import add, multiply
 
 def test_match1():

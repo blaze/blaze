@@ -18,6 +18,7 @@ graph.
 """
 
 from numbers import Integral
+from functools import partial
 from collections import Iterable
 
 from blaze.eclass import eclass
@@ -62,6 +63,8 @@ class NotSimple(Exception):
 #------------------------------------------------------------------------
 # Graph Construction
 #------------------------------------------------------------------------
+
+instanceof = lambda T: lambda X: isinstance(X, T)
 
 def is_homogeneous(it):
     # Checks Python types for arguments, not to be confused with the
