@@ -72,7 +72,7 @@ def open(uri=None, mode='a'):
     if structure == ARRAY:
         return Array(source)
     elif structure == TABLE:
-        return NDTable(source)
+        return Table(source)
 
 # These are like NumPy equivalent except that they can allocate
 # larger than memory.

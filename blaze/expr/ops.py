@@ -21,8 +21,8 @@ discrete   = ints | uints
 continuous = floats | complexes
 numeric    = discrete | continuous
 
-array_like, tabular_like = Array, Table
-indexable = set([array_like, tabular_like])
+array_like, table_like = Array, Table
+indexable = set([array_like, table_like])
 
 universal = set([C.top]) | numeric | indexable | string
 

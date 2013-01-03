@@ -1,3 +1,5 @@
+from blaze.expr.nodes import Node
+
 #------------------------------------------------------------------------
 # Evaluation Class ( eclass )
 #------------------------------------------------------------------------
@@ -10,7 +12,8 @@ class eclass:
     delayed  = DELAYED
 
 def all_manifest(list_of_nodes):
-    return all(node.eclass == MANIFEST for node in list_of_nodes)
+    return all(node.eclass == MANIFEST for node in list_of_nodes
+            if isinstance(node, Node))
 
 def all_deferred(list_of_nodes):
     return all(node.eclass == DELAYED for node in list_of_nodes)

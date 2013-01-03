@@ -2,7 +2,6 @@ import cython
 import numpy as np
 cimport numpy as np
 
-from blaze import Table
 from blaze.carray import carrayExtension as carray
 from blaze.carray.carrayExtension cimport chunk
 

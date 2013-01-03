@@ -1,6 +1,3 @@
-Blaze
-=====
-
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
 </p>

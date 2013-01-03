@@ -34,36 +34,43 @@ If we were to "read" this definition in English. It would read:
 > this function implementation!
 
 """
-import numpy as np
-from math import sqrt
 
-from blaze.datashape import dshape
-from blaze.rts.funcs import PythonFn, install, lift
+import numpy as np
+
+from blaze.rts.funcs import lift
 from blaze import metadata as md
 
-from numexpr import evaluate
-
-from blaze.expr.ops import array_like
 from blaze.metadata import aligned
+from blaze.expr.ops import array_like, table_like
 
 from blaze.ts.ucr_dtw import ucr
 #from blaze.ooc import linalg
-__all__ = [ 'zerocost',
-            'lift',
-            'abs',
-            'dot',
-            'dtw',
-            'add',
-            'multiply',
-            'power'
-            ]
-
+from blaze.algo import stats
 
 zerocost = lambda term: 0
 
+#------------------------------------------------------------------------
+# Statistics
+#------------------------------------------------------------------------
+
+@lift('mean(<term>, <str>)', '(a,_) -> a', dict(
+    types =  {'a': table_like},
+    metadata = {},
+    passthrough = True
+))
+def mean(table, label):
+    return stats.mean(table, label)
+
+@lift('std(<term>, <str>)', '(a,_) -> a', dict(
+    types =  {'a': table_like},
+    metadata = {},
+    passthrough = True
+))
+def std(table, label):
+    return stats.mean(table, label)
 
 #------------------------------------------------------------------------
-# Function Library
+# Time Series
 #------------------------------------------------------------------------
 
 @lift('dtw(<term>, <term>, <term>, <term>)', '(a,a,float,int) -> b', {
@@ -73,6 +80,10 @@ zerocost = lambda term: 0
 def dtw(d1, d2, s, n):
     return ucr.dtw(d1, d2, s, n)
 
+#------------------------------------------------------------------------
+# Linear Algebra
+#------------------------------------------------------------------------
+
 @lift('dot(<term>, <term>)', '(a,a) -> a', {
     'types'    : {'a' : array_like},
     'metadata' : {'a' : md.c_contigious},
@@ -80,6 +91,8 @@ def dtw(d1, d2, s, n):
 def dot(a1, a2):
     return linalg.dot(a1, a2)
 
+#------------------------------------------------------------------------
+# Arithmetic
 #------------------------------------------------------------------------
 
 @lift('Add(<term>,<term>)', '(a,a) -> a')
@@ -117,3 +130,16 @@ def power(a, b):
 })
 def abs(a, b):
     return np.abs(a, b)
+
+
+__all__ = [
+    'lift',
+    'mean',
+    'std',
+    'abs',
+    'dot',
+    'dtw',
+    'add',
+    'multiply',
+    'power'
+]

@@ -146,7 +146,12 @@ def lift(signature, typesig, constraints=None, **params):
 
             if allmanifest:
                 # do immediete evaluation
-                return ieval(pyfn, args)
+                if constraints.pop('passthrough', False):
+                    # don't use descriptors just call Python fn
+                    return pyfn(*args)
+                else:
+                    # generate descriptors
+                    return ieval(pyfn, args)
             else:
                 # Return a new Fun() class that is a graph node
                 # constructor.
