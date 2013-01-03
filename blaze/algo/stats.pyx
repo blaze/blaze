@@ -9,27 +9,58 @@ from blaze.carray.carrayExtension cimport chunk
 np.import_array()
 nan = np.nan
 
+# just using this to debug the loops to make sure we only do n
+# reads from disk where n = nchunks.
+def generic1d_loop(table, label):
+    cdef:
+        chunk chunk_
+
+    col = table.data.ca[label]
+
+    nchunks = col.nchunks
+
+    for nchunk from 0 <= nchunk < nchunks:
+        chunk_ = col.chunks[nchunk]
+        size = cython.cdiv(chunk_.nbytes, chunk_.atomsize)
+
+        if chunk_.isconstant:
+            arr = chunk_.constant * col.chunklen
+            print np.array([chunk._constant] * col.chunklen)
+            # logic
+        else:
+            arr = chunk_[:]
+            print arr
+            # logic
+
+    if col.leftovers:
+        leftover = col.len - nchunks * col.chunklen
+        arr = col.leftover_array[:leftover]
+        print arr
+        # logic
+
 #------------------------------------------------------------------------
 # Columwise Standard Deviation
 #------------------------------------------------------------------------
 
+# Calculate the sum and sum of squares in one pass
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef sqsum(np.ndarray[np.int32_t, ndim=1] a):
     cdef:
-        Py_ssize_t i0
-        np.npy_intp *dim
         Py_ssize_t length = a.shape[0]
-        np.float32_t asum, assum = 0, ai
+
+        np.int64_t ai    = 0
+        np.int64_t asum  = 0
+        np.int64_t assum = 0
 
     for i from 0 <= i < length:
         ai = a[i]
-        asum += ai
+        asum  += ai
         assum += ai * ai
 
-    return np.float32(asum), np.float32(assum)
+    return asum, assum
 
-def std(table, col):
+def std(table, label):
     """ Columnwise out of core standard devaiation
 
     Parameters
@@ -45,17 +76,18 @@ def std(table, col):
         standard deviation
 
     """
-    cdef chunk chunk_
-    cdef np.npy_intp nchunk, nchunks
-    col = table.data.ca[col]
+    cdef:
+        chunk chunk_
+        Py_ssize_t nchunk, nchunks
 
-    cdef np.float32_t asum = 0
-    cdef np.float32_t amean = 0
-    cdef np.float32_t asumsq = 0
-    cdef Py_ssize_t count = 0
+        Py_ssize_t count = 0
+        np.float64_t asum   = 0
+        np.float64_t asumsq = 0
+        np.float64_t amean  = 0
 
-    leftover = (col.len % len(col.leftover_array)) * col.atomsize
+    col = table.data.ca[label]
     nchunks = col.nchunks
+    count = col.len
 
     for nchunk from 0 <= nchunk < nchunks:
         chunk_ = col.chunks[nchunk]
@@ -69,8 +101,6 @@ def std(table, col):
             asum   += _asum
             asumsq += _assum
 
-        count += cython.cdiv(chunk_.nbytes, chunk_.atomsize)
-
     if col.leftovers:
         leftover = col.len - nchunks * col.chunklen
         leftover_arr = col.leftover_array[:leftover]
@@ -79,11 +109,11 @@ def std(table, col):
         asum   += _asum
         asumsq += _assum
 
-        count += leftover
-
     if count > 0:
-        amean = asum / count
-        return np.sqrt((asumsq / count) - (amean * amean))
+        amean = cython.cdiv(asum, count)
+        # there is probably a more numerically stable version of this
+        # but NumPy's implementation is really naive as well so whatever
+        return np.float64(np.sqrt((asumsq / count) - (amean * amean)))
     else:
         return np.float64(nan)
 
@@ -91,7 +121,7 @@ def std(table, col):
 # Columwise Mean
 #------------------------------------------------------------------------
 
-def mean(table, col):
+def mean(table, label):
     """ Columnwise out of core mean
 
     Parameters
@@ -107,84 +137,34 @@ def mean(table, col):
         mean
 
     """
-    cdef chunk chunk_
-    cdef np.npy_intp nchunk, nchunks
-    cdef np.float32_t result = 0
-    cdef Py_ssize_t count = 0
-    col = table.data.ca[col]
 
-    leftover = (col.len % len(col.leftover_array)) * col.atomsize
+    cdef:
+        chunk chunk_
+        Py_ssize_t nchunk, nchunks
+
+        Py_ssize_t count = 0
+        np.float64_t asum   = 0
+        np.float64_t amean  = 0
+
+
+    col = table.data.ca[label]
     nchunks = col.nchunks
+    count = col.len
 
     for nchunk from 0 <= nchunk < nchunks:
         chunk_ = col.chunks[nchunk]
 
         if chunk_.isconstant:
-            result += chunk_.constant * col.chunklen
+            asum += chunk_.constant * col.chunklen
         else:
-            result += chunk_[:].sum(dtype=col.dtype)
-
-        count += cython.cdiv(chunk_.nbytes, chunk_.atomsize)
+            asum += chunk_[:].sum(dtype=col.dtype)
 
     if col.leftovers:
         leftover = col.len - nchunks * col.chunklen
-        result += col.leftover_array[:leftover].sum(dtype=col.dtype)
-        count += leftover
+        asum += col.leftover_array[:leftover].sum(dtype=col.dtype)
 
     if count > 0:
-        return np.float32(result / count)
+        return np.float64(asum / count)
     else:
-        return np.float32(nan)
+        return np.float64(nan)
 
-#------------------------------------------------------------------------
-# NA Experiments
-#------------------------------------------------------------------------
-
-# Experimental, don't use!
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def mean_float(np.ndarray[np.float32_t, ndim=1] a, Py_ssize_t _count=0):
-    cdef Py_ssize_t count = _count
-
-    cdef np.float32_t asum = 0, ai
-    cdef Py_ssize_t i0
-    cdef np.npy_intp *dim
-    dim = np.PyArray_DIMS(a)
-    cdef Py_ssize_t n0 = dim[0]
-
-    with nogil:
-        for i0 in range(n0):
-            ai = a[i0]
-            if ai == ai: # disregard nan
-                asum += ai
-                count += 1
-
-    if count > 0:
-        return np.float32(asum / count), count
-    else: return np.float32(nan), count
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def mean_int(np.ndarray[np.int32_t, ndim=1] a, int lower, int upper, Py_ssize_t _count=0):
-    cdef Py_ssize_t count = _count
-
-    cdef np.float64_t asum = 0, ai
-    cdef Py_ssize_t size
-    cdef Py_ssize_t i0
-    cdef np.npy_intp *dim
-    dim = np.PyArray_DIMS(a)
-    cdef Py_ssize_t n0 = dim[0]
-    size = n0
-
-    with nogil:
-        for i0 in range(n0):
-            ai = a[i0]
-            if lower < ai < upper:
-                asum += ai
-                count += 1
-
-    if count > 0:
-        return np.float32(asum / count), count
-    else:
-        return np.float32(nan), count

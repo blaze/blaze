@@ -50,3 +50,5 @@ print '-------------------'
 t0 = time()
 print np.std(t.data.ca['f0'])
 print "NumPy std", round(time()-t0, 6)
+
+#blaze.generic_loop(t, 'f0')
