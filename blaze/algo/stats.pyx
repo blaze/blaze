@@ -95,7 +95,7 @@ def std(table, label):
         if chunk_.isconstant:
             it = chunk_.constant * col.chunklen
             asum += it
-            asumsq += (it * 2) * col.chunklen
+            asumsq += (it ** 2) * col.chunklen
         else:
             _asum, _assum = sqsum(chunk_[:])
             asum   += _asum
