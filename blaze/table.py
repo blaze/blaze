@@ -18,6 +18,7 @@ from blaze.printer import generic_str, generic_repr
 from blaze.datashape import from_numpy, dshape as _dshape
 from blaze.datashape.record import dtype_from_dict
 from blaze.expr.graph import ArrayNode, injest_iterable
+from blaze.carray import fromiter
 
 from blaze.layouts.scalar import ChunkedL
 from blaze.layouts.query import retrieve, write
@@ -525,7 +526,6 @@ class NDTable(Indexable, ArrayNode):
 
     @classmethod
     def from_dict(self, data):
-        from blaze.carray import fromiter
 
         dtype = dtype_from_dict(data)
         count = len(data.values()[0])
