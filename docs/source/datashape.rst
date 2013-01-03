@@ -330,7 +330,7 @@ Example of array-like::
 
 Example of table-like::
 
-    TableLike = {x:int, y:float}
+    TableLike = { x : int, y : float }
 
 Enumeration
 -----------
