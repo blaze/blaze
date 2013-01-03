@@ -1,5 +1,5 @@
 from blaze.datashape import *
-from blaze.datashape.parse import parse, load
+from blaze.datashape.parse import parse
 from blaze.datashape.record import RecordDecl, derived
 
 from unittest import skip
@@ -142,13 +142,3 @@ def test_custom_record_infer():
             return (self.min + self.max)/2
 
     assert Stock2.mid
-
-@skip
-def test_module_parse():
-    mod = load('tests/foo.ds')
-
-    assert 'A' in dir(mod)
-    assert type(mod.B) is DataShape
-
-    assert 'B' in dir(mod)
-    assert type(mod.A) is DataShape

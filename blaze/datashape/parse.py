@@ -1,5 +1,5 @@
 """
-Deprecating this in favor of parser.py
+WARNING: Deprecating this in favor of parser.py
 """
 
 import imp
@@ -140,21 +140,6 @@ class Translate(Visitor):
     def Index(self, tree):
         return self.visit(tree.value)
 
-class TranslateModule(Translate):
-
-    def Module(self, tree):
-        return [self.visit(i) for i in tree.body]
-
-    def Assign(self, tree):
-        left = tree.targets[0].id
-        right = self.visit(tree.value)
-        assert left not in self.namespace
-        self.namespace[left] = right
-
-
-#------------------------------------------------------------------------
-# Operator Translation
-#------------------------------------------------------------------------
 
 def parse(expr):
     expr_translator = Translate(expr)
@@ -163,24 +148,3 @@ def parse(expr):
     except SyntaxError as e:
         raise DatashapeSyntaxError(*e.args[1])
     return expr_translator.visit(past)
-
-def load(fname, modname=None):
-    """
-    # Load a file of datashape definitions as if it were a python module.
-    """
-
-    with open(fname, 'r') as fd:
-        expr = fd.read()
-        expr = translate(expr, op_table)
-        past = ast.parse(expr)
-
-    translator = TranslateModule(expr)
-    translator.visit(past)
-
-    if not modname:
-        modname = fname
-    mod = imp.new_module(modname)
-
-    for k,v in translator.namespace.iteritems():
-        setattr(mod, k, v)
-    return mod
