@@ -528,13 +528,11 @@ class Record(DataShape, Mapping):
     def __str__(self):
         # Prints out something like this:
         #   {a : int32, b: float32, ... }
-        return ('{ '
-            + ''.join([
-                ('%s : %s, ' % (k,v)) for k,v in zip(self.k, self.v)
-        ]) + '}')
+        body = ''.join([ ('%s : %s; ' % (k,v)) for k,v in zip(self.k, self.v)])
+        return '{' + body + '}'
 
     def __repr__(self):
-        return 'Record ' + repr(self.d)
+        return str(self)
 
 #------------------------------------------------------------------------
 # Constructions

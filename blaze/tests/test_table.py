@@ -30,4 +30,11 @@ def test_all_construct():
     #a.datashape._equal(expected_ds)
 
 def test_record():
-    data = NDTable([(1, 2.1)], '1, Record(x=int32, y=float)')
+    table = NDTable([(1, 2.1), (2, 3.1)], dshape='1, {x: int32, y: float32}')
+
+def test_record_consume():
+    d = {
+        'i'   : [1, 2, 3, 4],
+        'f'   : [4., 3., 2., 1.]
+    }
+    table = NDTable(d)

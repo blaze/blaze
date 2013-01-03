@@ -95,7 +95,7 @@ def dot(a1, a2):
 # Arithmetic
 #------------------------------------------------------------------------
 
-@lift('Add(<term>,<term>)', '(a,a) -> a')
+@lift('Add(<term>,<term>)', '(a,a) -> a', {})
 def add(a, b):
     from blaze import zeros
 

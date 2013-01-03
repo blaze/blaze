@@ -2,15 +2,14 @@
 WARNING: Deprecating this in favor of parser.py
 """
 
-import imp
 import ast
 import inspect
-from operator import add
-from string import maketrans, translate
 from collections import OrderedDict, Iterable
 
 from coretypes import Integer, TypeVar, Record, Enum, Type, DataShape, \
     Range, Either, Fixed
+
+from blaze.error import CustomSyntaxError
 
 syntax_error = """
   File {filename}, line {lineno}
@@ -20,25 +19,8 @@ syntax_error = """
 DatashapeSyntaxError: {msg}
 """
 
-class DatashapeSyntaxError(Exception):
-    """
-    Makes datashape parse errors look like Python SyntaxError.
-    """
-    def __init__(self, filename, lineno, col_offset, text, msg=None):
-        self.lineno     = lineno
-        self.col_offset = col_offset
-        self.filename   = filename
-        self.text       = text
-        self.msg        = msg or 'invalid syntax'
-
-    def __str__(self):
-        return syntax_error.format(**{
-            'filename' : self.filename,
-            'lineno'   : self.lineno,
-            'line'     : self.text,
-            'pointer'  : ' '*self.col_offset + '^',
-            'msg'      : self.msg
-        })
+class DatashapeSyntaxError(CustomSyntaxError):
+    pass
 
 class Visitor(object):
 
@@ -100,10 +82,17 @@ class Translate(Visitor):
         else:
             return TypeVar(tree.id)
 
+    def Dict(self, tree):
+        k = [k.id for k in tree.keys]
+        v = map(self.visit, tree.values)
+
+        kwargs = OrderedDict(zip(k,v))
+        return Record(**kwargs)
+
     def Call(self, tree):
         # TODO: don't inline this
         internals = {
-            'Record'   : Record,
+            'Record'   :Record,
             'Enum'     : Enum,
             'Range'    : Range,
             'Either'   : Either,

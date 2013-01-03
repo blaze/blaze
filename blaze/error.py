@@ -66,7 +66,6 @@ class CustomSyntaxError(Exception):
         self.filename   = filename
         self.text       = text
         self.msg        = msg or 'invalid syntax'
-        raise NotImplementedError
 
     def __str__(self):
         return syntax_error.format(

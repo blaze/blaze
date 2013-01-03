@@ -5,8 +5,8 @@ from blaze.datashape.record import RecordDecl, derived
 from unittest import skip
 
 def test_simple_parse():
-    x = parse('Enum (1,2)')
-    y = parse('300 , 400, Record(x=int64, y=int32)')
+    x = parse('Enum(1,2)')
+    y = parse('300 , 400, {x: int64, y: int32}')
 
     assert type(x) is DataShape
     assert type(y) is DataShape
@@ -18,10 +18,14 @@ def test_simple_parse():
     assert y[2]('x') is int64
     assert y[2]('y') is int32
 
-def test_compound_record():
-    p = parse('6, Record(x=int, y=float, z=str)')
+def test_compound_record1():
+    p = parse('6, {x:int, y:float, z:str}')
     assert type(p[0]) is Fixed
     assert type(p[1]) is Record
+
+def test_compound_record2():
+    p = parse('''{ a: { b: int, y: int }}''')
+    assert type(p[0]) is Record
 
 def test_free_variables():
     p = parse('N, M, 800, 600, int32')
