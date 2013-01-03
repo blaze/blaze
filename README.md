@@ -1,6 +1,10 @@
 Blaze
 =====
 
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
+</p>
+
 **Blaze** is the next-generation of NumPy. It is designed as a
 foundational set of abstractions on which to build out-of-core and
 distributed algorithms over a wide variety of data sources and to extend
@@ -159,9 +163,9 @@ make build
 Contributing
 ------------
 
-Anyone wishing to contribute should join the discussion on the
-[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev)
-mailing list at: blaze-dev@continuum.io
+Anyone wishing to discuss on Blaze should join the
+[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze
+-dev) mailing list at: blaze-dev@continuum.io
 
 License
 -------
