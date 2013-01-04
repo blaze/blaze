@@ -2,8 +2,15 @@
 # Immediete Evaluation
 #------------------------------------------------------------------------
 
-def ieval(fn, args):
-    fnargs = [(a._datashape, a.data.read_desc()) for a in args]
+from blaze.expr.graph import ArrayNode
 
-    return 42
-    #return fn(fnargs)
+def ieval(fn, args):
+    fnargs = []
+
+    for arg in args:
+        if isinstance(arg, ArrayNode):
+            fnargs.append(arg._datashape, arg.data.read_desc())
+        else:
+            fnargs.append(arg)
+
+    return fn(*fnargs)

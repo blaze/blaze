@@ -118,7 +118,6 @@ def test_parse_blob_varchar():
     p1 = parse('2, 3, Varchar(5)')
     p2 = parse('2, 3, blob')
 
-    import pdb; pdb.set_trace()
     assert type(p1[2]) is Varchar
     assert type(p2[2]) is Blob
 
