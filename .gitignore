@@ -74,6 +74,7 @@ blaze/cutils.c
 blaze/engine/*.[ch]
 blaze/expr/*.[ch]
 blaze/desc/*.[ch]
+blaze/algo/*.[ch]
 blaze/ts/ucr_dtw/ucr.c
 
 # Sphinx Docs
