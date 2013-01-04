@@ -34,10 +34,10 @@ def test_fromiter():
 
 def test_custom_dshape():
     from blaze import NDTable, RecordDecl
-    from blaze import int32, string
+    from blaze import int32, String
 
     class CustomStock(RecordDecl):
-        name   = string
+        name   = String
         max    = int32
         min    = int32
 

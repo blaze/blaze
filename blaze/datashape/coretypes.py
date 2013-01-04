@@ -127,6 +127,41 @@ class Top(Primitive):
         # emulate numpy
         return ''.join(["dshape(\"", str(self), "\")"])
 
+class Blob(Primitive):
+    """ Blob type, large variable length string """
+
+    def __str__(self):
+        return 'blob'
+
+    def __repr__(self):
+        # emulate numpy
+        return ''.join(["dshape(\"", str(self), "\")"])
+
+class Varchar(Primitive):
+    """ Blob type, small variable length string """
+
+
+    def __init__(self, maxlen):
+        assert isinstance(maxlen, Integer)
+        self.maxlen = maxlen.val
+
+    def __repr__(self):
+        return expr_string('varchar', [self.maxlen])
+
+class String(Primitive):
+    """ Fixed length string container """
+
+    def __init__(self, fixlen):
+        if isinstance(fixlen, int):
+            self.fixlen = fixlen
+        elif isinstance(fixlen, Integer):
+            self.fixlen = fixlen.val
+        else:
+            raise ValueError()
+
+    def __repr__(self):
+        return expr_string('string', [self.fixlen])
+
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
@@ -608,21 +643,21 @@ longdouble = float128
 void = CType('void')
 object_ = pyobj = CType('object')
 
-string = CType('string')
-
 na = Null
 top = Top()
 dynamic = Dynamic()
 NullRecord = Record()
+
+blob = Blob()
+string = String
 
 Stream = Range(Integer(0), None)
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
 Type.register('?', Dynamic)
-
-# Top should not be user facing... but for debugging useful
 Type.register('top', top)
+Type.register('blob', blob)
 
 #------------------------------------------------------------------------
 # Deconstructors

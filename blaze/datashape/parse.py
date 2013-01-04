@@ -7,7 +7,7 @@ import inspect
 from collections import OrderedDict, Iterable
 
 from coretypes import Integer, TypeVar, Record, Enum, Type, DataShape, \
-    Range, Either, Fixed
+    Range, Either, Fixed, Varchar, String
 
 from blaze.error import CustomSyntaxError
 
@@ -96,6 +96,8 @@ class Translate(Visitor):
             'Enum'     : Enum,
             'Range'    : Range,
             'Either'   : Either,
+            'Varchar'  : Varchar,
+            'String'   : String,
         }
         internals.update(Type._registry)
 

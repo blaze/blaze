@@ -114,6 +114,25 @@ def test_parse_either():
     assert x[0].a == int64
     assert x[0].b is na
 
+def test_parse_blob_varchar():
+    p1 = parse('2, 3, Varchar(5)')
+    p2 = parse('2, 3, blob')
+
+    import pdb; pdb.set_trace()
+    assert type(p1[2]) is Varchar
+    assert type(p2[2]) is Blob
+
+    # Deconstructing the type
+    assert p1[2].maxlen == 5
+
+def test_parse_string():
+    p1 = parse('2, 3, String(5)')
+
+    assert type(p1[2]) is String
+
+    # Deconstructing the type
+    assert p1[2].fixlen == 5
+
 def test_custom_record():
 
     class Stock1(RecordDecl):
