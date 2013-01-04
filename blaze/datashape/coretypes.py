@@ -145,6 +145,9 @@ class Varchar(Primitive):
         assert isinstance(maxlen, Integer)
         self.maxlen = maxlen.val
 
+    def __str__(self):
+        return 'varchar(maxlen=%i)' % self.maxlen
+
     def __repr__(self):
         return expr_string('varchar', [self.maxlen])
 
@@ -158,6 +161,9 @@ class String(Primitive):
             self.fixlen = fixlen.val
         else:
             raise ValueError()
+
+    def __str__(self):
+        return 'string(%i)' % self.fixlen
 
     def __repr__(self):
         return expr_string('string', [self.fixlen])
@@ -655,6 +661,7 @@ Type.register('Stream', Stream)
 Type.register('?', Dynamic)
 Type.register('top', top)
 Type.register('blob', blob)
+Type.register('string8', String(8))
 
 #------------------------------------------------------------------------
 # Deconstructors
