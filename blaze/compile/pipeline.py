@@ -7,6 +7,7 @@ passes on the graph which result in code generation.
 
 from blaze.plan import BlazeVisitor, InstructionGen
 from blaze.compile.toposort import topovals
+from blaze.expr.typeinference import infer, expand
 
 #------------------------------------------------------------------------
 # Pipeline Combinators
@@ -115,8 +116,18 @@ def do_convert_to_aterm(context, graph):
 def do_types(context, graph):
     context = dict(context)
 
-    # Resolve TypeVars using typeinference.py, not needed right
-    # now because we're only doing simple numpy-like things
+    # Build the constraint graph and the environement mapping
+
+    cgraph, env = infer(graph)
+
+    # Expand all type variable references in expressions with the actual
+    # type instances in the context, local to the subexpression
+
+    graph = expand(cgraph, env)
+
+    # ----------------------
+    context['type_env'] = env
+    # ----------------------
 
     return context, graph
 
