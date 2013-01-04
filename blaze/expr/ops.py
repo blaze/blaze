@@ -18,6 +18,7 @@ bools     = set([C.bool_])
 string    = set([C.String, C.Varchar, C.Blob])
 
 discrete   = ints | uints
+reals      = ints | floats
 continuous = floats | complexes
 numeric    = discrete | continuous
 
