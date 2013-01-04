@@ -2,14 +2,13 @@
 # Immediete Evaluation
 #------------------------------------------------------------------------
 
-from blaze.expr.graph import ArrayNode
-
 def ieval(fn, args):
     fnargs = []
 
     for arg in args:
-        if isinstance(arg, ArrayNode):
-            fnargs.append(arg._datashape, arg.data.read_desc())
+        # TODO: better way of sepcying that it has a "data backend"
+        if hasattr(arg, 'data'):
+            fnargs.append((arg._datashape, arg.data.read_desc()))
         else:
             fnargs.append(arg)
 

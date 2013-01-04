@@ -602,9 +602,6 @@ def inl(ty):
 # Unit Types
 #------------------------------------------------------------------------
 
-# At the type level these are all singleton types, they take no
-# arguments in their constructors and have no internal structure.
-
 plat = calcsize('@P') * 8
 
 int_       = CType('int')

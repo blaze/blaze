@@ -45,7 +45,8 @@ class Visitor(object):
     def error_ast(self, ast_node):
         if self.source:
             line = self.source.split('\n')[ast_node.lineno - 1]
-            return DatashapeSyntaxError('<stdin>', ast_node.lineno, ast_node.col_offset, line)
+            return DatashapeSyntaxError('<stdin>', ast_node.lineno,
+                    ast_node.col_offset, line)
         else:
             raise SyntaxError()
 
