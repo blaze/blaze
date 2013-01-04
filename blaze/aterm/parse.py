@@ -231,7 +231,7 @@ def p_error(p):
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        path = os.path.abspath(__file__)
+        path = os.path.relpath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="alex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='ayacc',outputdir=dir_path,
