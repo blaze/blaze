@@ -4,10 +4,11 @@
 Defines the Pipeline class which provides a series of transformation
 passes on the graph which result in code generation.
 """
+from functools import wraps
 
 from blaze.plan import BlazeVisitor, InstructionGen
 from blaze.compile.toposort import topovals
-from blaze.expr.typeinference import infer, expand
+#from blaze.expr.typeinference import infer, expand
 
 #------------------------------------------------------------------------
 # Pipeline Combinators
@@ -29,17 +30,12 @@ def bind(self, f, x):
         else:
             return None
 
-# Compose with pre and post condition checks
-# pipeline = (post ∘ stl ∘ pre) <> (post ∘ st2 ∘ pre) <> ...
-def compose_constrained(f, g, pre, post):
-    return lambda *x: post(*g(*f(*pre(*x))))
-
 #------------------------------------------------------------------------
 # Pre/Post Conditions
 #------------------------------------------------------------------------
 
 # vacuously true condition
-Id = lambda x:x
+Id = lambda p: lambda x: x
 
 #------------------------------------------------------------------------
 # Passes
@@ -74,6 +70,11 @@ Id = lambda x:x
 #          |          |
 #          +----------+-----> Output
 
+def ppass(pre=Id,post=Id):
+    @wraps
+    def outer(fn):
+        return fn
+    return outer
 
 def do_environment(context, graph):
     context = dict(context)
@@ -118,15 +119,15 @@ def do_types(context, graph):
 
     # Build the constraint graph and the environement mapping
 
-    cgraph, env = infer(graph)
+    #cgraph, env = infer(graph)
 
     # Expand all type variable references in expressions with the actual
     # type instances in the context, local to the subexpression
 
-    graph = expand(cgraph, env)
+    #graph = expand(cgraph, env)
 
     # ----------------------
-    context['type_env'] = env
+    #context['type_env'] = env
     # ----------------------
 
     return context, graph
@@ -175,17 +176,11 @@ class Pipeline(object):
     runtime to execute serially.
     """
 
-    def __init__(self, **params):
-        defaults = {}
-        self.init = dict(defaults, **params)
+    def __init__(self, passes, inputs=None):
+        self.init = inputs or {}
 
         # sequential pipeline of passes
-        self.pipeline = [
-            do_environment,
-            do_convert_to_aterm,
-            do_types,
-            do_plan,
-        ]
+        self.pipeline = reduce(compose, passes)
 
     def run_pipeline(self, graph, plan=False):
         """
@@ -196,8 +191,20 @@ class Pipeline(object):
         # ``graph`` objects threaded through.
 
         # pipeline = stn ∘  ... ∘  st2 ∘ st1
-        pipeline = reduce(compose, self.pipeline)
 
-        context, plan = pipeline(self.init, graph)
+        context, plan = self.pipeline(self.init, graph)
         return context, context['plan']
         #return context, plan
+
+    def __call__(self, graph):
+        return self.run_pipeline(graph)
+
+blaze_rts = Pipeline([do_environment,
+                      do_convert_to_aterm,
+                      do_types,
+                      do_plan,
+                      ])
+
+def compile(source, target=blaze_rts, **inputs):
+    ctx, plan = blaze_rts.run_pipeline(source)
+    return plan

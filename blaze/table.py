@@ -530,7 +530,7 @@ class NDTable(Indexable, ArrayNode):
         dtype = dtype_from_dict(data)
         count = len(data.values()[0])
 
-        return fromiter(izip(*data.itervalues()), dtype, count)
+        return fromiter(izip(*data.itervalues()), dtype, -1)
 
     @property
     def datashape(self):
