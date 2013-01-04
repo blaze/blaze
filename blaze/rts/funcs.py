@@ -22,22 +22,18 @@ them into a form that is executable. I.e. casting into NumPy ( if
 possible ), converting to a Numexpr expression, etc.
 """
 
-
-from thread import allocate_lock
-from blaze.error import NoDispatch
-from blaze.aterm import parse, match, AtermSyntaxError
-from blaze.datashape.coretypes import dynamic
-from blaze.metadata import all_prop
-
-from blaze.expr.graph import Fun
-
-from blaze.eclass import all_manifest
-from blaze.rts.immediete import ieval
-
 from functools import wraps
 from threading import local
-from blaze.error import InvalidLibraryDefinition
 from inspect import getargspec
+from thread import allocate_lock
+
+from blaze.metadata import all_prop
+from blaze.expr.graph import Fun
+from blaze.eclass import all_manifest
+from blaze.rts.immediete import ieval
+from blaze.datashape.coretypes import dynamic
+from blaze.aterm import parse, match, AtermSyntaxError
+from blaze.error import InvalidLibraryDefinition, NoDispatch
 
 #------------------------------------------------------------------------
 # Globals
@@ -162,6 +158,7 @@ def lift(signature, typesig, constraints=None, **params):
 
     return outer
 
+# WARNING: side-effectful!
 def install(matcher, fn, cost=None):
     """ Install a function in the Blaze runtime, specializes
     based on the matcher. Assign the cost function to the
