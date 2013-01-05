@@ -3,8 +3,8 @@ Django style class declarations mapping onto Record datashape types.
 """
 
 from numpy import dtype
-from coretypes import Record, Type, DataShape
 from parse import parse
+from coretypes import Record, Type, DataShape
 
 #------------------------------------------------------------------------
 # Record Declarations
@@ -77,15 +77,8 @@ def dtype_from_dict(dct):
 
     Parameters
     ----------
-    uri : str
-        Specifies the URI for the Blaze object.  It can be a regular file too.
-    mode : the open mode (string)
-        Specifies the mode in which the object is opened.  The supported
-        values are:
-
-          * 'r' for read-only
-          * 'w' for emptying the previous underlying data
-          * 'a' for allowing read/write on top of existing data
+    dct : dict
+        Python dictionary of values
 
     Returns
     -------
