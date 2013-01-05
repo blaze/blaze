@@ -15,8 +15,10 @@ def test_simple_parse():
     assert type(y[1]) is Fixed
     assert type(y[2]) is Record
 
-    assert y[2]('x') is int64
-    assert y[2]('y') is int32
+    rec = y[2]
+
+    assert rec['x'] is int64
+    assert rec['y'] is int32
 
 def test_compound_record1():
     p = parse('6, {x:int, y:float, z:str}')

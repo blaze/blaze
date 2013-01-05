@@ -87,8 +87,7 @@ class Translate(Visitor):
         k = [k.id for k in tree.keys]
         v = map(self.visit, tree.values)
 
-        kwargs = OrderedDict(zip(k,v))
-        return Record(**kwargs)
+        return Record(zip(k,v))
 
     def Call(self, tree):
         # TODO: don't inline this

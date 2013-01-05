@@ -25,7 +25,8 @@ class DeclMeta(type):
             if hasattr(cls, 'fields'):
                 # Side-effectful operation to register the alias
                 # with the parser
-                rcd = Record(**dict(cls.fields, **cls._derived))
+                fields = cls.fields.items() + cls._derived.items()
+                rcd = Record(fields)
                 Type.register(name, rcd)
         return cls
 
