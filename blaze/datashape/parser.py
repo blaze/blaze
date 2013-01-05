@@ -3,7 +3,7 @@ The improved parser for Datashape grammar.
 
 Grammar::
 
-    statement ::= lhs_expression EQUALS rhs_expression
+    statement ::= TYPE lhs_expression EQUALS rhs_expression
                 | rhs_expression
 
     lhs_expression ::= lhs_expression SPACE lhs_expression
@@ -36,9 +36,12 @@ import sys
 from functools import partial
 from collections import namedtuple
 
-# Precompiled modules
-import dlex
-import dyacc
+try:
+    import dlex
+    import dyacc
+    DEBUG = False
+except:
+    DEBUG = True
 
 from blaze.plyhacks import yaccfrom, lexfrom
 from blaze.error import CustomSyntaxError
@@ -55,7 +58,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'SPACE','NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
+    'SPACE', 'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
     'LBRACE', 'RBRACE', 'SEMI'
 )
 
@@ -65,7 +68,6 @@ literals = [
     '(' ,
     ')' ,
     ':' ,
-    ';' ,
     '{' ,
     '}' ,
 ]
@@ -78,6 +80,10 @@ t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
 t_ignore = '\n'
+
+def t_TYPE(t):
+    r'type'
+    return t
 
 def t_SPACE(t):
     r'\s'
@@ -106,14 +112,16 @@ tydecl     = namedtuple('tydecl', 'lhs, rhs')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
 def p_statement_assign(p):
-    'statement : lhs_expression EQUALS rhs_expression'
-    constructid = p[1][0]
-    parameters  = p[1][1:]
-    rhs         = p[3]
+    'statement : TYPE SPACE lhs_expression EQUALS rhs_expression'
+    try:
+        constructid = p[3][0]
+        parameters  = p[3][1:]
+        rhs         = p[5]
+    except IndexError:
+        import pdb; pdb.set_trace()
 
     lhs = simpletype(len(parameters), constructid, parameters)
     p[0] = tydecl(lhs, rhs)
-
 def p_statement_expr(p):
     'statement : rhs_expression'
     p[0] = tyinst(p[1])
@@ -240,11 +248,12 @@ preparse = reduce(compose, [
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
+        print 'Building parser'
         path = os.path.relpath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
-                write_tables=0, debug=0, optimize=1)
+                write_tables=1, debug=0, optimize=1)
         return partial(parser.parse, lexer=lexer)
     else:
         module = sys.modules[__name__]
@@ -257,10 +266,9 @@ def load_parser(debug=False):
 class Module(object):
     pass
 
-def parse(pattern, modules=[]):
-    parser = load_parser(True)
+def parse(pattern):
+    parser = load_parser()
     return parser(preparse(pattern))
-
 
 if __name__ == '__main__':
     import readline
@@ -273,5 +281,3 @@ if __name__ == '__main__':
             print parse(line)
         except EOFError:
             break
-        except Exception as e:
-            print e
