@@ -113,15 +113,18 @@ simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
 def p_statement_assign(p):
     'statement : TYPE SPACE lhs_expression EQUALS rhs_expression'
-    try:
+    if len(p[3]) == 1:
+        constructid = p[3][0]
+        parameters  = ()
+        rhs         = p[5]
+    else:
         constructid = p[3][0]
         parameters  = p[3][1:]
         rhs         = p[5]
-    except IndexError:
-        import pdb; pdb.set_trace()
 
     lhs = simpletype(len(parameters), constructid, parameters)
     p[0] = tydecl(lhs, rhs)
+
 def p_statement_expr(p):
     'statement : rhs_expression'
     p[0] = tyinst(p[1])
@@ -248,7 +251,6 @@ preparse = reduce(compose, [
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        print 'Building parser'
         path = os.path.relpath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)

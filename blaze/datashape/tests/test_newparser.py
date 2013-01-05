@@ -1,4 +1,4 @@
-from blaze.datashape.parser import *
+from blaze.datashape.parser import parse
 
 def test_all_the_strings():
     parse('a')
@@ -66,7 +66,7 @@ def test_trailing_semi():
     type a = {
         a: int;
         b: float;
-        c: (int,int)
+        c: (int,int);
     }
     ''')
 
