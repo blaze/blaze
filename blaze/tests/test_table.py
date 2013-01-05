@@ -37,3 +37,10 @@ def test_record_consume():
         'f'   : [4., 3., 2., 1.]
     }
     table = NDTable(d)
+
+def test_record_consume():
+    d = {
+        'a'   : ["foo", "bar"],
+        'b'   : [4., 3., 2., 1.]
+    }
+    table = NDTable(d)
