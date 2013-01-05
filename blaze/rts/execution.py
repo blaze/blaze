@@ -1,18 +1,5 @@
 # a + b * c
 
-# ATerm Graph
-# ===========
-#
-#   Arithmetic(
-#     Add
-#   , Array(){dshape("3, int64"), 45340864}
-#   , Arithmetic(
-#         Mul
-#       , Array(){dshape("3, int64"), 45340792}
-#       , Array(){dshape("3, int64"), 45341584}
-#     ){dshape("3, int64"), 45264528}
-#   ){dshape("3, int64"), 45264432}
-
 # Execution Plan
 # ==============
 
@@ -38,7 +25,7 @@ from blaze.rts.heap import Heap
 # sources to allocate on, IOPro allocators, SQL Queries, ZeroMQ...
 
 # TOOD: write in Cython
-def execplan(context, plan, symbols):
+def execute(context, plan, symbols):
     """ Takes a list of of instructions from the Pipeline and
     then allocates the necessary memory needed for the
     intermediates are temporaries """
