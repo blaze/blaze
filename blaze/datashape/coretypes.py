@@ -235,7 +235,7 @@ class DataShape(object):
     def __repr__(self):
         # need double quotes to form valid aterm, also valid
         # Python
-        return ''.join(["dshape(\"", doublequote(str(self)), "\")"])
+        return ''.join(["dshape(\"", str(self), "\")"])
 
     @property
     def shape(self):
