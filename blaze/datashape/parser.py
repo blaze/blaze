@@ -56,7 +56,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 
 tokens = (
     'SPACE','NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
-    'LBRACE', 'RBRACE'
+    'LBRACE', 'RBRACE', 'SEMI'
 )
 
 literals = [
@@ -65,6 +65,7 @@ literals = [
     '(' ,
     ')' ,
     ':' ,
+    ';' ,
     '{' ,
     '}' ,
 ]
@@ -73,6 +74,7 @@ t_NAME   = r'[a-zA-Z_][a-zA-Z0-9_]*'
 t_EQUALS = r'='
 t_COMMA  = r','
 t_COLON  = r':'
+t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
 t_ignore = '\n'
@@ -147,11 +149,12 @@ def p_record(p):
     else:
         p[0] = (p[2],)
 
-# { x: int; y: int }
-# TODO: change comma to semicolon, removes need for braces
 def p_record_opt1(p):
-    'record_opt : record_opt COMMA record_opt'
-    p[0] = [p[1], p[3]]
+    'record_opt : record_opt SEMI record_opt'
+    if p[3]: # trailing semicolon
+        p[0] = [p[1], p[3]]
+    else:
+        p[0] = p[1]
 
 def p_record_opt2(p):
     'record_opt : record_item'
@@ -237,11 +240,12 @@ preparse = reduce(compose, [
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        path = os.path.abspath(__file__)
+        path = os.path.relpath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
                 write_tables=0, debug=0, optimize=1)
+        return partial(parser.parse, lexer=lexer)
     else:
         module = sys.modules[__name__]
         lexer = lexfrom(module, dlex)
@@ -254,7 +258,7 @@ class Module(object):
     pass
 
 def parse(pattern, modules=[]):
-    parser = load_parser()
+    parser = load_parser(True)
     return parser(preparse(pattern))
 
 
