@@ -187,6 +187,12 @@ and of themselves. Parser artifacts, if you like.</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="blaze.datashape.coretypes.Blob">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Blob</tt><big>(</big><em>*parameters</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Blob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blob type, large variable length string</p>
+</dd></dl>
+
+<dl class="class">
 <dt id="blaze.datashape.coretypes.CType">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">CType</tt><big>(</big><em>ctype</em>, <em>size=None</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Symbol for a sized type mapping uniquely to a native type.</p>
@@ -364,8 +370,8 @@ of possible Fixed dimensions.</p>
 
 <dl class="class">
 <dt id="blaze.datashape.coretypes.Record">
-<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Record</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Record" title="Permalink to this definition">¶</a></dt>
-<dd><p>A composite data structure with fields mapped to types.</p>
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Record</tt><big>(</big><em>fields</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Record" title="Permalink to this definition">¶</a></dt>
+<dd><p>A composite data structure of ordered fields mapped to types.</p>
 <p class="rubric">Methods</p>
 <dl class="attribute">
 <dt id="blaze.datashape.coretypes.Record.fields">
@@ -383,6 +389,12 @@ of possible Fixed dimensions.</p>
 <dd><p>To Numpy record dtype.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.String">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">String</tt><big>(</big><em>fixlen</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.String" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixed length string container</p>
 </dd></dl>
 
 <dl class="class">
@@ -419,6 +431,12 @@ of possible Fixed dimensions.</p>
 <dd><p>A untagged union is a datashape for a value that may hold
 several but fixed datashapes.</p>
 <p class="rubric">Methods</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.Varchar">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Varchar</tt><big>(</big><em>maxlen</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Varchar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blob type, small variable length string</p>
 </dd></dl>
 
 <dl class="function">
@@ -510,9 +528,20 @@ all of them. Only defined over simple CType instances.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="blaze.datashape.coretypes.record_string">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">record_string</tt><big>(</big><em>fields</em>, <em>values</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.record_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="blaze.datashape.coretypes.shape_coerce">
 <tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">shape_coerce</tt><big>(</big><em>ob</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.shape_coerce" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.string">
+<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">string</tt><a class="headerlink" href="#blaze.datashape.coretypes.string" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#blaze.datashape.coretypes.String" title="blaze.datashape.coretypes.String"><tt class="xref py py-class docutils literal"><span class="pre">String</span></tt></a></p>
+</dd></dl>
 
 <dl class="function">
 <dt id="blaze.datashape.coretypes.table_like">

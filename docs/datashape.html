@@ -301,17 +301,9 @@ sugar.</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="o">((</span><span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">),</span> <span class="n">c</span><span class="o">)</span> <span class="o">=</span> <span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">,</span> <span class="n">c</span>
 </pre></div>
 </div>
-<p>The product operator has the additional constraint that the first
-operator cannot be a measure. This permits types of the form:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">a</span><span class="o">,</span> <span class="n">int32</span>
-<span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">,</span> <span class="n">int32</span>
-</pre></div>
-</div>
-<p>But forbids types of the form:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">int32</span><span class="o">,</span> <span class="n">a</span>
-<span class="n">int32</span><span class="o">,</span> <span class="n">int32</span>
-</pre></div>
-</div>
+<p>The outer element a product type is referred to as a <strong>measure</strong>
+while the other elements of the product are referred to as
+<strong>dimensions</strong>.</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Dimensions</span>
     <span class="o">|</span>
 <span class="o">----------</span>
@@ -321,20 +313,32 @@ operator cannot be a measure. This permits types of the form:</p>
             <span class="nc">Measure</span>
 </pre></div>
 </div>
+<p>The product operator has the additional constraint that the first
+operator cannot be a measure. This permits types of the form:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="mi">1</span><span class="o">,</span> <span class="n">int32</span>
+<span class="mi">1</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
+<p>But forbids types of the form:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">int32</span><span class="o">,</span> <span class="mi">1</span>
+<span class="n">int32</span><span class="o">,</span> <span class="n">int32</span>
+</pre></div>
+</div>
 <p>There is a algebraic relation between product types and sum types
 ( discussed below ).</p>
 </div>
 </div>
 <div class="section" id="fixed">
 <h2>Fixed<a class="headerlink" href="#fixed" title="Permalink to this headline">¶</a></h2>
-<p>The unit shape type is a <strong>dimension</strong> unit type. They are represented
+<p>The unit shape type is a dimension unit type. They are represented
 as just integer values at the top level of the datatype. These are
-identical to <tt class="docutils literal"><span class="pre">shape</span></tt> parameters in NumPy.</p>
+identical to <tt class="docutils literal"><span class="pre">shape</span></tt> parameters in NumPy. For example:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="mi">2</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
-<p>Is an equivalent to the shape and dtype of a NumPy array of the form:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="kt">array</span><span class="o">([</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">],</span> <span class="n">dtype</span><span class="o">(</span><span class="k">&#39;</span><span class="n">int32&#39;</span><span class="o">))</span>
+<p>The previous signature Is an equivalent to the shape and dtype of a
+NumPy array of the form:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">ndarray</span><span class="o">(</span><span class="n">dtype</span><span class="o">(</span><span class="k">&#39;</span><span class="n">int32&#39;</span><span class="o">),</span> <span class="n">shape</span><span class="o">=(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">))</span>
 </pre></div>
 </div>
 <p>A 2 by 3 matrix of integers has datashape:</p>
@@ -342,8 +346,7 @@ identical to <tt class="docutils literal"><span class="pre">shape</span></tt> pa
 </pre></div>
 </div>
 <p>With the corresponding NumPy array:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="kt">array</span><span class="o">([[</span> <span class="mi">1</span><span class="o">,</span>  <span class="mi">2</span><span class="o">,</span>  <span class="mi">3</span><span class="o">],</span>
-       <span class="o">[</span> <span class="mi">4</span><span class="o">,</span>  <span class="mi">5</span><span class="o">,</span>  <span class="mi">6</span><span class="o">]])</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">ndarray</span><span class="o">(</span><span class="n">dtype</span><span class="o">(</span><span class="k">&#39;</span><span class="n">int32&#39;</span><span class="o">),</span> <span class="n">shape</span><span class="o">=(</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">))</span>
 </pre></div>
 </div>
 </div>
@@ -478,7 +481,7 @@ but cannot be self-referential:</p>
 </pre></div>
 </div>
 <p>Example of table-like:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">TableLike</span> <span class="o">=</span> <span class="o">{</span><span class="n">x</span><span class="o">:</span><span class="kt">int</span><span class="o">,</span> <span class="n">y</span><span class="o">:</span><span class="kt">float</span><span class="o">}</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">TableLike</span> <span class="o">=</span> <span class="o">{</span> <span class="n">x</span> <span class="o">:</span> <span class="kt">int</span><span class="o">,</span> <span class="n">y</span> <span class="o">:</span> <span class="kt">float</span> <span class="o">}</span>
 </pre></div>
 </div>
 <div class="section" id="enumeration">
@@ -515,8 +518,8 @@ can be written as two free type vars:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">A</span><span class="o">,</span> <span class="nc">B</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
-<p>Type variables are reduced through scope of constructors and
-unified into one of two classes:</p>
+<p>Type variables are reduced through scope of constructors and unified
+into one of two classes:</p>
 <ul class="simple">
 <li><strong>dimension-generic</strong></li>
 <li><strong>measure-generic</strong></li>
@@ -525,12 +528,15 @@ unified into one of two classes:</p>
 <span class="nc">TypGen</span> <span class="nc">T</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span>
 </pre></div>
 </div>
-<p>A type signature may only be either dimension-generic or
-measure-generic. Attempting to use a type variable in both will
-raise an Exception. For example in the following signature the
-type variable T is unified in both arguments to the type
-constructor <tt class="docutils literal"><span class="pre">Either</span></tt>:</p>
+<p>For example in the following signature the type variable T is unified in
+both arguments to the type constructor <tt class="docutils literal"><span class="pre">Either</span></tt>:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Sig</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Either</span> <span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span> <span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
+</pre></div>
+</div>
+<p>A type signature may only be either dimension-generic or
+measure-generic. Attempting to use a type variable in both will raise an
+exception <tt class="docutils literal"><span class="pre">AmbigiousTypeVariable</span></tt>. For example:</p>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Sig</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Either</span> <span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span> <span class="o">(</span><span class="nc">T</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="kt">int</span><span class="o">)</span>
 </pre></div>
 </div>
 <p>Not all declarations of type variables are well-defined. For example
@@ -538,7 +544,6 @@ it is not possible to expression a Range type in terms of variable. An
 instance like this would require a immensely more sophisticated type
 system.</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">InvalidSig1</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
-<span class="nc">InvalidSig2</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
 </pre></div>
 </div>
 <div class="section" id="sums">
