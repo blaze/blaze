@@ -3,8 +3,6 @@ The improved parser for Datashape grammar.
 
 Grammar::
 
-    module ::= statement NEWLINE statement
-
     statement ::= TYPE lhs_expression EQUALS rhs_expression
                 | rhs_expression
 
@@ -61,7 +59,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'SPACE', 'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
+    'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
     'LBRACE', 'RBRACE', 'SEMI', 'END'
 )
 
@@ -81,15 +79,15 @@ t_COLON  = r':'
 t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
-t_ignore = ''
-
-def t_newline(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count("\n")
+t_ignore = ' '
 
 def t_TYPE(t):
     r'type'
     return t
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += t.value.count("\n")
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -98,10 +96,6 @@ def t_NAME(t):
 def t_COMMENT(t):
     r'\#.*'
     pass
-
-def t_SPACE(t):
-    r'\s'
-    return t
 
 def t_NUMBER(t):
     r'\d+'
@@ -118,7 +112,6 @@ def t_error(t):
 
 precedence = (
     ('right' , 'COMMA'),
-    ('left'  , 'SPACE'),
 )
 
 tyinst     = namedtuple('tyinst', 'conargs')
@@ -134,15 +127,15 @@ def p_decl2(p):
     p[0] = p[1]
 
 def p_statement_assign(p):
-    'statement : TYPE SPACE lhs_expression EQUALS rhs_expression'
+    'statement : TYPE lhs_expression EQUALS rhs_expression'
     if len(p[3]) == 1:
-        constructid = p[3][0]
+        constructid = p[2][0]
         parameters  = ()
-        rhs         = p[5]
+        rhs         = p[4]
     else:
-        constructid = p[3][0]
-        parameters  = p[3][1:]
-        rhs         = p[5]
+        constructid = p[2][0]
+        parameters  = p[2][1:]
+        rhs         = p[4]
 
     lhs = simpletype(len(parameters), constructid, parameters)
     p[0] = tydecl(lhs, rhs)
@@ -152,9 +145,9 @@ def p_statement_expr(p):
     p[0] = tyinst(p[1])
 
 def p_lhs_expression(p):
-    'lhs_expression : lhs_expression SPACE lhs_expression'
+    'lhs_expression : lhs_expression lhs_expression'
     # tuple addition
-    p[0] = p[1] + p[3]
+    p[0] = p[1] + p[2]
 
 def p_lhs_expression_node(p):
     "lhs_expression : NAME"
@@ -265,10 +258,10 @@ def rhs_strip(s):
 
 preparse = reduce(compose, [
     dedent,
-    pre_whitespace,
-    pre_trailing,
-    equal_trailing,
-    rhs_strip
+    #pre_whitespace,
+    #pre_trailing,
+    #equal_trailing,
+    #rhs_strip
 ])
 
 #------------------------------------------------------------------------
@@ -316,20 +309,18 @@ def load_parser(debug=False):
 
 def parse(pattern):
     parser = load_parser(debug=True)
-    try:
-        return parser(preparse(pattern))
-    except DatashapeSyntaxError:
-        print '------------------Fail----------------------\n', preparse(pattern)
+    print preparse(pattern)
+    return parser(preparse(pattern))
 
-a = parse('''
-type f a = b
-type g a = b
-type h a b = c
+print parse('''
+type foo a b = c, d
+type foo a b = c, d
+type foo a b = c, d
 ''')
 
 if __name__ == '__main__':
     import readline
-    parser = load_parser()
+    parser = load_parser(debug=True)
     readline.parse_and_bind('')
 
     while True:
