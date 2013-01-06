@@ -3,29 +3,36 @@ The improved parser for Datashape grammar.
 
 Grammar::
 
-    statement ::= TYPE lhs_expression EQUALS rhs_expression
-                | rhs_expression
+    top : mod
+        | stmt
 
-    lhs_expression ::= lhs_expression lhs_expression
-                     | NAME
+    mod : mod mod
+        | stmt
 
-    rhs_expression ::= rhs_expression COMMA rhs_expression
+    stmt : TYPE lhs_expression EQUALS rhs_expression
+         | rhs_expression
 
-    rhs_expression ::= record
-                     | NAME
-                     | NUMBER
+    lhs_expression : lhs_expression lhs_expression
+                   | NAME
 
-    record ::= LBRACE record_opt RBRACE
+    rhs_expression : rhs_expression COMMA rhs_expression
+                   | appl
+                   | record
+                   | BIT
+                   | NAME
+                   | NUMBER
 
-    record_opt ::= record_opt COMMA record_opt
-                 | record_item
-                 | empty
+    appl : NAME '(' rhs_expression ')'
 
-    record_item ::= NAME COLON '(' rhs_expression ')'
-                  | NAME COLON NAME
-                  | NAME COLON NUMBER
-
-    empty ::=
+    record : LBRACE record_opt RBRACE
+    record_opt : record_opt SEMI record_opt
+    record_opt : record_item
+    record_opt : empty
+    record_item : NAME COLON '(' rhs_expression ')'
+    record_item : NAME COLON NAME
+                : NAME COLON BIT
+                | NAME COLON NUMBER
+    empty :
 
 """
 
@@ -58,7 +65,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 
 tokens = (
     'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
-    'LBRACE', 'RBRACE', 'SEMI'
+    'LBRACE', 'RBRACE', 'SEMI', 'BIT'
 )
 
 literals = [
@@ -70,6 +77,31 @@ literals = [
     '{' ,
     '}' ,
 ]
+
+bits = set([
+    'bool',
+    'int8',
+    'int16',
+    'int32',
+    'int64',
+    'int64',
+    'uint8',
+    'uint16',
+    'uint32',
+    'uint64',
+    'uint64',
+    'uint64',
+    'float16',
+    'float32',
+    'float64',
+    'float128',
+    'complex64',
+    'complex128',
+    'complex256',
+    'object',
+    'datetime64',
+    'timedelta64',
+])
 
 t_EQUALS = r'='
 t_COMMA  = r','
@@ -89,6 +121,8 @@ def t_newline(t):
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
+    if t.value in bits:
+        t.type = 'BIT'
     return t
 
 def t_COMMENT(t):
@@ -112,8 +146,10 @@ precedence = (
     ('right' , 'COMMA'),
 )
 
+bittype     = namedtuple('bit', 'name')
 tyinst     = namedtuple('tyinst', 'conargs')
 tydecl     = namedtuple('tydecl', 'lhs, rhs')
+tyappl     = namedtuple('tyappl', 'head, args')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
 def p_top(p):
@@ -152,13 +188,31 @@ def p_statement_expr(p):
     'stmt : rhs_expression'
     p[0] = tyinst(p[1])
 
+#------------------------------------------------------------------------
+
 def p_lhs_expression(p):
     'lhs_expression : lhs_expression lhs_expression'
     # tuple addition
     p[0] = p[1] + p[2]
 
 def p_lhs_expression_node(p):
-    "lhs_expression : NAME"
+    'lhs_expression : NAME'
+    p[0] = (p[1],)
+
+#------------------------------------------------------------------------
+
+def p_rhs_expression_node1(p):
+    '''rhs_expression : appl
+                      | record'''
+    p[0] = p[1]
+
+def p_rhs_expression_node2(p):
+    '''rhs_expression : BIT'''
+    p[0] = (bittype(p[1]),)
+
+def p_rhs_expression_node3(p):
+    '''rhs_expression : NAME
+                      | NUMBER'''
     p[0] = (p[1],)
 
 def p_rhs_expression(p):
@@ -166,14 +220,11 @@ def p_rhs_expression(p):
     # tuple addition
     p[0] = p[1] + p[3]
 
-def p_rhs_expression_node1(p):
-    '''rhs_expression : record'''
-    p[0] = p[1]
+#------------------------------------------------------------------------
 
-def p_rhs_expression_node2(p):
-    '''rhs_expression : NAME
-                      | NUMBER'''
-    p[0] = (p[1],)
+def p_appl(p):
+    "appl : NAME '(' rhs_expression ')'"
+    p[0] = (tyappl(p[1], p[3]),)
 
 def p_record(p):
     'record : LBRACE record_opt RBRACE'
@@ -204,6 +255,7 @@ def p_record_item1(p):
 
 def p_record_item2(p):
     '''record_item : NAME COLON NAME
+                   | NAME COLON BIT
                    | NAME COLON NUMBER'''
     p[0] = (p[1], p[3])
 
@@ -238,7 +290,6 @@ class Module:
 # Toplevel
 #------------------------------------------------------------------------
 
-
 def debug_parse(data, lexer, parser):
     lexer.input(data)
     while True:
@@ -265,12 +316,12 @@ def load_parser(debug=False):
         return partial(parser.parse, lexer=lexer)
 
 def parse(pattern):
-    parser = load_parser()
+    parser = load_parser(debug=True)
     return parser(pattern)
 
 if __name__ == '__main__':
     import readline
-    parser = load_parser()
+    parser = load_parser(debug=True)
     readline.parse_and_bind('')
 
     while True:

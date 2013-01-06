@@ -92,7 +92,7 @@ class Translate(Visitor):
     def Call(self, tree):
         # TODO: don't inline this
         internals = {
-            'Record'   :Record,
+            'Record'   : Record,
             'Enum'     : Enum,
             'Range'    : Range,
             'Either'   : Either,

@@ -1,6 +1,6 @@
 # dlex.py. This file automatically created by PLY (version 3.4). Don't edit!
 _tabversion   = '3.4'
-_lextokens    = {'LBRACE': 1, 'NAME': 1, 'SEMI': 1, 'EQUALS': 1, 'NUMBER': 1, 'COMMA': 1, 'COLON': 1, 'TYPE': 1, 'RBRACE': 1}
+_lextokens    = {'LBRACE': 1, 'NAME': 1, 'SEMI': 1, 'EQUALS': 1, 'NUMBER': 1, 'COMMA': 1, 'COLON': 1, 'BIT': 1, 'TYPE': 1, 'RBRACE': 1}
 _lexreflags   = 0
 _lexliterals  = '=,():{}'
 _lexstateinfo = {'INITIAL': 'inclusive'}

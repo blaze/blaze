@@ -71,7 +71,7 @@ class CustomSyntaxError(Exception):
         return syntax_error.format(
             filename = self.filename,
             lineno   = self.lineno,
-            line     = self.text,
+            line     = self.text.split()[self.lineno],
             pointer  = ' '*self.col_offset + '^',
             msg      = self.msg,
             error    = self.__class__.__name__,
