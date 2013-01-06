@@ -6,7 +6,7 @@ Grammar::
     statement ::= TYPE lhs_expression EQUALS rhs_expression
                 | rhs_expression
 
-    lhs_expression ::= lhs_expression SPACE lhs_expression
+    lhs_expression ::= lhs_expression lhs_expression
                      | NAME
 
     rhs_expression ::= rhs_expression COMMA rhs_expression
@@ -30,10 +30,8 @@ Grammar::
 """
 
 import os
-import re
 import sys
 
-from textwrap import dedent
 from functools import partial
 from collections import namedtuple
 
@@ -60,7 +58,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 
 tokens = (
     'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
-    'LBRACE', 'RBRACE', 'SEMI', 'END'
+    'LBRACE', 'RBRACE', 'SEMI'
 )
 
 literals = [
@@ -79,7 +77,7 @@ t_COLON  = r':'
 t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
-t_ignore = ' '
+t_ignore = '[ ]'
 
 def t_TYPE(t):
     r'type'
@@ -215,56 +213,6 @@ def p_error(p):
         print("Syntax error at EOF")
 
 #------------------------------------------------------------------------
-# Whitespace Preprocessor
-#------------------------------------------------------------------------
-
-# We use whitespace as tokens in the language so we need to define a
-# preprocessor to push the syntax into a normal form before we go about
-# parsing since Ply's LALR can't do offside parsing.
-
-def compose(f, g):
-    return lambda x: g(f(x))
-
-# remove trailing and leading whitespace
-pass1 = re.compile(
-    '^ *'
-    '| *$'
-)
-pre_trailing = partial(pass1.sub, '')
-
-# collapse redundent whitespace
-pass2 = re.compile(r' +')
-pre_whitespace = partial(pass2.sub, ' ')
-
-# push to normal form for whitespace around the equal sign
-pass3 = re.compile(
-    ' = ' # a b = c d -> a b=c d
-    '| =' # a b =c d  -> a b=c d
-    '|= ' # a b= c d  -> a b=c d
-)
-equal_trailing = partial(pass3.sub,'=')
-
-# Strip whitespace on the right side
-def rhs_strip(s):
-    if s.find('=') > -1:
-        try:
-            lhs, rhs = s.split('=')
-            return '='.join([lhs, rhs.replace(' ','')])
-        except ValueError:
-            # it's probably malformed, let the parser catch it
-            return s
-    else:
-        return s.replace(' ','')
-
-preparse = reduce(compose, [
-    dedent,
-    #pre_whitespace,
-    #pre_trailing,
-    #equal_trailing,
-    #rhs_strip
-])
-
-#------------------------------------------------------------------------
 # Module
 #------------------------------------------------------------------------
 
@@ -306,17 +254,9 @@ def load_parser(debug=False):
         # curry the lexer into the parser
         return partial(parser.parse, lexer=lexer)
 
-
 def parse(pattern):
-    parser = load_parser(debug=True)
-    print preparse(pattern)
-    return parser(preparse(pattern))
-
-print parse('''
-type foo a b = c, d
-type foo a b = c, d
-type foo a b = c, d
-''')
+    parser = load_parser()
+    return parser(pattern)
 
 if __name__ == '__main__':
     import readline

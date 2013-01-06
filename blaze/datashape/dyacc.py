@@ -5,9 +5,9 @@ _tabversion = '3.2'
 
 _lr_method = 'LALR'
 
-_lr_signature = '\xcd\xa3\xbf\x8ef\xaa\xabuq\x85\xffdwz\xeaj'
+_lr_signature = '(\tp\x02\xc0h2\xcf\x1f1\x8f\xc0\xcf\xd5\x8c\xe7'
     
-_lr_action_items = {'LBRACE':([0,1,3,4,5,6,7,9,14,16,19,24,26,29,],[2,2,-4,-9,-10,-8,-2,2,2,-11,-7,2,2,-3,]),'NAME':([0,1,2,3,4,5,6,7,9,14,15,16,17,18,19,24,26,27,29,],[4,4,13,-4,-9,-10,-8,-2,4,4,20,-11,13,23,-7,4,4,20,-3,]),'SEMI':([2,10,11,12,17,22,23,25,31,],[-18,17,-13,-14,-18,17,-16,-17,-15,]),'SPACE':([8,20,21,30,],[15,-6,27,-5,]),')':([4,5,6,16,19,28,],[-9,-10,-8,-11,-7,31,]),'(':([18,],[24,]),'NUMBER':([0,1,3,4,5,6,7,9,14,16,18,19,24,26,29,],[5,5,-4,-9,-10,-8,-2,5,5,-11,25,-7,5,5,-3,]),'RBRACE':([2,10,11,12,17,22,23,25,31,],[-18,16,-13,-14,-18,-12,-16,-17,-15,]),'EQUALS':([20,21,30,],[-6,26,-5,]),'COMMA':([3,4,5,6,16,19,28,29,],[14,-9,-10,-8,-11,14,14,14,]),'COLON':([13,],[18,]),'TYPE':([0,1,3,4,5,6,7,9,16,19,29,],[8,8,-4,-9,-10,-8,-2,8,-11,-7,-3,]),'$end':([1,3,4,5,6,7,9,16,19,29,],[0,-4,-9,-10,-8,-2,-1,-11,-7,-3,]),}
+_lr_action_items = {'LBRACE':([0,1,3,4,5,6,7,9,14,17,20,22,25,27,],[2,2,-4,-9,-10,-8,-2,2,2,-11,-7,2,2,-3,]),'NAME':([0,1,2,3,4,5,6,7,8,9,14,15,16,17,18,19,20,21,22,25,27,],[4,4,13,-4,-9,-10,-8,-2,16,4,4,16,-6,-11,13,24,-7,16,4,4,-3,]),'SEMI':([2,10,11,12,18,23,24,26,29,],[-18,18,-13,-14,-18,18,-16,-17,-15,]),')':([4,5,6,17,20,28,],[-9,-10,-8,-11,-7,29,]),'(':([19,],[25,]),'NUMBER':([0,1,3,4,5,6,7,9,14,17,19,20,22,25,27,],[5,5,-4,-9,-10,-8,-2,5,5,-11,26,-7,5,5,-3,]),'RBRACE':([2,10,11,12,18,23,24,26,29,],[-18,17,-13,-14,-18,-12,-16,-17,-15,]),'EQUALS':([15,16,21,],[22,-6,-5,]),'COMMA':([3,4,5,6,17,20,27,28,],[14,-9,-10,-8,-11,14,14,14,]),'COLON':([13,],[19,]),'TYPE':([0,1,3,4,5,6,7,9,17,20,27,],[8,8,-4,-9,-10,-8,-2,8,-11,-7,-3,]),'$end':([1,3,4,5,6,7,9,17,20,27,],[0,-4,-9,-10,-8,-2,-1,-11,-7,-3,]),}
 
 _lr_action = { }
 for _k, _v in _lr_action_items.items():
@@ -16,7 +16,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'decl':([0,1,9,],[1,9,9,]),'rhs_expression':([0,1,9,14,24,26,],[3,3,3,19,28,29,]),'record_opt':([2,17,],[10,22,]),'lhs_expression':([15,27,],[21,30,]),'record':([0,1,9,14,24,26,],[6,6,6,6,6,6,]),'record_item':([2,17,],[11,11,]),'statement':([0,1,9,],[7,7,7,]),'empty':([2,17,],[12,12,]),}
+_lr_goto_items = {'decl':([0,1,9,],[1,9,9,]),'rhs_expression':([0,1,9,14,22,25,],[3,3,3,20,27,28,]),'record_opt':([2,18,],[10,23,]),'lhs_expression':([8,15,21,],[15,21,21,]),'record':([0,1,9,14,22,25,],[6,6,6,6,6,6,]),'record_item':([2,18,],[11,11,]),'statement':([0,1,9,],[7,7,7,]),'empty':([2,18,],[12,12,]),}
 
 _lr_goto = { }
 for _k, _v in _lr_goto_items.items():
@@ -26,22 +26,22 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> decl","S'",1,None,None,None),
-  ('decl -> decl decl','decl',2,'p_decl1','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',129),
-  ('decl -> statement','decl',1,'p_decl2','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',133),
-  ('statement -> TYPE SPACE lhs_expression EQUALS rhs_expression','statement',5,'p_statement_assign','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',137),
-  ('statement -> rhs_expression','statement',1,'p_statement_expr','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',151),
-  ('lhs_expression -> lhs_expression SPACE lhs_expression','lhs_expression',3,'p_lhs_expression','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',155),
-  ('lhs_expression -> NAME','lhs_expression',1,'p_lhs_expression_node','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',160),
-  ('rhs_expression -> rhs_expression COMMA rhs_expression','rhs_expression',3,'p_rhs_expression','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',164),
-  ('rhs_expression -> record','rhs_expression',1,'p_rhs_expression_node1','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',169),
-  ('rhs_expression -> NAME','rhs_expression',1,'p_rhs_expression_node2','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',173),
-  ('rhs_expression -> NUMBER','rhs_expression',1,'p_rhs_expression_node2','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',174),
-  ('record -> LBRACE record_opt RBRACE','record',3,'p_record','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',178),
-  ('record_opt -> record_opt SEMI record_opt','record_opt',3,'p_record_opt1','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',186),
-  ('record_opt -> record_item','record_opt',1,'p_record_opt2','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',193),
-  ('record_opt -> empty','record_opt',1,'p_record_opt3','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',197),
-  ('record_item -> NAME COLON ( rhs_expression )','record_item',5,'p_record_item1','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',201),
-  ('record_item -> NAME COLON NAME','record_item',3,'p_record_item2','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',205),
-  ('record_item -> NAME COLON NUMBER','record_item',3,'p_record_item2','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',206),
-  ('empty -> <empty>','empty',0,'p_empty','/home/stephen/continuum/blazepro/blaze/datashape/parser.py',210),
+  ('decl -> decl decl','decl',2,'p_decl1','',122),
+  ('decl -> statement','decl',1,'p_decl2','',126),
+  ('statement -> TYPE lhs_expression EQUALS rhs_expression','statement',4,'p_statement_assign','',130),
+  ('statement -> rhs_expression','statement',1,'p_statement_expr','',144),
+  ('lhs_expression -> lhs_expression lhs_expression','lhs_expression',2,'p_lhs_expression','',148),
+  ('lhs_expression -> NAME','lhs_expression',1,'p_lhs_expression_node','',153),
+  ('rhs_expression -> rhs_expression COMMA rhs_expression','rhs_expression',3,'p_rhs_expression','',157),
+  ('rhs_expression -> record','rhs_expression',1,'p_rhs_expression_node1','',162),
+  ('rhs_expression -> NAME','rhs_expression',1,'p_rhs_expression_node2','',166),
+  ('rhs_expression -> NUMBER','rhs_expression',1,'p_rhs_expression_node2','',167),
+  ('record -> LBRACE record_opt RBRACE','record',3,'p_record','',171),
+  ('record_opt -> record_opt SEMI record_opt','record_opt',3,'p_record_opt1','',179),
+  ('record_opt -> record_item','record_opt',1,'p_record_opt2','',186),
+  ('record_opt -> empty','record_opt',1,'p_record_opt3','',190),
+  ('record_item -> NAME COLON ( rhs_expression )','record_item',5,'p_record_item1','',194),
+  ('record_item -> NAME COLON NAME','record_item',3,'p_record_item2','',198),
+  ('record_item -> NAME COLON NUMBER','record_item',3,'p_record_item2','',199),
+  ('empty -> <empty>','empty',0,'p_empty','',203),
 ]
