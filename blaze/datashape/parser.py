@@ -116,20 +116,30 @@ tyinst     = namedtuple('tyinst', 'conargs')
 tydecl     = namedtuple('tydecl', 'lhs, rhs')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
+def p_top(p):
+    '''top : mod
+           | stmt
+    '''
+    p[0] = p[1]
+
 def p_decl1(p):
-    'decl : decl decl'
+    'mod : mod mod'
     p[0] = [p[1], p[2]]
 
 def p_decl2(p):
-    'decl : statement'
+    'mod : stmt'
     p[0] = p[1]
 
 def p_statement_assign(p):
-    'statement : TYPE lhs_expression EQUALS rhs_expression'
-    if len(p[3]) == 1:
+    'stmt : TYPE lhs_expression EQUALS rhs_expression'
+
+    # alias
+    if len(p[2]) == 1:
         constructid = p[2][0]
         parameters  = ()
         rhs         = p[4]
+
+    # paramaterized
     else:
         constructid = p[2][0]
         parameters  = p[2][1:]
@@ -139,7 +149,7 @@ def p_statement_assign(p):
     p[0] = tydecl(lhs, rhs)
 
 def p_statement_expr(p):
-    'statement : rhs_expression'
+    'stmt : rhs_expression'
     p[0] = tyinst(p[1])
 
 def p_lhs_expression(p):
@@ -235,7 +245,7 @@ def debug_parse(data, lexer, parser):
         tok = lexer.token()
         if not tok: break
         print tok
-    print parser.parse(data)
+    return parser.parse(data)
 
 def load_parser(debug=False):
     if debug:
@@ -260,12 +270,12 @@ def parse(pattern):
 
 if __name__ == '__main__':
     import readline
-    parser = load_parser(debug=True)
+    parser = load_parser()
     readline.parse_and_bind('')
 
     while True:
         try:
             line = raw_input('>> ')
-            print parse(line)
+            print parser(line)
         except EOFError:
             break

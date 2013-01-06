@@ -1,30 +1,30 @@
 from blaze.datashape.parser import parse
 
 def test_all_the_strings():
-    print parse('a')
-    print parse('a, b')
-    print parse('a, b, c')
-    print parse('a,      b')
-    print parse('a,      b  ,     d')
-    print parse('800, 600, RGBA')
-    print parse('type foo = c')
-    print parse('type foo    =    c')
-    print parse('type a b c = d,e,f')
-    print parse('type   a b c = d, e   ')
-    print parse('type foo a b = c, d')
-    print parse('type foo a b = c,d,e')
-    print parse('type foo a b = c,d,e,   f')
-    print parse('type foo a b = c,   d,   e,   f')
-    print parse('type foo b = c,   d,   e,   f')
-    print parse('type a b c = d, e')
-    print parse('type a b c = bar, foo')
-    print parse('type Pixel A = A')
-    print parse('type Pixel A = A, B')
-    print parse('type Pixel A = 800, 600, A, A')
-    print parse('type Pixel A B = 800, 600, A, B')
-    print parse('type Pixel A B = {}')
-    print parse('type Pixel A B = {A:B}')
-    print parse('''
+    parse('a')
+    parse('a, b')
+    parse('a, b, c')
+    parse('a,      b')
+    parse('a,      b  ,     d')
+    parse('800, 600, RGBA')
+    parse('type foo = c')
+    parse('type foo    =    c')
+    parse('type a b c = d,e,f')
+    parse('type   a b c = d, e   ')
+    parse('type foo a b = c, d')
+    parse('type foo a b = c,d,e')
+    parse('type foo a b = c,d,e,   f')
+    parse('type foo a b = c,   d,   e,   f')
+    parse('type foo b = c,   d,   e,   f')
+    parse('type a b c = d, e')
+    parse('type a b c = bar, foo')
+    parse('type Pixel A = A')
+    parse('type Pixel A = A, B')
+    parse('type Pixel A = 800, 600, A, A')
+    parse('type Pixel A B = 800, 600, A, B')
+    parse('type Pixel A B = {}')
+    parse('type Pixel A B = {A:B}')
+    parse('''
     type foo = {
         A: B;
         C: D;
@@ -32,7 +32,7 @@ def test_all_the_strings():
     }
     ''')
 
-    print parse('''
+    parse('''
     type bar a b = {
         A : B;
         C : D;
@@ -42,7 +42,7 @@ def test_all_the_strings():
 
     parse('type empty = {} ')
 
-    print parse('''
+    parse('''
     type Stock = {
       name   : string;
       min    : int64;
