@@ -3,6 +3,8 @@ The improved parser for Datashape grammar.
 
 Grammar::
 
+    module ::= statement NEWLINE statement
+
     statement ::= TYPE lhs_expression EQUALS rhs_expression
                 | rhs_expression
 
@@ -33,6 +35,7 @@ import os
 import re
 import sys
 
+from textwrap import dedent
 from functools import partial
 from collections import namedtuple
 
@@ -59,7 +62,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 
 tokens = (
     'SPACE', 'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
-    'LBRACE', 'RBRACE', 'SEMI'
+    'LBRACE', 'RBRACE', 'SEMI', 'END'
 )
 
 literals = [
@@ -72,18 +75,29 @@ literals = [
     '}' ,
 ]
 
-t_NAME   = r'[a-zA-Z_][a-zA-Z0-9_]*'
 t_EQUALS = r'='
 t_COMMA  = r','
 t_COLON  = r':'
 t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
-t_ignore = '\n'
+t_ignore = ''
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += t.value.count("\n")
 
 def t_TYPE(t):
     r'type'
     return t
+
+def t_NAME(t):
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    return t
+
+def t_COMMENT(t):
+    r'\#.*'
+    pass
 
 def t_SPACE(t):
     r'\s'
@@ -110,6 +124,14 @@ precedence = (
 tyinst     = namedtuple('tyinst', 'conargs')
 tydecl     = namedtuple('tydecl', 'lhs, rhs')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
+
+def p_decl1(p):
+    'decl : decl decl'
+    p[0] = [p[1], p[2]]
+
+def p_decl2(p):
+    'decl : statement'
+    p[0] = p[1]
 
 def p_statement_assign(p):
     'statement : TYPE SPACE lhs_expression EQUALS rhs_expression'
@@ -203,18 +225,22 @@ def p_error(p):
 # Whitespace Preprocessor
 #------------------------------------------------------------------------
 
+# We use whitespace as tokens in the language so we need to define a
+# preprocessor to push the syntax into a normal form before we go about
+# parsing since Ply's LALR can't do offside parsing.
+
 def compose(f, g):
     return lambda x: g(f(x))
 
 # remove trailing and leading whitespace
 pass1 = re.compile(
-    '^\s*'
-    '|\s*$'
+    '^ *'
+    '| *$'
 )
 pre_trailing = partial(pass1.sub, '')
 
 # collapse redundent whitespace
-pass2 = re.compile(r'\s+')
+pass2 = re.compile(r' +')
 pre_whitespace = partial(pass2.sub, ' ')
 
 # push to normal form for whitespace around the equal sign
@@ -238,6 +264,7 @@ def rhs_strip(s):
         return s.replace(' ','')
 
 preparse = reduce(compose, [
+    dedent,
     pre_whitespace,
     pre_trailing,
     equal_trailing,
@@ -245,8 +272,29 @@ preparse = reduce(compose, [
 ])
 
 #------------------------------------------------------------------------
+# Module
+#------------------------------------------------------------------------
+
+class Module:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        keys = sorted(self.__dict__)
+        items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+        return "{}({})".format(type(self).__name__, ", ".join(items))
+
+#------------------------------------------------------------------------
 # Toplevel
 #------------------------------------------------------------------------
+
+
+def debug_parse(data, lexer, parser):
+    lexer.input(data)
+    while True:
+        tok = lexer.token()
+        if not tok: break
+        print tok
+    print parser.parse(data)
 
 def load_parser(debug=False):
     if debug:
@@ -256,7 +304,7 @@ def load_parser(debug=False):
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
                 write_tables=1, debug=0, optimize=1)
-        return partial(parser.parse, lexer=lexer)
+        return partial(debug_parse, lexer=lexer, parser=parser)
     else:
         module = sys.modules[__name__]
         lexer = lexfrom(module, dlex)
@@ -265,12 +313,19 @@ def load_parser(debug=False):
         # curry the lexer into the parser
         return partial(parser.parse, lexer=lexer)
 
-class Module(object):
-    pass
 
 def parse(pattern):
-    parser = load_parser()
-    return parser(preparse(pattern))
+    parser = load_parser(debug=True)
+    try:
+        return parser(preparse(pattern))
+    except DatashapeSyntaxError:
+        print '------------------Fail----------------------\n', preparse(pattern)
+
+a = parse('''
+type f a = b
+type g a = b
+type h a b = c
+''')
 
 if __name__ == '__main__':
     import readline
