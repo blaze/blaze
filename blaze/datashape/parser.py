@@ -29,8 +29,8 @@ Grammar::
     record_opt : record_item
     record_opt : empty
     record_item : NAME COLON '(' rhs_expression ')'
-    record_item : NAME COLON NAME
-                : NAME COLON BIT
+    record_item : NAME COLON BIT
+                : NAME COLON NAME
                 | NAME COLON NUMBER
     empty :
 
@@ -158,6 +158,8 @@ def p_top(p):
     '''
     p[0] = p[1]
 
+#------------------------------------------------------------------------
+
 def p_decl1(p):
     'mod : mod mod'
     p[0] = [p[1], p[2]]
@@ -165,6 +167,8 @@ def p_decl1(p):
 def p_decl2(p):
     'mod : stmt'
     p[0] = p[1]
+
+#------------------------------------------------------------------------
 
 def p_statement_assign(p):
     'stmt : TYPE lhs_expression EQUALS rhs_expression'
@@ -254,10 +258,12 @@ def p_record_item1(p):
     p[0] = (p[1], p[4])
 
 def p_record_item2(p):
-    '''record_item : NAME COLON NAME
-                   | NAME COLON BIT
+    '''record_item : NAME COLON BIT
+                   | NAME COLON NAME
                    | NAME COLON NUMBER'''
     p[0] = (p[1], p[3])
+
+#------------------------------------------------------------------------
 
 def p_empty(t):
     'empty : '
@@ -316,12 +322,12 @@ def load_parser(debug=False):
         return partial(parser.parse, lexer=lexer)
 
 def parse(pattern):
-    parser = load_parser(debug=True)
+    parser = load_parser()
     return parser(pattern)
 
 if __name__ == '__main__':
     import readline
-    parser = load_parser(debug=True)
+    parser = load_parser()
     readline.parse_and_bind('')
 
     while True:
