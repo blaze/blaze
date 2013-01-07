@@ -404,7 +404,7 @@ class Table(Indexable):
         md.tablelike,
     ]
 
-    def __init__(self, obj, dshape=None, metadata=None, layout=None,
+    def __init__(self, data, dshape=None, metadata=None, layout=None,
             params=None):
 
         # Datashape
@@ -417,20 +417,25 @@ class Table(Indexable):
             # The user just passed in a raw data source, try
             # and infer how it should be layed out or fail
             # back on dynamic types.
-            self._datashape = dshape = CTableSource.infer_datashape(obj)
+            self._datashape = dshape = CTableSource.infer_datashape(data)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
-            CTableSource.check_datashape(obj, given_dshape=dshape)
+            CTableSource.check_datashape(data, given_dshape=dshape)
             self._datashape = dshape
 
         # Source
         # ------
 
-        if isinstance(obj, ByteProvider):
-            self.data = obj
+        if isinstance(data, ByteProvider):
+            self.data = data
+        if isinstance(data, dict):
+            ct = self.from_dict(data)
+            dshape = from_numpy(ct.shape, ct.dtype)
+            self.data = CTableSource(ct, dshape=dshape, params=params)
+            self._datashape = dshape
         else:
-            self.data = CTableSource(obj, dshape=dshape, params=params)
+            self.data = CTableSource(data, dshape=dshape, params=params)
 
         # children graph nodes
         self.children = []
@@ -453,6 +458,14 @@ class Table(Indexable):
         # Parameters
         # ----------
         self.params = params
+
+    @classmethod
+    def from_dict(self, data):
+        dtype = dtype_from_dict(data)
+        return fromiter(izip(*data.itervalues()), dtype, -1)
+
+    def __repr__(self):
+        return generic_repr('Table', self, deferred=False)
 
 
 class NDTable(Indexable, ArrayNode):
@@ -526,10 +539,7 @@ class NDTable(Indexable, ArrayNode):
 
     @classmethod
     def from_dict(self, data):
-
         dtype = dtype_from_dict(data)
-        count = len(data.values()[0])
-
         return fromiter(izip(*data.itervalues()), dtype, -1)
 
     @property
