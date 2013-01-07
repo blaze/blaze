@@ -341,61 +341,18 @@ def parse(pattern):
     parser = load_parser(debug=True)
     return parser(pattern)
 
-a = parse('''
+def mopen(f):
+    fd = open(f)
+    contents = fd.read()
+    b = parse(contents)
 
-interface Arith a b:
-  op _+_ :: (a,a) -> a
-  op _-_ :: (a,a) -> a
-  op _*_ :: (a,a) -> a
+    return build_module(b)
 
-  op _+_ :: (b,b) -> b
-  op _-_ :: (b,b) -> b
-  op _*_ :: (b,b) -> b
-
-  op _**_ :: (a,a) -> a
-  op _**_ :: (a,b) -> b
-  op _**_ :: (b,a) -> b
-
-  fun abs :: a -> a
-  fun abs :: b -> b
-
-  fun exp :: b -> b
-  fun log :: b -> b
-  fun sqrt :: b -> b
-
-  fun sin :: b -> b
-  fun cos :: b -> b
-  fun tan :: b -> b
-
-  fun asin :: b -> b
-  fun acos :: b -> b
-  fun atan :: b -> b
-
-  fun asinh :: b -> b
-  fun acosh :: b -> b
-  fun atanh :: b -> b
-
-interface Ix t:
-  fun getitem  :: (t, index) -> t
-  fun getslice :: (t, index) -> t
-
-interface Ord t:
-  op _>_ :: (t,t) -> t
-  op _<_ :: (t,t) -> t
-
-interface Bool t:
-  fun or :: (t, t) -> t
-  fun and :: (t, t) -> t
-  fun xor :: (t, t) -> t
-
-interface Traversable t:
-  fun map :: (f, t) -> t
-
-  fun zip :: (f, t) -> t
-  fun zip2 :: (f, t, t) -> (t, t)
-  fun zip3 :: (f, t, t, t) -> (t, t, t)
-
-''')
+def build_module(a):
+    return [
+        Interface(iface.name, iface.params, iface.body)
+        for iface in a
+    ]
 
 #------------------------------------------------------------------------
 
@@ -442,15 +399,13 @@ class Signature(object):
             'cod': self.cod,
         })
 
-def build_module(a):
-    for iface in a:
-        print Interface(iface.name, iface.params, iface.body)
-
-    return
-
-build_module(a)
+#------------------------------------------------------------------------
 
 if __name__ == '__main__':
+
+    a = mopen('module/blaze.mod')
+    print a
+
     import readline
     parser = load_parser(debug=True)
     readline.parse_and_bind('')
