@@ -592,7 +592,8 @@ cdef class chunks(object):
     atomsize = self.dtype.itemsize
     itemsize = self.dtype.base.itemsize
 
-    if not _new:
+    # Initialize last chunk (not valid for 'O'bject dtypes)
+    if not _new and self.dtype.char != 'O':
       self.nchunks = cython.cdiv(self.len, len(lastchunkarr))
       chunksize = len(lastchunkarr) * atomsize
       lastchunk = lastchunkarr.data
@@ -934,7 +935,6 @@ cdef class carray:
 
     self.atomsize = atomsize = dtype.itemsize
     self.itemsize = itemsize = dtype.base.itemsize
-    print "atomsize, itemsize:", atomsize, itemsize
 
     # Check defaults for dflt
     _dflt = np.zeros((), dtype=dtype)
@@ -1147,7 +1147,6 @@ cdef class carray:
     import pickle
 
     for obj in arrobj:
-      print "obj-->", obj
       pick_obj = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
       chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
                      _memory = self._rootdir is None)
