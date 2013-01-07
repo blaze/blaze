@@ -49,7 +49,7 @@ IntType = np.dtype(np.int_)
 # numpy functions & objects
 from definitions cimport import_array, ndarray, dtype, \
      malloc, realloc, free, memcpy, memset, strdup, strcmp, \
-     PyString_AsString, PyString_FromString, \
+     PyString_AsString, PyString_GET_SIZE, PyString_FromString, \
      PyString_FromStringAndSize, \
      Py_BEGIN_ALLOW_THREADS, Py_END_ALLOW_THREADS, \
      PyArray_GETITEM, PyArray_SETITEM, \
@@ -216,6 +216,7 @@ cdef class chunk:
     cdef int itemsize, footprint
     cdef size_t nbytes, cbytes, blocksize
     cdef dtype dtype_
+    cdef char *data
 
     self.atom = atom
     self.atomsize = atom.itemsize
@@ -228,12 +229,18 @@ cdef class chunk:
     if _compr:
       # Data comes in an already compressed state inside a Python String
       self.data = PyString_AsString(dobject)
-      self.dobject = dobject   # Increment the reference so that data don't go
+      # Increment the reference so that data don't go away
+      self.dobject = dobject 
       # Set size info for the instance
       blosc_cbuffer_sizes(self.data, &nbytes, &cbytes, &blocksize)
+    elif dtype_ == 'O':
+      # The objects should arrive here already pickled
+      data = PyString_AsString(dobject)
+      nbytes = PyString_GET_SIZE(dobject)
+      cbytes, blocksize = self.compress_data(data, 1, nbytes, cparams)
     else:
       # Compress the data object (a NumPy object)
-      nbytes, cbytes, blocksize, footprint = self.compress_data(
+      nbytes, cbytes, blocksize, footprint = self.compress_arrdata(
         dobject, cparams, _memory)
     footprint += 128  # add the (aprox) footprint of this instance in bytes
 
@@ -243,11 +250,9 @@ cdef class chunk:
     self.cdbytes = cbytes
     self.blocksize = blocksize
 
-  cdef compress_data(self, ndarray array, object cparams, object _memory):
+  cdef compress_arrdata(self, ndarray array, object cparams, object _memory):
     """Compress data in `array` and put it in ``self.data``"""
     cdef size_t nbytes, cbytes, blocksize, itemsize, footprint
-    cdef int clevel, shuffle
-    cdef char *dest
 
     # Compute the total number of bytes in this array
     itemsize = array.itemsize
@@ -289,28 +294,55 @@ cdef class chunk:
         array = array.copy()
 
       # Compress data
-      dest = <char *>malloc(nbytes+BLOSC_MAX_OVERHEAD)
-      clevel = cparams.clevel
-      shuffle = cparams.shuffle
-      with nogil:
-        cbytes = blosc_compress(clevel, shuffle, itemsize, nbytes,
-                                array.data, dest, nbytes+BLOSC_MAX_OVERHEAD)
-      if cbytes <= 0:
-        raise RuntimeError, "fatal error during Blosc compression: %d" % cbytes
-      # Free the unused data
-      self.data = <char *>realloc(dest, cbytes)
-      # Set size info for the instance
-      blosc_cbuffer_sizes(self.data, &nbytes, &cbytes, &blocksize)
+      cbytes, blocksize = self.compress_data(array.data, itemsize, nbytes,
+                                             cparams)
 
     return (nbytes, cbytes, blocksize, footprint)
 
+  cdef compress_data(self, char *data, size_t itemsize, size_t nbytes,
+                     object cparams):
+    """Compress data with `caparms` and return metadata."""
+    cdef size_t nbytes_, cbytes, blocksize
+    cdef int clevel, shuffle
+    cdef char *dest
+
+    clevel = cparams.clevel
+    shuffle = cparams.shuffle
+    dest = <char *>malloc(nbytes+BLOSC_MAX_OVERHEAD)
+    with nogil:
+      cbytes = blosc_compress(clevel, shuffle, itemsize, nbytes,
+                              data, dest, nbytes+BLOSC_MAX_OVERHEAD)
+    if cbytes <= 0:
+      raise RuntimeError, "fatal error during Blosc compression: %d" % cbytes
+    # Free the unused data
+    self.data = <char *>realloc(dest, cbytes)
+    # Set size info for the instance
+    blosc_cbuffer_sizes(self.data, &nbytes_, &cbytes, &blocksize)
+    assert nbytes_ == nbytes
+
+    return (cbytes, blocksize)
+
   def getdata(self):
-    """Get a compressed String object out of this chunk (for persistence)."""
+    """Get a compressed string object out of this chunk (for persistence)."""
     cdef object string
 
     assert (not self.isconstant,
             "This function can only be used for persistency")
     string = PyString_FromStringAndSize(self.data, <Py_ssize_t>self.cdbytes)
+    return string
+
+  def getudata(self):
+    """Get an uncompressed string out of this chunk (for 'O'bject types)."""
+    cdef int ret
+    cdef char *dest
+
+    dest = <char *>malloc(self.nbytes)
+    # Fill dest with uncompressed data
+    with nogil:
+      ret = blosc_decompress(self.data, dest, self.nbytes)
+    if ret < 0:
+      raise RuntimeError, "fatal error during Blosc decompression: %d" % ret
+    string = PyString_FromStringAndSize(dest, <Py_ssize_t>self.nbytes)
     return string
 
   cdef void _getitem(self, int start, int stop, char *dest):
@@ -887,14 +919,15 @@ cdef class carray:
     else:
       self._dtype = dtype
     # Checks for the dtype
-    if self._dtype.kind == 'O':
-      raise TypeError, "object dtypes are not supported in carray objects"
+    # if self._dtype.kind == 'O':
+    #   raise TypeError, "object dtypes are not supported in carray objects"
     # Check that atom size is less than 2 GB
     if dtype.itemsize >= 2**31:
       raise ValueError, "atomic size is too large (>= 2 GB)"
 
     self.atomsize = atomsize = dtype.itemsize
     self.itemsize = itemsize = dtype.base.itemsize
+    print "atomsize, itemsize:", atomsize, itemsize
 
     # Check defaults for dflt
     _dflt = np.zeros((), dtype=dtype)
@@ -1102,6 +1135,19 @@ cdef class carray:
     dflt = data["dflt"]
     return (shape, cparams, dtype_, dflt, expectedlen, cbytes, chunklen)
 
+  def store_obj(self, object arrobj):
+    cdef chunk chunk_
+    import pickle
+
+    for obj in arrobj:
+      print "obj-->", obj
+      pick_obj = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
+      chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
+                     _memory = self._rootdir is None)
+
+    self.chunks.append(chunk_)
+    return chunk_.nbytes, chunk_.cbytes
+
   def append(self, object array):
     """
     append(array)
@@ -1128,11 +1174,20 @@ cdef class carray:
     arrcpy = utils.to_ndarray(array, self._dtype)
     if arrcpy.dtype != self._dtype.base:
       raise TypeError, "array dtype does not match with self"
+
+    # Object dtype requires special storage
+    if arrcpy.dtype.char == 'O':
+      nbytes, cbytes = self.store_obj(arrcpy)
+      # Update some counters
+      self._cbytes += cbytes
+      self._nbytes += nbytes
+      return
+
     # Appending a single row should be supported
     if arrcpy.shape == self._dtype.shape:
       arrcpy = arrcpy.reshape((1,)+arrcpy.shape)
     if arrcpy.shape[1:] != self._dtype.shape:
-      raise ValueError, "array trailing dimensions does not match with self"
+      raise ValueError, "array trailing dimensions do not match with self"
 
     atomsize = self.atomsize
     itemsize = self.itemsize
@@ -1198,6 +1253,7 @@ cdef class carray:
     self.leftover = leftover
     self._cbytes += cbytes
     self._nbytes += bsize
+    return
 
   def trim(self, object nitems):
     """
@@ -1546,6 +1602,13 @@ cdef class carray:
     self.idxcache = idxcache
     return 1
 
+  def getitem_object(self, object key):
+    """Retrieve elements of type object."""
+    import pickle
+    cchunk = self.chunks[key]
+    chunk = cchunk.getudata()
+    return pickle.loads(chunk)
+
   def __getitem__(self, object key):
     """
     x.__getitem__(key) <==> x[key]
@@ -1586,6 +1649,8 @@ cdef class carray:
       if key >= self.len:
         raise IndexError, "index out of range"
       arr1 = self.arr1
+      if self.dtype.char == 'O':
+        return self.getitem_object(key)
       if self.getitem_cache(key, arr1.data):
         if self.itemsize == self.atomsize:
           return PyArray_GETITEM(arr1, arr1.data)

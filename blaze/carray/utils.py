@@ -121,6 +121,7 @@ def to_ndarray(array, dtype, arrlen=None):
         array2[:] = array   # broadcast
         array = array2
 
+    print "array:", `array`
     return array
 
 def human_readable_size(size):
