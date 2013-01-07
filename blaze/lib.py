@@ -67,7 +67,7 @@ def mean(table, label):
     passthrough = True
 ))
 def std(table, label):
-    return stats.mean(table, label)
+    return stats.std(table, label)
 
 #------------------------------------------------------------------------
 # Time Series

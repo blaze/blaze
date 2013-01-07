@@ -464,6 +464,15 @@ class Table(Indexable):
         # ----------
         self.params = params
 
+    # TODO: don't hardcode against carray,  breaks down if we use
+    # something else
+    def append(self, data):
+        self.data.ca.append(data)
+
+    def commit(self):
+        self.data.ca.flush()
+
+
     @classmethod
     def from_dict(self, data):
         dtype = dtype_from_dict(data)

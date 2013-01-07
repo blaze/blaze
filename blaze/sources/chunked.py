@@ -198,7 +198,11 @@ class CTableSource(ByteProvider):
         # general Blaze params object.
         if dshape:
             shape, dtype = to_numpy(dshape)
-            self.ca = ctable(data, dtype=dtype, rootdir=rootdir)
+            if len(data) == 0:
+                data = np.empty(0, dtype=dtype)
+                self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
+            else:
+                self.ca = ctable(data, dtype=dtype, rootdir=rootdir)
         else:
             self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
 

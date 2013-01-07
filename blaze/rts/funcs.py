@@ -142,7 +142,7 @@ def lift(signature, typesig, constraints=None, **params):
 
             if allmanifest:
                 # do immediete evaluation
-                if constraints.pop('passthrough', False):
+                if constraints.get('passthrough', False):
                     # don't generate descriptors just call Python fn
                     # with the whatever was passed in
                     return pyfn(*args)
