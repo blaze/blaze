@@ -1,7 +1,7 @@
 from blaze import dshape
 from blaze import NDTable, Table, NDArray, Array
 
-def test_all_construct():
+def test_arrays():
     # Assert that the pretty pritner works for all of the
     # toplevel structures
 
@@ -18,25 +18,24 @@ def test_all_construct():
     a.datashape._equal(expected_ds)
 
 
-    a = NDTable([(1, 1)])
-    str(a)
-    repr(a)
-    #a.datashape._equal(expected_ds)
-
-    a = Table([(1, 1)])
-    str(a)
-    repr(a)
-    #a.datashape._equal(expected_ds)
-
 def test_record():
-    table = NDTable([(1, 2.1), (2, 3.1)], dshape='1, {x: int32, y: float32}')
+    expected_ds = dshape('1, {x: int32, y: float32}')
+
+    t = NDTable([(1, 2.1), (2, 3.1)], dshape='1, {x: int32, y: float32}')
+    t.datashape._equal(expected_ds)
+
+    str(t)
+    repr(t)
 
 def test_record_consume():
+    expected_ds = dshape("4, {i: int64, f: float64}")
+
     d = {
         'i'   : [1, 2, 3, 4],
         'f'   : [4., 3., 2., 1.]
     }
-    table = NDTable(d)
+    t = NDTable(d)
+    t.datashape._equal(expected_ds)
 
 def test_record_consume2():
     d = {

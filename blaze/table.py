@@ -429,13 +429,16 @@ class Table(Indexable):
 
         if isinstance(data, ByteProvider):
             self.data = data
-        if isinstance(data, dict):
+        elif isinstance(data, dict):
             ct = self.from_dict(data)
+            self._axes = data.keys()
             dshape = from_numpy(ct.shape, ct.dtype)
             self.data = CTableSource(ct, dshape=dshape, params=params)
             self._datashape = dshape
         else:
             self.data = CTableSource(data, dshape=dshape, params=params)
+            # Pull the labels from the datashape
+            self._axes = self._datashape[-1].names
 
         # children graph nodes
         self.children = []
@@ -509,11 +512,15 @@ class NDTable(Indexable, ArrayNode):
             self.data = data
         if isinstance(data, dict):
             ct = self.from_dict(data)
+            self._axes = data.keys()
+
             dshape = from_numpy(ct.shape, ct.dtype)
             self.data = CTableSource(ct, dshape=dshape, params=params)
             self._datashape = dshape
         else:
             self.data = CTableSource(data, dshape=dshape, params=params)
+            # Pull the labels from the datashape
+            self._axes = self._datashape[-1].names
 
         # children graph nodes
         self.children = []

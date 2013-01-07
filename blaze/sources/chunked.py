@@ -14,6 +14,8 @@ from blaze.layouts.scalar import ChunkedL
 from blaze.desc.byteprovider import ByteProvider
 from blaze.desc.datadescriptor import CArrayDataDescriptor
 
+from blaze.printer import table2string
+
 import numpy as np
 
 #------------------------------------------------------------------------
@@ -234,9 +236,6 @@ class CTableSource(ByteProvider):
     def check_datashape(source, given_dshape):
         # TODO
         return True
-
-    def repr_data(self):
-        return carray.table2string(self.ca)
 
     def read(self, elt, key):
         return self.ca.__getitem__(key)

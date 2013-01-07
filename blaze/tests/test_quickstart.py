@@ -1,6 +1,7 @@
 """
 Tests for the simple sessions we put on the documentation page.
 """
+from unittest import skip
 
 def test_simple_session():
     from blaze import Array, dshape
@@ -32,6 +33,7 @@ def test_fromiter():
 
     a = fromiter(xrange(10), 'x, float64', params=params(clevel=5))
 
+@skip
 def test_custom_dshape():
     from blaze import NDTable, RecordDecl
     from blaze import int32, String
