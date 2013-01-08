@@ -33,5 +33,7 @@ def test_simple():
     qs1 = select(t, lambda x: x > 80000, 'f0')
     qs2 = select2(t, lambda x,y: x > y, ['f0', 'f1'])
 
+    result = t[qs1]
+
 if __name__ == '__main__':
     test_simple()
