@@ -46,6 +46,7 @@ from blaze.expr.ops import array_like, table_like
 from blaze.ts.ucr_dtw import ucr
 #from blaze.ooc import linalg
 from blaze.algo import stats
+from blaze.algo import select as _select
 
 zerocost = lambda term: 0
 
@@ -68,6 +69,12 @@ def mean(table, label):
 ))
 def std(table, label):
     return stats.std(table, label)
+
+@lift('select(<term>, <str>)', 'a -> a', dict(
+    passthrough = True
+))
+def select(table, predicate, label):
+    return _select(table, predicate, label)
 
 #------------------------------------------------------------------------
 # Time Series
@@ -136,6 +143,7 @@ __all__ = [
     'lift',
     'mean',
     'std',
+    'select',
     'abs',
     'dot',
     'dtw',
