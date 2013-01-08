@@ -472,6 +472,9 @@ class Table(Indexable):
     def commit(self):
         self.data.ca.flush()
 
+    # TODO: don't hardcode against carray
+    def __getitem__(self, mask):
+        return self.data.ca[mask]
 
     @classmethod
     def from_dict(self, data):
