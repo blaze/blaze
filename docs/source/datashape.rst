@@ -528,27 +528,35 @@ Grammar
     COLON  = ":'
     LBRACE = "{'
     RBRACE = "}'
+    BIT    = 'bool' | 'int8' | 'int16' | 'int32' ...
 
-    statement ::= lhs_expression EQUALS rhs_expression
-                | rhs_expression
+    top : mod
+        | stmt
 
-    lhs_expression ::= lhs_expression SPACE lhs_expression
-                     | NAME
+    mod : mod mod
+        | stmt
 
-    rhs_expression ::= rhs_expression COMMA rhs_expression
+    stmt : TYPE lhs_expression EQUALS rhs_expression
+         | rhs_expression
 
-    rhs_expression ::= record
-                     | NAME
-                     | NUMBER
+    lhs_expression : lhs_expression lhs_expression
+                   | NAME
 
-    record ::= LBRACE record_opt RBRACE
+    rhs_expression : rhs_expression COMMA rhs_expression
+                   | appl
+                   | record
+                   | BIT
+                   | NAME
+                   | NUMBER
 
-    record_opt ::= record_opt COMMA record_opt
-                 | record_item
-                 | empty
+    appl : NAME '(' rhs_expression ')'
 
-    record_item ::= NAME COLON '(' rhs_expression ')'
-                  | NAME COLON NAME
-                  | NAME COLON NUMBER
-
-    empty ::=
+    record : LBRACE record_opt RBRACE
+    record_opt : record_opt SEMI record_opt
+    record_opt : record_item
+    record_opt : empty
+    record_item : NAME COLON '(' rhs_expression ')'
+    record_item : NAME COLON BIT
+                : NAME COLON NAME
+                | NAME COLON NUMBER
+    empty :
