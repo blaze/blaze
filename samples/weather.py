@@ -1,27 +1,37 @@
-from blaze import open
-from blaze import mean, std
+import os
+import iopro
 
-from datetime import datetime
+from blaze import Table, mean, std, params, select, open
+from blaze.algo.select import select2
 
-table = open('ctable://noaa_gsod_example')
-print table
+adapter = iopro.text_adapter(
+    'noaa_gsod_example.op',
+    header=1,
+    infer_types=False,
+    field_names=['x', 'y', 'z', 'w']
+)
+adapter.set_field_types({0:'u8', 1:'u8', 2:'u8', 3:'f8'})
 
-#------------------------------------------------------------------------
 
-start = datetime(year = 2008 , month = 1 , day = 1)
-end   = datetime(year = 2009 , month = 1 , day = 1)
+def test_simple():
+    if not os.path.exists('./noaa_data'):
+        p = params(clevel=5, storage='./noaa_data')
 
-res = table.select(lambda x: start < x < end, col='YEARMODA')
+        t = Table([], dshape='{f0: int, f1:int, f2:int, f3:float}', params=p)
 
-mean(res, 'TEMP')
-std(res, 'TEMP')
+        # TODO: chunkwise copy
+        t.append(adapter[:])
+        t.commit()
+    else:
+        t = open('ctable://noaa_data')
 
-#------------------------------------------------------------------------
+    print '--------------------------------------'
+    print 'mean', mean(t, 'f3')
+    print 'std', std(t, 'f2')
+    print '--------------------------------------'
 
-start = datetime(year = 2009 , month = 1 , day = 1)
-end   = datetime(year = 2010 , month = 1 , day = 1)
+    qs1 = select(t, lambda x: x > 80000, 'f0')
+    qs2 = select2(t, lambda x,y: x > y, ['f0', 'f1'])
 
-res2 = table.select(lambda x: start < x < end, col='YEARMODA')
-
-mean(res2, 'TEMP')
-std(res2, 'TEMP')
+if __name__ == '__main__':
+    test_simple()
