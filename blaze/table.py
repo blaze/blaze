@@ -473,8 +473,15 @@ class Table(Indexable):
         self.data.ca.flush()
 
     # TODO: don't hardcode against carray
+    def __len__(self):
+        return len(self.data.ca)
+
+    # TODO: don't hardcode against carray
     def __getitem__(self, mask):
-        return self.data.ca[mask]
+        ct = (self.data.ca[mask])
+        dshape = from_numpy(ct.shape, ct.dtype)
+        source = CTableSource(ct, dshape=dshape)
+        return Table(source, dshape=dshape)
 
     @classmethod
     def from_dict(self, data):
