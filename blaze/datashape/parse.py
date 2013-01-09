@@ -1,16 +1,15 @@
 """
-Deprecating this in favor of parser.py
+WARNING: Deprecating this in favor of parser.py
 """
 
-import imp
 import ast
 import inspect
-from operator import add
-from string import maketrans, translate
 from collections import OrderedDict, Iterable
 
 from coretypes import Integer, TypeVar, Record, Enum, Type, DataShape, \
-    Range, Either, Fixed
+    Range, Either, Fixed, Varchar, String
+
+from blaze.error import CustomSyntaxError
 
 syntax_error = """
   File {filename}, line {lineno}
@@ -20,25 +19,8 @@ syntax_error = """
 DatashapeSyntaxError: {msg}
 """
 
-class DatashapeSyntaxError(Exception):
-    """
-    Makes datashape parse errors look like Python SyntaxError.
-    """
-    def __init__(self, filename, lineno, col_offset, text, msg=None):
-        self.lineno     = lineno
-        self.col_offset = col_offset
-        self.filename   = filename
-        self.text       = text
-        self.msg        = msg or 'invalid syntax'
-
-    def __str__(self):
-        return syntax_error.format(**{
-            'filename' : self.filename,
-            'lineno'   : self.lineno,
-            'line'     : self.text,
-            'pointer'  : ' '*self.col_offset + '^',
-            'msg'      : self.msg
-        })
+class DatashapeSyntaxError(CustomSyntaxError):
+    pass
 
 class Visitor(object):
 
@@ -63,7 +45,8 @@ class Visitor(object):
     def error_ast(self, ast_node):
         if self.source:
             line = self.source.split('\n')[ast_node.lineno - 1]
-            return DatashapeSyntaxError('<stdin>', ast_node.lineno, ast_node.col_offset, line)
+            return DatashapeSyntaxError('<stdin>', ast_node.lineno,
+                    ast_node.col_offset, line)
         else:
             raise SyntaxError()
 
@@ -100,6 +83,12 @@ class Translate(Visitor):
         else:
             return TypeVar(tree.id)
 
+    def Dict(self, tree):
+        k = [k.id for k in tree.keys]
+        v = map(self.visit, tree.values)
+
+        return Record(zip(k,v))
+
     def Call(self, tree):
         # TODO: don't inline this
         internals = {
@@ -107,6 +96,8 @@ class Translate(Visitor):
             'Enum'     : Enum,
             'Range'    : Range,
             'Either'   : Either,
+            'Varchar'  : Varchar,
+            'String'   : String,
         }
         internals.update(Type._registry)
 
@@ -140,21 +131,6 @@ class Translate(Visitor):
     def Index(self, tree):
         return self.visit(tree.value)
 
-class TranslateModule(Translate):
-
-    def Module(self, tree):
-        return [self.visit(i) for i in tree.body]
-
-    def Assign(self, tree):
-        left = tree.targets[0].id
-        right = self.visit(tree.value)
-        assert left not in self.namespace
-        self.namespace[left] = right
-
-
-#------------------------------------------------------------------------
-# Operator Translation
-#------------------------------------------------------------------------
 
 def parse(expr):
     expr_translator = Translate(expr)
@@ -163,24 +139,3 @@ def parse(expr):
     except SyntaxError as e:
         raise DatashapeSyntaxError(*e.args[1])
     return expr_translator.visit(past)
-
-def load(fname, modname=None):
-    """
-    # Load a file of datashape definitions as if it were a python module.
-    """
-
-    with open(fname, 'r') as fd:
-        expr = fd.read()
-        expr = translate(expr, op_table)
-        past = ast.parse(expr)
-
-    translator = TranslateModule(expr)
-    translator.visit(past)
-
-    if not modname:
-        modname = fname
-    mod = imp.new_module(modname)
-
-    for k,v in translator.namespace.iteritems():
-        setattr(mod, k, v)
-    return mod

@@ -61,7 +61,7 @@ class NotSimple(Exception):
         return 'Datashape deferred until eval()'
 
 #------------------------------------------------------------------------
-# Graph Construction
+# Argument Munging
 #------------------------------------------------------------------------
 
 instanceof = lambda T: lambda X: isinstance(X, T)
@@ -77,6 +77,7 @@ def is_homogeneous(it):
 def injest_iterable(args, depth=0, force_homog=False):
     # TODO: Should be 1 stack frame per each recursion so we
     # don't blow up Python trying to parse big structures
+    assert isinstance(args, (list, tuple))
 
     if depth > _max_argument_recursion:
         raise RuntimeError(\

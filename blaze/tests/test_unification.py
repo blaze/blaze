@@ -1,7 +1,7 @@
 # Unification Rules
 # -----------------
 from blaze import NDArray, dshape
-from blaze.compile.pipeline import Pipeline
+from blaze.compile import compile
 
 from unittest import skip
 
@@ -18,6 +18,8 @@ def test_simple_unify():
     # ==============
     g = (A*B+C*D)**2
     # ==============
+
+    compile(g)
 
     # Operator Constraints
     #
@@ -54,7 +56,3 @@ def test_simple_unify():
     # B : t -> a
     # C : a -> x
     # D : x -> a
-
-    line = Pipeline()
-    context, plan = line.run_pipeline(g)
-    print plan

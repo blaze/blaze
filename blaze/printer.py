@@ -1,5 +1,10 @@
 from pprint import pformat
-from carray import array2string, set_printoptions as np_setprintoptions
+from carray import (
+    array2string,
+    set_printoptions as np_setprintoptions,
+    get_printoptions as np_getprintoptions,
+)
+from blaze.metadata import arraylike, tablelike
 
 _show_details = True
 
@@ -16,14 +21,18 @@ def generic_str(obj, deferred):
     # Do we force str() to render and consequently do a read
     # operation?
 
-    if deferred:
-        str_repr = '<Deferred>'
-    else:
-        str_repr = ''
-        for provider in list(obj.space):
-            str_repr += provider.repr_data()
 
-    return str_repr
+    if arraylike in obj._metadata:
+        if deferred:
+            str_repr = '<Deferred>'
+        else:
+            str_repr = ''
+            for provider in list(obj.space):
+                str_repr += provider.repr_data()
+        return str_repr
+
+    elif tablelike in obj._metadata:
+        return '<Tabular Data>'
 
 def generic_repr(name, obj, deferred):
     """
@@ -35,6 +44,7 @@ def generic_repr(name, obj, deferred):
           values   := [Numpy(ptr=60597776, dtype=int64, shape=(3,))];
           metadata := [contigious]
           layout   := Identity;
+          [1 2 3]
 
     """
 
@@ -59,6 +69,16 @@ def generic_repr(name, obj, deferred):
     fullrepr = header + generic_str(obj, deferred)
 
     return fullrepr
+
+#------------------------------------------------------------------------
+# Tables
+#------------------------------------------------------------------------
+
+def table2string(tab, max_line_width=None, precision=None,
+                 suppress_small=None, separator=' ', prefix="",
+                 style=repr, formatter=None):
+
+    axes = tab._axes
 
 #------------------------------------------------------------------------
 # IPython Notebook

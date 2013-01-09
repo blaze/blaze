@@ -15,9 +15,10 @@ uints     = set([C.uint8, C.uint16, C.uint32, C.uint64])
 floats    = set([C.float32, C.float64])
 complexes = set([C.complex64, C.complex128])
 bools     = set([C.bool_])
-string    = set([C.string])
+string    = set([C.String, C.Varchar, C.Blob])
 
 discrete   = ints | uints
+reals      = ints | floats
 continuous = floats | complexes
 numeric    = discrete | continuous
 

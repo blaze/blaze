@@ -15,12 +15,16 @@ from blaze.eclass import eclass
 from blaze.desc.byteprovider import ByteProvider
 from blaze.printer import generic_str, generic_repr
 
-from blaze.datashape import dshape as _dshape
+from blaze.datashape import from_numpy, dshape as _dshape
+from blaze.datashape.record import dtype_from_dict
 from blaze.expr.graph import ArrayNode, injest_iterable
+from blaze.carray import fromiter
 
 from blaze.layouts.scalar import ChunkedL
 from blaze.layouts.query import retrieve, write
 from blaze.sources.chunked import CArraySource, CTableSource
+
+from itertools import izip
 
 #------------------------------------------------------------------------
 # Indexable
@@ -400,7 +404,7 @@ class Table(Indexable):
         md.tablelike,
     ]
 
-    def __init__(self, obj, dshape=None, metadata=None, layout=None,
+    def __init__(self, data, dshape=None, metadata=None, layout=None,
             params=None):
 
         # Datashape
@@ -413,20 +417,30 @@ class Table(Indexable):
             # The user just passed in a raw data source, try
             # and infer how it should be layed out or fail
             # back on dynamic types.
-            self._datashape = dshape = CTableSource.infer_datashape(obj)
+            self._datashape = dshape = CTableSource.infer_datashape(data)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
-            CTableSource.check_datashape(obj, given_dshape=dshape)
+            CTableSource.check_datashape(data, given_dshape=dshape)
             self._datashape = dshape
 
         # Source
         # ------
 
-        if isinstance(obj, ByteProvider):
-            self.data = obj
+        if isinstance(data, ByteProvider):
+            self.data = data
+        elif isinstance(data, dict):
+            ct = self.from_dict(data)
+            self._axes = data.keys()
+            dshape = from_numpy(ct.shape, ct.dtype)
+            self.data = CTableSource(ct, dshape=dshape, params=params)
+            self._datashape = dshape
+        elif isinstance(data, (list, tuple)):
+            self.data = CTableSource(data, dshape=dshape, params=params)
+            # Pull the labels from the datashape
+            self._axes = self._datashape[-1].names
         else:
-            self.data = CTableSource(obj, dshape=dshape, params=params)
+            raise ValueError
 
         # children graph nodes
         self.children = []
@@ -449,6 +463,33 @@ class Table(Indexable):
         # Parameters
         # ----------
         self.params = params
+
+    # TODO: don't hardcode against carray,  breaks down if we use
+    # something else
+    def append(self, data):
+        self.data.ca.append(data)
+
+    def commit(self):
+        self.data.ca.flush()
+
+    # TODO: don't hardcode against carray
+    def __len__(self):
+        return len(self.data.ca)
+
+    # TODO: don't hardcode against carray
+    def __getitem__(self, mask):
+        ct = (self.data.ca[mask])
+        dshape = from_numpy(ct.shape, ct.dtype)
+        source = CTableSource(ct, dshape=dshape)
+        return Table(source, dshape=dshape)
+
+    @classmethod
+    def from_dict(self, data):
+        dtype = dtype_from_dict(data)
+        return fromiter(izip(*data.itervalues()), dtype, -1)
+
+    def __repr__(self):
+        return generic_repr('Table', self, deferred=False)
 
 
 class NDTable(Indexable, ArrayNode):
@@ -465,11 +506,7 @@ class NDTable(Indexable, ArrayNode):
         md.tablelike,
     ]
 
-    #------------------------------------------------------------------------
-    # Properties
-    #------------------------------------------------------------------------
-
-    def __init__(self, obj, dshape=None, metadata=None, layout=None,
+    def __init__(self, data, dshape=None, metadata=None, layout=None,
             params=None):
 
         # Datashape
@@ -482,20 +519,31 @@ class NDTable(Indexable, ArrayNode):
             # The user just passed in a raw data source, try
             # and infer how it should be layed out or fail
             # back on dynamic types.
-            self._datashape = dshape = CTableSource.infer_datashape(obj)
+            self._datashape = dshape = CTableSource.infer_datashape(data)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
-            CTableSource.check_datashape(obj, given_dshape=dshape)
+            CTableSource.check_datashape(data, given_dshape=dshape)
             self._datashape = dshape
 
         # Source
         # ------
 
-        if isinstance(obj, ByteProvider):
-            self.data = obj
+        if isinstance(data, ByteProvider):
+            self.data = data
+        if isinstance(data, dict):
+            ct = self.from_dict(data)
+            self._axes = data.keys()
+
+            dshape = from_numpy(ct.shape, ct.dtype)
+            self.data = CTableSource(ct, dshape=dshape, params=params)
+            self._datashape = dshape
+        elif isinstance(data, (list, tuple)):
+            self.data = CTableSource(data, dshape=dshape, params=params)
+            # Pull the labels from the datashape
+            self._axes = self._datashape[-1].names
         else:
-            self.data = CTableSource(obj, dshape=dshape, params=params)
+            raise ValueError
 
         # children graph nodes
         self.children = []
@@ -518,6 +566,11 @@ class NDTable(Indexable, ArrayNode):
         # Parameters
         # ----------
         self.params = params
+
+    @classmethod
+    def from_dict(self, data):
+        dtype = dtype_from_dict(data)
+        return fromiter(izip(*data.itervalues()), dtype, -1)
 
     @property
     def datashape(self):

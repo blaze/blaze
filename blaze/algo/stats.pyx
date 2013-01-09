@@ -3,7 +3,6 @@ import numpy as np
 cimport numpy as np
 
 from blaze.carray import carrayExtension as carray
-from blaze.carray.carrayExtension cimport chunk
 
 np.import_array()
 nan = np.nan
@@ -11,25 +10,14 @@ nan = np.nan
 # just using this to debug the loops to make sure we only do n
 # reads from disk where n = nchunks.
 def generic1d_loop(table, label):
-    cdef:
-        chunk chunk_
-
     col = table.data.ca[label]
 
     nchunks = col.nchunks
 
     for nchunk from 0 <= nchunk < nchunks:
-        chunk_ = col.chunks[nchunk]
-        size = cython.cdiv(chunk_.nbytes, chunk_.atomsize)
-
-        if chunk_.isconstant:
-            arr = chunk_.constant * col.chunklen
-            print np.array([chunk._constant] * col.chunklen)
-            # logic
-        else:
-            arr = chunk_[:]
-            print arr
-            # logic
+        arr = col.chunks[nchunk][:]
+        print arr
+        # logic
 
     if col.leftovers:
         leftover = col.len - nchunks * col.chunklen
@@ -76,7 +64,6 @@ def std(table, label):
 
     """
     cdef:
-        chunk chunk_
         Py_ssize_t nchunk, nchunks
 
         Py_ssize_t count = 0
@@ -89,16 +76,9 @@ def std(table, label):
     count = col.len
 
     for nchunk from 0 <= nchunk < nchunks:
-        chunk_ = col.chunks[nchunk]
-
-        if chunk_.isconstant:
-            it = chunk_.constant * col.chunklen
-            asum += it
-            asumsq += (it ** 2) * col.chunklen
-        else:
-            _asum, _assum = sqsum(chunk_[:])
-            asum   += _asum
-            asumsq += _assum
+        _asum, _assum = sqsum(col.chunks[nchunk][:])
+        asum   += _asum
+        asumsq += _assum
 
     if col.leftovers:
         leftover = col.len - nchunks * col.chunklen
@@ -138,7 +118,6 @@ def mean(table, label):
     """
 
     cdef:
-        chunk chunk_
         Py_ssize_t nchunk, nchunks
 
         Py_ssize_t count = 0
@@ -151,12 +130,7 @@ def mean(table, label):
     count = col.len
 
     for nchunk from 0 <= nchunk < nchunks:
-        chunk_ = col.chunks[nchunk]
-
-        if chunk_.isconstant:
-            asum += chunk_.constant * col.chunklen
-        else:
-            asum += chunk_[:].sum(dtype=col.dtype)
+        asum += col.chunks[nchunk][:].sum(dtype=col.dtype)
 
     if col.leftovers:
         leftover = col.len - nchunks * col.chunklen

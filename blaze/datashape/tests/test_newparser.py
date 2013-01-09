@@ -1,32 +1,4 @@
-from blaze.datashape.parser import *
-from unittest import skip
-
-ex1 = tyinst(conargs=('a',))
-ex2 = tyinst(conargs=('a', 'b'))
-ex3 = tyinst(conargs=('a', 'b', 'c'))
-ex4 = tyinst(conargs=('a', 'b'))
-ex5 = tyinst(conargs=('a', 'b', 'd'))
-ex6 = tydecl(lhs=simpletype(nargs=0, tycon='foo', tyvars=()), rhs=('c',))
-ex7 = tydecl(lhs=simpletype(nargs=2, tycon='a', tyvars=('b', 'c')), rhs=('d', 'e', 'f'))
-ex8 = tydecl(lhs=simpletype(nargs=2, tycon='a', tyvars=('b', 'c')), rhs=('d', 'e'))
-ex9 = tydecl(lhs=simpletype(nargs=2, tycon='foo', tyvars=('a', 'b')), rhs=('c', 'd'))
-ex10 = tydecl(lhs=simpletype(nargs=2, tycon='foo', tyvars=('a', 'b')), rhs=('c', 'd', 'e'))
-ex11 = tydecl(lhs=simpletype(nargs=2, tycon='foo', tyvars=('a', 'b')), rhs=('c', 'd', 'e', 'f'))
-ex12 = tydecl(lhs=simpletype(nargs=2, tycon='foo', tyvars=('a', 'b')), rhs=('c', 'd', 'e', 'f'))
-ex13 = tydecl(lhs=simpletype(nargs=1, tycon='foo', tyvars=('b',)), rhs=('c', 'd', 'e', 'f'))
-ex13 = tydecl(lhs=simpletype(nargs=2, tycon='a', tyvars=('b', 'c')), rhs=('d', 'e'))
-ex14 = tydecl(lhs=simpletype(nargs=2, tycon='a', tyvars=('b', 'c')), rhs=('bar', 'foo'))
-ex15 = tyinst(conargs=(800, 600, 'RGBA'))
-ex16 = tydecl(lhs=simpletype(nargs=1, tycon='Pixel', tyvars=('A',)), rhs=('A',))
-ex17 = tydecl(lhs=simpletype(nargs=1, tycon='Pixel', tyvars=('A',)), rhs=('A', 'B'))
-ex18 = tydecl(lhs=simpletype(nargs=1, tycon='Pixel', tyvars=('A',)), rhs=(800, 600, 'A', 'A'))
-ex19 = tydecl(lhs=simpletype(nargs=2, tycon='Type', tyvars=('A', 'B')), rhs=(800, 600, 'A', 'B'))
-ex20 = tydecl(lhs=simpletype(nargs=2, tycon='Type', tyvars=('A', 'B')), rhs=(None,))
-ex21 = tydecl(lhs=simpletype(nargs=2, tycon='Type', tyvars=('A', 'B')), rhs=(('A', 'B'),))
-ex22 = tydecl(lhs=simpletype(nargs=0, tycon='Type', tyvars=()), rhs=[('A', 'B'), [('C', 'D'), [('E', ('A', 'B')), None]]])
-ex23 = tydecl(lhs=simpletype(nargs=2, tycon='Type', tyvars=('a', 'b')), rhs=[('A', 'B'), [('C', 'D'), [('E', ('A', 'B')), None]]])
-ex24 = tydecl(lhs=simpletype(nargs=0, tycon='Type', tyvars=()), rhs=(('A', [('B', 0), [('C', 0), None]]),))
-ex25 = tydecl(lhs=simpletype(nargs=0, tycon='Stock', tyvars=()), rhs=[('name', 'string'), [('min', 'int64'), [('max', 'int64'), [('mid', 'int64'), [('volume', 'float'), [('close', 'float'), [('open', 'float'), None]]]]]]])
+from blaze.datashape.parser import parse
 
 def test_all_the_strings():
     parse('a')
@@ -34,56 +6,83 @@ def test_all_the_strings():
     parse('a, b, c')
     parse('a,      b')
     parse('a,      b  ,     d')
-    parse('foo = c')
-    parse('a b c = d,e,f')
-    parse('   a b c = d, e   ')
-    parse('foo a b = c, d')
-    parse('foo a b = c,d,e')
-    parse('foo a b = c,d,e,   f')
-    parse('foo a b = c,   d,   e,   f')
-    parse('foo b = c,   d,   e,   f')
-    parse('a b c = d, e')
-    parse('a b c = bar, foo')
     parse('800, 600, RGBA')
-    parse('Pixel A = A')
-    parse('Pixel A = A, B')
-    parse('Pixel A = 800, 600, A, A')
-    parse('Type A B = 800, 600, A, B')
-    parse('Type A B = {}')
-    parse('Type A B = {A:B}')
+    parse('type foo = c')
+    parse('type foo    =    c')
+    parse('type a b c = d,e,f')
+    parse('type   a b c = d, e   ')
+    parse('type foo a b = c, d')
+    parse('type foo a b = c,d,e')
+    parse('type foo a b = c,d,e,   f')
+    parse('type foo a b = c,   d,   e,   f')
+    parse('type foo b = c,   d,   e,   f')
+    parse('type a b c = d, e')
+    parse('type a b c = bar, foo')
+    parse('type Pixel A = A')
+    parse('type Pixel A = A, B')
+    parse('type Pixel A = 800, 600, A, A')
+    parse('type Pixel A B = 800, 600, A, B')
+    parse('type Pixel A B = {}')
+    parse('type Pixel A B = {A:B}')
     parse('''
-    Type = {
-        A: B,
-        C: D,
-        E: (A,B),
+    type foo = {
+        A: B;
+        C: D;
+        E: (A,B)
     }
     ''')
 
     parse('''
-    Type a b = {
-        A:B,
-        C:D,
-        E:(A,B),
+    type bar a b = {
+        A : B;
+        C : D;
+        E : (a,b)
     }
     ''')
 
+    parse('type empty = {} ')
+
     parse('''
-    Type = {
-        A:({
-            B: 0,
-            C: 0,
-        })
+    type Stock = {
+      name   : string;
+      min    : int64;
+      max    : int64;
+      mid    : int64;
+      volume : float;
+      close  : float;
+      open   : float
     }
     ''')
 
-    parse('''
-    Stock = {
-      name   : string,
-      min    : int64,
-      max    : int64,
-      mid    : int64,
-      volume : float,
-      close  : float,
-      open   : float,
+def test_trailing_semi():
+    a = parse('''
+    type a = {
+        a: int;
+        b: float;
+        c: (int,int)
     }
+    ''')
+
+    b = parse('''
+    type a = {
+        a: int;
+        b: float;
+        c: (int,int);
+    }
+    ''')
+
+    assert a == b
+
+def test_multiline():
+    a = parse('''
+
+    type f a = b
+    type g a = b
+
+    type a = {
+        a: int;
+        b: float;
+        c: (int,int);
+    }
+
     ''')

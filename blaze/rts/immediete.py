@@ -3,7 +3,13 @@
 #------------------------------------------------------------------------
 
 def ieval(fn, args):
-    fnargs = [(a._datashape, a.data.read_desc()) for a in args]
+    fnargs = []
 
-    return 42
-    #return fn(fnargs)
+    for arg in args:
+        # TODO: better way of sepcying that it has a "data backend"
+        if hasattr(arg, 'data'):
+            fnargs.append((arg._datashape, arg.data.read_desc()))
+        else:
+            fnargs.append(arg)
+
+    return fn(*fnargs)

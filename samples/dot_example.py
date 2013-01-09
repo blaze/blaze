@@ -4,7 +4,7 @@ import shutil, os.path
 from time import time
 import blaze
 
-from linalg import dot
+from blaze.algo.linalg import dot
 
 # Remove pre-existent data directories
 for d in ('a', 'b', 'out'):

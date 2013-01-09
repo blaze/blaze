@@ -10,38 +10,16 @@ of memory that may or may not be contigious.
 - Continuous
 - Strided
 
+.. image:: svg/layout.png
+    :align: center
+
+.. image:: svg/layout2.png
+    :align: center
+
 If we build a composite block structure as some union of two
 multiple blocks of data, then we need only have a invertible linear
 transformation which is able to map coordinates between the local
 coordinates of the chunks as we pull bytes from them.
-
-::
-
-    Chunked(dim=0)
-    +---------+
-    |         |
-    |---------|
-    |         |
-    +---------+
-
-::
-
-    Chunked(dim=1)
-    +---------+
-    |    |    |
-    |    |    |
-    |    |    |
-    +---------+
-
-
-::
-
-    Multichunk(points=...)
-    +---------+
-    |    |    |
-    |----|----|
-    |    |    |
-    +---------+
 
 
 Combining Chunks

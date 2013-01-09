@@ -14,6 +14,8 @@ from blaze.layouts.scalar import ChunkedL
 from blaze.desc.byteprovider import ByteProvider
 from blaze.desc.datadescriptor import CArrayDataDescriptor
 
+from blaze.printer import table2string
+
 import numpy as np
 
 #------------------------------------------------------------------------
@@ -181,6 +183,10 @@ class CTableSource(ByteProvider):
         assert (data is not None) or (dshape is not None) or \
                (params.get('storage'))
 
+        if isinstance(data, ctable):
+            self.ca = data
+            return
+
         # Extract the relevant carray parameters from the more
         # general Blaze params object.
         if params:
@@ -192,7 +198,11 @@ class CTableSource(ByteProvider):
         # general Blaze params object.
         if dshape:
             shape, dtype = to_numpy(dshape)
-            self.ca = ctable(data, dtype=dtype, rootdir=rootdir)
+            if len(data) == 0:
+                data = np.empty(0, dtype=dtype)
+                self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
+            else:
+                self.ca = ctable(data, dtype=dtype, rootdir=rootdir)
         else:
             self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
 
@@ -230,9 +240,6 @@ class CTableSource(ByteProvider):
     def check_datashape(source, given_dshape):
         # TODO
         return True
-
-    def repr_data(self):
-        return carray.table2string(self.ca)
 
     def read(self, elt, key):
         return self.ca.__getitem__(key)

@@ -1,12 +1,12 @@
 from blaze.datashape import *
-from blaze.datashape.parse import parse, load
+from blaze.datashape.parse import parse
 from blaze.datashape.record import RecordDecl, derived
 
 from unittest import skip
 
 def test_simple_parse():
-    x = parse('Enum (1,2)')
-    y = parse('300 , 400, Record(x=int64, y=int32)')
+    x = parse('Enum(1,2)')
+    y = parse('300 , 400, {x: int64, y: int32}')
 
     assert type(x) is DataShape
     assert type(y) is DataShape
@@ -15,13 +15,21 @@ def test_simple_parse():
     assert type(y[1]) is Fixed
     assert type(y[2]) is Record
 
-    assert y[2]('x') is int64
-    assert y[2]('y') is int32
+    rec = y[2]
 
-def test_compound_record():
-    p = parse('6, Record(x=int, y=float, z=str)')
+    assert rec['x'] is int64
+    assert rec['y'] is int32
+
+def test_compound_record1():
+    p = parse('6, {x:int, y:float, z:str}')
+
     assert type(p[0]) is Fixed
     assert type(p[1]) is Record
+
+def test_compound_record2():
+    p = parse('{ a: { x: int, y: int }, b: {w: int, u: int } }')
+
+    assert type(p[0]) is Record
 
 def test_free_variables():
     p = parse('N, M, 800, 600, int32')
@@ -110,6 +118,24 @@ def test_parse_either():
     assert x[0].a == int64
     assert x[0].b is na
 
+def test_parse_blob_varchar():
+    p1 = parse('2, 3, Varchar(5)')
+    p2 = parse('2, 3, blob')
+
+    assert type(p1[2]) is Varchar
+    assert type(p2[2]) is Blob
+
+    # Deconstructing the type
+    assert p1[2].maxlen == 5
+
+def test_parse_string():
+    p1 = parse('2, 3, String(5)')
+
+    assert type(p1[2]) is String
+
+    # Deconstructing the type
+    assert p1[2].fixlen == 5
+
 def test_custom_record():
 
     class Stock1(RecordDecl):
@@ -142,13 +168,3 @@ def test_custom_record_infer():
             return (self.min + self.max)/2
 
     assert Stock2.mid
-
-@skip
-def test_module_parse():
-    mod = load('tests/foo.ds')
-
-    assert 'A' in dir(mod)
-    assert type(mod.B) is DataShape
-
-    assert 'B' in dir(mod)
-    assert type(mod.A) is DataShape

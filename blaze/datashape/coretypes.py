@@ -127,6 +127,47 @@ class Top(Primitive):
         # emulate numpy
         return ''.join(["dshape(\"", str(self), "\")"])
 
+class Blob(Primitive):
+    """ Blob type, large variable length string """
+
+    def __str__(self):
+        return 'blob'
+
+    def __repr__(self):
+        # emulate numpy
+        return ''.join(["dshape(\"", str(self), "\")"])
+
+class Varchar(Primitive):
+    """ Blob type, small variable length string """
+
+
+    def __init__(self, maxlen):
+        assert isinstance(maxlen, Integer)
+        self.maxlen = maxlen.val
+
+    def __str__(self):
+        return 'varchar(maxlen=%i)' % self.maxlen
+
+    def __repr__(self):
+        return expr_string('varchar', [self.maxlen])
+
+class String(Primitive):
+    """ Fixed length string container """
+
+    def __init__(self, fixlen):
+        if isinstance(fixlen, int):
+            self.fixlen = fixlen
+        elif isinstance(fixlen, Integer):
+            self.fixlen = fixlen.val
+        else:
+            raise ValueError()
+
+    def __str__(self):
+        return 'string(%i)' % self.fixlen
+
+    def __repr__(self):
+        return expr_string('string', [self.fixlen])
+
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
@@ -194,7 +235,7 @@ class DataShape(object):
     def __repr__(self):
         # need double quotes to form valid aterm, also valid
         # Python
-        return ''.join(["dshape(\"", doublequote(str(self)), "\")"])
+        return ''.join(["dshape(\"", str(self), "\")"])
 
     @property
     def shape(self):
@@ -484,57 +525,56 @@ class Union(Atom, Sequence):
     def __len__(self):
         return len(self.parameters)
 
-class Record(DataShape, Mapping):
+class Record(DataShape):
     """
-    A composite data structure with fields mapped to types.
+    A composite data structure of ordered fields mapped to types.
     """
 
-    def __init__(self, **kwargs):
-        self.d = kwargs
-        self.k = kwargs.keys()
-        self.v = kwargs.values()
+    def __init__(self, fields):
+        # This is passed in with a OrderedDict so field order is
+        # preserved. Using RecordDecl there is some magic to also
+        # ensure that the fields align in the order they are
+        # declared.
+        self.__d = dict(fields)
+        self.__k = [f[0] for f in fields]
+        self.__v = [f[1] for f in fields]
 
     @property
     def fields(self):
-        return self.d
+        return self.__d
 
     @property
     def names(self):
-        return self.k
+        return self.__k
 
     def to_dtype(self):
         """
         To Numpy record dtype.
         """
-        dk = self.k
-        dv = map(to_dtype, self.v)
+        dk = self.__k
+        dv = map(to_dtype, self.__v)
         return np.dtype(zip(dk, dv))
+
+    def __getitem__(self, key):
+        return self.__d[key]
 
     def __eq__(self, other):
         if isinstance(other, Record):
-            return self.d == other.d
+            return self.__d == other.__d
         else:
             return False
 
-    def __call__(self, key):
-        return self.d[key]
-
     def __iter__(self):
-        return zip(self.k, self.v)
+        return zip(self.__k, self.__v)
 
     def __len__(self):
-        return len(self.k)
+        return len(self.__k)
 
     def __str__(self):
-        # Prints out something like this:
-        #   {a : int32, b: float32, ... }
-        return ('{ '
-            + ''.join([
-                ('%s : %s, ' % (k,v)) for k,v in zip(self.k, self.v)
-        ]) + '}')
+        return record_string(self.__k, self.__v)
 
     def __repr__(self):
-        return 'Record ' + repr(self.d)
+        return str(self)
 
 #------------------------------------------------------------------------
 # Constructions
@@ -568,9 +608,6 @@ def inl(ty):
 #------------------------------------------------------------------------
 # Unit Types
 #------------------------------------------------------------------------
-
-# At the type level these are all singleton types, they take no
-# arguments in their constructors and have no internal structure.
 
 plat = calcsize('@P') * 8
 
@@ -610,21 +647,23 @@ longdouble = float128
 void = CType('void')
 object_ = pyobj = CType('object')
 
-string = CType('string')
-
 na = Null
 top = Top()
 dynamic = Dynamic()
-NullRecord = Record()
+NullRecord = Record(())
+
+blob = Blob()
+string = String
 
 Stream = Range(Integer(0), None)
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
 Type.register('?', Dynamic)
-
-# Top should not be user facing... but for debugging useful
 Type.register('top', top)
+Type.register('blob', blob)
+Type.register('string8', String(8))
+Type.register('string16', String(16))
 
 #------------------------------------------------------------------------
 # Deconstructors
@@ -779,7 +818,7 @@ def from_numpy(shape, dt):
     if dtype.fields:
         # Convert the record into a dict of keys to CType
         rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
-        measure = Record(**dict(rec))
+        measure = Record(rec)
     else:
         measure = CType.from_dtype(dtype)
 
@@ -797,6 +836,18 @@ def expr_string(spine, const_args, outer=None):
         return str(spine) + outer[0] + ','.join(map(str,const_args)) + outer[1]
     else:
         return str(spine)
+
+def record_string(fields, values):
+    # Prints out something like this:
+    #   {a : int32, b: float32, ... }
+    body = ''
+    count = len(fields)
+    for i, (k,v) in enumerate(zip(fields,values)):
+        if (i+1) == count:
+            body += '%s : %s' % (k,v)
+        else:
+            body += '%s : %s; ' % (k,v)
+    return '{ ' + body + ' }'
 
 #------------------------------------------------------------------------
 # Argument Munging

@@ -3,7 +3,7 @@
 
 from blaze.expr import ops
 from blaze.table import NDArray
-from blaze.compile.pipeline import Pipeline
+from blaze.compile.pipeline import compile
 from blaze.expr.graph import IntNode, FloatNode, VAL, OP, APP
 from pprint import pprint
 from difflib import ndiff
@@ -26,20 +26,21 @@ y = a+(b*abs(c))
 d = NDArray([1,2,3])
 
 def test_simple_pipeline():
-    line = Pipeline()
-    _, plan = line.run_pipeline(x)
+    plan = compile(x)
 
     # Add(1,Mul(2,Abs(3.0)))
     if DEBUG:
         pprint(plan, width=1)
 
-    ctx, plan = line.run_pipeline(y)
+def test_simple_pipeline2():
+
+    plan = compile(y)
 
     # Add(Add(1,Add(2,3.0)),Add(1,Mul(2,Abs(3.0))))
     if DEBUG:
         pprint(plan, width=1)
 
-    ctx, plan = line.run_pipeline(x+y)
+    plan = compile(x+y)
 
     # ATerm
     # -----
@@ -59,7 +60,7 @@ def test_simple_pipeline():
     if DEBUG:
         pprint(plan, width=1)
 
-    ctx, plan = line.run_pipeline(x*(y+2)+3)
+    plan = compile(x*(y+2)+3)
 
     #------------------------------------------------------------------------
 
@@ -67,7 +68,7 @@ def test_simple_pipeline():
     if DEBUG:
         pprint(plan, width=1)
 
-    ctx, plan = line.run_pipeline(d+d)
+    plan = compile(d+d)
 
     # Add(
     #   Add(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
@@ -76,7 +77,7 @@ def test_simple_pipeline():
     if DEBUG:
         pprint(plan, width=1)
 
-    ctx, plan = line.run_pipeline((d+d)+(d+d))
+    plan = compile((d+d)+(d+d))
 
     if DEBUG:
         pprint(plan, width=1)
@@ -86,7 +87,7 @@ def test_simple_pipeline():
     #   Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
     # , Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
     # )
-    ctx, plan = line.run_pipeline((d*d)*(d*d))
+    plan = compile((d*d)*(d*d))
 
     if DEBUG:
         pprint(plan, width=1)
@@ -97,25 +98,7 @@ def test_complex_pipeline1():
     c = NDArray([1,2,3])
     d = NDArray([1,2,3])
 
-    line = Pipeline()
-    _, plan = line.run_pipeline(((a*b)+(c*d))**2)
-
-    # Pow(
-    #   Arithmetic(
-    #     Add
-    #   , Arithmetic(
-    #       Mul
-    #     , Array(){dshape("3,int64"), 40127160}
-    #     , Array(){dshape("3,int64"), 40015272}
-    #     ){dshape("int64"), 40076400}
-    #   , Arithmetic(
-    #       Mul
-    #     , Array{dshape("3,int64"), 40069816}
-    #     , Array{dshape("3,int64"), 40080448}
-    #     ){dshape("int64"), 40076016}
-    #   ){dshape("int64"), 40077552}
-    # , 2{dshape("int"), 40090448}
-    # ){dshape("int64"), 40077744}
+    plan = compile(((a*b)+(c*d))**2)
 
     if DEBUG:
         pprint(plan, width=1)
@@ -129,45 +112,7 @@ def test_complex_pipeline2():
     f = ((a*b)+(c*d))
     g = f**(a+b)
 
-    line = Pipeline()
-    _, plan = line.run_pipeline(f+g)
-
-    #   Arithmetic(
-    #     Add()
-    #   , Arithmetic(
-    #       Add()
-    #     , Arithmetic(
-    #         Mul()
-    #       , Array(){dshape("3, int64"), 61582152}
-    #       , Array(){dshape("3, int64"), 61469976}
-    #       ){dshape("int64"), 61526768}
-    #     , Arithmetic(
-    #         Mul()
-    #       , Array(){dshape("3, int64"), 61524520}
-    #       , Array(){dshape("3, int64"), 61531056}
-    #       ){dshape("int64"), 61526864}
-    #     ){dshape("int64"), 61527152}
-    #   , Pow(
-    #       Arithmetic(
-    #         Add()
-    #       , Arithmetic(
-    #           Mul()
-    #         , Array(){dshape("3, int64"), 61582152}
-    #         , Array(){dshape("3, int64"), 61469976}
-    #         ){dshape("int64"), 61526768}
-    #       , Arithmetic(
-    #           Mul()
-    #         , Array(){dshape("3, int64"), 61524520}
-    #         , Array(){dshape("3, int64"), 61531056}
-    #         ){dshape("int64"), 61526864}
-    #       ){dshape("int64"), 61527152}
-    #     , Arithmetic(
-    #         Add()
-    #       , Array(){dshape("3, int64"), 61582152}
-    #       , Array(){dshape("3, int64"), 61469976}
-    #       ){dshape("int64"), 61528304}
-    #     ){dshape("int64"), 61528496}
-    #   ){dshape("int64"), 61528592}
+    plan = compile(f+g)
 
     if DEBUG:
         pprint(plan, width=1)

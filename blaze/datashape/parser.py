@@ -3,42 +3,51 @@ The improved parser for Datashape grammar.
 
 Grammar::
 
-    statement ::= lhs_expression EQUALS rhs_expression
-                | rhs_expression
+    top : mod
+        | stmt
 
-    lhs_expression ::= lhs_expression SPACE lhs_expression
-                     | NAME
+    mod : mod mod
+        | stmt
 
-    rhs_expression ::= rhs_expression COMMA rhs_expression
+    stmt : TYPE lhs_expression EQUALS rhs_expression
+         | rhs_expression
 
-    rhs_expression ::= record
-                     | NAME
-                     | NUMBER
+    lhs_expression : lhs_expression lhs_expression
+                   | NAME
 
-    record ::= LBRACE record_opt RBRACE
+    rhs_expression : rhs_expression COMMA rhs_expression
+                   | appl
+                   | record
+                   | BIT
+                   | NAME
+                   | NUMBER
 
-    record_opt ::= record_opt COMMA record_opt
-                 | record_item
-                 | empty
+    appl : NAME '(' rhs_expression ')'
 
-    record_item ::= NAME COLON '(' rhs_expression ')'
-                  | NAME COLON NAME
-                  | NAME COLON NUMBER
-
-    empty ::=
+    record : LBRACE record_opt RBRACE
+    record_opt : record_opt SEMI record_opt
+    record_opt : record_item
+    record_opt : empty
+    record_item : NAME COLON '(' rhs_expression ')'
+    record_item : NAME COLON BIT
+                : NAME COLON NAME
+                | NAME COLON NUMBER
+    empty :
 
 """
 
 import os
-import re
 import sys
 
 from functools import partial
 from collections import namedtuple
 
-# Precompiled modules
-import dlex
-import dyacc
+try:
+    import dlex
+    import dyacc
+    DEBUG = False
+except:
+    DEBUG = True
 
 from blaze.plyhacks import yaccfrom, lexfrom
 from blaze.error import CustomSyntaxError
@@ -55,8 +64,8 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'SPACE','NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
-    'LBRACE', 'RBRACE'
+    'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
+    'LBRACE', 'RBRACE', 'SEMI', 'BIT'
 )
 
 literals = [
@@ -69,17 +78,56 @@ literals = [
     '}' ,
 ]
 
-t_NAME   = r'[a-zA-Z_][a-zA-Z0-9_]*'
+bits = set([
+    'bool',
+    'int8',
+    'int16',
+    'int32',
+    'int64',
+    'int64',
+    'uint8',
+    'uint16',
+    'uint32',
+    'uint64',
+    'uint64',
+    'uint64',
+    'float16',
+    'float32',
+    'float64',
+    'float128',
+    'complex64',
+    'complex128',
+    'complex256',
+    'object',
+    'datetime64',
+    'timedelta64',
+])
+
 t_EQUALS = r'='
 t_COMMA  = r','
 t_COLON  = r':'
+t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
-t_ignore = '\n'
+t_ignore = '[ ]'
 
-def t_SPACE(t):
-    r'\s'
+def t_TYPE(t):
+    r'type'
     return t
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += t.value.count("\n")
+
+def t_NAME(t):
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    if t.value in bits:
+        t.type = 'BIT'
+    return t
+
+def t_COMMENT(t):
+    r'\#.*'
+    pass
 
 def t_NUMBER(t):
     r'\d+'
@@ -96,33 +144,79 @@ def t_error(t):
 
 precedence = (
     ('right' , 'COMMA'),
-    ('left'  , 'SPACE'),
 )
 
+bittype     = namedtuple('bit', 'name')
 tyinst     = namedtuple('tyinst', 'conargs')
 tydecl     = namedtuple('tydecl', 'lhs, rhs')
+tyappl     = namedtuple('tyappl', 'head, args')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
+def p_top(p):
+    '''top : mod
+           | stmt
+    '''
+    p[0] = p[1]
+
+#------------------------------------------------------------------------
+
+def p_decl1(p):
+    'mod : mod mod'
+    p[0] = [p[1], p[2]]
+
+def p_decl2(p):
+    'mod : stmt'
+    p[0] = p[1]
+
+#------------------------------------------------------------------------
+
 def p_statement_assign(p):
-    'statement : lhs_expression EQUALS rhs_expression'
-    constructid = p[1][0]
-    parameters  = p[1][1:]
-    rhs         = p[3]
+    'stmt : TYPE lhs_expression EQUALS rhs_expression'
+
+    # alias
+    if len(p[2]) == 1:
+        constructid = p[2][0]
+        parameters  = ()
+        rhs         = p[4]
+
+    # paramaterized
+    else:
+        constructid = p[2][0]
+        parameters  = p[2][1:]
+        rhs         = p[4]
 
     lhs = simpletype(len(parameters), constructid, parameters)
     p[0] = tydecl(lhs, rhs)
 
 def p_statement_expr(p):
-    'statement : rhs_expression'
+    'stmt : rhs_expression'
     p[0] = tyinst(p[1])
 
+#------------------------------------------------------------------------
+
 def p_lhs_expression(p):
-    'lhs_expression : lhs_expression SPACE lhs_expression'
+    'lhs_expression : lhs_expression lhs_expression'
     # tuple addition
-    p[0] = p[1] + p[3]
+    p[0] = p[1] + p[2]
 
 def p_lhs_expression_node(p):
-    "lhs_expression : NAME"
+    'lhs_expression : NAME'
+    p[0] = (p[1],)
+
+#------------------------------------------------------------------------
+
+def p_rhs_expression_node1(p):
+    '''rhs_expression : appl
+                      | record'''
+    p[0] = p[1]
+
+def p_rhs_expression_node2(p):
+    '''rhs_expression : BIT'''
+    p[0] = (bittype(p[1]),)
+
+def p_rhs_expression_node3(p):
+    '''rhs_expression : NAME
+                      | NUMBER'''
     p[0] = (p[1],)
 
 def p_rhs_expression(p):
@@ -130,14 +224,11 @@ def p_rhs_expression(p):
     # tuple addition
     p[0] = p[1] + p[3]
 
-def p_rhs_expression_node1(p):
-    '''rhs_expression : record'''
-    p[0] = p[1]
+#------------------------------------------------------------------------
 
-def p_rhs_expression_node2(p):
-    '''rhs_expression : NAME
-                      | NUMBER'''
-    p[0] = (p[1],)
+def p_appl(p):
+    "appl : NAME '(' rhs_expression ')'"
+    p[0] = (tyappl(p[1], p[3]),)
 
 def p_record(p):
     'record : LBRACE record_opt RBRACE'
@@ -147,11 +238,12 @@ def p_record(p):
     else:
         p[0] = (p[2],)
 
-# { x: int; y: int }
-# TODO: change comma to semicolon, removes need for braces
 def p_record_opt1(p):
-    'record_opt : record_opt COMMA record_opt'
-    p[0] = [p[1], p[3]]
+    'record_opt : record_opt SEMI record_opt'
+    if p[3]: # trailing semicolon
+        p[0] = [p[1], p[3]]
+    else:
+        p[0] = p[1]
 
 def p_record_opt2(p):
     'record_opt : record_item'
@@ -166,9 +258,12 @@ def p_record_item1(p):
     p[0] = (p[1], p[4])
 
 def p_record_item2(p):
-    '''record_item : NAME COLON NAME
+    '''record_item : NAME COLON BIT
+                   | NAME COLON NAME
                    | NAME COLON NUMBER'''
     p[0] = (p[1], p[3])
+
+#------------------------------------------------------------------------
 
 def p_empty(t):
     'empty : '
@@ -186,62 +281,38 @@ def p_error(p):
         print("Syntax error at EOF")
 
 #------------------------------------------------------------------------
-# Whitespace Preprocessor
+# Module
 #------------------------------------------------------------------------
 
-def compose(f, g):
-    return lambda x: g(f(x))
-
-# remove trailing and leading whitespace
-pass1 = re.compile(
-    '^\s*'
-    '|\s*$'
-)
-pre_trailing = partial(pass1.sub, '')
-
-# collapse redundent whitespace
-pass2 = re.compile(r'\s+')
-pre_whitespace = partial(pass2.sub, ' ')
-
-# push to normal form for whitespace around the equal sign
-pass3 = re.compile(
-    ' = ' # a b = c d -> a b=c d
-    '| =' # a b =c d  -> a b=c d
-    '|= ' # a b= c d  -> a b=c d
-)
-equal_trailing = partial(pass3.sub,'=')
-
-# Strip whitespace on the right side
-def rhs_strip(s):
-    if s.find('=') > -1:
-        try:
-            lhs, rhs = s.split('=')
-            return '='.join([lhs, rhs.replace(' ','')])
-        except ValueError:
-            # it's probably malformed, let the parser catch it
-            return s
-    else:
-        return s.replace(' ','')
-
-preparse = reduce(compose, [
-    pre_whitespace,
-    pre_trailing,
-    equal_trailing,
-    rhs_strip
-])
+class Module:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        keys = sorted(self.__dict__)
+        items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+        return "{}({})".format(type(self).__name__, ", ".join(items))
 
 #------------------------------------------------------------------------
 # Toplevel
 #------------------------------------------------------------------------
 
+def debug_parse(data, lexer, parser):
+    lexer.input(data)
+    while True:
+        tok = lexer.token()
+        if not tok: break
+        print tok
+    return parser.parse(data)
+
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        path = os.path.abspath(__file__)
+        path = os.path.relpath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
-                write_tables=0, debug=0, optimize=1)
+                write_tables=1, debug=0, optimize=1)
+        return partial(debug_parse, lexer=lexer, parser=parser)
     else:
         module = sys.modules[__name__]
         lexer = lexfrom(module, dlex)
@@ -250,13 +321,9 @@ def load_parser(debug=False):
         # curry the lexer into the parser
         return partial(parser.parse, lexer=lexer)
 
-class Module(object):
-    pass
-
-def parse(pattern, modules=[]):
+def parse(pattern):
     parser = load_parser()
-    return parser(preparse(pattern))
-
+    return parser(pattern)
 
 if __name__ == '__main__':
     import readline
@@ -266,8 +333,6 @@ if __name__ == '__main__':
     while True:
         try:
             line = raw_input('>> ')
-            print parse(line)
+            print parser(line)
         except EOFError:
             break
-        except Exception as e:
-            print e

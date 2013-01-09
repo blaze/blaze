@@ -3,9 +3,14 @@ Django style class declarations mapping onto Record datashape types.
 """
 
 from numpy import dtype
-from coretypes import Record, Type, DataShape
 from parse import parse
+from coretypes import Record, Type, DataShape
 
+#------------------------------------------------------------------------
+# Record Declarations
+#------------------------------------------------------------------------
+
+# XXX: Do we really want this metaclass???
 class DeclMeta(type):
     def __new__(meta, name, bases, namespace):
         abstract = namespace.pop('__abstract', False)
@@ -20,7 +25,8 @@ class DeclMeta(type):
             if hasattr(cls, 'fields'):
                 # Side-effectful operation to register the alias
                 # with the parser
-                rcd = Record(**dict(cls.fields, **cls._derived))
+                fields = cls.fields.items() + cls._derived.items()
+                rcd = Record(fields)
                 Type.register(name, rcd)
         return cls
 
@@ -60,3 +66,28 @@ def derived(sig=None):
         else:
             raise NotImplementedError
     return wrapper
+
+#------------------------------------------------------------------------
+# Utils
+#------------------------------------------------------------------------
+
+def dtype_from_dict(dct):
+    """Convert a dictionary of Python types into a structured
+    array dtype
+
+    Parameters
+    ----------
+    dct : dict
+        Python dictionary of values
+
+    Returns
+    -------
+        out : numpy.dtype instance
+
+    Example
+
+        >>> dtype_from_dict({'i': [1, 2, 3, 4], 'f': [4.0, 3.0, 2.0, 1.0]})
+        dtype([('i', '<i8'), ('f', '<f8')])
+
+    """
+    return dtype([(k, dtype(type(v[0]))) for k,v in dct.iteritems()])
