@@ -3,8 +3,11 @@ interface Ix t:
     fun getitem  :: (t, index) -> t
     fun getslice :: (t, index) -> t
 
-    fun setitem  :: (t, index val) -> ()
-    fun setslice :: (t, index val) -> ()
+    fun setitem  :: (t, index, val) -> ()
+    fun setslice :: (t, index, val) -> ()
+
+    fun delitem  :: (t, index) -> ()
+    fun delslice :: (t, index) -> ()
 
 # Scalar arithmetic
 interface Arith a b:
@@ -19,6 +22,7 @@ interface Arith a b:
     op _**_ :: (a,a) -> a
     op _**_ :: (a,b) -> b
     op _**_ :: (b,a) -> b
+    op _**_ :: (b,b) -> b
 
     fun abs :: a -> a
     fun abs :: b -> b

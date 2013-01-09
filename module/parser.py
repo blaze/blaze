@@ -266,14 +266,18 @@ def p_fun(p):
 #------------------------------------------------------------------------
 
 def p_sig1(p):
-    "sig : '(' sig ')' "
-    p[0] = (p[2],)
+    "sig : '(' sig ')'"
+    p[0] = p[2],
 
 def p_sig2(p):
-    'sig : NAME'
-    p[0] = (p[1],)
+    "sig : '(' ')' "
+    p[0] = ()
 
 def p_sig3(p):
+    'sig : NAME'
+    p[0] = p[1],
+
+def p_sig4(p):
     "sig : sig COMMA sig "
     p[0] = p[1] + p[3]
 
@@ -300,9 +304,14 @@ def p_error(p):
 # Module
 #------------------------------------------------------------------------
 
+class Defn:
+    def __init__(self):
+        pass
+
 class Module:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
+
     def __repr__(self):
         keys = sorted(self.__dict__)
         items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
@@ -402,7 +411,6 @@ class Signature(object):
 #------------------------------------------------------------------------
 
 if __name__ == '__main__':
-
     a = mopen('module/blaze.mod')
     print a
 

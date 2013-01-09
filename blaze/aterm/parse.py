@@ -1,16 +1,18 @@
 """
-ATerm parser
 
-t : bt                 -- basic term
-  | bt {ty,m1,...}     -- annotated term
+ATerm grammar::
 
-bt : C                 -- constant
-   | C(t1,...,tn)      -- n-ary constructor
-   | (t1,...,tn)       -- n-ary tuple
-   | [t1,...,tn]       -- list
-   | "ccc"             -- quoted string ( explicit double quotes )
-   | int               -- integer
-   | real              -- floating point number
+    t : bt                 -- basic term
+      | bt {ty,m1,...}     -- annotated term
+
+    bt : C                 -- constant
+       | C(t1,...,tn)      -- n-ary constructor
+       | (t1,...,tn)       -- n-ary tuple
+       | [t1,...,tn]       -- list
+       | "ccc"             -- quoted string ( explicit double quotes )
+       | int               -- integer
+       | real              -- floating point number
+
 """
 
 import re
@@ -27,8 +29,6 @@ import ayacc
 
 from blaze.plyhacks import yaccfrom, lexfrom
 from blaze.error import CustomSyntaxError
-
-DEBUG = True
 
 #------------------------------------------------------------------------
 # Errors
@@ -228,6 +228,14 @@ def p_error(p):
 # Toplevel
 #------------------------------------------------------------------------
 
+def debug_parse(data, lexer, parser):
+    lexer.input(data)
+    while True:
+        tok = lexer.token()
+        if not tok: break
+        print tok
+    return parser.parse(data)
+
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
@@ -236,6 +244,7 @@ def load_parser(debug=False):
         lexer = lex.lex(lextab="alex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='ayacc',outputdir=dir_path,
                 write_tables=1, debug=0, optimize=1)
+        return partial(debug_parse, lexer=lexer, parser=parser)
     else:
         module = sys.modules[__name__]
         lexer = lexfrom(module, alex)
