@@ -926,9 +926,7 @@ cdef class carray:
         self._dtype = dtype = np.dtype((array_.dtype.base, array_.shape[1:]))
     else:
       self._dtype = dtype
-    # Checks for the dtype
-    # if self._dtype.kind == 'O':
-    #   raise TypeError, "object dtypes are not supported in carray objects"
+
     # Check that atom size is less than 2 GB
     if dtype.itemsize >= 2**31:
       raise ValueError, "atomic size is too large (>= 2 GB)"
@@ -992,7 +990,12 @@ cdef class carray:
       self.write_meta()
 
     # Finally, fill the chunks
-    self.fill_chunks(array_)
+    # Object dtype requires special storage
+    if array_.dtype.char == 'O':
+      for obj in array_:
+        self.store_obj(obj)
+    else:
+      self.fill_chunks(array_)
 
     # and flush the data pending...
     self.flush()
@@ -1146,13 +1149,15 @@ cdef class carray:
     cdef chunk chunk_
     import pickle
 
-    for obj in arrobj:
-      pick_obj = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
-      chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
-                     _memory = self._rootdir is None)
+    pick_obj = pickle.dumps(arrobj, pickle.HIGHEST_PROTOCOL)
+    chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
+                   _memory = self._rootdir is None)
 
     self.chunks.append(chunk_)
-    return chunk_.nbytes, chunk_.cbytes
+    # Update some counters
+    nbytes, cbytes = chunk_.nbytes, chunk_.cbytes
+    self._cbytes += cbytes
+    self._nbytes += nbytes
 
   def append(self, object array):
     """
@@ -1183,10 +1188,7 @@ cdef class carray:
 
     # Object dtype requires special storage
     if arrcpy.dtype.char == 'O':
-      nbytes, cbytes = self.store_obj(arrcpy)
-      # Update some counters
-      self._cbytes += cbytes
-      self._nbytes += nbytes
+      self.store_obj(array)
       return
 
     # Appending a single row should be supported

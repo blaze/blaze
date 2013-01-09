@@ -1,12 +1,16 @@
+import numpy as np
 import blaze
 from blaze.carray import carray, cparams
 
 # Create a new array
-blb = carray([], dtype='O', rootdir='p', mode='w')
+arrobj = np.array(["s%d"%i for i in range(10)], dtype='O')
+# arrobj = []
 
-# Append some objects
-for i in xrange(10):
-    blb.append("s%d"%i)
+blb = carray(arrobj, dtype='O', rootdir='p', mode='w')
+
+# # Append some objects
+# for i in xrange(10):
+#     blb.append("s%d"%i)
 
 #print "blb:", blb
 blb.flush()
