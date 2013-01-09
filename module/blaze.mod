@@ -1,13 +1,17 @@
+interface Array T ds:
+    op _+_ :: (a,a) -> a
+
 # Array indexing
-interface Ix t:
-    fun getitem  :: (t, index) -> t
-    fun getslice :: (t, index) -> t
+interface Ix T:
+    fun getitem  :: (T, index) -> T
+    fun getslice :: (T, index) -> T
 
-    fun setitem  :: (t, index, val) -> ()
-    fun setslice :: (t, index, val) -> ()
+    fun setitem  :: (T, index, val) -> ()
+    fun setslice :: (T, index, val) -> ()
 
-    fun delitem  :: (t, index) -> ()
-    fun delslice :: (t, index) -> ()
+    fun delitem  :: (T, index) -> ()
+    fun delslice :: (T, index) -> ()
+
 
 # Scalar arithmetic
 interface Arith a b:
@@ -43,15 +47,15 @@ interface Arith a b:
     fun acosh :: b -> b
     fun atanh :: b -> b
 
-interface Ord t:
-    op _>_ :: (t,t) -> t
-    op _<_ :: (t,t) -> t
+interface Ord T:
+    op _>_ :: (T,T) -> T
+    op _<_ :: (T,T) -> T
 
 interface Bool t:
-    fun or :: (t, t) -> t
-    fun and :: (t, t) -> t
-    fun xor :: (t, t) -> t
+    fun or  :: (T, T) -> T
+    fun and :: (T, T) -> T
+    fun xor :: (T, T) -> T
 
 interface Traversable t:
-    fun map :: (f, t) -> t
-    fun zip :: (f, t) -> t
+    fun map :: ((a->b), T) -> T
+    fun zip :: ((a->b), T) -> T

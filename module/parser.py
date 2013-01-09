@@ -281,6 +281,10 @@ def p_sig4(p):
     "sig : sig COMMA sig "
     p[0] = p[1] + p[3]
 
+def p_sig5(p):
+    "sig : sig ARROW sig "
+    p[0] = p[1] + p[3]
+
 #------------------------------------------------------------------------
 
 def p_empty(t):
