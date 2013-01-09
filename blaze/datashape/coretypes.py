@@ -663,6 +663,7 @@ Type.register('?', Dynamic)
 Type.register('top', top)
 Type.register('blob', blob)
 Type.register('string8', String(8))
+Type.register('string16', String(16))
 
 #------------------------------------------------------------------------
 # Deconstructors
