@@ -664,6 +664,10 @@ Type.register('top', top)
 Type.register('blob', blob)
 Type.register('string8', String(8))
 Type.register('string16', String(16))
+Type.register('string32', String(32))
+Type.register('string64', String(64))
+Type.register('string128', String(128))
+Type.register('string256', String(256))
 
 #------------------------------------------------------------------------
 # Deconstructors
