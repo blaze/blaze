@@ -195,7 +195,7 @@ def t_newline(t):
     t.lexer.lineno += t.value.count("\n")
 
 def t_NAME(t):
-    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    r'[a-zA-Z_][a-zA-Z0-9_\']*'
     return t
 
 def t_COMMENT(t):
@@ -214,6 +214,8 @@ interface = namedtuple('interface', 'name params body')
 opdef = namedtuple('opdef', 'op sig')
 fndef = namedtuple('fndef', 'name sig')
 sig = namedtuple('interface', 'dom cod')
+fn = namedtuple('fn', 'dom cod')
+pt = namedtuple('pt', 'x xs')
 
 def p_top(p):
     '''top : mod'''
@@ -267,23 +269,27 @@ def p_fun(p):
 
 def p_sig1(p):
     "sig : '(' sig ')'"
-    p[0] = p[2],
+    p[0] = p[2]
 
 def p_sig2(p):
     "sig : '(' ')' "
     p[0] = ()
 
 def p_sig3(p):
-    'sig : NAME'
-    p[0] = p[1],
+    'sig : NAME NAME'
+    p[0] = pt(p[1], p[2])
 
 def p_sig4(p):
     "sig : sig COMMA sig "
-    p[0] = p[1] + p[3]
+    p[0] = [p[1], p[3]]
 
 def p_sig5(p):
     "sig : sig ARROW sig "
-    p[0] = p[1] + p[3]
+    p[0] = fn(p[1], p[3])
+
+def p_sig6(p):
+    'sig : NAME'
+    p[0] = p[1]
 
 #------------------------------------------------------------------------
 
@@ -307,19 +313,6 @@ def p_error(p):
 #------------------------------------------------------------------------
 # Module
 #------------------------------------------------------------------------
-
-class Defn:
-    def __init__(self):
-        pass
-
-class Module:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-    def __repr__(self):
-        keys = sorted(self.__dict__)
-        items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
-        return "{}({})".format(type(self).__name__, ", ".join(items))
 
 #------------------------------------------------------------------------
 # Toplevel
@@ -361,42 +354,62 @@ def mopen(f):
 
     return build_module(b)
 
+def build_def(sig):
+    return Definition(Signature(*sig))
+
 def build_module(a):
-    return [
-        Interface(iface.name, iface.params, iface.body)
+    return Module([
+        (iface.name , Interface(iface.name, iface.params, iface.body))
         for iface in a
-    ]
+    ])
 
 #------------------------------------------------------------------------
+#
+#------------------------------------------------------------------------
+
+class Module(object):
+    def __init__(self, insts):
+        self.ifaces = dict(insts)
+
+    def instantiate(self, name, base, params=None):
+        return self.ifaces[name].instantiate(params)
+
+    def __repr__(self):
+        return pformat({
+            'interfaces': self.ifaces
+        })
+
+class Instance(object):
+
+    def __init__(self):
+        self.symtab = {}
+
+    def resolve(self, fn):
+        ty = self.symtab[fn]
+        return ty
 
 class Interface(object):
     def __init__(self, name, params, defs):
         self.name = name
         self.params = params
+        self.defs = dict([(name, build_def(sig)) for name, sig in defs])
 
-        self.defs = [
-            Definition(
-                name,
-                Signature(*sig)
-            )
-            for name, sig in defs
-        ]
+    def instantiate(self, name, params):
+        pass
 
     def __repr__(self):
         return pformat({
-            'name': self.name,
-            'params': self.params,
-            'defs': self.defs,
+            'name'   : self.name,
+            'params' : self.params,
+            'defs'   : self.defs,
         })
 
 class Definition(object):
-    def __init__(self, name, sig):
-        self.name = name
+    def __init__(self, sig):
         self.sig = sig
 
     def __repr__(self):
         return pformat({
-            'name': self.name,
             'sig': self.sig,
         })
 
@@ -408,15 +421,31 @@ class Signature(object):
 
     def __repr__(self):
         return pformat({
-            'dom': self.dom,
-            'cod': self.cod,
+            'dom': (self.dom),
+            'cod': (self.cod),
         })
 
 #------------------------------------------------------------------------
 
+python = {
+    'int'     : int,
+    'float'   : float,
+    'complex' : complex,
+    'object'  : object,
+}
+
 if __name__ == '__main__':
     a = mopen('module/blaze.mod')
     print a
+
+    # typeset
+
+    # just has to inform the type of graph node that gets
+    # outputted and the datashape of that node.
+
+    # Entire thing needs to compile down into a giant dictionary
+    # with the type mappings for a single concrete type.
+    #a.instantiate('Ix', )
 
     import readline
     parser = load_parser(debug=True)
