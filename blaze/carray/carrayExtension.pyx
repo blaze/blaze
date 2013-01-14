@@ -937,7 +937,7 @@ cdef class carray:
 
     self.atomsize = atomsize = dtype.itemsize
     self.itemsize = itemsize = dtype.base.itemsize
-    print "atomsize, itemsize:", atomsize, itemsize
+    #print "atomsize, itemsize:", atomsize, itemsize
 
     # Check defaults for dflt
     _dflt = np.zeros((), dtype=dtype)
