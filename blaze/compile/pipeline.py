@@ -90,13 +90,6 @@ def do_convert_to_aterm(context, graph):
     ::
         a + b
 
-    ::
-        Arithmetic(
-          Add
-        , Array(){dshape("3, int64"), 45340864}
-        , Array(){dshape("3, int64"), 45340864}
-        ){dshape("3, int64"), 45264432}
-
     """
     context = dict(context)
     vars = topovals(graph)
