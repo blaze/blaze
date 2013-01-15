@@ -523,11 +523,11 @@ Grammar
 .. code-block:: text
 
     NAME   = [a-zA-Z_][a-zA-Z0-9_]*
-    EQUALS = "='
-    COMMA  = ",'
-    COLON  = ":'
-    LBRACE = "{'
-    RBRACE = "}'
+    EQUALS = '='
+    COMMA  = ','
+    COLON  = ':'
+    LBRACE = '{'
+    RBRACE = '}'
     BIT    = 'bool' | 'int8' | 'int16' | 'int32' ...
 
     top : mod
