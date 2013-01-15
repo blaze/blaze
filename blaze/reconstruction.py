@@ -9,6 +9,8 @@ from collections import namedtuple
 
 from context import Env
 
+DEBUG = False
+
 #------------------------------------------------------------------------
 # Syntax
 #------------------------------------------------------------------------
@@ -111,13 +113,14 @@ class TypeCon(object):
 # Unit Types
 #------------------------------------------------------------------------
 
-# -----------
-# Γ ⊢ x : int
-
 # ------------
 # Γ ⊢ x : bool
 
 Bool = TypeCon("bool", [])
+
+# -----------
+# Γ ⊢ x : int
+
 Integer = TypeCon("int", [])
 
 #------------------------------------------------------------------------
@@ -137,7 +140,6 @@ Function = lambda dom, cod: TypeCon('->', (dom, cod), infix=True)
 def tyeval(node, env, ctx=None):
     ctx = ctx or set()
     assert isinstance(ctx, set)
-
 
     # a : t ∈ Γ
     # ----------  [Var]
@@ -210,14 +212,18 @@ def constraints(t, bindings):
     return gen(t, constrs, bindings)
 
 #------------------------------------------------------------------------
-# Unifiers
+# Unification
 #------------------------------------------------------------------------
+
+# Calculate a solution to a set of constraint.
 
 def unify(env, t1, t2):
     ctx = env.collapse()
 
     a = simplifyty(t1)
     b = simplifyty(t2)
+
+    # ---------------------------
 
     if isinstance(a, TypeVar):
         if a != b:
@@ -226,8 +232,12 @@ def unify(env, t1, t2):
             a.ty = b
             return {a: b}
 
+    # ---------------------------
+
     elif isinstance(a, TypeCon) and isinstance(b, TypeVar):
         return unify(ctx, b, a)
+
+    # ---------------------------
 
     elif isinstance(a, TypeCon) and isinstance(b, TypeCon):
         if (a.cons != b.cons):
@@ -247,7 +257,7 @@ def unify(env, t1, t2):
         return ctx
 
     else:
-        raise Exception("Could not unify")
+        fail(ctx, a, b)
 
 def simplifyty(t):
     if isinstance(t, TypeVar):
@@ -378,6 +388,13 @@ def beta(node):
 def eta(node):
     """ eta reduction"""
     raise NotImplementedError
+
+def fail(env, a, b):
+    if DEBUG:
+        print 'terms', a,b
+        print 'env', env
+    else:
+        raise Exception("Could not unify")
 
 #------------------------------------------------------------------------
 # Syntax Buidlers

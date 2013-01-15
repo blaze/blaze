@@ -36,11 +36,20 @@ def test_reconstruct():
 
     # -- Example 3 --
 
+    x = app(
+        lam(['x', 'y', 'z'], product(Atom('x'), Atom('z'))),
+        [Atom('1'), Atom('2'), Atom('3')]
+    )
+    inferred = infer(env,x, debug=DEBUG)
+    assert pprint(inferred) == '(int x int)'
+
+    # -- Example 4 --
+
     x = app(Atom("product"), [Atom("?"), Atom("1")])
     inferred = infer(env, x, debug=DEBUG)
     assert pprint(inferred) == '(? x int)'
 
-    # -- Example 3 --
+    # -- Example 5 --
 
     x = app(Atom("sum"), [Atom("?"), Atom("1")])
     inferred = infer(env, x, debug=DEBUG)
