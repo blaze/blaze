@@ -1,53 +1,62 @@
+"""
+Create signatures wrapped around the umath functions.
+"""
+
 import numpy as np
 from types import FunctionType
+from blaze.datashape import from_numpy
 
 #------------------------------------------------------------------------
 # Lifted Primitives
 #------------------------------------------------------------------------
 
 class Prim(object):
-  def __init__(self, fn, pyfn=None, symbol=None, name=None,
-          nin=None, nout=None):
+    def __init__(self, fn, pyfn=None, symbol=None, name=None,
+            nin=None, nout=None):
 
-    self.fn = fn
-    self.pyfn = pyfn
-    self.symbol = symbol
-    self.name = name or fn.__name__
-    self.sig = None
-
-    # Map arity
-    if nin:
-        self.nin = nin
-    elif hasattr(fn, 'nin'):
-        self.nin = fn.nin
-    else:
-        assert isinstance(fn, FunctionType)
-        self.nin = fn.func_code.co_argcount
-
-    # Map arity
-    if nout:
-        self.nout = nout
-    elif hasattr(fn, 'nout'):
-        self.nout = fn.nout
-    else:
-        self.nout = 1
-
-    self._map_signature()
-
-  # should only be called by constructor
-  def _map_signature(self):
-    if hasattr(self.fn, 'types'):
+        self.fn = fn
+        self.pyfn = pyfn
+        self.symbol = symbol
+        self.name = name or fn.__name__
         self.sig = {}
-        for signature in self.fn.types:
-            dom, cod = signature.split('->')
-    else:
-        raise NotImplementedError
 
-  def __eq__(self, other):
-    return self.fn == other.fn
+        # Map arity
+        if nin:
+            self.nin = nin
+        elif hasattr(fn, 'nin'):
+            self.nin = fn.nin
+        else:
+            assert isinstance(fn, FunctionType)
+            self.nin = fn.func_code.co_argcount
 
-  def __repr__(self):
-    return "Prim(%s)" % self.name
+        # Map arity
+        if nout:
+            self.nout = nout
+        elif hasattr(fn, 'nout'):
+            self.nout = fn.nout
+        else:
+            self.nout = 1
+
+        self._map_signature()
+
+    # should only be called by constructor
+    def _map_signature(self):
+        if hasattr(self.fn, 'types'):
+            for signature in self.fn.types:
+                dom, cod = signature.split('->')
+
+                domi = tuple(map(np.dtype, dom))
+                codi = tuple(map(np.dtype, cod))
+
+                self.sig[domi] = codi
+        else:
+            raise NotImplementedError
+
+    def __eq__(self, other):
+        return self.fn == other.fn
+
+    def __repr__(self):
+        return "Prim(%s)" % self.name
 
 #------------------------------------------------------------------------
 # Classes
@@ -72,12 +81,12 @@ class ACmp(Prim):
 # Defs
 #------------------------------------------------------------------------
 
-arith_add      = AArith(np.add, 'Add', '+')
-arith_multiply = AArith(np.multiply, 'Mult', '*')
-arith_subtract = AArith(np.subtract, 'Sub', '-')
-arith_divide   = AArith(np.divide, 'Div', '/')
-arith_mod      = AArith(np.mod, 'Mod', '%')
-arith_power    = AArith(np.power, 'Pow', '**')
+add      = AArith(np.add, 'Add', '+')
+multiply = AArith(np.multiply, 'Mult', '*')
+subtract = AArith(np.subtract, 'Sub', '-')
+divide   = AArith(np.divide, 'Div', '/')
+mod      = AArith(np.mod, 'Mod', '%')
+power    = AArith(np.power, 'Pow', '**')
 
 bit_not = ABit(np.bitwise_not, 'Invert', '!')
 bit_and = ABit(np.bitwise_and, 'BitAnd', '&')
@@ -112,12 +121,12 @@ tanh  = ATransc(np.tanh)
 prim_types = [ATransc, ABit, ALogic, AArith, ATransc]
 
 __all__ =  [
-      'arith_add'
-    , 'arith_multiply'
-    , 'arith_subtract'
-    , 'arith_divide'
-    , 'arith_mod'
-    , 'arith_power'
+      'add'
+    , 'multiply'
+    , 'subtract'
+    , 'divide'
+    , 'mod'
+    , 'power'
 
     , 'bit_not'
     , 'bit_and'
@@ -148,4 +157,10 @@ __all__ =  [
     , 'sinh'
     , 'tan'
     , 'tanh'
+
+      'ATransc'
+    , 'ABit'
+    , 'ALogic'
+    , 'AArith'
+    , 'ATransc'
 ]
