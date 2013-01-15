@@ -1,5 +1,7 @@
 from blaze.reconstruction import *
 
+from nose.tools import assert_raises
+
 DEBUG = True
 
 def test_reconstruct():
@@ -14,9 +16,12 @@ def test_reconstruct():
     #------------
 
     env = {
-        "?"       : dynamic_t,
-        "product" : Function(var1, Function(var2, product_t)),
-        "sum"     : Function(var1, Function(var2, sum_t)),
+        "?"        : dynamic_t,
+        "product"  : Function(var1, Function(var2, product_t)),
+        "sum"      : Function(var1, Function(var2, sum_t)),
+        "true"     : Bool,
+        "false"    : Bool,
+        "boolfunc" : Function(Bool, Bool),
     }
 
     # -- Example 1 --
@@ -54,3 +59,9 @@ def test_reconstruct():
     x = app(Atom("sum"), [Atom("?"), Atom("1")])
     inferred = infer(env, x, debug=DEBUG)
     assert pprint(inferred) == '(? + int)'
+
+    # -- Example 5 --
+
+    x = app(Atom("boolfunc"), [Atom('1')])
+    with assert_raises(TypeError):
+        infer(env, x, debug=DEBUG)

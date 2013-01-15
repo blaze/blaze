@@ -299,7 +299,8 @@ def isnumericval(name):
         return False
 
 def isboolval(term):
-    return isinstance(term, bool)
+    if term in ['true', 'false']:
+        return isinstance(term, bool)
 
 def isdynamic(term):
     return term == '?'
