@@ -628,35 +628,43 @@ of this type.</p>
 <div class="section" id="grammar">
 <h2>Grammar<a class="headerlink" href="#grammar" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-text"><div class="highlight"><pre>NAME   = [a-zA-Z_][a-zA-Z0-9_]*
-EQUALS = &quot;=&#39;
-COMMA  = &quot;,&#39;
-COLON  = &quot;:&#39;
-LBRACE = &quot;{&#39;
-RBRACE = &quot;}&#39;
+EQUALS = &#39;=&#39;
+COMMA  = &#39;,&#39;
+COLON  = &#39;:&#39;
+LBRACE = &#39;{&#39;
+RBRACE = &#39;}&#39;
+BIT    = &#39;bool&#39; | &#39;int8&#39; | &#39;int16&#39; | &#39;int32&#39; ...
 
-statement ::= lhs_expression EQUALS rhs_expression
-            | rhs_expression
+top : mod
+    | stmt
 
-lhs_expression ::= lhs_expression SPACE lhs_expression
-                 | NAME
+mod : mod mod
+    | stmt
 
-rhs_expression ::= rhs_expression COMMA rhs_expression
+stmt : TYPE lhs_expression EQUALS rhs_expression
+     | rhs_expression
 
-rhs_expression ::= record
-                 | NAME
-                 | NUMBER
+lhs_expression : lhs_expression lhs_expression
+               | NAME
 
-record ::= LBRACE record_opt RBRACE
+rhs_expression : rhs_expression COMMA rhs_expression
+               | appl
+               | record
+               | BIT
+               | NAME
+               | NUMBER
 
-record_opt ::= record_opt COMMA record_opt
-             | record_item
-             | empty
+appl : NAME &#39;(&#39; rhs_expression &#39;)&#39;
 
-record_item ::= NAME COLON &#39;(&#39; rhs_expression &#39;)&#39;
-              | NAME COLON NAME
-              | NAME COLON NUMBER
-
-empty ::=
+record : LBRACE record_opt RBRACE
+record_opt : record_opt SEMI record_opt
+record_opt : record_item
+record_opt : empty
+record_item : NAME COLON &#39;(&#39; rhs_expression &#39;)&#39;
+record_item : NAME COLON BIT
+            : NAME COLON NAME
+            | NAME COLON NUMBER
+empty :
 </pre></div>
 </div>
 </div>

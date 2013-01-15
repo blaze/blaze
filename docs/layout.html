@@ -108,27 +108,6 @@ of memory that may or may not be contigious.</p>
 multiple blocks of data, then we need only have a invertible linear
 transformation which is able to map coordinates between the local
 coordinates of the chunks as we pull bytes from them.</p>
-<div class="highlight-python"><pre>Chunked(dim=0)
-+---------+
-|         |
-|---------|
-|         |
-+---------+</pre>
-</div>
-<div class="highlight-python"><pre>Chunked(dim=1)
-+---------+
-|    |    |
-|    |    |
-|    |    |
-+---------+</pre>
-</div>
-<div class="highlight-python"><pre>Multichunk(points=...)
-+---------+
-|    |    |
-|----|----|
-|    |    |
-+---------+</pre>
-</div>
 <div class="section" id="combining-chunks">
 <h2>Combining Chunks<a class="headerlink" href="#combining-chunks" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><pre>f : (i,j) -&gt; (i', j')
