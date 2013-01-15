@@ -60,7 +60,7 @@ def test_reconstruct():
     inferred = infer(env, x, debug=DEBUG)
     assert pprint(inferred) == '(? + int)'
 
-    # -- Example 5 --
+    # -- Example 6 --
 
     x = app(Atom("boolfunc"), [Atom('1')])
     with assert_raises(TypeError):
