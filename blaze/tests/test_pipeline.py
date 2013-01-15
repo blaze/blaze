@@ -64,16 +64,11 @@ def test_simple_pipeline2():
 
     #------------------------------------------------------------------------
 
-    # Add(Array(39558864){dshape("3 int64")},Array(39558864){dshape("3 int64")})
     if DEBUG:
         pprint(plan, width=1)
 
     plan = compile(d+d)
 
-    # Add(
-    #   Add(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
-    # , Add(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
-    # )
     if DEBUG:
         pprint(plan, width=1)
 
@@ -83,10 +78,6 @@ def test_simple_pipeline2():
         pprint(plan, width=1)
 
 
-    # Mul(
-    #   Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
-    # , Mul(Array(39558864){dshape("3 int64")}, Array(39558864){dshape("3 int64")})
-    # )
     plan = compile((d*d)*(d*d))
 
     if DEBUG:
