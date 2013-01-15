@@ -355,9 +355,12 @@ The above could describe a Python structure of the form::
 Type Variables
 ~~~~~~~~~~~~~~
 
-**Variable types** a seperate class of types expressed as free variables
-scoped within the type signature signifying a range of types. Type
-variables that occur once in a type signature are referred to as
+**Type variables** a seperate class of types expressed as free variables
+scoped within the type signature. Holding type variables as first order
+terms in the signatures encodes the fact that a term can be used in many
+concrete contexts with different concrete types.
+
+Type variables that occur once in a type signature are referred to as
 **free**, while type variables that appear multiple types are **rigid**.
 
 For example the type capable of expressing all square two dimensional
