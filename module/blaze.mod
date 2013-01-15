@@ -1,13 +1,22 @@
-interface Array T ds:
-    op _+_ :: (a,a) -> a
+# Array objects
+interface Array A a:
+    fun map        :: ((a -> b), A a) -> A b
+    fun reduce     :: (((a,a) -> b), A a) -> A b
+    fun accumulate :: (((a,a) -> b), A a) -> A b
+    fun zipwith    :: (((a,b) -> c), A a, A b) -> A c
+
+    #op _+_ = (A a, A a) -> zipwith(<add>, A a, A a)
+    #op _+_ = (A a, A b) -> zipwith(<add>, A c, A c) where
+    #    { a', b' = <unify(A a, A b)> }
+
 
 # Array indexing
-interface Ix T:
+interface Ix T a:
     fun getitem  :: (T, index) -> T
     fun getslice :: (T, index) -> T
 
-    fun setitem  :: (T, index, val) -> ()
-    fun setslice :: (T, index, val) -> ()
+    fun setitem  :: (T, index, a) -> ()
+    fun setslice :: (T, index, a) -> ()
 
     fun delitem  :: (T, index) -> ()
     fun delslice :: (T, index) -> ()
@@ -39,23 +48,21 @@ interface Arith a b:
     fun cos :: b -> b
     fun tan :: b -> b
 
-    fun asin :: b -> b
-    fun acos :: b -> b
-    fun atan :: b -> b
+    fun arcsin :: b -> b
+    fun arccos :: b -> b
+    fun arctan :: b -> b
 
-    fun asinh :: b -> b
-    fun acosh :: b -> b
-    fun atanh :: b -> b
+    fun arcsinh :: b -> b
+    fun arccosh :: b -> b
+    fun arctanh :: b -> b
+
 
 interface Ord T:
     op _>_ :: (T,T) -> T
     op _<_ :: (T,T) -> T
 
-interface Bool t:
+
+interface Bool T:
     fun or  :: (T, T) -> T
     fun and :: (T, T) -> T
     fun xor :: (T, T) -> T
-
-interface Traversable t:
-    fun map :: ((a->b), T) -> T
-    fun zip :: ((a->b), T) -> T
