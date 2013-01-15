@@ -5,10 +5,9 @@
 
 from numpy import dtype
 from string import letters
-from itertools import chain
 from collections import namedtuple
 
-DEBUG = True
+from context import Env
 
 #------------------------------------------------------------------------
 # Syntax
@@ -166,7 +165,7 @@ def tyeval(node, env, ctx=None):
     elif isinstance(node, Lambda):
         dom = TypeVar()
 
-        scope = dict(env)
+        scope = env.collapse()
         scope[node.v] = dom
 
         bindings = set(ctx)
@@ -215,14 +214,14 @@ def constraints(t, bindings):
 #------------------------------------------------------------------------
 
 def unify(env, t1, t2):
-    ctx = dict(env)
+    ctx = env.collapse()
 
     a = simplifyty(t1)
     b = simplifyty(t2)
 
     if isinstance(a, TypeVar):
         if a != b:
-            if occur1(a, b):
+            if occursin(a, b):
                 raise TypeError("Recursive types are not supported")
             a.ty = b
             return {a: b}
@@ -260,10 +259,11 @@ def simplifyty(t):
     else:
         return t
 
-def isbound(v, bindings):
-    return not occurs(v, bindings)
+#------------------------------------------------------------------------
+# Occurs Check
+#------------------------------------------------------------------------
 
-def occur1(var, ty):
+def occursin(var, ty):
     sty = simplifyty(ty)
     if sty == var:
         return True
@@ -272,11 +272,14 @@ def occur1(var, ty):
     return False
 
 def occurs(t, types):
-    return any(occur1(t, t2) for t2 in types)
+    return any(occursin(t, t2) for t2 in types)
 
 #------------------------------------------------------------------------
 # Term Deconstructors
 #------------------------------------------------------------------------
+
+def isbound(v, bindings):
+    return not occurs(v, bindings)
 
 def isnumericval(name):
     try:
@@ -327,7 +330,7 @@ def pprint(ty):
 # Toplevel
 #------------------------------------------------------------------------
 
-def infer(env, term):
+def infer(env, term, debug=True):
     """ Infer
 
     Parameters
@@ -339,18 +342,11 @@ def infer(env, term):
         type signature
 
     """
+    env = Env(env)
     t = tyeval(term, env)
-    if DEBUG:
+    if debug:
         print ('%s :: %s' % (str(term), pprint(t)))
     return t
-
-def beta(node):
-    """ beta reduction"""
-    pass
-
-def eta(node):
-    """ eta reduction"""
-    pass
 
 def atnf(node):
     """ algebraic type normal form
@@ -375,62 +371,13 @@ def atnf(node):
     elif isinstance(node, Lambda):
         return atnf(node.body)
 
-class Env(object):
+def beta(node):
+    """ beta reduction"""
+    raise NotImplementedError
 
-    def __init__(self, *evs):
-        self.evs = [dict()] + list(evs)
-        self.iev = self.evs[0]
-
-    def lookup(self, key):
-        for e in self.evs:
-            if key in e:
-                return e[key]
-        raise KeyError, key
-
-    def foldl(self, key):
-        t = key
-        while key in self:
-            t = self[key]
-        return t
-
-    def collapse(self):
-        iev = {}
-        for e in self.evs:
-            iev.update(e)
-        return Env(iev)
-
-    def has_key(self, key):
-        for e in self.maps:
-            if key in e:
-                return True
-        return False
-
-    def __len__(self):
-        return sum(len(e) for e in self.evs)
-
-    def __getitem__(self, key):
-        return self.lookup(key)
-
-    def update(self, other):
-        self.iev.update(other)
-
-    def __setitem__(self, key, value):
-        self.iev[key] = value
-
-    def __contains__(self, key):
-        for e in self.evs:
-            if key in e:
-                return True
-        return False
-
-    def __iter__(self):
-        return chain(*[e.keys() for e in self.evs])
-
-    def iterkeys(self):
-        return self.__iter__()
-
-    def __repr__(self):
-        return 'Env(' + repr(self.evs) + ')'
+def eta(node):
+    """ eta reduction"""
+    raise NotImplementedError
 
 #------------------------------------------------------------------------
 # Syntax Buidlers
@@ -458,48 +405,3 @@ def union(*xs):
 # product types
 def product(x,y):
     return App(App(Atom("product"), x), y)
-
-
-if __name__ == '__main__':
-    var1 = TypeVar()
-    var2 = TypeVar()
-
-    product_t = TypeCon("x", (var1, var2), infix=True)
-    sum_t     = TypeCon("+", (var1, var2), infix=True)
-    dynamic_t = TypeCon("?", [])
-
-    # Example Env
-    #------------
-
-    env = {
-        "?"       : dynamic_t,
-        "product" : Function(var1, Function(var2, product_t)),
-        "sum"     : Function(var1, Function(var2, sum_t)),
-    }
-
-    # -- Example 1 --
-
-    x = lam(['x', 'y'], product(Atom('x'), Atom('y')))
-    inferred = infer(env,x)
-    assert pprint(inferred) == '(a -> (b -> (b x a)))'
-
-    # -- Example 2 --
-
-    x = app(
-        lam(['x', 'y', 'z'], product(Atom('x'), Atom('z'))),
-        [Atom('1')]
-    )
-    inferred = infer(env,x)
-    assert pprint(inferred) == '(a -> (b -> (b x int)))'
-
-    # -- Example 3 --
-
-    x = app(Atom("product"), [Atom("?"), Atom("1")])
-    inferred = infer(env, x)
-    assert pprint(inferred) == '(? x int)'
-
-    # -- Example 3 --
-
-    x = app(Atom("sum"), [Atom("?"), Atom("1")])
-    inferred = infer(env, x)
-    assert pprint(inferred) == '(? + int)'
