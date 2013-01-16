@@ -18,13 +18,13 @@ try:
 except ImportError:
     have_minivect = False
 
-# Clases of unit types.
-DIMENSION = 1
-MEASURE   = 2
-
 #------------------------------------------------------------------------
 # Type Metaclass
 #------------------------------------------------------------------------
+
+# Clases of unit types.
+DIMENSION = 1
+MEASURE   = 2
 
 class Type(type):
     _registry = {}

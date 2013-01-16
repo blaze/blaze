@@ -231,6 +231,8 @@ def unify(env, t1, t2):
                 raise TypeError("Recursive types are not supported")
             a.ty = b
             return {a: b}
+        else:
+            return {a: a}
 
     # ---------------------------
 
@@ -240,21 +242,21 @@ def unify(env, t1, t2):
     # ---------------------------
 
     elif isinstance(a, TypeCon) and isinstance(b, TypeCon):
+
         if (a.cons != b.cons):
-            raise TypeError("Type mismatch: %s != %s" %
-                (str(a), str(b))
-            )
+            raise TypeError("Type mismatch: %s != %s" % (str(a), str(b)))
 
         if len(a.types) != len(b.types):
             raise ValueError("Wrong number of arguments: %s != %s" %
-                (len(a.types), len(b.types))
-            )
+                (len(a.types), len(b.types)))
 
         for p, q in zip(a.types, b.types):
             locals = unify(ctx, p, q)
             ctx.update(locals)
 
         return ctx
+
+    # ---------------------------
 
     else:
         fail(ctx, a, b)
@@ -304,13 +306,6 @@ def isboolval(term):
 
 def isdynamic(term):
     return term == '?'
-
-def isnumpy(term):
-    try:
-        dtype(term)
-        return True
-    except TypeError:
-        return False
 
 #------------------------------------------------------------------------
 # Printing

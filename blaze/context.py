@@ -41,7 +41,10 @@ class Env(object):
         return self.lookup(key)
 
     def update(self, other):
-        self.iev.update(other)
+        if isinstance(other, Env):
+            self.iev.update(other.iev)
+        else:
+            self.iev.update(other)
 
     def __setitem__(self, key, value):
         self.iev[key] = value

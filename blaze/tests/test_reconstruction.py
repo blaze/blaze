@@ -65,3 +65,49 @@ def test_reconstruct():
     x = app(Atom("boolfunc"), [Atom('1')])
     with assert_raises(TypeError):
         infer(env, x, debug=DEBUG)
+
+def test_simple_lisp_like():
+    # Simple typed cons list for LISP like things.
+
+    var1 = TypeVar()
+    var2 = TypeVar()
+    list_t = TypeCon(":", (var1, var2))
+
+    env = {
+        "true"  : Bool,
+        "false" : Bool,
+        "zero"  : Integer,
+        "one"   : Integer,
+
+        "cons" : Function(var1, Function(var2, list_t)),
+        "nil"  : list_t
+    }
+
+def test_simple_dtype_like():
+    var1 = TypeVar()
+    var2 = TypeVar()
+    var2 = TypeVar()
+
+    int_   = TypeCon("int", [])
+    float_ = TypeCon("float", [])
+    bool_  = TypeCon("bool", [])
+    dynamic_t = TypeCon("?", [])
+
+    # fun map        :: ((a -> b), A a) -> A b
+    # fun reduce     :: (((a,a) -> b), A a) -> A b
+    # fun accumulate :: (((a,a) -> b), A a) -> A b
+    # fun zipwith    :: (((a,b) -> c), A a, A b) -> A c
+
+    Array = TypeCon('Array', [var1])
+
+    env = {
+        "?"        : dynamic_t,
+        "true"     : bool_,
+        "false"    : bool_,
+        "map"      : Function(Function(var1, var2), Function(Array, Array))
+    }
+
+    ufunc = lam(['x'], Atom('x'))
+    x = app(Atom("map"), [ufunc])
+
+    inferred = infer(env, x, debug=DEBUG)
