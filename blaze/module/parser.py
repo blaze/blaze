@@ -66,7 +66,7 @@ class ModuleSyntaxError(Exception):
 
 tokens = (
     'INTERFACE', 'NAME', 'ARROW', 'COLON', 'OP', 'FUN', 'DCOLON', 'PYOP',
-    'COMMA'
+    'COMMA', 'EFFECT'
 )
 
 infix = ( '+', '*', '-', '/')
@@ -150,6 +150,14 @@ ops = set([
     , '__xor__'
 ])
 
+effects = [
+    'alloc',
+    'dealloc,'
+    'read',
+    'assign,'
+    'dirty',
+]
+
 literals = [
     '=' ,
     ',' ,
@@ -157,6 +165,7 @@ literals = [
     ')' ,
     '{' ,
     '}' ,
+    '!' ,
 ]
 
 t_COMMA  = r','
@@ -190,9 +199,9 @@ def t_ARROW(t):
     r'->'
     return t
 
-def t_newline(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count("\n")
+def t_EFFECT(t):
+    r'alloc|dealloc|read|assign|dirty'
+    return t
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_\']*'
@@ -201,6 +210,10 @@ def t_NAME(t):
 def t_COMMENT(t):
     r'\#.*'
     pass
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += t.value.count("\n")
 
 def t_error(t):
     print("Unknown token '%s'" % t.value[0])
@@ -276,18 +289,26 @@ def p_sig2(p):
     p[0] = ()
 
 def p_sig3(p):
+    "sig : '!' EFFECT '(' ')' "
+    p[0] = ()
+
+def p_sig4(p):
     'sig : NAME NAME'
     p[0] = pt(p[1], p[2])
 
-def p_sig4(p):
+def p_sig5(p):
     "sig : sig COMMA sig "
     p[0] = [p[1], p[3]]
 
-def p_sig5(p):
+def p_sig6(p):
     "sig : sig ARROW sig "
     p[0] = fn(p[1], p[3])
 
-def p_sig6(p):
+def p_sig7(p):
+    '''sig : '!' EFFECT NAME'''
+    p[0] = (p[1], p[2])
+
+def p_sig8(p):
     'sig : NAME'
     p[0] = p[1]
 
@@ -347,13 +368,6 @@ def parse(pattern):
     parser = load_parser(debug=True)
     return parser(pattern)
 
-def mopen(f):
-    fd = open(f)
-    contents = fd.read()
-    b = parse(contents)
-
-    return build_module(b)
-
 def build_def(sig):
     return Definition(Signature(*sig))
 
@@ -362,6 +376,23 @@ def build_module(a):
         (iface.name , Interface(iface.name, iface.params, iface.body))
         for iface in a
     ])
+
+def mread(s):
+    """
+    Read module from string
+    """
+    b = parse(s)
+    return build_module(b)
+
+def mopen(f):
+    """
+    Read module from file
+    """
+    fd = open(f)
+    contents = fd.read()
+    b = parse(contents)
+
+    return build_module(b)
 
 #------------------------------------------------------------------------
 #
