@@ -11,6 +11,9 @@ from blaze.datashape import from_numpy
 #------------------------------------------------------------------------
 
 class Prim(object):
+    """
+    """
+
     def __init__(self, fn, pyfn=None, symbol=None, name=None,
             nin=None, nout=None):
 
@@ -63,19 +66,24 @@ class Prim(object):
 #------------------------------------------------------------------------
 
 class ATransc(Prim):
-  pass
+    """ Transcendental functions """
+    pass
 
 class AArith(Prim):
-  pass
+    """ Arithmetic functions """
+    pass
 
 class ALogic(Prim):
-  pass
+    """ Logical functions """
+    pass
 
 class ABit(Prim):
-  pass
+    """ Bitwise functions """
+    pass
 
 class ACmp(Prim):
-  pass
+    """ Comparision functions """
+    pass
 
 #------------------------------------------------------------------------
 # Defs
