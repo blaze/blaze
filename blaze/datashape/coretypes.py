@@ -40,7 +40,6 @@ class Type(type):
     @staticmethod
     def register(name, type):
         # Don't clobber existing types.
-        # TODO: more sophisticated ways of namespacing these.
         if name in Type._registry:
             raise TypeError('There is another type registered with name %s'\
                 % name)

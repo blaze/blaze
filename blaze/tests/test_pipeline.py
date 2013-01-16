@@ -1,6 +1,3 @@
-# TODO assertsion for the output'd values... right now they have
-# pointer addresses so its hard to do string matching
-
 from blaze.expr import ops
 from blaze.table import NDArray
 from blaze.compile.pipeline import compile

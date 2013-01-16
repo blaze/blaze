@@ -7,6 +7,7 @@ from utils import Symbol
 # Domain Constraints
 #------------------------------------------------------------------------
 
+# TODO: Dependency on graph is not desirable
 Array, Table = Symbol('Array'), Symbol('Table')
 one, zero, false, true = xrange(4)
 
@@ -33,7 +34,7 @@ universal = set([C.top]) | numeric | indexable | string
 
 # These are abstract graph nodes for Operations.
 
-# TODO: this is vestigal
+# TODO: remove this in favor of new module system
 
 class Add(Op):
     # -----------------------
