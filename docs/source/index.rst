@@ -43,6 +43,7 @@ API Reference
 
    toplevel
    types
+   prims
    persistence
    typeinference
    aterm
