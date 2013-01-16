@@ -1,5 +1,7 @@
 from blaze.module.parser import mread
 
+#------------------------------------------------------------------------
+
 dummy = """
 interface Dummy t:
     fun foo :: (t,a) -> a
@@ -15,6 +17,8 @@ dummy_expected = \
           'pop': {'sig': {'cod': ('!', 'dirty'), 'dom': 't'}}},
  'name': 'Dummy',
  'params': ('t',)}}}
+
+#------------------------------------------------------------------------
 
 arith = """
 interface Arith t:
@@ -35,6 +39,8 @@ arith_expected = \
           'subtract': {'sig': {'cod': 't', 'dom': ['t', 't']}}},
  'name': 'Arith',
  'params': ('t',)}}}
+
+#------------------------------------------------------------------------
 
 def test_dummy():
     print mread(dummy)

@@ -69,7 +69,12 @@ tokens = (
     'COMMA', 'EFFECT'
 )
 
-infix = ( '+', '*', '-', '/')
+infix = {
+    '+': 'add',
+    '*': 'mul',
+    '-': 'sub',
+    '/': 'div',
+}
 
 ops = set([
       '__abs__'
@@ -467,16 +472,7 @@ python = {
 
 if __name__ == '__main__':
     a = mopen('module/blaze.mod')
-    print a
-
-    # typeset
-
-    # just has to inform the type of graph node that gets
-    # outputted and the datashape of that node.
-
-    # Entire thing needs to compile down into a giant dictionary
-    # with the type mappings for a single concrete type.
-    #a.instantiate('Ix', )
+    a.instantiate('Ix', )
 
     import readline
     parser = load_parser(debug=True)
