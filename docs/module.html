@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Python Module Index &mdash; Blaze 0.1-dev documentation</title>
+    <title>Module System &mdash; Blaze 0.1-dev documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -31,13 +31,12 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-
+    <link rel="next" title="Extending" href="extending.html" />
+    <link rel="prev" title="Evaluation Class" href="eclass.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-
-
 
   </head>
   <body>
@@ -82,84 +81,108 @@
   <div class="row">
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Module System</a><ul>
+<li><a class="reference internal" href="#typesets">Typesets</a></li>
+</ul>
+</li>
+</ul>
 
          </ul>
       </div>
       <div class="span9">
           
-
-   <h1>Python Module Index</h1>
-
-   <div class="modindex-jumpbox">
-   <a href="#cap-b"><strong>b</strong></a>
-   </div>
-
-   <table class="indextable modindextable" cellspacing="0" cellpadding="2">
-     <tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
-     <tr class="cap" id="cap-b"><td></td><td>
-       <strong>b</strong></td><td></td></tr>
-     <tr>
-       <td><img src="_static/minus.png" class="toggler"
-              id="toggle-1" style="display: none" alt="-" /></td>
-       <td>
-       <tt class="xref">blaze</tt></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="types.html#module-blaze.datashape.coretypes"><tt class="xref">blaze.datashape.coretypes</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="eclass.html#module-blaze.eclass"><tt class="xref">blaze.eclass</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="ops.html#module-blaze.expr.ops"><tt class="xref">blaze.expr.ops</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="layout.html#module-blaze.layouts.scalar"><tt class="xref">blaze.layouts.scalar</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="persistence.html#module-blaze.persistence.bloscpack"><tt class="xref">blaze.persistence.bloscpack</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="prims.html#module-blaze.prims"><tt class="xref">blaze.prims</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="typeinference.html#module-blaze.reconstruction"><tt class="xref">blaze.reconstruction</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="typeinference.html#module-blaze.signatures"><tt class="xref">blaze.signatures</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="sources.html#module-blaze.sources.canonical"><tt class="xref">blaze.sources.canonical</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="table.html#module-blaze.table"><tt class="xref">blaze.table</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="toplevel.html#module-blaze.toplevel"><tt class="xref">blaze.toplevel</tt></a></td><td>
-       <em></em></td></tr>
-   </table>
+  <div class="section" id="module-system">
+<h1>Module System<a class="headerlink" href="#module-system" title="Permalink to this headline">¶</a></h1>
+<p>A goal of the Blaze module system is to package together packets of
+definitions of data types and associated operations over that type and
+enforce a consistent naming scheme for these definitions.</p>
+<p>The module system also serves to define the signatures for determining
+types over the defined modules to define operations in a generic way.</p>
+<div class="section" id="typesets">
+<h2>Typesets<a class="headerlink" href="#typesets" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td rowspan="14"><blockquote class="first">
+<div>array</div></blockquote>
+<blockquote>
+<div>table</div></blockquote>
+<blockquote>
+<div>ints</div></blockquote>
+<blockquote>
+<div>uints</div></blockquote>
+<blockquote>
+<div>floats</div></blockquote>
+<blockquote>
+<div>complexes</div></blockquote>
+<blockquote>
+<div>bools</div></blockquote>
+<blockquote>
+<div>string</div></blockquote>
+<blockquote>
+<div>discrete</div></blockquote>
+<blockquote>
+<div>reals</div></blockquote>
+<blockquote>
+<div>continuous</div></blockquote>
+<blockquote>
+<div>numeric</div></blockquote>
+<blockquote>
+<div>indexable</div></blockquote>
+<blockquote class="last">
+<div>universal</div></blockquote>
+</td>
+<td rowspan="14"><blockquote class="first">
+<div>Array T</div></blockquote>
+<blockquote>
+<div>Table T</div></blockquote>
+<blockquote>
+<div>int8, int16, int32, int64</div></blockquote>
+<blockquote>
+<div>uint8, uint16, uint32, uint64</div></blockquote>
+<blockquote>
+<div>float32, float64</div></blockquote>
+<blockquote>
+<div>complex64, complex128</div></blockquote>
+<blockquote>
+<div>bool</div></blockquote>
+<blockquote>
+<div>String, Varchar, Blob</div></blockquote>
+<blockquote>
+<div>ints , uints</div></blockquote>
+<blockquote>
+<div>ints , floats</div></blockquote>
+<blockquote>
+<div>floats , complexes</div></blockquote>
+<blockquote>
+<div>discrete , continuous</div></blockquote>
+<blockquote>
+<div>array_like, table_like</div></blockquote>
+<blockquote class="last">
+<div>top , numeric , indexable , string</div></blockquote>
+</td>
+</tr>
+<tr class="row-even"></tr>
+<tr class="row-odd"></tr>
+<tr class="row-even"></tr>
+<tr class="row-odd"></tr>
+<tr class="row-even"></tr>
+<tr class="row-odd"></tr>
+<tr class="row-even"></tr>
+<tr class="row-odd"></tr>
+<tr class="row-even"></tr>
+<tr class="row-odd"></tr>
+<tr class="row-even"></tr>
+<tr class="row-odd"></tr>
+<tr class="row-even"></tr>
+</tbody>
+</table>
+</div>
+</div>
 
 
       </div>

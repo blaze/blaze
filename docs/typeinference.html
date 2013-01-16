@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Type Inference &mdash; Blaze 0.1-dev documentation</title>
+    <title>Type Reconstruction &mdash; Blaze 0.1-dev documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -32,7 +32,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
     <link rel="next" title="ATerm" href="aterm.html" />
-    <link rel="prev" title="Persistence" href="persistence.html" />
+    <link rel="prev" title="Proposal for a persistent format that can include variable length objects" href="format-variable-length.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -82,15 +82,14 @@
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
-<li><a class="reference internal" href="#">Type Inference</a><ul>
-<li><a class="reference internal" href="#type-variables">Type Variables</a></li>
+<li><a class="reference internal" href="#">Type Reconstruction</a><ul>
 <li><a class="reference internal" href="#signatures">Signatures</a></li>
 <li><a class="reference internal" href="#type-system">Type System</a></li>
 <li><a class="reference internal" href="#dynamic">Dynamic</a></li>
 <li><a class="reference internal" href="#rigid-free">Rigid &amp; Free</a></li>
 <li><a class="reference internal" href="#context">Context</a></li>
 <li><a class="reference internal" href="#constraints">Constraints</a><ul>
-<li><a class="reference internal" href="#module-blaze.expr.typeinference">API</a></li>
+<li><a class="reference internal" href="#module-blaze.reconstruction">API</a></li>
 </ul>
 </li>
 </ul>
@@ -101,22 +100,23 @@
       </div>
       <div class="span9">
           
-  <div class="section" id="type-inference">
-<h1>Type Inference<a class="headerlink" href="#type-inference" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="type-variables">
-<h2>Type Variables<a class="headerlink" href="#type-variables" title="Permalink to this headline">¶</a></h2>
-<p>Type variables are free paramaters standing for type or ranges of types.
-A concrete type is fixed type in the base type system.</p>
-<p>The goal of inference is to resolve the relationships between type
-variables and concrete variables within the context of a of an
-expression but without the need for explicit annotation.</p>
-</div>
+  <div class="section" id="type-reconstruction">
+<h1>Type Reconstruction<a class="headerlink" href="#type-reconstruction" title="Permalink to this headline">¶</a></h1>
+<p>The goal of type reconstruction is to resolve the relationships between
+type variables and concrete variables within the context of a of an
+expression but without the need for the entire expression to be explicitly
+annotated.</p>
+<p>Holding type variables as first order terms in the signatures encodes
+the fact that a term can be used in many concrete contexts with
+different concrete types. The end result of successful type
+reconstruction and unification is determine the least general
+type satisfying the constraints on the expression.</p>
 <div class="section" id="signatures">
 <h2>Signatures<a class="headerlink" href="#signatures" title="Permalink to this headline">¶</a></h2>
 <p>The signature:</p>
 <div class="highlight-python"><pre>(a, b) -&gt; c</pre>
 </div>
-<p>stands for a function of two arguments, the first of type <tt class="docutils literal"><span class="pre">a</span></tt>, the second
+<p>u for a function of two arguments, the first of type <tt class="docutils literal"><span class="pre">a</span></tt>, the second
 of type <tt class="docutils literal"><span class="pre">b</span></tt> and returning type <tt class="docutils literal"><span class="pre">c</span></tt>.</p>
 <p>Would be this in Python 3 signature notation:</p>
 <div class="highlight-python"><pre>def (x : a, y : b) -&gt; c:
@@ -165,11 +165,11 @@ the unifiers.</p>
 <div class="section" id="constraints">
 <h2>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
 <p>TODO</p>
-<div class="section" id="module-blaze.expr.typeinference">
-<span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.expr.typeinference" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="module-blaze.reconstruction">
+<span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.reconstruction" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
-<dt id="blaze.expr.typeinference.atnf">
-<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">atnf</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.atnf" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.reconstruction.atnf">
+<tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">atnf</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.atnf" title="Permalink to this definition">¶</a></dt>
 <dd><p>algebraic type normal form</p>
 <p>This is confluent until unless we permit recursive types, which we
 don&#8217;t:</p>
@@ -180,20 +180,20 @@ don&#8217;t:</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="blaze.expr.typeinference.beta">
-<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">beta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.beta" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.reconstruction.beta">
+<tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">beta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.beta" title="Permalink to this definition">¶</a></dt>
 <dd><p>beta reduction</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="blaze.expr.typeinference.eta">
-<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">eta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.eta" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.reconstruction.eta">
+<tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">eta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.eta" title="Permalink to this definition">¶</a></dt>
 <dd><p>eta reduction</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="blaze.expr.typeinference.infer">
-<tt class="descclassname">blaze.expr.typeinference.</tt><tt class="descname">infer</tt><big>(</big><em>env</em>, <em>term</em><big>)</big><a class="headerlink" href="#blaze.expr.typeinference.infer" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.reconstruction.infer">
+<tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">infer</tt><big>(</big><em>env</em>, <em>term</em>, <em>debug=True</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.infer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Infer</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -213,13 +213,13 @@ don&#8217;t:</p>
 </table>
 </dd></dl>
 
-<span class="target" id="module-blaze.expr.signatures"></span><p>Convert between type signatures between Blaze and NumPy</p>
+<span class="target" id="module-blaze.signatures"></span><p>Convert between type signatures between Blaze and NumPy</p>
 <div class="highlight-python"><pre>NumPy: ii -&gt; i
 Blaze: (a,a) -&gt; a</pre>
 </div>
 <dl class="function">
-<dt id="blaze.expr.signatures.sig_parse">
-<tt class="descclassname">blaze.expr.signatures.</tt><tt class="descname">sig_parse</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.expr.signatures.sig_parse" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.signatures.sig_parse">
+<tt class="descclassname">blaze.signatures.</tt><tt class="descname">sig_parse</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#blaze.signatures.sig_parse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Signature parse</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

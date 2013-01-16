@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Python Module Index &mdash; Blaze 0.1-dev documentation</title>
+    <title>Primitive Operations &mdash; Blaze 0.1-dev documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -31,13 +31,12 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-
+    <link rel="next" title="Persistence" href="persistence.html" />
+    <link rel="prev" title="Core Types" href="types.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-
-
 
   </head>
   <body>
@@ -82,84 +81,58 @@
   <div class="row">
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Primitive Operations</a><ul>
+<li><a class="reference internal" href="#umath">Umath</a></li>
+<li><a class="reference internal" href="#math">Math</a></li>
+<li><a class="reference internal" href="#cmath">CMath</a></li>
+</ul>
+</li>
+</ul>
 
          </ul>
       </div>
       <div class="span9">
           
+  <div class="section" id="primitive-operations">
+<h1>Primitive Operations<a class="headerlink" href="#primitive-operations" title="Permalink to this headline">¶</a></h1>
+<p>Operations for arithmetic operations, comparisons. Wrappings for
+mathematical operations over native types.</p>
+<div class="section" id="umath">
+<h2>Umath<a class="headerlink" href="#umath" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-blaze.prims"></span><p>Create signatures wrapped around the umath functions.</p>
+<dl class="class">
+<dt id="blaze.prims.ABit">
+<em class="property">class </em><tt class="descclassname">blaze.prims.</tt><tt class="descname">ABit</tt><big>(</big><em>fn</em>, <em>pyfn=None</em>, <em>symbol=None</em>, <em>name=None</em>, <em>nin=None</em>, <em>nout=None</em><big>)</big><a class="headerlink" href="#blaze.prims.ABit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bitwise functions</p>
+</dd></dl>
 
-   <h1>Python Module Index</h1>
+<dl class="class">
+<dt id="blaze.prims.ALogic">
+<em class="property">class </em><tt class="descclassname">blaze.prims.</tt><tt class="descname">ALogic</tt><big>(</big><em>fn</em>, <em>pyfn=None</em>, <em>symbol=None</em>, <em>name=None</em>, <em>nin=None</em>, <em>nout=None</em><big>)</big><a class="headerlink" href="#blaze.prims.ALogic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logical functions</p>
+</dd></dl>
 
-   <div class="modindex-jumpbox">
-   <a href="#cap-b"><strong>b</strong></a>
-   </div>
+<dl class="class">
+<dt id="blaze.prims.AArith">
+<em class="property">class </em><tt class="descclassname">blaze.prims.</tt><tt class="descname">AArith</tt><big>(</big><em>fn</em>, <em>pyfn=None</em>, <em>symbol=None</em>, <em>name=None</em>, <em>nin=None</em>, <em>nout=None</em><big>)</big><a class="headerlink" href="#blaze.prims.AArith" title="Permalink to this definition">¶</a></dt>
+<dd><p>Arithmetic functions</p>
+</dd></dl>
 
-   <table class="indextable modindextable" cellspacing="0" cellpadding="2">
-     <tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
-     <tr class="cap" id="cap-b"><td></td><td>
-       <strong>b</strong></td><td></td></tr>
-     <tr>
-       <td><img src="_static/minus.png" class="toggler"
-              id="toggle-1" style="display: none" alt="-" /></td>
-       <td>
-       <tt class="xref">blaze</tt></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="types.html#module-blaze.datashape.coretypes"><tt class="xref">blaze.datashape.coretypes</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="eclass.html#module-blaze.eclass"><tt class="xref">blaze.eclass</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="ops.html#module-blaze.expr.ops"><tt class="xref">blaze.expr.ops</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="layout.html#module-blaze.layouts.scalar"><tt class="xref">blaze.layouts.scalar</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="persistence.html#module-blaze.persistence.bloscpack"><tt class="xref">blaze.persistence.bloscpack</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="prims.html#module-blaze.prims"><tt class="xref">blaze.prims</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="typeinference.html#module-blaze.reconstruction"><tt class="xref">blaze.reconstruction</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="typeinference.html#module-blaze.signatures"><tt class="xref">blaze.signatures</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="sources.html#module-blaze.sources.canonical"><tt class="xref">blaze.sources.canonical</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="table.html#module-blaze.table"><tt class="xref">blaze.table</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="toplevel.html#module-blaze.toplevel"><tt class="xref">blaze.toplevel</tt></a></td><td>
-       <em></em></td></tr>
-   </table>
+<dl class="class">
+<dt id="blaze.prims.ATransc">
+<em class="property">class </em><tt class="descclassname">blaze.prims.</tt><tt class="descname">ATransc</tt><big>(</big><em>fn</em>, <em>pyfn=None</em>, <em>symbol=None</em>, <em>name=None</em>, <em>nin=None</em>, <em>nout=None</em><big>)</big><a class="headerlink" href="#blaze.prims.ATransc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transcendental functions</p>
+</dd></dl>
+
+</div>
+<div class="section" id="math">
+<h2>Math<a class="headerlink" href="#math" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="cmath">
+<h2>CMath<a class="headerlink" href="#cmath" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
 
 
       </div>

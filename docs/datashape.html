@@ -504,9 +504,11 @@ but cannot be self-referential:</p>
 </div>
 <div class="section" id="type-variables">
 <h2>Type Variables<a class="headerlink" href="#type-variables" title="Permalink to this headline">¶</a></h2>
-<p><strong>Variable types</strong> a seperate class of types expressed as free variables
-scoped within the type signature signifying a range of types. Type
-variables that occur once in a type signature are referred to as
+<p><strong>Type variables</strong> a seperate class of types expressed as free variables
+scoped within the type signature. Holding type variables as first order
+terms in the signatures encodes the fact that a term can be used in many
+concrete contexts with different concrete types.</p>
+<p>Type variables that occur once in a type signature are referred to as
 <strong>free</strong>, while type variables that appear multiple types are <strong>rigid</strong>.</p>
 <p>For example the type capable of expressing all square two dimensional
 matrices could be written as a combination of rigid type vars:</p>
