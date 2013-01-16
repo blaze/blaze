@@ -2,6 +2,14 @@
 Extending
 =========
 
+Learning from our experience with SciPy we aim to make Blaze modular
+from the beginning and allow experts with different backgrounds to enter
+the project at different levels of the stack.
+
+Those that wish to add domain knowledge to Blaze can extend types and
+functions. While those who are interested in execution can extend with
+the execution backends to different hardware and code generation paths.
+
 Custom Types
 ============
 
@@ -37,7 +45,7 @@ Memory Allocation
 TODO
 
 Custom Backends
-=================
+===============
 
 TODO
 
