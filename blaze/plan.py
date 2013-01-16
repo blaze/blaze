@@ -27,6 +27,18 @@ def annotate_dshape(ds):
     assert isinstance(ds, DataShape)
     return aappl(aterm('dshape'), [astr(str(ds))])
 
+#------------------------------------------------------------------------
+# Plan Primitives
+#------------------------------------------------------------------------
+
+class Plan(object):
+    def __init__(self, instructions):
+        self.instructions = instructions
+
+    def __repr__(self):
+        return pformat(self.instructions)
+
+
 class Constant(object):
     def __init__(self, n):
         self.n = n
@@ -56,17 +68,12 @@ class Instruction(object):
         else:
             return ' '.join([self.fn,] + map(repr, self.args))
 
+#------------------------------------------------------------------------
+# Instruction Generation
+#------------------------------------------------------------------------
+
 # TODO: plan file should be serializable and in the context of a
 # symbol table uniquely defines the computation
-
-class Plan(object):
-    def __init__(self, instructions):
-        self.instructions = instructions
-
-    def __repr__(self):
-        return pformat(self.instructions)
-
-# TODO: naive constant folding
 
 class InstructionGen(MroVisitor):
     """ Map ATerm into linear instructions, unlike ATerm this
@@ -89,10 +96,10 @@ class InstructionGen(MroVisitor):
         ]
 
         vartable = {
-            Array(){dshape("2, 2, int32"),54490464}   : '%0',
-            Array(){dshape("2, 2, float32"),54490176} : '%1',
-            Array(){dshape("2, 2, int32"),54491184}   : '%2',
-            ...
+            %1 : Array(...)
+            %2 : Array(...)
+            %3 : <alloca>
+            %4 : <alloca>
         }
 
     """

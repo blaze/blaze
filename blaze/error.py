@@ -1,10 +1,9 @@
-__all__ = [ 'ExecutionError',
-           'NoDispatch',
-           'InvalidLibraryDefinition',
-           'NotNumpyCompatible',
-           'syntax_error',
-           'CustomSyntaxError'
-            ]
+__all__ = [
+    'ExecutionError',
+    'NoDispatch',
+    'InvalidLibraryDefinition',
+    'CustomSyntaxError'
+]
 
 # for Numba
 class ExecutionError(Exception):
@@ -22,13 +21,6 @@ class NoDispatch(Exception):
 
 # for the RTS
 class InvalidLibraryDefinition(Exception):
-    pass
-
-class NotNumpyCompatible(Exception):
-    """
-    Raised when we try to convert a datashape into a NumPy dtype
-    but it cannot be ceorced.
-    """
     pass
 
 #------------------------------------------------------------------------

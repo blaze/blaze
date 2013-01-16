@@ -10,8 +10,6 @@ from numbers import Integral
 from collections import Mapping, Sequence
 from functools import total_ordering
 
-from blaze.error import NotNumpyCompatible
-
 try:
     from numba.minivect import minitypes
     have_minivect = True
@@ -761,6 +759,13 @@ def to_minivect(ds):
 #------------------------------------------------------------------------
 # NumPy Compatibility
 #------------------------------------------------------------------------
+
+class NotNumpyCompatible(Exception):
+    """
+    Raised when we try to convert a datashape into a NumPy dtype
+    but it cannot be ceorced.
+    """
+    pass
 
 def to_dtype(ds):
     """ Throw away the shape information and just return the

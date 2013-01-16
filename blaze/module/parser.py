@@ -3,9 +3,6 @@ If the input shape and output shape of every operation is specified,
 then when they are chained together in expressions it is possible
 to statically reason about the manner in which the data will be
 transformed.
-
-Replace *all* the NumPy methods, constructors and interators with
-graph nodes with signatures.
 """
 
 import re
@@ -468,6 +465,7 @@ python = {
     'float'   : float,
     'complex' : complex,
     'object'  : object,
+    'index'   : tuple,
 }
 
 if __name__ == '__main__':
