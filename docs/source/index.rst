@@ -32,6 +32,7 @@ Overview
    format
    memory
    datashape
+   eclass
    extending
 
 API Reference

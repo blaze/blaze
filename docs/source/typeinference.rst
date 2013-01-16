@@ -1,16 +1,17 @@
-==============
-Type Inference
-==============
+===================
+Type Reconstruction
+===================
 
-Type Variables
---------------
+The goal of type reconstruction is to resolve the relationships between
+type variables and concrete variables within the context of a of an
+expression but without the need for the entire expression to be explicitly
+annotated.
 
-Type variables are free paramaters standing for type or ranges of types.
-A concrete type is fixed type in the base type system.
-
-The goal of inference is to resolve the relationships between type
-variables and concrete variables within the context of a of an
-expression but without the need for explicit annotation.
+Holding type variables as first order terms in the signatures encodes
+the fact that a term can be used in many concrete contexts with
+different concrete types. The end result of successful type
+reconstruction and unification is determine the least general
+type satisfying the constraints on the expression.
 
 Signatures
 ----------
@@ -19,7 +20,7 @@ The signature::
 
     (a, b) -> c
 
-stands for a function of two arguments, the first of type ``a``, the second
+u for a function of two arguments, the first of type ``a``, the second
 of type ``b`` and returning type ``c``.
 
 Would be this in Python 3 signature notation::
