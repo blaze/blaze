@@ -33,6 +33,8 @@ universal = set([C.top]) | numeric | indexable | string
 
 # These are abstract graph nodes for Operations.
 
+# TODO: this is vestigal
+
 class Add(Op):
     # -----------------------
     arity = 2

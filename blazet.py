@@ -11,16 +11,6 @@ from blaze.datashape.unification import unify
 from blaze.expr.typechecker import typesystem
 
 #------------------------------------------------------------------------
-# Exceptions
-#------------------------------------------------------------------------
-
-class UnknownExpression(Exception):
-    def __init__(self, obj):
-        self.obj = obj
-    def __str__(self):
-        return 'Unknown object in expression: %r' % (self.obj,)
-
-#------------------------------------------------------------------------
 # Deconstructors
 #------------------------------------------------------------------------
 
@@ -55,7 +45,7 @@ def typeof(obj):
     elif typ is dynamic:
         return top
     else:
-        raise UnknownExpression(obj)
+        raise TypeError, type(obj)
 
 #------------------------------------------------------------------------
 # Blaze Typesystem
@@ -71,6 +61,6 @@ def typeof(obj):
 # * a type unifier
 # * a top type
 # * a value deconstructor
-# * universe of first order terms
+# * first order terms
 
 BlazeT = typesystem(unify, top, any, typeof)

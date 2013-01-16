@@ -33,6 +33,7 @@ Overview
    memory
    datashape
    eclass
+   module
    extending
 
 API Reference

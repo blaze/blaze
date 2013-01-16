@@ -1,26 +1,10 @@
-__all__ = ['ChunkingException',
-           'NoSuchChecksum',
-           'ChecksumMismatch',
-           'FileNotFound',
-           'ExecutionError',
+__all__ = [ 'ExecutionError',
            'NoDispatch',
            'InvalidLibraryDefinition',
            'NotNumpyCompatible',
            'syntax_error',
            'CustomSyntaxError'
             ]
-
-class ChunkingException(BaseException):
-    pass
-
-class NoSuchChecksum(ValueError):
-    pass
-
-class ChecksumMismatch(RuntimeError):
-    pass
-
-class FileNotFound(IOError):
-    pass
 
 # for Numba
 class ExecutionError(Exception):
@@ -46,6 +30,10 @@ class NotNumpyCompatible(Exception):
     but it cannot be ceorced.
     """
     pass
+
+#------------------------------------------------------------------------
+# Generic Syntax Errors
+#------------------------------------------------------------------------
 
 syntax_error = """
 
