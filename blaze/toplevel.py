@@ -78,7 +78,7 @@ def open(uri=None, mode='a'):
 # These are like NumPy equivalent except that they can allocate
 # larger than memory.
 
-def zeros(dshape, params=None):
+def zeros(dshape, params=None, eclass=_eclass.manifest):
     """ Create an Array and fill it with zeros.
 
     Parameters
@@ -103,7 +103,10 @@ def zeros(dshape, params=None):
     else:
         source = CArraySource(carray.zeros(shape, dtype, cparams=cparams),
                               params=params)
-        return Array(source)
+        if eclass is _eclass.manifest:
+            return Array(source)
+        elif eclass is _eclass.delayed:
+            return NDArray(source)
 
 def ones(dshape, params=None, eclass=_eclass.manifest):
     """ Create an Array and fill it with ones.
