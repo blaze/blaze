@@ -80,8 +80,8 @@ TODO
 API
 ~~~
 
-.. automodule:: blaze.expr.typeinference
+.. automodule:: blaze.reconstruction
    :members:
 
-.. automodule:: blaze.expr.signatures
+.. automodule:: blaze.signatures
    :members:
