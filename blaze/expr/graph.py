@@ -21,8 +21,9 @@ from numbers import Integral
 from functools import partial
 from collections import Iterable
 
+from blaze import catalog
+from blaze.expr import nodes
 from blaze.eclass import eclass
-from blaze.expr import nodes, catalog
 from blaze.datashape import coretypes
 from blaze.sources.canonical import PythonSource
 from blaze.datashape.coretypes import int_, float_, string

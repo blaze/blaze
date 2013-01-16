@@ -9,7 +9,7 @@ Convert between type signatures between Blaze and NumPy
 """
 
 import re
-from blaze.expr.typeinference import tyeval
+from blaze.reconstruction import tyeval
 from blaze.datashape import shorthand as T
 
 # TODO: if we extend this then just use ply

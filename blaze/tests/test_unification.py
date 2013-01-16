@@ -3,11 +3,6 @@
 from blaze import NDArray, dshape
 from blaze.compile import compile
 
-from unittest import skip
-
-# XXX Disabling until adding typeinference.py to Pipeline, this is not
-# solveable in terms of classical numpy promotion.
-
 def test_simple_unify():
     A = NDArray([0], dshape('s, t, int'))
     B = NDArray([0], dshape('u, v, int'))
@@ -19,7 +14,8 @@ def test_simple_unify():
     g = (A*B+C*D)**2
     # ==============
 
-    compile(g)
+    out = compile(g)
+    print out
 
     # Operator Constraints
     #
