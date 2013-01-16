@@ -16,7 +16,7 @@ import numpy as np
 # TODO: we'd like to distinguish between opening in Deferred or
 # Immediete mode
 
-def open(uri=None, mode='a'):
+def open(uri=None, mode='a',  eclass=_eclass.manifest):
     """Open a Blaze object via an `uri` (Uniform Resource Identifier).
 
     Parameters
@@ -71,9 +71,18 @@ def open(uri=None, mode='a'):
     # Don't want a deferred array (yet)
     # return NDArray(source)
     if structure == ARRAY:
-        return Array(source)
+
+        if eclass is _eclass.manifest:
+            return Array(source)
+        elif eclass is _eclass.delayed:
+            return NDArray(source)
+
     elif structure == TABLE:
-        return Table(source)
+
+        if eclass is _eclass.manifest:
+            return Table(source)
+        elif eclass is _eclass.delayed:
+            return NDTable(source)
 
 # These are like NumPy equivalent except that they can allocate
 # larger than memory.
