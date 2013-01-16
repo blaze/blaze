@@ -5,10 +5,7 @@ This defines the DataShape type system.
 import numpy as np
 
 import datetime
-from struct import calcsize
 from numbers import Integral
-from collections import Mapping, Sequence
-from functools import total_ordering
 
 try:
     from numba.minivect import minitypes
@@ -20,7 +17,7 @@ except ImportError:
 # Type Metaclass
 #------------------------------------------------------------------------
 
-# Clases of unit types.
+# Classes of unit types.
 DIMENSION = 1
 MEASURE   = 2
 
@@ -241,7 +238,7 @@ class DataShape(object):
 class Atom(DataShape):
     """
     Atoms for arguments to constructors of types, not types in
-    and of themselves. Parser artifacts, if you like.
+    and of themselves.
     """
     abstract = True
 
@@ -359,7 +356,6 @@ class CType(DataShape):
 # Fixed
 #------------------------------------------------------------------------
 
-@total_ordering
 class Fixed(Atom):
     """
     Fixed dimension.
@@ -489,7 +485,7 @@ class Option(Atom):
     def __init__(self, ty):
         self.parameters = [ty]
 
-class Enum(Atom, Sequence):
+class Enum(Atom):
     """
     A finite enumeration of Fixed dimensions.
     """
@@ -507,7 +503,7 @@ class Enum(Atom, Sequence):
     def __len__(self):
         return len(self.parameters)
 
-class Union(Atom, Sequence):
+class Union(Atom):
     """
     A untagged union is a datashape for a value that may hold
     several but fixed datashapes.
@@ -605,8 +601,6 @@ def inl(ty):
 #------------------------------------------------------------------------
 # Unit Types
 #------------------------------------------------------------------------
-
-plat = calcsize('@P') * 8
 
 int_       = CType('int')
 long_      = CType('long')
