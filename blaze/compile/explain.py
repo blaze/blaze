@@ -1,0 +1,2 @@
+def explain(plan):
+    pass

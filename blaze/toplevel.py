@@ -9,6 +9,7 @@ from sources.chunked import CArraySource, CTableSource
 from table import NDArray, Array, NDTable, Table
 from blaze.datashape.coretypes import from_numpy, to_numpy, TypeVar, Fixed
 from blaze import carray, dshape as _dshape
+from eclass import eclass as _eclass
 
 import numpy as np
 
@@ -104,7 +105,7 @@ def zeros(dshape, params=None):
                               params=params)
         return Array(source)
 
-def ones(dshape, params=None):
+def ones(dshape, params=None, eclass=_eclass.manifest):
     """ Create an Array and fill it with ones.
 
     Parameters
@@ -129,7 +130,10 @@ def ones(dshape, params=None):
     else:
         source = CArraySource(carray.ones(shape, dtype, cparams=cparams),
                               params=params)
-        return Array(source)
+        if eclass is _eclass.manifest:
+            return Array(source)
+        elif eclass is _eclass.delayed:
+            return NDArray(source)
 
 def fromiter(iterable, dshape, params=None):
     """ Create an Array and fill it with values from `iterable`.

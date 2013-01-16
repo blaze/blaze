@@ -1,5 +1,3 @@
-from blaze.expr.nodes import Node
-
 #------------------------------------------------------------------------
 # Evaluation Class ( eclass )
 #------------------------------------------------------------------------
@@ -12,6 +10,7 @@ class eclass:
     delayed  = DELAYED
 
 def all_manifest(list_of_nodes):
+    from blaze.expr.nodes import Node
     return all(node.eclass == MANIFEST for node in list_of_nodes
             if isinstance(node, Node))
 

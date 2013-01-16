@@ -1,9 +1,9 @@
-from blaze import ones
+from blaze import manifest, delayed, ones
 from blaze.rts import execute
 from blaze.compile import compile, explain
 
-A = ones('100, 100, int32')
-B = ones('100, 100, int32')
+A = ones('100, 100, int32', eclass=delayed)
+B = ones('100, 100, int32', eclass=delayed)
 
 expr = (A + B) * B
 
@@ -12,5 +12,6 @@ expr = (A + B) * B
 
 plan = compile(expr)
 
+print plan
 print explain(plan)
 print execute(plan)

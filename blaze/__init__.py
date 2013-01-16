@@ -7,6 +7,10 @@ from lib import *
 from datashape import dshape
 from table import Array, Table, NDArray, NDTable
 
+from eclass import eclass
+manifest = eclass.manifest
+delayed = eclass.delayed
+
 # From numpy compatability, ideally ``import blaze as np``
 # should be somewhat backwards compatable
 array   = Array
@@ -26,7 +30,7 @@ from datashape.record import RecordDecl, derived
 from datashape.coretypes import to_numpy, from_numpy
 
 # Errors
-from blaze.error import *
+from error import *
 
 # For Ilan
 from blaze.testing import runner as test
