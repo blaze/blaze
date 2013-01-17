@@ -118,6 +118,23 @@ varchar     Variable length string
 blob        Binary large object
 ==========  =========================================================
 
+
+Several python types are can be mapped directly on to datashape types:
+
+.. cssclass:: table-striped
+
+===========  =========================================================
+Python type  Datashape
+===========  =========================================================
+int          int
+bool         bool
+float        float
+complex      cfloat
+str          string
+unicode      unicode
+buffer       void
+===========  =========================================================
+
 Endianness
 ~~~~~~~~~~
 
@@ -276,18 +293,18 @@ are themselves type constructors of variable number of type arguments.
 Example 1::
 
     Person = {
-        name   : string,
-        age    : int,
-        height : int,
+        name   : string;
+        age    : int;
+        height : int;
         weight : int
     }
 
 Example 2::
 
     RGBA = {
-        r: int32,
-        g: int32,
-        b: int32,
+        r: int32;
+        g: int32;
+        b: int32;
         a: int8
     }
 
@@ -296,21 +313,21 @@ but cannot be self-referential:
 
 Example 2::
 
-    Point = {
-        x : int,
+    type Point = {
+        x : int;
         y : int
     }
 
-    Space = {
-        a: Point,
+    type Space = {
+        a: Point;
         b: Point
     }
 
 Or equivelantly::
 
-    Space = {
-        a: ({ x: int, y: int }),
-        b: ({ x: int, y: int })
+    type Space = {
+        a: { x: int; y: int };
+        b: { x: int; y: int }
     }
 
 Composite datashapes that terminate in record types are called
@@ -323,7 +340,7 @@ Example of array-like::
 
 Example of table-like::
 
-    TableLike = { x : int, y : float }
+    TableLike = { x : int; y : float }
 
 Enumeration
 -----------
@@ -555,4 +572,5 @@ Grammar
     record_item : NAME COLON BIT
                 : NAME COLON NAME
                 | NAME COLON NUMBER
+                | NAME COLON record
     empty :
