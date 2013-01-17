@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 This defines the DataShape type system.
 """
@@ -49,31 +51,49 @@ class Type(type):
 # Primitives
 #------------------------------------------------------------------------
 
-class Primitive(object):
+class Mono(object):
+    """
+    Monotype
+    """
     composite = False
     __metaclass__ = Type
 
-    def __init__(self, *parameters):
-        self.parameters = parameters
-
-    def __rmul__(self, other):
-        if not isinstance(other, (DataShape, Primitive)):
-            other = shape_coerce(other)
-        return product(other, self)
+    def __init__(self, *params):
+        self.parameters = params
 
     def __mul__(self, other):
-        if not isinstance(other, (DataShape, Primitive)):
-            other = shape_coerce(other)
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = Integer(other)
+            else:
+                raise NotImplementedError()
+
         return product(other, self)
 
-class Null(Primitive):
+    def __rmul__(self, other):
+        return self.__mul__(self, other)
+
+
+class Poly(object):
+    """
+    Polytype
+    """
+
+    def __init__(self, qualifier, *params):
+        self.parameters = params
+
+#------------------------------------------------------------------------
+# Parse Types
+#------------------------------------------------------------------------
+
+class Null(Mono):
     """
     The null datashape.
     """
     def __str__(self):
         return expr_string('null', None)
 
-class Integer(Primitive):
+class Integer(Mono):
     """
     Integers at the level of constructor it just means integer in the
     sense of of just an integer value to a constructor.
@@ -98,7 +118,7 @@ class Integer(Primitive):
     def __str__(self):
         return str(self.val)
 
-class Dynamic(Primitive):
+class Dynamic(Mono):
     """
     The dynamic type allows an explicit upcast and downcast from any
     type to ``?``.
@@ -111,7 +131,7 @@ class Dynamic(Primitive):
         # emulate numpy
         return ''.join(["dshape(\"", str(self), "\")"])
 
-class Top(Primitive):
+class Top(Mono):
     """ The top type """
 
     def __str__(self):
@@ -121,7 +141,7 @@ class Top(Primitive):
         # emulate numpy
         return ''.join(["dshape(\"", str(self), "\")"])
 
-class Blob(Primitive):
+class Blob(Mono):
     """ Blob type, large variable length string """
 
     def __str__(self):
@@ -131,7 +151,7 @@ class Blob(Primitive):
         # emulate numpy
         return ''.join(["dshape(\"", str(self), "\")"])
 
-class Varchar(Primitive):
+class Varchar(Mono):
     """ Blob type, small variable length string """
 
 
@@ -145,7 +165,7 @@ class Varchar(Primitive):
     def __repr__(self):
         return expr_string('varchar', [self.maxlen])
 
-class String(Primitive):
+class String(Mono):
     """ Fixed length string container """
 
     def __init__(self, fixlen):
@@ -171,7 +191,7 @@ class String(Primitive):
 #   - DataShape
 #   - Datashape
 
-class DataShape(object):
+class DataShape(Mono):
     """ The Datashape class, implementation for generic composite
     datashape objects """
 
@@ -199,16 +219,6 @@ class DataShape(object):
     def __getitem__(self, index):
         return self.parameters[index]
 
-    # TODO these are kind of hackish, remove
-    def __rmul__(self, other):
-        if not isinstance(other, (DataShape, Primitive)):
-            other = shape_coerce(other)
-        return product(other, self)
-
-    def __mul__(self, other):
-        if not isinstance(other, (DataShape, Primitive)):
-            other = shape_coerce(other)
-        return product(other, self)
 
     def __str__(self):
         if self.name:
@@ -234,6 +244,23 @@ class DataShape(object):
     @property
     def shape(self):
         return self.parameters[:-1]
+
+    # Alternative constructors
+    # ------------------------
+
+    def __or__(self, other):
+        return Either(self, other)
+
+    def __mul__(self, other):
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = Integer(other)
+            else:
+                raise NotImplementedError()
+        return product(other, self)
+
+    def __rmul__(self, other):
+        return self.__mul__(self, other)
 
 class Atom(DataShape):
     """
@@ -387,7 +414,7 @@ class Fixed(Atom):
 
 class TypeVar(Atom):
     """
-    A free variable in the dimension specifier. Not user facing.
+    A free variable in the signature. Not user facing.
     """
 
     def __init__(self, symbol):
@@ -844,6 +871,7 @@ def record_string(fields, values):
     #   {a : int32, b: float32, ... }
     body = ''
     count = len(fields)
+
     for i, (k,v) in enumerate(zip(fields,values)):
         if (i+1) == count:
             body += '%s : %s' % (k,v)
@@ -855,18 +883,6 @@ def record_string(fields, values):
 # Argument Munging
 #------------------------------------------------------------------------
 
-def doublequote(s):
-    if '"' not in s:
-        return '"%s"' % s
-    else:
-        return s
-
-def shape_coerce(ob):
-    if type(ob) is int:
-        return Integer(ob)
-    else:
-        raise NotImplementedError()
-
 def flatten(it):
     for a in it:
         if a.composite:
@@ -874,7 +890,6 @@ def flatten(it):
                 yield b
         else:
             yield a
-
 
 def table_like(ds):
     return type(ds[-1]) is Record

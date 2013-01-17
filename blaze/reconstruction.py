@@ -290,6 +290,9 @@ def occurs(t, types):
 # Term Deconstructors
 #------------------------------------------------------------------------
 
+def isval(v, bindings):
+    return isinstance(v, TypeVar)
+
 def isbound(v, bindings):
     return not occurs(v, bindings)
 
@@ -377,14 +380,6 @@ def atnf(node):
     elif isinstance(node, Lambda):
         return atnf(node.body)
 
-def beta(node):
-    """ beta reduction"""
-    raise NotImplementedError
-
-def eta(node):
-    """ eta reduction"""
-    raise NotImplementedError
-
 def fail(env, a, b):
     if DEBUG:
         print 'terms', a,b
@@ -393,8 +388,32 @@ def fail(env, a, b):
         raise Exception("Could not unify")
 
 #------------------------------------------------------------------------
+# Reductions and Equivalence
+#------------------------------------------------------------------------
+
+def beta(node):
+    """ beta reduction"""
+    raise NotImplementedError
+
+def eta(node):
+    """ eta reduction"""
+    raise NotImplementedError
+
+def alpha_eq(node1, node2):
+    raise NotImplementedError
+
+#------------------------------------------------------------------------
 # Syntax Buidlers
 #------------------------------------------------------------------------
+
+def var():
+    return TypeVar()
+
+def atom(ident):
+    return Atom(ident)
+
+def con(head, vars, infix=False):
+    return TypeCon(head, vars, infix)
 
 def app(expr, vars):
     expr = expr
@@ -418,3 +437,21 @@ def union(*xs):
 # product types
 def product(x,y):
     return App(App(Atom("product"), x), y)
+
+
+__all__ = [
+      'var'
+    , 'atom'
+    , 'con'
+    , 'app'
+    , 'lam'
+    , 'sumt'
+    , 'union'
+    , 'product'
+    , 'Bool'
+    , 'Integer'
+    , 'Function'
+
+    , 'infer'
+    , 'pprint'
+]

@@ -92,7 +92,7 @@ def do_convert_to_aterm(context, graph):
 
     """
     context = dict(context)
-    vars = topovals(graph)
+    #vars = topovals(graph)
 
     # walk the blaze Graph objects ( Python objects inherting
     # derived expr.node.Node ) map them into a ATerm expression
@@ -199,5 +199,5 @@ blaze_rts = Pipeline([do_environment,
                       ])
 
 def compile(source, target=blaze_rts, **inputs):
-    ctx, plan = blaze_rts.run_pipeline(source)
+    ctx, plan = target.run_pipeline(source)
     return plan
