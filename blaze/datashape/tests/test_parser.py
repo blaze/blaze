@@ -5,7 +5,7 @@ from blaze.datashape.record import RecordDecl, derived
 from unittest import skip
 
 def test_simple_parse():
-    x = parse('Enum(1,2)')
+    x = parse('2, 3, int32')
     y = parse('300 , 400, {x: int64, y: int32}')
 
     assert type(x) is DataShape

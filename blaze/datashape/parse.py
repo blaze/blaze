@@ -6,7 +6,7 @@ import ast
 import inspect
 from collections import OrderedDict, Iterable
 
-from coretypes import Integer, TypeVar, Record, Enum, Type, DataShape, \
+from coretypes import Integer, TypeVar, Record, Factor, Type, DataShape, \
     Range, Either, Fixed, Varchar, String
 
 from blaze.error import CustomSyntaxError
@@ -93,7 +93,6 @@ class Translate(Visitor):
         # TODO: don't inline this
         internals = {
             'Record'   : Record,
-            'Enum'     : Enum,
             'Range'    : Range,
             'Either'   : Either,
             'Varchar'  : Varchar,
@@ -126,7 +125,7 @@ class Translate(Visitor):
 
     def Set(self, tree):
         args = map(self.visit, tree.elts)
-        return Enum(*args)
+        return Factor(*args)
 
     def Index(self, tree):
         return self.visit(tree.value)

@@ -7,6 +7,8 @@ Relations of Types
 
 Arrows denotes commensurability, not hierarchy.
 
+.. TODO: These are wicked old... fix
+
 .. graphviz::
 
    digraph relation {

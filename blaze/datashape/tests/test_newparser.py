@@ -18,12 +18,16 @@ def test_all_the_strings():
     parse('type foo b = c,   d,   e,   f')
     parse('type a b c = d, e')
     parse('type a b c = bar, foo')
-    parse('type Pixel A = A')
-    parse('type Pixel A = A, B')
-    parse('type Pixel A = 800, 600, A, A')
-    parse('type Pixel A B = 800, 600, A, B')
-    parse('type Pixel A B = {}')
-    parse('type Pixel A B = {A:B}')
+    parse('type bar A = A')
+    parse('type bar A = A, B')
+    parse('type bar A = 800, 600, A, A')
+    parse('type bar A B = 800, 600, A, B')
+    parse('type bar A B = {}')
+    parse('type bar A B = {A:B}')
+
+    parse('type baz = F(A,B)')
+    parse('type baz = F(A,F(A))')
+
     parse('''
     type foo = {
         A: B;
@@ -132,3 +136,7 @@ def test_parameterized():
         b: y
     }
     ''')
+
+def test_stress():
+    parse('type big = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(x))))))))))))))))')
+    parse('type big = {x:{x:{x:{x:{x:{x:{x:{x:{x:{x:int32}}}}}}}}}}')

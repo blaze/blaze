@@ -514,7 +514,7 @@ class Option(Atom):
     def __init__(self, ty):
         self.parameters = [ty]
 
-class Enum(Atom):
+class Factor(Atom):
     """
     A finite enumeration of Fixed dimensions.
     """
