@@ -86,3 +86,49 @@ def test_multiline():
     }
 
     ''')
+
+def test_inline():
+    a = parse('''
+    type Point = {
+        x : int;
+        y : int
+    }
+
+    type Space = {
+        a: Point;
+        b: Point
+    }
+
+    ''')
+
+    a = parse('''
+    type Person = {
+        name   : string;
+        age    : int;
+        height : int;
+        weight : int
+    }
+
+    type RGBA = {
+        r: int32;
+        g: int32;
+        b: int32;
+        a: int8
+    }
+    ''')
+
+def test_nested():
+    a = parse('''
+    type Space = {
+        a: { x: int; y: int };
+        b: { x: int; y: int }
+    }
+    ''')
+
+def test_parameterized():
+    a = parse('''
+    type T x y = {
+        a: x;
+        b: y
+    }
+    ''')

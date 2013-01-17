@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
 """
-This defines the DataShape type system.
+This defines the DataShape type system. The unification of shape and
+dtype.
 """
 
 import numpy as np
-
 import datetime
-from numbers import Integral
 
 try:
     from numba.minivect import minitypes
@@ -78,7 +77,6 @@ class Poly(object):
     """
     Polytype
     """
-
     def __init__(self, qualifier, *params):
         self.parameters = params
 
@@ -389,7 +387,11 @@ class Fixed(Atom):
     """
 
     def __init__(self, i):
-        assert isinstance(i, Integral)
+        assert isinstance(i, int)
+
+        if i < 0:
+            raise ValueError, 'Fixed dimensions must be positive'
+
         self.val = i
         self.parameters = [self.val]
 
@@ -660,6 +662,19 @@ timedelta64 = CType('timedelta', 64)
 datetime64 = CType('datetime', 64)
 
 ulonglong  = CType('ulonglong')
+
+byte = int8
+short = int16
+longlong = int64
+
+ubyte = uint8
+ushort = uint16
+ulonglong = uint64
+
+half = float16
+single = float32
+longfloat = float128
+
 longdouble = float128
 
 void = CType('void')
@@ -669,8 +684,8 @@ na = Null
 top = Top()
 dynamic = Dynamic()
 NullRecord = Record(())
-
 blob = Blob()
+
 string = String
 
 Stream = Range(Integer(0), None)

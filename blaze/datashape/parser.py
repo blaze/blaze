@@ -260,7 +260,8 @@ def p_record_item1(p):
 def p_record_item2(p):
     '''record_item : NAME COLON BIT
                    | NAME COLON NAME
-                   | NAME COLON NUMBER'''
+                   | NAME COLON NUMBER
+                   | NAME COLON record'''
     p[0] = (p[1], p[3])
 
 #------------------------------------------------------------------------
@@ -284,9 +285,12 @@ def p_error(p):
 # Module
 #------------------------------------------------------------------------
 
-class Module:
+class Module(object):
+
     def __init__(self, **kwargs):
+        # TODO: EVIL! just for debugging
         self.__dict__.update(kwargs)
+
     def __repr__(self):
         keys = sorted(self.__dict__)
         items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
@@ -295,6 +299,9 @@ class Module:
 #------------------------------------------------------------------------
 # Toplevel
 #------------------------------------------------------------------------
+
+def build_ds(ds):
+    return ds
 
 def debug_parse(data, lexer, parser):
     lexer.input(data)
@@ -323,7 +330,10 @@ def load_parser(debug=False):
 
 def parse(pattern):
     parser = load_parser()
-    return parser(pattern)
+    res = parser(pattern)
+
+    ds = build_ds(res)
+    return ds
 
 if __name__ == '__main__':
     import readline
