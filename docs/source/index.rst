@@ -34,6 +34,7 @@ Overview
    datashape
    eclass
    module
+   pipeline
    extending
 
 API Reference

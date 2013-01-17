@@ -146,15 +146,8 @@ The outer element a product type is referred to as a **measure**
 while the other elements of the product are referred to as
 **dimensions**.
 
-::
-
-    Dimensions
-        |
-    ----------
-       a, b,     int32
-                 -----
-                   |
-                Measure
+.. image:: svg/type_expand.png
+    :align: center
 
 The product operator has the additional constraint that the first
 operator cannot be a measure. This permits types of the form::
