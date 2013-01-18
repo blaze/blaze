@@ -1,5 +1,7 @@
 from blaze.datashape.parser import parse
 
+from unittest import skip
+
 def test_all_the_strings():
     parse('a')
     parse('a, b')
@@ -140,3 +142,19 @@ def test_parameterized():
 def test_stress():
     parse('type big = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(x))))))))))))))))')
     parse('type big = {x:{x:{x:{x:{x:{x:{x:{x:{x:{x:int32}}}}}}}}}}')
+
+def test_option():
+    a = parse(''' Option(int32) ''')
+
+def test_union():
+    a = parse(''' Union(a,b,c,d) ''')
+
+def test_either1():
+    a = parse(''' Either(int32, float32) ''')
+
+def test_either2():
+    a = parse(''' Either({x: int}, {y: float}) ''')
+
+@skip
+def test_either3():
+    a = parse(''' Either( (2, 2, T), (T, 2, int) ) ''')
