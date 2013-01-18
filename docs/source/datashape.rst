@@ -397,13 +397,13 @@ into one of two classes:
 For example in the following signature the type variable T is unified in
 both arguments to the type constructor ``Either``::
 
-    Sig T = Either (2, 2, T) (3, 3, T)
+    Sig T = Either( (2, 2, T), (3, 3, T) )
 
 A type signature may only be either dimension-generic or
 measure-generic. Attempting to use a type variable in both will raise an
 exception ``AmbigiousTypeVariable``. For example::
 
-    Sig T = Either (2, 2, T) (T, 2, int)
+    Sig T = Either( (2, 2, T), (T, 2, int) )
 
 Not all declarations of type variables are well-defined. For example
 it is not possible to expression a Range type in terms of variable. An
@@ -438,9 +438,9 @@ A **variant** type is a sum type with two tagged parameters ``left`` and
 ``right`` which represent two possible types. We use the keyword
 ``Either`` to represent the type operator. Examples::
 
-    Either float char
-    Either int32 na
-    Either {1,2} {4,5}
+    Either(float,char)
+    Either(int32,float)
+    Either({x: int}, {y: float})
 
 ..
     1 + B + C ...
@@ -454,11 +454,11 @@ A **union** or **untagged union** is a variant type permitting a
 variable number of variants. Unions behave like unions in C and permit a
 variable number of heterogeneous typed values::
 
-    Union int8 string
+    Union(int8,string)
 
 ::
 
-    Union int8 int16 int32 int64
+    Union(int8,int16,int32,int64)
 
 ..
     A + B + C ...
@@ -475,7 +475,7 @@ reference.
 
 For example a optional int field::
 
-    Option int32
+    Option(int32)
 
 Indicates the presense or absense of a integer. For example a (``5,
 Option int32``) array could be model the Python data structure:
@@ -571,6 +571,6 @@ Grammar
     record_item : NAME COLON '(' rhs_expression ')'
     record_item : NAME COLON BIT
                 : NAME COLON NAME
-                | NAME COLON NUMBER
+                : NAME COLON NUMBER
                 | NAME COLON record
     empty :
