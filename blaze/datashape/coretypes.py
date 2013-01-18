@@ -416,17 +416,14 @@ class TypeVar(Atom):
     """
 
     def __init__(self, symbol):
+        if symbol.startswith("'"):
+            symbol = symbol[1:]
         self.symbol = symbol
+        self.parameters = [symbol]
 
     def __str__(self):
         # Use the F# notation
         return "'" + str(self.symbol)
-
-    def __eq__(self, other):
-        if isinstance(other, TypeVar):
-            return self.symbol == other.symbol
-        else:
-            return False
 
 class Range(Atom):
     """
@@ -539,6 +536,7 @@ class Record(DataShape):
         self.__d = dict(fields)
         self.__k = [f[0] for f in fields]
         self.__v = [f[1] for f in fields]
+        self.parameters = [fields]
 
     @property
     def fields(self):
@@ -897,3 +895,13 @@ def table_like(ds):
 
 def array_like(ds):
     return not table_like(ds)
+
+def _reduce(x):
+    if isinstance(x, Record):
+        return [(k, _reduce(v)) for k,v in x.parameters[0]]
+    elif isinstance(x, DataShape):
+        return map(_reduce, x.parameters)
+    elif isinstance(x, TypeVar):
+        import pdb; pdb.set_trace()
+    else:
+        return x

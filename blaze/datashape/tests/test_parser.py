@@ -1,6 +1,7 @@
 from blaze.datashape import *
 from blaze.datashape.parse import parse
 from blaze.datashape.record import RecordDecl, derived
+from blaze.datashape.coretypes import _reduce
 
 from unittest import skip
 
@@ -40,7 +41,7 @@ def test_free_variables():
     assert type(p[3]) is Fixed
     assert type(p[4]) is CType
 
-# INVALID
+# TODO: INVALID
 def test_flat_datashape():
     p = parse('N, M, 800, 600, (int16, int16, int16, int8)')
 
@@ -67,7 +68,7 @@ def test_flatten1():
     assert y[2].symbol == 'c'
     assert y[3].symbol == 'd'
 
-    assert x.parameters == y.parameters
+    assert _reduce(x) == _reduce(y)
 
 def test_flatten2():
     x = parse('a, ( b, ( c, d ) )')
@@ -85,7 +86,7 @@ def test_flatten2():
     assert y[2].symbol == 'c'
     assert y[3].symbol == 'd'
 
-    assert x.parameters == y.parameters
+    assert _reduce(x) == _reduce(y)
 
 def test_parse_equality():
     x = parse('800, 600, int64')
