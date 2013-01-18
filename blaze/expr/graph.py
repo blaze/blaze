@@ -399,6 +399,10 @@ class Op(ExpressionNode):
         self.children = operands
         self.operands = operands
 
+    @property
+    def name(self):
+        return str(self.op)
+
 #------------------------------------------------------------------------
 # Functions
 #------------------------------------------------------------------------

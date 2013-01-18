@@ -200,3 +200,7 @@ blaze_rts = Pipeline([do_environment,
 def compile(source, target=blaze_rts, **inputs):
     ctx, plan = target.run_pipeline(source)
     return plan
+
+def _compile(source, target=blaze_rts, **inputs):
+    ctx, plan = target.run_pipeline(source)
+    return ctx, plan
