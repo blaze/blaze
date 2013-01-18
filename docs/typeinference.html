@@ -32,7 +32,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
     <link rel="next" title="ATerm" href="aterm.html" />
-    <link rel="prev" title="Proposal for a persistent format that can include variable length objects" href="format-variable-length.html" />
+    <link rel="prev" title="Persistence" href="persistence.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -167,30 +167,6 @@ the unifiers.</p>
 <p>TODO</p>
 <div class="section" id="module-blaze.reconstruction">
 <span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.reconstruction" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
-<dt id="blaze.reconstruction.atnf">
-<tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">atnf</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.atnf" title="Permalink to this definition">¶</a></dt>
-<dd><p>algebraic type normal form</p>
-<p>This is confluent until unless we permit recursive types, which we
-don&#8217;t:</p>
-<div class="highlight-python"><pre>(a + (b + c))  ~&gt;  ((a + b) + c)
-(a * (b * c))  ~&gt;  ((a * b) * c)
-((a + b) * c)  ~&gt;  (a * c) + (b * c)</pre>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.reconstruction.beta">
-<tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">beta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.beta" title="Permalink to this definition">¶</a></dt>
-<dd><p>beta reduction</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.reconstruction.eta">
-<tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">eta</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.eta" title="Permalink to this definition">¶</a></dt>
-<dd><p>eta reduction</p>
-</dd></dl>
-
 <dl class="function">
 <dt id="blaze.reconstruction.infer">
 <tt class="descclassname">blaze.reconstruction.</tt><tt class="descname">infer</tt><big>(</big><em>env</em>, <em>term</em>, <em>debug=True</em><big>)</big><a class="headerlink" href="#blaze.reconstruction.infer" title="Permalink to this definition">¶</a></dt>
