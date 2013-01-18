@@ -482,7 +482,7 @@ Option int32``) array could be model the Python data structure:
 
 ::
 
-    [1, 2, 3, na, na]
+    [1, 2, 3, na, na, 4]
 
 Option types are only defined for type arguments of unit measures and
 Records.
