@@ -17,9 +17,8 @@ from blaze.compile.toposort import topovals
 def compose(f, g):
     return lambda *x: g(*f(*x))
 
-# monadic bind combinator <>, is the ``id`` function if pre and post
-# condition holds, otherwise terminates is a ``const`` that returns the
-# error and misbehaving condition.
+def braid(f):
+    return lambda *y: lambda *x: f(*x)(*y)
 
 def bind(self, f, x):
     if x is None:
