@@ -168,7 +168,7 @@ class Array(Indexable):
         if isinstance(obj, ByteProvider):
             self.data = obj
         else:
-            self.data = CArraySource(obj, params=params)
+            self.data = CArraySource(obj, dshape=dshape, params=params)
 
         # children graph nodes
         self.children = []

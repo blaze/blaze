@@ -662,8 +662,15 @@ Type.register('Stream', Stream)
 Type.register('?', Dynamic)
 Type.register('top', top)
 Type.register('blob', blob)
+
 Type.register('string8', String(8))
 Type.register('string16', String(16))
+Type.register('string32', String(32))
+Type.register('string64', String(64))
+Type.register('string128', String(128))
+Type.register('string256', String(256))
+
+Type.register('string24', String(24))
 Type.register('string32', String(32))
 Type.register('string64', String(64))
 Type.register('string128', String(128))
@@ -793,10 +800,16 @@ def to_numpy(ds):
             shape += (dim,)
         elif isinstance(dim, Fixed):
             shape += (dim.val,)
+        elif isinstance(dim, TypeVar):
+            shape += (-1,)
+
         elif isinstance(dim, CType):
             dtype = dim.to_dtype()
+        elif isinstance(dim, Blob):
+            dtype = np.dtype('object')
         elif isinstance(dim, Record):
             dtype = dim.to_dtype()
+
         else:
             raise NotNumpyCompatible()
 
@@ -819,8 +832,11 @@ def from_numpy(shape, dt):
     else:
         dimensions = map(Fixed, shape)
 
+    if dtype.kind == 'S':
+        measure = String(dtype.itemsize)
+
     if dtype.fields:
-        # Convert the record into a dict of keys to CType
+
         rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
         measure = Record(rec)
     else:
