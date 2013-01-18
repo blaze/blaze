@@ -1,5 +1,5 @@
 from graph import Op
-from blaze.datashape import coretypes as C
+import blaze.datashape as C
 
 from utils import Symbol
 

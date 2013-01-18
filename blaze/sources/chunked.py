@@ -7,7 +7,7 @@ from blaze import carray
 from blaze.carray.ctable import ctable
 
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
-from blaze.datashape.coretypes import dynamic, from_numpy, to_numpy
+from blaze.datashape import dynamic, from_numpy, to_numpy
 from blaze.params import params, to_cparams
 from blaze.layouts.scalar import ChunkedL
 

@@ -2,7 +2,7 @@ from abc import ABCMeta
 from numbers import Integral
 from collections import Set, Mapping, Sequence
 from itertools import count
-from datashape.coretypes import Fixed, dynamic
+from datashape import Fixed, dynamic
 
 from numpy import searchsorted, lexsort
 

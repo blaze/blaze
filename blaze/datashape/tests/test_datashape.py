@@ -58,7 +58,3 @@ def test_iteration():
     assert ds2[0] == a
     assert ds2[1] == a
     assert ds2[-1] is int64
-
-def test_shallow_equality():
-    assert TypeVar('x') == TypeVar('x')
-    assert Integer(42) == Integer(42)

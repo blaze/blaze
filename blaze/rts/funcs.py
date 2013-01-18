@@ -31,7 +31,7 @@ from blaze.metadata import all_prop
 from blaze.expr.graph import Fun
 from blaze.eclass import all_manifest
 from blaze.rts.immediete import ieval
-from blaze.datashape.coretypes import dynamic
+from blaze.datashape import dynamic
 from blaze.aterm import parse, match, AtermSyntaxError
 from blaze.error import InvalidLibraryDefinition, NoDispatch
 

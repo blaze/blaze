@@ -40,6 +40,7 @@ def test_free_variables():
     assert type(p[3]) is Fixed
     assert type(p[4]) is CType
 
+# INVALID
 def test_flat_datashape():
     p = parse('N, M, 800, 600, (int16, int16, int16, int8)')
 

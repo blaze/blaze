@@ -14,6 +14,8 @@ try:
 except ImportError:
     have_minivect = False
 
+instanceof = lambda T: lambda X: isinstance(X, T)
+
 #------------------------------------------------------------------------
 # Type Metaclass
 #------------------------------------------------------------------------
@@ -106,12 +108,6 @@ class Integer(Mono):
     def __init__(self, i):
         assert isinstance(i, int)
         self.val = i
-
-    def __eq__(self, other):
-        if type(other) is Integer:
-            return self.val == other.val
-        else:
-            return False
 
     def __str__(self):
         return str(self.val)
@@ -423,7 +419,8 @@ class TypeVar(Atom):
         self.symbol = symbol
 
     def __str__(self):
-        return str(self.symbol)
+        # Use the F# notation
+        return "'" + str(self.symbol)
 
     def __eq__(self, other):
         if isinstance(other, TypeVar):
@@ -501,9 +498,6 @@ class Either(Atom):
         self.b = b
         self.parameters = [a,b]
 
-    def __eq__(self, other):
-        return False
-
 class Option(Atom):
     """
     A sum type for nullable measures unit types. Can be written
@@ -523,15 +517,6 @@ class Factor(Atom):
         # Use c-style enumeration syntax
         return expr_string('', self.parameters, '{}')
 
-    def __eq__(self, other):
-        return False
-
-    def __getitem__(self, index):
-        return self.parameters[index]
-
-    def __len__(self):
-        return len(self.parameters)
-
 class Union(Atom):
     """
     A untagged union is a datashape for a value that may hold
@@ -540,12 +525,6 @@ class Union(Atom):
 
     def __str__(self):
         return expr_string('', self.parameters, '{}')
-
-    def __getitem__(self, index):
-        return self.parameters[index]
-
-    def __len__(self):
-        return len(self.parameters)
 
 class Record(DataShape):
     """
@@ -867,6 +846,13 @@ def from_numpy(shape, dt):
         measure = CType.from_dtype(dtype)
 
     return reduce(product, dimensions + [measure])
+
+def from_char(c):
+    dtype = np.typeDict[c]
+    return from_numpy((), np.dtype(dtype))
+
+def from_dtype(dt):
+    return from_numpy((), dt)
 
 #------------------------------------------------------------------------
 # Printing

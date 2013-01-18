@@ -7,7 +7,7 @@ from sources.sql import SqliteSource
 from sources.chunked import CArraySource, CTableSource
 
 from table import NDArray, Array, NDTable, Table
-from blaze.datashape.coretypes import from_numpy, to_numpy, TypeVar, Fixed
+from blaze.datashape import from_numpy, to_numpy, TypeVar, Fixed
 from blaze import carray, dshape as _dshape
 from eclass import eclass as _eclass
 

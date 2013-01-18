@@ -4,9 +4,8 @@ and units of data.
 """
 
 from blaze.desc.byteprovider import ByteProvider
-from blaze.datashape import Fixed, dynamic, string, pyobj
-from blaze.datashape.coretypes import from_numpy, to_numpy
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
+from blaze.datashape import dynamic, string, pyobj, from_numpy, to_numpy
 
 import socket
 import numpy as np
