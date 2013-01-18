@@ -139,10 +139,6 @@ def test_parameterized():
     }
     ''')
 
-def test_stress():
-    parse('type big = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(x))))))))))))))))')
-    parse('type big = {x:{x:{x:{x:{x:{x:{x:{x:{x:{x:int32}}}}}}}}}}')
-
 def test_option():
     a = parse(''' Option(int32) ''')
 
@@ -158,3 +154,20 @@ def test_either2():
 @skip
 def test_either3():
     a = parse(''' Either( (2, 2, T), (T, 2, int) ) ''')
+
+def test_stress():
+    parse('type big = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(x))))))))))))))))')
+    parse('type big = {x:{x:{x:{x:{x:{x:{x:{x:{x:{x:int32}}}}}}}}}}')
+
+    # whitespace insensitivity
+    parse('''type big = {
+            x:{         x
+                :{
+                        x:
+            {x:{x:
+                {x:{x:{  x:{x
+        :{x
+        :int32
+            }}}
+                }}    }}}}}
+    ''')

@@ -7,7 +7,7 @@ from difflib import ndiff
 
 from unittest import skip
 
-DEBUG = False
+DEBUG = True
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -34,8 +34,7 @@ def test_simple_pipeline2():
     plan = compile(y)
 
     # Add(Add(1,Add(2,3.0)),Add(1,Mul(2,Abs(3.0))))
-    if DEBUG:
-        pprint(plan, width=1)
+    if DEBUG: pprint(plan, width=1)
 
     plan = compile(x+y)
 
@@ -104,6 +103,24 @@ def test_complex_pipeline2():
 
     if DEBUG:
         pprint(plan, width=1)
+
+def test_implicit_instruction_gen():
+    a = NDArray([1,2,3])
+
+    ex = sum([a]*10)
+    plan = compile(ex)
+
+    if DEBUG:
+        pprint(plan, width=1)
+
+def test_implicit_instruction_gen2():
+    from operator import mul
+
+    a = NDArray([1,2,3])
+
+    ex = reduce(mul, [a]*10)
+    plan = compile(ex)
+
 
 if __name__ == '__main__':
     test_simple_pipeline()
