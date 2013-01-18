@@ -276,7 +276,7 @@ Or in Haskell:
 Pretty Printing
 ~~~~~~~~~~~~~~~
 
-The Stratego Project provides a command line pretty printer ( http://releases.strategoxt.org/strategoxt-manual/unstable/manual/chunk-b ook/ref-pp-aterm.html )
+The Stratego Project provides a command line pretty printer ( http://releases.strategoxt.org/strategoxt-manual/unstable/manual/chunk-book/ref-pp-aterm.html )
 for printing generic ATerm expressions.
 
 In addition for dealing with highly annotated expressions the
