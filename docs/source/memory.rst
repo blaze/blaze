@@ -29,6 +29,3 @@ That ensures maximum performance for I/O operation.
 
 Tables
 ------
-
-.. image:: svg/interface.png
-    :align: center
