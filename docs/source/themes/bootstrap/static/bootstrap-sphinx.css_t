@@ -11,6 +11,18 @@ body {
   padding-bottom: 40px;
 }
 
+p {
+    font-size: 0.9em;
+}
+
+h1 {
+    font-size: 1.3em;
+}
+
+h2 {
+    font-size: 1.3em;
+}
+
 table.docutils {
     border: 1px solid #ccc !important;
     border-collapse: none !important;
@@ -42,6 +54,18 @@ table.docutils {
 .jumbotron .btn {
   font-size: 21px;
   padding: 14px 24px;
+}
+
+pre {
+  font-size: 0.9em;
+
+  margin-bottom: 18px;
+  margin-top: 18px;
+
+  border-left: 4px solid #ccc;
+  border-top: 0px;
+  border-bottom: 0px;
+  border-right: 0px;
 }
 
 /* Sidenav for Docs
