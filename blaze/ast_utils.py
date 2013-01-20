@@ -2,9 +2,9 @@ import ast
 import pprint
 from types import FunctionType, LambdaType
 
-# backproted from Numba
+# backported from Numba
 
-def ast2tree (node, include_attrs = True):
+def ast2tree(node, include_attrs = True):
     def _transform(node):
         if isinstance(node, ast.AST):
             fields = ((a, _transform(b))
@@ -22,7 +22,7 @@ def ast2tree (node, include_attrs = True):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
     return _transform(node)
 
-def pformat_ast (node, include_attrs = True, **kws):
+def pformat_ast (node, include_attrs = False, **kws):
     return pprint.pformat(ast2tree(node, include_attrs), **kws)
 
 def dump(node):

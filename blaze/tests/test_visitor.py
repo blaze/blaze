@@ -1,6 +1,5 @@
 from blaze.expr.graph import IntNode, FloatNode
-from blaze.expr.visitor import BasicGraphVisitor, MroVisitor, GraphVisitor
-from blaze.expr import visitor
+from blaze import visitor
 
 #------------------------------------------------------------------------
 # Sample Graph
@@ -17,7 +16,7 @@ y = a+b+c
 # Visitors
 #------------------------------------------------------------------------
 
-class Visitor(BasicGraphVisitor):
+class Visitor(visitor.BasicGraphVisitor):
 
     def App(self, tree):
         return self.visit(tree.children)
@@ -31,7 +30,7 @@ class Visitor(BasicGraphVisitor):
     def Add(self, tree):
         return self.visit(tree.children)
 
-class MroVisitor(MroVisitor):
+class MroVisitor(visitor.MroVisitor):
 
     def App(self, tree):
         return self.visit(tree.children)
@@ -42,7 +41,7 @@ class MroVisitor(MroVisitor):
     def Literal(self, tree):
         return True
 
-class SkipSomeVisitor(GraphVisitor):
+class SkipSomeVisitor(visitor.GraphVisitor):
 
     def __init__(self):
         super(SkipSomeVisitor, self).__init__()
