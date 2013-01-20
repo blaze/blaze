@@ -37,7 +37,7 @@ If we were to "read" this definition in English. It would read:
 
 import numpy as np
 
-from blaze.rts.funcs import lift
+from blaze.funcs import lift
 from blaze import metadata as md
 
 from blaze.metadata import aligned

@@ -5,7 +5,7 @@ Execute raw graph to ATerm after inference but before evaluation.
 import itertools
 from pprint import pformat
 
-from blaze.rts.funcs import lookup
+from blaze.funcs import lookup
 from blaze.visitor import MroVisitor
 from blaze.datashape import DataShape
 from blaze.aterm import aappl, aterm, astr, aint, areal
