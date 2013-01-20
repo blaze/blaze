@@ -2,6 +2,7 @@
 Execute raw graph to ATerm after inference but before evaluation.
 """
 
+import itertools
 from pprint import pformat
 
 from blaze.rts.funcs import lookup
@@ -38,12 +39,12 @@ class Plan(object):
     def __repr__(self):
         return pformat(self.instructions)
 
-
 class Constant(object):
     def __init__(self, n):
         self.n = n
+
     def __repr__(self):
-        return 'const(%s)' % self.n
+        return 'Const(%s)' % self.n
 
 class Var(object):
     def __init__(self, key):
@@ -63,10 +64,10 @@ class Instruction(object):
         # with output types
         if self.lhs:
             return self.lhs + ' = ' + \
-            ' '.join([self.fn,] + map(repr, self.args))
+            ' '.join([self.fn.name,] + map(str, self.args))
         # purely side effectful
         else:
-            return ' '.join([self.fn,] + map(repr, self.args))
+            return ' '.join([self.fn,] + map(str, self.args))
 
 #------------------------------------------------------------------------
 # Instruction Generation
@@ -76,13 +77,12 @@ class Instruction(object):
 # symbol table uniquely defines the computation
 
 class InstructionGen(MroVisitor):
-    """ Map ATerm into linear instructions, unlike ATerm this
-    does not preserve the information contained in the expression
-    graph, information is discarded.
+    """ Map ATerm into linear instructions.
 
-    Maintains a stack as the nodes are visited, the instructions
-    for the innermost term are top on the stack. The temporaries
-    are mapped through the vartable.
+    Does pre-order traversal of the expression graph and maintains a
+    stack as the nodes are visited, the instructions for the innermost
+    term are top on the stack. The temporaries are mapped through the
+    vartable.
 
     ::
 
@@ -105,10 +105,22 @@ class InstructionGen(MroVisitor):
     """
 
     def __init__(self):
-        self.n = 0
         self._vartable = {}
         self._instructions = []
+        self._vars = ('%' + str(n) for n in itertools.count(0))
 
+    def tmp(self):
+        return next(self._vars)
+
+    def push(self, ins):
+        self._instructions.append(ins)
+
+    @property
+    def tos(self):
+        return self._instructions[-1]
+
+
+    @property
     def plan(self):
         return self._instructions
 
@@ -117,9 +129,8 @@ class InstructionGen(MroVisitor):
         return self._vartable
 
     def var(self, term):
-        key = ('%' + str(self.n))
+        key = self.tmp()
         self._vartable[term] = key
-        self.n += 1
         return key
 
     def AAppl(self, term):
@@ -139,18 +150,19 @@ class InstructionGen(MroVisitor):
         args  = term.args
 
         # visit the innermost arguments, push those arguments on
-        # the instruction list first
-        self.visit(term.args)
+        # the stack first
+        map(self.visit, term.args)
 
         fn, cost = lookup(term)
+
         fargs = [self._vartable[a] for a in args]
 
         # push the temporary for the result in the vartable
         key = self.var(term)
 
         # build the instruction & push it on the stack
-        inst = Instruction(str(fn.fn), fargs, lhs=key)
-        self._instructions.append(inst)
+        inst = Instruction(fn, fargs, lhs=key)
+        self.push(inst)
 
     def _Array(self, term):
         key = self.var(term)
@@ -163,15 +175,17 @@ class InstructionGen(MroVisitor):
         pass
 
     def AInt(self, term):
-        self._vartable[term] = Constant(term.val)
-        return
+        const = Constant(term.val)
+        self._vartable[term] = const
+        return const
 
     def AReal(self, term):
-        self._vartable[term] = Constant(term.val)
-        return
+        const = Constant(term.val)
+        self._vartable[term] = const
+        return const
 
     def ATerm(self, term):
-        return
+        raise NotImplementedError
 
 #------------------------------------------------------------------------
 # Internal Blaze Graph -> ATerm

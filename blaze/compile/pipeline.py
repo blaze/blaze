@@ -148,7 +148,8 @@ def do_plan(context, graph):
 
     igen = InstructionGen()
     igen.visit(aterm_graph) # effectful
-    plan = igen.plan()
+    plan = igen.plan
+    vars = igen.vars
 
     context['plan'] = plan
     return context, graph

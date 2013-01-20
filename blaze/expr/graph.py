@@ -384,6 +384,9 @@ class App(ExpressionNode):
     def name(self):
         return 'App'
 
+    def __repr__(self):
+        return '<App(%s, %s)>' % (self.operator.name, [])
+
 #------------------------------------------------------------------------
 # Op
 #------------------------------------------------------------------------
@@ -402,6 +405,9 @@ class Op(ExpressionNode):
     @property
     def name(self):
         return str(self.op)
+
+    def __repr__(self):
+        return '<Op(%s)>' % (self.name, [])
 
 #------------------------------------------------------------------------
 # Functions

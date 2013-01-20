@@ -113,7 +113,7 @@ def lift(signature, typesig, constraints=None, **params):
             raise InvalidLibraryDefinition(*e.args + (fname,))
 
         # #effectful
-        libcall = PythonFn(signature, pyfn)
+        libcall = PythonFn(signature, typesig, pyfn)
         install(signature, libcall)
 
         sig = getargspec(pyfn)
@@ -180,22 +180,35 @@ def lookup(aterm):
 
 # A function in the Python interpreter
 class PythonFn(object):
-    gil = True
 
-    def __init__(self, signature, fn, mayblock=False):
-        self.fn = fn
-        self.mayblock = mayblock
-        self.signature = signature
+    def __init__(self, signature, typesig, fn, mayblock=False):
+        self.__fn = fn
+        self.__mayblock = mayblock
+        self.__typesig = typesig
+        self.__signature = signature
+        self.__gil = True
 
     @property
     def ptr(self):
         raise NotImplementedError
 
+    @property
+    def name(self):
+        return self.__fn.__name__
+
 # A function external to Python interpreter
 class ExternalFn(object):
 
     def __init__(self, signature, ptr, gil, mayblock):
-        self.ptr = ptr
-        self.gil = gil
-        self.mayblock = mayblock
-        self.signature = signature
+        self.__ptr = ptr
+        self.__gil = gil
+        self.__mayblock = mayblock
+        self.__signature = signature
+
+    @property
+    def ptr(self):
+        raise self.__ptr
+
+    @property
+    def name(self):
+        raise NotImplementedError

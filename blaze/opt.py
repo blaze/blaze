@@ -3,6 +3,9 @@
 
 import pyrewrite
 
+# We'd like to be just be able to quote these rules inline... ala
+# Mython.
+
 #------------------------------------------------------------------------
 # Constant Folding
 #------------------------------------------------------------------------
