@@ -32,7 +32,7 @@ class ANode(object):
 
     @property
     def children(self):
-        return self.__children
+        return self.__cons
 
     @classmethod
     def tag(cls):

@@ -1,5 +1,4 @@
 import itertools
-
 from gen import Gen
 
 c_types = {
@@ -25,9 +24,6 @@ def nln(xs):
 def cat(xs):
     return "".join(xs)
 
-def pgen(self):
-    return
-
 #------------------------------------------------------------------------
 # C Syntax
 #------------------------------------------------------------------------
@@ -38,6 +34,7 @@ class FunctionDef(object):
     pass
 
 class Assign(object):
+
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
@@ -47,6 +44,7 @@ class Assign(object):
 
 
 class Typedef(object):
+
     def __init__(self, ty, val, name, struct=False):
         self.ty = ty
         self.val = val
@@ -73,6 +71,7 @@ class Decl(object):
             yield "%s %s;" % (c_types[self.ty], self.var)
 
 class For(object):
+
     def __init__(self, start, cond, itr, body):
         self.start = start
         self.cond = cond
