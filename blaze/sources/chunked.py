@@ -1,7 +1,10 @@
 """
-Wrappers around chunked arrays ( carray ) supporting both in-memory and
-on-disk storage.
+Chunked Blaze containers for arrays and tables supporting both in-memory
+and on-disk storage. Uses either the monolothic or chunked file format
+for on-disk storage.
 """
+
+import numpy as np
 
 from blaze import carray
 from blaze.carray.ctable import ctable
@@ -13,10 +16,6 @@ from blaze.layouts.scalar import ChunkedL
 
 from blaze.desc.byteprovider import ByteProvider
 from blaze.desc.datadescriptor import CArrayDataDescriptor
-
-from blaze.printer import table2string
-
-import numpy as np
 
 #------------------------------------------------------------------------
 # Chunked Array

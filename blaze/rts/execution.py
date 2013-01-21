@@ -20,10 +20,6 @@
 
 from blaze.rts.heap import Heap
 
-# =================================
-# The main Blaze RTS execution loop
-# =================================
-
 # Write now we're trying to emphasize the protocol semantics,
 # not performance!
 

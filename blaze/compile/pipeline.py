@@ -8,7 +8,7 @@ from functools import wraps
 
 from blaze.plan import BlazeVisitor, InstructionGen
 from blaze.compile.toposort import topovals
-#from blaze.reconstruction import infer, expand
+#from blaze.type_reconstruction import infer
 
 #------------------------------------------------------------------------
 # Pipeline Combinators

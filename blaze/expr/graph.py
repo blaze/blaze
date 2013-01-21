@@ -24,9 +24,8 @@ from collections import Iterable
 from blaze import catalog
 from blaze.expr import nodes
 from blaze.eclass import eclass
-from blaze.datashape import coretypes
 from blaze.sources.canonical import PythonSource
-from blaze.datashape.coretypes import int_, float_, string
+from blaze.datashape import coretypes as T
 
 #------------------------------------------------------------------------
 # Kinds
@@ -52,14 +51,6 @@ def set_max_argument_len(val):
 def set_max_argument_recursion(val):
     global _max_argument_recursion
     _max_argument_recursion = val
-
-#------------------------------------------------------------------------
-# Exceptions
-#------------------------------------------------------------------------
-
-class NotSimple(Exception):
-    def __str__(self):
-        return 'Datashape deferred until eval()'
 
 #------------------------------------------------------------------------
 # Argument Munging
@@ -454,9 +445,9 @@ class Literal(ExpressionNode):
 class StringNode(Literal):
     kind      = VAL
     vtype     = str
-    datashape = string
+    datashape = T.string
     eclass    = eclass.manifest
-    datashape = coretypes.string
+    datashape = T.string
 
     @property
     def data(self):
@@ -468,10 +459,10 @@ class StringNode(Literal):
 
 class IntNode(Literal):
     vtype     = int
-    datashape = int_
+    datashape = T.int_
     kind      = VAL
     eclass    = eclass.manifest
-    datashape = coretypes.int_
+    datashape = T.int_
 
     @property
     def data(self):
@@ -480,9 +471,9 @@ class IntNode(Literal):
 class FloatNode(Literal):
     kind      = VAL
     vtype     = float
-    datashape = float_
+    datashape = T.float_
     eclass    = eclass.manifest
-    datashape = coretypes.float_
+    datashape = T.float_
 
     @property
     def data(self):
