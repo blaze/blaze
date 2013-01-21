@@ -814,8 +814,11 @@ cdef class carray:
   property len:
     "The length (leading dimension) of this object."
     def __get__(self):
-      # Important to do the cast in order to get a npy_intp result
-      return cython.cdiv(self._nbytes, <npy_intp>self.atomsize)
+      if self._dtype.char == 'O':
+        return len(self.chunks)
+      else:
+        # Important to do the cast in order to get a npy_intp result
+        return cython.cdiv(self._nbytes, <npy_intp>self.atomsize)
 
   property mode:
     "The mode used to create/open the `mode`."
@@ -973,9 +976,8 @@ cdef class carray:
 
     # Create layout for data and metadata
     self._cparams = cparams
-    if rootdir is None:
-      self.chunks = []
-    else:
+    self.chunks = []
+    if rootdir is not None:
       self.mkdirs(rootdir, mode)
       metainfo = (dtype, cparams, self.shape[0], lastchunkarr, self._mode)
       self.chunks = chunks(self._rootdir, metainfo=metainfo, _new=True)
@@ -1603,12 +1605,19 @@ cdef class carray:
     self.idxcache = idxcache
     return 1
 
-  def getitem_object(self, object key):
+  def getitem_object(self, start, stop=None, step=None):
     """Retrieve elements of type object."""
     import pickle
-    cchunk = self.chunks[key]
-    chunk = cchunk.getudata()
-    return pickle.loads(chunk)
+
+    if stop is None and step is None:
+      # Integer
+      cchunk = self.chunks[start]
+      chunk = cchunk.getudata()
+      return pickle.loads(chunk)
+
+    # Range
+    objs = [self.getitem_object(i) for i in xrange(start, stop, step)]
+    return np.array(objs, dtype=self._dtype)
 
   def __getitem__(self, object key):
     """
@@ -1732,6 +1741,9 @@ cdef class carray:
     if blen == 0:
       # If empty, return immediately
       return arr
+
+    if self.dtype.char == 'O':
+      return self.getitem_object(start, stop, step)
 
     # Fill it from data in chunks
     nwrow = 0
