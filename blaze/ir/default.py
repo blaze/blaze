@@ -36,7 +36,7 @@ class ANode(object):
         return (self.tag(), tuple([self.__cons[k] for k in self._fields ]))
 
     def __eq__(self, other):
-        return eqcls(self,other) and all(map(eq, self.__cons))
+        return eqcls(self,other) and map(eq, self.__cons, other.__cons)
 
     def __ne__(self, other):
         return not self == other
@@ -118,3 +118,6 @@ class TiledScan(object):
 if __name__ == '__main__':
     print Reduce(prims.add, 0, 3, [1,2,3])
     print Zip(prims.sqrt, 0, [1,2,3], [1,2,3])
+    a = Zip(prims.sqrt, 0, [1,2,3], [1,2,3])
+
+    assert a == a
