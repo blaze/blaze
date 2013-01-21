@@ -22,9 +22,10 @@ them into a form that is executable. I.e. casting into NumPy ( if
 possible ), converting to a Numexpr expression, etc.
 """
 
+import ast
 from functools import wraps
 from threading import local
-from inspect import getargspec
+from inspect import getsource, getargspec
 from thread import allocate_lock
 
 from blaze.metadata import all_prop
@@ -123,6 +124,8 @@ def lift(signature, typesig, constraints=None, **params):
         # the dynamic type.
         cod = params.pop('cod', dynamic)
 
+        _ast = ast.parse(getsource(pyfn))
+
         fun = type(pyfn.func_name, (Fun,), {
             'nargs'       : nargs,
             'fn'          : pyfn,
@@ -130,6 +133,7 @@ def lift(signature, typesig, constraints=None, **params):
             'typesig'     : typesig,
             'cod'         : cod,
             'constraints' : constraints,
+            '_ast'        : _ast,
         })
 
         @wraps(pyfn)

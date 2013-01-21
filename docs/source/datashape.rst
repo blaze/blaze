@@ -232,13 +232,13 @@ Example::
 Datashape types with free parameters in their constructor are called
 **parameterized** types. Example::
 
-    SquareMatrix T = N, N, T
+    type SquareMatrix T = N, N, T
 
 Datashape types without free parameters in their constructor are called
 **alias** types. Alias types don't add any additional structure they just
 ascribe a new name. Example::
 
-    AliasType N = N, N, int32
+    type AliasType N = N, N, int32
 
 Datashape types can be **anonymous** or labeled. Once a type is
 registered it can be used in dshape expressions just like primitive
@@ -292,7 +292,7 @@ are themselves type constructors of variable number of type arguments.
 
 Example 1::
 
-    Person = {
+    type Person = {
         name   : string;
         age    : int;
         height : int;
@@ -301,7 +301,7 @@ Example 1::
 
 Example 2::
 
-    RGBA = {
+    type RGBA = {
         r: int32;
         g: int32;
         b: int32;
@@ -336,11 +336,11 @@ Composite datashapes that terminate in record types are called
 
 Example of array-like::
 
-    ArrayLike = 2, 3, int32
+    type ArrayLike = 2, 3, int32
 
 Example of table-like::
 
-    TableLike = { x : int; y : float }
+    type TableLike = { x : int; y : float }
 
 Enumeration
 -----------
@@ -349,7 +349,7 @@ A enumeration specifies a number of fixed dimensions sequentially. Example::
 
     {1,2,4,2,1}, int32
 
-The above could describe a Python structure of the form::
+The above could describe a irregularly shaped Python structure of the form::
 
     [
         [1],
@@ -391,19 +391,19 @@ into one of two classes:
 
 ::
 
-    DimGen T = T, int
-    TypGen T = 2, T
+    type DimGen T = T, int
+    type TypGen T = 2, T
 
 For example in the following signature the type variable T is unified in
 both arguments to the type constructor ``Either``::
 
-    Sig T = Either( (2, 2, T), (3, 3, T) )
+    type Sig T = Either( (2, 2, T), (3, 3, T) )
 
 A type signature may only be either dimension-generic or
 measure-generic. Attempting to use a type variable in both will raise an
 exception ``AmbigiousTypeVariable``. For example::
 
-    Sig T = Either( (2, 2, T), (T, 2, int) )
+    type Sig T = Either( (2, 2, T), (T, 2, int) )
 
 Not all declarations of type variables are well-defined. For example
 it is not possible to expression a Range type in terms of variable. An
@@ -412,7 +412,7 @@ system.
 
 ::
     
-    InvalidSig1 T = Range(0, T)
+    type InvalidSig1 T = Range(0, T)
 
 ..
     (1x + 2x + ... + Ax) * (1y + 2y + ... By)

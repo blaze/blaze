@@ -340,7 +340,7 @@ def pprint(ty):
 #------------------------------------------------------------------------
 
 def infer(env, term, debug=True):
-    """ Infer
+    """ Reconstruct types
 
     Parameters
     ----------
@@ -391,15 +391,15 @@ def fail(env, a, b):
 # Reductions and Equivalence
 #------------------------------------------------------------------------
 
-def beta(node):
+def beta(e):
     """ beta reduction"""
     raise NotImplementedError
 
-def eta(node):
+def eta(e):
     """ eta reduction"""
     raise NotImplementedError
 
-def alpha_eq(node1, node2):
+def alpha_eq(e1, e2):
     raise NotImplementedError
 
 #------------------------------------------------------------------------
@@ -427,6 +427,7 @@ def lam(vars, body):
         body = Lambda(v, body)
     return body
 
+# sum types
 def sumt(x,y):
     return App(App(Atom("sum"), x), y)
 
