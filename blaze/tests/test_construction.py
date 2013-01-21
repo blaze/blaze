@@ -5,11 +5,9 @@ from blaze.expr.viz import dump
 from blaze.table import NDArray, NDArray
 
 from blaze.datashape.coretypes import float64, dynamic
-from blaze.expr.graph import IntNode, FloatNode, App, StringNode,\
-    NotSimple
+from blaze.expr.graph import IntNode, FloatNode, App, StringNode
 
 from unittest import skip
-from nose.tools import assert_raises
 
 # Print out graphviz to the screen
 DEBUG = False

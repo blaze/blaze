@@ -9,7 +9,7 @@ from blaze import dshape
 from blaze.datashape.coretypes import NotNumpyCompatible,\
     to_numpy, from_numpy, extract_dims, extract_measure
 
-from nose.tools import assert_raises
+from blaze.test_utils import assert_raises
 
 #------------------------------------------------------------------------
 # To NumPy

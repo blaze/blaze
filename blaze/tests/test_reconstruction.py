@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from blaze.reconstruction import *
+from blaze.type_reconstruction import *
 
-from nose.tools import assert_raises
+from blaze.test_utils import assert_raises
 
 DEBUG = True
 
