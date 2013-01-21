@@ -1,5 +1,5 @@
 from blaze.aterm import parse
-from blaze.rts.funcs import lookup
+from blaze.funcs import lookup
 
 from blaze import NDArray, Array
 from blaze import add, multiply

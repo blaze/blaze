@@ -196,6 +196,10 @@ class PythonFn(object):
     def name(self):
         return self.__fn.__name__
 
+    @property
+    def signature(self):
+        return signature
+
 # A function external to Python interpreter
 class ExternalFn(object):
 
@@ -212,3 +216,29 @@ class ExternalFn(object):
     @property
     def name(self):
         raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Pretty Printing
+#------------------------------------------------------------------------
+
+def repr_sig(sig):
+    dom = sig.dom
+    cod = sig.dom
+    # polytypic signature
+    if all(var.free() for var in sig.dom.vars):
+        return '{dom} -> {cod}'.format(
+            '.'.join('forall %s' % v for v in dom.vars),
+            repr(cod.vars[0])
+        )
+
+    elif any(var.free() for free in sig.dom.vars):
+        raise NotImplementedError
+
+    else:
+        return '{dom} -> {cod}'.format(
+            ','.join(str(v) for v in dom.vars),
+            repr(cod.vars[0])
+        )
+
+def repr_fn(fn):
+    return '{name} :: {typesig}'.format(fn.name, fn)

@@ -32,9 +32,27 @@ def annotate_dshape(ds):
 # Plan Primitives
 #------------------------------------------------------------------------
 
+# %2 = multiply %0 %1
+# %5 = multiply %3 %4
+# %6 = add %2 %5
+# %9 = multiply %7 %8
+
 class Plan(object):
-    def __init__(self, instructions):
+    def __init__(self, vartable, instructions):
+        self.vartable = vartable
         self.instructions = instructions
+
+    def tofile(self, fname, local=False):
+        with open(fname, 'w+') as fd:
+            for var in self.vars:
+                fd.write(var.geturi(local))
+            fd.write('\r\n')
+            for ins in self.instructions:
+                fd.write(str(ins))
+            fd.write('\n')
+
+    def fromfile(self):
+        raise NotImplementedError
 
     def __repr__(self):
         return pformat(self.instructions)
@@ -49,12 +67,13 @@ class Constant(object):
 class Var(object):
     def __init__(self, key):
         self.key = key
+
     def __repr__(self):
         return self.key
 
 class Instruction(object):
     def __init__(self, fn, args=None, lhs=None):
-        """ %lhs = fn{props}(arguments) """
+        # %lhs = fn{props}(arguments)
 
         self.fn = fn
         self.lhs = lhs

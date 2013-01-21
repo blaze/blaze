@@ -15,17 +15,22 @@
 # - Later: handle kernel fusion
 # - Much Later: handle GPU access & thread control
 
+# Invokes Executor functions and handles memory management from external
+# sources to allocate on, IOPro allocators, SQL Queries, ZeroMQ...
+
 from blaze.rts.heap import Heap
 
 # =================================
 # The main Blaze RTS execution loop
 # =================================
 
-# Invokes Executor functions and handles memory management from external
-# sources to allocate on, IOPro allocators, SQL Queries, ZeroMQ...
+# Write now we're trying to emphasize the protocol semantics,
+# not performance!
 
-# TOOD: write in Cython
-def execute(context, plan, symbols):
+# TODO: Write in C or Cython.
+
+# Blaze X -> X
+def execute(context, vartable, instructions):
     """ Takes a list of of instructions from the Pipeline and
     then allocates the necessary memory needed for the
     intermediates are temporaries """
@@ -33,8 +38,8 @@ def execute(context, plan, symbols):
     h = Heap()
     ret = None
 
-    for instruction in plan:
-        ops = [symbols[sym] for sym in symbols]
+    for instruction in instruction:
+        ops = [vartable[uri] for uri in vartable]
         dds = [op.asbuflist() for op in ops]
         dss = [op.datashape() for op in ops]
 

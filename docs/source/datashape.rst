@@ -530,6 +530,16 @@ of this type.
     (1 + 1 + ...)
 
 
+Numpy Compatability
+~~~~~~~~~~~~~~~~~~~
+
+FAQ
+---
+
+* How do I convert from Blaze DataShape to NumPy shape and dtype?
+
+* How do I convert from Blaze DataShape to CTypes?
+
 Grammar
 ~~~~~~~
 
