@@ -1,12 +1,7 @@
 from blaze import prims
 from operator import eq
 from copy import deepcopy
-from itertools import chain, izip
-
-from pprint import pprint
-
-def eqcls(a,b):
-    return a.__class__ is b.__class__
+from itertools import izip
 
 #------------------------------------------------------------------------
 # Phase 1 ( Types )
@@ -35,12 +30,6 @@ class ANode(object):
     def to_tuple(self):
         return (self.tag(), tuple([self.__cons[k] for k in self._fields ]))
 
-    def __eq__(self, other):
-        return eqcls(self,other) and map(eq, self.__cons, other.__cons)
-
-    def __ne__(self, other):
-        return not self == other
-
     @property
     def children(self):
         return self.__children
@@ -52,6 +41,12 @@ class ANode(object):
     def copy(self):
        new = deepcopy(self)
        return new
+
+    def __eq__(self, other):
+        return eqcls(self,other) and map(eq, self.__cons, other.__cons)
+
+    def __ne__(self, other):
+        return not self == other
 
     def __str__(self):
         kw = []
@@ -113,6 +108,14 @@ class TiledReduce(object):
 
 class TiledScan(object):
     pass
+
+#------------------------------------------------------------------------
+# Utils
+#------------------------------------------------------------------------
+
+def eqcls(a,b):
+    return a.__class__ is b.__class__
+
 
 
 if __name__ == '__main__':

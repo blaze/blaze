@@ -83,10 +83,10 @@ class Instruction(object):
         # with output types
         if self.lhs:
             return self.lhs + ' = ' + \
-            ' '.join([self.fn.name,] + map(str, self.args))
+            ' '.join([self.fn.name] + map(str, self.args))
         # purely side effectful
         else:
-            return ' '.join([self.fn,] + map(str, self.args))
+            return ' '.join([self.fn] + map(str, self.args))
 
 #------------------------------------------------------------------------
 # Instruction Generation
@@ -152,18 +152,6 @@ class InstructionGen(MroVisitor):
         self._vartable[term] = key
         return key
 
-    def AAppl(self, term):
-        label = term.spine.term
-
-        if label == 'Array':
-            return self._Array(term)
-        elif label == 'Slice':
-            return self._Slice(term)
-        elif label == 'Assign':
-            return self._Assign(term)
-        else:
-            return self._Op(term)
-
     def _Op(self, term):
         spine = term.spine
         args  = term.args
@@ -192,6 +180,19 @@ class InstructionGen(MroVisitor):
 
     def _Slice(self, term):
         pass
+
+
+    def AAppl(self, term):
+        label = term.spine.term
+
+        if label == 'Array':
+            return self._Array(term)
+        elif label == 'Slice':
+            return self._Slice(term)
+        elif label == 'Assign':
+            return self._Assign(term)
+        else:
+            return self._Op(term)
 
     def AInt(self, term):
         const = Constant(term.val)
