@@ -24,7 +24,7 @@
 typedef enum
 {
    NIL, PARAM, TYPEVAR, DYNAMIC, CTYPE, FIXED, PRODUCT, RANGE,
-   EITHER, OPTION, UNION, ENUM, RECORD
+   EITHER, OPTION, UNION, FACTOR, RECORD
 } kind_t;
 
 #define kindof(t) (kind_t)((type_t*)(t)->kind)
@@ -45,21 +45,21 @@ typedef struct type_t
 
 /*---------------------------------------------------------*/
 
-type_t * null_type(void)
+type_t *null_type(void)
 {
     type_t * t = (type_t *) MALLOC(sizeof(type_t));
     t->kind = NIL;
     return t;
 }
 
-type_t * dynamic_type(void)
+type_t *dynamic_type(void)
 {
     type_t *t = (type_t *) MALLOC(sizeof(type_t));
     t->kind = DYNAMIC;
     return t;
 }
 
-type_t * typevar_type(int index)
+type_t *typevar_type(int index)
 {
     type_t *t = (type_t *) MALLOC(sizeof(type_t));
     t->kind = TYPEVAR;
@@ -67,7 +67,7 @@ type_t * typevar_type(int index)
     return t;
 }
 
-type_t * param_type(int n, int* indices, type_t * body)
+type_t *param_type(int n, int* indices, type_t * body)
 {
     type_t *t = (type_t *) MALLOC(sizeof(type_t));
     t->kind = PARAM;
@@ -77,7 +77,7 @@ type_t * param_type(int n, int* indices, type_t * body)
     return t;
 }
 
-type_t * product_type(int n, type_t ** args)
+type_t *product_type(int n, type_t ** args)
 {
     type_t *t = (type_t *) MALLOC(sizeof(type_t));
     t->kind = PRODUCT;
@@ -245,15 +245,19 @@ Py_Dynamic(PyObject *self)
 static PyObject *
 Py_TypeVar(PyObject *self, PyObject *args)
 {
+    PyObject *ds;
     int index;
     type_t *t;
 
     if (!PyArg_ParseTuple(args, "i", &index)) {
-        return NULL;
+        PyErr_SetString(PyExc_TypeError, "Invalid de brujin index");
     }
+    ds = PyObject_CallObject((PyObject *) &PyDshapeType, args);
 
     t = typevar_type(index);
-    return PyLong_FromSsize_t((Py_ssize_t)t);
+    Dshape_Set(ds, t);
+
+    return ds;
 }
 
 static PyObject *
