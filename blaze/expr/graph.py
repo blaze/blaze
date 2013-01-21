@@ -26,15 +26,16 @@ from blaze.expr import nodes
 from blaze.eclass import eclass
 from blaze.sources.canonical import PythonSource
 from blaze.datashape import coretypes as T
+from blaze.graph_kinds import graph_kind
 
 #------------------------------------------------------------------------
 # Kinds
 #------------------------------------------------------------------------
 
-OP  = 0
-APP = 1
-VAL = 2
-FUN = 3
+OP  = graph_kind.OP
+APP = graph_kind.APP
+VAL = graph_kind.VAL
+FUN = graph_kind.FUN
 
 #------------------------------------------------------------------------
 # Settings

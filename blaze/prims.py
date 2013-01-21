@@ -58,7 +58,7 @@ class Prim(object):
     def __eq__(self, other):
         return self.fn == other.fn
 
-    def __repr__(self):
+    def __str__(self):
         return "Prim(%s)" % self.name
 
 #------------------------------------------------------------------------
