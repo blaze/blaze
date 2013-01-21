@@ -351,7 +351,8 @@ operator cannot be a measure. This permits types of the form:</p>
 </pre></div>
 </div>
 <p>But forbids types of the form:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="n">int32</span><span class="o">,</span> <span class="mi">1</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="mi">1</span><span class="o">,</span> <span class="mi">1</span>
+<span class="n">int32</span><span class="o">,</span> <span class="mi">1</span>
 <span class="n">int32</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
@@ -405,13 +406,13 @@ Example:</p>
 </div>
 <p>Datashape types with free parameters in their constructor are called
 <strong>parameterized</strong> types. Example:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">SquareMatrix</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">T</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">SquareMatrix</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">T</span>
 </pre></div>
 </div>
 <p>Datashape types without free parameters in their constructor are called
 <strong>alias</strong> types. Alias types don&#8217;t add any additional structure they just
 ascribe a new name. Example:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">AliasType</span> <span class="nc">N</span> <span class="o">=</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">N</span><span class="o">,</span> <span class="n">int32</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">AliasType</span> <span class="nc">N</span> <span class="o">=</span> <span class="nc">N</span><span class="o">,</span> <span class="nc">N</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
 <p>Datashape types can be <strong>anonymous</strong> or labeled. Once a type is
@@ -466,7 +467,7 @@ types keyed by labels. Records are also an in the class of <strong>measure</stro
 types. Records are sugard to look like Python dictionaries but
 are themselves type constructors of variable number of type arguments.</p>
 <p>Example 1:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Person</span> <span class="o">=</span> <span class="o">{</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">Person</span> <span class="o">=</span> <span class="o">{</span>
     <span class="n">name</span>   <span class="o">:</span> <span class="kt">string</span><span class="o">;</span>
     <span class="n">age</span>    <span class="o">:</span> <span class="kt">int</span><span class="o">;</span>
     <span class="n">height</span> <span class="o">:</span> <span class="kt">int</span><span class="o">;</span>
@@ -475,7 +476,7 @@ are themselves type constructors of variable number of type arguments.</p>
 </pre></div>
 </div>
 <p>Example 2:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">RGBA</span> <span class="o">=</span> <span class="o">{</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">RGBA</span> <span class="o">=</span> <span class="o">{</span>
     <span class="n">r</span><span class="o">:</span> <span class="n">int32</span><span class="o">;</span>
     <span class="n">g</span><span class="o">:</span> <span class="n">int32</span><span class="o">;</span>
     <span class="n">b</span><span class="o">:</span> <span class="n">int32</span><span class="o">;</span>
@@ -508,11 +509,11 @@ but cannot be self-referential:</p>
 <strong>table-like</strong>, while any other terminating type is called
 <strong>array-like</strong>.</p>
 <p>Example of array-like:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">ArrayLike</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="n">int32</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">ArrayLike</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="n">int32</span>
 </pre></div>
 </div>
 <p>Example of table-like:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">TableLike</span> <span class="o">=</span> <span class="o">{</span> <span class="n">x</span> <span class="o">:</span> <span class="kt">int</span><span class="o">;</span> <span class="n">y</span> <span class="o">:</span> <span class="kt">float</span> <span class="o">}</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">TableLike</span> <span class="o">=</span> <span class="o">{</span> <span class="n">x</span> <span class="o">:</span> <span class="kt">int</span><span class="o">;</span> <span class="n">y</span> <span class="o">:</span> <span class="kt">float</span> <span class="o">}</span>
 </pre></div>
 </div>
 <div class="section" id="enumeration">
@@ -521,7 +522,7 @@ but cannot be self-referential:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="o">{</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">1</span><span class="o">},</span> <span class="n">int32</span>
 </pre></div>
 </div>
-<p>The above could describe a Python structure of the form:</p>
+<p>The above could describe a irregularly shaped Python structure of the form:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="o">[</span>
     <span class="o">[</span><span class="mi">1</span><span class="o">],</span>
     <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">],</span>
@@ -557,26 +558,26 @@ into one of two classes:</p>
 <li><strong>dimension-generic</strong></li>
 <li><strong>measure-generic</strong></li>
 </ul>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">DimGen</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">T</span><span class="o">,</span> <span class="kt">int</span>
-<span class="nc">TypGen</span> <span class="nc">T</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">DimGen</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">T</span><span class="o">,</span> <span class="kt">int</span>
+<span class="k">type</span> <span class="nc">TypGen</span> <span class="nc">T</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span>
 </pre></div>
 </div>
 <p>For example in the following signature the type variable T is unified in
 both arguments to the type constructor <tt class="docutils literal"><span class="pre">Either</span></tt>:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Sig</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Either</span><span class="o">(</span> <span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span><span class="o">),</span> <span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span> <span class="o">)</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">Sig</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Either</span><span class="o">(</span> <span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span><span class="o">),</span> <span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span> <span class="o">)</span>
 </pre></div>
 </div>
 <p>A type signature may only be either dimension-generic or
 measure-generic. Attempting to use a type variable in both will raise an
 exception <tt class="docutils literal"><span class="pre">AmbigiousTypeVariable</span></tt>. For example:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">Sig</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Either</span><span class="o">(</span> <span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span><span class="o">),</span> <span class="o">(</span><span class="nc">T</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="kt">int</span><span class="o">)</span> <span class="o">)</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">Sig</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Either</span><span class="o">(</span> <span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="nc">T</span><span class="o">),</span> <span class="o">(</span><span class="nc">T</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="kt">int</span><span class="o">)</span> <span class="o">)</span>
 </pre></div>
 </div>
 <p>Not all declarations of type variables are well-defined. For example
 it is not possible to expression a Range type in terms of variable. An
 instance like this would require a immensely more sophisticated type
 system.</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="nc">InvalidSig1</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">InvalidSig1</span> <span class="nc">T</span> <span class="o">=</span> <span class="nc">Range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="nc">T</span><span class="o">)</span>
 </pre></div>
 </div>
 <div class="section" id="sums">
