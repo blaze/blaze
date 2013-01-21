@@ -1,5 +1,10 @@
-from blaze.module.parser import mread
+import os
 
+import blaze
+from blaze.module.parser import mopen, mread
+
+#------------------------------------------------------------------------
+# Dummy Modules
 #------------------------------------------------------------------------
 
 dummy = """
@@ -47,3 +52,13 @@ def test_dummy():
 
 def test_arith():
     print mread(arith)
+
+#------------------------------------------------------------------------
+# Blaze Core
+#------------------------------------------------------------------------
+
+def test_blaze_core():
+    path = os.path.dirname(blaze.__file__)
+    blazecore = os.path.join(path, 'module', 'blaze.mod')
+
+    mopen(blazecore)
