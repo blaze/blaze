@@ -35,6 +35,14 @@ def test_object_blob():
         assert v[0] == i
         assert v[1] == str(i*.2)
 
+def test_object_unicode():
+    ds = blaze.dshape('x, blob')
+    c = blaze.Array([u'a'*i for i in range(10)], ds)
+
+    for i, v in enumerate(c):
+        # The outcome are 0-dim arrays (that might change in the future)
+        assert v[()] == u'a'*i
+
 def test_object_persistent_blob():
     td = tempfile.mkdtemp()
     tmppath = os.path.join(td, 'c')
