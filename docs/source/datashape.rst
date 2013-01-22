@@ -174,6 +174,7 @@ operator cannot be a measure. This permits types of the form::
 
 But forbids types of the form::
 
+    1, 1
     int32, 1
     int32, int32
 

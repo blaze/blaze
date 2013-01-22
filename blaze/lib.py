@@ -131,6 +131,7 @@ def multiply(a, b):
 def power(a, b):
     return np.power(a, b)
 
+
 @lift('Abs(<term>)', 'a -> a', {
     'types'   : {'a': array_like},
     'metadata': {},

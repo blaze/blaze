@@ -2,6 +2,7 @@ from blaze import prims
 from operator import eq
 from copy import deepcopy
 from itertools import izip
+from blaze.aterm import build
 
 #------------------------------------------------------------------------
 # Phase 1 ( Types )
@@ -29,6 +30,10 @@ class ANode(object):
 
     def to_tuple(self):
         return (self.tag(), tuple([self.__cons[k] for k in self._fields ]))
+
+    def to_aterm(self):
+        raise NotImplementedError
+
 
     @property
     def children(self):
@@ -80,9 +85,17 @@ class Scan(ANode):
 class Permute(ANode):
     _fields = ['fn', 'xs', 'ys']
 
+class Compose(ANode):
+    _fields = ['f', 'g']
+
 #------------------------------------------------------------------------
 # Phase 2 ( Layout & Locality )
 #------------------------------------------------------------------------
+
+class BNode(object):
+    pass
+
+# ------
 
 class ChunkedMap(object):
     pass
@@ -96,6 +109,7 @@ class ChunkedReduce(object):
 class ChunkedScan(object):
     pass
 
+# ------
 
 class TiledMap(object):
     pass
