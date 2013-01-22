@@ -124,6 +124,27 @@ def do_types(context, graph):
 
     return context, graph
 
+def build_operand_dict(context, aterm_graph):
+    """
+    Map input operands ids to the input operands in context['operand_dict']
+    """
+    operands = context['operands']
+    operand_dict = dict((id(op), op) for op in operands)
+    context['operand_dict'] = operand_dict
+    return context, aterm_graph
+
+def substitute_llvm(context, aterm_graph):
+    "Substitute executors for the parts of the graph we can handle"
+    from blaze.compile.llvm import llvm_execution
+
+    executors = {}
+    context['executors'] = executors
+    operand_dict = context['operand_dict']
+
+    aterm_graph = llvm_execution.substitute_llvm_executors(
+                        aterm_graph, executors, operand_dict)
+    return context, aterm_graph
+
 def do_plan(context, graph):
     """ Take the ATerm expression graph and do inner-most evaluation to
     generate a linear sequence of instructions from that together with
@@ -145,13 +166,17 @@ def do_plan(context, graph):
     context = dict(context)
 
     aterm_graph = context['aterm_graph']
+    executors = context['executors']
 
-    igen = InstructionGen()
+    igen = InstructionGen(executors)
     igen.visit(aterm_graph) # effectful
-    plan = igen.plan
+    plan = igen.plan # instructions
     vars = igen.vars
+    symbols = igen.symbols
 
     context['plan'] = plan
+    context['symbols'] = symbols
+
     return context, graph
 
 #------------------------------------------------------------------------
@@ -195,6 +220,10 @@ class Pipeline(object):
 blaze_rts = Pipeline([do_environment,
                       do_convert_to_aterm,
                       do_types,
+                      build_operand_dict,
+
+                      # Codegen stages
+                      substitute_llvm,
                       do_plan,
                       ])
 
