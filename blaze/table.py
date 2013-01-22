@@ -168,7 +168,7 @@ class Array(Indexable):
         if isinstance(obj, ByteProvider):
             self.data = obj
         else:
-            self.data = CArraySource(obj, params=params)
+            self.data = CArraySource(obj, dshape=dshape, params=params)
 
         # children graph nodes
         self.children = []
@@ -243,6 +243,18 @@ class Array(Indexable):
     def __setitem__(self, indexer, value):
         cc = self._layout.change_coordinates
         write(cc, indexer, value)
+
+    #------------------------------------------------------------------------
+    # Specific functions for carray backend
+    #------------------------------------------------------------------------
+
+    # TODO: don't hardcode against carray,  breaks down if we use
+    # something else
+    def append(self, data):
+        self.data.ca.append(data)
+
+    def commit(self):
+        self.data.ca.flush()
 
     def __str__(self):
         return generic_str(self, deferred=False)

@@ -812,10 +812,16 @@ def to_numpy(ds):
             shape += (dim,)
         elif isinstance(dim, Fixed):
             shape += (dim.val,)
+        elif isinstance(dim, TypeVar):
+            shape += (-1,)
+
         elif isinstance(dim, CType):
             dtype = dim.to_dtype()
+        elif isinstance(dim, Blob):
+            dtype = np.dtype('object')
         elif isinstance(dim, Record):
             dtype = dim.to_dtype()
+
         else:
             raise NotNumpyCompatible()
 
@@ -842,7 +848,7 @@ def from_numpy(shape, dt):
         measure = String(dtype.itemsize)
 
     if dtype.fields:
-        # Convert the record into a dict of keys to CType
+
         rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
         measure = Record(rec)
     else:

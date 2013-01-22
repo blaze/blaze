@@ -595,7 +595,13 @@ cdef class chunks(object):
     atomsize = self.dtype.itemsize
     itemsize = self.dtype.base.itemsize
 
-    if not _new:
+    # For 'O'bject types, the number of chunks is equal to the number of
+    # elements
+    if self.dtype.char == 'O':
+      self.nchunks = self.len
+
+    # Initialize last chunk (not valid for 'O'bject dtypes)
+    if not _new and self.dtype.char != 'O':
       self.nchunks = cython.cdiv(self.len, len(lastchunkarr))
       chunksize = len(lastchunkarr) * atomsize
       lastchunk = lastchunkarr.data
@@ -823,8 +829,11 @@ cdef class carray:
   property len:
     "The length (leading dimension) of this object."
     def __get__(self):
-      # Important to do the cast in order to get a npy_intp result
-      return cython.cdiv(self._nbytes, <npy_intp>self.atomsize)
+      if self._dtype.char == 'O':
+        return len(self.chunks)
+      else:
+        # Important to do the cast in order to get a npy_intp result
+        return cython.cdiv(self._nbytes, <npy_intp>self.atomsize)
 
   property mode:
     "The mode used to create/open the `mode`."
@@ -928,16 +937,13 @@ cdef class carray:
         self._dtype = dtype = np.dtype((array_.dtype.base, array_.shape[1:]))
     else:
       self._dtype = dtype
-    # Checks for the dtype
-    # if self._dtype.kind == 'O':
-    #   raise TypeError, "object dtypes are not supported in carray objects"
+
     # Check that atom size is less than 2 GB
     if dtype.itemsize >= 2**31:
       raise ValueError, "atomic size is too large (>= 2 GB)"
 
     self.atomsize = atomsize = dtype.itemsize
     self.itemsize = itemsize = dtype.base.itemsize
-    #print "atomsize, itemsize:", atomsize, itemsize
 
     # Check defaults for dflt
     _dflt = np.zeros((), dtype=dtype)
@@ -985,9 +991,8 @@ cdef class carray:
 
     # Create layout for data and metadata
     self._cparams = cparams
-    if rootdir is None:
-      self.chunks = []
-    else:
+    self.chunks = []
+    if rootdir is not None:
       self.mkdirs(rootdir, mode)
       metainfo = (dtype, cparams, self.shape[0], lastchunkarr, self._mode)
       self.chunks = chunks(self._rootdir, metainfo=metainfo, _new=True)
@@ -995,7 +1000,12 @@ cdef class carray:
       self.write_meta()
 
     # Finally, fill the chunks
-    self.fill_chunks(array_)
+    # Object dtype requires special storage
+    if array_.dtype.char == 'O':
+      for obj in array_:
+        self.store_obj(obj)
+    else:
+      self.fill_chunks(array_)
 
     # and flush the data pending...
     self.flush()
@@ -1149,14 +1159,15 @@ cdef class carray:
     cdef chunk chunk_
     import pickle
 
-    for obj in arrobj:
-      print "obj-->", obj
-      pick_obj = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
-      chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
-                     _memory = self._rootdir is None)
+    pick_obj = pickle.dumps(arrobj, pickle.HIGHEST_PROTOCOL)
+    chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
+                   _memory = self._rootdir is None)
 
     self.chunks.append(chunk_)
-    return chunk_.nbytes, chunk_.cbytes
+    # Update some counters
+    nbytes, cbytes = chunk_.nbytes, chunk_.cbytes
+    self._cbytes += cbytes
+    self._nbytes += nbytes
 
   def append(self, object array):
     """
@@ -1187,10 +1198,7 @@ cdef class carray:
 
     # Object dtype requires special storage
     if arrcpy.dtype.char == 'O':
-      nbytes, cbytes = self.store_obj(arrcpy)
-      # Update some counters
-      self._cbytes += cbytes
-      self._nbytes += nbytes
+      self.store_obj(array)
       return
 
     # Appending a single row should be supported
@@ -1612,12 +1620,19 @@ cdef class carray:
     self.idxcache = idxcache
     return 1
 
-  def getitem_object(self, object key):
+  def getitem_object(self, start, stop=None, step=None):
     """Retrieve elements of type object."""
     import pickle
-    cchunk = self.chunks[key]
-    chunk = cchunk.getudata()
-    return pickle.loads(chunk)
+
+    if stop is None and step is None:
+      # Integer
+      cchunk = self.chunks[start]
+      chunk = cchunk.getudata()
+      return pickle.loads(chunk)
+
+    # Range
+    objs = [self.getitem_object(i) for i in xrange(start, stop, step)]
+    return np.array(objs, dtype=self._dtype)
 
   def __getitem__(self, object key):
     """
@@ -1741,6 +1756,9 @@ cdef class carray:
     if blen == 0:
       # If empty, return immediately
       return arr
+
+    if self.dtype.char == 'O':
+      return self.getitem_object(start, stop, step)
 
     # Fill it from data in chunks
     nwrow = 0
