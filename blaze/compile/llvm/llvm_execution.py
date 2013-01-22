@@ -12,13 +12,13 @@ from numba.minivect import minitypes
 
 import blaze
 import blaze.idx
-from blaze.expr import visitor
+from blaze import visitor
 from blaze.expr import ops
-from blaze.expr import paterm
+import blaze.aterm as paterm
 from blaze.datashape import coretypes
-from blaze.engine import pipeline
-from blaze.engine import executors
-from blaze.engine import numba_kernels, numba_reductions
+from blaze.compile import pipeline
+from blaze.rts import executors
+from blaze.compile.llvm import numba_kernels, numba_reductions
 from blaze.sources import canonical
 from blaze import plan
 
@@ -43,7 +43,7 @@ class GraphToAst(visitor.BasicGraphVisitor):
 
     def App(self, app):
         if app.operator.arity == 2:
-            op = binop_to_astop.get(type(app.operator), None)
+            op = self.binop_to_astop.get(type(app.operator), None)
             if op is not None:
                 left, right = self.visit(app.operator.children)
                 return ast.BinOp(left=left, op=op(), right=right)
