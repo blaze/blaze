@@ -44,6 +44,9 @@ def get_datashape(term):
     dshape_string = term.args[0].val
     return dshape(dshape_string)
 
+def annotate(node, metadata):
+    return aappl('Annotation', [node] + metadata)
+
 #------------------------------------------------------------------------
 # Plan Primitives
 #------------------------------------------------------------------------
@@ -227,6 +230,12 @@ class InstructionGen(MroVisitor):
                            fillvalue=fillvalue)
         self.push(inst)
 
+    def _Annotation(self, node):
+        child_node, metadata = node.args[0], node.args[1]
+        self.metadata = metadata
+        node.args[0] = self.visit(child_node)
+        return node
+
     def AAppl(self, term):
         label = term.spine.term
 
@@ -238,6 +247,8 @@ class InstructionGen(MroVisitor):
             return self._Assign(term)
         elif label == 'Executor':
             return self._Executor(term)
+        elif label == 'Annotation':
+            return self._Annotation(term)
         else:
             return self._Op(term)
 
@@ -274,7 +285,8 @@ class BlazeVisitor(MroVisitor):
 
     def Op(self, node):
         opname = node.__class__.__name__
-        return aappl(aterm(opname), self.visit(node.children))
+        result_node = aappl(aterm(opname), self.visit(node.children))
+        return annotate(result_node, [annotate_dshape(node.datashape)])
 
     def Literal(self, node):
         if node.vtype == int:
