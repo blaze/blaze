@@ -585,6 +585,11 @@ cdef class chunks(object):
     atomsize = self.dtype.itemsize
     itemsize = self.dtype.base.itemsize
 
+    # For 'O'bject types, the number of chunks is equal to the number of
+    # elements
+    if self.dtype.char == 'O':
+      self.nchunks = self.len
+
     # Initialize last chunk (not valid for 'O'bject dtypes)
     if not _new and self.dtype.char != 'O':
       self.nchunks = cython.cdiv(self.len, len(lastchunkarr))

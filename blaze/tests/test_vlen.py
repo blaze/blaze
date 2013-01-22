@@ -50,6 +50,23 @@ def test_object_persistent_blob():
     # Remove everything under the temporary dir
     shutil.rmtree(td)
 
+def test_object_persistent_blob_reopen():
+    td = tempfile.mkdtemp()
+    tmppath = os.path.join(td, 'c')
+
+    ds = blaze.dshape('x, blob')
+    c = blaze.Array([(i, "s"*i) for i in range(10)], ds,
+                    params=blaze.params(storage=tmppath))
+
+    c2 = blaze.open(tmppath)
+
+    for i, v in enumerate(c2):
+        assert v[0] == i
+        assert v[1] == "s"*i
+
+    # Remove everything under the temporary dir
+    shutil.rmtree(td)
+
 def test_intfloat_blob():
     ds = blaze.dshape('x, blob')
     c = blaze.Array([(i, i*.2) for i in range(10)], ds)
