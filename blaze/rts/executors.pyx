@@ -2,9 +2,9 @@ cimport cpython
 from libc.stdlib cimport malloc, free
 cimport numpy as cnp
 from cpython cimport PyObject, Py_INCREF
-from blaze.engine import numba_kernels
+from blaze.compile.llvm import numba_kernels
 
-from blaze.sources.descriptors cimport lldescriptors
+from blaze.desc cimport lldescriptors
 
 #------------------------------------------------------------------------
 # NumPy Utilities
