@@ -1,9 +1,7 @@
 from cpython cimport *
+from blaze.blaze cimport *
 
 DEF MAX_NDIM = 8
-
-cdef extern from "Python.h":
-    ctypedef unsigned int Py_uintptr_t
 
 #------------------------------------------------------------------------
 # C-level Chunk or Tile Data Descriptors
