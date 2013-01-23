@@ -8,7 +8,7 @@ from sources.chunked import CArraySource, CTableSource
 
 from table import NDArray, Array, NDTable, Table
 from blaze.datashape import from_numpy, to_numpy, TypeVar, Fixed
-from blaze.expr import graph
+from blaze.expr import graph, ops
 from blaze import carray, dshape as _dshape
 from eclass import eclass as _eclass
 
@@ -281,7 +281,8 @@ def blaze_abs(a, axis=None, out=None):
     Returns the absolute value element-wise.
     """
     a = lazy(a)
-    return a.abs(axis=axis, out=out)
+    op = ops.Abs('Abs', [a], {'out': out})
+    return op
 
 def blaze_sum(a, axis=None, out=None):
     """
