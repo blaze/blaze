@@ -8,6 +8,7 @@ from sources.chunked import CArraySource, CTableSource
 
 from table import NDArray, Array, NDTable, Table
 from blaze.datashape import from_numpy, to_numpy, TypeVar, Fixed
+from blaze.expr import graph
 from blaze import carray, dshape as _dshape
 from eclass import eclass as _eclass
 
@@ -200,7 +201,7 @@ def lazy(a):
     Turn an object into its lazy blaze equivalent.
     """
     # TODO: tables, etc
-    if not isinstance(a, (ArrayLike, graph.ExpressionNode)):
+    if not isinstance(a, (NDArray, Array, graph.ExpressionNode)):
         a = NDArray(a)
     return a
 
