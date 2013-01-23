@@ -124,3 +124,4 @@ def test_implicit_instruction_gen2():
 
 if __name__ == '__main__':
     test_simple_pipeline()
+    test_implicit_instruction_gen2()

@@ -423,7 +423,8 @@ class TypeVar(Atom):
 
     def __str__(self):
         # Use the F# notation
-        return "'" + str(self.symbol)
+        return str(self.symbol)
+        # return "'" + str(self.symbol)
 
 class Range(Atom):
     """
@@ -698,7 +699,7 @@ def extract_dims(ds):
     dimensions
     """
     if isinstance(ds, CType):
-        raise Exception("No Dimensions")
+        raise NotNumpyCompatible("No Dimensions")
     return ds.parameters[0:-2]
 
 def extract_measure(ds):

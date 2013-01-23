@@ -8,6 +8,7 @@ from sources.chunked import CArraySource, CTableSource
 
 from table import NDArray, Array, NDTable, Table
 from blaze.datashape import from_numpy, to_numpy, TypeVar, Fixed
+from blaze.expr import graph, ops
 from blaze import carray, dshape as _dshape
 from eclass import eclass as _eclass
 
@@ -194,3 +195,153 @@ def fromiter(iterable, dshape, params=None):
 def loadtxt(filetxt, storage):
     """ Convert txt file into Blaze native format """
     Array(np.loadtxt(filetxt), params=params(storage=storage))
+
+def lazy(a):
+    """
+    Turn an object into its lazy blaze equivalent.
+    """
+    # TODO: tables, etc
+    if not isinstance(a, (NDArray, Array, graph.ExpressionNode)):
+        a = NDArray(a)
+    return a
+
+def allclose(a, b, rtol=1e-05, atol=1e-08):
+    """
+    Returns True if two arrays are element-wise equal within a tolerance.
+
+    The tolerance values are positive, typically very small numbers.  The
+    relative difference (`rtol` * abs(`b`)) and the absolute difference
+    `atol` are added together to compare against the absolute difference
+    between `a` and `b`.
+
+    If either array contains one or more NaNs, False is returned.
+    Infs are treated as equal if they are in the same place and of the same
+    sign in both arrays.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Input arrays to compare.
+    rtol : float
+        The relative tolerance parameter (see Notes).
+    atol : float
+        The absolute tolerance parameter (see Notes).
+
+    Returns
+    -------
+    allclose : bool
+        Returns True if the two arrays are equal within the given
+        tolerance; False otherwise.
+
+    See Also
+    --------
+    all, any, alltrue, sometrue
+
+    Notes
+    -----
+    If the following equation is element-wise True, then allclose returns
+    True.
+
+     absolute(`a` - `b`) <= (`atol` + `rtol` * absolute(`b`))
+
+    The above equation is not symmetric in `a` and `b`, so that
+    `allclose(a, b)` might be different from `allclose(b, a)` in
+    some rare cases.
+
+    Examples
+    --------
+    >>> blaze.allclose([1e10,1e-7], [1.00001e10,1e-8])
+    False
+    >>> blaze.allclose([1e10,1e-8], [1.00001e10,1e-9])
+    True
+    >>> blaze.allclose([1e10,1e-8], [1.0001e10,1e-9])
+    False
+    >>> blaze.allclose([1.0, np.nan], [1.0, np.nan])
+    False
+    """
+    a, b = lazy(a), lazy(b)
+    return blaze_all(blaze_abs(a - b) <= atol + rtol * blaze_abs(b))
+
+def blaze_all(a, axis=None, out=None):
+    """
+    Test whether all array elements along a given axis evaluate to True.
+    """
+    a = lazy(a)
+    return a.all(axis=axis, out=out)
+
+def blaze_any(a, axis=None, out=None):
+    """
+    Test whether any array elements along a given axis evaluate to True.
+    """
+    a = lazy(a)
+    return a.any(axis=axis, out=out)
+
+def blaze_abs(a, axis=None, out=None):
+    """
+    Returns the absolute value element-wise.
+    """
+    a = lazy(a)
+    op = ops.Abs('Abs', [a], {'out': out})
+    return op
+
+def blaze_sum(a, axis=None, out=None):
+    """
+    Sum of array elements over a given axis.
+
+    Parameters
+    ----------
+    a : array_like
+        Elements to sum.
+    axis : None or int or tuple of ints, optional
+        Axis or axes along which a sum is performed.
+        The default (`axis` = `None`) is perform a sum over all
+        the dimensions of the input array. `axis` may be negative, in
+        which case it counts from the last to the first axis.
+
+        .. versionadded:: 1.7.0
+
+        If this is a tuple of ints, a sum is performed on multiple
+        axes, instead of a single axis or all the axes as before.
+    out : ndarray, optional
+        Array into which the output is placed.  By default, a new array is
+        created.  If `out` is given, it must be of the appropriate shape
+        (the shape of `a` with `axis` removed, i.e.,
+        ``numpy.delete(a.shape, axis)``).  Its type is preserved. See
+        `doc.ufuncs` (Section "Output arguments") for more details.
+
+    Returns
+    -------
+    sum_along_axis : ndarray
+        An array with the same shape as `a`, with the specified
+        axis removed.   If `a` is a 0-d array, or if `axis` is None, a scalar
+        is returned.  If an output array is specified, a reference to
+        `out` is returned.
+
+    See Also
+    --------
+    ndarray.sum : Equivalent method.
+
+    cumsum : Cumulative sum of array elements.
+
+    trapz : Integration of array values using the composite trapezoidal rule.
+
+    mean, average
+
+    Notes
+    -----
+    Arithmetic is modular when using integer types, and no error is
+    raised on overflow.
+
+    Examples
+    --------
+    >>> np.sum([0.5, 1.5])
+    2.0
+    >>> np.sum([[0, 1], [0, 5]])
+    6
+    >>> np.sum([[0, 1], [0, 5]], axis=0)
+    array([0, 6])
+    >>> np.sum([[0, 1], [0, 5]], axis=1)
+    array([1, 5])
+    """
+    a = lazy(a)
+    return a.sum(axis=axis, out=out)
