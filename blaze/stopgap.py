@@ -4,7 +4,7 @@ whenever someone gets around to implementing something real.
 """
 
 from blaze import error
-from blaze.expr import graph, nodes
+from blaze.expr import graph, nodes, ops
 from blaze.datashape import coretypes, DataShape
 
 def _get_datashape(graph_node):
@@ -31,3 +31,14 @@ def broadcast(*operands):
     if not shapes:
         return type
     return DataShape(shapes[0] + (type,))
+
+def compute_datashape(op, operands, kwargs):
+    dshape = broadcast(*operands)
+
+    if isinstance(op, ops.ReductionOp):
+        if kwargs.get("axis", None):
+            raise NotImplemented("axis")
+
+        dshape = DataShape([coretypes.extract_measure(dshape)])
+
+    return dshape

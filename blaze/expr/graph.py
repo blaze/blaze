@@ -396,14 +396,8 @@ class Op(ExpressionNode):
         self.kwargs = kwargs
 
         # TODO: type inference on the aterm graph
-        self.datashape = self.compute_datashape(operands)
-
-    def compute_datashape(self, operands):
-        # Replace this method when type inference is ready ?
         from blaze import stopgap
-
-        dshape = stopgap.broadcast(*operands)
-        return dshape
+        self.datashape = stopgap.compute_datashape(self, operands, kwargs)
 
     @property
     def name(self):
