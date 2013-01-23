@@ -7,8 +7,8 @@ from pprint import pformat
 
 from blaze.funcs import lookup
 from blaze.visitor import MroVisitor
-from blaze.datashape import DataShape, dshape
-from blaze.aterm import aappl, aterm, astr, aint, areal, match
+from blaze.datashape import DataShape
+from blaze.aterm import aappl, aterm, astr, aint, areal
 
 #------------------------------------------------------------------------
 # Plans
@@ -19,39 +19,14 @@ def annotate_dshape(ds):
     Convert a datashape instance into Aterm annotation
 
     >>> ds = dshape('2, 2, int32')
-    >>> anno = annotate_dshape(ds)
-    >>> anno
+    >>> anno = dshape_anno(ds)
     dshape("2, 2, int32")
     >>> type(anno)
-    <class 'blaze.aterm.terms.AAppl'>
+    <class 'AAppl'>
     """
 
     assert isinstance(ds, DataShape)
     return aappl(aterm('dshape'), [astr(str(ds))])
-
-def get_datashape(term):
-    """
-    >>> ds = dshape('2, 2, int32')
-    >>> ds2 = get_datashape(annotate_dshape(ds))
-    >>> type(ds2)
-    <class 'blaze.datashape.coretypes.DataShape'>
-    >>> ds2
-    dshape("2, 2, int32")
-    """
-    # result = match("dshape(<value>)", term)
-    # assert result, result
-    # dshape_string = result['value'].val
-    dshape_string = term.args[0].val
-    return dshape(dshape_string)
-
-def annotate(node, metadata):
-    if node.annotation is None:
-        node.annotation = metadata
-    else:
-        node.annotation.extend(metadata)
-
-    return node
-    # return aappl(aterm('Annotation'), [node] + metadata)
 
 #------------------------------------------------------------------------
 # Plan Primitives
@@ -97,17 +72,12 @@ class Var(object):
         return self.key
 
 class Instruction(object):
-    def __init__(self, fn, datashape, args=None, lhs=None, fillvalue=None):
+    def __init__(self, fn, args=None, lhs=None):
         # %lhs = fn{props}(arguments)
 
         self.fn = fn
-        self.datashape = datashape
-        self.args = args or []
         self.lhs = lhs
-        self.fillvalue = fillvalue
-
-    def execute(self, operands, lhs=None):
-        return self.fn(operands, lhs)
+        self.args = args or []
 
     def __repr__(self):
         # with output types
@@ -153,9 +123,7 @@ class InstructionGen(MroVisitor):
 
     """
 
-    def __init__(self, executors):
-        self.executors = executors
-
+    def __init__(self):
         self._vartable = {}
         self._instructions = []
         self._vars = ('%' + str(n) for n in itertools.count(0))
@@ -170,6 +138,7 @@ class InstructionGen(MroVisitor):
     def tos(self):
         return self._instructions[-1]
 
+
     @property
     def plan(self):
         return self._instructions
@@ -177,10 +146,6 @@ class InstructionGen(MroVisitor):
     @property
     def vars(self):
         return self._vartable
-
-    @property
-    def symbols(self):
-        return dict((name, term) for term, name in self._vartable.iteritems())
 
     def var(self, term):
         key = self.tmp()
@@ -190,7 +155,6 @@ class InstructionGen(MroVisitor):
     def _Op(self, term):
         spine = term.spine
         args  = term.args
-        dshape_term = term.annotation[0]
 
         # visit the innermost arguments, push those arguments on
         # the stack first
@@ -204,12 +168,12 @@ class InstructionGen(MroVisitor):
         key = self.var(term)
 
         # build the instruction & push it on the stack
-        inst = Instruction(fn, get_datashape(dshape_term), fargs, lhs=key)
+        inst = Instruction(fn, fargs, lhs=key)
         self.push(inst)
 
     def _Array(self, term):
         key = self.var(term)
-        # return Var(key)
+        return Var(key)
 
     def _Assign(self, term):
         pass
@@ -217,25 +181,6 @@ class InstructionGen(MroVisitor):
     def _Slice(self, term):
         pass
 
-    def _Executor(self, term):
-        executor_id, backend, has_lhs, fillvalue = term.annotation.meta
-        has_lhs = has_lhs.label
-        fillvalue = fillvalue.label
-        executor = self.executors[executor_id.label]
-
-        self.visit(term.args)
-
-        fargs = [self._vartable[a] for a in term.args]
-
-        if has_lhs:
-            fargs, lhs = fargs[:-1], fargs[-1]
-        else:
-            lhs = None
-
-        # build the instruction & push it on the stack
-        inst = Instruction(executor, get_datashape(term), fargs, lhs=lhs,
-                           fillvalue=fillvalue)
-        self.push(inst)
 
     def AAppl(self, term):
         label = term.spine.term
@@ -246,8 +191,6 @@ class InstructionGen(MroVisitor):
             return self._Slice(term)
         elif label == 'Assign':
             return self._Assign(term)
-        elif label == 'Executor':
-            return self._Executor(term)
         else:
             return self._Op(term)
 
@@ -284,8 +227,7 @@ class BlazeVisitor(MroVisitor):
 
     def Op(self, node):
         opname = node.__class__.__name__
-        result_node = aappl(aterm(opname), self.visit(node.children))
-        return annotate(result_node, [annotate_dshape(node.datashape)])
+        return aappl(aterm(opname), self.visit(node.children))
 
     def Literal(self, node):
         if node.vtype == int:
@@ -323,7 +265,3 @@ class BlazeVisitor(MroVisitor):
 
     def Assign(self, node):
         return aappl(aterm('Assign'), self.visit(node.operands))
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
