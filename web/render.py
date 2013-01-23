@@ -69,6 +69,7 @@ def render_page(bfolder, name, template=None):
         'active_page' : name,
         'nav'         : nav.render(navigation_bar=pages, active_page=name),
         'content'     : text,
+        'github'      : src_url,
     }
 
     with codecs.open(output, 'w+', 'utf-8') as f:
