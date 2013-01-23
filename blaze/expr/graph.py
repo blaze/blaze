@@ -389,7 +389,7 @@ class Op(ExpressionNode):
     """
     kind = OP
 
-    def __init__(self, op, operands, kwargs):
+    def __init__(self, op, operands, kwargs=None):
         self.op = op
         self.children = operands
         self.operands = operands
