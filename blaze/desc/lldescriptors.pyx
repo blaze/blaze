@@ -1,4 +1,3 @@
-
 """
 Low-level data descriptors accessible from C, Cython and Python (and numba
 in the future).

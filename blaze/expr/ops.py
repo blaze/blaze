@@ -1,5 +1,6 @@
 from graph import Op
 import blaze.datashape as C
+from blaze.datashape import datashape
 
 from utils import Symbol
 
@@ -100,3 +101,18 @@ class Abs(Op):
     associative  = False
     idempotent   = True
     nilpotent    = False
+
+class ReductionOp(Op):
+    # Need an OO taxonomy for compute_datashape
+
+    # -----------------------
+    arity = 1
+    signature = 'a -> b'
+    dom = [array_like, numeric] # only full reductions?
+    # -----------------------
+
+    scalar_func = None
+
+class Sum(ReductionOp):
+
+    scalar_func = Add

@@ -5,6 +5,8 @@ __all__ = [
     'CustomSyntaxError'
 ]
 
+# TODO: BlazeException base class ?
+
 # for Numba
 class ExecutionError(Exception):
     """
