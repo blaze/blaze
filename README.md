@@ -1,5 +1,5 @@
 <p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
+<img src="https://raw.github.com/ContinuumIO/blaze-core/master/docs/source/svg/blaze_med.png">
 </p>
 
 **Blaze** is the next-generation of NumPy. It is designed as a
@@ -8,7 +8,7 @@ distributed algorithms over a wide variety of data sources and to extend
 the structure of NumPy itself.
 
 <p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png">
+<img src="https://raw.github.com/ContinuumIO/blaze-core/master/docs/source/svg/numpy_plus.png">
 </p>
 
 Our goal is to allow easy composition of low level computation kernels
@@ -23,7 +23,7 @@ massively-multicore arena, allowing it to able to leverage many CPU and
 GPU cores across computers, virtual machines and cloud services.
 
 <p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
+<img src="https://raw.github.com/ContinuumIO/blaze-core/master/docs/source/svg/codepush.png">
 </p>
 
 The general parallelization and distributed scheduling problem is
@@ -42,7 +42,7 @@ different users of other PyData projects ( Pandas, Theano, Numba, SciPy,
 Scikit-Learn) to interoperate.
 
 <p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png">
+<img src="https://raw.github.com/ContinuumIO/blaze-core/master/docs/source/svg/sources.png">
 </p>
 
 Status
@@ -64,7 +64,7 @@ If you are interested in the development version of Blaze you can
 obtain the source from Github.
 
 ```bash
-$ git clone git@github.com:ContinuumIO/blaze.git
+$ git clone git@github.com:ContinuumIO/blaze-core.git
 ```
 
 Many of the dependencies ( llvm, numba, ... ) are non-trivial to
