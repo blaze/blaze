@@ -45,6 +45,7 @@ cdef class CArrayChunkIterator(ChunkIterator):
         self.iterator.commit = carray_chunk_commit
         self.iterator.dispose = carray_chunk_dispose
 
+
 cdef int carray_chunk_next(CChunkIterator *info, CChunk *chunk) except -1:
     cdef Py_uintptr_t data
 
@@ -72,8 +73,7 @@ cdef int carray_chunk_commit(CChunkIterator *info, CChunk *chunk) except -1:
         carray.chunks[chunk.chunk_index] = carray.chunk(arr, arr.dtype,
                                                         carray_obj.cparams)
 
-    carray_chunk_dispose(info, chunk)
-    return 0
+    return carray_chunk_dispose(info, chunk)
 
 cdef int carray_chunk_dispose(CChunkIterator *info, CChunk *chunk) except -1:
     # Decref previously set live object

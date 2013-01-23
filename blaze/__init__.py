@@ -19,6 +19,10 @@ dtype   = dshape
 
 from params import params
 from toplevel import open, zeros, ones, fromiter
+from toplevel import (blaze_all as all,
+                      blaze_any as any,
+                      blaze_abs as abs,
+                      blaze_sum as sum)
 
 # Shorthand namespace dump
 from datashape.shorthand import *

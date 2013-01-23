@@ -40,6 +40,7 @@ class BasicGraphVisitor(object):
     def Unknown(self, tree):
         raise NoVisitor(tree)
 
+
 class GraphVisitor(BasicGraphVisitor):
     """
     Similar to BasicGraphVisitor, but visits the children of unhandled terms.
@@ -137,7 +138,7 @@ class GraphTranslator(GraphTransformer):
         return tree
 
 
-class MroVisitor(object):
+class MroVisitor(GraphVisitor):
 
     def visit(self, tree):
         if isinstance(tree, list):
