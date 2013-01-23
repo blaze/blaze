@@ -698,7 +698,7 @@ def extract_dims(ds):
     dimensions
     """
     if isinstance(ds, CType):
-        raise Exception("No Dimensions")
+        raise NotNumpyCompatible("No Dimensions")
     return ds.parameters[0:-2]
 
 def extract_measure(ds):
