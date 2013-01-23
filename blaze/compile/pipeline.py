@@ -10,6 +10,8 @@ from blaze.plan import BlazeVisitor, InstructionGen
 from blaze.compile.toposort import topovals
 #from blaze.type_reconstruction import infer
 
+debug = True
+
 #------------------------------------------------------------------------
 # Pipeline Combinators
 #------------------------------------------------------------------------
@@ -124,6 +126,12 @@ def do_types(context, graph):
 
     return context, graph
 
+def debug_aterm(context, graph):
+    if debug:
+        print context['aterm_graph']
+
+    return context, graph
+
 def build_operand_dict(context, aterm_graph):
     """
     Map input operands ids to the input operands in context['operand_dict']
@@ -220,6 +228,7 @@ class Pipeline(object):
 blaze_rts = Pipeline([do_environment,
                       do_convert_to_aterm,
                       do_types,
+                      debug_aterm,
                       build_operand_dict,
 
                       # Codegen stages
