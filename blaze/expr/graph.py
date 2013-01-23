@@ -159,7 +159,7 @@ class ExpressionNode(nodes.Node):
 
         # Lookup by capitalized name
         op = getattr(ops, func_name.capitalize())
-        iop = op(func_name.capitalize(), iargs, kwargs)
+        iop = op(func_name.capitalize(), iargs)
 
         #op.__proto__
 
@@ -389,22 +389,17 @@ class Op(ExpressionNode):
     """
     kind = OP
 
-    def __init__(self, op, operands, kwargs=None):
+    def __init__(self, op, operands):
         self.op = op
         self.children = operands
         self.operands = operands
-        self.kwargs = kwargs
-
-        # TODO: type inference on the aterm graph
-        from blaze import stopgap
-        self.datashape = stopgap.compute_datashape(self, operands, kwargs)
 
     @property
     def name(self):
         return str(self.op)
 
     def __repr__(self):
-        return '<Op(%s)>' % (self.name,)
+        return '<Op(%s)>' % (self.name, [])
 
 #------------------------------------------------------------------------
 # Functions
