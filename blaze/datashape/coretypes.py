@@ -423,7 +423,8 @@ class TypeVar(Atom):
 
     def __str__(self):
         # Use the F# notation
-        return "'" + str(self.symbol)
+        return str(self.symbol)
+        # return "'" + str(self.symbol)
 
 class Range(Atom):
     """
