@@ -10,7 +10,7 @@ obtain the source from Github.
 
 ::
 
-    $ git clone git@github.com:ContinuumIO/blaze.git
+    $ git clone git@github.com:ContinuumIO/blaze-core.git
 
 Many of the dependencies ( llvm, numba, ... ) are non-trivial to
 install. It is highly recommend that you build Blaze using the Anaconda
