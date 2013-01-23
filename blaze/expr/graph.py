@@ -394,12 +394,22 @@ class Op(ExpressionNode):
         self.children = operands
         self.operands = operands
 
+        # TODO: type inference on the aterm graph
+        self.datashape = self.compute_datashape(operands)
+
+    def compute_datashape(self, operands):
+        # Replace this method when type inference is ready ?
+        from blaze import stopgap
+
+        dshape = stopgap.broadcast(*operands)
+        return dshape
+
     @property
     def name(self):
         return str(self.op)
 
     def __repr__(self):
-        return '<Op(%s)>' % (self.name, [])
+        return '<Op(%s)>' % (self.name,)
 
 #------------------------------------------------------------------------
 # Functions

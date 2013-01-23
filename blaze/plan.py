@@ -45,7 +45,7 @@ def get_datashape(term):
     return dshape(dshape_string)
 
 def annotate(node, metadata):
-    return aappl('Annotation', [node] + metadata)
+    return aappl(aterm('Annotation'), [node] + metadata)
 
 #------------------------------------------------------------------------
 # Plan Primitives
@@ -184,6 +184,7 @@ class InstructionGen(MroVisitor):
     def _Op(self, term):
         spine = term.spine
         args  = term.args
+        dshape_term = self.metadata[0]
 
         # visit the innermost arguments, push those arguments on
         # the stack first
@@ -197,12 +198,12 @@ class InstructionGen(MroVisitor):
         key = self.var(term)
 
         # build the instruction & push it on the stack
-        inst = Instruction(fn, get_datashape(term), fargs, lhs=key)
+        inst = Instruction(fn, get_datashape(dshape_term), fargs, lhs=key)
         self.push(inst)
 
     def _Array(self, term):
         key = self.var(term)
-        return Var(key)
+        # return Var(key)
 
     def _Assign(self, term):
         pass
@@ -231,10 +232,13 @@ class InstructionGen(MroVisitor):
         self.push(inst)
 
     def _Annotation(self, node):
-        child_node, metadata = node.args[0], node.args[1]
+        # Annotations as wrapper nodes are not very practical...
+        child_node, metadata = node.args[0], node.args[1:]
         self.metadata = metadata
-        node.args[0] = self.visit(child_node)
-        return node
+        self.visit(child_node)
+
+        # yeah ...
+        self._vartable[node] = self._vartable[child_node]
 
     def AAppl(self, term):
         label = term.spine.term
