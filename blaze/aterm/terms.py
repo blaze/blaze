@@ -6,7 +6,7 @@ class ATerm(object):
 
     def __init__(self, term, annotation=None):
         self.term = term
-        self.annotation = annotation
+        self.annotation = annotation # This should be a dict !
 
     def __str__(self):
         if self.annotation is not None:
@@ -31,10 +31,11 @@ class ATerm(object):
 
 class AAppl(object):
 
-    def __init__(self, spine, args):
+    def __init__(self, spine, args, annotation=None):
         assert isinstance(spine, ATerm)
         self.spine = spine
         self.args = args
+        self.annotation = annotation
 
     def __str__(self):
         return str(self.spine) + arepr(self.args, '(', ')')
@@ -43,9 +44,10 @@ class AAppl(object):
         return str(self)
 
 class AString(object):
-    def __init__(self, val):
+    def __init__(self, val, annotation=None):
         assert isinstance(val, str)
         self.val = val
+        self.annotation = annotation
 
     def __str__(self):
         return '"%s"' % (self.val)
@@ -54,8 +56,9 @@ class AString(object):
         return str(self)
 
 class AInt(object):
-    def __init__(self, val):
+    def __init__(self, val, annotation=None):
         self.val = val
+        self.annotation = annotation
 
     def __str__(self):
         return str(self.val)
@@ -76,8 +79,9 @@ class AInt(object):
         return str(self)
 
 class AReal(object):
-    def __init__(self, val):
+    def __init__(self, val, annotation=None):
         self.val = val
+        self.annotation = annotation
 
     def __str__(self):
         return str(self.val)
@@ -86,9 +90,10 @@ class AReal(object):
         return str(self)
 
 class AList(object):
-    def __init__(self, args):
+    def __init__(self, args, annotation=None):
         assert isinstance(args, list)
         self.args = args or []
+        self.annotation = annotation
 
     def __str__(self):
         return arepr(self.args, '[', ']')
@@ -97,9 +102,10 @@ class AList(object):
         return str(self)
 
 class ATuple(object):
-    def __init__(self, args):
+    def __init__(self, args, annotation=None):
         assert isinstance(args, list)
         self.args = args or []
+        self.annotation = annotation
 
     def __str__(self):
         return arepr(self.args, '(', ')')
@@ -109,9 +115,10 @@ class ATuple(object):
 
 class APlaceholder(object):
 
-    def __init__(self, type, args):
+    def __init__(self, type, args, annotation=None):
         self.type = type
         self.args = args
+        self.annotation = annotation
 
     def __str__(self):
         if self.args is not None:
@@ -121,6 +128,7 @@ class APlaceholder(object):
 
     def __repr__(self):
         return str(self)
+
 
 #------------------------------------------------------------------------
 # Pretty Printing
