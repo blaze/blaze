@@ -57,7 +57,7 @@ class CArraySource(ByteProvider):
 
         if dshape:
             shape, dtype = to_numpy(dshape)
-            self.ca = carray.carray(data, dtype=dtype, rootdir=rootdir)
+            self.ca = carray.carray(data, dtype=dtype, rootdir=rootdir, cparams=cparams)
             self.dshape = dshape
         else:
             self.ca = carray.carray(data, rootdir=rootdir, cparams=cparams)
