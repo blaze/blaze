@@ -6,7 +6,7 @@ type KivaLender = {
         template_id: int64;
     };
     whereabouts: string;
-    country_code: string2;
+    country_code: json; # string2;
     uid: string;
     member_since: string; # datetime<minutes>
     personal_url: string; # URL type?
@@ -15,7 +15,7 @@ type KivaLender = {
     occupational_info: string;
     loan_count: int64;
     invitee_count: int64;
-    inviter_id: int64;
+    inviter_id: json; # sometimes string, sometimes number 0. 0 is being used as the "missing value"
 }
 
 type KivaLendersFile = {

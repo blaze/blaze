@@ -15,13 +15,15 @@ class json_array_provider:
         if array_name[0] == '/':
             array_name = array_name[1:]
         root = path.join(self.root_dir, array_name)
-        jfile = jfile + '.json'
+        jfile = root + '.json'
         if not path.isfile(jfile):
             return None
 
         # If we've already read this array into cache, just return it
         if self.array_cache.has_key(jfile):
+            print 'Returning cached array %s' % array_name
             return self.array_cache[jfile]
+        print 'Loading array %s from file %s' % (array_name, jfile)
 
         # Search for the datashape file of this array
         dsfile = None
@@ -43,4 +45,6 @@ class json_array_provider:
 
         with open(jfile) as f:
             # TODO: Add stream support to parse_json for compressed JSON, etc.
-            return nd.parse_json(dt, f.read())
+            arr = nd.parse_json(dt, f.read())
+        self.array_cache[jfile] = arr
+        return arr

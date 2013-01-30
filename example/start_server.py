@@ -11,4 +11,6 @@ else:
 
 app = wsgi_app(json_array_provider(root_path))
 server = make_server('localhost', 8080, app)
+
+print 'Starting Blaze Server...'
 server.serve_forever()

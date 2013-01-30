@@ -3,13 +3,7 @@ from dynd import nd, ndt
 import json
 from cgi import parse_qs
 from blaze_url import split_array_base
-from blaze_datashape_html import render_dynd_datashape
-
-print "Starting Blaze Server..."
-
-served_arrays = {
-    'loans':loan_data
-}
+from datashape_html import render_dynd_datashape
 
 def wsgi_reconstruct_base_url(environ):
     from urllib import quote
@@ -53,7 +47,7 @@ def add_indexers_to_url(base_url, indexers):
     return base_url
 
 def indexers_navigation_html(base_url, array_name, indexers):
-    base_url = base_url + '/' + array_name
+    base_url = base_url + array_name
     result = '<a href="' + base_url + '">' + array_name + '</a>'
     for i, idx in enumerate(indexers):
         if type(idx) is str:
@@ -78,11 +72,11 @@ def indexers_navigation_html(base_url, array_name, indexers):
             result += (' <a href="' + base_url + '">' + s + '</a>')
     return result
 
- class wsgi_app:
+class wsgi_app:
     def __init__(self, array_provider):
         self.array_provider = array_provider
  
-     def __call__(self, environ, start_response):
+    def __call__(self, environ, start_response):
         array_name, indexers = split_array_base(environ['PATH_INFO'])
 
         # Request the array from the array provider
@@ -91,7 +85,7 @@ def indexers_navigation_html(base_url, array_name, indexers):
             start_response('404 Not Found', [('content-type', 'text/plain')])
             return ['No Blaze Array named ' + array_name]
 
-        print "Got request: " + path
+        print "Got request: " + environ['PATH_INFO'] + environ['QUERY_STRING']
         print "Array name: " + array_name
         print "Indexers: " + str(indexers)
 
@@ -117,7 +111,7 @@ def indexers_navigation_html(base_url, array_name, indexers):
             body = '<html><head><title>Blaze Array</title></head>\n' + \
                 '<body>\n' + \
                 'Indexers &gt; ' + nav_html + '\n<p />\n' + \
-                '<a href="' + array_url + '?r=data.json">Download as JSON</a>\n<p />\n' + \
+                '<a href="' + array_url + '?r=data.json">Data as JSON</a>\n<p />\n' + \
                 datashape_html + \
                 '</body></html>'
         else:

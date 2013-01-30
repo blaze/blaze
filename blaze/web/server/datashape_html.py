@@ -21,7 +21,10 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
                             farr, indent + '  ')
             result += (indent + '  ' +
                 '<a href="' + child_url + '">' + str(fname) + '</a>'
-                ': ' + child_result + ';\n')
+                ': ' + child_result + ';')
+            result += '<font style="font-size:x-small"> # <a href="'
+            result += child_url + '?r=data.json">JSON</a></font>'
+            result += '\n'
         result += (indent + '}')
     elif dt.kind == 'uniform_array':
         if dt.type_id == 'strided_array':
@@ -47,5 +50,5 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
 def render_dynd_datashape(base_url, arr):
     result = render_dynd_datashape_recursive(base_url, arr, '')
     result = '<pre>\ntype <a href="' + base_url + \
-            '?q=datashape">BlazeDataShape</a> = ' + result + '\n</pre>'
+            '?r=datashape">BlazeDataShape</a> = ' + result + '\n</pre>'
     return result

@@ -1,21 +1,21 @@
 from pyparsing import Word, Regex, Optional, ZeroOrMore, \
-        StringStart, StringEnd, alphas, alphanums
+        StringStart, StringEnd, alphas, alphanums, Or
 
 # Parser to match the Blaze URL syntax
 intNumber = Regex(r'[-+]?\b\d+\b')
-arrayName = Regex(r'.*/[a-zA-Z_][a-zA-Z0-9]*\b')
-indexedWord = arrayName + \
-    Optional(
-        '[' + Optional(intNumber) +
+arrayName = Regex(r'(/\w*)*[a-zA-Z0-9_]+\b')
+indexerPattern = ('.' + Word(alphas + '_', alphanums + '_')) ^ \
+        ('[' + Optional(intNumber) +
             Optional(':' + Optional(intNumber)) +
-            Optional(':' + Optional(intNumber)) + ']'
-    )
+            Optional(':' + Optional(intNumber)) + ']')
 arrayBase = StringStart() + \
-    indexedWord + ZeroOrMore('.' + indexedWord) + \
+    arrayName + ZeroOrMore(indexerPattern) + \
     StringEnd()
 
 def split_array_base(array_base):
+    print array_base
     pieces = arrayBase.parseString(array_base)
+    print pieces
     array_name = pieces[0]
     indexers = []
     i = 1
