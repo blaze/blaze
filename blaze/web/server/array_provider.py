@@ -1,7 +1,44 @@
-import os
+import os, glob
 from os import path
 
 from dynd import nd, ndt
+
+def load_json_file_array(root, array_name):
+    # Load the datashape
+    dsfile = root + '.datashape'
+    if not path.isfile(dsfile):
+        dsfile = path.dirname(root) + '.datashape'
+        if not path.isfile(dsfile):
+            raise Exception('No datashape file found for array %s' % array_name)
+    with open(dsfile) as f:
+        dt = nd.dtype(f.read())
+
+    # Load the JSON
+    with open(root + '.json') as f:
+        # TODO: Add stream support to parse_json for compressed JSON, etc.
+        arr = nd.parse_json(dt, f.read())
+    return arr
+
+def load_json_directory_array(root, array_name):
+    # Load the datashape
+    dsfile = root + '.datashape'
+    if not path.isfile(dsfile):
+        raise Exception('No datashape file found for array %s' % array_name)
+    with open(dsfile) as f:
+        dt = nd.dtype(f.read())
+
+    # Scan for JSON files, assuming they're just #.json
+    # Sort them numerically
+    files = sorted([(int(path.splitext(path.basename(x))[0]), x)
+                    for x in glob.glob(path.join(root, '*.json'))])
+    files = [x[1] for x in files]
+    dt = ndt.make_fixedarray_dtype(dt, len(files))
+    arr = nd.empty(dt)
+    for i, fname in enumerate(files):
+        with open(fname) as f:
+            nd.parse_json(arr[i], f.read())
+    arr.flag_as_immutable()
+    return arr
 
 class json_array_provider:
     def __init__(self, root_dir):
@@ -15,36 +52,20 @@ class json_array_provider:
         if array_name[0] == '/':
             array_name = array_name[1:]
         root = path.join(self.root_dir, array_name)
-        jfile = root + '.json'
-        if not path.isfile(jfile):
+        if not path.isfile(root + '.json') and not path.isdir(root):
             return None
 
         # If we've already read this array into cache, just return it
-        if self.array_cache.has_key(jfile):
+        if self.array_cache.has_key(root):
             print 'Returning cached array %s' % array_name
-            return self.array_cache[jfile]
-        print 'Loading array %s from file %s' % (array_name, jfile)
+            return self.array_cache[root]
 
-        # Search for the datashape file of this array
-        dsfile = None
-        if path.isfile(root + '.datashape'):
-            dsfile = root + '.datashape'
+        if path.isfile(root + '.json'):
+            print 'Loading array %s from file %s' % (array_name, root + '.json')
+            arr = load_json_file_array(root, array_name)
         else:
-            an_components = array_name.split('/')
-            l = len(an_components)
-            if l > 1:
-                for i in range(1, l):
-                    partial_root = path.join(self.root_dir, '/'.join(an_components[:(l-i)]))
-                    if path.isfile(partial_root + '.datashape'):
-                        dsfile = partial_root + '.datashape'
-                        break
-        if dsfile is None:
-            raise Exception('No datashape file found for array %s' % array_name)
-        with open(dsfile) as f:
-            dt = nd.dtype(f.read())
-
-        with open(jfile) as f:
-            # TODO: Add stream support to parse_json for compressed JSON, etc.
-            arr = nd.parse_json(dt, f.read())
-        self.array_cache[jfile] = arr
+            print 'Loading array %s from directory %s' % (array_name, root)
+            arr = load_json_directory_array(root, array_name)
+            
+        self.array_cache[root] = arr
         return arr

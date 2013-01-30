@@ -1,6 +1,6 @@
 type KivaLender = {
-    lender_id: string;
-    name: string;
+    lender_id: json; # Option(string);
+    name: json; # Option(string);
     image: {
         id: int64;
         template_id: int64;

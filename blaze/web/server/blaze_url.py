@@ -13,9 +13,7 @@ arrayBase = StringStart() + \
     StringEnd()
 
 def split_array_base(array_base):
-    print array_base
     pieces = arrayBase.parseString(array_base)
-    print pieces
     array_name = pieces[0]
     indexers = []
     i = 1

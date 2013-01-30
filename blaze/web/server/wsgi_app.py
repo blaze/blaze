@@ -110,8 +110,8 @@ class wsgi_app:
             datashape_html = render_dynd_datashape(array_url, arr)
             body = '<html><head><title>Blaze Array</title></head>\n' + \
                 '<body>\n' + \
-                'Indexers &gt; ' + nav_html + '\n<p />\n' + \
-                '<a href="' + array_url + '?r=data.json">Data as JSON</a>\n<p />\n' + \
+                'Blaze Array &gt; ' + nav_html + '\n<p />\n' + \
+                '<a href="' + array_url + '?r=data.json">JSON</a>\n<p />\n' + \
                 datashape_html + \
                 '</body></html>'
         else:
