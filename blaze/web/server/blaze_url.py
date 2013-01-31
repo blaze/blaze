@@ -4,10 +4,11 @@ from pyparsing import Word, Regex, Optional, ZeroOrMore, \
 # Parser to match the Blaze URL syntax
 intNumber = Regex(r'[-+]?\b\d+\b')
 arrayName = Regex(r'(/\w*)*[a-zA-Z0-9_]+\b')
+bracketsIndexer = Optional(intNumber) + \
+            Optional(':' + Optional(intNumber)) + \
+            Optional(':' + Optional(intNumber))
 indexerPattern = ('.' + Word(alphas + '_', alphanums + '_')) ^ \
-        ('[' + Optional(intNumber) +
-            Optional(':' + Optional(intNumber)) +
-            Optional(':' + Optional(intNumber)) + ']')
+        ('[' + bracketsIndexer + ZeroOrMore(',' + bracketsIndexer) + ']')
 arrayBase = StringStart() + \
     arrayName + ZeroOrMore(indexerPattern) + \
     StringEnd()
@@ -18,36 +19,42 @@ def split_array_base(array_base):
     indexers = []
     i = 1
     while i < len(pieces):
-        # Convert [...] into a slice object
+        # Convert [...] into an int, a slice, or a tuple of int/slice
         if pieces[i] == '[':
             i += 1
-            if pieces[i] != ':':
-                first = int(pieces[i])
-                i += 1
-            else:
-                first = None
-            if pieces[i] == ']':
-                i += 1
-                indexers.append(first)
-            else:
-                i += 1
-                if pieces[i] not in (':', ']'):
-                    second = int(pieces[i])
+            ilist = []
+            while pieces[i-1] != ']':
+                if pieces[i] != ':':
+                    first = int(pieces[i])
                     i += 1
                 else:
-                    second = None
-                if pieces[i] == ']':
+                    first = None
+                if pieces[i] in [',', ']']:
                     i += 1
-                    indexers.append(slice(first, second))
+                    ilist.append(first)
                 else:
                     i += 1
-                    if pieces[i] != ']':
-                        third = int(pieces[i])
+                    if pieces[i] not in [',', ':', ']']:
+                        second = int(pieces[i])
                         i += 1
                     else:
-                        third = 1
-                    indexers.append(slice(first, second, third))
-                    i += 2
+                        second = None
+                    if pieces[i] in [',', ']']:
+                        i += 1
+                        ilist.append(slice(first, second))
+                    else:
+                        i += 1
+                        if pieces[i] not in [',', ']']:
+                            third = int(pieces[i])
+                            i += 1
+                        else:
+                            third = 1
+                        ilist.append(slice(first, second, third))
+                        i += 2
+            if len(ilist) == 1:
+                indexers.append(ilist[0])
+            else:
+                indexers.append(tuple(ilist))
         elif pieces[i] == '.':
             i += 1
         else:

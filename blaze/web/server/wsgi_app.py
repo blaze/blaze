@@ -24,17 +24,29 @@ def wsgi_reconstruct_base_url(environ):
     url += quote(environ.get('SCRIPT_NAME', ''))
     return url
 
+def slice_as_interior_string(s):
+    if type(s) is int:
+        return str(s)
+    else:
+        result = ''
+        if s.start is not None:
+            result += str(s.start)
+        result += ':'
+        if s.stop is not None:
+            result += str(s.stop)
+        if s.step is not None and s.step != 1:
+            result += ':' + str(s.step)
+        return result
+
 def slice_as_string(s):
-    str_slice = '['
-    if s.start is not None:
-        str_slice += str(s.start)
-    str_slice += ':'
-    if s.stop is not None:
-        str_slice += str(s.stop)
-    if s.step is not None and s.step != 1:
-        str_slice += ':' + str(s.step)
-    str_slice += ']'
-    return str_slice
+    return '[' + slice_as_interior_string(s) + ']'
+
+def index_tuple_as_string(s):
+    result = '[' + slice_as_interior_string(s[0])
+    for i in s[1:]:
+        result += ', ' + slice_as_interior_string(i)
+    result += ']'
+    return result
 
 def add_indexers_to_url(base_url, indexers):
     for idx in indexers:
@@ -70,6 +82,10 @@ def indexers_navigation_html(base_url, array_name, indexers):
             s = slice_as_string(idx)
             base_url = base_url + s
             result += (' <a href="' + base_url + '">' + s + '</a>')
+        elif type(idx) is tuple:
+            s = index_tuple_as_string(idx)
+            base_url = base_url + s
+            result += (' <a href="' + base_url + '">' + s + '</a>')
     return result
 
 class wsgi_app:
@@ -91,7 +107,7 @@ class wsgi_app:
 
         try:
             for i in indexers:
-                if type(i) in [slice, int]:
+                if type(i) in [slice, int, tuple]:
                     arr = arr[i]
                 else:
                     arr = getattr(arr, i)
