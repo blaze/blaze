@@ -14,18 +14,6 @@ from blaze.carray import chunk
 from blaze.carray.tests import common
 from common import MayBeDiskTest
 
-
-#
-# The original constructors of carray are gone in blaze
-# monkey-patch them in order to retain the code in the tests
-#
-def _carray_arange(*args, **kw_args):
-    array = np.arange(*args)
-    return ca.carray(array, **kw_args)
-
-ca.arange = _carray_arange
-
-
 is_64bit = (struct.calcsize("P") == 8)
 
 # Just memory tests for now
