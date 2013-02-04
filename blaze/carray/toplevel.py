@@ -16,6 +16,8 @@ import itertools as it
 import numpy as np
 #import blaze.carray as ca
 from carrayExtension import carray
+from blaze.carray.ctable import ctable
+from cparams import cparams
 import math
 
 def detect_number_of_cores():
@@ -133,7 +135,7 @@ def fromiter(iterable, dtype, count, **kwargs):
     allows `fromiter` to avoid looping the iterable twice (which is slooow).
     It avoids memory leaks to happen too (which can be important for large
     iterables).
-
+    
     """
     from ctable import ctable
 

@@ -17,7 +17,7 @@ import os, os.path
 import shutil
 
 from carrayExtension import carray
-from toplevel import cparams
+from cparams import cparams
 
 # carray utilities
 import utils, attrs, arrayprint
