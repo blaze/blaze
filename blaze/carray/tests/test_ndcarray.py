@@ -704,6 +704,48 @@ class computeMethodsTest(unittest.TestCase):
         self.assert_(sa.dtype == sac.dtype, "sum() is not working correctly.")
         self.assert_(sa == sac, "sum() is not working correctly.")
 
+
+class carrayConstructorDimensionTest(MayBeDiskTest, unittest.TestCase):
+    """
+    This test is related to issue #14 in blaze github repo.
+    Check that when using a carray constructor the dimensionality of the array
+    is not lost. Neither in the implicit dtype or explicit dtype cases.
+    """
+    open = False
+
+    def testImplicitDtype(self):
+        """Testing carray construction keeping dimensions (implicit dtype)"""
+        a = np.eye(6) # 2d
+        b = ca.carray(a, rootdir=self.rootdir)
+        if self.open:
+            b = ca.open(rootdir=self.rootdir)
+
+        # array equality implies having the same shape 
+        assert_array_equal(a, b, "Arrays are not equal")
+
+    def testExplicitDtype(self):
+        """Testing carray construction keeping dimensions (explicit dtype)"""
+        dtype = np.dtype(np.float64)
+        a = np.eye(6, dtype=dtype)
+        b = ca.carray(a, dtype=dtype, rootdir=self.rootdir)
+        if self.open:
+            b = ca.open(rootdir=self.rootdir)
+
+        # array equality implies having the same shape 
+        assert_array_equal(a, b, "Arrays are not equal")
+
+class carrayConstructorDimensionDiskTest(carrayConstructorDimensionTest,
+                                         unittest.TestCase):
+    disk = True
+    open = False
+
+class carrayConstructorDimensionOpenTest(carrayConstructorDimensionTest,
+                                         unittest.TestCase):
+    disk = True
+    open = True
+
+
+
 ## Local Variables:
 ## mode: python
 ## py-indent-offset: 4
