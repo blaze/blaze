@@ -925,19 +925,18 @@ cdef class carray:
     if type(dtype) is str:
         dtype = np.dtype(dtype)
     array_ = utils.to_ndarray(array, dtype)
-    if dtype is None:
-      if len(array_.shape) == 1:
-        self._dtype = dtype = array_.dtype
-      else:
-        # Multidimensional array.  The atom will have array_.shape[1:] dims.
-        # atom dimensions will be stored in `self._dtype`, which is different
-        # than `self.dtype` in that `self._dtype` dimensions are borrowed
-        # from `self.shape`.  `self.dtype` will always be scalar (NumPy
-        # convention).
-        self._dtype = dtype = np.dtype((array_.dtype.base, array_.shape[1:]))
-    else:
-      self._dtype = dtype
 
+    # if no base dtype is provided, use the dtype from the array.
+    if dtype is None:
+      dtype = array_.dtype.base
+
+    # Multidimensional array.  The atom will have array_.shape[1:] dims.
+    # atom dimensions will be stored in `self._dtype`, which is different
+    # than `self.dtype` in that `self._dtype` dimensions are borrowed
+    # from `self.shape`.  `self.dtype` will always be scalar (NumPy
+    # convention).
+    self._dtype = dtype = np.dtype((dtype, array_.shape[1:]))
+ 
     # Check that atom size is less than 2 GB
     if dtype.itemsize >= 2**31:
       raise ValueError, "atomic size is too large (>= 2 GB)"
