@@ -11,9 +11,6 @@ from os.path import join
 from distutils.core import Command, setup
 from distutils.sysconfig import get_python_inc, get_config_var
 
-from unittest import TextTestRunner
-testrunner = TextTestRunner
-
 #------------------------------------------------------------------------
 # Top Level Packages
 #------------------------------------------------------------------------
@@ -313,7 +310,6 @@ setup(
     ext_modules=extensions,
     cmdclass = {
         'build_ext' : build_ext,
-        'test'      : testrunner,
         'clean'     : CleanCommand,
     },
 )

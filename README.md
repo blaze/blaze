@@ -98,7 +98,9 @@ $ make docs
 To run tests:
 
 ```bash
-$ python setup.py test
+>>> python
+>>> from blaze.testing import runner
+>>> runner()
 ```
 
 Alternative Installation

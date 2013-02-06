@@ -43,5 +43,6 @@ To build documentation:
 To run tests:
 
 ::
-
-    $ python setup.py test
+    >>> python
+    >>> from blaze.testing import runner
+    >>> runner()
