@@ -2,6 +2,10 @@ from dynd import nd, ndt
 #from blaze_server_config import jinja_env
 from jinja2 import Template
 
+def json_comment(array_url):
+    return '<font style="font-size:x-small"> # <a href="' + \
+        array_url + '?r=data.json">JSON</a></font>\n'
+
 def render_dynd_datashape_recursive(base_url, arr, indent):
     result = ''
     if type(arr) is nd.dtype:
@@ -10,7 +14,7 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
         dt = arr.dtype
 
     if dt.kind == 'struct':
-        result += '{\n'
+        result += '{' + json_comment(base_url)
         field_names = dt.field_names.as_py()
         for i, fname in enumerate(field_names):
             farr = arr[i]
@@ -22,9 +26,8 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
             result += (indent + '  ' +
                 '<a href="' + child_url + '">' + str(fname) + '</a>'
                 ': ' + child_result + ';')
-            result += '<font style="font-size:x-small"> # <a href="'
-            result += child_url + '?r=data.json">JSON</a></font>'
-            result += '\n'
+            if farr.kind != 'struct':
+                result += json_comment(child_url)
         result += (indent + '}')
     elif dt.kind == 'uniform_array':
         if dt.type_id == 'strided_array':
