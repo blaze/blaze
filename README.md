@@ -77,7 +77,6 @@ Using Anaconda's package manager:
 
 ```bash
 $ conda install ply
-$ conda install blosc
 ```
 
 Introduction
@@ -148,7 +147,6 @@ $ PATH=venv/bin:$PATH
 
 ```bash
 conda install ply
-conda install blosc
 conda install numpy
 conda install cython
 ```
