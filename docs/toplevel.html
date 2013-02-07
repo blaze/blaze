@@ -58,7 +58,7 @@
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -92,6 +92,159 @@
   <div class="section" id="module-blaze.toplevel">
 <span id="toplevel"></span><h1>Toplevel<a class="headerlink" href="#module-blaze.toplevel" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
+<dt id="blaze.toplevel.allclose">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">allclose</tt><big>(</big><em>a</em>, <em>b</em>, <em>rtol=1e-05</em>, <em>atol=1e-08</em><big>)</big><a class="headerlink" href="#blaze.toplevel.allclose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if two arrays are element-wise equal within a tolerance.</p>
+<p>The tolerance values are positive, typically very small numbers.  The
+relative difference (<cite>rtol</cite> * abs(<cite>b</cite>)) and the absolute difference
+<cite>atol</cite> are added together to compare against the absolute difference
+between <cite>a</cite> and <cite>b</cite>.</p>
+<p>If either array contains one or more NaNs, False is returned.
+Infs are treated as equal if they are in the same place and of the same
+sign in both arrays.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>a, b</strong> : array_like</p>
+<blockquote>
+<div><p>Input arrays to compare.</p>
+</div></blockquote>
+<p><strong>rtol</strong> : float</p>
+<blockquote>
+<div><p>The relative tolerance parameter (see Notes).</p>
+</div></blockquote>
+<p><strong>atol</strong> : float</p>
+<blockquote>
+<div><p>The absolute tolerance parameter (see Notes).</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>allclose</strong> : bool</p>
+<blockquote class="last">
+<div><p>Returns True if the two arrays are equal within the given
+tolerance; False otherwise.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference external" href="http://docs.python.org/dev/library/functions.html#all" title="(in Python v3.4)"><tt class="xref py py-obj docutils literal"><span class="pre">all</span></tt></a>, <a class="reference external" href="http://docs.python.org/dev/library/functions.html#any" title="(in Python v3.4)"><tt class="xref py py-obj docutils literal"><span class="pre">any</span></tt></a>, <tt class="xref py py-obj docutils literal"><span class="pre">alltrue</span></tt>, <tt class="xref py py-obj docutils literal"><span class="pre">sometrue</span></tt></p>
+</div>
+<p class="rubric">Notes</p>
+<p>If the following equation is element-wise True, then allclose returns
+True.</p>
+<blockquote>
+<div>absolute(<cite>a</cite> - <cite>b</cite>) &lt;= (<cite>atol</cite> + <cite>rtol</cite> * absolute(<cite>b</cite>))</div></blockquote>
+<p>The above equation is not symmetric in <cite>a</cite> and <cite>b</cite>, so that
+<cite>allclose(a, b)</cite> might be different from <cite>allclose(b, a)</cite> in
+some rare cases.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e-7</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.00001e10</span><span class="p">,</span><span class="mf">1e-8</span><span class="p">])</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e-8</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.00001e10</span><span class="p">,</span><span class="mf">1e-9</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e-8</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0001e10</span><span class="p">,</span><span class="mf">1e-9</span><span class="p">])</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.blaze_abs">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_abs</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the absolute value element-wise.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.blaze_all">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_all</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether all array elements along a given axis evaluate to True.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.blaze_any">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_any</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_any" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether any array elements along a given axis evaluate to True.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.blaze_sum">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_sum</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum of array elements over a given axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>a</strong> : array_like</p>
+<blockquote>
+<div><p>Elements to sum.</p>
+</div></blockquote>
+<p><strong>axis</strong> : None or int or tuple of ints, optional</p>
+<blockquote>
+<div><p>Axis or axes along which a sum is performed.
+The default (<cite>axis</cite> = <cite>None</cite>) is perform a sum over all
+the dimensions of the input array. <cite>axis</cite> may be negative, in
+which case it counts from the last to the first axis.</p>
+<p class="versionadded">
+<span class="versionmodified">New in version 1.7.0.</span></p>
+<p>If this is a tuple of ints, a sum is performed on multiple
+axes, instead of a single axis or all the axes as before.</p>
+</div></blockquote>
+<p><strong>out</strong> : ndarray, optional</p>
+<blockquote>
+<div><p>Array into which the output is placed.  By default, a new array is
+created.  If <cite>out</cite> is given, it must be of the appropriate shape
+(the shape of <cite>a</cite> with <cite>axis</cite> removed, i.e.,
+<tt class="docutils literal"><span class="pre">numpy.delete(a.shape,</span> <span class="pre">axis)</span></tt>).  Its type is preserved. See
+<cite>doc.ufuncs</cite> (Section &#8220;Output arguments&#8221;) for more details.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first"><strong>sum_along_axis</strong> : ndarray</p>
+<blockquote class="last">
+<div><p>An array with the same shape as <cite>a</cite>, with the specified
+axis removed.   If <cite>a</cite> is a 0-d array, or if <cite>axis</cite> is None, a scalar
+is returned.  If an output array is specified, a reference to
+<cite>out</cite> is returned.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="docutils">
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">ndarray.sum</span></tt></dt>
+<dd>Equivalent method.</dd>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">cumsum</span></tt></dt>
+<dd>Cumulative sum of array elements.</dd>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">trapz</span></tt></dt>
+<dd>Integration of array values using the composite trapezoidal rule.</dd>
+</dl>
+<p class="last"><tt class="xref py py-obj docutils literal"><span class="pre">mean</span></tt>, <tt class="xref py py-obj docutils literal"><span class="pre">average</span></tt></p>
+</div>
+<p class="rubric">Notes</p>
+<p>Arithmetic is modular when using integer types, and no error is
+raised on overflow.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">])</span>
+<span class="go">2.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]])</span>
+<span class="go">6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">array([0, 6])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">array([1, 5])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="blaze.toplevel.fromiter">
 <tt class="descclassname">blaze.toplevel.</tt><tt class="descname">fromiter</tt><big>(</big><em>iterable</em>, <em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.fromiter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an Array and fill it with values from <cite>iterable</cite>.</p>
@@ -120,6 +273,12 @@ unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVa
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="blaze.toplevel.lazy">
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">lazy</tt><big>(</big><em>a</em><big>)</big><a class="headerlink" href="#blaze.toplevel.lazy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn an object into its lazy blaze equivalent.</p>
 </dd></dl>
 
 <dl class="function">
