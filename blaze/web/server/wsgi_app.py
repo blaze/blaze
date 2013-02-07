@@ -4,6 +4,7 @@ import json
 from cgi import parse_qs
 from blaze_url import split_array_base
 from datashape_html import render_dynd_datashape
+from compute_session import compute_session
 
 def wsgi_reconstruct_base_url(environ):
     from urllib import quote
@@ -90,48 +91,68 @@ def indexers_navigation_html(base_url, array_name, indexers):
 
 class wsgi_app:
     def __init__(self, array_provider):
+        # object which provides arrays from disk/other source
         self.array_provider = array_provider
- 
-    def __call__(self, environ, start_response):
-        array_name, indexers = split_array_base(environ['PATH_INFO'])
+        # Dictionary of open compute sessions
+        self.sessions = {}
 
+    def get_array(self, array_name, indexers):
         # Request the array from the array provider
         arr = self.array_provider(array_name)
         if arr is None:
-            start_response('404 Not Found', [('content-type', 'text/plain')])
-            return ['No Blaze Array named ' + array_name]
+            raise Exception('No Blaze Array named ' + array_name)
 
-        print "Got request: " + environ['PATH_INFO'] + environ['QUERY_STRING']
-        print "Array name: " + array_name
-        print "Indexers: " + str(indexers)
+        for i in indexers:
+            if type(i) in [slice, int, tuple]:
+                arr = arr[i]
+            else:
+                arr = getattr(arr, i)
+        return arr
 
+    def html_array(self, arr, base_url, array_name, indexers):
+        array_url = add_indexers_to_url(base_url + array_name, indexers)
+        nav_html = indexers_navigation_html(base_url, array_name, indexers)
+        datashape_html = render_dynd_datashape(array_url, arr)
+        body = '<html><head><title>Blaze Array</title></head>\n' + \
+            '<body>\n' + \
+            'Blaze Array &gt; ' + nav_html + '\n<p />\n' + \
+            '<a href="' + array_url + '?r=data.json">JSON</a>\n<p />\n' + \
+            datashape_html + \
+            '</body></html>'
+        return body
+
+    def __call__(self, environ, start_response):
         try:
-            for i in indexers:
-                if type(i) in [slice, int, tuple]:
-                    arr = arr[i]
-                else:
-                    arr = getattr(arr, i)
+            array_name, indexers = split_array_base(environ['PATH_INFO'])
+            arr = self.get_array(array_name, indexers)
         except:
-            status = '400 Bad Request'
+            status = '404 Not Found'
             response_headers = [('content-type', 'text/plain')]
             start_response(status, response_headers, sys.exc_info())
-            return ['Bad indexer to Blaze Array\n\n' + traceback.format_exc()]
+            return ['Error getting Blaze Array\n\n' + traceback.format_exc()]
 
-        if environ['QUERY_STRING'] == '' and environ['REQUEST_METHOD'] == 'GET':
+        request_method = environ['REQUEST_METHOD']
+        if request_method == 'GET' and environ['QUERY_STRING'] == '':
             # This version of the array information is for human consumption
             content_type = 'text/html; charset=utf-8'
             base_url = wsgi_reconstruct_base_url(environ)
-            array_url = base_url + environ.get('PATH_INFO', '')
-            nav_html = indexers_navigation_html(base_url, array_name, indexers)
-            datashape_html = render_dynd_datashape(array_url, arr)
-            body = '<html><head><title>Blaze Array</title></head>\n' + \
-                '<body>\n' + \
-                'Blaze Array &gt; ' + nav_html + '\n<p />\n' + \
-                '<a href="' + array_url + '?r=data.json">JSON</a>\n<p />\n' + \
-                datashape_html + \
-                '</body></html>'
+            body = self.html_array(arr, base_url, array_name, indexers)
         else:
-            q = parse_qs(environ['QUERY_STRING'])
+            if request_method == 'GET':
+                q = parse_qs(environ['QUERY_STRING'])
+            elif request_method == 'POST':
+                # the environment variable CONTENT_LENGTH may be empty or missing
+                try:
+                    request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+                except (ValueError):
+                    request_body_size = 0
+                request_body = environ['wsgi.input'].read(request_body_size)
+                q = parse_qs(request_body)
+            else:
+                status = '404 Not Found'
+                response_headers = [('content-type', 'text/plain')]
+                start_response(status, response_headers)
+                return ['Unsupported request method']
             print q
             if not q.has_key('r'):
                 status = '400 Bad Request'
@@ -144,12 +165,15 @@ class wsgi_app:
             elif q['r'][0] == 'datashape':
                 content_type = 'application/json; charset=utf-8'
                 body = arr.dshape
+            elif q['r'][0] == 'dyndtype':
+                content_type = 'application/json; charset=utf-8'
+                body = str(arr.dtype)
             else:
                 status = '400 Bad Request'
                 response_headers = [('content-type', 'text/plain')]
                 start_response(status, response_headers, sys.exc_info())
                 return ['Unknown Blaze server request ?r=%s' % q['r'][0]]
-        
+            
         status = '200 OK'
         response_headers = [
             ('content-type', content_type),

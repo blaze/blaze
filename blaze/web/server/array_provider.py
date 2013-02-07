@@ -1,5 +1,6 @@
 import os, glob
 from os import path
+import tempfile
 
 from dynd import nd, ndt
 
@@ -32,6 +33,8 @@ def load_json_directory_array(root, array_name):
     files = sorted([(int(path.splitext(path.basename(x))[0]), x)
                     for x in glob.glob(path.join(root, '*.json'))])
     files = [x[1] for x in files]
+    # Make an array with an extra fixed dimension, then
+    # read a JSON file into each element of that array
     dt = ndt.make_fixedarray_dtype(dt, len(files))
     arr = nd.empty(dt)
     for i, fname in enumerate(files):
@@ -69,3 +72,7 @@ class json_array_provider:
             
         self.array_cache[root] = arr
         return arr
+
+    def create_session_dir(self):
+        d = tempfile.mkdtemp(prefix='.session_', dir=self.root_dir)
+        return os.path.basename(d), d
