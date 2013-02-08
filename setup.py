@@ -6,5 +6,5 @@ setup(name='BlazeWeb',
       author='Continuum Analytics',
       author_email='mwiebe@continuum.io',
       url='http://www.continum.io/',
-      packages=['blaze.web'],
+      packages=['blaze_web'],
      )
