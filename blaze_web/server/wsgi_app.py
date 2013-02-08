@@ -44,7 +44,7 @@ def slice_as_string(s):
 def index_tuple_as_string(s):
     result = '[' + slice_as_interior_string(s[0])
     for i in s[1:]:
-        result += ', ' + slice_as_interior_string(i)
+        result += ',' + slice_as_interior_string(i)
     result += ']'
     return result
 
@@ -56,6 +56,8 @@ def add_indexers_to_url(base_url, indexers):
             base_url += '[' + str(idx) + ']'
         elif type(idx) is slice:
             base_url += slice_as_string(idx)
+        elif type(idx) is tuple:
+            base_url += index_tuple_as_string(idx)
     return base_url
 
 def indexers_navigation_html(base_url, array_name, indexers):
@@ -110,6 +112,7 @@ class wsgi_app:
 
     def html_array(self, arr, base_url, array_name, indexers):
         array_url = add_indexers_to_url(base_url + array_name, indexers)
+        print array_url
         nav_html = indexers_navigation_html(base_url, array_name, indexers)
         datashape_html = render_dynd_datashape(array_url, arr)
         body = '<html><head><title>Blaze Array</title></head>\n' + \
