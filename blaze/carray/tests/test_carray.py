@@ -1377,52 +1377,32 @@ class persistenceTest(MayBeDiskTest, unittest.TestCase):
         cn[N+1] = 3
         self.assert_(cn[N+1] == 3)
 
-"""
-def suite():
-    theSuite = unittest.TestSuite()
 
-    theSuite.addTest(unittest.makeSuite(chunkTest))
-    theSuite.addTest(unittest.makeSuite(getitemTest))
-    theSuite.addTest(unittest.makeSuite(getitemDiskTest))
-    theSuite.addTest(unittest.makeSuite(setitemTest))
-    theSuite.addTest(unittest.makeSuite(setitemDiskTest))
-    theSuite.addTest(unittest.makeSuite(appendTest))
-    theSuite.addTest(unittest.makeSuite(appendDiskTest))
-    theSuite.addTest(unittest.makeSuite(trimTest))
-    theSuite.addTest(unittest.makeSuite(trimDiskTest))
-    theSuite.addTest(unittest.makeSuite(resize_smallTest))
-    theSuite.addTest(unittest.makeSuite(resize_smallDiskTest))
-    theSuite.addTest(unittest.makeSuite(resize_largeTest))
-    theSuite.addTest(unittest.makeSuite(resize_largeDiskTest))
-    theSuite.addTest(unittest.makeSuite(miscTest))
-    theSuite.addTest(unittest.makeSuite(miscDiskTest))
-    theSuite.addTest(unittest.makeSuite(copyTest))
-    theSuite.addTest(unittest.makeSuite(copyDiskTest))
-    theSuite.addTest(unittest.makeSuite(iterTest))
-    theSuite.addTest(unittest.makeSuite(iterDiskTest))
-    theSuite.addTest(unittest.makeSuite(wheretrueTest))
-    theSuite.addTest(unittest.makeSuite(whereTest))
-    theSuite.addTest(unittest.makeSuite(fancy_indexing_getitemTest))
-    theSuite.addTest(unittest.makeSuite(fancy_indexing_setitemTest))
-    theSuite.addTest(unittest.makeSuite(fromiterTest))
-    theSuite.addTest(unittest.makeSuite(arange_smallTest))
-    theSuite.addTest(unittest.makeSuite(arange_bigTest))
-    theSuite.addTest(unittest.makeSuite(constructorSmallTest))
-    theSuite.addTest(unittest.makeSuite(constructorSmallDiskTest))
-    theSuite.addTest(unittest.makeSuite(constructorBigTest))
-    theSuite.addTest(unittest.makeSuite(constructorBigDiskTest))
-    theSuite.addTest(unittest.makeSuite(dtypesTest))
-    theSuite.addTest(unittest.makeSuite(computeMethodsTest))
-    theSuite.addTest(unittest.makeSuite(persistenceTest))
+class ObjectCarrayTest(MayBeDiskTest, unittest.TestCase):
+    def test_carray_1d_source(self):
+        """Testing carray of objects, 1d source"""
+        src_data = ['s'*i for i in range(10)]
+        carr = ca.carray(src_data, dtype=np.dtype('O'))
 
-    # Only for 64-bit systems
-    if is_64bit and common.heavy:
-        theSuite.addTest(unittest.makeSuite(largeCarrayTest))
+        self.assertEqual(len(carr.shape), 1)
+        self.assertEqual(len(src_data), carr.shape[0])
+        for i in range(len(carr)):
+            self.assertEqual(carr[i], src_data[i])
+            self.assertEqual(carr[i], src_data[i])
 
-    return theSuite
+    def test_carray_2d_source(self):
+        """Testing carray of objects, 2d source"""
+        src_data = [(i, 's'*i) for i in range(10)]
+        carr = ca.carray(src_data, dtype=np.dtype('O'))
+        # note that carray should alwas create a 1 dimensional
+        # array of objects.
+        self.assertEqual(len(carr.shape), 1)
+        self.assertEqual(len(src_data), carr.shape[0])
+        for i in range(len(carr)):
+            self.assertEqual(carr[i][0], src_data[i][0])
+            self.assertEqual(carr[i][1], src_data[i][1])
 
 
-if __name__ == "__main__":
-    unittest.main(defaultTest="suite")
+class ObjectCarrayDiskTest(ObjectCarrayTest):
+    disk = True
 
-"""

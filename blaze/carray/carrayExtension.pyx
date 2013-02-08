@@ -935,7 +935,14 @@ cdef class carray:
     # than `self.dtype` in that `self._dtype` dimensions are borrowed
     # from `self.shape`.  `self.dtype` will always be scalar (NumPy
     # convention).
-    self._dtype = dtype = np.dtype((dtype, array_.shape[1:]))
+    #
+    # Note that objects are a special case. Carray does not support object
+    # arrays of more than one dimensions.
+    if dtype != np.dtype('O'):
+      dtype = np.dtype((dtype, array_.shape[1:]))
+
+    self._dtype = dtype
+
  
     # Check that atom size is less than 2 GB
     if dtype.itemsize >= 2**31:
