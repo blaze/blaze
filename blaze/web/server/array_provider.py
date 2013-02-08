@@ -75,4 +75,7 @@ class json_array_provider:
 
     def create_session_dir(self):
         d = tempfile.mkdtemp(prefix='.session_', dir=self.root_dir)
-        return os.path.basename(d), d
+        session_name = os.path.basename(d)
+        if type(session_name) is unicode:
+            session_name = session_name.encode('utf-8')
+        return session_name, d

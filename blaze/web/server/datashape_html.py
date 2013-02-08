@@ -26,8 +26,10 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
             result += (indent + '  ' +
                 '<a href="' + child_url + '">' + str(fname) + '</a>'
                 ': ' + child_result + ';')
-            if farr.kind != 'struct':
+            if farr.udtype.kind != 'struct':
                 result += json_comment(child_url)
+            else:
+                result += '\n'
         result += (indent + '}')
     elif dt.kind == 'uniform_array':
         if dt.type_id == 'strided_array':

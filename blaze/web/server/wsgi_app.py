@@ -1,6 +1,5 @@
 import sys, traceback
 from dynd import nd, ndt
-import json
 from cgi import parse_qs
 from blaze_url import split_array_base
 from datashape_html import render_dynd_datashape
@@ -121,7 +120,20 @@ class wsgi_app:
             '</body></html>'
         return body
 
-    def __call__(self, environ, start_response):
+    def handle_session_query(self, environ, start_response):
+        session = self.sessions[environ['PATH_INFO']]
+        content_type = 'text/plain; charset=utf-8'
+        body = 'something with session ' + session.session_name
+
+        status = '200 OK'
+        response_headers = [
+            ('content-type', content_type),
+            ('content-length', str(len(body)))
+        ]
+        start_response(status, response_headers)
+        return [body]
+    
+    def handle_array_query(self, environ, start_response):
         try:
             array_name, indexers = split_array_base(environ['PATH_INFO'])
             arr = self.get_array(array_name, indexers)
@@ -131,11 +143,11 @@ class wsgi_app:
             start_response(status, response_headers, sys.exc_info())
             return ['Error getting Blaze Array\n\n' + traceback.format_exc()]
 
+        base_url = wsgi_reconstruct_base_url(environ)
         request_method = environ['REQUEST_METHOD']
         if request_method == 'GET' and environ['QUERY_STRING'] == '':
             # This version of the array information is for human consumption
             content_type = 'text/html; charset=utf-8'
-            base_url = wsgi_reconstruct_base_url(environ)
             body = self.html_array(arr, base_url, array_name, indexers)
         else:
             if request_method == 'GET':
@@ -153,21 +165,28 @@ class wsgi_app:
                 response_headers = [('content-type', 'text/plain')]
                 start_response(status, response_headers)
                 return ['Unsupported request method']
+
             print q
             if not q.has_key('r'):
                 status = '400 Bad Request'
                 response_headers = [('content-type', 'text/plain')]
                 start_response(status, response_headers, sys.exc_info())
                 return ['Blaze server request requires the ?r= query request type']
-            if q['r'][0] == 'data.json':
+            q_req = q['r'][0]
+            if q_req == 'data.json':
                 content_type = 'application/json; charset=utf-8'
                 body = nd.format_json(arr).view_scalars(ndt.bytes).as_py()
-            elif q['r'][0] == 'datashape':
-                content_type = 'application/json; charset=utf-8'
+            elif q_req == 'datashape':
+                content_type = 'text/plain; charset=utf-8'
                 body = arr.dshape
-            elif q['r'][0] == 'dyndtype':
+            elif q_req == 'dyndtype':
                 content_type = 'application/json; charset=utf-8'
                 body = str(arr.dtype)
+            elif q_req == 'create_session':
+                session = compute_session(self.array_provider, base_url,
+                                          add_indexers_to_url(array_name, indexers))
+                self.sessions[session.session_name] = session
+                content_type, body = session.creation_response()
             else:
                 status = '400 Bad Request'
                 response_headers = [('content-type', 'text/plain')]
@@ -181,3 +200,9 @@ class wsgi_app:
         ]
         start_response(status, response_headers)
         return [body]
+
+    def __call__(self, environ, start_response):
+        if environ['PATH_INFO'] in self.sessions:
+            return self.handle_session_query(environ, start_response)
+        else:
+            return self.handle_array_query(environ, start_response)

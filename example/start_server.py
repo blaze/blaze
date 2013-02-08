@@ -1,8 +1,7 @@
 import sys, os
-from os import path
 from wsgiref.simple_server import make_server
-from blaze.web.server.wsgi_app import wsgi_app
-from blaze.web.server.array_provider import json_array_provider
+from blaze_web.server.wsgi_app import wsgi_app
+from blaze_web.server.array_provider import json_array_provider
 
 if len(sys.argv) > 1:
     root_path = sys.argv[1]
