@@ -85,7 +85,7 @@ int         Platform integer (normally either ``int32`` or ``int64``)
 int8        Byte (-128 to 127)
 int16       Integer (-32768 to 32767)
 int32       Integer (-2147483648 to 2147483647)
-int64       Integer (9223372036854775808 to 9223372036854775807)
+int64       Integer (-9223372036854775808 to 9223372036854775807)
 uint8       Unsigned integer (0 to 255)
 uint16      Unsigned integer (0 to 65535)
 uint32      Unsigned integer (0 to 4294967295)
@@ -114,7 +114,7 @@ a subset of specialized storage and computation backends.
 Bit type    Description
 ==========  =========================================================
 double      Fixed point precision
-varchar     Variable length string
+string      Variable length UTF-8 string
 blob        Binary large object
 ==========  =========================================================
 
@@ -130,10 +130,42 @@ int          int
 bool         bool
 float        float
 complex      cfloat
-str          string
-unicode      unicode
+str          string('ascii') or string('latin-1')
+unicode      string
 buffer       void
 ===========  =========================================================
+
+String Types
+~~~~~~~~~~~~
+
+To Blaze, all strings are sequences of unicode code points, following
+in the footsteps of Python 3. The default Blaze string atom, simply
+called "string", is a variable-length string which can contain any
+unicode values.
+
+There are many possible ways to encode strings, and in some contexts,
+such as NumPy, strings are stored in a fixed-size buffer. These kinds
+of strings are indicated by providing length and encoding parameters
+to the string type.
+
+For example, variable-length ASCII strings have the Blaze atom
+"string('ascii')", and UTF-8 strings have the Blaze atom
+"string('utf-8')".
+
+When a fixed buffer-size is being used, a number can be included
+to indicate the size of the buffer in encoding primitive units.
+Strings represented this way are NULL-terminated, as in C.
+For example, "string(16,'utf-8')" is a 16-byte UTF-8 string,
+while "string(16,'utf-32')" is a 64-byte UTF-32 string.
+
+To keep things short, we may want to adopt shortened forms for the
+most common encodings by default. This could be "string('A')" for
+ASCII, and string('U8') for UTF-8.
+
+For encodings, supporting the set of encodings in Python
+(http://docs.python.org/3/library/codecs.html#standard-encodings) is
+the end-goal, initially focused on unicode and the most common
+legacy codepages.
 
 Endianness
 ~~~~~~~~~~
