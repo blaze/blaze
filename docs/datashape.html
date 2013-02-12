@@ -88,6 +88,7 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#bit-types">Bit Types</a></li>
+<li><a class="reference internal" href="#string-types">String Types</a></li>
 <li><a class="reference internal" href="#endianness">Endianness</a><ul>
 <li><a class="reference internal" href="#products">Products</a></li>
 </ul>
@@ -220,7 +221,7 @@ unboxed machine types. These inherit the notation from NumPy.</p>
 <td>Integer (-2147483648 to 2147483647)</td>
 </tr>
 <tr class="row-odd"><td>int64</td>
-<td>Integer (9223372036854775808 to 9223372036854775807)</td>
+<td>Integer (-9223372036854775808 to 9223372036854775807)</td>
 </tr>
 <tr class="row-even"><td>uint8</td>
 <td>Unsigned integer (0 to 255)</td>
@@ -278,8 +279,8 @@ a subset of specialized storage and computation backends.</p>
 <tr class="row-even"><td>double</td>
 <td>Fixed point precision</td>
 </tr>
-<tr class="row-odd"><td>varchar</td>
-<td>Variable length string</td>
+<tr class="row-odd"><td>string</td>
+<td>Variable length UTF-8 string</td>
 </tr>
 <tr class="row-even"><td>blob</td>
 <td>Binary large object</td>
@@ -311,16 +312,42 @@ a subset of specialized storage and computation backends.</p>
 <td>cfloat</td>
 </tr>
 <tr class="row-even"><td>str</td>
-<td>string</td>
+<td>string(&#8216;ascii&#8217;) or string(&#8216;latin-1&#8217;)</td>
 </tr>
 <tr class="row-odd"><td>unicode</td>
-<td>unicode</td>
+<td>string</td>
 </tr>
 <tr class="row-even"><td>buffer</td>
 <td>void</td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section" id="string-types">
+<h2>String Types<a class="headerlink" href="#string-types" title="Permalink to this headline">¶</a></h2>
+<p>To Blaze, all strings are sequences of unicode code points, following
+in the footsteps of Python 3. The default Blaze string atom, simply
+called &#8220;string&#8221;, is a variable-length string which can contain any
+unicode values.</p>
+<p>There are many possible ways to encode strings, and in some contexts,
+such as NumPy, strings are stored in a fixed-size buffer. These kinds
+of strings are indicated by providing length and encoding parameters
+to the string type.</p>
+<p>For example, variable-length ASCII strings have the Blaze atom
+&#8220;string(&#8216;ascii&#8217;)&#8221;, and UTF-8 strings have the Blaze atom
+&#8220;string(&#8216;utf-8&#8217;)&#8221;.</p>
+<p>When a fixed buffer-size is being used, a number can be included
+to indicate the size of the buffer in encoding primitive units.
+Strings represented this way are NULL-terminated, as in C.
+For example, &#8220;string(16,&#8217;utf-8&#8217;)&#8221; is a 16-byte UTF-8 string,
+while &#8220;string(16,&#8217;utf-32&#8217;)&#8221; is a 64-byte UTF-32 string.</p>
+<p>To keep things short, we may want to adopt shortened forms for the
+most common encodings by default. This could be &#8220;string(&#8216;A&#8217;)&#8221; for
+ASCII, and string(&#8216;U8&#8217;) for UTF-8.</p>
+<p>For encodings, supporting the set of encodings in Python
+(<a class="reference external" href="http://docs.python.org/3/library/codecs.html#standard-encodings">http://docs.python.org/3/library/codecs.html#standard-encodings</a>) is
+the end-goal, initially focused on unicode and the most common
+legacy codepages.</p>
 </div>
 <div class="section" id="endianness">
 <h2>Endianness<a class="headerlink" href="#endianness" title="Permalink to this headline">¶</a></h2>
