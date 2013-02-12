@@ -1,7 +1,8 @@
 # Simple use case for connecting CArray API and Blaze
 # Byte Providers.
 
-from blaze import Array, dshape
+from blaze import Array, dshape, params, open
+import numpy as np
 
 #------------------------------------------------------------------------
 # Case
@@ -11,6 +12,9 @@ from blaze import Array, dshape
 
 def arr():
     return Array([1,2,3], '3, int32')
+
+def ndarr():
+    return np.arange(1e5).reshape(1e3, 1e2)
 
 #------------------------------------------------------------------------
 # Tests
@@ -61,3 +65,34 @@ def test_fancyslice():
     for i in xrange(3):
         # Simple read fancy slice
         nd[i::2]
+
+# Case nd
+def test_getitem_nd():
+    # create
+    nd = ndarr()
+    barray = Array(nd)
+
+    # read
+    data = barray[:]
+
+    assert np.all(data == nd)
+
+# Case nd (persistent version)
+def test_getitem_nd_persistent():
+    import tempfile, shutil, os.path
+
+    td = tempfile.mkdtemp()
+    path = os.path.join(td, 'test.blz')
+
+    # write
+    bparams = params(storage=path, clevel=6)
+    nd = ndarr()
+    barray = Array(nd, params=bparams)
+
+    # read
+    arr = open(path)
+    data = arr[:]
+
+    assert np.all(data == nd)
+
+    shutil.rmtree(td)
