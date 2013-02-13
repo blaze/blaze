@@ -120,11 +120,41 @@ class wsgi_app:
             'Blaze Array &gt; ' + nav_html + '\n<p />\n' + \
             '<a href="' + array_url + '?r=data.json">JSON</a>\n<p />\n' + \
             datashape_html + \
+            '\n<p /> Debug Links: ' + \
+            '<a href="' + array_url + '?r=dyndtype">DyND Type</a>\n' + \
+            '&nbsp;&nbsp;' + \
+            '<a href="' + array_url + '?r=dynddebug">DyND Debug Repr</a>\n' + \
             '</body></html>'
         return body
 
     def handle_session_query(self, environ, start_response):
         session = self.sessions[environ['PATH_INFO']]
+        request_method = environ['REQUEST_METHOD']
+        if request_method != 'POST':
+            status = '404 Not Found'
+            response_headers = [('content-type', 'text/plain')]
+            start_response(status, response_headers, sys.exc_info())
+            return ['Must use POST with compute session URL']
+        else:
+            # the environment variable CONTENT_LENGTH may be empty or missing
+            try:
+                request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+            except (ValueError):
+                request_body_size = 0
+            request_body = environ['wsgi.input'].read(request_body_size)
+            q = parse_qs(request_body)
+
+        print q
+        if not q.has_key('r'):
+            status = '400 Bad Request'
+            response_headers = [('content-type', 'text/plain')]
+            start_response(status, response_headers, sys.exc_info())
+            return ['Blaze server compute session request requires the ?r= query request type']
+        q_req = q['r'][0]
+        if q_req == 'create_table_view':
+            j = q['json'][0]
+            content_type, body = session.create_table_view(j)
+
         content_type = 'text/plain; charset=utf-8'
         body = 'something with session ' + session.session_name
 
@@ -140,62 +170,65 @@ class wsgi_app:
         try:
             array_name, indexers = split_array_base(environ['PATH_INFO'])
             arr = self.get_array(array_name, indexers)
+
+            base_url = wsgi_reconstruct_base_url(environ)
+            request_method = environ['REQUEST_METHOD']
+            if request_method == 'GET' and environ['QUERY_STRING'] == '':
+                # This version of the array information is for human consumption
+                content_type = 'text/html; charset=utf-8'
+                body = self.html_array(arr, base_url, array_name, indexers)
+            else:
+                if request_method == 'GET':
+                    q = parse_qs(environ['QUERY_STRING'])
+                elif request_method == 'POST':
+                    # the environment variable CONTENT_LENGTH may be empty or missing
+                    try:
+                        request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+                    except (ValueError):
+                        request_body_size = 0
+                    request_body = environ['wsgi.input'].read(request_body_size)
+                    q = parse_qs(request_body)
+                else:
+                    status = '404 Not Found'
+                    response_headers = [('content-type', 'text/plain')]
+                    start_response(status, response_headers)
+                    return ['Unsupported request method']
+    
+                print q
+                if not q.has_key('r'):
+                    status = '400 Bad Request'
+                    response_headers = [('content-type', 'text/plain')]
+                    start_response(status, response_headers, sys.exc_info())
+                    return ['Blaze server request requires the ?r= query request type']
+                q_req = q['r'][0]
+                if q_req == 'data.json':
+                    content_type = 'application/json; charset=utf-8'
+                    body = nd.as_py(nd.format_json(arr).view_scalars(ndt.bytes))
+                elif q_req == 'datashape':
+                    content_type = 'text/plain; charset=utf-8'
+                    body = arr.dshape
+                elif q_req == 'dyndtype':
+                    content_type = 'application/json; charset=utf-8'
+                    body = str(arr.dtype)
+                elif q_req == 'dynddebug':
+                    content_type = 'text/plain; charset=utf-8'
+                    body = arr.debug_repr()
+                elif q_req == 'create_session':
+                    session = compute_session(self.array_provider, base_url,
+                                              add_indexers_to_url(array_name, indexers))
+                    self.sessions[session.session_name] = session
+                    content_type, body = session.creation_response()
+                else:
+                    status = '400 Bad Request'
+                    response_headers = [('content-type', 'text/plain')]
+                    start_response(status, response_headers, sys.exc_info())
+                    return ['Unknown Blaze server request ?r=%s' % q['r'][0]]
         except:
             status = '404 Not Found'
             response_headers = [('content-type', 'text/plain')]
             start_response(status, response_headers, sys.exc_info())
             return ['Error getting Blaze Array\n\n' + traceback.format_exc()]
 
-        base_url = wsgi_reconstruct_base_url(environ)
-        request_method = environ['REQUEST_METHOD']
-        if request_method == 'GET' and environ['QUERY_STRING'] == '':
-            # This version of the array information is for human consumption
-            content_type = 'text/html; charset=utf-8'
-            body = self.html_array(arr, base_url, array_name, indexers)
-        else:
-            if request_method == 'GET':
-                q = parse_qs(environ['QUERY_STRING'])
-            elif request_method == 'POST':
-                # the environment variable CONTENT_LENGTH may be empty or missing
-                try:
-                    request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-                except (ValueError):
-                    request_body_size = 0
-                request_body = environ['wsgi.input'].read(request_body_size)
-                q = parse_qs(request_body)
-            else:
-                status = '404 Not Found'
-                response_headers = [('content-type', 'text/plain')]
-                start_response(status, response_headers)
-                return ['Unsupported request method']
-
-            print q
-            if not q.has_key('r'):
-                status = '400 Bad Request'
-                response_headers = [('content-type', 'text/plain')]
-                start_response(status, response_headers, sys.exc_info())
-                return ['Blaze server request requires the ?r= query request type']
-            q_req = q['r'][0]
-            if q_req == 'data.json':
-                content_type = 'application/json; charset=utf-8'
-                body = nd.as_py(nd.format_json(arr).view_scalars(ndt.bytes))
-            elif q_req == 'datashape':
-                content_type = 'text/plain; charset=utf-8'
-                body = arr.dshape
-            elif q_req == 'dyndtype':
-                content_type = 'application/json; charset=utf-8'
-                body = str(arr.dtype)
-            elif q_req == 'create_session':
-                session = compute_session(self.array_provider, base_url,
-                                          add_indexers_to_url(array_name, indexers))
-                self.sessions[session.session_name] = session
-                content_type, body = session.creation_response()
-            else:
-                status = '400 Bad Request'
-                response_headers = [('content-type', 'text/plain')]
-                start_response(status, response_headers, sys.exc_info())
-                return ['Unknown Blaze server request ?r=%s' % q['r'][0]]
-            
         status = '200 OK'
         response_headers = [
             ('content-type', content_type),
