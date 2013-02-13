@@ -1,4 +1,8 @@
-from setuptools import setup
+import sys
+if len(sys.argv) > 1 and sys.argv[1] == 'develop':
+    from setuptools import setup
+else:
+    from distutils.core import setup
 
 setup(name='BlazeWeb',
       version='dev',
