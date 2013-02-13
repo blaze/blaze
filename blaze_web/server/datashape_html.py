@@ -15,7 +15,7 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
 
     if dt.kind == 'struct':
         result += '{' + json_comment(base_url)
-        field_names = dt.field_names.as_py()
+        field_names = nd.as_py(dt.field_names)
         for i, fname in enumerate(field_names):
             farr = arr[i]
             if type(farr) is not nd.dtype:

@@ -178,7 +178,7 @@ class wsgi_app:
             q_req = q['r'][0]
             if q_req == 'data.json':
                 content_type = 'application/json; charset=utf-8'
-                body = nd.format_json(arr).view_scalars(ndt.bytes).as_py()
+                body = nd.as_py(nd.format_json(arr).view_scalars(ndt.bytes))
             elif q_req == 'datashape':
                 content_type = 'text/plain; charset=utf-8'
                 body = arr.dshape
