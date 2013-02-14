@@ -57,3 +57,35 @@ act as a base unit for processing, chunks should be a base unit at the
 process level. Shard is more related to storage, but if distributed
 storage is used the computation should be performed in the node that has
 more efficient access to the shard.
+
+===================
+ Related solutions
+===================
+
+SciDB
+=====
+SciDB is an array database. SciDB tackles objectives beyond the scope of
+our file-format, as a single database may contain several arrays. SciDB
+also provides and Array Query Language (AQL) and an Array Functional
+Language (AFL). Those languages provide a functionality that in the our
+case will be provided in other parts of Blaze.
+
+From an array storage point of view, SciDB has the following features:
+
+1. **Dimensions** and **Attributes**. Dimensions define the *grid* of the array,
+while Attributes define the contents of a *cell* in the array. This is
+somewhat less flexible than blaze capabilities. 
+2. Support for non-integer dimensions. 
+3. Explicit control on **Chunking**. A *chunk* size can be explicitly
+especified. In fact, chunk size is specified by dimension. An overlap
+can be specified.
+4. Storage uses vertical partitioning (physically placing attributes
+together). Run-length encoding is used to compress repeated values and a
+cache of decompressed chunks is held in RAM.
+5. Implements versioning. "no overwrite" storage model.
+
+
+============
+ References
+============
+scidb-userguide-13.1
