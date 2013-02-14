@@ -47,7 +47,7 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
             arr = arr.dtype
         result += render_dynd_datashape_recursive(base_url, arr[0], indent)
     elif dt.kind in ['bool', 'int', 'uint', 'real', 'datetime', 'json', 'string']:
-        result += str(dt)
+        result += str(dt.dshape)
     else:
         raise TypeError('Unrecognized DyND type ' + str(dt))
     return result

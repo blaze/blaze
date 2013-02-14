@@ -2,8 +2,8 @@ type KivaLoan = {
     id: int64;
     name: string;
     description: {
-        languages: VarDim, string2;
-        texts: json # map<string2, string>;
+        languages: VarDim, string(2);
+        texts: json # map<string(2), string>;
     };
     status: string; # LoanStatusType;
     funded_amount: float64;
@@ -23,7 +23,7 @@ type KivaLoan = {
     # For 'delinquent', saw values \"null\" and \"true\" in brief search, map null -> false on import?
     delinquent: bool;
     location: {
-        country_code: string2;
+        country_code: string(2);
         country: string;
         town: json; # Option(string);
         geo: {
@@ -40,7 +40,7 @@ type KivaLoan = {
     borrowers: VarDim, {
         first_name: string;
         last_name: string;
-        gender: string1; # GenderType
+        gender: string(1); # GenderType
         pictured: bool;
     };
     terms: {

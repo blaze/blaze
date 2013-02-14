@@ -206,7 +206,7 @@ class wsgi_app:
                     body = nd.as_py(nd.format_json(arr).view_scalars(ndt.bytes))
                 elif q_req == 'datashape':
                     content_type = 'text/plain; charset=utf-8'
-                    body = arr.dshape
+                    body = 'type BlazeDataShape = ' + arr.dshape
                 elif q_req == 'dyndtype':
                     content_type = 'application/json; charset=utf-8'
                     body = str(arr.dtype)

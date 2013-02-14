@@ -6,7 +6,7 @@ type KivaLender = {
         template_id: int64;
     };
     whereabouts: string;
-    country_code: json; # string2;
+    country_code: json; # string(2);
     uid: string;
     member_since: string; # datetime<minutes>
     personal_url: string; # URL type?
