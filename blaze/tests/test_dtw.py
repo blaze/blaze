@@ -8,5 +8,5 @@ def test_dtw():
     loc, dist = ucr.dtw(data, query, 0.1, 100, verbose=False)
 
     # these are stupid, mostly just to check for regressions
-    assert isinstance(loc, int)
+    assert isinstance(loc, int) or isinstance(loc, long)
     assert isinstance(dist, float)

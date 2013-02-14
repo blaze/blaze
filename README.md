@@ -77,7 +77,6 @@ Using Anaconda's package manager:
 
 ```bash
 $ conda install ply
-$ conda install blosc
 ```
 
 Introduction
@@ -98,7 +97,9 @@ $ make docs
 To run tests:
 
 ```bash
-$ python setup.py test
+>>> python
+>>> from blaze.testing import runner
+>>> runner()
 ```
 
 Alternative Installation
@@ -146,7 +147,6 @@ $ PATH=venv/bin:$PATH
 
 ```bash
 conda install ply
-conda install blosc
 conda install numpy
 conda install cython
 ```

@@ -383,7 +383,7 @@ class Fixed(Atom):
     """
 
     def __init__(self, i):
-        assert isinstance(i, int)
+        assert isinstance(i, int) or isinstance(i, long)
 
         if i < 0:
             raise ValueError, 'Fixed dimensions must be positive'

@@ -34,9 +34,6 @@ def test_deconstruct():
 
 def test_not_compat():
     with assert_raises(NotNumpyCompatible):
-        to_numpy(dshape('x, int32'))
-
-    with assert_raises(NotNumpyCompatible):
         to_numpy(dshape('{1}, int32'))
 
     with assert_raises(NotNumpyCompatible):
