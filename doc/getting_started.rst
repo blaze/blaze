@@ -1,3 +1,4 @@
+.. contents:: Table of Contents
 
 ****************************************
 Getting Started Running the Blaze Server
@@ -34,12 +35,18 @@ blaze-web
 Running The Sample Server
 =========================
 
+Starting The Server
+-------------------
+
 In the 'example' directory, there is a script that starts Python's
 wsgiref server to serve some sample array data. With both DyND and
 blaze-web installed, you can start it by running::
 
     ~/Develop/blaze-web/example $ python start_server.py 
     Starting Blaze Server...
+
+Viewing An Array
+----------------
 
 Now, in a web browser, navigate to http://localhost:8080/kiva_tiny/loans.
 You should see something which starts like this::
@@ -61,6 +68,9 @@ You should see something which starts like this::
 This is looking at the files in the 'example/arrays/kiva_tiny/loans'
 subdirectory, using the file 'example/arrays/kiva_tiny/loans.datashape'
 for how to interpret the data in the JSON files.
+
+Main Array Page
+---------------
 
 Click on the 'header' link (http://localhost:8080/kiva_tiny/loans.header),
 to get to a simpler subarray we can use to illustrate the parts that are
@@ -100,6 +110,13 @@ resulting page.
 Finally, at the bottom, are some links to help with debugging. They
 give you some information about the DyND representation of the array
 being viewed.
+
+Indexing
+--------
+
+To pick specific elements of the array, you can add [] like in Python
+to index into it. For example, to look at just one header, you
+can go to `<http://localhost:8080/kiva_tiny/loans.header[2]>`__
 
 Conclusion
 ==========
