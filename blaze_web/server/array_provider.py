@@ -35,7 +35,7 @@ def load_json_directory_array(root, array_name):
     files = [x[1] for x in files]
     # Make an array with an extra fixed dimension, then
     # read a JSON file into each element of that array
-    dt = ndt.make_fixedarray_dtype(len(files), dt)
+    dt = ndt.make_fixed_dim_dtype(len(files), dt)
     arr = nd.empty(dt)
     for i, fname in enumerate(files):
         with open(fname) as f:

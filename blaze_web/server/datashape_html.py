@@ -31,15 +31,15 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
             else:
                 result += '\n'
         result += (indent + '}')
-    elif dt.kind == 'uniform_array':
-        if dt.type_id == 'strided_array':
+    elif dt.kind == 'uniform_dim':
+        if dt.type_id == 'strided_dim':
             if (type(arr) is not nd.dtype):
                 result += (str(arr.shape[0]) + ', ')
             else:
                 result += 'VarDim, '
-        elif dt.type_id == 'fixedarray':
+        elif dt.type_id == 'fixed_dim':
             result += (str(dt.fixed_dim_size) + ', ')
-        elif dt.type_id == 'var_array':
+        elif dt.type_id == 'var_dim':
             result += 'VarDim, '
         else:
             raise TypeError('Unrecognized DyND uniform array type ' + str(dt))
