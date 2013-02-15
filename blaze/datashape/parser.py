@@ -26,12 +26,11 @@ Grammar::
 
     record : LBRACE record_opt RBRACE
     record_opt : record_opt SEMI record_opt
-    record_opt : record_item
-    record_opt : empty
+               | record_item
+               | empty
     record_item : NAME COLON '(' rhs_expression ')'
-    record_item : NAME COLON BIT
-                | NAME COLON NAME
-                | NAME COLON NUMBER
+                | NAME COLON rhs_expression'
+
     empty :
 
 """
@@ -235,6 +234,8 @@ def p_appl(p):
     "appl : NAME '(' rhs_expression ')'"
     p[0] = (tyappl(p[1], p[3]),)
 
+#------------------------------------------------------------------------
+
 def p_record(p):
     'record : LBRACE record_opt RBRACE'
     p[0] = (tyrecord(p[2]),)
@@ -251,7 +252,6 @@ def p_record_opt3(p):
     'record_opt : empty'
     p[0] = []
 
-# TODO: remove
 def p_record_item1(p):
     "record_item : NAME COLON '(' rhs_expression ')' "
     p[0] = (p[1], p[4])
@@ -276,21 +276,6 @@ def p_error(p):
         )
     else:
         print("Syntax error at EOF")
-
-#------------------------------------------------------------------------
-# Module
-#------------------------------------------------------------------------
-
-class Module(object):
-
-    def __init__(self, **kwargs):
-        # TODO: EVIL! just for debugging
-        self.__dict__.update(kwargs)
-
-    def __repr__(self):
-        keys = sorted(self.__dict__)
-        items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
-        return "{}({})".format(type(self).__name__, ", ".join(items))
 
 #------------------------------------------------------------------------
 # Toplevel
@@ -366,6 +351,10 @@ def load_parser(debug=False):
 
         # curry the lexer into the parser
         return partial(parser.parse, lexer=lexer)
+
+#------------------------------------------------------------------------
+# Toplevel
+#------------------------------------------------------------------------
 
 def parse(pattern):
     parser = load_parser()
