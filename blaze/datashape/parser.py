@@ -30,7 +30,7 @@ Grammar::
     record_opt : empty
     record_item : NAME COLON '(' rhs_expression ')'
     record_item : NAME COLON BIT
-                : NAME COLON NAME
+                | NAME COLON NAME
                 | NAME COLON NUMBER
     empty :
 
@@ -41,6 +41,7 @@ import sys
 
 from functools import partial
 from collections import namedtuple
+import coretypes as T
 
 try:
     import dlex
@@ -150,6 +151,7 @@ bittype     = namedtuple('bit', 'name')
 tyinst     = namedtuple('tyinst', 'conargs')
 tydecl     = namedtuple('tydecl', 'lhs, rhs')
 tyappl     = namedtuple('tyappl', 'head, args')
+tyrecord   = namedtuple('tyrecord', 'elts')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
 def p_top(p):
@@ -232,26 +234,19 @@ def p_appl(p):
 
 def p_record(p):
     'record : LBRACE record_opt RBRACE'
-
-    if isinstance(p[2], list):
-        p[0] = p[2]
-    else:
-        p[0] = (p[2],)
+    p[0] = (tyrecord(p[2]),)
 
 def p_record_opt1(p):
     'record_opt : record_opt SEMI record_opt'
-    if p[3]: # trailing semicolon
-        p[0] = [p[1], p[3]]
-    else:
-        p[0] = p[1]
+    p[0] = p[1] + p[3]
 
 def p_record_opt2(p):
     'record_opt : record_item'
-    p[0] = p[1]
+    p[0] = [p[1]]
 
 def p_record_opt3(p):
     'record_opt : empty'
-    pass
+    p[0] = []
 
 def p_record_item1(p):
     "record_item : NAME COLON '(' rhs_expression ')' "
@@ -300,8 +295,49 @@ class Module(object):
 # Toplevel
 #------------------------------------------------------------------------
 
+reserved = {
+    'Record'   : T.Record,
+    'Range'    : T.Range,
+    'Either'   : T.Either,
+    'Varchar'  : T.Varchar,
+    'Union'    : T.Union,
+    'Option'   : T.Option,
+    'string'   : T.String, # String type per proposal
+}
+
+python_internals = (int, long, basestring)
+
 def build_ds(ds):
-    return ds
+    """
+    Build a single datashape instance from parse tree
+    """
+    # ----------------------------
+    if isinstance(ds, list):
+        pass # XXX # multiple datashapes, handle later
+    elif isinstance(ds, simpletype):
+        pass # XXX
+    elif isinstance(ds, tydecl):
+        pass # XXX
+    # ----------------------------
+
+    elif isinstance(ds, tyinst):
+        dst = map(build_ds, ds.conargs)
+        return T.DataShape(dst)
+    elif isinstance(ds, bittype):
+        return T.Type._registry[ds.name]
+    elif isinstance(ds, (int, long)):
+        return T.Fixed(ds)
+    elif isinstance(ds, basestring):
+        return T.TypeVar(ds)
+    elif isinstance(ds, tyappl):
+        if ds.head in reserved:
+            return reserved[ds.head](*ds.args)
+        else:
+            raise NameError, ds.head
+    elif isinstance(ds, tyrecord):
+        return T.Record(ds.elts)
+    else:
+        raise ValueError, 'Invalid construction from Datashape parser' ,ds
 
 def debug_parse(data, lexer, parser):
     lexer.input(data)
@@ -343,6 +379,8 @@ if __name__ == '__main__':
     while True:
         try:
             line = raw_input('>> ')
-            print parser(line)
+            ast = parser(line)
+            print ast
+            print build_ds(ast)
         except EOFError:
             break
