@@ -21,11 +21,16 @@
 /***********************************************************************/
 /***********************************************************************/
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#ifdef min
+#   undef min
+#endif
+#ifdef max
+#   undef max
+#endif
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 #define dist(x,y) ((x-y)*(x-y))
@@ -181,27 +186,28 @@ double lb_kim_hierarchy(double *t, double *q, int j, int len, double mean, doubl
 {
     /// 1 point at front and back
     double d, lb;
+    double x1, y1, x2, y2;
     double x0 = (t[j] - mean) / std;
     double y0 = (t[(len-1+j)] - mean) / std;
     lb = dist(x0,q[0]) + dist(y0,q[len-1]);
     if (lb >= bsf)   return lb;
 
     /// 2 points at front
-    double x1 = (t[(j+1)] - mean) / std;
+    x1 = (t[(j+1)] - mean) / std;
     d = min(dist(x1,q[0]), dist(x0,q[1]));
     d = min(d, dist(x1,q[1]));
     lb += d;
     if (lb >= bsf)   return lb;
 
     /// 2 points at back
-    double y1 = (t[(len-2+j)] - mean) / std;
+    y1 = (t[(len-2+j)] - mean) / std;
     d = min(dist(y1,q[len-1]), dist(y0, q[len-2]) );
     d = min(d, dist(y1,q[len-2]));
     lb += d;
     if (lb >= bsf)   return lb;
 
     /// 3 points at front
-    double x2 = (t[(j+2)] - mean) / std;
+    x2 = (t[(j+2)] - mean) / std;
     d = min(dist(x0,q[2]), dist(x1, q[2]));
     d = min(d, dist(x2,q[2]));
     d = min(d, dist(x2,q[1]));
@@ -210,7 +216,7 @@ double lb_kim_hierarchy(double *t, double *q, int j, int len, double mean, doubl
     if (lb >= bsf)   return lb;
 
     /// 3 points at back
-    double y2 = (t[(len-3+j)] - mean) / std;
+    y2 = (t[(len-3+j)] - mean) / std;
     d = min(dist(y0,q[len-3]), dist(y1, q[len-3]));
     d = min(d, dist(y2,q[len-3]));
     d = min(d, dist(y2,q[len-2]));
@@ -288,6 +294,7 @@ double lb_keogh_data_cumulative(int* order, double *tz, double *qo, double *cb, 
 double dtw_distance(double* A, double* B, double *cb, int m, int r, double bsf)
 {
 
+    double final_dtw;
     double *cost;
     double *cost_prev;
     double *cost_tmp;
@@ -347,7 +354,7 @@ double dtw_distance(double* A, double* B, double *cb, int m, int r, double bsf)
     k--;
 
     /// the DTW distance is in the last cell in the matrix of size O(m^2) or at the middle of our array.
-    double final_dtw = cost_prev[k];
+    final_dtw = cost_prev[k];
     free(cost);
     free(cost_prev);
     return final_dtw;
