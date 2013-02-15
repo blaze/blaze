@@ -337,7 +337,8 @@ def build_ds(ds):
         else:
             raise NameError, ds.head
     elif isinstance(ds, tyrecord):
-        return T.Record(ds.elts)
+        res = T.Record([(a, build_ds(b)) for a,b in ds.elts])
+        import pdb; pdb.set_trace()
     else:
         raise ValueError, 'Invalid construction from Datashape parser' ,ds
 
