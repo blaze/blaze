@@ -1146,7 +1146,7 @@ static int init_threads(void)
 int blosc_set_nthreads(int nthreads_new)
 {
   int32_t nthreads_old = nthreads;
-  int32_t t;
+  int32_t t, rc;
   void *status;
 
   if (nthreads_new > BLOSC_MAX_THREADS) {
@@ -1194,7 +1194,7 @@ int blosc_set_nthreads(int nthreads_new)
 /* Free possible memory temporaries and thread resources */
 void blosc_free_resources(void)
 {
-  int32_t t;
+  int32_t t, rc;
   void *status;
 
   /* Release temporaries */
