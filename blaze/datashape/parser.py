@@ -81,6 +81,7 @@ literals = [
 
 bits = set([
     'bool',
+    'blob', # XXX deprecated
     'int',
     'float',
     'int8',
@@ -250,15 +251,13 @@ def p_record_opt3(p):
     'record_opt : empty'
     p[0] = []
 
+# TODO: remove
 def p_record_item1(p):
     "record_item : NAME COLON '(' rhs_expression ')' "
     p[0] = (p[1], p[4])
 
 def p_record_item2(p):
-    '''record_item : NAME COLON BIT
-                   | NAME COLON NAME
-                   | NAME COLON NUMBER
-                   | NAME COLON record'''
+    '''record_item : NAME COLON rhs_expression'''
     p[0] = (p[1], p[3])
 
 #------------------------------------------------------------------------
@@ -333,12 +332,13 @@ def build_ds(ds):
         return T.TypeVar(ds)
     elif isinstance(ds, tyappl):
         if ds.head in reserved:
-            return reserved[ds.head](*ds.args)
+            args = map(build_ds, ds.args)
+            return reserved[ds.head](*args)
         else:
             raise NameError, ds.head
     elif isinstance(ds, tyrecord):
-        res = T.Record([(a, build_ds(b)) for a,b in ds.elts])
-        import pdb; pdb.set_trace()
+        # TODO: ugly hack
+        return T.Record([(a, build_ds(b[0])) for a,b in ds.elts])
     else:
         raise ValueError, 'Invalid construction from Datashape parser' ,ds
 
@@ -384,6 +384,6 @@ if __name__ == '__main__':
             line = raw_input('>> ')
             ast = parser(line)
             print ast
-            print build_ds(ast)
+            #print build_ds(ast)
         except EOFError:
             break
