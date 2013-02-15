@@ -28,7 +28,7 @@ def test_record():
     repr(t)
 
 def test_record_consume():
-    expected_ds = dshape("4, {i: int64, f: float64}")
+    expected_ds = dshape("4, {i: int64; f: float64}")
 
     d = {
         'i'   : [1, 2, 3, 4],
