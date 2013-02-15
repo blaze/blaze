@@ -81,6 +81,8 @@ literals = [
 
 bits = set([
     'bool',
+    'int',
+    'float',
     'int8',
     'int16',
     'int32',

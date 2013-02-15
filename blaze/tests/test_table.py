@@ -19,9 +19,9 @@ def test_arrays():
 
 
 def test_record():
-    expected_ds = dshape('1, {x: int32, y: float32}')
+    expected_ds = dshape('1, {x: int32; y: float32}')
 
-    t = NDTable([(1, 2.1), (2, 3.1)], dshape='1, {x: int32, y: float32}')
+    t = NDTable([(1, 2.1), (2, 3.1)], dshape='1, {x: int32; y: float32}')
     t.datashape._equal(expected_ds)
 
     str(t)
