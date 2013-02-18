@@ -1378,31 +1378,3 @@ class persistenceTest(MayBeDiskTest, unittest.TestCase):
         self.assert_(cn[N+1] == 3)
 
 
-class ObjectCarrayTest(MayBeDiskTest, unittest.TestCase):
-    def test_carray_1d_source(self):
-        """Testing carray of objects, 1d source"""
-        src_data = ['s'*i for i in range(10)]
-        carr = ca.carray(src_data, dtype=np.dtype('O'))
-
-        self.assertEqual(len(carr.shape), 1)
-        self.assertEqual(len(src_data), carr.shape[0])
-        for i in range(len(carr)):
-            self.assertEqual(carr[i], src_data[i])
-            self.assertEqual(carr[i], src_data[i])
-
-    def test_carray_2d_source(self):
-        """Testing carray of objects, 2d source"""
-        src_data = [(i, 's'*i) for i in range(10)]
-        carr = ca.carray(src_data, dtype=np.dtype('O'))
-        # note that carray should alwas create a 1 dimensional
-        # array of objects.
-        self.assertEqual(len(carr.shape), 1)
-        self.assertEqual(len(src_data), carr.shape[0])
-        for i in range(len(carr)):
-            self.assertEqual(carr[i][0], src_data[i][0])
-            self.assertEqual(carr[i][1], src_data[i][1])
-
-
-class ObjectCarrayDiskTest(ObjectCarrayTest):
-    disk = True
-

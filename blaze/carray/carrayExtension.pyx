@@ -907,9 +907,27 @@ cdef class carray:
     self.where_mode = False
     self.idxcache = -1       # cache not initialized
 
+  cdef _adapt_dtype(self, dtype, shape):
+    """adapt the dtype to one supported in carray.
+    returns the adapted type with the shape modified accordingly.
+    """
+    if dtype.hasobject:
+      if  dtype != np.object_:
+        raise TypeError, repr(dtype) + ' is not a supported dtype'
+    else:
+      dtype = np.dtype((dtype, shape[1:]))
+
+    return dtype
+
   def create_carray(self, array, cparams, dtype, dflt,
                     expectedlen, chunklen, rootdir, mode):
-    """Create a new array."""
+    """Create a new array.
+    There are restrictions creating carray objects with dtypes that have objects
+    (dtype.hasobject is True). The only case where this dtype is supported is
+    on unidimensionl arrays whose dtype is object (objects in composite dtypes
+    are not supported).
+
+    """
     cdef int itemsize, atomsize, chunksize
     cdef ndarray lastchunkarr
     cdef object array_, _dflt
@@ -938,10 +956,7 @@ cdef class carray:
     #
     # Note that objects are a special case. Carray does not support object
     # arrays of more than one dimensions.
-    if dtype != np.dtype('O'):
-      dtype = np.dtype((dtype, array_.shape[1:]))
-
-    self._dtype = dtype
+    self._dtype = dtype = self._adapt_dtype(dtype, array_.shape)
 
  
     # Check that atom size is less than 2 GB
