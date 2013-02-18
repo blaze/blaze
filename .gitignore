@@ -76,6 +76,7 @@ blaze/expr/*.[ch]
 blaze/desc/*.[ch]
 blaze/algo/*.[ch]
 blaze/ts/ucr_dtw/ucr.c
+blaze/rts/executors.c
 
 # Sphinx Docs
 docs/_build
@@ -84,3 +85,6 @@ docs/_build
 web/_build
 
 old/*
+
+# Emacs tmps
+*~
