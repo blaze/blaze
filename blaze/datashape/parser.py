@@ -295,8 +295,8 @@ python_internals = (int, long, basestring)
 
 def build_ds(ds):
     """
-    Build a single datashape instance from parse tree. In the case where
-    we have a named instance disregard the naming and the parameters and
+    Build a datashape instance from parse tree. In the case where we
+    have a named instance disregard the naming and the parameters and
     return an anonymous type.
     """
     # ----------------------------
@@ -330,7 +330,7 @@ def build_ds(ds):
         # TODO: ugly hack
         return T.Record([(a, build_ds(b[0])) for a,b in ds.elts])
     else:
-        raise ValueError, 'Invalid construction from Datashape parser' ,ds
+        raise ValueError, 'Invalid construction from Datashape parser: %s' % repr(ds)
 
 def debug_parse(data, lexer, parser):
     lexer.input(data)
