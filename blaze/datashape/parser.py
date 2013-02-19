@@ -293,6 +293,14 @@ reserved = {
 
 python_internals = (int, long, basestring)
 
+def build_ds_extern(ds):
+    if isinstance(ds, list):
+        return map(build_ds, ds)
+    elif isinstance(ds, simpletype):
+        pass # XXX
+    elif isinstance(ds, tydecl):
+        pass
+
 def build_ds(ds):
     """
     Build a datashape instance from parse tree. In the case where we
@@ -366,6 +374,13 @@ def parse(pattern):
     res = parser(pattern)
 
     ds = build_ds(res)
+    return ds
+
+def parse_extern(pattern):
+    parser = load_parser()
+    res = parser(pattern)
+
+    ds = build_ds_extern(res)
     return ds
 
 if __name__ == '__main__':
