@@ -30,13 +30,32 @@ class ObjectCarrayTest(MayBeDiskTest, TestCase):
             self.assertEqual(carr[i], src_data[i])
 
     def test_carray_2d_source(self):
-        """Testing carray of objects, 2d source"""
+        """Testing carray of objects, 2d source
+        Expected result will be a 1d carray whose elements are containers
+        holding the inner dimension
+        """
         src_data = [(i, 's'*i) for i in range(10)]
         carr = ca.carray(src_data, dtype=np.dtype('O'))
-        # note that carray should alwas create a 1 dimensional
+        # note that carray should always create a 1 dimensional
         # array of objects.
         self.assertEqual(len(carr.shape), 1)
         self.assertEqual(len(src_data), carr.shape[0])
+        for i in range(len(carr)):
+            self.assertEqual(carr[i][0], src_data[i][0])
+            self.assertEqual(carr[i][1], src_data[i][1])
+
+    def test_carray_tuple_source(self):
+        """Testing a carray of objects that are tuples
+        This uses a numpy container as source. Tuples should be
+        preserved
+        """
+        src_data = np.empty((10,), dtype=np.dtype('O'))
+        src_data[:] = [(i, 's'*i) for i in range(src_data.shape[0])]
+        carr = ca.carray(src_data)
+        self.assertEqual(len(carr.shape), 1)
+        self.assertEqual(len(src_data), carr.shape[0])
+        self.assertEqual(type(carr[0]), tuple)
+        self.assertEqual(type(carr[0]), type(src_data[0]))
         for i in range(len(carr)):
             self.assertEqual(carr[i][0], src_data[i][0])
             self.assertEqual(carr[i][1], src_data[i][1])
@@ -48,6 +67,16 @@ class ObjectCarrayTest(MayBeDiskTest, TestCase):
         src_data = [(i, 's'*i) for i in range(10)]
         self.assertRaises(TypeError, ca.carray, src_data, dtype=np.dtype('O,O'))
 
+    def test_carray_record_as_object(self):
+        src_data = np.empty((10,), dtype=np.dtype('u1,O'))
+        src_data[:] = [(i, 's'*i) for i in range(10)]
+        carr = ca.carray(src_data, dtype=np.dtype('O'))
+        self.assertEqual(len(carr.shape), 1)
+        self.assertEqual(len(src_data), carr.shape[0])
+        for i in range(len(carr)):
+            self.assertEqual(carr[i][0], src_data[i][0])
+            self.assertEqual(carr[i][1], src_data[i][1])
+                              
     # The following tests document different alternatives in handling input data
     # which would infer a record dtype in the resulting carray.
     # option 1: fail with a type error as if the dtype was explicit
