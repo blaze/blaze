@@ -295,15 +295,20 @@ python_internals = (int, long, basestring)
 
 def build_ds(ds):
     """
-    Build a single datashape instance from parse tree
+    Build a single datashape instance from parse tree. In the case where
+    we have a named instance disregard the naming and the parameters and
+    return an anonymous type.
     """
     # ----------------------------
     if isinstance(ds, list):
-        pass # XXX # multiple datashapes, handle later
+        pass # XXX
     elif isinstance(ds, simpletype):
         pass # XXX
     elif isinstance(ds, tydecl):
-        pass # XXX
+        if isinstance(ds.lhs , simpletype):
+            return build_ds(ds.rhs[0])
+        else:
+            raise NotImplementedError
     # ----------------------------
 
     elif isinstance(ds, tyinst):
