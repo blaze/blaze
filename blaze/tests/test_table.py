@@ -43,3 +43,18 @@ def test_record_consume2():
         'b'   : [4., 3., 2., 1.]
     }
     table = NDTable(d)
+
+
+def test_custom_dshape():
+    from blaze import RecordDecl, derived
+    from blaze import int32, string
+    class CustomStock(RecordDecl):
+        name   = string
+        max    = int32
+        min    = int32
+
+        @derived
+        def mid(self):
+            return (self.min + self.max)/2
+
+    a = Table([('GOOG', 120, 153)], CustomStock)
