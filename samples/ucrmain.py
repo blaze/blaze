@@ -7,6 +7,7 @@ from time import time
 import blaze
 from blaze.ts.ucr_dtw import ucr
 
+import numpy as np
 
 # Convert txt file into Blaze native format
 def convert(filetxt, storage):
