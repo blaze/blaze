@@ -28,7 +28,7 @@ packages = [
     'blaze.include',
     'blaze.layouts',
     'blaze.persistence',
-    'blaze.rosetta',
+    'blaze.module',
     'blaze.rts',
     'blaze.sources',
     'blaze.ts',
