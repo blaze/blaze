@@ -573,7 +573,8 @@ FAQ
   dtype?::
 
     >>> from blaze import dshape, to_numpy
-    >>> ds = dshape("5, 5' int32")
+    >>> ds = dshape("5, 5, int32")
+    >>> to_numpy(ds)
     ((5, 5), dtype('int32'))
 
 * How do I convert from Numpy Dtype to Datashape?::
