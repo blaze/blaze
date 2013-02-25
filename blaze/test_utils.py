@@ -11,4 +11,4 @@ class assert_raises(object):
             raise AssertionError('Exception not raised')
         if issubclass(type, self.exc_ty):
             return True
-        raise AssertionError('Wrong exception raised'), value
+        raise AssertionError('Wrong exception raised: ' + repr(value))
