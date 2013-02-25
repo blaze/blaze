@@ -13,7 +13,7 @@ in order to do optimization passes and execution dispatch.
 Grammar
 -------
 
-The ATerm spec is overseen by
+The ATerm spec is overseen by `StrategoXT Project`_.
 
 .. _StrategoXT Project: http://strategoxt.org/Tools/ATermLibrary
 
