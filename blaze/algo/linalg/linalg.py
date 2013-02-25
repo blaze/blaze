@@ -71,7 +71,7 @@ def dot(a, b, out=None, outname='out'):
     l, m, n = a_shape[0], a_shape[1], b_shape[1]
 
     if out:
-        out_shape = tuple(i.val for i in ouy.datashape.parameters[:-1])
+        out_shape = tuple(i.val for i in out.datashape.parameters[:-1])
         if out_shape != (l, n):
             raise (ValueError, "`out` array does not have the correct shape")
     else:
