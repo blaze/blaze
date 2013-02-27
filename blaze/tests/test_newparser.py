@@ -27,8 +27,8 @@ def test_all_the_strings():
     parse('type bar A B = {}')
     parse('type bar A B = {A:B}')
 
-    parse('type baz = F(A,B)')
-    parse('type baz = F(A,F(A))')
+    #parse('type baz = F(A,B)')
+    #parse('type baz = F(A,F(A))')
 
     parse('''
     type foo = {
@@ -156,7 +156,7 @@ def test_either3():
     a = parse(''' Either( (2, 2, T), (T, 2, int) ) ''')
 
 def test_stress():
-    parse('type big = F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(F(x))))))))))))))))')
+    parse('type big = Union(Union(Union(Union(Union(Union(Union(Union(x)))))))) ')
     parse('type big = {x:{x:{x:{x:{x:{x:{x:{x:{x:{x:int32}}}}}}}}}}')
 
     # whitespace insensitivity

@@ -19,16 +19,16 @@ def test_arrays():
 
 
 def test_record():
-    expected_ds = dshape('1, {x: int32, y: float32}')
+    expected_ds = dshape('1, {x: int32; y: float32}')
 
-    t = NDTable([(1, 2.1), (2, 3.1)], dshape='1, {x: int32, y: float32}')
+    t = NDTable([(1, 2.1), (2, 3.1)], dshape='1, {x: int32; y: float32}')
     t.datashape._equal(expected_ds)
 
     str(t)
     repr(t)
 
 def test_record_consume():
-    expected_ds = dshape("4, {i: int64, f: float64}")
+    expected_ds = dshape("4, {i: int64; f: float64}")
 
     d = {
         'i'   : [1, 2, 3, 4],
@@ -43,3 +43,18 @@ def test_record_consume2():
         'b'   : [4., 3., 2., 1.]
     }
     table = NDTable(d)
+
+
+def test_custom_dshape():
+    from blaze import RecordDecl, derived
+    from blaze import int32, string
+    class CustomStock(RecordDecl):
+        name   = string
+        max    = int32
+        min    = int32
+
+        @derived
+        def mid(self):
+            return (self.min + self.max)/2
+
+    a = Table([('GOOG', 120, 153)], CustomStock)

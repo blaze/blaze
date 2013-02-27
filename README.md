@@ -26,20 +26,18 @@ GPU cores across computers, virtual machines and cloud services.
 <img src="https://raw.github.com/ContinuumIO/blaze-core/master/docs/source/svg/codepush.png">
 </p>
 
-The general parallelization and distributed scheduling problem is
-extremely difficult and under active research, as such we do not aim to
-solve the problem in its full generality. We aim to provide a compact
-set of abstractions and types to express general transformations between
-code and data in addition to a framework for exploring distributed
-computations.
+Continuum Analytics' vision is to provide open technologies for data
+integration on a massive scale based on a vision of a structured,
+universal "data web". In the same way that URL, HTML, and HTTP form
+the basis of the World Wide Web for documents, their technologies will
+be the fabric for structured and numerical data and will spearhead
+innovations in data management, analytics, and distributed computation.
 
-Simultaneously, in reality most analysts and scientific-computing users
-spend a large portion of their time combating practical, operational
-issues, such as cleaning data, matching data formats, and navigating
-heterogeneous technology environments. Blaze aims to tackle this
-problem in its entirely and become a "glue project" allowing many
-different users of other PyData projects ( Pandas, Theano, Numba, SciPy,
-Scikit-Learn) to interoperate.
+Blaze aims to be a "glue project" allowing many different users of
+other PyData projects ( Pandas, Theano, Numba, SciPy, Scikit-Learn)
+to interoperate at the appication level and at the library level with
+the goal of being able to to lift their existing functionality into a
+distributed context.
 
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze-core/master/docs/source/svg/sources.png">
@@ -97,9 +95,7 @@ $ make docs
 To run tests:
 
 ```bash
->>> python
->>> from blaze.testing import runner
->>> runner()
+$ python -m blaze.testing
 ```
 
 Alternative Installation

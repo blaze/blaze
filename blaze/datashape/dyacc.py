@@ -5,9 +5,9 @@ _tabversion = '3.2'
 
 _lr_method = 'LALR'
 
-_lr_signature = '\x9eh\xc6\x87\xf6{z\x86&\xef\xcf\xaf\x17\xc0V\xd7'
+_lr_signature = '~\xae\xf2\xe0\x8bR\xd5\xdcs\xf6\xf7\x1c\xe8\x86*\xc8'
     
-_lr_action_items = {'LBRACE':([0,2,3,5,6,7,8,9,11,16,17,20,21,22,24,25,28,31,35,36,],[1,-6,-12,-4,-13,-10,-9,-11,1,1,1,-4,1,-16,1,-14,1,1,-15,-5,]),'NAME':([0,1,2,3,5,6,7,8,9,10,11,16,17,18,19,20,21,22,23,24,25,27,28,31,35,36,],[3,15,-6,-12,-4,-13,-10,-9,-11,19,3,3,3,19,-8,-4,3,-16,15,30,-14,19,3,3,-15,-5,]),'SEMI':([1,12,13,14,22,23,29,30,32,33,34,38,],[-25,23,-18,-19,-16,-25,23,-22,-23,-24,-21,-20,]),')':([3,6,7,8,9,22,25,26,35,37,],[-12,-13,-10,-9,-11,-16,-14,35,-15,38,]),'(':([3,24,],[17,31,]),'NUMBER':([0,2,3,5,6,7,8,9,11,16,17,20,21,22,24,25,28,31,35,36,],[6,-6,-12,-4,-13,-10,-9,-11,6,6,6,-4,6,-16,32,-14,6,6,-15,-5,]),'EQUALS':([18,19,27,],[28,-8,-7,]),'COMMA':([2,3,6,7,8,9,22,25,26,35,36,37,],[16,-12,-13,-10,-9,-11,-16,16,16,-15,16,16,]),'COLON':([15,],[24,]),'BIT':([0,2,3,5,6,7,8,9,11,16,17,20,21,22,24,25,28,31,35,36,],[9,-6,-12,-4,-13,-10,-9,-11,9,9,9,-4,9,-16,34,-14,9,9,-15,-5,]),'$end':([2,3,4,5,6,7,8,9,11,20,21,22,25,35,36,],[-6,-12,0,-2,-13,-10,-9,-11,-1,-4,-3,-16,-14,-15,-5,]),'TYPE':([0,2,3,5,6,7,8,9,11,20,21,22,25,35,36,],[10,-6,-12,-4,-13,-10,-9,-11,10,-4,10,-16,-14,-15,-5,]),'RBRACE':([1,12,13,14,22,23,29,30,32,33,34,38,],[-25,22,-18,-19,-16,-25,-17,-22,-23,-24,-21,-20,]),}
+_lr_action_items = {'LBRACE':([0,2,3,5,6,7,8,9,11,16,17,20,21,22,24,25,28,31,32,33,],[1,-6,-12,-4,-13,-10,-9,-11,1,1,1,-4,1,-16,1,-14,1,1,-15,-5,]),'NAME':([0,1,2,3,5,6,7,8,9,10,11,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,],[3,15,-6,-12,-4,-13,-10,-9,-11,19,3,3,3,19,-8,-4,3,-16,15,3,-14,19,3,3,-15,-5,]),'SEMI':([1,3,6,7,8,9,12,13,14,22,23,25,29,30,32,35,],[-22,-12,-13,-10,-9,-11,23,-18,-19,-16,-22,-14,23,-21,-15,-20,]),')':([3,6,7,8,9,22,25,26,32,34,],[-12,-13,-10,-9,-11,-16,-14,32,-15,35,]),'(':([3,24,],[17,31,]),'NUMBER':([0,2,3,5,6,7,8,9,11,16,17,20,21,22,24,25,28,31,32,33,],[6,-6,-12,-4,-13,-10,-9,-11,6,6,6,-4,6,-16,6,-14,6,6,-15,-5,]),'EQUALS':([18,19,27,],[28,-8,-7,]),'COMMA':([2,3,6,7,8,9,22,25,26,30,32,33,34,],[16,-12,-13,-10,-9,-11,-16,16,16,16,-15,16,16,]),'COLON':([15,],[24,]),'BIT':([0,2,3,5,6,7,8,9,11,16,17,20,21,22,24,25,28,31,32,33,],[9,-6,-12,-4,-13,-10,-9,-11,9,9,9,-4,9,-16,9,-14,9,9,-15,-5,]),'$end':([2,3,4,5,6,7,8,9,11,20,21,22,25,32,33,],[-6,-12,0,-2,-13,-10,-9,-11,-1,-4,-3,-16,-14,-15,-5,]),'TYPE':([0,2,3,5,6,7,8,9,11,20,21,22,25,32,33,],[10,-6,-12,-4,-13,-10,-9,-11,10,-4,10,-16,-14,-15,-5,]),'RBRACE':([1,3,6,7,8,9,12,13,14,22,23,25,29,30,32,35,],[-22,-12,-13,-10,-9,-11,22,-18,-19,-16,-22,-14,-17,-21,-15,-20,]),}
 
 _lr_action = { }
 for _k, _v in _lr_action_items.items():
@@ -16,7 +16,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'rhs_expression':([0,11,16,17,21,28,31,],[2,2,25,26,2,36,37,]),'record_opt':([1,23,],[12,29,]),'top':([0,],[4,]),'stmt':([0,11,21,],[5,20,20,]),'record':([0,11,16,17,21,24,28,31,],[7,7,7,7,7,33,7,7,]),'appl':([0,11,16,17,21,28,31,],[8,8,8,8,8,8,8,]),'record_item':([1,23,],[13,13,]),'lhs_expression':([10,18,27,],[18,27,27,]),'empty':([1,23,],[14,14,]),'mod':([0,11,21,],[11,21,21,]),}
+_lr_goto_items = {'rhs_expression':([0,11,16,17,21,24,28,31,],[2,2,25,26,2,30,33,34,]),'record_opt':([1,23,],[12,29,]),'top':([0,],[4,]),'stmt':([0,11,21,],[5,20,20,]),'record':([0,11,16,17,21,24,28,31,],[7,7,7,7,7,7,7,7,]),'appl':([0,11,16,17,21,24,28,31,],[8,8,8,8,8,8,8,8,]),'record_item':([1,23,],[13,13,]),'lhs_expression':([10,18,27,],[18,27,27,]),'empty':([1,23,],[14,14,]),'mod':([0,11,21,],[11,21,21,]),}
 
 _lr_goto = { }
 for _k, _v in _lr_goto_items.items():
@@ -26,29 +26,26 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> top","S'",1,None,None,None),
-  ('top -> mod','top',1,'p_top','',156),
-  ('top -> stmt','top',1,'p_top','',157),
-  ('mod -> mod mod','mod',2,'p_decl1','',164),
-  ('mod -> stmt','mod',1,'p_decl2','',168),
-  ('stmt -> TYPE lhs_expression EQUALS rhs_expression','stmt',4,'p_statement_assign','',174),
-  ('stmt -> rhs_expression','stmt',1,'p_statement_expr','',192),
-  ('lhs_expression -> lhs_expression lhs_expression','lhs_expression',2,'p_lhs_expression','',198),
-  ('lhs_expression -> NAME','lhs_expression',1,'p_lhs_expression_node','',203),
-  ('rhs_expression -> appl','rhs_expression',1,'p_rhs_expression_node1','',209),
-  ('rhs_expression -> record','rhs_expression',1,'p_rhs_expression_node1','',210),
-  ('rhs_expression -> BIT','rhs_expression',1,'p_rhs_expression_node2','',214),
-  ('rhs_expression -> NAME','rhs_expression',1,'p_rhs_expression_node3','',218),
-  ('rhs_expression -> NUMBER','rhs_expression',1,'p_rhs_expression_node3','',219),
-  ('rhs_expression -> rhs_expression COMMA rhs_expression','rhs_expression',3,'p_rhs_expression','',223),
-  ('appl -> NAME ( rhs_expression )','appl',4,'p_appl','',230),
-  ('record -> LBRACE record_opt RBRACE','record',3,'p_record','',234),
-  ('record_opt -> record_opt SEMI record_opt','record_opt',3,'p_record_opt1','',242),
-  ('record_opt -> record_item','record_opt',1,'p_record_opt2','',249),
-  ('record_opt -> empty','record_opt',1,'p_record_opt3','',253),
-  ('record_item -> NAME COLON ( rhs_expression )','record_item',5,'p_record_item1','',257),
-  ('record_item -> NAME COLON BIT','record_item',3,'p_record_item2','',261),
-  ('record_item -> NAME COLON NAME','record_item',3,'p_record_item2','',262),
-  ('record_item -> NAME COLON NUMBER','record_item',3,'p_record_item2','',263),
-  ('record_item -> NAME COLON record','record_item',3,'p_record_item2','',264),
-  ('empty -> <empty>','empty',0,'p_empty','',270),
+  ('top -> mod','top',1,'p_top','',161),
+  ('top -> stmt','top',1,'p_top','',162),
+  ('mod -> mod mod','mod',2,'p_decl1','',169),
+  ('mod -> stmt','mod',1,'p_decl2','',173),
+  ('stmt -> TYPE lhs_expression EQUALS rhs_expression','stmt',4,'p_statement_assign','',179),
+  ('stmt -> rhs_expression','stmt',1,'p_statement_expr','',197),
+  ('lhs_expression -> lhs_expression lhs_expression','lhs_expression',2,'p_lhs_expression','',203),
+  ('lhs_expression -> NAME','lhs_expression',1,'p_lhs_expression_node','',208),
+  ('rhs_expression -> appl','rhs_expression',1,'p_rhs_expression_node1','',214),
+  ('rhs_expression -> record','rhs_expression',1,'p_rhs_expression_node1','',215),
+  ('rhs_expression -> BIT','rhs_expression',1,'p_rhs_expression_node2','',219),
+  ('rhs_expression -> NAME','rhs_expression',1,'p_rhs_expression_node3','',223),
+  ('rhs_expression -> NUMBER','rhs_expression',1,'p_rhs_expression_node3','',224),
+  ('rhs_expression -> rhs_expression COMMA rhs_expression','rhs_expression',3,'p_rhs_expression','',228),
+  ('appl -> NAME ( rhs_expression )','appl',4,'p_appl','',235),
+  ('record -> LBRACE record_opt RBRACE','record',3,'p_record','',239),
+  ('record_opt -> record_opt SEMI record_opt','record_opt',3,'p_record_opt1','',243),
+  ('record_opt -> record_item','record_opt',1,'p_record_opt2','',247),
+  ('record_opt -> empty','record_opt',1,'p_record_opt3','',251),
+  ('record_item -> NAME COLON ( rhs_expression )','record_item',5,'p_record_item1','',256),
+  ('record_item -> NAME COLON rhs_expression','record_item',3,'p_record_item2','',260),
+  ('empty -> <empty>','empty',0,'p_empty','',266),
 ]

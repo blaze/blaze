@@ -569,7 +569,19 @@ Numpy Compatability
 FAQ
 ---
 
-* How do I convert from Blaze DataShape to NumPy shape and dtype?
+* How do I convert from Blaze DataShape to NumPy shape and
+  dtype?::
+
+    >>> from blaze import dshape, to_numpy
+    >>> ds = dshape("5, 5, int32")
+    >>> to_numpy(ds)
+    ((5, 5), dtype('int32'))
+
+* How do I convert from Numpy Dtype to Datashape?::
+
+    >>> from_numpy((5,5), dtype('int32'))
+    >>> dshape("5, 5, int32")
+    dshape("5, 5, int32")
 
 * How do I convert from Blaze DataShape to CTypes?
 
@@ -609,11 +621,9 @@ Grammar
 
     record : LBRACE record_opt RBRACE
     record_opt : record_opt SEMI record_opt
-    record_opt : record_item
-    record_opt : empty
+               | record_item
+               | empty
     record_item : NAME COLON '(' rhs_expression ')'
-    record_item : NAME COLON BIT
-                : NAME COLON NAME
-                : NAME COLON NUMBER
-                | NAME COLON record
+                | NAME COLON rhs_expression'
+
     empty :

@@ -86,7 +86,7 @@
 #endif
 
 
-BLOSCLZ_INLINE uint32_t hash_function(uint8_t* p, uint8_t hash_log)
+static BLOSCLZ_INLINE uint32_t hash_function(uint8_t* p, uint8_t hash_log)
 {
   uint32_t v;
 

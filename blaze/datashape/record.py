@@ -3,7 +3,7 @@ Django style class declarations mapping onto Record datashape types.
 """
 
 from numpy import dtype
-from parse import parse
+from parser import parse
 from coretypes import Record, Type, DataShape
 
 #------------------------------------------------------------------------
