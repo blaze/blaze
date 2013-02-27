@@ -29,7 +29,7 @@ class FromiterTemplate:
 
 
 class FromIterMemory_floatarray(FromiterTemplate, TestCase):
-    ds = dshape('(x, float32)')
+    ds = dshape('x, float32')
     count = 1000
     p = params(clevel=5)
 
@@ -38,7 +38,7 @@ class FromIterMemory_floatarray(FromiterTemplate, TestCase):
 
 
 class FromIterMemory_doublearray(FromiterTemplate, TestCase):
-    ds = dshape('(x, float64)')
+    ds = dshape('x, float64')
     count = 1000
     p = params(clevel=5)
 
@@ -47,7 +47,7 @@ class FromIterMemory_doublearray(FromiterTemplate, TestCase):
 
 
 class FromIterMemory_int32array(FromiterTemplate, TestCase):
-    ds = dshape('(x, int32)')
+    ds = dshape('x, int32')
     count = 1000
     p = params(clevel=5)
 
@@ -56,7 +56,7 @@ class FromIterMemory_int32array(FromiterTemplate, TestCase):
 
 
 class FromIterMemory_int64array(FromiterTemplate, TestCase): 
-    ds = dshape('(x, int64)')
+    ds = dshape('x, int64')
     count = 1000
     p = params(clevel=5)
 
