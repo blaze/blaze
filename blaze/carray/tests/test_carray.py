@@ -5,9 +5,7 @@ import struct
 import os, os.path
 from unittest import TestCase
 
-
 import numpy as np
-
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 import blaze.carray as ca
@@ -1228,6 +1226,23 @@ class dtypesTest(TestCase):
         self.assert_(ac.dtype == dtype)
         self.assert_(a.dtype == ac.dtype)
         assert_array_equal(a, ac, "Arrays are not equal")
+
+    def test07(self):
+        """Checking carray constructor from another carray.
+        
+        Test introduced after it was seen failing (blaze issue #30)
+        """
+        types = [np.int8, np.int16, np.int32, np.int64,
+                 np.uint8, np.uint16, np.uint32, np.uint64,
+                 np.float16, np.float32, np.float64, np.float128,
+                 np.complex64, np.complex128, np.complex256]
+        shapes = [(10,), (10,10), (10,10,10)] 
+        for t in types:
+            a = ca.zeros(shape, t)
+            b = ca.carray(a)
+            self.assertEqual(a.dtype, b.dtype)
+            self.assertEqual(a.shape, b.shape)
+            self.assertEqual(a.shape, shape)
 
 
 class persistenceTest(MayBeDiskTest, TestCase):
