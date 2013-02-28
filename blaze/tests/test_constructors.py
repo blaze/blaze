@@ -26,12 +26,15 @@ class ConstructTest(TestCase):
         '32, 14, 45, 56, complex64'
         ]
 
-    @skipif(True)
     def test_zeros(self):
         for t in self.full_types:
             a = zeros(t)
-            if a.datashape != dshape(t):
-                print 'test_zeros fails for \'%s\'' % t
+            self.assertEqual(a.datashape, dshape(t))
+
+    def test_ones(self):
+        for t in self.full_types:
+            a = ones(t)
+            self.assertEqual(a.datashape, dshape(t))
 
 
 
