@@ -226,7 +226,7 @@ class DataShape(Mono):
 
     def __eq__(self, other):
         if type(other) is DataShape:
-            return False
+            return self._equal(other)
         else:
             raise TypeError('Cannot compare non-datashape to datashape')
 
