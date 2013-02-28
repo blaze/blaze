@@ -16,14 +16,21 @@ class ConstructTest(TestCase):
         '30, int16',
         '40, int32',
         '12, int64',
+        '10, uint8',
+        '30, uint16',
+        '40, uint32',
+        '12, uint64',
         '10, float16',
         '15, float32',
         '32, float64',
-        '10, complex32',
+        '32, float128',
         '20, complex64',
         '30, complex128',
+        '30, complex256',
         '10, 20, int32',
-        '32, 14, 45, 56, complex64'
+        '10, 20, uint8',
+        '10, 20, float32',
+        '10, 20, complex128',
         ]
 
     def test_zeros(self):
