@@ -93,7 +93,10 @@ def to_ndarray(array, dtype, arrlen=None):
     """Convert object to a ndarray."""
 
     if dtype is None:
-        return np.array(array)
+        if hasattr(array, 'dtype'):
+            return np.array(array, dtype=array.dtype)
+        else:
+            return np.array(array)
 
     # Arrays with a 0 stride are special
     if type(array) == np.ndarray and array.strides[0] == 0:
@@ -151,7 +154,8 @@ if __name__ == '__main__':
 
 ## Local Variables:
 ## mode: python
+## coding: utf-8
 ## py-indent-offset: 4
 ## tab-width: 4
-## fill-column: 72
+## fill-column: 66
 ## End:
