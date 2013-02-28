@@ -2,8 +2,9 @@
 
 import sys
 import struct
-import unittest
 import os, os.path
+from unittest import TestCase
+
 
 import numpy as np
 
@@ -18,7 +19,7 @@ is_64bit = (struct.calcsize("P") == 8)
 
 # Just memory tests for now
 
-class chunkTest(unittest.TestCase):
+class chunkTest(TestCase):
 
     def test01(self):
         """Testing `__getitem()__` method with scalars"""
@@ -49,7 +50,7 @@ class chunkTest(unittest.TestCase):
         assert_array_equal(a[1:8000], b[1:8000], "Arrays are not equal")
 
 
-class getitemTest(MayBeDiskTest, unittest.TestCase):
+class getitemTest(MayBeDiskTest, TestCase):
 
     def test01a(self):
         """Testing `__getitem()__` method with only a start"""
@@ -198,7 +199,7 @@ class getitemDiskTest(getitemTest):
     disk = True
 
 
-class setitemTest(MayBeDiskTest, unittest.TestCase):
+class setitemTest(MayBeDiskTest, TestCase):
 
     def test00a(self):
         """Testing `__setitem()__` method with only one element"""
@@ -296,7 +297,7 @@ class setitemDiskTest(setitemTest):
     disk = True
 
 
-class appendTest(MayBeDiskTest, unittest.TestCase):
+class appendTest(MayBeDiskTest, TestCase):
 
     def test00(self):
         """Testing `append()` method"""
@@ -357,7 +358,7 @@ class appendDiskTest(appendTest):
     disk = True
 
 
-class trimTest(MayBeDiskTest, unittest.TestCase):
+class trimTest(MayBeDiskTest, TestCase):
 
     def test00(self):
         """Testing `trim()` method"""
@@ -464,21 +465,21 @@ class resizeTest(MayBeDiskTest):
         assert_array_equal(a, b[:], "Arrays are not equal")
 
 
-class resize_smallTest(resizeTest, unittest.TestCase):
+class resize_smallTest(resizeTest, TestCase):
     N = 10
 
-class resize_smallDiskTest(resizeTest, unittest.TestCase):
+class resize_smallDiskTest(resizeTest, TestCase):
     N = 10
     disk = True
 
-class resize_largeTest(resizeTest, unittest.TestCase):
+class resize_largeTest(resizeTest, TestCase):
     N = 10000
 
-class resize_largeDiskTest(resizeTest, unittest.TestCase):
+class resize_largeDiskTest(resizeTest, TestCase):
     N = 10000
     disk = True
 
-class miscTest(MayBeDiskTest, unittest.TestCase):
+class miscTest(MayBeDiskTest, TestCase):
 
     def test00(self):
         """Testing __len__()"""
@@ -508,7 +509,7 @@ class miscDiskTest(miscTest):
     disk = True
 
 
-class copyTest(MayBeDiskTest, unittest.TestCase):
+class copyTest(MayBeDiskTest, TestCase):
 
     def test00(self):
         """Testing copy() without params"""
@@ -549,7 +550,7 @@ class copyDiskTest(copyTest):
     disk = True
 
 
-class iterTest(MayBeDiskTest, unittest.TestCase):
+class iterTest(MayBeDiskTest, TestCase):
 
     def test00(self):
         """Testing `iter()` method"""
@@ -659,7 +660,7 @@ class iterDiskTest(iterTest):
     disk = True
 
 
-class wheretrueTest(unittest.TestCase):
+class wheretrueTest(TestCase):
 
     def test00(self):
         """Testing `wheretrue()` iterator (all true values)"""
@@ -742,7 +743,7 @@ class wheretrueTest(unittest.TestCase):
         self.assert_(wt == cwt, "wheretrue() does not work correctly")
 
 
-class whereTest(unittest.TestCase):
+class whereTest(TestCase):
 
     def test00(self):
         """Testing `where()` iterator (all true values)"""
@@ -848,7 +849,7 @@ class whereTest(unittest.TestCase):
         self.assert_(wt == cwt, "where() does not work correctly")
 
 
-class fancy_indexing_getitemTest(unittest.TestCase):
+class fancy_indexing_getitemTest(TestCase):
 
     def test00(self):
         """Testing fancy indexing (short list)"""
@@ -911,7 +912,7 @@ class fancy_indexing_getitemTest(unittest.TestCase):
         assert_array_equal(wt, cwt, "where() does not work correctly")
 
 
-class fancy_indexing_setitemTest(unittest.TestCase):
+class fancy_indexing_setitemTest(TestCase):
 
     def test00(self):
         """Testing fancy indexing with __setitem__ (small values)"""
@@ -976,7 +977,7 @@ class fancy_indexing_setitemTest(unittest.TestCase):
         assert_array_equal(b[:], a, "fancy indexing does not work correctly")
 
 
-class fromiterTest(unittest.TestCase):
+class fromiterTest(TestCase):
 
     def test00(self):
         """Testing fromiter (short iter)"""
@@ -1027,7 +1028,7 @@ class fromiterTest(unittest.TestCase):
         assert_array_equal(b[:], a, "iterator with a hint fails")
 
 
-class computeMethodsTest(unittest.TestCase):
+class computeMethodsTest(TestCase):
 
     def test00(self):
         """Testing sum()."""
@@ -1083,10 +1084,10 @@ class arangeTemplate():
         ac = ca.arange(self.N, dtype="i1")
         self.assert_(np.all(a == ac))
 
-class arange_smallTest(arangeTemplate, unittest.TestCase):
+class arange_smallTest(arangeTemplate, TestCase):
     N = 10
 
-class arange_bigTest(arangeTemplate, unittest.TestCase):
+class arange_bigTest(arangeTemplate, TestCase):
     N = 1e4
 
 
@@ -1146,22 +1147,22 @@ class constructorTest(MayBeDiskTest):
         self.assert_(a.dtype == ac.dtype)
         self.assert_(np.all(a == ac[:]))
 
-class constructorSmallTest(constructorTest, unittest.TestCase):
+class constructorSmallTest(constructorTest, TestCase):
     N = 10
 
-class constructorSmallDiskTest(constructorTest, unittest.TestCase):
+class constructorSmallDiskTest(constructorTest, TestCase):
     N = 10
     disk = True
 
-class constructorBigTest(constructorTest, unittest.TestCase):
+class constructorBigTest(constructorTest, TestCase):
     N = 50000
 
-class constructorBigDiskTest(constructorTest, unittest.TestCase):
+class constructorBigDiskTest(constructorTest, TestCase):
     N = 50000
     disk = True
 
 
-class dtypesTest(unittest.TestCase):
+class dtypesTest(TestCase):
 
     def test00(self):
         """Testing carray constructor with a float32 `dtype`."""
@@ -1229,70 +1230,7 @@ class dtypesTest(unittest.TestCase):
         assert_array_equal(a, ac, "Arrays are not equal")
 
 
-class largeCarrayTest(MayBeDiskTest, unittest.TestCase):
-
-    disk = True
-
-    def test00(self):
-        """Creating an extremely large carray (> 2**32) in memory."""
-
-        cn = ca.zeros(5e9, dtype="i1")
-        self.assert_(len(cn) == int(5e9))
-
-        # Now check some accesses
-        cn[1] = 1
-        self.assert_(cn[1] == 1)
-        cn[int(2e9)] = 2
-        self.assert_(cn[int(2e9)] == 2)
-        cn[long(3e9)] = 3
-        self.assert_(cn[long(3e9)] == 3)
-        cn[-1] = 4
-        self.assert_(cn[-1] == 4)
-
-        self.assert_(cn.sum() == 10)
-
-    def test01(self):
-        """Creating an extremely large carray (> 2**32) on disk."""
-
-        cn = ca.zeros(5e9, dtype="i1", rootdir=self.rootdir)
-        self.assert_(len(cn) == int(5e9))
-
-        # Now check some accesses
-        cn[1] = 1
-        self.assert_(cn[1] == 1)
-        cn[int(2e9)] = 2
-        self.assert_(cn[int(2e9)] == 2)
-        cn[long(3e9)] = 3
-        self.assert_(cn[long(3e9)] == 3)
-        cn[-1] = 4
-        self.assert_(cn[-1] == 4)
-
-        self.assert_(cn.sum() == 10)
-
-    def test02(self):
-        """Opening an extremely large carray (> 2**32) on disk."""
-
-        # Create the array on-disk
-        cn = ca.zeros(5e9, dtype="i1", rootdir=self.rootdir)
-        self.assert_(len(cn) == int(5e9))
-        # Reopen it from disk
-        cn = ca.carray(rootdir=self.rootdir)
-        self.assert_(len(cn) == int(5e9))
-
-        # Now check some accesses
-        cn[1] = 1
-        self.assert_(cn[1] == 1)
-        cn[int(2e9)] = 2
-        self.assert_(cn[int(2e9)] == 2)
-        cn[long(3e9)] = 3
-        self.assert_(cn[long(3e9)] == 3)
-        cn[-1] = 4
-        self.assert_(cn[-1] == 4)
-
-        self.assert_(cn.sum() == 10)
-
-
-class persistenceTest(MayBeDiskTest, unittest.TestCase):
+class persistenceTest(MayBeDiskTest, TestCase):
 
     disk = True
 
@@ -1378,3 +1316,10 @@ class persistenceTest(MayBeDiskTest, unittest.TestCase):
         self.assert_(cn[N+1] == 3)
 
 
+## Local Variables:
+## mode: python
+## coding: utf-8 
+## py-indent-offset: 4
+## tab-with: 4
+## fill-column: 66
+## End:
