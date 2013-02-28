@@ -1236,13 +1236,14 @@ class dtypesTest(TestCase):
                  np.uint8, np.uint16, np.uint32, np.uint64,
                  np.float16, np.float32, np.float64, np.float128,
                  np.complex64, np.complex128, np.complex256]
-        shapes = [(10,), (10,10), (10,10,10)] 
-        for t in types:
-            a = ca.zeros(shape, t)
-            b = ca.carray(a)
-            self.assertEqual(a.dtype, b.dtype)
-            self.assertEqual(a.shape, b.shape)
-            self.assertEqual(a.shape, shape)
+        shapes = [(10,), (10,10), (10,10,10)]
+        for shape in shapes:
+            for t in types:
+                a = ca.zeros(shape, t)
+                b = ca.carray(a)
+                self.assertEqual(a.dtype, b.dtype)
+                self.assertEqual(a.shape, b.shape)
+                self.assertEqual(a.shape, shape)
 
 
 class persistenceTest(MayBeDiskTest, TestCase):
@@ -1325,7 +1326,7 @@ class persistenceTest(MayBeDiskTest, TestCase):
         # Now check some accesses (no errors should be raised)
         cn.append([1,1])
         self.assert_(len(cn) == N+2)
-        cn[1] = 2
+        cn[1] = 2 
         self.assert_(cn[1] == 2)
         cn[N+1] = 3
         self.assert_(cn[N+1] == 3)
