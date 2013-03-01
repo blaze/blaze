@@ -1,5 +1,5 @@
 import json
-from blaze_url import split_array_base
+from blaze_web.common.blaze_url import split_array_base
 from dynd import nd, ndt
 
 class compute_session:

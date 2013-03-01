@@ -1,9 +1,10 @@
 import sys, traceback
 from dynd import nd, ndt
 from cgi import parse_qs
-from blaze_url import split_array_base
 from datashape_html import render_dynd_datashape
 from compute_session import compute_session
+from blaze_web.common.blaze_url import split_array_base, add_indexers_to_url, \
+                slice_as_string, index_tuple_as_string
 
 def wsgi_reconstruct_base_url(environ):
     from urllib import quote
@@ -23,42 +24,6 @@ def wsgi_reconstruct_base_url(environ):
 
     url += quote(environ.get('SCRIPT_NAME', ''))
     return url
-
-def slice_as_interior_string(s):
-    if type(s) is int:
-        return str(s)
-    else:
-        result = ''
-        if s.start is not None:
-            result += str(s.start)
-        result += ':'
-        if s.stop is not None:
-            result += str(s.stop)
-        if s.step is not None and s.step != 1:
-            result += ':' + str(s.step)
-        return result
-
-def slice_as_string(s):
-    return '[' + slice_as_interior_string(s) + ']'
-
-def index_tuple_as_string(s):
-    result = '[' + slice_as_interior_string(s[0])
-    for i in s[1:]:
-        result += ',' + slice_as_interior_string(i)
-    result += ']'
-    return result
-
-def add_indexers_to_url(base_url, indexers):
-    for idx in indexers:
-        if type(idx) is str:
-            base_url += '.' + idx
-        elif type(idx) is int:
-            base_url += '[' + str(idx) + ']'
-        elif type(idx) is slice:
-            base_url += slice_as_string(idx)
-        elif type(idx) is tuple:
-            base_url += index_tuple_as_string(idx)
-    return base_url
 
 def indexers_navigation_html(base_url, array_name, indexers):
     base_url = base_url + array_name
@@ -107,7 +72,10 @@ class wsgi_app:
             if type(i) in [slice, int, tuple]:
                 arr = arr[i]
             else:
-                arr = getattr(arr, i)
+                if i in arr.dtype.property_names:
+                    arr = getattr(arr, i)
+                else:
+                    raise Exception('Blaze array does not have field ' + i)
         return arr
 
     def html_array(self, arr, base_url, array_name, indexers):
