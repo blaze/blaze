@@ -227,11 +227,6 @@ extensions = [
         include_dirs = [numpy_path],
    ),
    Extension(
-        "blaze.datashape.cdatashape", ["blaze/datashape/datashape.c"],
-        include_dirs = [],
-        define_macros=[('DEBUG', 1)]
-   ),
-   Extension(
         "blaze.algo.stats",
         sources = ["blaze/algo/stats.pyx"],
         include_dirs = [numpy_path]
