@@ -314,7 +314,7 @@ unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVa
 
 <dl class="function">
 <dt id="blaze.toplevel.open">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">open</tt><big>(</big><em>uri=None</em>, <em>mode='a'</em>, <em>eclass=1</em><big>)</big><a class="headerlink" href="#blaze.toplevel.open" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">open</tt><big>(</big><em>uri</em>, <em>mode='a'</em>, <em>eclass=1</em><big>)</big><a class="headerlink" href="#blaze.toplevel.open" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open a Blaze object via an <cite>uri</cite> (Uniform Resource Identifier).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -322,7 +322,16 @@ unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVa
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>uri</strong> : str</p>
 <blockquote>
-<div><p>Specifies the URI for the Blaze object.  It can be a regular file too.</p>
+<div><p>Specifies the URI for the Blaze object.  It can be a regular file too.
+The URL scheme indicates the storage type:</p>
+<blockquote>
+<div><ul class="simple">
+<li>carray: Chunked array</li>
+<li>ctable: Chunked table</li>
+<li>sqlite: SQLite table (the URI &#8216;sqlite://&#8217; creates in-memory table)</li>
+</ul>
+</div></blockquote>
+<p>If no URI scheme is given, carray is assumed.</p>
 </div></blockquote>
 <p><strong>mode</strong> : the open mode (string)</p>
 <blockquote>
