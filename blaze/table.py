@@ -500,6 +500,13 @@ class Table(Indexable):
         dtype = dtype_from_dict(data)
         return fromiter(izip(*data.itervalues()), dtype, -1)
 
+    @property
+    def datashape(self):
+        """
+        Type deconstructor
+        """
+        return self._datashape
+
     def __repr__(self):
         return generic_repr('Table', self, deferred=False)
 
