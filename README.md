@@ -65,17 +65,13 @@ obtain the source from Github.
 $ git clone git@github.com:ContinuumIO/blaze-core.git
 ```
 
-Many of the dependencies ( llvm, numba, ... ) are non-trivial to
-install. It is **highly recommend** that you build Blaze using the Anaconda
-Python distribution.
+Many of the dependencies ( i.e. llvmpy ) are non-trivial to install.
+It is **highly recommend** that you build Blaze using the Anaconda
+distribution, a free Python distribution that comes with a host of
+scientific and numeric packages bundled and precompiled into a userspace
+Python environment.
 
-Free Anaconda CE is available here: http://continuum.io/anacondace.html .
-
-Using Anaconda's package manager:
-
-```bash
-$ conda install ply
-```
+Anaconda can be downloaded for all platforms here: http://continuum.io/anacondace.html .
 
 Introduction
 ------------
@@ -139,11 +135,13 @@ mkdir venv/pkgs
 $ PATH=venv/bin:$PATH
 ```
 
-6) Use Anaconda to resolve Blaze dependencies.
+6) Use Anaconda to resolve Blaze dependencies. This method is
+experimental and not officially supported.
 
 ```bash
 conda install ply
 conda install numpy
+conda install llvmpy
 conda install cython
 ```
 
