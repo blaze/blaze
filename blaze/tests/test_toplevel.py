@@ -6,7 +6,6 @@ import blaze.toplevel as toplevel
 from blaze.params import params
 from blaze import dshape
 from blaze.sources.chunked import CArraySource, CTableSource
-from blaze.sources.sql import SqliteSource
 from blaze.eclass import eclass
 
 def test_open_carray():
@@ -43,18 +42,4 @@ def test_open_ctable():
 
         # Test delayed mode
         c = toplevel.open(uri, eclass=eclass.delayed)
-        assert c.datashape == ds
-
-def test_open_sqlite():
-    with temp_dir() as temp:
-        # Create an table on disk
-        table_filename = os.path.join(temp, 'ctable')
-        p = params(storage=table_filename)
-        ds = dshape('1,{ x: int32; y: int32 }')
-        t = SqliteSource(data=[(1, 1), (2, 2)], dshape=ds, params=p)
-        del t
-
-        # Open table with open function
-        uri = 'sqlite://' + table_filename
-        c = toplevel.open(uri)
         assert c.datashape == ds
