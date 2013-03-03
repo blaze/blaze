@@ -1,6 +1,6 @@
-import typing
-import nodes as N
-from parser import mread
+import blaze.module.typing
+import blaze.module.nodes as N
+from blaze.module.parser import mread
 
 def test_resolution1():
 

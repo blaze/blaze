@@ -1,21 +1,16 @@
-import typing
-import nodes as N
-from proxy import Proxy
-
-from parser import mopen
+import blaze.module.nodes as N
+from blaze.module.proxy import Proxy
+from blaze.module.parser import mopen
 
 from operator import add
-
 from nose.tools import assert_raises
-
-from unittest import skip
 
 #------------------------------------------------------------------------
 
 def test_signatures():
-   a = mopen('blaze.mod')
-   print "Module".center(80, '=')
-   print a.show()
+    a = mopen('blaze/module/blaze.mod')
+    print "Module".center(80, '=')
+    print a.show()
 
 #------------------------------------------------------------------------
 
