@@ -17,13 +17,21 @@ import numpy as np
 # TODO: we'd like to distinguish between opening in Deferred or
 # Immediete mode
 
-def open(uri=None, mode='a',  eclass=_eclass.manifest):
+def open(uri, mode='a',  eclass=_eclass.manifest):
     """Open a Blaze object via an `uri` (Uniform Resource Identifier).
 
     Parameters
     ----------
     uri : str
         Specifies the URI for the Blaze object.  It can be a regular file too.
+        The URL scheme indicates the storage type:
+
+          * carray: Chunked array
+          * ctable: Chunked table
+          * sqlite: SQLite table (the URI 'sqlite://' creates in-memory table)
+
+        If no URI scheme is given, carray is assumed.
+
     mode : the open mode (string)
         Specifies the mode in which the object is opened.  The supported
         values are:
@@ -40,34 +48,29 @@ def open(uri=None, mode='a',  eclass=_eclass.manifest):
     ARRAY = 1
     TABLE = 2
 
-    if uri is None:
-        source = CArraySource()
+    uri = urlparse(uri)
+    path = uri.netloc + uri.path
+    parms = params(storage=path)
+
+    if uri.scheme == 'carray':
+        source = CArraySource(params=parms)
+        structure = ARRAY
+
+    elif uri.scheme == 'ctable':
+        source = CTableSource(params=parms)
+        structure = TABLE
+
+    elif uri.scheme == 'sqlite':
+        # Empty path means memory storage
+        parms = params(storage=path or None)
+        source = SqliteSource(params=parms)
+        structure = TABLE
+
     else:
-        uri = urlparse(uri)
-
-        if uri.scheme == 'carray':
-            path = os.path.join(uri.netloc, uri.path[1:])
-            parms = params(storage=path)
-            source = CArraySource(params=parms)
-            structure = ARRAY
-
-        if uri.scheme == 'ctable':
-            path = os.path.join(uri.netloc, uri.path[1:])
-            parms = params(storage=path)
-            source = CTableSource(params=parms)
-            structure = TABLE
-
-        elif uri.scheme == 'sqlite':
-            path = os.path.join(uri.netloc, uri.path[1:])
-            parms = params(storage=path or None)
-            source = SqliteSource(params=parms)
-            structure = TABLE
-
-        else:
-            # Default is to treat the URI as a regular path
-            parms = params(storage=uri.path)
-            source = CArraySource(params=parms)
-            structure = ARRAY
+        # Default is to treat the URI as a regular path
+        parms = params(storage=path)
+        source = CArraySource(params=parms)
+        structure = ARRAY
 
     # Don't want a deferred array (yet)
     # return NDArray(source)
