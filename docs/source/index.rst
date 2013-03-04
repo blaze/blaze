@@ -31,6 +31,7 @@ Overview
    vision
    format
    memory
+   compiler
    datashape
    eclass
    module
