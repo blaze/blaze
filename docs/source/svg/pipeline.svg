@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="277.39023"
+   height="537.47705"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="pipeline.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.7"
+     inkscape:cx="199.13941"
+     inkscape:cy="243.18229"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1360"
+     inkscape:window-height="748"
+     inkscape:window-x="0"
+     inkscape:window-y="14"
+     inkscape:window-maximized="0"
+     fit-margin-top="20"
+     fit-margin-left="20"
+     fit-margin-right="20"
+     fit-margin-bottom="20">
+    <inkscape:grid
+       type="xygrid"
+       id="grid4020"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       originx="-51.161789px"
+       originy="-492.9454px" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-51.161789,-21.939758)">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:2.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 189.85996,73.524366 0,435.375744"
+       id="path4032"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:100px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Helvetica Neue LT Pro;-inkscape-font-specification:Helvetica Neue LT Pro"
+       x="402.04071"
+       y="278.58533"
+       id="text3064"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3066"
+         x="402.04071"
+         y="278.58533" /></text>
+    <g
+       id="g3943"
+       transform="translate(11.568039,4.7835083)">
+      <rect
+         y="38.169022"
+         x="60.60915"
+         height="61.619305"
+         width="235.36554"
+         id="rect3101"
+         style="color:#000000;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2985"
+         y="77.578674"
+         x="138.43196"
+         style="font-size:100px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+         xml:space="preserve"><tspan
+           style="font-size:25px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+           y="77.578674"
+           x="138.43196"
+           id="tspan2987"
+           sodipodi:role="line">Parser</tspan></text>
+    </g>
+    <g
+       id="g3948"
+       transform="translate(13.083271,-0.1409302)">
+      <rect
+         y="129.58783"
+         x="59.093918"
+         height="61.619305"
+         width="235.36554"
+         id="rect3101-2"
+         style="color:#000000;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2985-7"
+         y="167.48499"
+         x="98.357155"
+         style="font-size:100px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+         xml:space="preserve"><tspan
+           style="font-size:25px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+           y="167.48499"
+           x="98.357155"
+           id="tspan2987-6"
+           sodipodi:role="line">Typechecker</tspan></text>
+    </g>
+    <g
+       id="g3953"
+       transform="translate(16.113716,-33.854853)">
+      <rect
+         y="249.79599"
+         x="56.063473"
+         height="61.619305"
+         width="235.36554"
+         id="rect3101-2-5"
+         style="color:#000000;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2985-7-7"
+         y="289.33063"
+         x="126.14722"
+         style="font-size:100px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+         xml:space="preserve"><tspan
+           style="font-size:25px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+           y="289.33063"
+           x="126.14722"
+           id="tspan2987-6-1"
+           sodipodi:role="line">Rewrite</tspan></text>
+    </g>
+    <g
+       id="g3958"
+       transform="translate(17.123867,-16.050904)">
+      <rect
+         y="318.48636"
+         x="55.053322"
+         height="61.619305"
+         width="235.36554"
+         id="rect3101-2-5-7"
+         style="color:#000000;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2985-7-7-4"
+         y="358.04602"
+         x="146.97534"
+         style="font-size:100px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+         xml:space="preserve"><tspan
+           style="font-size:25px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+           y="358.04602"
+           x="146.97534"
+           id="tspan2987-6-1-0"
+           sodipodi:role="line">SSA</tspan></text>
+    </g>
+    <g
+       id="g3963"
+       transform="translate(18.134022,4.7835083)">
+      <rect
+         y="384.14627"
+         x="54.043167"
+         height="61.619305"
+         width="235.36554"
+         id="rect3101-2-5-7-8"
+         style="color:#000000;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2985-7-7-4-0"
+         y="423.93091"
+         x="67.679649"
+         style="font-size:100px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+         xml:space="preserve"><tspan
+           style="font-size:25px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+           y="423.93091"
+           x="67.679649"
+           id="tspan2987-6-1-0-1"
+           sodipodi:role="line">Code Generation</tspan></text>
+    </g>
+    <g
+       id="g4014"
+       transform="translate(12.073113,4.7835083)">
+      <g
+         transform="translate(6.0609091,87.883278)"
+         id="g3963-6">
+        <rect
+           style="color:#000000;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+           id="rect3101-2-5-7-8-8"
+           width="235.36554"
+           height="61.619305"
+           x="54.043167"
+           y="384.14627" />
+        <text
+           xml:space="preserve"
+           style="font-size:100px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Gotham;-inkscape-font-specification:Gotham Bold"
+           x="110.10992"
+           y="421.85593"
+           id="text2985-7-7-4-0-6"
+           sodipodi:linespacing="125%"><tspan
+             sodipodi:role="line"
+             id="tspan2987-6-1-0-1-6"
+             x="110.10992"
+             y="421.85593"
+             style="font-size:25px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gotham;-inkscape-font-specification:Gotham Bold">Optimizer</tspan></text>
+      </g>
+    </g>
+  </g>
+</svg>
