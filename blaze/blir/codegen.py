@@ -22,8 +22,6 @@ pointer = Type.pointer
 
 string_type = pointer(char_type)
 
-data_type = pointer(Type.int(8)) # char*
-
 # { i32*, i32, i32* }
 array_type = lambda elt_type: Type.struct([
     pointer(elt_type), # data         | (<type>)*

@@ -169,7 +169,7 @@ def compile(source):
 def main():
     import argparse
     argp = argparse.ArgumentParser('blirc')
-    argp.add_argument('file', metavar="file", nargs='?', help='Module')
+    argp.add_argument('file', metavar="file", nargs='?', help='Source file')
     argp.add_argument('--ddump-parse', action='store_true', help='Dump parse tree')
     argp.add_argument('--ddump-lex', action='store_true', help='Dump token stream')
     argp.add_argument('--ddump-blocks', action='store_true', help='Dump the block structure')
