@@ -85,7 +85,7 @@ def wrap_arguments(fn, args):
 
 # mostly just delegates to Bitey because I don't feel like rolling a
 # ctypes wrapper, this is just for debugging anyways so whatever.
-def execute(env, args=None, timing=False):
+def execute(env, args=None, fname=None, timing=False):
     from bitey.bind import wrap_llvm_module
 
     args = args or ()
@@ -107,17 +107,21 @@ def execute(env, args=None, timing=False):
 
     mod = ModuleType('mymodule')
     wrap_llvm_module(cgen.module, executor, mod)
-    largs = wrap_arguments(mod.main, args)
+
+    lfn = getattr(mod, fname or 'main')
+    largs = wrap_arguments(lfn, args)
 
     if timing:
         start = time.time()
 
-    if mod.main and len(mod.main.argtypes) == 0:
-        print mod.main()
-    elif mod.main and len(mod.main.argtypes) == len(args):
-        print mod.main(*largs)
+    if len(lfn.argtypes) == 0:
+        res = lfn()
+    elif len(lfn.argtypes) == len(args):
+        res = lfn(*largs)
     else:
         print 'Invalid number of arguments to main function.'
 
     if timing:
         print 'Time %.6f' % (time.time() - start)
+
+    return res
