@@ -143,6 +143,7 @@ conda install ply
 conda install numpy
 conda install llvmpy
 conda install cython
+conda install pycparser
 ```
 
 7) From inside the Blaze directory run the Makefile.
