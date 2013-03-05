@@ -108,12 +108,16 @@ def execute(env, args=None, fname=None, timing=False):
     mod = ModuleType('mymodule')
     wrap_llvm_module(cgen.module, executor, mod)
 
-    lfn = getattr(mod, fname or 'main')
+    try:
+        lfn = getattr(mod, fname or 'main')
+    except AttributeError:
+        raise Exception, 'Compiled module has no toplevel function %s' % fname
     largs = wrap_arguments(lfn, args)
 
     if timing:
         start = time.time()
 
+    res = None
     if len(lfn.argtypes) == 0:
         res = lfn()
     elif len(lfn.argtypes) == len(args):
