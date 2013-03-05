@@ -132,6 +132,6 @@ broadcasting and implicit ceorcion logic.
     <Proxy int>
     >>> y = f0(x)
     >>> print y
-    <Proxy int>
+    <Proxy List int>
     >>> y.eval()
     1

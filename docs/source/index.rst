@@ -31,8 +31,10 @@ Overview
    vision
    format
    memory
+   compiler
    datashape
    module
+   extending
 
 API Reference
 ~~~~~~~~~~~~~
@@ -43,6 +45,7 @@ API Reference
    toplevel
    types
    eclass
+   prims
    persistence
    typeinference
    aterm
@@ -53,14 +56,6 @@ API Reference
    table
    releases
    legal
-
-Developer Guide
-~~~~~~~~~~~~~~~
-
-.. toctree::
-   compiler
-   datashape-spec
-   extending
 
 Index
 ~~~~~
