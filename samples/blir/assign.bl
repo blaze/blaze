@@ -1,0 +1,13 @@
+def main(x : array[int]) -> int {
+    var int i;
+    var int j;
+
+    for i in range(5) {
+        for j in range(5) {
+            x[i,j] = (i+1)*(j+1);
+            print "foo";
+        }
+    }
+
+    return 0;
+}

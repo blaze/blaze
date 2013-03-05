@@ -1,0 +1,10 @@
+def fib(n : int) -> int {
+    var int ret = 0;
+
+    if (n == 1) || (n == 2) {
+        ret = 1;
+    } else {
+        ret = fib(n-1) + fib(n-2);
+    }
+    return ret;
+}

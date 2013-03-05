@@ -5,8 +5,8 @@ checking, nothing sophisiticated since we're nominally staticly typed.
 """
 
 import btypes
-from .syntax import *
-from .errors import error
+from syntax import *
+from errors import error
 
 from ast import NodeVisitor
 from collections import defaultdict

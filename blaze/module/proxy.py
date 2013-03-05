@@ -116,9 +116,6 @@ def build_bound_meth(ctx, name, sig):
         adom, bdom = sig.dom[0], sig.dom[1:]
         saturated = len(bdom) == len(args)
 
-        if name == '__gt__':
-            pass
-
         # resolve the codomain of the signature it terms
         # of the proxy _ty variables
         if saturated:

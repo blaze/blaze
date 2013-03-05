@@ -1,0 +1,11 @@
+def main(x : array[int]) -> int {
+    print x[0];
+    var int i;
+    var int j;
+
+    for i in range(5) {
+        x[i] = i;
+        print x[i];
+    }
+    return 0;
+}

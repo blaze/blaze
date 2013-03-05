@@ -1,0 +1,12 @@
+def main(x : array[int]) -> int {
+    var int i;
+    var int j;
+
+    for i in range(5) {
+        for j in range(5) {
+            x[i,j] = i*(j*5);
+            print x[i,j];
+        }
+    }
+    return 0;
+}
