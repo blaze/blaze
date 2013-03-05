@@ -307,4 +307,5 @@ setup(
         'build_ext' : build_ext,
         'clean'     : CleanCommand,
     },
+    scripts=['bin/blirc'],
 )
