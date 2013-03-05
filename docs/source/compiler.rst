@@ -99,7 +99,7 @@ The two objects exposed from the compiler library are the ``ast``
 and ``env``.
 
 :ast:
-    The parse tree for the 
+    The parse tree for the given source.
 
 ..
 
@@ -206,7 +206,7 @@ strides array.
 
     struct ndarray {
         char *data;
-        int nd;
+        int dims;
         int *strides;
     }
 
