@@ -9,12 +9,11 @@ def main(x: array[int], n : int) -> void {
         for j in range(n) {
             x[i,j] = i+j;
         }
-        x[i-1,j-1] = 10;
     }
 }
 """
 
-N = 14
+N = 15
 ast, env = compile(source)
 
 arr = np.eye(N, dtype='int32')
