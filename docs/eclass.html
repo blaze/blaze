@@ -31,8 +31,8 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Module System" href="module.html" />
-    <link rel="prev" title="Datashape" href="datashape.html" />
+    <link rel="next" title="Primitive Operations" href="prims.html" />
+    <link rel="prev" title="Core Types" href="types.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -98,11 +98,10 @@ class. The two evaluation classes are</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Manifest:</th><td class="field-body">Evaluation is done immedietely for every operation. Expression
-graph has at most a depth of 1. Shape and type checking is done at
-immedietely.</td>
+graph has at most a depth of 1.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Delayed:</th><td class="field-body">Evaluation is delayed until explictly compiled. Expression graph has
-unlimited depth. Shape and type checking is done at compile-time.</td>
+unlimited depth.</td>
 </tr>
 </tbody>
 </table>
@@ -120,7 +119,6 @@ combinations of arguments.:</p>
         <span class="k">return</span> <span class="n">DELAYED</span>
 </pre></div>
 </div>
-<p>In short delayed experssion are <em>algebraicly closed</em>.</p>
 <span class="target" id="module-blaze.eclass"></span><dl class="function">
 <dt id="blaze.eclass.decide_eclass">
 <tt class="descclassname">blaze.eclass.</tt><tt class="descname">decide_eclass</tt><big>(</big><em>xs</em><big>)</big><a class="headerlink" href="#blaze.eclass.decide_eclass" title="Permalink to this definition">¶</a></dt>

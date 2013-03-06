@@ -31,8 +31,8 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Pipeline" href="pipeline.html" />
-    <link rel="prev" title="Evaluation Class" href="eclass.html" />
+    <link rel="next" title="Extending" href="extending.html" />
+    <link rel="prev" title="Datashape" href="datashape.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -83,7 +83,10 @@
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
 <li><a class="reference internal" href="#">Module System</a><ul>
+<li><a class="reference internal" href="#traits">Traits</a></li>
+<li><a class="reference internal" href="#trait-properties">Trait Properties</a></li>
 <li><a class="reference internal" href="#typesets">Typesets</a></li>
+<li><a class="reference internal" href="#proxies">Proxies</a></li>
 </ul>
 </li>
 </ul>
@@ -94,23 +97,43 @@
           
   <div class="section" id="module-system">
 <h1>Module System<a class="headerlink" href="#module-system" title="Permalink to this headline">¶</a></h1>
-<p>A goal of the Blaze module system is to package together packets of
-definitions of data types and associated operations over that type and
-enforce a consistent naming scheme for these definitions.</p>
-<p>The module system also serves to define the signatures for determining
-types over the defined modules to define operations in a generic way.</p>
+<p>The Blaze module is a domain specific language for defining module
+groups of definitions of data types and associated operations over
+associated types and enforce a consistent naming scheme for these
+definitions.</p>
+<p>The Blaze module system guides for the construction composition of
+proxy objects in a way that preserves the types of the operands without
+resorting to immediate evaluation.</p>
+<div class="section" id="traits">
+<h2>Traits<a class="headerlink" href="#traits" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="trait-properties">
+<h2>Trait Properties<a class="headerlink" href="#trait-properties" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">fun:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">op:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">ty:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</div>
 <div class="section" id="typesets">
 <h2>Typesets<a class="headerlink" href="#typesets" title="Permalink to this headline">¶</a></h2>
+<p>Typesets are domains of types over which entire sets of traits can be
+defined.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="17%" />
 <col width="83%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td rowspan="14"><blockquote class="first">
-<div>array</div></blockquote>
-<blockquote>
-<div>table</div></blockquote>
+<tr class="row-odd"><td rowspan="11"><blockquote class="first">
+<div>bools</div></blockquote>
 <blockquote>
 <div>ints</div></blockquote>
 <blockquote>
@@ -119,8 +142,6 @@ types over the defined modules to define operations in a generic way.</p>
 <div>floats</div></blockquote>
 <blockquote>
 <div>complexes</div></blockquote>
-<blockquote>
-<div>bools</div></blockquote>
 <blockquote>
 <div>string</div></blockquote>
 <blockquote>
@@ -131,15 +152,11 @@ types over the defined modules to define operations in a generic way.</p>
 <div>continuous</div></blockquote>
 <blockquote>
 <div>numeric</div></blockquote>
-<blockquote>
-<div>indexable</div></blockquote>
 <blockquote class="last">
-<div>universal</div></blockquote>
+<div>temporal</div></blockquote>
 </td>
-<td rowspan="14"><blockquote class="first">
-<div>Array T</div></blockquote>
-<blockquote>
-<div>Table T</div></blockquote>
+<td rowspan="11"><blockquote class="first">
+<div>bool</div></blockquote>
 <blockquote>
 <div>int8, int16, int32, int64</div></blockquote>
 <blockquote>
@@ -149,9 +166,7 @@ types over the defined modules to define operations in a generic way.</p>
 <blockquote>
 <div>complex64, complex128</div></blockquote>
 <blockquote>
-<div>bool</div></blockquote>
-<blockquote>
-<div>String, Varchar, Blob</div></blockquote>
+<div>string</div></blockquote>
 <blockquote>
 <div>ints , uints</div></blockquote>
 <blockquote>
@@ -160,10 +175,8 @@ types over the defined modules to define operations in a generic way.</p>
 <div>floats , complexes</div></blockquote>
 <blockquote>
 <div>discrete , continuous</div></blockquote>
-<blockquote>
-<div>array_like, table_like</div></blockquote>
 <blockquote class="last">
-<div>top , numeric , indexable , string</div></blockquote>
+<div>datetime , timedelta</div></blockquote>
 </td>
 </tr>
 <tr class="row-even"></tr>
@@ -176,11 +189,84 @@ types over the defined modules to define operations in a generic way.</p>
 <tr class="row-odd"></tr>
 <tr class="row-even"></tr>
 <tr class="row-odd"></tr>
-<tr class="row-even"></tr>
-<tr class="row-odd"></tr>
-<tr class="row-even"></tr>
 </tbody>
 </table>
+</div>
+<div class="section" id="proxies">
+<h2>Proxies<a class="headerlink" href="#proxies" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># ExampleModule.py</span>
+<span class="c"># implemention of ExampleModule</span>
+
+<span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">At</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">At</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span>
+
+<span class="n">__types__</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;List&#39;</span><span class="p">:</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">__functions__</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;foo&#39;</span><span class="p">:</span> <span class="n">foo</span><span class="p">,</span>
+    <span class="s">&#39;bar&#39;</span><span class="p">:</span> <span class="n">bar</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="k">module</span> <span class="nc">ExampleModule</span> <span class="o">{</span>
+
+    <span class="n">trait</span> <span class="nc">Example</span><span class="o">[</span><span class="nc">T</span> <span class="n">a</span><span class="o">]:</span>
+        <span class="k">fun</span> <span class="n">f0</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="nc">T</span> <span class="n">a</span>
+        <span class="k">fun</span> <span class="n">f1</span> <span class="o">::</span> <span class="nc">T</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">a</span>
+
+    <span class="n">impl</span> <span class="nc">Example</span><span class="o">[</span><span class="nc">List</span> <span class="n">a</span><span class="o">]:</span>
+        <span class="k">fun</span> <span class="n">f0</span> <span class="o">=</span> <span class="n">foo</span>
+        <span class="k">fun</span> <span class="n">f1</span> <span class="o">=</span> <span class="n">bar</span>
+
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>The crux of the proxy system is the <tt class="docutils literal"><span class="pre">blaze.module.proxy</span></tt> class which
+is created dynamically for each proxy object. The <tt class="docutils literal"><span class="pre">_create_proxy</span></tt>
+method is called each time a proxy is created and populates the Python
+class&#8217; namespace with the types specified by the implementations over
+it in the module definitions. Each of these are themselves wrapped in
+function wrappers that return proxy objects corresponding to the output
+types of the function in question.</p>
+<p>In this way the proxy object system preserves welltypedness of
+composition of proxy objects and rejects invalid compositions ( i.e. map
+over scalars ) while still preserving the ability to express NumPy like
+broadcasting and implicit ceorcion logic.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Proxy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;_ty&quot;</span><span class="p">,</span> <span class="s">&quot;_ns&quot;</span><span class="p">,</span> <span class="s">&quot;_ctx&quot;</span><span class="p">,</span> <span class="s">&quot;_node&quot;</span><span class="p">]</span>
+
+    <span class="o">...</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_create_proxy</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">ns</span><span class="p">):</span>
+        <span class="n">namespace</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">ns</span><span class="p">:</span>
+            <span class="n">meth</span> <span class="o">=</span> <span class="n">build_bound_meth</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span>
+            <span class="n">namespace</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">meth</span>
+
+        <span class="n">namespace</span><span class="p">[</span><span class="s">&#39;capabilities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">List</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">x</span>
+<span class="go">&lt;Proxy List int&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">&lt;Proxy int&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">f0</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">y</span>
+<span class="go">&lt;Proxy int&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
 </div>
 </div>
 
