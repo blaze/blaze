@@ -163,6 +163,7 @@ compiler = Pipeline('compile', [frontend,
 #------------------------------------------------------------------------
 
 def compile(source, opts=None):
+    opts = opts or {'O':2}
     env = {'args': opts}
     with compilelock:
         ast, env = compiler(source, env)

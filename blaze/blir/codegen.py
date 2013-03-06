@@ -1,12 +1,13 @@
 import btypes
 import errors
-from collections import defaultdict
 
 import llvm.core as lc
 import llvm.passes as lp
 
 from llvm import LLVMException
 from llvm.core import Module, Builder, Function, Type, Constant, GlobalVariable
+
+from collections import defaultdict
 
 #------------------------------------------------------------------------
 # LLVM Types
@@ -17,6 +18,7 @@ float_type = Type.double()
 bool_type  = Type.int(1)
 void_type  = Type.void()
 char_type  = Type.int(8)
+any_type   = Type.opaque(name='any')
 
 pointer = Type.pointer
 
@@ -32,10 +34,13 @@ array_type = lambda elt_type: Type.struct([
 # opaque for now
 blaze_type = lambda datashape: Type.opaque(name="blaze")
 
-any_type = Type.void()
+#------------------------------------------------------------------------
+# Constants
+#------------------------------------------------------------------------
 
 false = Constant.int(bool_type, 0)
 true  = Constant.int(bool_type, 1)
+zero = Constant.int(int_type, 0)
 
 #------------------------------------------------------------------------
 # Type Relations
@@ -74,7 +79,7 @@ float_instrs = {
     '!=' : lc.FCMP_ONE
 }
 
-sing_instrs = {
+int_instrs = {
     '>'  : lc.ICMP_SGT,
     '<'  : lc.ICMP_SLT,
     '==' : lc.ICMP_EQ,
@@ -88,7 +93,7 @@ bool_instr = {
     '!=' : lc.ICMP_NE
 }
 
-bitwise = { '&&', '||' }
+logic_instrs = { '&&', '||' }
 
 #------------------------------------------------------------------------
 # Prelude
@@ -399,29 +404,31 @@ class LLVMEmitter(object):
             )
 
     def op_UNARY_NOT(self, ty, source, val):
-        self.temps[val] = self.builder.icmp(lc.ICMP_EQ, self.temps[source], false, val)
+        if ty == btypes.int_type:
+            self.temps[val] = self.builder.icmp(lc.ICMP_EQ, self.temps[source], zero, val)
+        elif ty == btypes.bool_type:
+            self.temps[val] = self.builder.not_(self.temps[source])
 
     def op_COMPARE(self, op, ty, left, right, val):
         lv = self.temps[left]
         rv = self.temps[right]
 
         if ty == btypes.int_type:
-            instr = sing_instrs[op]
+            instr = int_instrs[op]
             self.temps[val] = self.builder.icmp(instr, lv, rv, val)
 
         elif ty == btypes.float_type:
             instr = float_instrs[op]
             self.temps[val] = self.builder.fcmp(instr, lv, rv, val)
 
-        # ick
         if ty == btypes.bool_type:
-            if op in bitwise:
+            if op in logic_instrs:
                 if op == '&&':
                     self.temps[val] = self.builder.and_(lv, rv, val)
                 elif op == '||':
                     self.temps[val] = self.builder.or_(lv, rv, val)
             else:
-                instr = sing_instrs[op]
+                instr = int_instrs[op]
                 self.temps[val] = self.builder.icmp(instr, lv, rv, val)
 
     #------------------------------------------------------------------------
@@ -662,7 +669,6 @@ class LLVMOptimizer(object):
 #------------------------------------------------------------------------
 
 def ddump_optimizer(source):
-    import lexer
     import parser
     import cfg
     import typecheck
