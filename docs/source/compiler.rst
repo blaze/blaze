@@ -174,9 +174,9 @@ but with different semantics.
 * BINARY_DIVIDE
 * BINARY_MULTIPLY
 * BINARY_SUBTRACT
-* CALL_FOREIGN
 * CALL_FUNCTION
 * COMPARE
+* DEF_FOREIGN
 * GLOBAL
 * LOAD
 * LOAD_ARGUMENT
@@ -243,9 +243,9 @@ LLVM or x86 as well as executing some simple programs.
 
 ::
 
-    usage: blirc [-h] [--ddump-parse] [--ddump-lex] [--ddump-blocks] [--ddump-tc]
-                 [--ddump-optimizer] [--noprelude] [--nooptimize] [--emit-llvm]
-                 [--emit-x86] [--run]
+    usage: blirc [-h] [-O [opt]] [--ddump-parse] [--ddump-lex] [--ddump-blocks]
+                 [--ddump-tc] [--ddump-optimizer] [--noprelude] [--nooptimize]
+                 [--emit-llvm] [--emit-x86] [--run]
                  [file]
 
     positional arguments:
@@ -253,6 +253,7 @@ LLVM or x86 as well as executing some simple programs.
 
     optional arguments:
       -h, --help         show this help message and exit
+      -O [opt]           Optimization level
       --ddump-parse      Dump parse tree
       --ddump-lex        Dump token stream
       --ddump-blocks     Dump the block structure
@@ -263,8 +264,6 @@ LLVM or x86 as well as executing some simple programs.
       --emit-llvm        Generate output files in LLVM formats
       --emit-x86         Generate output files in x86 assembly
       --run              Execute generated code
-
-
 
 Directory Structure
 -------------------
