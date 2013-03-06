@@ -195,7 +195,7 @@ class SSARewrite(NodeVisitor):
         # --
 
         args = tuple(arg.type.name for arg in node.sig.parameters)
-        inst = ('CALL_FOREIGN', node.sig.name, node.sig.type.name) + args
+        inst = ('DEF_FOREIGN', node.sig.name, node.sig.type.name) + args
         self.block.append(inst)
 
     def visit_FunctionCall(self, node):

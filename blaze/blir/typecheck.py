@@ -5,6 +5,7 @@ checking, nothing sophisiticated since we're nominally staticly typed.
 """
 
 import btypes
+import intrinsics
 from syntax import *
 from errors import error
 
@@ -107,6 +108,15 @@ class TypeChecker(NodeVisitor):
         node.type = node.left.type
 
     def visit_FunctionCall(self, node):
+        if node.name in intrinsics.llvm_intrinsics:
+            for n in node.arglist:
+                self.visit(n)
+
+            # just pop the last type off the signature
+            retty = getattr(intrinsics, node.name)[2][-1]
+            node.type = retty
+            return
+
         symnode = self.symtab.lookup(node.name, self.scope)
 
         if symnode:
@@ -162,7 +172,7 @@ class TypeChecker(NodeVisitor):
         if node.expr:
             self.visit(node.expr)
             if node.expr.type != node.type:
-                error(node.lineno,"Type error %s = %s" % (node.type.name, node.expr.type.name))
+                error(node.lineno,"Type Error %s != %s" % (node.type.name, node.expr.type.name))
         else:
             # Possibly controversial decision:
             # --------------------------------

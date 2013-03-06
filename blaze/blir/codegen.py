@@ -101,6 +101,26 @@ prelude = {
     'show_string' : Type.function(void_type, [string_type], False),
 }
 
+
+def build_intrinsics():
+    import intrinsics
+    mod = Module.new('blir.intrinsics')
+
+    ins = {}
+
+    for name, intr in intrinsics.llvm_intrinsics.iteritems():
+         # get the function signature
+        name, retty, argtys = getattr(intrinsics, name)
+
+        largtys = map(arg_typemap, argtys)
+        lretty  = arg_typemap(retty)
+
+        lfunc = Function.intrinsic(mod, intr, largtys)
+        ins[name] = lfunc
+
+    mod.verify()
+    return mod, ins
+
 #------------------------------------------------------------------------
 # Function Level Codegen
 #------------------------------------------------------------------------
@@ -123,7 +143,12 @@ class LLVMEmitter(object):
         self.temps = {}
 
         self.intrinsics = {}
-        self.define_intrinsics()
+        self.add_prelude()
+
+        intmod, intrinsics = build_intrinsics()
+
+        self.module.link_in(intmod)
+        self.globals.update(intrinsics)
 
     def visit_op(self, instr):
         for op in instr:
@@ -163,7 +188,7 @@ class LLVMEmitter(object):
         else:
             self.builder.ret_void()
 
-    def define_intrinsics(self):
+    def add_prelude(self):
         for name, function in prelude.iteritems():
             self.intrinsics[name] = Function.new(
                 self.module,
@@ -420,7 +445,7 @@ class LLVMEmitter(object):
     # Extern Functions
     #------------------------------------------------------------------------
 
-    def op_CALL_FOREIGN(self, name, retty, *argtys):
+    def op_DEF_FOREIGN(self, name, retty, *argtys):
         _rettype = typemap[retty]
         _argtys = [typemap[arg] for arg in argtys]
 
@@ -602,21 +627,32 @@ class BlockEmitter(object):
 class LLVMOptimizer(object):
 
     def __init__(self, module, opt_level=3):
+        INLINER_THRESHOLD = 1000
+
         self.fpm = lp.FunctionPassManager.new(module)
         self.pmb = lp.PassManagerBuilder.new()
+        self.pm  = lp.PassManager.new()
+
         self.pmb.opt_level = opt_level
         self.pmb.vectorize = True
+        self.pmb.use_inliner_with_threshold(INLINER_THRESHOLD)
+
+        self.pmb.populate(self.pm)
         self.pmb.populate(self.fpm)
+
+    def runmodule(self, module):
+        self.pm.run(module)
 
     def run(self, func):
         self.fpm.run(func)
 
-    def diff(self, func):
+    def diff(self, func, module):
         from difflib import Differ
 
         d = Differ()
         before = str(func)
         self.run(func)
+        self.runmodule(module)
         after = str(func)
 
         diff = d.compare(before.splitlines(), after.splitlines())
@@ -653,7 +689,7 @@ def ddump_optimizer(source):
             optimizer = codegen.LLVMOptimizer(cgen.module)
 
             print 'Optimizer Diff'.center(80, '=')
-            optimizer.diff(function)
+            optimizer.diff(function, cgen.module)
 
 #------------------------------------------------------------------------
 
