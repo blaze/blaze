@@ -1,4 +1,4 @@
-import os, glob
+import os, glob, shutil
 from os import path
 import tempfile
 
@@ -49,33 +49,62 @@ class json_array_provider:
             raise ValueError('%s is not a valid directory' % root_dir)
         self.root_dir = root_dir
         self.array_cache = {}
+        self.session_dirs = {}
 
     def __call__(self, array_name):
         # First check that the .json file at the requested address exists
-        if array_name[0] == '/':
-            array_name = array_name[1:]
-        root = path.join(self.root_dir, array_name)
-        if not path.isfile(root + '.json') and not path.isdir(root):
+        root = path.join(self.root_dir, array_name[1:])
+        if not path.isfile(root + '.json') and \
+                        not path.isfile(root + '.deferred.json') and \
+                        not path.isdir(root):
             return None
 
         # If we've already read this array into cache, just return it
-        if self.array_cache.has_key(root):
+        print('Cache has keys %s' % self.array_cache.keys())
+        print('Checking cache for %s' % array_name)
+        if self.array_cache.has_key(array_name):
             print 'Returning cached array %s' % array_name
-            return self.array_cache[root]
+            return self.array_cache[array_name]
 
         if path.isfile(root + '.json'):
-            print 'Loading array %s from file %s' % (array_name, root + '.json')
+            print('Loading array %s from file %s' %
+                            (array_name, root + '.json'))
             arr = load_json_file_array(root, array_name)
+        elif path.isfile(root + '.deferred.json'):
+            print('Loading deferred array %s from file %s' %
+                            (array_name, root + '.deferred.json'))
+            with open(root + '.deferred.json') as f:
+                print(f.read())
+            raise RuntimeError('TODO: Deferred loading not implemented!')
         else:
             print 'Loading array %s from directory %s' % (array_name, root)
             arr = load_json_directory_array(root, array_name)
             
-        self.array_cache[root] = arr
+        self.array_cache[array_name] = arr
         return arr
 
     def create_session_dir(self):
         d = tempfile.mkdtemp(prefix='.session_', dir=self.root_dir)
-        session_name = os.path.basename(d)
+        session_name = '/' + os.path.basename(d)
         if type(session_name) is unicode:
             session_name = session_name.encode('utf-8')
+        self.session_dirs[session_name] = d
         return session_name, d
+
+    def delete_session_dir(self, session_name):
+        shutil.rmtree(self.session_dirs[session_name])
+        del self.session_dirs[session_name]
+
+    def create_deferred_array_filename(self, session_name,
+                                       prefix, cache_array):
+        d = tempfile.mkstemp(suffix='.deferred.json', prefix=prefix,
+                             dir=self.session_dirs[session_name], text=True)
+        array_name = os.path.basename(d[1])
+        array_name = session_name + '/' + array_name[:array_name.find('.')]
+        if type(array_name) is unicode:
+            array_name = array_name.encode('utf-8')
+
+        if cache_array is not None:
+            self.array_cache[array_name] = cache_array
+        
+        return (os.fdopen(d[0], "w"), array_name, d[1])

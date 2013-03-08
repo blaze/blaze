@@ -96,6 +96,7 @@ class wsgi_app:
         return body
 
     def handle_session_query(self, environ, start_response):
+        print('Handling session query')
         session = self.sessions[environ['PATH_INFO']]
         request_method = environ['REQUEST_METHOD']
         if request_method != 'POST':
@@ -113,18 +114,21 @@ class wsgi_app:
             q = parse_qs(request_body)
 
         print q
-        if not q.has_key('r'):
+        if 'r' not in q:
+            print('Request is missing ?r= query part')
             status = '400 Bad Request'
             response_headers = [('content-type', 'text/plain')]
             start_response(status, response_headers, sys.exc_info())
             return ['Blaze server compute session request requires the ?r= query request type']
         q_req = q['r'][0]
-        if q_req == 'create_table_view':
+        if q_req == 'close_session':
+            content_type, body = session.close()
+        elif q_req == 'add_computed_fields':
             j = q['json'][0]
-            content_type, body = session.create_table_view(j)
-
-        content_type = 'text/plain; charset=utf-8'
-        body = 'something with session ' + session.session_name
+            content_type, body = session.add_computed_fields(j)
+        else:
+            content_type = 'text/plain; charset=utf-8'
+            body = 'something with session ' + session.session_name
 
         status = '200 OK'
         response_headers = [
@@ -135,6 +139,7 @@ class wsgi_app:
         return [body]
     
     def handle_array_query(self, environ, start_response):
+        print('Handling array query')
         try:
             array_name, indexers = split_array_base(environ['PATH_INFO'])
             arr = self.get_array(array_name, indexers)
@@ -192,6 +197,7 @@ class wsgi_app:
                     start_response(status, response_headers, sys.exc_info())
                     return ['Unknown Blaze server request ?r=%s' % q['r'][0]]
         except:
+            traceback.print_exc()
             status = '404 Not Found'
             response_headers = [('content-type', 'text/plain')]
             start_response(status, response_headers, sys.exc_info())
@@ -209,4 +215,7 @@ class wsgi_app:
         if environ['PATH_INFO'] in self.sessions:
             return self.handle_session_query(environ, start_response)
         else:
+            if environ['PATH_INFO'] == '/favicon.ico':
+                start_response('404 Not Found', [('content-type', 'text/plain')])
+                return ['No favicon']
             return self.handle_array_query(environ, start_response)

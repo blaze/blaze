@@ -7,7 +7,7 @@ from pyparsing import Word, Regex, Optional, ZeroOrMore, \
 
 # Parser to match the Blaze URL syntax
 intNumber = Regex(r'[-+]?\b\d+\b')
-arrayName = Regex(r'(/\w*)*[a-zA-Z0-9_]+\b')
+arrayName = Regex(r'(/(\.session_)?\w*)*[a-zA-Z0-9_]+\b')
 bracketsIndexer = Optional(intNumber) + \
             Optional(':' + Optional(intNumber)) + \
             Optional(':' + Optional(intNumber))

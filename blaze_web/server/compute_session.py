@@ -1,21 +1,24 @@
 import json
 from blaze_web.common.blaze_url import split_array_base
+import dynd
 from dynd import nd, ndt
 
 class compute_session:
     def __init__(self, array_provider, base_url, array_name):
         self.array_provider = array_provider
         session_name, root_dir = array_provider.create_session_dir()
-        self.session_name = array_name + '/' + session_name
+        self.session_name = session_name
         self.root_dir = root_dir
         self.array_name = array_name
         self.base_url = base_url
 
-    def get_session_array(self):
-        array_name, indexers = split_array_base(self.array_name)
-        arr = self.array_provider(array_name)
+    def get_session_array(self, array_name = None):
+        if array_name is None:
+            array_name = self.array_name
+        array_root, indexers = split_array_base(array_name)
+        arr = self.array_provider(array_root)
         if arr is None:
-            raise Exception('No Blaze Array named ' + array_name)
+            raise Exception('No Blaze Array named ' + array_root)
 
         for i in indexers:
             if type(i) in [slice, int, tuple]:
@@ -29,20 +32,51 @@ class compute_session:
         body = json.dumps({
                 'session' : self.base_url + self.session_name,
                 'version' : 'prototype',
+                'dynd_python_version': dynd.__version_string__,
+                'dynd_version' : dynd.__dynd_version_string__,
                 'access' : 'no permission model yet'
             })
         return (content_type, body)
 
-    def create_table_view(self, json_cmd):
-        cmd = json.reads(json_cmd)
-        ds = cmd['datashape']
-        dt = nd.dtype(ds)
-        ex = cmd['expressions']
-        
-        arr = self.get_session_array()
-        print arr.dshape
+    def close(self):
+        print('Deleting files for session %s' % self.session_name)
+        self.array_provider.delete_session_dir(self.session_name)
+        content_type = 'application/json; charset=utf-8'
+        body = json.dumps({
+                'session': self.base_url + self.session_name,
+                'action': 'closed'
+            })
+        return (content_type, body)
 
-        result = nd.empty_like(arr, dt)
-        for fname in dt.field_names:
-            print fname
+    def add_computed_fields(self, json_cmd):
+        print('Adding computed fields')
+        cmd = json.loads(json_cmd)
+        array_url = cmd.get('input', self.base_url + self.array_name)
+        if not array_url.startswith(self.base_url):
+            raise RuntimeError('Input array must start with the base url')
+        array_name = array_url[len(self.base_url):]
+        fields = cmd['fields']
+        rm_fields = cmd.get('rm_fields', [])
+        fnname = cmd.get('fnname', None)
         
+        arr = self.get_session_array(array_name)
+
+        res = nd.add_computed_fields(arr, fields, rm_fields, fnname)
+        defarr = self.array_provider.create_deferred_array_filename(
+                        self.session_name, 'computed_fields_', res)
+        defarr[0].write(json.dumps({
+                'dshape': res.dshape,
+                'command': 'add_computed_fields',
+                'params': {
+                    'fields': fields,
+                    'rm_fields': rm_fields,
+                    'fnname': fnname
+                }
+            }))
+        defarr[0].close()
+        content_type = 'application/json; charset=utf-8'
+        body = json.dumps({
+                'session': self.base_url + self.session_name,
+                'output': self.base_url + defarr[1]
+            })
+        return (content_type, body)

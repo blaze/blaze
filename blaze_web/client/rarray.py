@@ -22,11 +22,10 @@ class rarray:
             raise AttributeError('Blaze remote array does not have attribute "%s"' % name)
 
     def __getitem__(self, key):
-        if type(key) in [int, long, slice]:
-            key = (key,)
-        return rarray(add_indexers_to_url(self.url, key))
+        return rarray(add_indexers_to_url(self.url, (key,)))
 
     def get_data(self):
         """Downloads the data and returns a local in-memory ndobject"""
         j = requests.get_remote_json(self.url)
-        return nd.parse_json(self.dshape, j)
+        return nd.parse_json(self.dtype, j)
+

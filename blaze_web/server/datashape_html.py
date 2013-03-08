@@ -9,17 +9,16 @@ def json_comment(array_url):
 def render_dynd_datashape_recursive(base_url, arr, indent):
     result = ''
     if type(arr) is nd.dtype:
-        dt = arr
+        dt = arr.value_dtype
     else:
-        dt = arr.dtype
+        dt = arr.dtype.value_dtype
 
     if dt.kind == 'struct':
         result += '{' + json_comment(base_url)
         field_names = nd.as_py(dt.field_names)
+        field_types = nd.as_py(dt.field_types)
         for i, fname in enumerate(field_names):
-            farr = arr[i]
-            if type(farr) is not nd.dtype:
-                farr = farr.dtype
+            farr = field_types[i]
             child_url = base_url + '.' + str(fname)
             child_result = render_dynd_datashape_recursive(child_url,
                             farr, indent + '  ')
