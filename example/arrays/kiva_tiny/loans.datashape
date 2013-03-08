@@ -45,7 +45,7 @@ type KivaLoan = {
     };
     terms: {
         disbursal_date: json; # datetime<seconds>;
-        disbursal_currency: json; # Option(string);
+        disbursal_currency: string(3,'A');
         disbursal_amount: float64;
         loan_amount: float64;
         local_payments: VarDim, {
