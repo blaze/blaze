@@ -10,5 +10,6 @@ setup(name='BlazeWeb',
       author='Continuum Analytics',
       author_email='mwiebe@continuum.io',
       url='http://www.continum.io/',
-      packages=['blaze_web', 'blaze_web.client', 'blaze_web.server'],
+      packages=['blaze_web', 'blaze_web.common',
+		'blaze_web.client', 'blaze_web.server'],
      )
