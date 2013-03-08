@@ -2,6 +2,7 @@
 
 from requests import create_remote_session, close_remote_session, \
         add_computed_fields
+from rarray import rarray
 
 class session:
     def __init__(self, root_url):
@@ -44,9 +45,10 @@ class session:
             The function name, which affects how the resulting
             deferred expression dtype is printed.
         """
-        return add_computed_fields(self.session_url,
+        j = add_computed_fields(self.session_url,
                                    arr.url, fields,
                                    rm_fields, fnname)
+        return rarray(j['output'], j['dshape'])
 
     def close(self):
         close_remote_session(self.session_url)

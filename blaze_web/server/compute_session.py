@@ -64,8 +64,9 @@ class compute_session:
         res = nd.add_computed_fields(arr, fields, rm_fields, fnname)
         defarr = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'computed_fields_', res)
+        dshape = res.dshape
         defarr[0].write(json.dumps({
-                'dshape': res.dshape,
+                'dshape': dshape,
                 'command': 'add_computed_fields',
                 'params': {
                     'fields': fields,
@@ -77,6 +78,7 @@ class compute_session:
         content_type = 'application/json; charset=utf-8'
         body = json.dumps({
                 'session': self.base_url + self.session_name,
-                'output': self.base_url + defarr[1]
+                'output': self.base_url + defarr[1],
+                'dshape': dshape
             })
         return (content_type, body)

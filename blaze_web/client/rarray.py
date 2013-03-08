@@ -6,13 +6,16 @@ from blaze_web.common.blaze_url import add_indexers_to_url
 from dynd import nd, ndt
 
 class rarray:
-    def __init__(self, url):
+    def __init__(self, url, dshape=None):
         self.url = url
-        self.dshape = requests.get_remote_datashape(url)
+        if dshape is None:
+            self.dshape = requests.get_remote_datashape(url)
+        else:
+            self.dshape = dshape
         self.dtype = nd.dtype(self.dshape)
 
     def __repr__(self):
-        return 'Remote Blaze Array\n  url: %s\n  dshape: %s\n' % \
+        return 'Remote Blaze Array\nurl: %s\ndshape: %s\n' % \
                         (self.url, self.dshape)
 
     def __getattr__(self, name):
