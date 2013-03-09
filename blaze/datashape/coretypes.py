@@ -137,6 +137,7 @@ class Top(Mono):
 
 class Blob(Mono):
     """ Blob type, large variable length string """
+    cls = MEASURE
 
     def __str__(self):
         return 'blob'
@@ -147,6 +148,7 @@ class Blob(Mono):
 
 class Varchar(Mono):
     """ Blob type, small variable length string """
+    cls = MEASURE
 
 
     def __init__(self, maxlen):
@@ -161,6 +163,7 @@ class Varchar(Mono):
 
 class String(Mono):
     """ Fixed length string container """
+    cls = MEASURE
 
     def __init__(self, fixlen):
         if isinstance(fixlen, int):
@@ -195,10 +198,15 @@ class DataShape(Mono):
     def __init__(self, parameters=None, name=None):
 
         if type(parameters) is DataShape:
-            self.paramaeters = parameters
+            self.parameters = parameters
 
         elif len(parameters) > 0:
             self.parameters = tuple(flatten(parameters))
+            if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
+                raise TypeError('Only a measure can appear on the last position of a datashape')
+            for dim in self.parameters[:-1]:
+                if getattr(dim, 'cls', DIMENSION) != DIMENSION:
+                    raise TypeError('Only dimensions can appear before the last position of a datashape')
             self.composite = True
         else:
             self.parameters = tuple()
@@ -381,6 +389,7 @@ class Fixed(Atom):
     """
     Fixed dimension.
     """
+    cls = DIMENSION
 
     def __init__(self, i):
         assert isinstance(i, (int, long))
@@ -414,6 +423,7 @@ class TypeVar(Atom):
     """
     A free variable in the signature. Not user facing.
     """
+    cls = DIMENSION
 
     def __init__(self, symbol):
         if symbol.startswith("'"):
@@ -431,6 +441,7 @@ class Range(Atom):
     Range type representing a bound or unbound interval of
     of possible Fixed dimensions.
     """
+    cls = DIMENSION
 
     def __init__(self, a, b=False):
         if type(a) is int:
@@ -502,6 +513,7 @@ class Option(Atom):
     as a tagged union with with ``left`` as ``null`` and
     ``right`` as a measure.
     """
+    cls = MEASURE
 
     def __init__(self, ty):
         self.parameters = [ty]
@@ -528,6 +540,7 @@ class Record(DataShape):
     """
     A composite data structure of ordered fields mapped to types.
     """
+    cls = MEASURE
 
     def __init__(self, fields):
         # This is passed in with a OrderedDict so field order is
