@@ -1703,7 +1703,7 @@ cdef class carray:
         else:
           return arr1[0]
       # Fallback action: use the slice code
-      return np.squeeze(self[slice(key, None, 1)])
+      return np.squeeze(self[slice(key, key+1, 1)])
     # Slices
     elif isinstance(key, slice):
       (start, stop, step) = key.start, key.stop, key.step
