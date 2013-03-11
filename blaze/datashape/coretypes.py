@@ -221,7 +221,6 @@ class DataShape(Mono):
     def __getitem__(self, index):
         return self.parameters[index]
 
-
     def __str__(self):
         if self.name:
             return self.name
@@ -712,8 +711,8 @@ def extract_dims(ds):
     dimensions
     """
     if isinstance(ds, CType):
-        raise NotNumpyCompatible("No Dimensions")
-    return ds.parameters[0:-2]
+        raise tuple()
+    return ds.parameters[:-1]
 
 def extract_measure(ds):
     """ Discard shape information and just return the measure
@@ -823,7 +822,7 @@ def to_numpy(ds):
     #assert isinstance(ds, DataShape)
 
     # The datashape dimensions
-    for dim in ds.parameters[:-1]:
+    for dim in extract_dims(ds):
         if isinstance(dim, Integer):
             shape += (dim,)
         elif isinstance(dim, Fixed):
@@ -834,13 +833,13 @@ def to_numpy(ds):
             raise NotNumpyCompatible('Datashape dimension %s is not NumPy-compatible' % dim)
 
     # The datashape measure
-    dim = ds.parameters[-1]
-    if isinstance(dim, CType):
-        dtype = dim.to_dtype()
-    elif isinstance(dim, Blob):
+    msr = extract_measure(ds)
+    if isinstance(msr, CType):
+        dtype = msr.to_dtype()
+    elif isinstance(msr, Blob):
         dtype = np.dtype('object')
-    elif isinstance(dim, Record):
-        dtype = dim.to_dtype()
+    elif isinstance(msr, Record):
+        dtype = msr.to_dtype()
     else:
         raise NotNumpyCompatible('Datashape measure %s is not NumPy-compatible' % dim)
 
@@ -865,9 +864,7 @@ def from_numpy(shape, dt):
 
     if dtype.kind == 'S':
         measure = String(dtype.itemsize)
-
-    if dtype.fields:
-
+    elif dtype.fields:
         rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
         measure = Record(rec)
     else:
