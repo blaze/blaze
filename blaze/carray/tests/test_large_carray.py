@@ -23,15 +23,15 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
 
         # Now check some accesses
         cn[1] = 1
-        self.assert_(cn[1] == 1)
+        self.assertEqual(cn[1], 1)
         cn[int(2e9)] = 2
-        self.assert_(cn[int(2e9)] == 2)
+        self.assertEqual(cn[int(2e9)], 2)
         cn[long(3e9)] = 3
-        self.assert_(cn[long(3e9)] == 3)
+        self.assertEqual(cn[long(3e9)], 3)
         cn[-1] = 4
-        self.assert_(cn[-1] == 4)
+        self.assertEqual(cn[-1], 4)
 
-        self.assert_(cn.sum() == 10)
+        self.assertEqual(cn.sum(), 10)
 
     def test01(self):
         """Creating an extremely large carray (> 2**32) on disk."""
@@ -41,15 +41,15 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
 
         # Now check some accesses
         cn[1] = 1
-        self.assert_(cn[1] == 1)
+        self.assertEqual(cn[1], 1)
         cn[int(2e9)] = 2
-        self.assert_(cn[int(2e9)] == 2)
+        self.assertEqual(cn[int(2e9)], 2)
         cn[long(3e9)] = 3
-        self.assert_(cn[long(3e9)] == 3)
+        self.assertEqual(cn[long(3e9)], 3)
         cn[-1] = 4
-        self.assert_(cn[-1] == 4)
+        self.assertEqual(cn[-1], 4)
 
-        self.assert_(cn.sum() == 10)
+        self.assertEqual(cn.sum(), 10)
 
     def test02(self):
         """Opening an extremely large carray (> 2**32) on disk."""
@@ -59,19 +59,19 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
         self.assertEqual(len(cn), int(5e9))
         # Reopen it from disk
         cn = ca.carray(rootdir=self.rootdir)
-        self.assert_(len(cn) == int(5e9))
+        self.assertEqual(len(cn), int(5e9))
 
         # Now check some accesses
         cn[1] = 1
-        self.assert_(cn[1] == 1)
+        self.assertEqual(cn[1], 1)
         cn[int(2e9)] = 2
-        self.assert_(cn[int(2e9)] == 2)
+        self.assertEqual(cn[int(2e9)], 2)
         cn[long(3e9)] = 3
-        self.assert_(cn[long(3e9)] == 3)
+        self.assertEqual(cn[long(3e9)], 3)
         cn[-1] = 4
-        self.assert_(cn[-1] == 4)
+        self.assertEqual(cn[-1], 4)
 
-        self.assert_(cn.sum() == 10)
+        self.assertEqual(cn.sum(), 10)
 
 ## Local Variables:
 ## mode: python
