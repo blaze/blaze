@@ -19,7 +19,7 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
         """Creating an extremely large carray (> 2**32) in memory."""
 
         cn = ca.zeros(5e9, dtype="i1")
-        self.assert_(len(cn) == int(5e9))
+        self.assertEqual(len(cn), int(5e9))
 
         # Now check some accesses
         cn[1] = 1
@@ -37,7 +37,7 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
         """Creating an extremely large carray (> 2**32) on disk."""
 
         cn = ca.zeros(5e9, dtype="i1", rootdir=self.rootdir)
-        self.assert_(len(cn) == int(5e9))
+        self.assertEqual(len(cn), int(5e9))
 
         # Now check some accesses
         cn[1] = 1
@@ -56,7 +56,7 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
 
         # Create the array on-disk
         cn = ca.zeros(5e9, dtype="i1", rootdir=self.rootdir)
-        self.assert_(len(cn) == int(5e9))
+        self.assertEqual(len(cn), int(5e9))
         # Reopen it from disk
         cn = ca.carray(rootdir=self.rootdir)
         self.assert_(len(cn) == int(5e9))
