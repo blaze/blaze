@@ -8,12 +8,6 @@ dtype.
 import numpy as np
 import datetime
 
-try:
-    from numba.minivect import minitypes
-    have_minivect = True
-except ImportError:
-    have_minivect = False
-
 instanceof = lambda T: lambda X: isinstance(X, T)
 
 #------------------------------------------------------------------------
@@ -779,18 +773,6 @@ def from_python_scalar(scalar):
         return datetime64
     else:
         return pyobj
-
-#------------------------------------------------------------------------
-# Minivect Compatibility
-#------------------------------------------------------------------------
-
-def to_minitype(ds):
-    # To minitype through NumPy. Discards dimension information.
-    return minitypes.map_dtype(to_numpy(extract_measure(ds)))
-
-def to_minivect(ds):
-    raise NotImplementedError
-    #return (shape, minitype)
 
 #------------------------------------------------------------------------
 # NumPy Compatibility

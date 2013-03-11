@@ -423,17 +423,11 @@ cdef class chunk:
 
   @property
   def pointer(self):
-      if self.memory:
-          return <Py_uintptr_t> self.data+BLOSCPACK_HEADER_LENGTH
-      else:
-          raise RuntimeError("Not in memory")
+      return <Py_uintptr_t> self.data+BLOSCPACK_HEADER_LENGTH
 
   @property
   def viewof(self):
-      if self.memory:
-          return PyBuffer_FromMemory(<void*>self.data, <Py_ssize_t>self.cdbytes)
-      else:
-          raise RuntimeError("Not in memory")
+      return PyBuffer_FromMemory(<void*>self.data, <Py_ssize_t>self.cdbytes)
 
 
   def __setitem__(self, object key, object value):

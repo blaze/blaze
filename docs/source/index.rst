@@ -32,9 +32,7 @@ Overview
    format
    memory
    datashape
-   eclass
    module
-   pipeline
 
 API Reference
 ~~~~~~~~~~~~~
@@ -44,6 +42,7 @@ API Reference
 
    toplevel
    types
+   eclass
    prims
    persistence
    typeinference

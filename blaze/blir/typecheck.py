@@ -5,6 +5,7 @@ checking, nothing sophisiticated since we're nominally staticly typed.
 """
 
 import btypes
+import intrinsics
 from syntax import *
 from errors import error
 
@@ -107,6 +108,15 @@ class TypeChecker(NodeVisitor):
         node.type = node.left.type
 
     def visit_FunctionCall(self, node):
+        if node.name in intrinsics.llvm_intrinsics:
+            for n in node.arglist:
+                self.visit(n)
+
+            # just pop the last type off the signature
+            retty = getattr(intrinsics, node.name)[2][-1]
+            node.type = retty
+            return
+
         symnode = self.symtab.lookup(node.name, self.scope)
 
         if symnode:
@@ -119,6 +129,7 @@ class TypeChecker(NodeVisitor):
 
                 for n, (arg, parm) in enumerate(zip(node.arglist, symnode.parameters),1):
                     self.visit(arg)
+                    arg.type == parm.type
                     if arg.type != parm.type:
                         error(arg.lineno,"Type Error. Argument %d must be %s" % (n, parm.type.name))
 
@@ -162,7 +173,7 @@ class TypeChecker(NodeVisitor):
         if node.expr:
             self.visit(node.expr)
             if node.expr.type != node.type:
-                error(node.lineno,"Type error %s = %s" % (node.type.name, node.expr.type.name))
+                error(node.lineno,"Type Error %s != %s" % (node.type.name, node.expr.type.name))
         else:
             # Possibly controversial decision:
             # --------------------------------
@@ -260,7 +271,7 @@ class TypeChecker(NodeVisitor):
                 # <array[int]> -> int
                 node.type = sym.type.arg.type
             else:
-                error(node.lineno,"Type Error: Cannot index scalar type" % node.name)
+                error(node.lineno,"Type Error: Cannot index scalar type: %s" % node.name)
                 node.type = btypes.undefined
         else:
             error(node.lineno,"Name Error: %s undefined" % node.name)
@@ -275,7 +286,7 @@ class TypeChecker(NodeVisitor):
                 # extract the element pointer
                 node.type = sym.type.arg.type
             else:
-                error(node.lineno,"Type Error: Cannot index scalar type" % node.name)
+                error(node.lineno,"Type Error: Cannot index scalar type: %s" % node.name)
                 node.type = btypes.undefined
         else:
             error(node.lineno,"Name Error: %s undefined" % node.name)

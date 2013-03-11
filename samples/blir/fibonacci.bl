@@ -8,3 +8,31 @@ def fib(n : int) -> int {
     }
     return ret;
 }
+
+
+# define void @__module() nounwind readnone {
+# entry:
+#   ret void
+# }
+# 
+# define i32 @fib(i32) nounwind readnone {
+# entry:
+#   %.off1 = add i32 %0, -1
+#   %1 = icmp ult i32 %.off1, 2
+#   br i1 %1, label %if.end, label %if.else
+# 
+# if.else:                                          ; preds = %entry, %if.else
+#   %.off4 = phi i32 [ %.off, %if.else ], [ %.off1, %entry ]
+#   %.tr3 = phi i32 [ %i12, %if.else ], [ %0, %entry ]
+#   %accumulator.tr2 = phi i32 [ %i14, %if.else ], [ 1, %entry ]
+#   %2 = tail call i32 @fib(i32 %.off4)
+#   %i12 = add i32 %.tr3, -2
+#   %i14 = add i32 %2, %accumulator.tr2
+#   %.off = add i32 %.tr3, -3
+#   %3 = icmp ult i32 %.off, 2
+#   br i1 %3, label %if.end, label %if.else
+# 
+# if.end:                                           ; preds = %if.else, %entry
+#   %accumulator.tr.lcssa = phi i32 [ 1, %entry ], [ %i14, %if.else ]
+#   ret i32 %accumulator.tr.lcssa
+# }

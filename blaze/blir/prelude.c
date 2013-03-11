@@ -2,10 +2,6 @@
 #include <string.h>
 #include <malloc.h>
 
-// Later...
-//#include <blosc.h>
-//#include <zmq.h>
-
 //#include <mkl.h>
 //#include <mkl_types.h>
 //#include <mkl_lapack.h>
@@ -16,6 +12,14 @@ extern "C" {
 #endif
 
 #include "datashape.h"
+
+// ------------------------------------------------------------------------
+
+typedef struct {
+    char *data;
+    int  nd;
+    int  *strides;
+} ndarray;
 
 // ------------------------------------------------------------------------
 // Execution State
@@ -43,16 +47,14 @@ void Blir_Finalize()
 // Datashape Operations
 // ------------------------------------------------------------------------
 
-// XXX Very limited for now...
-
-void is_fixed(type_t *ds)
+int is_fixed(type_t *ds)
 {
-    kindof(ds) == FIXED;
+    return kindof(ds) == FIXED;
 }
 
-void is_ctype(type_t *ds)
+int is_ctype(type_t *ds)
 {
-    kindof(ds) == CTYPE;
+    return kindof(ds) == CTYPE;
 }
 
 // ------------------------------------------------------------------------
@@ -108,6 +110,10 @@ void show_bool(int b)
     } else {
         printf("False\n");
     }
+}
+
+void show_array(ndarray *a) {
+    printf("array(%p)", a->data);
 }
 
 #ifdef __cplusplus
