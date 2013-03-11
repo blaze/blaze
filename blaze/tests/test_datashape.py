@@ -18,8 +18,8 @@ def test_associative2():
     assert sig1.parameters == sig2.parameters == sig3.parameters == sig4.parameters
 
 def test_coersion():
-    sig1 = int64*2
-    sig2 = int64*3*2
+    sig1 = Integer(2)*int64
+    sig2 = Integer(3)*Integer(2)*int64
 
     assert type(sig1[0]) is Integer
     assert type(sig2[0]) is Integer
@@ -37,7 +37,7 @@ def test_fromlist_compose():
     ds1 = DataShape(parameters=it1)
     ds2 = DataShape(parameters=it2)
 
-    ds = ds2 * ds1
+    ds = ds1 * ds2
 
     assert ds[2] is int64
 
@@ -47,14 +47,14 @@ def test_fromlist_compose2():
     ds1 = DataShape(parameters=it1)
     ds2 = DataShape(parameters=it2)
 
-    ds_x = ds2 * ds1
+    ds_x = ds1 * ds2
     ds_y = DataShape(parameters=(ds1, ds2))
     assert list(ds_x) == list(ds_y)
 
 def test_iteration():
     ds = DataShape(parameters=[a,a,a])
 
-    ds2 = int64 * (ds * ds)
+    ds2 = (ds * ds) * int64
     assert ds2[0] == a
     assert ds2[1] == a
     assert ds2[-1] is int64

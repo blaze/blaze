@@ -62,11 +62,15 @@ class Mono(object):
                 other = Integer(other)
             else:
                 raise NotImplementedError()
-
-        return product(other, self)
+        return product(self, other)
 
     def __rmul__(self, other):
-        return self.__mul__(self, other)
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = Integer(other)
+            else:
+                raise NotImplementedError()
+        return product(other, self)
 
 
 class Poly(object):
@@ -193,7 +197,6 @@ class DataShape(Mono):
 
         if type(parameters) is DataShape:
             self.parameters = parameters
-
         elif len(parameters) > 0:
             self.parameters = tuple(flatten(parameters))
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
@@ -252,10 +255,15 @@ class DataShape(Mono):
                 other = Integer(other)
             else:
                 raise NotImplementedError()
-        return product(other, self)
+        return product(self, other)
 
     def __rmul__(self, other):
-        return self.__mul__(self, other)
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = Integer(other)
+            else:
+                raise NotImplementedError()
+        return product(other, self)
 
 class Atom(DataShape):
     """
