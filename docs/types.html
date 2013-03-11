@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Primitive Operations" href="prims.html" />
+    <link rel="next" title="Evaluation Class" href="eclass.html" />
     <link rel="prev" title="Toplevel" href="toplevel.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -191,6 +191,11 @@ and of themselves.</p>
 <dt id="blaze.datashape.coretypes.Blob">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Blob</tt><big>(</big><em>*params</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Blob" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blob type, large variable length string</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Blob.cls">
+<tt class="descname">cls</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.datashape.coretypes.Blob.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -314,6 +319,11 @@ tag deconstructors for this type are <a class="reference internal" href="#blaze.
 <dt id="blaze.datashape.coretypes.Fixed">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Fixed</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Fixed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixed dimension.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Fixed.cls">
+<tt class="descname">cls</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.datashape.coretypes.Fixed.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -357,6 +367,11 @@ but it cannot be ceorced.</p>
 <dd><p>A sum type for nullable measures unit types. Can be written
 as a tagged union with with <tt class="docutils literal"><span class="pre">left</span></tt> as <tt class="docutils literal"><span class="pre">null</span></tt> and
 <tt class="docutils literal"><span class="pre">right</span></tt> as a measure.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Option.cls">
+<tt class="descname">cls</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.datashape.coretypes.Option.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -370,6 +385,11 @@ as a tagged union with with <tt class="docutils literal"><span class="pre">left<
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Range</tt><big>(</big><em>a</em>, <em>b=False</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Range" title="Permalink to this definition">¶</a></dt>
 <dd><p>Range type representing a bound or unbound interval of
 of possible Fixed dimensions.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Range.cls">
+<tt class="descname">cls</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.datashape.coretypes.Range.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="blaze.datashape.coretypes.Range.lower">
 <tt class="descname">lower</tt><a class="headerlink" href="#blaze.datashape.coretypes.Range.lower" title="Permalink to this definition">¶</a></dt>
@@ -387,6 +407,11 @@ of possible Fixed dimensions.</p>
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Record</tt><big>(</big><em>fields</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Record" title="Permalink to this definition">¶</a></dt>
 <dd><p>A composite data structure of ordered fields mapped to types.</p>
 <p class="rubric">Methods</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Record.cls">
+<tt class="descname">cls</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.datashape.coretypes.Record.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="blaze.datashape.coretypes.Record.fields">
 <tt class="descname">fields</tt><a class="headerlink" href="#blaze.datashape.coretypes.Record.fields" title="Permalink to this definition">¶</a></dt>
@@ -409,6 +434,11 @@ of possible Fixed dimensions.</p>
 <dt id="blaze.datashape.coretypes.String">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">String</tt><big>(</big><em>fixlen</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.String" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixed length string container</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.String.cls">
+<tt class="descname">cls</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.datashape.coretypes.String.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -437,6 +467,11 @@ of possible Fixed dimensions.</p>
 <dt id="blaze.datashape.coretypes.TypeVar">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">TypeVar</tt><big>(</big><em>symbol</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.TypeVar" title="Permalink to this definition">¶</a></dt>
 <dd><p>A free variable in the signature. Not user facing.</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.TypeVar.cls">
+<tt class="descname">cls</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.datashape.coretypes.TypeVar.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -450,6 +485,11 @@ several but fixed datashapes.</p>
 <dt id="blaze.datashape.coretypes.Varchar">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Varchar</tt><big>(</big><em>maxlen</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Varchar" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blob type, small variable length string</p>
+<dl class="attribute">
+<dt id="blaze.datashape.coretypes.Varchar.cls">
+<tt class="descname">cls</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.datashape.coretypes.Varchar.cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="function">
@@ -572,16 +612,6 @@ all of them. Only defined over simple CType instances.</p>
 <dd><p>Throw away the shape information and just return the
 measure as NumPy dtype instance.</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="blaze.datashape.coretypes.to_minitype">
-<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">to_minitype</tt><big>(</big><em>ds</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.to_minitype" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="blaze.datashape.coretypes.to_minivect">
-<tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">to_minivect</tt><big>(</big><em>ds</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.to_minivect" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="function">
 <dt id="blaze.datashape.coretypes.to_numpy">

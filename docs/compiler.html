@@ -31,8 +31,8 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Datashape" href="datashape.html" />
-    <link rel="prev" title="Memory Layout" href="memory.html" />
+    <link rel="next" title="&lt;no title&gt;" href="datashape-spec.html" />
+    <link rel="prev" title="Legal" href="legal.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -214,7 +214,7 @@ module.</td>
 <p>Example usage:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">blaze.blir</span> <span class="kn">import</span> <span class="nb">compile</span><span class="p">,</span> <span class="n">execute</span>
+<span class="kn">from</span> <span class="nn">blaze.blir</span> <span class="kn">import</span> <span class="n">Context</span><span class="p">,</span> <span class="nb">compile</span><span class="p">,</span> <span class="n">execute</span>
 
 <span class="n">source</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
 <span class="s">def main(x: array[int], n : int) -&gt; void {</span>
@@ -234,7 +234,9 @@ module.</td>
 <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;int32&#39;</span><span class="p">)</span>
 <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
 
-<span class="n">execute</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+<span class="n">execute</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 <span class="k">print</span> <span class="n">arr</span>
 </pre></div>
 </div>
@@ -270,9 +272,9 @@ but with different semantics.</p>
 <li>BINARY_DIVIDE</li>
 <li>BINARY_MULTIPLY</li>
 <li>BINARY_SUBTRACT</li>
-<li>CALL_FOREIGN</li>
 <li>CALL_FUNCTION</li>
 <li>COMPARE</li>
+<li>DEF_FOREIGN</li>
 <li>GLOBAL</li>
 <li>LOAD</li>
 <li>LOAD_ARGUMENT</li>
@@ -328,9 +330,9 @@ into it as an argument.</p>
 <p>For debugging there is a standalone compiler that takes Blir source as
 input. Flags can be passed to debug compiler internals and emit either
 LLVM or x86 as well as executing some simple programs.</p>
-<div class="highlight-c"><pre>usage: blirc [-h] [--ddump-parse] [--ddump-lex] [--ddump-blocks] [--ddump-tc]
-             [--ddump-optimizer] [--noprelude] [--nooptimize] [--emit-llvm]
-             [--emit-x86] [--run]
+<div class="highlight-c"><pre>usage: blirc [-h] [-O [opt]] [--ddump-parse] [--ddump-lex] [--ddump-blocks]
+             [--ddump-tc] [--ddump-optimizer] [--noprelude] [--nooptimize]
+             [--emit-llvm] [--emit-x86] [--run]
              [file]
 
 positional arguments:
@@ -338,6 +340,7 @@ positional arguments:
 
 optional arguments:
   -h, --help         show this help message and exit
+  -O [opt]           Optimization level
   --ddump-parse      Dump parse tree
   --ddump-lex        Dump token stream
   --ddump-blocks     Dump the block structure

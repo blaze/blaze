@@ -89,7 +89,7 @@
 <li><a class="reference internal" href="#rigid-free">Rigid &amp; Free</a></li>
 <li><a class="reference internal" href="#context">Context</a></li>
 <li><a class="reference internal" href="#constraints">Constraints</a><ul>
-<li><a class="reference internal" href="#api">API</a></li>
+<li><a class="reference internal" href="#module-blaze.type_reconstruction">API</a></li>
 </ul>
 </li>
 </ul>
@@ -165,8 +165,30 @@ the unifiers.</p>
 <div class="section" id="constraints">
 <h2>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
 <p>TODO</p>
-<div class="section" id="api">
-<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="module-blaze.type_reconstruction">
+<span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.type_reconstruction" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="blaze.type_reconstruction.infer">
+<tt class="descclassname">blaze.type_reconstruction.</tt><tt class="descname">infer</tt><big>(</big><em>env</em>, <em>term</em>, <em>debug=True</em><big>)</big><a class="headerlink" href="#blaze.type_reconstruction.infer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruct types</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>env</strong> : dict</p>
+<blockquote>
+<div><p>environment of lexically-bound variables with types</p>
+</div></blockquote>
+<p><strong>term: object</strong> :</p>
+<blockquote class="last">
+<div><p>type signature</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 </div>
 </div>

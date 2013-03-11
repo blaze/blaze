@@ -88,6 +88,9 @@
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
 </ul>
 </li>
+<li><a class="reference internal" href="#developer-guide">Developer Guide</a><ul>
+</ul>
+</li>
 <li><a class="reference internal" href="#index">Index</a></li>
 </ul>
 </li>
@@ -146,19 +149,6 @@ for the layout and type of the data.</p>
 <li class="toctree-l2"><a class="reference internal" href="memory.html#tables">Tables</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="compiler.html">Blaze Compiler Infrastructure</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#goals">Goals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#example-syntax">Example Syntax</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#library-usage">Library Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#prelude">Prelude</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#external-libraries">External Libraries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#pipeline">Pipeline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#opcodes">Opcodes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#numpy-compat">Numpy Compat</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#standlone-compiler">Standlone Compiler</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#directory-structure">Directory Structure</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="datashape.html">Datashape</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="datashape.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datashape.html#bit-types">Bit Types</a></li>
@@ -174,7 +164,6 @@ for the layout and type of the data.</p>
 <li class="toctree-l2"><a class="reference internal" href="datashape.html#range">Range</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datashape.html#stream">Stream</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datashape.html#numpy-compatability">Numpy Compatability</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#grammar">Grammar</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="module.html">Module System</a><ul>
@@ -182,12 +171,6 @@ for the layout and type of the data.</p>
 <li class="toctree-l2"><a class="reference internal" href="module.html#trait-properties">Trait Properties</a></li>
 <li class="toctree-l2"><a class="reference internal" href="module.html#typesets">Typesets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="module.html#proxies">Proxies</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-types">Custom Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-functions">Custom Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-backends">Custom Backends</a></li>
 </ul>
 </li>
 </ul>
@@ -200,7 +183,6 @@ for the layout and type of the data.</p>
 <li class="toctree-l1"><a class="reference internal" href="toplevel.html">Toplevel</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">Core Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eclass.html">Evaluation Class</a></li>
-<li class="toctree-l1"><a class="reference internal" href="prims.html">Primitive Operations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="persistence.html">Persistence</a></li>
 <li class="toctree-l1"><a class="reference internal" href="typeinference.html">Type Reconstruction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="aterm.html">ATerm</a></li>
@@ -211,6 +193,38 @@ for the layout and type of the data.</p>
 <li class="toctree-l1"><a class="reference internal" href="table.html">Tables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="releases.html">Release Notes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="legal.html">Legal</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="developer-guide">
+<h2>Developer Guide<a class="headerlink" href="#developer-guide" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="compiler.html">Blaze Compiler Infrastructure</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#goals">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#example-syntax">Example Syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#library-usage">Library Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#prelude">Prelude</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#external-libraries">External Libraries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#pipeline">Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#opcodes">Opcodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#numpy-compat">Numpy Compat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#standlone-compiler">Standlone Compiler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html#directory-structure">Directory Structure</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-types">Custom Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-functions">Custom Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="extending.html#type-signatures">Type Signatures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending.html#execution-backends">Execution Backends</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending.html#numba">Numba</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending.html#memory-allocation">Memory Allocation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-backends">Custom Backends</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
