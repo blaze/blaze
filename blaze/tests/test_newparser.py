@@ -1,8 +1,9 @@
-from blaze.datashape.parser import parse
+from blaze.datashape.parser import load_parser
 
 from unittest import skip
 
 def test_all_the_strings():
+    parse = load_parser()
     parse('a')
     parse('a, b')
     parse('a, b, c')
@@ -61,6 +62,7 @@ def test_all_the_strings():
     ''')
 
 def test_trailing_semi():
+    parse = load_parser()
     a = parse('''
     type a = {
         a: int;
@@ -80,6 +82,7 @@ def test_trailing_semi():
     assert a == b
 
 def test_multiline():
+    parse = load_parser()
     a = parse('''
 
     type f a = b
@@ -94,6 +97,7 @@ def test_multiline():
     ''')
 
 def test_inline():
+    parse = load_parser()
     a = parse('''
     type Point = {
         x : int;
@@ -124,6 +128,7 @@ def test_inline():
     ''')
 
 def test_nested():
+    parse = load_parser()
     a = parse('''
     type Space = {
         a: { x: int; y: int };
@@ -132,6 +137,7 @@ def test_nested():
     ''')
 
 def test_parameterized():
+    parse = load_parser()
     a = parse('''
     type T x y = {
         a: x;
@@ -140,22 +146,28 @@ def test_parameterized():
     ''')
 
 def test_option():
+    parse = load_parser()
     a = parse(''' Option(int32) ''')
 
 def test_union():
+    parse = load_parser()
     a = parse(''' Union(a,b,c,d) ''')
 
 def test_either1():
+    parse = load_parser()
     a = parse(''' Either(int32, float32) ''')
 
 def test_either2():
+    parse = load_parser()
     a = parse(''' Either({x: int}, {y: float}) ''')
 
 @skip
 def test_either3():
+    parse = load_parser()
     a = parse(''' Either( (2, 2, T), (T, 2, int) ) ''')
 
 def test_stress():
+    parse = load_parser()
     parse('type big = Union(Union(Union(Union(Union(Union(Union(Union(x)))))))) ')
     parse('type big = {x:{x:{x:{x:{x:{x:{x:{x:{x:{x:int32}}}}}}}}}}')
 
