@@ -3,7 +3,7 @@ import numpy as np
 from blaze.cgen.blirgen import *
 
 from blaze.blir import compile, assembly, bitcode, Context, execute
-from blaze.cgen.fusion import *
+from blaze.cgen.kernels import *
 from blaze.cgen.utils import namesupply
 
 def test_cgen2():
