@@ -15,9 +15,9 @@ Our goal is to allow easy composition of low level computation kernels
 ( C, Fortran, Numba ) to form complex data transformations on large
 datasets.
 
-In Blaze computations are described in a high-level language ( Python
-) but executed on a low-level runtime outside of Python. Allowing the
-easy mapping of high-level expertise to data while not sacrificing
+In Blaze, computations are described in a high-level language ( Python
+) but executed on a low-level runtime outside of Python, enabling the
+easy mapping of high-level expertise to data without sacrificing
 low-level performance. Blaze aims to bring Python and NumPy into the
 massively-multicore arena, allowing it to able to leverage many CPU and
 GPU cores across computers, virtual machines and cloud services.
@@ -35,7 +35,7 @@ innovations in data management, analytics, and distributed computation.
 
 Blaze aims to be a "glue project" allowing many different users of
 other PyData projects ( Pandas, Theano, Numba, SciPy, Scikit-Learn)
-to interoperate at the appication level and at the library level with
+to interoperate at the application level and at the library level with
 the goal of being able to to lift their existing functionality into a
 distributed context.
 
@@ -47,7 +47,7 @@ Status
 ------
 
 Blaze is a work in progress at the moment. The code is quite a distance
-from feature complete. The code is released in an effort to start a
+from feature-complete. The code is released in an effort to start a
 public discussion with our end users and community.
 
 Documentation
@@ -97,8 +97,9 @@ $ python -m blaze.testing
 Alternative Installation
 ------------------------
 
-If you desire not to use Anaconda it is possible to build Blaze using
-standard Python tools. This method is not recommended.
+If for some reason you wish to avoid using Anaconda 
+it is possible to build Blaze using standard Python tools. 
+This method is not recommended.
 
 1) After you have checked out the Blaze source, create a virtualenv
 under the root of the Blaze repo.
@@ -156,8 +157,8 @@ Contributing
 ------------
 
 Anyone wishing to discuss on Blaze should join the
-[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze
--dev) mailing list at: blaze-dev@continuum.io
+[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev) 
+mailing list at: blaze-dev@continuum.io
 
 License
 -------
