@@ -803,26 +803,31 @@ def to_numpy(ds):
     dtype = None
 
     #assert isinstance(ds, DataShape)
-    for dim in ds:
+
+    # The datashape dimensions
+    for dim in ds.parameters[:-1]:
         if isinstance(dim, Integer):
             shape += (dim,)
         elif isinstance(dim, Fixed):
             shape += (dim.val,)
         elif isinstance(dim, TypeVar):
             shape += (-1,)
-
-        elif isinstance(dim, CType):
-            dtype = dim.to_dtype()
-        elif isinstance(dim, Blob):
-            dtype = np.dtype('object')
-        elif isinstance(dim, Record):
-            dtype = dim.to_dtype()
-
         else:
-            raise NotNumpyCompatible()
+            raise NotNumpyCompatible('Datashape dimension %s is not NumPy-compatible' % dim)
 
-    if len(shape) < 0 or type(dtype) != np.dtype:
-        raise NotNumpyCompatible()
+    # The datashape measure
+    dim = ds.parameters[-1]
+    if isinstance(dim, CType):
+        dtype = dim.to_dtype()
+    elif isinstance(dim, Blob):
+        dtype = np.dtype('object')
+    elif isinstance(dim, Record):
+        dtype = dim.to_dtype()
+    else:
+        raise NotNumpyCompatible('Datashape measure %s is not NumPy-compatible' % dim)
+
+    if type(dtype) != np.dtype:
+        raise NotNumpyCompatible('Internal Error: Failed to produce NumPy dtype')
     return (shape, dtype)
 
 
@@ -850,7 +855,7 @@ def from_numpy(shape, dt):
     else:
         measure = CType.from_dtype(dtype)
 
-    return reduce(product, dimensions + [measure])
+    return DataShape(parameters=(dimensions+[measure]))
 
 def from_char(c):
     dtype = np.typeDict[c]
