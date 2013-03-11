@@ -129,6 +129,7 @@ class TypeChecker(NodeVisitor):
 
                 for n, (arg, parm) in enumerate(zip(node.arglist, symnode.parameters),1):
                     self.visit(arg)
+                    arg.type == parm.type
                     if arg.type != parm.type:
                         error(arg.lineno,"Type Error. Argument %d must be %s" % (n, parm.type.name))
 
@@ -270,7 +271,7 @@ class TypeChecker(NodeVisitor):
                 # <array[int]> -> int
                 node.type = sym.type.arg.type
             else:
-                error(node.lineno,"Type Error: Cannot index scalar type" % node.name)
+                error(node.lineno,"Type Error: Cannot index scalar type: %s" % node.name)
                 node.type = btypes.undefined
         else:
             error(node.lineno,"Name Error: %s undefined" % node.name)
@@ -285,7 +286,7 @@ class TypeChecker(NodeVisitor):
                 # extract the element pointer
                 node.type = sym.type.arg.type
             else:
-                error(node.lineno,"Type Error: Cannot index scalar type" % node.name)
+                error(node.lineno,"Type Error: Cannot index scalar type: %s" % node.name)
                 node.type = btypes.undefined
         else:
             error(node.lineno,"Name Error: %s undefined" % node.name)

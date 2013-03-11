@@ -217,19 +217,29 @@ extensions = [
        include_dirs = [],
        depends=descriptor_depends,
    ),
-   Extension(
-        "blaze.rts.executors", ["blaze/rts/executors.pyx"],
-        include_dirs = [numpy_path],
-        depends=descriptor_depends,
-   ),
+
    Extension(
         "blaze.cutils", ["blaze/cutils.pyx"],
         include_dirs = [numpy_path],
    ),
+
    Extension(
         "blaze.algo.stats",
         sources = ["blaze/algo/stats.pyx"],
         include_dirs = [numpy_path]
+   ),
+
+   # ----------------------------------------
+
+   Extension(
+        "blaze.rts.runtime",
+        sources = ["blaze/rts/runtime.c"],
+        include_dirs = [],
+   ),
+   Extension(
+        "blaze.rts.wrapper",
+        sources = ["blaze/rts/wrapper.pyx"],
+        include_dirs = [numpy_path],
    ),
 ]
 

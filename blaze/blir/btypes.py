@@ -38,6 +38,12 @@ class Type(object):
         self.unary_ops = unary_ops
         self.cmp_ops = cmp_ops
 
+    def __eq__(self, other):
+        if isinstance(other, Type):
+            return self.name == other.name
+        else:
+            return False
+
     def __repr__(self):
         return '<%s>' % self.name
 
@@ -47,6 +53,15 @@ class PType(Type):
         self.kind = Param
         self.cons = cons
         self.arg = arg
+
+    def __eq__(self, other):
+        if isinstance(other, PType):
+            return self.cons.name == other.cons.name
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not (self == other)
 
     def __repr__(self):
         return '<%s[%s]>' % (self.cons.name, self.arg.name)

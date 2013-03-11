@@ -114,7 +114,7 @@ Example usage:
 
     import time
     import numpy as np
-    from blaze.blir import compile, execute
+    from blaze.blir import Context, compile, execute
 
     source = """
     def main(x: array[int], n : int) -> void {
@@ -134,7 +134,9 @@ Example usage:
     arr = np.eye(N, dtype='int32')
     args = (arr, N)
 
-    execute(env, args, timing=True)
+    ctx = Context(env)
+    execute(ctx, env, args, timing=True)
+    ctx.destroy()
     print arr
 
 Prelude

@@ -423,17 +423,11 @@ cdef class chunk:
 
   @property
   def pointer(self):
-      if self.memory:
-          return <Py_uintptr_t> self.data+BLOSCPACK_HEADER_LENGTH
-      else:
-          raise RuntimeError("Not in memory")
+      return <Py_uintptr_t> self.data+BLOSCPACK_HEADER_LENGTH
 
   @property
   def viewof(self):
-      if self.memory:
-          return PyBuffer_FromMemory(<void*>self.data, <Py_ssize_t>self.cdbytes)
-      else:
-          raise RuntimeError("Not in memory")
+      return PyBuffer_FromMemory(<void*>self.data, <Py_ssize_t>self.cdbytes)
 
 
   def __setitem__(self, object key, object value):
@@ -447,9 +441,10 @@ cdef class chunk:
   def __repr__(self):
     """Represent the chunk as an string, with additional info."""
     cratio = self.nbytes / float(self.cbytes)
-    fullrepr = "chunk(%s, %s)  nbytes: %d; cbytes: %d; ratio: %.2f\n%r" % \
-        (self.shape, self.dtype, self.nbytes, self.cbytes, cratio, str(self))
-    return fullrepr
+    return "<chunk %s %s>" % (self.dtype, self.nbytes)
+    #fullrepr = "chunk(%s, %s)  nbytes: %d; cbytes: %d; ratio: %.2f\n%r" % \
+        #(self.shape, self.dtype, self.nbytes, self.cbytes, cratio, str(self))
+    #return fullrepr
 
   def __dealloc__(self):
     """Release C resources before destruction."""

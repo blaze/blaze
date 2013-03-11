@@ -41,8 +41,10 @@ fmod = 'fmod', float_type, [float_type, float_type]
 llvm_intrinsics = {
     'sin'  : lc.INTR_SIN,
     'cos'  : lc.INTR_COS,
-    #'tan'  : lc.INTR_TAN,
 
     'sqrt' : lc.INTR_SQRT,
     'pow'  : lc.INTR_POW,
+    'exp'  : lc.INTR_EXP,
+    'log'  : lc.INTR_LOG,
+    'sqrt' : lc.INTR_SQRT,
 }

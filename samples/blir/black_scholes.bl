@@ -1,0 +1,36 @@
+const a1 = 0.31938153;
+const a2 = 0.356563782;
+const a3 = 1.781477937;
+const a4 = 1.821255978;
+const a5 = 1.330274429;
+
+def CND(x : float) -> float {
+    var float L = x;
+
+    if x < 0.0 {
+        L = -x;
+    }
+
+    var float K = 1.0 / (1.0 + 0.2316419 * L);
+    var float w = 1.0 - 1.0/sqrt(2.0*3.141592653589793)* exp(-1.0*L*L/2.0) * (a1*K + -a2*K*K + -a3*K*K*K + a4*K*K*K*K + a5*K*K*K*K*K);
+
+    if x < 0.0 {
+      w = 1.0-w;
+    }
+    return w;
+}
+
+def black_scholes(call : bool, S : float, X : float, T : float ,r : float , v : float ) -> float {
+  var float d1 = ((r+v*v/2.)*T+log(S/X))/(v*sqrt(T));
+  var float d2 = d1-v*sqrt(T);
+  var float z = exp(-1.0*r*T) * X;
+  var float retval;
+
+  if call {
+    retval = S*CND(d1) - z*CND(d2);
+  } else {
+    retval = z*CND(-1.0*d2) - S*CND(-1.0*d1);
+  }
+
+  return retval;
+}

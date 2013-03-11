@@ -11,7 +11,6 @@ import errors
 import exc
 
 from threading import Lock
-from plyhacks import lexfrom, yaccfrom
 
 compilelock = Lock()
 
@@ -162,8 +161,8 @@ compiler = Pipeline('compile', [frontend,
 # Toplevel
 #------------------------------------------------------------------------
 
-def compile(source, opts=None):
-    opts = opts or {'O':2}
+def compile(source, **opts):
+    opts.setdefault('O', 2)
     env = {'args': opts}
     with compilelock:
         ast, env = compiler(source, env)
@@ -216,7 +215,7 @@ def main():
         start = time.time()
         with errors.listen():
             opts = vars(args)
-            ast, env = compile(source, opts)
+            ast, env = compile(source, **opts)
         timing = time.time() - start
         # =====================================
 
@@ -225,13 +224,15 @@ def main():
         elif args.emit_x86:
             print env['lmodule'].to_native_assembly()
         elif args.run:
-            exc.execute(env)
+            ctx = exc.Context(env)
+            exc.execute(ctx, fname='main')
         else:
             print 'Compile time %.3fs' % timing
 
     except CompileError as e:
         sys.stderr.write('FAIL: Failure in compiler phase: %s\n' % e.args[0])
         sys.exit(1)
+        errors.reset()
 
 if __name__ == '__main__':
     main()
