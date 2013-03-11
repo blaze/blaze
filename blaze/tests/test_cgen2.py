@@ -11,9 +11,9 @@ def test_cgen2():
 
         krn = ElementwiseKernel(
             [
-                (IN  , VectorArg((25,), 'array[float]')),
-                (IN  , VectorArg((25,), 'array[float]')),
-                (OUT , VectorArg((25,), 'array[float]')),
+                (IN  , VectorArg((300,), 'array[float]')),
+                (IN  , VectorArg((300,), 'array[float]')),
+                (OUT , VectorArg((300,), 'array[float]')),
             ],
             '_out0[i0] = exp(_in0[i0] + _in1[i0])',
         )
@@ -23,8 +23,8 @@ def test_cgen2():
 
         ctx = Context(env)
 
-        a = np.array(xrange(25), dtype='double')
-        b = np.array(xrange(25), dtype='double')
+        a = np.array(xrange(300), dtype='double')
+        b = np.array(xrange(300), dtype='double')
         c = np.empty_like(b)
 
         execute(ctx, args=(a,b,c), fname='kernel0', timing=False)
