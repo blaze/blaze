@@ -10,6 +10,8 @@ from blaze.cgen.utils import namesupply
 # Code Generation ( Level 2 )
 #------------------------------------------------------------------------
 
+# Level 2 tests kernel construction.
+
 def test_cgen2_expadd():
     with namesupply():
 

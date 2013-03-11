@@ -1,6 +1,12 @@
 from textwrap import dedent
 from blaze.cgen.blirgen import *
 
+#------------------------------------------------------------------------
+# Code Generation ( Level 1 )
+#------------------------------------------------------------------------
+
+# Level 1 just tests syntatic construction.
+
 def test_compose():
     x = Assign('a', '3')
     y = Arg('int', 'a')
