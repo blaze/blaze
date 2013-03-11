@@ -719,7 +719,7 @@ def extract_dims(ds):
     dimensions
     """
     if isinstance(ds, CType):
-        raise tuple()
+        return tuple()
     return ds.parameters[:-1]
 
 def extract_measure(ds):
