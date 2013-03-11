@@ -48,7 +48,7 @@ def test_parse_equality():
     assert x._equal(y)
 
 def test_parse_vars():
-    x = parse('Range(1,2)')
+    x = parse('Range(1,2), int32')
 
     assert x[0].lower == 1
     assert x[0].upper == 2
