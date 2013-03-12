@@ -241,6 +241,21 @@ extensions = [
         sources = ["blaze/rts/wrapper.pyx"],
         include_dirs = [numpy_path],
    ),
+
+   # ----------------------------------------
+
+   Extension(
+        "blaze.blir.datashape",
+        sources = ["blaze/blir/datashape.c"],
+        include_dirs = [],
+   ),
+
+   Extension(
+        "blaze.blir.prelude",
+        sources = ["blaze/blir/prelude.c"],
+        depends = ["blaze/blir/datashape.c"],
+        include_dirs = [],
+   ),
 ]
 
 #------------------------------------------------------------------------

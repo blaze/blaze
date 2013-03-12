@@ -1,17 +1,6 @@
 .PHONY: all docs tests build clean web
 
-CC = gcc
-LPYTHON = $(shell python-config --includes)
-LNUMPY = $(shell python -c "import numpy; print '-I' + numpy.get_include()")
-
-CFLAGS = -lpthread $(LPYTHON) $(LNUMPY)
-
-all: build blir
-
-# stupid hack for now
-blir:
-	$(CC) $(CFLAGS) -shared -fPIC blaze/blir/datashape.c -o blaze/blir/datashape.o
-	$(CC) $(CFLAGS) -shared -fPIC blaze/blir/datashape.o blaze/blir/prelude.c -o blaze/blir/prelude.so
+all: build
 
 build:
 	python setup.py build_ext --inplace
