@@ -6,7 +6,7 @@ import numpy as np
 from os.path import realpath, dirname, join
 from types import ModuleType
 
-from bitey.bind import wrap_llvm_module
+from bind import wrap_llvm_module
 
 import llvm.ee as le
 from llvm.workaround.avx_support import detect_avx_support

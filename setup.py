@@ -39,12 +39,9 @@ packages = [
 # Minimum Versions
 #------------------------------------------------------------------------
 
-# The minimum version of Cython required for generating extensions
 min_cython_version = '0.16'
-# The minimum version of NumPy required
-min_numpy_version = '1.5'
-# The minimum version of llvmpy required
-min_llvmpy_version = '0.8.4'
+min_numpy_version  = '1.5'
+min_llvmpy_version = '0.11.1'
 
 #------------------------------------------------------------------------
 # Utilities
@@ -112,6 +109,8 @@ check_import('numpy', min_numpy_version)
 #------------------------------------------------------------------------
 # LLVM Sanity Check
 #------------------------------------------------------------------------
+
+#check_import('llvmpy', min_llvmpy_version)
 
 #------------------------------------------------------------------------
 # C Compiler Environment
