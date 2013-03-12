@@ -141,9 +141,9 @@ class ElementwiseKernel(Kernel):
         ivars = {}
         icount = 0
 
+        ins    = {}
+        outs   = {}
         params = []
-        ins = {}
-        outs = {}
 
         _operation = self.operation
 
@@ -197,7 +197,7 @@ class ElementwiseKernel(Kernel):
 
 
 class ZipKernel(Kernel):
-    def __init__(self, arguments, operationk, name=None):
+    def __init__(self, arguments, operation, name=None):
         self.arguments = arguments
         self.operation = operation
 

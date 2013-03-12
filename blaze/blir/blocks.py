@@ -1,5 +1,3 @@
-import opcodes as ops
-
 BASIC  = 0
 IFELSE = 1
 WHILE  = 2
