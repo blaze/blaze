@@ -520,7 +520,7 @@ def debug_parse(data, lexer, parser):
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        path = os.path.relpath(__file__)
+        path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="mlex", outputdir=dir_path, optimize=0)
         parser = yacc.yacc(tabmodule='myacc',outputdir=dir_path,
