@@ -29,7 +29,7 @@ log = 'log', float_type, [float_type]
 log10 = 'log10', float_type, [float_type]
 
 # misc
-fabs = 'fabs', float_type, [float_type]
+abs = 'abs', float_type, [float_type]
 ceil = 'ceil', float_type, [float_type]
 floor = 'floor', float_type, [float_type]
 fmod = 'fmod', float_type, [float_type, float_type]
@@ -47,4 +47,5 @@ llvm_intrinsics = {
     'exp'  : lc.INTR_EXP,
     'log'  : lc.INTR_LOG,
     'sqrt' : lc.INTR_SQRT,
+    'abs'  : lc.INTR_FABS,
 }

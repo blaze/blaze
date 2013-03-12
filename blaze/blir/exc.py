@@ -9,6 +9,7 @@ from types import ModuleType
 from bitey.bind import wrap_llvm_module
 
 import llvm.ee as le
+from llvm.workaround.avx_support import detect_avx_support
 
 any_type = ctypes.c_char_p
 
@@ -131,7 +132,13 @@ class Context(object):
         self.__namespace = cgen.globals
         self.__llmodule = cgen.module.clone()
 
-        self.__engine = le.ExecutionEngine.new(self.__llmodule)
+        if not detect_avx_support():
+            tc = le.TargetMachine.new(features='-avx', cm=le.CM_JITDEFAULT)
+        else:
+            tc = le.TargetMachine.new(features='', cm=le.CM_JITDEFAULT)
+
+        eb = le.EngineBuilder.new(self.__llmodule)
+        self.__engine = eb.create(tc)
         #self.__engine.run_function(cgen.globals['__module'], [])
 
         mod = ModuleType('blir_wrapper')
@@ -151,7 +158,7 @@ class Context(object):
 
     def destroy(self):
         if not self.destroyed:
-            self.__engine.remove_module(self.__llmodule)
+            del self.__engine
         else:
             raise RuntimeError("Context already destroyed")
 
