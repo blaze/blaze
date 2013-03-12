@@ -23,15 +23,21 @@ class ConstructTest(TestCase):
         '10, float16',
         '15, float32',
         '32, float64',
-        '32, float128',
         '20, complex64',
         '30, complex128',
-        '30, complex256',
         '10, 20, int32',
         '10, 20, uint8',
         '10, 20, float32',
         '10, 20, complex128',
         ]
+
+    def setUp(self):
+        import sys
+        if sys.platform != 'win32':
+            full_types.extend([
+                '32, float128',
+                '30, complex256'
+                ])
 
     def test_zeros(self):
         for t in self.full_types:
