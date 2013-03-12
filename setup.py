@@ -45,8 +45,6 @@ min_cython_version = '0.16'
 min_numpy_version = '1.5'
 # The minimum version of llvmpy required
 min_llvmpy_version = '0.8.4'
-# The minimum version of Numba required
-min_numba_version = '0.5'
 
 #------------------------------------------------------------------------
 # Utilities
