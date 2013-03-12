@@ -47,9 +47,8 @@ def test_record_consume2():
 
 def test_custom_dshape():
     from blaze import RecordDecl, derived
-    from blaze import int32, String
+    from blaze import int32
     class CustomStock(RecordDecl):
-        name   = String
         max    = int32
         min    = int32
 

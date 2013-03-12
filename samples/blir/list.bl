@@ -1,0 +1,9 @@
+def main(x : array[int], n : int) -> int {
+    var int sum = 0;
+    var int i;
+
+    for i in range(n) {
+        sum = sum + x[i];
+    }
+    return sum;
+}

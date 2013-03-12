@@ -141,7 +141,7 @@ tanh  = NumpyOp(np.tanh, 'Tanh')
 
 # For Python calling the application strategy is stored on the
 # operator itself so rather unnaturally we have the combinator
-# reach into the operator to clal itself.
+# reach into the operator to call itself.
 
 def MkMap(op):
     return NumpySort(MAP, op.fn)
@@ -217,7 +217,7 @@ for op in ops:
 # Module Interface
 #------------------------------------------------------------------------
 
-constructors = {
+__functions__ = {
     'array': np.ndarray,
     'slice': slice,
 }
@@ -226,7 +226,7 @@ constructors = {
 # Parameterized types are 2-tuples with a the first element being
 # a list of tuples of the form (name, ty) with ty string
 # reference to other type.
-types = {
+__types__ = {
     'int'   : (np.int,),
     'float' : (np.float),
     'bool'  : (np.bool,),

@@ -1,0 +1,5 @@
+foreign "C" def append(x : str, y: str) -> str;
+
+def main() -> void {
+    print append("Foo", "Bar");
+}

@@ -1,0 +1,3 @@
+def noop(x: blaze[int], y: blaze[int]) -> int {
+    return 0;
+}

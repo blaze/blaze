@@ -32,10 +32,7 @@ Overview
    format
    memory
    datashape
-   eclass
    module
-   pipeline
-   extending
 
 API Reference
 ~~~~~~~~~~~~~
@@ -45,6 +42,7 @@ API Reference
 
    toplevel
    types
+   eclass
    prims
    persistence
    typeinference
@@ -56,6 +54,14 @@ API Reference
    table
    releases
    legal
+
+Developer Guide
+~~~~~~~~~~~~~~~
+
+.. toctree::
+   compiler
+   datashape-spec
+   extending
 
 Index
 ~~~~~

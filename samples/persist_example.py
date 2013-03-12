@@ -10,7 +10,7 @@ def build_table(table_name, rows):
 
     if already built just open it"""
     if not os.path.exists(table_name):
-        ds = '(x, {i: int64, f: float64})'
+        ds = 'x, {i: int64; f: float64}'
         p = params(clevel=5, storage=table_name)
         t = Table([], dshape=ds, params=p)
         for i in xrange(rows):
@@ -25,7 +25,7 @@ def build_table(table_name, rows):
 
 def build_array(array_name, rows):
     if not os.path.exists(array_name):
-        ds = '(x, float)'
+        ds = 'x, float'
 
         p = params(clevel=5, storage=array_name)
         t = fromiter((0.1*i for i in xrange(rows)),
@@ -33,18 +33,18 @@ def build_array(array_name, rows):
         t.commit()
     else:
         t = open(array_name)
-    
+
     return t
 
 def test_simple():
-    table_name = './sample_tables/test_table'
-#    array_name = './sample_tables/test_array'
+#    table_name = './sample_tables/test_table'
+    array_name = './sample_tables/test_array'
 
-    t = build_table(table_name, 100000)
-#    a = build_array(array_name, 100000)
+#    t = build_table(table_name, 100000)
+    a = build_array(array_name, 100000)
 
-    print t
-#    print a.datashape
+#    print "table", t
+    print "array", a
 
 if __name__ == '__main__':
     test_simple()
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 ## Local Variables:
 ## mode: python
 ## coding: utf-8 
-## py-indent-offset: 4
-## tab-with: 4
+## python-indent: 4
+## tab-width: 4
 ## fill-column: 66
 ## End:

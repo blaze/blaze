@@ -19,11 +19,11 @@ packages = [
     'blaze',
     'blaze.algo',
     'blaze.aterm',
+    'blaze.blir',
     'blaze.carray',
     'blaze.datashape',
     'blaze.desc',
     'blaze.dist',
-    'blaze.compile',
     'blaze.expr',
     'blaze.include',
     'blaze.layouts',
@@ -217,24 +217,29 @@ extensions = [
        include_dirs = [],
        depends=descriptor_depends,
    ),
-   Extension(
-        "blaze.rts.executors", ["blaze/rts/executors.pyx"],
-        include_dirs = [numpy_path],
-        depends=descriptor_depends,
-   ),
+
    Extension(
         "blaze.cutils", ["blaze/cutils.pyx"],
         include_dirs = [numpy_path],
    ),
-   Extension(
-        "blaze.datashape.cdatashape", ["blaze/datashape/datashape.c"],
-        include_dirs = [],
-        define_macros=[('DEBUG', 1)]
-   ),
+
    Extension(
         "blaze.algo.stats",
         sources = ["blaze/algo/stats.pyx"],
         include_dirs = [numpy_path]
+   ),
+
+   # ----------------------------------------
+
+   Extension(
+        "blaze.rts.runtime",
+        sources = ["blaze/rts/runtime.c"],
+        include_dirs = [],
+   ),
+   Extension(
+        "blaze.rts.wrapper",
+        sources = ["blaze/rts/wrapper.pyx"],
+        include_dirs = [numpy_path],
    ),
 ]
 
@@ -312,4 +317,5 @@ setup(
         'build_ext' : build_ext,
         'clean'     : CleanCommand,
     },
+    scripts=['bin/blirc'],
 )

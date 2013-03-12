@@ -5,8 +5,7 @@ Datashape
 
 Datashape is a generalization of ``dtype`` and ``shape`` into a micro
 type system which lets us overlay high level structure on existing
-data in Table and Array objects that can inform better code
-generation and scheduling.
+data in Table and Array objects.
 
 Overview
 ~~~~~~~~
@@ -19,8 +18,8 @@ appropriate implementation for each application of the function, based
 on the types of the arguments. Blaze simply extends this specialization
 to data structure and data layout as well as data type ( dtype ).
 
-In fact many of the ideas behind datashape are generalizations and
-combinations of notions found in Numpy:
+Many of the ideas behind datashape are generalizations and combinations
+of notions found in Numpy:
 
 .. cssclass:: table-bordered
 
@@ -36,23 +35,6 @@ combinations of notions found in Numpy:
 | Ufunc          | Gufunc         |
 +----------------+----------------+
 
-Datashapes in Blaze do not form a hierarchy or permit subtyping. This
-differs from type systems found in other languages like OCaml and Julia
-which achieve a measure of type polymorphism through the construction of
-hierarchies of types with an explicit pre-ordering.
-
-Blaze favors the other approach in that types do not exist in a
-hierarchy but instead are inferred through constraint generation at
-"compile time". In addition it also permits a weakened version of
-gradual typing through a dynamic type ( denoted ``?`` ) which allows a
-"escape hatch" in the type system for expressing types of values which
-cannot be known until runtime.
-
-The goal of next generation of vector operations over Blaze structures
-aim to allow a richer and more declarative way of phrasing operations
-over semi-structured data. While types are a necessary part of writing
-efficient code, the ideal type system is one which disappears entirely!
-
 Units
 -----
 
@@ -65,9 +47,6 @@ In Blaze there are two classes of units: **measures** and
 units of shape. The combination of measure and dimension in datashape
 constructors uniquely describe the space of possible values or
 **dataspace** of a table or array object.
-
-Dataspace mappings which preserve values ( i.e. homomorphisms ) are
-called **index-space transformations**.
 
 Bit Types
 ~~~~~~~~~
@@ -190,7 +169,6 @@ It is also left associative, namely::
 
     ((a, b), c) = a, b, c
 
-
 The outer element a product type is referred to as a **measure**
 while the other elements of the product are referred to as
 **dimensions**.
@@ -238,17 +216,8 @@ With the corresponding NumPy array::
 Constructors
 ~~~~~~~~~~~~
 
-A type constructor is a parameterized type definition for specifying
-polymorphic types. Polymorphic types specify containers that are capable
-of holding values of many different types conforming to the intermix of
-the constructors.
-
-The **kind** of a argument specifies the signature of the constructor in
-relation to its parameters.
-
-::
-
-    K = * | K -> K
+A type constructor is a parameterized type definition for specifying a
+function which produces new types given inputs.
 
 For example type constructor with no parameters has the base
 kind ``(*)``, a type constructor with two parameters has kind ``(*
@@ -268,8 +237,8 @@ Datashape types with free parameters in their constructor are called
     type SquareMatrix T = N, N, T
 
 Datashape types without free parameters in their constructor are called
-**alias** types. Alias types don't add any additional structure they just
-ascribe a new name. Example::
+**alias** types, and are similar to ``typedef`` in C. Alias types don't
+add any additional structure they just ascribe a new name. Example::
 
     type AliasType N = N, N, int32
 
@@ -280,40 +249,6 @@ values and to construct even higher order types.
 Blaze does not permit recursive type definitions.
 
 Datashape types are split into three equivalence classes.
-
-:Fixed:
-
-    Fixed types are equal iff their value is equal::
-
-        1 == 1
-        1 != 2
-
-:CTypes:
-
-    Bit types are equal iff their data type name and width
-    are equal::
-
-        int32 == int32
-        int64 != int32
-        int8 != char
-
-:Composite:
-
-    Composite datashape types are **nominative**, in that the equivalence of
-    two types is determined whether the names they are given are equivalent.
-    Thus two datashapes that are defined identically are still not equal to
-    each other::
-
-        A = 2, int32
-        B = 2, int32
-
-        A == A
-        A != B
-
-While it is true that structurally equivalent composites are not equal
-to each other, it is however necessarily true that the unification of
-two identically defined composite types is structurally identical to the
-two types.
 
 Records
 ~~~~~~~
@@ -415,40 +350,6 @@ A type capable of rectangular variable length arrays of integers
 can be written as two free type vars::
 
     A, B, int32
-
-Type variables are reduced through scope of constructors and unified
-into one of two classes:
-
-* **dimension-generic**
-* **measure-generic**
-
-::
-
-    type DimGen T = T, int
-    type TypGen T = 2, T
-
-For example in the following signature the type variable T is unified in
-both arguments to the type constructor ``Either``::
-
-    type Sig T = Either( (2, 2, T), (3, 3, T) )
-
-A type signature may only be either dimension-generic or
-measure-generic. Attempting to use a type variable in both will raise an
-exception ``AmbigiousTypeVariable``. For example::
-
-    type Sig T = Either( (2, 2, T), (T, 2, int) )
-
-Not all declarations of type variables are well-defined. For example
-it is not possible to expression a Range type in terms of variable. An
-instance like this would require a immensely more sophisticated type
-system.
-
-::
-    
-    type InvalidSig1 T = Range(0, T)
-
-..
-    (1x + 2x + ... + Ax) * (1y + 2y + ... By)
 
 Sums
 ----
@@ -585,45 +486,3 @@ FAQ
 
 * How do I convert from Blaze DataShape to CTypes?
 
-Grammar
-~~~~~~~
-
-.. code-block:: text
-
-    NAME   = [a-zA-Z_][a-zA-Z0-9_]*
-    EQUALS = '='
-    COMMA  = ','
-    COLON  = ':'
-    LBRACE = '{'
-    RBRACE = '}'
-    BIT    = 'bool' | 'int8' | 'int16' | 'int32' ...
-
-    top : mod
-        | stmt
-
-    mod : mod mod
-        | stmt
-
-    stmt : TYPE lhs_expression EQUALS rhs_expression
-         | rhs_expression
-
-    lhs_expression : lhs_expression lhs_expression
-                   | NAME
-
-    rhs_expression : rhs_expression COMMA rhs_expression
-                   | appl
-                   | record
-                   | BIT
-                   | NAME
-                   | NUMBER
-
-    appl : NAME '(' rhs_expression ')'
-
-    record : LBRACE record_opt RBRACE
-    record_opt : record_opt SEMI record_opt
-               | record_item
-               | empty
-    record_item : NAME COLON '(' rhs_expression ')'
-                | NAME COLON rhs_expression'
-
-    empty :

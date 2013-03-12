@@ -309,12 +309,16 @@ def build_ds(ds):
     """
     # ----------------------------
     if isinstance(ds, list):
-        pass # XXX
+        raise NotImplementedError('dshape from list parse tree') # XXX
     elif isinstance(ds, simpletype):
-        pass # XXX
+        raise NotImplementedError('dshape from simpletype') # XXX
     elif isinstance(ds, tydecl):
         if isinstance(ds.lhs , simpletype):
-            return build_ds(ds.rhs[0])
+            if len(ds.lhs.tyvars) == 0:
+                dst = map(build_ds, ds.rhs)
+                return T.DataShape(dst)
+            else:
+                raise TypeError('building a simple dshape with type parameters is not supported')
         else:
             raise NotImplementedError
     # ----------------------------
