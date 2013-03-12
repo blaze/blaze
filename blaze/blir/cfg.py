@@ -60,19 +60,17 @@ class SSARewrite(NodeVisitor):
         # f%d - floats
         # s%d - string
         # b%d - bool
-        name = TEMP_NAMING % (val.name[0], self.assignments[val.name])
+        name = TEMP_NAMING % (val.name, self.assignments[val.name])
         self.assignments[val.name] += 1
         return name
 
     def visit_Module(self, node):
         self.visit(node.body)
-        # --
 
         self.block.append(('RETURN', btypes.void_type))
 
     def visit_UnaryOp(self, node):
         self.visit(node.expr)
-        # --
 
         target = self.atemp(node.expr.type)
         opcode = unary_ops[node.op]
@@ -84,7 +82,6 @@ class SSARewrite(NodeVisitor):
     def visit_BinOp(self, node):
         self.visit(node.left)
         self.visit(node.right)
-        # --
 
         target = self.atemp(node.type)
         opcode = binary_ops[node.op]
@@ -109,7 +106,6 @@ class SSARewrite(NodeVisitor):
     def visit_Assign(self,node):
         self.visit(node.expr)
         self.visit(node.store_location)
-        # --
 
     def visit_LoadVariable(self, node):
         target = self.atemp(node.type)
@@ -178,7 +174,7 @@ class SSARewrite(NodeVisitor):
         inst = ('STORE', node.expr.ssa_name, node.name)
         self.block.append(inst)
 
-    def visit_ConstDecl(self,node):
+    def visit_ConstDecl(self, node):
         if node.is_global:
             inst = ('GLOBAL', node.expr.type, node.name)
         else:
@@ -190,12 +186,12 @@ class SSARewrite(NodeVisitor):
         inst = ('STORE', node.expr.ssa_name, node.name)
         self.block.append(inst)
 
-    def visit_ExternFuncDecl(self,node):
+    def visit_ExternFuncDecl(self, node):
         self.visit(node.sig)
         # --
 
-        args = tuple(arg.type.name for arg in node.sig.parameters)
-        inst = ('CALL_FOREIGN', node.sig.name, node.sig.type.name) + args
+        args = tuple(arg.type for arg in node.sig.parameters)
+        inst = ('DEF_FOREIGN', node.sig.name, node.sig.type, args)
         self.block.append(inst)
 
     def visit_FunctionCall(self, node):
@@ -205,7 +201,7 @@ class SSARewrite(NodeVisitor):
             args.append(arg.ssa_name)
 
         target = self.atemp(node.type)
-        inst = ('CALL_FUNCTION', node.name) + tuple(args) + (target,)
+        inst = ('CALL_FUNCTION', node.name, args, target)
         self.block.append(inst)
         node.ssa_name = target
 

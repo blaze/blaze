@@ -2,6 +2,7 @@ import sys
 from contextlib import contextmanager
 
 _listeners = []
+_errlog = []
 _count = 0
 
 #------------------------------------------------------------------------
@@ -9,13 +10,14 @@ _count = 0
 #------------------------------------------------------------------------
 
 def error(lineno, message, filename=None):
-    global _count
+    global _count, _errlog
     if not filename:
         errmsg = "{}: {}".format(lineno, message)
     else:
         errmsg = "{}:{}: {}".format(filename, lineno, message)
     for listener in _listeners:
         listener(errmsg)
+    _errlog.append(errmsg)
     _count += 1
 
 def _default_handler(msg):
@@ -24,7 +26,12 @@ def _default_handler(msg):
 
 def reset():
     global _count
+    global _errlog
     _count = 0
+
+def log():
+    global _errlog
+    return _errlog
 
 #------------------------------------------------------------------------
 # Toplevel

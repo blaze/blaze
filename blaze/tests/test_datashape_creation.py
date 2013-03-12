@@ -1,0 +1,36 @@
+import blaze
+import numpy as np
+import unittest
+
+class TestDatashapeCreation(unittest.TestCase):
+
+    def test_raise_on_bad_input(self):
+        # Make sure it raises exceptions on a few nonsense inputs
+        self.assertRaises(TypeError, blaze.dshape, None)
+        self.assertRaises(TypeError, blaze.dshape, lambda x: x+1)
+
+    def test_atom_shapes(self):
+        self.assertEqual(blaze.dshape('bool'), blaze.bool_)
+        self.assertEqual(blaze.dshape('int8'), blaze.i1)
+        self.assertEqual(blaze.dshape('int16'), blaze.i2)
+        self.assertEqual(blaze.dshape('int32'), blaze.i4)
+        self.assertEqual(blaze.dshape('int64'), blaze.i8)
+        self.assertEqual(blaze.dshape('uint8'), blaze.u1)
+        self.assertEqual(blaze.dshape('uint16'), blaze.u2)
+        self.assertEqual(blaze.dshape('uint32'), blaze.u4)
+        self.assertEqual(blaze.dshape('uint64'), blaze.u8)
+        self.assertEqual(blaze.dshape('float32'), blaze.f4)
+        self.assertEqual(blaze.dshape('float64'), blaze.f8)
+        self.assertEqual(blaze.dshape('complex64'), blaze.c8)
+        self.assertEqual(blaze.dshape('complex128'), blaze.c16)
+
+    def test_atom_shape_errors(self):
+        self.assertRaises(TypeError, blaze.dshape, 'boot')
+        self.assertRaises(TypeError, blaze.dshape, 'int33')
+        self.assertRaises(TypeError, blaze.dshape, '12')
+
+    def test_type_decl(self):
+        self.assertRaises(TypeError, blaze.dshape, 'type X T = 3, T')
+        self.assertEqual(blaze.dshape('3, int32'), blaze.dshape('type X = 3, int32'))
+if __name__ == '__main__':
+    unittest.main()

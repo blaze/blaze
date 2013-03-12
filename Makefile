@@ -1,15 +1,17 @@
 .PHONY: all docs tests build clean web
 
 CC = gcc
-LPYTHON = $(shell python-config --includes --libs)
-CFLAGS = -shared -fPIC -lpthread $(LPYTHON)
+LPYTHON = $(shell python-config --includes)
+LNUMPY = $(shell python -c "import numpy; print '-I' + numpy.get_include()")
 
-all: build
+CFLAGS = -lpthread $(LPYTHON) $(LNUMPY)
+
+all: build blir
 
 # stupid hack for now
 blir:
-	$(CC) $(CFLAGS) blaze/blir/datashape.c -o blaze/blir/datashape.o
-	$(CC) $(CFLAGS) blaze/blir/prelude.c blaze/blir/datashape.o -o blaze/blir/prelude.dylib
+	$(CC) $(CFLAGS) -shared -fPIC blaze/blir/datashape.c -o blaze/blir/datashape.o
+	$(CC) $(CFLAGS) -shared -fPIC blaze/blir/datashape.o blaze/blir/prelude.c -o blaze/blir/prelude.so
 
 build:
 	python setup.py build_ext --inplace

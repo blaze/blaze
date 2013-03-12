@@ -10,7 +10,7 @@ def build_table(table_name, rows):
 
     if already built just open it"""
     if not os.path.exists(table_name):
-        ds = 'x, {i: int64, f: float64}'
+        ds = 'x, {i: int64; f: float64}'
         p = params(clevel=5, storage=table_name)
         t = Table([], dshape=ds, params=p)
         for i in xrange(rows):
@@ -33,7 +33,7 @@ def build_array(array_name, rows):
         t.commit()
     else:
         t = open(array_name)
-    
+
     return t
 
 def test_simple():

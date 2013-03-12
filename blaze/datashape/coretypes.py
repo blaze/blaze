@@ -8,12 +8,6 @@ dtype.
 import numpy as np
 import datetime
 
-try:
-    from numba.minivect import minitypes
-    have_minivect = True
-except ImportError:
-    have_minivect = False
-
 instanceof = lambda T: lambda X: isinstance(X, T)
 
 #------------------------------------------------------------------------
@@ -68,11 +62,15 @@ class Mono(object):
                 other = Integer(other)
             else:
                 raise NotImplementedError()
-
-        return product(other, self)
+        return product(self, other)
 
     def __rmul__(self, other):
-        return self.__mul__(self, other)
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = Integer(other)
+            else:
+                raise NotImplementedError()
+        return product(other, self)
 
 
 class Poly(object):
@@ -137,6 +135,7 @@ class Top(Mono):
 
 class Blob(Mono):
     """ Blob type, large variable length string """
+    cls = MEASURE
 
     def __str__(self):
         return 'blob'
@@ -147,6 +146,7 @@ class Blob(Mono):
 
 class Varchar(Mono):
     """ Blob type, small variable length string """
+    cls = MEASURE
 
 
     def __init__(self, maxlen):
@@ -161,6 +161,7 @@ class Varchar(Mono):
 
 class String(Mono):
     """ Fixed length string container """
+    cls = MEASURE
 
     def __init__(self, fixlen):
         if isinstance(fixlen, int):
@@ -195,10 +196,14 @@ class DataShape(Mono):
     def __init__(self, parameters=None, name=None):
 
         if type(parameters) is DataShape:
-            self.paramaeters = parameters
-
+            self.parameters = parameters
         elif len(parameters) > 0:
             self.parameters = tuple(flatten(parameters))
+            if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
+                raise TypeError('Only a measure can appear on the last position of a datashape')
+            for dim in self.parameters[:-1]:
+                if getattr(dim, 'cls', DIMENSION) != DIMENSION:
+                    raise TypeError('Only dimensions can appear before the last position of a datashape')
             self.composite = True
         else:
             self.parameters = tuple()
@@ -212,7 +217,6 @@ class DataShape(Mono):
 
     def __getitem__(self, index):
         return self.parameters[index]
-
 
     def __str__(self):
         if self.name:
@@ -251,10 +255,15 @@ class DataShape(Mono):
                 other = Integer(other)
             else:
                 raise NotImplementedError()
-        return product(other, self)
+        return product(self, other)
 
     def __rmul__(self, other):
-        return self.__mul__(self, other)
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = Integer(other)
+            else:
+                raise NotImplementedError()
+        return product(other, self)
 
 class Atom(DataShape):
     """
@@ -381,6 +390,7 @@ class Fixed(Atom):
     """
     Fixed dimension.
     """
+    cls = DIMENSION
 
     def __init__(self, i):
         assert isinstance(i, (int, long))
@@ -414,6 +424,7 @@ class TypeVar(Atom):
     """
     A free variable in the signature. Not user facing.
     """
+    cls = DIMENSION
 
     def __init__(self, symbol):
         if symbol.startswith("'"):
@@ -431,6 +442,7 @@ class Range(Atom):
     Range type representing a bound or unbound interval of
     of possible Fixed dimensions.
     """
+    cls = DIMENSION
 
     def __init__(self, a, b=False):
         if type(a) is int:
@@ -502,6 +514,7 @@ class Option(Atom):
     as a tagged union with with ``left`` as ``null`` and
     ``right`` as a measure.
     """
+    cls = MEASURE
 
     def __init__(self, ty):
         self.parameters = [ty]
@@ -528,6 +541,7 @@ class Record(DataShape):
     """
     A composite data structure of ordered fields mapped to types.
     """
+    cls = MEASURE
 
     def __init__(self, fields):
         # This is passed in with a OrderedDict so field order is
@@ -699,8 +713,8 @@ def extract_dims(ds):
     dimensions
     """
     if isinstance(ds, CType):
-        raise NotNumpyCompatible("No Dimensions")
-    return ds.parameters[0:-2]
+        return tuple()
+    return ds.parameters[:-1]
 
 def extract_measure(ds):
     """ Discard shape information and just return the measure
@@ -761,18 +775,6 @@ def from_python_scalar(scalar):
         return pyobj
 
 #------------------------------------------------------------------------
-# Minivect Compatibility
-#------------------------------------------------------------------------
-
-def to_minitype(ds):
-    # To minitype through NumPy. Discards dimension information.
-    return minitypes.map_dtype(to_numpy(extract_measure(ds)))
-
-def to_minivect(ds):
-    raise NotImplementedError
-    #return (shape, minitype)
-
-#------------------------------------------------------------------------
 # NumPy Compatibility
 #------------------------------------------------------------------------
 
@@ -808,26 +810,31 @@ def to_numpy(ds):
     dtype = None
 
     #assert isinstance(ds, DataShape)
-    for dim in ds:
+
+    # The datashape dimensions
+    for dim in extract_dims(ds):
         if isinstance(dim, Integer):
             shape += (dim,)
         elif isinstance(dim, Fixed):
             shape += (dim.val,)
         elif isinstance(dim, TypeVar):
             shape += (-1,)
-
-        elif isinstance(dim, CType):
-            dtype = dim.to_dtype()
-        elif isinstance(dim, Blob):
-            dtype = np.dtype('object')
-        elif isinstance(dim, Record):
-            dtype = dim.to_dtype()
-
         else:
-            raise NotNumpyCompatible()
+            raise NotNumpyCompatible('Datashape dimension %s is not NumPy-compatible' % dim)
 
-    if len(shape) < 0 or type(dtype) != np.dtype:
-        raise NotNumpyCompatible()
+    # The datashape measure
+    msr = extract_measure(ds)
+    if isinstance(msr, CType):
+        dtype = msr.to_dtype()
+    elif isinstance(msr, Blob):
+        dtype = np.dtype('object')
+    elif isinstance(msr, Record):
+        dtype = msr.to_dtype()
+    else:
+        raise NotNumpyCompatible('Datashape measure %s is not NumPy-compatible' % dim)
+
+    if type(dtype) != np.dtype:
+        raise NotNumpyCompatible('Internal Error: Failed to produce NumPy dtype')
     return (shape, dtype)
 
 
@@ -847,15 +854,13 @@ def from_numpy(shape, dt):
 
     if dtype.kind == 'S':
         measure = String(dtype.itemsize)
-
-    if dtype.fields:
-
+    elif dtype.fields:
         rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
         measure = Record(rec)
     else:
         measure = CType.from_dtype(dtype)
 
-    return reduce(product, dimensions + [measure])
+    return DataShape(parameters=(dimensions+[measure]))
 
 def from_char(c):
     dtype = np.typeDict[c]

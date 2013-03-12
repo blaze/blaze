@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from blaze.blir import compile, execute
+from blaze.blir import compile, Context, execute
 
 #------------------------------------------------------------------------
 # Matrix Assignement
@@ -24,7 +24,10 @@ ast, env = compile(source)
 arr = np.eye(N, dtype='int32')
 args = (arr, N)
 
-execute(env, args, timing=True)
+ctx = Context(env)
+execute(ctx, args, timing=True)
+ctx.destroy()
+
 print arr
 
 #------------------------------------------------------------------------
@@ -40,8 +43,9 @@ ast, env = compile(source.read())
 
 args = (A,B,N)
 
-
-res = execute(env, args, fname='sdot', timing=True)
+ctx = Context(env)
+res = execute(ctx, args, fname='sdot', timing=True)
+ctx.destroy()
 print res
 
 start = time.time()

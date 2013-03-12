@@ -81,8 +81,5 @@ TODO
 API
 ~~~
 
-.. automodule:: blaze.reconstruction
-   :members:
-
-.. automodule:: blaze.signatures
+.. automodule:: blaze.type_reconstruction
    :members:

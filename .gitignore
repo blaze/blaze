@@ -74,9 +74,8 @@ blaze/engine/*.[ch]
 blaze/expr/*.[ch]
 blaze/desc/*.[ch]
 blaze/algo/*.[ch]
-blaze/rts/executors.c
+blaze/rts/runtime.c
 blaze/ts/ucr_dtw/ucr.c
-blaze/rts/executors.c
 
 # Sphinx Docs
 docs/_build

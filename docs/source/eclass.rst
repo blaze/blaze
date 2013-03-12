@@ -7,12 +7,11 @@ class. The two evaluation classes are
 
 :Manifest:
     Evaluation is done immedietely for every operation. Expression
-    graph has at most a depth of 1. Shape and type checking is done at
-    immedietely.
+    graph has at most a depth of 1.
 
 :Delayed:
     Evaluation is delayed until explictly compiled. Expression graph has
-    unlimited depth. Shape and type checking is done at compile-time.
+    unlimited depth.
 
 The eclass of the application of an operator to operands is
 decided by mapping the following decision procedure over all
@@ -27,8 +26,6 @@ combinations of arguments.::
             return MANIFEST
         if (a,b) == (DELAYED, DELAYED):
             return DELAYED
-
-In short delayed experssion are *algebraicly closed*.
 
 .. automodule:: blaze.eclass
    :members:

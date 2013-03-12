@@ -7,7 +7,7 @@ class cfn(object):
         self.retty = retty
 
     def __str__(self):
-        return 'foreign ccall %s :: %s -> %s' % \
+        return 'foreign "C" %s :: %s -> %s' % \
             (self.name, self.argtys, self.retty)
 
 def wrap_cfn(ctx, argtys, retty, address, gil=True):
@@ -19,5 +19,5 @@ def wrap_cfn(ctx, argtys, retty, address, gil=True):
     else:
         ffi = CFUNCTYPE
 
-    callable = ffi(cretty, *cargtys)(address)
-    return callable
+    fn = ffi(cretty, *cargtys)(address)
+    return fn

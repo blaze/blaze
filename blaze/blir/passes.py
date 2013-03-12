@@ -11,7 +11,6 @@ import errors
 import exc
 
 from threading import Lock
-from plyhacks import lexfrom, yaccfrom
 
 compilelock = Lock()
 
@@ -117,11 +116,16 @@ def optimizer_pass(ast, env):
     cgen = env['cgen']
     lfunctions = env['lfunctions']
 
-    optimizer = codegen.LLVMOptimizer(cgen.module)
+    opt_level = env['args']['O']
+    optimizer = codegen.LLVMOptimizer(cgen.module, opt_level)
 
+    # function-level optimize
     for lfunc in lfunctions:
         optimizer.run(lfunc)
         lfunc.verify()
+
+    # module-level optimization
+    optimizer.runmodule(cgen.module)
 
     cgen.module.verify()
     env['lmodule'] = cgen.module
@@ -157,9 +161,11 @@ compiler = Pipeline('compile', [frontend,
 # Toplevel
 #------------------------------------------------------------------------
 
-def compile(source):
+def compile(source, **opts):
+    opts.setdefault('O', 2)
+    env = {'args': opts}
     with compilelock:
-        ast, env = compiler(source, {})
+        ast, env = compiler(source, env)
     return ast, env
 
 #------------------------------------------------------------------------
@@ -169,7 +175,8 @@ def compile(source):
 def main():
     import argparse
     argp = argparse.ArgumentParser('blirc')
-    argp.add_argument('file', metavar="file", nargs='?', help='Module')
+    argp.add_argument('file', metavar="file", nargs='?', help='Source file')
+    argp.add_argument('-O', metavar="opt", nargs='?', type=int, help='Optimization level', default=2)
     argp.add_argument('--ddump-parse', action='store_true', help='Dump parse tree')
     argp.add_argument('--ddump-lex', action='store_true', help='Dump token stream')
     argp.add_argument('--ddump-blocks', action='store_true', help='Dump the block structure')
@@ -185,7 +192,7 @@ def main():
     if args.file:
         source = open(args.file).read()
     else:
-        print 'No input'
+        sys.stderr.write('No input\n')
         sys.exit(1)
 
     if args.ddump_lex:
@@ -207,7 +214,8 @@ def main():
         # =====================================
         start = time.time()
         with errors.listen():
-            ast, env = compile(source)
+            opts = vars(args)
+            ast, env = compile(source, **opts)
         timing = time.time() - start
         # =====================================
 
@@ -216,13 +224,15 @@ def main():
         elif args.emit_x86:
             print env['lmodule'].to_native_assembly()
         elif args.run:
-            exc.execute(env)
+            ctx = exc.Context(env)
+            exc.execute(ctx, fname='main')
         else:
             print 'Compile time %.3fs' % timing
 
     except CompileError as e:
-        print 'FAIL: Failure in compiler phase:', e.args[0]
+        sys.stderr.write('FAIL: Failure in compiler phase: %s\n' % e.args[0])
         sys.exit(1)
+        errors.reset()
 
 if __name__ == '__main__':
     main()
