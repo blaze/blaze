@@ -286,18 +286,23 @@ class Atom(DataShape):
 # CType
 #------------------------------------------------------------------------
 
+NATIVE = '='
+LITTLE = '<'
+BIG    = '>'
+
 class CType(DataShape):
     """
     Symbol for a sized type mapping uniquely to a native type.
     """
     cls = MEASURE
 
-    def __init__(self, ctype, size=None):
+    def __init__(self, ctype, size=None, byteorder=None):
         if size:
             assert 1 <= size < (2**23-1)
             label = ctype + str(size)
             self.parameters = [label]
             self.name = label
+            self.byteorder = byteorder or LITTLE
             Type.register(label, self)
         else:
             self.parameters = [ctype]
@@ -376,10 +381,6 @@ class CType(DataShape):
 
     @property
     def str(self):
-        raise NotImplementedError()
-
-    @property
-    def byeteorder(self):
         raise NotImplementedError()
 
 #------------------------------------------------------------------------
