@@ -847,11 +847,6 @@ def from_numpy(shape, dt):
     """
     dtype = np.dtype(dt)
 
-    if shape == ():
-        dimensions = []
-    else:
-        dimensions = map(Fixed, shape)
-
     if dtype.kind == 'S':
         measure = String(dtype.itemsize)
     elif dtype.fields:
@@ -860,7 +855,10 @@ def from_numpy(shape, dt):
     else:
         measure = CType.from_dtype(dtype)
 
-    return DataShape(parameters=(dimensions+[measure]))
+    if shape == ():
+        return measure
+    else:
+        return DataShape(parameters=(map(Fixed, shape)+[measure]))
 
 def from_char(c):
     dtype = np.typeDict[c]
