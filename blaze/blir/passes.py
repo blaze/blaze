@@ -120,9 +120,9 @@ def optimizer_pass(ast, env):
     optimizer = codegen.LLVMOptimizer(cgen.module, opt_level)
 
     # function-level optimize
-    for lfunc in lfunctions:
-        optimizer.run(lfunc)
-        lfunc.verify()
+    #for lfunc in lfunctions:
+        #optimizer.run(lfunc)
+        #lfunc.verify()
 
     # module-level optimization
     optimizer.runmodule(cgen.module)

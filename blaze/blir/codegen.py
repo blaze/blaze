@@ -2,6 +2,7 @@ import btypes
 import ctypes
 import errors
 
+import llvm.ee as le
 import llvm.core as lc
 import llvm.passes as lp
 
@@ -664,18 +665,9 @@ class BlockEmitter(object):
 class LLVMOptimizer(object):
 
     def __init__(self, module, opt_level=3):
-        INLINER_THRESHOLD = 1000
-
-        self.fpm = lp.FunctionPassManager.new(module)
-        self.pmb = lp.PassManagerBuilder.new()
-        self.pm  = lp.PassManager.new()
-
-        self.pmb.opt_level = opt_level
-        self.pmb.vectorize = True
-        self.pmb.use_inliner_with_threshold(INLINER_THRESHOLD)
-
-        self.pmb.populate(self.pm)
-        self.pmb.populate(self.fpm)
+        tc = le.TargetMachine.new(features='', cm=le.CM_JITDEFAULT)
+        self.pm, self.fpm = lp.build_pass_managers(tc, loop_vectorize=False,
+                vectorize=True, fpm=False, mod=module)
 
     def runmodule(self, module):
         self.pm.run(module)
