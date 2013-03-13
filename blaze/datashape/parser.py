@@ -316,7 +316,10 @@ def build_ds(ds):
         if isinstance(ds.lhs , simpletype):
             if len(ds.lhs.tyvars) == 0:
                 dst = map(build_ds, ds.rhs)
-                return T.DataShape(dst)
+                if len(dst) == 1:
+                    return dst[0]
+                else:
+                    return T.DataShape(dst)
             else:
                 raise TypeError('building a simple dshape with type parameters is not supported')
         else:
@@ -325,7 +328,10 @@ def build_ds(ds):
 
     elif isinstance(ds, tyinst):
         dst = map(build_ds, ds.conargs)
-        return T.DataShape(dst)
+        if len(dst) == 1:
+            return dst[0]
+        else:
+            return T.DataShape(dst)
     elif isinstance(ds, bittype):
         return T.Type._registry[ds.name]
     elif isinstance(ds, (int, long)):

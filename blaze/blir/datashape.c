@@ -272,7 +272,7 @@ static PyMethodDef functions[] = {
 
 /*---------------------------------------------------------*/
 
-void initcdatashape(void)
+void initdatashape(void)
 {
     PyObject* m;
 

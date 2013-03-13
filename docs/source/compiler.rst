@@ -135,7 +135,7 @@ Example usage:
     args = (arr, N)
 
     ctx = Context(env)
-    execute(ctx, env, args, timing=True)
+    execute(ctx, args, timing=True)
     ctx.destroy()
     print arr
 
@@ -288,7 +288,6 @@ For developers the BLIR directory hierarchy is described below:
     ├── exc.py         # Execution
     ├── lexer.py       # Lexer logic
     ├── magic.py       # IPython magic
-    ├── opcodes.py     # Opcode definitions
     ├── parser.py      # Parser logic
     ├── passes.py      # Compiler logic ( MAIN ENTRY POINT )
     ├── prelude.c      # C libraries for Prelude

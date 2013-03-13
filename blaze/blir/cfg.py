@@ -1,7 +1,6 @@
 import btypes
 import syntax
 import blocks
-import opcodes as ops
 
 from ast import NodeVisitor
 from collections import Counter

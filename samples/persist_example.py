@@ -37,14 +37,14 @@ def build_array(array_name, rows):
     return t
 
 def test_simple():
-#    table_name = './sample_tables/test_table'
-    array_name = './sample_tables/test_array'
+    table_name = './sample_tables/test_table'
+#    array_name = './sample_tables/test_array'
 
-#    t = build_table(table_name, 100000)
-    a = build_array(array_name, 100000)
+    t = build_table(table_name, 100000)
+#    a = build_array(array_name, 100000)
 
-#    print "table", t
-    print "array", a
+    print t
+#    print a.datashape
 
 if __name__ == '__main__':
     test_simple()
