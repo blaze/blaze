@@ -17,7 +17,7 @@ def _gen_blir_decl(name, obj):
     return name + ': ' + _to_blir_type_string(obj) 
 
 def _gen_blir_signature(terms):
-    return ', '.join([_gen_blir_decl(pair[1], pair[0]) 
+    return ',\n\t'.join([_gen_blir_decl(pair[1], pair[0]) 
                       for pair in terms.iteritems()])
 
 class Operation(object):
@@ -163,30 +163,50 @@ def chunked_eval(blz_expr, chunk_size=1024):
     temps = [_temp_for(i, chunk_size) for i in operands]
     temp_op = [i for i in zip(temps, operands) if isinstance(i[1], blaze.Array)]
     offset = 0
-    accum = 0.0
-
-    print 'total size: %d offset: %d' % (total_size, offset)
+    accum = 0.0    
+    _, env = blir.compile(code)
+    ctx = blir.Context(env)
     while offset < total_size:
-        _, _expr_env = blir.compile(code)
-
         curr_chunk_size = min(total_size - offset, chunk_size)
         slice_chunk = slice(0, curr_chunk_size)
         slice_src = slice(offset, offset+curr_chunk_size)
         for temp, op in temp_op:
             temp[slice_chunk] = op[slice_src]
-        accum += blir.execute(_expr_env, temps + [curr_chunk_size])
+
+        accum += blir.execute(ctx, args=temps + [curr_chunk_size])
         offset = slice_src.stop
 
     return accum
 
+
 if __name__ == '__main__':
-    x = Terminal(blaze.ones('100, float64'))
-    y = Terminal(blaze.ones('100, float64'))
-    z = Terminal(blaze.ones('100, float64'))
-    w = Terminal(blaze.ones('100, float64'))
-    a = Terminal(blaze.ones('100, float64'))
-    b = Terminal(blaze.ones('100, float64'))
-    expr = (x+y).dot(a*z + b*a)
+    dshape = '1000000, float64'
+    params = blaze.params()
+    x = Terminal(blaze.ones(dshape, params=params))
+    y = Terminal(blaze.ones(dshape, params=params))
+    z = Terminal(blaze.ones(dshape, params=params))
+    w = Terminal(blaze.ones(dshape, params=params))
+    a = Terminal(blaze.ones(dshape, params=params))
+    b = Terminal(blaze.ones(dshape, params=params))
+    expr = (x+y).dot(a*z + b*w)
 
     print expr.gen_blir()[1]
-    print 'result is : ', chunked_eval(expr)
+
+    t_ce = time()
+    result1 = chunked_eval(expr, chunk_size=50000)
+    t_ce = time() - t_ce
+    print 'ce result is : %s in %f s' % (result1, t_ce)
+
+    shape, dtype = blaze.to_numpy(blaze.dshape(dshape))
+    x = np.ones(shape, dtype=dtype)
+    y = np.ones(shape, dtype=dtype)
+    z = np.ones(shape, dtype=dtype)
+    w = np.ones(shape, dtype=dtype)
+    a = np.ones(shape, dtype=dtype)
+    b = np.ones(shape, dtype=dtype)
+
+    t_np = time()
+    result = np.dot(x+y, a*z + b*w)
+    t_np = time() - t_np
+
+    print 'np result is : %s in %f s' % (result1, t_np)
