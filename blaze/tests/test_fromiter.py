@@ -67,7 +67,7 @@ class FromIterMemory_int64array(FromiterTemplate, TestCase):
 ## Local Variables:
 ## mode: python
 ## coding: utf-8 
-## py-indent-offset: 4
-## tab-with: 4
+## python-offset: 4
+## tab-width: 4
 ## fill-column: 66
 ## End:
