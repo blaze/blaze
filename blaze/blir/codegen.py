@@ -667,7 +667,7 @@ class LLVMOptimizer(object):
     def __init__(self, module, opt_level=3):
         tc = le.TargetMachine.new(features='', cm=le.CM_JITDEFAULT)
         self.pm, self.fpm = lp.build_pass_managers(tc, loop_vectorize=False,
-                vectorize=True, fpm=False, mod=module)
+                vectorize=False, fpm=False, mod=module)
 
     def runmodule(self, module):
         self.pm.run(module)
