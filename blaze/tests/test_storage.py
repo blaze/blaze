@@ -10,12 +10,6 @@ from string import letters
 from unittest import skip, skipIf
 
 try:
-    from numba.decorators import autojit
-    have_numba = True
-except ImportError:
-    have_numba = False
-
-try:
     import iopro
     have_iopro = True
 except ImportError:
@@ -72,24 +66,5 @@ def test_iopro():
 
     assert len(h._arenas) == 1
     assert block.nbytes < h._lengths[0]
-
-    finalize(h)
-
-#------------------------------------------------------------------------
-# Numba Prototype
-#------------------------------------------------------------------------
-
-@skip
-@skipIf(not have_numba, "numba not installed")
-def test_numba():
-
-    @autojit
-    def fill(x):
-        for i in range(25):
-            x[i] = i
-
-    h = Heap()
-    addr, block = allocate_numpy(h, np.dtype('int'), (25, ))
-    fill(block)
 
     finalize(h)
