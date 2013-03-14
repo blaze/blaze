@@ -91,10 +91,14 @@ class Terminal(object):
         return Operation('dot', self, rhs)
 
     def make_terms(self, terms):
-        terms.add(self.source)
+        if isinstance(self.source, blaze.Array):
+            terms.add(self.source)
 
     def gen_blir_expr(self, terms):
-        return terms[self.source] + '[i]'
+        if (isinstance(self.source, blaze.Array)):
+            return terms[self.source] + '[i]'
+        else:
+            return repr(self.source)
  
     def __repr__(self):
         return 'Terminal(' + repr(self.source) + ')'
@@ -182,30 +186,32 @@ def chunked_eval(blz_expr, chunk_size=1024):
 
 
 if __name__ == '__main__':
-    dshape = '1000000, float64'
+    dshape = '50000000, float64'
 
     shape, dtype = blaze.to_numpy(blaze.dshape(dshape))
     x = np.ones(shape, dtype=dtype)
     y = np.ones(shape, dtype=dtype)
     z = np.ones(shape, dtype=dtype)
     w = np.ones(shape, dtype=dtype)
-    a = np.ones(shape, dtype=dtype)
-    b = np.ones(shape, dtype=dtype)
+#    a = np.ones(shape, dtype=dtype)
+#    b = np.ones(shape, dtype=dtype)
 
     t_np = time()
-    result_np = np.dot(x+y, a*z + b*w)
+    result_np = np.dot(x+y, 2.0*z + 2.0*w)
     t_np = time() - t_np
 
     print 'np result is : %s in %f s' % (result_np, t_np)
 
     params = blaze.params()
-    x = Terminal(blaze.ones(dshape, params=params))
-    y = Terminal(blaze.ones(dshape, params=params))
-    z = Terminal(blaze.ones(dshape, params=params))
-    w = Terminal(blaze.ones(dshape, params=params))
-    a = Terminal(blaze.ones(dshape, params=params))
-    b = Terminal(blaze.ones(dshape, params=params))
-    expr = (x+y).dot(a*z + b*w)
+    T = Terminal
+
+    x = T(blaze.ones(dshape, params=params))
+    y = T(blaze.ones(dshape, params=params))
+    z = T(blaze.ones(dshape, params=params))
+    w = T(blaze.ones(dshape, params=params))
+ #   a = T(blaze.ones(dshape, params=params))
+ #   b = T(blaze.ones(dshape, params=params))
+    expr = (x+y).dot(T(2.0)*z + T(2.0)*w)
 
     print expr.gen_blir()[1]
 
