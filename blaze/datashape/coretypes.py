@@ -59,7 +59,7 @@ class Mono(object):
     def __mul__(self, other):
         if not isinstance(other, (DataShape, Mono)):
             if type(other) is int:
-                other = Integer(other)
+                other = IntegerConstant(other)
             else:
                 raise NotImplementedError()
         return product(self, other)
@@ -67,7 +67,7 @@ class Mono(object):
     def __rmul__(self, other):
         if not isinstance(other, (DataShape, Mono)):
             if type(other) is int:
-                other = Integer(other)
+                other = IntegerConstant(other)
             else:
                 raise NotImplementedError()
         return product(other, self)
@@ -91,7 +91,7 @@ class Null(Mono):
     def __str__(self):
         return expr_string('null', None)
 
-class Integer(Mono):
+class IntegerConstant(Mono):
     """
     Integers at the level of constructor it just means integer in the
     sense of of just an integer value to a constructor.
@@ -99,7 +99,7 @@ class Integer(Mono):
     ::
 
         1, int32   # 1 is Fixed
-        Range(1,5) # 1 is Integer
+        Range(1,5) # 1 is IntegerConstant
 
     """
 
@@ -109,6 +109,22 @@ class Integer(Mono):
 
     def __str__(self):
         return str(self.val)
+
+class StringConstant(Mono):
+    """
+    Strings at the level of the constructor.
+    
+    ::
+    
+        string(3, "utf-8")   # "utf-8" is StringConstant
+    """
+
+    def __init__(self, i):
+        assert isinstance(i, (str, unicode))
+        self.val = i
+
+    def __str__(self):
+        return repr(self.val)
 
 class Dynamic(Mono):
     """
@@ -150,7 +166,7 @@ class Varchar(Mono):
 
 
     def __init__(self, maxlen):
-        assert isinstance(maxlen, Integer)
+        assert isinstance(maxlen, IntegerConstant)
         self.maxlen = maxlen.val
 
     def __str__(self):
@@ -159,24 +175,85 @@ class Varchar(Mono):
     def __repr__(self):
         return expr_string('varchar', [self.maxlen])
 
+_canonical_string_encodings = {
+    u'A' : u'A',
+    u'ascii' : u'A',
+    u'U8' : u'U8',
+    u'utf-8' : u'U8',
+    u'utf_8' : u'U8',
+    u'utf8' : u'U8',
+    u'U16' : u'U16',
+    u'utf-16' : u'U16',
+    u'utf_16' : u'U16',
+    u'utf16' : u'U16',
+    u'U32' : u'U32',
+    u'utf-32' : u'U32',
+    u'utf_32' : u'U32',
+    u'utf32' : u'U32'
+    }
 class String(Mono):
-    """ Fixed length string container """
+    """ String container """
     cls = MEASURE
 
-    def __init__(self, fixlen):
-        if isinstance(fixlen, int):
-            self.fixlen = fixlen
-        elif isinstance(fixlen, Integer):
-            self.fixlen = fixlen.val
+    def __init__(self, fixlen=None, encoding=None):
+        if fixlen is None and encoding is None:
+            # String()
+            self.fixlen = None
+            self.encoding = u'U8'
+        elif isinstance(fixlen, (int, long, IntegerConstant)) and encoding is None:
+            # String(fixlen)
+            if isinstance(fixlen, IntegerConstant):
+                self.fixlen = fixlen.val
+            else:
+                self.fixlen = fixlen
+            self.encoding = u'U8'
+        elif isinstance(fixlen, (str, unicode, StringConstant)) and encoding is None:
+            # String('encoding')
+            self.fixlen = None
+            if isinstance(fixlen, StringConstant):
+                self.encoding = fixlen.val
+            else:
+                self.encoding = unicode(fixlen)
+        elif isinstance(fixlen, (int, long, IntegerConstant)) and \
+                        isinstance(encoding, (str, unicode, StringConstant)):
+            # String(fixlen, 'encoding')
+            if isinstance(fixlen, IntegerConstant):
+                self.fixlen = fixlen.val
+            else:
+                self.fixlen = fixlen
+            if isinstance(encoding, StringConstant):
+                self.encoding = encoding.val
+            else:
+                self.encoding = unicode(encoding)
         else:
-            raise ValueError()
+            raise ValueError('Unexpected types to String constructor (%s, %s)' %
+                            (type(fixlen), type(encoding)))
+        # Validate the encoding
+        if not self.encoding in _canonical_string_encodings:
+            raise ValueError('Unsupported string encoding %s' % repr(self.encoding))
+        # Put it in a canonical form
+        self.encoding = _canonical_string_encodings[self.encoding]
+        
 
     def __str__(self):
-        return 'string(%i)' % self.fixlen
+        if self.fixlen is None and self.encoding is None:
+            return 'string'
+        elif self.fixlen is not None and self.encoding is None:
+            return 'string(%i)' % self.fixlen
+        elif self.fixlen is None and self.encoding is not None:
+            return 'string(%s)' % repr(self.encoding)
+        else:
+            return 'string(%i, %s)' % (self.fixlen, repr(self.encoding))
 
     def __repr__(self):
-        return expr_string('string', [self.fixlen])
+        return str(self)
 
+    def __eq__(self, other):
+        if type(other) is String:
+            return self.fixlen == other.fixlen and self.encoding == other.encoding
+        else:
+            return False
+   
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
@@ -232,7 +309,7 @@ class DataShape(Mono):
         if type(other) is DataShape:
             return self._equal(other)
         else:
-            raise TypeError('Cannot compare non-datashape to datashape')
+            raise TypeError('Cannot compare non-datashape type %s to datashape' % type(other))
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid
@@ -252,7 +329,7 @@ class DataShape(Mono):
     def __mul__(self, other):
         if not isinstance(other, (DataShape, Mono)):
             if type(other) is int:
-                other = Integer(other)
+                other = IntegerConstant(other)
             else:
                 raise NotImplementedError()
         return product(self, other)
@@ -260,7 +337,7 @@ class DataShape(Mono):
     def __rmul__(self, other):
         if not isinstance(other, (DataShape, Mono)):
             if type(other) is int:
-                other = Integer(other)
+                other = IntegerConstant(other)
             else:
                 raise NotImplementedError()
         return product(other, self)
@@ -446,17 +523,21 @@ class Range(Atom):
     cls = DIMENSION
 
     def __init__(self, a, b=False):
-        if type(a) is int:
+        if isinstance(a, (int, long)):
             self.a = a
-        else:
+        elif isinstance(a, IntegerConstant):
             self.a = a.val
+        else:
+            raise TypeError('Expected integer for parameter a, not %s' % type(a))
 
-        if type(b) is int:
+        if isinstance(b, (int, long)):
             self.b = b
         elif b is False or b is None:
             self.b = b
-        else:
+        elif isinstance(b, IntegerConstant):
             self.b = b.val
+        else:
+            raise TypeError('Expected integer for parameter b, not %s' % type(b))
 
         if a and b:
             assert self.a < self.b, 'Must have upper < lower'
@@ -681,7 +762,7 @@ blob = Blob()
 
 string = String
 
-Stream = Range(Integer(0), None)
+Stream = Range(IntegerConstant(0), None)
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
@@ -689,6 +770,7 @@ Type.register('?', Dynamic)
 Type.register('top', top)
 Type.register('blob', blob)
 
+Type.register('string', String())
 Type.register('string8', String(8))
 Type.register('string16', String(16))
 Type.register('string24', String(24))
@@ -727,13 +809,13 @@ def extract_measure(ds):
 def is_simple(ds):
     # Unit Type
     if not ds.composite:
-        if isinstance(ds, (Fixed, Integer, CType)):
+        if isinstance(ds, (Fixed, IntegerConstant, CType)):
             return True
 
     # Composite Type
     else:
         for dim in ds:
-            if not isinstance(dim, (Fixed, Integer, CType)):
+            if not isinstance(dim, (Fixed, IntegerConstant, CType)):
                 return False
         return True
 
@@ -814,7 +896,7 @@ def to_numpy(ds):
 
     # The datashape dimensions
     for dim in extract_dims(ds):
-        if isinstance(dim, Integer):
+        if isinstance(dim, IntegerConstant):
             shape += (dim,)
         elif isinstance(dim, Fixed):
             shape += (dim.val,)
@@ -849,7 +931,9 @@ def from_numpy(shape, dt):
     dtype = np.dtype(dt)
 
     if dtype.kind == 'S':
-        measure = String(dtype.itemsize)
+        measure = String(dtype.itemsize, 'A')
+    elif dtype.kind == 'U':
+        measure = String(dtype.itemsize / 4, 'U8')
     elif dtype.fields:
         rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
         measure = Record(rec)

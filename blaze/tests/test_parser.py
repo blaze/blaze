@@ -30,7 +30,7 @@ def test_compound_record1():
 def test_compound_record2():
     p = parse('{ a: { x: int; y: int }; b: {w: int; u: int } }')
 
-    assert type(p[0]) == Record
+    assert type(p) == Record
 
 def test_free_variables():
     p = parse('N, M, 800, 600, int32')
@@ -55,8 +55,10 @@ def test_parse_vars():
 
 def test_parse_either():
     x = parse('Either(int64, float64)')
-    assert x[0].a == int64
-    assert x[0].b == float64
+
+    assert type(x) == Either
+    assert x.a == int64
+    assert x.b == float64
 
 def test_custom_record():
 
