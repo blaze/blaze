@@ -12,8 +12,7 @@ from time import time
 import blaze
 
 
-# ----------------------------------------------------------------
-
+# ================================================================
 
 def _to_blir_type_string(anObject):
     if (isinstance(anObject, blaze.Array)):
@@ -33,7 +32,7 @@ def _gen_blir_signature(terms):
                       for pair in terms.iteritems()])
 
 
-# ----------------------------------------------------------------
+# ================================================================
 
 # Support code to build expresions and convert them to a blir
 # function to be executed on each chunk
@@ -44,6 +43,7 @@ class Operation(object):
         self.lhs = lhs
         self.rhs = rhs
 
+    # ------------------------------------------------------------
     # operators - used to build an AST of the expresion
     def __add__(self, rhs):
         return Operation('+', self, rhs)
@@ -129,7 +129,8 @@ class Terminal(object):
         else:
             return repr(self.source)
  
-# ----------------------------------------------------------------
+
+# ================================================================
 def _temp_for(aScalarOrArray, chunk_size):
     if (isinstance(aScalarOrArray, blaze.Array)):
         dtype = aScalarOrArray.datashape.parameters[-1].to_dtype()
@@ -137,14 +138,15 @@ def _temp_for(aScalarOrArray, chunk_size):
     else:
         return aScalarOrArray #an Scalar
 
+
 def _dimension(operand_list):
     dims = [op.datashape.shape[-1].val for op in operand_list if isinstance(op, blaze.Array)]
     assert (dims.count(dims[0]) == len(dims))
     return dims[0]
 
-def chunked_eval(blz_expr, chunk_size=1024):
+
+def chunked_eval(blz_expr, chunk_size=32768):
     operands, code = blz_expr.gen_blir()
-    print code
     total_size = _dimension(operands)
     temps = [_temp_for(i, chunk_size) for i in operands]
     temp_op = [i for i in zip(temps, operands) if isinstance(i[1], blaze.Array)]
@@ -166,36 +168,97 @@ def chunked_eval(blz_expr, chunk_size=1024):
     return accum
 
 
-if __name__ == '__main__':
-    dshape = '50000000, float64'
+# ================================================================
 
-    shape, dtype = blaze.to_numpy(blaze.dshape(dshape))
-    x = np.ones(shape, dtype=dtype)
-    y = np.ones(shape, dtype=dtype)
-    z = np.ones(shape, dtype=dtype)
-    w = np.ones(shape, dtype=dtype)
+_persistent_array_names = ['chunk_sample_x.blz', 
+                           'chunk_sample_y.blz', 
+                           'chunk_sample_z.blz',
+                           'chunk_sample_w.blz']
+
+def _create_persistent_array(name, dshape):
+    print 'creating ' + name + '...'
+    blaze.ones(dshape, params=blaze.params(storage=name))
+
+def _delete_persistent_array(name):
+    from shutils import rmtree
+    rmtree(name)
+
+def create_persistent_arrays(args):
+    elements = args[0] if len(args) > 0 else '10000000'
+    dshape = elements + ', float64'
+
+    try:
+        dshape = blaze.dshape(dshape)
+    except:
+        print elements + ' is not a valid size for the arrays'
+        return
+
+    for name in _persistent_array_names:
+        _create_persistent_array(name, dshape)
+
+def delete_persistent_arrays():
+    for name in _persistent_array_names:
+        _delete_persistent_array(name)
+
+
+def as_np_array(blaze_array):
+    """convert a blaze array to a numpy array"""
+    shape, dtype = blaze.to_numpy(blaze_array.datashape)
+    np_array = np.empty(shape, dtype)
+    np_array[:] = blaze_array[:]
+    return np_array
+
+def run_test(args):
+    T = Terminal
+
+    print 'opening blaze arrays...'
+    x = blaze.open(_persistent_array_names[0])
+    y = blaze.open(_persistent_array_names[0])
+    z = blaze.open(_persistent_array_names[0])
+    w = blaze.open(_persistent_array_names[0])
+
+    print 'datashape is ', x.datashape
+
+    print 'evaluating expression with blir...'
+    expr = (T(x)+T(y)).dot(T(2.0)*T(z) + T(2.0)*T(w))
+
+    if 'print_expr' in args:
+        print expr.gen_blir()[1]
+
+    t_ce = time()
+    result_ce = chunked_eval(expr, chunk_size=50000)
+    t_ce = time() - t_ce
+    print 'blir chunked result is : %s in %f s' % (result_ce, t_ce)
+    
+    # in numpy...
+    print 'evaluating expression with numpy..'
+    x = as_np_array(x)
+    y = as_np_array(y)
+    z = as_np_array(z)
+    w = as_np_array(w)
 
     t_np = time()
     result_np = np.dot(x+y, 2.0*z + 2.0*w)
     t_np = time() - t_np
 
-    print 'np result is : %s in %f s' % (result_np, t_np)
+    print 'numpy result is : %s in %f s' % (result_np, t_np)
 
-    params = blaze.params()
-    T = Terminal
 
-    x = T(blaze.ones(dshape, params=params))
-    y = T(blaze.ones(dshape, params=params))
-    z = T(blaze.ones(dshape, params=params))
-    w = T(blaze.ones(dshape, params=params))
-    expr = (x+y).dot(T(2.0)*z + T(2.0)*w)
+def main(args):
+    command = args[1] if len(args) > 1 else 'help'
 
-    print expr.gen_blir()[1]
+    if command == 'create':
+        create_persistent_arrays(args[2:])
+    elif command == 'run':
+        run_test(args)
+    elif command == 'delete':
+        delete_persistent_arrays()
+    else:
+        print args[0] + ' [create elements|run|delete]' 
 
-    t_ce = time()
-    result_ce = chunked_eval(expr, chunk_size=50000)
-    t_ce = time() - t_ce
-    print 'ce result is : %s in %f s' % (result_ce, t_ce)
+if __name__ == '__main__':
+    from sys import argv
+    main(argv)
 
 
 ## Local Variables:
