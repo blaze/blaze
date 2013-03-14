@@ -58,3 +58,6 @@ class CustomSyntaxError(Exception):
             msg      = self.msg,
             error    = self.__class__.__name__,
         )
+
+    def __repr__(self):
+        return str(self)
