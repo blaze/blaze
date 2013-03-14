@@ -1,8 +1,18 @@
+""" Sample showing chunked execution of expresions
+
+This sample constructs an expresion to be executed in chunks.
+Different aproaches are tested, and it is compared with the
+equivalent expresion written in numpy.
+"""
+
 import blaze
 import blaze.blir as blir
 import numpy as np
 from time import time
 import blaze
+
+
+# ----------------------------------------------------------------
 
 
 def _to_blir_type_string(anObject):
@@ -13,12 +23,20 @@ def _to_blir_type_string(anObject):
     else:
         return 'float' #hardcode ftw
 
+
 def _gen_blir_decl(name, obj):
     return name + ': ' + _to_blir_type_string(obj) 
+
 
 def _gen_blir_signature(terms):
     return ',\n\t'.join([_gen_blir_decl(pair[1], pair[0]) 
                       for pair in terms.iteritems()])
+
+
+# ----------------------------------------------------------------
+
+# Support code to build expresions and convert them to a blir
+# function to be executed on each chunk
 
 class Operation(object):
     def __init__(self, op, lhs, rhs):
@@ -26,6 +44,7 @@ class Operation(object):
         self.lhs = lhs
         self.rhs = rhs
 
+    # operators - used to build an AST of the expresion
     def __add__(self, rhs):
         return Operation('+', self, rhs)
 
@@ -38,15 +57,19 @@ class Operation(object):
     def dot(self, rhs):
         return Operation('dot', self, rhs)
 
-    def make_terms(self, terms):
-        self.lhs.make_terms(terms)
-        self.rhs.make_terms(terms)
-        return terms
-
+    # ------------------------------------------------------------
+    # repr
     def __repr__(self):
         return ('Operation(' + repr(self.op) + ', ' 
                 + repr(self.lhs) + ', ' 
                 + repr(self.rhs) + ')')
+
+    # ------------------------------------------------------------
+    # support functions to generate blir code
+    def make_terms(self, terms):
+        self.lhs.make_terms(terms)
+        self.rhs.make_terms(terms)
+        return terms
 
     def gen_blir_expr(self, terms):
         a = self.lhs.gen_blir_expr(terms)
@@ -78,6 +101,7 @@ class Terminal(object):
     def __init__(self, src):
         self.source = src
 
+    # ------------------------------------------------------------
     def __add__(self, rhs):
         return Operation('+', self, rhs)
 
@@ -90,6 +114,11 @@ class Terminal(object):
     def dot(self, rhs):
         return Operation('dot', self, rhs)
 
+    # ------------------------------------------------------------
+    def __repr__(self):
+        return 'Terminal(' + repr(self.source) + ')'
+
+    # ------------------------------------------------------------
     def make_terms(self, terms):
         if isinstance(self.source, blaze.Array):
             terms.add(self.source)
@@ -100,55 +129,7 @@ class Terminal(object):
         else:
             return repr(self.source)
  
-    def __repr__(self):
-        return 'Terminal(' + repr(self.source) + ')'
-
-_src = """
-def main(x: array[float], y: array[float], n : int) -> float {
-    var float accum = 0.0;
-    var int i = 0;
-
-    for i in range(n) {
-        accum = accum + x[i]*y[i];
-    }
-    return accum;
-}
-"""
-_dot_ast, _dot_env = blir.compile(_src)
-
-
-def chunked_dot(a, b, chunk_size=1024):
-    a_shape, a_dtype = blaze.to_numpy(a.datashape)
-    b_shape, b_dtype = blaze.to_numpy(b.datashape)
-    assert(a_dtype == b_dtype)
-    assert(a_dtype == np.float64)
-    assert(len(a_shape) == 1)
-    assert(len(b_shape) == 1)
-    assert(a_shape[0] == b_shape[0])
-
-    achunk = np.empty((chunk_size,), a_dtype)
-    bchunk = np.empty((chunk_size,), b_dtype)
-    total_size = a_shape[0]
-    accum = 0.0;
-    offset = 0;
-
-    while offset < total_size:
-        t0 = time()
-        t1 = time()
-        curr_chunk_size = min(total_size - offset, chunk_size)
-        slice_chunk = slice(0, curr_chunk_size)
-        slice_src = slice(offset, offset+curr_chunk_size)
-        achunk[slice_chunk] = a[slice_src]
-        bchunk[slice_chunk] = b[slice_src]
-        t2 = time()
-        accum += np.dot(achunk[slice_chunk], bchunk[slice_chunk])
-#blir.execute(_dot_env, (achunk, bchunk, curr_chunk_size))
-        t3 = time()
-        offset = slice_src.stop
-        print 'chunk at %d: compile %f, copy %f, exe %f' % (offset, t1-t0,t2-t1,t3-t2)
-        
-    return accum
-
+# ----------------------------------------------------------------
 def _temp_for(aScalarOrArray, chunk_size):
     if (isinstance(aScalarOrArray, blaze.Array)):
         dtype = aScalarOrArray.datashape.parameters[-1].to_dtype()
@@ -193,8 +174,6 @@ if __name__ == '__main__':
     y = np.ones(shape, dtype=dtype)
     z = np.ones(shape, dtype=dtype)
     w = np.ones(shape, dtype=dtype)
-#    a = np.ones(shape, dtype=dtype)
-#    b = np.ones(shape, dtype=dtype)
 
     t_np = time()
     result_np = np.dot(x+y, 2.0*z + 2.0*w)
@@ -209,8 +188,6 @@ if __name__ == '__main__':
     y = T(blaze.ones(dshape, params=params))
     z = T(blaze.ones(dshape, params=params))
     w = T(blaze.ones(dshape, params=params))
- #   a = T(blaze.ones(dshape, params=params))
- #   b = T(blaze.ones(dshape, params=params))
     expr = (x+y).dot(T(2.0)*z + T(2.0)*w)
 
     print expr.gen_blir()[1]
@@ -219,3 +196,12 @@ if __name__ == '__main__':
     result_ce = chunked_eval(expr, chunk_size=50000)
     t_ce = time() - t_ce
     print 'ce result is : %s in %f s' % (result_ce, t_ce)
+
+
+## Local Variables:
+## mode: python
+## coding: utf-8 
+## python-indent: 4
+## tab-width: 4
+## fill-column: 66
+## End:
