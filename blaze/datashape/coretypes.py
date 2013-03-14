@@ -236,17 +236,19 @@ class String(Mono):
         
 
     def __str__(self):
-        if self.fixlen is None and self.encoding is None:
+        if self.fixlen is None and self.encoding == 'U8':
             return 'string'
-        elif self.fixlen is not None and self.encoding is None:
+        elif self.fixlen is not None and self.encoding == 'U8':
             return 'string(%i)' % self.fixlen
-        elif self.fixlen is None and self.encoding is not None:
-            return 'string(%s)' % repr(self.encoding)
+        elif self.fixlen is None and self.encoding != 'U8':
+            return 'string(%s)' % repr(self.encoding).strip('u')
         else:
-            return 'string(%i, %s)' % (self.fixlen, repr(self.encoding))
+            return 'string(%i, %s)' % (self.fixlen, repr(self.encoding).strip('u'))
 
     def __repr__(self):
-        return str(self)
+        # need double quotes to form valid aterm, also valid
+        # Python
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
     def __eq__(self, other):
         if type(other) is String:
@@ -314,7 +316,7 @@ class DataShape(Mono):
     def __repr__(self):
         # need double quotes to form valid aterm, also valid
         # Python
-        return ''.join(["dshape(\"", str(self), "\")"])
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
     @property
     def shape(self):
