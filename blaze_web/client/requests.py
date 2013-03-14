@@ -26,7 +26,6 @@ def close_remote_session(session_url):
 
 def add_computed_fields(session_url, url, fields, rm_fields, fnname):
     """Creates a new remote array with the added computed fields."""
-    print("handling add_computed_fields request")
     reqdata = {
             "input": str(url),
             "fields": [[str(name), str(dt), str(expr)]
