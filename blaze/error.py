@@ -50,10 +50,11 @@ class CustomSyntaxError(Exception):
         self.msg        = msg or 'invalid syntax'
 
     def __str__(self):
+        text_split = self.text.split()
         return syntax_error.format(
             filename = self.filename,
             lineno   = self.lineno,
-            line     = self.text.split()[self.lineno],
+            line     = text_split[max(self.lineno, len(text_split) - 1)],
             pointer  = ' '*self.col_offset + '^',
             msg      = self.msg,
             error    = self.__class__.__name__,
