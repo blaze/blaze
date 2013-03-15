@@ -217,7 +217,7 @@ def run_test(args):
     z = blaze.open(_persistent_array_names[0])
     w = blaze.open(_persistent_array_names[0])
 
-    print 'datashape is ', x.datashape
+    print 'datashape is:', x.datashape
 
     print 'evaluating expression with blir...'
     expr = (T(x)+T(y)).dot(T(2.0)*T(z) + T(2.0)*T(w))
@@ -231,7 +231,7 @@ def run_test(args):
     print 'blir chunked result is : %s in %f s' % (result_ce, t_ce)
     
     # in numpy...
-    print 'evaluating expression with numpy..'
+    print 'evaluating expression with numpy...'
     x = as_np_array(x)
     y = as_np_array(y)
     z = as_np_array(z)
