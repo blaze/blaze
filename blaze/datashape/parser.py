@@ -4,7 +4,6 @@ The improved parser for Datashape grammar.
 Grammar::
 
     top : mod
-        | stmt
 
     mod : mod mod
         | stmt
@@ -22,14 +21,26 @@ Grammar::
                    | NAME
                    | NUMBER
 
-    appl : NAME '(' rhs_expression ')'
+    appl_args : appl_args COMMA appl_args
+              | appl
+              | record
+              | '(' rhs_expression ')'
+              | BIT
+              | NAME
+              | NUMBER
+              | STRING
+
+    appl : NAME '(' appl_args ')'
 
     record : LBRACE record_opt RBRACE
     record_opt : record_opt SEMI record_opt
                | record_item
                | empty
-    record_item : NAME COLON '(' rhs_expression ')'
-                | NAME COLON rhs_expression'
+    record_name : NAME
+                | BIT
+                | TYPE
+    record_item : record_name COLON '(' rhs_expression ')'
+                | record_name COLON rhs_expression'
 
     empty :
 
@@ -64,8 +75,8 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
-    'LBRACE', 'RBRACE', 'SEMI', 'BIT'
+    'TYPE', 'NAME', 'NUMBER', 'STRING',
+    'EQUALS', 'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT'
 )
 
 literals = [
@@ -92,8 +103,6 @@ bits = set([
     'uint16',
     'uint32',
     'uint64',
-    'uint64',
-    'uint64',
     'float16',
     'float32',
     'float64',
@@ -101,6 +110,7 @@ bits = set([
     'complex64',
     'complex128',
     'complex256',
+    'string',
     'object',
     'datetime64',
     'timedelta64',
@@ -120,7 +130,7 @@ def t_TYPE(t):
 
 def t_newline(t):
     r'\n+'
-    t.lexer.lineno += t.value.count("\n")
+    #t.lexer.lineno += t.value.count("\n")
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -137,9 +147,14 @@ def t_NUMBER(t):
     t.value = int(t.value)
     return t
 
+def t_STRING(t):
+    r'(?:"(?:[^"\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*")|(?:\'(?:[^\'\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*\')'
+    t.value = t.value[1:-1].decode('unicode_escape')
+    return t
+
 def t_error(t):
-    print("Unknown token '%s'" % t.value[0])
-    t.lexer.skip(1)
+    raise Exception("Unknown token %s" % repr(t.value[0]))
+    #t.lexer.skip(1)
 
 #------------------------------------------------------------------------
 # Parser
@@ -158,7 +173,6 @@ simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
 def p_top(p):
     '''top : mod
-           | stmt
     '''
     p[0] = p[1]
 
@@ -224,14 +238,47 @@ def p_rhs_expression_node3(p):
     p[0] = (p[1],)
 
 def p_rhs_expression(p):
-    'rhs_expression : rhs_expression COMMA rhs_expression'''
+    'rhs_expression : rhs_expression COMMA rhs_expression'
+    # tuple addition
+    p[0] = p[1] + p[3]
+
+#------------------------------------------------------------------------
+
+def p_appl_args__appl__record(p):
+    '''appl_args : appl
+                 | record'''
+    p[0] = (build_ds(p[1][0]),)
+
+def p_appl_args__rhs_expression(p):
+    "appl_args : '(' rhs_expression ')'"
+    p[0] = (build_ds(p[2][0]),)
+
+def p_appl_args__name(p):
+    '''appl_args : NAME'''
+    p[0] = (T.TypeVar(p[1]),)
+
+def p_appl_args__bit(p):
+    '''appl_args : BIT'''
+    p[0] = (T.Type._registry[p[1]],)
+
+def p_appl_args__number(p):
+    '''appl_args : NUMBER'''
+    p[0] = (T.IntegerConstant(p[1]),)
+
+def p_appl_args__string(p):
+    '''appl_args : STRING'''
+    p[0] = (T.StringConstant(p[1]),)
+
+def p_appl_args(p):
+    'appl_args : appl_args COMMA appl_args'
     # tuple addition
     p[0] = p[1] + p[3]
 
 #------------------------------------------------------------------------
 
 def p_appl(p):
-    "appl : NAME '(' rhs_expression ')'"
+    """appl : NAME '(' appl_args ')'
+            | BIT '(' appl_args ')'""" # BIT is here for 'string(...)'
     p[0] = (tyappl(p[1], p[3]),)
 
 #------------------------------------------------------------------------
@@ -252,12 +299,18 @@ def p_record_opt3(p):
     'record_opt : empty'
     p[0] = []
 
+def p_record_name(p):
+    '''record_name : NAME
+                   | BIT
+                   | TYPE'''
+    p[0] = p[1]
+
 def p_record_item1(p):
-    "record_item : NAME COLON '(' rhs_expression ')' "
+    "record_item : record_name COLON '(' rhs_expression ')' "
     p[0] = (p[1], p[4])
 
 def p_record_item2(p):
-    '''record_item : NAME COLON rhs_expression'''
+    '''record_item : record_name COLON rhs_expression'''
     p[0] = (p[1], p[3])
 
 #------------------------------------------------------------------------
@@ -269,7 +322,6 @@ def p_empty(t):
 def p_error(p):
     if p:
         raise DatashapeSyntaxError(
-            p.lineno,
             p.lexpos,
             '<stdin>',
             p.lexer.lexdata,
@@ -340,10 +392,11 @@ def build_ds(ds):
         return T.TypeVar(ds)
     elif isinstance(ds, tyappl):
         if ds.head in reserved:
-            args = map(build_ds, ds.args)
-            return reserved[ds.head](*args)
+            # The appl_args part of the grammar already produces
+            # TypeVar/IntegerConstant/StringConstant values
+            return reserved[ds.head](*ds.args)
         else:
-            raise NameError, ds.head
+            raise NameError('Cannot use the name %s for type application' % repr(ds.head))
     elif isinstance(ds, tyrecord):
         # TODO: ugly hack
         return T.Record([(a, build_ds(b[0])) for a,b in ds.elts])
@@ -356,12 +409,23 @@ def debug_parse(data, lexer, parser):
         tok = lexer.token()
         if not tok: break
         print tok
-    return parser.parse(data)
+
+    import logging
+    logging.basicConfig(
+        level = logging.DEBUG,
+        filename = "parselog.txt",
+        filemode = "w",
+        format = "%(filename)10s:%(lineno)4d:%(message)s"
+    )
+    log = logging.getLogger()
+    return parser.parse(data, debug=log)
 
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        path = os.path.relpath(__file__)
+        # Must be abspath instead of relpath because
+        # of Windows multi-rooted filesystem.
+        path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
@@ -380,7 +444,10 @@ def load_parser(debug=False):
 #------------------------------------------------------------------------
 
 def parse(pattern):
-    parser = load_parser()
+    # NOTE: If you change the lexer/parser, you should
+    #       run with load_parser(True)
+    #       to trigger a re-creation of the parser.
+    parser = load_parser(False)
     res = parser(pattern)
 
     ds = build_ds(res)
