@@ -130,7 +130,7 @@ def t_TYPE(t):
 
 def t_newline(t):
     r'\n+'
-    t.lexer.lineno += t.value.count("\n")
+    #t.lexer.lineno += t.value.count("\n")
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -322,7 +322,6 @@ def p_empty(t):
 def p_error(p):
     if p:
         raise DatashapeSyntaxError(
-            p.lineno,
             p.lexpos,
             '<stdin>',
             p.lexer.lexdata,
