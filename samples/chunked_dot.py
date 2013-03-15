@@ -180,7 +180,7 @@ def _create_persistent_array(name, dshape):
     blaze.ones(dshape, params=blaze.params(storage=name))
 
 def _delete_persistent_array(name):
-    from shutils import rmtree
+    from shutil import rmtree
     rmtree(name)
 
 def create_persistent_arrays(args):
