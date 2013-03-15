@@ -36,8 +36,11 @@ Grammar::
     record_opt : record_opt SEMI record_opt
                | record_item
                | empty
-    record_item : NAME COLON '(' rhs_expression ')'
-                | NAME COLON rhs_expression'
+    record_name : NAME
+                | BIT
+                | TYPE
+    record_item : record_name COLON '(' rhs_expression ')'
+                | record_name COLON rhs_expression'
 
     empty :
 
@@ -99,8 +102,6 @@ bits = set([
     'uint8',
     'uint16',
     'uint32',
-    'uint64',
-    'uint64',
     'uint64',
     'float16',
     'float32',
@@ -298,12 +299,18 @@ def p_record_opt3(p):
     'record_opt : empty'
     p[0] = []
 
+def p_record_name(p):
+    '''record_name : NAME
+                   | BIT
+                   | TYPE'''
+    p[0] = p[1]
+
 def p_record_item1(p):
-    "record_item : NAME COLON '(' rhs_expression ')' "
+    "record_item : record_name COLON '(' rhs_expression ')' "
     p[0] = (p[1], p[4])
 
 def p_record_item2(p):
-    '''record_item : NAME COLON rhs_expression'''
+    '''record_item : record_name COLON rhs_expression'''
     p[0] = (p[1], p[3])
 
 #------------------------------------------------------------------------
@@ -403,12 +410,23 @@ def debug_parse(data, lexer, parser):
         tok = lexer.token()
         if not tok: break
         print tok
-    return parser.parse(data)
+
+    import logging
+    logging.basicConfig(
+        level = logging.DEBUG,
+        filename = "parselog.txt",
+        filemode = "w",
+        format = "%(filename)10s:%(lineno)4d:%(message)s"
+    )
+    log = logging.getLogger()
+    return parser.parse(data, debug=log)
 
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        path = os.path.relpath(__file__)
+        # Must be abspath instead of relpath because
+        # of Windows multi-rooted filesystem.
+        path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
@@ -428,8 +446,8 @@ def load_parser(debug=False):
 
 def parse(pattern):
     # NOTE: If you change the lexer/parser, you should
-    #       run with load_parser(True) to trigger a
-    #       re-creation of the parser.
+    #       run with load_parser(True)
+    #       to trigger a re-creation of the parser.
     parser = load_parser(False)
     res = parser(pattern)
 
