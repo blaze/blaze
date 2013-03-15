@@ -308,12 +308,9 @@ def chunked_dot(a, b, chunk_size=1024):
 
 def dot(a_, b_):
     global _locals, _params
-    print "a, b:", a_, b_, type(a_), type(b_)
     vm = _params.get('vm', 'python')
     op1 = evaluate(a_, vm=vm, user_dict=_locals)
-    print "op1:", op1
     op2 = evaluate(b_, vm=vm, user_dict=_locals)
-    print "op2:", op2
     _locals = None   # get rid of references to operands
     _params = None   # get rid of references to params
     if len(op1.datashape.shape) > 1:
@@ -385,7 +382,7 @@ def run_test(args):
     expr_vars = {'x': x_, 'y': y_, 'z': z_, 'w': w_, 'a': a_, 'b': b_, }
     result_ce = expr.eval(expr_vars, params={'vm': vm})
     t_ce = time() - t_ce
-    print 'python chunked result is : %s in %.3f s' % (result_ce, t_ce)
+    print "'%s' vm result is : %s in %.3f s" % (vm, result_ce, t_ce)
     
     # in numpy...
     print 'evaluating expression with numpy..'
@@ -398,7 +395,7 @@ def run_test(args):
     result_np = np.dot(x_+y_, a_*z_ + b_*w_)
     t_np = time() - t_np
 
-    print 'numpy result is : %s in %f s' % (result_np, t_np)
+    print 'numpy result is : %s in %.3f s' % (result_np, t_np)
 
 
 def main(args):
