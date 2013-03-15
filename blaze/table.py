@@ -252,6 +252,9 @@ class Array(Indexable):
     # something else
     def append(self, data):
         self.data.ca.append(data)
+        # Update the shape
+        shape, dtype = self.data.ca.shape, self.data.ca.dtype
+        self._datashape = from_numpy(shape, dtype)
 
     def commit(self):
         self.data.ca.flush()
