@@ -317,7 +317,7 @@ _persistent_array_names = ['chunk_sample_x.blz',
 
 def _create_persistent_array(name, dshape):
     print 'creating ' + name + '...'
-    blaze.ones(dshape, params=blaze.params(storage=name))
+    blaze.ones(dshape, params=blaze.params(storage=name, clevel=0))
 
 def _delete_persistent_array(name):
     from shutil import rmtree
@@ -355,11 +355,21 @@ def run_test(args):
 
     print 'opening blaze arrays...'
     x_ = blaze.open(_persistent_array_names[0])
-    y_ = blaze.open(_persistent_array_names[0])
-    z_ = blaze.open(_persistent_array_names[0])
-    w_ = blaze.open(_persistent_array_names[0])
+    y_ = blaze.open(_persistent_array_names[1])
+    z_ = blaze.open(_persistent_array_names[2])
+    w_ = blaze.open(_persistent_array_names[3])
     a_ = 2.0
     b_ = 2.0
+
+    if 'in_memory' in args:
+        print 'getting an in-memory version of blaze arrays...'
+        params = blaze.params(clevel=0)
+        t0 = time()
+        x_ = blaze.array(x_[:], params=params)
+        y_ = blaze.array(y_[:], params=params)
+        z_ = blaze.array(z_[:], params=params)
+        w_ = blaze.array(w_[:], params=params)
+        print "conversion to blaze in-memory: %.3f" % (time() - t0)
 
     print 'datashape is:', x_.datashape
 

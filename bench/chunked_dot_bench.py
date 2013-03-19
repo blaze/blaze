@@ -9,7 +9,7 @@ import blaze
 import blaze.blir as blir
 import numpy as np
 from time import time
-import blaze
+import math
 
 
 # ================================================================
@@ -175,17 +175,16 @@ _persistent_array_names = ['chunk_sample_x.blz',
                            'chunk_sample_z.blz',
                            'chunk_sample_w.blz']
 
-def _create_persistent_array(name, dshape):
+def _create_persistent_array(name, n, clevel=9):
     print 'creating ' + name + '...'
-    blaze.ones(dshape, params=blaze.params(storage=name, clevel=0))
+    blaze.array(n, params=blaze.params(storage=name, clevel=clevel))
 
 def _delete_persistent_array(name):
     from shutil import rmtree
     rmtree(name)
 
-def create_persistent_arrays(args):
-    elements = args[0] if len(args) > 0 else '10000000'
-    dshape = elements + ', float64'
+def create_persistent_arrays(elements, clevel):
+    dshape = str(elements) + ', float64'
 
     try:
         dshape = blaze.dshape(dshape)
@@ -194,14 +193,17 @@ def create_persistent_arrays(args):
         return
 
     for name in _persistent_array_names:
-        _create_persistent_array(name, dshape)
+        # First create a numpy container
+        shape, dtype = blaze.to_numpy(dshape)
+        n = np.sin(np.linspace(0, 10*math.pi, shape[0]))
+        _create_persistent_array(name, n, clevel)
 
 def delete_persistent_arrays():
     for name in _persistent_array_names:
         _delete_persistent_array(name)
 
 
-def run_test(args):
+def run_test(in_memory, args):
     T = Terminal
 
     print 'opening blaze arrays...'
@@ -209,8 +211,10 @@ def run_test(args):
     y = blaze.open(_persistent_array_names[1])
     z = blaze.open(_persistent_array_names[2])
     w = blaze.open(_persistent_array_names[3])
+    shape, dtype = blaze.to_numpy(x.datashape)
+    print "***nelements:", shape[0]
 
-    if 'in_memory' in args:
+    if in_memory:
         print 'getting an in-memory version of blaze arrays...'
         params = blaze.params(clevel=9)
         t0 = time()
@@ -232,6 +236,7 @@ def run_test(args):
     result_ce = chunked_eval(expr, chunk_size=50000)
     t_ce = time() - t_ce
     print 'blir chunked result is : %s in %f s' % (result_ce, t_ce)
+    print '***blir time: %.3f' % t_ce
     
     # in numpy...
     t0 = time()
@@ -239,7 +244,7 @@ def run_test(args):
     y = y[:]
     z = z[:]
     w = w[:]
-    print "Conversion to numpy in-memory: %.3f" % (time() - t0)
+    print "conversion to numpy in-memory: %.3f" % (time() - t0)
 
     print 'evaluating expression with numpy...'
     t_np = time()
@@ -247,19 +252,68 @@ def run_test(args):
     t_np = time() - t_np
 
     print 'numpy result is : %s in %f s' % (result_np, t_np)
+    print '***numpy time: %.3f' % t_np
+
+    print '**** %d, %.5f, %.5f' % (shape[0], t_ce, t_np)
+
+
+def usage(sname):
+    print sname + ' [--create elements [--clevel lvl]|--run [--in_memory]|--delete|--bench [--max_log]]' 
 
 
 def main(args):
+    import sys,getopt
     command = args[1] if len(args) > 1 else 'help'
+    try:                                
+        opts, args = getopt.getopt(sys.argv[1:], "hric:dl:bm:",
+                                   ["help", "create=", "delete",
+                                    "run", "in_memory", "clevel=",
+                                    "bench", "max_log"]) 
+    except getopt.GetoptError:           
+        usage(args[0])                          
+        sys.exit(2)                     
 
-    if command == 'create':
-        create_persistent_arrays(args[2:])
-    elif command == 'run':
-        run_test(args)
-    elif command == 'delete':
+    create = False
+    delete = False
+    run = False
+    bench = False
+    clevel = 9
+    elements = 1000000
+    max_log = 7
+    in_memory = False
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            usage(args[0])
+            sys.exit()
+        elif opt in ("-c", "--create"):
+            elements = int(arg)
+            create = True
+        elif opt in ("-d", "--delete"):
+            delete_persistent_arrays()
+        elif opt in ("-l", "--clevel"):
+            clevel = int(arg)
+        elif opt in ("-r", "--run"):
+            run = True
+        elif opt in ("-i", "--in_memory"):
+            in_memory = True
+        elif opt in ("-b", "--bench"):
+            bench = True
+        elif opt in ("-m", "--max_log"):
+            max_log = int(arg)
+
+    if create:
+        create_persistent_arrays(elements, clevel)
+    elif run:
+        run_test(in_memory, args)
+    elif delete:
         delete_persistent_arrays()
-    else:
-        print args[0] + ' [create elements|run|delete]' 
+    elif bench:
+        print "max_log:", max_log
+        for i in xrange(max_log):
+            delete_persistent_arrays()
+            create_persistent_arrays(10**i, clevel)
+            run_test(in_memory, args)
+
 
 if __name__ == '__main__':
     from sys import argv
