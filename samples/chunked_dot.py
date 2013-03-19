@@ -201,21 +201,22 @@ def delete_persistent_arrays():
         _delete_persistent_array(name)
 
 
-def as_np_array(blaze_array):
-    """convert a blaze array to a numpy array"""
-    shape, dtype = blaze.to_numpy(blaze_array.datashape)
-    np_array = np.empty(shape, dtype)
-    np_array[:] = blaze_array[:]
-    return np_array
-
 def run_test(args):
     T = Terminal
 
     print 'opening blaze arrays...'
     x = blaze.open(_persistent_array_names[0])
-    y = blaze.open(_persistent_array_names[0])
-    z = blaze.open(_persistent_array_names[0])
-    w = blaze.open(_persistent_array_names[0])
+    y = blaze.open(_persistent_array_names[1])
+    z = blaze.open(_persistent_array_names[2])
+    w = blaze.open(_persistent_array_names[3])
+
+    if 'in_memory' in args:
+        t0 = time()
+        x = blaze.array(x[:])
+        y = blaze.array(y[:])
+        z = blaze.array(z[:])
+        w = blaze.array(w[:])
+        print "Conversion to blaze in-memory: %.3f" % (time() - t0)
 
     print 'datashape is:', x.datashape
 
@@ -231,12 +232,14 @@ def run_test(args):
     print 'blir chunked result is : %s in %f s' % (result_ce, t_ce)
     
     # in numpy...
-    print 'evaluating expression with numpy...'
-    x = as_np_array(x)
-    y = as_np_array(y)
-    z = as_np_array(z)
-    w = as_np_array(w)
+    t0 = time()
+    x = x[:]
+    y = y[:]
+    z = z[:]
+    w = w[:]
+    print "Conversion to numpy in-memory: %.3f" % (time() - t0)
 
+    print 'evaluating expression with numpy...'
     t_np = time()
     result_np = np.dot(x+y, 2.0*z + 2.0*w)
     t_np = time() - t_np
