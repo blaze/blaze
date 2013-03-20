@@ -228,16 +228,16 @@ extensions = [
 
    # ----------------------------------------
 
-   Extension(
-        "blaze.rts.runtime",
-        sources = ["blaze/rts/runtime.c"],
-        include_dirs = [],
-   ),
-   Extension(
-        "blaze.rts.wrapper",
-        sources = ["blaze/rts/wrapper.pyx"],
-        include_dirs = [numpy_path],
-   ),
+   #Extension(
+   #     "blaze.rts.runtime",
+   #     sources = ["blaze/rts/runtime.c"],
+   #     include_dirs = [],
+   #),
+   #Extension(
+   #     "blaze.rts.wrapper",
+   #     sources = ["blaze/rts/wrapper.pyx"],
+   #     include_dirs = [numpy_path],
+   #),
 
    # ----------------------------------------
 
@@ -247,12 +247,12 @@ extensions = [
         include_dirs = [],
    ),
 
-   Extension(
-        "blaze.blir.prelude",
-        sources = ["blaze/blir/prelude.c"],
-        depends = ["blaze/blir/datashape.c"],
-        include_dirs = [],
-   ),
+#   Extension(
+#        "blaze.blir.prelude",
+#        sources = ["blaze/blir/prelude.c"],
+#        depends = ["blaze/blir/datashape.c"],
+#        include_dirs = [],
+#   ),
 ]
 
 #------------------------------------------------------------------------
