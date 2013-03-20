@@ -24,11 +24,11 @@ def _to_blir_type_string(anObject):
 
 
 def _gen_blir_decl(name, obj):
-    return name + ': ' + _to_blir_type_string(obj) 
+    return name + ': ' + _to_blir_type_string(obj)
 
 
 def _gen_blir_signature(terms):
-    return ',\n\t'.join([_gen_blir_decl(pair[1], pair[0]) 
+    return ',\n\t'.join([_gen_blir_decl(pair[1], pair[0])
                       for pair in terms.iteritems()])
 
 
@@ -60,8 +60,8 @@ class Operation(object):
     # ------------------------------------------------------------
     # repr
     def __repr__(self):
-        return ('Operation(' + repr(self.op) + ', ' 
-                + repr(self.lhs) + ', ' 
+        return ('Operation(' + repr(self.op) + ', '
+                + repr(self.lhs) + ', '
                 + repr(self.rhs) + ')')
 
     # ------------------------------------------------------------
@@ -79,8 +79,8 @@ class Operation(object):
     def gen_blir(self):
         assert(self.op == 'dot')
         term_array = self.make_terms(set())
-        terms = { obj: 'in%d' % i for i, obj in 
-                  enumerate(term_array)} 
+        terms = { obj: 'in%d' % i for i, obj in
+                  enumerate(term_array) }
         code = """
 def main(%s, n: int) -> float {
     var float accum = 0.0;
@@ -91,11 +91,11 @@ def main(%s, n: int) -> float {
     return accum;
 }
 """ %  (_gen_blir_signature(terms),
-        self.lhs.gen_blir_expr(terms), 
+        self.lhs.gen_blir_expr(terms),
         self.rhs.gen_blir_expr(terms))
- 
+
         return term_array, code
-        
+
 
 class Terminal(object):
     def __init__(self, src):
@@ -128,7 +128,7 @@ class Terminal(object):
             return terms[self.source] + '[i]'
         else:
             return repr(self.source)
- 
+
 
 # ================================================================
 def _temp_for(aScalarOrArray, chunk_size):
@@ -151,7 +151,7 @@ def chunked_eval(blz_expr, chunk_size=32768):
     temps = [_temp_for(i, chunk_size) for i in operands]
     temp_op = [i for i in zip(temps, operands) if isinstance(i[1], blaze.Array)]
     offset = 0
-    accum = 0.0    
+    accum = 0.0
     _, env = blir.compile(code)
     ctx = blir.Context(env)
     while offset < total_size:
@@ -170,18 +170,21 @@ def chunked_eval(blz_expr, chunk_size=32768):
 
 # ================================================================
 
-_persistent_array_names = ['chunk_sample_x.blz', 
-                           'chunk_sample_y.blz', 
+_persistent_array_names = ['chunk_sample_x.blz',
+                           'chunk_sample_y.blz',
                            'chunk_sample_z.blz',
                            'chunk_sample_w.blz']
+
 
 def _create_persistent_array(name, dshape):
     print 'creating ' + name + '...'
     blaze.ones(dshape, params=blaze.params(storage=name, clevel=0))
 
+
 def _delete_persistent_array(name):
     from shutil import rmtree
     rmtree(name)
+
 
 def create_persistent_arrays(args):
     elements = args[0] if len(args) > 0 else '10000000'
@@ -195,6 +198,7 @@ def create_persistent_arrays(args):
 
     for name in _persistent_array_names:
         _create_persistent_array(name, dshape)
+
 
 def delete_persistent_arrays():
     for name in _persistent_array_names:
@@ -214,10 +218,10 @@ def run_test(args):
         print 'getting an in-memory version of blaze arrays...'
         params = blaze.params(clevel=9)
         t0 = time()
-        x = blaze.array(x[:], params=params)
-        y = blaze.array(y[:], params=params)
-        z = blaze.array(z[:], params=params)
-        w = blaze.array(w[:], params=params)
+        x = blaze.array(x, params=params)
+        y = blaze.array(y, params=params)
+        z = blaze.array(z, params=params)
+        w = blaze.array(w, params=params)
         print "conversion to blaze in-memory: %.3f" % (time() - t0)
 
     print 'datashape is:', x.datashape
@@ -232,7 +236,7 @@ def run_test(args):
     result_ce = chunked_eval(expr, chunk_size=50000)
     t_ce = time() - t_ce
     print 'blir chunked result is : %s in %f s' % (result_ce, t_ce)
-    
+
     # in numpy...
     t0 = time()
     x = x[:]
@@ -259,7 +263,7 @@ def main(args):
     elif command == 'delete':
         delete_persistent_arrays()
     else:
-        print args[0] + ' [create elements|run|delete]' 
+        print args[0] + ' [create elements|run|delete]'
 
 if __name__ == '__main__':
     from sys import argv
@@ -268,7 +272,7 @@ if __name__ == '__main__':
 
 ## Local Variables:
 ## mode: python
-## coding: utf-8 
+## coding: utf-8
 ## python-indent: 4
 ## tab-width: 4
 ## fill-column: 66
