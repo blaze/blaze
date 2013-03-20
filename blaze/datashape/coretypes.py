@@ -136,8 +136,8 @@ class Dynamic(Mono):
         return '?'
 
     def __repr__(self):
-        # emulate numpy
-        return ''.join(["dshape(\"", str(self), "\")"])
+        # need double quotes to form valid aterm, also valid Python
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
 class Top(Mono):
     """ The top type """
@@ -157,8 +157,8 @@ class Blob(Mono):
         return 'blob'
 
     def __repr__(self):
-        # emulate numpy
-        return ''.join(["dshape(\"", str(self), "\")"])
+        # need double quotes to form valid aterm, also valid Python
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
 class Varchar(Mono):
     """ Blob type, small variable length string """
@@ -279,10 +279,10 @@ class DataShape(Mono):
         elif len(parameters) > 0:
             self.parameters = tuple(flatten(parameters))
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
-                raise TypeError('Only a measure can appear on the last position of a datashape')
+                raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(self.parameters[-1]))
             for dim in self.parameters[:-1]:
                 if getattr(dim, 'cls', DIMENSION) != DIMENSION:
-                    raise TypeError('Only dimensions can appear before the last position of a datashape')
+                    raise TypeError('Only dimensions can appear before the last position of a datashape, not %s' % repr(dim))
             self.composite = True
         else:
             self.parameters = tuple()
@@ -314,8 +314,7 @@ class DataShape(Mono):
             raise TypeError('Cannot compare non-datashape type %s to datashape' % type(other))
 
     def __repr__(self):
-        # need double quotes to form valid aterm, also valid
-        # Python
+        # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
     @property
@@ -481,6 +480,9 @@ class Fixed(Atom):
         self.val = i
         self.parameters = [self.val]
 
+    def __int__(self):
+        return self.val
+
     def __eq__(self, other):
         if type(other) is Fixed:
             return self.val == other.val
@@ -504,7 +506,7 @@ class TypeVar(Atom):
     """
     A free variable in the signature. Not user facing.
     """
-    cls = DIMENSION
+    # cls could be MEASURE or DIMENSION, depending on context
 
     def __init__(self, symbol):
         if symbol.startswith("'"):
@@ -672,7 +674,8 @@ class Record(DataShape):
         return record_string(self.__k, self.__v)
 
     def __repr__(self):
-        return str(self)
+        # need double quotes to form valid aterm, also valid Python
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
 #------------------------------------------------------------------------
 # Constructions
