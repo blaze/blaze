@@ -936,6 +936,15 @@ cdef class carray:
     # Convert input to an appropriate type
     if type(dtype) is str:
         dtype = np.dtype(dtype)
+
+    # avoid bad performance with another carray, as in utils it would
+    # construct the temp ndarray using a slow iterator.
+    #
+    # TODO: There should be a fast path creating carrays from other carrays
+    # (especially when dtypes and compression params match)
+    if isinstance(array, carray):
+      array = array[:]
+
     array_ = utils.to_ndarray(array, dtype)
 
     # if no base dtype is provided, use the dtype from the array.
@@ -952,7 +961,6 @@ cdef class carray:
     # arrays of more than one dimensions.
     self._dtype = dtype = self._adapt_dtype(dtype, array_.shape)
 
- 
     # Check that atom size is less than 2 GB
     if dtype.itemsize >= 2**31:
       raise ValueError, "atomic size is too large (>= 2 GB)"
