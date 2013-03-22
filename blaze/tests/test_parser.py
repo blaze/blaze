@@ -22,7 +22,7 @@ def test_simple_parse():
     assert rec['y'] == int32
 
 def test_compound_record1():
-    p = parse('6, {x:int; y:float; z:str}')
+    p = parse('6, {x:int32; y:float64; z:string}')
 
     assert type(p[0]) == Fixed
     assert type(p[1]) == Record

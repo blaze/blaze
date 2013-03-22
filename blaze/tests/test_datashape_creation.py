@@ -44,5 +44,10 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertEqual(blaze.dshape("string('utf-32')").encoding, 'U32')
         self.assertEqual(blaze.dshape("string('U32')").encoding, 'U32')
 
+    def test_struct_of_array(self):
+        self.assertEqual(str(blaze.dshape('5, int32')), '5, int32')
+        self.assertEqual(str(blaze.dshape('{field: 5, int32}')), '{ field : 5, int32 }')
+        self.assertEqual(str(blaze.dshape('{field: M, int32}')), '{ field : M, int32 }')
+
 if __name__ == '__main__':
     unittest.main()
