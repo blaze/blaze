@@ -87,6 +87,7 @@ old/*
 
 # generated data from samples
 sample_tables
+*.blz/
 
 # Emacs tmps
 *~
