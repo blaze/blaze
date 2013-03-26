@@ -10,28 +10,99 @@ import blaze.blir as blir
 import numpy as np
 from time import time
 import blaze
+from chunked.expression_builder import Operation, Terminal, Visitor
 
 
 # ================================================================
 
-def _to_blir_type_string(anObject):
-    if (isinstance(anObject, blaze.Array)):
-        p = anObject.datashape.parameters
-        assert(len(p) == 2)
-        return 'array[%s]' % 'float'#p[-1].name
-    else:
-        return 'float' #hardcode ftw
+class BlirEvaluator(object):
+    """Evaluates expressions using blir
 
+    Note that this is a sample, and has several assumptions
+    hardcoded. This is 'proof-of-concept'
+    """
 
-def _gen_blir_decl(name, obj):
-    return name + ': ' + _to_blir_type_string(obj)
+    class _ExtractTerminals(Visitor):
+        def accept_operation(self, node):
+            return self.accept(node.lhs) |  self.accept(node.rhs)
+           
+        def accept_terminal(self, node):
+            if isinstance(node.source, blaze.Array):
+                return { node.source }
+            else:
+                return set()
 
+    class _GenerateExpression(Visitor):
+        def __init__(self, terms_dict):
+            self.terms = terms_dict
 
-def _gen_blir_signature(terms):
-    return ',\n\t'.join([_gen_blir_decl(pair[1], pair[0])
-                      for pair in terms.iteritems()])
+        def accept_operation(self, node):
+            a = self.accept(node.lhs)
+            b = self.accept(node.rhs)
+            return '(' + a + node.op + b + ')'
+                
+        def accept_terminal(self, node):
+            if (isinstance(node.source, blaze.Array)):
+                return self.terms[node.source] + '[i]'
+            else:
+                return repr(node.source)
 
+    def __init__(self, root_node):
+        """ after constructor:
+        """
+        assert(root_node.op == 'dot')
+        terms = self._ExtractTerminals().accept(root_node)
+        terms = { obj: 'in%d' % i for i, obj in
+                  enumerate(terms) }
 
+        str_signature = self._gen_blir_signature(terms)
+        str_lhs = self._GenerateExpression(terms).accept(root_node.lhs)
+        str_rhs = self._GenerateExpression(terms).accept(root_node.rhs)
+        code = """
+def main(%s, n: int) -> float {
+    var float accum = 0.0;
+    var int i = 0;
+    for i in range(n) {
+        accum = accum + (%s*%s);
+    }
+    return accum;
+}
+""" %  (str_signature, str_lhs, str_rhs)
+
+        _, self.env = blir.compile(code)
+        self.ctx = blir.Context(self.env)
+        self.operands = list(terms)
+        self.code = code
+
+    def __del__(self):
+        try:
+            self.ctx.destroy()
+        except:
+            pass
+    
+    def __str__(self):
+        str_args = ',\n\n'.join([str(op) for op in  self.operands]) 
+        return '''blir evaluator with code:\n%s\n\nwith args:\n%s\n''' % (self.code, str_args)
+
+    @staticmethod
+    def _to_blir_type_string(obj):
+        if (isinstance(obj, blaze.Array)):
+            p = obj.datashape.parameters
+            assert(len(p) == 2)
+            return 'array[%s]' % 'float'
+        else:
+            return 'float'
+
+    @staticmethod
+    def _gen_blir_decl(name, obj):
+        return name + ': ' + BlirEvaluator._to_blir_type_string(obj)
+
+    @staticmethod
+    def _gen_blir_signature(terms):
+        return ',\n\t'.join([BlirEvaluator._gen_blir_decl(pair[1], pair[0])
+                             for pair in terms.iteritems()])
+
+'''
 # ================================================================
 
 # Support code to build expresions and convert them to a blir
@@ -76,31 +147,11 @@ class Operation(object):
         b = self.rhs.gen_blir_expr(terms)
         return '(' + a + self.op + b + ')'
 
-    def gen_blir(self):
-        assert(self.op == 'dot')
-        term_array = self.make_terms(set())
-        terms = { obj: 'in%d' % i for i, obj in
-                  enumerate(term_array) }
-        code = """
-def main(%s, n: int) -> float {
-    var float accum = 0.0;
-    var int i = 0;
-    for i in range(n) {
-        accum = accum + (%s*%s);
-    }
-    return accum;
-}
-""" %  (_gen_blir_signature(terms),
-        self.lhs.gen_blir_expr(terms),
-        self.rhs.gen_blir_expr(terms))
-
-        return term_array, code
-
 
 class Terminal(object):
     def __init__(self, src):
         self.source = src
-
+ 
     # ------------------------------------------------------------
     def __add__(self, rhs):
         return Operation('+', self, rhs)
@@ -128,43 +179,24 @@ class Terminal(object):
             return terms[self.source] + '[i]'
         else:
             return repr(self.source)
-
+'''
 
 # ================================================================
-def _temp_for(aScalarOrArray, chunk_size):
-    if (isinstance(aScalarOrArray, blaze.Array)):
-        dtype = aScalarOrArray.datashape.parameters[-1].to_dtype()
-        return np.empty((chunk_size,), dtype=dtype)
-    else:
-        return aScalarOrArray #an Scalar
-
-
-def _dimension(operand_list):
-    dims = [op.datashape.shape[-1].val for op in operand_list if isinstance(op, blaze.Array)]
-    assert (dims.count(dims[0]) == len(dims))
-    return dims[0]
-
 
 def chunked_eval(blz_expr, chunk_size=32768):
-    operands, code = blz_expr.gen_blir()
-    total_size = _dimension(operands)
-    temps = [_temp_for(i, chunk_size) for i in operands]
-    temp_op = [i for i in zip(temps, operands) if isinstance(i[1], blaze.Array)]
+    evaluator = BlirEvaluator(blz_expr)
+    operands = evaluator.operands
+    total_size = operands[0].datashape.shape[-1].val
     offset = 0
     accum = 0.0
-    _, env = blir.compile(code)
-    ctx = blir.Context(env)
     while offset < total_size:
         curr_chunk_size = min(total_size - offset, chunk_size)
-        slice_chunk = slice(0, curr_chunk_size)
         slice_src = slice(offset, offset+curr_chunk_size)
-        for temp, op in temp_op:
-            temp[slice_chunk] = op[slice_src]
-
-        accum += blir.execute(ctx, args=temps + [curr_chunk_size], fname='main')
+        args = [op[slice_src] for op in operands]
+        args.append(curr_chunk_size)
+        accum += blir.execute(evaluator.ctx, args=args, fname='main')
         offset = slice_src.stop
 
-    ctx.destroy()
     return accum
 
 
@@ -264,6 +296,7 @@ def main(args):
         delete_persistent_arrays()
     else:
         print args[0] + ' [create elements|run|delete]'
+
 
 if __name__ == '__main__':
     from sys import argv
