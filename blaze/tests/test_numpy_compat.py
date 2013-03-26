@@ -18,10 +18,10 @@ from blaze.test_utils import assert_raises
 
 class TestToNumPy(unittest.TestCase):
     def test_dtype_compat(self):
-        self.assertEqual(to_numpy(blaze.int32), np.int32)
-        self.assertEqual(to_numpy(blaze.int64), np.int64)
-        self.assertEqual(to_numpy(blaze.float_), np.float_)
-        self.assertEqual(to_numpy(blaze.int_), np.int_)
+        self.assertEqual(to_numpy(blaze.int32), np.dtype(np.int32))
+        self.assertEqual(to_numpy(blaze.int64), np.dtype(np.int64))
+        self.assertEqual(to_numpy(blaze.float_), np.dtype(np.float_))
+        self.assertEqual(to_numpy(blaze.int_), np.dtype(np.int_))
 
     def test_shape_compat(self):
         self.assertEqual(to_numpy(dshape('1, int32')), ((1,), np.int32))
@@ -31,7 +31,7 @@ class TestToNumPy(unittest.TestCase):
     def test_deconstruct(self):
         ds = dshape('1, 2, 3, int32')
 
-        self.assertEqual(extract_dims(ds), (1,2,3))
+        self.assertEqual([int(x) for x in extract_dims(ds)], [1,2,3])
         self.assertEqual(extract_measure(ds), blaze.int32)
 
     def test_not_compat(self):
