@@ -79,6 +79,25 @@ def main(%s, n: int) -> float {
             self.ctx.destroy()
         except:
             pass
+
+    def chunked_eval(self, chunk_size = 32768):
+        operands = self.operands
+        total_size = operands[0].datashape.shape[-1].val
+        offset = 0
+        accum = 0.0
+        t_real = 0.0
+        while offset < total_size:
+            curr_chunk_size = min(total_size - offset, chunk_size)
+            slice_src = slice(offset, offset+curr_chunk_size)
+            args = [op[slice_src] for op in operands]
+            args.append(curr_chunk_size)
+            t = time()
+            accum += blir.execute(self.ctx, args=args, fname='main')
+            t_real += time() - t
+            offset = slice_src.stop
+
+        return accum, t_real
+
     
     def __str__(self):
         str_args = ',\n\n'.join([str(op) for op in  self.operands]) 
@@ -101,104 +120,6 @@ def main(%s, n: int) -> float {
     def _gen_blir_signature(terms):
         return ',\n\t'.join([BlirEvaluator._gen_blir_decl(pair[1], pair[0])
                              for pair in terms.iteritems()])
-
-'''
-# ================================================================
-
-# Support code to build expresions and convert them to a blir
-# function to be executed on each chunk
-
-class Operation(object):
-    def __init__(self, op, lhs, rhs):
-        self.op = op
-        self.lhs = lhs
-        self.rhs = rhs
-
-    # ------------------------------------------------------------
-    # operators - used to build an AST of the expresion
-    def __add__(self, rhs):
-        return Operation('+', self, rhs)
-
-    def __sub__(self, rhs):
-        return Operation('-', self, rhs)
-
-    def __mul__(self, rhs):
-        return Operation('*', self, rhs)
-
-    def dot(self, rhs):
-        return Operation('dot', self, rhs)
-
-    # ------------------------------------------------------------
-    # repr
-    def __repr__(self):
-        return ('Operation(' + repr(self.op) + ', '
-                + repr(self.lhs) + ', '
-                + repr(self.rhs) + ')')
-
-    # ------------------------------------------------------------
-    # support functions to generate blir code
-    def make_terms(self, terms):
-        self.lhs.make_terms(terms)
-        self.rhs.make_terms(terms)
-        return terms
-
-    def gen_blir_expr(self, terms):
-        a = self.lhs.gen_blir_expr(terms)
-        b = self.rhs.gen_blir_expr(terms)
-        return '(' + a + self.op + b + ')'
-
-
-class Terminal(object):
-    def __init__(self, src):
-        self.source = src
- 
-    # ------------------------------------------------------------
-    def __add__(self, rhs):
-        return Operation('+', self, rhs)
-
-    def __sub__(self, rhs):
-        return Operation('-', self, rhs)
-
-    def __mul__(self, rhs):
-        return Operation('*', self, rhs)
-
-    def dot(self, rhs):
-        return Operation('dot', self, rhs)
-
-    # ------------------------------------------------------------
-    def __repr__(self):
-        return 'Terminal(' + repr(self.source) + ')'
-
-    # ------------------------------------------------------------
-    def make_terms(self, terms):
-        if isinstance(self.source, blaze.Array):
-            terms.add(self.source)
-
-    def gen_blir_expr(self, terms):
-        if (isinstance(self.source, blaze.Array)):
-            return terms[self.source] + '[i]'
-        else:
-            return repr(self.source)
-'''
-
-# ================================================================
-
-def chunked_eval(blz_expr, chunk_size=32768):
-    evaluator = BlirEvaluator(blz_expr)
-    operands = evaluator.operands
-    total_size = operands[0].datashape.shape[-1].val
-    offset = 0
-    accum = 0.0
-    while offset < total_size:
-        curr_chunk_size = min(total_size - offset, chunk_size)
-        slice_src = slice(offset, offset+curr_chunk_size)
-        args = [op[slice_src] for op in operands]
-        args.append(curr_chunk_size)
-        accum += blir.execute(evaluator.ctx, args=args, fname='main')
-        offset = slice_src.stop
-
-    return accum
-
 
 # ================================================================
 
@@ -264,10 +185,17 @@ def run_test(args):
     if 'print_expr' in args:
         print expr.gen_blir()[1]
 
-    t_ce = time()
-    result_ce = chunked_eval(expr, chunk_size=50000)
-    t_ce = time() - t_ce
-    print 'blir chunked result is : %s in %f s' % (result_ce, t_ce)
+    t_bc = time()
+    evaluator = BlirEvaluator(expr)
+    t_bc = time() - t_bc
+    print 'blir evaluator took %f s to build' % t_bc
+
+    for log2cs in xrange(12, 26):
+        cs = pow(2,log2cs)
+        t_ce = time()
+        result_ce, t_real = evaluator.chunked_eval(cs)
+        t_ce = time() - t_ce
+        print 'blir chunked result is : %s in %f/%f s (chunksize = %d)' % (result_ce, t_ce, t_real, cs)
 
     # in numpy...
     t0 = time()
