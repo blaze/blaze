@@ -191,7 +191,7 @@ def run_test(args):
     print 'blir evaluator took %f s to build' % t_bc
 
     for log2cs in xrange(12, 26):
-        cs = pow(2,log2cs)
+        cs = 2**log2cs
         t_ce = time()
         result_ce, t_real = evaluator.chunked_eval(cs)
         t_ce = time() - t_ce
