@@ -5,9 +5,19 @@ from expression_builder import Visitor
 import blaze
 import math
 
-def evaluate(expression, vm='python', out_flavor='blaze', user_dict={}, **kwargs):
+def evaluate(expression,
+             vm='python', 
+             out_flavor='blaze', 
+             chunk_size=None, 
+             user_dict={}, 
+             **kwargs):
     """
-    evaluate(expression, vm=None, out_flavor=None, user_dict=None, **kwargs)
+    evaluate(expression,
+             vm=None,
+             out_flavor=None,
+             chunk_size=None,
+             user_dict=None,
+             **kwargs)
 
     Evaluate an `expression` and return the result.
 
@@ -20,6 +30,8 @@ def evaluate(expression, vm='python', out_flavor='blaze', user_dict={}, **kwargs
     vm : string
         The virtual machine to be used in computations.  It can be 'numexpr'
         or 'python'.  The default is to use 'numexpr' if it is installed.
+    chunk_size : size of the chunk for chunked evaluation. If None, use some
+                 heuristics to infer it.
     out_flavor : string
         The flavor for the `out` object.  It can be 'Blaze' or 'numpy'.
     user_dict : dict
@@ -69,33 +81,43 @@ def evaluate(expression, vm='python', out_flavor='blaze', user_dict={}, **kwargs
             import numexpr
             return numexpr.evaluate(expression, local_dict=vars)
 
-    return _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
+    return _eval_blocks(expression,
+                        vars,
+                        vlen,
+                        typesize,
+                        vm,
+                        out_flavor,
+                        chunk_size,
                         **kwargs)
 
+
 def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
-                 **kwargs):
+                 chunk_size, **kwargs):
     """Perform the evaluation in blocks."""
 
     # Compute the optimal block size (in elements)
     # The next is based on experiments with bench/ctable-query.py
-    if vm == "numexpr":
-        # If numexpr, make sure that operands fits in L3 chache
-        bsize = 2**20  # 1 MB is common for L3
+    if chunk_size:
+        bsize = chunk_size
     else:
-        # If python, make sure that operands fits in L2 chache
-        bsize = 2**17  # 256 KB is common for L2
-    bsize //= typesize
-    # Evaluation seems more efficient if block size is a power of 2
-    bsize = 2 ** (int(math.log(bsize, 2)))
-    if vlen < 100*1000:
-        bsize //= 8
-    elif vlen < 1000*1000:
-        bsize //= 4
-    elif vlen < 10*1000*1000:
-        bsize //= 2
-    # Protection against too large atomsizes
-    if bsize == 0:
-        bsize = 1
+        if vm == "numexpr":
+            # If numexpr, make sure that operands fits in L3 chache
+            bsize = 2**20  # 1 MB is common for L3
+        else:
+            # If python, make sure that operands fits in L2 chache
+            bsize = 2**17  # 256 KB is common for L2
+        bsize //= typesize
+        # Evaluation seems more efficient if block size is a power of 2
+        bsize = 2 ** (int(math.log(bsize, 2)))
+        if vlen < 100*1000:
+            bsize //= 8
+        elif vlen < 1000*1000:
+            bsize //= 4
+        elif vlen < 10*1000*1000:
+            bsize //= 2
+        # Protection against too large atomsizes
+        if bsize == 0:
+            bsize = 1
 
     vars_ = {}
     # Get temporaries for vars
@@ -194,6 +216,7 @@ class NumexprEvaluator(object):
     def eval(self, chunk_size=None):
         return evaluate(self.str_expr,
                         vm='numexpr',
+                        chunk_size=chunk_size,
                         user_dict=self.operands)
     
 
@@ -207,5 +230,6 @@ class NumpyEvaluator(object):
     def eval(self, chunk_size=None):
         return evaluate(self.str_expr, 
                         vm='python',
+                        chunk_size=chunk_size,
                         user_dict=self.operands)
 
