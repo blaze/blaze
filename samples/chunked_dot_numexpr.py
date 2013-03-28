@@ -19,70 +19,9 @@ import blaze.blir as blir
 import numpy as np
 import math
 from time import time
+from chunked.expression_builder import Operation, Terminal, Visitor
 
-_locals = None
-_params = None
-
-# Machinery for evaluating expressions via python or numexpr
-# ---------------
-
-def _getvars(expression, user_dict, depth, vm):
-    """Get the variables in `expression`.
-
-    `depth` specifies the depth of the frame in order to reach local
-    or global variables.
-    """
-
-    cexpr = compile(expression, '<string>', 'eval')
-    if vm == "python":
-        exprvars = [ var for var in cexpr.co_names
-                     if var not in ['None', 'False', 'True'] ]
-    else:
-        import numexpr
-        # Check that var is not a numexpr function here.  This is useful for
-        # detecting unbound variables in expressions.  This is not necessary
-        # for the 'python' engine.
-        from numexpr.expressions import functions as numexpr_functions
-        exprvars = [ var for var in cexpr.co_names
-                     if var not in ['None', 'False', 'True']
-                     and var not in numexpr_functions ]
-
-
-    # Get the local and global variable mappings of the user frame
-    user_locals, user_globals = {}, {}
-    # user_frame = sys._getframe(depth)
-    # user_locals = user_frame.f_locals
-    # user_globals = user_frame.f_globals
-
-    # Look for the required variables
-    reqvars = {}
-    for var in exprvars:
-        # Get the value.
-        if var in user_dict:
-            val = user_dict[var]
-        elif var in user_locals:
-            val = user_locals[var]
-        elif var in user_globals:
-            val = user_globals[var]
-        else:
-            if vm == "numexpr":
-                raise NameError("variable name ``%s`` not found" % var)
-            val = None
-        # Check the value.
-        if (vm == "numexpr" and
-            hasattr(val, 'dtype') and hasattr(val, "__len__") and
-            val.dtype.str[1:] == 'u8'):
-            raise NotImplementedError(
-                "variable ``%s`` refers to "
-                "a 64-bit unsigned integer object, that is "
-                "not yet supported in numexpr expressions; "
-                "rather, use the 'python' vm." % var )
-        if val is not None:
-            reqvars[var] = val
-    return reqvars
-
-
-def evaluate(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
+def evaluate(expression, vm='python', out_flavor='blaze', user_dict={}, **kwargs):
     """
     evaluate(expression, vm=None, out_flavor=None, user_dict=None, **kwargs)
 
@@ -114,19 +53,14 @@ def evaluate(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
 
     """
 
-    if vm is None:
-        vm = "python"
-    if vm not in ("numexpr", "python"):
+    if vm not in ('numexpr', 'python'):
         raiseValue, "`vm` must be either 'numexpr' or 'python'"
 
-    if out_flavor is None:
-        out_flavor = "blaze"
-    if out_flavor not in ("blaze", "numpy"):
+    if out_flavor not in ('blaze', 'numpy'):
         raiseValue, "`out_flavor` must be either 'blaze' or 'numpy'"
 
     # Get variables and column names participating in expression
-    depth = kwargs.pop('depth', 2)
-    vars = _getvars(expression, user_dict, depth, vm=vm)
+    vars = user_dict
 
     # Gather info about sizes and lengths
     typesize, vlen = 0, 1
@@ -248,65 +182,46 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
 # End of machinery for evaluating expressions via python or numexpr
 # ---------------
 
-
-class Operation(object):
-    def __init__(self, op, lhs, rhs):
-        self.op = op
-        self.lhs = lhs
-        self.rhs = rhs
-
-    def __add__(self, rhs):
-        return Operation('+', self, rhs)
-
-    def __sub__(self, rhs):
-        return Operation('-', self, rhs)
-
-    def __mul__(self, rhs):
-        return Operation('*', self, rhs)
-
-    def dot(self, rhs):
-        return Operation('dot', self, rhs)
-
-    def eval(self, locals=None, params=None):
-        global _locals, _params
-        _locals, _params = locals, params
-        return evaluate(str(self), vm=params['vm'], user_dict=locals)
-
-    def __str__(self):
-        if self.op == "dot":
+class _ExpressionBuilder(Visitor):
+    def accept_operation(self, node):
+        str_lhs = self.accept(node.lhs)
+        str_rhs = self.accept(node.rhs)
+        if node.op == "dot":
             # Re-express dot product in terms of a product and an sum()
-            return 'sum' + "(" + str(self.lhs) + "*" + str(self.rhs) + ")"
+            return 'sum' + "(" + str_lhs + "*" + str_rhs + ")"
         else:
-            return "(" + str(self.lhs) + str(self.op) + str(self.rhs) + ")"
+            return "(" + str_lhs + node.op + str_rhs + ')'
 
-    def __repr__(self):
-        return ('Operation(' + repr(self.op) + ', ' 
-                + repr(self.lhs) + ', ' 
-                + repr(self.rhs) + ')')
-        
+    def accept_terminal(self, node):
+        return node.source
+            
 
-class Terminal(object):
-    def __init__(self, src):
-        self.source = src
+class NumexprEvaluator(object):
+    """ Evaluates expressions using numexpr """
+    name = 'numexpr'
 
-    def __add__(self, rhs):
-        return Operation('+', self, rhs)
+    def __init__(self, root_node, operands=None):
+        assert(operands)
+        self.str_expr = _ExpressionBuilder().accept(root_node)
+        self.operands = operands
 
-    def __sub__(self, rhs):
-        return Operation('-', self, rhs)
+    def eval(self, chunk_size=None):
+        return evaluate(self.str_expr,
+                        vm='numexpr',
+                        user_dict=self.operands)
+    
 
-    def __mul__(self, rhs):
-        return Operation('*', self, rhs)
+class PythonEvaluator(object):
+    name = 'python interpreter'
+    def __init__(self, root_node, operands=None):
+        assert(operands)
+        self.str_expr = _ExpressionBuilder().accept(root_node)
+        self.operands = operands
 
-    def dot(self, rhs):
-        return Operation('dot', self, rhs)
-
-    def __str__(self):
-        return self.source
-
-    def __repr__(self):
-        return 'Terminal(' + repr(self.source) + ')'
-
+    def eval(self, chunk_size=None):
+        return evaluate(self.str_expr, 
+                        vm='python',
+                        user_dict=self.operands)
 
 # ================================================================
 
@@ -340,6 +255,7 @@ def delete_persistent_arrays():
     for name in _persistent_array_names:
         _delete_persistent_array(name)
 
+
 def run_test(args):
     T = Terminal
 
@@ -349,8 +265,8 @@ def run_test(args):
     w = T('w')
     a = T('a')
     b = T('b')
-    vm = "python" if "python" in args else "numexpr"
-    print "evaluating expression with '%s' vm..." % vm
+    evaluator = PythonEvaluator if "python" in args else NumexprEvaluator
+    print "evaluating expression with '%s'..." % evaluator.name 
     expr = (x+y).dot(a*z + b*w)
 
     print 'opening blaze arrays...'
@@ -375,12 +291,14 @@ def run_test(args):
 
     if 'print_expr' in args:
         print expr
-
-    t_ce = time()
+    
+    #warmup
     expr_vars = {'x': x_, 'y': y_, 'z': z_, 'w': w_, 'a': a_, 'b': b_, }
-    result_ce = expr.eval(expr_vars, params={'vm': vm})
+    evaluator(expr, operands=expr_vars).eval() # expr.eval(expr_vars, params={'vm': vm})
+    t_ce = time()
+    result_ce = evaluator(expr, operands=expr_vars).eval() # expr.eval(expr_vars, params={'vm': vm})
     t_ce = time() - t_ce
-    print "'%s' vm result is : %s in %.3f s" % (vm, result_ce, t_ce)
+    print "'%s' vm result is : %s in %.3f s" % (evaluator.name, result_ce, t_ce)
     
     # in numpy...
     print 'evaluating expression with numpy...'
