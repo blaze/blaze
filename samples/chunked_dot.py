@@ -1,9 +1,25 @@
 """ Sample showing chunked execution of expresions
 
-This sample constructs an expresion to be executed in chunks.
-Different aproaches are tested, and it is compared with the
-equivalent expresion written in numpy.
+Example that evaluates an expression like `(x+y).dot(a*z + b*w)`, where
+x, y, z and w are vector that live on disk.  The computation can be performed
+using different computation backends using chunking.
+
+Usage:
+
+$ chunked_dot_numexpr create  # creates the vectors on-disk
+$ chunked_dot_numexpr run <backend> [in_memory] # computes the expression
+$ chunked_dot_numexpr delete  # removes the vectors from disk
+
+The supported backends are:
+- blir: computing performed by a blir-compiled kernel
+- numexpr: computing is performed using numexpr
+- numpy: computing is performed with the python interpreter using numpy
+
+The optional "in_memory" arguments forces the matrices into memory
+before performing the computation. That can have negative
+implications with huge arrays.
 """
+
 
 import blaze
 import numpy as np
