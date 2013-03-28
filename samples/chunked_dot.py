@@ -11,7 +11,7 @@ import numpy as np
 from time import time
 import blaze
 from chunked.expression_builder import Operation, Terminal, Visitor
-
+from copy import deepcopy
 
 # ================================================================
 
@@ -47,10 +47,28 @@ class BlirEvaluator(object):
             else:
                 return repr(node.source)
 
-    def __init__(self, root_node):
-        """ after constructor:
-        """
+    class _ParameterBinder(Visitor):
+        def __init__(self, bind_dict):
+            self.bind_dict = bind_dict
+            print self.bind_dict
+
+        def accept_operation(self, node):
+            self.accept(node.lhs)
+            self.accept(node.rhs)
+
+        def accept_terminal(self, node):
+            print node.source
+            try:
+                node.source = self.bind_dict[node.source]
+            except KeyError:
+                pass
+
+    def __init__(self, root_node, operands=None):
+        root_node = deepcopy(root_node)
         assert(root_node.op == 'dot')
+
+        if operands:
+            self._ParameterBinder(operands).accept(root_node)
         terms = self._ExtractTerminals().accept(root_node)
         terms = { obj: 'in%d' % i for i, obj in
                   enumerate(terms) }
@@ -58,7 +76,7 @@ class BlirEvaluator(object):
         str_signature = self._gen_blir_signature(terms)
         str_lhs = self._GenerateExpression(terms).accept(root_node.lhs)
         str_rhs = self._GenerateExpression(terms).accept(root_node.rhs)
-        code = """
+        code = '''
 def main(%s, n: int) -> float {
     var float accum = 0.0;
     var int i = 0;
@@ -67,8 +85,9 @@ def main(%s, n: int) -> float {
     }
     return accum;
 }
-""" %  (str_signature, str_lhs, str_rhs)
+''' %  (str_signature, str_lhs, str_rhs)
 
+        print code
         _, self.env = blir.compile(code)
         self.ctx = blir.Context(self.env)
         self.operands = list(terms)
@@ -80,8 +99,11 @@ def main(%s, n: int) -> float {
         except:
             pass
 
-    def chunked_eval(self, chunk_size = 32768):
+    def chunked_eval(self, chunk_size=32768):
         operands = self.operands
+        ctx = self.ctx
+        execute = blir.execute
+        
         total_size = operands[0].datashape.shape[-1].val
         offset = 0
         accum = 0.0
@@ -92,7 +114,7 @@ def main(%s, n: int) -> float {
             args = [op[slice_src] for op in operands]
             args.append(curr_chunk_size)
             t = time()
-            accum += blir.execute(self.ctx, args=args, fname='main')
+            accum += execute(ctx, args=args, fname='main')
             t_real += time() - t
             offset = slice_src.stop
 
@@ -166,6 +188,8 @@ def run_test(args):
     y = blaze.open(_persistent_array_names[1])
     z = blaze.open(_persistent_array_names[2])
     w = blaze.open(_persistent_array_names[3])
+    a = 2.0
+    b = 2.0
 
     if 'in_memory' in args:
         print 'getting an in-memory version of blaze arrays...'
@@ -180,13 +204,13 @@ def run_test(args):
     print 'datashape is:', x.datashape
 
     print 'evaluating expression with blir...'
-    expr = (T(x)+T(y)).dot(T(2.0)*T(z) + T(2.0)*T(w))
+    expr = (T('x')+T('y')).dot(T('a')*T('z') + T('b')*T('w'))
 
     if 'print_expr' in args:
         print expr.gen_blir()[1]
 
     t_bc = time()
-    evaluator = BlirEvaluator(expr)
+    evaluator = BlirEvaluator(expr, operands={ 'a': a, 'b': b, 'x': x, 'y': y, 'z': z, 'w': w } )
     t_bc = time() - t_bc
     print 'blir evaluator took %f s to build' % t_bc
 
