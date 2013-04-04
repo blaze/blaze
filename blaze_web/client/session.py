@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from requests import create_remote_session, close_remote_session, \
-        add_computed_fields
+        add_computed_fields, sort
 from rarray import rarray
 
 class session:
@@ -49,7 +49,11 @@ class session:
                                    arr.url, fields,
                                    rm_fields, fnname)
         return rarray(j['output'], j['dshape'])
-
+    
+    def sort(self, arr, field):
+        j = sort(self.session_url, arr.url, field)
+        return rarray(j['output'], j['dshape'])
+    
     def close(self):
         close_remote_session(self.session_url)
         self.session_url = None
