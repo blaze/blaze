@@ -62,7 +62,6 @@ class compute_session:
         nparr = as_numpy(arr)
         idxs = np.argsort(nparr[field])
         res = nd.ndobject(nparr[idxs])
-        import pdb;pdb.set_trace()
         defarr = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'sort_', res)
         dshape = res.dshape
