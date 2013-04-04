@@ -90,7 +90,7 @@ class compute_session:
         array_name = array_url[len(self.base_url):]
         fields = cmd['fields']
 
-        arr = self.get_session_array(array_name)
+        arr = self.get_session_array(array_name)[...]
 
         # Do the groupby, get its groups, then
         # evaluate it because deferred operations
