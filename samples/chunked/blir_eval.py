@@ -12,6 +12,8 @@ class BlirEvaluator(object):
     hardcoded. This is 'proof-of-concept'
     """
 
+    name = 'blir'
+
     class _ExtractTerminals(Visitor):
         def accept_operation(self, node):
             return self.accept(node.lhs) |  self.accept(node.rhs)
