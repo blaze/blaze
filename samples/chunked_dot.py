@@ -110,7 +110,8 @@ def run_test(args):
         t_ce = time()
         result_ce = evaluator.eval(cs)
         t_ce = time() - t_ce
-        print '%s result is : %s in %f/%f s (chunksize = %d)' % (evaluator.name, result_ce, t_ce, evaluator.time, cs)
+        print ('%s result is : %s in %f/%f s (chunksize = %d)' % 
+               (evaluator.name, result_ce, t_ce, evaluator.time, cs))
 
     # in numpy...
     t0 = time()

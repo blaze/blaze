@@ -60,8 +60,7 @@ def evaluate(expression,
 
     # Gather info about sizes and lengths
     typesize, vlen = 0, 1
-    for name in vars.iterkeys():
-        var = vars[name]
+    for var in vars.itervalues():
         if not hasattr(var, "datashape"):
             # scalar detection
             continue
@@ -94,6 +93,14 @@ def evaluate(expression,
 def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
                  chunk_size, **kwargs):
     """Perform the evaluation in blocks."""
+
+    if vm == 'python':
+        def eval_flavour(expr, vars_):
+            return eval(expr, None, vars_)
+    else:
+        import numexpr
+        def eval_flavour(expr, vars_):
+            return numexpr.evaluate(expr, local_dict=vars_)
 
     # Compute the optimal block size (in elements)
     # The next is based on experiments with bench/ctable-query.py
@@ -130,54 +137,55 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
             if ndims > maxndims:
                 maxndims = ndims
 
-    for i in xrange(0, vlen, bsize):
+    offset = 0
+    while offset < vlen:
         # Get buffers for vars
+        curr_slice = slice(offset, min(vlen, offset+chunk_size))
         for name in vars.iterkeys():
             var = vars[name]
             if hasattr(var, "datashape"):
                 shape, dtype = blaze.to_numpy(var.datashape)
-                vars_[name] = var[i:i+bsize]
+                vars_[name] = var[curr_slice]
             else:
                 if hasattr(var, "__getitem__"):
-                    vars_[name] = var[:]
+                    vars_[name] = var[curr_slice]
                 else:
                     vars_[name] = var
 
         # Perform the evaluation for this block
-        if vm == "python":
-            res_block = eval(expression, None, vars_)
-        else:
-            import numexpr
-            res_block = numexpr.evaluate(expression, local_dict=vars_)
+        res_block = eval_flavour(expression, vars_)
 
-        if i == 0:
+        if offset == 0:
             # Detection of reduction operations
             scalar = False
             dim_reduction = False
             if len(res_block.shape) == 0:
                 scalar = True
                 result = res_block
-                continue
             elif len(res_block.shape) < maxndims:
                 dim_reduction = True
                 result = res_block
-                continue
+
             # Get a decent default for expectedlen
-            if out_flavor == "blaze":
-                nrows = kwargs.pop('expectedlen', vlen)
-                result = blaze.array(res_block, **kwargs)
             else:
-                out_shape = list(res_block.shape)
-                out_shape[0] = vlen
-                result = np.empty(out_shape, dtype=res_block.dtype)
-                result[:bsize] = res_block
+                if out_flavor == "blaze":
+                    nrows = kwargs.pop('expectedlen', vlen)
+                    result = blaze.array(res_block, **kwargs)
+                else:
+                    out_shape = list(res_block.shape)
+                    out_shape[0] = vlen
+                    result = np.empty(out_shape, dtype=res_block.dtype)
+                    result[curr_slice] = res_block
         else:
             if scalar or dim_reduction:
                 result += res_block
             elif out_flavor == "blaze":
                 result.append(res_block)
             else:
-                result[i:i+bsize] = res_block
+                result[curr_slice] = res_block
+
+        offset = curr_slice.stop #for next iteration
+                           
 
     # if isinstance(result, blaze.Array):
     #     result.flush()
