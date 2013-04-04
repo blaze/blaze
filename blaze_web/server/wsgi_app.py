@@ -126,6 +126,9 @@ class wsgi_app:
         elif q_req == 'add_computed_fields':
             j = q['json'][0]
             content_type, body = session.add_computed_fields(j)
+        elif q_req == 'sort':
+            j = q['json'][0]
+            content_type, body = session.sort(j)
         else:
             content_type = 'text/plain; charset=utf-8'
             body = 'something with session ' + session.session_name
@@ -219,3 +222,5 @@ class wsgi_app:
                 start_response('404 Not Found', [('content-type', 'text/plain')])
                 return ['No favicon']
             return self.handle_array_query(environ, start_response)
+
+

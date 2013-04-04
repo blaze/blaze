@@ -40,3 +40,14 @@ def add_computed_fields(session_url, url, fields, rm_fields, fnname):
     response = urllib2.urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())
 
+def sort(session_url, url, field):
+    """Creates a new remote array which is sorted by field."""
+    reqdata = {
+        "input": str(url),
+        "field": field
+        }
+    params = [('r', 'sort'),
+              ('json', json.dumps(reqdata))]
+    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    return json.loads(response.read())
+

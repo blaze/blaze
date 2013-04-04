@@ -2,6 +2,7 @@ import json
 from blaze_web.common.blaze_url import split_array_base
 import dynd
 from dynd import nd, ndt
+from dynd.nd import as_numpy
 
 class compute_session:
     def __init__(self, array_provider, base_url, array_name):
@@ -47,7 +48,40 @@ class compute_session:
                 'action': 'closed'
             })
         return (content_type, body)
-
+    
+    def sort(self, json_cmd):
+        import numpy as np
+        print ('sorting')
+        cmd = json.loads(json_cmd)
+        array_url = cmd.get('input', self.base_url + self.array_name)
+        if not array_url.startswith(self.base_url):
+            raise RuntimeError('Input array must start with the base url')
+        array_name = array_url[len(self.base_url):]
+        field = cmd['field']
+        arr = self.get_session_array(array_name)
+        nparr = as_numpy(arr)
+        idxs = np.argsort(nparr[field])
+        res = nd.ndobject(nparr[idxs])
+        import pdb;pdb.set_trace()
+        defarr = self.array_provider.create_deferred_array_filename(
+                        self.session_name, 'sort_', res)
+        dshape = res.dshape
+        defarr[0].write(json.dumps({
+                'dshape': dshape,
+                'command': 'sort',
+                'params': {
+                    'field': field,
+                }
+            }))
+        defarr[0].close()
+        content_type = 'application/json; charset=utf-8'
+        body = json.dumps({
+                'session': self.base_url + self.session_name,
+                'output': self.base_url + defarr[1],
+                'dshape': dshape
+            })
+        return (content_type, body)
+        
     def add_computed_fields(self, json_cmd):
         print('Adding computed fields')
         cmd = json.loads(json_cmd)
