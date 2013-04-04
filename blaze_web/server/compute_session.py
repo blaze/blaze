@@ -80,7 +80,61 @@ class compute_session:
                 'dshape': dshape
             })
         return (content_type, body)
+
+    def groupby(self, json_cmd):
+        print('GroupBy operation')
+        cmd = json.loads(json_cmd)
+        array_url = cmd.get('input', self.base_url + self.array_name)
+        if not array_url.startswith(self.base_url):
+            raise RuntimeError('Input array must start with the base url')
+        array_name = array_url[len(self.base_url):]
+        fields = cmd['fields']
+
+        arr = self.get_session_array(array_name)
+
+        # Do the groupby, get its groups, then
+        # evaluate it because deferred operations
+        # through the groupby won't work well yet.
+        res = nd.groupby(arr, nd.fields(arr, *fields))
+        groups = res.groups
+        res = res.eval()
         
+        # Write out the groupby result
+        defarr_gb = self.array_provider.create_deferred_array_filename(
+                        self.session_name, 'groupby_', res)
+        dshape_gb = res.dshape
+        defarr_gb[0].write(json.dumps({
+                'dshape': dshape_gb,
+                'command': 'groupby',
+                'params': {
+                    'fields': fields
+                }
+            }))
+        defarr_gb[0].close()
+        
+        # Write out the groups
+        defarr_groups = self.array_provider.create_deferred_array_filename(
+                        self.session_name, 'groups_', groups)
+        dshape_groups = groups.dshape
+        defarr_groups[0].write(json.dumps({
+                'dshape': dshape_groups,
+                'command': 'groupby.groups',
+                'params': {
+                    'fields': fields
+                }
+            }))
+        defarr_groups[0].close()
+
+        content_type = 'application/json; charset=utf-8'
+        body = json.dumps({
+                'session': self.base_url + self.session_name,
+                'output_gb': self.base_url + defarr_gb[1],
+                'dshape_gb': dshape_gb,
+                'output_groups': self.base_url + defarr_groups[1],
+                'dshape_groups': dshape_groups
+            })
+        return (content_type, body)
+
     def add_computed_fields(self, json_cmd):
         print('Adding computed fields')
         cmd = json.loads(json_cmd)

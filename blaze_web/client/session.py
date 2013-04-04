@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from requests import create_remote_session, close_remote_session, \
-        add_computed_fields, sort
+        add_computed_fields, sort, groupby
 from rarray import rarray
 
 class session:
@@ -53,7 +53,23 @@ class session:
     def sort(self, arr, field):
         j = sort(self.session_url, arr.url, field)
         return rarray(j['output'], j['dshape'])
-    
+
+    def groupby(self, arr, fields):
+        """
+        Applies a groupby to a struct array based on selected fields.
+        
+        arr : rarray
+            A remote array on the server.
+        fields : list of field names
+            These are the fields which are used for grouping.
+        
+        Returns a tuple of the groupby result and the groups.
+        """
+        j = groupby(self.session_url, arr.url, fields)
+        return (
+            rarray(j['output_gb'], j['dshape_gb']),
+            rarray(j['output_groups'], j['dshape_groups']))
+
     def close(self):
         close_remote_session(self.session_url)
         self.session_url = None

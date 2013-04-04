@@ -129,6 +129,9 @@ class wsgi_app:
         elif q_req == 'sort':
             j = q['json'][0]
             content_type, body = session.sort(j)
+        elif q_req == 'groupby':
+            j = q['json'][0]
+            content_type, body = session.groupby(j)
         else:
             content_type = 'text/plain; charset=utf-8'
             body = 'something with session ' + session.session_name

@@ -51,3 +51,12 @@ def sort(session_url, url, field):
     response = urllib2.urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())
 
+def groupby(session_url, url, fields):
+    reqdata = {
+        "input": str(url),
+        "fields": fields
+        }
+    params = [('r', 'groupby'),
+              ('json', json.dumps(reqdata))]
+    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    return json.loads(response.read())
