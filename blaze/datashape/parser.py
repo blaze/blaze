@@ -4,7 +4,6 @@ The improved parser for Datashape grammar.
 Grammar::
 
     top : mod
-        | stmt
 
     mod : mod mod
         | stmt
@@ -15,21 +14,35 @@ Grammar::
     lhs_expression : lhs_expression lhs_expression
                    | NAME
 
-    rhs_expression : rhs_expression COMMA rhs_expression
+    rhs_expression : rhs_expression_list
+
+    rhs_expression_list : rhs_expression_list COMMA rhs_expression_list
                    | appl
                    | record
                    | BIT
                    | NAME
                    | NUMBER
 
-    appl : NAME '(' rhs_expression ')'
+    appl_args : appl_args COMMA appl_args
+              | appl
+              | record
+              | '(' rhs_expression ')'
+              | BIT
+              | NAME
+              | NUMBER
+              | STRING
+
+    appl : NAME '(' appl_args ')'
 
     record : LBRACE record_opt RBRACE
     record_opt : record_opt SEMI record_opt
                | record_item
                | empty
-    record_item : NAME COLON '(' rhs_expression ')'
-                | NAME COLON rhs_expression'
+    record_name : NAME
+                | BIT
+                | TYPE
+    record_item : record_name COLON '(' rhs_expression ')'
+                | record_name COLON rhs_expression'
 
     empty :
 
@@ -64,8 +77,8 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'TYPE', 'NAME', 'NUMBER', 'EQUALS', 'COMMA', 'COLON',
-    'LBRACE', 'RBRACE', 'SEMI', 'BIT'
+    'TYPE', 'NAME', 'NUMBER', 'STRING',
+    'EQUALS', 'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT'
 )
 
 literals = [
@@ -92,8 +105,6 @@ bits = set([
     'uint16',
     'uint32',
     'uint64',
-    'uint64',
-    'uint64',
     'float16',
     'float32',
     'float64',
@@ -101,6 +112,7 @@ bits = set([
     'complex64',
     'complex128',
     'complex256',
+    'string',
     'object',
     'datetime64',
     'timedelta64',
@@ -120,7 +132,7 @@ def t_TYPE(t):
 
 def t_newline(t):
     r'\n+'
-    t.lexer.lineno += t.value.count("\n")
+    #t.lexer.lineno += t.value.count("\n")
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -137,9 +149,14 @@ def t_NUMBER(t):
     t.value = int(t.value)
     return t
 
+def t_STRING(t):
+    r'(?:"(?:[^"\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*")|(?:\'(?:[^\'\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*\')'
+    t.value = t.value[1:-1].decode('unicode_escape')
+    return t
+
 def t_error(t):
-    print("Unknown token '%s'" % t.value[0])
-    t.lexer.skip(1)
+    raise Exception("Unknown token %s" % repr(t.value[0]))
+    #t.lexer.skip(1)
 
 #------------------------------------------------------------------------
 # Parser
@@ -149,16 +166,11 @@ precedence = (
     ('right' , 'COMMA'),
 )
 
-bittype     = namedtuple('bit', 'name')
-tyinst     = namedtuple('tyinst', 'conargs')
 tydecl     = namedtuple('tydecl', 'lhs, rhs')
-tyappl     = namedtuple('tyappl', 'head, args')
-tyrecord   = namedtuple('tyrecord', 'elts')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
 def p_top(p):
     '''top : mod
-           | stmt
     '''
     p[0] = p[1]
 
@@ -183,7 +195,7 @@ def p_statement_assign(p):
         parameters  = ()
         rhs         = p[4]
 
-    # paramaterized
+    # parameterized
     else:
         constructid = p[2][0]
         parameters  = p[2][1:]
@@ -194,7 +206,7 @@ def p_statement_assign(p):
 
 def p_statement_expr(p):
     'stmt : rhs_expression'
-    p[0] = tyinst(p[1])
+    p[0] = p[1]
 
 #------------------------------------------------------------------------
 
@@ -209,36 +221,87 @@ def p_lhs_expression_node(p):
 
 #------------------------------------------------------------------------
 
-def p_rhs_expression_node1(p):
-    '''rhs_expression : appl
-                      | record'''
-    p[0] = p[1]
+def p_rhs_expression(p):
+    'rhs_expression : rhs_expression_list'
+    if len(p[1]) == 1:
+        rhs = p[1][0]
+        if getattr(rhs, 'cls', T.MEASURE) != T.MEASURE:
+            raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(rhs))
+        p[0] = rhs
+    else:
+        p[0] = T.DataShape(p[1])
 
-def p_rhs_expression_node2(p):
-    '''rhs_expression : BIT'''
-    p[0] = (bittype(p[1]),)
-
-def p_rhs_expression_node3(p):
-    '''rhs_expression : NAME
-                      | NUMBER'''
+def p_rhs_expression_list_node1(p):
+    '''rhs_expression_list : appl
+                           | record'''
     p[0] = (p[1],)
 
-def p_rhs_expression(p):
-    'rhs_expression : rhs_expression COMMA rhs_expression'''
+def p_rhs_expression_list__bit(p):
+    '''rhs_expression_list : BIT'''
+    p[0] = (T.Type._registry[p[1]],)
+
+def p_rhs_expression_list__name(p):
+    '''rhs_expression_list : NAME'''
+    p[0] = (T.TypeVar(p[1]),)
+
+def p_rhs_expression_list__number(p):
+    '''rhs_expression_list : NUMBER'''
+    p[0] = (T.Fixed(p[1]),)
+
+def p_rhs_expression_list(p):
+    'rhs_expression_list : rhs_expression_list COMMA rhs_expression_list'
+    # tuple addition
+    p[0] = p[1] + p[3]
+
+#------------------------------------------------------------------------
+
+def p_appl_args__appl__record(p):
+    '''appl_args : appl
+                 | record'''
+    p[0] = (p[1],)
+
+def p_appl_args__rhs_expression(p):
+    "appl_args : '(' rhs_expression ')'"
+    p[0] = (p[2],)
+
+def p_appl_args__name(p):
+    '''appl_args : NAME'''
+    p[0] = (T.TypeVar(p[1]),)
+
+def p_appl_args__bit(p):
+    '''appl_args : BIT'''
+    p[0] = (T.Type._registry[p[1]],)
+
+def p_appl_args__number(p):
+    '''appl_args : NUMBER'''
+    p[0] = (T.IntegerConstant(p[1]),)
+
+def p_appl_args__string(p):
+    '''appl_args : STRING'''
+    p[0] = (T.StringConstant(p[1]),)
+
+def p_appl_args(p):
+    'appl_args : appl_args COMMA appl_args'
     # tuple addition
     p[0] = p[1] + p[3]
 
 #------------------------------------------------------------------------
 
 def p_appl(p):
-    "appl : NAME '(' rhs_expression ')'"
-    p[0] = (tyappl(p[1], p[3]),)
+    """appl : NAME '(' appl_args ')'
+            | BIT '(' appl_args ')'""" # BIT is here for 'string(...)'
+    if p[1] in reserved:
+        # The appl_args part of the grammar already produces
+        # TypeVar/IntegerConstant/StringConstant values
+        p[0] = reserved[p[1]](*p[3])
+    else:
+        raise NameError('Cannot use the name %s for type application' % repr(p[1]))
 
 #------------------------------------------------------------------------
 
 def p_record(p):
     'record : LBRACE record_opt RBRACE'
-    p[0] = (tyrecord(p[2]),)
+    p[0] = T.Record(p[2])
 
 def p_record_opt1(p):
     'record_opt : record_opt SEMI record_opt'
@@ -252,12 +315,18 @@ def p_record_opt3(p):
     'record_opt : empty'
     p[0] = []
 
+def p_record_name(p):
+    '''record_name : NAME
+                   | BIT
+                   | TYPE'''
+    p[0] = p[1]
+
 def p_record_item1(p):
-    "record_item : NAME COLON '(' rhs_expression ')' "
+    "record_item : record_name COLON '(' rhs_expression ')'"
     p[0] = (p[1], p[4])
 
 def p_record_item2(p):
-    '''record_item : NAME COLON rhs_expression'''
+    '''record_item : record_name COLON rhs_expression'''
     p[0] = (p[1], p[3])
 
 #------------------------------------------------------------------------
@@ -269,7 +338,6 @@ def p_empty(t):
 def p_error(p):
     if p:
         raise DatashapeSyntaxError(
-            p.lineno,
             p.lexpos,
             '<stdin>',
             p.lexer.lexdata,
@@ -301,67 +369,29 @@ def build_ds_extern(ds):
     elif isinstance(ds, tydecl):
         pass
 
-def build_ds(ds):
-    """
-    Build a datashape instance from parse tree. In the case where we
-    have a named instance disregard the naming and the parameters and
-    return an anonymous type.
-    """
-    # ----------------------------
-    if isinstance(ds, list):
-        raise NotImplementedError('dshape from list parse tree') # XXX
-    elif isinstance(ds, simpletype):
-        raise NotImplementedError('dshape from simpletype') # XXX
-    elif isinstance(ds, tydecl):
-        if isinstance(ds.lhs , simpletype):
-            if len(ds.lhs.tyvars) == 0:
-                dst = map(build_ds, ds.rhs)
-                if len(dst) == 1:
-                    return dst[0]
-                else:
-                    return T.DataShape(dst)
-            else:
-                raise TypeError('building a simple dshape with type parameters is not supported')
-        else:
-            raise NotImplementedError
-    # ----------------------------
-
-    elif isinstance(ds, tyinst):
-        dst = map(build_ds, ds.conargs)
-        if len(dst) == 1:
-            return dst[0]
-        else:
-            return T.DataShape(dst)
-    elif isinstance(ds, bittype):
-        return T.Type._registry[ds.name]
-    elif isinstance(ds, (int, long)):
-        return T.Fixed(ds)
-    elif isinstance(ds, basestring):
-        return T.TypeVar(ds)
-    elif isinstance(ds, tyappl):
-        if ds.head in reserved:
-            args = map(build_ds, ds.args)
-            return reserved[ds.head](*args)
-        else:
-            raise NameError, ds.head
-    elif isinstance(ds, tyrecord):
-        # TODO: ugly hack
-        return T.Record([(a, build_ds(b[0])) for a,b in ds.elts])
-    else:
-        raise ValueError, 'Invalid construction from Datashape parser: %s' % repr(ds)
-
 def debug_parse(data, lexer, parser):
     lexer.input(data)
     while True:
         tok = lexer.token()
         if not tok: break
         print tok
-    return parser.parse(data)
+
+    import logging
+    logging.basicConfig(
+        level = logging.DEBUG,
+        filename = "parselog.txt",
+        filemode = "w",
+        format = "%(filename)10s:%(lineno)4d:%(message)s"
+    )
+    log = logging.getLogger()
+    return parser.parse(data, debug=log)
 
 def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
-        path = os.path.relpath(__file__)
+        # Must be abspath instead of relpath because
+        # of Windows multi-rooted filesystem.
+        path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
         parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
@@ -380,10 +410,21 @@ def load_parser(debug=False):
 #------------------------------------------------------------------------
 
 def parse(pattern):
-    parser = load_parser()
-    res = parser(pattern)
+    # NOTE: If you change the lexer/parser, you should
+    #       run with load_parser(True)
+    #       to trigger a re-creation of the parser.
+    parser = load_parser(False)
+    ds = parser(pattern)
 
-    ds = build_ds(res)
+    # Just take the type from "type X = Y" statements
+    if isinstance(ds, tydecl):
+        if ds.lhs.nargs == 0:
+            ds = ds.rhs
+        else:
+            raise TypeError('building a simple dshape with type parameters is not supported')
+    # Require that the type be concrete, not parameterized
+    if isinstance(ds, T.TypeVar):
+        raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(ds))
     return ds
 
 def parse_extern(pattern):

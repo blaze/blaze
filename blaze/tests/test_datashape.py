@@ -1,8 +1,8 @@
 from blaze.datashape import *
 
-a = Integer(800)
-b = Integer(600)
-c = Integer(300)
+a = IntegerConstant(800)
+b = IntegerConstant(600)
+c = IntegerConstant(300)
 
 def test_associative():
     sig1 = a * (b * int64)
@@ -18,11 +18,11 @@ def test_associative2():
     assert sig1.parameters == sig2.parameters == sig3.parameters == sig4.parameters
 
 def test_coersion():
-    sig1 = Integer(2)*int64
-    sig2 = Integer(3)*Integer(2)*int64
+    sig1 = IntegerConstant(2)*int64
+    sig2 = IntegerConstant(3)*IntegerConstant(2)*int64
 
-    assert type(sig1[0]) is Integer
-    assert type(sig2[0]) is Integer
+    assert type(sig1[0]) is IntegerConstant
+    assert type(sig2[0]) is IntegerConstant
 
 def test_fromlist():
     it = (a, b, int64)

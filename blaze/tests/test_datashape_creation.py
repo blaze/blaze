@@ -32,5 +32,22 @@ class TestDatashapeCreation(unittest.TestCase):
     def test_type_decl(self):
         self.assertRaises(TypeError, blaze.dshape, 'type X T = 3, T')
         self.assertEqual(blaze.dshape('3, int32'), blaze.dshape('type X = 3, int32'))
+
+    def test_string_atom(self):
+        self.assertEqual(blaze.dshape('string'), blaze.dshape("string('U8')"))
+        self.assertEqual(blaze.dshape("string('ascii')").encoding, 'A')
+        self.assertEqual(blaze.dshape("string('A')").encoding, 'A')
+        self.assertEqual(blaze.dshape("string('utf-8')").encoding, 'U8')
+        self.assertEqual(blaze.dshape("string('U8')").encoding, 'U8')
+        self.assertEqual(blaze.dshape("string('utf-16')").encoding, 'U16')
+        self.assertEqual(blaze.dshape("string('U16')").encoding, 'U16')
+        self.assertEqual(blaze.dshape("string('utf-32')").encoding, 'U32')
+        self.assertEqual(blaze.dshape("string('U32')").encoding, 'U32')
+
+    def test_struct_of_array(self):
+        self.assertEqual(str(blaze.dshape('5, int32')), '5, int32')
+        self.assertEqual(str(blaze.dshape('{field: 5, int32}')), '{ field : 5, int32 }')
+        self.assertEqual(str(blaze.dshape('{field: M, int32}')), '{ field : M, int32 }')
+
 if __name__ == '__main__':
     unittest.main()

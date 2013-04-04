@@ -34,7 +34,7 @@ class ConstructTest(TestCase):
     def setUp(self):
         import sys
         if sys.platform != 'win32':
-            full_types.extend([
+            self.full_types.extend([
                 '32, float128',
                 '30, complex256'
                 ])
@@ -54,7 +54,7 @@ class ConstructTest(TestCase):
 ## Local Variables:
 ## mode: python
 ## coding: utf-8 
-## python-offset: 4
+## python-indent: 4
 ## tab-width: 4
 ## fill-column: 66
 ## End:

@@ -142,6 +142,7 @@ class Array(Indexable):
     def __init__(self, obj, dshape=None, metadata=None, layout=None,
             params=None):
 
+
         # Datashape
         # ---------
 
@@ -149,24 +150,31 @@ class Array(Indexable):
             dshape = _dshape(dshape)
 
         if not dshape:
-            # The user just passed in a raw data source, try
-            # and infer how it should be layed out or fail
-            # back on dynamic types.
-            self._datashape = dshape = CArraySource.infer_datashape(obj)
+            # No explicit dshape provided. Infer it from the source.
+            # if the source is another blaze array just use its shape,
+            # otherwile let the provider infer its data_shape
+            if isinstance(obj, Array):
+                dshape = obj.datashape
+            else:
+                dshape = CArraySource.infer_datashape(obj)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
             CArraySource.check_datashape(obj, given_dshape=dshape)
-            self._datashape = dshape
+
+        self._datashape = dshape
 
         # Values
         # ------
         # Mimic NumPy behavior in that we have a variety of
         # possible arguments to the first argument which result
         # in different behavior for the values.
-
         if isinstance(obj, ByteProvider):
             self.data = obj
+        elif isinstance(obj, Array):
+            self.data = CArraySource(obj.data,
+                                     dshape=dshape,
+                                     params=params)
         else:
             self.data = CArraySource(obj, dshape=dshape, params=params)
 
@@ -252,6 +260,9 @@ class Array(Indexable):
     # something else
     def append(self, data):
         self.data.ca.append(data)
+        # Update the shape
+        shape, dtype = self.data.ca.shape, self.data.ca.dtype
+        self._datashape = from_numpy(shape, dtype)
 
     def commit(self):
         self.data.ca.flush()

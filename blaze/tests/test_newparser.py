@@ -67,7 +67,7 @@ def test_trailing_semi():
     type a = {
         a: int;
         b: float;
-        c: (int,int)
+        c: (5,int32)
     }
     ''')
 
@@ -75,7 +75,7 @@ def test_trailing_semi():
     type a = {
         a: int;
         b: float;
-        c: (int,int);
+        c: (5,int32);
     }
     ''')
 
@@ -91,7 +91,7 @@ def test_multiline():
     type a = {
         a: int;
         b: float;
-        c: (int,int);
+        c: (5,int32);
     }
 
     ''')
@@ -100,8 +100,8 @@ def test_inline():
     parse = load_parser()
     a = parse('''
     type Point = {
-        x : int;
-        y : int
+        x : int32;
+        y : int32
     }
 
     type Space = {

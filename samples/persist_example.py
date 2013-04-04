@@ -52,8 +52,8 @@ if __name__ == '__main__':
 
 ## Local Variables:
 ## mode: python
-## coding: utf-8
-## py-indent-offset: 4
-## tab-with: 4
+## coding: utf-8 
+## python-indent: 4
+## tab-width: 4
 ## fill-column: 66
 ## End:
