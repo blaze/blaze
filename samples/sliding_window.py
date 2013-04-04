@@ -41,6 +41,7 @@ def sliding_window_blz(dirname, window_size):
         start = starts[i]
         partial = (X[start:i + 1]).mean()
         filtered.append([partial])
+    filtered.commit()
     return filtered
 
 
