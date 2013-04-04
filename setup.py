@@ -18,6 +18,7 @@ from distutils.sysconfig import get_python_inc, get_config_var
 packages = [
     'blaze',
     'blaze.algo',
+    'blaze.algo.linalg',
     'blaze.aterm',
     'blaze.blir',
     'blaze.carray',
