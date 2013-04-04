@@ -6,9 +6,9 @@ import blaze
 import math
 
 def evaluate(expression,
+             chunk_size,
              vm='python', 
              out_flavor='blaze', 
-             chunk_size=None, 
              user_dict={}, 
              **kwargs):
     """
@@ -81,17 +81,17 @@ def evaluate(expression,
             return numexpr.evaluate(expression, local_dict=vars)
 
     return _eval_blocks(expression,
+                        chunk_size,
                         vars,
                         vlen,
                         typesize,
                         vm,
                         out_flavor,
-                        chunk_size,
                         **kwargs)
 
 
-def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
-                 chunk_size, **kwargs):
+def _eval_blocks(expression, chunk_size, vars, vlen, typesize, vm, 
+                 out_flavor, **kwargs):
     """Perform the evaluation in blocks."""
 
     if vm == 'python':
@@ -101,30 +101,6 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
         import numexpr
         def eval_flavour(expr, vars_):
             return numexpr.evaluate(expr, local_dict=vars_)
-
-    # Compute the optimal block size (in elements)
-    # The next is based on experiments with bench/ctable-query.py
-    if chunk_size:
-        bsize = chunk_size
-    else:
-        if vm == "numexpr":
-            # If numexpr, make sure that operands fits in L3 chache
-            bsize = 2**20  # 1 MB is common for L3
-        else:
-            # If python, make sure that operands fits in L2 chache
-            bsize = 2**17  # 256 KB is common for L2
-        bsize //= typesize
-        # Evaluation seems more efficient if block size is a power of 2
-        bsize = 2 ** (int(math.log(bsize, 2)))
-        if vlen < 100*1000:
-            bsize //= 8
-        elif vlen < 1000*1000:
-            bsize //= 4
-        elif vlen < 10*1000*1000:
-            bsize //= 2
-        # Protection against too large atomsizes
-        if bsize == 0:
-            bsize = 1
 
     vars_ = {}
     # Get temporaries for vars
@@ -222,11 +198,29 @@ class NumexprEvaluator(object):
         self.operands = operands
 
     def eval(self, chunk_size=None):
+        chunk_size = (chunk_size 
+                      if chunk_size is not None 
+                      else self._infer_chunksize())
         return evaluate(self.str_expr,
+                        chunk_size,
                         vm='numexpr',
-                        chunk_size=chunk_size,
                         user_dict=self.operands)
     
+    def _infer_chunksize(self):
+        typesize = _per_element_size(self.operands)
+        vlen = _array_length(self.operands)
+        bsize = 2**20
+        bsize //= typesize
+        bsize = 2 ** (int(math.log(bsize,2)))
+        if vlen < 100*1000:
+            bsize //= 8
+        elif vlen < 1000*1000:
+            bsize //= 4
+        elif vlen < 10*1000*1000:
+            bsize //= 2
+
+        return bsize if bsize > 0 else 1
+
 
 class NumpyEvaluator(object):
     name = 'python interpreter with numpy'
@@ -236,8 +230,28 @@ class NumpyEvaluator(object):
         self.operands = operands
 
     def eval(self, chunk_size=None):
+        chunk_size = (chunk_size 
+                      if chunk_size is not None 
+                      else self._infer_chunksize())
         return evaluate(self.str_expr, 
+                        chunk_size,
                         vm='python',
-                        chunk_size=chunk_size,
                         user_dict=self.operands)
 
+    def _infer_chunksize(self):
+        """this is somehow similar to the numexpr version, but the
+        heuristics are slightly changed as there will be temporaries
+        """
+        typesize = _per_element_size(self.operands)
+        vlen = _array_length(self.operands)
+        bsize = 2**17
+        bsize //= typesize
+        bsize = 2 ** (int(math.log(bsize,2)))
+        if vlen < 100*1000:
+            bsize //= 8
+        elif vlen < 1000*1000:
+            bsize //= 4
+        elif vlen < 10*1000*1000:
+            bsize //= 2
+
+        return bsize if bsize > 0 else 1
