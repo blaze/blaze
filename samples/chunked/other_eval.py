@@ -88,6 +88,68 @@ def evaluate(expression,
                         vm,
                         out_flavor,
                         **kwargs)
+def _ndims_var(a_var):
+    if hasattr(a_var, 'datashape'):
+        # a blaze array
+        return len(a_var.datashape.shape)
+    elif hasattr(a_var, 'shape'):
+        # a numpy array
+        return len(a_var.shape)
+    elif hasattr(a_var, '__get_item__'):
+        # neither a blaze nor a numpy array, but indexable: 
+        # assume just 1 dimension :-/
+        return 1
+    else:
+        # not indexable: a scalar
+        return 0
+
+def _max_ndims_vars(a_dict_of_vars):
+    return max([_ndims_var(var) for var in a_dict_of_vars.itervalues()])
+
+
+class _ResultGatherer(object):
+    def __init__(self, vlen, maxndims, flavour):
+        self.vlen = vlen
+        self.flavour = flavour
+        self.maxndims = maxndims
+        self.accumulate = self._entry
+
+    def _entry(self, chunk_result, curr_slice):
+        self.scalar = False
+        self.dim_reduction = False
+        l = len(chunk_result.shape)
+        if l < self.maxndims:
+            self.accumulate = self._reduce
+            self.result = (self._scalar_result 
+                           if l == 0 
+                           else self._array_result)
+            self._result = chunk_result
+        else:
+            if out_flavor == "blaze":
+                self._result = blaze.array(chunk_result, **kwargs)
+                self.accumulate = self._blaze_append
+                self.result = self._array_result
+            else:
+                out_shape = list(res_block.shape)
+                out_shape[0] = self.vlen
+                self._result = np.empty(chunk_result,
+                                        dtype=chunk_result.dtype)
+                self._result[curr_slice] = chunk_result
+
+    def _reduce(self, chunk_result, curr_slice):
+        self._result += chunk_result
+
+    def _blaze_append(self, chunk_result, curr_slice):
+        self._result.append(chunk_result)
+
+    def _np_append(self, chunk_result, slice_, curr_slice):
+        self._result[slice_] = chunk_result
+
+    def _array_result(self):
+        return self._result
+
+    def _scalar_result(self):
+        return self._result[()]
 
 
 def _eval_blocks(expression, chunk_size, vars, vlen, typesize, vm, 
@@ -102,72 +164,29 @@ def _eval_blocks(expression, chunk_size, vars, vlen, typesize, vm,
         def eval_flavour(expr, vars_):
             return numexpr.evaluate(expr, local_dict=vars_)
 
-    vars_ = {}
     # Get temporaries for vars
-    maxndims = 0
-    for name in vars.iterkeys():
-        var = vars[name]
-        if hasattr(var, "datashape"):
-            shape, dtype = blaze.to_numpy(var.datashape)
-            ndims = len(shape) + len(dtype.shape)
-            if ndims > maxndims:
-                maxndims = ndims
+    maxndims = _max_ndims_vars(vars)
+    vars_ = { name: var 
+              for name, var in vars.iteritems()
+              if not hasattr(var, '__getitem__') }
 
+    arrays = [ (name, var)
+               for name, var in vars.iteritems()
+               if hasattr(var, '__getitem__') ]
+
+    result = _ResultGatherer(vlen, maxndims, out_flavor)
     offset = 0
     while offset < vlen:
         # Get buffers for vars
         curr_slice = slice(offset, min(vlen, offset+chunk_size))
-        for name in vars.iterkeys():
-            var = vars[name]
-            if hasattr(var, "datashape"):
-                shape, dtype = blaze.to_numpy(var.datashape)
-                vars_[name] = var[curr_slice]
-            else:
-                if hasattr(var, "__getitem__"):
-                    vars_[name] = var[curr_slice]
-                else:
-                    vars_[name] = var
+        for name, array in arrays:
+            vars_[name] = array[curr_slice]
 
         # Perform the evaluation for this block
-        res_block = eval_flavour(expression, vars_)
-
-        if offset == 0:
-            # Detection of reduction operations
-            scalar = False
-            dim_reduction = False
-            if len(res_block.shape) == 0:
-                scalar = True
-                result = res_block
-            elif len(res_block.shape) < maxndims:
-                dim_reduction = True
-                result = res_block
-
-            # Get a decent default for expectedlen
-            else:
-                if out_flavor == "blaze":
-                    nrows = kwargs.pop('expectedlen', vlen)
-                    result = blaze.array(res_block, **kwargs)
-                else:
-                    out_shape = list(res_block.shape)
-                    out_shape[0] = vlen
-                    result = np.empty(out_shape, dtype=res_block.dtype)
-                    result[curr_slice] = res_block
-        else:
-            if scalar or dim_reduction:
-                result += res_block
-            elif out_flavor == "blaze":
-                result.append(res_block)
-            else:
-                result[curr_slice] = res_block
-
+        result.accumulate(eval_flavour(expression, vars_), curr_slice)
         offset = curr_slice.stop #for next iteration
                            
-
-    # if isinstance(result, blaze.Array):
-    #     result.flush()
-    if scalar:
-        return result[()]
-    return result
+    return result.result()
 
 # End of machinery for evaluating expressions via python or numexpr
 # ---------------
@@ -186,7 +205,7 @@ class _ExpressionBuilder(Visitor):
         return node.source
 
 
-# ================================================================            
+# ================================================================ 
 
 class NumexprEvaluator(object):
     """ Evaluates expressions using numexpr """
