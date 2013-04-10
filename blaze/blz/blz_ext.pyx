@@ -9,8 +9,8 @@
 
 import sys
 import numpy as np
-import blaze.carray as ca
-from blaze.carray import utils, attrs, array2string
+import blaze.blz as blz
+from blaze.blz import utils, attrs, array2string
 import os, os.path
 import struct
 import shutil
@@ -22,7 +22,7 @@ import cython
 _KB = 1024
 _MB = 1024*_KB
 
-# Directories for saving the data and metadata for carray persistency
+# Directories for saving the data and metadata for BLZ persistency
 DATA_DIR = 'data'
 META_DIR = 'meta'
 SIZES_FILE = 'sizes'
@@ -92,9 +92,9 @@ import_array()
 #-------------------------------------------------------------
 
 # Some utilities
-def _blosc_set_nthreads(nthreads):
+def blz_set_nthreads(nthreads):
   """
-  blosc_set_nthreads(nthreads)
+  blz_set_nthreads(nthreads)
 
   Sets the number of threads that Blosc can use.
 
@@ -195,14 +195,14 @@ cdef int true_count(char *data, int nbytes):
 
 #-------------------------------------------------------------
 
-# For member defintions see carrayExtension.pxd ~Stephen
+
 cdef class chunk:
   """
-  chunk(array, atom, cparams)
+  chunk(array, atom, bparams)
 
   Compressed in-memory container for a data chunk.
 
-  This class is meant to be used only by the `carray` class.
+  This class is meant to be used only by the `barray` class.
 
   """
   cdef char typekind, isconstant
@@ -213,15 +213,16 @@ cdef class chunk:
   cdef object atom, constant, dobject
 
   cdef void _getitem(self, int start, int stop, char *dest)
-  cdef compress_data(self, char *data, size_t itemsize, size_t nbytes, object cparams)
-  cdef compress_arrdata(self, ndarray array, object cparams, object _memory)
+  cdef compress_data(self, char *data, size_t itemsize, size_t nbytes,
+                     object bparams)
+  cdef compress_arrdata(self, ndarray array, object bparams, object _memory)
 
   property dtype:
     "The NumPy dtype for this chunk."
     def __get__(self):
       return self.atom
 
-  def __cinit__(self, object dobject, object atom, object cparams,
+  def __cinit__(self, object dobject, object atom, object bparams,
                 object _memory=True, object _compr=False):
     cdef int itemsize, footprint
     cdef size_t nbytes, cbytes, blocksize
@@ -247,11 +248,11 @@ cdef class chunk:
       # The objects should arrive here already pickled
       data = PyString_AsString(dobject)
       nbytes = PyString_GET_SIZE(dobject)
-      cbytes, blocksize = self.compress_data(data, 1, nbytes, cparams)
+      cbytes, blocksize = self.compress_data(data, 1, nbytes, bparams)
     else:
       # Compress the data object (a NumPy object)
       nbytes, cbytes, blocksize, footprint = self.compress_arrdata(
-        dobject, cparams, _memory)
+        dobject, bparams, _memory)
     footprint += 128  # add the (aprox) footprint of this instance in bytes
 
     # Fill instance data
@@ -260,7 +261,7 @@ cdef class chunk:
     self.cdbytes = cbytes
     self.blocksize = blocksize
 
-  cdef compress_arrdata(self, ndarray array, object cparams, object _memory):
+  cdef compress_arrdata(self, ndarray array, object bparams, object _memory):
     """Compress data in `array` and put it in ``self.data``"""
     cdef size_t nbytes, cbytes, blocksize, itemsize, footprint
 
@@ -305,19 +306,19 @@ cdef class chunk:
 
       # Compress data
       cbytes, blocksize = self.compress_data(array.data, itemsize, nbytes,
-                                             cparams)
+                                             bparams)
 
     return (nbytes, cbytes, blocksize, footprint)
 
   cdef compress_data(self, char *data, size_t itemsize, size_t nbytes,
-                     object cparams):
+                     object bparams):
     """Compress data with `caparms` and return metadata."""
     cdef size_t nbytes_, cbytes, blocksize
     cdef int clevel, shuffle
     cdef char *dest
 
-    clevel = cparams.clevel
-    shuffle = cparams.shuffle
+    clevel = bparams.clevel
+    shuffle = bparams.shuffle
     dest = <char *>malloc(nbytes+BLOSC_MAX_OVERHEAD)
     with nogil:
       cbytes = blosc_compress(clevel, shuffle, itemsize, nbytes,
@@ -547,9 +548,9 @@ cdef decode_blosc_header(buffer_):
 
 
 cdef class chunks(object):
-  """Store the different carray chunks in a directory on-disk."""
+  """Store the different barray chunks in a directory on-disk."""
   cdef object _rootdir, _mode
-  cdef object dtype, cparams, lastchunkarr
+  cdef object dtype, bparams, lastchunkarr
   cdef object chunk_cached
   cdef npy_intp nchunks, nchunk_cached, len
 
@@ -585,7 +586,7 @@ cdef class chunks(object):
     self._rootdir = rootdir
     self.nchunks = 0
     self.nchunk_cached = -1    # no chunk cached initially
-    self.dtype, self.cparams, self.len, lastchunkarr, self._mode = metainfo
+    self.dtype, self.bparams, self.len, lastchunkarr, self._mode = metainfo
     atomsize = self.dtype.itemsize
     itemsize = self.dtype.base.itemsize
 
@@ -637,7 +638,7 @@ cdef class chunks(object):
     else:
       scomp = self.read_chunk(nchunk)
       # Data chunk should be compressed already
-      chunk_ = chunk(scomp, self.dtype, self.cparams,
+      chunk_ = chunk(scomp, self.dtype, self.bparams,
                      _memory=False, _compr=True)
       # Fill cache
       self.nchunk_cached = nchunk
@@ -651,7 +652,7 @@ cdef class chunks(object):
     return self.nchunks
 
   def append(self, chunk_):
-    """Append an new chunk to the carray."""
+    """Append an new chunk to the barray."""
     self._save(self.nchunks, chunk_)
     self.nchunks += 1
 
@@ -698,27 +699,27 @@ cdef class chunks(object):
     return chunk_
 
 
-cdef class carray:
+cdef class barray:
   """
-  carray(array, cparams=None, dtype=None, dflt=None, expectedlen=None, chunklen=None, rootdir=None, mode='a')
+  barray(array, bparams=None, dtype=None, dflt=None, expectedlen=None, chunklen=None, rootdir=None, mode='a')
 
   A compressed and enlargeable in-memory data container.
 
-  `carray` exposes a series of methods for dealing with the compressed
+  `barray` exposes a series of methods for dealing with the compressed
   container in a NumPy-like way.
 
   Parameters
   ----------
   array : a NumPy-like object
-      This is taken as the input to create the carray.  It can be any Python
+      This is taken as the input to create the barray.  It can be any Python
       object that can be converted into a NumPy object.  The data type of
-      the resulting carray will be the same as this NumPy object.
-  cparams : instance of the `cparams` class, optional
+      the resulting barray will be the same as this NumPy object.
+  bparams : instance of the `bparams` class, optional
       Parameters to the internal Blosc compressor.
   dtype : NumPy dtype
-      Force this `dtype` for the carray (rather than the `array` one).
+      Force this `dtype` for the barray (rather than the `array` one).
   dflt : Python or NumPy scalar
-      The value to be used when enlarging the carray.  If None, the default is
+      The value to be used when enlarging the barray.  If None, the default is
       filling with zeros.
   expectedlen : int, optional
       A guess on the expected length of this object.  This will serve to
@@ -730,16 +731,16 @@ cdef class carray:
       Only use it if you know what are you doing.
   rootdir : str, optional
       The directory where all the data and metadata will be stored.  If
-      specified, then the carray object will be disk-based (i.e. all chunks
+      specified, then the barray object will be disk-based (i.e. all chunks
       will live on-disk, not in memory) and persistent (i.e. it can be
       restored in other session, e.g. via the `open()` top-level function).
   mode : str, optional
-      The mode that a *persistent* carray should be created/opened.  The
+      The mode that a *persistent* barray should be created/opened.  The
       values can be:
 
         * 'r' for read-only
-        * 'w' for read/write.  During carray creation, the `rootdir` will be
-          removed if it exists.  During carray opening, the carray will be
+        * 'w' for read/write.  During barray creation, the `rootdir` will be
+          removed if it exists.  During barray opening, the barray will be
           resized to 0.
         * 'a' for append (possible data inside `rootdir` will not be removed).
 
@@ -757,7 +758,7 @@ cdef class carray:
   cdef npy_intp expectedlen
   cdef char *lastchunk
   cdef object lastchunkarr, where_arr, arr1
-  cdef object _cparams, _dflt
+  cdef object _bparams, _dflt
   cdef object _dtype
   cdef public object chunks
   cdef object _rootdir, datadir, metadir, _mode
@@ -805,10 +806,10 @@ cdef class carray:
     def __get__(self):
       return self._chunklen
 
-  property cparams:
+  property bparams:
     "The compression parameters for this object."
     def __get__(self):
-      return self._cparams
+      return self._bparams
 
   property dflt:
     "The default value of this object."
@@ -864,11 +865,11 @@ cdef class carray:
     def __set__(self, value):
       if not self.rootdir:
         raise ValueError(
-          "cannot modify the rootdir value of an in-memory carray")
+          "cannot modify the rootdir value of an in-memory barray")
       self._rootdir = value
       self.chunks.rootdir = value
 
-  def __cinit__(self, object array=None, object cparams=None,
+  def __cinit__(self, object array=None, object bparams=None,
                 object dtype=None, object dflt=None,
                 object expectedlen=None, object chunklen=None,
                 object rootdir=None, object mode="a"):
@@ -879,12 +880,12 @@ cdef class carray:
     self._mode = mode
 
     if array is not None:
-      self.create_carray(array, cparams, dtype, dflt,
+      self.create_barray(array, bparams, dtype, dflt,
                          expectedlen, chunklen, rootdir, mode)
       _new = True
     elif rootdir is not None:
       meta_info = self.read_meta()
-      self.open_carray(*meta_info)
+      self.open_barray(*meta_info)
       _new = False
     else:
       raise ValueError("You need at least to pass an array or/and a rootdir")
@@ -902,7 +903,7 @@ cdef class carray:
     self.idxcache = -1       # cache not initialized
 
   cdef _adapt_dtype(self, dtype, shape):
-    """adapt the dtype to one supported in carray.
+    """adapt the dtype to one supported in barray.
     returns the adapted type with the shape modified accordingly.
     """
     if dtype.hasobject:
@@ -913,10 +914,10 @@ cdef class carray:
 
     return dtype
 
-  def create_carray(self, array, cparams, dtype, dflt,
+  def create_barray(self, array, bparams, dtype, dflt,
                     expectedlen, chunklen, rootdir, mode):
     """Create a new array.
-    There are restrictions creating carray objects with dtypes that have objects
+    There are restrictions creating barray objects with dtypes that have objects
     (dtype.hasobject is True). The only case where this dtype is supported is
     on unidimensionl arrays whose dtype is object (objects in composite dtypes
     are not supported).
@@ -926,23 +927,23 @@ cdef class carray:
     cdef ndarray lastchunkarr
     cdef object array_, _dflt
 
-    # Check defaults for cparams
-    if cparams is None:
-      cparams = ca.cparams()
+    # Check defaults for bparams
+    if bparams is None:
+      bparams = blz.bparams()
 
-    if not isinstance(cparams, ca.cparams):
-      raise ValueError, "`cparams` param must be an instance of `cparams` class"
+    if not isinstance(bparams, blz.bparams):
+      raise ValueError, "`bparams` param must be an instance of `bparams` class"
 
     # Convert input to an appropriate type
     if type(dtype) is str:
         dtype = np.dtype(dtype)
 
-    # avoid bad performance with another carray, as in utils it would
+    # avoid bad performance with another barray, as in utils it would
     # construct the temp ndarray using a slow iterator.
     #
-    # TODO: There should be a fast path creating carrays from other carrays
+    # TODO: There should be a fast path creating barrays from other barrays
     # (especially when dtypes and compression params match)
-    if isinstance(array, carray):
+    if isinstance(array, barray):
       array = array[:]
 
     array_ = utils.to_ndarray(array, dtype)
@@ -957,7 +958,7 @@ cdef class carray:
     # from `self.shape`.  `self.dtype` will always be scalar (NumPy
     # convention).
     #
-    # Note that objects are a special case. Carray does not support object
+    # Note that objects are a special case. Barray does not support object
     # arrays of more than one dimensions.
     self._dtype = dtype = self._adapt_dtype(dtype, array_.shape)
 
@@ -984,7 +985,7 @@ cdef class carray:
         expectedlen = len(array_)
       except TypeError:
         raise NotImplementedError(
-          "creating carrays from scalar objects not supported")
+          "creating barrays from scalar objects not supported")
     try:
       self.expectedlen = expectedlen
     except OverflowError:
@@ -1013,11 +1014,11 @@ cdef class carray:
     self.lastchunkarr = lastchunkarr
 
     # Create layout for data and metadata
-    self._cparams = cparams
+    self._bparams = bparams
     self.chunks = []
     if rootdir is not None:
       self.mkdirs(rootdir, mode)
-      metainfo = (dtype, cparams, self.shape[0], lastchunkarr, self._mode)
+      metainfo = (dtype, bparams, self.shape[0], lastchunkarr, self._mode)
       self.chunks = chunks(self._rootdir, metainfo=metainfo, _new=True)
       # We can write the metainfo already
       self.write_meta()
@@ -1033,7 +1034,7 @@ cdef class carray:
     # and flush the data pending...
     self.flush()
 
-  def open_carray(self, shape, cparams, dtype, dflt,
+  def open_barray(self, shape, bparams, dtype, dflt,
                   expectedlen, cbytes, chunklen):
     """Open an existing array."""
     cdef ndarray lastchunkarr
@@ -1050,7 +1051,7 @@ cdef class carray:
       # convention).
       self._dtype = dtype = np.dtype((dtype.base, shape[1:]))
 
-    self._cparams = cparams
+    self._bparams = bparams
     self.atomsize = dtype.itemsize
     self.itemsize = dtype.base.itemsize
     self._chunklen = chunklen
@@ -1074,9 +1075,9 @@ cdef class carray:
     if not os.path.isdir(self.metadir):
       raise RuntimeError("meta directory does not exist")
 
-    calen = shape[0]    # the length ot the carray
+    calen = shape[0]    # the length ot the barray
     # Finally, open data directory
-    metainfo = (dtype, cparams, calen, lastchunkarr, self._mode)
+    metainfo = (dtype, bparams, calen, lastchunkarr, self._mode)
     self.chunks = chunks(self._rootdir, metainfo=metainfo, _new=False)
 
     # Update some counters
@@ -1107,7 +1108,7 @@ cdef class carray:
     for i from 0 <= i < nchunks:
       assert i*chunklen < array_.size, "i, nchunks: %d, %d" % (i, nchunks)
       chunk_ = chunk(array_[i*chunklen:(i+1)*chunklen],
-                     self._dtype, self._cparams,
+                     self._dtype, self._bparams,
                      _memory = self._rootdir is None)
       self.chunks.append(chunk_)
       cbytes += chunk_.cbytes
@@ -1141,9 +1142,9 @@ cdef class carray:
       with open(storagef, 'wb') as storagefh:
         storagefh.write(json.dumps({
           "dtype": str(self.dtype),
-          "cparams": {
-            "clevel": self.cparams.clevel,
-            "shuffle": self.cparams.shuffle,
+          "bparams": {
+            "clevel": self.bparams.clevel,
+            "shuffle": self.bparams.shuffle,
             },
           "chunklen": self._chunklen,
           "expectedlen": self.expectedlen,
@@ -1171,19 +1172,19 @@ cdef class carray:
       data = json.loads(storagefh.read())
     dtype_ = np.dtype(data["dtype"])
     chunklen = data["chunklen"]
-    cparams = ca.cparams(
-      clevel = data["cparams"]["clevel"],
-      shuffle = data["cparams"]["shuffle"])
+    bparams = blz.bparams(
+      clevel = data["bparams"]["clevel"],
+      shuffle = data["bparams"]["shuffle"])
     expectedlen = data["expectedlen"]
     dflt = data["dflt"]
-    return (shape, cparams, dtype_, dflt, expectedlen, cbytes, chunklen)
+    return (shape, bparams, dtype_, dflt, expectedlen, cbytes, chunklen)
 
   def store_obj(self, object arrobj):
     cdef chunk chunk_
     import pickle
 
     pick_obj = pickle.dumps(arrobj, pickle.HIGHEST_PROTOCOL)
-    chunk_ = chunk(pick_obj, np.dtype('O'), self._cparams,
+    chunk_ = chunk(pick_obj, np.dtype('O'), self._bparams,
                    _memory = self._rootdir is None)
 
     self.chunks.append(chunk_)
@@ -1202,7 +1203,7 @@ cdef class carray:
     ----------
     array : NumPy-like object
         The array to be appended.  Must be compatible with shape and type of
-        the carray.
+        the barray.
 
     """
     cdef int atomsize, itemsize, chunksize, leftover
@@ -1261,7 +1262,7 @@ cdef class carray:
           stop = cython.cdiv((leftover+nbytesfirst), atomsize)
           self.lastchunkarr[start:stop] = arrcpy[start:stop]
         # Compress the last chunk and add it to the list
-        chunk_ = chunk(self.lastchunkarr, self._dtype, self._cparams,
+        chunk_ = chunk(self.lastchunkarr, self._dtype, self._bparams,
                        _memory = self._rootdir is None)
         chunks.append(chunk_)
         cbytes = chunk_.cbytes
@@ -1276,7 +1277,7 @@ cdef class carray:
       remainder = arrcpy[cython.cdiv(nbytesfirst, atomsize):]
       for i from 0 <= i < nchunks:
         chunk_ = chunk(
-          remainder[i*chunklen:(i+1)*chunklen], self._dtype, self._cparams,
+          remainder[i*chunklen:(i+1)*chunklen], self._dtype, self._bparams,
           _memory = self._rootdir is None)
         chunks.append(chunk_)
         cbytes += chunk_.cbytes
@@ -1400,7 +1401,7 @@ cdef class carray:
     """
     reshape(newshape)
 
-    Returns a new carray containing the same data with a new shape.
+    Returns a new barray containing the same data with a new shape.
 
     Parameters
     ----------
@@ -1412,8 +1413,8 @@ cdef class carray:
 
     Returns
     -------
-    reshaped_array : carray
-        A copy of the original carray.
+    reshaped_array : barray
+        A copy of the original barray.
 
     """
     cdef npy_intp newlen, ilen, isize, osize, newsize, rsize, i
@@ -1461,7 +1462,8 @@ cdef class carray:
       rootdir = None
 
     # Create the final container and fill it
-    out = carray([], dtype=newdtype, cparams=self.cparams, expectedlen=newlen,
+    out = barray([], dtype=newdtype, bparams=self.bparams,
+                 expectedlen=newlen,
                  rootdir=rootdir, mode='w')
     if newlen < ilen:
       rsize = isize / newlen
@@ -1491,27 +1493,27 @@ cdef class carray:
     Parameters
     ----------
     kwargs : list of parameters or dictionary
-        Any parameter supported by the carray constructor.
+        Any parameter supported by the barray constructor.
 
     Returns
     -------
-    out : carray object
+    out : barray object
         The copy of this object.
 
     """
     cdef object chunklen
 
     # Get defaults for some parameters
-    cparams = kwargs.pop('cparams', self._cparams)
+    bparams = kwargs.pop('bparams', self._bparams)
     expectedlen = kwargs.pop('expectedlen', self.len)
 
-    # Create a new, empty carray
-    ccopy = carray(np.empty(0, dtype=self._dtype),
-                   cparams=cparams,
+    # Create a new, empty barray
+    ccopy = barray(np.empty(0, dtype=self._dtype),
+                   bparams=bparams,
                    expectedlen=expectedlen,
                    **kwargs)
 
-    # Now copy the carray chunk by chunk
+    # Now copy the barray chunk by chunk
     chunklen = self._chunklen
     for i from 0 <= i < self.len by chunklen:
       ccopy.append(self[i:i+chunklen])
@@ -1743,7 +1745,7 @@ cdef class carray:
         # A boolean array
         if len(key) != self.len:
           raise IndexError, "boolean array length must match len(self)"
-        if isinstance(key, carray):
+        if isinstance(key, barray):
           count = key.sum()
         else:
           count = -1
@@ -1754,16 +1756,6 @@ cdef class carray:
       else:
         raise IndexError, \
               "arrays used as indices must be of integer (or boolean) type"
-    # An boolean expression (case of fancy indexing)
-    elif type(key) is str:
-      # Evaluate
-      result = ca.eval(key)
-      if result.dtype.type != np.bool_:
-        raise IndexError, "only boolean expressions supported"
-      if len(result) != self.len:
-        raise IndexError, "boolean expression outcome must match len(self)"
-      # Call __getitem__ again
-      return self[result]
     # All the rest not implemented
     else:
       raise NotImplementedError, "key not supported: %s" % repr(key)
@@ -1898,17 +1890,6 @@ cdef class carray:
       else:
         raise IndexError, \
               "arrays used as indices must be of integer (or boolean) type"
-    # An boolean expression (case of fancy indexing)
-    elif type(key) is str:
-      # Evaluate
-      result = ca.eval(key)
-      if result.dtype.type != np.bool_:
-        raise IndexError, "only boolean expressions supported"
-      if len(result) != self.len:
-        raise IndexError, "boolean expression outcome must match len(self)"
-      # Call __setitem__ again
-      self[result] = value
-      return
     # All the rest not implemented
     else:
       raise NotImplementedError, "key not supported: %s" % repr(key)
@@ -1946,7 +1927,7 @@ cdef class carray:
         # Overwrite it with data from value
         cdata[startb:stopb:step] = value[nwrow:nwrow+blen]
         # Replace the chunk
-        chunk_ = chunk(cdata, self._dtype, self._cparams,
+        chunk_ = chunk(cdata, self._dtype, self._bparams,
                        _memory = self._rootdir is None)
         self.chunks[nchunk] = chunk_
         # Update cbytes counter
@@ -2036,7 +2017,7 @@ cdef class carray:
         # Overwrite it with data from value
         cdata[boolb] = value[nwrow:nwrow+blen]
         # Replace the chunk
-        chunk_ = chunk(cdata, self._dtype, self._cparams,
+        chunk_ = chunk(cdata, self._dtype, self._bparams,
                        _memory = self._rootdir is None)
         self.chunks[nchunk] = chunk_
         # Update cbytes counter
@@ -2061,7 +2042,7 @@ cdef class carray:
     self.nrowsread = self.start
     self._nrow = self.start - self.step
     self._row = -1  # a sentinel
-    if self.where_mode and isinstance(self.where_arr, carray):
+    if self.where_mode and isinstance(self.where_arr, barray):
       self.nrowsinbuf = self.where_arr.chunklen
     else:
       self.nrowsinbuf = self._chunklen
@@ -2116,7 +2097,7 @@ cdef class carray:
 
     Iterator that returns indices where this object is true.
 
-    This is currently only useful for boolean carrays that are unidimensional.
+    This is currently only useful for boolean barrays that are unidimensional.
 
     Parameters
     ----------
@@ -2153,11 +2134,11 @@ cdef class carray:
 
     Iterator that returns values of this object where `boolarr` is true.
 
-    This is currently only useful for boolean carrays that are unidimensional.
+    This is currently only useful for boolean barrays that are unidimensional.
 
     Parameters
     ----------
-    boolarr : a carray or NumPy array of boolean type
+    boolarr : a barray or NumPy array of boolean type
         The boolean values.
     limit : int
         A maximum number of elements to return.  The default is return
@@ -2290,12 +2271,12 @@ cdef class carray:
     """Check for zeros.  Return 1 if all zeros, else return 0."""
     cdef int bsize
     cdef npy_intp nchunk
-    cdef carray carr
+    cdef barray carr
     cdef ndarray ndarr
     cdef chunk chunk_
 
-    if isinstance(barr, carray):
-      # Check for zero'ed chunks in carrays
+    if isinstance(barr, barray):
+      # Check for zero'ed chunks in barrays
       carr = barr
       nchunk = <npy_intp>cython.cdiv(self.nrowsread, self.nrowsinbuf)
       if nchunk < len(carr.chunks):
@@ -2342,7 +2323,7 @@ cdef class carray:
     if self.leftover:
       leftover_atoms = cython.cdiv(self.leftover, self.atomsize)
       chunk_ = chunk(self.lastchunkarr[:leftover_atoms], self.dtype,
-                     self.cparams,
+                     self.bparams,
                      _memory = self._rootdir is None)
       # Flush this chunk to disk
       self.chunks.flush(chunk_)
@@ -2363,10 +2344,10 @@ cdef class carray:
     snbytes = utils.human_readable_size(self._nbytes)
     scbytes = utils.human_readable_size(self._cbytes)
     cratio = self._nbytes / float(self._cbytes)
-    header = "carray(%s, %s)\n" % (self.shape, self.dtype)
+    header = "barray(%s, %s)\n" % (self.shape, self.dtype)
     header += "  nbytes: %s; cbytes: %s; ratio: %.2f\n" % (
       snbytes, scbytes, cratio)
-    header += "  cparams := %r\n" % self.cparams
+    header += "  bparams := %r\n" % self.bparams
     if self._rootdir:
       header += "  rootdir := '%s'\n" % self._rootdir
     fullrepr = header + str(self)

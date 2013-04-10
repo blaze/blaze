@@ -9,23 +9,22 @@
 import sys, math
 
 import numpy as np
-#import blaze.carray as ca
 import itertools as it
 from collections import namedtuple
 import json
 import os, os.path
 import shutil
 
-from carrayExtension import carray
-from cparams import cparams
+from blz_ext import barray
+from blzparams import blzparams
 
-# carray utilities
+# BLZ utilities
 import utils, attrs, arrayprint
 
 ROOTDIRS = '__rootdirs__'
 
 class cols(object):
-    """Class for accessing the columns on the ctable object."""
+    """Class for accessing the columns on the btable object."""
 
     def __init__(self, rootdir, mode):
         self.rootdir = rootdir
@@ -41,9 +40,9 @@ class cols(object):
             data = json.loads(rfile.read())
         # JSON returns unicode (?)
         self.names = [str(name) for name in data['names']]
-        # Initialize the cols by instatiating the carrays
+        # Initialize the cols by instatiating the barrays
         for name, dir_ in data['dirs'].items():
-            self._cols[str(name)] = carray(rootdir=dir_, mode=self.mode)
+            self._cols[str(name)] = barray(rootdir=dir_, mode=self.mode)
 
     def update_meta(self):
         """Update metainfo about directories on-disk."""
@@ -59,9 +58,9 @@ class cols(object):
     def __getitem__(self, name):
         return self._cols[name]
 
-    def __setitem__(self, name, carray):
+    def __setitem__(self, name, barray):
         self.names.append(name)
-        self._cols[name] = carray
+        self._cols[name] = barray
         self.update_meta()
 
     def __iter__(self):
@@ -70,10 +69,10 @@ class cols(object):
     def __len__(self):
         return len(self.names)
 
-    def insert(self, name, pos, carray):
-        """Insert carray in the specified pos and name."""
+    def insert(self, name, pos, barray):
+        """Insert barray in the specified pos and name."""
         self.names.insert(pos, name)
-        self._cols[name] = carray
+        self._cols[name] = barray
         self.update_meta()
 
     def pop(self, name):
@@ -97,20 +96,20 @@ class cols(object):
         return fullrepr
 
 
-class ctable(object):
+class btable(object):
     """
-    ctable(cols, names=None, **kwargs)
+    btable(cols, names=None, **kwargs)
 
     This class represents a compressed, column-wise, in-memory table.
 
-    Create a new ctable from `cols` with optional `names`.
+    Create a new btable from `cols` with optional `names`.
 
     Parameters
     ----------
     columns : tuple or list of column objects
-        The list of column data to build the ctable object.  This can also be
+        The list of column data to build the btable object.  This can also be
         a pure NumPy structured array.  A list of lists or tuples is valid
-        too, as long as they can be converted into carray objects.
+        too, as long as they can be converted into barray objects.
     names : list of strings or string
         The list of names for the columns.  The names in this list must be
         valid Python identifiers, must not start with an underscore, and has
@@ -118,13 +117,13 @@ class ctable(object):
         names will be chosen as 'f0' for the first column, 'f1' for the second
         and so on so forth (NumPy convention).
     kwargs : list of parameters or dictionary
-        Allows to pass additional arguments supported by carray
-        constructors in case new carrays need to be built.
+        Allows to pass additional arguments supported by barray
+        constructors in case new barrays need to be built.
 
     Notes
     -----
-    Columns passed as carrays are not be copied, so their settings
-    will stay the same, even if you pass additional arguments (cparams,
+    Columns passed as barrays are not be copied, so their settings
+    will stay the same, even if you pass additional arguments (blzparams,
     chunklen...).
 
     """
@@ -138,9 +137,9 @@ class ctable(object):
         return self._get_stats()[1]
 
     @property
-    def cparams(self):
+    def blzparams(self):
         "The compression parameters for this object."
-        return self._cparams
+        return self._blzparams
 
     @property
     def dtype(self):
@@ -178,7 +177,7 @@ class ctable(object):
     def __init__(self, columns=None, names=None, **kwargs):
 
         # Important optional params
-        self._cparams = kwargs.get('cparams', cparams())
+        self._blzparams = kwargs.get('blzparams', blzparams())
         self.rootdir = kwargs.get('rootdir', None)
         "The directory where this object is saved."
         self.mode = kwargs.get('mode', 'a')
@@ -186,27 +185,27 @@ class ctable(object):
 
         # Setup the columns accessor
         self.cols = cols(self.rootdir, self.mode)
-        "The ctable columns accessor."
+        "The btable columns accessor."
 
         # The length counter of this array
         self.len = 0
 
-        # Create a new ctable or open it from disk
+        # Create a new btable or open it from disk
         if columns is not None:
-            self.create_ctable(columns, names, **kwargs)
+            self.create_btable(columns, names, **kwargs)
             _new = True
         else:
-            self.open_ctable()
+            self.open_btable()
             _new = False
 
         # Attach the attrs to this object
         self.attrs = attrs.attrs(self.rootdir, self.mode, _new=_new)
 
-        # Cache a structured array of len 1 for ctable[int] acceleration
+        # Cache a structured array of len 1 for btable[int] acceleration
         self._arr1 = np.empty(shape=(1,), dtype=self.dtype)
 
-    def create_ctable(self, columns, names, **kwargs):
-        """Create a ctable anew."""
+    def create_btable(self, columns, names, **kwargs):
+        """Create a btable anew."""
 
         # Create the rootdir if necessary
         if self.rootdir:
@@ -237,7 +236,7 @@ class ctable(object):
         # Guess the kind of columns input
         calist, nalist, ratype = False, False, False
         if type(columns) in (tuple, list):
-            calist = [type(v) for v in columns] == [carray for v in columns]
+            calist = [type(v) for v in columns] == [barray for v in columns]
             nalist = [type(v) for v in columns] == [np.ndarray for v in columns]
         elif isinstance(columns, np.ndarray):
             ratype = hasattr(columns.dtype, "names")
@@ -247,9 +246,9 @@ class ctable(object):
         else:
             raise ValueError, "`columns` input is not supported"
         if not (calist or nalist or ratype):
-            # Try to convert the elements to carrays
+            # Try to convert the elements to barrays
             try:
-                columns = [carray(col) for col in columns]
+                columns = [barray(col) for col in columns]
                 calist = True
             except:
                 raise ValueError, "`columns` input is not supported"
@@ -258,7 +257,7 @@ class ctable(object):
         clen = -1
         for i, name in enumerate(names):
             if self.rootdir:
-                # Put every carray under each own `name` subdirectory
+                # Put every barray under each own `name` subdirectory
                 kwargs['rootdir'] = os.path.join(self.rootdir, name)
             if calist:
                 column = columns[i]
@@ -270,9 +269,9 @@ class ctable(object):
                 if column.dtype == np.void:
                     raise ValueError,(
                         "`columns` elements cannot be of type void")
-                column = carray(column, **kwargs)
+                column = barray(column, **kwargs)
             elif ratype:
-                column = carray(columns[name], **kwargs)
+                column = barray(columns[name], **kwargs)
             self.cols[name] = column
             if clen >= 0 and clen != len(column):
                 raise ValueError, "all `columns` must have the same length"
@@ -280,14 +279,14 @@ class ctable(object):
 
         self.len = clen
 
-    def open_ctable(self):
-        """Open an existing ctable on-disk."""
+    def open_btable(self):
+        """Open an existing btable on-disk."""
 
         if self.rootdir is None:
             raise ValueError(
                 "you need to pass either a `columns` or a `rootdir` param")
 
-        # Open the ctable by reading the metadata
+        # Open the btable by reading the metadata
         self.cols.read_meta_and_open()
 
         # Get the length out of the first column
@@ -310,28 +309,28 @@ class ctable(object):
         """
         append(rows)
 
-        Append `rows` to this ctable.
+        Append `rows` to this btable.
 
         Parameters
         ----------
-        rows : list/tuple of scalar values, NumPy arrays or carrays
+        rows : list/tuple of scalar values, NumPy arrays or barrays
             It also can be a NumPy record, a NumPy recarray, or
-            another ctable.
+            another btable.
 
         """
 
         # Guess the kind of rows input
         calist, nalist, sclist, ratype = False, False, False, False
         if type(rows) in (tuple, list):
-            calist = [type(v) for v in rows] == [carray for v in rows]
+            calist = [type(v) for v in rows] == [barray for v in rows]
             nalist = [type(v) for v in rows] == [np.ndarray for v in rows]
             if not (calist or nalist):
                 # Try with a scalar list
                 sclist = True
         elif isinstance(rows, np.ndarray):
             ratype = hasattr(rows.dtype, "names")
-        elif isinstance(rows, ctable):
-            # Convert int a list of carrays
+        elif isinstance(rows, btable):
+            # Convert int a list of barrays
             rows = [rows[name] for name in self.names]
             calist = True
         else:
@@ -406,9 +405,9 @@ class ctable(object):
 
         Parameters
         ----------
-        newcol : carray, ndarray, list or tuple
-            If a carray is passed, no conversion will be carried out.
-            If conversion to a carray has to be done, `kwargs` will
+        newcol : barray, ndarray, list or tuple
+            If a barray is passed, no conversion will be carried out.
+            If conversion to a barray has to be done, `kwargs` will
             apply.
         name : string, optional
             The name for the new column.  If not passed, it will
@@ -417,7 +416,7 @@ class ctable(object):
             The column position.  If not passed, it will be appended
             at the end.
         kwargs : list of parameters or dictionary
-            Any parameter supported by the carray constructor.
+            Any parameter supported by the barray constructor.
 
         Notes
         -----
@@ -446,17 +445,17 @@ class ctable(object):
         if name in self.names:
             raise ValueError, "'%s' column already exists" % name
         if len(newcol) != self.len:
-            raise ValueError, "`newcol` must have the same length than ctable"
+            raise ValueError, "`newcol` must have the same length than btable"
 
         if isinstance(newcol, np.ndarray):
-            if 'cparams' not in kwargs:
-                kwargs['cparams'] = self.cparams
-            newcol = carray(newcol, **kwargs)
+            if 'blzparams' not in kwargs:
+                kwargs['blzparams'] = self.blzparams
+            newcol = barray(newcol, **kwargs)
         elif type(newcol) in (list, tuple):
-            if 'cparams' not in kwargs:
-                kwargs['cparams'] = self.cparams
-            newcol = carray(newcol, **kwargs)
-        elif type(newcol) != carray:
+            if 'blzparams' not in kwargs:
+                kwargs['blzparams'] = self.blzparams
+            newcol = barray(newcol, **kwargs)
+        elif type(newcol) != barray:
             raise ValueError(
                 """`newcol` type not supported""")
 
@@ -516,17 +515,17 @@ class ctable(object):
         """
         copy(**kwargs)
 
-        Return a copy of this ctable.
+        Return a copy of this btable.
 
         Parameters
         ----------
         kwargs : list of parameters or dictionary
-            Any parameter supported by the carray/ctable constructor.
+            Any parameter supported by the barray/btable constructor.
 
         Returns
         -------
-        out : ctable object
-            The copy of this ctable.
+        out : btable object
+            The copy of this btable.
 
         """
 
@@ -544,8 +543,8 @@ class ctable(object):
             cols = [ self.cols[name] for name in self.names ]
         else:
             cols = [ self.cols[name].copy(**kwargs) for name in self.names ]
-        # Create the ctable
-        ccopy = ctable(cols, names, **kwargs)
+        # Create the btable
+        ccopy = btable(cols, names, **kwargs)
         return ccopy
 
     def __len__(self):
@@ -562,8 +561,8 @@ class ctable(object):
 
         Parameters
         ----------
-        expression : string or carray
-            A boolean Numexpr expression or a boolean carray.
+        expression : string or barray
+            A boolean Numexpr expression or a boolean barray.
         outcols : list of strings or string
             The list of column names that you want to get back in results.
             Alternatively, it can be specified as a string such as 'f0 f1' or
@@ -731,15 +730,15 @@ class ctable(object):
         Parameters
         ----------
         key : string
-            The corresponding ctable column name will be returned.  If
+            The corresponding btable column name will be returned.  If
             not a column name, it will be interpret as a boolean
-            expression (computed via `ctable.eval`) and the rows where
+            expression (computed via `btable.eval`) and the rows where
             these values are true will be returned as a NumPy
             structured array.
 
         See Also
         --------
-        ctable.eval
+        btable.eval
 
         """
 
@@ -768,7 +767,7 @@ class ctable(object):
             # Range of column names
             if strlist:
                 cols = [self.cols[name] for name in key]
-                return ctable(cols, key)
+                return btable(cols, key)
             # Try to convert to a integer array
             try:
                 key = np.array(key, dtype=np.int_)
@@ -826,14 +825,14 @@ class ctable(object):
         Parameters
         ----------
         key : string
-            The corresponding ctable column name will be set to `value`.  If
+            The corresponding btable column name will be set to `value`.  If
             not a column name, it will be interpret as a boolean expression
-            (computed via `ctable.eval`) and the rows where these values are
+            (computed via `btable.eval`) and the rows where these values are
             true will be set to `value`.
 
         See Also
         --------
-        ctable.eval
+        btable.eval
 
         """
 
@@ -843,7 +842,7 @@ class ctable(object):
         if type(key) is bytes:
             # Convert key into a boolean array
             #key = self.eval(key)
-            # The method below is faster (specially for large ctables)
+            # The method below is faster (specially for large btables)
             rowval = 0
             for nrow in self.where(key, outcols=["nrow__"]):
                 nrow = nrow[0]
@@ -859,40 +858,6 @@ class ctable(object):
         for name in self.names:
             self.cols[name][key] = value[name]
         return
-
-    def eval(self, expression, **kwargs):
-        """
-        eval(expression, **kwargs)
-
-        Evaluate the `expression` on columns and return the result.
-
-        Parameters
-        ----------
-        expression : string
-            A string forming an expression, like '2*a+3*b'. The values
-            for 'a' and 'b' are variable names to be taken from the
-            calling function's frame.  These variables may be column
-            names in this table, scalars, carrays or NumPy arrays.
-        kwargs : list of parameters or dictionary
-            Any parameter supported by the `eval()` first level function.
-
-        Returns
-        -------
-        out : carray object
-            The outcome of the expression.  You can tailor the
-            properties of this carray by passing additional arguments
-            supported by carray constructor in `kwargs`.
-
-        See Also
-        --------
-        eval (first level function)
-
-        """
-
-        # Get the desired frame depth
-        depth = kwargs.pop('depth', 3)
-        # Call top-level eval with cols as user_dict
-        return ca.eval(expression, user_dict=self.cols, depth=depth, **kwargs)
 
     def flush(self):
         """Flush data in internal buffers to disk.
@@ -914,7 +879,7 @@ class ctable(object):
         Returns
         -------
         out : a (nbytes, cbytes, ratio) tuple
-            nbytes is the number of uncompressed bytes in ctable.
+            nbytes is the number of uncompressed bytes in btable.
             cbytes is the number of compressed bytes.  ratio is the
             compression ratio.
 
@@ -936,10 +901,10 @@ class ctable(object):
         nbytes, cbytes, cratio = self._get_stats()
         snbytes = utils.human_readable_size(nbytes)
         scbytes = utils.human_readable_size(cbytes)
-        header = "ctable(%s, %s)\n" % (self.shape, self.dtype)
+        header = "btable(%s, %s)\n" % (self.shape, self.dtype)
         header += "  nbytes: %s; cbytes: %s; ratio: %.2f\n" % (
             snbytes, scbytes, cratio)
-        header += "  cparams := %r\n" % self.cparams
+        header += "  blzparams := %r\n" % self.blzparams
         if self.rootdir:
             header += "  rootdir := '%s'\n" % self.rootdir
         fullrepr = header + str(self)

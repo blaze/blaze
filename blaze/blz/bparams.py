@@ -1,13 +1,13 @@
 
 """
-cparams
+bparams
 
-configuration parameters for carray
+configuration parameters for barray
 """
 
-class cparams(object):
+class bparams(object):
     """
-    cparams(clevel=5, shuffle=True)
+    bparams(clevel=5, shuffle=True)
 
     Class to host parameters for compression and other filters.
 
