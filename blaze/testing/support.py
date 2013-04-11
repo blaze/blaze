@@ -20,6 +20,7 @@ def make_unit_tests(global_scope):
 
     for name, obj in global_scope.items():
         if inspect.isfunction(obj) and obj.__module__ == module_name:
+            @functools.wraps(obj)
             def wrapper(self, func=obj):
                 return func()
 

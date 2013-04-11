@@ -3,9 +3,11 @@ from __future__ import print_function, division, absolute_import
 
 import os
 import sys
+import unittest
 from itertools import ifilter
 from functools import partial
-import subprocess
+
+from blaze.testing import support
 
 PY3 = sys.version_info[0] >= 3
 
@@ -99,7 +101,7 @@ else:
 # Test running
 #------------------------------------------------------------------------
 
-def test(whitelist=None, blacklist=None, print_failures_only=False):
+def test(whitelist=None, blacklist=None):
     """
     Run tests under the blaze directory.
     """
@@ -119,11 +121,8 @@ def test(whitelist=None, blacklist=None, print_failures_only=False):
         filters.append(ModuleFilter(lambda item: not match(blacklist, item)))
 
     # Run tests
-    runner = TestRunner(print_failures_only)
+    runner = TestRunner()
     run_tests(runner, filters)
-
-    sys.stdout.write("ran test files: failed: (%d/%d)\n" % (runner.failed,
-                                                            runner.ran))
 
     return 0 if runner.failed == 0 else 1
 
@@ -145,43 +144,37 @@ def run_tests(test_runner, filters):
                     for testfile in testfiles:
                         # print("testfile:", testfile)
                         modname = qualify_test_name(testfile)
-                        test_runner.run(modname)
+                        test_runner.collect(modname)
 
+    test_runner.run()
 
 class TestRunner(object):
     """
     Test runner used by runtests.py
     """
 
-    def __init__(self, print_failures_only):
+    def __init__(self):
         self.ran = 0
         self.failed = 0
-        self.print_failures_only = print_failures_only
+        # self.loader = unittest.TestLoader()
+        self.suite = unittest.TestSuite()
 
-    def run(self, modname):
-        self.ran += 1
-        if not self.print_failures_only:
-            sys.stdout.write("running %-61s" % (modname,))
+    def collect(self, modname):
+        module = __import__(modname, fromlist=[''])
+        support.make_unit_tests(vars(module))
 
-        process = subprocess.Popen([sys.executable, '-m', modname],
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        out, err = process.communicate()
+        classes = (unittest.TestCase, unittest.FunctionTestCase)
+        for name, obj in vars(module).iteritems():
+            if isinstance(obj, classes):
+                self.suite.addTest(obj)
+            elif isinstance(obj, type) and issubclass(obj, classes):
+                tests = unittest.defaultTestLoader.loadTestsFromTestCase(obj)
+                self.suite.addTests(tests)
 
-        if process.returncode == 0:
-            if not self.print_failures_only:
-                sys.stdout.write("SUCCESS\n")
-        else:
-            if self.print_failures_only:
-                sys.stdout.write("running %-61s" % (modname,))
+    def run(self):
+        runner = unittest.TextTestRunner()
+        runner.run(self.suite)
+        result = runner._makeResult()
 
-            sys.stdout.write("FAILED: %s\n" % map_returncode_to_message(
-                                            process.returncode))
-            if PY3:
-                out = str(out, encoding='UTF-8')
-                err = str(err, encoding='UTF-8')
-            sys.stdout.write(out)
-            sys.stdout.write(err)
-            sys.stdout.write("-" * 80)
-            sys.stdout.write('\n')
-            self.failed += 1
+        self.ran += result.testsRun
+        self.failed += len(result.failures)
