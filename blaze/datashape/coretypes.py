@@ -113,9 +113,9 @@ class IntegerConstant(Mono):
 class StringConstant(Mono):
     """
     Strings at the level of the constructor.
-    
+
     ::
-    
+
         string(3, "utf-8")   # "utf-8" is StringConstant
     """
 
@@ -233,7 +233,7 @@ class String(Mono):
             raise ValueError('Unsupported string encoding %s' % repr(self.encoding))
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
-        
+
 
     def __str__(self):
         if self.fixlen is None and self.encoding == 'U8':
@@ -255,7 +255,7 @@ class String(Mono):
             return self.fixlen == other.fixlen and self.encoding == other.encoding
         else:
             return False
-   
+
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
@@ -710,12 +710,7 @@ def inl(ty):
 # Unit Types
 #------------------------------------------------------------------------
 
-int_       = CType('int')
-long_      = CType('long')
 bool_      = CType('bool')
-float_     = CType('float')
-double     = CType('double')
-short      = CType('short')
 char       = CType('char')
 
 int8       = CType('int', 8)
@@ -744,6 +739,7 @@ ulonglong  = CType('ulonglong')
 
 byte = int8
 short = int16
+int_ = int32
 longlong = int64
 
 ubyte = uint8
@@ -751,10 +747,12 @@ ushort = uint16
 ulonglong = uint64
 
 half = float16
+float_ = float32
+double = float64
+longdouble = float128
+
 single = float32
 longfloat = float128
-
-longdouble = float128
 
 void = CType('void')
 object_ = pyobj = CType('object')
