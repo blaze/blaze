@@ -119,7 +119,7 @@ $ git clone git@github.com:ContinuumIO/conda.git
 
 ```bash
 $ cd conda
-$ python setup.sh install
+$ python setup.py install
 $ cd ..
 ```
 
