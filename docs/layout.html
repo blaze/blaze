@@ -156,7 +156,6 @@ of a layout is that there be some unique way of distinguishing an
 <dt id="blaze.layouts.scalar.Chart">
 <em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Chart</tt><big>(</big><em>components</em>, <em>ref</em>, <em>tinv=None</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Chart" title="Permalink to this definition">¶</a></dt>
 <dd><p>A interval partition pointing at a Indexable reference.</p>
-<p class="rubric">Methods</p>
 <dl class="method">
 <dt id="blaze.layouts.scalar.Chart.inverse">
 <tt class="descname">inverse</tt><big>(</big><em>coords</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Chart.inverse" title="Permalink to this definition">¶</a></dt>
@@ -183,27 +182,19 @@ and the component.</p>
 <dt id="blaze.layouts.scalar.ChunkedL">
 <em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ChunkedL</tt><big>(</big><em>init</em>, <em>cdimension</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ChunkedL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Chunked layout, like CArray.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><p class="first"><strong>:init: Initial block</strong> :</p>
-<blockquote class="last">
+<blockquote>
 <div><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">cdimension:</th><td class="field-body">Dimension along which chunks are aligned.
+<tr class="field-odd field"><th class="field-name">init:</th><td class="field-body">Initial block</td>
+</tr>
+<tr class="field-even field"><th class="field-name">cdimension:</th><td class="field-body">Dimension along which chunks are aligned.
 CArraySource uses 0 by default.</td>
 </tr>
 </tbody>
 </table>
 </div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Methods</p>
 <dl class="method">
 <dt id="blaze.layouts.scalar.ChunkedL.change_coordinates">
 <tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ChunkedL.change_coordinates" title="Permalink to this definition">¶</a></dt>
@@ -216,7 +207,6 @@ CArraySource uses 0 by default.</td>
 <dt id="blaze.layouts.scalar.ContiguousL">
 <em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ContiguousL</tt><big>(</big><em>single</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ContiguousL" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single block with. Coordinate transform is just a passthrough.</p>
-<p class="rubric">Methods</p>
 <dl class="method">
 <dt id="blaze.layouts.scalar.ContiguousL.change_coordinates">
 <tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ContiguousL.change_coordinates" title="Permalink to this definition">¶</a></dt>
@@ -244,7 +234,6 @@ but are discontinuous.</p>
  |    |         |
  +    +----+----+</pre>
 </div>
-<p class="rubric">Methods</p>
 </dd></dl>
 
 <dl class="class">
@@ -273,7 +262,6 @@ but are discontinuous.</p>
 chunks. It is enough to track the partition points of the
 array in arbitrary dimensions and then binary sort across
 each dimension in order to resolve partition locations.</p>
-<p class="rubric">Methods</p>
 <dl class="method">
 <dt id="blaze.layouts.scalar.MultichunkedL.change_coordinates">
 <tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.MultichunkedL.change_coordinates" title="Permalink to this definition">¶</a></dt>
@@ -292,7 +280,6 @@ each dimension in order to resolve partition locations.</p>
 <dt id="blaze.layouts.scalar.StridedL">
 <em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">StridedL</tt><big>(</big><em>init</em>, <em>strides=None</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.StridedL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Single strided layout. This behaves like strided NumPy arrays.</p>
-<p class="rubric">Methods</p>
 <dl class="method">
 <dt id="blaze.layouts.scalar.StridedL.change_coordinates">
 <tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.StridedL.change_coordinates" title="Permalink to this definition">¶</a></dt>

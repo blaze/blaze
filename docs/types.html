@@ -200,14 +200,8 @@ and of themselves.</p>
 
 <dl class="class">
 <dt id="blaze.datashape.coretypes.CType">
-<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">CType</tt><big>(</big><em>ctype</em>, <em>size=None</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">CType</tt><big>(</big><em>ctype</em>, <em>size=None</em>, <em>byteorder=None</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.CType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Symbol for a sized type mapping uniquely to a native type.</p>
-<p class="rubric">Methods</p>
-<dl class="attribute">
-<dt id="blaze.datashape.coretypes.CType.byeteorder">
-<tt class="descname">byeteorder</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.byeteorder" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="attribute">
 <dt id="blaze.datashape.coretypes.CType.char">
 <tt class="descname">char</tt><a class="headerlink" href="#blaze.datashape.coretypes.CType.char" title="Permalink to this definition">¶</a></dt>
@@ -327,12 +321,12 @@ tag deconstructors for this type are <a class="reference internal" href="#blaze.
 </dd></dl>
 
 <dl class="class">
-<dt id="blaze.datashape.coretypes.Integer">
-<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Integer</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Integer" title="Permalink to this definition">¶</a></dt>
+<dt id="blaze.datashape.coretypes.IntegerConstant">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">IntegerConstant</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.IntegerConstant" title="Permalink to this definition">¶</a></dt>
 <dd><p>Integers at the level of constructor it just means integer in the
 sense of of just an integer value to a constructor.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="mi">1</span><span class="p">,</span> <span class="n">int32</span>   <span class="c"># 1 is Fixed</span>
-<span class="n">Range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span> <span class="c"># 1 is Integer</span>
+<span class="n">Range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span> <span class="c"># 1 is IntegerConstant</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -406,7 +400,6 @@ of possible Fixed dimensions.</p>
 <dt id="blaze.datashape.coretypes.Record">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Record</tt><big>(</big><em>fields</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Record" title="Permalink to this definition">¶</a></dt>
 <dd><p>A composite data structure of ordered fields mapped to types.</p>
-<p class="rubric">Methods</p>
 <dl class="attribute">
 <dt id="blaze.datashape.coretypes.Record.cls">
 <tt class="descname">cls</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.datashape.coretypes.Record.cls" title="Permalink to this definition">¶</a></dt>
@@ -432,13 +425,22 @@ of possible Fixed dimensions.</p>
 
 <dl class="class">
 <dt id="blaze.datashape.coretypes.String">
-<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">String</tt><big>(</big><em>fixlen</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.String" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fixed length string container</p>
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">String</tt><big>(</big><em>fixlen=None</em>, <em>encoding=None</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.String" title="Permalink to this definition">¶</a></dt>
+<dd><p>String container</p>
 <dl class="attribute">
 <dt id="blaze.datashape.coretypes.String.cls">
 <tt class="descname">cls</tt><em class="property"> = 2</em><a class="headerlink" href="#blaze.datashape.coretypes.String.cls" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+</dd></dl>
+
+<dl class="class">
+<dt id="blaze.datashape.coretypes.StringConstant">
+<em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">StringConstant</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.StringConstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strings at the level of the constructor.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">string</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s">&quot;utf-8&quot;</span><span class="p">)</span>   <span class="c"># &quot;utf-8&quot; is StringConstant</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="class">
@@ -450,8 +452,7 @@ of possible Fixed dimensions.</p>
 <dl class="class">
 <dt id="blaze.datashape.coretypes.Type">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">Type</tt><a class="headerlink" href="#blaze.datashape.coretypes.Type" title="Permalink to this definition">¶</a></dt>
-<dd><p class="rubric">Methods</p>
-<dl class="classmethod">
+<dd><dl class="classmethod">
 <dt id="blaze.datashape.coretypes.Type.lookup_type">
 <em class="property">classmethod </em><tt class="descname">lookup_type</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.Type.lookup_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -467,11 +468,6 @@ of possible Fixed dimensions.</p>
 <dt id="blaze.datashape.coretypes.TypeVar">
 <em class="property">class </em><tt class="descclassname">blaze.datashape.coretypes.</tt><tt class="descname">TypeVar</tt><big>(</big><em>symbol</em><big>)</big><a class="headerlink" href="#blaze.datashape.coretypes.TypeVar" title="Permalink to this definition">¶</a></dt>
 <dd><p>A free variable in the signature. Not user facing.</p>
-<dl class="attribute">
-<dt id="blaze.datashape.coretypes.TypeVar.cls">
-<tt class="descname">cls</tt><em class="property"> = 1</em><a class="headerlink" href="#blaze.datashape.coretypes.TypeVar.cls" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">

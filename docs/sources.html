@@ -98,7 +98,6 @@ and units of data.</p>
 <em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">ArraySource</tt><big>(</big><em>lst</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ArraySource" title="Permalink to this definition">¶</a></dt>
 <dd><p>The buffer from a Numpy array used a data source</p>
 <p>Only used for bootstrapping. Will be removed later.</p>
-<p class="rubric">Methods</p>
 <dl class="staticmethod">
 <dt id="blaze.sources.canonical.ArraySource.infer_datashape">
 <em class="property">static </em><tt class="descname">infer_datashape</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ArraySource.infer_datashape" title="Permalink to this definition">¶</a></dt>
@@ -114,7 +113,6 @@ should be in the context of this datasource.</p>
 <dt id="blaze.sources.canonical.ByteSource">
 <em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">ByteSource</tt><big>(</big><em>bits</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ByteSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>A raw block of memory layed out in raditional NumPy fashion.</p>
-<p class="rubric">Methods</p>
 <dl class="staticmethod">
 <dt id="blaze.sources.canonical.ByteSource.infer_datashape">
 <em class="property">static </em><tt class="descname">infer_datashape</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ByteSource.infer_datashape" title="Permalink to this definition">¶</a></dt>
@@ -128,21 +126,18 @@ dshape otherwise specified.</p>
 <dt id="blaze.sources.canonical.FileSource">
 <em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">FileSource</tt><big>(</big><em>fname</em>, <em>mode='rb+'</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.FileSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>File on local disk.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="blaze.sources.canonical.PythonSource">
 <em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">PythonSource</tt><big>(</big><em>pyobject</em>, <em>type=&lt;type 'list'&gt;</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.PythonSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Work with a immutable Python list as if it were byte interfaces.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="blaze.sources.canonical.SocketSource">
 <em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">SocketSource</tt><big>(</big><em>host</em>, <em>port</em>, <em>flags=None</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.SocketSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stream of bytes over TCP.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
 
 </div>

@@ -235,7 +235,7 @@ module.</td>
 <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
 
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-<span class="n">execute</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">execute</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 <span class="k">print</span> <span class="n">arr</span>
 </pre></div>
@@ -370,7 +370,6 @@ optional arguments:
 ├── exc.py         # Execution
 ├── lexer.py       # Lexer logic
 ├── magic.py       # IPython magic
-├── opcodes.py     # Opcode definitions
 ├── parser.py      # Parser logic
 ├── passes.py      # Compiler logic ( MAIN ENTRY POINT )
 ├── prelude.c      # C libraries for Prelude
