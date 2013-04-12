@@ -35,7 +35,7 @@ Disk Backed Array
     >>> from blaze import Array, dshape, params
 
     >>> data = np.zeros(4).reshape(2,2)
-    >>> Array(data, dshape('(2,2), float64'), params=params(storage='a'))
+    >>> Array(data, dshape('2,2, float64'), params=params(storage='a'))
     Array
       datashape := 2, 2, float64
       values    := [CArray(ptr=56992176)]
