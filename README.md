@@ -112,22 +112,22 @@ $ . venv/bin/activate
 2) Pull the Conda package manager for use inside of your virtualenv.
 
 ```bash
-git clone git@github.com:ContinuumIO/conda.git
+$ git clone git@github.com:ContinuumIO/conda.git
 ```
 
 3) Build and install conda.
 
 ```bash
-cd conda
-python setup.sh install
-cd ..
+$ cd conda
+$ python setup.sh install
+$ cd ..
 ```
 
 4) Create a directory in your virtualenv to mimic the behavior of
 Anaconda and allow Continuum signed packages to be installed.
 
 ```bash
-mkdir venv/pkgs
+$ mkdir venv/pkgs
 ```
 
 5) Add ``conda`` to your path.
@@ -140,17 +140,17 @@ $ PATH=venv/bin:$PATH
 experimental and not officially supported.
 
 ```bash
-conda install ply
-conda install numpy
-conda install llvmpy
-conda install cython
-conda install pycparser
+$ conda install ply
+$ conda install numpy
+$ conda install llvmpy
+$ conda install cython
+$ conda install pycparser
 ```
 
 7) From inside the Blaze directory run the Makefile.
 
 ```bash
-make build
+$ make build
 ```
 
 Contributing
