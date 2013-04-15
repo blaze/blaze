@@ -126,6 +126,9 @@ class wsgi_app:
         elif q_req == 'add_computed_fields':
             j = q['json'][0]
             content_type, body = session.add_computed_fields(j)
+        elif q_req == 'make_computed_fields':
+            j = q['json'][0]
+            content_type, body = session.make_computed_fields(j)
         elif q_req == 'sort':
             j = q['json'][0]
             content_type, body = session.sort(j)

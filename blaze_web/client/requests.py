@@ -40,6 +40,21 @@ def add_computed_fields(session_url, url, fields, rm_fields, fnname):
     response = urllib2.urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())
 
+def make_computed_fields(session_url, url, replace_undim, fields, fnname):
+    """Creates a new remote array with the computed fields."""
+    reqdata = {
+            "input": str(url),
+            "replace_undim": int(replace_undim),
+            "fields": [[str(name), str(dt), str(expr)]
+                    for name, dt, expr in fields]
+        }
+    if fnname is not None:
+        reqdata['fnname'] = str(fnname)
+    params = [('r', 'make_computed_fields'),
+              ('json', json.dumps(reqdata))]
+    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    return json.loads(response.read())
+
 def sort(session_url, url, field):
     """Creates a new remote array which is sorted by field."""
     reqdata = {

@@ -169,3 +169,38 @@ class compute_session:
                 'dshape': dshape
             })
         return (content_type, body)
+
+    def make_computed_fields(self, json_cmd):
+        print('Adding computed fields')
+        cmd = json.loads(json_cmd)
+        array_url = cmd.get('input', self.base_url + self.array_name)
+        if not array_url.startswith(self.base_url):
+            raise RuntimeError('Input array must start with the base url')
+        array_name = array_url[len(self.base_url):]
+        fields = cmd['fields']
+        replace_undim = cmd.get('replace_undim', 0)
+        fnname = cmd.get('fnname', None)
+        
+        arr = self.get_session_array(array_name)
+
+        res = nd.make_computed_fields(arr, replace_undim, fields, fnname)
+        defarr = self.array_provider.create_deferred_array_filename(
+                        self.session_name, 'computed_fields_', res)
+        dshape = res.dshape
+        defarr[0].write(json.dumps({
+                'dshape': dshape,
+                'command': 'make_computed_fields',
+                'params': {
+                    'fields': fields,
+                    'replace_undim': replace_undim,
+                    'fnname': fnname
+                }
+            }))
+        defarr[0].close()
+        content_type = 'application/json; charset=utf-8'
+        body = json.dumps({
+                'session': self.base_url + self.session_name,
+                'output': self.base_url + defarr[1],
+                'dshape': dshape
+            })
+        return (content_type, body)
