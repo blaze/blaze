@@ -5,20 +5,19 @@ from unittest import TestCase
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-import blaze.carray as ca
-from blaze.carray import chunk
-from blaze.carray.tests import common
+from blaze import blz
+from blaze.blz.tests import common
 from common import MayBeDiskTest
 
 
-class largeCarrayTest(MayBeDiskTest, TestCase):
+class largeBarrayTest(MayBeDiskTest, TestCase):
 
     disk = True
 
     def test00(self):
-        """Creating an extremely large carray (> 2**32) in memory."""
+        """Creating an extremely large barray (> 2**32) in memory."""
 
-        cn = ca.zeros(5e9, dtype="i1")
+        cn = blz.zeros(5e9, dtype="i1")
         self.assertEqual(len(cn), int(5e9))
 
         # Now check some accesses
@@ -34,9 +33,9 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
         self.assertEqual(cn.sum(), 10)
 
     def test01(self):
-        """Creating an extremely large carray (> 2**32) on disk."""
+        """Creating an extremely large barray (> 2**32) on disk."""
 
-        cn = ca.zeros(5e9, dtype="i1", rootdir=self.rootdir)
+        cn = blz.zeros(5e9, dtype="i1", rootdir=self.rootdir)
         self.assertEqual(len(cn), int(5e9))
 
         # Now check some accesses
@@ -52,13 +51,13 @@ class largeCarrayTest(MayBeDiskTest, TestCase):
         self.assertEqual(cn.sum(), 10)
 
     def test02(self):
-        """Opening an extremely large carray (> 2**32) on disk."""
+        """Opening an extremely large barray (> 2**32) on disk."""
 
         # Create the array on-disk
-        cn = ca.zeros(5e9, dtype="i1", rootdir=self.rootdir)
+        cn = blz.zeros(5e9, dtype="i1", rootdir=self.rootdir)
         self.assertEqual(len(cn), int(5e9))
         # Reopen it from disk
-        cn = ca.carray(rootdir=self.rootdir)
+        cn = blz.barray(rootdir=self.rootdir)
         self.assertEqual(len(cn), int(5e9))
 
         # Now check some accesses
