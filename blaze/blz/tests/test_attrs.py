@@ -5,24 +5,24 @@ from unittest import TestCase
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-import blaze.carray as ca
-from blaze.carray.tests import common
+from blaze import blz
+from blaze.blz.tests import common
 from common import MayBeDiskTest
 
 class basicTest(MayBeDiskTest):
 
     def getobject(self):
-        if self.flavor == 'carray':
-            obj = ca.zeros(10, dtype="i1", rootdir=self.rootdir)
-            assert type(obj) == ca.carray
-        elif self.flavor == 'ctable':
-            obj = ca.fromiter(((i,i*2) for i in range(10)), dtype='i2,f4',
+        if self.flavor == 'barray':
+            obj = blz.zeros(10, dtype="i1", rootdir=self.rootdir)
+            assert type(obj) == blz.barray
+        elif self.flavor == 'btable':
+            obj = blz.fromiter(((i,i*2) for i in range(10)), dtype='i2,f4',
                               count=10, rootdir=self.rootdir)
-            assert type(obj) == ca.ctable
+            assert type(obj) == blz.btable
         return obj
 
     def test00a(self):
-        """Creating attributes in a new carray."""
+        """Creating attributes in a new barray."""
 
         cn = self.getobject()
         # Some attrs
@@ -35,23 +35,23 @@ class basicTest(MayBeDiskTest):
         self.assert_(len(cn.attrs) == 3)
 
     def test00b(self):
-        """Accessing attributes in a opened carray."""
+        """Accessing attributes in a opened barray."""
 
         cn = self.getobject()
         # Some attrs
         cn.attrs['attr1'] = 'val1'
         cn.attrs['attr2'] = 'val2'
         cn.attrs['attr3'] = 'val3'
-        # Re-open the carray
+        # Re-open the barray
         if self.rootdir:
-            cn = ca.open(rootdir=self.rootdir)
+            cn = blz.open(rootdir=self.rootdir)
         self.assert_(cn.attrs['attr1'] == 'val1')
         self.assert_(cn.attrs['attr2'] == 'val2')
         self.assert_(cn.attrs['attr3'] == 'val3')
         self.assert_(len(cn.attrs) == 3)
 
     def test01a(self):
-        """Removing attributes in a new carray."""
+        """Removing attributes in a new barray."""
 
         cn = self.getobject()
         # Some attrs
@@ -66,7 +66,7 @@ class basicTest(MayBeDiskTest):
         self.assert_(len(cn.attrs) == 2)
 
     def test01b(self):
-        """Removing attributes in a opened carray."""
+        """Removing attributes in a opened barray."""
 
         cn = self.getobject()
         # Some attrs
@@ -75,7 +75,7 @@ class basicTest(MayBeDiskTest):
         cn.attrs['attr3'] = 'val3'
         # Reopen
         if self.rootdir:
-            cn = ca.open(rootdir=self.rootdir)
+            cn = blz.open(rootdir=self.rootdir)
         # Remove one of them
         del cn.attrs['attr2']
         self.assert_(cn.attrs['attr1'] == 'val1')
@@ -84,14 +84,14 @@ class basicTest(MayBeDiskTest):
         self.assert_(len(cn.attrs) == 2)
 
     def test01c(self):
-        """Appending attributes in a opened carray."""
+        """Appending attributes in a opened barray."""
         
         cn = self.getobject()
         # Some attrs
         cn.attrs['attr1'] = 'val1'
         # Reopen
         if self.rootdir:
-            cn = ca.open(rootdir=self.rootdir)
+            cn = blz.open(rootdir=self.rootdir)
         # Append attrs
         cn.attrs['attr2'] = 'val2'
         cn.attrs['attr3'] = 'val3'
@@ -119,20 +119,20 @@ class basicTest(MayBeDiskTest):
             count += 1
         self.assert_(count, 3)
 
-class carrayTest(basicTest, TestCase):
-    flavor = "carray"
+class barrayTest(basicTest, TestCase):
+    flavor = "barray"
     disk = False
 
-class carrayDiskTest(basicTest, TestCase):
-    flavor = "carray"
+class barrayDiskTest(basicTest, TestCase):
+    flavor = "barray"
     disk = True
 
-class ctableTest(basicTest, TestCase):
-    flavor = "ctable"
+class btableTest(basicTest, TestCase):
+    flavor = "btable"
     disk = False
 
-class ctableDiskTest(basicTest, TestCase):
-    flavor = "ctable"
+class btableDiskTest(basicTest, TestCase):
+    flavor = "btable"
     disk = True
 
 
