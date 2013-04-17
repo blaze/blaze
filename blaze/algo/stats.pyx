@@ -2,7 +2,6 @@ import cython
 import numpy as np
 cimport numpy as np
 
-from blaze.carray import carrayExtension as carray
 
 np.import_array()
 nan = np.nan

@@ -1,2 +1,2 @@
 from canonical import PythonSource
-from chunked import CArraySource, CTableSource
+from chunked import BArraySource, BTableSource

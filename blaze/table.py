@@ -18,11 +18,11 @@ from blaze.printer import generic_str, generic_repr
 from blaze.datashape import from_numpy, dshape as _dshape
 from blaze.datashape.record import dtype_from_dict
 from blaze.expr.graph import ArrayNode, injest_iterable
-from blaze.carray import fromiter
+from blaze.blz import fromiter
 
 from blaze.layouts.scalar import ChunkedL
 from blaze.layouts.query import retrieve, write
-from blaze.sources.chunked import CArraySource, CTableSource
+from blaze.sources.chunked import BArraySource, BTableSource
 
 from itertools import izip
 
@@ -156,11 +156,11 @@ class Array(Indexable):
             if isinstance(obj, Array):
                 dshape = obj.datashape
             else:
-                dshape = CArraySource.infer_datashape(obj)
+                dshape = BArraySource.infer_datashape(obj)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
-            CArraySource.check_datashape(obj, given_dshape=dshape)
+            BArraySource.check_datashape(obj, given_dshape=dshape)
 
         self._datashape = dshape
 
@@ -172,11 +172,11 @@ class Array(Indexable):
         if isinstance(obj, ByteProvider):
             self.data = obj
         elif isinstance(obj, Array):
-            self.data = CArraySource(obj.data,
+            self.data = BArraySource(obj.data,
                                      dshape=dshape,
                                      params=params)
         else:
-            self.data = CArraySource(obj, dshape=dshape, params=params)
+            self.data = BArraySource(obj, dshape=dshape, params=params)
 
         # children graph nodes
         self.children = []
@@ -253,10 +253,10 @@ class Array(Indexable):
         write(cc, indexer, value)
 
     #------------------------------------------------------------------------
-    # Specific functions for carray backend
+    # Specific functions for barray backend
     #------------------------------------------------------------------------
 
-    # TODO: don't hardcode against carray,  breaks down if we use
+    # TODO: don't hardcode against barray,  breaks down if we use
     # something else
     def append(self, data):
         self.data.ca.append(data)
@@ -299,11 +299,11 @@ class NDArray(Indexable, ArrayNode):
             # The user just passed in a raw data source, try
             # and infer how it should be layed out or fail
             # back on dynamic types.
-            self._datashape = dshape = CArraySource.infer_datashape(obj)
+            self._datashape = dshape = BArraySource.infer_datashape(obj)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
-            CArraySource.check_datashape(obj, given_dshape=dshape)
+            BArraySource.check_datashape(obj, given_dshape=dshape)
             self._datashape = dshape
 
         # Values
@@ -312,10 +312,10 @@ class NDArray(Indexable, ArrayNode):
         # possible arguments to the first argument which result
         # in different behavior for the values.
 
-        if isinstance(obj, CArraySource):
+        if isinstance(obj, BArraySource):
             self.data = obj
         else:
-            self.data = CArraySource(obj, params)
+            self.data = BArraySource(obj, params)
 
         # children graph nodes
         self.children = []
@@ -487,7 +487,7 @@ class Table(Indexable):
         # ----------
         self.params = params
 
-    # TODO: don't hardcode against carray,  breaks down if we use
+    # TODO: don't hardcode against blz,  breaks down if we use
     # something else
     def append(self, data):
         self.data.ca.append(data)

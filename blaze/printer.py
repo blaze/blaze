@@ -1,5 +1,5 @@
 from pprint import pformat
-from carray import (
+from blaze.blz import (
     array2string,
     set_printoptions as np_setprintoptions,
     get_printoptions as np_getprintoptions,

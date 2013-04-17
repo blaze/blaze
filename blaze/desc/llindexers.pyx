@@ -3,7 +3,7 @@ from cpython cimport *
 
 #from lldescriptors import *
 
-from blaze.carray import carrayExtension as carray
+from blaze.blz import blz_ext
 
 
 cdef chunk_next_generic(CChunkIterator *info, CChunk *chunk, arr, keep_alive):
@@ -50,14 +50,14 @@ cdef int carray_chunk_next(CChunkIterator *info, CChunk *chunk) except -1:
     cdef Py_uintptr_t data
 
     carray = <object> <PyObject *> info.meta.source
-    if info.cur_chunk_idx < carray.nchunks:
-        carray_chunk = carray.chunks[info.cur_chunk_idx]
+    if info.cur_chunk_idx < blz_ext.nchunks:
+        carray_chunk = blz_ext.chunks[info.cur_chunk_idx]
 
         # decompress chunk
         arr = carray_chunk[:]
         chunk.extra = <void *> carray_chunk
-    elif info.cur_chunk_idx == carray.nchunks:
-        arr = carray.leftover_array
+    elif info.cur_chunk_idx == blz_ext.nchunks:
+        arr = blz_ext.leftover_array
     else:
         return done(chunk)
 
@@ -70,8 +70,8 @@ cdef int carray_chunk_commit(CChunkIterator *info, CChunk *chunk) except -1:
         # compress chunk and replace previous chunk
         carray_chunk = <object> chunk.extra
         arr = <object> chunk.obj
-        carray.chunks[chunk.chunk_index] = carray.chunk(arr, arr.dtype,
-                                                        carray_obj.cparams)
+        blz_ext.chunks[chunk.chunk_index] = blz_ext.chunk(arr, arr.dtype,
+                                                          carray_obj.cparams)
 
     return carray_chunk_dispose(info, chunk)
 

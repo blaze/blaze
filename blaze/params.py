@@ -1,4 +1,4 @@
-from blaze import carray
+from blaze import blz
 
 defaults = {
     'clevel'        : 5,
@@ -64,9 +64,9 @@ class params(object):
         )
 
 
-def to_cparams(params):
-    """Convert params to cparams.  roodir and format_flavor also extracted."""
-    cparams = {}; rootdir = format_flavor = None
+def to_bparams(params):
+    """Convert params to bparams.  roodir and format_flavor also extracted."""
+    bparams = {}; rootdir = format_flavor = None
     for key, val in params.iteritems():
         if key == 'storage':
             rootdir = val
@@ -74,5 +74,5 @@ def to_cparams(params):
         if key == 'format_flavor':
             format_flavor = val
             continue
-        cparams[key] = val
-    return carray.cparams(**cparams), rootdir, format_flavor
+        bparams[key] = val
+    return blz.bparams(**bparams), rootdir, format_flavor

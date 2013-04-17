@@ -6,22 +6,22 @@ for on-disk storage.
 
 import numpy as np
 
-from blaze import carray
-from blaze.carray.ctable import ctable
+from blaze import blz
+from blaze.blz.btable import btable
 
 from blaze.byteproto import CONTIGUOUS, CHUNKED, STREAM, ACCESS_ALLOC
 from blaze.datashape import dynamic, from_numpy, to_numpy
-from blaze.params import params, to_cparams
+from blaze.params import params, to_bparams
 from blaze.layouts.scalar import ChunkedL
 
 from blaze.desc.byteprovider import ByteProvider
-from blaze.desc.datadescriptor import CArrayDataDescriptor
+from blaze.desc.datadescriptor import BArrayDataDescriptor
 
 #------------------------------------------------------------------------
 # Chunked Array
 #------------------------------------------------------------------------
 
-class CArraySource(ByteProvider):
+class BArraySource(ByteProvider):
     """
     A chunked array source.
 
@@ -36,7 +36,7 @@ class CArraySource(ByteProvider):
            * clevel - compression level
            * shuffle - shuffle filter
            * format_flavor - ``monolithic`` | ``chunked``
-           * storage - The directory hosting the carray
+           * storage - The directory hosting the barray
     """
 
     read_capabilities  = CHUNKED
@@ -48,37 +48,37 @@ class CArraySource(ByteProvider):
         assert (data is not None) or (dshape is not None) or \
                (params.get('storage'))
 
-        # Extract the relevant carray parameters from the more
+        # Extract the relevant barray parameters from the more
         # general Blaze params object.
         if params:
-            cparams, rootdir, format_flavor = to_cparams(params)
+            bparams, rootdir, format_flavor = to_bparams(params)
         else:
-            rootdir,cparams = None, None
+            rootdir, bparams = None, None
 
-        if isinstance(data, CArraySource):
+        if isinstance(data, BArraySource):
             data = data.ca
             dshape = dshape if dshape else data.dshape
 
         if dshape:
             shape, dtype = to_numpy(dshape)
-            self.ca = carray.carray(data, dtype=dtype, rootdir=rootdir, cparams=cparams)
+            self.ca = blz.barray(data, dtype=dtype, rootdir=rootdir, bparams=bparams)
             self.dshape = dshape
         else:
-            self.ca = carray.carray(data, rootdir=rootdir, cparams=cparams)
+            self.ca = blz.barray(data, rootdir=rootdir, bparams=bparams)
             self.dshape = from_numpy(self.ca.shape, self.ca.dtype)
 
     @classmethod
     def empty(self, dshape):
-        """ Create a CArraySource from a datashape specification,
+        """ Create a BArraySource from a datashape specification,
         downcasts into Numpy dtype and shape tuples if possible
         otherwise raises an exception.
         """
         shape, dtype = from_numpy(dshape)
-        return CArraySource(carray([], dtype))
+        return BArraySource(barray([], dtype))
 
     # Get a READ descriptor the source
     def read_desc(self):
-        return CArrayDataDescriptor('carray_dd', self.ca.nbytes, self.dshape,
+        return BArrayDataDescriptor('barray_dd', self.ca.nbytes, self.dshape,
                 self.ca)
 
     # Return the layout of the dataa
@@ -104,11 +104,11 @@ class CArraySource(ByteProvider):
         The user has only provided us with a Python object ( could be
         a buffer interface, a string, a list, list of lists, etc) try
         our best to infer what the datashape should be in the context of
-        what it would mean as a CArray.
+        what it would mean as a BArray.
         """
         if isinstance(source, np.ndarray):
             return from_numpy(source.shape, source.dtype)
-        elif isinstance(source, CArraySource):
+        elif isinstance(source, BArraySource):
             return from_numpy(source.ca.shape, source.ca.dtype)
         elif isinstance(source, list):
             # TODO: um yeah, we'd don't actually want to do this
@@ -142,23 +142,23 @@ class CArraySource(ByteProvider):
         return isinstance(layout, ChunkedL)
 
     def repr_data(self):
-        return carray.array2string(self.ca)
+        return blz.array2string(self.ca)
 
     def read(self, elt, key):
-        """ CArray extension supports reading directly from high-level
+        """ BArray extension supports reading directly from high-level
         coordinates """
         # disregards elt since this logic is implemented lower
         # level in the Cython extension _getrange
         return self.ca.__getitem__(key)
 
     def __repr__(self):
-        return 'CArray(ptr=%r)' % id(self.ca)
+        return 'BArray(ptr=%r)' % id(self.ca)
 
 #------------------------------------------------------------------------
 # Chunked Tables
 #------------------------------------------------------------------------
 
-class CTableSource(ByteProvider):
+class BTableSource(ByteProvider):
     """
     A chunked table source.
 
@@ -173,7 +173,7 @@ class CTableSource(ByteProvider):
            * clevel - compression level
            * shuffle - shuffle filter
            * format_flavor - ``monolithic`` | ``chunked``
-           * storage - The directory hosting the ctable
+           * storage - The directory hosting the btable
 
     """
 
@@ -186,37 +186,37 @@ class CTableSource(ByteProvider):
         assert (data is not None) or (dshape is not None) or \
                (params.get('storage'))
 
-        if isinstance(data, ctable):
+        if isinstance(data, btable):
             self.ca = data
             return
 
-        # Extract the relevant carray parameters from the more
+        # Extract the relevant barray parameters from the more
         # general Blaze params object.
         if params:
-            cparams, rootdir, format_flavor = to_cparams(params)
+            bparams, rootdir, format_flavor = to_bparams(params)
         else:
-            rootdir,cparams = None, None
+            rootdir, bparams = None, None
 
-        # Extract the relevant carray parameters from the more
+        # Extract the relevant barray parameters from the more
         # general Blaze params object.
         if dshape:
             shape, dtype = to_numpy(dshape)
             if len(data) == 0:
                 data = np.empty(0, dtype=dtype)
-                self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
+                self.ca = btable(data, rootdir=rootdir, bparams=bparams)
             else:
-                self.ca = ctable(data, dtype=dtype, rootdir=rootdir)
+                self.ca = btable(data, dtype=dtype, rootdir=rootdir)
         else:
-            self.ca = ctable(data, rootdir=rootdir, cparams=cparams)
+            self.ca = btable(data, rootdir=rootdir, bparams=bparams)
 
     @classmethod
     def empty(self, dshape):
         shape, dtype = from_numpy(dshape)
-        return CTableSource(carray([[]], dtype))
+        return BTableSource(barray([[]], dtype))
 
     def read_desc(self):
         # TODO
-        return CArrayDataDescriptor('ctable_dd', self.ca.nbytes, self.ca)
+        return BArrayDataDescriptor('btable_dd', self.ca.nbytes, self.ca)
 
     # Return the layout of the dataa
     def default_layout(self):
@@ -248,4 +248,4 @@ class CTableSource(ByteProvider):
         return self.ca.__getitem__(key)
 
     def __repr__(self):
-        return 'CTable(ptr=%r)' % id(self.ca)
+        return 'BTable(ptr=%r)' % id(self.ca)
