@@ -1,6 +1,9 @@
+# XXX To Be Done: For the time being the tests here are skipped,
+# but they should be executed as soon as we implement a way to
+# separate execution of normal and heavy tests (via flag to the
+# test runner, for example).
 
-
-from unittest import TestCase
+from unittest import TestCase, skip
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
@@ -14,6 +17,7 @@ class largeBarrayTest(MayBeDiskTest, TestCase):
 
     disk = True
 
+    @skip
     def test00(self):
         """Creating an extremely large barray (> 2**32) in memory."""
 
@@ -32,6 +36,7 @@ class largeBarrayTest(MayBeDiskTest, TestCase):
 
         self.assertEqual(cn.sum(), 10)
 
+    @skip
     def test01(self):
         """Creating an extremely large barray (> 2**32) on disk."""
 
@@ -50,6 +55,7 @@ class largeBarrayTest(MayBeDiskTest, TestCase):
 
         self.assertEqual(cn.sum(), 10)
 
+    @skip
     def test02(self):
         """Opening an extremely large barray (> 2**32) on disk."""
 
