@@ -16,7 +16,7 @@ import os, os.path
 import shutil
 
 from blz_ext import barray
-from blzparams import blzparams
+from bparams import bparams
 
 # BLZ utilities
 import utils, attrs, arrayprint
@@ -123,7 +123,7 @@ class btable(object):
     Notes
     -----
     Columns passed as barrays are not be copied, so their settings
-    will stay the same, even if you pass additional arguments (blzparams,
+    will stay the same, even if you pass additional arguments (bparams,
     chunklen...).
 
     """
@@ -137,9 +137,9 @@ class btable(object):
         return self._get_stats()[1]
 
     @property
-    def blzparams(self):
+    def bparams(self):
         "The compression parameters for this object."
-        return self._blzparams
+        return self._bparams
 
     @property
     def dtype(self):
@@ -177,7 +177,7 @@ class btable(object):
     def __init__(self, columns=None, names=None, **kwargs):
 
         # Important optional params
-        self._blzparams = kwargs.get('blzparams', blzparams())
+        self._bparams = kwargs.get('bparams', bparams())
         self.rootdir = kwargs.get('rootdir', None)
         "The directory where this object is saved."
         self.mode = kwargs.get('mode', 'a')
@@ -448,12 +448,12 @@ class btable(object):
             raise ValueError, "`newcol` must have the same length than btable"
 
         if isinstance(newcol, np.ndarray):
-            if 'blzparams' not in kwargs:
-                kwargs['blzparams'] = self.blzparams
+            if 'bparams' not in kwargs:
+                kwargs['bparams'] = self.bparams
             newcol = barray(newcol, **kwargs)
         elif type(newcol) in (list, tuple):
-            if 'blzparams' not in kwargs:
-                kwargs['blzparams'] = self.blzparams
+            if 'bparams' not in kwargs:
+                kwargs['bparams'] = self.bparams
             newcol = barray(newcol, **kwargs)
         elif type(newcol) != barray:
             raise ValueError(
@@ -904,7 +904,7 @@ class btable(object):
         header = "btable(%s, %s)\n" % (self.shape, self.dtype)
         header += "  nbytes: %s; cbytes: %s; ratio: %.2f\n" % (
             snbytes, scbytes, cratio)
-        header += "  blzparams := %r\n" % self.blzparams
+        header += "  bparams := %r\n" % self.bparams
         if self.rootdir:
             header += "  rootdir := '%s'\n" % self.rootdir
         fullrepr = header + str(self)
