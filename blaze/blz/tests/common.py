@@ -11,7 +11,6 @@ verbose = False
 heavy = False
 
 
-
 #
 # The original constructors of barray are gone in blaze
 # monkey-patch them in order to retain the code in the tests

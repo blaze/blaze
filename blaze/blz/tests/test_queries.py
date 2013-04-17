@@ -5,7 +5,7 @@ from unittest import TestCase
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-import blaze.carray as ca
+from blaze import blz
 import common
 
 
@@ -13,8 +13,8 @@ class with_listTest:
 
     def test00a(self):
         """Testing wheretrue() in combination with a list constructor"""
-        a = ca.zeros(self.N, dtype="bool")
-        a[30:40] = ca.ones(10, dtype="bool")
+        a = blz.zeros(self.N, dtype="bool")
+        a[30:40] = blz.ones(10, dtype="bool")
         alist = list(a)
         blist1 = [r for r in a.wheretrue()]
         self.assert_(blist1 == range(30,40))
@@ -23,15 +23,15 @@ class with_listTest:
 
     def test00b(self):
         """Testing wheretrue() with a multidimensional array"""
-        a = ca.zeros((self.N, 10), dtype="bool")
-        a[30:40] = ca.ones(10, dtype="bool")
+        a = blz.zeros((self.N, 10), dtype="bool")
+        a[30:40] = blz.ones(10, dtype="bool")
         self.assertRaises(NotImplementedError, a.wheretrue)
 
     def test01a(self):
         """Testing where() in combination with a list constructor"""
-        a = ca.zeros(self.N, dtype="bool")
-        a[30:40] = ca.ones(10, dtype="bool")
-        b = ca.arange(self.N, dtype="f4")
+        a = blz.zeros(self.N, dtype="bool")
+        a[30:40] = blz.ones(10, dtype="bool")
+        b = blz.arange(self.N, dtype="f4")
         blist = list(b)
         blist1 = [r for r in b.where(a)]
         self.assert_(blist1 == range(30,40))
@@ -40,14 +40,14 @@ class with_listTest:
 
     def test01b(self):
         """Testing where() with a multidimensional array"""
-        a = ca.zeros((self.N, 10), dtype="bool")
-        a[30:40] = ca.ones(10, dtype="bool")
-        b = ca.arange(self.N*10, dtype="f4").reshape((self.N, 10))
+        a = blz.zeros((self.N, 10), dtype="bool")
+        a[30:40] = blz.ones(10, dtype="bool")
+        b = blz.arange(self.N*10, dtype="f4").reshape((self.N, 10))
         self.assertRaises(NotImplementedError, b.where, a)
 
     def test02(self):
         """Testing iter() in combination with a list constructor"""
-        b = ca.arange(self.N, dtype="f4")
+        b = blz.arange(self.N, dtype="f4")
         blist = list(b)
         blist1 = [r for r in b.iter(3,10)]
         self.assert_(blist1 == range(3,10))
