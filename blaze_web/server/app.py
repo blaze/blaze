@@ -76,7 +76,9 @@ def html_array(arr, base_url, array_name, indexers):
 def favicon():
     return 'no icon'
 
-@app.route("/<path:path>", methods=['GET', 'POST'])
+from crossdomain import crossdomain
+@app.route("/<path:path>", methods=['GET', 'POST', 'OPTIONS'])
+@crossdomain(origin="*", automatic_options=False, automatic_headers=True)
 def handle(path):
     if request.path in app.sessions:
         return handle_session_query()
