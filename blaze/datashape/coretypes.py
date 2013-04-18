@@ -767,6 +767,9 @@ string = String
 
 Stream = Range(IntegerConstant(0), None)
 
+Type.register('int', int_)
+Type.register('float', float_)
+
 Type.register('NA', Null)
 Type.register('Stream', Stream)
 Type.register('?', Dynamic)
