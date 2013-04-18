@@ -7,7 +7,7 @@ using kernels as the primitive and not involving iterators.
 This approach still interoperates well with iterators, and
 this proposal is not to exclude iterator support in blaze,
 but rather suggests kernels as a mechanism which more readily
-generalizes to to diversity of data that blaze is targetting.
+generalizes to to diversity of data that blaze is targeting.
 
 Dealing With Variable-Sized Dimensions/Ragged Arrays
 ----------------------------------------------------
