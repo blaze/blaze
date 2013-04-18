@@ -440,11 +440,11 @@ class Table(Indexable):
             # The user just passed in a raw data source, try
             # and infer how it should be layed out or fail
             # back on dynamic types.
-            self._datashape = dshape = CTableSource.infer_datashape(data)
+            self._datashape = dshape = BTableSource.infer_datashape(data)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
-            CTableSource.check_datashape(data, given_dshape=dshape)
+            BTableSource.check_datashape(data, given_dshape=dshape)
             self._datashape = dshape
 
         # Source
@@ -456,10 +456,10 @@ class Table(Indexable):
             ct = self.from_dict(data)
             self._axes = data.keys()
             dshape = from_numpy(ct.shape, ct.dtype)
-            self.data = CTableSource(ct, dshape=dshape, params=params)
+            self.data = BTableSource(ct, dshape=dshape, params=params)
             self._datashape = dshape
         elif isinstance(data, (list, tuple)):
-            self.data = CTableSource(data, dshape=dshape, params=params)
+            self.data = BTableSource(data, dshape=dshape, params=params)
             # Pull the labels from the datashape
             self._axes = self._datashape[-1].names
         else:
@@ -503,7 +503,7 @@ class Table(Indexable):
     def __getitem__(self, mask):
         ct = (self.data.ca[mask])
         dshape = from_numpy(ct.shape, ct.dtype)
-        source = CTableSource(ct, dshape=dshape)
+        source = BTableSource(ct, dshape=dshape)
         return Table(source, dshape=dshape)
 
     @classmethod
@@ -549,11 +549,11 @@ class NDTable(Indexable, ArrayNode):
             # The user just passed in a raw data source, try
             # and infer how it should be layed out or fail
             # back on dynamic types.
-            self._datashape = dshape = CTableSource.infer_datashape(data)
+            self._datashape = dshape = BTableSource.infer_datashape(data)
         else:
             # The user overlayed their custom dshape on this
             # data, check if it makes sense
-            CTableSource.check_datashape(data, given_dshape=dshape)
+            BTableSource.check_datashape(data, given_dshape=dshape)
             self._datashape = dshape
 
         # Source
@@ -566,10 +566,10 @@ class NDTable(Indexable, ArrayNode):
             self._axes = data.keys()
 
             dshape = from_numpy(ct.shape, ct.dtype)
-            self.data = CTableSource(ct, dshape=dshape, params=params)
+            self.data = BTableSource(ct, dshape=dshape, params=params)
             self._datashape = dshape
         elif isinstance(data, (list, tuple)):
-            self.data = CTableSource(data, dshape=dshape, params=params)
+            self.data = BTableSource(data, dshape=dshape, params=params)
             # Pull the labels from the datashape
             self._axes = self._datashape[-1].names
         else:
