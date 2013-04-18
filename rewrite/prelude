@@ -1,0 +1,21 @@
+# Language defines the base combinators:
+#
+# fail(s)
+# id(s)
+# repeat(s)
+# not(s)
+# rec x(s)
+# all(s)
+# one(s)
+
+# s1;s2
+# s1<+s2
+# s1+s2
+# s1<s2+s3
+
+try(s)       = s <+ id
+topdown(s)   = s; all(topdown(s))
+bottomup(s)  = all(bottomup(s)); s
+alltd(s)     = s <+ all(alltd(s))
+downup(s)    = s; all(downup(s)); s
+innermost(s) = bottomup(try(s; innermost(s)))
