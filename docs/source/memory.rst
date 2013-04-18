@@ -10,7 +10,7 @@ of multiple noncontiguous buffers in memory.
 
 The chunks are bits of data compressed as a whole, but that can be
 decompressed partially in order to improve the fetching of small parts
-of the array. This chunked nature of the carray objects, together with
+of the array. This chunked nature of the Array objects, together with
 a buffered I/O, makes appends very cheap and fetches reasonably fast
 (although the modification of values can be an expensive operation).
 

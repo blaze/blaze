@@ -213,11 +213,11 @@ Tables and Arrays
 =================
 
 A Table is a Python object that allows N-dimensional + "named fields"
-indexing.  It is a generalization of NumPy, Pandas, data array, larry, ctable,
-and CArray, and is meant to serve as a foundational abstraction on which to
-build out-of-core and distributed algorithms by focusing attention away from
-moving data to the code and rather layering interpretation on top of data that
-exists.
+indexing.  It is a generalization of NumPy, PyTables, pandas,
+datarray, larry, and carray, and is meant to serve as a foundational
+abstraction on which to build out-of-core and distributed algorithms
+by focusing attention away from moving data to the code and rather
+layering interpretation on top of data that exists.
 
 .. image:: svg/codepush.png
     :align: center
@@ -258,7 +258,7 @@ calculation.
     :align: center
 
 The methods and operators on Tables will be similar to those available in the
-projects mentioned above: Pandas, larry, CArray/ctable, etc.
+projects mentioned above: pandas, larry, carray, etc.
 
 
 Data Descriptors
