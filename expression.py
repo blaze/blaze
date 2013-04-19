@@ -133,15 +133,15 @@ class Node(object):
     def ast(self):
         return self._ast
 
-    def eval(self, backend=None):
+    def eval(self, engine=None):
         import compile
         expr = self._ast
 
-        if backend == 'numpy':
+        if engine == 'numpy':
             return compile.eval_numpy(expr)
-        elif backend == 'blir':
+        elif engine == 'blir':
             return compile.eval_blir(expr)
-        elif backend == 'numexpr':
+        elif engine == 'numexpr':
             return compile.eval_numexpr(expr)
         else:
             return self.eval(oracle(expr))
@@ -246,7 +246,7 @@ if __name__ == '__main__':
     print 'D'.center(80, '=')
     print dump((a+a+a+b).ast())
 
-    print (a+b).eval(backend='blir')
-    print (a+b).eval(backend='numexpr')
+    print (a+b).eval(engine='blir')
+    print (a+b).eval(engine='numexpr')
 
     print a+1
