@@ -28,7 +28,7 @@ import alex
 import ayacc
 
 from blaze.plyhacks import yaccfrom, lexfrom
-from blaze.error import CustomSyntaxError
+from error import CustomSyntaxError
 
 #------------------------------------------------------------------------
 # Errors

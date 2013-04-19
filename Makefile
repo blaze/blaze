@@ -2,20 +2,21 @@
 
 all: parser
 
-build: parser
+build:
 	python setup.py build_ext --inplace
 
 test: build
-	python -c "import blir; blir.test()"
+	python -m unittest discover blaze/blz/tests
+	python -m unittest discover blaze/aterm/tests
 
 parser: cleanparser
-	python -m blir.parser
+	python -m blaze.blir.parser
 
 cleanparser:
-	-rm -f blir/byacc.py
-	-rm -f blir/byacc.pyc
-	-rm -f blir/blex.py
-	-rm -f blir/blex.pyc
+	-rm -f blaze/blir/byacc.py
+	-rm -f blaze/blir/byacc.pyc
+	-rm -f blaze/blir/blex.py
+	-rm -f blaze/blir/blex.pyc
 
 clean: cleanparser
 	-rm -Rf build
