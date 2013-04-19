@@ -17,7 +17,7 @@ class largeBarrayTest(MayBeDiskTest, TestCase):
 
     disk = True
 
-    @skip
+    @skip('')
     def test00(self):
         """Creating an extremely large barray (> 2**32) in memory."""
 
@@ -36,7 +36,7 @@ class largeBarrayTest(MayBeDiskTest, TestCase):
 
         self.assertEqual(cn.sum(), 10)
 
-    @skip
+    @skip('')
     def test01(self):
         """Creating an extremely large barray (> 2**32) on disk."""
 
@@ -55,7 +55,7 @@ class largeBarrayTest(MayBeDiskTest, TestCase):
 
         self.assertEqual(cn.sum(), 10)
 
-    @skip
+    @skip('')
     def test02(self):
         """Opening an extremely large barray (> 2**32) on disk."""
 
