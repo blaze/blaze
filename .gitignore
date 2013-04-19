@@ -4,3 +4,4 @@
 */__pycache__
 *.swp
 *.swo
+blaze/blz/blz_ext.c
