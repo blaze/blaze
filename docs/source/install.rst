@@ -49,9 +49,11 @@ Dependencies
 * llvmpy_
 * ply_
 * python-blosc_
+* pycparser_
 
 .. _numpy: http://www.numpy.org/
 .. _cython: http://www.cython.org/
 .. _llvmpy: http://www.llvmpy.org/
 .. _ply: http://www.dabeaz.com/ply/
 .. _python-blosc: http://blosc.pytables.org
+.. _pycparser: https://bitbucket.org/eliben/pycparser
