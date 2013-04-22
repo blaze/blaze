@@ -1,8 +1,8 @@
 # This file defines the Concrete Array --- a leaf node in the expression graph
 #
-# A concrete array is constructed from a Data Descriptor Object, a Data Shape
-# Object, a MetaData Object and a few addtional attributes that are meant for
-# convenience (i.e. flags
+# A concrete array is constructed from a Data Descriptor Object which handles the
+#  indexing and basic interpretation of bytes
+# 
 
 from datashape import dshape
 from desc import DataDescriptor
@@ -17,9 +17,8 @@ class NDArray(object):
     def __init__(self, data, **user):
         assert isinstance(data, DataDescriptor)
         self.data = data
-        self._meta = {'axes': ['']*self.nd,
-                      'labels' : [None]*self.nd,
-                      }
+        self.axes = ['']*self.data.nd
+        self.labels = [None]*self.data.nd
         self.user = user
         # Need to inject attributes on the NDArray depending on dshape attributes
 
