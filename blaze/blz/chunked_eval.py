@@ -68,7 +68,7 @@ _eval = eval
 
 def eval(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
     """
-    eval(expression, vm=None, out_flavor=None, user_dict=None, **kwargs)
+    eval(expression, vm=None, out_flavor=None, user_dict={}, **kwargs)
 
     Evaluate an `expression` and return the result.
 

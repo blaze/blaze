@@ -349,6 +349,33 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
     obj.flush()
     return obj
 
+def iterblocks(barr, blen=None, start=0, stop=None):
+    """iterblocks(blen=None, start=0, stop=None)
+
+    Iterate over blocks of size `blen`.
+
+    Parameters
+    ----------
+    barr : barray object
+        The BLZ array to be iterated over.
+    blen : int
+        The length of the block that is returned.
+    start : int
+        Where the iterator starts.  The default is to start at the beginning.
+    stop : int
+        Where the iterator stops. The default is to stop at the end.
+    
+    """
+
+    if stop is None:
+        stop = len(barr)
+    for i in xrange(start, stop, blen):
+        buf = np.empty(blen, dtype=barr.dtype)
+        barr._getrange(i, blen, buf)
+        if i + blen > stop:
+            buf = buf[:stop - i]
+        yield buf
+
 def walk(dir, classname=None, mode='a'):
     """walk(dir, classname=None, mode='a')
 

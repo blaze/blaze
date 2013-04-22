@@ -1332,6 +1332,17 @@ class persistenceTest(MayBeDiskTest, TestCase):
         self.assert_(cn[N+1] == 3)
 
 
+class iterchunksTest(TestCase):
+
+    def test01(self):
+        """Testing `iterchunks` method with not start, no stop"""
+        N, blen = int(1e4), 100
+        a = blz.fromiter(xrange(N), dtype=np.float64, count=N)
+
+        for block in blz.iterblocks(a, blen):
+            self.assert_(len(block) == blen)
+
+
 ## Local Variables:
 ## mode: python
 ## coding: utf-8 
