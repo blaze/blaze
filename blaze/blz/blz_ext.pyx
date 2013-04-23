@@ -1965,6 +1965,9 @@ cdef class barray:
         # XXX I still have to explain why this expression works
         # for chunklen > (start + blen)
         stopb = (stop - start) + startb
+        # stopb can never be larger than chunklen
+        if stopb > chunklen:
+          stopb = chunklen
       cblen = stopb - startb
       if cblen == 0:
         continue
