@@ -18,7 +18,7 @@ distribution, a free Python distribution that comes with a host of
 scientific and numeric packages bundled and precompiled into a userspace
 Python environment.
 
-Anaconda can be downloaded for all platforms here: http://continuum.io/anacondace.html .
+Anaconda can be downloaded for all platforms here: http://continuum.io/anaconda.html .
 
 Introduction
 ~~~~~~~~~~~~
