@@ -65,12 +65,12 @@ class BLZBytes(ByteProvider):
         Parameters
         ----------
         blen : int
-            The length, in rows, of the buffer that is returned.
+            The length, in rows, of the buffers that are returned.
         start : int
             Where the iterator starts.  The default is to start at the
             beginning.
-        stop : int Where the iterator stops. The default is to stop at
-            the end.
+        stop : int
+            Where the iterator stops. The default is to stop at the end.
         
         """
         self.flags = READ   # the returned chunks are read-only
@@ -78,7 +78,29 @@ class BLZBytes(ByteProvider):
             self.buffer = memoryview(chunk)
             self.buflen = len(chunk)
             self.nbytes = self.buflen * self.original.dtype.size
-            yield
+            yield  # hey, we have a new self.buffer ready for you
+
+    # The next is another iterator but:
+    # 1) Returns a buffer on each iteration, without bounding it to a variable
+    # 2) With a name that describer better what it does
+    def iterchunks(self, blen=None, start=None, stop=None):
+        """Return chunks of size `blen` (in leading dimension).
+
+        Parameters
+        ----------
+        blen : int
+            The length, in rows, of the buffers that are returned.
+        start : int
+            Where the iterator starts.  The default is to start at the
+            beginning.
+        stop : int
+            Where the iterator stops. The default is to stop at the end.
+        
+        """
+        self.flags = READ   # the returned chunks are meant to be read-only
+        for chunk in blz.iterchunks(self.original, blen, start, stop):
+            buffer = memoryview(chunk)
+            yield buffer
 
 
 class ValueBytes(ByteProvider):
