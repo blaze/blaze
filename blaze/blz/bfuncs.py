@@ -367,6 +367,8 @@ def iterblocks(barr, blen=None, start=0, stop=None):
     
     """
 
+    if blen is None:
+        blen = barr.chunklen
     if stop is None:
         stop = len(barr)
     for i in xrange(start, stop, blen):
