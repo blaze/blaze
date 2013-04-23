@@ -58,6 +58,13 @@ class NumPyBytes(ByteProvider):
 class BLZBytes(ByteProvider):
     def __init__(self, arr):
         self.original = arr
+        self.flags = READ   # the returned data will be read-only
+        # The capabilities that this ByteProvider supports
+        self.capabilities = {
+           'iterchunks': True,  # limited to the leading dimension
+           'getitem': True,     # fully supported, even for inner dims
+           'append': True,      # limited to the leading dimension
+          } 
 
     def nextchunk(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
@@ -73,7 +80,6 @@ class BLZBytes(ByteProvider):
             Where the iterator stops. The default is to stop at the end.
         
         """
-        self.flags = READ   # the returned chunks are read-only
         for chunk in blz.iterchunks(self.original, blen, start, stop):
             self.buffer = memoryview(chunk)
             self.buflen = len(chunk)
@@ -101,6 +107,15 @@ class BLZBytes(ByteProvider):
         for chunk in blz.iterchunks(self.original, blen, start, stop):
             buffer = memoryview(chunk)
             yield buffer
+
+    def __getitem__(self, object key):
+        """__getitem__(self, key) -> values."""
+        # Just defer this operation to the underlying BLZ object
+        self.original[key]
+
+    def append(self, buffer):
+        """Append a buffer at the end of the first dimension """
+        self.original.append(buffer)
 
 
 class ValueBytes(ByteProvider):
