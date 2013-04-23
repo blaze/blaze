@@ -16,12 +16,13 @@ Many things are not included here:
 
 """
 
-import numpy as np
-
-import ast
+import imp
+import sys
 import random
 
-from _ast import AST
+import numpy as np
+
+from ast import AST
 from astutils import dump
 
 #------------------------------------------------------------------------
@@ -44,20 +45,47 @@ OUTER   = 4
 # extend the dictionary of types and functions instead of having to
 # subclassing the Blaze internals.
 
-module = {
+
+# Mapping of types to namespaces
+bound_ns = {
     'array': {
         '__add__'  : lambda self, other: kernel(ZIPWITH, 'add', [self, other]),
         '__radd__' : lambda self, other: kernel(ZIPWITH, 'add', [other, self]),
-        'dot'      : lambda self, other: kernel(REDUCE, 'dot', [self, other]),
     },
 
     'scalar': {
         '__add__'  : lambda self, other: binop('+', self, other),
         '__mul__'  : lambda self, other: binop('*', self, other),
-        #'__radd__' : lambda self, other: binop('+', other, self),
-        #'__rmul__' : lambda self, other: binop('*', other, self),
     }
 }
+
+# Mapping of functions to lookup tables over argument types
+anon_ns = {
+    'basic': {
+
+        'add' : {
+            ('array', 'array')   : lambda a,b: kernel(ZIPWITH, 'add', [a, b]),
+            ('scalar', 'scalar') : lambda a,b: binop(ZIPWITH, 'add', [a, b]),
+        },
+
+        'dot' : {
+            ('array', 'array')   : lambda a,b: kernel(ZIPWITH, 'add', [a, b]),
+            ('scalar', 'scalar') : lambda a,b: binop(ZIPWITH, 'add', [a, b]),
+        }
+
+    }
+}
+
+def build_module(name, ns):
+    mod = imp.new_module(name)
+    for fname, table in ns.iteritems():
+        setattr(mod, fname, match(fname, table))
+    sys.modules[name] = mod
+    return mod
+
+#------------------------------------------------------------------------
+# Docstrings
+#------------------------------------------------------------------------
 
 docs = {
     'array'  : 'A vector value',
@@ -109,8 +137,22 @@ def kernel(kind, name, args):
 
     return Value(retty, logic)
 
+def match(fname, table):
+    # need error handling and arity-check here, but for now just ignore
+    def matcher(*args):
+        sig = tuple([a.ty for a in args])
+        try:
+            return table[sig](*args)
+        except KeyError:
+            raise Exception("No matching implementation of '%s' for signature '%s'" % (fname, sig))
+    return matcher
+
 def oracle(expr):
     return random.choice(['numpy', 'blir', 'numexpr'])
+
+# This is normally called at modoule registration time, for
+# instruction purposese just here...
+build_module('basic', anon_ns['basic'])
 
 #------------------------------------------------------------------------
 # Proxy Nodes
@@ -123,7 +165,7 @@ class Node(object):
         global module
         ns = {}
 
-        for name, obj in module[ty].iteritems():
+        for name, obj in bound_ns[ty].iteritems():
             ns[name] = obj
 
         ns['ty'] = ty
@@ -216,6 +258,8 @@ class Terminal(Node):
 #------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    from basic import dot
+
     T = Terminal
 
     # ---------------------------------
@@ -241,7 +285,7 @@ if __name__ == '__main__':
     print dump((t+s).ast())
 
     print 'C'.center(80, '=')
-    print dump((a.dot(a) + a).ast())
+    print dump(dot(a,a).ast())
 
     print 'D'.center(80, '=')
     print dump((a+a+a+b).ast())
