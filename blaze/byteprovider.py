@@ -53,6 +53,34 @@ class NumPyBytes(ByteProvider):
         self.nbytes = self.buflen
         self.flags = READ | (WRITE if arr.flags.writeable else 0)
 
+
+# This is meant as a proof of concept!
+class BLZBytes(ByteProvider):
+    def __init__(self, arr):
+        self.original = arr
+
+    def nextchunk(self, blen=None, start=None, stop=None):
+        """Return chunks of size `blen` (in leading dimension).
+
+        Parameters
+        ----------
+        blen : int
+            The length, in rows, of the buffer that is returned.
+        start : int
+            Where the iterator starts.  The default is to start at the
+            beginning.
+        stop : int Where the iterator stops. The default is to stop at
+            the end.
+        
+        """
+        self.flags = READ   # the returned chunks are read-only
+        for chunk in blz.iterchunks(self.original, blen, start, stop):
+            self.buffer = memoryview(chunk)
+            self.buflen = len(chunk)
+            self.nbytes = self.buflen * self.original.dtype.size
+            yield
+
+
 class ValueBytes(ByteProvider):
     def __init__(self, tup_or_N):
         self.original = tup_or_N
