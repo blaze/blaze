@@ -12,11 +12,18 @@
 from concrete import NDArray
 
 
+
+# this is provisional...
+class NumpyDataDescriptor(object):
+    def __init__(self, sources, dtype, indexfactory):
+
+    def __getitem__(self, key):
+
 # note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "data"
 # and infer the indexer from the apropriate information in the numpy
 # array.
-def array(numpy_array_like):
+def array(numpy_array_like, datashape=None):
     from numpy import array
     dd = SimpleDataDescriptor(NpByteProvider(array(numpy_array_like)))
     return NDArray(dd)
