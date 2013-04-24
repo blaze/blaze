@@ -22,4 +22,5 @@ def array(numpy_array_like):
     return NDArray(dd)
 
 # for a temptative open function:
-def open
+def open(uri):
+    raise NotImplementedError
