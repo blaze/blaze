@@ -77,10 +77,10 @@ anon_ns = {
 }
 
 def build_module(name, ns):
-    mod = imp.new_module(name)
+    mod = imp.new_module('blaze.' + name)
     for fname, table in ns.iteritems():
         setattr(mod, fname, match(fname, table))
-    sys.modules[name] = mod
+    sys.modules['blaze.' + name] = mod
     return mod
 
 #------------------------------------------------------------------------
@@ -258,7 +258,8 @@ class Terminal(Node):
 #------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    from basic import dot
+    import blaze
+    from blaze.basic import dot
 
     T = Terminal
 
