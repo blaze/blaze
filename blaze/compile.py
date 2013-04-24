@@ -1,13 +1,7 @@
 """
 Simple kernel selection for execution
-
-- NumPy
-- Numexpr
-- Blir (experimental)
-
 """
 
-from astutils import dump
 from ast import NodeVisitor
 
 #------------------------------------------------------------------------
@@ -60,6 +54,13 @@ from cgen.kernels import *
 from cgen.utils import namesupply
 
 # --------------------------------
+
+blir_ops = {
+    'add' : '(%s + %s)',
+    'mul' : '(%s * %s)',
+    'sin' : 'sin(%s)',
+    'cos' : 'cos(%s)',
+}
 
 blir_kernels = {
     'add'  : '_out0[i0] = _in0[i0] + _in1[i0]',
@@ -126,9 +127,17 @@ def eval_blir(exp):
 # Python
 #------------------------------------------------------------------------
 
+import operator
+from functools import partial
+
+python_ops = {
+    'add' : operator.add,
+    'mul' : operator.mul,
+}
+
 python_kernels = {
-    'add' : '+',
-    'mul' : '+',
+    'add' : partial(map, operator.add),
+    'mul' : partial(map, operator.mul),
 }
 
 def eval_python(exp):
@@ -150,8 +159,8 @@ numpy_kernels = {
 }
 
 numpy_ops = {
-    '+' : np.add,
-    '*' : np.add,
+    'add' : np.add,
+    'mul' : np.multiply,
 }
 
 numpy_typemap = {
@@ -165,25 +174,10 @@ class NumpySubtree(NodeVisitor):
         self.args = []
 
     def visit_Kernel(self, node):
-        args = map(self.visit, node.args)
-
-        if node.kind == 1: # ZIPWITH
-            pass
-        else:
-            raise NotImplementedError
+        raise NotImplementedError
 
     def visit_Terminal(self, node):
-        if node.ty == 'array':
-            arr = node.src
-
-        elif node.ty == 'scalar':
-            typ = blir_typemap[node.ty]
-            arg = (IN, ScalarArg('%s' % typ))
-        else:
-            raise NotImplementedError
-
-        self.vars.append(node.src)
-        return arg
+        raise NotImplementedError
 
 def eval_numpy(exp):
     pass

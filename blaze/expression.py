@@ -49,13 +49,12 @@ OUTER   = 4
 # Mapping of types to namespaces
 bound_ns = {
     'array': {
-        '__add__'  : lambda self, other: kernel(ZIPWITH, 'add', [self, other]),
-        '__radd__' : lambda self, other: kernel(ZIPWITH, 'add', [other, self]),
+        '__add__'  : lambda a, b: kernel(ZIPWITH, 'add', [a, b]),
     },
 
     'scalar': {
-        '__add__'  : lambda self, other: binop('+', self, other),
-        '__mul__'  : lambda self, other: binop('*', self, other),
+        '__add__'  : lambda a, b: primop('add', [a, b]),
+        '__mul__'  : lambda a, b: primop('mul', [a, b]),
     }
 }
 
@@ -63,14 +62,33 @@ bound_ns = {
 anon_ns = {
     'basic': {
 
+        'abs' : {
+            ('array',)  : lambda a: kernel(ZIPWITH, 'abs', [a]),
+            ('scalar',) : lambda a: primop('abs', [a]),
+        },
+
+        'neg' : {
+            ('array',)  : lambda a: kernel(ZIPWITH, 'neg', [a]),
+            ('scalar',) : lambda a: primop('neg', [a]),
+        },
+
         'add' : {
-            ('array', 'array')   : lambda a,b: kernel(ZIPWITH, 'add', [a, b]),
-            ('scalar', 'scalar') : lambda a,b: binop(ZIPWITH, 'add', [a, b]),
+            ('array' , 'array')  : lambda a,b: kernel(ZIPWITH, 'add', [a, b]),
+            ('scalar', 'scalar') : lambda a,b: primop('add', a, b),
+        },
+
+        'sin' : {
+            ('array' ,) : lambda a: kernel(MAP, 'sin', [a]),
+            ('scalar',) : lambda a: primop('sin', [a]),
+        },
+
+        'cos' : {
+            ('array' ,) : lambda a: kernel(MAP, 'cos', [a]),
+            ('scalar',) : lambda a: primop('cos', [a]),
         },
 
         'dot' : {
-            ('array', 'array')   : lambda a,b: kernel(ZIPWITH, 'add', [a, b]),
-            ('scalar', 'scalar') : lambda a,b: binop(ZIPWITH, 'add', [a, b]),
+            ('array', 'array') : lambda a,b: kernel(ZIPWITH, 'dot', [a, b]),
         }
 
     }
@@ -119,14 +137,12 @@ def unit(val):
     else:
         raise NotImplementedError
 
-def binop(op, a, b):
-    """ Append a binary operation to the expression tree """
-    retty = unify(op,a,b)
+def primop(op, args):
+    """ Append a primitive operation to the expression tree """
+    operands = map(unit, args)
+    retty = unify(op, args[0], args[1])
+    logic = Op(op, operands)
 
-    a = unit(a)
-    b = unit(b)
-
-    logic = Op(op, a, b)
     return Value(retty, logic)
 
 def kernel(kind, name, args):
@@ -136,6 +152,10 @@ def kernel(kind, name, args):
     logic = Kernel(kind, name, operands)
 
     return Value(retty, logic)
+
+#------------------------------------------------------------------------
+# Matching
+#------------------------------------------------------------------------
 
 def match(fname, table):
     # need error handling and arity-check here, but for now just ignore
@@ -202,13 +222,11 @@ class Kernel(AST):
         self.args = args
 
 class Op(AST):
-    """ Ops are functions over scalars """
     _fields = ['op', 'left', 'right']
 
-    def __init__(self, op, lhs, rhs):
+    def __init__(self, op, operands):
         self.op = op
-        self.left = lhs
-        self.right = rhs
+        self.operands = operands
 
 #------------------------------------------------------------------------
 # Values
