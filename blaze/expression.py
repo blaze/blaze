@@ -68,7 +68,7 @@ anon_ns = {
         },
 
         'neg' : {
-            ('array',)  : lambda a: kernel(ZIPWITH, 'neg', [a]),
+            ('array',)  : lambda a: kernel(MAP, 'neg', [a]),
             ('scalar',) : lambda a: primop('neg', [a]),
         },
 
@@ -309,7 +309,7 @@ if __name__ == '__main__':
     print 'D'.center(80, '=')
     print dump((a+a+a+b).ast())
 
-    print (a+b).eval(engine='blir')
+    print (a+b*b).eval(engine='blir')
     print (a+b).eval(engine='numexpr')
 
     print a+1
