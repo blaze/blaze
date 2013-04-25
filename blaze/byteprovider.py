@@ -40,9 +40,9 @@ class ByteProvider(object):
         self.nbytes = self.buflen
         self.flags = CONST | READ
 
-    # Point self.buffer to the next chunk
-    #   limit any data-copy or file-read to N bytes
-    def nextchunk(self, N=defaultN):
+    # Iterate over chunks of the object
+    # limit any data-copy or file-read to N bytes
+    def iterchunks(self, N=defaultN):
         raise StopIteration
 
 class NumPyBytes(ByteProvider):
@@ -66,29 +66,6 @@ class BLZBytes(ByteProvider):
            'append': True,      # limited to the leading dimension
           } 
 
-    def nextchunk(self, blen=None, start=None, stop=None):
-        """Return chunks of size `blen` (in leading dimension).
-
-        Parameters
-        ----------
-        blen : int
-            The length, in rows, of the buffers that are returned.
-        start : int
-            Where the iterator starts.  The default is to start at the
-            beginning.
-        stop : int
-            Where the iterator stops. The default is to stop at the end.
-        
-        """
-        for chunk in blz.iterchunks(self.original, blen, start, stop):
-            self.buffer = memoryview(chunk)
-            self.buflen = len(chunk)
-            self.nbytes = self.buflen * self.original.dtype.size
-            yield  # hey, we have a new self.buffer ready for you
-
-    # The next is another iterator but:
-    # 1) Returns a buffer on each iteration, without bounding it to a variable
-    # 2) With a name that describer better what it does
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
 
