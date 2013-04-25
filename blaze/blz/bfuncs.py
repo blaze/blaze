@@ -349,14 +349,14 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
     obj.flush()
     return obj
 
-def iterblocks(barr, blen=None, start=0, stop=None):
+def iterblocks(bobj, blen=None, start=0, stop=None):
     """iterblocks(blen=None, start=0, stop=None)
 
     Iterate over blocks of size `blen`.
 
     Parameters
     ----------
-    barr : barray object
+    bobj : barray/btable object
         The BLZ array to be iterated over.
     blen : int
         The length of the block that is returned.
@@ -367,16 +367,37 @@ def iterblocks(barr, blen=None, start=0, stop=None):
     
     """
 
-    if blen is None:
-        blen = barr.chunklen
     if stop is None:
-        stop = len(barr)
-    for i in xrange(start, stop, blen):
-        buf = np.empty(blen, dtype=barr.dtype)
-        barr._getrange(i, blen, buf)
-        if i + blen > stop:
-            buf = buf[:stop - i]
-        yield buf
+        stop = len(bobj)
+    if isinstance(bobj, btable):
+        # A btable object
+        if blen is None:
+            # Get the minimum chunklen for every column
+            blen = min(col.chunklen for col in bobj.cols)
+        # Create intermediate buffers for columns in a dictarray
+        # (it is important that columns are contiguous)
+        cbufs = {}
+        for name, col in zip(bobj.names, bobj.cols):
+            cbufs[name] = np.empty(blen, dtype=col.dtype)
+        for i in xrange(start, stop, blen):
+            buf = np.empty(blen, dtype=bobj.dtype)
+            # Populate the column buffers and assign to the final buffer
+            for name, col in zip(bobj.names, bobj.cols):
+                col._getrange(i, blen, cbufs[name])
+                buf[name][:] = cbufs[name]
+            if i + blen > stop:
+                buf = buf[:stop - i]
+            yield buf
+    else:
+        # A barray object
+        if blen is None:
+            blen = bobj.chunklen
+        for i in xrange(start, stop, blen):
+            buf = np.empty(blen, dtype=bobj.dtype)
+            bobj._getrange(i, blen, buf)
+            if i + blen > stop:
+                buf = buf[:stop - i]
+            yield buf
 
 def walk(dir, classname=None, mode='a'):
     """walk(dir, classname=None, mode='a')
