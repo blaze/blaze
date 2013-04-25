@@ -64,7 +64,8 @@ class cols(object):
         self.update_meta()
 
     def __iter__(self):
-        return iter(self._cols)
+        """Return an iterator over the columns (not the names)."""
+        return self._cols.itervalues()
 
     def __len__(self):
         return len(self.names)

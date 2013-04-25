@@ -922,6 +922,59 @@ class iterTest(MayBeDiskTest, TestCase):
 class iterDiskTest(iterTest, TestCase):
     disk = True
 
+
+class iterchunksTest(TestCase):
+
+    def test00(self):
+        """Testing `iterchunks` method with no blen, no start, no stop"""
+        N = int(1e4)
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.iterblocks(t):
+            l += len(block)
+            s += block['f0'].sum()
+        self.assert_(l == N)
+        self.assert_(s == (N - 1) * (N / 2))  # as per Gauss summation formula
+        
+    def test01(self):
+        """Testing `iterchunks` method with no start, no stop"""
+        N, blen = int(1e4), 100
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.iterblocks(t, blen):
+            self.assert_(len(block) == blen)
+            l += len(block)
+            s += block['f0'].sum()
+        self.assert_(l == N)
+        self.assert_(s == (N - 1) * (N / 2))  # as per Gauss summation formula
+
+    def test02(self):
+        """Testing `iterchunks` method with no stop"""
+        N, blen = int(1e4), 100
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0.
+        for block in blz.iterblocks(t, blen, blen-1):
+            l += len(block)
+            s += block['f1'].sum()
+        self.assert_(l == (N - (blen - 1)))
+        self.assert_(s == (np.arange(blen-1, N, dtype='f8')*2).sum())
+
+    def test03(self):
+        """Testing `iterchunks` method with all parameters set"""
+        N, blen = int(1e4), 100
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.iterblocks(t, blen, blen-1, 3*blen+2):
+            l += len(block)
+            s += block['f2'].sum()
+        self.assert_(l == 2*blen + 3)
+        self.assert_(s == (np.arange(blen-1, 3*blen+2)*3).sum())
+
+
 ## Local Variables:
 ## mode: python
 ## py-indent-offset: 4
