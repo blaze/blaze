@@ -85,7 +85,7 @@ class BLZBytes(ByteProvider):
             buffer = memoryview(chunk)
             yield buffer
 
-    def __getitem__(self, object key):
+    def __getitem__(self, key):
         """__getitem__(self, key) -> values."""
         # Just defer this operation to the underlying BLZ object
         self.original[key]
