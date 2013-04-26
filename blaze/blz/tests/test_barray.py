@@ -1332,6 +1332,53 @@ class persistenceTest(MayBeDiskTest, TestCase):
         self.assert_(cn[N+1] == 3)
 
 
+class iterchunksTest(TestCase):
+
+    def test00(self):
+        """Testing `iterchunks` method with no blen, no start, no stop"""
+        N = int(1e4)
+        a = blz.fromiter(xrange(N), dtype=np.float64, count=N)
+        l, s = 0, 0
+        for block in blz.iterblocks(a):
+            l += len(block)
+            s += block.sum()
+        self.assert_(l == N)
+        self.assert_(s == (N - 1) * (N / 2))  # as per Gauss summation formula
+
+    def test01(self):
+        """Testing `iterchunks` method with no start, no stop"""
+        N, blen = int(1e4), 100
+        a = blz.fromiter(xrange(N), dtype=np.float64, count=N)
+        l, s = 0, 0
+        for block in blz.iterblocks(a, blen):
+            self.assert_(len(block) == blen)
+            l += len(block)
+            s += block.sum()
+        self.assert_(l == N)
+
+    def test02(self):
+        """Testing `iterchunks` method with no stop"""
+        N, blen = int(1e4), 100
+        a = blz.fromiter(xrange(N), dtype=np.float64, count=N)
+        l, s = 0, 0
+        for block in blz.iterblocks(a, blen, blen-1):
+            l += len(block)
+            s += block.sum()
+        self.assert_(l == (N - (blen - 1)))
+        self.assert_(s == np.arange(blen-1, N).sum())
+
+    def test03(self):
+        """Testing `iterchunks` method with all parameters set"""
+        N, blen = int(1e4), 100
+        a = blz.fromiter(xrange(N), dtype=np.float64, count=N)
+        l, s = 0, 0
+        for block in blz.iterblocks(a, blen, blen-1, 3*blen+2):
+            l += len(block)
+            s += block.sum()
+        self.assert_(l == 2*blen + 3)
+        self.assert_(s == np.arange(blen-1, 3*blen+2).sum())
+
+
 ## Local Variables:
 ## mode: python
 ## coding: utf-8 

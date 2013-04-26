@@ -40,9 +40,9 @@ class ByteProvider(object):
         self.nbytes = self.buflen
         self.flags = CONST | READ
 
-    # Point self.buffer to the next chunk
-    #   limit any data-copy or file-read to N bytes
-    def nextchunk(self, N=defaultN):
+    # Iterate over chunks of the object
+    # limit any data-copy or file-read to N bytes
+    def iterchunks(self, N=defaultN):
         raise StopIteration
 
 class NumPyBytes(ByteProvider):
@@ -52,6 +52,48 @@ class NumPyBytes(ByteProvider):
         self.buflen = arr.nbytes
         self.nbytes = self.buflen
         self.flags = READ | (WRITE if arr.flags.writeable else 0)
+
+
+# This is meant as a proof of concept!
+class BLZBytes(ByteProvider):
+    def __init__(self, arr):
+        self.original = arr
+        self.flags = READ   # the returned data will be read-only
+        # The capabilities that this ByteProvider supports
+        self.capabilities = {
+           'iterchunks': True,  # limited to the leading dimension
+           'getitem': True,     # fully supported, even for inner dims
+           'append': True,      # limited to the leading dimension
+          } 
+
+    def iterchunks(self, blen=None, start=None, stop=None):
+        """Return chunks of size `blen` (in leading dimension).
+
+        Parameters
+        ----------
+        blen : int
+            The length, in rows, of the buffers that are returned.
+        start : int
+            Where the iterator starts.  The default is to start at the
+            beginning.
+        stop : int
+            Where the iterator stops. The default is to stop at the end.
+        
+        """
+        self.flags = READ   # the returned chunks are meant to be read-only
+        for chunk in blz.iterchunks(self.original, blen, start, stop):
+            buffer = memoryview(chunk)
+            yield buffer
+
+    def __getitem__(self, object key):
+        """__getitem__(self, key) -> values."""
+        # Just defer this operation to the underlying BLZ object
+        self.original[key]
+
+    def append(self, buffer):
+        """Append a buffer at the end of the first dimension """
+        self.original.append(buffer)
+
 
 class ValueBytes(ByteProvider):
     def __init__(self, tup_or_N):
