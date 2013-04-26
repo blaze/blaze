@@ -105,11 +105,6 @@ class IGetElement:
         raise NotImplemented
 
             @abc.abstractproperty
-    def dshape(self):
-        """
-        Returns the datashape for the data behind this datadescriptor.
-        """
-        raise NotImplemented
 
 class IElementIter:
     """
