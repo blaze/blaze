@@ -472,7 +472,7 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
             yield buf
             buf = np.empty(blen, dtype=dtype)
             nrow = 0
-     yield buf[:nrow]
+    yield buf[:nrow]
 
 def walk(dir, classname=None, mode='a'):
     """walk(dir, classname=None, mode='a')
