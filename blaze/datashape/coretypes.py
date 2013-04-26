@@ -398,11 +398,11 @@ class CType(DataShape):
         return Type._registry[s]
 
     @classmethod
-    def from_dtype(self, dt):
+    def from_numpy_dtype(self, dt):
         """
         From Numpy dtype.
 
-        >>> CType.from_dtype(dtype('int32'))
+        >>> CType.from_numpy_dtype(dtype('int32'))
         int32
         """
         return Type._registry[dt.name]
@@ -837,7 +837,7 @@ def promote_cvals(*vals):
     """
 
     promoted = np.result_type(*vals)
-    datashape = CType.from_dtype(promoted)
+    datashape = CType.from_numpy_dtype(promoted)
     return datashape
 
 #------------------------------------------------------------------------
@@ -941,10 +941,10 @@ def from_numpy(shape, dt):
     elif dtype.kind == 'U':
         measure = String(dtype.itemsize / 4, 'U8')
     elif dtype.fields:
-        rec = [(a,CType.from_dtype(b[0])) for a,b in dtype.fields.items()]
+        rec = [(a,CType.from_numpy_dtype(b[0])) for a,b in dtype.fields.items()]
         measure = Record(rec)
     else:
-        measure = CType.from_dtype(dtype)
+        measure = CType.from_numpy_dtype(dtype)
 
     if shape == ():
         return measure
