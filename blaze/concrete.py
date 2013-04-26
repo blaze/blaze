@@ -2,7 +2,7 @@
 #
 # A concrete array is constructed from a Data Descriptor Object which handles the
 #  indexing and basic interpretation of bytes
-# 
+#
 
 from datashape import dshape
 from desc import DataDescriptor

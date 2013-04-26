@@ -16,12 +16,13 @@ Many things are not included here:
 
 """
 
-import numpy as np
-
-import ast
+import imp
+import sys
 import random
 
-from _ast import AST
+import numpy as np
+
+from ast import AST
 from astutils import dump
 
 #------------------------------------------------------------------------
@@ -44,20 +45,65 @@ OUTER   = 4
 # extend the dictionary of types and functions instead of having to
 # subclassing the Blaze internals.
 
-module = {
+
+# Mapping of types to namespaces
+bound_ns = {
     'array': {
-        '__add__'  : lambda self, other: kernel(ZIPWITH, 'add', [self, other]),
-        '__radd__' : lambda self, other: kernel(ZIPWITH, 'add', [other, self]),
-        'dot'      : lambda self, other: kernel(REDUCE, 'dot', [self, other]),
+        '__add__'  : lambda a, b: kernel(ZIPWITH, 'add', [a, b]),
     },
 
     'scalar': {
-        '__add__'  : lambda self, other: binop('+', self, other),
-        '__mul__'  : lambda self, other: binop('*', self, other),
-        #'__radd__' : lambda self, other: binop('+', other, self),
-        #'__rmul__' : lambda self, other: binop('*', other, self),
+        '__add__'  : lambda a, b: primop('add', [a, b]),
+        '__mul__'  : lambda a, b: primop('mul', [a, b]),
     }
 }
+
+# Mapping of functions to lookup tables over argument types
+anon_ns = {
+    'basic': {
+
+        'abs' : {
+            ('array',)  : lambda a: kernel(ZIPWITH, 'abs', [a]),
+            ('scalar',) : lambda a: primop('abs', [a]),
+        },
+
+        'neg' : {
+            ('array',)  : lambda a: kernel(MAP, 'neg', [a]),
+            ('scalar',) : lambda a: primop('neg', [a]),
+        },
+
+        'add' : {
+            ('array' , 'array')  : lambda a,b: kernel(ZIPWITH, 'add', [a, b]),
+            ('scalar', 'scalar') : lambda a,b: primop('add', a, b),
+        },
+
+        'sin' : {
+            ('array' ,) : lambda a: kernel(MAP, 'sin', [a]),
+            ('scalar',) : lambda a: primop('sin', [a]),
+        },
+
+        'cos' : {
+            ('array' ,) : lambda a: kernel(MAP, 'cos', [a]),
+            ('scalar',) : lambda a: primop('cos', [a]),
+        },
+
+        'dot' : {
+            ('array', 'array') : lambda a,b: kernel(ZIPWITH, 'dot', [a, b]),
+        }
+
+    }
+}
+
+def build_module(name, ns):
+    mod = imp.new_module('blaze.' + name)
+    for fname, table in ns.iteritems():
+        setattr(mod, fname, match(fname, table))
+    sys.modules['blaze.' + name] = mod
+    return mod
+
+#------------------------------------------------------------------------
+# Docstrings
+#------------------------------------------------------------------------
 
 docs = {
     'array'  : 'A vector value',
@@ -91,14 +137,12 @@ def unit(val):
     else:
         raise NotImplementedError
 
-def binop(op, a, b):
-    """ Append a binary operation to the expression tree """
-    retty = unify(op,a,b)
+def primop(op, args):
+    """ Append a primitive operation to the expression tree """
+    operands = map(unit, args)
+    retty = unify(op, args[0], args[1])
+    logic = Op(op, operands)
 
-    a = unit(a)
-    b = unit(b)
-
-    logic = Op(op, a, b)
     return Value(retty, logic)
 
 def kernel(kind, name, args):
@@ -109,8 +153,26 @@ def kernel(kind, name, args):
 
     return Value(retty, logic)
 
+#------------------------------------------------------------------------
+# Matching
+#------------------------------------------------------------------------
+
+def match(fname, table):
+    # need error handling and arity-check here, but for now just ignore
+    def matcher(*args):
+        sig = tuple([a.ty for a in args])
+        try:
+            return table[sig](*args)
+        except KeyError:
+            raise Exception("No matching implementation of '%s' for signature '%s'" % (fname, sig))
+    return matcher
+
 def oracle(expr):
     return random.choice(['numpy', 'blir', 'numexpr'])
+
+# This is normally called at modoule registration time, for
+# instruction purposese just here...
+build_module('basic', anon_ns['basic'])
 
 #------------------------------------------------------------------------
 # Proxy Nodes
@@ -123,7 +185,7 @@ class Node(object):
         global module
         ns = {}
 
-        for name, obj in module[ty].iteritems():
+        for name, obj in bound_ns[ty].iteritems():
             ns[name] = obj
 
         ns['ty'] = ty
@@ -160,13 +222,11 @@ class Kernel(AST):
         self.args = args
 
 class Op(AST):
-    """ Ops are functions over scalars """
     _fields = ['op', 'left', 'right']
 
-    def __init__(self, op, lhs, rhs):
+    def __init__(self, op, operands):
         self.op = op
-        self.left = lhs
-        self.right = rhs
+        self.operands = operands
 
 #------------------------------------------------------------------------
 # Values
@@ -216,6 +276,9 @@ class Terminal(Node):
 #------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    import blaze
+    from blaze.basic import dot
+
     T = Terminal
 
     # ---------------------------------
@@ -241,12 +304,12 @@ if __name__ == '__main__':
     print dump((t+s).ast())
 
     print 'C'.center(80, '=')
-    print dump((a.dot(a) + a).ast())
+    print dump(dot(a,a).ast())
 
     print 'D'.center(80, '=')
     print dump((a+a+a+b).ast())
 
-    print (a+b).eval(engine='blir')
+    print (a+b*b).eval(engine='blir')
     print (a+b).eval(engine='numexpr')
 
     print a+1
