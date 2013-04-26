@@ -62,6 +62,23 @@ class big_with_listTest(with_listTest, TestCase):
     N = 10000
 
 
+class wherechunksTest(TestCase):
+
+    def test00(self):
+        """Testing `wherechunks` method with only an expression"""
+        N = int(1e4)
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.whereblocks(t, 'f1 < f2'):
+            l += len(block)
+            s += block['f0'].sum()
+        print "l:", l
+        self.assert_(l == N - 1)
+        self.assert_(s == (N - 1) * (N / 2))  # Gauss summation formula
+        
+
+
 ## Local Variables:
 ## mode: python
 ## py-indent-offset: 4

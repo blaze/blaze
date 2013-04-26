@@ -1,4 +1,4 @@
-import parser
+#import parser
 from coretypes import *
 
 def dopen(fname):
