@@ -8,10 +8,12 @@ from datashape import dshape
 from desc import DataDescriptor
 
 # An NDArray is a
-#   Sequence of Bytes (where are the bytes)
-#   Index Object (how do I get to them)
-#   Data Shape Object (what are the bytes? how do I interpret them)
-#   Meta-data (axis and dimension labels and other internal meta-data, internal dictionary)
+#   DataDescriptor
+#       Sequence of Bytes (where are the bytes)
+#       Index Object (how do I get to them)
+#       Data Shape Object (what are the bytes? how do I interpret them)
+#
+#   axis and dimension labels 
 #   user-defined meta-data (whatever are needed --- provenance propagation)
 class NDArray(object):
     def __init__(self, data, **user):
@@ -21,6 +23,9 @@ class NDArray(object):
         self.labels = [None]*self.data.nd
         self.user = user
         # Need to inject attributes on the NDArray depending on dshape attributes
+
+"""
+These should be functions
 
     @staticmethod
     def fromfiles(list_of_files, converters):
@@ -56,3 +61,5 @@ class NDArray(object):
 
     def __getitem__(self, key):
         raise NotImplementedError
+"""
+        

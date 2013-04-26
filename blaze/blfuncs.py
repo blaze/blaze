@@ -71,9 +71,10 @@ class BlazeFunc(object):
 
 
     def __call__(self, *args):
-        # convert inputs to Concrete Arrays
-        # 
+        # convert inputs to Arrays
+        # build an AST and return Arrays with a Deferred Data Descriptor
 
+        # The eval method of the NDArray does the actual computation
 
     
         
