@@ -12,6 +12,9 @@ test: build
 parser: cleanparser
 	python -m blaze.blir.parser
 
+prelude:
+	cd blaze/blir/; clang -S -emit-llvm prelude.c
+
 cleanparser:
 	-rm -f blaze/blir/byacc.py
 	-rm -f blaze/blir/byacc.pyc
