@@ -44,17 +44,11 @@ char* append(char* x, char* y)
 
 int strHead(char* str)
 {
-    if (str[0]=='\0') {
-        ERROR("Can't take the head of an empty string");
-    }
     return (int)(str[0]);
 }
 
 char* strTail(char* str)
 {
-    if (str[0]=='\0') {
-        ERROR("Can't take the tail of an empty string");
-    }
     return str+1;
 }
 
