@@ -22,7 +22,7 @@ class NumPyGetDescriptor(IGetDescriptor):
         idx = tuple([operator.index(i) for i in idx])
         return NumPyDataDescriptor(self.npyarr[idx])
 
-class NumPyDesciptorIter(IDescriptorIter):
+class NumPyDescriptorIter(IDescriptorIter):
     def __init__(self, npyarr):
         assert npyarr.ndim > 0
         self.npyarr = npyarr
