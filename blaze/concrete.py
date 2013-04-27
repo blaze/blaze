@@ -16,12 +16,13 @@ from desc import DataDescriptor
 #   axis and dimension labels 
 #   user-defined meta-data (whatever are needed --- provenance propagation)
 class NDArray(object):
-    def __init__(self, data, **user):
+    def __init__(self, data, axes=None, labels=None, user={})
         assert isinstance(data, DataDescriptor)
         self.data = data
-        self.axes = ['']*self.data.nd
-        self.labels = [None]*self.data.nd
+        self.axes = axes or ['']*self.data.nd
+        self.labels = labels or [None]*self.data.nd
         self.user = user
+
         # Need to inject attributes on the NDArray depending on dshape attributes
 
 """
