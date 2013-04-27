@@ -314,6 +314,9 @@ class DataShape(Mono):
         else:
             raise TypeError('Cannot compare non-datashape type %s to datashape' % type(other))
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
@@ -494,6 +497,8 @@ class Fixed(Atom):
     def __eq__(self, other):
         if type(other) is Fixed:
             return self.val == other.val
+        elif isinstance(other, (int, long)):
+            return self.val == other
         else:
             return False
 

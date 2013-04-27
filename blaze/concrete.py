@@ -1,11 +1,12 @@
+from __future__ import absolute_import
 # This file defines the Concrete Array --- a leaf node in the expression graph
 #
 # A concrete array is constructed from a Data Descriptor Object which handles the
 #  indexing and basic interpretation of bytes
 #
 
-from datashape import dshape
-#from datadescriptor import DataDescriptor
+from .datashape import dshape
+from .datadescriptor import DataDescriptor
 
 # An NDArray is a
 #   DataDescriptor
