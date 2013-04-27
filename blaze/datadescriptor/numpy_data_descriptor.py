@@ -9,7 +9,8 @@ import numpy as np
 
 class NumPyGetDescriptor(IGetDescriptor):
     def __init__(self, npyarr, nindex):
-        assert nindex <= npyarr.ndim
+        if nindex > npyarr.ndim:
+            raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
         self.npyarr = npyarr
 
@@ -18,13 +19,16 @@ class NumPyGetDescriptor(IGetDescriptor):
         return self._nindex
 
     def get(self, idx):
-        assert len(idx) == self.nindex
+        if len(idx) != self.nindex:
+            raise IndexError('Incorrect number of indices (got %d, require %d)' %
+                           (len(idx), self.nindex))
         idx = tuple([operator.index(i) for i in idx])
         return NumPyDataDescriptor(self.npyarr[idx])
 
 class NumPyDescriptorIter(IDescriptorIter):
     def __init__(self, npyarr):
-        assert npyarr.ndim > 0
+        if npyarr.ndim <= 0:
+            raise IndexError('Need at least one dimension for iteration')
         self.npyarr = npyarr
         self._index = 0
         self._len = self.npyarr.shape[0]
@@ -42,7 +46,8 @@ class NumPyDescriptorIter(IDescriptorIter):
 
 class NumPyGetElement(IGetElement):
     def __init__(self, npyarr, nindex):
-        assert nindex <= npyarr.ndim
+        if nindex > npyarr.ndim:
+            raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
         self.npyarr = npyarr
 
@@ -51,7 +56,9 @@ class NumPyGetElement(IGetElement):
         return self._nindex
 
     def get(self, idx):
-        assert len(idx) == self.nindex
+        if len(idx) != self.nindex:
+            raise IndexError('Incorrect number of indices (got %d, require %d)' %
+                           (len(idx), self.nindex))
         idx = tuple([operator.index(i) for i in idx])
         x = self.npyarr[idx]
         # Make it C-contiguous and in native byte order
@@ -62,7 +69,8 @@ class NumPyGetElement(IGetElement):
 
 class NumPyElementIter(IElementIter):
     def __init__(self, npyarr):
-        assert npyarr.ndim > 0
+        if npyarr.ndim <= 0:
+            raise IndexError('Need at least one dimension for iteration')
         self.npyarr = npyarr
         self._index = 0
         self._len = self.npyarr.shape[0]
@@ -84,6 +92,9 @@ class NumPyElementIter(IElementIter):
             raise StopIteration
 
 class NumPyDataDescriptor(DataDescriptor):
+    """
+    A Blaze data descriptor which exposes a NumPy array.
+    """
     def __init__(self, npyarr):
         self.npyarr = npyarr
         self._dshape = coretypes.from_numpy(self.npyarr.shape, self.npyarr.dtype)

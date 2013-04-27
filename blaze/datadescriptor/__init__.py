@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
-from .datadescriptor import DataDescriptor, IGetDescriptor, \
+from .data_descriptor import DataDescriptor, IGetDescriptor, \
                 IDescriptorIter, IGetElement, IElementIter
 
-from .numpydatadescriptor import NumPyDataDescriptor
+from .numpy_data_descriptor import NumPyDataDescriptor
+from .cat_data_descriptor import CatDataDescriptor

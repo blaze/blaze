@@ -5,6 +5,7 @@ This defines the DataShape type system. The unification of shape and
 dtype.
 """
 
+import operator
 import numpy as np
 import datetime
 
@@ -480,6 +481,9 @@ class Fixed(Atom):
         self.val = i
         self.parameters = [self.val]
 
+    def __index__(self):
+        return self.val
+
     def __int__(self):
         return self.val
 
@@ -839,6 +843,38 @@ def promote_cvals(*vals):
     promoted = np.result_type(*vals)
     datashape = CType.from_numpy_dtype(promoted)
     return datashape
+
+#------------------------------------------------------------------------
+# Utility Functions
+#------------------------------------------------------------------------
+
+def cat_dshapes(dslist):
+    """
+    Concatenates a list of dshapes together along
+    the first axis. Raises an error if there is
+    a mismatch along another axis or the measures
+    are different.
+
+    Requires that the leading dimension be a known
+    size for all data shapes.
+    TODO: Relax this restriction to support
+          streaming dimensions.
+    """
+    if len(dslist) == 0:
+        raise ValueError('Cannot concatenate an empty list of dshapes')
+    elif len(dslist) == 1:
+        return dslist[0]
+
+    outer_dim_size = operator.index(dslist[0][0])
+    inner_ds = dslist[0][1:]
+    for ds in dslist[1:]:
+        outer_dim_size += operator.index(ds[0])
+        if ds[1:] != inner_dshape:
+            raise ValueError(('The datashapes to concatenate much all match after'
+                            ' the first dimension (%s vs %s)') %
+                            (inner_dshape, ds[1:]))
+    return coretypes.DataShape([Fixed(outer_dim_size)] + inner_dshape)
+
 
 #------------------------------------------------------------------------
 # Python Compatibility
