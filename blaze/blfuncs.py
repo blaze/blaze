@@ -104,7 +104,7 @@ class BlazeFunc(object):
 
         # Simple Case
         if not any(isinstance(arg.data, BlazeFuncDescriptor) for arg in args):
-            self.kernel = 
+            kernel = None
         blfuncs = []
         for arg in args:
             if isinstance(arg.data, BlazeFuncDescriptor):
