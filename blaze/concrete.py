@@ -5,7 +5,7 @@
 #
 
 from datashape import dshape
-from desc import DataDescriptor
+#from datadescriptor import DataDescriptor
 
 # An NDArray is a
 #   DataDescriptor
@@ -16,7 +16,7 @@ from desc import DataDescriptor
 #   axis and dimension labels 
 #   user-defined meta-data (whatever are needed --- provenance propagation)
 class NDArray(object):
-    def __init__(self, data, axes=None, labels=None, user={})
+    def __init__(self, data, axes=None, labels=None, user={}):
         assert isinstance(data, DataDescriptor)
         self.data = data
         self.axes = axes or ['']*self.data.nd

@@ -33,11 +33,12 @@ def cat_dshapes(dslist):
 def broadcastable(dslist, ranks=None, rankconnect=[]):
     """Return output (outer) shape if datashapes are broadcastable.
 
-    The default is to assume broadcasting over a scalar operation.  If the kernel 
-    to be applied takes arrays as arguments, then rank and rank-connect provide the
-    inner-shape information with ranks a list of integers indicating the kernel rank
-    required for each argument and rank-connect a list of sets of tuples where each
-    tuple is a (argument, inner-dim) 
+    The default is to assume broadcasting over a scalar operation.  
+    However, if the kernel to be applied takes arrays as arguments, 
+    then rank and rank-connect provide the inner-shape information with 
+    ranks a list of integers indicating the kernel rank of each argument
+    and rank-connect a list of sets of tuples where each set contains the 
+    dimensions that must match and each tuple is (argument #, inner-dim #)
     """
     if ranks is None:
         ranks = [0]*len(dslist)
@@ -55,12 +56,25 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
                   for dim1, dim2 in zip(shape1, shape2)):
             raise TypeError("Outer-dimensions are not broadcastable to the same shape")
 
+    outshape = tuple(map(max, zip(*outshapes)))
+
+    for connect in rankconnect:
+        for (arg1, dim1), (arg2,dim2) in itertools.combinations(connect, 2):
+            if (inshapes[arg1][dim1] != inshapes[arg2][dim2]):
+                raise TypeError("Inner dimensions do not match in " + 
+                                "argument %d and argument %d" % (arg1, arg2))
+
+    return outshape
+
 
 def test_cat_dshapes():
     pass
 
 def test_broadcastable():
-    dslist = []
+    from blaze.datashape import dshape
+    dslist = [dshape('10,20,30,int32'), dshape('20,30,int32'), dshape('int32')]
+    outshape = broadcastable(dslist, ranks=[1,1,0])
+    assert outshape == (10,20)
 
 def test():
     test_cat_dshapes()

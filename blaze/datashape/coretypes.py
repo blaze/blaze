@@ -383,12 +383,12 @@ class CType(DataShape):
         if size:
             assert 1 <= size < (2**23-1)
             label = ctype + str(size)
-            self.parameters = [label]
+            self.parameters = (label,)
             self.name = label
             self.byteorder = byteorder or LITTLE
             Type.register(label, self)
         else:
-            self.parameters = [ctype]
+            self.parameters = (ctype,)
             self.name = ctype
             Type.register(ctype, self)
 
@@ -483,7 +483,7 @@ class Fixed(Atom):
             raise ValueError, 'Fixed dimensions must be positive'
 
         self.val = i
-        self.parameters = [self.val]
+        self.parameters = (self.val,)
 
     def __index__(self):
         return self.val
@@ -520,7 +520,7 @@ class TypeVar(Atom):
         if symbol.startswith("'"):
             symbol = symbol[1:]
         self.symbol = symbol
-        self.parameters = [symbol]
+        self.parameters = (symbol,)
 
     def __str__(self):
         # Use the F# notation
@@ -553,7 +553,7 @@ class Range(Atom):
 
         if a and b:
             assert self.a < self.b, 'Must have upper < lower'
-        self.parameters = [self.a, self.b]
+        self.parameters = (self.a, self.b)
 
     @property
     def upper(self):
@@ -600,7 +600,7 @@ class Either(Atom):
     def __init__(self, a, b):
         self.a = a
         self.b = b
-        self.parameters = [a,b]
+        self.parameters = (a,b)
 
 class Option(Atom):
     """
@@ -611,7 +611,7 @@ class Option(Atom):
     cls = MEASURE
 
     def __init__(self, ty):
-        self.parameters = [ty]
+        self.parameters = (ty,)
 
 class Factor(Atom):
     """
@@ -645,7 +645,7 @@ class Record(DataShape):
         self.__d = dict(fields)
         self.__k = [f[0] for f in fields]
         self.__v = [f[1] for f in fields]
-        self.parameters = [fields]
+        self.parameters = (fields,)
 
     @property
     def fields(self):
@@ -957,7 +957,7 @@ def from_numpy(shape, dt):
     if shape == ():
         return measure
     else:
-        return DataShape(parameters=(map(Fixed, shape)+[measure]))
+        return DataShape(parameters=(map(Fixed, shape)+(measure,)))
 
 def from_char(c):
     dtype = np.typeDict[c]
