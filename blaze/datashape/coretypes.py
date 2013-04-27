@@ -869,11 +869,11 @@ def cat_dshapes(dslist):
     inner_ds = dslist[0][1:]
     for ds in dslist[1:]:
         outer_dim_size += operator.index(ds[0])
-        if ds[1:] != inner_dshape:
+        if ds[1:] != inner_ds:
             raise ValueError(('The datashapes to concatenate much all match after'
                             ' the first dimension (%s vs %s)') %
-                            (inner_dshape, ds[1:]))
-    return coretypes.DataShape([Fixed(outer_dim_size)] + inner_dshape)
+                            (inner_ds, ds[1:]))
+    return DataShape([Fixed(outer_dim_size)] + list(inner_ds))
 
 
 #------------------------------------------------------------------------
