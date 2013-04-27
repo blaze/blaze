@@ -3,46 +3,19 @@ import operator
 
 from blaze import dshape
 from blaze.datashape import coretypes
-from . import DataDescriptor, IGetDescriptor, \
-                IDescriptorIter, IGetElement, IElementIter
+from . import DataDescriptor, IGetElement, IElementIter
 import numpy as np
 
-class NumPyGetDescriptor(IGetDescriptor):
-    def __init__(self, npyarr, nindex):
-        if nindex > npyarr.ndim:
-            raise IndexError('Cannot have more indices than dimensions')
-        self._nindex = nindex
-        self.npyarr = npyarr
-
-    @property
-    def nindex(self):
-        return self._nindex
-
-    def get(self, idx):
-        if len(idx) != self.nindex:
-            raise IndexError('Incorrect number of indices (got %d, require %d)' %
-                           (len(idx), self.nindex))
-        idx = tuple([operator.index(i) for i in idx])
-        return NumPyDataDescriptor(self.npyarr[idx])
-
-class NumPyDescriptorIter(IDescriptorIter):
-    def __init__(self, npyarr):
-        if npyarr.ndim <= 0:
-            raise IndexError('Need at least one dimension for iteration')
-        self.npyarr = npyarr
-        self._index = 0
-        self._len = self.npyarr.shape[0]
-
-    def __len__(self):
-        return self._len
-
-    def __next__(self):
-        if self._index < self._len:
-            i = self._index
-            self._index = i + 1
-            return NumPyDataDescriptor(self.npyarr[i])
-        else:
-            raise StopIteration
+def numpy_descriptor_iter(npyarr):
+    if npyarr.ndim > 1:
+        for el in npyarr:
+            yield NumPyDataDescriptor(el)
+    else:
+        for i in range(npyarr.shape[0]):
+            # NumPy doesn't have a convenient way to avoid collapsing
+            # to a scalar, this is a way to avoid that
+            el = npyarr[...,np.newaxis][i].reshape(())
+            yield NumPyDataDescriptor(el)
 
 class NumPyGetElement(IGetElement):
     def __init__(self, npyarr, nindex):
@@ -96,6 +69,8 @@ class NumPyDataDescriptor(DataDescriptor):
     A Blaze data descriptor which exposes a NumPy array.
     """
     def __init__(self, npyarr):
+        if not isinstance(npyarr, np.ndarray):
+            raise TypeError('object is not a numpy array, has type %s' % type(npyarr))
         self.npyarr = npyarr
         self._dshape = coretypes.from_numpy(self.npyarr.shape, self.npyarr.dtype)
 
@@ -103,11 +78,24 @@ class NumPyDataDescriptor(DataDescriptor):
     def dshape(self):
         return self._dshape
 
-    def get_descriptor_interface(self, nindex):
-        return NumPyGetDescriptor(self.npyarr, nindex)
+    def __len__(self):
+        if self.npyarr.ndim > 0:
+            return self.npyarr.shape[0]
+        else:
+            raise IndexError('Cannot get the length of a zero-dimensional array')
 
-    def descriptor_iter_interface(self):
-        return NumPyDescriptorIter(self.npyarr)
+    def __getitem__(self, key):
+        # Just integer indices (no slices) for now
+        if not isinstance(key, tuple):
+            key = (key,)
+        key = tuple([operator.index(i) for i in key])
+        if len(key) == self.npyarr.ndim:
+            return NumPyDataDescriptor(self.npyarr[...,np.newaxis][key].reshape(()))
+        else:
+            return NumPyDataDescriptor(self.npyarr[key])
+
+    def __iter__(self):
+        return numpy_descriptor_iter(self.npyarr)
 
     def get_element_interface(self, nindex):
         return NumPyGetElement(self.npyarr, nindex)

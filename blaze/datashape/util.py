@@ -1,6 +1,25 @@
+from __future__ import absolute_import
+
+__all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable']
+            
+import operator
+from .coretypes import DataShape, Fixed
+
 #------------------------------------------------------------------------
 # Utility Functions for DataShapes
 #------------------------------------------------------------------------
+
+def dopen(fname):
+    contents = open(fname).read()
+    return parser.parse_extern(contents)
+
+def dshape(o):
+    if isinstance(o, str):
+        return parser.parse(o)
+    elif isinstance(o, DataShape):
+        return o
+    else:
+        raise TypeError('Cannot create dshape from object of type %s' % type(o))
 
 def cat_dshapes(dslist):
     """
