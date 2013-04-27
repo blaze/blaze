@@ -267,8 +267,8 @@ class String(Mono):
 #   - Datashape
 
 class DataShape(Mono):
-    """ The Datashape class, implementation for generic composite
-    datashape objects """
+    """The Datashape class, implementation for generic composite
+    datashape objects"""
 
     __metaclass__ = Type
     composite = False
@@ -321,6 +321,10 @@ class DataShape(Mono):
     @property
     def shape(self):
         return self.parameters[:-1]
+
+    @property
+    def measure(self):
+        return self.parameters[-1]
 
     # Alternative constructors
     # ------------------------
@@ -843,38 +847,6 @@ def promote_cvals(*vals):
     promoted = np.result_type(*vals)
     datashape = CType.from_numpy_dtype(promoted)
     return datashape
-
-#------------------------------------------------------------------------
-# Utility Functions
-#------------------------------------------------------------------------
-
-def cat_dshapes(dslist):
-    """
-    Concatenates a list of dshapes together along
-    the first axis. Raises an error if there is
-    a mismatch along another axis or the measures
-    are different.
-
-    Requires that the leading dimension be a known
-    size for all data shapes.
-    TODO: Relax this restriction to support
-          streaming dimensions.
-    """
-    if len(dslist) == 0:
-        raise ValueError('Cannot concatenate an empty list of dshapes')
-    elif len(dslist) == 1:
-        return dslist[0]
-
-    outer_dim_size = operator.index(dslist[0][0])
-    inner_ds = dslist[0][1:]
-    for ds in dslist[1:]:
-        outer_dim_size += operator.index(ds[0])
-        if ds[1:] != inner_ds:
-            raise ValueError(('The datashapes to concatenate must all match after'
-                            ' the first dimension (%s vs %s)') %
-                            (inner_ds, ds[1:]))
-    return DataShape([Fixed(outer_dim_size)] + list(inner_ds))
-
 
 #------------------------------------------------------------------------
 # Python Compatibility
