@@ -104,8 +104,6 @@ class IGetElement:
         """
         raise NotImplemented
 
-            @abc.abstractproperty
-
 class IElementIter:
     """
     In interface for iterating over the outermost dimension of a data descriptor.
