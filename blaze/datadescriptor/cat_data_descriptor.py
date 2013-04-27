@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import operator
+import bisect
 
 from blaze import dshape
 from blaze.datashape import coretypes
@@ -8,25 +9,44 @@ from . import DataDescriptor, IGetDescriptor, \
 
 class CatGetDescriptor(IGetDescriptor):
     def __init__(self, catdd, nindex):
-        assert nindex <= catdd.ndim
+        if nindex > catdd._ndim:
+            raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
-        self.catdd = catdd
+        self._boundary_index = catdd._boundary_index
+        self._gdlist = [dd.get_descriptor_interface(nindex) for dd in catdd._ddlist]
 
     @property
     def nindex(self):
         return self._nindex
 
     def get(self, idx):
-        assert len(idx) == self.nindex
-        idx = tuple([operator.index(i) for i in idx])
-        return CatDataDescriptor(self.catdd[idx])
+        if len(idx) != self.nindex:
+            raise IndexError('Incorrect number of indices (got %d, require %d)' %
+                           (len(idx), self.nindex))
+        boundary_index = self._boundary_index
+        dim_size = boundary_index[-1]
+        idx0 = operator.index(idx[0])
+        # Determine which data descriptor in the list to use
+        if idx0 >= 0:
+            if idx0 >= dim_size:
+                raise IndexError('Index %d is out of range in dimension sized %d' %
+                                (idx0, dim_size))
+        else:
+            if idx0 < -dim_size:
+                raise IndexError('Index %d is out of range in dimension sized %d' %
+                                (idx0, dim_size))
+            idx0 += dim_size
+        i = bisect.bisect_right(boundary_index, idx0) - 1
+        print('idx0: %d, i: %d, idx: %s' % (idx0, i, idx))
+        # Call the i-th data descriptor to get the result
+        return self._gdlist[i].get([idx0 - boundary_index[i]] + idx[1:])
 
 class CatDescriptorIter(IDescriptorIter):
     def __init__(self, catdd):
         assert catdd.ndim > 0
-        self.catdd = catdd
+        self._catdd = catdd
         self._index = 0
-        self._len = self.catdd.shape[0]
+        self._len = self._catdd.shape[0]
 
     def __len__(self):
         return self._len
@@ -35,15 +55,16 @@ class CatDescriptorIter(IDescriptorIter):
         if self._index < self._len:
             i = self._index
             self._index = i + 1
-            return CatDataDescriptor(self.catdd[i])
+            return CatDataDescriptor(self._catdd[i])
         else:
             raise StopIteration
 
 class CatGetElement(IGetElement):
     def __init__(self, catdd, nindex):
-        assert nindex <= catdd.ndim
+        if nindex > catdd._ndim:
+            raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
-        self.catdd = catdd
+        self._catdd = catdd
 
     @property
     def nindex(self):
@@ -55,9 +76,9 @@ class CatGetElement(IGetElement):
 class CatElementIter(IElementIter):
     def __init__(self, catdd):
         assert catdd.ndim > 0
-        self.catdd = catdd
+        self._catdd = catdd
         self._index = 0
-        self._len = self.catdd.shape[0]
+        self._len = self._catdd.shape[0]
 
     def __len__(self):
         return self._len
@@ -80,10 +101,15 @@ class CatDataDescriptor(DataDescriptor):
         for dd in ddlist:
             if not isinstance(dd, DataDescriptor):
                 raise ValueError('Provided ddlist has an element which is not a data descriptor')
-        self.ddlist = ddlist
+        self._ddlist = ddlist
         self._dshape = coretypes.cat_dshapes([dd.dshape for dd in ddlist])
-        print 'cat dshape: ', self._dshape
-        # Create a list of 
+        self._ndim = len(self._dshape[:]) - 1
+        # Create a list of boundary indices
+        boundary_index = [0]
+        for dd in ddlist:
+            dim_size = operator.index(dd.dshape[0])
+            boundary_index.append(dim_size + boundary_index[-1])
+        self._boundary_index = boundary_index
  
     @property
     def dshape(self):
