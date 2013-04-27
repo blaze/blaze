@@ -86,20 +86,20 @@ class NumPyElementIter(IElementIter):
 class NumPyDataDescriptor(DataDescriptor):
     def __init__(self, npyarr):
         self.npyarr = npyarr
-        self._dshape = coretypes.from_numpy(self.npyarr.shape, self.dtype)
+        self._dshape = coretypes.from_numpy(self.npyarr.shape, self.npyarr.dtype)
 
     @property
     def dshape(self):
         return self._dshape
 
     def get_descriptor_interface(self, nindex):
-        return NumPyGetDescriptor(self.npyarr, self.nindex)
+        return NumPyGetDescriptor(self.npyarr, nindex)
 
     def descriptor_iter_interface(self):
         return NumPyDescriptorIter(self.npyarr)
 
     def get_element_interface(self, nindex):
-        return NumPyGetElement(self.npyarr, self.nindex)
+        return NumPyGetElement(self.npyarr, nindex)
 
-    def get_element_iter(self):
+    def element_iter_interface(self):
         return NumPyElementIter(self.npyarr)
