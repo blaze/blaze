@@ -3,6 +3,7 @@ from __future__ import absolute_import
 __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable']
             
 import operator
+import itertools
 from .coretypes import DataShape, Fixed
 
 #------------------------------------------------------------------------
@@ -72,9 +73,8 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
     outshapes = [(1,)*(maxshape-len(shape))+shape for shape in outshapes]
     for shape1, shape2 in itertools.combinations(outshapes, 2):
         if any((dim1 != 1 and dim2 != 1 and dim1 != dim2) 
-                  for dim1, dim2 in zip(shape1, shape2)):
+                  for dim1, dim2 in zip(shape1,shape2)):
             raise TypeError("Outer-dimensions are not broadcastable to the same shape")
-
     outshape = tuple(map(max, zip(*outshapes)))
 
     for connect in rankconnect:
@@ -94,6 +94,12 @@ def test_broadcastable():
     dslist = [dshape('10,20,30,int32'), dshape('20,30,int32'), dshape('int32')]
     outshape = broadcastable(dslist, ranks=[1,1,0])
     assert outshape == (10,20)
+    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,20,int32'), dshape('int32')]    
+    outshape = broadcastable(dslist, ranks=[1,1,0])
+    assert outshape == (10,20,30)
+    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,40,int32'), dshape('int32')]    
+    outshape = broadcastable(dslist, ranks=[1,1,0], rankconnect=[{(0,0),(1,0)}])
+    assert outshape == (10,20,30)  
 
 def test():
     test_cat_dshapes()
