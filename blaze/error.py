@@ -2,7 +2,8 @@ __all__ = [
     'ExecutionError',
     'NoDispatch',
     'InvalidLibraryDefinition',
-    'CustomSyntaxError'
+    'CustomSyntaxError',
+    'StreamingDimensionError'
 ]
 
 # TODO: BlazeException base class ?
@@ -73,3 +74,16 @@ class CustomSyntaxError(Exception):
 
     def __repr__(self):
         return str(self)
+
+#------------------------------------------------------------------------
+# Array-related errors
+#------------------------------------------------------------------------
+
+class StreamingDimensionError(Exception):
+    """
+    An error for when a streaming dimension is accessed
+    like a dimension of known size.
+    """
+    def __init__(self, msg):
+        super(StreamingDimensionError, self).__init__(msg)
+

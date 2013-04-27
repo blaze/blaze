@@ -957,7 +957,7 @@ def from_numpy(shape, dt):
     if shape == ():
         return measure
     else:
-        return DataShape(parameters=(map(Fixed, shape)+(measure,)))
+        return DataShape(parameters=(tuple(map(Fixed, shape))+(measure,)))
 
 def from_char(c):
     dtype = np.typeDict[c]
