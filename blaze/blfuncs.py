@@ -3,10 +3,11 @@ from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
 
 class KernelObj(object):
-    def __init__(self, kernel, types, blfunc):
+    def __init__(self, kernel, types, ranks, name):
         self.kernel = kernel
         self.types = types
-        self.blfunc = blfunc
+        self.ranks = ranks
+        self.name = name
 
 # A KernelTree needs an args list which are applied to the leaf-nodes
 # of the kernel using a depth-first search
@@ -104,7 +105,7 @@ class BlazeFunc(object):
         # convert inputs to Arrays
         # build an AST and return Arrays with a Deferred Data Descriptor
         # The eval method of the NDArray does the actual computation
-        args = map(blz.asarray, args)
+        #args = map(blaze.asarray, args)
 
 
         # FIXME:  The compatible function should unify a suitable
@@ -119,7 +120,7 @@ class BlazeFunc(object):
         # Construct output dshape
         outdshape = DataShape(outshape+(out_type,))
 
-        kernelobj = KernelObj(kernel, (out_type,)+types, self)
+        kernelobj = KernelObj(kernel, (out_type,)+types, self.ranks, self.name)
 
         # Create a new BlazeFuncDescriptor with this
         # kerneltree and a new set of args
@@ -135,6 +136,8 @@ class BlazeFunc(object):
         kerneltree = KernelTree(kernelobj, children)
         
         data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)        
+
+        # Construct an NDArray object from data descriptor
         user = {self.name : [arg.user for arg in args]}
 
         # FIXME:  Check for axes alignment and labels alignment
