@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 import operator
 
-from blaze import dshape
-from blaze.datashape import coretypes
+from blaze.datashape import coretypes, dshape
 from . import DataDescriptor, IGetElement, IElementIter
 import numpy as np
 

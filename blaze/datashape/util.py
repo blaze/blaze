@@ -4,6 +4,8 @@ __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable']
             
 import operator
 import itertools
+
+from . import parser
 from .coretypes import DataShape, Fixed
 
 #------------------------------------------------------------------------
