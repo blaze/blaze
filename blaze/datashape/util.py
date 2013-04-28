@@ -1,12 +1,16 @@
 from __future__ import absolute_import
 
-__all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable']
+__all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
+                'from_cffi']
             
 import operator
 import itertools
 
 from . import parser
-from .coretypes import DataShape, Fixed, Record
+from .coretypes import DataShape, Fixed, TypeVar, Record, \
+                uint8, uint16, uint32, uint64, \
+                int8, int16, int32, int64, \
+                float32, float64
 
 #------------------------------------------------------------------------
 # Utility Functions for DataShapes
@@ -87,23 +91,78 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
 
     return outshape
 
-def from_cffi(ctype):
+def from_cffi(ffi, ctype):
     """
     Constructs a blaze dshape from a cffi type.
     """
     k = ctype.kind
     if k == 'pointer':
-        return from_cffi(ctype.item)
+        return from_cffi(ffi, ctype.item)
     elif k == 'struct':
         # TODO: Assuming the field offsets match
         #       blaze kernels - need to sync up blaze, dynd,
         #       cffi, numpy, etc so that the field offsets always work!
         #       Also need to make sure there are no bitsize/bitshift
         #       values that would be incompatible.
-        return Record([(f[0], from_cffi(f[1].type)) for f in ctype.fields])
+        return Record([(f[0], from_cffi(ffi, f[1].type))
+                        for f in ctype.fields])
+    elif k == 'array':
+        if ctype.length is None:
+            # Only the first array can have the size
+            # unspecified, so only need a single name
+            dsparams = [TypeVar('N')]
+        else:
+            dsparams = [Fixed(ctype.length)]
+        ctype = ctype.item
+        while True:
+            k = ctype.kind
+            if k == 'pointer':
+                ctype = ctype.item
+            elif k == 'array':
+                dsparams.append(Fixed(ctype.length))
+                ctype = ctype.item
+            else:
+                dsparams.append(from_cffi(ffi, ctype))
+                return DataShape(dsparams)
+    elif k == 'primitive':
+        cn = ctype.cname
+        if cn in ['signed char', 'short', 'int',
+                        'long', 'long long']:
+            so = ffi.sizeof(ctype)
+            if so == 1:
+                return int8
+            elif so == 2:
+                return int16
+            elif so == 4:
+                return int32
+            elif so == 8:
+                return int64
+            else:
+                raise TypeError('cffi primitive "%s" has invalid size %d' %
+                                (cn, so))
+        elif cn in ['unsigned char', 'unsigned short',
+                        'unsigned int', 'unsigned long',
+                        'unsigned long long']:
+            so = ffi.sizeof(ctype)
+            if so == 1:
+                return uint8
+            elif so == 2:
+                return uint16
+            elif so == 4:
+                return uint32
+            elif so == 8:
+                return uint64
+            else:
+                raise TypeError('cffi primitive "%s" has invalid size %d' %
+                                (cn, so))
+        elif cn == 'float':
+            return float32
+        elif cn == 'double':
+            return float64
+        else:
+            raise TypeError('Unrecognized cffi primitive "%s"' % cn)
     else:
-        # TODO
-        raise NotImplemented
+        raise TypeError('Unrecognized cffi kind "%s"' % k)
 
 def test_cat_dshapes():
     pass
