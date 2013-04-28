@@ -1,6 +1,22 @@
 import itertools
 from .datashape.util import broadcastable
+from .datashape.coretypes import DataShape
 
+class KernelObj(object):
+    def __init__(self, kernel, types, blfunc):
+        self.kernel = kernel
+        self.types = types
+        self.blfunc = blfunc
+
+# A KernelTree needs an args list which are applied to the leaf-nodes
+# of the kernel using a depth-first search
+class KernelTree(object):
+    def __init__(self, node, children=[]):
+        assert isinstance(node, KernelObj)
+        for el in children:
+            assert isinstance(children, KernelTree)
+        self.node = node
+        self.children = children
         
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
@@ -78,11 +94,10 @@ class BlazeFunc(object):
 
     def compatible(self, args):
         # check for broadcastability
+        # TODO: figure out correct types as well
         dshapes = [args.data.dshape for arg in args]
-        return broadcastable(dshapes, self.ranks, rankconnect=self.rankconnect)
-
-
-
+        return broadcastable(dshapes, self.ranks, 
+                                rankconnect=self.rankconnect)
 
 
     def __call__(self, *args, **kwds):
@@ -91,32 +106,41 @@ class BlazeFunc(object):
         # The eval method of the NDArray does the actual computation
         args = map(blz.asarray, args)
 
+
+        # FIXME:  The compatible function should unify a suitable
+        #          function even if the types are not all the same
         # Find the kernel from the dispatch table:
         types = tuple(arr.data.dshape.measure for arr in args)
         out_type, kernel = self.dispatch[types]
 
         # Check rank-signature compatibility and broadcastability of arguments
-        if not self.compatible(args):
-            raise TypeError("Arguments do not have compatible dimensions")
+        outshape = self.compatible(args)
 
+        # Construct output dshape
+        outdshape = DataShape(outshape+(out_type,))
 
+        kernelobj = KernelObj(kernel, (out_type,)+types, self)
 
-
-        # Simple Case
-        if not any(isinstance(arg.data, BlazeFuncDescriptor) for arg in args):
-            kernel = None
-        blfuncs = []
+        # Create a new BlazeFuncDescriptor with this
+        # kerneltree and a new set of args
+        children = []
+        newargs = []
         for arg in args:
             if isinstance(arg.data, BlazeFuncDescriptor):
-                blfuncs.append(arg.data.blfunc)
-        data = BlazeFuncDescriptor(self, newargs)
-        # flatten the BlazeFuncDescriptor to a composition of kernels and
-        #  non-BlazeFunc Descriptors
+                children.append(arg.data.kerneltree)
+                newargs.extend(arg.data.args)
+            else:
+                newargs.append(arg)
 
-        data = flatten(data)
+        kerneltree = KernelTree(kernelobj, children)
+        
+        data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)        
         user = {self.name : [arg.user for arg in args]}
+
+        # FIXME:  Check for axes alignment and labels alignment
         axes = args[0].axes
         labels = args[0].labels
+
         return NDArray(data, axes, labels, user)
         
     
