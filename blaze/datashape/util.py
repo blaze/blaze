@@ -6,7 +6,7 @@ import operator
 import itertools
 
 from . import parser
-from .coretypes import DataShape, Fixed
+from .coretypes import DataShape, Fixed, Record
 
 #------------------------------------------------------------------------
 # Utility Functions for DataShapes
@@ -87,6 +87,23 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
 
     return outshape
 
+def from_cffi(ctype):
+    """
+    Constructs a blaze dshape from a cffi type.
+    """
+    k = ctype.kind
+    if k == 'pointer':
+        return from_cffi(ctype.item)
+    elif k == 'struct':
+        # TODO: Assuming the field offsets match
+        #       blaze kernels - need to sync up blaze, dynd,
+        #       cffi, numpy, etc so that the field offsets always work!
+        #       Also need to make sure there are no bitsize/bitshift
+        #       values that would be incompatible.
+        return Record([(f[0], from_cffi(f[1].type)) for f in ctype.fields])
+    else:
+        # TODO
+        raise NotImplemented
 
 def test_cat_dshapes():
     pass
