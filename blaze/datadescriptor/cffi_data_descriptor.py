@@ -84,14 +84,19 @@ class CFFIDataDescriptor(DataDescriptor):
         self.cdata = cdata
         self.ctype = ffi.typeof(cdata)
         self._dshape = datashape.from_cffi(self.ctype)
+        if isinstance(self._dshape, DataShape) and \
+                        isinstance(self._dshape[0], TypeVar):
+            # If the outermost dimension is an array without fixed
+            # size, get the size from the data
+            self._dshape = DataShape([Fixed(len(cdata))] + self._dshape[1:])
 
     @property
     def dshape(self):
         return self._dshape
 
     def __len__(self):
-        if self.npyarr.ndim > 0:
-            return self.npyarr.shape[0]
+        if isinstance(self._dshape, DataShape):
+            return operator.index(self._dshape[0])
         else:
             raise IndexError('Cannot get the length of a zero-dimensional array')
 

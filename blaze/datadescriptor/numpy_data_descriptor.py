@@ -1,12 +1,8 @@
 from __future__ import absolute_import
 import operator
 
-<<<<<<< HEAD
-from blaze.datashape import coretypes, dshape
-=======
-from blaze import dshape, datashape
->>>>>>> Add rough placeholder for a CFFI data descriptor
 from . import DataDescriptor, IGetElement, IElementIter
+from ..datashape import dshape
 import numpy as np
 
 def numpy_descriptor_iter(npyarr):
