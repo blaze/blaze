@@ -643,6 +643,12 @@ class Record(DataShape):
     cls = MEASURE
 
     def __init__(self, fields):
+        """
+        Parameters
+        ----------
+        fields : list/OrderedDict of (name, type) entries
+            The fields which make up the record.
+        """
         # This is passed in with a OrderedDict so field order is
         # preserved. Using RecordDecl there is some magic to also
         # ensure that the fields align in the order they are

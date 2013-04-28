@@ -1,26 +1,22 @@
 from __future__ import absolute_import
 import operator
 
-<<<<<<< HEAD
-from blaze.datashape import coretypes, dshape
-=======
 from blaze import dshape, datashape
->>>>>>> Add rough placeholder for a CFFI data descriptor
 from . import DataDescriptor, IGetElement, IElementIter
-import numpy as np
+import cffi
 
-def numpy_descriptor_iter(npyarr):
+def cffi_descriptor_iter(npyarr):
     if npyarr.ndim > 1:
         for el in npyarr:
-            yield NumPyDataDescriptor(el)
+            yield CFFIDataDescriptor(el)
     else:
         for i in range(npyarr.shape[0]):
-            # NumPy doesn't have a convenient way to avoid collapsing
+            # CFFI doesn't have a convenient way to avoid collapsing
             # to a scalar, this is a way to avoid that
             el = npyarr[...,np.newaxis][i].reshape(())
-            yield NumPyDataDescriptor(el)
+            yield CFFIDataDescriptor(el)
 
-class NumPyGetElement(IGetElement):
+class CFFIGetElement(IGetElement):
     def __init__(self, npyarr, nindex):
         if nindex > npyarr.ndim:
             raise IndexError('Cannot have more indices than dimensions')
@@ -43,7 +39,7 @@ class NumPyGetElement(IGetElement):
         import ctypes
         return x.data_as(ctypes.c_void_p)
 
-class NumPyElementIter(IElementIter):
+class CFFIElementIter(IElementIter):
     def __init__(self, npyarr):
         if npyarr.ndim <= 0:
             raise IndexError('Need at least one dimension for iteration')
@@ -67,15 +63,27 @@ class NumPyElementIter(IElementIter):
         else:
             raise StopIteration
 
-class NumPyDataDescriptor(DataDescriptor):
+class CFFIDataDescriptor(DataDescriptor):
     """
-    A Blaze data descriptor which exposes a NumPy array.
+    A Blaze data descriptor which exposes CFFI memory.
     """
-    def __init__(self, npyarr):
-        if not isinstance(npyarr, np.ndarray):
-            raise TypeError('object is not a numpy array, has type %s' % type(npyarr))
-        self.npyarr = npyarr
-        self._dshape = datashape.from_numpy(self.npyarr.shape, self.npyarr.dtype)
+    def __init__(self, ffi, cdata):
+        """
+        Parameters
+        ----------
+        ffi : cffi.FFI
+            The cffi namespace which contains the cdata.
+        cdata : cffi.CData
+            The cffi data.
+        """
+        if not isinstance(ffi, cffi.FFI):
+            raise TypeError('object is not a cffi.FFI object, has type %s' % type(ffi))
+        if not isinstance(cdata, cffi.CData):
+            raise TypeError('object is not a cffi.CData object, has type %s' % type(cdata))
+        self.ffi = ffi
+        self.cdata = cdata
+        self.ctype = ffi.typeof(cdata)
+        self._dshape = datashape.from_cffi(self.ctype)
 
     @property
     def dshape(self):
@@ -93,15 +101,16 @@ class NumPyDataDescriptor(DataDescriptor):
             key = (key,)
         key = tuple([operator.index(i) for i in key])
         if len(key) == self.npyarr.ndim:
-            return NumPyDataDescriptor(self.npyarr[...,np.newaxis][key].reshape(()))
+            return CFFIDataDescriptor(self.npyarr[...,np.newaxis][key].reshape(()))
         else:
-            return NumPyDataDescriptor(self.npyarr[key])
+            return CFFIDataDescriptor(self.npyarr[key])
 
     def __iter__(self):
-        return numpy_descriptor_iter(self.npyarr)
+        return cffi_descriptor_iter(self.npyarr)
 
     def get_element_interface(self, nindex):
-        return NumPyGetElement(self.npyarr, nindex)
+        return CFFIGetElement(self.npyarr, nindex)
 
     def element_iter_interface(self):
-        return NumPyElementIter(self.npyarr)
+        return CFFIElementIter(self.npyarr)
+
