@@ -77,6 +77,23 @@ class wherechunksTest(TestCase):
         self.assert_(l == N - 1)
         self.assert_(s == (N - 1) * (N / 2))  # Gauss summation formula
         
+    def test01(self):
+        """Testing `wherechunks` method with a `blen`"""
+        N = int(1e4)
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.whereblocks(t, 'f0 <= f1', blen=100):
+            l += len(block)
+            print "len:", len(block)
+            # All blocks should be of length 100, except the last one,
+            # which should be 0
+            self.assert_(len(block) in (0, 100))
+            s += block['f0'].sum()
+        print "l:", l
+        self.assert_(l == N)
+        self.assert_(s == (N - 1) * (N / 2))  # Gauss summation formula
+        
 
 
 ## Local Variables:
