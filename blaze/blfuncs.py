@@ -1,6 +1,7 @@
 import itertools
 from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
+from ..cgen.utils import namesupply, fresh
 
 # A Node on the kernel Tree
 class KernelObj(object):
@@ -8,33 +9,34 @@ class KernelObj(object):
         self.kernel = kernel
         self.types = types
         self.ranks = ranks
-        self.name = name
+        self.name = name  # name of kernel
 
 # A KernelTree is just the bare element-wise kernel functions 
-# (no arguments).  The args would be applied to the leaf-nodes
-# of the kerneltree in a left-to-right order of a depth-first search
+# (no arguments).  Any arguments are identified as unique-names
+# in an abstract name-space
+# All nodes in the kernel tree can be named or else a unique-name
+# from the abstract name-space will be created.
 class KernelTree(object):
-    def __init__(self, node, children=[]):
+    def __init__(self, node, children=[], name=None):
         assert isinstance(node, KernelObj)
         for el in children:
-            assert isinstance(el, KernelTree)
+            assert isinstance(el, (KernelTree, str))
         self.node = node
+        self.name = name
         self.children = children
+        if name is None:
+            with namesupply():
+                name = fresh()
 
-    # add an llvm_element_kernel function to the given llvm_module
-    # and return a handle to the function
-    # Any temporary memory needed (i.e. to hold intermediate
-    #   results) is allocated on the stack.
-    def llvm_element_kernel(self, module):
-        pass
+    def create_blir_kernel(self, name=None):
+        """Take a composite kernel tree and make a BLIR kernel for it.
 
-    # A blir function to call for each element
-    def blir_element_kernel(self, module):
-        pass
-
-    # A function pointer to call for each element
-    def cffi_element_kernel(self, module):
-        pass
+        Return A KernelObject with a blir kernel
+        """
+        if name is None:
+            with namesupply():
+                self.name = fresh('kernel')
+        
         
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
@@ -50,7 +52,8 @@ def process_signature(ranksignature):
     
     varmap = {}
     for i, arg in enumerate(ranksignature):
-        if not arg: continue
+        if not arg:
+            continue
         for k, var in enumerate(arg.split(',')):
             varmap.setdefault(var,[]).append((i,k))
 
@@ -76,7 +79,7 @@ def process_typetable(typetable):
 #       and the primitive type signature because a BlazeFunc will have one
 #       rank-signature but possibly multiple primitive type signatures.
 #   * Kernels for a particular type might be inline jitted or loaded from
-#       a shared-library 
+#       a shared-library --- uses BLIR kernel engine on-top of LLVM.
 #   * Example BlazeFuncs are sin, svd, eig, fft, sum, prod, inner1d, add, mul
 #       etc --- kernels all work on in-memory "elements"
       
@@ -85,9 +88,8 @@ class BlazeFunc(object):
         """
         Construct a Blaze Function from a rank-signature and keyword arguments.
         
-        The keyword arguments are typenames with values as the kernel.  Kernels
-        can be written in many ways:  "blir" string, python function (will be
-        jitted by numba), ctypes function, cffi functions, etc.
+        The keyword arguments are typenames with values as the kernel.  A kernel
+        is a BLIR kernel object.
 
         Arguments
         =========
@@ -104,7 +106,7 @@ class BlazeFunc(object):
         # FIXME:  Think about merging the dispatch table and rank-signature
         #         so that dispatch can occur on different rank
         self.ranks, self.rankconnect = process_signature(ranksignature)
-        self.dispatch = process_types(typetable)
+        self.dispatch = process_typetable(typetable)
 
     @property
     def nin(self):
@@ -141,20 +143,26 @@ class BlazeFunc(object):
         kernelobj = KernelObj(kernel, (out_type,)+types, self.ranks, self.name)
 
         # Create a new BlazeFuncDescriptor with this
-        # kerneltree and a new set of args
+        # kerneltree and a new set of args depending on 
+        #  re-usage.
         children = []
         newargs = []
+        argnames = [arg.data.unique_name for arg in args]
         for arg in args:
-            if isinstance(arg.data, BlazeFuncDescriptor):
-                children.append(arg.data.kerneltree)
-                newargs.extend(arg.data.args)
+            data = arg.data
+            if isinstance(data, BlazeFuncDescriptor):
+                children.append(data.kerneltree)
+                newargs.extend([arg for arg in data.args 
+                                    if arg.data.unique_name not in argnames])
             else:
+                children.append(data.unique_name)
                 newargs.append(arg)
+
         kerneltree = KernelTree(kernelobj, children)        
         data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)        
  
         # Construct an NDArray object from new data descriptor
-        user = {self.name : [arg.user for arg in args]}
+        user = {self.name: [arg.user for arg in args]}
 
         # FIXME:  Check for axes alignment and labels alignment
         axes = args[0].axes

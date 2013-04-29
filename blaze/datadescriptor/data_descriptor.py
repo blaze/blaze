@@ -2,13 +2,14 @@ from __future__ import absolute_import
 
 import abc
 from blaze.error import StreamingDimensionError
+from ..cgen.utils import namesupply, fresh
 
 class IGetElement:
     """
     An interface for getting char* element pointers at fixed-size
     index tuples. Provides additional C and llvm function
     interfaces to use in a jitting context.
-    
+
     >>> obj = blzarr.get_element_interface(3)
     >>> obj.get([i, j, k])
     CTypes/CFFIobj("char *", 0x...)
@@ -134,6 +135,7 @@ class DataDescriptor:
     object, to achieve this.
     """
     __metaclass__ = abc.ABCMeta
+    _unique_name = None
 
     @abc.abstractproperty
     def dshape(self):
@@ -141,6 +143,16 @@ class DataDescriptor:
         Returns the datashape for the data behind this datadescriptor.
         """
         raise NotImplemented
+
+    @abc.abstractproperty
+    def unique_name(self):
+        """
+        Returns a unique name (in this process space)
+        """
+        if not self._unique_name:
+            with namesupply():
+                self._unique_name = fresh() 
+        return self._unique_name
 
     def __len__(self):
         """
