@@ -20,11 +20,17 @@ class NDArray(object):
     def __init__(self, data, axes=None, labels=None, user={}):
         assert isinstance(data, DataDescriptor)
         self.data = data
-        self.axes = axes or ['']*self.data.nd
-        self.labels = labels or [None]*self.data.nd
+        # TODO: reenable that when it is needed.
+        #self.axes = axes or ['']*self.data.nd
+        #self.labels = labels or [None]*self.data.nd
         self.user = user
 
         # Need to inject attributes on the NDArray depending on dshape attributes
+
+
+    @property
+    def datashape(self):
+        return self.data.dshape
 
 """
 These should be functions

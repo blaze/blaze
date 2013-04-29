@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import operator
 
 from . import DataDescriptor, IGetElement, IElementIter
-from ..datashape import dshape
+from ..datashape import dshape, from_numpy
 import numpy as np
 
 def numpy_descriptor_iter(npyarr):
@@ -71,7 +71,7 @@ class NumPyDataDescriptor(DataDescriptor):
         if not isinstance(npyarr, np.ndarray):
             raise TypeError('object is not a numpy array, has type %s' % type(npyarr))
         self.npyarr = npyarr
-        self._dshape = datashape.from_numpy(self.npyarr.shape, self.npyarr.dtype)
+        self._dshape = from_numpy(self.npyarr.shape, self.npyarr.dtype)
 
     @property
     def dshape(self):

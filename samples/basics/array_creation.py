@@ -2,7 +2,12 @@
 
 import blaze
 
-print ('building basic arrays')
+
+def print_section(a_string, spacing=2, underline='='):
+    print '%s%s\n%s' % ('\n'*spacing, a_string, underline*len(a_string))
+
+
+print_section('building basic arrays')
 # It is possible to build arrays from python lists
 a = blaze.array([ 2, 3, 4 ])
 
@@ -18,20 +23,20 @@ b = blaze.array([1.2, 3.5, 5.1])
 print b.datashape
 
 # Arrays can be bi-dimensional
-print ('going 2d')
+print_section('going 2d', spacing=1, underline='-')
 c = blaze.array([ [1, 2], [3, 4] ]) 
 print (c)
 print (c.datashape)
 
 # or as many dimensions as you like
-print ('3d')
+print_section('going 3d', spacing=1, underline='-')
 d = blaze.array([ [ [1, 2], [3, 4] ], [ [5, 6], [7, 8] ] ])
 
 print (d.datashape)
 
 # --------------------------------------------------------------------
 
-print ('Explicit types in construction')
+print_section('Explicit types in construction')
 # It is possible to force a type in a given array. This allows a
 # broader selection of types on construction.
 e =  blaze.array([ 1, 2, 3], dshape='3, float32') 
@@ -46,7 +51,7 @@ f = blaze.array([ 1, 2, 3], dshape='float32')
 
 # --------------------------------------------------------------------
 
-print ('Alternative  constructors')
+print_section('Alternative  constructors')
 
 # Arrays can be created to be all zeros:
 g = blaze.zeros('10, 10, int32')
