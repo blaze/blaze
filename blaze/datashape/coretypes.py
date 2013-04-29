@@ -288,25 +288,58 @@ class DataShape(Mono):
 
     def __init__(self, parameters=None, name=None):
 
-        if type(parameters) is DataShape:
-            self.parameters = parameters
-        elif len(parameters) > 0:
+        if len(parameters) > 1:
             self.parameters = tuple(flatten(parameters))
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
-                raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(self.parameters[-1]))
+                raise TypeError(('Only a measure can appear on the'
+                                ' last position of a datashape, not %s') %
+                                repr(self.parameters[-1]))
             for dim in self.parameters[:-1]:
                 if getattr(dim, 'cls', DIMENSION) != DIMENSION:
-                    raise TypeError('Only dimensions can appear before the last position of a datashape, not %s' % repr(dim))
-            self.composite = True
+                    raise TypeError(('Only dimensions can appear before the'
+                                    ' last position of a datashape, not %s') %
+                                    repr(dim))
         else:
-            self.parameters = tuple()
-            self.composite = False
+            raise ValueError(('the data shape should be constructed from 2 or'
+                            ' more parameters, only got %s') % (len(parameters)))
+        self.composite = True
 
         if name:
             self.name = name
             self.__metaclass__._registry[name] = self
         else:
             self.name = None
+
+        # Calculate the C itemsize and strides, which
+        # are based on a C-order contiguous assumption
+        if hasattr(parameters[-1], 'c_itemsize'):
+            c_itemsize = parameters[-1].c_itemsize
+        else:
+            c_itemsize = None
+        c_strides = []
+        for p in parameters[-2::-1]:
+            c_strides.insert(0, c_itemsize)
+            if c_itemsize is not None:
+                if isinstance(p, Fixed):
+                    c_itemsize *= operator.index(p)
+                else:
+                    c_itemsize = None
+        self._c_itemsize = c_itemsize
+        self._c_strides = tuple(c_strides)
+
+    @property
+    def c_itemsize(self):
+        """The size of one element of this type, with C-contiguous storage."""
+        if self._c_itemsize is not None:
+            return self._c_itemsize
+        else:
+            raise AttributeError('data shape does not have a fixed C itemsize')
+
+    @property
+    def c_strides(self):
+        """A tuple of all the strides for the data shape,
+        assuming C-contiguous storage."""
+        return self._c_strides
 
     def __len__(self):
         return len(self.parameters)
@@ -398,8 +431,9 @@ class CType(Mono):
     """
     cls = MEASURE
 
-    def __init__(self, name):
+    def __init__(self, name, itemsize):
         self.name = name
+        self._itemsize = itemsize
         Type.register(name, self)
 
     @classmethod
@@ -422,9 +456,15 @@ class CType(Mono):
         """
         return Type._registry[dt.name]
 
-    def size(self):
-        # TODO: no cheating!
-        return np.dtype(self.name).itemsize
+    @property
+    def itemsize(self):
+        """The size of one element of this type."""
+        return self._itemsize
+
+    @property
+    def c_itemsize(self):
+        """The size of one element of this type, with C-contiguous storage."""
+        return self._itemsize
 
     def to_struct(self):
         """
@@ -731,32 +771,30 @@ def inl(ty):
 # Unit Types
 #------------------------------------------------------------------------
 
-bool_      = CType('bool')
-char       = CType('char')
+bool_      = CType('bool', 1)
+char       = CType('char', 1)
 
-int8       = CType('int8')
-int16      = CType('int16')
-int32      = CType('int32')
-int64      = CType('int64')
+int8       = CType('int8', 1)
+int16      = CType('int16', 2)
+int32      = CType('int32', 4)
+int64      = CType('int64', 8)
 
-uint8      = CType('uint8')
-uint16     = CType('uint16')
-uint32     = CType('uint32')
-uint64     = CType('uint64')
+uint8      = CType('uint8', 1)
+uint16     = CType('uint16', 2)
+uint32     = CType('uint32', 4)
+uint64     = CType('uint64', 8)
 
-float16    = CType('float16')
-float32    = CType('float32')
-float64    = CType('float64')
-float128   = CType('float128')
+float16    = CType('float16', 2)
+float32    = CType('float32', 4)
+float64    = CType('float64', 8)
+float128   = CType('float128', 16)
 
-complex64  = CType('complex64')
-complex128 = CType('complex128')
-complex256 = CType('complex256')
+complex64  = CType('complex64', 8)
+complex128 = CType('complex128', 16)
+complex256 = CType('complex256', 32)
 
-timedelta64 = CType('timedelta64')
-datetime64 = CType('datetime64')
-
-ulonglong  = CType('ulonglong')
+timedelta64 = CType('timedelta64', 8)
+datetime64 = CType('datetime64', 8)
 
 c_byte = int8
 c_short = int16
@@ -768,9 +806,18 @@ c_ushort = uint16
 c_ulonglong = uint64
 
 if ctypes.sizeof(ctypes.c_long) == 4:
+    c_long = int32
     c_ulong = uint32
 else:
+    c_long = int64
     c_ulong = uint64
+
+if ctypes.sizeof(ctypes.c_void_p) == 4:
+    c_intptr = c_ssize_t = int32
+    c_uintptr = c_size_t = uint32
+else:
+    c_intptr = c_ssize_t = int64
+    c_uintptr = c_size_t = uint64
 
 c_half = float16
 c_float = float32
@@ -782,8 +829,8 @@ half = float16
 single = float32
 double = float64
 
-void = CType('void')
-object_ = pyobj = CType('object')
+void = CType('void', 0)
+object_ = pyobj = CType('object', c_intptr.itemsize)
 
 na = Null
 top = Top()
