@@ -143,6 +143,29 @@ class wherechunksTest(TestCase):
         self.assert_(l == M)
         self.assert_(s == M * ((M + 1) / 2))  # Gauss summation formula
         
+    def test06(self):
+        """Testing `wherechunks` method with a `skip` parameter"""
+        N, M = int(1e4), 101
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.whereblocks(t, 'f1 < f2', skip=N-M):
+            l += len(block)
+            s += block['f0'].sum()
+        self.assert_(l == M - 1)
+        self.assert_(s == np.arange(N-M+1, N).sum())
+        
+    def test07(self):
+        """Testing `wherechunks` method with a `limit`, `skip` parameter"""
+        N, M = int(1e4), 101
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.whereblocks(t, 'f1 < f2', limit=N-M-2, skip=M):
+            l += len(block)
+            s += block['f0'].sum()
+        self.assert_(l == N - M - 2)
+        self.assert_(s == np.arange(M+1, N-1).sum())
 
 
 ## Local Variables:
