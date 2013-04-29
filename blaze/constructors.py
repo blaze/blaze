@@ -18,15 +18,56 @@ from blaze.datashape import to_numpy, dshape
 # the array from a numpy is creating a ByteProvider based on "data"
 # and infer the indexer from the apropriate information in the numpy
 # array.
-def array(numpy_array_like, dshape=None):
+def array(data, dshape=None):
+    """Create an in-memory Blaze array.
+
+    Parameters
+    ----------
+    data : array_lile
+        Initial contents for the array.
+
+    dshape : datashape
+        The datashape for the resulting array. By default the
+        datashape will be inferred from data. If an explicit dshape is
+        provided, the input data will be coerced into the provided
+        dshape.
+
+    Returns
+    -------
+    out : a concrete, in-memory blaze array.
+
+    Bugs
+    ----
+    Right now the explicit dshape is ignored. This needs to be
+    corrected. When the data cannot be coerced to an explicit dshape
+    an exception should be raised.
+
+    """
     from numpy import array
 
-    datadesc = NumPyDataDescriptor(array(numpy_array_like))
+    datadesc = NumPyDataDescriptor(array(data))
 
     return NDArray(datadesc)
 
 
 def zeros(ds):
+    """Create an array and fill it with zeros
+
+    Parameters
+    ----------
+    ds : datashape
+        The datashape for the created array.
+
+    Returns
+    -------
+    out: a concrete blaze array
+
+    Bugs
+    ----
+    Right now only concrete, in-memory blaze arrays can be created
+    this way.
+
+    """
     from numpy import zeros
 
     ds = ds if not isinstance(ds, basestring) else dshape(ds)
@@ -36,6 +77,23 @@ def zeros(ds):
 
 
 def ones(ds):
+    """Create an array and fill it with ones
+
+    Parameters
+    ----------
+    ds : datashape
+        The datashape for the created array.
+
+    Returns
+    -------
+    out: a concrete blaze array
+
+    Bugs
+    ----
+    Right now only concrete, in-memory blaze arrays can be created
+    this way.
+
+    """
     from numpy import ones
 
     ds = ds if not isinstance(ds, basestring) else dshape(ds)
