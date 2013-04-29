@@ -91,20 +91,15 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
 
     return outshape
 
-def from_cffi(ffi, ctype):
-    """
-    Constructs a blaze dshape from a cffi type.
-    """
+def _from_cffi_internal(ffi, ctype):
     k = ctype.kind
-    if k == 'pointer':
-        return from_cffi(ffi, ctype.item)
-    elif k == 'struct':
+    if k == 'struct':
         # TODO: Assuming the field offsets match
         #       blaze kernels - need to sync up blaze, dynd,
         #       cffi, numpy, etc so that the field offsets always work!
         #       Also need to make sure there are no bitsize/bitshift
         #       values that would be incompatible.
-        return Record([(f[0], from_cffi(ffi, f[1].type))
+        return Record([(f[0], _from_cffi_internal(ffi, f[1].type))
                         for f in ctype.fields])
     elif k == 'array':
         if ctype.length is None:
@@ -114,16 +109,11 @@ def from_cffi(ffi, ctype):
         else:
             dsparams = [Fixed(ctype.length)]
         ctype = ctype.item
-        while True:
-            k = ctype.kind
-            if k == 'pointer':
-                ctype = ctype.item
-            elif k == 'array':
-                dsparams.append(Fixed(ctype.length))
-                ctype = ctype.item
-            else:
-                dsparams.append(from_cffi(ffi, ctype))
-                return DataShape(dsparams)
+        while ctype.kind == 'array':
+            dsparams.append(Fixed(ctype.length))
+            ctype = ctype.item
+        dsparams.append(_from_cffi_internal(ffi, ctype))
+        return DataShape(dsparams)
     elif k == 'primitive':
         cn = ctype.cname
         if cn in ['signed char', 'short', 'int',
@@ -161,8 +151,21 @@ def from_cffi(ffi, ctype):
             return float64
         else:
             raise TypeError('Unrecognized cffi primitive "%s"' % cn)
+    elif k == 'pointer':
+        raise TypeError('a pointer can only be at the outer level of a cffi type '
+                        'when converting to blaze datashape')
     else:
         raise TypeError('Unrecognized cffi kind "%s"' % k)
+    
+
+def from_cffi(ffi, ctype):
+    """
+    Constructs a blaze dshape from a cffi type.
+    """
+    # Allow one pointer dereference at the outermost level
+    if ctype.kind == 'pointer':
+        ctype = ctype.item
+    return _from_cffi_internal(ffi, ctype)
 
 def test_cat_dshapes():
     pass
