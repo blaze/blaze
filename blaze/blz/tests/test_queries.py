@@ -94,6 +94,34 @@ class wherechunksTest(TestCase):
         self.assert_(l == N)
         self.assert_(s == (N - 1) * (N / 2))  # Gauss summation formula
         
+    def test02(self):
+        """Testing `wherechunks` method with a `outfields` with 2 fields"""
+        N = int(1e4)
+        ra = np.fromiter(((i, i, i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.whereblocks(t, 'f1 < f2', outfields=('f1','f2')):
+            self.assert_(block.dtype.names == ('f1','f2'))
+            l += len(block)
+            s += block['f1'].sum()
+        print "l:", l
+        self.assert_(l == N - 1)
+        self.assert_(s == (N - 1) * (N / 2))  # Gauss summation formula
+        
+    def test03(self):
+        """Testing `wherechunks` method with a `outfields` with 1 fields"""
+        N = int(1e4)
+        ra = np.fromiter(((i, i, i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        t = blz.btable(ra)
+        l, s = 0, 0
+        for block in blz.whereblocks(t, 'f1 < f2', outfields=('f1',)):
+            self.assert_(block.dtype.names == ('f1',))
+            l += len(block)
+            s += block['f1'].sum()
+        print "l:", l
+        self.assert_(l == N - 1)
+        self.assert_(s == (N - 1) * (N / 2))  # Gauss summation formula
+        
 
 
 ## Local Variables:

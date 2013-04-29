@@ -419,10 +419,10 @@ def iterblocks(bobj, blen=None, start=0, stop=None):
             yield buf
 
 
-def whereblocks(table, expression, blen=None, outcols=None, limit=None,
+def whereblocks(table, expression, blen=None, outfields=None, limit=None,
                 skip=0):
     """
-    whereblocks(table, expression, blen=None, outcols=None, limit=None, skip=0)
+    whereblocks(table, expression, blen=None, outfields=None, limit=None, skip=0)
 
     Iterate over the rows that fullfill the `expression` condition on
     `table` in blocks of size `blen`.
@@ -435,7 +435,7 @@ def whereblocks(table, expression, blen=None, outcols=None, limit=None,
         The length of the block that is returned.  The default is the
         chunklen, or for a btable, the minimum of the different column
         chunklens.
-    outcols : list of strings or string
+    outfields : list of strings or string
         The list of column names that you want to get back in results.
         Alternatively, it can be specified as a string such as 'f0 f1' or
         'f0, f1'.  If None, all the columns are returned.  If the special
@@ -451,8 +451,8 @@ def whereblocks(table, expression, blen=None, outcols=None, limit=None,
     -------
     out : iterable
         This iterable returns buffers as NumPy arrays made of
-        structured types (or homogeneous ones in case `outcols` is a
-        single column.
+        structured types (or homogeneous ones in case `outfields` is a
+        single field.
 
     See Also
     --------
@@ -461,22 +461,22 @@ def whereblocks(table, expression, blen=None, outcols=None, limit=None,
     """
 
     if blen is None:
-        # Get the minimum chunklen for every column
+        # Get the minimum chunklen for every field
         blen = min(table[col].chunklen for col in table.cols)
-    if outcols is None:
+    if outfields is None:
         dtype = table.dtype
     else:
-        if not isinstance(outcols, (list, tuple)):
-            raise ValueError, "only a sequence is supported for outcols"
-        # Get the dtype for the outcols set
+        if not isinstance(outfields, (list, tuple)):
+            raise ValueError, "only a sequence is supported for outfields"
+        # Get the dtype for the outfields set
         try:
-            dtype = [(name, table[name].dtype) for name in outcols]
+            dtype = [(name, table[name].dtype) for name in outfields]
         except IndexError:
-            raise ValueError("Some names in `outcols` are not real fields")
+            raise ValueError("Some names in `outfields` are not real fields")
 
     buf = np.empty(blen, dtype=dtype)
     nrow = 0
-    for row in table.where(expression, outcols, limit, skip):
+    for row in table.where(expression, outfields, limit, skip):
         buf[nrow] = row
         nrow += 1
         if nrow == blen:
