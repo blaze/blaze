@@ -438,9 +438,7 @@ def whereblocks(table, expression, blen=None, outfields=None, limit=None,
     outfields : list of strings or string
         The list of column names that you want to get back in results.
         Alternatively, it can be specified as a string such as 'f0 f1' or
-        'f0, f1'.  If None, all the columns are returned.  If the special
-        name 'nrow__' is present, the number of row will be included in
-        output.
+        'f0, f1'.
     limit : int
         A maximum number of elements to return.  The default is return
         everything.
