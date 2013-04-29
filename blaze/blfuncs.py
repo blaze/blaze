@@ -1,7 +1,9 @@
-import itertools
 from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
-from ..cgen.utils import namesupply, fresh
+from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
+from .concrete import NDArray
+from ..cgen.utils import letters
+
 
 # A Node on the kernel Tree
 class KernelObj(object):
@@ -11,33 +13,36 @@ class KernelObj(object):
         self.ranks = ranks
         self.name = name  # name of kernel
 
-# A KernelTree is just the bare element-wise kernel functions 
+
+# A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
 # in an abstract name-space
 # All nodes in the kernel tree can be named or else a unique-name
 # from the abstract name-space will be created.
 class KernelTree(object):
+    _stream_of_unique_names = letters()
+    _stream_of_unique_kernels = letters()
+
     def __init__(self, node, children=[], name=None):
         assert isinstance(node, KernelObj)
         for el in children:
             assert isinstance(el, (KernelTree, str))
         self.node = node
-        self.name = name
         self.children = children
         if name is None:
-            with namesupply():
-                name = fresh()
+            name = next(self._stream_of_uniques)
+        self.name = name
 
     def create_blir_kernel(self, name=None):
-        """Take a composite kernel tree and make a BLIR kernel for it.
+        """Take a composite kernel tree and make a fused
+        BLIR kernel for it.
 
         Return A KernelObject with a blir kernel
         """
         if name is None:
-            with namesupply():
-                self.name = fresh('kernel')
-        
-        
+            name = 'kernel_' + next(self._stream_of_unique_kernels)
+
+     
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
 #  shows dimensions of arguments that must match by indicating a 2-tuple
@@ -46,7 +51,6 @@ class KernelTree(object):
 # Example:  If the rank-signature is ['M,L', 'L,K', 'K', '']
 #           then the list of integer ranks is [2, 2, 1, 0]
 #           while the list of connections is [{(0,1),(1,0)},{(1,1),(2,0)}]
-
 def process_signature(ranksignature):
     ranklist = [0 if not arg else len(arg.split(',')) for arg in ranksignature]
     

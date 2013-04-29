@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import abc
 from blaze.error import StreamingDimensionError
-from ..cgen.utils import namesupply, fresh
+from ..cgen.utils import letters
 
 class IGetElement:
     """
@@ -136,6 +136,7 @@ class DataDescriptor:
     """
     __metaclass__ = abc.ABCMeta
     _unique_name = None
+    _stream_of_uniques = letters()
 
     @abc.abstractproperty
     def dshape(self):
@@ -150,8 +151,7 @@ class DataDescriptor:
         Returns a unique name (in this process space)
         """
         if not self._unique_name:
-            with namesupply():
-                self._unique_name = fresh() 
+            self._unique_name = next(_stream_of_uniques)
         return self._unique_name
 
     def __len__(self):
