@@ -8,6 +8,7 @@ dtype.
 import operator
 import numpy as np
 import datetime
+import ctypes
 
 instanceof = lambda T: lambda X: isinstance(X, T)
 
@@ -56,6 +57,13 @@ class Mono(object):
 
     def __init__(self, *params):
         self.parameters = params
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, key):
+        lst = [self]
+        return lst[key]
 
     def __mul__(self, other):
         if not isinstance(other, (DataShape, Mono)):
@@ -201,14 +209,16 @@ class String(Mono):
             # String()
             self.fixlen = None
             self.encoding = u'U8'
-        elif isinstance(fixlen, (int, long, IntegerConstant)) and encoding is None:
+        elif isinstance(fixlen, (int, long, IntegerConstant)) and \
+                        encoding is None:
             # String(fixlen)
             if isinstance(fixlen, IntegerConstant):
                 self.fixlen = fixlen.val
             else:
                 self.fixlen = fixlen
             self.encoding = u'U8'
-        elif isinstance(fixlen, (str, unicode, StringConstant)) and encoding is None:
+        elif isinstance(fixlen, (str, unicode, StringConstant)) and \
+                        encoding is None:
             # String('encoding')
             self.fixlen = None
             if isinstance(fixlen, StringConstant):
@@ -227,11 +237,12 @@ class String(Mono):
             else:
                 self.encoding = unicode(encoding)
         else:
-            raise ValueError('Unexpected types to String constructor (%s, %s)' %
-                            (type(fixlen), type(encoding)))
+            raise ValueError(('Unexpected types to String constructor '
+                            '(%s, %s)') % (type(fixlen), type(encoding)))
         # Validate the encoding
         if not self.encoding in _canonical_string_encodings:
-            raise ValueError('Unsupported string encoding %s' % repr(self.encoding))
+            raise ValueError('Unsupported string encoding %s' %
+                            repr(self.encoding))
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
 
@@ -244,7 +255,8 @@ class String(Mono):
         elif self.fixlen is None and self.encoding != 'U8':
             return 'string(%s)' % repr(self.encoding).strip('u')
         else:
-            return 'string(%i, %s)' % (self.fixlen, repr(self.encoding).strip('u'))
+            return 'string(%i, %s)' % \
+                            (self.fixlen, repr(self.encoding).strip('u'))
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid
@@ -253,7 +265,8 @@ class String(Mono):
 
     def __eq__(self, other):
         if type(other) is String:
-            return self.fixlen == other.fixlen and self.encoding == other.encoding
+            return self.fixlen == other.fixlen and \
+                            self.encoding == other.encoding
         else:
             return False
 
@@ -294,6 +307,9 @@ class DataShape(Mono):
             self.__metaclass__._registry[name] = self
         else:
             self.name = None
+
+    def __len__(self):
+        return len(self.parameters)
 
     def __getitem__(self, index):
         return self.parameters[index]
@@ -376,24 +392,15 @@ NATIVE = '='
 LITTLE = '<'
 BIG    = '>'
 
-class CType(DataShape):
+class CType(Mono):
     """
     Symbol for a sized type mapping uniquely to a native type.
     """
     cls = MEASURE
 
-    def __init__(self, ctype, size=None, byteorder=None):
-        if size:
-            assert 1 <= size < (2**23-1)
-            label = ctype + str(size)
-            self.parameters = (label,)
-            self.name = label
-            self.byteorder = byteorder or LITTLE
-            Type.register(label, self)
-        else:
-            self.parameters = (ctype,)
-            self.name = ctype
-            Type.register(ctype, self)
+    def __init__(self, name):
+        self.name = name
+        Type.register(name, self)
 
     @classmethod
     def from_str(self, s):
@@ -429,19 +436,13 @@ class CType(DataShape):
         """
         To Numpy dtype.
         """
-        # special cases because of NumPy weirdness
-        # >>> dtype('i')
-        # dtype('int32')
-        # >>> dtype('int')
-        # dtype('int64')
-        if self.name == "int":
-            return np.dtype("i")
-        if self.name == "float":
-            return np.dtype("f")
         return np.dtype(self.name)
 
     def __str__(self):
-        return str(self.parameters[0])
+        return self.name
+
+    def __repr__(self):
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
     def __eq__(self, other):
         if type(other) is CType:
@@ -683,11 +684,12 @@ class Record(DataShape):
         else:
             return False
 
-    def __iter__(self):
-        return zip(self.__k, self.__v)
-
     def __len__(self):
-        return len(self.__k)
+        return 1
+
+    def __getitem__(self, key):
+        lst = (self,)
+        return lst[key]
 
     def __str__(self):
         return record_string(self.__k, self.__v)
@@ -732,46 +734,53 @@ def inl(ty):
 bool_      = CType('bool')
 char       = CType('char')
 
-int8       = CType('int', 8)
-int16      = CType('int', 16)
-int32      = CType('int', 32)
-int64      = CType('int', 64)
+int8       = CType('int8')
+int16      = CType('int16')
+int32      = CType('int32')
+int64      = CType('int64')
 
-uint8      = CType('uint',  8)
-uint16     = CType('uint', 16)
-uint32     = CType('uint', 32)
-uint64     = CType('uint', 64)
+uint8      = CType('uint8')
+uint16     = CType('uint16')
+uint32     = CType('uint32')
+uint64     = CType('uint64')
 
-float16    = CType('float', 16)
-float32    = CType('float', 32)
-float64    = CType('float', 64)
-float128   = CType('float', 128)
+float16    = CType('float16')
+float32    = CType('float32')
+float64    = CType('float64')
+float128   = CType('float128')
 
-complex64  = CType('complex' , 64)
-complex128 = CType('complex', 128)
-complex256 = CType('complex', 256)
+complex64  = CType('complex64')
+complex128 = CType('complex128')
+complex256 = CType('complex256')
 
-timedelta64 = CType('timedelta', 64)
-datetime64 = CType('datetime', 64)
+timedelta64 = CType('timedelta64')
+datetime64 = CType('datetime64')
 
 ulonglong  = CType('ulonglong')
 
-byte = int8
-short = int16
-int_ = int32
-longlong = int64
+c_byte = int8
+c_short = int16
+c_int = int32
+c_longlong = int64
 
-ubyte = uint8
-ushort = uint16
-ulonglong = uint64
+c_ubyte = uint8
+c_ushort = uint16
+c_ulonglong = uint64
+
+if ctypes.sizeof(ctypes.c_long) == 4:
+    c_ulong = uint32
+else:
+    c_ulong = uint64
+
+c_half = float16
+c_float = float32
+c_double = float64
+# TODO: Deal with the longdouble == one of float64/float80/float96/float128 situation
+c_longdouble = float128
 
 half = float16
-float_ = float32
-double = float64
-longdouble = float128
-
 single = float32
-longfloat = float128
+double = float64
 
 void = CType('void')
 object_ = pyobj = CType('object')
@@ -786,8 +795,9 @@ string = String
 
 Stream = Range(IntegerConstant(0), None)
 
-Type.register('int', int_)
-Type.register('float', float_)
+Type.register('int', c_int)
+Type.register('float', c_float)
+Type.register('double', c_double)
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
@@ -796,13 +806,6 @@ Type.register('top', top)
 Type.register('blob', blob)
 
 Type.register('string', String())
-Type.register('string8', String(8))
-Type.register('string16', String(16))
-Type.register('string24', String(24))
-Type.register('string32', String(32))
-Type.register('string64', String(64))
-Type.register('string128', String(128))
-Type.register('string256', String(256))
 
 #------------------------------------------------------------------------
 # Deconstructors
@@ -820,23 +823,18 @@ def extract_dims(ds):
     """ Discard measure information and just return the
     dimensions
     """
-    if isinstance(ds, CType):
-        return tuple()
-    return ds.parameters[:-1]
+    return ds[:-1]
 
 def extract_measure(ds):
     """ Discard shape information and just return the measure
     """
-    if isinstance(ds, CType):
-        return ds
-    return ds.parameters[-1]
+    return ds[-1]
 
 def is_simple(ds):
     # Unit Type
     if not ds.composite:
         if isinstance(ds, (Fixed, IntegerConstant, CType)):
             return True
-
     # Composite Type
     else:
         for dim in ds:
@@ -868,9 +866,9 @@ def from_python_scalar(scalar):
     Return a datashape ctype for a python scalar.
     """
     if isinstance(scalar, int):
-        return int_
+        return int32
     elif isinstance(scalar, float):
-        return double
+        return float64
     elif isinstance(scalar, complex):
         return complex128
     elif isinstance(scalar, (str, unicode)):
