@@ -2,6 +2,7 @@ import itertools
 from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
 
+# A Node on the kernel Tree
 class KernelObj(object):
     def __init__(self, kernel, types, ranks, name):
         self.kernel = kernel
@@ -9,15 +10,31 @@ class KernelObj(object):
         self.ranks = ranks
         self.name = name
 
-# A KernelTree needs an args list which are applied to the leaf-nodes
-# of the kernel using a depth-first search
+# A KernelTree is just the bare element-wise kernel functions 
+# (no arguments).  The args would be applied to the leaf-nodes
+# of the kerneltree in a left-to-right order of a depth-first search
 class KernelTree(object):
     def __init__(self, node, children=[]):
         assert isinstance(node, KernelObj)
         for el in children:
-            assert isinstance(children, KernelTree)
+            assert isinstance(el, KernelTree)
         self.node = node
         self.children = children
+
+    # add an llvm_element_kernel function to the given llvm_module
+    # and return a handle to the function
+    # Any temporary memory needed (i.e. to hold intermediate
+    #   results) is allocated on the stack.
+    def llvm_element_kernel(self, module):
+        pass
+
+    # A blir function to call for each element
+    def blir_element_kernel(self, module):
+        pass
+
+    # A function pointer to call for each element
+    def cffi_element_kernel(self, module):
+        pass
         
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
@@ -110,7 +127,8 @@ class BlazeFunc(object):
 
         # FIXME:  The compatible function should unify a suitable
         #          function even if the types are not all the same
-        # Find the kernel from the dispatch table:
+
+        # Find the kernel from the dispatch table
         types = tuple(arr.data.dshape.measure for arr in args)
         out_type, kernel = self.dispatch[types]
 
@@ -132,12 +150,10 @@ class BlazeFunc(object):
                 newargs.extend(arg.data.args)
             else:
                 newargs.append(arg)
-
-        kerneltree = KernelTree(kernelobj, children)
-        
+        kerneltree = KernelTree(kernelobj, children)        
         data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)        
-
-        # Construct an NDArray object from data descriptor
+ 
+        # Construct an NDArray object from new data descriptor
         user = {self.name : [arg.user for arg in args]}
 
         # FIXME:  Check for axes alignment and labels alignment
