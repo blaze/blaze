@@ -61,9 +61,10 @@ class BLZBytes(ByteProvider):
         self.flags = READ   # the returned data will be read-only
         # The capabilities that this ByteProvider supports
         self.capabilities = {
-           'iterchunks': True,  # limited to the leading dimension
-           'getitem': True,     # fully supported, even for inner dims
-           'append': True,      # limited to the leading dimension
+           'iterchunks': True,    # limited to the leading dimension
+           'wherechunks': True,   # limited to one-dimensional fields
+           'getitem': True,       # fully supported, even for inner dims
+           'append': True,        # limited to the leading dimension
           } 
 
     def iterchunks(self, blen=None, start=None, stop=None):
@@ -79,9 +80,67 @@ class BLZBytes(ByteProvider):
         stop : int
             Where the iterator stops. The default is to stop at the end.
         
+        Returns
+        -------
+        out : iterable
+            This iterable returns buffers as NumPy arays of
+            homogeneous or structured types, depending on whether
+            `self.original` is a barray or a btable object.
+
+        See Also
+        --------
+        wherechunks
+
         """
+
         self.flags = READ   # the returned chunks are meant to be read-only
-        for chunk in blz.iterchunks(self.original, blen, start, stop):
+        for chunk in blz.iterblocks(self.original, blen, start, stop):
+            buffer = memoryview(chunk)
+            yield buffer
+
+    def wherechunks(self, expression, blen=None, outfields=None, limit=None,
+                    skip=0):
+        """Return chunks fulfilling `expression`.
+
+        Iterate over the rows that fullfill the `expression` condition
+        on Table `self.original` in blocks of size `blen`.
+
+        Parameters
+        ----------
+        expression : string or barray
+            A boolean Numexpr expression or a boolean barray.
+        blen : int
+            The length of the block that is returned.  The default is the
+            chunklen, or for a btable, the minimum of the different column
+            chunklens.
+        outfields : list of strings or string
+            The list of column names that you want to get back in results.
+            Alternatively, it can be specified as a string such as 'f0 f1' or
+            'f0, f1'.  If None, all the columns are returned.  If the special
+            name 'nrow__' is present, the number of row will be included in
+            output.
+        limit : int
+            A maximum number of elements to return.  The default is return
+            everything.
+        skip : int
+            An initial number of elements to skip.  The default is 0.
+
+        Returns
+        -------
+        out : iterable
+            This iterable returns buffers as NumPy arrays made of
+            structured types (or homogeneous ones in case `outfields` is a
+            single field.
+
+        See Also
+        --------
+        iterchunks
+
+        """
+
+        self.flags = READ   # the returned chunks are meant to be read-only
+        for chunk in blz.whereblocks(self.original, expression, blen,
+                                     outfields, limit, skip):
             buffer = memoryview(chunk)
             yield buffer
 
