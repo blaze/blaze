@@ -1,10 +1,12 @@
 '''Sample module showing the creation of blaze arrays'''
+from __future__ import print_function
 
 import blaze
 
-
 def print_section(a_string, spacing=2, underline='='):
-    print '%s%s\n%s' % ('\n'*spacing, a_string, underline*len(a_string))
+    print ('%s%s\n%s' % ('\n'*spacing,
+                         a_string,
+                         underline*len(a_string)))
 
 
 print_section('building basic arrays')
@@ -17,10 +19,10 @@ print (a)
 # The array will have a datashape. A datashape is a combination of the
 # shape and dtype concept found in numpy. Note that when creating from
 # a Python iterable, a datashape will be inferred.
-print a.datashape
+print (a.datashape)
 
 b = blaze.array([1.2, 3.5, 5.1])
-print b.datashape
+print (b.datashape)
 
 # Arrays can be bi-dimensional
 print_section('going 2d', spacing=1, underline='-')
@@ -47,7 +49,7 @@ print (e)
 # be inferred. The following is thus equivalent:
 
 f = blaze.array([ 1, 2, 3], dshape='float32')
-
+print (f)
 
 # --------------------------------------------------------------------
 
@@ -59,3 +61,4 @@ print (g)
 
 # All ones
 h = blaze.ones('10, 10, float64')
+print (h)
