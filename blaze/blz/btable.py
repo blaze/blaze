@@ -6,7 +6,6 @@
 #
 ########################################################################
 
-import sys, math
 
 import numpy as np
 import itertools as it
@@ -17,6 +16,7 @@ import shutil
 
 from blz_ext import barray
 from bparams import bparams
+from chunked_eval import evaluate
 
 # BLZ utilities
 import utils, attrs, arrayprint
@@ -65,7 +65,7 @@ class cols(object):
 
     def __iter__(self):
         """Return an iterator over the columns (not the names)."""
-        return self._cols.itervalues()
+        return iter(self._cols)
 
     def __len__(self):
         return len(self.names)
@@ -554,7 +554,7 @@ class btable(object):
     def __sizeof__(self):
         return self.cbytes
 
-    def where(self, expression, outcols=None, limit=None, skip=0):
+    def where(self, expression, outcols=None, limit=None, skip=0, **kwargs):
         """
         where(expression, outcols=None, limit=None, skip=0)
 
@@ -591,7 +591,7 @@ class btable(object):
         # Check input
         if type(expression) is str:
             # That must be an expression
-            boolarr = self.eval(expression)
+            boolarr = self.eval(expression, **kwargs)
         elif hasattr(expression, "dtype") and expression.dtype.kind == 'b':
             boolarr = expression
         else:
@@ -859,6 +859,40 @@ class btable(object):
         for name in self.names:
             self.cols[name][key] = value[name]
         return
+
+    def eval(self, expression, **kwargs):
+        """
+        eval(expression, **kwargs)
+
+        Evaluate the `expression` on columns and return the result.
+
+        Parameters
+        ----------
+        expression : string
+            A string forming an expression, like '2*a+3*b'. The values
+            for 'a' and 'b' are variable names to be taken from the
+            calling function's frame.  These variables may be column
+            names in this table, scalars, barrays or NumPy arrays.
+        kwargs : list of parameters or dictionary
+            Any parameter supported by the `eval()` first level function.
+
+        Returns
+        -------
+        out : barray object
+            The outcome of the expression.  You can tailor the
+            properties of this barray by passing additional arguments
+            supported by barray constructor in `kwargs`.
+
+        See Also
+        --------
+        eval (first level function)
+
+        """
+
+        # Get the desired frame depth
+        depth = kwargs.pop('depth', 3)
+        # Call top-level eval with cols as user_dict
+        return evaluate(expression, user_dict=self.cols, depth=depth, **kwargs)
 
     def flush(self):
         """Flush data in internal buffers to disk.

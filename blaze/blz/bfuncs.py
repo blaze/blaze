@@ -56,6 +56,7 @@ def open(rootdir, mode='a'):
             pass
     return obj
 
+
 def fromiter(iterable, dtype, count, **kwargs):
     """
     fromiter(iterable, dtype, count, **kwargs)
@@ -149,6 +150,7 @@ def fromiter(iterable, dtype, count, **kwargs):
     obj.flush()
     return obj
 
+
 def fill(shape, dflt=None, dtype=np.float, **kwargs):
     """
     fill(shape, dtype=float, dflt=None, **kwargs)
@@ -209,6 +211,7 @@ def fill(shape, dflt=None, dtype=np.float, **kwargs):
     obj.flush()
     return obj
 
+
 def zeros(shape, dtype=np.float, **kwargs):
     """
     zeros(shape, dtype=float, **kwargs)
@@ -238,6 +241,7 @@ def zeros(shape, dtype=np.float, **kwargs):
     dtype = np.dtype(dtype)
     return fill(shape=shape, dflt=np.zeros((), dtype), dtype=dtype, **kwargs)
 
+
 def ones(shape, dtype=np.float, **kwargs):
     """
     ones(shape, dtype=float, **kwargs)
@@ -266,6 +270,7 @@ def ones(shape, dtype=np.float, **kwargs):
     """
     dtype = np.dtype(dtype)
     return fill(shape=shape, dflt=np.ones((), dtype), dtype=dtype, **kwargs)
+
 
 def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
     """
@@ -349,6 +354,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
     obj.flush()
     return obj
 
+
 def iterblocks(bobj, blen=None, start=0, stop=None):
     """iterblocks(blen=None, start=0, stop=None)
 
@@ -374,6 +380,10 @@ def iterblocks(bobj, blen=None, start=0, stop=None):
         structured types, depending on whether `bobj` is a barray or a
         btable object.
 
+    See Also
+    --------
+    whereblocks
+
     """
 
     if stop is None:
@@ -382,17 +392,17 @@ def iterblocks(bobj, blen=None, start=0, stop=None):
         # A btable object
         if blen is None:
             # Get the minimum chunklen for every column
-            blen = min(col.chunklen for col in bobj.cols)
+            blen = min(bobj[col].chunklen for col in bobj.cols)
         # Create intermediate buffers for columns in a dictarray
         # (it is important that columns are contiguous)
         cbufs = {}
-        for name, col in zip(bobj.names, bobj.cols):
-            cbufs[name] = np.empty(blen, dtype=col.dtype)
+        for name in bobj.names:
+            cbufs[name] = np.empty(blen, dtype=bobj[name].dtype)
         for i in xrange(start, stop, blen):
             buf = np.empty(blen, dtype=bobj.dtype)
             # Populate the column buffers and assign to the final buffer
-            for name, col in zip(bobj.names, bobj.cols):
-                col._getrange(i, blen, cbufs[name])
+            for name in bobj.names:
+                bobj[name]._getrange(i, blen, cbufs[name])
                 buf[name][:] = cbufs[name]
             if i + blen > stop:
                 buf = buf[:stop - i]
@@ -408,13 +418,14 @@ def iterblocks(bobj, blen=None, start=0, stop=None):
                 buf = buf[:stop - i]
             yield buf
 
-def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
+
+def whereblocks(table, expression, blen=None, outfields=None, limit=None,
                 skip=0):
     """
-    whereblocks(expression, blen=None, outcols=None, limit=None, skip=0)
+    whereblocks(table, expression, blen=None, outfields=None, limit=None, skip=0)
 
     Iterate over the rows that fullfill the `expression` condition on
-    `btable` in blocks of size `blen`.
+    `table` in blocks of size `blen`.
 
     Parameters
     ----------
@@ -424,12 +435,10 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
         The length of the block that is returned.  The default is the
         chunklen, or for a btable, the minimum of the different column
         chunklens.
-    outcols : list of strings or string
+    outfields : list of strings or string
         The list of column names that you want to get back in results.
         Alternatively, it can be specified as a string such as 'f0 f1' or
-        'f0, f1'.  If None, all the columns are returned.  If the special
-        name 'nrow__' is present, the number of row will be included in
-        output.
+        'f0, f1'.
     limit : int
         A maximum number of elements to return.  The default is return
         everything.
@@ -440,8 +449,8 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
     -------
     out : iterable
         This iterable returns buffers as NumPy arrays made of
-        structured types (or homogeneous ones in case `outcols` is a
-        single column.
+        structured types (or homogeneous ones in case `outfields` is a
+        single field.
 
     See Also
     --------
@@ -450,22 +459,22 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
     """
 
     if blen is None:
-        # Get the minimum chunklen for every column
-        blen = min(col.chunklen for col in bobj.cols)
-    if outcols is None:
-        dtype = btable.dtype
+        # Get the minimum chunklen for every field
+        blen = min(table[col].chunklen for col in table.cols)
+    if outfields is None:
+        dtype = table.dtype
     else:
-        if not isinstance(outcols, (list, tuple)):
-            raise ValueError, "only a sequence is supported for outcols"
-        # Get the dtype for the outcols set
+        if not isinstance(outfields, (list, tuple)):
+            raise ValueError, "only a sequence is supported for outfields"
+        # Get the dtype for the outfields set
         try:
-            dtype = [(name, btable[name].dtype) for name in outcols]
+            dtype = [(name, table[name].dtype) for name in outfields]
         except IndexError:
-            raise ValueError("Some names in `outcols` are not real fields")
+            raise ValueError("Some names in `outfields` are not real fields")
 
     buf = np.empty(blen, dtype=dtype)
     nrow = 0
-    for row in btable.where(expression, outcols, limit, skip):
+    for row in table.where(expression, outfields, limit, skip):
         buf[nrow] = row
         nrow += 1
         if nrow == blen:
@@ -473,6 +482,7 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
             buf = np.empty(blen, dtype=dtype)
             nrow = 0
     yield buf[:nrow]
+
 
 def walk(dir, classname=None, mode='a'):
     """walk(dir, classname=None, mode='a')
