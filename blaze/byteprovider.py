@@ -94,9 +94,8 @@ class BLZBytes(ByteProvider):
         """
 
         self.flags = READ   # the returned chunks are meant to be read-only
-        for chunk in blz.iterblocks(self.original, blen, start, stop):
-            buffer = memoryview(chunk)
-            yield buffer
+	# Return the iterable
+        return blz.iterblocks(self.original, blen, start, stop)
 
     def wherechunks(self, expression, blen=None, outfields=None, limit=None,
                     skip=0):
@@ -116,9 +115,7 @@ class BLZBytes(ByteProvider):
         outfields : list of strings or string
             The list of column names that you want to get back in results.
             Alternatively, it can be specified as a string such as 'f0 f1' or
-            'f0, f1'.  If None, all the columns are returned.  If the special
-            name 'nrow__' is present, the number of row will be included in
-            output.
+            'f0, f1'.  If None, all the columns are returned.
         limit : int
             A maximum number of elements to return.  The default is return
             everything.
@@ -139,10 +136,9 @@ class BLZBytes(ByteProvider):
         """
 
         self.flags = READ   # the returned chunks are meant to be read-only
-        for chunk in blz.whereblocks(self.original, expression, blen,
-                                     outfields, limit, skip):
-            buffer = memoryview(chunk)
-            yield buffer
+	# Return the iterable
+        return blz.whereblocks(self.original, expression, blen,
+			       outfields, limit, skip)
 
     def __getitem__(self, key):
         """__getitem__(self, key) -> values."""
