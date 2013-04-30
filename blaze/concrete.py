@@ -29,9 +29,11 @@ class NDArray(object):
 
 
     @property
-    def datashape(self):
+    def dshape(self):
         return self.data.dshape
 
+    def __len__(self):
+        return self.data.dshape[0]
 """
 These should be functions
 
