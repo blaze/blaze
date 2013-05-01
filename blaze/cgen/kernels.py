@@ -56,6 +56,66 @@ class Kernel(object):
                 assert varg.shape == shape
         return True
 
+    def build_source(self):
+        ivars = {}
+        icount = 0
+
+        ins    = {}
+        outs   = {}
+        params = []
+
+        _operation = self.operation
+
+        # Preamble
+        # --------
+        for i, arg in enumerate(self.outs):
+            name = arg.name or fresh('out')
+            param = Arg(arg.ty, name)
+            params.append(param)
+            outs[i] = param
+
+            _operation = _operation.replace('_out%s' % i, name)
+
+        for i, arg in enumerate(self.ins):
+            name = arg.name or fresh('in')
+            param = Arg(arg.ty, name)
+            params.append(param)
+            ins[i] = param
+
+            _operation = _operation.replace('_in%i' % i, name)
+
+
+        inner = Logic(_operation)
+
+        # Loops
+        # -----
+        for lower, upper in self.dimensions:
+            ivar = 'i%s' % len(ivars)
+            ivars[ivar] = VarDecl('int', ivar, 0)
+
+            inner = For(ivar, Range(lower, upper), Block([inner]))
+
+        # Kernel Body
+        decls = ivars.values()
+        block = decls + [inner]
+        try:
+            block += [Return(self.retval)]
+        except NotImplementedError:
+            pass
+        body = Block(block)
+
+        fn = FuncDef(
+            name = self.name or fresh('kernel'),
+            args = params,
+            ret  = self.retty,
+            body = body,
+        )
+        return fn
+
+    def compile(self):
+        import blaze.blir as bb
+        return bb.compile(str(self.build_source()))
+
     def __add__(self, other):
         """ Kernel fusion """
         if isinstance(other, Kernel):
@@ -99,6 +159,19 @@ class VectorArg(object):
 # Kernels
 #------------------------------------------------------------------------
 
+# A simple input-output scalar kernel
+class ScalarKernel(Kernel):
+    def __init__(self, )
+    @property
+    def retty(self):
+        return self._retty
+    
+    pass
+
+class ElementKernel(Kernel):
+    pass
+
+
 # Intentionally designed to mirror the PyOpenCL and PyCuda API. These
 # high level descriptions of the kernels will allow us to fuse and
 # compose kernels symbolically at a high level. LLVM then takes care of
@@ -131,54 +204,7 @@ class ElementwiseKernel(Kernel):
         if hasattr(self, '__cached'):
             return self.__cached
 
-        ivars = {}
-        icount = 0
-
-        ins    = {}
-        outs   = {}
-        params = []
-
-        _operation = self.operation
-
-        # Preamble
-        # --------
-        for i, arg in enumerate(self.ins):
-            name = arg.name or fresh('in')
-            param = Arg(arg.ty, name)
-            params.append(param)
-            ins[i] = param
-
-            _operation = _operation.replace('_in%i' % i, name)
-
-        for i, arg in enumerate(self.outs):
-            name = arg.name or fresh('out')
-            param = Arg(arg.ty, name)
-            params.append(param)
-            outs[i] = param
-
-            _operation = _operation.replace('_out%s' % i, name)
-
-        inner = Logic(_operation)
-
-        # Loops
-        # -----
-        for lower, upper in self.dimensions:
-            ivar = 'i%s' % len(ivars)
-            ivars[ivar] = VarDecl('int', ivar, 0)
-
-            inner = For(ivar, Range(lower, upper), Block([inner]))
-
-        # Kernel Body
-        decls = ivars.values()
-        body = Block(decls + [inner])
-
-        fn = FuncDef(
-            name = self.name or fresh('kernel'),
-            args = params,
-            ret  = self.retty,
-            body = body,
-        )
-
+        fn = self.build_source()
         self.__cached = str(fn)
         return self.__cached
 

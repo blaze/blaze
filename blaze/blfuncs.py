@@ -33,7 +33,7 @@ class KernelTree(object):
             name = next(self._stream_of_uniques)
         self.name = name
 
-    def create_blir_kernel(self, name=None):
+    def fuse_blir_kernel(self, name=None):
         """Take a composite kernel tree and make a fused
         BLIR kernel for it.
 
@@ -42,7 +42,8 @@ class KernelTree(object):
         if name is None:
             name = 'kernel_' + next(self._stream_of_unique_kernels)
 
-     
+        return kernel
+
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
 #  shows dimensions of arguments that must match by indicating a 2-tuple
@@ -53,16 +54,17 @@ class KernelTree(object):
 #           while the list of connections is [{(0,1),(1,0)},{(1,1),(2,0)}]
 def process_signature(ranksignature):
     ranklist = [0 if not arg else len(arg.split(',')) for arg in ranksignature]
-    
+
     varmap = {}
     for i, arg in enumerate(ranksignature):
         if not arg:
             continue
         for k, var in enumerate(arg.split(',')):
-            varmap.setdefault(var,[]).append((i,k))
+            varmap.setdefault(var, []).append((i, k))
 
     connections = [set(val) for val in varmap.values() if len(val) > 1]
     return ranklist, connections
+
 
 # Process type-table dictionary which maps a signature list with
 #   (output-type, input-type1, input-type2) to a kernel into a
@@ -88,12 +90,13 @@ def process_typetable(typetable):
 #       etc --- kernels all work on in-memory "elements"
       
 class BlazeFunc(object):
-    def __init__(self, name, ranksignature, typetable):
+    def __init__(self, name, ranksignature, typetable, inouts=[]):
         """
         Construct a Blaze Function from a rank-signature and keyword arguments.
         
-        The keyword arguments are typenames with values as the kernel.  A kernel
-        is a BLIR kernel object.
+        The typetable is a dictionary with keys a tuple of types 
+        and values as corresponding BLIR kernel object with Output as first
+        argument and Inputs as remaining arguments.
 
         Arguments
         =========
@@ -104,6 +107,9 @@ class BlazeFunc(object):
 
         typetable :  dictionary mapping argument types to an implementation
                      kernel
+
+        inouts : list of integers corresponding to arguments which are
+                  input and output arguments
         """
         self.name = name
 
@@ -111,6 +117,7 @@ class BlazeFunc(object):
         #         so that dispatch can occur on different rank
         self.ranks, self.rankconnect = process_signature(ranksignature)
         self.dispatch = process_typetable(typetable)
+        self.inouts = inouts
 
     @property
     def nin(self):
@@ -120,9 +127,8 @@ class BlazeFunc(object):
         # check for broadcastability
         # TODO: figure out correct types as well
         dshapes = [args.data.dshape for arg in args]
-        return broadcastable(dshapes, self.ranks, 
+        return broadcastable(dshapes, self.ranks,
                                 rankconnect=self.rankconnect)
-
 
     def __call__(self, *args, **kwds):
         # convert inputs to Arrays

@@ -4,6 +4,8 @@ import abc
 from blaze.error import StreamingDimensionError
 from ..cgen.utils import letters
 
+_stream_of_uniques = letters()
+
 class IGetElement:
     """
     An interface for getting char* element pointers at fixed-size
@@ -135,8 +137,7 @@ class DataDescriptor:
     object, to achieve this.
     """
     __metaclass__ = abc.ABCMeta
-    _unique_name = None
-    _stream_of_uniques = letters()
+    _unique_name = ''
 
     @abc.abstractproperty
     def dshape(self):
