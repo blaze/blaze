@@ -486,7 +486,7 @@ class CType(Mono):
 
     def __eq__(self, other):
         if type(other) is CType:
-            return self.parameters[0] == other.parameters[0]
+            return self.name == other.name
         else:
             return False
 
@@ -677,7 +677,7 @@ class Union(Atom):
     def __str__(self):
         return expr_string('', self.parameters, '{}')
 
-class Record(DataShape):
+class Record(Mono):
     """
     A composite data structure of ordered fields mapped to types.
     """
@@ -723,13 +723,6 @@ class Record(DataShape):
             return self.__d == other.__d
         else:
             return False
-
-    def __len__(self):
-        return 1
-
-    def __getitem__(self, key):
-        lst = (self,)
-        return lst[key]
 
     def __str__(self):
         return record_string(self.__k, self.__v)
