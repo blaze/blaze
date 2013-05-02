@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import operator
 
 from . import DataDescriptor, IGetElement, IElementIter
+from .. import datashape
 from ..datashape import dshape
 import numpy as np
 
@@ -37,7 +38,7 @@ class NumPyGetElement(IGetElement):
         x = np.ascontiguousarray(x, dtype=x.dtype.newbyteorder('='))
         self._tmpbuffer = x
         import ctypes
-        return x.data_as(ctypes.c_void_p)
+        return x.ctypes.data_as(ctypes.c_void_p)
 
 class NumPyElementIter(IElementIter):
     def __init__(self, npyarr):
@@ -54,12 +55,12 @@ class NumPyElementIter(IElementIter):
         if self._index < self._len:
             i = self._index
             self._index = i + 1
-            x = self.npyarr[idx]
+            x = self.npyarr[i]
             # Make it C-contiguous and in native byte order
             x = np.ascontiguousarray(x, dtype=x.dtype.newbyteorder('='))
             self._tmpbuffer = x
             import ctypes
-            return x.data_as(ctypes.c_void_p)
+            return x.ctypes.data_as(ctypes.c_void_p)
         else:
             raise StopIteration
 
@@ -69,7 +70,8 @@ class NumPyDataDescriptor(DataDescriptor):
     """
     def __init__(self, npyarr):
         if not isinstance(npyarr, np.ndarray):
-            raise TypeError('object is not a numpy array, has type %s' % type(npyarr))
+            raise TypeError('object is not a numpy array, has type %s' %
+                            type(npyarr))
         self.npyarr = npyarr
         self._dshape = datashape.from_numpy(self.npyarr.shape, self.npyarr.dtype)
 

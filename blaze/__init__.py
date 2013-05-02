@@ -39,5 +39,4 @@ def test(verbosity=1, xunitfile=None, exit=False):
             argv.append(testsdir)
             print('Test dir: %s' % testsdir[len(rootdir)+1:])
     # Ask nose to do its thing
-    return nose.main(argv=argv,
-                    exit=exit)
+    return nose.main(argv=argv, exit=exit)

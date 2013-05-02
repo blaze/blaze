@@ -72,8 +72,8 @@ class IElementIter:
         return self
 
     def __len__(self):
-        # TODO: raise StreamingDimensionError("Cannot get the length of a streaming dimension")
-        raise NotImplemented
+        raise StreamingDimensionError('Cannot get the length of'
+                        ' a streaming dimension')
 
     @abc.abstractmethod
     def __next__(self):
@@ -146,7 +146,7 @@ class DataDescriptor:
         """
         raise NotImplemented
 
-    @abc.abstractproperty
+    #@abc.abstractproperty
     def unique_name(self):
         """
         Returns a unique name (in this process space)
@@ -161,7 +161,8 @@ class DataDescriptor:
         behavior of a streaming dimension, where the size
         of the dimension isn't known ahead of time.
         """
-        raise StreamingDimensionError("Cannot get the length of a streaming dimension")
+        raise StreamingDimensionError('Cannot get the length of'
+                        ' a streaming dimension')
 
     @abc.abstractmethod
     def __iter__(self):

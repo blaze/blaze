@@ -51,7 +51,8 @@ class CatDataDescriptor(DataDescriptor):
             raise ValueError('Need at least 2 data descriptors to concatenate')
         for dd in ddlist:
             if not isinstance(dd, DataDescriptor):
-                raise ValueError('Provided ddlist has an element which is not a data descriptor')
+                raise ValueError('Provided ddlist has an element '
+                                'which is not a data descriptor')
         self._ddlist = ddlist
         self._dshape = ds.cat_dshapes([dd.dshape for dd in ddlist])
         self._ndim = len(self._dshape[:]) - 1
@@ -79,12 +80,12 @@ class CatDataDescriptor(DataDescriptor):
         # Determine which data descriptor in the list to use
         if idx0 >= 0:
             if idx0 >= dim_size:
-                raise IndexError('Index %d is out of range in dimension sized %d' %
-                                (idx0, dim_size))
+                raise IndexError(('Index %d is out of range '
+                                'in dimension sized %d') % (idx0, dim_size))
         else:
             if idx0 < -dim_size:
-                raise IndexError('Index %d is out of range in dimension sized %d' %
-                                (idx0, dim_size))
+                raise IndexError(('Index %d is out of range '
+                                'in dimension sized %d') % (idx0, dim_size))
             idx0 += dim_size
         i = bisect.bisect_right(boundary_index, idx0) - 1
         # Call the i-th data descriptor to get the result
