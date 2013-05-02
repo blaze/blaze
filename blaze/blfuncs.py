@@ -17,7 +17,8 @@ class KernelObj(object):
 # A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
 # in an abstract name-space
-# All nodes in the kernel tree can be named or else a unique-name
+# All nodes in the kernel tree can also be named 
+#   or else a unique-name
 # from the abstract name-space will be created.
 class KernelTree(object):
     _stream_of_unique_names = letters()
@@ -30,7 +31,7 @@ class KernelTree(object):
         self.node = node
         self.children = children
         if name is None:
-            name = next(self._stream_of_uniques)
+            name = 'node_' + next(self._stream_of_uniques)
         self.name = name
 
     def fuse_blir_kernel(self, name=None):
@@ -41,6 +42,8 @@ class KernelTree(object):
         """
         if name is None:
             name = 'kernel_' + next(self._stream_of_unique_kernels)
+
+
 
         return kernel
 
@@ -67,13 +70,13 @@ def process_signature(ranksignature):
 
 
 # Process type-table dictionary which maps a signature list with
-#   (output-type, input-type1, input-type2) to a kernel into a
+#   (input-type1, input-type2, output_type) to a kernel into a
 #   lookup-table dictionary which maps a input-only signature list
 #   with a tuple of the output-type plus the signature
 def process_typetable(typetable):
     newtable = {}
     for key, value in typetable:
-        newtable[key[1:]] = (key[0], value)
+        newtable[key[:-1]] = (key[-1], value)
         
 # Define the Blaze Function
 #   * A Blaze Function is a callable that takes Concrete Arrays and returns
@@ -95,9 +98,9 @@ class BlazeFunc(object):
         Construct a Blaze Function from a rank-signature and keyword arguments.
         
         The typetable is a dictionary with keys a tuple of types 
-        and values as corresponding BLIR kernel object with Output as first
-        argument and Inputs as remaining arguments.
-
+        and values as corresponding BlazeScalarKernel objects.  The 
+        tuple of types has Input types first with the Output Type last
+        
         Arguments
         =========
         ranksignature : ['name1,M', 'M,name3', 'L']
@@ -106,7 +109,7 @@ class BlazeFunc(object):
                         of the output.  An empty-string or None means a scalar.
 
         typetable :  dictionary mapping argument types to an implementation
-                     kernel
+                     kernel which is an instance of a BlazeScalarKernel object
 
         inouts : list of integers corresponding to arguments which are
                   input and output arguments
