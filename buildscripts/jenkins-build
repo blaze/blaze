@@ -17,7 +17,7 @@
 if [ "${PYTHON_VERSION}" == "" ]; then
  echo You must select a Python version with the PYTHON_VERSION variable.
  exit 1
-fi 
+fi
 
 # Use conda to create a conda environment of the required
 # python version and containing the dependencies.
@@ -40,5 +40,6 @@ ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
 # Run the tests
 pushd ..
-${PYTHON_EXECUTABLE} -c 'import sys, blaze;tr=blaze.test();sys.exit(not tr.wasSuccessful())' || exit 1
+# Run the unit tests
+${PYTHON_EXECUTABLE} -c 'import dynd;dynd.test(xunitfile="../test_results.xml", exit=1)' || exit 1
 popd

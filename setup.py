@@ -18,8 +18,15 @@ from distutils.sysconfig import get_python_inc, get_config_var
 packages = [
     'blaze',
     'blaze.aterm',
+    'blaze.aterm.tests',
     'blaze.blir',
     'blaze.blz',
+    'blaze.blz.tests',
+    'blaze.cgen',
+    'blaze.datadescriptor',
+    'blaze.datadescriptor.tests',
+    'blaze.datashape',
+    'blaze.datashape.tests',
 ]
 
 #------------------------------------------------------------------------
