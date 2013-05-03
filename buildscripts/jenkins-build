@@ -41,5 +41,5 @@ ${PYTHON_EXECUTABLE} setup.py install || exit 1
 # Run the tests
 pushd ..
 # Run the unit tests
-${PYTHON_EXECUTABLE} -c 'import dynd;dynd.test(xunitfile="../test_results.xml", exit=1)' || exit 1
+${PYTHON_EXECUTABLE} -c 'import blaze;blaze.test(xunitfile="../test_results.xml", exit=1)' || exit 1
 popd
