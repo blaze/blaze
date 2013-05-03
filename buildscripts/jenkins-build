@@ -10,7 +10,7 @@
 #     platforms/python versions
 #   - Use the XShell plugin to launch this script
 #   - Call the script from the root workspace
-#     directory as ./jenkins/jenkins-build
+#     directory as buildscripts/jenkins-build
 #
 
 # Require a version of Python to be selected
@@ -23,7 +23,7 @@ fi
 # python version and containing the dependencies.
 export PYENV_PREFIX=${WORKSPACE}/build/pyenv
 rm -rf ${PYENV_PREFIX}
-~/anaconda/bin/conda create --yes -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython scipy llvmpy ply || exit 1
+~/anaconda/bin/conda create --yes -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython=0.19 scipy llvmpy ply || exit 1
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
 if [ -f "${PYENV_PREFIX}/bin/python" ]; then
@@ -40,6 +40,5 @@ ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
 # Run the tests
 pushd ..
-# Run the unit tests
 ${PYTHON_EXECUTABLE} -c 'import blaze;blaze.test(xunitfile="../test_results.xml", exit=1)' || exit 1
 popd
