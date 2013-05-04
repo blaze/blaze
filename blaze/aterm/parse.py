@@ -233,7 +233,7 @@ def debug_parse(data, lexer, parser):
     while True:
         tok = lexer.token()
         if not tok: break
-        print tok
+        print(tok)
     return parser.parse(data)
 
 def load_parser(debug=False):
@@ -268,14 +268,14 @@ if __name__ == '__main__':
         try:
             line = raw_input('>> ')
             if line == ':reload':
-                print 'Rebuilding parser...'
+                print('Rebuilding parser...')
                 continue
             elif line == ':show':
-                print repr(last)
+                print(repr(last))
             else:
                 last = parse(line)
-                print last
+                print(last)
         except EOFError:
             break
         except Exception as e:
-            print e
+            print(e)

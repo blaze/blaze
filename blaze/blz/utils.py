@@ -34,12 +34,12 @@ def show_stats(explain, tref):
         elif line.startswith("VmLib:"):
             vmlib = int(line.split()[1])
     sout.close()
-    print "Memory usage: ******* %s *******" % explain
-    print "VmSize: %7s kB\tVmRSS: %7s kB" % (vmsize, vmrss)
-    print "VmData: %7s kB\tVmStk: %7s kB" % (vmdata, vmstk)
-    print "VmExe:  %7s kB\tVmLib: %7s kB" % (vmexe, vmlib)
+    print("Memory usage: ******* %s *******" % explain)
+    print("VmSize: %7s kB\tVmRSS: %7s kB" % (vmsize, vmrss))
+    print("VmData: %7s kB\tVmStk: %7s kB" % (vmdata, vmstk))
+    print("VmExe:  %7s kB\tVmLib: %7s kB" % (vmexe, vmlib))
     tnow = time()
-    print "WallClock time:", round(tnow - tref, 3)
+    print("WallClock time:", round(tnow - tref, 3))
     return tnow
 
 def detect_number_of_cores():
@@ -186,13 +186,13 @@ def human_readable_size(size):
 # Main part
 # =========
 if __name__ == '__main__':
-    print human_readable_size(1023)
-    print human_readable_size(10234)
-    print human_readable_size(10234*100)
-    print human_readable_size(10234*10000)
-    print human_readable_size(10234*1000000)
-    print human_readable_size(10234*100000000)
-    print human_readable_size(10234*1000000000)
+    print(human_readable_size(1023))
+    print(human_readable_size(10234))
+    print(human_readable_size(10234*100))
+    print(human_readable_size(10234*10000))
+    print(human_readable_size(10234*1000000))
+    print(human_readable_size(10234*100000000))
+    print(human_readable_size(10234*1000000000))
 
 
 ## Local Variables:

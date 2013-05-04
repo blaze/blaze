@@ -138,7 +138,7 @@ def eval_blir(exp):
     v.visit(exp)
 
     # hardcoded against the first kernel for now
-    print v.kernels[0]
+    print(v.kernels[0])
     ast, env = compile(v.kernels[0])
     ctx = Context(env)
 

@@ -295,21 +295,21 @@ if __name__ == '__main__':
     b = T('array', a3)
     # ---------------------------------
 
-    print 'A'.center(80, '=')
-    print a+s
-    print dump((a+b).ast())
+    print('A'.center(80, '='))
+    print(a+s)
+    print(dump((a+b).ast()))
 
-    print 'B'.center(80, '=')
-    print t+s
-    print dump((t+s).ast())
+    print('B'.center(80, '='))
+    print(t+s)
+    print(dump((t+s).ast()))
 
-    print 'C'.center(80, '=')
-    print dump(dot(a,a).ast())
+    print('C'.center(80, '='))
+    print(dump(dot(a,a).ast()))
 
-    print 'D'.center(80, '=')
-    print dump((a+a+a+b).ast())
+    print('D'.center(80, '='))
+    print(dump((a+a+a+b).ast()))
 
-    print (a+b*b).eval(engine='blir')
-    print (a+b).eval(engine='numexpr')
+    print((a+b*b).eval(engine='blir'))
+    print((a+b).eval(engine='numexpr'))
 
-    print a+1
+    print(a+1)

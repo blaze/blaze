@@ -50,7 +50,7 @@ class Defaults(object):
     def eval_vm(self, value):
         self.check_choices('eval_vm', value)
         if value == "numexpr" and not ca.numexpr_here:
-            raise (ValueError,
+            raise ValueError(
                    "cannot use `numexpr` virtual machine "
                    "(minimum required version is probably not installed)")
         self.__eval_vm = value
@@ -137,7 +137,7 @@ def evaluate(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
     for name in vars.iterkeys():
         var = vars[name]
         if hasattr(var, "__len__") and not hasattr(var, "dtype"):
-            raise ValueError, "only numpy/barray sequences supported"
+            raise ValueError("only numpy/barray sequences supported")
         if hasattr(var, "dtype") and not hasattr(var, "__len__"):
             continue
         if hasattr(var, "dtype"):  # numpy/barray arrays
@@ -146,10 +146,10 @@ def evaluate(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
             elif isinstance(var, barray):  # barray array
                 typesize += var.dtype.itemsize
             else:
-                raise ValueError, "only numpy/barray objects supported"
+                raise ValueError("only numpy/barray objects supported")
         if hasattr(var, "__len__"):
             if vlen > 1 and vlen != len(var):
-                raise ValueError, "arrays must have the same length"
+                raise ValueError("arrays must have the same length")
             vlen = len(var)
 
     if typesize == 0:

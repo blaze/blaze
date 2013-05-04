@@ -435,8 +435,8 @@ def ddump_tc(source, verbose=False):
     if errors.occurred():
         sys.stdout.write("Not well-typed!\n")
     else:
-        print 'Locals'.center(80, '=')
+        print('Locals'.center(80, '='))
         sys.stdout.write(pprint.pformat(symtab._locals.items()) + '\n')
-        print 'Globals'.center(80, '=')
+        print('Globals'.center(80, '='))
         sys.stdout.write(pprint.pformat(symtab._globals) + '\n')
         sys.stdout.write("Well-typed!\n")

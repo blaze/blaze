@@ -35,8 +35,8 @@ class Type(type):
     def register(name, type):
         # Don't clobber existing types.
         if name in Type._registry:
-            raise TypeError('There is another type registered with name %s'\
-                % name)
+            raise TypeError('There is another type registered with name %s'
+                            % name)
 
         Type._registry[name] = type
 
@@ -524,7 +524,7 @@ class Fixed(Atom):
         assert isinstance(i, (int, long))
 
         if i < 0:
-            raise ValueError, 'Fixed dimensions must be positive'
+            raise ValueError('Fixed dimensions must be positive')
 
         self.val = i
         self.parameters = (self.val,)

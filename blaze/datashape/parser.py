@@ -374,7 +374,7 @@ def debug_parse(data, lexer, parser):
     while True:
         tok = lexer.token()
         if not tok: break
-        print tok
+        print(tok)
 
     import logging
     logging.basicConfig(
@@ -443,7 +443,7 @@ if __name__ == '__main__':
         try:
             line = raw_input('>> ')
             ast = parser(line)
-            print ast
-            #print build_ds(ast)
+            print(ast)
+            #print(build_ds(ast))
         except EOFError:
             break

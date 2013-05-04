@@ -86,7 +86,7 @@ def fromiter(iterable, dtype, count, **kwargs):
     allows `fromiter` to avoid looping the iterable twice (which is slooow).
     It avoids memory leaks to happen too (which can be important for large
     iterables).
-    
+
     """
     from btable import btable
 
@@ -196,7 +196,7 @@ def fill(shape, dflt=None, dtype=np.float, **kwargs):
     # Create the container
     expectedlen = kwargs.pop("expectedlen", length)
     if dtype.kind == "V" and dtype.shape == ():
-        raise ValueError, "fill does not support btables objects"
+        raise ValueError("fill does not support btables objects")
     obj = barray([], dtype=dtype, dflt=dflt, expectedlen=expectedlen,
                  **kwargs)
     chunklen = obj.chunklen
@@ -315,7 +315,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
 
     # Check start, stop, step values
     if (start, stop) == (None, None):
-        raise ValueError, "You must pass a `stop` value at least."
+        raise ValueError("You must pass a `stop` value at least.")
     elif stop is None:
         start, stop = 0, start
     elif start is None:
@@ -333,7 +333,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
     # Create the container
     expectedlen = kwargs.pop("expectedlen", stop)
     if dtype.kind == "V":
-        raise ValueError, "arange does not support btables yet."
+        raise ValueError("arange does not support btables yet.")
     else:
         obj = barray(np.array([], dtype=dtype),
                      expectedlen=expectedlen,
@@ -465,7 +465,7 @@ def whereblocks(table, expression, blen=None, outfields=None, limit=None,
         dtype = table.dtype
     else:
         if not isinstance(outfields, (list, tuple)):
-            raise ValueError, "only a sequence is supported for outfields"
+            raise ValueError("only a sequence is supported for outfields")
         # Get the dtype for the outfields set
         try:
             dtype = [(name, table[name].dtype) for name in outfields]
