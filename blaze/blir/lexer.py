@@ -11,7 +11,7 @@ tokens = [
  'RPAREN', 'SEMI', 'SHL', 'SHR', 'STRING', 'TIMES', 'TRUE', 'VAR', 'WHILE'
 ]
 
-reserved = {
+reserved = set([
     'False',
     'True',
     # --
@@ -27,16 +27,16 @@ reserved = {
     'return',
     'var',
     'while'
-}
+])
 
 _escapes_re = r'(\\b[0-9a-fA-F]{2})|(\\.)'
-_escape_map = {
+_escape_map = set([
     r'\n' : '\n',  # newline
     r'\t' : '\t',  # tab
     r'\r' : '\r',  # carriage return
     r'\\' : '\\',  # backslash
     r'\"' : '"',   # quote
-}
+])
 _escape_pat = re.compile(_escapes_re)
 
 t_ignore = ' \t\r'

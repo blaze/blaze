@@ -161,12 +161,12 @@ class VectorArg(object):
 
 # A simple input-output scalar kernel
 class ScalarKernel(Kernel):
-    def __init__(self, )
+    def __init__(self):
+        pass
+
     @property
     def retty(self):
         return self._retty
-    
-    pass
 
 class ElementKernel(Kernel):
     pass
