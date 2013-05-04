@@ -6,6 +6,7 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
 
 import numpy as np
 import itertools as it
@@ -14,12 +15,12 @@ import json
 import os, os.path
 import shutil
 
-from blz_ext import barray
-from bparams import bparams
-from chunked_eval import evaluate
+from .blz_ext import barray
+from .bparams import bparams
+from .chunked_eval import evaluate
 
 # BLZ utilities
-import utils, attrs, arrayprint
+from . import utils, attrs, arrayprint
 
 ROOTDIRS = '__rootdirs__'
 

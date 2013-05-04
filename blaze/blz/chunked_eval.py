@@ -6,12 +6,13 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
 
 # Functions for an execution engine for BLZ
 
 import sys, math
 import numpy as np
-from blz_ext import barray
+from .blz_ext import barray
 
 
 min_numexpr_version = '2.1'  # the minimum version of Numexpr needed

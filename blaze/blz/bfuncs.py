@@ -6,6 +6,8 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
+
 """Top level functions and classes.
 """
 
@@ -14,10 +16,10 @@ import os, os.path
 import glob
 import itertools as it
 import numpy as np
-from blz_ext import barray
-from blaze.blz.btable import btable
-from bparams import bparams
 import math
+from .blz_ext import barray
+from .btable import btable
+from .bparams import bparams
 
 
 def open(rootdir, mode='a'):

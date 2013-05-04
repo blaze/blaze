@@ -6,13 +6,15 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
+
 """Utility functions (mostly private).
 """
 
 import sys, os, os.path, subprocess, math
 from time import time, clock
 import numpy as np
-import blz_ext
+from . import blz_ext
 
 
 def show_stats(explain, tref):

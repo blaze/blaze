@@ -14,8 +14,10 @@ import sys
 
 if sys.version_info >= (3, 0):
     _inttypes = (int,)
+    _strtypes = (str,)
 else:
     _inttypes = (int, long)
+    _strtypes = (str, unicode)
 
 instanceof = lambda T: lambda X: isinstance(X, T)
 
@@ -136,7 +138,7 @@ class StringConstant(Mono):
     """
 
     def __init__(self, i):
-        assert isinstance(i, (str, unicode))
+        assert isinstance(i, _strtypes)
         self.val = i
 
     def __str__(self):
@@ -224,7 +226,7 @@ class String(Mono):
             else:
                 self.fixlen = fixlen
             self.encoding = u'U8'
-        elif isinstance(fixlen, (str, unicode, StringConstant)) and \
+        elif isinstance(fixlen, _strtypes + (StringConstant,)) and \
                         encoding is None:
             # String('encoding')
             self.fixlen = None
@@ -233,7 +235,7 @@ class String(Mono):
             else:
                 self.encoding = unicode(fixlen)
         elif isinstance(fixlen, _inttypes + (IntegerConstant,)) and \
-                        isinstance(encoding, (str, unicode, StringConstant)):
+                        isinstance(encoding, _strtypes + (StringConstant,)):
             # String(fixlen, 'encoding')
             if isinstance(fixlen, IntegerConstant):
                 self.fixlen = fixlen.val
@@ -918,7 +920,7 @@ def from_python_scalar(scalar):
         return float64
     elif isinstance(scalar, complex):
         return complex128
-    elif isinstance(scalar, (str, unicode)):
+    elif isinstance(scalar, _strtypes):
         return string
     elif isinstance(scalar, datetime.timedelta):
         return timedelta64
