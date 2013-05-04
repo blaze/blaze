@@ -6,7 +6,7 @@ from contextlib import contextmanager
 if sys.version_info >= (2, 7):
     from collections import Counter
 else:
-    from counter_py26 import Counter
+    from .counter_py26 import Counter
 
 #------------------------------------------------------------------------
 # Naming
