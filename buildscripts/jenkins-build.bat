@@ -32,7 +32,7 @@ IF %ERRORLEVEL% NEQ 0 exit /b 1
 
 REM Run the tests
 pushd ..
-%PYTHON_EXECUTABLE% -c "import blaze;blaze.test(xunitfile='../test_results.xml', verbosity=2, exit=1)"
+%PYTHON_EXECUTABLE% -c "import blaze;blaze.test(xunitfile='./test_results.xml', verbosity=2, exit=1)"
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 popd
 

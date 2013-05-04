@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 The improved parser for Datashape grammar.
 
@@ -53,7 +55,7 @@ import sys
 
 from functools import partial
 from collections import namedtuple
-import coretypes as T
+from . import coretypes as T
 
 try:
     import dlex
