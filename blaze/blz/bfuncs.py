@@ -90,7 +90,6 @@ def fromiter(iterable, dtype, count, **kwargs):
     iterables).
 
     """
-    from btable import btable
 
     # Check for a true iterable
     if not hasattr(iterable, "next"):

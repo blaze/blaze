@@ -14,7 +14,6 @@ from __future__ import absolute_import
 import sys, os, os.path, subprocess, math
 from time import time, clock
 import numpy as np
-from .blz_ext import blz_set_nthreads
 
 
 def show_stats(explain, tref):
@@ -84,6 +83,7 @@ def set_nthreads(nthreads):
         The previous setting for the number of threads.
 
     """
+    from blz_ext import blz_set_nthreads
     nthreads_old = blz_set_nthreads(nthreads)
     return nthreads_old
 
