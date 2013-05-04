@@ -49,7 +49,7 @@ IntType = np.dtype(np.int_)
 # numpy functions & objects
 from definitions cimport import_array, ndarray, dtype, \
      malloc, realloc, free, memcpy, memset, strdup, strcmp, \
-     PyString_AsString, PyString_GET_SIZE, PyString_FromString, \
+     PyString_AsString, PyString_GET_SIZE, \
      PyString_FromStringAndSize, \
      Py_BEGIN_ALLOW_THREADS, Py_END_ALLOW_THREADS, \
      PyArray_GETITEM, PyArray_SETITEM, \
@@ -241,7 +241,7 @@ cdef class chunk:
       # Data comes in an already compressed state inside a Python String
       self.data = PyString_AsString(dobject)
       # Increment the reference so that data don't go away
-      self.dobject = dobject 
+      self.dobject = dobject
       # Set size info for the instance
       blosc_cbuffer_sizes(self.data, &nbytes, &cbytes, &blocksize)
     elif dtype_ == 'O':
