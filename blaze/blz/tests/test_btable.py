@@ -6,6 +6,8 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
+
 import sys
 
 import numpy as np
@@ -14,8 +16,10 @@ from unittest import TestCase
 
 
 from blaze import blz
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 
+if sys.version_info >= (3, 0):
+    xrange = range
 
 class createTest(MayBeDiskTest, TestCase):
 
@@ -936,7 +940,7 @@ class iterchunksTest(TestCase):
             s += block['f0'].sum()
         self.assert_(l == N)
         self.assert_(s == (N - 1) * (N / 2))  # as per Gauss summation formula
-        
+
     def test01(self):
         """Testing `iterchunks` method with no start, no stop"""
         N, blen = int(1e4), 100

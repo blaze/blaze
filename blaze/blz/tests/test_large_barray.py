@@ -3,6 +3,8 @@
 # separate execution of normal and heavy tests (via flag to the
 # test runner, for example).
 
+from __future__ import absolute_import
+
 import sys
 from unittest import TestCase
 if sys.version_info >= (2, 7):
@@ -25,7 +27,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from blaze import blz
 from blaze.blz.tests import common
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 
 
 class largeBarrayTest(MayBeDiskTest, TestCase):

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+
 import sys
 import struct
 import os, os.path
@@ -11,9 +13,12 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 import blaze.blz as blz
 from blaze.blz.blz_ext import chunk
 from blaze.blz.tests import common
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 
 is_64bit = (struct.calcsize("P") == 8)
+
+if sys.version_info >= (3, 0):
+    xrange = range
 
 # Just memory tests for now
 
@@ -1227,7 +1232,7 @@ class dtypesTest(TestCase):
 
     def test07(self):
         """Checking barray constructor from another barray.
-        
+
         Test introduced after it was seen failing (blaze issue #30)
         """
         types = [np.int8, np.int16, np.int32, np.int64,
@@ -1254,7 +1259,7 @@ class persistenceTest(MayBeDiskTest, TestCase):
         """Creating a barray in "r" mode."""
 
         N = 10000
-        self.assertRaises(RuntimeError, blz.zeros, 
+        self.assertRaises(RuntimeError, blz.zeros,
                           N, dtype="i1", rootdir=self.rootdir, mode='r')
 
     def test01b(self):
@@ -1280,7 +1285,7 @@ class persistenceTest(MayBeDiskTest, TestCase):
         cn = blz.zeros(N, dtype="i1", rootdir=self.rootdir)
         self.assert_(len(cn) == N)
 
-        self.assertRaises(RuntimeError, blz.zeros, 
+        self.assertRaises(RuntimeError, blz.zeros,
                           N-2, dtype="i1", rootdir=self.rootdir, mode='a')
 
     def test02a(self):
@@ -1326,7 +1331,7 @@ class persistenceTest(MayBeDiskTest, TestCase):
         # Now check some accesses (no errors should be raised)
         cn.append([1,1])
         self.assert_(len(cn) == N+2)
-        cn[1] = 2 
+        cn[1] = 2
         self.assert_(cn[1] == 2)
         cn[N+1] = 3
         self.assert_(cn[N+1] == 3)
@@ -1381,7 +1386,7 @@ class iterchunksTest(TestCase):
 
 ## Local Variables:
 ## mode: python
-## coding: utf-8 
+## coding: utf-8
 ## python-indent: 4
 ## tab-width: 4
 ## fill-column: 66

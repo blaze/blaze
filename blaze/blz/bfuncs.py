@@ -21,6 +21,10 @@ from .blz_ext import barray
 from .btable import btable
 from .bparams import bparams
 
+if sys.version_info >= (3, 0):
+    _inttypes = (int,)
+else:
+    _inttypes = (int, long)
 
 def open(rootdir, mode='a'):
     """
@@ -184,7 +188,7 @@ def fill(shape, dflt=None, dtype=np.float, **kwargs):
     """
 
     dtype = np.dtype(dtype)
-    if type(shape) in (int, long, float):
+    if type(shape) in _inttypes + (float,):
         shape = (int(shape),)
     else:
         shape = tuple(shape)
@@ -326,7 +330,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
 
     # Guess the dtype
     if dtype is None:
-        if type(stop) in (int, long):
+        if type(stop) in _inttypes:
             dtype = np.dtype(np.int_)
     dtype = np.dtype(dtype)
     stop = int(stop)

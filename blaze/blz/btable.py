@@ -8,8 +8,9 @@
 
 from __future__ import absolute_import
 
+import sys
 import numpy as np
-import itertools as it
+import itertools
 from collections import namedtuple
 import json
 import os, os.path
@@ -21,6 +22,14 @@ from .chunked_eval import evaluate
 
 # BLZ utilities
 from . import utils, attrs, arrayprint
+
+if sys.version_info >= (3, 0):
+    _inttypes = (int,)
+    imap = map
+else:
+    _inttypes = (int, long)
+    imap = itertools.imap
+islice = itertools.islice
 
 ROOTDIRS = '__rootdirs__'
 
@@ -686,7 +695,7 @@ class btable(object):
                 istop = None
                 if limit is not None:
                     istop = limit + skip
-                icols.append(it.islice(xrange(start, stop, step), skip, istop))
+                icols.append(islice(xrange(start, stop, step), skip, istop))
                 dtypes.append((name, np.int_))
             else:
                 col = self.cols[name]
@@ -701,7 +710,7 @@ class btable(object):
 
         icols = tuple(icols)
         namedt = namedtuple('row', dtype.names)
-        iterable = it.imap(namedt, *icols)
+        iterable = imap(namedt, *icols)
         return iterable
 
     def _where(self, boolarr, colnames=None):
@@ -743,7 +752,7 @@ class btable(object):
         """
 
         # First, check for integer
-        if isinstance(key, (int, long)):
+        if isinstance(key, _inttypes):
             # Get a copy of the len-1 array
             ra = self._arr1.copy()
             # Fill it

@@ -58,15 +58,15 @@ class attrs(object):
         if self.mode != 'r':
             # Empty the underlying file
             with open(self.attrsfile, 'wb') as rfile:
-                rfile.write(json.dumps({}))
-                rfile.write("\n")
+                rfile.write(json.dumps({}, ensure_ascii=True).encode('ascii'))
+                rfile.write(b"\n")
 
     def _open(self):
         if not os.path.isfile(self.attrsfile):
             if self.mode != 'r':
                 # Create a new empty file
                 with open(self.attrsfile, 'wb') as rfile:
-                    rfile.write("\n")
+                    rfile.write(b"\n")
         # Get the serialized attributes
         with open(self.attrsfile, 'rb') as rfile:
             try:
@@ -81,8 +81,8 @@ class attrs(object):
         if not self.rootdir:
             return
         with open(self.attrsfile, 'wb') as rfile:
-            rfile.write(json.dumps(self.attrs))
-            rfile.write("\n")
+            rfile.write(json.dumps(self.attrs, ensure_ascii=True).encode('ascii'))
+            rfile.write(b"\n")
 
     def getall(self):
         return self.attrs.copy()

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 
 import sys
 from unittest import TestCase
@@ -6,8 +7,10 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from blaze import blz
-import common
+from . import common
 
+if sys.version_info >= (3, 0):
+    xrange = range
 
 class with_listTest:
 
@@ -17,7 +20,7 @@ class with_listTest:
         a[30:40] = blz.ones(10, dtype="bool")
         alist = list(a)
         blist1 = [r for r in a.wheretrue()]
-        self.assert_(blist1 == range(30,40))
+        self.assert_(blist1 == list(range(30,40)))
         alist2 = list(a)
         self.assert_(alist == alist2, "wheretrue() not working correctly")
 
@@ -34,7 +37,7 @@ class with_listTest:
         b = blz.arange(self.N, dtype="f4")
         blist = list(b)
         blist1 = [r for r in b.where(a)]
-        self.assert_(blist1 == range(30,40))
+        self.assert_(blist1 == list(range(30,40)))
         blist2 = list(b)
         self.assert_(blist == blist2, "where() not working correctly")
 
@@ -50,7 +53,7 @@ class with_listTest:
         b = blz.arange(self.N, dtype="f4")
         blist = list(b)
         blist1 = [r for r in b.iter(3,10)]
-        self.assert_(blist1 == range(3,10))
+        self.assert_(blist1 == list(range(3,10)))
         blist2 = list(b)
         self.assert_(blist == blist2, "iter() not working correctly")
 

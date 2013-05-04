@@ -14,6 +14,13 @@ import sys, math
 import numpy as np
 from .blz_ext import barray
 
+if sys.version_info >= (3, 0):
+    xrange = range
+    def dict_viewkeys(d):
+        return d.keys()
+else:
+    def dict_viewkeys(d):
+        return d.iterkeys()
 
 min_numexpr_version = '2.1'  # the minimum version of Numexpr needed
 numexpr_here = False
@@ -135,7 +142,7 @@ def evaluate(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
 
     # Gather info about sizes and lengths
     typesize, vlen = 0, 1
-    for name in vars.iterkeys():
+    for name in dict_viewkeys(vars):
         var = vars[name]
         if hasattr(var, "__len__") and not hasattr(var, "dtype"):
             raise ValueError("only numpy/barray sequences supported")
@@ -244,7 +251,7 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
     vars_ = {}
     # Get temporaries for vars
     maxndims = 0
-    for name in vars.iterkeys():
+    for name in dict_viewkeys(vars):
         var = vars[name]
         if hasattr(var, "__len__"):
             ndims = len(var.shape) + len(var.dtype.shape)
@@ -255,7 +262,7 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, out_flavor,
 
     for i in xrange(0, vlen, bsize):
         # Get buffers for vars
-        for name in vars.iterkeys():
+        for name in dict_viewkeys(vars):
             var = vars[name]
             if hasattr(var, "__len__") and len(var) > bsize:
                 if hasattr(var, "_getrange"):
