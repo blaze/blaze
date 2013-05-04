@@ -84,7 +84,7 @@ def t_INT(t):
 
 def t_STRING(t):
     r'"([^"\\]|\\.)*"'
-    t.value = t.value.encode('ascii')
+    # t.value = t.value.encode('ascii')
     t.value = unquote.findall(t.value)[0]
     return t
 

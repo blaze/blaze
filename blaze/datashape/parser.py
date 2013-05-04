@@ -52,6 +52,7 @@ Grammar::
 
 import os
 import sys
+import ast
 
 from functools import partial
 from collections import namedtuple
@@ -152,8 +153,13 @@ def t_NUMBER(t):
     return t
 
 def t_STRING(t):
-    r'(?:"(?:[^"\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*")|(?:\'(?:[^\'\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*\')'
-    t.value = t.value[1:-1].decode('unicode_escape')
+    r'(?:"(?:[^"\n\r\\]|(?:\\x[0-9a-fA-F]{2})|(?:\\u[0-9a-fA-F]{4})|(?:\\.))*")|(?:\'(?:[^\'\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\u[0-9a-fA-F]{4})|(?:\\.))*\')'
+    # Use the Python parser via the ast module to parse the string,
+    # since neither the string_escape nor unicode_escape do the right thing
+    if sys.version_info >= (3, 0):
+        t.value = ast.parse(t.value).body[0].value.s
+    else:
+        t.value = ast.parse('u' + t.value).body[0].value.s
     return t
 
 def t_error(t):
