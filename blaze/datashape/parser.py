@@ -58,8 +58,8 @@ from collections import namedtuple
 from . import coretypes as T
 
 try:
-    import dlex
-    import dyacc
+    from . import dlex
+    from . import dyacc
     DEBUG = False
 except:
     DEBUG = True
@@ -360,8 +360,6 @@ reserved = {
     'Option'   : T.Option,
     'string'   : T.String, # String type per proposal
 }
-
-python_internals = (int, long, basestring)
 
 def build_ds_extern(ds):
     if isinstance(ds, list):
