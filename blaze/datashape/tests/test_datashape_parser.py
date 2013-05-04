@@ -3,8 +3,6 @@ from blaze.datashape.parser import parse
 from blaze.datashape.record import RecordDecl, derived
 from blaze.datashape.coretypes import _reduce
 
-from unittest import skip
-
 def test_simple_parse():
     x = parse('2, 3, int32')
     y = parse('300 , 400, {x: int64; y: int32}')
