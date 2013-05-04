@@ -6,7 +6,7 @@ Simple kernel selection for execution
 
 from ast import NodeVisitor
 
-import .expression as expr
+from . import expression as expr
 
 #------------------------------------------------------------------------
 # Numexpr

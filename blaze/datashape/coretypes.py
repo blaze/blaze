@@ -9,6 +9,12 @@ import operator
 import numpy as np
 import datetime
 import ctypes
+import sys
+
+if sys.version_info >= (3, 0):
+    _inttypes = (int,)
+else:
+    _inttypes = (int, long)
 
 instanceof = lambda T: lambda X: isinstance(X, T)
 
@@ -209,7 +215,7 @@ class String(Mono):
             # String()
             self.fixlen = None
             self.encoding = u'U8'
-        elif isinstance(fixlen, (int, long, IntegerConstant)) and \
+        elif isinstance(fixlen, _inttypes + (IntegerConstant,)) and \
                         encoding is None:
             # String(fixlen)
             if isinstance(fixlen, IntegerConstant):
@@ -225,7 +231,7 @@ class String(Mono):
                 self.encoding = fixlen.val
             else:
                 self.encoding = unicode(fixlen)
-        elif isinstance(fixlen, (int, long, IntegerConstant)) and \
+        elif isinstance(fixlen, _inttypes + (IntegerConstant,)) and \
                         isinstance(encoding, (str, unicode, StringConstant)):
             # String(fixlen, 'encoding')
             if isinstance(fixlen, IntegerConstant):
@@ -521,7 +527,7 @@ class Fixed(Atom):
     cls = DIMENSION
 
     def __init__(self, i):
-        assert isinstance(i, (int, long))
+        assert isinstance(i, _inttypes)
 
         if i < 0:
             raise ValueError('Fixed dimensions must be positive')
@@ -538,7 +544,7 @@ class Fixed(Atom):
     def __eq__(self, other):
         if type(other) is Fixed:
             return self.val == other.val
-        elif isinstance(other, (int, long)):
+        elif isinstance(other, _inttypes):
             return self.val == other
         else:
             return False
@@ -581,14 +587,14 @@ class Range(Atom):
     cls = DIMENSION
 
     def __init__(self, a, b=False):
-        if isinstance(a, (int, long)):
+        if isinstance(a, _inttypes):
             self.a = a
         elif isinstance(a, IntegerConstant):
             self.a = a.val
         else:
             raise TypeError('Expected integer for parameter a, not %s' % type(a))
 
-        if isinstance(b, (int, long)):
+        if isinstance(b, _inttypes):
             self.b = b
         elif b is False or b is None:
             self.b = b
