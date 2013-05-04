@@ -30,13 +30,13 @@ reserved = set([
 ])
 
 _escapes_re = r'(\\b[0-9a-fA-F]{2})|(\\.)'
-_escape_map = set([
+_escape_map = {
     r'\n' : '\n',  # newline
     r'\t' : '\t',  # tab
     r'\r' : '\r',  # carriage return
     r'\\' : '\\',  # backslash
     r'\"' : '"',   # quote
-])
+}
 _escape_pat = re.compile(_escapes_re)
 
 t_ignore = ' \t\r'
