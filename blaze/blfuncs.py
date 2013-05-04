@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
@@ -17,7 +19,7 @@ class KernelObj(object):
 # A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
 # in an abstract name-space
-# All nodes in the kernel tree can also be named 
+# All nodes in the kernel tree can also be named
 #   or else a unique-name
 # from the abstract name-space will be created.
 class KernelTree(object):
@@ -77,7 +79,7 @@ def process_typetable(typetable):
     newtable = {}
     for key, value in typetable:
         newtable[key[:-1]] = (key[-1], value)
-        
+
 # Define the Blaze Function
 #   * A Blaze Function is a callable that takes Concrete Arrays and returns
 #        Deferred Concrete Arrays
@@ -91,16 +93,16 @@ def process_typetable(typetable):
 #       a shared-library --- uses BLIR kernel engine on-top of LLVM.
 #   * Example BlazeFuncs are sin, svd, eig, fft, sum, prod, inner1d, add, mul
 #       etc --- kernels all work on in-memory "elements"
-      
+
 class BlazeFunc(object):
     def __init__(self, name, ranksignature, typetable, inouts=[]):
         """
         Construct a Blaze Function from a rank-signature and keyword arguments.
-        
-        The typetable is a dictionary with keys a tuple of types 
-        and values as corresponding BlazeScalarKernel objects.  The 
+
+        The typetable is a dictionary with keys a tuple of types
+        and values as corresponding BlazeScalarKernel objects.  The
         tuple of types has Input types first with the Output Type last
-        
+
         Arguments
         =========
         ranksignature : ['name1,M', 'M,name3', 'L']
@@ -156,7 +158,7 @@ class BlazeFunc(object):
         kernelobj = KernelObj(kernel, (out_type,)+types, self.ranks, self.name)
 
         # Create a new BlazeFuncDescriptor with this
-        # kerneltree and a new set of args depending on 
+        # kerneltree and a new set of args depending on
         #  re-usage.
         children = []
         newargs = []
@@ -165,15 +167,15 @@ class BlazeFunc(object):
             data = arg.data
             if isinstance(data, BlazeFuncDescriptor):
                 children.append(data.kerneltree)
-                newargs.extend([arg for arg in data.args 
+                newargs.extend([arg for arg in data.args
                                     if arg.data.unique_name not in argnames])
             else:
                 children.append(data.unique_name)
                 newargs.append(arg)
 
-        kerneltree = KernelTree(kernelobj, children)        
-        data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)        
- 
+        kerneltree = KernelTree(kernelobj, children)
+        data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)
+
         # Construct an NDArray object from new data descriptor
         user = {self.name: [arg.user for arg in args]}
 
@@ -182,7 +184,7 @@ class BlazeFunc(object):
         labels = args[0].labels
 
         return NDArray(data, axes, labels, user)
-        
-    
-        
-        
+
+
+
+

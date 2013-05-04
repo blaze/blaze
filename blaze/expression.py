@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 A typed expression graph prototype. maintains a distinction between
 values and operations, intermediate results are attached to a AST graph

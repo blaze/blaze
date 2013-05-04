@@ -1,24 +1,26 @@
-# A Blaze Element Kernel is a wrapper around an LLVM Function with a 
+from __future__ import absolute_import
+
+# A Blaze Element Kernel is a wrapper around an LLVM Function with a
 #    particular signature.
 #    The kinds of argument types are simple, ptr, and array.
-#    A kernel kind is a tuple of input kinds followed by the output kind 
+#    A kernel kind is a tuple of input kinds followed by the output kind
 #
 #    simple:  out_type @func(in1_type %a, in2_type %b)
 #    ptrs:  void @func(in1_type * %a, in2_type * %b, out_type * %out)
 #    array:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
 #
-# We use a simple array type definition at this level for arrays 
+# We use a simple array type definition at this level for arrays
 # struct {
 #    eltype *data;
 #    int nd;
-#    diminfo dims[nd]; 
+#    diminfo dims[nd];
 #} array
-# 
+#
 # struct {
 #   intp dim;
 #   intp stride;
 #} diminfo
-# 
+#
 
 import sys
 
@@ -109,12 +111,12 @@ class BlazeElementKernel(object):
         pass
 
     def create_wrapper_kernel(inrank, outrank):
-        """Take the current kernel of inrank and create a new kernel of 
+        """Take the current kernel of inrank and create a new kernel of
         outrank that calls call the current kernel multiple times as needed
 
-        Example (let rn == rank-n) 
-          We need an r2, r2 -> r2 kernel and we have an r0, r0 -> r0 
-          kernel.   
+        Example (let rn == rank-n)
+          We need an r2, r2 -> r2 kernel and we have an r0, r0 -> r0
+          kernel.
 
           We create a kernel that does the equivalent of
 

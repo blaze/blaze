@@ -1,5 +1,7 @@
-from datashape import dshape
-from byteprovider import bytefactory
+from __future__ import absolute_import
+
+from .datashape import dshape
+from .byteprovider import bytefactory
 
 #------------------------------------------------------------------------
 # Data Descriptor  Abstract Base Class
@@ -39,7 +41,7 @@ class DataDescriptor(object):
 class MemoryDescriptor(DataDescriptor):
     pass
 
-# ByteProvider as a Deferred Graph 
+# ByteProvider as a Deferred Graph
 class DeferredDescriptor(DataDescriptor):
     pass
 

@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 """
 Simple kernel selection for execution
 """
 
 from ast import NodeVisitor
 
-import expression as expr
+import .expression as expr
 
 #------------------------------------------------------------------------
 # Numexpr

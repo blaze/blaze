@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 ByteProvider base class.
 """
@@ -6,7 +8,7 @@ ByteProvider base class.
 import mmap
 import numpy as np
 
-from byteproto import READ, WRITE, CONST
+from .byteproto import READ, WRITE, CONST
 defaultN = 8000
 
 """
@@ -65,7 +67,7 @@ class BLZBytes(ByteProvider):
            'wherechunks': True,   # limited to one-dimensional fields
            'getitem': True,       # fully supported, even for inner dims
            'append': True,        # limited to the leading dimension
-          } 
+          }
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
@@ -79,7 +81,7 @@ class BLZBytes(ByteProvider):
             beginning.
         stop : int
             Where the iterator stops. The default is to stop at the end.
-        
+
         Returns
         -------
         out : iterable
