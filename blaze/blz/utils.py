@@ -14,7 +14,7 @@ from __future__ import absolute_import
 import sys, os, os.path, subprocess, math
 from time import time, clock
 import numpy as np
-from . import blz_ext
+from .blz_ext import blz_set_nthreads
 
 
 def show_stats(explain, tref):
@@ -84,7 +84,7 @@ def set_nthreads(nthreads):
         The previous setting for the number of threads.
 
     """
-    nthreads_old = blz_ext.blz_set_nthreads(nthreads)
+    nthreads_old = blz_set_nthreads(nthreads)
     return nthreads_old
 
 ##### Code for computing optimum chunksize follows  #####
