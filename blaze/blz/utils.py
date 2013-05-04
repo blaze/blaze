@@ -144,7 +144,7 @@ def to_ndarray(array, dtype, arrlen=None):
     # Arrays with a 0 stride are special
     if type(array) == np.ndarray and array.strides[0] == 0:
         if array.dtype != dtype.base:
-            raise TypeError, "dtypes do not match"
+            raise TypeError("dtypes do not match")
         return array
 
     # Ensure that we have an ndarray of the correct dtype
@@ -152,7 +152,7 @@ def to_ndarray(array, dtype, arrlen=None):
         try:
             array = np.array(array, dtype=dtype.base)
         except ValueError:
-            raise ValueError, "cannot convert to an ndarray object"
+            raise ValueError("cannot convert to an ndarray object")
 
     # We need a contiguous array
     if not array.flags.contiguous:
