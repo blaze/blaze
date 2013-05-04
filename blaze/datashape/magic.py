@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Blaze magic extensions for IPython.
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 """
 This defines the DataShape type system. The unification of shape and

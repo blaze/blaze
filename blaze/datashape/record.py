@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 """
 Django style class declarations mapping onto Record datashape types.
 """
 
 from numpy import dtype
 from parser import parse
-from coretypes import Record, Type, DataShape
+from .coretypes import Record, Type, DataShape
 
 #------------------------------------------------------------------------
 # Record Declarations
