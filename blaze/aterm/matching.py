@@ -1,5 +1,7 @@
-from parse import parse
-from terms import *
+from __future__ import absolute_import
+
+from .parse import parse
+from .terms import *
 
 placeholders = {
     'appl'        : aappl,

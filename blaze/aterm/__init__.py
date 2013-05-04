@@ -1,6 +1,8 @@
-from parse import parse, AtermSyntaxError
-from matching import match, build
-from terms import (
+from __future__ import absolute_import
+
+from .parse import parse, AtermSyntaxError
+from .matching import match, build
+from .terms import (
     aterm,
     aappl,
     aint,

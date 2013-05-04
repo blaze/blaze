@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 
 ATerm grammar::
@@ -21,14 +23,14 @@ import sys
 
 from functools import partial
 
-from terms import *
+from .terms import *
 
 # Precompiled modules
-import alex
-import ayacc
+from . import alex
+from . import ayacc
 
 from blaze.plyhacks import yaccfrom, lexfrom
-from error import CustomSyntaxError
+from .error import CustomSyntaxError
 
 #------------------------------------------------------------------------
 # Errors
