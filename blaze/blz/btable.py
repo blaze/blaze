@@ -62,8 +62,8 @@ class cols(object):
         data = {'names': self.names, 'dirs': dirs}
         rootsfile = os.path.join(self.rootdir, ROOTDIRS)
         with open(rootsfile, 'wb') as rfile:
-            rfile.write(json.dumps(data))
-            rfile.write("\n")
+            rfile.write(json.dumps(data).encode('ascii'))
+            rfile.write(b"\n")
 
     def __getitem__(self, name):
         return self._cols[name]
