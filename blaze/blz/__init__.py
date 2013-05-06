@@ -11,6 +11,6 @@ from .arrayprint import (
 from .blz_ext import barray, blz_set_nthreads, blosc_version
 from .btable import btable
 from .bfuncs import (
-    open, zeros, ones, fromiter, iterblocks, whereblocks)
+    open, zeros, ones, fill, fromiter, iterblocks, whereblocks)
 from .bparams import bparams
 from .version import __version__

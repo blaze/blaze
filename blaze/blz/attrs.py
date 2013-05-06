@@ -9,8 +9,17 @@
 
 from __future__ import absolute_import
 
+import sys
 import os, os.path
 import json
+
+if sys.version_info >= (3, 0):
+    xrange = range
+    def dict_iteritems(d):
+        return d.items().__iter__()
+else:
+    def dict_iteritems(d):
+        return d.iteritems()
 
 
 ATTRSDIR = "__attrs__"
@@ -70,7 +79,7 @@ class attrs(object):
         # Get the serialized attributes
         with open(self.attrsfile, 'rb') as rfile:
             try:
-                data = json.loads(rfile.read())
+                data = json.loads(rfile.read().decode('ascii'))
             except:
                 raise IOError(
                     "Attribute file is not readable")
@@ -106,7 +115,7 @@ class attrs(object):
         self._update_meta()
 
     def __iter__(self):
-        return self.attrs.iteritems()
+        return dict_iteritems(self.attrs)
 
     def __len__(self):
         return len(self.attrs)

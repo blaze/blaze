@@ -26,6 +26,7 @@ from . import utils, attrs, arrayprint
 if sys.version_info >= (3, 0):
     _inttypes = (int,)
     imap = map
+    xrange = range
 else:
     _inttypes = (int, long)
     imap = itertools.imap
@@ -47,7 +48,7 @@ class cols(object):
         # Get the directories of the columns
         rootsfile = os.path.join(self.rootdir, ROOTDIRS)
         with open(rootsfile, 'rb') as rfile:
-            data = json.loads(rfile.read())
+            data = json.loads(rfile.read().decode('ascii'))
         # JSON returns unicode (?)
         self.names = [str(name) for name in data['names']]
         # Initialize the cols by instatiating the barrays

@@ -23,6 +23,7 @@ from .bparams import bparams
 
 if sys.version_info >= (3, 0):
     _inttypes = (int,)
+    xrange = range
 else:
     _inttypes = (int, long)
 
@@ -46,20 +47,15 @@ def open(rootdir, mode='a'):
 
     Returns
     -------
-    out : a barray/btable object or None (if not objects are found)
+    out : a barray/btable object
 
     """
-    # First try with a barray
-    obj = None
-    try:
+    # Use the existence of __rootdirs__ to
+    # distinguish between btable and barray
+    if os.path.exists(os.path.join(rootdir, '__rootdirs__')):
+        obj = btable(rootdir=rootdir, mode=mode)
+    else:
         obj = barray(rootdir=rootdir, mode=mode)
-    except IOError:
-        # Not a barray.  Now with a btable
-        try:
-            obj = btable(rootdir=rootdir, mode=mode)
-        except IOError:
-            # Not a btable
-            pass
     return obj
 
 
@@ -94,6 +90,7 @@ def fromiter(iterable, dtype, count, **kwargs):
     iterables).
 
     """
+    _MAXINT_SIGNAL = 2**64
 
     # Check for a true iterable
     if not hasattr(iterable, "next"):
@@ -108,7 +105,7 @@ def fromiter(iterable, dtype, count, **kwargs):
             expected = count
         else:
             # No guess
-            count = sys.maxint
+            count = _MAXINT_SIGNAL
             # If we do not have a hint on the iterable length then
             # create a couple of iterables and use the second when the
             # first one is exhausted (ValueError will be raised).
@@ -137,7 +134,7 @@ def fromiter(iterable, dtype, count, **kwargs):
             blen = count - nread
         else:
             blen = chunklen
-        if count != sys.maxint:
+        if count != _MAXINT_SIGNAL:
             chunk = np.fromiter(iterable, dtype=dtype, count=blen)
         else:
             try:
