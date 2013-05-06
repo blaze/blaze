@@ -48,8 +48,11 @@ def not_equal(x, val):
     else:
         return _um.not_equal(x, val)
 
-_summaryEdgeItems = 3     # repr N leading and trailing items of each dimension
-_summaryThreshold = 1000 # total items > triggers array summarization
+# repr N leading and trailing items of each dimension
+_summaryEdgeItems = 3
+
+# total items > triggers array summarization
+_summaryThreshold = 1000
 
 _float_output_precision = 8
 _float_output_suppress_small = False
