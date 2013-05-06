@@ -16,14 +16,37 @@ import sys
 # import numerictypes as _nt
 # from umath import maximum, minimum, absolute, not_equal, isnan, isinf
 # from multiarray import format_longfloat, datetime_as_string, datetime_data
+import numpy.core.umath as _um
 
-from blaze.datashape import to_numpy
+from blaze.datashape import to_numpy, to_dtype
 
 # These are undesired dependencies:
-from numpy import ravel, maximum, minimum, absolute, isnan, isinf
+from numpy import ravel, maximum, minimum, absolute, array
 import numpy.core.numerictypes as _nt
 
 def product(x, y): return x*y
+
+# hacks to remove when isnan/isinf are available for data descriptors
+def isnan(x):
+    if hasattr(x, 'dshape'):
+        comp = array(x, dtype=to_dtype(x.dshape))
+        return _um.isnan(comp)
+    else:
+        return _um.isnan(x)
+
+def isinf(x):
+    if hasattr(x, 'dshape'):
+        comp = array(x, dtype=to_dtype(x.dshape))
+        return _um.isinf(comp)
+    else:
+        return _um.isinf(x)
+
+def not_equal(x, val):
+    if hasattr(x, 'dshape'):
+        comp = array(x, dtype=to_dtype(x.dshape))
+        return _um.not_equal(comp, val)
+    else:
+        return _um.not_equal(x, val)
 
 _summaryEdgeItems = 3     # repr N leading and trailing items of each dimension
 _summaryThreshold = 1000 # total items > triggers array summarization
@@ -198,7 +221,7 @@ def get_printoptions():
     return d
 
 def _leading_trailing(a):
-    import numeric as _nc
+    import numpy.core.numeric as _nc
     if a.ndim == 1:
         if len(a) > 2*_summaryEdgeItems:
             b = _nc.concatenate((a[:_summaryEdgeItems],
@@ -329,7 +352,7 @@ def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
     return lst
 
 def _convert_arrays(obj):
-    import numeric as _nc
+    import numpy.core.numeric as _nc
     newtup = []
     for k in obj:
         if isinstance(k, _nc.ndarray):
@@ -538,25 +561,25 @@ class FloatFormat(object):
             pass
 
     def fillFormat(self, data):
-#        import numeric as _nc
-#        errstate = _nc.seterr(all='ignore')
-#        try:
-        special = isnan(data) | isinf(data)
-        valid = not_equal(data, 0) & ~special
-        non_zero = absolute(data.compress(valid))
-        if len(non_zero) == 0:
-            max_val = 0.
-            min_val = 0.
-        else:
-            max_val = maximum.reduce(non_zero)
-            min_val = minimum.reduce(non_zero)
-            if max_val >= 1.e8:
-                self.exp_format = True
-            if not self.suppress_small and (min_val < 0.0001
-                                            or max_val/min_val > 1000.):
-                self.exp_format = True
-#        finally:
-#            _nc.seterr(**errstate)
+        import numpy.core.numeric as _nc
+        errstate = _nc.seterr(all='ignore')
+        try:
+            special = isnan(data) | isinf(data)
+            valid = not_equal(data, 0) & ~special
+            non_zero = absolute(data.compress(valid))
+            if len(non_zero) == 0:
+                max_val = 0.
+                min_val = 0.
+            else:
+                max_val = maximum.reduce(non_zero)
+                min_val = minimum.reduce(non_zero)
+                if max_val >= 1.e8:
+                    self.exp_format = True
+                if not self.suppress_small and (min_val < 0.0001
+                                                or max_val/min_val > 1000.):
+                    self.exp_format = True
+        finally:
+            _nc.seterr(**errstate)
 
         if self.exp_format:
             self.large_exponent = 0 < min_val < 1e-99 or max_val >= 1e100
@@ -591,24 +614,25 @@ class FloatFormat(object):
         self.format = format
 
     def __call__(self, x, strip_zeros=True):
-#        import numeric as _nc
-#        err = _nc.seterr(invalid='ignore')
-#        try:
-        if isnan(x):
-            if self.sign:
-                return self.special_fmt % ('+' + _nan_str,)
-            else:
-                return self.special_fmt % (_nan_str,)
-        elif isinf(x):
-            if x > 0:
+        import numpy.core.numeric as _nc
+        err = _nc.seterr(invalid='ignore')
+
+        try:
+            if isnan(x):
                 if self.sign:
-                    return self.special_fmt % ('+' + _inf_str,)
+                    return self.special_fmt % ('+' + _nan_str,)
                 else:
-                    return self.special_fmt % (_inf_str,)
-            else:
-                return self.special_fmt % ('-' + _inf_str,)
-#        finally:
-#            _nc.seterr(**err)
+                    return self.special_fmt % (_nan_str,)
+            elif isinf(x):
+                if x > 0:
+                    if self.sign:
+                        return self.special_fmt % ('+' + _inf_str,)
+                    else:
+                        return self.special_fmt % (_inf_str,)
+                else:
+                    return self.special_fmt % ('-' + _inf_str,)
+        finally:
+            _nc.seterr(**err)
 
         s = self.format % x
         if self.large_exponent:
