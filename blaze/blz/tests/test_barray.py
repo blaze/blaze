@@ -12,7 +12,6 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 import blaze.blz as blz
 from blaze.blz.blz_ext import chunk
-from blaze.blz.tests import common
 from .common import MayBeDiskTest
 
 is_64bit = (struct.calcsize("P") == 8)

@@ -11,33 +11,6 @@ verbose = False
 heavy = False
 
 
-#
-# The original constructors of barray are gone in blaze
-# monkey-patch them in order to retain the code in the tests
-#
-def _barray_fill(shape, value, dtype = None, bparams = None, rootdir = None):
-    """
-    hacked version that will only work with 2 dimensions, as needed
-    by the tests
-    """
-    arr = np.empty(shape, dtype=dtype)
-    arr[:,:]=value
-    carr = blz.barray(arr, bparams=bparams, rootdir=rootdir) 
-    return carr
-
-blz.fill = _barray_fill
-
-def _barray_arange(*args, **kw_args):
-    array = np.arange(*args)
-    return blz.barray(array, **kw_args)
-
-blz.arange = _barray_arange
-#
-# end monkey-patch
-#
-
-
-
 
 # Useful superclass for disk-based tests
 class MayBeDiskTest():
