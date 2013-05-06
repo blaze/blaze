@@ -685,7 +685,7 @@ class LLVMOptimizer(object):
 
         diff = d.compare(before.splitlines(), after.splitlines())
         for line in diff:
-            print line
+            print(line)
 
 #------------------------------------------------------------------------
 
@@ -703,5 +703,5 @@ def ddump_optimizer(source):
         blockgen  = codegen.BlockEmitter(cgen)
         optimizer = codegen.LLVMOptimizer(cgen.module)
 
-        print 'Optimizer Diff'.center(80, '=')
+        print('Optimizer Diff'.center(80, '='))
         optimizer.diff()

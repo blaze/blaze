@@ -6,6 +6,8 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
+
 """Top level functions and classes.
 """
 
@@ -14,11 +16,16 @@ import os, os.path
 import glob
 import itertools as it
 import numpy as np
-from blz_ext import barray
-from blaze.blz.btable import btable
-from bparams import bparams
 import math
+from .blz_ext import barray
+from .btable import btable
+from .bparams import bparams
 
+if sys.version_info >= (3, 0):
+    _inttypes = (int,)
+    xrange = range
+else:
+    _inttypes = (int, long)
 
 def open(rootdir, mode='a'):
     """
@@ -40,21 +47,17 @@ def open(rootdir, mode='a'):
 
     Returns
     -------
-    out : a barray/btable object or None (if not objects are found)
+    out : a barray/btable object
 
     """
-    # First try with a barray
-    obj = None
-    try:
+    # Use the existence of __rootdirs__ to
+    # distinguish between btable and barray
+    if os.path.exists(os.path.join(rootdir, '__rootdirs__')):
+        obj = btable(rootdir=rootdir, mode=mode)
+    else:
         obj = barray(rootdir=rootdir, mode=mode)
-    except IOError:
-        # Not a barray.  Now with a btable
-        try:
-            obj = btable(rootdir=rootdir, mode=mode)
-        except IOError:
-            # Not a btable
-            pass
     return obj
+
 
 def fromiter(iterable, dtype, count, **kwargs):
     """
@@ -85,9 +88,9 @@ def fromiter(iterable, dtype, count, **kwargs):
     allows `fromiter` to avoid looping the iterable twice (which is slooow).
     It avoids memory leaks to happen too (which can be important for large
     iterables).
-    
+
     """
-    from btable import btable
+    _MAXINT_SIGNAL = 2**64
 
     # Check for a true iterable
     if not hasattr(iterable, "next"):
@@ -102,7 +105,7 @@ def fromiter(iterable, dtype, count, **kwargs):
             expected = count
         else:
             # No guess
-            count = sys.maxint
+            count = _MAXINT_SIGNAL
             # If we do not have a hint on the iterable length then
             # create a couple of iterables and use the second when the
             # first one is exhausted (ValueError will be raised).
@@ -131,7 +134,7 @@ def fromiter(iterable, dtype, count, **kwargs):
             blen = count - nread
         else:
             blen = chunklen
-        if count != sys.maxint:
+        if count != _MAXINT_SIGNAL:
             chunk = np.fromiter(iterable, dtype=dtype, count=blen)
         else:
             try:
@@ -148,6 +151,7 @@ def fromiter(iterable, dtype, count, **kwargs):
             break
     obj.flush()
     return obj
+
 
 def fill(shape, dflt=None, dtype=np.float, **kwargs):
     """
@@ -181,7 +185,7 @@ def fill(shape, dflt=None, dtype=np.float, **kwargs):
     """
 
     dtype = np.dtype(dtype)
-    if type(shape) in (int, long, float):
+    if type(shape) in _inttypes + (float,):
         shape = (int(shape),)
     else:
         shape = tuple(shape)
@@ -194,7 +198,7 @@ def fill(shape, dflt=None, dtype=np.float, **kwargs):
     # Create the container
     expectedlen = kwargs.pop("expectedlen", length)
     if dtype.kind == "V" and dtype.shape == ():
-        raise ValueError, "fill does not support btables objects"
+        raise ValueError("fill does not support btables objects")
     obj = barray([], dtype=dtype, dflt=dflt, expectedlen=expectedlen,
                  **kwargs)
     chunklen = obj.chunklen
@@ -208,6 +212,7 @@ def fill(shape, dflt=None, dtype=np.float, **kwargs):
     obj.append(chunk)
     obj.flush()
     return obj
+
 
 def zeros(shape, dtype=np.float, **kwargs):
     """
@@ -238,6 +243,7 @@ def zeros(shape, dtype=np.float, **kwargs):
     dtype = np.dtype(dtype)
     return fill(shape=shape, dflt=np.zeros((), dtype), dtype=dtype, **kwargs)
 
+
 def ones(shape, dtype=np.float, **kwargs):
     """
     ones(shape, dtype=float, **kwargs)
@@ -266,6 +272,7 @@ def ones(shape, dtype=np.float, **kwargs):
     """
     dtype = np.dtype(dtype)
     return fill(shape=shape, dflt=np.ones((), dtype), dtype=dtype, **kwargs)
+
 
 def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
     """
@@ -310,7 +317,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
 
     # Check start, stop, step values
     if (start, stop) == (None, None):
-        raise ValueError, "You must pass a `stop` value at least."
+        raise ValueError("You must pass a `stop` value at least.")
     elif stop is None:
         start, stop = 0, start
     elif start is None:
@@ -320,7 +327,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
 
     # Guess the dtype
     if dtype is None:
-        if type(stop) in (int, long):
+        if type(stop) in _inttypes:
             dtype = np.dtype(np.int_)
     dtype = np.dtype(dtype)
     stop = int(stop)
@@ -328,7 +335,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
     # Create the container
     expectedlen = kwargs.pop("expectedlen", stop)
     if dtype.kind == "V":
-        raise ValueError, "arange does not support btables yet."
+        raise ValueError("arange does not support btables yet.")
     else:
         obj = barray(np.array([], dtype=dtype),
                      expectedlen=expectedlen,
@@ -348,6 +355,7 @@ def arange(start=None, stop=None, step=None, dtype=None, **kwargs):
         bstop += incr
     obj.flush()
     return obj
+
 
 def iterblocks(bobj, blen=None, start=0, stop=None):
     """iterblocks(blen=None, start=0, stop=None)
@@ -374,6 +382,10 @@ def iterblocks(bobj, blen=None, start=0, stop=None):
         structured types, depending on whether `bobj` is a barray or a
         btable object.
 
+    See Also
+    --------
+    whereblocks
+
     """
 
     if stop is None:
@@ -382,17 +394,17 @@ def iterblocks(bobj, blen=None, start=0, stop=None):
         # A btable object
         if blen is None:
             # Get the minimum chunklen for every column
-            blen = min(col.chunklen for col in bobj.cols)
+            blen = min(bobj[col].chunklen for col in bobj.cols)
         # Create intermediate buffers for columns in a dictarray
         # (it is important that columns are contiguous)
         cbufs = {}
-        for name, col in zip(bobj.names, bobj.cols):
-            cbufs[name] = np.empty(blen, dtype=col.dtype)
+        for name in bobj.names:
+            cbufs[name] = np.empty(blen, dtype=bobj[name].dtype)
         for i in xrange(start, stop, blen):
             buf = np.empty(blen, dtype=bobj.dtype)
             # Populate the column buffers and assign to the final buffer
-            for name, col in zip(bobj.names, bobj.cols):
-                col._getrange(i, blen, cbufs[name])
+            for name in bobj.names:
+                bobj[name]._getrange(i, blen, cbufs[name])
                 buf[name][:] = cbufs[name]
             if i + blen > stop:
                 buf = buf[:stop - i]
@@ -408,13 +420,14 @@ def iterblocks(bobj, blen=None, start=0, stop=None):
                 buf = buf[:stop - i]
             yield buf
 
-def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
+
+def whereblocks(table, expression, blen=None, outfields=None, limit=None,
                 skip=0):
     """
-    whereblocks(expression, blen=None, outcols=None, limit=None, skip=0)
+    whereblocks(table, expression, blen=None, outfields=None, limit=None, skip=0)
 
     Iterate over the rows that fullfill the `expression` condition on
-    `btable` in blocks of size `blen`.
+    `table` in blocks of size `blen`.
 
     Parameters
     ----------
@@ -424,12 +437,10 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
         The length of the block that is returned.  The default is the
         chunklen, or for a btable, the minimum of the different column
         chunklens.
-    outcols : list of strings or string
+    outfields : list of strings or string
         The list of column names that you want to get back in results.
         Alternatively, it can be specified as a string such as 'f0 f1' or
-        'f0, f1'.  If None, all the columns are returned.  If the special
-        name 'nrow__' is present, the number of row will be included in
-        output.
+        'f0, f1'.
     limit : int
         A maximum number of elements to return.  The default is return
         everything.
@@ -440,8 +451,8 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
     -------
     out : iterable
         This iterable returns buffers as NumPy arrays made of
-        structured types (or homogeneous ones in case `outcols` is a
-        single column.
+        structured types (or homogeneous ones in case `outfields` is a
+        single field.
 
     See Also
     --------
@@ -450,22 +461,22 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
     """
 
     if blen is None:
-        # Get the minimum chunklen for every column
-        blen = min(col.chunklen for col in bobj.cols)
-    if outcols is None:
-        dtype = btable.dtype
+        # Get the minimum chunklen for every field
+        blen = min(table[col].chunklen for col in table.cols)
+    if outfields is None:
+        dtype = table.dtype
     else:
-        if not isinstance(outcols, (list, tuple)):
-            raise ValueError, "only a sequence is supported for outcols"
-        # Get the dtype for the outcols set
+        if not isinstance(outfields, (list, tuple)):
+            raise ValueError("only a sequence is supported for outfields")
+        # Get the dtype for the outfields set
         try:
-            dtype = [(name, btable[name].dtype) for name in outcols]
+            dtype = [(name, table[name].dtype) for name in outfields]
         except IndexError:
-            raise ValueError("Some names in `outcols` are not real fields")
+            raise ValueError("Some names in `outfields` are not real fields")
 
     buf = np.empty(blen, dtype=dtype)
     nrow = 0
-    for row in btable.where(expression, outcols, limit, skip):
+    for row in table.where(expression, outfields, limit, skip):
         buf[nrow] = row
         nrow += 1
         if nrow == blen:
@@ -473,6 +484,7 @@ def whereblocks(btable, expression, blen=None, outcols=None, limit=None,
             buf = np.empty(blen, dtype=dtype)
             nrow = 0
     yield buf[:nrow]
+
 
 def walk(dir, classname=None, mode='a'):
     """walk(dir, classname=None, mode='a')

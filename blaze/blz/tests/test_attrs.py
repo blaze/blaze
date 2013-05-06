@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 
 from unittest import TestCase
 
@@ -7,7 +8,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from blaze import blz
 from blaze.blz.tests import common
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 
 class basicTest(MayBeDiskTest):
 
@@ -85,7 +86,7 @@ class basicTest(MayBeDiskTest):
 
     def test01c(self):
         """Appending attributes in a opened barray."""
-        
+
         cn = self.getobject()
         # Some attrs
         cn.attrs['attr1'] = 'val1'

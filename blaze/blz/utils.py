@@ -6,13 +6,14 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
+
 """Utility functions (mostly private).
 """
 
 import sys, os, os.path, subprocess, math
 from time import time, clock
 import numpy as np
-import blz_ext
 
 
 def show_stats(explain, tref):
@@ -34,12 +35,12 @@ def show_stats(explain, tref):
         elif line.startswith("VmLib:"):
             vmlib = int(line.split()[1])
     sout.close()
-    print "Memory usage: ******* %s *******" % explain
-    print "VmSize: %7s kB\tVmRSS: %7s kB" % (vmsize, vmrss)
-    print "VmData: %7s kB\tVmStk: %7s kB" % (vmdata, vmstk)
-    print "VmExe:  %7s kB\tVmLib: %7s kB" % (vmexe, vmlib)
+    print("Memory usage: ******* %s *******" % explain)
+    print("VmSize: %7s kB\tVmRSS: %7s kB" % (vmsize, vmrss))
+    print("VmData: %7s kB\tVmStk: %7s kB" % (vmdata, vmstk))
+    print("VmExe:  %7s kB\tVmLib: %7s kB" % (vmexe, vmlib))
     tnow = time()
-    print "WallClock time:", round(tnow - tref, 3)
+    print("WallClock time:", round(tnow - tref, 3))
     return tnow
 
 def detect_number_of_cores():
@@ -82,7 +83,8 @@ def set_nthreads(nthreads):
         The previous setting for the number of threads.
 
     """
-    nthreads_old = blz_ext.blz_set_nthreads(nthreads)
+    from blz_ext import blz_set_nthreads
+    nthreads_old = blz_set_nthreads(nthreads)
     return nthreads_old
 
 ##### Code for computing optimum chunksize follows  #####
@@ -144,7 +146,7 @@ def to_ndarray(array, dtype, arrlen=None):
     # Arrays with a 0 stride are special
     if type(array) == np.ndarray and array.strides[0] == 0:
         if array.dtype != dtype.base:
-            raise TypeError, "dtypes do not match"
+            raise TypeError("dtypes do not match")
         return array
 
     # Ensure that we have an ndarray of the correct dtype
@@ -152,7 +154,7 @@ def to_ndarray(array, dtype, arrlen=None):
         try:
             array = np.array(array, dtype=dtype.base)
         except ValueError:
-            raise ValueError, "cannot convert to an ndarray object"
+            raise ValueError("cannot convert to an ndarray object")
 
     # We need a contiguous array
     if not array.flags.contiguous:
@@ -186,13 +188,13 @@ def human_readable_size(size):
 # Main part
 # =========
 if __name__ == '__main__':
-    print human_readable_size(1023)
-    print human_readable_size(10234)
-    print human_readable_size(10234*100)
-    print human_readable_size(10234*10000)
-    print human_readable_size(10234*1000000)
-    print human_readable_size(10234*100000000)
-    print human_readable_size(10234*1000000000)
+    print(human_readable_size(1023))
+    print(human_readable_size(10234))
+    print(human_readable_size(10234*100))
+    print(human_readable_size(10234*10000))
+    print(human_readable_size(10234*1000000))
+    print(human_readable_size(10234*100000000))
+    print(human_readable_size(10234*1000000000))
 
 
 ## Local Variables:

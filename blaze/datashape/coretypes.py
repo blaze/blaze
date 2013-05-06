@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 """
 This defines the DataShape type system. The unification of shape and
@@ -8,6 +9,15 @@ dtype.
 import operator
 import numpy as np
 import datetime
+import ctypes
+import sys
+
+if sys.version_info >= (3, 0):
+    _inttypes = (int,)
+    _strtypes = (str,)
+else:
+    _inttypes = (int, long)
+    _strtypes = (str, unicode)
 
 instanceof = lambda T: lambda X: isinstance(X, T)
 
@@ -34,8 +44,8 @@ class Type(type):
     def register(name, type):
         # Don't clobber existing types.
         if name in Type._registry:
-            raise TypeError('There is another type registered with name %s'\
-                % name)
+            raise TypeError('There is another type registered with name %s'
+                            % name)
 
         Type._registry[name] = type
 
@@ -56,6 +66,13 @@ class Mono(object):
 
     def __init__(self, *params):
         self.parameters = params
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, key):
+        lst = [self]
+        return lst[key]
 
     def __mul__(self, other):
         if not isinstance(other, (DataShape, Mono)):
@@ -121,7 +138,7 @@ class StringConstant(Mono):
     """
 
     def __init__(self, i):
-        assert isinstance(i, (str, unicode))
+        assert isinstance(i, _strtypes)
         self.val = i
 
     def __str__(self):
@@ -201,22 +218,24 @@ class String(Mono):
             # String()
             self.fixlen = None
             self.encoding = u'U8'
-        elif isinstance(fixlen, (int, long, IntegerConstant)) and encoding is None:
+        elif isinstance(fixlen, _inttypes + (IntegerConstant,)) and \
+                        encoding is None:
             # String(fixlen)
             if isinstance(fixlen, IntegerConstant):
                 self.fixlen = fixlen.val
             else:
                 self.fixlen = fixlen
             self.encoding = u'U8'
-        elif isinstance(fixlen, (str, unicode, StringConstant)) and encoding is None:
+        elif isinstance(fixlen, _strtypes + (StringConstant,)) and \
+                        encoding is None:
             # String('encoding')
             self.fixlen = None
             if isinstance(fixlen, StringConstant):
                 self.encoding = fixlen.val
             else:
                 self.encoding = unicode(fixlen)
-        elif isinstance(fixlen, (int, long, IntegerConstant)) and \
-                        isinstance(encoding, (str, unicode, StringConstant)):
+        elif isinstance(fixlen, _inttypes + (IntegerConstant,)) and \
+                        isinstance(encoding, _strtypes + (StringConstant,)):
             # String(fixlen, 'encoding')
             if isinstance(fixlen, IntegerConstant):
                 self.fixlen = fixlen.val
@@ -227,11 +246,12 @@ class String(Mono):
             else:
                 self.encoding = unicode(encoding)
         else:
-            raise ValueError('Unexpected types to String constructor (%s, %s)' %
-                            (type(fixlen), type(encoding)))
+            raise ValueError(('Unexpected types to String constructor '
+                            '(%s, %s)') % (type(fixlen), type(encoding)))
         # Validate the encoding
         if not self.encoding in _canonical_string_encodings:
-            raise ValueError('Unsupported string encoding %s' % repr(self.encoding))
+            raise ValueError('Unsupported string encoding %s' %
+                            repr(self.encoding))
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
 
@@ -244,7 +264,8 @@ class String(Mono):
         elif self.fixlen is None and self.encoding != 'U8':
             return 'string(%s)' % repr(self.encoding).strip('u')
         else:
-            return 'string(%i, %s)' % (self.fixlen, repr(self.encoding).strip('u'))
+            return 'string(%i, %s)' % \
+                            (self.fixlen, repr(self.encoding).strip('u'))
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid
@@ -253,7 +274,8 @@ class String(Mono):
 
     def __eq__(self, other):
         if type(other) is String:
-            return self.fixlen == other.fixlen and self.encoding == other.encoding
+            return self.fixlen == other.fixlen and \
+                            self.encoding == other.encoding
         else:
             return False
 
@@ -275,25 +297,61 @@ class DataShape(Mono):
 
     def __init__(self, parameters=None, name=None):
 
-        if type(parameters) is DataShape:
-            self.parameters = parameters
-        elif len(parameters) > 0:
+        if len(parameters) > 1:
             self.parameters = tuple(flatten(parameters))
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
-                raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(self.parameters[-1]))
+                raise TypeError(('Only a measure can appear on the'
+                                ' last position of a datashape, not %s') %
+                                repr(self.parameters[-1]))
             for dim in self.parameters[:-1]:
                 if getattr(dim, 'cls', DIMENSION) != DIMENSION:
-                    raise TypeError('Only dimensions can appear before the last position of a datashape, not %s' % repr(dim))
-            self.composite = True
+                    raise TypeError(('Only dimensions can appear before the'
+                                    ' last position of a datashape, not %s') %
+                                    repr(dim))
         else:
-            self.parameters = tuple()
-            self.composite = False
+            raise ValueError(('the data shape should be constructed from 2 or'
+                            ' more parameters, only got %s') % (len(parameters)))
+        self.composite = True
 
         if name:
             self.name = name
             self.__metaclass__._registry[name] = self
         else:
             self.name = None
+
+        # Calculate the C itemsize and strides, which
+        # are based on a C-order contiguous assumption
+        if hasattr(parameters[-1], 'c_itemsize'):
+            c_itemsize = parameters[-1].c_itemsize
+        else:
+            c_itemsize = None
+        c_strides = []
+        for p in parameters[-2::-1]:
+            c_strides.insert(0, c_itemsize)
+            if c_itemsize is not None:
+                if isinstance(p, Fixed):
+                    c_itemsize *= operator.index(p)
+                else:
+                    c_itemsize = None
+        self._c_itemsize = c_itemsize
+        self._c_strides = tuple(c_strides)
+
+    @property
+    def c_itemsize(self):
+        """The size of one element of this type, with C-contiguous storage."""
+        if self._c_itemsize is not None:
+            return self._c_itemsize
+        else:
+            raise AttributeError('data shape does not have a fixed C itemsize')
+
+    @property
+    def c_strides(self):
+        """A tuple of all the strides for the data shape,
+        assuming C-contiguous storage."""
+        return self._c_strides
+
+    def __len__(self):
+        return len(self.parameters)
 
     def __getitem__(self, index):
         return self.parameters[index]
@@ -376,24 +434,16 @@ NATIVE = '='
 LITTLE = '<'
 BIG    = '>'
 
-class CType(DataShape):
+class CType(Mono):
     """
     Symbol for a sized type mapping uniquely to a native type.
     """
     cls = MEASURE
 
-    def __init__(self, ctype, size=None, byteorder=None):
-        if size:
-            assert 1 <= size < (2**23-1)
-            label = ctype + str(size)
-            self.parameters = (label,)
-            self.name = label
-            self.byteorder = byteorder or LITTLE
-            Type.register(label, self)
-        else:
-            self.parameters = (ctype,)
-            self.name = ctype
-            Type.register(ctype, self)
+    def __init__(self, name, itemsize):
+        self.name = name
+        self._itemsize = itemsize
+        Type.register(name, self)
 
     @classmethod
     def from_str(self, s):
@@ -415,9 +465,15 @@ class CType(DataShape):
         """
         return Type._registry[dt.name]
 
-    def size(self):
-        # TODO: no cheating!
-        return np.dtype(self.name).itemsize
+    @property
+    def itemsize(self):
+        """The size of one element of this type."""
+        return self._itemsize
+
+    @property
+    def c_itemsize(self):
+        """The size of one element of this type, with C-contiguous storage."""
+        return self._itemsize
 
     def to_struct(self):
         """
@@ -429,23 +485,17 @@ class CType(DataShape):
         """
         To Numpy dtype.
         """
-        # special cases because of NumPy weirdness
-        # >>> dtype('i')
-        # dtype('int32')
-        # >>> dtype('int')
-        # dtype('int64')
-        if self.name == "int":
-            return np.dtype("i")
-        if self.name == "float":
-            return np.dtype("f")
         return np.dtype(self.name)
 
     def __str__(self):
-        return str(self.parameters[0])
+        return self.name
+
+    def __repr__(self):
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
 
     def __eq__(self, other):
         if type(other) is CType:
-            return self.parameters[0] == other.parameters[0]
+            return self.name == other.name
         else:
             return False
 
@@ -480,10 +530,10 @@ class Fixed(Atom):
     cls = DIMENSION
 
     def __init__(self, i):
-        assert isinstance(i, (int, long))
+        assert isinstance(i, _inttypes)
 
         if i < 0:
-            raise ValueError, 'Fixed dimensions must be positive'
+            raise ValueError('Fixed dimensions must be positive')
 
         self.val = i
         self.parameters = (self.val,)
@@ -497,7 +547,7 @@ class Fixed(Atom):
     def __eq__(self, other):
         if type(other) is Fixed:
             return self.val == other.val
-        elif isinstance(other, (int, long)):
+        elif isinstance(other, _inttypes):
             return self.val == other
         else:
             return False
@@ -540,14 +590,14 @@ class Range(Atom):
     cls = DIMENSION
 
     def __init__(self, a, b=False):
-        if isinstance(a, (int, long)):
+        if isinstance(a, _inttypes):
             self.a = a
         elif isinstance(a, IntegerConstant):
             self.a = a.val
         else:
             raise TypeError('Expected integer for parameter a, not %s' % type(a))
 
-        if isinstance(b, (int, long)):
+        if isinstance(b, _inttypes):
             self.b = b
         elif b is False or b is None:
             self.b = b
@@ -636,7 +686,7 @@ class Union(Atom):
     def __str__(self):
         return expr_string('', self.parameters, '{}')
 
-class Record(DataShape):
+class Record(Mono):
     """
     A composite data structure of ordered fields mapped to types.
     """
@@ -683,12 +733,6 @@ class Record(DataShape):
         else:
             return False
 
-    def __iter__(self):
-        return zip(self.__k, self.__v)
-
-    def __len__(self):
-        return len(self.__k)
-
     def __str__(self):
         return record_string(self.__k, self.__v)
 
@@ -729,52 +773,66 @@ def inl(ty):
 # Unit Types
 #------------------------------------------------------------------------
 
-bool_      = CType('bool')
-char       = CType('char')
+bool_      = CType('bool', 1)
+char       = CType('char', 1)
 
-int8       = CType('int', 8)
-int16      = CType('int', 16)
-int32      = CType('int', 32)
-int64      = CType('int', 64)
+int8       = CType('int8', 1)
+int16      = CType('int16', 2)
+int32      = CType('int32', 4)
+int64      = CType('int64', 8)
 
-uint8      = CType('uint',  8)
-uint16     = CType('uint', 16)
-uint32     = CType('uint', 32)
-uint64     = CType('uint', 64)
+uint8      = CType('uint8', 1)
+uint16     = CType('uint16', 2)
+uint32     = CType('uint32', 4)
+uint64     = CType('uint64', 8)
 
-float16    = CType('float', 16)
-float32    = CType('float', 32)
-float64    = CType('float', 64)
-float128   = CType('float', 128)
+float16    = CType('float16', 2)
+float32    = CType('float32', 4)
+float64    = CType('float64', 8)
+float128   = CType('float128', 16)
 
-complex64  = CType('complex' , 64)
-complex128 = CType('complex', 128)
-complex256 = CType('complex', 256)
+complex64  = CType('complex64', 8)
+complex128 = CType('complex128', 16)
+complex256 = CType('complex256', 32)
 
-timedelta64 = CType('timedelta', 64)
-datetime64 = CType('datetime', 64)
+timedelta64 = CType('timedelta64', 8)
+datetime64 = CType('datetime64', 8)
 
-ulonglong  = CType('ulonglong')
+c_byte = int8
+c_short = int16
+c_int = int32
+c_longlong = int64
 
-byte = int8
-short = int16
-int_ = int32
-longlong = int64
+c_ubyte = uint8
+c_ushort = uint16
+c_ulonglong = uint64
 
-ubyte = uint8
-ushort = uint16
-ulonglong = uint64
+if ctypes.sizeof(ctypes.c_long) == 4:
+    c_long = int32
+    c_ulong = uint32
+else:
+    c_long = int64
+    c_ulong = uint64
+
+if ctypes.sizeof(ctypes.c_void_p) == 4:
+    c_intptr = c_ssize_t = int32
+    c_uintptr = c_size_t = uint32
+else:
+    c_intptr = c_ssize_t = int64
+    c_uintptr = c_size_t = uint64
+
+c_half = float16
+c_float = float32
+c_double = float64
+# TODO: Deal with the longdouble == one of float64/float80/float96/float128 situation
+c_longdouble = float128
 
 half = float16
-float_ = float32
-double = float64
-longdouble = float128
-
 single = float32
-longfloat = float128
+double = float64
 
-void = CType('void')
-object_ = pyobj = CType('object')
+void = CType('void', 0)
+object_ = pyobj = CType('object', c_intptr.itemsize)
 
 na = Null
 top = Top()
@@ -786,8 +844,9 @@ string = String
 
 Stream = Range(IntegerConstant(0), None)
 
-Type.register('int', int_)
-Type.register('float', float_)
+Type.register('int', c_int)
+Type.register('float', c_float)
+Type.register('double', c_double)
 
 Type.register('NA', Null)
 Type.register('Stream', Stream)
@@ -796,13 +855,6 @@ Type.register('top', top)
 Type.register('blob', blob)
 
 Type.register('string', String())
-Type.register('string8', String(8))
-Type.register('string16', String(16))
-Type.register('string24', String(24))
-Type.register('string32', String(32))
-Type.register('string64', String(64))
-Type.register('string128', String(128))
-Type.register('string256', String(256))
 
 #------------------------------------------------------------------------
 # Deconstructors
@@ -820,23 +872,18 @@ def extract_dims(ds):
     """ Discard measure information and just return the
     dimensions
     """
-    if isinstance(ds, CType):
-        return tuple()
-    return ds.parameters[:-1]
+    return ds[:-1]
 
 def extract_measure(ds):
     """ Discard shape information and just return the measure
     """
-    if isinstance(ds, CType):
-        return ds
-    return ds.parameters[-1]
+    return ds[-1]
 
 def is_simple(ds):
     # Unit Type
     if not ds.composite:
         if isinstance(ds, (Fixed, IntegerConstant, CType)):
             return True
-
     # Composite Type
     else:
         for dim in ds:
@@ -868,12 +915,12 @@ def from_python_scalar(scalar):
     Return a datashape ctype for a python scalar.
     """
     if isinstance(scalar, int):
-        return int_
+        return int32
     elif isinstance(scalar, float):
-        return double
+        return float64
     elif isinstance(scalar, complex):
         return complex128
-    elif isinstance(scalar, (str, unicode)):
+    elif isinstance(scalar, _strtypes):
         return string
     elif isinstance(scalar, datetime.timedelta):
         return timedelta64

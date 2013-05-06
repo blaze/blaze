@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 """
 Simple kernel selection for execution
 """
 
 from ast import NodeVisitor
 
-import expression as expr
+from . import expression as expr
 
 #------------------------------------------------------------------------
 # Numexpr
@@ -138,7 +140,7 @@ def eval_blir(exp):
     v.visit(exp)
 
     # hardcoded against the first kernel for now
-    print v.kernels[0]
+    print(v.kernels[0])
     ast, env = compile(v.kernels[0])
     ctx = Context(env)
 

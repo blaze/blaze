@@ -2,13 +2,16 @@ from __future__ import absolute_import
 
 import abc
 from blaze.error import StreamingDimensionError
+from ..cgen.utils import letters
+
+_stream_of_uniques = letters()
 
 class IGetElement:
     """
     An interface for getting char* element pointers at fixed-size
     index tuples. Provides additional C and llvm function
     interfaces to use in a jitting context.
-    
+
     >>> obj = blzarr.get_element_interface(3)
     >>> obj.get([i, j, k])
     CTypes/CFFIobj("char *", 0x...)
@@ -69,8 +72,8 @@ class IElementIter:
         return self
 
     def __len__(self):
-        # TODO: raise StreamingDimensionError("Cannot get the length of a streaming dimension")
-        raise NotImplemented
+        raise StreamingDimensionError('Cannot get the length of'
+                        ' a streaming dimension')
 
     @abc.abstractmethod
     def __next__(self):
@@ -134,6 +137,7 @@ class DataDescriptor:
     object, to achieve this.
     """
     __metaclass__ = abc.ABCMeta
+    _unique_name = ''
 
     @abc.abstractproperty
     def dshape(self):
@@ -142,13 +146,23 @@ class DataDescriptor:
         """
         raise NotImplemented
 
+    #@abc.abstractproperty
+    def unique_name(self):
+        """
+        Returns a unique name (in this process space)
+        """
+        if not self._unique_name:
+            self._unique_name = next(_stream_of_uniques)
+        return self._unique_name
+
     def __len__(self):
         """
         The default implementation of __len__ is for the
         behavior of a streaming dimension, where the size
         of the dimension isn't known ahead of time.
         """
-        raise StreamingDimensionError("Cannot get the length of a streaming dimension")
+        raise StreamingDimensionError('Cannot get the length of'
+                        ' a streaming dimension')
 
     @abc.abstractmethod
     def __iter__(self):

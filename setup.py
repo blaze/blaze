@@ -18,8 +18,15 @@ from distutils.sysconfig import get_python_inc, get_config_var
 packages = [
     'blaze',
     'blaze.aterm',
+    'blaze.aterm.tests',
     'blaze.blir',
     'blaze.blz',
+    'blaze.blz.tests',
+    'blaze.cgen',
+    'blaze.datadescriptor',
+    'blaze.datadescriptor.tests',
+    'blaze.datashape',
+    'blaze.datashape.tests',
 ]
 
 #------------------------------------------------------------------------
@@ -39,9 +46,9 @@ def _print_admonition(kind, head, body):
     tw = textwrap.TextWrapper(
         initial_indent='   ', subsequent_indent='   ')
 
-    print ".. %s:: %s" % (kind.upper(), head)
+    print(".. %s:: %s" % (kind.upper(), head))
     for line in tw.wrap(body):
-        print line
+        print(line)
 
 def exit_with_error(head, body=''):
     _print_admonition('error', head, body)
@@ -63,7 +70,7 @@ def check_import(pkgname, pkgver):
                 "You need %(pkgname)s %(pkgver)s or greater to run Blaze!"
                 % {'pkgname': pkgname, 'pkgver': pkgver} )
 
-    print ( "* Found %(pkgname)s %(pkgver)s package installed."
+    print("* Found %(pkgname)s %(pkgver)s package installed."
             % {'pkgname': pkgname, 'pkgver': mod.__version__} )
     globals()[pkgname] = mod
 
@@ -84,7 +91,7 @@ if Version.version < min_cython_version:
         "At least Cython %s is needed so as to generate extensions!"
         % (min_cython_version) )
 else:
-    print ( "* Found %(pkgname)s %(pkgver)s package installed."
+    print( "* Found %(pkgname)s %(pkgver)s package installed."
             % {'pkgname': 'Cython', 'pkgver': Version.version} )
 
 #------------------------------------------------------------------------
@@ -215,13 +222,13 @@ class CleanCommand(Command):
     def run(self):
         for clean_me in self._clean_me:
             try:
-                print 'flushing', clean_me
+                print('flushing', clean_me)
                 os.unlink(clean_me)
             except Exception:
                 pass
         for clean_tree in self._clean_trees:
             try:
-                print 'flushing', clean_tree
+                print('flushing', clean_tree)
                 shutil.rmtree(clean_tree)
             except Exception:
                 pass

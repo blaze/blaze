@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 
 ATerm grammar::
@@ -21,14 +23,14 @@ import sys
 
 from functools import partial
 
-from terms import *
+from .terms import *
 
 # Precompiled modules
-import alex
-import ayacc
+from . import alex
+from . import ayacc
 
 from blaze.plyhacks import yaccfrom, lexfrom
-from error import CustomSyntaxError
+from .error import CustomSyntaxError
 
 #------------------------------------------------------------------------
 # Errors
@@ -82,7 +84,7 @@ def t_INT(t):
 
 def t_STRING(t):
     r'"([^"\\]|\\.)*"'
-    t.value = t.value.encode('ascii')
+    # t.value = t.value.encode('ascii')
     t.value = unquote.findall(t.value)[0]
     return t
 
@@ -233,7 +235,7 @@ def debug_parse(data, lexer, parser):
     while True:
         tok = lexer.token()
         if not tok: break
-        print tok
+        print(tok)
     return parser.parse(data)
 
 def load_parser(debug=False):
@@ -268,14 +270,14 @@ if __name__ == '__main__':
         try:
             line = raw_input('>> ')
             if line == ':reload':
-                print 'Rebuilding parser...'
+                print('Rebuilding parser...')
                 continue
             elif line == ':show':
-                print repr(last)
+                print(repr(last))
             else:
                 last = parse(line)
-                print last
+                print(last)
         except EOFError:
             break
         except Exception as e:
-            print e
+            print(e)

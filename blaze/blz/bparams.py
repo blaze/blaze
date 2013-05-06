@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 
 """
 bparams
@@ -37,12 +38,12 @@ class bparams(object):
 
     def __init__(self, clevel=5, shuffle=True):
         if not isinstance(clevel, int):
-            raise ValueError, "`clevel` must an int."
+            raise ValueError("`clevel` must an int.")
         if not isinstance(shuffle, (bool, int)):
-            raise ValueError, "`shuffle` must a boolean."
+            raise ValueError("`shuffle` must a boolean.")
         shuffle = bool(shuffle)
         if clevel < 0:
-            raise ValueError, "clevel must be a positive integer"
+            raise ValueError("clevel must be a positive integer")
         self._clevel = clevel
         self._shuffle = shuffle
 

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
                 'from_cffi']
-            
+
 import operator
 import itertools
 
@@ -59,11 +59,11 @@ def cat_dshapes(dslist):
 def broadcastable(dslist, ranks=None, rankconnect=[]):
     """Return output (outer) shape if datashapes are broadcastable.
 
-    The default is to assume broadcasting over a scalar operation.  
-    However, if the kernel to be applied takes arrays as arguments, 
-    then rank and rank-connect provide the inner-shape information with 
+    The default is to assume broadcasting over a scalar operation.
+    However, if the kernel to be applied takes arrays as arguments,
+    then rank and rank-connect provide the inner-shape information with
     ranks a list of integers indicating the kernel rank of each argument
-    and rank-connect a list of sets of tuples where each set contains the 
+    and rank-connect a list of sets of tuples where each set contains the
     dimensions that must match and each tuple is (argument #, inner-dim #)
     """
     if ranks is None:
@@ -78,7 +78,7 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
     maxshape = max(len(shape) for shape in outshapes)
     outshapes = [(1,)*(maxshape-len(shape))+shape for shape in outshapes]
     for shape1, shape2 in itertools.combinations(outshapes, 2):
-        if any((dim1 != 1 and dim2 != 1 and dim1 != dim2) 
+        if any((dim1 != 1 and dim2 != 1 and dim1 != dim2)
                   for dim1, dim2 in zip(shape1,shape2)):
             raise TypeError("Outer-dimensions are not broadcastable to the same shape")
     outshape = tuple(map(max, zip(*outshapes)))
@@ -86,25 +86,20 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
     for connect in rankconnect:
         for (arg1, dim1), (arg2,dim2) in itertools.combinations(connect, 2):
             if (inshapes[arg1][dim1] != inshapes[arg2][dim2]):
-                raise TypeError("Inner dimensions do not match in " + 
+                raise TypeError("Inner dimensions do not match in " +
                                 "argument %d and argument %d" % (arg1, arg2))
 
     return outshape
 
-def from_cffi(ffi, ctype):
-    """
-    Constructs a blaze dshape from a cffi type.
-    """
+def _from_cffi_internal(ffi, ctype):
     k = ctype.kind
-    if k == 'pointer':
-        return from_cffi(ffi, ctype.item)
-    elif k == 'struct':
+    if k == 'struct':
         # TODO: Assuming the field offsets match
         #       blaze kernels - need to sync up blaze, dynd,
         #       cffi, numpy, etc so that the field offsets always work!
         #       Also need to make sure there are no bitsize/bitshift
         #       values that would be incompatible.
-        return Record([(f[0], from_cffi(ffi, f[1].type))
+        return Record([(f[0], _from_cffi_internal(ffi, f[1].type))
                         for f in ctype.fields])
     elif k == 'array':
         if ctype.length is None:
@@ -114,16 +109,11 @@ def from_cffi(ffi, ctype):
         else:
             dsparams = [Fixed(ctype.length)]
         ctype = ctype.item
-        while True:
-            k = ctype.kind
-            if k == 'pointer':
-                ctype = ctype.item
-            elif k == 'array':
-                dsparams.append(Fixed(ctype.length))
-                ctype = ctype.item
-            else:
-                dsparams.append(from_cffi(ffi, ctype))
-                return DataShape(dsparams)
+        while ctype.kind == 'array':
+            dsparams.append(Fixed(ctype.length))
+            ctype = ctype.item
+        dsparams.append(_from_cffi_internal(ffi, ctype))
+        return DataShape(dsparams)
     elif k == 'primitive':
         cn = ctype.cname
         if cn in ['signed char', 'short', 'int',
@@ -161,8 +151,21 @@ def from_cffi(ffi, ctype):
             return float64
         else:
             raise TypeError('Unrecognized cffi primitive "%s"' % cn)
+    elif k == 'pointer':
+        raise TypeError('a pointer can only be at the outer level of a cffi type '
+                        'when converting to blaze datashape')
     else:
         raise TypeError('Unrecognized cffi kind "%s"' % k)
+
+
+def from_cffi(ffi, ctype):
+    """
+    Constructs a blaze dshape from a cffi type.
+    """
+    # Allow one pointer dereference at the outermost level
+    if ctype.kind == 'pointer':
+        ctype = ctype.item
+    return _from_cffi_internal(ffi, ctype)
 
 def test_cat_dshapes():
     pass
@@ -172,12 +175,12 @@ def test_broadcastable():
     dslist = [dshape('10,20,30,int32'), dshape('20,30,int32'), dshape('int32')]
     outshape = broadcastable(dslist, ranks=[1,1,0])
     assert outshape == (10,20)
-    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,20,int32'), dshape('int32')]    
+    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,20,int32'), dshape('int32')]
     outshape = broadcastable(dslist, ranks=[1,1,0])
     assert outshape == (10,20,30)
-    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,40,int32'), dshape('int32')]    
-    outshape = broadcastable(dslist, ranks=[1,1,0], rankconnect=[{(0,0),(1,0)}])
-    assert outshape == (10,20,30)  
+    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,40,int32'), dshape('int32')]
+    outshape = broadcastable(dslist, ranks=[1,1,0], rankconnect=[set([(0,0),(1,0)])])
+    assert outshape == (10,20,30)
 
 def test():
     test_cat_dshapes()

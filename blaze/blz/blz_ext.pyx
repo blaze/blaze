@@ -18,6 +18,10 @@ import tempfile
 import json
 import cython
 
+if sys.version_info >= (3, 0):
+    _MAXINT = 2**31 - 1
+else:
+    _MAXINT = sys.maxint
 
 _KB = 1024
 _MB = 1024*_KB
@@ -30,7 +34,7 @@ STORAGE_FILE = 'storage'
 
 # For the persistence layer
 EXTENSION = '.blp'
-MAGIC = 'blpk'
+MAGIC = b'blpk'
 BLOSCPACK_HEADER_LENGTH = 16
 BLOSC_HEADER_LENGTH = 16
 FORMAT_VERSION = 1
@@ -49,7 +53,7 @@ IntType = np.dtype(np.int_)
 # numpy functions & objects
 from definitions cimport import_array, ndarray, dtype, \
      malloc, realloc, free, memcpy, memset, strdup, strcmp, \
-     PyString_AsString, PyString_GET_SIZE, PyString_FromString, \
+     PyString_AsString, PyString_GET_SIZE, \
      PyString_FromStringAndSize, \
      Py_BEGIN_ALLOW_THREADS, Py_END_ALLOW_THREADS, \
      PyArray_GETITEM, PyArray_SETITEM, \
@@ -119,6 +123,17 @@ def blosc_version():
 
   """
   return (<char *>BLOSC_VERSION_STRING, <char *>BLOSC_VERSION_DATE)
+
+def list_bytes_to_str(lst):
+    """The Python 3 JSON encoder doesn't accept 'bytes' objects,
+    this utility function converts all bytes to strings.
+    """
+    if isinstance(lst, bytes):
+        return lst.decode('ascii')
+    elif isinstance(lst, list):
+        return [list_bytes_to_str(x) for x in lst]
+    else:
+        return lst
 
 # This is the same than in utils.py, but works faster in extensions
 cdef get_len_of_range(npy_intp start, npy_intp stop, npy_intp step):
@@ -241,7 +256,7 @@ cdef class chunk:
       # Data comes in an already compressed state inside a Python String
       self.data = PyString_AsString(dobject)
       # Increment the reference so that data don't go away
-      self.dobject = dobject 
+      self.dobject = dobject
       # Set size info for the instance
       blosc_cbuffer_sizes(self.data, &nbytes, &cbytes, &blocksize)
     elif dtype_ == 'O':
@@ -498,11 +513,15 @@ cdef create_bloscpack_header(nchunks=None, format_version=FORMAT_VERSION):
       raise ValueError(
         "'nchunks' must be in the range 0 <= n <= %d, not '%s'" %
         (MAX_CHUNKS, str(nchunks)))
-    return (MAGIC + struct.pack('<B', format_version) + '\x00\x00\x00' +
+    return (MAGIC + struct.pack('<B', format_version) + b'\x00\x00\x00' +
             struct.pack('<q', nchunks if nchunks is not None else -1))
 
-def decode_byte(byte):
-  return int(byte.encode('hex'), 16)
+if sys.version_info >= (3, 0):
+    def decode_byte(byte):
+      return byte
+else:
+    def decode_byte(byte):
+      return int(byte.encode('hex'), 16)
 def decode_uint32(fourbyte):
   return struct.unpack('<I', fourbyte)[0]
 
@@ -1140,17 +1159,23 @@ cdef class barray:
       """Write metadata persistently."""
       storagef = os.path.join(self.metadir, STORAGE_FILE)
       with open(storagef, 'wb') as storagefh:
+        dflt_list = self.dflt.tolist()
+        # In Python 3, the json encoder doesn't accept bytes objects
+        if sys.version_info >= (3, 0):
+            dflt_list = list_bytes_to_str(dflt_list)
         storagefh.write(json.dumps({
-          "dtype": str(self.dtype),
+          # str(self.dtype) produces bytes by default in cython.py3.
+          # Calling .__str__() is a workaround.
+          "dtype": self.dtype.__str__(),
           "bparams": {
             "clevel": self.bparams.clevel,
             "shuffle": self.bparams.shuffle,
             },
           "chunklen": self._chunklen,
           "expectedlen": self.expectedlen,
-          "dflt": self.dflt.tolist(),
-          }))
-        storagefh.write("\n")
+          "dflt": dflt_list,
+          }, ensure_ascii=True).encode('ascii'))
+        storagefh.write(b"\n")
 
   def read_meta(self):
     """Read persistent metadata."""
@@ -1159,7 +1184,7 @@ cdef class barray:
     metadir = os.path.join(self._rootdir, META_DIR)
     shapef = os.path.join(metadir, SIZES_FILE)
     with open(shapef, 'rb') as shapefh:
-      sizes = json.loads(shapefh.read())
+      sizes = json.loads(shapefh.read().decode('ascii'))
     shape = sizes['shape']
     if type(shape) == list:
       shape = tuple(shape)
@@ -1169,7 +1194,7 @@ cdef class barray:
     # Then the rest of metadata
     storagef = os.path.join(metadir, STORAGE_FILE)
     with open(storagef, 'rb') as storagefh:
-      data = json.loads(storagefh.read())
+      data = json.loads(storagefh.read().decode('ascii'))
     dtype_ = np.dtype(data["dtype"])
     chunklen = data["chunklen"]
     bparams = blz.bparams(
@@ -2038,7 +2063,7 @@ cdef class barray:
       self.step = 1
     if not (self.sss_mode or self.where_mode or self.wheretrue_mode):
       self.nhits = 0
-      self.limit = sys.maxint
+      self.limit = _MAXINT
       self.skip = 0
     # Initialize some internal values
     self.startb = 0
@@ -2267,7 +2292,7 @@ cdef class barray:
     self.where_mode = False
     self.where_arr = None
     self.nhits = 0
-    self.limit = sys.maxint
+    self.limit = _MAXINT
     self.skip = 0
 
   cdef int check_zeros(self, object barr):
@@ -2305,8 +2330,8 @@ cdef class barray:
       sizes['cbytes'] = self.cbytes
       rowsf = os.path.join(self.metadir, SIZES_FILE)
       with open(rowsf, 'wb') as rowsfh:
-        rowsfh.write(json.dumps(sizes))
-        rowsfh.write('\n')
+        rowsfh.write(json.dumps(sizes, ensure_ascii=True).encode('ascii'))
+        rowsfh.write(b'\n')
 
   def flush(self):
     """Flush data in internal buffers to disk.

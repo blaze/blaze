@@ -6,16 +6,20 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
+
 import sys
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_equal, assert_array_equal, assert_array_almost_equal
 from unittest import TestCase
 
 
 from blaze import blz
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 
+if sys.version_info >= (3, 0):
+    xrange = range
 
 class createTest(MayBeDiskTest, TestCase):
 
@@ -216,7 +220,17 @@ class add_del_colTest(MayBeDiskTest, TestCase):
         t = blz.btable(ra, rootdir=self.rootdir)
         c = np.arange(N, dtype='i8')*3
         t.addcol(c.tolist(), 'f2')
-        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        # The exact dtype of this test depend on some finicky
+        # behavior of how numpy interacts with longs on Python 2
+        if sys.version_info >= (3, 0):
+            _long_type = int
+        else:
+            _long_type = long
+        if np.array([_long_type(1), _long_type(2)]).dtype.itemsize == 4:
+            dts = 'i4,f8,i4'
+        else:
+            dts = 'i4,f8,i8'
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype=dts)
         #print "t->", `t`
         #print "ra[:]", ra[:]
         assert_array_equal(t[:], ra, "btable values are not correct")
@@ -936,7 +950,7 @@ class iterchunksTest(TestCase):
             s += block['f0'].sum()
         self.assert_(l == N)
         self.assert_(s == (N - 1) * (N / 2))  # as per Gauss summation formula
-        
+
     def test01(self):
         """Testing `iterchunks` method with no start, no stop"""
         N, blen = int(1e4), 100

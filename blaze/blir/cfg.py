@@ -333,24 +333,24 @@ class BlockDebug(object):
             block = block.next_block
 
     def visit_BasicBlock(self,block):
-        print str(block.label) + ':'
+        print(str(block.label) + ':')
 
         for inst in block.instrs:
             if len(inst) == 1:
-                print '%-20s' % repr_instr(inst)
+                print('%-20s' % repr_instr(inst))
             if len(inst) == 2:
-                print '\t%-20s %-8s' % repr_instr(inst)
+                print('\t%-20s %-8s' % repr_instr(inst))
             elif len(inst) == 3:
-                print '\t%-20s %-8s %-8s' % repr_instr(inst)
+                print('\t%-20s %-8s %-8s' % repr_instr(inst))
             elif len(inst) == 4:
-                print '\t%-20s %-8s %-8s %-8s' % repr_instr(inst)
+                print('\t%-20s %-8s %-8s %-8s' % repr_instr(inst))
             elif len(inst) == 5:
-                print '\t%-20s %-8s %-8s %-8s %-8s' % repr_instr(inst)
+                print('\t%-20s %-8s %-8s %-8s %-8s' % repr_instr(inst))
 
         if block.next_block:
-            print '\t%-20s %-8s' % ('JUMP', block.next_block.label)
+            print('\t%-20s %-8s' % ('JUMP', block.next_block.label))
         else:
-            print '\tCBRANCH'
+            print('\tCBRANCH')
 
         print("\n")
 
@@ -383,5 +383,5 @@ def ddump_blocks(source):
         if not errors.reported():
             functions = ssa_pass(ast)
             for funcname, retty, argtys, start_block in functions:
-                print str(funcname) + ':'
+                print(str(funcname) + ':')
                 blockprint.visit(start_block)

@@ -6,6 +6,8 @@
 #
 ########################################################################
 
+from __future__ import absolute_import
+
 import sys
 import struct
 
@@ -13,7 +15,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from blaze import blz
 from blaze.blz.tests import common
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 import unittest
 
 class constructorTest(MayBeDiskTest, unittest.TestCase):
@@ -719,7 +721,7 @@ class barrayConstructorDimensionTest(MayBeDiskTest, unittest.TestCase):
         if self.open:
             b = blz.open(rootdir=self.rootdir)
 
-        # array equality implies having the same shape 
+        # array equality implies having the same shape
         assert_array_equal(a, b, "Arrays are not equal")
 
     def testExplicitDtype(self):
@@ -730,7 +732,7 @@ class barrayConstructorDimensionTest(MayBeDiskTest, unittest.TestCase):
         if self.open:
             b = blz.open(rootdir=self.rootdir)
 
-        # array equality implies having the same shape 
+        # array equality implies having the same shape
         assert_array_equal(a, b, "Arrays are not equal")
 
 class barrayConstructorDimensionDiskTest(barrayConstructorDimensionTest,

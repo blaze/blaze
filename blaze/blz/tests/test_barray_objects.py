@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 Unit tests related to the handling of arrays of objects
 -------------------------------------------------------
@@ -15,7 +17,7 @@ from numpy.testing.decorators import skipif, knownfailureif
 
 import numpy as np
 from blaze import blz
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 
 class ObjectBarrayTest(MayBeDiskTest, TestCase):
     def test_barray_1d_source(self):
@@ -30,7 +32,7 @@ class ObjectBarrayTest(MayBeDiskTest, TestCase):
             self.assertEqual(carr[i], src_data[i])
 
     def test_barray_2d_source(self):
-        """Testing barray of objects, 2d source 
+        """Testing barray of objects, 2d source
 
         Expected result will be a 1d barray whose elements are
         containers holding the inner dimension
@@ -79,13 +81,13 @@ class ObjectBarrayTest(MayBeDiskTest, TestCase):
         for i in range(len(carr)):
             self.assertEqual(carr[i][0], src_data[i][0])
             self.assertEqual(carr[i][1], src_data[i][1])
-                              
+
     # The following tests document different alternatives in handling
     # input data which would infer a record dtype in the resulting
     # barray.
     #
     # option 1: fail with a type error as if the dtype was
-    # explicit 
+    # explicit
     #
     # option 2: handle it as an array of arrays of objects.
     def test_barray_record_inferred_opt1(self):
@@ -124,7 +126,7 @@ class ObjectBarrayDiskTest(ObjectBarrayTest):
 
 ## Local Variables:
 ## mode: python
-## coding: utf-8 
+## coding: utf-8
 ## py-indent-offset: 4
 ## tab-with: 4
 ## fill-column: 66

@@ -36,7 +36,9 @@ cdef extern from "time.h":
 #-----------------------------------------------------------------------------
 
 # Some helper routines from the Python API
-cdef extern from "Python.h":
+# PythonHelper.h is used to help make
+# python 2 and 3 both work.
+cdef extern from "PythonHelper.h":
 
   # special types
   ctypedef int Py_ssize_t

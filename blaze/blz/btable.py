@@ -6,20 +6,32 @@
 #
 ########################################################################
 
-import sys, math
+from __future__ import absolute_import
 
+import sys
 import numpy as np
-import itertools as it
+import itertools
+import operator
 from collections import namedtuple
 import json
 import os, os.path
 import shutil
 
-from blz_ext import barray
-from bparams import bparams
+from .blz_ext import barray
+from .bparams import bparams
+from .chunked_eval import evaluate
 
 # BLZ utilities
-import utils, attrs, arrayprint
+from . import utils, attrs, arrayprint
+
+if sys.version_info >= (3, 0):
+    _inttypes = (int,)
+    imap = map
+    xrange = range
+else:
+    _inttypes = (int, long)
+    imap = itertools.imap
+islice = itertools.islice
 
 ROOTDIRS = '__rootdirs__'
 
@@ -37,7 +49,7 @@ class cols(object):
         # Get the directories of the columns
         rootsfile = os.path.join(self.rootdir, ROOTDIRS)
         with open(rootsfile, 'rb') as rfile:
-            data = json.loads(rfile.read())
+            data = json.loads(rfile.read().decode('ascii'))
         # JSON returns unicode (?)
         self.names = [str(name) for name in data['names']]
         # Initialize the cols by instatiating the barrays
@@ -52,8 +64,8 @@ class cols(object):
         data = {'names': self.names, 'dirs': dirs}
         rootsfile = os.path.join(self.rootdir, ROOTDIRS)
         with open(rootsfile, 'wb') as rfile:
-            rfile.write(json.dumps(data))
-            rfile.write("\n")
+            rfile.write(json.dumps(data).encode('ascii'))
+            rfile.write(b"\n")
 
     def __getitem__(self, name):
         return self._cols[name]
@@ -65,7 +77,7 @@ class cols(object):
 
     def __iter__(self):
         """Return an iterator over the columns (not the names)."""
-        return self._cols.itervalues()
+        return iter(self._cols)
 
     def __len__(self):
         return len(self.names)
@@ -225,8 +237,7 @@ class btable(object):
             if type(names) == tuple:
                 names = list(names)
             if type(names) != list:
-                raise ValueError(
-                    "`names` can only be a list or tuple")
+                raise ValueError("`names` can only be a list or tuple")
             if len(names) != len(columns):
                 raise ValueError(
                     "`columns` and `names` must have the same length")
@@ -243,16 +254,16 @@ class btable(object):
             ratype = hasattr(columns.dtype, "names")
             if ratype:
                 if len(columns.shape) != 1:
-                    raise ValueError, "only unidimensional shapes supported"
+                    raise ValueError("only unidimensional shapes supported")
         else:
-            raise ValueError, "`columns` input is not supported"
+            raise ValueError("`columns` input is not supported")
         if not (calist or nalist or ratype):
             # Try to convert the elements to barrays
             try:
                 columns = [barray(col) for col in columns]
                 calist = True
             except:
-                raise ValueError, "`columns` input is not supported"
+                raise ValueError("`columns` input is not supported")
 
         # Populate the columns
         clen = -1
@@ -268,14 +279,14 @@ class btable(object):
             elif nalist:
                 column = columns[i]
                 if column.dtype == np.void:
-                    raise ValueError,(
+                    raise ValueError(
                         "`columns` elements cannot be of type void")
                 column = barray(column, **kwargs)
             elif ratype:
                 column = barray(columns[name], **kwargs)
             self.cols[name] = column
             if clen >= 0 and clen != len(column):
-                raise ValueError, "all `columns` must have the same length"
+                raise ValueError("all `columns` must have the same length")
             clen = len(column)
 
         self.len = clen
@@ -335,9 +346,9 @@ class btable(object):
             rows = [rows[name] for name in self.names]
             calist = True
         else:
-            raise ValueError, "`rows` input is not supported"
+            raise ValueError("`rows` input is not supported")
         if not (calist or nalist or sclist or ratype):
-            raise ValueError, "`rows` input is not supported"
+            raise ValueError("`rows` input is not supported")
 
         # Populate the columns
         clen = -1
@@ -347,7 +358,7 @@ class btable(object):
             elif nalist:
                 column = rows[i]
                 if column.dtype == np.void:
-                    raise ValueError, "`rows` elements cannot be of type void"
+                    raise ValueError("`rows` elements cannot be of type void")
                 column = column
             elif ratype:
                 column = rows[name]
@@ -358,7 +369,7 @@ class btable(object):
             else:
                 clen2 = len(column)
             if clen >= 0 and clen != clen2:
-                raise ValueError, "all cols in `rows` must have the same length"
+                raise ValueError("all cols in `rows` must have the same length")
             clen = clen2
         self.len += clen
 
@@ -435,18 +446,18 @@ class btable(object):
             pos = len(self.names)
         else:
             if pos and type(pos) != int:
-                raise ValueError, "`pos` must be an int"
+                raise ValueError("`pos` must be an int")
             if pos < 0 or pos > len(self.names):
-                raise ValueError, "`pos` must be >= 0 and <= len(self.cols)"
+                raise ValueError("`pos` must be >= 0 and <= len(self.cols)")
         if name is None:
             name = "f%d" % pos
         else:
             if type(name) != str:
-                raise ValueError, "`name` must be a string"
+                raise ValueError("`name` must be a string")
         if name in self.names:
-            raise ValueError, "'%s' column already exists" % name
+            raise ValueError("'%s' column already exists" % name)
         if len(newcol) != self.len:
-            raise ValueError, "`newcol` must have the same length than btable"
+            raise ValueError("`newcol` must have the same length than btable")
 
         if isinstance(newcol, np.ndarray):
             if 'bparams' not in kwargs:
@@ -457,8 +468,7 @@ class btable(object):
                 kwargs['bparams'] = self.bparams
             newcol = barray(newcol, **kwargs)
         elif type(newcol) != barray:
-            raise ValueError(
-                """`newcol` type not supported""")
+            raise ValueError("`newcol` type not supported")
 
         # Insert the column
         self.cols.insert(name, pos, newcol)
@@ -491,20 +501,20 @@ class btable(object):
         """
 
         if name is None and pos is None:
-            raise ValueError, "specify either a `name` or a `pos`"
+            raise ValueError("specify either a `name` or a `pos`")
         if name is not None and pos is not None:
-            raise ValueError, "you cannot specify both a `name` and a `pos`"
+            raise ValueError("you cannot specify both a `name` and a `pos`")
         if name:
             if type(name) != str:
-                raise ValueError, "`name` must be a string"
+                raise ValueError("`name` must be a string")
             if name not in self.names:
-                raise ValueError, "`name` not found in columns"
+                raise ValueError("`name` not found in columns")
             pos = self.names.index(name)
         elif pos is not None:
             if type(pos) != int:
-                raise ValueError, "`pos` must be an int"
+                raise ValueError("`pos` must be an int")
             if pos < 0 or pos > len(self.names):
-                raise ValueError, "`pos` must be >= 0 and <= len(self.cols)"
+                raise ValueError("`pos` must be >= 0 and <= len(self.cols)")
             name = self.names[pos]
 
         # Remove the column
@@ -554,7 +564,7 @@ class btable(object):
     def __sizeof__(self):
         return self.cbytes
 
-    def where(self, expression, outcols=None, limit=None, skip=0):
+    def where(self, expression, outcols=None, limit=None, skip=0, **kwargs):
         """
         where(expression, outcols=None, limit=None, skip=0)
 
@@ -591,23 +601,23 @@ class btable(object):
         # Check input
         if type(expression) is str:
             # That must be an expression
-            boolarr = self.eval(expression)
+            boolarr = self.eval(expression, **kwargs)
         elif hasattr(expression, "dtype") and expression.dtype.kind == 'b':
             boolarr = expression
         else:
-            raise ValueError, "only boolean expressions or arrays are supported"
+            raise ValueError("only boolean expressions or arrays are supported")
 
         # Check outcols
         if outcols is None:
             outcols = self.names
         else:
             if type(outcols) not in (list, tuple, str):
-                raise ValueError, "only list/str is supported for outcols"
+                raise ValueError("only list/str is supported for outcols")
             # Check name validity
             nt = namedtuple('_nt', outcols, verbose=False)
             outcols = list(nt._fields)
             if set(outcols) - set(self.names+['nrow__']) != set():
-                raise ValueError, "not all outcols are real column names"
+                raise ValueError("not all outcols are real column names")
 
         # Get iterators for selected columns
         icols, dtypes = [], []
@@ -668,16 +678,16 @@ class btable(object):
             outcols = self.names
         else:
             if type(outcols) not in (list, tuple, str):
-                raise ValueError, "only list/str is supported for outcols"
+                raise ValueError("only list/str is supported for outcols")
             # Check name validity
             nt = namedtuple('_nt', outcols, verbose=False)
             outcols = list(nt._fields)
             if set(outcols) - set(self.names+['nrow__']) != set():
-                raise ValueError, "not all outcols are real column names"
+                raise ValueError("not all outcols are real column names")
 
         # Check limits
         if step <= 0:
-            raise NotImplementedError, "step param can only be positive"
+            raise NotImplementedError("step param can only be positive")
         start, stop, step = slice(start, stop, step).indices(self.len)
 
         # Get iterators for selected columns
@@ -687,7 +697,7 @@ class btable(object):
                 istop = None
                 if limit is not None:
                     istop = limit + skip
-                icols.append(it.islice(xrange(start, stop, step), skip, istop))
+                icols.append(islice(xrange(start, stop, step), skip, istop))
                 dtypes.append((name, np.int_))
             else:
                 col = self.cols[name]
@@ -702,7 +712,7 @@ class btable(object):
 
         icols = tuple(icols)
         namedt = namedtuple('row', dtype.names)
-        iterable = it.imap(namedt, *icols)
+        iterable = imap(namedt, *icols)
         return iterable
 
     def _where(self, boolarr, colnames=None):
@@ -744,7 +754,7 @@ class btable(object):
         """
 
         # First, check for integer
-        if isinstance(key, (int, long)):
+        if isinstance(key, _inttypes):
             # Get a copy of the len-1 array
             ra = self._arr1.copy()
             # Fill it
@@ -758,7 +768,7 @@ class btable(object):
         # Multidimensional keys
         elif isinstance(key, tuple):
             if len(key) != 1:
-                raise IndexError, "multidimensional keys are not supported"
+                raise IndexError("multidimensional keys are not supported")
             return self[key[0]]
         # List of integers (case of fancy indexing), or list of column names
         elif type(key) is list:
@@ -773,9 +783,9 @@ class btable(object):
             try:
                 key = np.array(key, dtype=np.int_)
             except:
-                raise IndexError, \
-                      "key cannot be converted to an array of indices"
-            return np.fromiter((self[i] for i in key),
+                raise IndexError(
+                      "key cannot be converted to an array of indices")
+            return np.fromiter((self[operator.index(i)] for i in key),
                                dtype=self.dtype, count=len(key))
         # A boolean array (case of fancy indexing)
         elif hasattr(key, "dtype"):
@@ -783,24 +793,24 @@ class btable(object):
                 return self._where(key)
             elif np.issubsctype(key, np.int_):
                 # An integer array
-                return np.array([self[i] for i in key], dtype=self.dtype)
+                return np.array([self[operator.index(i)] for i in key], dtype=self.dtype)
             else:
-                raise IndexError, \
-                      "arrays used as indices must be integer (or boolean)"
+                raise IndexError(
+                      "arrays used as indices must be integer (or boolean)")
         # Column name or expression
         elif type(key) is str:
             if key not in self.names:
                 # key is not a column name, try to evaluate
                 arr = self.eval(key, depth=4)
                 if arr.dtype.type != np.bool_:
-                    raise IndexError, \
-                          "`key` %s does not represent a boolean expression" %\
-                          key
+                    raise IndexError(
+                          "`key` %s does not represent a boolean expression" %
+                          key)
                 return self._where(arr)
             return self.cols[key]
         # All the rest not implemented
         else:
-            raise NotImplementedError, "key not supported: %s" % repr(key)
+            raise NotImplementedError("key not supported: %s" % repr(key))
 
         # From now on, will only deal with [start:stop:step] slices
 
@@ -859,6 +869,40 @@ class btable(object):
         for name in self.names:
             self.cols[name][key] = value[name]
         return
+
+    def eval(self, expression, **kwargs):
+        """
+        eval(expression, **kwargs)
+
+        Evaluate the `expression` on columns and return the result.
+
+        Parameters
+        ----------
+        expression : string
+            A string forming an expression, like '2*a+3*b'. The values
+            for 'a' and 'b' are variable names to be taken from the
+            calling function's frame.  These variables may be column
+            names in this table, scalars, barrays or NumPy arrays.
+        kwargs : list of parameters or dictionary
+            Any parameter supported by the `eval()` first level function.
+
+        Returns
+        -------
+        out : barray object
+            The outcome of the expression.  You can tailor the
+            properties of this barray by passing additional arguments
+            supported by barray constructor in `kwargs`.
+
+        See Also
+        --------
+        eval (first level function)
+
+        """
+
+        # Get the desired frame depth
+        depth = kwargs.pop('depth', 3)
+        # Call top-level eval with cols as user_dict
+        return evaluate(expression, user_dict=self.cols, depth=depth, **kwargs)
 
     def flush(self):
         """Flush data in internal buffers to disk.

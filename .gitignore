@@ -5,4 +5,5 @@
 *.swp
 *.swo
 *.pyd
+build
 blaze/blz/blz_ext.c

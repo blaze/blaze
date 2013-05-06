@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 The improved parser for Datashape grammar.
 
@@ -50,14 +52,15 @@ Grammar::
 
 import os
 import sys
+import ast
 
 from functools import partial
 from collections import namedtuple
-import coretypes as T
+from . import coretypes as T
 
 try:
-    import dlex
-    import dyacc
+    from . import dlex
+    from . import dyacc
     DEBUG = False
 except:
     DEBUG = True
@@ -150,8 +153,13 @@ def t_NUMBER(t):
     return t
 
 def t_STRING(t):
-    r'(?:"(?:[^"\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*")|(?:\'(?:[^\'\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\.))*\')'
-    t.value = t.value[1:-1].decode('unicode_escape')
+    r'(?:"(?:[^"\n\r\\]|(?:\\x[0-9a-fA-F]{2})|(?:\\u[0-9a-fA-F]{4})|(?:\\.))*")|(?:\'(?:[^\'\n\r\\]|(?:\\x[0-9a-fA-F]+)|(?:\\u[0-9a-fA-F]{4})|(?:\\.))*\')'
+    # Use the Python parser via the ast module to parse the string,
+    # since neither the string_escape nor unicode_escape do the right thing
+    if sys.version_info >= (3, 0):
+        t.value = ast.parse(t.value).body[0].value.s
+    else:
+        t.value = ast.parse('u' + t.value).body[0].value.s
     return t
 
 def t_error(t):
@@ -359,8 +367,6 @@ reserved = {
     'string'   : T.String, # String type per proposal
 }
 
-python_internals = (int, long, basestring)
-
 def build_ds_extern(ds):
     if isinstance(ds, list):
         return map(build_ds, ds)
@@ -374,7 +380,7 @@ def debug_parse(data, lexer, parser):
     while True:
         tok = lexer.token()
         if not tok: break
-        print tok
+        print(tok)
 
     import logging
     logging.basicConfig(
@@ -443,7 +449,7 @@ if __name__ == '__main__':
         try:
             line = raw_input('>> ')
             ast = parser(line)
-            print ast
-            #print build_ds(ast)
+            print(ast)
+            #print(build_ds(ast))
         except EOFError:
             break

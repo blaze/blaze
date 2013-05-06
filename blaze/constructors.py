@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 
 # This are the constructors for the blaze array objects.  Having them
 # as external functions allows to more flexibility and helps keeping
@@ -9,7 +10,7 @@
 # of the constructors, and will use low-level parameters, like
 # ByteProviders, that an end user may not even need to know about.
 
-from concrete import NDArray
+from .concrete import NDArray
 
 from blaze.datadescriptor import NumPyDataDescriptor
 from blaze.datashape import to_numpy, dshape

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """Array printing function
 
 $Id: arrayprint.py,v 1.9 2005/09/13 13:58:44 teoliphant Exp $
@@ -38,8 +40,10 @@ _nan_str = 'nan'
 _inf_str = 'inf'
 _formatter = None  # formatting function for array elements
 
-if sys.version_info[0] >= 3:
+if sys.version_info >= (3, 0):
     from functools import reduce
+    xrange = range
+
 
 def set_printoptions(precision=None, threshold=None, edgeitems=None,
                      linewidth=None, suppress=None,
@@ -638,9 +642,12 @@ def _digits(x, precision, format):
     z = s.rstrip('0')
     return precision - len(s) + len(z)
 
-
-_MAXINT = sys.maxint
-_MININT = -sys.maxint-1
+if sys.version_info >= (3, 0):
+    _MAXINT = 10**9
+    _MININT = -10**9
+else:
+    _MAXINT = sys.maxint
+    _MININT = -sys.maxint-1
 class IntegerFormat(object):
     def __init__(self, data):
         try:
