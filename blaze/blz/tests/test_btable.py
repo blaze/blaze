@@ -220,7 +220,13 @@ class add_del_colTest(MayBeDiskTest, TestCase):
         t = blz.btable(ra, rootdir=self.rootdir)
         c = np.arange(N, dtype='i8')*3
         t.addcol(c.tolist(), 'f2')
-        if np.array([1,2,3]).dtype.itemsize == 4:
+        # The exact dtype of this test depend on some finicky
+        # behavior of how numpy interacts with longs on Python 2
+        if sys.version_info >= (3, 0):
+            _long_type = int
+        else:
+            _long_type = long
+        if np.array([_long_type(1), _long_type(2)]).dtype.itemsize == 4:
             dts = 'i4,f8,i4'
         else:
             dts = 'i4,f8,i8'

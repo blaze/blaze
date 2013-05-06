@@ -28,6 +28,7 @@ def test(verbosity=1, xunitfile=None, exit=False):
     """
     import nose
     import os
+    import sys
     argv = ['nosetests', '--verbosity=%d' % verbosity]
     # Output an xunit file if requested
     if xunitfile:
@@ -39,5 +40,6 @@ def test(verbosity=1, xunitfile=None, exit=False):
             testsdir = os.path.join(root, 'tests')
             argv.append(testsdir)
             print('Test dir: %s' % testsdir[len(rootdir)+1:])
+    sys.stdout.flush()
     # Ask nose to do its thing
     return nose.main(argv=argv, exit=exit)
