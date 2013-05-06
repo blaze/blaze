@@ -9,7 +9,7 @@ from .byteprovider import bytefactory
 
 class DataDescriptor(object):
     """DataDescriptors are the map between low-level references to Bytes
-    and the Blaze Array.  It is basically an "unadorned" NDArray with no
+    and the Blaze Array.  It is basically an "unadorned" Array with no
     special methods and no math just mechanisms to get access to the
     data quickly and iterators.
 

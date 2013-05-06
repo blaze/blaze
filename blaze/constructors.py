@@ -10,7 +10,7 @@ from __future__ import absolute_import
 # of the constructors, and will use low-level parameters, like
 # ByteProviders, that an end user may not even need to know about.
 
-from .concrete import NDArray
+from .concrete import Array
 
 
 # note that this is rather naive. In fact, a proper way to implement
@@ -20,7 +20,7 @@ from .concrete import NDArray
 def array(numpy_array_like):
     from numpy import array
     dd = SimpleDataDescriptor(NpByteProvider(array(numpy_array_like)))
-    return NDArray(dd)
+    return Array(dd)
 
 # for a temptative open function:
 def open(uri):
