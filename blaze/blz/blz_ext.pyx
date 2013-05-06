@@ -19,7 +19,7 @@ import json
 import cython
 
 if sys.version_info >= (3, 0):
-    _MAXINT = 2**32 - 1
+    _MAXINT = 2**31 - 1
 else:
     _MAXINT = sys.maxint
 
