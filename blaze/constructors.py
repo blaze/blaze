@@ -10,7 +10,7 @@ from __future__ import absolute_import
 # of the constructors, and will use low-level parameters, like
 # ByteProviders, that an end user may not even need to know about.
 
-from .concrete import Array
+from .array import Array
 
 
 # note that this is rather naive. In fact, a proper way to implement
