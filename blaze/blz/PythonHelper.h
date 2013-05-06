@@ -9,7 +9,7 @@
 
 #if PY_VERSION_HEX >= 0x03000000
 #define PyString_FromStringAndSize(v, len) PyBytes_FromStringAndSize(v, len)
-#define PyString_AsString(v) PyBytes_FromString(v)
+#define PyString_AsString(v) PyBytes_AsString(v)
 #define PyString_GET_SIZE(string) PyBytes_GET_SIZE(string)
 #define PyBuffer_FromMemory(ptr, size) PyMemoryView_FromMemory(ptr, size, PyBUF_READ|PyBUF_WRITE)
 #endif

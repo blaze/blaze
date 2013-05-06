@@ -40,8 +40,10 @@ _nan_str = 'nan'
 _inf_str = 'inf'
 _formatter = None  # formatting function for array elements
 
-if sys.version_info[0] >= 3:
+if sys.version_info >= (3, 0):
     from functools import reduce
+    xrange = range
+
 
 def set_printoptions(precision=None, threshold=None, edgeitems=None,
                      linewidth=None, suppress=None,
