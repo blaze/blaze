@@ -11,7 +11,7 @@ from __future__ import absolute_import
 import sys
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_equal, assert_array_equal, assert_array_almost_equal
 from unittest import TestCase
 
 
@@ -220,7 +220,11 @@ class add_del_colTest(MayBeDiskTest, TestCase):
         t = blz.btable(ra, rootdir=self.rootdir)
         c = np.arange(N, dtype='i8')*3
         t.addcol(c.tolist(), 'f2')
-        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype='i4,f8,i8')
+        if np.array([1,2,3]).dtype.itemsize == 4:
+            dts = 'i4,f8,i4'
+        else:
+            dts = 'i4,f8,i8'
+        ra = np.fromiter(((i, i*2., i*3) for i in xrange(N)), dtype=dts)
         #print "t->", `t`
         #print "ra[:]", ra[:]
         assert_array_equal(t[:], ra, "btable values are not correct")
