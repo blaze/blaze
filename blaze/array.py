@@ -8,7 +8,7 @@ from __future__ import absolute_import
 from .datashape import dshape
 from .datadescriptor import DataDescriptor
 
-# An NDArray is a
+# An Array is a
 #   DataDescriptor
 #       Sequence of Bytes (where are the bytes)
 #       Index Object (how do I get to them)
@@ -16,7 +16,7 @@ from .datadescriptor import DataDescriptor
 #
 #   axis and dimension labels 
 #   user-defined meta-data (whatever are needed --- provenance propagation)
-class NDArray(object):
+class Array(object):
     def __init__(self, data, axes=None, labels=None, user={}):
         assert isinstance(data, DataDescriptor)
         self.data = data
@@ -25,7 +25,7 @@ class NDArray(object):
         #self.labels = labels or [None]*self.data.nd
         self.user = user
 
-        # Need to inject attributes on the NDArray depending on dshape attributes
+        # Need to inject attributes on the Array depending on dshape attributes
 
 
     @property

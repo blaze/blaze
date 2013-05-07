@@ -10,7 +10,7 @@ from __future__ import absolute_import
 # of the constructors, and will use low-level parameters, like
 # ByteProviders, that an end user may not even need to know about.
 
-from .concrete import NDArray
+from .array import Array
 
 from blaze.datadescriptor import NumPyDataDescriptor
 from blaze.datashape import to_numpy, dshape
@@ -45,6 +45,8 @@ def array(data, dshape=None):
 
     """
     from numpy import array
+    dd = SimpleDataDescriptor(NpByteProvider(array(numpy_array_like)))
+    return Array(dd)
 
     datadesc = NumPyDataDescriptor(array(data))
 

@@ -2,8 +2,9 @@ from __future__ import absolute_import
 
 # build the blaze namespace with selected functions
 
-from .constructors import array, ones, zeros
+from . import datashape
 from .datashape import dshape
+from .constructors import array, open, ones, zeros
 
 def test(verbosity=1, xunitfile=None, exit=False):
     """

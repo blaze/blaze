@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
-from .concrete import NDArray
+from .array import Array
 from ..cgen.utils import letters
 
 
@@ -138,7 +138,7 @@ class BlazeFunc(object):
     def __call__(self, *args, **kwds):
         # convert inputs to Arrays
         # build an AST and return Arrays with a Deferred Data Descriptor
-        # The eval method of the NDArray does the actual computation
+        # The eval method of the Array does the actual computation
         #args = map(blaze.asarray, args)
 
 
@@ -176,14 +176,14 @@ class BlazeFunc(object):
         kerneltree = KernelTree(kernelobj, children)
         data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)
 
-        # Construct an NDArray object from new data descriptor
+        # Construct an Array object from new data descriptor
         user = {self.name: [arg.user for arg in args]}
 
         # FIXME:  Check for axes alignment and labels alignment
         axes = args[0].axes
         labels = args[0].labels
 
-        return NDArray(data, axes, labels, user)
+        return Array(data, axes, labels, user)
 
 
 
