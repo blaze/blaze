@@ -19,22 +19,22 @@ print (a)
 # The array will have a datashape. A datashape is a combination of the
 # shape and dtype concept found in numpy. Note that when creating from
 # a Python iterable, a datashape will be inferred.
-print (a.datashape)
+print (a.dshape)
 
 b = blaze.array([1.2, 3.5, 5.1])
-print (b.datashape)
+print (b.dshape)
 
 # Arrays can be bi-dimensional
 print_section('going 2d', spacing=1, underline='-')
 c = blaze.array([ [1, 2], [3, 4] ]) 
 print (c)
-print (c.datashape)
+print (c.dshape)
 
 # or as many dimensions as you like
 print_section('going 3d', spacing=1, underline='-')
 d = blaze.array([ [ [1, 2], [3, 4] ], [ [5, 6], [7, 8] ] ])
 
-print (d.datashape)
+print (d.dshape)
 
 # --------------------------------------------------------------------
 

@@ -45,12 +45,10 @@ def array(data, dshape=None):
 
     """
     from numpy import array
-    dd = SimpleDataDescriptor(NpByteProvider(array(numpy_array_like)))
-    return Array(dd)
 
     datadesc = NumPyDataDescriptor(array(data))
 
-    return NDArray(datadesc)
+    return Array(datadesc)
 
 
 def zeros(ds):
@@ -76,7 +74,7 @@ def zeros(ds):
     ds = ds if not isinstance(ds, basestring) else dshape(ds)
     (shape, dtype) = to_numpy(ds)
     datadesc = NumPyDataDescriptor(zeros(shape, dtype=dtype))
-    return NDArray(datadesc)
+    return Array(datadesc)
 
 
 def ones(ds):
@@ -102,7 +100,7 @@ def ones(ds):
     ds = ds if not isinstance(ds, basestring) else dshape(ds)
     (shape, dtype) = to_numpy(ds)
     datadesc = NumPyDataDescriptor(ones(shape, dtype=dtype))
-    return NDArray(datadesc)
+    return Array(datadesc)
 
 
 # for a temptative open function:
