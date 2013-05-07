@@ -20,15 +20,7 @@ class Array(object):
 
     @property
     def dshape(self):
-        return self._dshape
-
-    @property
-    def shape(self):
-        return self._dshape.shape
-
-    @property
-    def nd(self):
-        return len(self._dshape, shape)
+        return self.data.dshape
 
     def __iter__(self, iter):
         return self.data.__iter__()
