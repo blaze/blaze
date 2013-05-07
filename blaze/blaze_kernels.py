@@ -96,36 +96,26 @@ class BlazeElementKernel(object):
 
     @staticmethod
     def fromblir(str):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def fromcffi(cffifunc):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def fromctypes(ctypefunc):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def fromcfunc(cfunc):
-        pass
+        raise NotImplementedError
 
-<<<<<<< HEAD
-    def create_wrapper_kernel(inrank, outrank):
-        """Take the current kernel of inrank and create a new kernel of
-        outrank that calls call the current kernel multiple times as needed
-
-        Example (let rn == rank-n)
-          We need an r2, r2 -> r2 kernel and we have an r0, r0 -> r0
-          kernel.
-=======
     def create_wrapper_kernel(input_ranks, output_rank):
         """Take the current kernel and available input argument ranks
          and create a new kernel that matches the required output rank 
          by using the current kernel multiple-times if necessary. 
 
-         So that we can create a simple call stack
->>>>>>> Check to ensure large-enough arrays for kernel rank and being work of creating wrappers and fusers.
+         This kernel allows creation of a simple call stack.
 
         Example: (let rn == rank-n) 
           We need an r2, r2 -> r2 kernel and we have an r1, r1 -> r1
