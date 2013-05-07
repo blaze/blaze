@@ -12,8 +12,8 @@ from __future__ import absolute_import
 
 from .array import Array
 
-from blaze.datadescriptor import NumPyDataDescriptor
-from blaze.datashape import to_numpy, dshape
+from .datadescriptor import NumPyDataDescriptor
+from .datashape import to_numpy, dshape
 
 # note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "data"
