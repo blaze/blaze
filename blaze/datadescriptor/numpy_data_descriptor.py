@@ -73,11 +73,20 @@ class NumPyDataDescriptor(DataDescriptor):
             raise TypeError('object is not a numpy array, has type %s' %
                             type(npyarr))
         self.npyarr = npyarr
-        self._dshape = datashape.from_numpy(self.npyarr.shape, self.npyarr.dtype)
+        self._dshape = datashape.from_numpy(
+            self.npyarr.shape, self.npyarr.dtype)
 
     @property
     def dshape(self):
         return self._dshape
+
+    @property
+    def shape(self):
+        return self._dshape.shape
+
+    @property
+    def nd(self):
+        return len(self._dshape.shape)
 
     def __len__(self):
         if self.npyarr.ndim > 0:
@@ -91,7 +100,8 @@ class NumPyDataDescriptor(DataDescriptor):
             key = (key,)
         key = tuple([operator.index(i) for i in key])
         if len(key) == self.npyarr.ndim:
-            return NumPyDataDescriptor(self.npyarr[...,np.newaxis][key].reshape(()))
+            return NumPyDataDescriptor(
+                self.npyarr[...,np.newaxis][key].reshape(()))
         else:
             return NumPyDataDescriptor(self.npyarr[key])
 

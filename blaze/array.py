@@ -17,11 +17,30 @@ from .datadescriptor import DataDescriptor
 #   axis and dimension labels 
 #   user-defined meta-data (whatever are needed --- provenance propagation)
 class Array(object):
+
+    @property
+    def dshape(self):
+        return self._dshape
+
+    @property
+    def shape(self):
+        return self._dshape.shape
+
+    @property
+    def nd(self):
+        return len(self._dshape, shape)
+
+    def __iter__(self, iter):
+        return self.data.__iter__()
+
+    def __getitem__(self, key):
+        return self.data.__getitem__(key)
+
     def __init__(self, data, axes=None, labels=None, user={}):
         assert isinstance(data, DataDescriptor)
         self.data = data
-        self.axes = axes or ['']*self.data.nd
-        self.labels = labels or [None]*self.data.nd
+        self.axes = axes or [''] * self.data.nd
+        self.labels = labels or [None] * self.data.nd
         self.user = user
 
         # Need to inject attributes on the Array depending on dshape attributes
@@ -53,15 +72,5 @@ These should be functions
     def fromiterator(buffer):
         raise NotImplementedError
 
-    @property
-    def shape(self):
-        return self._dshape.shape
-
-    @property
-    def nd(self):
-        return len(self.shape)
-
-    def __getitem__(self, key):
-        raise NotImplementedError
 """
         
