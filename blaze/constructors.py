@@ -11,15 +11,20 @@ from __future__ import absolute_import
 # ByteProviders, that an end user may not even need to know about.
 
 from .array import Array
-
+from .datadescriptor import NumPyDataDescriptor, BLZDataDescriptor
 
 # note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "data"
 # and infer the indexer from the apropriate information in the numpy
 # array.
-def array(numpy_array_like):
-    from numpy import array
-    dd = SimpleDataDescriptor(NpByteProvider(array(numpy_array_like)))
+def array(obj, dshape=None, caps={'efficient-write': True}):
+    if 'efficient-write' in caps:
+        # NumPy provides efficient writes
+        import numpy as np
+        dd = NumPyDataDescriptor(np.array(obj))
+    elif 'compress' in caps:
+        # BLZ provides compression
+        dd = BLZDataDescriptor(obj)
     return Array(dd)
 
 # for a temptative open function:

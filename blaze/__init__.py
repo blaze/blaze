@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 from . import datashape
 from .datashape import dshape
+from .array import Array
 from .constructors import array, open
 
 def test(verbosity=1, xunitfile=None, exit=False):
