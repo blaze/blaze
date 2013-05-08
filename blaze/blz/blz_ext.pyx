@@ -20,8 +20,10 @@ import cython
 
 if sys.version_info >= (3, 0):
     _MAXINT = 2**31 - 1
+    _inttypes = (int, np.integer)
 else:
     _MAXINT = sys.maxint
+    _inttypes = (int, long, np.integer)
 
 _KB = 1024
 _MB = 1024*_KB
@@ -402,7 +404,7 @@ cdef class chunk:
     cdef ndarray array
     cdef object start, stop, step, clen, idx
 
-    if isinstance(key, (int, long)):
+    if isinstance(key, _inttypes):
       # Quickly return a single element
       array = np.empty(shape=(1,), dtype=self.dtype)
       self._getitem(key, key+1, array.data)
@@ -1339,7 +1341,7 @@ cdef class barray:
     cdef npy_intp cbytes, bsize, nchunk2
     cdef chunk chunk_
 
-    if not isinstance(nitems, (int, long, float)):
+    if not isinstance(nitems, _inttypes +(float,)):
       raise TypeError, "`nitems` must be an integer"
 
     # Check that we don't run out of space
@@ -1404,7 +1406,7 @@ cdef class barray:
     """
     cdef object chunk
 
-    if not isinstance(nitems, (int, long, float)):
+    if not isinstance(nitems, _inttypes + (float,)):
       raise TypeError, "`nitems` must be an integer"
 
     if nitems == self.len:
@@ -1446,7 +1448,7 @@ cdef class barray:
     cdef object ishape, oshape, pos, newdtype, out
 
     # Enforce newshape as tuple
-    if isinstance(newshape, (int, long)):
+    if isinstance(newshape, _inttypes):
       newshape = (newshape,)
     newsize = np.prod(newshape)
 
@@ -1716,8 +1718,7 @@ cdef class barray:
     chunklen = self._chunklen
 
     # Check for integer
-    # isinstance(key, int) is not enough in Cython (?)
-    if isinstance(key, (int, long)) or isinstance(key, np.int_):
+    if isinstance(key, _inttypes):
       if key < 0:
         # To support negative values
         key += self.len
@@ -1856,8 +1857,7 @@ cdef class barray:
       self.idxcache = -2
 
     # Check for integer
-    # isinstance(key, int) is not enough in Cython (?)
-    if isinstance(key, (int, long)) or isinstance(key, np.int_):
+    if isinstance(key, _inttypes):
       if key < 0:
         # To support negative values
         key += self.len

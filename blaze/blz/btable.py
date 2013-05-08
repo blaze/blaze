@@ -11,7 +11,6 @@ from __future__ import absolute_import
 import sys
 import numpy as np
 import itertools
-import operator
 from collections import namedtuple
 import json
 import os, os.path
@@ -25,7 +24,7 @@ from .chunked_eval import evaluate
 from . import utils, attrs, arrayprint
 
 if sys.version_info >= (3, 0):
-    _inttypes = (int,)
+    _inttypes = (int, np.integer)
     imap = map
     xrange = range
 else:
@@ -785,7 +784,7 @@ class btable(object):
             except:
                 raise IndexError(
                       "key cannot be converted to an array of indices")
-            return np.fromiter((self[operator.index(i)] for i in key),
+            return np.fromiter((self[i] for i in key),
                                dtype=self.dtype, count=len(key))
         # A boolean array (case of fancy indexing)
         elif hasattr(key, "dtype"):
@@ -793,7 +792,7 @@ class btable(object):
                 return self._where(key)
             elif np.issubsctype(key, np.int_):
                 # An integer array
-                return np.array([self[operator.index(i)] for i in key], dtype=self.dtype)
+                return np.array([self[i] for i in key], dtype=self.dtype)
             else:
                 raise IndexError(
                       "arrays used as indices must be integer (or boolean)")
