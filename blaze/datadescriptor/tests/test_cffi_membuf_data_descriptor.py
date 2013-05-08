@@ -1,15 +1,39 @@
 import unittest
 
+import sys
 import blaze
 from blaze import datashape
 from blaze.datadescriptor import (MemBufDataDescriptor,
                 data_descriptor_from_cffi, dd_as_py,
                 DataDescriptor, IGetElement, IElementIter)
 import ctypes
-import cffi
-ffi = cffi.FFI()
+try:
+    import cffi
+    ffi = cffi.FFI()
+except ImportError:
+    cffi = None
+
+if sys.version_info >= (2, 7):
+    from unittest import skipIf
+else:
+    from nose.plugins.skip import SkipTest
+    class skipIf(object):
+        def __init__(self, condition, reason):
+            self.condition = condition
+            self.reason = reason
+
+        def __call__(self, func):
+            if self.condition:
+                from nose.plugins.skip import SkipTest
+                def wrapped(*args, **kwargs):
+                    raise SkipTest("Test %s is skipped because: %s" % (func.__name__, self.reason))
+                wrapped.__name__ = func.__name__
+                return wrapped
+            else:
+                return func
 
 class TestMemBufDataDescriptor(unittest.TestCase):
+    @skipIf(cffi is None, 'cffi is not installed')
     def test_scalar(self):
         a = ffi.new('int *', 3)
         dd = data_descriptor_from_cffi(ffi, a)
@@ -23,6 +47,7 @@ class TestMemBufDataDescriptor(unittest.TestCase):
         self.assertEqual(dd_as_py(dd), 3.25)
         self.assertTrue(isinstance(dd_as_py(dd), float))
 
+    @skipIf(cffi is None, 'cffi is not installed')
     def test_1d_array(self):
         # An array where the size is in the type
         a = ffi.new('short[32]', [2*i for i in range(32)])
@@ -36,6 +61,7 @@ class TestMemBufDataDescriptor(unittest.TestCase):
         self.assertEqual(dd.dshape, blaze.dshape('32, float64'))
         self.assertEqual(dd_as_py(dd), [1.5*i for i in range(32)])
 
+    @skipIf(cffi is None, 'cffi is not installed')
     def test_2d_array(self):
         # An array where the leading array size is in the type
         vals = [[2**i + j for i in range(35)] for j in range(32)]
@@ -51,6 +77,7 @@ class TestMemBufDataDescriptor(unittest.TestCase):
         self.assertEqual(dd.dshape, blaze.dshape('32, 35, uint8'))
         self.assertEqual(dd_as_py(dd), vals)
 
+    @skipIf(cffi is None, 'cffi is not installed')
     def test_3d_array(self):
         # Simple 3D array
         vals = [[[(i + 2*j + 3*k)
