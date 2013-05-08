@@ -128,7 +128,6 @@ class wherechunksTest(TestCase):
         for block in blz.whereblocks(t, 'f1 < f2', limit=M):
             l += len(block)
             s += block['f0'].sum()
-        print("l:", l)
         self.assert_(l == M)
         self.assert_(s == M * ((M + 1) / 2))  # Gauss summation formula
 
@@ -141,7 +140,6 @@ class wherechunksTest(TestCase):
         for block in blz.whereblocks(t, 'f1 < f2', limit=M):
             l += len(block)
             s += block['f0'].sum()
-        print("l:", l)
         self.assert_(l == M)
         self.assert_(s == M * ((M + 1) / 2))  # Gauss summation formula
 
