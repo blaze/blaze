@@ -4,7 +4,10 @@ from __future__ import absolute_import
 
 from . import datashape
 from .datashape import dshape
+from .array import Array
 from .constructors import array, open, ones, zeros
+
+__version__ = '0.0.1'
 
 def test(verbosity=1, xunitfile=None, exit=False):
     """

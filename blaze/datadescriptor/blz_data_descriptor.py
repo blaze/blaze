@@ -2,9 +2,9 @@ from __future__ import absolute_import
 import operator
 
 from . import DataDescriptor, IGetElement, IElementIter
-#from ..datashape import dshape  # apparently this is not used
+from .. import datashape
 import numpy as np
-import blz
+from blaze import blz
 
 def blz_descriptor_iter(blzarr):
     if blzarr.ndim > 1:
@@ -66,17 +66,33 @@ class BLZDataDescriptor(DataDescriptor):
     """
     A Blaze data descriptor which exposes a BLZ array.
     """
-    def __init__(self, blzarr):
-        if not isinstance(blzarr, blz.barray):
-            raise TypeError(
-                'object is not a blz array, has type %s' % type(blzarr))
-        self.blzarr = blzarr
-        self._dshape = datashape.from_numpy(
-            self.blzarr.shape, self.blzarr.dtype)
+    def __init__(self, obj):
+        if isinstance(obj, np.ndarray) and obj.ndim == 0:
+            # Scalars cannot be represented in BLZ.  Keep it in the
+            # original form.
+            self.blzarr = obj
+        elif not isinstance(obj, blz.barray):
+            # Try to convert into a BLZ array
+            try:
+                obj = blz.barray(obj)
+            except:
+                raise TypeError(
+                    'object is not a blz array, and cannot be converted '
+                    'into one.  It has type %s' % type(obj))
+            self.blzarr = obj
+        self._dshape = datashape.from_numpy(obj.shape, obj.dtype)
 
     @property
     def dshape(self):
         return self._dshape
+
+    @property
+    def shape(self):
+        return self._dshape.shape
+
+    @property
+    def nd(self):
+        return len(self._dshape.shape)
 
     def __len__(self):
         if self.blzarr.ndim > 0:
@@ -89,10 +105,11 @@ class BLZDataDescriptor(DataDescriptor):
         if not isinstance(key, tuple):
             key = (key,)
         key = tuple([operator.index(i) for i in key])
-        if len(key) == self.blzarr.ndim:
-            return BLZDataDescriptor(np.array(blzarr[i], dtype=blzarr.dtype))
+        blzarr = self.blzarr
+        if len(key) == blzarr.ndim:
+            return BLZDataDescriptor(np.array(blzarr[i]))
         else:
-            return BLZDataDescriptor(self.blzarr[key])
+            return BLZDataDescriptor(blzarr[key])
 
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)

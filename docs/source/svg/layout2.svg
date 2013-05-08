@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="469.9173"
+   height="519.43066"
+   id="svg3070"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="layout2.svg">
+  <defs
+     id="defs3072" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="198.73358"
+     inkscape:cy="229.63342"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:window-width="954"
+     inkscape:window-height="1060"
+     inkscape:window-x="0"
+     inkscape:window-y="14"
+     inkscape:window-maximized="0"
+     fit-margin-top="25"
+     fit-margin-right="25"
+     fit-margin-bottom="25"
+     fit-margin-left="25">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3870"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       originx="-35.032329px"
+       originy="-531.81445px" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata3075">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-35.032329,-1.1170654)">
+    <path
+       inkscape:connector-curvature="0"
+       style="fill:none;stroke:#000000;stroke-width:2.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 258.69134,251.48054 0,-28.01817 -28.01817,0 0,28.01817 -56.03635,0 0,-28.01817 28.01817,0 0,-28.01818 -28.01817,0 0,-28.01816 56.03635,0 0,28.01816 28.01817,0 0,-56.03634 -28.01817,0 0,-28.01818 28.01817,0 0,-56.036346 -28.01817,0 0,28.018176 -28.01818,0 0,-28.018176 -28.01817,0 0,56.036346 28.01817,0 0,28.01818 -84.05454,0 0,-28.01818 28.01819,0 0,-56.036346 -28.01819,0 0,28.018176 -28.01817,0 0,-28.018176 -28.018175,0 0,56.036346 28.018175,0 0,28.01818 -28.018175,0 0,56.03634 28.018175,0 0,-28.01816 56.03636,0 0,28.01816 -28.01819,0 0,28.01818 28.01819,0 0,28.01817 -56.03636,0 0,-28.01817 -28.018175,0 0,28.01817"
+       id="path4940"
+       sodipodi:nodetypes="cccccccccccccccccccccccccccccccccccccccccccccccccccc" />
+    <text
+       xml:space="preserve"
+       style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:A;-inkscape-font-specification:A"
+       x="81.428574"
+       y="313.07648"
+       id="text3853"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3855"
+         x="81.428574"
+         y="313.07648" /></text>
+    <text
+       xml:space="preserve"
+       style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Monaco;-inkscape-font-specification:Monaco"
+       x="99"
+       y="37.362183"
+       id="text4007"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4009"
+         x="99"
+         y="37.362183">Hilbert Layout</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Monaco;-inkscape-font-specification:Monaco"
+       x="310"
+       y="37.362183"
+       id="text4007-4"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4009-1"
+         x="310"
+         y="37.362183">Row-Major Order</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Monaco;-inkscape-font-specification:Monaco"
+       x="86"
+       y="492.36218"
+       id="text4007-4-9"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4009-1-9"
+         x="86"
+         y="492.36218">Column Major Order</tspan></text>
+    <path
+       style="color:#000000;fill:none;stroke:#000000;stroke-width:2.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       d="m 280,52.362179 200,0 -200,53.589841 200,1.41016 -200,50 200,0 -200,50 200,0 -200,45 200,0"
+       id="path3025"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccccccc" />
+    <path
+       style="color:#000000;fill:none;stroke:#000000;stroke-width:2.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       d="m 260,267.36218 0,200 -53.58984,-200 -1.41016,200 -50,-200 0,200 -50,-200 0,200 -45,-200 0,200"
+       id="path3025-3"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccccccc" />
+    <text
+       xml:space="preserve"
+       style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Monaco;-inkscape-font-specification:Monaco"
+       x="344"
+       y="490.36218"
+       id="text4007-4-9-2"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4009-1-9-5"
+         x="344"
+         y="490.36218">Z-Order</tspan></text>
+    <polyline
+       transform="translate(244,-41.452271)"
+       style="fill:none;stroke:#000000;stroke-width:2.5;color:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="polyline3198"
+       points="229.333,507.112 201.556,507.112 229.333,479.333   201.556,479.333 173.778,507.112 146,507.112 173.778,479.333 146,479.333 229.333,451.555 201.556,451.555 229.333,423.778   201.556,423.778 173.778,451.555 146,451.555 173.778,423.778 146,423.778 118.223,507.112 90.444,507.112 118.223,479.333   90.444,479.333 62.667,507.112 34.889,507.112 62.667,479.333 34.889,479.333 118.223,451.555 90.444,451.555 118.223,423.778   90.444,423.778 62.667,451.555 34.889,451.555 62.667,423.778 34.889,423.778 229.333,396 201.556,396 229.333,368.223   201.556,368.223 173.778,396 146,396 173.778,368.223 146,368.223 229.333,340.444 201.556,340.444 229.333,312.667   201.556,312.667 173.778,340.444 146,340.444 173.778,312.667 146,312.667 118.223,396 90.444,396 118.223,368.223 90.444,368.223   62.667,396 34.889,396 62.667,368.223 34.889,368.223 118.223,340.444 90.444,340.444 118.223,312.667 90.444,312.667   62.667,340.444 34.889,340.444 62.667,312.667 34.889,312.667  " />
+  </g>
+</svg>

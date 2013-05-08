@@ -38,6 +38,14 @@ print (d.dshape)
 
 # --------------------------------------------------------------------
 
+print_section ('building compressed in-memory arrays')
+
+# A compressed array (backed by BLZ):
+blz = blaze.array([1,2,3], caps={'compress': True})
+print (blz)
+
+# --------------------------------------------------------------------
+
 print_section('Explicit types in construction')
 # It is possible to force a type in a given array. This allows a
 # broader selection of types on construction.

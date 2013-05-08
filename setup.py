@@ -27,6 +27,7 @@ packages = [
     'blaze.datadescriptor.tests',
     'blaze.datashape',
     'blaze.datashape.tests',
+    'blaze.tests',
 ]
 
 #------------------------------------------------------------------------

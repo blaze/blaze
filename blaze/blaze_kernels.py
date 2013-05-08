@@ -96,33 +96,58 @@ class BlazeElementKernel(object):
 
     @staticmethod
     def fromblir(str):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def fromcffi(cffifunc):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def fromctypes(ctypefunc):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def fromcfunc(cfunc):
-        pass
-
-    def create_wrapper_kernel(inrank, outrank):
-        """Take the current kernel of inrank and create a new kernel of
-        outrank that calls call the current kernel multiple times as needed
-
-        Example (let rn == rank-n)
-          We need an r2, r2 -> r2 kernel and we have an r0, r0 -> r0
-          kernel.
-
-          We create a kernel that does the equivalent of
-
-          for i in range(n2):
-            for j in range(n1)
-                out[i,j] = inner_kernel(in0[i,j], in1[i,j])
-        """
         raise NotImplementedError
 
+    def create_wrapper_kernel(input_ranks, output_rank):
+        """Take the current kernel and available input argument ranks
+         and create a new kernel that matches the required output rank 
+         by using the current kernel multiple-times if necessary. 
+
+         This kernel allows creation of a simple call stack.
+
+        Example: (let rn == rank-n) 
+          We need an r2, r2 -> r2 kernel and we have an r1, r1 -> r1
+          kernel.    
+
+          We create a kernel with rank r2, r2 -> r2 that does the equivalent of
+
+          for i in range(n0):
+              out[i] = inner_kernel(in0[i], in1[i])
+        """
+
+        raise NotImplementedError
+
+
+def fuse_kerneltree(tree):
+    """Fuse the kernel tree into a single kernel object with the common names
+     
+    Define a variable for each unique node that is not a scalar. 
+
+    add(multiply(b,c),subtract(d,f))
+
+    var tmp0 = multiply(b,c)
+    var tmp1 = subtract(d,f)
+
+    return add(tmp0, tmp1)
+
+    var tmp0;
+    var tmp1;
+
+    multiply(b,c,&tmp0)
+    subtract(d,f,&tmp1)
+
+    add(tmp0, tmp1, &res)
+
+    """

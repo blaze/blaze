@@ -70,6 +70,12 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
         ranks = [0]*len(dslist)
 
     shapes = [dshape.shape for dshape in dslist]
+
+    # ensure shapes are large enough
+    for i, shape, rank in zip(xrange(len(dslist), shapes, ranks)):
+        if len(shape) < rank:
+            raise TypeError("Argument %d is not large-enough for kernel rank" % i)
+
     splitshapes = [(shape[:len(shape)-rank], shape[len(shape)-rank:])
                              for shape, rank in zip(shapes, ranks)]
     outshapes, inshapes = zip(*splitshapes)
@@ -77,6 +83,8 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
     # broadcast outer-dimensions
     maxshape = max(len(shape) for shape in outshapes)
     outshapes = [(1,)*(maxshape-len(shape))+shape for shape in outshapes]
+
+    # check rank-connections
     for shape1, shape2 in itertools.combinations(outshapes, 2):
         if any((dim1 != 1 and dim2 != 1 and dim1 != dim2)
                   for dim1, dim2 in zip(shape1,shape2)):
