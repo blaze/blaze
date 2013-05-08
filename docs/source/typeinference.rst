@@ -81,5 +81,5 @@ TODO
 API
 ~~~
 
-.. automodule:: blaze.type_reconstruction
-   :members:
+.. .. automodule:: blaze.type_reconstruction
+..    :members:

@@ -2,5 +2,5 @@
 Sources
 =======
 
-.. automodule:: blaze.sources.canonical
-   :members:
+.. .. automodule:: blaze.sources.canonical
+..   :members:

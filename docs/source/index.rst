@@ -43,7 +43,6 @@ API Reference
    toplevel
    types
    eclass
-   prims
    persistence
    typeinference
    aterm

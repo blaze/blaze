@@ -7,6 +7,8 @@ from .datashape import dshape
 from .array import Array
 from .constructors import array, open
 
+__version__ = '0.0.1'
+
 def test(verbosity=1, xunitfile=None, exit=False):
     """
     Runs the full Blaze test suite, outputting

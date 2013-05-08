@@ -55,8 +55,8 @@ TODO
 API
 ---
 
-.. autoclass:: blaze.expr.graph.App
+.. .. autoclass:: blaze.expr.graph.App
 
-.. autoclass:: blaze.expr.graph.Op
+.. .. autoclass:: blaze.expr.graph.Op
 
-.. autoclass:: blaze.expr.graph.Literal
+.. .. autoclass:: blaze.expr.graph.Literal

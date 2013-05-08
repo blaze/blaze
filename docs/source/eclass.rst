@@ -27,5 +27,5 @@ combinations of arguments.::
         if (a,b) == (DELAYED, DELAYED):
             return DELAYED
 
-.. automodule:: blaze.eclass
-   :members:
+.. .. automodule:: blaze.eclass
+..   :members:

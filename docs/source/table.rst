@@ -10,5 +10,5 @@ Tables
         Indexable -> Fixed;
    }
 
-.. automodule:: blaze.table
-   :members:
+.. .. automodule:: blaze.table
+..    :members:

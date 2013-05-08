@@ -2,5 +2,5 @@
 Toplevel
 ========
 
-.. automodule:: blaze.toplevel
-   :members:
+.. .. automodule:: blaze.toplevel
+..    :members:

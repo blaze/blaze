@@ -73,5 +73,5 @@ experts. ( Not all are defined for every operator. )
 * ``involutive``
 * ``sideffectful``
 
-.. automodule:: blaze.expr.ops
-   :members:
+.. .. automodule:: blaze.expr.ops
+..   :members:

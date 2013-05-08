@@ -2,5 +2,5 @@
 Persistence
 ===========
 
-.. automodule:: blaze.persistence.bloscpack
-   :members:
+.. .. automodule:: blaze.persistence.bloscpack
+..   :members:

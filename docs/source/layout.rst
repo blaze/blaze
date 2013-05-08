@@ -73,5 +73,5 @@ Combining Chunks
                       (i,j) -> (i, j)
 
 
-.. automodule:: blaze.layouts.scalar
-   :members:
+.. .. automodule:: blaze.layouts.scalar
+..    :members:
