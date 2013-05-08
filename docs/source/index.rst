@@ -19,8 +19,16 @@ data.  Blaze’s generalized calculation engine can iterate over the
 distributed array or table and dispatch to low-level kernels specialized
 for the layout and type of the data.
 
-Overview
-~~~~~~~~
+WIP Index
+~~~~~~~~~
+
+.. toctree::
+   :maxdepth: 2
+
+   data_descriptor
+
+Original Index
+~~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 2
