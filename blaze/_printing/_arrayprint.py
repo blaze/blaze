@@ -18,7 +18,9 @@ import sys
 # from multiarray import format_longfloat, datetime_as_string, datetime_data
 import numpy.core.umath as _um
 
-from blaze.datashape import to_numpy, to_dtype
+from ..datashape import to_numpy, to_dtype
+from ..datadescriptor import DataDescriptor
+from ..datadescriptor.as_py import dd_as_py
 
 # These are undesired dependencies:
 from numpy import ravel, maximum, minimum, absolute, array
@@ -28,24 +30,51 @@ def product(x, y): return x*y
 
 # hacks to remove when isnan/isinf are available for data descriptors
 def isnan(x):
-    if hasattr(x, 'dshape'):
-        comp = array(x, dtype=to_dtype(x.dshape))
-        return _um.isnan(comp)
+    if isinstance(x, DataDescriptor):
+        print 'isnan dd: %s' % str(x)
+
+        try:
+            print (dd_as_py(x))
+        except Exception as a:
+            print type(a)
+            print a.args
+            print (a)
+
+        return _um.isnan(dd_as_py(x))
     else:
+        print 'isnan non-dd: %s' % str(x)
         return _um.isnan(x)
 
 def isinf(x):
-    if hasattr(x, 'dshape'):
-        comp = array(x, dtype=to_dtype(x.dshape))
-        return _um.isinf(comp)
+    if isinstance(x, DataDescriptor):
+        print 'isinf dd: %s' % str(x)
+
+        try:
+            print (dd_as_py(x))
+        except Exception as a:
+            print type(a)
+            print a.args
+            print (a)
+
+        print (dd_as_py(x))
+        return _um.isinf(dd_as_py(x))
     else:
+        print 'isinf non-dd: %s' % str(x)
         return _um.isinf(x)
 
 def not_equal(x, val):
-    if hasattr(x, 'dshape'):
-        comp = array(x, dtype=to_dtype(x.dshape))
-        return _um.not_equal(comp, val)
+    if isinstance(x, DataDescriptor):
+        print 'non_equal dd: %s' % str(x)
+        try:
+            print (dd_as_py(x))
+        except Exception as a:
+            print type(a)
+            print a.args
+            print (a)
+
+        return _um.not_equal(dd_as_py(x))
     else:
+        print 'non_equal non-dd: %s' % str(x)
         return _um.not_equal(x, val)
 
 # repr N leading and trailing items of each dimension
@@ -565,6 +594,8 @@ class FloatFormat(object):
         except (TypeError, NotImplementedError):
             # if reduce(data) fails, this instance will not be called, just
             # instantiated in formatdict.
+            print ("exception raised in fillFormat")
+            raise
             pass
 
     def fillFormat(self, data):
@@ -794,5 +825,3 @@ def _test():
     print array2string(arr.data)
 
 
-if __name__ == '__main__':
-    _test()

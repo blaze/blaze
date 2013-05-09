@@ -1,3 +1,3 @@
 
 
-from _arrayprint import arrayprint
+from _arrayprint import array2string
