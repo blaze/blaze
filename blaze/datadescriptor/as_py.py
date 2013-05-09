@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from ..datashape import DataShape, CType, Record
-from .data_descriptor import DataDescriptor, IGetElement, IElementIter
+from .data_descriptor import IDataDescriptor
 import struct
 import ctypes
 
@@ -46,20 +46,20 @@ def dd_as_py(dd):
     so is not expected to be fast. Its main initial purpose
     is to assist with writing unit tests.
     """
-    if not isinstance(dd, DataDescriptor):
+    if not isinstance(dd, IDataDescriptor):
         raise TypeError('expected DataDescriptor, got %r' % type(dd))
     ds = dd.dshape
     if len(ds) == 1:
         # Use the get_element interface to get
         # the data as a C pointer
         ptr_to_py = dshaped_ptr_to_py(ds)
-        ge = dd.get_element_interface(0)
-        return ptr_to_py(ge.get(()))
+        ge = dd.element_reader(0)
+        return ptr_to_py(ge.read_single(()))
     elif len(ds) == 2:
         # Use the element_iter interface to get
         # all the elements as C pointers
         ptr_to_py = dshaped_ptr_to_py(ds[-1])
-        ei = dd.element_iter_interface()
+        ei = dd.element_read_iter()
         return [ptr_to_py(ptr) for ptr in ei]
     else:
         # Use the data descriptor iterator to

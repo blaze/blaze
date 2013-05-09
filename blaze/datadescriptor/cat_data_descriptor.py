@@ -3,14 +3,16 @@ import operator
 import bisect
 
 from blaze.datashape import dshape
-from . import DataDescriptor, IGetElement, IElementIter
+from . import (IElementReader, IElementWriter,
+                IElementReadIter, IElementWriteIter,
+                IDataDescriptor)
 
 def cat_descriptor_iter(ddlist):
     for i, dd in enumerate(ddlist):
         for el in dd:
             yield el
 
-class CatGetElement(IGetElement):
+class CatElementReader(IElementReader):
     def __init__(self, catdd, nindex):
         if nindex > catdd._ndim:
             raise IndexError('Cannot have more indices than dimensions')
@@ -24,7 +26,7 @@ class CatGetElement(IGetElement):
     def get(self, idx):
         raise NotImplemented
 
-class CatElementIter(IElementIter):
+class CatElementReadIter(IElementReadIter):
     def __init__(self, catdd):
         assert catdd.ndim > 0
         self._catdd = catdd
@@ -37,7 +39,7 @@ class CatElementIter(IElementIter):
     def __next__(self):
         raise NotImplemented
 
-class CatDataDescriptor(DataDescriptor):
+class CatDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which concatenates a list
     of data descriptors, all of which have the same
@@ -50,7 +52,7 @@ class CatDataDescriptor(DataDescriptor):
         if len(ddlist) <= 1:
             raise ValueError('Need at least 2 data descriptors to concatenate')
         for dd in ddlist:
-            if not isinstance(dd, DataDescriptor):
+            if not isinstance(dd, IDataDescriptor):
                 raise ValueError('Provided ddlist has an element '
                                 'which is not a data descriptor')
         self._ddlist = ddlist
@@ -94,9 +96,9 @@ class CatDataDescriptor(DataDescriptor):
     def __iter__(self):
         return cat_descriptor_iter(self._ddlist)
 
-    def get_element_interface(self, nindex):
-        return CatGetElement(self, nindex)
+    def element_reader(self, nindex):
+        return CatElementReader(self, nindex)
 
-    def element_iter_interface(self):
-        return CatElementIter(self)
+    def element_read_iter(self):
+        return CatElementReadIter(self)
 

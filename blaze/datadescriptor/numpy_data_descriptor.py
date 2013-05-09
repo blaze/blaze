@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 import operator
 
-from . import DataDescriptor, IGetElement, IElementIter
+from . import (IElementReader, IElementWriter,
+                IElementReadIter, IElementWriteIter,
+                IDataDescriptor)
 from .. import datashape
 from ..datashape import dshape
 import numpy as np
@@ -17,18 +19,23 @@ def numpy_descriptor_iter(npyarr):
             el = npyarr[...,np.newaxis][i].reshape(())
             yield NumPyDataDescriptor(el)
 
-class NumPyGetElement(IGetElement):
+class NumPyElementReader(IElementReader):
     def __init__(self, npyarr, nindex):
         if nindex > npyarr.ndim:
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
+        self._dshape = datashape.from_numpy(npyarr.shape[nindex:], npyarr.dtype)
         self.npyarr = npyarr
+
+    @property
+    def dshape(self):
+        return self._dshape
 
     @property
     def nindex(self):
         return self._nindex
 
-    def get(self, idx):
+    def read_single(self, idx):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
@@ -40,13 +47,18 @@ class NumPyGetElement(IGetElement):
         import ctypes
         return x.ctypes.data_as(ctypes.c_void_p)
 
-class NumPyElementIter(IElementIter):
+class NumPyElementReadIter(IElementReadIter):
     def __init__(self, npyarr):
         if npyarr.ndim <= 0:
             raise IndexError('Need at least one dimension for iteration')
-        self.npyarr = npyarr
         self._index = 0
-        self._len = self.npyarr.shape[0]
+        self._len = npyarr.shape[0]
+        self._dshape = datashape.from_numpy(npyarr.shape[1:], npyarr.dtype)
+        self.npyarr = npyarr
+
+    @property
+    def dshape(self):
+        return self._dshape
 
     def __len__(self):
         return self._len
@@ -64,7 +76,7 @@ class NumPyElementIter(IElementIter):
         else:
             raise StopIteration
 
-class NumPyDataDescriptor(DataDescriptor):
+class NumPyDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a NumPy array.
     """
@@ -108,8 +120,8 @@ class NumPyDataDescriptor(DataDescriptor):
     def __iter__(self):
         return numpy_descriptor_iter(self.npyarr)
 
-    def get_element_interface(self, nindex):
-        return NumPyGetElement(self.npyarr, nindex)
+    def element_reader(self, nindex):
+        return NumPyElementReader(self.npyarr, nindex)
 
-    def element_iter_interface(self):
-        return NumPyElementIter(self.npyarr)
+    def element_read_iter(self):
+        return NumPyElementReadIter(self.npyarr)

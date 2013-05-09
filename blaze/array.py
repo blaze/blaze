@@ -5,10 +5,14 @@ from __future__ import absolute_import
 #  indexing and basic interpretation of bytes
 #
 
+from . import blz
+import numpy as np
 from .datashape import dshape
-from .datadescriptor import DataDescriptor
+from .datadescriptor import (IDataDescriptor,
+                NumPyDataDescriptor,
+                BLZDataDescriptor)
 
-# An Array is a
+# An Array contains:
 #   DataDescriptor
 #       Sequence of Bytes (where are the bytes)
 #       Index Object (how do I get to them)
@@ -29,10 +33,18 @@ class Array(object):
         return self._data.__getitem__(key)
 
     def __init__(self, data, axes=None, labels=None, user={}):
-        assert isinstance(data, DataDescriptor)
-        self._data = data
-        self.axes = axes or [''] * data.nd
-        self.labels = labels or [None] * data.nd
+        if isinstance(data, IDataDescriptor):
+            self._data = data
+        elif isinstance(data, np.ndarray):
+            self._data = NumPyDataDescriptor(data)
+        elif isinstance(data, blz.barray):
+            self._data = BLZDataDescriptor(data)
+        else:
+            raise TypeError(('Constructing a blaze array from '
+                            'an object of type %r is '
+                            'not supported') % (type(data)))
+        self.axes = axes or [''] * (len(self._data.dshape) - 1)
+        self.labels = labels or [None] * (len(self._data.dshape) - 1)
         self.user = user
 
         # Need to inject attributes on the Array depending on dshape attributes

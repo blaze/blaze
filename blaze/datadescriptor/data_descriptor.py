@@ -1,35 +1,48 @@
 from __future__ import absolute_import
 
+__all__ = ['IElementReader', 'IElementWriter',
+                'IElementReadIter', 'IElementWriteIter',
+                'IDataDescriptor']
+
 import abc
+import ctypes
 from blaze.error import StreamingDimensionError
 from ..cgen.utils import letters
 
 _stream_of_uniques = letters()
 
-class IGetElement:
+class IElementReader:
     """
     An interface for getting char* element pointers at fixed-size
     index tuples. Provides additional C and llvm function
     interfaces to use in a jitting context.
 
-    >>> obj = blzarr.get_element_interface(3)
-    >>> obj.get([i, j, k])
-    CTypes/CFFIobj("char *", 0x...)
+    >>> obj = blzarr.element_reader(3)
+    >>> obj.read_single([i, j, k])
+    <raw pointer value>
     """
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
+    def dshape(self):
+        """
+        The dshape of elements returned by the
+        element reader.
+        """
+        raise NotImplemented
+
+    @abc.abstractproperty
     def nindex(self):
         """
-        The number of indices the get() function
+        The number of indices the read_single() function
         requires. This is equal to the 'nindex'
         provided to the datadescriptor's
-        get_element_interface() function.
+        element_reader() function.
         """
         raise NotImplemented
 
     @abc.abstractmethod
-    def get(self, idx):
+    def read_single(self, idx):
         """
         Returns a char* pointer to the element
         at the specified index. The value in
@@ -37,7 +50,20 @@ class IGetElement:
         """
         raise NotImplemented
 
-    def c_getter(self):
+    def read_single_into(self, idx, dst_ptr):
+        """
+        Reads a single element, placing into
+        the memory location provided by dst_ptr.
+
+        By default this is implemented in terms of
+        read_single, but data descriptors which do
+        processing can write directly into that pointer
+        instead of allocating their own buffer.
+        """
+        src_ptr = self.read_single(idx)
+        ctypes.memmove(dst_ptr, src_ptr, self.dshape.itemsize)
+
+    def c_api(self):
         """
         Returns a tuple with a [CFFI or ctypes?] function pointer
         to a C get method, and a void* pointer to pass to
@@ -49,24 +75,100 @@ class IGetElement:
         """
         raise NotImplemented
 
-    def llvm_getter(self, module):
+    def llvm_api(self, module):
         """
         Inserts a getter function into the llvm module, and
         returns it as a function object.
         """
         raise NotImplemented
 
-class IElementIter:
+class IElementWriter:
     """
-    In interface for iterating over the outermost dimension of a data descriptor.
-    It must return a char* pointer for each element along the dimension.
-    If the dimension has a known size, it should be returned in the __len__
-    method. A streaming dimension does not have a size known ahead of time,
-    and should not implement __len__.
-    
-    
+    An interface for writing elements into the data at
+    the specified index tuples. Provides additional C and
+    llvm function interfaces to use in a jitting context.
+
     """
     __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def dshape(self):
+        """
+        The dshape of elements to be written to the
+        element writer.
+        """
+        raise NotImplemented
+
+    @abc.abstractproperty
+    def nindex(self):
+        """
+        The number of indices the set() function
+        requires. This is equal to the 'nindex'
+        provided to the datadescriptor's
+        get_element_interface() function.
+        """
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def read_single(self, idx):
+        """
+        Returns a char* pointer to the element
+        at the specified index. The value in
+        'idx' must be a tuple of 'nindex' integers.
+        """
+        raise NotImplemented
+
+    def read_single_into(self, idx, dst_ptr):
+        """
+        Reads a single element, placing into
+        the memory location provided by dst_ptr.
+
+        By default this is implemented in terms of
+        read_single, but data descriptors which do
+        processing can write directly into that pointer
+        instead of allocating their own buffer.
+        """
+        src_ptr = self.read_single(idx)
+        ctypes.memmove(dst_ptr, src_ptr, self.dshape.itemsize)
+
+    def c_api(self):
+        """
+        Returns a tuple with a [CFFI or ctypes?] function pointer
+        to a C get method, and a void* pointer to pass to
+        the function's 'extra' parameter.
+        
+        Possible alternative: Returns a blaze kernel with a
+        'get_element' function prototype. (This wraps destruction
+        and the void* pointer in the blaze kernel low level interface)
+        """
+        raise NotImplemented
+
+    def llvm_api(self, module):
+        """
+        Inserts a getter function into the llvm module, and
+        returns it as a function object.
+        """
+        raise NotImplemented
+
+class IElementReadIter:
+    """
+    In interface for iterating over the outermost dimension of
+    a data descriptor for reading. It must return a char* pointer
+    for each element along the dimension.
+    
+    If the dimension has a known size, it should be returned
+    in the __len__ method. A streaming dimension does not
+    have a size known ahead of time, and should not implement __len__.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def dshape(self):
+        """
+        The dshape of elements returned by the
+        element iterator.
+        """
+        raise NotImplemented
 
     def __iter__(self):
         return self
@@ -82,17 +184,72 @@ class IElementIter:
     def next(self):
         return self.__next__()
 
-    def c_iter(self):
+    def c_api(self):
         """
-        Returns a tuple of objects providing the iteration as C data pointers and
-        function pointers. This interface is similar to the iteration interface
-        in NumPy's nditer C API
+        Returns a tuple of objects providing the iteration as C data
+        pointers and function pointers. This interface is similar to
+        the iteration interface in NumPy's nditer C API
         (http://docs.scipy.org/doc/numpy/reference/c-api.iterator.html#simple-iteration-example).
         """
         raise NotImplemented
 
+    def llvm_api(self, module):
+        """
+        An LLVM api for the iterator, to be designed as we hook
+        up LLVM here.
+        """
+        raise NotImplemented
 
-class DataDescriptor:
+class IElementWriteIter:
+    """
+    In interface for iterating over the outermost dimension of
+    a data descriptor for writing.
+
+    If the dimension has a known size, it should be returned
+    in the __len__ method. A streaming dimension does not
+    have a size known ahead of time, and should not implement __len__.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def dshape(self):
+        """
+        The dshape of elements returned by the
+        element iterator.
+        """
+        raise NotImplemented
+
+    def __iter__(self):
+        return self
+
+    def __len__(self):
+        raise StreamingDimensionError('Cannot get the length of'
+                        ' a streaming dimension')
+
+    @abc.abstractmethod
+    def __next__(self):
+        raise NotImplemented
+
+    def next(self):
+        return self.__next__()
+
+    def c_api(self):
+        """
+        Returns a tuple of objects providing the iteration as C data
+        pointers and function pointers. This interface is similar to
+        the iteration interface in NumPy's nditer C API
+        (http://docs.scipy.org/doc/numpy/reference/c-api.iterator.html#simple-iteration-example).
+        """
+        raise NotImplemented
+
+    def llvm_api(self, module):
+        """
+        An LLVM api for the iterator, to be designed as we hook
+        up LLVM here.
+        """
+        raise NotImplemented
+
+class IDataDescriptor:
     """
     The Blaze data descriptor is an interface which exposes
     data to Blaze. The data descriptor doesn't implement math
@@ -143,6 +300,7 @@ class DataDescriptor:
     def dshape(self):
         """
         Returns the datashape for the data behind this datadescriptor.
+        Every data descriptor implementation must provide a dshape.
         """
         raise NotImplemented
 
@@ -150,6 +308,7 @@ class DataDescriptor:
     def unique_name(self):
         """
         Returns a unique name (in this process space)
+        TODO: Describe the purpose of unique_name
         """
         if not self._unique_name:
             self._unique_name = next(_stream_of_uniques)
@@ -160,6 +319,10 @@ class DataDescriptor:
         The default implementation of __len__ is for the
         behavior of a streaming dimension, where the size
         of the dimension isn't known ahead of time.
+
+        If a data descriptor knows its dimension size,
+        it should implement __len__, and provide the size
+        as an integer.
         """
         raise StreamingDimensionError('Cannot get the length of'
                         ' a streaming dimension')
@@ -184,22 +347,69 @@ class DataDescriptor:
         raise NotImplemented
 
     @abc.abstractmethod
-    def get_element_interface(self, nindex):
+    def element_reader(self, nindex):
         """
         This returns an object which implements the
-        IGetElement interface for the specified number
+        IElementReader interface for the specified number
         of indices. The returned object can also
         expose a C-level function to get an element.
         """
         raise NotImplemented
 
-    @abc.abstractmethod
-    def element_iter_interface(self):
+    def element_writer(self, nindex):
         """
-        This returns an iterator which iterates over
-        the leftmost dimension of the data, returning
-        a char* at a time. The returned object can also
+        This returns an object which implements the
+        IElementWriter interface for the specified number
+        of indices. The returned object can also
+        expose a C-level function to set an element.
+        """
+        raise TypeError('data descriptor %r is read only'
+                        % type(self))
+
+    # TODO: When/If this becomes needed
+    #@abc.abstractmethod
+    #def element_mutator(self, nindex):
+    #    """
+    #    This returns an object which implements the
+    #    ISetElement interface for the specified number
+    #    of indices. The returned object can also
+    #    expose a C-level function to set an element.
+    #    """
+    #    raise NotImplemented
+
+    @abc.abstractmethod
+    def element_read_iter(self):
+        """
+        This returns an iterator with the IElementReadIter
+        interface which iterates over
+        the leftmost dimension of the data for reading,
+        returning a char* at a time. The returned object can also
         expose a C-level chunked iterator interface, similar
         to NumPy nditer.
         """
         raise NotImplemented
+
+    def element_write_iter(self):
+        """
+        This returns an iterator with the IElementWriteIter
+        interface which iterates over
+        the leftmost dimension of the data for writing,
+        returning a char* at a time. The returned object can also
+        expose a C-level chunked iterator interface, similar
+        to NumPy nditer.
+        """
+        raise TypeError('data descriptor %r is read only'
+                        % type(self))
+
+    # TODO: When/If this becomes needed
+    #@abc.abstractmethod
+    #def element_mutate_iter(self):
+    #    """
+    #    This returns an iterator which iterates over
+    #    the leftmost dimension of the data for mutation (read+write),
+    #    returning a char* at a time. The returned object can also
+    #    expose a C-level chunked iterator interface, similar
+    #    to NumPy nditer.
+    #    """
+    #    raise NotImplemented
+

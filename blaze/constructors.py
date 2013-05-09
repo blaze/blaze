@@ -12,6 +12,8 @@ from __future__ import absolute_import
 
 from .array import Array
 from .datadescriptor import NumPyDataDescriptor, BLZDataDescriptor
+import numpy as np
+from . import blz
 
 # note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "data"
@@ -20,11 +22,10 @@ from .datadescriptor import NumPyDataDescriptor, BLZDataDescriptor
 def array(obj, dshape=None, caps={'efficient-write': True}):
     if 'efficient-write' in caps:
         # NumPy provides efficient writes
-        import numpy as np
         dd = NumPyDataDescriptor(np.array(obj))
     elif 'compress' in caps:
         # BLZ provides compression
-        dd = BLZDataDescriptor(obj)
+        dd = BLZDataDescriptor(blz.barray(obj))
     return Array(dd)
 
 # for a temptative open function:

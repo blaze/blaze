@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 import operator
 
-from . import DataDescriptor, IGetElement, IElementIter
+from . import (IElementReader, IElementWriter,
+                IElementReadIter, IElementWriteIter,
+                IDataDescriptor)
 from .. import datashape
 import numpy as np
 from blaze import blz
@@ -17,7 +19,7 @@ def blz_descriptor_iter(blzarr):
             el = np.array(blzarr[i], dtype=blzarr.dtype)
             yield BLZDataDescriptor(el)
 
-class BLZGetElement(IGetElement):
+class BLZElementReader(IElementReader):
     def __init__(self, blzarr, nindex):
         if nindex > blzarr.ndim:
             raise IndexError('Cannot have more indices than dimensions')
@@ -39,7 +41,7 @@ class BLZGetElement(IGetElement):
         import ctypes
         return x.data_as(ctypes.c_void_p)
 
-class BLZElementIter(IElementIter):
+class BLZElementReadIter(IElementReadIter):
     def __init__(self, blzarr):
         if blzarr.ndim <= 0:
             raise IndexError('Need at least one dimension for iteration')
@@ -58,47 +60,30 @@ class BLZElementIter(IElementIter):
             # x is already well-behaved (C-contiguous and native order)
             self._tmpbuffer = x
             import ctypes
-            return x.data_as(ctypes.c_void_p)
+            return x.ctypes.data
         else:
             raise StopIteration
 
-class BLZDataDescriptor(DataDescriptor):
+class BLZDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a BLZ array.
     """
     def __init__(self, obj):
-        if isinstance(obj, np.ndarray) and obj.ndim == 0:
-            # Scalars cannot be represented in BLZ.  Keep it in the
-            # original form.
-            self.blzarr = obj
-        elif not isinstance(obj, blz.barray):
-            # Try to convert into a BLZ array
-            try:
-                obj = blz.barray(obj)
-            except:
-                raise TypeError(
-                    'object is not a blz array, and cannot be converted '
-                    'into one.  It has type %s' % type(obj))
-            self.blzarr = obj
+        # This is a low level interface, so strictly
+        # require a BLZ barray here
+        if not isinstance(obj, blz.barray):
+            raise TypeError(('object is not a blz array, '
+                        'it has type %r') % type(obj))
+        self.blzarr = obj
         self._dshape = datashape.from_numpy(obj.shape, obj.dtype)
 
     @property
     def dshape(self):
         return self._dshape
 
-    @property
-    def shape(self):
-        return self._dshape.shape
-
-    @property
-    def nd(self):
-        return len(self._dshape.shape)
-
     def __len__(self):
-        if self.blzarr.ndim > 0:
-            return self.blzarr.shape[0]
-        else:
-            raise IndexError('Cannot get the length of a zero-dimensional array')
+        # BLZ arrays are never scalars
+        return self.blzarr.shape[0]
 
     def __getitem__(self, key):
         # Just integer indices (no slices) for now
@@ -183,8 +168,8 @@ class BLZDataDescriptor(DataDescriptor):
         return blz.whereblocks(self.blzarr, expression, blen,
 			       outfields, limit, skip)
 
-    def get_element_interface(self, nindex):
-        return BLZGetElement(self.blzarr, nindex)
+    def element_reader(self, nindex):
+        return BLZElementReader(self.blzarr, nindex)
 
-    def element_iter_interface(self):
-        return BLZElementIter(self.blzarr)
+    def element_read_iter(self):
+        return BLZElementReadIter(self.blzarr)

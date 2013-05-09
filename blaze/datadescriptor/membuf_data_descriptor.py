@@ -3,7 +3,10 @@ import operator
 
 import sys
 from blaze import dshape, datashape
-from . import DataDescriptor, IGetElement, IElementIter
+from . import (IElementReader, IElementWriter,
+                IElementReadIter, IElementWriteIter,
+                IDataDescriptor)
+from ..datashape import DataShape
 import ctypes
 
 if sys.version_info >= (3, 0):
@@ -26,18 +29,26 @@ def membuf_descriptor_iter(mbdd):
     for ptr in range(mbdd.ptr, end, c_outer_stride):
         yield MemBufDataDescriptor(ptr, mbdd.ptr_owner, ds)
 
-class MemBufGetElement(IGetElement):
+class MemBufElementReader(IElementReader):
     def __init__(self, mbdd, nindex):
         if nindex > len(mbdd.dshape) - 1:
             raise IndexError('Cannot have more indices than dimensions')
         self._mbdd = mbdd
+        if nindex == len(mbdd.dshape) - 1:
+            self._dshape = mbdd.dshape[-1]
+        else:
+            self._dshape = DataShape(mbdd.dshape[nindex:])
         self._nindex = nindex
+
+    @property
+    def dshape(self):
+        return self._dshape
 
     @property
     def nindex(self):
         return self._nindex
 
-    def get(self, idx):
+    def read_single(self, idx):
         if len(idx) != self.nindex:
             raise IndexError(('Incorrect number of indices '
                             '(got %d, require %d)') % (len(idx), self.nindex))
@@ -49,15 +60,23 @@ class MemBufGetElement(IGetElement):
         else:
             return self._mbdd.ptr
 
-class MemBufElementIter(IElementIter):
+class MemBufElementReadIter(IElementReadIter):
     def __init__(self, mbdd):
         if len(mbdd.dshape) <= 1:
             raise IndexError('Need at least one dimension for iteration')
         self._outer_stride = mbdd.dshape.c_strides[0]
         self._mbdd = mbdd
+        if len(mbdd.dshape) == 2:
+            self._dshape = mbdd.dshape[-1]
+        else:
+            self._dshape = DataShape(mbdd.dshape[1:])
         self._ptr = mbdd.ptr
         self._end = (self._ptr +
                         self._outer_stride * operator.index(mbdd.dshape[0]))
+
+    @property
+    def dshape(self):
+        return self._dshape
 
     def __len__(self):
         return self._len
@@ -70,7 +89,7 @@ class MemBufElementIter(IElementIter):
         else:
             raise StopIteration
 
-class MemBufDataDescriptor(DataDescriptor):
+class MemBufDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a raw memory buffer,
     which is in C-order with C struct alignment.
@@ -145,11 +164,11 @@ class MemBufDataDescriptor(DataDescriptor):
     def __iter__(self):
         return membuf_descriptor_iter(self)
 
-    def get_element_interface(self, nindex):
-        return MemBufGetElement(self, nindex)
+    def element_reader(self, nindex):
+        return MemBufElementReader(self, nindex)
 
-    def element_iter_interface(self):
-        return MemBufElementIter(self)
+    def element_read_iter(self):
+        return MemBufElementReadIter(self)
 
 def data_descriptor_from_cffi(ffi, cdata):
     """

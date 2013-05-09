@@ -5,7 +5,7 @@ import blaze
 from blaze import datashape
 from blaze.datadescriptor import (MemBufDataDescriptor,
                 data_descriptor_from_cffi, dd_as_py,
-                DataDescriptor, IGetElement, IElementIter)
+                IDataDescriptor, IElementReader, IElementReadIter)
 import ctypes
 try:
     import cffi
@@ -26,7 +26,8 @@ else:
             if self.condition:
                 from nose.plugins.skip import SkipTest
                 def wrapped(*args, **kwargs):
-                    raise SkipTest("Test %s is skipped because: %s" % (func.__name__, self.reason))
+                    raise SkipTest("Test %s is skipped because: %s" %
+                                    (func.__name__, self.reason))
                 wrapped.__name__ = func.__name__
                 return wrapped
             else:
