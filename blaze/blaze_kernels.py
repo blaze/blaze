@@ -23,28 +23,33 @@ from __future__ import absolute_import
 #
 
 import sys
-import struct
 
 import llvm.core as lc
-from llvm.core import Type, Function
+from llvm.core import Type, Function, Module
+from llvm import LLVMException
 
 void_type = Type.void()
 int_type = Type.int()
-intp_type = Type.int(struct.calcsize('@P'))
+intp_type = Type.int(8) if sys.maxsize > 2**32 else Type.int(4)
 diminfo_type = Type.struct([
-    intp_type,    # shape
-    intp_type     # stride
-    ], name='diminfo')
+                            intp_type,    # shape
+                            intp_type     # stride
+                            ], name='diminfo')
 
-array_type = lambda el_type: Type.struct([
+array_type = lambda el_type, nd: Type.struct([
     Type.pointer(el_type),       # data
     int_type,                    # nd
-    Type.array(diminfo_type, 0)  # dims[nd]  variable-length struct
+    Type.array(diminfo_type, nd) # dims[nd]  
+                                 # use 0 for a variable-length struct
     ])
+
+generic_array_type = array_type(Type.int(8), 0)
 
 SCALAR = 0
 POINTER = 1
 ARRAY = 2
+
+arg_kinds = (SCALAR, POINTER, ARRAY)
 
 def isarray(arr):
     if not isinstance(arr, lc.StructType):
@@ -60,18 +65,31 @@ def isarray(arr):
     return True
 
 # A wrapper around an LLVM Function object
+# Every LLVM Function object comes attached to a particular module
+# But, Blaze Element Kernels may be re-attached to different LLVM modules
+# as needed using the attach method.
+# 
+# To inline functions we can either:
+#  1) Execute f.add_attribute(lc.ATTR_ALWAYS_INLINE) to always inline a particular
+#     function 'f'
+#  2) Execute llvm.core.inline_function(callinst) on the output of the 
+#     call function when the function is used.
 class BlazeElementKernel(object):
     def __init__(self, func):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
                                 " Try a converter method.")
+
+
+        func.add_attribute(lc.ATTR_ALWAYS_INLINE)
         self.func = func
         func_type = func.type.pointee
+        self.argtypes = func_type.args
+        self.return_type = func_type.return_type
         kindlist = [None]*func_type.arg_count
         if not (func_type.return_type == void_type):  # Scalar output
             kindlist += [SCALAR]
 
-        ranks = [0]*kindlist
         for i, arg in enumerate(func_type.args):
             if not isinstance(arg, lc.PointerType):
                 kindlist[i] = SCALAR
@@ -81,7 +99,13 @@ class BlazeElementKernel(object):
             else:
                 kindlist[i] = POINTER
         self.kind = tuple(kindlist)
-        self.ranks = ranks
+
+    def verify_ranks(self, ranks):
+        for i, kind in enumerate(self.kind):
+            if (kind == ARRAY or kind is None) and self.rank[0] == 0:
+                raise ValueError("Non-scalar function argument "\
+                                 "but scalar rank in argument %d" % i)
+
 
     @property
     def nin(self):
@@ -111,16 +135,45 @@ class BlazeElementKernel(object):
     def fromcfunc(cfunc):
         raise NotImplementedError
 
+    # Should check to ensure kinds still match
+    def replace_func(self, func):
+        self.func = func
+
+    def attach(self, module):
+        """Update this kernel to be attached to a particular module
+
+        Return None
+        """
+
+        if not isinstance(module, Module):
+            raise TypeError("Must provide an LLVM module object to attach kernel")
+        if module is self.func.module: # Already attached
+            return
+        try:
+            # This assumes unique names for functions and just
+            # replaces the function with one named from module
+            # Should check to ensure kinds still match
+            self.func = module.get_function_named(self.func.name)
+            return
+        except LLVMException:
+            pass
+
+        # Link the module the function is part of to this module
+        module.link_in(self.func.module, preserve=True)
+        # Re-set the function object to the newly linked function
+        self.func = module.get_function_named(self.func.name)
+       
+
     def create_wrapper_kernel(input_ranks, output_rank):
         """Take the current kernel and available input argument ranks
-         and create a new kernel that matches the required output rank
-         by using the current kernel multiple-times if necessary.
+         and create a new kernel that matches the required output rank 
+         by using the current kernel multiple-times if necessary. 
 
          This kernel allows creation of a simple call stack.
 
-        Example: (let rn == rank-n)
+        Example: (let rn == rank-n) 
           We need an r2, r2 -> r2 kernel and we have an r1, r1 -> r1
-          kernel.
+          kernel.    
 
           We create a kernel with rank r2, r2 -> r2 that does the equivalent of
 
@@ -130,11 +183,68 @@ class BlazeElementKernel(object):
 
         raise NotImplementedError
 
+# A Node on the kernel Tree
+class KernelObj(object):
+    def __init__(self, kernel, types, ranks, name):
+        if not isinstance(kernel, BlazeElementKernel):
+            raise ValueError("Must pass in kernel object of type BlazeElementKernel")
+        self.kernel = kernel
+        self.types = types
+        self.ranks = ranks
+        self.name = name  # name of kernel
+        kernel.verify_ranks(ranks)
+
+    def attach_to(self, module):
+        """attach the kernel to a different LLVM module
+        """
+        self.kernel.attach(module)
+
+
+# An Argument to a kernel tree (encapsulates name, argument kind and rank)
+class Argument(object):
+    def __init__(self, name, kind, rank, llvmtype):
+        self.name = name
+        self.kind = kind
+        self.rank = rank
+        self.llvmtype = llvmtype
+
+    def __eq__(self, other):
+        if not isinstance(other, Argument):
+            return NotImplemented
+        return self.name == other.name and self.rank == other.rank
+
+def find_unique_args(tree, unique_args):
+    for element in tree.children:
+        if isinstance(element, Argument):
+            if element not in unique_args:
+                unique_args.append(element)
+        else:
+            find_unique_args(element, unique_args)
+
+def get_fused_type(tree):
+    """Get the function type of the compound kernel
+    """
+    outkrn = tree.node.kernel
+    # If this is not a SCALAR then we need to attach another node
+    out_kind = outkrn.kind[-1]
+    out_type = outkrn.func.type.pointee.return_type
+
+    unique_args = []
+    find_unique_args(tree, unique_args)
+
+    args = [arg.llvmtype for arg in unique_args]
+
+    if out_kind != SCALAR:
+        args.append(outkrn.argtypes[-1])
+
+    return Type.function(out_type, args)
+
+
 
 def fuse_kerneltree(tree):
     """Fuse the kernel tree into a single kernel object with the common names
-
-    Define a variable for each unique node that is not a scalar.
+     
+    Define a variable for each unique node and store the result in that variable
 
     add(multiply(b,c),subtract(d,f))
 
@@ -150,5 +260,18 @@ def fuse_kerneltree(tree):
     subtract(d,f,&tmp1)
 
     add(tmp0, tmp1, &res)
-
     """
+    module = Module.new(tree.name)
+    func_type = get_fused_type(tree)
+    func = Function.new(module, func_type, tree.name+"_fused")
+    block = func.append_basic_block('entry')
+    builder = lc.Builder.new(block)
+
+    # Create a dictionary of 'names'
+    call_dict = tree.make_callsites()
+    buildlist = []
+    for node in tree.get_nodes():
+        # Make sure each LLVM Function is defined in this module object
+        node.attach_to(module)
+        builder
+        builder.alloca

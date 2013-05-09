@@ -4,17 +4,33 @@ from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
-from ..cgen.utils import letters
+from .cgen.utils import letters
+from .blaze_kernels import BlazeElementKernel
 
 
 # A Node on the kernel Tree
 class KernelObj(object):
     def __init__(self, kernel, types, ranks, name):
+        if not isinstance(kernel, BlazeElementKernel):
+            raise ValueError("Must pass in kernel object of type BlazeElementKernel")
         self.kernel = kernel
         self.types = types
         self.ranks = ranks
         self.name = name  # name of kernel
+        kernel.verify_ranks(ranks)
 
+    def attach_to(self, module):
+        """attach the kernel to a different LLVM module
+        """
+        self.kernel.attach(module)
+
+
+# An Argument to a kernel tree (encapsulates name, argument kind and rank)
+class Argument(object):
+    def __init__(self, name, kind, rank):
+        self.name = name
+        self.kind = kind
+        self.rank = rank
 
 # A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
@@ -22,6 +38,7 @@ class KernelObj(object):
 # All nodes in the kernel tree can also be named
 #   or else a unique-name
 # from the abstract name-space will be created.
+# Each KernelTree has a single llvm module name-space
 class KernelTree(object):
     _stream_of_unique_names = letters()
     _stream_of_unique_kernels = letters()
@@ -29,23 +46,20 @@ class KernelTree(object):
     def __init__(self, node, children=[], name=None):
         assert isinstance(node, KernelObj)
         for el in children:
-            assert isinstance(el, (KernelTree, str))
+            assert isinstance(el, (KernelTree, Argument))
         self.node = node
         self.children = children
         if name is None:
             name = 'node_' + next(self._stream_of_uniques)
         self.name = name
 
-    def fuse_blir_kernel(self, name=None):
-        """Take a composite kernel tree and make a fused
-        BLIR kernel for it.
+    def flatten_tree(self, name=None):
+        """Take a composite kernel tree and flatten it creating a single
+        node object with a fused kernel and all children as Arguments.
 
-        Return A KernelObject with a blir kernel
         """
         if name is None:
-            name = 'kernel_' + next(self._stream_of_unique_kernels)
-
-
+            name = 'flat_' + self.name + next(self._stream_of_unique_kernels)
 
         return kernel
 
@@ -159,19 +173,23 @@ class BlazeFunc(object):
 
         # Create a new BlazeFuncDescriptor with this
         # kerneltree and a new set of args depending on
-        #  re-usage.
+        #  unique new arguments in the expression. 
         children = []
         newargs = []
-        argnames = [arg.data.unique_name for arg in args]
-        for arg in args:
+        argnames = set(arg.data.unique_name for arg in args)
+        for i, arg in enumerate(args):
             data = arg.data
             if isinstance(data, BlazeFuncDescriptor):
                 children.append(data.kerneltree)
                 newargs.extend([arg for arg in data.args
-                                    if arg.data.unique_name not in argnames])
+                                  if arg.data.unique_name not in argnames])
+                for arg in data.args:
+                    argnames.add(arg.data.unique_name)
             else:
-                children.append(data.unique_name)
+                tree_arg = Argument(data.unique_name, kernel.kind[i], self.ranks[i])
+                children.append(tree_arg)
                 newargs.append(arg)
+                argnames.add(data.unique_name)
 
         kerneltree = KernelTree(kernelobj, children)
         data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)
