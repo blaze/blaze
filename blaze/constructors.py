@@ -11,7 +11,8 @@ from __future__ import absolute_import
 # ByteProviders, that an end user may not even need to know about.
 
 from .array import Array
-from .datadescriptor import NumPyDataDescriptor, BLZDataDescriptor
+from .datadescriptor import (IDataDescriptor,
+                NumPyDataDescriptor, BLZDataDescriptor)
 import numpy as np
 from . import blz
 
@@ -20,12 +21,23 @@ from . import blz
 # and infer the indexer from the apropriate information in the numpy
 # array.
 def array(obj, dshape=None, caps={'efficient-write': True}):
-    if 'efficient-write' in caps:
+    if isinstance(obj, IDataDescriptor):
+        # TODO: Validate the 'caps', convert to another kind
+        #       of data descriptor if necessary
+        dd = obj
+    elif 'efficient-write' in caps:
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.array(obj))
     elif 'compress' in caps:
         # BLZ provides compression
         dd = BLZDataDescriptor(blz.barray(obj))
+    elif isinstance(obj, np.ndarray):
+        dd = NumPyDataDescriptor(data)
+    elif isinstance(data, blz.barray):
+        dd = BLZDataDescriptor(data)
+    else:
+        raise TypeError(('Failed to construct blaze array from '
+                        'object of type %r') % type(obj))
     return Array(dd)
 
 # for a temptative open function:

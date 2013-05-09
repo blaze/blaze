@@ -33,16 +33,11 @@ class Array(object):
         return self._data.__getitem__(key)
 
     def __init__(self, data, axes=None, labels=None, user={}):
-        if isinstance(data, IDataDescriptor):
-            self._data = data
-        elif isinstance(data, np.ndarray):
-            self._data = NumPyDataDescriptor(data)
-        elif isinstance(data, blz.barray):
-            self._data = BLZDataDescriptor(data)
-        else:
-            raise TypeError(('Constructing a blaze array from '
-                            'an object of type %r is '
-                            'not supported') % (type(data)))
+        if not isinstance(data, IDataDescriptor):
+            raise TypeError(('Constructing a blaze array directly '
+                            'requires a data descriptor, not type '
+                            '%r') % (type(data)))
+        self._data = data
         self.axes = axes or [''] * (len(self._data.dshape) - 1)
         self.labels = labels or [None] * (len(self._data.dshape) - 1)
         self.user = user
