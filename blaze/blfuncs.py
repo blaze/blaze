@@ -5,32 +5,9 @@ from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
 from .cgen.utils import letters
-from .blaze_kernels import BlazeElementKernel
+from .blaze_kernels import Kernel, Argument
 
 
-# A Node on the kernel Tree
-class KernelObj(object):
-    def __init__(self, kernel, types, ranks, name):
-        if not isinstance(kernel, BlazeElementKernel):
-            raise ValueError("Must pass in kernel object of type BlazeElementKernel")
-        self.kernel = kernel
-        self.types = types
-        self.ranks = ranks
-        self.name = name  # name of kernel
-        kernel.verify_ranks(ranks)
-
-    def attach_to(self, module):
-        """attach the kernel to a different LLVM module
-        """
-        self.kernel.attach(module)
-
-
-# An Argument to a kernel tree (encapsulates name, argument kind and rank)
-class Argument(object):
-    def __init__(self, name, kind, rank):
-        self.name = name
-        self.kind = kind
-        self.rank = rank
 
 # A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
@@ -186,7 +163,8 @@ class BlazeFunc(object):
                 for arg in data.args:
                     argnames.add(arg.data.unique_name)
             else:
-                tree_arg = Argument(data.unique_name, kernel.kind[i], self.ranks[i])
+                tree_arg = Argument(data.unique_name, kernel.kind[i],  
+                                    self.ranks[i], kernel.argtypes[i])
                 children.append(tree_arg)
                 newargs.append(arg)
                 argnames.add(data.unique_name)
