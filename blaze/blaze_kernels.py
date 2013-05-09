@@ -23,13 +23,14 @@ from __future__ import absolute_import
 #
 
 import sys
+import struct
 
 import llvm.core as lc
 from llvm.core import Type, Function
 
 void_type = Type.void()
 int_type = Type.int()
-intp_type = Type.int(8) if sys.maxsize > 2**32 else Type.int(4)
+intp_type = Type.int(struct.calcsize('@P'))
 diminfo_type = Type.struct([
     intp_type,    # shape
     intp_type     # stride
@@ -112,14 +113,14 @@ class BlazeElementKernel(object):
 
     def create_wrapper_kernel(input_ranks, output_rank):
         """Take the current kernel and available input argument ranks
-         and create a new kernel that matches the required output rank 
-         by using the current kernel multiple-times if necessary. 
+         and create a new kernel that matches the required output rank
+         by using the current kernel multiple-times if necessary.
 
          This kernel allows creation of a simple call stack.
 
-        Example: (let rn == rank-n) 
+        Example: (let rn == rank-n)
           We need an r2, r2 -> r2 kernel and we have an r1, r1 -> r1
-          kernel.    
+          kernel.
 
           We create a kernel with rank r2, r2 -> r2 that does the equivalent of
 
@@ -132,8 +133,8 @@ class BlazeElementKernel(object):
 
 def fuse_kerneltree(tree):
     """Fuse the kernel tree into a single kernel object with the common names
-     
-    Define a variable for each unique node that is not a scalar. 
+
+    Define a variable for each unique node that is not a scalar.
 
     add(multiply(b,c),subtract(d,f))
 
