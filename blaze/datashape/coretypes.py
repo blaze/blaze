@@ -709,8 +709,7 @@ else:
 c_half = float16
 c_float = float32
 c_double = float64
-# TODO: Deal with the longdouble == one of
-#       float64/float80/float96/float128 situation
+# TODO: Deal with the longdouble == one of float64/float80/float96/float128 situation
 # c_longdouble = float128
 
 half = float16
