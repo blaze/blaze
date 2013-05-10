@@ -1,6 +1,5 @@
 from blaze import datashape
 from blaze.datashape.parser import parse
-from blaze.datashape.record import RecordDecl, derived
 
 def test_simple_parse():
     x = parse('2, 3, int32')
@@ -49,22 +48,6 @@ def test_parse_vars():
 
     assert x[0].lower == 1
     assert x[0].upper == 2
-
-def test_custom_record():
-
-    class Stock1(RecordDecl):
-        name   = datashape.string
-        open   = datashape.float32
-        close  = datashape.float32
-        max    = datashape.int64
-        min    = datashape.int64
-        volume = datashape.float32
-
-        @derived('int64')
-        def mid(self):
-            return (self.min + self.max)/2
-
-    assert Stock1.mid
 
 def test_fields_with_reserved_names():
     # Should be able to name a field 'type', 'int64'
