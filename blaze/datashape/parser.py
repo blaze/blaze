@@ -360,10 +360,10 @@ def p_error(p):
 reserved = {
     'Record'   : T.Record,
     'Range'    : T.Range,
-    'Either'   : T.Either,
-    'Varchar'  : T.Varchar,
-    'Union'    : T.Union,
-    'Option'   : T.Option,
+#    'Either'   : T.Either,
+#    'Varchar'  : T.Varchar,
+#    'Union'    : T.Union,
+#    'Option'   : T.Option,
     'string'   : T.String, # String type per proposal
 }
 

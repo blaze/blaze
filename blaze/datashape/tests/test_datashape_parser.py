@@ -1,7 +1,6 @@
 from blaze import datashape
 from blaze.datashape.parser import parse
 from blaze.datashape.record import RecordDecl, derived
-from blaze.datashape.coretypes import _reduce
 
 def test_simple_parse():
     x = parse('2, 3, int32')
@@ -50,13 +49,6 @@ def test_parse_vars():
 
     assert x[0].lower == 1
     assert x[0].upper == 2
-
-def test_parse_either():
-    x = parse('Either(int64, float64)')
-
-    assert type(x) == datashape.Either
-    assert x.a == datashape.int64
-    assert x.b == datashape.float64
 
 def test_custom_record():
 
