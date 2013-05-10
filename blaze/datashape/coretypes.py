@@ -15,6 +15,7 @@ import sys
 if sys.version_info >= (3, 0):
     _inttypes = (int,)
     _strtypes = (str,)
+    unicode = str
 else:
     _inttypes = (int, long)
     _strtypes = (str, unicode)
@@ -159,7 +160,7 @@ class Dynamic(Mono):
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
 class Top(Mono):
     """ The top type """
@@ -180,7 +181,7 @@ class Blob(Mono):
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
 class Varchar(Mono):
     """ Blob type, small variable length string """
@@ -274,7 +275,7 @@ class String(Mono):
     def __repr__(self):
         # need double quotes to form valid aterm, also valid
         # Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     def __eq__(self, other):
         if type(other) is String:
@@ -381,7 +382,7 @@ class DataShape(Mono):
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     @property
     def shape(self):
@@ -495,7 +496,7 @@ class CType(Mono):
         return self.name
 
     def __repr__(self):
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     def __eq__(self, other):
         if type(other) is CType:
@@ -742,7 +743,7 @@ class Record(Mono):
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape'), "\")"])
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
 #------------------------------------------------------------------------
 # Constructions
