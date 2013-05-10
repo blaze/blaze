@@ -12,8 +12,6 @@ import datetime
 import ctypes
 import sys
 
-from ..error import NotNumpyCompatible
-
 if sys.version_info >= (3, 0):
     _inttypes = (int,)
     _strtypes = (str,)
@@ -81,9 +79,40 @@ class Mono(object):
         lst = [self]
         return lst[key]
 
+    def __mul__(self, other):
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = IntegerConstant(other)
+            else:
+                raise NotImplementedError()
+        return product(self, other)
+
+    def __rmul__(self, other):
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = IntegerConstant(other)
+            else:
+                raise NotImplementedError()
+        return product(other, self)
+
+
+class Poly(object):
+    """
+    Polytype
+    """
+    def __init__(self, qualifier, *params):
+        self.parameters = params
+
 #------------------------------------------------------------------------
 # Parse Types
 #------------------------------------------------------------------------
+
+class Null(Mono):
+    """
+    The null datashape.
+    """
+    def __str__(self):
+        return expr_string('null', None)
 
 class IntegerConstant(Mono):
     """
@@ -119,6 +148,55 @@ class StringConstant(Mono):
 
     def __str__(self):
         return repr(self.val)
+
+class Dynamic(Mono):
+    """
+    The dynamic type allows an explicit upcast and downcast from any
+    type to ``?``.
+    """
+
+    def __str__(self):
+        return '?'
+
+    def __repr__(self):
+        # need double quotes to form valid aterm, also valid Python
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+
+class Top(Mono):
+    """ The top type """
+
+    def __str__(self):
+        return 'top'
+
+    def __repr__(self):
+        # emulate numpy
+        return ''.join(["dshape(\"", str(self), "\")"])
+
+class Blob(Mono):
+    """ Blob type, large variable length string """
+    cls = MEASURE
+
+    def __str__(self):
+        return 'blob'
+
+    def __repr__(self):
+        # need double quotes to form valid aterm, also valid Python
+        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+
+class Varchar(Mono):
+    """ Blob type, small variable length string """
+    cls = MEASURE
+
+
+    def __init__(self, maxlen):
+        assert isinstance(maxlen, IntegerConstant)
+        self.maxlen = maxlen.val
+
+    def __str__(self):
+        return 'varchar(maxlen=%i)' % self.maxlen
+
+    def __repr__(self):
+        return expr_string('varchar', [self.maxlen])
 
 _canonical_string_encodings = {
     u'A' : u'A',
@@ -225,7 +303,7 @@ class DataShape(Mono):
     def __init__(self, parameters=None, name=None):
 
         if len(parameters) > 1:
-            self.parameters = tuple(parameters)
+            self.parameters = tuple(flatten(parameters))
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
                 raise TypeError(('Only a measure can appear on the'
                                 ' last position of a datashape, not %s') %
@@ -314,6 +392,28 @@ class DataShape(Mono):
     def measure(self):
         return self.parameters[-1]
 
+    # Alternative constructors
+    # ------------------------
+
+    def __or__(self, other):
+        return Either(self, other)
+
+    def __mul__(self, other):
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = IntegerConstant(other)
+            else:
+                raise NotImplementedError()
+        return product(self, other)
+
+    def __rmul__(self, other):
+        if not isinstance(other, (DataShape, Mono)):
+            if type(other) is int:
+                other = IntegerConstant(other)
+            else:
+                raise NotImplementedError()
+        return product(other, self)
+
 class Atom(DataShape):
     """
     Atoms for arguments to constructors of types, not types in
@@ -386,7 +486,7 @@ class CType(Mono):
         """
         return np.dtype(self.name).char
 
-    def to_numpy_dtype(self):
+    def to_dtype(self):
         """
         To Numpy dtype.
         """
@@ -550,6 +650,47 @@ class Range(Atom):
 # Aggregate
 #------------------------------------------------------------------------
 
+class Either(Atom):
+    """
+    A datashape for tagged union of values that can take on two
+    different, but fixed, types called tags ``left`` and ``right``. The
+    tag deconstructors for this type are :func:`inl` and :func:`inr`.
+    """
+
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+        self.parameters = (a,b)
+
+class Option(Atom):
+    """
+    A sum type for nullable measures unit types. Can be written
+    as a tagged union with with ``left`` as ``null`` and
+    ``right`` as a measure.
+    """
+    cls = MEASURE
+
+    def __init__(self, ty):
+        self.parameters = (ty,)
+
+class Factor(Atom):
+    """
+    A finite enumeration of Fixed dimensions.
+    """
+
+    def __str__(self):
+        # Use c-style enumeration syntax
+        return expr_string('', self.parameters, '{}')
+
+class Union(Atom):
+    """
+    A untagged union is a datashape for a value that may hold
+    several but fixed datashapes.
+    """
+
+    def __str__(self):
+        return expr_string('', self.parameters, '{}')
+
 class Record(Mono):
     """
     A composite data structure of ordered fields mapped to types.
@@ -580,12 +721,12 @@ class Record(Mono):
     def names(self):
         return self.__k
 
-    def to_numpy_dtype(self):
+    def to_dtype(self):
         """
         To Numpy record dtype.
         """
         dk = self.__k
-        dv = map(to_numpy_dtype, self.__v)
+        dv = map(to_dtype, self.__v)
         return np.dtype(zip(dk, dv))
 
     def __getitem__(self, key):
@@ -598,18 +739,7 @@ class Record(Mono):
             return False
 
     def __str__(self):
-        # Prints out something like this:
-        #   {a : int32, b: float32, ... }
-        fields, values = (self.__k, self.__v)
-        body = ''
-        count = len(fields)
-
-        for i, (k,v) in enumerate(zip(fields,values)):
-            if (i+1) == count:
-                body += '%s : %s' % (k,v)
-            else:
-                body += '%s : %s; ' % (k,v)
-        return '{ ' + body + ' }'
+        return record_string(self.__k, self.__v)
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
@@ -649,36 +779,26 @@ def inl(ty):
 #------------------------------------------------------------------------
 
 bool_      = CType('bool', 1)
+char       = CType('char', 1)
 
-# Signed integers
 int8       = CType('int8', 1)
 int16      = CType('int16', 2)
 int32      = CType('int32', 4)
 int64      = CType('int64', 8)
 
-# Unsigned integers
 uint8      = CType('uint8', 1)
 uint16     = CType('uint16', 2)
 uint32     = CType('uint32', 4)
 uint64     = CType('uint64', 8)
 
-# IEEE 754 float types
 float16    = CType('float16', 2)
 float32    = CType('float32', 4)
 float64    = CType('float64', 8)
-# TODO: float128 should be reserved for IEEE 754 binary128 format,
-#       which is different from long double on most platforms.
-# float128   = CType('float128', 16)
+float128   = CType('float128', 16)
 
-# Complex types
-cfloat32  = CType('cfloat32', 8)
-cfloat64 = CType('cfloat64', 16)
-#complex256 = CType('complex256', 32)
-complex64 = cfloat32
-complex128 = cfloat64
-Type.register('complex64', cfloat32)
-Type.register('complex128', cfloat64)
-
+complex64  = CType('complex64', 8)
+complex128 = CType('complex128', 16)
+complex256 = CType('complex256', 32)
 
 timedelta64 = CType('timedelta64', 8)
 datetime64 = CType('datetime64', 8)
@@ -710,7 +830,7 @@ c_half = float16
 c_float = float32
 c_double = float64
 # TODO: Deal with the longdouble == one of float64/float80/float96/float128 situation
-# c_longdouble = float128
+c_longdouble = float128
 
 half = float16
 single = float32
@@ -719,14 +839,25 @@ double = float64
 void = CType('void', 0)
 object_ = pyobj = CType('object', c_intptr.itemsize)
 
-# A single unicode character (i.e. one UTF-32 character)
-char   = CType('char', 4)
-# UTF-8 variable-sized string
+na = Null
+top = Top()
+dynamic = Dynamic()
+NullRecord = Record(())
+blob = Blob()
+
 string = String()
+
+Stream = Range(IntegerConstant(0), None)
 
 Type.register('int', c_int)
 Type.register('float', c_float)
 Type.register('double', c_double)
+
+Type.register('NA', Null)
+Type.register('Stream', Stream)
+Type.register('?', Dynamic)
+Type.register('top', top)
+Type.register('blob', blob)
 
 Type.register('string', String())
 
@@ -807,7 +938,14 @@ def from_python_scalar(scalar):
 # NumPy Compatibility
 #------------------------------------------------------------------------
 
-def to_numpy_dtype(ds):
+class NotNumpyCompatible(Exception):
+    """
+    Raised when we try to convert a datashape into a NumPy dtype
+    but it cannot be ceorced.
+    """
+    pass
+
+def to_dtype(ds):
     """ Throw away the shape information and just return the
     measure as NumPy dtype instance."""
     return to_numpy(extract_measure(ds))
@@ -822,11 +960,11 @@ def to_numpy(ds):
     """
 
     if isinstance(ds, CType):
-        return ds.to_numpy_dtype()
+        return ds.to_dtype()
 
     # XXX: fix circular deps for DeclMeta
-    if hasattr(ds, 'to_numpy_dtype'):
-        return None, ds.to_numpy_dtype()
+    if hasattr(ds, 'to_dtype'):
+        return None, ds.to_dtype()
 
     shape = tuple()
     dtype = None
@@ -842,22 +980,21 @@ def to_numpy(ds):
         elif isinstance(dim, TypeVar):
             shape += (-1,)
         else:
-            raise NotNumpyCompatible(('Datashape dimension %s '
-                            'is not NumPy-compatible') % (dim))
+            raise NotNumpyCompatible('Datashape dimension %s is not NumPy-compatible' % dim)
 
     # The datashape measure
     msr = extract_measure(ds)
     if isinstance(msr, CType):
-        dtype = msr.to_numpy_dtype()
+        dtype = msr.to_dtype()
+    elif isinstance(msr, Blob):
+        dtype = np.dtype('object')
     elif isinstance(msr, Record):
-        dtype = msr.to_numpy_dtype()
+        dtype = msr.to_dtype()
     else:
-        raise NotNumpyCompatible(('Datashape dimension %s '
-                        'is not NumPy-compatible') % (dim))
+        raise NotNumpyCompatible('Datashape measure %s is not NumPy-compatible' % dim)
 
-    if not isinstance(dtype, np.dtype):
-        raise NotNumpyCompatible('Internal Blaze Error: Failed '
-                        'to produce NumPy dtype')
+    if type(dtype) != np.dtype:
+        raise NotNumpyCompatible('Internal Error: Failed to produce NumPy dtype')
     return (shape, dtype)
 
 
@@ -905,3 +1042,43 @@ def expr_string(spine, const_args, outer=None):
     else:
         return str(spine)
 
+def record_string(fields, values):
+    # Prints out something like this:
+    #   {a : int32, b: float32, ... }
+    body = ''
+    count = len(fields)
+
+    for i, (k,v) in enumerate(zip(fields,values)):
+        if (i+1) == count:
+            body += '%s : %s' % (k,v)
+        else:
+            body += '%s : %s; ' % (k,v)
+    return '{ ' + body + ' }'
+
+#------------------------------------------------------------------------
+# Argument Munging
+#------------------------------------------------------------------------
+
+def flatten(it):
+    for a in it:
+        if a.composite:
+            for b in iter(a):
+                yield b
+        else:
+            yield a
+
+def table_like(ds):
+    return type(ds[-1]) is Record
+
+def array_like(ds):
+    return not table_like(ds)
+
+def _reduce(x):
+    if isinstance(x, Record):
+        return [(k, _reduce(v)) for k,v in x.parameters[0]]
+    elif isinstance(x, DataShape):
+        return map(_reduce, x.parameters)
+    elif isinstance(x, TypeVar):
+        import pdb; pdb.set_trace()
+    else:
+        return x

@@ -76,17 +76,6 @@ class CustomSyntaxError(Exception):
         return str(self)
 
 #------------------------------------------------------------------------
-# Interop errors
-#------------------------------------------------------------------------
-
-class NotNumpyCompatible(Exception):
-    """
-    Raised when we try to convert a datashape into a NumPy dtype
-    but it cannot be ceorced.
-    """
-    pass
-
-#------------------------------------------------------------------------
 # Array-related errors
 #------------------------------------------------------------------------
 
