@@ -170,6 +170,16 @@ class MemBufDataDescriptor(IDataDescriptor):
     def element_read_iter(self):
         return MemBufElementReadIter(self)
 
+def data_descriptor_from_ctypes(cdata):
+    """
+    Parameters
+    ----------
+    cdata : ctypes data instance
+        The ctypes data object which owns the data.
+    """
+    return MemBufDataDescriptor(ctypes.addressof(cdata), cdata,
+                    datashape.from_ctypes(type(cdata)))
+
 def data_descriptor_from_cffi(ffi, cdata):
     """
     Parameters

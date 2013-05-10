@@ -1,10 +1,11 @@
 from __future__ import absolute_import
 
 __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
-                'from_cffi']
+                'from_ctypes', 'from_cffi']
 
 import operator
 import itertools
+import ctypes
 
 from . import parser
 from .coretypes import DataShape, Fixed, TypeVar, Record, \
@@ -50,7 +51,8 @@ def cat_dshapes(dslist):
     for ds in dslist[1:]:
         outer_dim_size += operator.index(ds[0])
         if ds[1:] != inner_ds:
-            raise ValueError(('The datashapes to concatenate much all match after'
+            raise ValueError(('The datashapes to concatenate much'
+                            ' all match after'
                             ' the first dimension (%s vs %s)') %
                             (inner_ds, ds[1:]))
     return DataShape([Fixed(outer_dim_size)] + list(inner_ds))
@@ -72,9 +74,10 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
     shapes = [dshape.shape for dshape in dslist]
 
     # ensure shapes are large enough
-    for i, shape, rank in zip(xrange(len(dslist), shapes, ranks)):
+    for i, shape, rank in zip(range(len(dslist)), shapes, ranks):
         if len(shape) < rank:
-            raise TypeError("Argument %d is not large-enough for kernel rank" % i)
+            raise TypeError(('Argument %d is not large-enough '
+                            'for kernel rank') % i)
 
     splitshapes = [(shape[:len(shape)-rank], shape[len(shape)-rank:])
                              for shape, rank in zip(shapes, ranks)]
@@ -88,7 +91,8 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
     for shape1, shape2 in itertools.combinations(outshapes, 2):
         if any((dim1 != 1 and dim2 != 1 and dim1 != dim2)
                   for dim1, dim2 in zip(shape1,shape2)):
-            raise TypeError("Outer-dimensions are not broadcastable to the same shape")
+            raise TypeError('Outer-dimensions are not broadcastable '
+                            'to the same shape')
     outshape = tuple(map(max, zip(*outshapes)))
 
     for connect in rankconnect:
@@ -175,26 +179,46 @@ def from_cffi(ffi, ctype):
         ctype = ctype.item
     return _from_cffi_internal(ffi, ctype)
 
-def test_cat_dshapes():
-    pass
-
-def test_broadcastable():
-    from blaze.datashape import dshape
-    dslist = [dshape('10,20,30,int32'), dshape('20,30,int32'), dshape('int32')]
-    outshape = broadcastable(dslist, ranks=[1,1,0])
-    assert outshape == (10,20)
-    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,20,int32'), dshape('int32')]
-    outshape = broadcastable(dslist, ranks=[1,1,0])
-    assert outshape == (10,20,30)
-    dslist = [dshape('10,20,30,40,int32'), dshape('20,30,40,int32'), dshape('int32')]
-    outshape = broadcastable(dslist, ranks=[1,1,0], rankconnect=[set([(0,0),(1,0)])])
-    assert outshape == (10,20,30)
-
-def test():
-    test_cat_dshapes()
-    test_broadcastable()
-
-if __name__ == '__main__':
-    test()
-
-
+def from_ctypes(ctype):
+    """
+    Constructs a blaze dshape from a ctypes type.
+    """
+    if issubclass(ctype, ctypes.Structure):
+        fields = []
+        for nm, tp in ctype._fields_:
+            child_ds = from_ctypes(tp)
+            fields.append((nm, from_ctypes(tp)))
+        ds = Record(fields)
+        # TODO: Validate that the ctypes offsets match
+        #       the C offsets blaze uses
+        return ds
+    elif issubclass(ctype, ctypes.Array):
+        dstup = []
+        while issubclass(ctype, ctypes.Array):
+            dstup.append(Fixed(ctype._length_))
+            ctype = ctype._type_
+        dstup.append(from_ctypes(ctype))
+        return DataShape(tuple(dstup))
+    elif ctype == ctypes.c_int8:
+        return int8
+    elif ctype == ctypes.c_int16:
+        return int16
+    elif ctype == ctypes.c_int32:
+        return int32
+    elif ctype == ctypes.c_int64:
+        return int64
+    elif ctype == ctypes.c_uint8:
+        return uint8
+    elif ctype == ctypes.c_uint16:
+        return uint16
+    elif ctype == ctypes.c_uint32:
+        return uint32
+    elif ctype == ctypes.c_uint64:
+        return uint64
+    elif ctype == ctypes.c_float:
+        return float32
+    elif ctype == ctypes.c_double:
+        return float64
+    else:
+        raise TypeError('Cannot convert ctypes %r into '
+                        'a blaze datashape')

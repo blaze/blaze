@@ -67,6 +67,10 @@ class Mono(object):
     def __init__(self, *params):
         self.parameters = params
 
+    @property
+    def shape(self):
+        return ()
+
     def __len__(self):
         return 1
 
@@ -381,7 +385,7 @@ class DataShape(Mono):
 
     @property
     def shape(self):
-        return self.parameters[:-1]
+        return tuple(operator.index(i) for i in self.parameters[:-1])
 
     @property
     def measure(self):

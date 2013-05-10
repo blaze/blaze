@@ -17,7 +17,7 @@ import numpy as np
 from . import blz
 
 # note that this is rather naive. In fact, a proper way to implement
-# the array from a numpy is creating a ByteProvider based on "data"
+# the array from a numpy is creating a ByteProvider based on "obj"
 # and infer the indexer from the apropriate information in the numpy
 # array.
 def array(obj, dshape=None, caps={'efficient-write': True}):
@@ -25,16 +25,16 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         # TODO: Validate the 'caps', convert to another kind
         #       of data descriptor if necessary
         dd = obj
+    elif isinstance(obj, np.ndarray):
+        dd = NumPyDataDescriptor(obj)
+    elif isinstance(obj, blz.barray):
+        dd = BLZDataDescriptor(obj)
     elif 'efficient-write' in caps:
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.array(obj))
     elif 'compress' in caps:
         # BLZ provides compression
         dd = BLZDataDescriptor(blz.barray(obj))
-    elif isinstance(obj, np.ndarray):
-        dd = NumPyDataDescriptor(data)
-    elif isinstance(data, blz.barray):
-        dd = BLZDataDescriptor(data)
     else:
         raise TypeError(('Failed to construct blaze array from '
                         'object of type %r') % type(obj))
