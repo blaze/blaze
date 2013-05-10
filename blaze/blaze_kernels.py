@@ -115,9 +115,7 @@ class BlazeElementKernel(object):
     @staticmethod
     def frompyfunc(pyfunc, signature):
         import numba
-        func = BlazeElementKernel(numba.jit(signature)(pyfunc).lfunc)
-        func.name = pyfunc.func_name
-        return func
+        return BlazeElementKernel(numba.jit(signature)(pyfunc).lfunc)
 
     @staticmethod
     def fromblir(str):
@@ -128,7 +126,14 @@ class BlazeElementKernel(object):
         raise NotImplementedError
 
     @staticmethod
-    def fromctypes(ctypefunc):
+    def fromctypes(func, module=None):
+        if func.argtypes is None:
+            raise ValueError("ctypes function must have argtypes and restype set")
+        if module is None:
+            names = [arg.__name__ for arg in func.argtypes]
+            names.append(func.restype.__name__)
+            name = "mod__{0}_{1}".format(func.__name__, '_'.join(names))
+            module = Module.new(name)
         raise NotImplementedError
 
     @staticmethod
@@ -198,7 +203,6 @@ class KernelObj(object):
         """attach the kernel to a different LLVM module
         """
         self.kernel.attach(module)
-
 
 # An Argument to a kernel tree (encapsulates name, argument kind and rank)
 class Argument(object):
