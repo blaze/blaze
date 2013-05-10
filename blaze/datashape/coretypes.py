@@ -844,7 +844,7 @@ dynamic = Dynamic()
 NullRecord = Record(())
 blob = Blob()
 
-string = String
+string = String()
 
 Stream = Range(IntegerConstant(0), None)
 
