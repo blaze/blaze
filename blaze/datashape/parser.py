@@ -427,10 +427,12 @@ def parse(pattern):
         if ds.lhs.nargs == 0:
             ds = ds.rhs
         else:
-            raise TypeError('building a simple dshape with type parameters is not supported')
+            raise TypeError('building a simple dshape with '
+                            'type parameters is not supported')
     # Require that the type be concrete, not parameterized
     if isinstance(ds, T.TypeVar):
-        raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(ds))
+        raise TypeError(('Only a measure can appear on the last '
+                        'position of a datashape, not %s') % repr(ds))
     return ds
 
 def parse_extern(pattern):
