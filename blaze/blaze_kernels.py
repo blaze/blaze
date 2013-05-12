@@ -99,6 +99,8 @@ class BlazeElementKernel(object):
             else:
                 kindlist[i] = POINTER
         self.kind = tuple(kindlist)
+        # Keep a handle on the module object
+        self.module = func.module
 
     def verify_ranks(self, ranks):
         for i, kind in enumerate(self.kind):
@@ -152,13 +154,14 @@ class BlazeElementKernel(object):
 
         if not isinstance(module, Module):
             raise TypeError("Must provide an LLVM module object to attach kernel")
-        if module is self.func.module: # Already attached
+        if module is self.module: # Already attached
             return
         try:
             # This assumes unique names for functions and just
             # replaces the function with one named from module
             # Should check to ensure kinds still match
             self.func = module.get_function_named(self.func.name)
+            self.module = module
             return
         except LLVMException:
             pass
@@ -167,6 +170,7 @@ class BlazeElementKernel(object):
         module.link_in(self.func.module, preserve=True)
         # Re-set the function object to the newly linked function
         self.func = module.get_function_named(self.func.name)
+        self.module = module
        
 
     def create_wrapper_kernel(input_ranks, output_rank):
@@ -190,11 +194,10 @@ class BlazeElementKernel(object):
 
 # A Node on the kernel Tree
 class KernelObj(object):
-    def __init__(self, kernel, types, ranks, name):
+    def __init__(self, kernel, ranks, name):
         if not isinstance(kernel, BlazeElementKernel):
             raise ValueError("Must pass in kernel object of type BlazeElementKernel")
         self.kernel = kernel
-        self.types = types
         self.ranks = ranks
         self.name = name  # name of kernel
         kernel.verify_ranks(ranks)
@@ -204,10 +207,10 @@ class KernelObj(object):
         """
         self.kernel.attach(module)
 
-# An Argument to a kernel tree (encapsulates name, argument kind and rank)
+# An Argument to a kernel tree (encapsulates the array, argument kind and rank)
 class Argument(object):
-    def __init__(self, name, kind, rank, llvmtype):
-        self.name = name
+    def __init__(self, arg, kind, rank, llvmtype):
+        self.arg = arg
         self.kind = kind
         self.rank = rank
         self.llvmtype = llvmtype
@@ -215,8 +218,9 @@ class Argument(object):
     def __eq__(self, other):
         if not isinstance(other, Argument):
             return NotImplemented
-        return self.name == other.name and self.rank == other.rank
+        return (self.arg is other.arg) and (self.rank == other.rank)
 
+# This find args that are used uniquely as well.
 def find_unique_args(tree, unique_args):
     for element in tree.children:
         if isinstance(element, Argument):
@@ -241,14 +245,37 @@ def get_fused_type(tree):
     if out_kind != SCALAR:
         args.append(outkrn.argtypes[-1])
 
-    return Type.function(out_type, args)
+    return unique_args, Type.function(out_type, args)
+
+# This modifies the node to add a reference to the llvm_obj
+def insert_instructions(node, builder):
+    kernel = node.node.kernel
+    is_scalar = (kernel.kind[-1] == SCALAR)
+    #allocate space for output if necessary
+    if not is_scalar:
+        # FIXME
+        print "Adding alloc %s" % kernel.argtypes[-1]
+        output = builder.alloca(kernel.argtypes[-1])
+
+    #Setup the argument list
+    args = [child.llvm_obj for child in node.children]
+
+    if not is_scalar:
+        args.append(output)
+
+    #call the kernel corresponding to this node
+    res = builder.call(kernel.func, args, name=node.name)    
+
+    if is_scalar:
+        node.llvm_obj = res
+    else:
+        node.llvm_obj = output
 
 
-
-def fuse_kerneltree(tree):
+def fuse_kerneltree(tree, newname):
     """Fuse the kernel tree into a single kernel object with the common names
      
-    Define a variable for each unique node and store the result in that variable
+    Examples: 
 
     add(multiply(b,c),subtract(d,f))
 
@@ -265,17 +292,35 @@ def fuse_kerneltree(tree):
 
     add(tmp0, tmp1, &res)
     """
-    module = Module.new(tree.name)
-    func_type = get_fused_type(tree)
+    module = Module.new(newname)
+    args, func_type = get_fused_type(tree)
     func = Function.new(module, func_type, tree.name+"_fused")
     block = func.append_basic_block('entry')
     builder = lc.Builder.new(block)
 
-    # Create a dictionary of 'names'
-    call_dict = tree.make_callsites()
-    buildlist = []
-    for node in tree.get_nodes():
-        # Make sure each LLVM Function is defined in this module object
-        node.attach_to(module)
-        builder
-        builder.alloca
+    # TODO: Create wrapped function for functions
+    #   that need to loop over their inputs
+
+    # Attach the llvm_object to the Argument objects
+    for i, arg in enumerate(args):
+        arg.llvm_obj = func.args[i]
+
+    # topologically sort the kernel-tree nodes at then for each node 
+    #  site we issue instructions to compute the value
+    nodelist = tree.sorted_nodes()
+
+    for node in nodelist:
+        node.node.attach_to(module)
+        insert_instructions(node, builder)
+
+    if tree.node.kernel.kind[-1] == SCALAR:
+        builder.ret(nodelist[-1].llvm_obj)
+    else:  
+        builder.ret_void()
+
+    newkernel = BlazeElementKernel(func)
+    ranks = [arg.rank for arg in args]
+
+    krnlobj = KernelObj(newkernel, ranks, newname)
+
+    return krnlobj, args 

@@ -386,7 +386,7 @@ class DataShape(Mono):
 
     @property
     def shape(self):
-        return tuple(operator.index(i) for i in self.parameters[:-1])
+        return self.parameters[:-1]
 
     @property
     def measure(self):

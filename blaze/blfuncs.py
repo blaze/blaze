@@ -5,8 +5,7 @@ from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
 from .cgen.utils import letters
-from .blaze_kernels import Kernel, Argument
-
+from .blaze_kernels import KernelObj, Argument, fuse_kerneltree
 
 
 # A KernelTree is just the bare element-wise kernel functions
@@ -27,8 +26,35 @@ class KernelTree(object):
         self.node = node
         self.children = children
         if name is None:
-            name = 'node_' + next(self._stream_of_uniques)
+            name = 'node_' + next(self._stream_of_unique_names)
         self.name = name
+
+    def sorted_nodes(self):
+        """Return depth-first list of unique KernelTree Nodes.
+
+        The root of the tree will be the last node.
+        """
+        nodes = []
+        self.visit(nodes)
+        return nodes
+
+    @property
+    def leafnode(self):
+        return all(isinstance(child, Argument) for child in self.children)
+
+    def visit(self, nodes):
+        if not self.leafnode:
+            for child in self.children:
+                if isinstance(child, KernelTree):
+                    child.visit(nodes)
+        if self not in nodes:
+            nodes.append(self)
+
+    def fuse(self, name=None):
+        if name is None:
+            name = 'flat_' + self.name
+        krnlobj, children = fuse_kerneltree(self, name)
+        return KernelTree(krnlobj, children)
 
     def flatten_tree(self, name=None):
         """Take a composite kernel tree and flatten it creating a single
@@ -68,8 +94,9 @@ def process_signature(ranksignature):
 #   with a tuple of the output-type plus the signature
 def process_typetable(typetable):
     newtable = {}
-    for key, value in typetable:
+    for key, value in typetable.iteritems():
         newtable[key[:-1]] = (key[-1], value)
+    return newtable
 
 # Define the Blaze Function
 #   * A Blaze Function is a callable that takes Concrete Arrays and returns
@@ -98,7 +125,7 @@ class BlazeFunc(object):
         =========
         ranksignature : ['name1,M', 'M,name3', 'L']
                         a list of comma-separated strings where names indicate
-                        unique sizes.  The first argument is the rank-signature
+                        unique sizes.  The last argument is the rank-signature
                         of the output.  An empty-string or None means a scalar.
 
         typetable :  dictionary mapping argument types to an implementation
@@ -122,7 +149,7 @@ class BlazeFunc(object):
     def compatible(self, args):
         # check for broadcastability
         # TODO: figure out correct types as well
-        dshapes = [args.data.dshape for arg in args]
+        dshapes = [arg._data.dshape for arg in args]
         return broadcastable(dshapes, self.ranks,
                                 rankconnect=self.rankconnect)
 
@@ -137,7 +164,7 @@ class BlazeFunc(object):
         #          function even if the types are not all the same
 
         # Find the kernel from the dispatch table
-        types = tuple(arr.data.dshape.measure for arr in args)
+        types = tuple(arr._data.dshape.measure for arr in args)
         out_type, kernel = self.dispatch[types]
 
         # Check rank-signature compatibility and broadcastability of arguments
@@ -146,33 +173,26 @@ class BlazeFunc(object):
         # Construct output dshape
         outdshape = DataShape(outshape+(out_type,))
 
-        kernelobj = KernelObj(kernel, (out_type,)+types, self.ranks, self.name)
+        kernelobj = KernelObj(kernel, self.ranks, self.name)
 
         # Create a new BlazeFuncDescriptor with this
         # kerneltree and a new set of args depending on
         #  unique new arguments in the expression. 
         children = []
-        newargs = []
-        argnames = set(arg.data.unique_name for arg in args)
         for i, arg in enumerate(args):
-            data = arg.data
+            data = arg._data
             if isinstance(data, BlazeFuncDescriptor):
                 children.append(data.kerneltree)
-                newargs.extend([arg for arg in data.args
-                                  if arg.data.unique_name not in argnames])
-                for arg in data.args:
-                    argnames.add(arg.data.unique_name)
             else:
-                tree_arg = Argument(data.unique_name, kernel.kind[i],  
+                tree_arg = Argument(arg, kernel.kind[i],
                                     self.ranks[i], kernel.argtypes[i])
                 children.append(tree_arg)
-                newargs.append(arg)
-                argnames.add(data.unique_name)
 
         kerneltree = KernelTree(kernelobj, children)
-        data = BlazeFuncDescriptor(kerneltree, outdshape, newargs)
+        data = BlazeFuncDescriptor(kerneltree, outdshape)
 
         # Construct an Array object from new data descriptor
+        # Standard propagation of user-defined meta-data.
         user = {self.name: [arg.user for arg in args]}
 
         # FIXME:  Check for axes alignment and labels alignment

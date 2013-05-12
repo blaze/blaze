@@ -7,9 +7,7 @@ __all__ = ['IElementReader', 'IElementWriter',
 import abc
 import ctypes
 from blaze.error import StreamingDimensionError
-from ..cgen.utils import letters
 
-_stream_of_uniques = letters()
 
 class IElementReader:
     """
@@ -294,7 +292,6 @@ class IDataDescriptor:
     object, to achieve this.
     """
     __metaclass__ = abc.ABCMeta
-    _unique_name = ''
 
     @abc.abstractproperty
     def dshape(self):
@@ -303,16 +300,6 @@ class IDataDescriptor:
         Every data descriptor implementation must provide a dshape.
         """
         raise NotImplemented
-
-    #@abc.abstractproperty
-    def unique_name(self):
-        """
-        Returns a unique name (in this process space)
-        TODO: Describe the purpose of unique_name
-        """
-        if not self._unique_name:
-            self._unique_name = next(_stream_of_uniques)
-        return self._unique_name
 
     def __len__(self):
         """
