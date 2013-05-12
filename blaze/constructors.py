@@ -30,8 +30,11 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
     elif isinstance(obj, blz.barray):
         dd = BLZDataDescriptor(obj)
     elif 'efficient-write' in caps:
+        dt = dshape
+        if dt is not None:
+            dt = dt.to_dtype()
         # NumPy provides efficient writes
-        dd = NumPyDataDescriptor(np.array(obj, dtype=dshape.to_dtype()))
+        dd = NumPyDataDescriptor(np.array(obj, dtype=dt))
     elif 'compress' in caps:
         # BLZ provides compression
         dd = BLZDataDescriptor(blz.barray(obj))
