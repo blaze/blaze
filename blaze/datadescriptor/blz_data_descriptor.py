@@ -20,15 +20,20 @@ def blz_descriptor_iter(blzarr):
             yield BLZDataDescriptor(el)
 
 class BLZElementReader(IElementReader):
-    def __init__(self, blzarr, nindex):
+    def __init__(self, blzarr, nindex, ds):
         if nindex > blzarr.ndim:
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
         self.blzarr = blzarr
+        self._dshape = ds
 
     @property
     def nindex(self):
         return self._nindex
+
+    @property
+    def dshape(self):
+        return self._dshape
 
     def get(self, idx):
         if len(idx) != self.nindex:
@@ -38,16 +43,20 @@ class BLZElementReader(IElementReader):
         x = self.blzarr[idx]
         # x is already well-behaved (C-contiguous and native order)
         self._tmpbuffer = x
-        import ctypes
-        return x.data_as(ctypes.c_void_p)
+        return x.ctypes.data()
 
 class BLZElementReadIter(IElementReadIter):
-    def __init__(self, blzarr):
+    def __init__(self, blzarr, ds):
         if blzarr.ndim <= 0:
             raise IndexError('Need at least one dimension for iteration')
         self.blzarr = blzarr
         self._index = 0
         self._len = self.blzarr.shape[0]
+        self._dshape = ds
+
+    @property
+    def dshape(self):
+        return self._dshape
 
     def __len__(self):
         return self._len
@@ -56,10 +65,9 @@ class BLZElementReadIter(IElementReadIter):
         if self._index < self._len:
             i = self._index
             self._index = i + 1
-            x = self.blzarr[idx]
+            x = self.blzarr[i:i+1]
             # x is already well-behaved (C-contiguous and native order)
             self._tmpbuffer = x
-            import ctypes
             return x.ctypes.data
         else:
             raise StopIteration
@@ -111,7 +119,7 @@ class BLZDataDescriptor(IDataDescriptor):
             beginning.
         stop : int
             Where the iterator stops. The default is to stop at the end.
-        
+
         Returns
         -------
         out : iterable
@@ -169,7 +177,7 @@ class BLZDataDescriptor(IDataDescriptor):
 			       outfields, limit, skip)
 
     def element_reader(self, nindex):
-        return BLZElementReader(self.blzarr, nindex)
+        return BLZElementReader(self.blzarr, nindex, self.dshape.subarray(nindex))
 
     def element_read_iter(self):
-        return BLZElementReadIter(self.blzarr)
+        return BLZElementReadIter(self.blzarr, self.dshape.subarray(1))

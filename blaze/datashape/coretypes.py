@@ -375,14 +375,17 @@ class DataShape(Mono):
         if type(other) is DataShape:
             return self._equal(other)
         else:
-            raise TypeError('Cannot compare non-datashape type %s to datashape' % type(other))
+            raise TypeError(('Cannot compare non-datashape '
+                            'type %s to datashape') % type(other))
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+        return ''.join(["dshape(\"",
+                        str(self).encode('unicode_escape').decode('ascii'),
+                        "\")"])
 
     @property
     def shape(self):
@@ -391,6 +394,18 @@ class DataShape(Mono):
     @property
     def measure(self):
         return self.parameters[-1]
+
+    def subarray(self, leading):
+        """Returns a data shape object of the subarray with 'leading'
+        dimensions removed.
+        """
+        if leading >= len(self.parameters):
+            raise IndexError(('Not enough dimensions in data shape '
+                            'to remove %d leading dimensions.') % leading)
+        elif leading == len(self.parameters) - 1:
+            return self.parameters[-1]
+        else:
+            return DataShape(self.parameters[leading:])
 
     # Alternative constructors
     # ------------------------
