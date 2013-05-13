@@ -22,8 +22,7 @@ import numpy.core.umath as _um
 import numpy as np
 
 from ..datashape import to_numpy, to_dtype
-from ..datadescriptor import IDataDescriptor
-from ..datadescriptor.as_py import dd_as_py
+from ..datadescriptor import IDataDescriptor, dd_as_py
 
 # These are undesired dependencies:
 from numpy import ravel, maximum, minimum, absolute, array
