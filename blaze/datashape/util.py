@@ -71,7 +71,7 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
     if ranks is None:
         ranks = [0]*len(dslist)
 
-    shapes = [dshape.shape for dshape in dslist]
+    shapes = [tuple(operator.index(s) for s in dshape.shape) for dshape in dslist]
 
     # ensure shapes are large enough
     for i, shape, rank in zip(range(len(dslist)), shapes, ranks):
@@ -101,7 +101,7 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
                 raise TypeError("Inner dimensions do not match in " +
                                 "argument %d and argument %d" % (arg1, arg2))
 
-    return outshape
+    return tuple(Fixed(s) for s in outshape)
 
 def _from_cffi_internal(ffi, ctype):
     k = ctype.kind
