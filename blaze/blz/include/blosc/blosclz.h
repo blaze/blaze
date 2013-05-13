@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Suffling and Compression Library
 
-  Author: Francesc Alted (faltet@pytables.org)
+  Author: Francesc Alted <faltet@gmail.com>
 
   See LICENSES/BLOSC.txt for details about copyright and rights to use.
 **********************************************************************/
