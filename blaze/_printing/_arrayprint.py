@@ -683,8 +683,12 @@ def _digits(x, precision, format):
     return precision - len(s) + len(z)
 
 
-_MAXINT = sys.maxint
-_MININT = -sys.maxint-1
+if sys.version_info >= (3, 0):
+    _MAXINT = 2**32 - 1
+    _MININT = -2**32
+else:
+    _MAXINT = sys.maxint
+    _MININT = -sys.maxint-1
 class IntegerFormat(object):
     def __init__(self, data):
         try:
