@@ -20,7 +20,7 @@ import numpy.core.umath as _um
 import numpy as np
 
 from ..datashape import to_numpy, to_dtype
-from ..datadescriptor import DataDescriptor
+from ..datadescriptor import IDataDescriptor
 from ..datadescriptor.as_py import dd_as_py
 
 # These are undesired dependencies:
@@ -32,7 +32,7 @@ import inspect
 
 def dump_data_info(x, ident=None):
     ident = ident if ident is not None else inspect.currentframe().f_back.f_lineno
-    if isinstance(x, DataDescriptor):
+    if isinstance(x, IDataDescriptor):
         subclass = 'DATA DESCRIPTOR'
     elif isinstance(x, np.ndarray):
         subclass = 'NUMPY ARRAY'
@@ -46,19 +46,19 @@ def product(x, y): return x*y
 
 # hacks to remove when isnan/isinf are available for data descriptors
 def isnan(x):
-    if isinstance(x, DataDescriptor):
+    if isinstance(x, IDataDescriptor):
         return _um.isnan(dd_as_py(x))
     else:
         return _um.isnan(x)
 
 def isinf(x):
-    if isinstance(x, DataDescriptor):
+    if isinstance(x, IDataDescriptor):
         return _um.isinf(dd_as_py(x))
     else:
         return _um.isinf(x)
 
 def not_equal(x, val):
-    if isinstance(x, DataDescriptor):
+    if isinstance(x, IDataDescriptor):
         return _um.not_equal(dd_as_py(x))
     else:
         return _um.not_equal(x, val)
@@ -807,11 +807,11 @@ def _test():
     arr = blaze.array([2,3,4.0])
     print arr.dshape
 
-    print array2string(arr.data)
+    print array2string(arr._data)
 
     arr = blaze.zeros('30, 30, 30, float32')
     print arr.dshape
 
-    print array2string(arr.data)
+    print array2string(arr._data)
 
 

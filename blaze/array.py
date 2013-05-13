@@ -34,10 +34,10 @@ class Array(object):
         return self._data.__getitem__(key)
 
     def __len__(self):
-        return self.data.dshape[0]
+        return self._data.dshape[0]
 
     def __str__(self):
-        return array2string(self.data)
+        return array2string(self._data)
 
     def __init__(self, data, axes=None, labels=None, user={}):
         if not isinstance(data, IDataDescriptor):

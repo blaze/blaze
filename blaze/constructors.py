@@ -13,6 +13,8 @@ from __future__ import absolute_import
 from .array import Array
 from .datadescriptor import (IDataDescriptor,
                 NumPyDataDescriptor, BLZDataDescriptor)
+from .datashape import dshape, to_numpy
+
 import numpy as np
 from . import blz
 
@@ -48,7 +50,16 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
     an exception should be raised.
 
     """
-    if 'efficient-write' in caps:
+    if isinstance(obj, IDataDescriptor):
+        # TODO: Validate the 'caps', convert to another kind
+        #       of data descriptor if necessary
+        dd = obj
+    elif isinstance(obj, np.ndarray):
+        dd = NumpyDataDescriptor(obj)
+    elif isinstance(obj, blz.barray):
+        dd = BLZDataDescriptor(obj)
+    elif 'efficient-write' in caps:
+        dt = None if dshape is None else dshape.to_dtype()
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.array(obj, dtype=dt))
     elif 'compress' in caps:
