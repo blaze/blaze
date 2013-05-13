@@ -23,23 +23,13 @@
 import llvm.core as lc
 from llvm.core import Type, Function, Module
 
-
-
 def platform_bytes():
     import sys
     PY3 = (sys.version_info[0] == 3)
     if PY3:
-        MAXSIZE = sys.MAXSIZE
+        MAXSIZE = sys.maxsize
     else:
-        class X(object):
-            def __len__(self):
-                return 1 << 32
-        try:
-            len(X())
-        except OverflowError:
-            MAXSIZE = int((1 << 31) - 1)
-        else:
-            MAXSIZE = int((1 << 63) - 1)
+        MAXSIZE = sys.maxint
 
     if MAXSIZE > (1 << 32):
         int_bytes = 8
@@ -47,6 +37,7 @@ def platform_bytes():
         int_bytes = 4
 
     return int_bytes
+
 
 C_CONTIGUOUS = 0
 F_CONTIGUOUS = 1
