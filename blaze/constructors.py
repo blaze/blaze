@@ -55,7 +55,7 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         #       of data descriptor if necessary
         dd = obj
     elif isinstance(obj, np.ndarray):
-        dd = NumpyDataDescriptor(obj)
+        dd = NumPyDataDescriptor(obj)
     elif isinstance(obj, blz.barray):
         dd = BLZDataDescriptor(obj)
     elif 'efficient-write' in caps:
