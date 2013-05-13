@@ -2,15 +2,14 @@
 
 from __future__ import absolute_import
 
-from unittest import TestCase
+import unittest
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from blaze import blz
 from blaze.blz.tests import common
-from .common import MayBeDiskTest
 
-class basicTest(MayBeDiskTest):
+class basicTest(common.MayBeDiskTest):
 
     def getobject(self):
         if self.flavor == 'barray':
@@ -120,22 +119,24 @@ class basicTest(MayBeDiskTest):
             count += 1
         self.assert_(count, 3)
 
-class barrayTest(basicTest, TestCase):
+class barrayTest(basicTest, unittest.TestCase):
     flavor = "barray"
     disk = False
 
-class barrayDiskTest(basicTest, TestCase):
+class barrayDiskTest(basicTest, unittest.TestCase):
     flavor = "barray"
     disk = True
 
-class btableTest(basicTest, TestCase):
+class btableTest(basicTest, unittest.TestCase):
     flavor = "btable"
     disk = False
 
-class btableDiskTest(basicTest, TestCase):
+class btableDiskTest(basicTest, unittest.TestCase):
     flavor = "btable"
     disk = True
 
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
 
 ## Local Variables:
 ## mode: python
