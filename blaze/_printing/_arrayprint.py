@@ -17,6 +17,7 @@ import sys
 # from umath import maximum, minimum, absolute, not_equal, isnan, isinf
 # from multiarray import format_longfloat, datetime_as_string, datetime_data
 import numpy.core.umath as _um
+import numpy as np
 
 from ..datashape import to_numpy, to_dtype
 from ..datadescriptor import DataDescriptor
@@ -26,55 +27,40 @@ from ..datadescriptor.as_py import dd_as_py
 from numpy import ravel, maximum, minimum, absolute, array
 import numpy.core.numerictypes as _nt
 
+import inspect
+# debug help
+
+def dump_data_info(x, ident=None):
+    ident = ident if ident is not None else inspect.currentframe().f_back.f_lineno
+    if isinstance(x, DataDescriptor):
+        subclass = 'DATA DESCRIPTOR'
+    elif isinstance(x, np.ndarray):
+        subclass = 'NUMPY ARRAY'
+    else:
+        subclass = 'UNKNOWN'
+
+    print '-> %s: %s: %s' % (ident, subclass, repr(x))
+
+
 def product(x, y): return x*y
 
 # hacks to remove when isnan/isinf are available for data descriptors
 def isnan(x):
     if isinstance(x, DataDescriptor):
-        print 'isnan dd: %s' % str(x)
-
-        try:
-            print (dd_as_py(x))
-        except Exception as a:
-            print type(a)
-            print a.args
-            print (a)
-
         return _um.isnan(dd_as_py(x))
     else:
-        print 'isnan non-dd: %s' % str(x)
         return _um.isnan(x)
 
 def isinf(x):
     if isinstance(x, DataDescriptor):
-        print 'isinf dd: %s' % str(x)
-
-        try:
-            print (dd_as_py(x))
-        except Exception as a:
-            print type(a)
-            print a.args
-            print (a)
-
-        print (dd_as_py(x))
         return _um.isinf(dd_as_py(x))
     else:
-        print 'isinf non-dd: %s' % str(x)
         return _um.isinf(x)
 
 def not_equal(x, val):
     if isinstance(x, DataDescriptor):
-        print 'non_equal dd: %s' % str(x)
-        try:
-            print (dd_as_py(x))
-        except Exception as a:
-            print type(a)
-            print a.args
-            print (a)
-
         return _um.not_equal(dd_as_py(x))
     else:
-        print 'non_equal non-dd: %s' % str(x)
         return _um.not_equal(x, val)
 
 # repr N leading and trailing items of each dimension
@@ -252,23 +238,26 @@ def get_printoptions():
              formatter=_formatter)
     return d
 
+def _extract_summary(a):
+    return l
+
 def _leading_trailing(a):
     import numpy.core.numeric as _nc
-    if a.ndim == 1:
+    if len(a.dshape.shape) == 1:
         if len(a) > 2*_summaryEdgeItems:
-            b = _nc.concatenate((a[:_summaryEdgeItems],
-                                     a[-_summaryEdgeItems:]))
+            b = [dd_as_py(a[i]) for i in range(_summaryEdgeItems)] 
+            b.extend([dd_as_py(a[i]) for i in range(-_summaryEdgeItems,0)])
+
         else:
-            b = a
+            b = dd_as_py(a)
     else:
         if len(a) > 2*_summaryEdgeItems:
-            l = [_leading_trailing(a[i]) for i in range(
-                min(len(a), _summaryEdgeItems))]
-            l.extend([_leading_trailing(a[-i]) for i in range(
-                min(len(a), _summaryEdgeItems),0,-1)])
+            b = [_leading_trailing(a[i]) 
+                 for i in range(_summaryEdgeItems)]
+            b.extend([_leading_trailing(a[-i]) 
+                      for i in range(-_summaryEdgeItems, 0)])
         else:
-            l = [_leading_trailing(a[i]) for i in range(0, len(a))]
-        b = _nc.concatenate(tuple(l))
+            b = [_leading_trailing(a[i]) for i in range(0, len(a))]
     return b
 
 def _boolFormatter(x):
@@ -352,11 +341,11 @@ def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
 
     if dim_size > _summaryThreshold:
         summary_insert = "..., "
-        data = _leading_trailing(a)
+        data = ravel(np.array(_leading_trailing(a)))
     else:
         summary_insert = ""
-        data = ravel(a)
-
+        data = ravel(np.array(dd_as_py(a)))
+    
     formatdict = {'bool' : _boolFormatter,
                   'int' : IntegerFormat(data),
                   'float' : FloatFormat(data, precision, suppress_small),
@@ -490,7 +479,6 @@ def array2string(a, max_line_width=None, precision=None,
     '[0x0L 0x1L 0x2L]'
 
     """
-
     try:
         shape, dtype = to_numpy(a.dshape)
     except AttributeError:
@@ -539,17 +527,17 @@ def _formatArray(a, format_function, rank, max_line_len,
         s = ""
         line = next_line_prefix
         for i in xrange(leading_items):
-            word = format_function(a[i]) + separator
+            word = format_function(dd_as_py(a[i])) + separator
             s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
 
         if summary_insert1:
             s, line = _extendLine(s, line, summary_insert1, max_line_len, next_line_prefix)
 
         for i in xrange(trailing_items, 1, -1):
-            word = format_function(a[-i]) + separator
+            word = format_function(dd_as_py(a[-i])) + separator
             s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
 
-        word = format_function(a[-1])
+        word = format_function(dd_as_py(a[-1]))
         s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
         s += line + "]\n"
         s = '[' + s[len(next_line_prefix):]
@@ -654,7 +642,7 @@ class FloatFormat(object):
     def __call__(self, x, strip_zeros=True):
         import numpy.core.numeric as _nc
         err = _nc.seterr(invalid='ignore')
-
+        
         try:
             if isnan(x):
                 if self.sign:
@@ -818,10 +806,12 @@ def _test():
 
     arr = blaze.array([2,3,4.0])
     print arr.dshape
+
     print array2string(arr.data)
 
     arr = blaze.zeros('30, 30, 30, float32')
     print arr.dshape
+
     print array2string(arr.data)
 
 
