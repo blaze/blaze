@@ -22,6 +22,7 @@ print (a)
 print (a.dshape)
 
 b = blaze.array([1.2, 3.5, 5.1])
+print (b)
 print (b.dshape)
 
 # Arrays can be bi-dimensional
@@ -33,7 +34,7 @@ print (c.dshape)
 # or as many dimensions as you like
 print_section('going 3d', spacing=1, underline='-')
 d = blaze.array([ [ [1, 2], [3, 4] ], [ [5, 6], [7, 8] ] ])
-
+print (d)
 print (d.dshape)
 
 # --------------------------------------------------------------------
