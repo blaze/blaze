@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 from .datashape import dshape
 from .datadescriptor import DataDescriptor
+from ._printing import array2string
 
 # An Array is a
 #   DataDescriptor
@@ -30,6 +31,9 @@ class Array(object):
 
     def __len__(self):
         return self.data.dshape[0]
+
+    def __str__(self):
+        return array2string(self.data)
 
     def __init__(self, data, axes=None, labels=None, user={}):
         assert isinstance(data, DataDescriptor)
