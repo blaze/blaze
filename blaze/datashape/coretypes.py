@@ -107,6 +107,10 @@ class Poly(object):
 # Parse Types
 #------------------------------------------------------------------------
 
+class Wild(Mono):
+    def __str__(self):
+        return '*'
+
 class Null(Mono):
     """
     The null datashape.
@@ -369,7 +373,12 @@ class DataShape(Mono):
 
     def _equal(self, other):
         """ Structural equality """
-        return all(a==b for a,b in zip(self, other))
+        def eq(a,b):
+            if isinstance(a, Wild) or isinstance(b, Wild):
+                return True
+            else:
+                return a == b
+        return all(eq(a,b) for a,b in zip(self, other))
 
     def __eq__(self, other):
         if type(other) is DataShape:

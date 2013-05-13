@@ -80,7 +80,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'TYPE', 'NAME', 'NUMBER', 'STRING',
+    'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR',
     'EQUALS', 'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT'
 )
 
@@ -92,6 +92,7 @@ literals = [
     ':' ,
     '{' ,
     '}' ,
+    '*' ,
 ]
 
 bits = set([
@@ -127,6 +128,7 @@ t_COLON  = r':'
 t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
+t_STAR   = r'\*'
 t_ignore = '[ ]'
 
 def t_TYPE(t):
@@ -256,6 +258,10 @@ def p_rhs_expression_list__number(p):
     '''rhs_expression_list : NUMBER'''
     p[0] = (T.Fixed(p[1]),)
 
+def p_rhs_expression_list__wild(p):
+    '''rhs_expression_list : STAR'''
+    p[0] = (T.Wild(),)
+
 def p_rhs_expression_list(p):
     'rhs_expression_list : rhs_expression_list COMMA rhs_expression_list'
     # tuple addition
@@ -365,6 +371,7 @@ reserved = {
     'Union'    : T.Union,
     'Option'   : T.Option,
     'string'   : T.String, # String type per proposal
+    'Wild'     : T.Wild
 }
 
 def build_ds_extern(ds):
