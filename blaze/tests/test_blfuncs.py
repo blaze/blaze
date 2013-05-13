@@ -1,5 +1,5 @@
 from blaze.blfuncs import BlazeFunc
-from blaze.datashape import double
+from blaze.datashape import double, complex128 as c128
 from blaze.blaze_kernels import BlazeElementKernel
 import blaze
 
@@ -10,7 +10,9 @@ def _mul(a,b):
     return a * b
 
 krnl = BlazeElementKernel.frompyfunc(_add, 'f8(f8,f8)')
-add = BlazeFunc('add', ['','',''],{(double, double, double): krnl})
+krnl2 = BlazeElementKernel.frompyfunc(_add, 'c16(c16,c16)')
+add = BlazeFunc('add', ['','',''],{(double, double, double): krnl,
+                                   (c128, c128, c128): krnl2})
 
 krnl = BlazeElementKernel.frompyfunc(_mul, 'f8(f8,f8)')
 mul = BlazeFunc('mul', ['']*3, {(double,)*3: krnl})

@@ -56,16 +56,6 @@ class KernelTree(object):
         krnlobj, children = fuse_kerneltree(self, name)
         return KernelTree(krnlobj, children)
 
-    def flatten_tree(self, name=None):
-        """Take a composite kernel tree and flatten it creating a single
-        node object with a fused kernel and all children as Arguments.
-
-        """
-        if name is None:
-            name = 'flat_' + self.name + next(self._stream_of_unique_kernels)
-
-        return kernel
-
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
 #  shows dimensions of arguments that must match by indicating a 2-tuple

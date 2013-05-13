@@ -10,61 +10,19 @@ from __future__ import print_function
 #    simple:  out_type @func(in1_type %a, in2_type %b)
 #    ptrs:  void @func(in1_type * %a, in2_type * %b, out_type * %out)
 #    array:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
-#
-# We use a simple array type definition at this level for arrays
-# struct {
-#    eltype *data;
-#    int nd;
-#    diminfo dims[nd];
-#} array
-#
-# struct {
-#   intp dim;
-#   intp stride;
-#} diminfo
-#
 
 import sys
 
 import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
-
-void_type = Type.void()
-int_type = Type.int()
-intp_type = Type.int(8) if sys.maxsize > 2**32 else Type.int(4)
-diminfo_type = Type.struct([
-                            intp_type,    # shape
-                            intp_type     # stride
-                            ], name='diminfo')
-
-array_type = lambda el_type, nd: Type.struct([
-    Type.pointer(el_type),       # data
-    int_type,                    # nd
-    Type.array(diminfo_type, nd) # dims[nd]
-                                 # use 0 for a variable-length struct
-    ])
-
-generic_array_type = array_type(Type.int(8), 0)
+from .llvm_array import isarray, void_type
 
 SCALAR = 0
 POINTER = 1
 ARRAY = 2
 
 arg_kinds = (SCALAR, POINTER, ARRAY)
-
-def isarray(arr):
-    if not isinstance(arr, lc.StructType):
-        return False
-    if arr.element_count != 3 or \
-        not isinstance(arr.elements[0], lc.PointerType) or \
-        not arr.elements[1] == int_type or \
-        not isinstance(arr.elements[2], lc.ArrayType):
-        return False
-    shapeinfo = arr.elements[2]
-    if not shapeinfo.element == diminfo_type:
-        return False
-    return True
 
 # A wrapper around an LLVM Function object
 # Every LLVM Function object comes attached to a particular module
