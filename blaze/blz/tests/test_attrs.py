@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import unittest
+import sys
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
@@ -14,11 +15,11 @@ class basicTest(common.MayBeDiskTest):
     def getobject(self):
         if self.flavor == 'barray':
             obj = blz.zeros(10, dtype="i1", rootdir=self.rootdir)
-            assert type(obj) == blz.barray
+            self.assertEqual(type(obj), blz.barray)
         elif self.flavor == 'btable':
             obj = blz.fromiter(((i,i*2) for i in range(10)), dtype='i2,f4',
                               count=10, rootdir=self.rootdir)
-            assert type(obj) == blz.btable
+            self.assertEqual(type(obj), blz.btable)
         return obj
 
     def test00a(self):
@@ -29,10 +30,10 @@ class basicTest(common.MayBeDiskTest):
         cn.attrs['attr1'] = 'val1'
         cn.attrs['attr2'] = 'val2'
         cn.attrs['attr3'] = 'val3'
-        self.assert_(cn.attrs['attr1'] == 'val1')
-        self.assert_(cn.attrs['attr2'] == 'val2')
-        self.assert_(cn.attrs['attr3'] == 'val3')
-        self.assert_(len(cn.attrs) == 3)
+        self.assertEqual(cn.attrs['attr1'], 'val1')
+        self.assertEqual(cn.attrs['attr2'], 'val2')
+        self.assertEqual(cn.attrs['attr3'], 'val3')
+        self.assertEqual(len(cn.attrs), 3)
 
     def test00b(self):
         """Accessing attributes in a opened barray."""
