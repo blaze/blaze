@@ -399,7 +399,7 @@ def debug_parse(data, lexer, parser):
     log = logging.getLogger()
     return parser.parse(data, debug=log)
 
-def load_parser(debug=True):
+def load_parser(debug=False):
     if debug:
         from ply import lex, yacc
         # Must be abspath instead of relpath because
