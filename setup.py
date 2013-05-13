@@ -28,6 +28,7 @@ packages = [
     'blaze.datashape',
     'blaze.datashape.tests',
     'blaze.tests',
+    'blaze._printing',
 ]
 
 #------------------------------------------------------------------------
