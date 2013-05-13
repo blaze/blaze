@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 """Array printing function
 
 """
@@ -39,7 +41,7 @@ def dump_data_info(x, ident=None):
     else:
         subclass = 'UNKNOWN'
 
-    print '-> %s: %s: %s' % (ident, subclass, repr(x))
+    print('-> %s: %s: %s' % (ident, subclass, repr(x)))
 
 
 def product(x, y): return x*y
@@ -148,13 +150,13 @@ def set_printoptions(precision=None, threshold=None, edgeitems=None,
     Floating point precision can be set:
 
     >>> np.set_printoptions(precision=4)
-    >>> print np.array([1.123456789])
+    >>> print(np.array([1.123456789]))
     [ 1.1235]
 
     Long arrays can be summarised:
 
     >>> np.set_printoptions(threshold=5)
-    >>> print np.arange(10)
+    >>> print(np.arange(10))
     [0 1 2 ..., 7 8 9]
 
     Small results can be suppressed:
@@ -245,16 +247,16 @@ def _leading_trailing(a):
     import numpy.core.numeric as _nc
     if len(a.dshape.shape) == 1:
         if len(a) > 2*_summaryEdgeItems:
-            b = [dd_as_py(a[i]) for i in range(_summaryEdgeItems)] 
+            b = [dd_as_py(a[i]) for i in range(_summaryEdgeItems)]
             b.extend([dd_as_py(a[i]) for i in range(-_summaryEdgeItems,0)])
 
         else:
             b = dd_as_py(a)
     else:
         if len(a) > 2*_summaryEdgeItems:
-            b = [_leading_trailing(a[i]) 
+            b = [_leading_trailing(a[i])
                  for i in range(_summaryEdgeItems)]
-            b.extend([_leading_trailing(a[-i]) 
+            b.extend([_leading_trailing(a[-i])
                       for i in range(-_summaryEdgeItems, 0)])
         else:
             b = [_leading_trailing(a[i]) for i in range(0, len(a))]
@@ -345,7 +347,7 @@ def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
     else:
         summary_insert = ""
         data = ravel(np.array(dd_as_py(a)))
-    
+
     formatdict = {'bool' : _boolFormatter,
                   'int' : IntegerFormat(data),
                   'float' : FloatFormat(data, precision, suppress_small),
@@ -466,8 +468,8 @@ def array2string(a, max_line_width=None, precision=None,
     Examples
     --------
     >>> x = np.array([1e-16,1,2,3])
-    >>> print np.array2string(x, precision=2, separator=',',
-    ...                       suppress_small=True)
+    >>> print(np.array2string(x, precision=2, separator=',',
+    ...                       suppress_small=True))
     [ 0., 1., 2., 3.]
 
     >>> x  = np.arange(3.)
@@ -582,7 +584,7 @@ class FloatFormat(object):
         except (TypeError, NotImplementedError):
             # if reduce(data) fails, this instance will not be called, just
             # instantiated in formatdict.
-            print ("exception raised in fillFormat")
+            print("exception raised in fillFormat")
             raise
             pass
 
@@ -642,7 +644,7 @@ class FloatFormat(object):
     def __call__(self, x, strip_zeros=True):
         import numpy.core.numeric as _nc
         err = _nc.seterr(invalid='ignore')
-        
+
         try:
             if isnan(x):
                 if self.sign:
@@ -805,13 +807,13 @@ def _test():
     import blaze
 
     arr = blaze.array([2,3,4.0])
-    print arr.dshape
+    print(arr.dshape)
 
-    print array2string(arr._data)
+    print(array2string(arr._data))
 
     arr = blaze.zeros('30, 30, 30, float32')
-    print arr.dshape
+    print(arr.dshape)
 
-    print array2string(arr._data)
+    print(array2string(arr._data))
 
 

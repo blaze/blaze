@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from __future__ import print_function
+
 
 # A Blaze Element Kernel is a wrapper around an LLVM Function with a
 #    particular signature.
@@ -39,7 +41,7 @@ diminfo_type = Type.struct([
 array_type = lambda el_type, nd: Type.struct([
     Type.pointer(el_type),       # data
     int_type,                    # nd
-    Type.array(diminfo_type, nd) # dims[nd]  
+    Type.array(diminfo_type, nd) # dims[nd]
                                  # use 0 for a variable-length struct
     ])
 
@@ -68,11 +70,11 @@ def isarray(arr):
 # Every LLVM Function object comes attached to a particular module
 # But, Blaze Element Kernels may be re-attached to different LLVM modules
 # as needed using the attach method.
-# 
+#
 # To inline functions we can either:
 #  1) Execute f.add_attribute(lc.ATTR_ALWAYS_INLINE) to always inline a particular
 #     function 'f'
-#  2) Execute llvm.core.inline_function(callinst) on the output of the 
+#  2) Execute llvm.core.inline_function(callinst) on the output of the
 #     call function when the function is used.
 class BlazeElementKernel(object):
     def __init__(self, func):
@@ -171,18 +173,18 @@ class BlazeElementKernel(object):
         # Re-set the function object to the newly linked function
         self.func = module.get_function_named(self.func.name)
         self.module = module
-       
+
 
     def create_wrapper_kernel(input_ranks, output_rank):
         """Take the current kernel and available input argument ranks
-         and create a new kernel that matches the required output rank 
-         by using the current kernel multiple-times if necessary. 
+         and create a new kernel that matches the required output rank
+         by using the current kernel multiple-times if necessary.
 
          This kernel allows creation of a simple call stack.
 
-        Example: (let rn == rank-n) 
+        Example: (let rn == rank-n)
           We need an r2, r2 -> r2 kernel and we have an r1, r1 -> r1
-          kernel.    
+          kernel.
 
           We create a kernel with rank r2, r2 -> r2 that does the equivalent of
 
@@ -254,7 +256,7 @@ def insert_instructions(node, builder):
     #allocate space for output if necessary
     if not is_scalar:
         # FIXME
-        print "Adding alloc %s" % kernel.argtypes[-1]
+        print("Adding alloc %s" % kernel.argtypes[-1])
         output = builder.alloca(kernel.argtypes[-1])
 
     #Setup the argument list
@@ -264,7 +266,7 @@ def insert_instructions(node, builder):
         args.append(output)
 
     #call the kernel corresponding to this node
-    res = builder.call(kernel.func, args, name=node.name)    
+    res = builder.call(kernel.func, args, name=node.name)
 
     if is_scalar:
         node.llvm_obj = res
@@ -274,8 +276,8 @@ def insert_instructions(node, builder):
 
 def fuse_kerneltree(tree, newname):
     """Fuse the kernel tree into a single kernel object with the common names
-     
-    Examples: 
+
+    Examples:
 
     add(multiply(b,c),subtract(d,f))
 
@@ -305,7 +307,7 @@ def fuse_kerneltree(tree, newname):
     for i, arg in enumerate(args):
         arg.llvm_obj = func.args[i]
 
-    # topologically sort the kernel-tree nodes at then for each node 
+    # topologically sort the kernel-tree nodes at then for each node
     #  site we issue instructions to compute the value
     nodelist = tree.sorted_nodes()
 
@@ -315,7 +317,7 @@ def fuse_kerneltree(tree, newname):
 
     if tree.node.kernel.kind[-1] == SCALAR:
         builder.ret(nodelist[-1].llvm_obj)
-    else:  
+    else:
         builder.ret_void()
 
     newkernel = BlazeElementKernel(func)
@@ -323,4 +325,4 @@ def fuse_kerneltree(tree, newname):
 
     krnlobj = KernelObj(newkernel, ranks, newname)
 
-    return krnlobj, args 
+    return krnlobj, args
