@@ -21,7 +21,8 @@ import sys
 import numpy.core.umath as _um
 import numpy as np
 
-from ..datashape import to_numpy, to_dtype
+from ..datashape import (to_numpy as _internal_to_numpy,
+                         to_dtype, NotNumpyCompatible)
 from ..datadescriptor import IDataDescriptor, dd_as_py
 
 # These are undesired dependencies:
@@ -29,10 +30,17 @@ from numpy import ravel, maximum, minimum, absolute, array
 import numpy.core.numerictypes as _nt
 
 import inspect
-# debug help
 
-def dump_data_info(x, ident=None):
-    ident = ident if ident is not None else inspect.currentframe().f_back.f_lineno
+def _to_numpy(ds):
+    res = _internal_to_numpy(ds)
+    res = res if type(res) is tuple else ((), res)
+    return res
+
+
+# debug help
+def _dump_data_info(x, ident=None):
+    ident = (ident if ident is not None 
+             else inspect.currentframe().f_back.f_lineno)
     if isinstance(x, IDataDescriptor):
         subclass = 'DATA DESCRIPTOR'
     elif isinstance(x, np.ndarray):
@@ -325,8 +333,8 @@ def _choose_format(formatdict, dtypeobj):
 def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
                   prefix="", formatter=None):
 
-    shape, dtype = to_numpy(a.dshape)
-    dim_size = reduce(product, shape)
+    shape, dtype = _to_numpy(a.dshape)
+    dim_size = reduce(product, shape, 1)
 
     if max_line_width is None:
         max_line_width = _line_width
@@ -481,13 +489,15 @@ def array2string(a, max_line_width=None, precision=None,
 
     """
     try:
-        shape, dtype = to_numpy(a.dshape)
+        print (a.dshape)
+        print (_to_numpy(a.dshape))
+        shape, dtype = _to_numpy(a.dshape)
     except AttributeError:
         raise # not a blaze array
     except NotNumpyCompatible:
         raise # only arrays that are numpy like are supported right now
 
-    if reduce(product, shape) == 0:
+    if reduce(product, shape, 1) == 0:
         # treat as a null array if any of shape elements == 0
         lst = "[]"
     else:
@@ -513,10 +523,7 @@ def _formatArray(a, format_function, rank, max_line_len,
 
     """
     if rank == 0:
-        obj = a.item()
-        if isinstance(obj, tuple):
-            obj = _convert_arrays(obj)
-        return str(obj)
+        return format_function(dd_as_py(a))
 
     if summary_insert and 2*edge_items < len(a):
         leading_items, trailing_items, summary_insert1 = \
