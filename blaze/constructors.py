@@ -200,4 +200,24 @@ def create(uri, dshape, caps={'efficient-append': True}):
 
 
 def open(uri):
-    raise NotImplementedError
+    """Open an existing persistent array.
+
+    Parameters
+    ----------
+    uri : URI string
+        The URI of where the array is stored (e.g. blz://myfile.blz).
+
+    Returns
+    -------
+    out: a concrete blaze array.
+
+    Notes
+    -----
+    Only the BLZ format is supported currently.
+
+    """
+    uri = urlparse(uri)
+    path = uri.netloc + uri.path
+    d = blz.open(rootdir=path)
+    dd = BLZDataDescriptor(d)
+    return Array(dd)

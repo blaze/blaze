@@ -86,7 +86,7 @@ class BLZDataDescriptor(IDataDescriptor):
         # require a BLZ barray here
         if not isinstance(obj, blz.barray):
             raise TypeError(('object is not a blz array, '
-                        'it has type %r') % type(obj))
+                             'it has type %r') % type(obj))
         self.blzarr = obj
         self._dshape = datashape.from_numpy(obj.shape, obj.dtype)
 
@@ -114,7 +114,11 @@ class BLZDataDescriptor(IDataDescriptor):
 
     def append(self, values):
         """Append a list of values."""
-        self.blzarr.append(values)
+        obj = self.blzarr
+        obj.append(values)
+        obj.flush()  # XXX This should be in BLZ barray object instead?
+        # Update the dshape
+        self._dshape = datashape.from_numpy(obj.shape, obj.dtype)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).

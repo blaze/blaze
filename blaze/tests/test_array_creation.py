@@ -17,10 +17,6 @@ class TestEphemeral(unittest.TestCase):
         a = blaze.array([1,2,3])
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3])
-        # XXX The tests below still do not work
-        # self.assertEqual(a[0], 1)
-        # self.assertEqual(a[1], 2)
-        # self.assertEqual(a[2], 3)
 
     def test_create_append(self):
         # A default array (backed by NumPy, append not supported yet)
@@ -93,6 +89,14 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         self.assert_(isinstance(a, blaze.Array))
         a.append(range(10))
         self.assertEqual(dd_as_py(a._data), range(10))
+
+    def test_open(self):
+        a = blaze.create(self.rooturi, 'float64')
+        a.append(range(10))
+        # Re-open the dataset in URI
+        a2 = blaze.open(self.rooturi)
+        self.assert_(isinstance(a2, blaze.Array))
+        self.assertEqual(dd_as_py(a2._data), range(10))
 
 
 if __name__ == '__main__':

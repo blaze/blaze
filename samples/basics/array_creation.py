@@ -91,3 +91,31 @@ describe_array('index thrice', array4d[3,2,4])
 describe_array('index four times', array4d[3,2,4,1])
 
 del describe_array
+
+# --------------------------------------------------------------------
+
+print_section('Persisted arrays')
+
+def maybe_remove(dname):
+    import os.path, shutil, glob
+    if os.path.exists(dname):
+        # Remove every directory starting with rootdir
+        for dir_ in glob.glob(dname+'*'):
+            shutil.rmtree(dir_)
+
+# Create an empty array on-disk
+dname = 'persisted.blz'
+maybe_remove(dname)
+p = blaze.create(dname, 'float64')
+# Feed it with some data
+p.append(range(10))
+
+from blaze.datadescriptor import dd_as_py
+
+print('Before re-opening:', p)
+
+# Re-open the dataset in URI
+p2 = blaze.open(dname)
+
+print('After re-opening:', p2)
+
