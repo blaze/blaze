@@ -356,10 +356,12 @@ def from_llvm(typ, argkind=SCALAR):
         raise TypeError("Unknown type %s" % kind)
     return ds
 
+# FIXME: This is a hack
 def from_numba(nty):
     return eval(str(nty))
 
 # Just scalars for now
+# FIXME: This could be improved
 def to_numba(ds):
     import numba
     return getattr(numba, (str(ds)))
