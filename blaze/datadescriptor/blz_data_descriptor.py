@@ -7,17 +7,22 @@ from . import (IElementReader, IElementWriter,
 from .. import datashape
 import numpy as np
 from blaze import blz
+from .numpy_data_descriptor import NumPyDataDescriptor
+
+# WARNING!  BLZ always return NumPy arrays when doing indexing
+# operations.  This is why NumPyDataDescriptor is used for returning
+# the values here.  Ideally, BLZ should return pure buffers instead.
 
 def blz_descriptor_iter(blzarr):
     if blzarr.ndim > 1:
         for el in blzarr:
-            yield BLZDataDescriptor(el)
+            yield NumPyDataDescriptor(el)
     else:
         for i in range(blzarr.shape[0]):
             # BLZ doesn't have a convenient way to avoid collapsing
             # to a scalar, this is a way to avoid that
             el = np.array(blzarr[i], dtype=blzarr.dtype)
-            yield BLZDataDescriptor(el)
+            yield NumPyDataDescriptor(el)
 
 class BLZElementReader(IElementReader):
     def __init__(self, blzarr, nindex, ds):
@@ -100,9 +105,9 @@ class BLZDataDescriptor(IDataDescriptor):
         key = tuple([operator.index(i) for i in key])
         blzarr = self.blzarr
         if len(key) == blzarr.ndim:
-            return BLZDataDescriptor(np.array(blzarr[i]))
+            return NumPyDataDescriptor(np.array(blzarr[i]))
         else:
-            return BLZDataDescriptor(blzarr[key])
+            return NumPyDataDescriptor(blzarr[key])
 
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
