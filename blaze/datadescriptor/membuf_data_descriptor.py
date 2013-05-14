@@ -34,10 +34,7 @@ class MemBufElementReader(IElementReader):
         if nindex > len(mbdd.dshape) - 1:
             raise IndexError('Cannot have more indices than dimensions')
         self._mbdd = mbdd
-        if nindex == len(mbdd.dshape) - 1:
-            self._dshape = mbdd.dshape[-1]
-        else:
-            self._dshape = DataShape(mbdd.dshape[nindex:])
+        self._dshape = mbdd.dshape.subarray(nindex)
         self._nindex = nindex
 
     @property
@@ -66,10 +63,7 @@ class MemBufElementReadIter(IElementReadIter):
             raise IndexError('Need at least one dimension for iteration')
         self._outer_stride = mbdd.dshape.c_strides[0]
         self._mbdd = mbdd
-        if len(mbdd.dshape) == 2:
-            self._dshape = mbdd.dshape[-1]
-        else:
-            self._dshape = DataShape(mbdd.dshape[1:])
+        self._dshape = mbdd.dshape.subarray(1)
         self._ptr = mbdd.ptr
         self._end = (self._ptr +
                         self._outer_stride * operator.index(mbdd.dshape[0]))
@@ -155,10 +149,7 @@ class MemBufDataDescriptor(IDataDescriptor):
                 idx += dim_size
             ptr = ptr + idx * c_strides[i]
         # Create the data shape of the result
-        if len(key) == len(ds) - 1:
-            ds = ds[-1]
-        else:
-            ds = datashape.DataShape(ds[len(key):])
+        ds = ds.subarray(len(key))
         return MemBufDataDescriptor(ptr, self.ptr_owner, ds)
 
     def __iter__(self):
