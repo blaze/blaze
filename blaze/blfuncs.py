@@ -1,13 +1,14 @@
 from __future__ import absolute_import
 
 import sys
+import types
 
-from .datashape.util import broadcastable
+from .datashape.util import broadcastable, to_numba
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
 from .cgen.utils import letters
-from .blaze_kernels import KernelObj, Argument, fuse_kerneltree
+from .blaze_kernels import KernelObj, Argument, fuse_kerneltree, BlazeElementKernel
 
 if sys.version_info >= (3, 0):
     def dict_iteritems(d):
@@ -26,6 +27,10 @@ else:
 class KernelTree(object):
     _stream_of_unique_names = letters()
     _stream_of_unique_kernels = letters()
+
+    _fused = None
+    _funcptr = None
+    _ctypes = None
 
     def __init__(self, node, children=[], name=None):
         assert isinstance(node, KernelObj)
@@ -59,15 +64,41 @@ class KernelTree(object):
             nodes.append(self)
 
     def fuse(self, name=None):
+        if self.leafnode:
+            self._fused = self
+            return self
         if name is None:
             name = 'flat_' + self.name
         krnlobj, children = fuse_kerneltree(self, name)
-        return KernelTree(krnlobj, children)
+        new = KernelTree(krnlobj, children)
+        self._fused = new
+        return new
+
+    @property
+    def func_ptr(self):
+        if self._funcptr is None:
+            self.fuse()
+            kernel = self._fused.node.kernel
+            self._funcptr = kernel.func_ptr
+            self._ctypes = kernel.ctypes_func
+        return self._funcptr
+
+    @property
+    def ctypes_func(self):
+        if self._ctypes is None:
+            self.fuse()
+            kernel = self._fused.node.kernel
+            self._funcptr = kernel.func_ptr
+            self._ctypes = kernel.ctypes_func
+        return self._ctypes            
+
+    def __call__(self, *args):
+        return self.ctypes_func(*args)      
 
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
 #  shows dimensions of arguments that must match by indicating a 2-tuple
-#  where the first integer is the argument number (output is argument 0) and
+#  where the first integer is the argument number (output is argument -1) and
 #  the second integer is the dimension
 # Example:  If the rank-signature is ['M,L', 'L,K', 'K', '']
 #           then the list of integer ranks is [2, 2, 1, 0]
@@ -85,16 +116,51 @@ def process_signature(ranksignature):
     connections = [set(val) for val in varmap.values() if len(val) > 1]
     return ranklist, connections
 
+def get_signature(typetuple):
+    sig = [','.join((str(x) for x in arg.shape)) for arg in typetuple]
+    return process_signature(sig)
+
+def convert_kernel(value, key=None):
+    if isinstance(value, tuple):
+        if len(value) == 2 and isinstance(value[0], types.FunctionType) and \
+                 isinstance(value[1], (str,unicode)):
+                krnl = BlazeElementKernel.frompyfunc(value[0], value[1])
+        else:
+            raise TypeError("Cannot parse kernel specification %s" % value)
+    elif isinstance(value, types.FunctionType):
+        args = ','.join(str(to_numba(ds)) for ds in key[:-1])
+        signature = '{0}({1})'.format(str(to_numba(key[-1])), args)
+        krnl = BlazeElementKernel.frompyfunc(value, signature)
+        krnl.dshapes = key
+    return krnl
 
 # Process type-table dictionary which maps a signature list with
 #   (input-type1, input-type2, output_type) to a kernel into a
 #   lookup-table dictionary which maps a input-only signature list
 #   with a tuple of the output-type plus the signature
+# So far it assumes the types all have the same rank
+#   and deduces the signature from the first kernel found
 def process_typetable(typetable):
     newtable = {}
-    for key, value in dict_iteritems(typetable):
-        newtable[key[:-1]] = (key[-1], value)
-    return newtable
+    if isinstance(typetable, list):
+        for item in typetable:
+            krnl = convert_kernel(item)
+            in_shapes = krnl.dshapes[:-1]
+            newtable.setdefault(in_shapes,[]).append(krnl)
+        key = krnl.dshapes
+    else:
+        for key, value in typetable.items():
+            if not isinstance(value, BlazeElementKernel):
+                value = convert_kernel(value, key)
+            value.dshapes = key
+            in_shapes = value.dshapes[:-1]
+            newtable.setdefault(in_shapes,[]).append(value)
+
+    # FIXME: 
+    #   Assumes the same ranklist and connections for all the keys
+    ranklist, connections = get_signature(key)
+
+    return ranklist, connections, newtable
 
 # Define the Blaze Function
 #   * A Blaze Function is a callable that takes Concrete Arrays and returns
@@ -111,7 +177,7 @@ def process_typetable(typetable):
 #       etc --- kernels all work on in-memory "elements"
 
 class BlazeFunc(object):
-    def __init__(self, name, ranksignature, typetable, inouts=[]):
+    def __init__(self, name, typetable, inouts=[]):
         """
         Construct a Blaze Function from a rank-signature and keyword arguments.
 
@@ -130,14 +196,11 @@ class BlazeFunc(object):
                      kernel which is an instance of a BlazeScalarKernel object
 
         inouts : list of integers corresponding to arguments which are
-                  input and output arguments
+                  input and output arguments (NotImplemented)
         """
         self.name = name
-
-        # FIXME:  Think about merging the dispatch table and rank-signature
-        #         so that dispatch can occur on different rank
-        self.ranks, self.rankconnect = process_signature(ranksignature)
-        self.dispatch = process_typetable(typetable)
+        res = process_typetable(typetable)
+        self.ranks, self.rankconnect, self.dispatch = res
         self.inouts = inouts
 
     @property
@@ -163,12 +226,18 @@ class BlazeFunc(object):
 
         # Find the kernel from the dispatch table
         types = tuple(arr._data.dshape.measure for arr in args)
-        out_type, kernel = self.dispatch[types]
+        kernels = self.dispatch[types]
 
         # Check rank-signature compatibility and broadcastability of arguments
         outshape = self.compatible(args)
 
+        kernel = kernels[0]
+
         # Construct output dshape
+        out_type = kernel.dshapes[-1]
+        if len(out_type) > 1:
+            out_type = out_type.measure
+
         outdshape = DataShape(outshape+(out_type,))
 
         kernelobj = KernelObj(kernel, self.ranks, self.name)
@@ -182,7 +251,7 @@ class BlazeFunc(object):
             if isinstance(data, BlazeFuncDescriptor):
                 children.append(data.kerneltree)
             else:
-                tree_arg = Argument(arg, kernel.kind[i],
+                tree_arg = Argument(arg, kernel.kinds[i],
                                     self.ranks[i], kernel.argtypes[i])
                 children.append(tree_arg)
 

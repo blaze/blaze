@@ -1,17 +1,20 @@
 from __future__ import absolute_import
 
 __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
-                'from_ctypes', 'from_cffi']
+           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm']
 
 import operator
 import itertools
 import ctypes
+import sys
 
 from . import parser
-from .coretypes import DataShape, Fixed, TypeVar, Record, \
-                uint8, uint16, uint32, uint64, \
-                int8, int16, int32, int64, \
-                float32, float64
+from .coretypes import (DataShape, Fixed, TypeVar, Record, Wild,
+                        uint8, uint16, uint32, uint64,
+                        int8, int16, int32, int64,
+                        float32, float64, complex64, complex128)
+
+PY3 = (sys.version_info[:2] >= (3,0))
 
 #------------------------------------------------------------------------
 # Utility Functions for DataShapes
@@ -179,6 +182,59 @@ def from_cffi(ffi, ctype):
         ctype = ctype.item
     return _from_cffi_internal(ffi, ctype)
 
+def to_ctypes(dshape):
+    """
+    Constructs a ctypes type from a datashape
+    """
+    if len(dshape) == 1:
+        if dshape == int8:
+            return ctypes.c_int8
+        elif dshape == int16:
+            return ctypes.c_int16
+        elif dshape == int32:
+            return ctypes.c_int32
+        elif dshape == int64:
+            return ctypes.c_int64
+        elif dshape == uint8:
+            return ctypes.c_uint8
+        elif dshape == uint16:
+            return ctypes.c_uint16
+        elif dshape == uint32:
+            return ctypes.c_uint32
+        elif dshape == uint64:
+            return ctypes.c_uint64
+        elif dshape == float32:
+            return ctypes.c_float
+        elif dshape == float64:
+            return ctypes.c_double
+        elif dshape == complex64:
+            class Complex64(ctypes.Structure):
+                _fields_ = [('real', ctypes.c_float),
+                            ('imag', ctypes.c_float)]                            
+            return Complex64
+        elif dshape == complex128:
+            class Complex128(ctypes.Structure):
+                _fields_ = [('real', ctypes.c_double),
+                            ('imag', ctypes.c_double)]                            
+            return Complex128            
+        elif isinstance(dshape, Record):
+            fields = [(name, to_ctypes(dshape.fields[name])) 
+                                          for name in dshape.names]
+            class temp(ctypes.Structure):
+                _fields_ = fields
+            return temp
+        else:
+            raise TypeError("Cannot convert datashape %r into ctype" % dshape)
+    # Create arrays
+    else:
+        if isinstance(dshape[0], (TypeVar, Wild)):
+            num = 0
+        else:
+            num = int(dshape[0])
+        return num*to_ctypes(dshape.subarray(1))
+
+
+# TODO: Handle complex values
 def from_ctypes(ctype):
     """
     Constructs a blaze dshape from a ctypes type.
@@ -187,7 +243,11 @@ def from_ctypes(ctype):
         fields = []
         for nm, tp in ctype._fields_:
             child_ds = from_ctypes(tp)
-            fields.append((nm, from_ctypes(tp)))
+            fields.append((nm, child_ds))
+        if fields == [('real', float32), ('imag', float32)]:
+            return complex64
+        elif fields == [('real', float64), ('imag', float64)]:
+            return complex128
         ds = Record(fields)
         # TODO: Validate that the ctypes offsets match
         #       the C offsets blaze uses
@@ -221,4 +281,85 @@ def from_ctypes(ctype):
         return float64
     else:
         raise TypeError('Cannot convert ctypes %r into '
-                        'a blaze datashape')
+                        'a blaze datashape' % ctype)
+
+# Class to hold Pointer temporarily
+def PointerDshape(object):
+    def __init__(self, dshape):
+        self.dshape = dshape
+
+from ..blaze_kernels import SCALAR, POINTER
+
+def from_llvm(typ, argkind=SCALAR):
+    """
+    Map an LLVM type to an equivalent data-shape type.
+    """
+    from ..llvm_array import check_array
+    import llvm.core
+
+    kind = typ.kind
+    if argkind is None and kind == llvm.core.TYPE_POINTER:
+        argkind = check_array(typ.pointee)
+        if argkind is None:
+            argkind = POINTER
+    if kind == llvm.core.TYPE_INTEGER:
+        ds = dshape("int" + str(typ.width))
+
+    elif kind == llvm.core.TYPE_DOUBLE:
+        ds = float64
+
+    elif kind == llvm.core.TYPE_FLOAT:
+        ds = float32
+
+    elif kind == llvm.core.TYPE_VOID:
+        ds = None
+
+    elif kind == llvm.core.TYPE_POINTER:
+        ds = ''
+        pointee = typ.pointee
+        p_kind = pointee.kind
+        if p_kind == llvm.core.TYPE_INTEGER:
+            width = pointee.width
+            # Special case:  char * is mapped to strings
+            if width == 8:
+                ds = dshape("string")
+            else:
+                ds = PointerDshape(from_llvm(pointee))
+        if p_kind == llvm.core.TYPE_STRUCT:
+            if argkind == POINTER:
+                ds = PointerDshape(from_llvm(pointee))
+            else:  # argkind is a tuple of (arrkind, nd, pointer_type)
+                nd = argkind[1]
+                eltype = from_llvm(argkind[2])
+                obj = [TypeVar('i'+str(n)) for n in range(nd)]
+                obj.append(eltype)
+                ds = DataShape(tuple(obj))
+                ds._array_kind = argkind[0]
+
+    elif kind == llvm.core.TYPE_STRUCT:
+        if not typ.is_literal:
+            struct_name = typ.name.split('.')[-1]
+            if not PY3:
+                struct_name = struct_name.encode('ascii')
+        else:
+            struct_name = ''
+
+        names = [ "e"+str(n) for n in range(typ.element_count) ]
+
+        fields = [(name, from_llvm(elem))
+                   for name, elem in zip(names, typ.elements)]
+        typstr = "{ %s }" % ("; ".join(["{0}: {1}".format(*field) 
+                                            for field in fields]))
+
+        ds = dshape(typstr)
+    else:
+        raise TypeError("Unknown type %s" % kind)
+    return ds
+
+def from_numba(nty):
+    return eval(str(nty))
+
+# Just scalars for now
+def to_numba(ds):
+    import numba
+    return getattr(numba, (str(ds)))
