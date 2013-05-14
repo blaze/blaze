@@ -9,8 +9,8 @@ def _add(a,b):
 def _mul(a,b):
     return a * b
 
-add = BlazeFunc('add',[(_add, 'f8(f8,f8)'),
-                       (_add, 'c16(c16,c16)')])
+add = BlazeFunc('add',[('f8(f8,f8)', _add),
+                       ('c16(c16,c16)', _add)])
 
 mul = BlazeFunc('mul', {(double,)*3: _mul})
 
