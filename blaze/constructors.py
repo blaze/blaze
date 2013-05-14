@@ -10,7 +10,6 @@ from __future__ import absolute_import
 # of the constructors, and will use low-level parameters, like
 # ByteProviders, that an end user may not even need to know about.
 
-from urlparse import urlparse
 import inspect
 
 from .array import Array
@@ -20,7 +19,7 @@ from .datashape import dshape as _dshape_builder, to_numpy, to_dtype
 
 import numpy as np
 from . import blz
-from .py3help import basestring
+from .py3help import basestring, urlparse
 
 try:
     basestring
@@ -186,7 +185,7 @@ def create(uri, dshape, caps={'efficient-append': True}):
     dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
     # Only BLZ supports efficient appends right now
     dt = to_dtype(dshape)
-    uri = urlparse(uri)
+    uri = urlparse.urlparse(uri)
     path = uri.netloc + uri.path
     if 'efficient-append' in caps:
         dd = BLZDataDescriptor(blz.barray([], dtype=dt, rootdir=path))
@@ -216,7 +215,7 @@ def open(uri):
     Only the BLZ format is supported currently.
 
     """
-    uri = urlparse(uri)
+    uri = urlparse.urlparse(uri)
     path = uri.netloc + uri.path
     d = blz.open(rootdir=path)
     dd = BLZDataDescriptor(d)
