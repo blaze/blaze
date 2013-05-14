@@ -42,5 +42,29 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), range(10))
 
+    def test_create_zeros(self):
+        # A default array (backed by NumPy)
+        a = blaze.zeros('10, int64')
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), [0]*10)
+
+    def test_create_compress_zeros(self):
+        # A compressed array (backed by BLZ)
+        a = blaze.zeros('10, int64', caps={'compress': True})
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), [0]*10)
+
+    def test_create_ones(self):
+        # A default array (backed by NumPy)
+        a = blaze.ones('10, int64')
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), [1]*10)
+
+    def test_create_compress_ones(self):
+        # A compressed array (backed by BLZ)
+        a = blaze.ones('10, int64', caps={'compress': True})
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), [1]*10)
+
 if __name__ == '__main__':
     unittest.main()

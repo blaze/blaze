@@ -19,7 +19,7 @@ import numpy as np
 import inspect
 from . import blz
 
-# note that this is rather naive. In fact, a proper way to implement
+# Note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "obj"
 # and infer the indexer from the apropriate information in the numpy
 # array.
@@ -28,7 +28,7 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
 
     Parameters
     ----------
-    data : array_lile
+    obj : array_like
         Initial contents for the array.
 
     dshape : datashape
@@ -37,8 +37,8 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         provided, the input data will be coerced into the provided
         dshape.
 
-	caps : capabilities dictionary
-	    A dictionary containing the desired capabilities of the array
+    caps : capabilities dictionary
+        A dictionary containing the desired capabilities of the array.
 
     Returns
     -------
@@ -51,7 +51,8 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
     an exception should be raised.
 
     """
-    dshape = dshape if not isinstance(dshape, basestring) else _dshape_builder(dshape)
+    dshape = (dshape if not isinstance(dshape, basestring)
+          else _dshape_builder(dshape))
 
     if isinstance(obj, IDataDescriptor):
         # TODO: Validate the 'caps', convert to another kind
@@ -65,11 +66,10 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         return _fromiter(obj, dshape, caps)
     elif 'efficient-write' in caps:
         dt = None if dshape is None else to_dtype(dshape)
-            
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.array(obj, dtype=dt))
     elif 'compress' in caps:
-        dt = None if dshape is None else dshape.to_dtype()
+        dt = None if dshape is None else to_dtype(dshape)
         # BLZ provides compression
         dd = BLZDataDescriptor(blz.barray(obj, dtype=dt))
     else:
@@ -84,66 +84,74 @@ def _fromiter(gen, dshape, caps):
     """Create an array out of an iterator."""
 
     if 'efficient-write' in caps:
-        dt = None if dshape is None else dshape.to_dtype()
+        dt = None if dshape is None else to_dtype(dshape)
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.fromiter(gen, dtype=dt))
     elif 'compress' in caps:
-        dt = None if dshape is None else dshape.to_dtype()
+        dt = None if dshape is None else to_dtype(dshape)
         # BLZ provides compression
         dd = BLZDataDescriptor(blz.fromiter(gen, dtype=dt, count=-1))
     return Array(dd)
-    
 
-def zeros(ds):
-    """Create an array and fill it with zeros
+
+def zeros(dshape, caps={'efficient-write': True}):
+    """Create an array and fill it with zeros.
 
     Parameters
     ----------
-    ds : datashape
-        The datashape for the created array.
+    dshape : datashape
+        The datashape for the resulting array.
+
+    caps : capabilities dictionary
+        A dictionary containing the desired capabilities of the array.
+
+    Returns
+    -------
+    out : a concrete, in-memory blaze array.
+
+    """
+    dshape = (dshape if not isinstance(dshape, basestring)
+          else _dshape_builder(dshape))
+
+    if 'efficient-write' in caps:
+        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
+        # NumPy provides efficient writes
+        dd = NumPyDataDescriptor(np.zeros(shape, dtype=dt))
+    elif 'compress' in caps:
+        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
+        # BLZ provides compression
+        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt))
+    return Array(dd)
+
+
+def ones(dshape, caps={'efficient-write': True}):
+    """Create an array and fill it with ones.
+
+    Parameters
+    ----------
+    dshape : datashape
+        The datashape for the resulting array.
+
+    caps : capabilities dictionary
+        A dictionary containing the desired capabilities of the array.
 
     Returns
     -------
     out: a concrete blaze array
 
-    Bugs
-    ----
-    Right now only concrete, in-memory blaze arrays can be created
-    this way.
-
     """
-    from numpy import zeros
+    dshape = (dshape if not isinstance(dshape, basestring)
+          else _dshape_builder(dshape))
 
-    ds = ds if not isinstance(ds, basestring) else _dshape_builder(ds)
-    (shape, dtype) = to_numpy(ds)
-    datadesc = NumPyDataDescriptor(zeros(shape, dtype=dtype))
-    return Array(datadesc)
-
-
-def ones(ds):
-    """Create an array and fill it with ones
-
-    Parameters
-    ----------
-    ds : datashape
-        The datashape for the created array.
-
-    Returns
-    -------
-    out: a concrete blaze array
-
-    Bugs
-    ----
-    Right now only concrete, in-memory blaze arrays can be created
-    this way.
-
-    """
-    from numpy import ones
-
-    ds = ds if not isinstance(ds, basestring) else _dshape_builder(ds)
-    (shape, dtype) = to_numpy(ds)
-    datadesc = NumPyDataDescriptor(ones(shape, dtype=dtype))
-    return Array(datadesc)
+    if 'efficient-write' in caps:
+        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
+        # NumPy provides efficient writes
+        dd = NumPyDataDescriptor(np.ones(shape, dtype=dt))
+    elif 'compress' in caps:
+        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
+        # BLZ provides compression
+        dd = BLZDataDescriptor(blz.ones(shape, dtype=dt))
+    return Array(dd)
 
 
 # for a temptative open function:
