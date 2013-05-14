@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import sys
+
 from .datashape.util import broadcastable
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
@@ -7,6 +9,12 @@ from .array import Array
 from .cgen.utils import letters
 from .blaze_kernels import KernelObj, Argument, fuse_kerneltree
 
+if sys.version_info >= (3, 0):
+    def dict_iteritems(d):
+        return d.items().__iter__()
+else:
+    def dict_iteritems(d):
+        return d.iteritems()
 
 # A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
@@ -84,7 +92,7 @@ def process_signature(ranksignature):
 #   with a tuple of the output-type plus the signature
 def process_typetable(typetable):
     newtable = {}
-    for key, value in typetable.iteritems():
+    for key, value in dict_iteritems(typetable):
         newtable[key[:-1]] = (key[-1], value)
     return newtable
 
@@ -167,7 +175,7 @@ class BlazeFunc(object):
 
         # Create a new BlazeFuncDescriptor with this
         # kerneltree and a new set of args depending on
-        #  unique new arguments in the expression. 
+        #  unique new arguments in the expression.
         children = []
         for i, arg in enumerate(args):
             data = arg._data
