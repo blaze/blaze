@@ -13,7 +13,7 @@ from __future__ import absolute_import
 from .array import Array
 from .datadescriptor import (IDataDescriptor,
                 NumPyDataDescriptor, BLZDataDescriptor)
-from .datashape import dshape, to_numpy
+from .datashape import dshape as _dshape_builder, to_numpy, to_dtype
 
 import numpy as np
 from . import blz
@@ -50,6 +50,8 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
     an exception should be raised.
 
     """
+    dshape = dshape if not isinstance(dshape, basestring) else _dshape_builder(dshape)
+
     if isinstance(obj, IDataDescriptor):
         # TODO: Validate the 'caps', convert to another kind
         #       of data descriptor if necessary
@@ -59,7 +61,8 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
     elif isinstance(obj, blz.barray):
         dd = BLZDataDescriptor(obj)
     elif 'efficient-write' in caps:
-        dt = None if dshape is None else dshape.to_dtype()
+        dt = None if dshape is None else to_dtype(dshape)
+            
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.array(obj, dtype=dt))
     elif 'compress' in caps:
@@ -91,7 +94,7 @@ def zeros(ds):
     """
     from numpy import zeros
 
-    ds = ds if not isinstance(ds, basestring) else dshape(ds)
+    ds = ds if not isinstance(ds, basestring) else _dshape_builder(ds)
     (shape, dtype) = to_numpy(ds)
     datadesc = NumPyDataDescriptor(zeros(shape, dtype=dtype))
     return Array(datadesc)
@@ -117,7 +120,7 @@ def ones(ds):
     """
     from numpy import ones
 
-    ds = ds if not isinstance(ds, basestring) else dshape(ds)
+    ds = ds if not isinstance(ds, basestring) else _dshape_builder(ds)
     (shape, dtype) = to_numpy(ds)
     datadesc = NumPyDataDescriptor(ones(shape, dtype=dtype))
     return Array(datadesc)
