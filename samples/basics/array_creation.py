@@ -78,13 +78,16 @@ print_section('Indexing')
 
 print ('starting with a 4d array')
 array4d = blaze.ones('10,10,10,10, float32')
-print (array4d)
 
-print ('index once')
-print (array4d[3])
-print ('index twice')
-print (array4d[3,2])
-print ('index thrice')
-print (array4d[3,2,4])
-print ('index 4 times')
-print (array4d[3,2,4,1])
+def describe_array(label, array):
+    print (label)
+    print ('dshape: ', array.dshape)
+    print (array)
+
+describe_array('base', array4d)
+describe_array('index once', array4d[3])
+describe_array('index twice', array4d[3,2])
+describe_array('index thrice', array4d[3,2,4])
+describe_array('index four times', array4d[3,2,4,1])
+
+del describe_array
