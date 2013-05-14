@@ -84,6 +84,10 @@ class StreamingDimensionError(Exception):
     An error for when a streaming dimension is accessed
     like a dimension of known size.
     """
-    def __init__(self, msg):
-        super(StreamingDimensionError, self).__init__(msg)
+    pass
 
+class BroadcastError(Exception):
+    """
+    An error for when arrays can't be broadcast together.
+    """
+    pass

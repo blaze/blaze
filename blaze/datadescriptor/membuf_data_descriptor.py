@@ -24,7 +24,7 @@ def membuf_descriptor_iter(mbdd):
     elif len(ds) > 2:
         ds = datashape.DataShape(ds[1:])
     else:
-        raise IndexError('Cannot iterator over a scalar')
+        raise IndexError('Cannot iterate over a scalar')
 
     for ptr in range(mbdd.ptr, end, c_outer_stride):
         yield MemBufDataDescriptor(ptr, mbdd.ptr_owner, ds)
