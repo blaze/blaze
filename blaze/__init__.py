@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from . import datashape
 from .datashape import dshape
 from .array import Array
-from .constructors import array, open, ones, zeros
+from .constructors import array, open, ones, zeros, create, open
 
 __version__ = '0.0.1'
 

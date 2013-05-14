@@ -10,13 +10,15 @@ from __future__ import absolute_import
 # of the constructors, and will use low-level parameters, like
 # ByteProviders, that an end user may not even need to know about.
 
+from urlparse import urlparse
+import inspect
+
 from .array import Array
 from .datadescriptor import (IDataDescriptor,
                 NumPyDataDescriptor, BLZDataDescriptor)
 from .datashape import dshape as _dshape_builder, to_numpy, to_dtype
 
 import numpy as np
-import inspect
 from . import blz
 
 # Note that this is rather naive. In fact, a proper way to implement
@@ -85,11 +87,9 @@ def _fromiter(gen, dshape, caps):
 
     if 'efficient-write' in caps:
         dt = None if dshape is None else to_dtype(dshape)
-        # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.fromiter(gen, dtype=dt))
     elif 'compress' in caps:
         dt = None if dshape is None else to_dtype(dshape)
-        # BLZ provides compression
         dd = BLZDataDescriptor(blz.fromiter(gen, dtype=dt, count=-1))
     return Array(dd)
 
@@ -114,13 +114,9 @@ def zeros(dshape, caps={'efficient-write': True}):
           else _dshape_builder(dshape))
 
     if 'efficient-write' in caps:
-        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
-        # NumPy provides efficient writes
-        dd = NumPyDataDescriptor(np.zeros(shape, dtype=dt))
+        dd = NumPyDataDescriptor(np.zeros(*to_numpy(dshape)))
     elif 'compress' in caps:
-        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
-        # BLZ provides compression
-        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt))
+        dd = BLZDataDescriptor(blz.zeros(*to_numpy(dshape)))
     return Array(dd)
 
 
@@ -144,16 +140,24 @@ def ones(dshape, caps={'efficient-write': True}):
           else _dshape_builder(dshape))
 
     if 'efficient-write' in caps:
-        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
-        # NumPy provides efficient writes
-        dd = NumPyDataDescriptor(np.ones(shape, dtype=dt))
+        dd = NumPyDataDescriptor(np.ones(*to_numpy(dshape)))
     elif 'compress' in caps:
-        shape, dt = (None,None) if dshape is None else to_numpy(dshape)
-        # BLZ provides compression
-        dd = BLZDataDescriptor(blz.ones(shape, dtype=dt))
+        shape, dt = to_numpy(dshape)
+        dd = BLZDataDescriptor(blz.ones(*to_numpy(dshape)))
     return Array(dd)
 
 
-# for a temptative open function:
+# Persistent constructors:
+def create(uri, dshape, caps={'efficient-append': True}):
+    dshape = (dshape if not isinstance(dshape, basestring)
+          else _dshape_builder(dshape))
+    # Only BLZ supports efficient appends right now
+    dt = to_dtype(dshape)
+    uri = urlparse(uri)
+    path = uri.netloc + uri.path
+    dd = BLZDataDescriptor(blz.barray([], dtype=dt, rootdir=path))
+    return Array(dd)
+
+
 def open(uri):
     raise NotImplementedError

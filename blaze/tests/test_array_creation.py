@@ -2,8 +2,10 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 import numpy as np
 import unittest
+from .common import MayBeUriTest
 
-class TestDatashapeCreation(unittest.TestCase):
+
+class TestEphemeral(unittest.TestCase):
 
     def test_create_from_numpy(self):
         a = blaze.array(np.arange(3))
@@ -65,6 +67,17 @@ class TestDatashapeCreation(unittest.TestCase):
         a = blaze.ones('10, int64', caps={'compress': True})
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1]*10)
+
+
+class TestPersistent(MayBeUriTest, unittest.TestCase):
+
+    uri = True
+
+    def test_create(self):
+        a = blaze.create(self.rooturi, 'float64', np.arange(3))
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), [])
+
 
 if __name__ == '__main__':
     unittest.main()
