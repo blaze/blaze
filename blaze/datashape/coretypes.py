@@ -566,6 +566,18 @@ class CType(Mono):
     def __hash__(self):
         return hash(self.name)
 
+    def subarray(self, leading):
+        """Returns a data shape object of the subarray with 'leading'
+        dimensions removed. In the case of a measure such as CType,
+        'leading' must be 0, and self is returned.
+        """
+        if leading >= 1:
+            raise IndexError(('Not enough dimensions in data shape '
+                            'to remove %d leading dimensions.') % leading)
+        else:
+            return self
+
+
     @property
     def type(self):
         raise NotImplementedError()
