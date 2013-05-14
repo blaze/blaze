@@ -7,3 +7,5 @@
 *.pyd
 build
 blaze/blz/blz_ext.c
+blaze/datashape/dyacc.py
+blaze/datashape/dlex.py
