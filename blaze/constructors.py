@@ -142,7 +142,7 @@ def ones(dshape, caps={'efficient-write': True}):
 
     Returns
     -------
-    out: a concrete blaze array
+    out: a concrete blaze array.
 
     """
     dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
@@ -157,6 +157,32 @@ def ones(dshape, caps={'efficient-write': True}):
 
 # Persistent constructors:
 def create(uri, dshape, caps={'efficient-append': True}):
+    """Create a 0-length persistent array.
+
+    Parameters
+    ----------
+    uri : URI string
+        The URI of where the array will be stored (e.g. blz://myfile.blz).
+
+    dshape : datashape
+        The datashape for the resulting array.
+
+    caps : capabilities dictionary
+        A dictionary containing the desired capabilities of the array.
+
+    Returns
+    -------
+    out: a concrete blaze array.
+
+    Notes
+    -----
+
+    The shape part of the `dshape` is ignored.  This should be fixed
+    by testing that the shape is actually empty.
+
+    Only the BLZ format is supported currently.
+
+    """
     dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
     # Only BLZ supports efficient appends right now
     dt = to_dtype(dshape)
