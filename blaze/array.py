@@ -31,7 +31,7 @@ class Array(object):
         return self._data.__iter__()
 
     def __getitem__(self, key):
-        return self._data.__getitem__(key)
+        return Array(self._data.__getitem__(key))
 
     def __len__(self):
         return self._data.dshape[0]
