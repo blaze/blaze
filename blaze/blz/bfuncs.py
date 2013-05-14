@@ -20,12 +20,9 @@ import math
 from .blz_ext import barray
 from .btable import btable
 from .bparams import bparams
+from ..py3help import xrange, _inttypes
 
-if sys.version_info >= (3, 0):
-    _inttypes = (int,)
-    xrange = range
-else:
-    _inttypes = (int, long)
+_inttypes += (np.integer,)
 
 def open(rootdir, mode='a'):
     """

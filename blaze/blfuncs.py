@@ -9,13 +9,7 @@ from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
 from .cgen.utils import letters
 from .blaze_kernels import KernelObj, Argument, fuse_kerneltree, BlazeElementKernel
-
-if sys.version_info >= (3, 0):
-    def dict_iteritems(d):
-        return d.items().__iter__()
-else:
-    def dict_iteritems(d):
-        return d.iteritems()
+from .py3help import dict_iteritems, _strtypes
 
 # A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
@@ -123,7 +117,7 @@ def get_signature(typetuple):
 def convert_kernel(value, key=None):
     if isinstance(value, tuple):
         if len(value) == 2 and isinstance(value[0], types.FunctionType) and \
-                 isinstance(value[1], (str,unicode)):
+                 isinstance(value[1], _strtypes):
                 krnl = BlazeElementKernel.frompyfunc(value[0], value[1])
         else:
             raise TypeError("Cannot parse kernel specification %s" % value)

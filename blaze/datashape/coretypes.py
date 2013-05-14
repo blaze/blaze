@@ -11,14 +11,7 @@ import numpy as np
 import datetime
 import ctypes
 import sys
-
-if sys.version_info >= (3, 0):
-    _inttypes = (int,)
-    _strtypes = (str,)
-    unicode = str
-else:
-    _inttypes = (int, long)
-    _strtypes = (str, unicode)
+from ..py3help import _inttypes, _strtypes, unicode
 
 instanceof = lambda T: lambda X: isinstance(X, T)
 

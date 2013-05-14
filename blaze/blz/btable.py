@@ -19,17 +19,13 @@ import shutil
 from .blz_ext import barray
 from .bparams import bparams
 from .chunked_eval import evaluate
+from ..py3help import _inttypes, imap, xrange
 
 # BLZ utilities
 from . import utils, attrs, arrayprint
 
-if sys.version_info >= (3, 0):
-    _inttypes = (int, np.integer)
-    imap = map
-    xrange = range
-else:
-    _inttypes = (int, long)
-    imap = itertools.imap
+_inttypes += (np.integer,)
+
 islice = itertools.islice
 
 ROOTDIRS = '__rootdirs__'

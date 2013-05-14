@@ -12,15 +12,7 @@ from __future__ import absolute_import
 import sys
 import os, os.path
 import json
-
-if sys.version_info >= (3, 0):
-    xrange = range
-    def dict_iteritems(d):
-        return d.items().__iter__()
-else:
-    def dict_iteritems(d):
-        return d.iteritems()
-
+from ..py3help import xrange, dict_iteritems
 
 ATTRSDIR = "__attrs__"
 
