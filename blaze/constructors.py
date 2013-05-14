@@ -20,8 +20,19 @@ from .datashape import dshape as _dshape_builder, to_numpy, to_dtype
 
 import numpy as np
 from . import blz
+from .py3help import basestring
 
-# Note that this is rather naive. In fact, a proper way to implement
+try:
+    basestring
+    # if basestring exists... use it (fails on python 3)
+    def _is_str(s):
+        return isinstance(s, basestring)
+except NameError:
+    # python 3 version
+    def _is_str(s):
+        return isinstance(s, str)
+
+# note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "obj"
 # and infer the indexer from the apropriate information in the numpy
 # array.
@@ -39,7 +50,7 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         provided, the input data will be coerced into the provided
         dshape.
 
-    caps : capabilities dictionary
+        caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
     Returns
@@ -53,8 +64,7 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
     an exception should be raised.
 
     """
-    dshape = (dshape if not isinstance(dshape, basestring)
-          else _dshape_builder(dshape))
+    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
 
     if isinstance(obj, IDataDescriptor):
         # TODO: Validate the 'caps', convert to another kind
@@ -84,6 +94,7 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
 # for BLZ is very important for getting good performance.
 def _fromiter(gen, dshape, caps):
     """Create an array out of an iterator."""
+    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
 
     if 'efficient-write' in caps:
         dt = None if dshape is None else to_dtype(dshape)
@@ -110,9 +121,7 @@ def zeros(dshape, caps={'efficient-write': True}):
     out : a concrete, in-memory blaze array.
 
     """
-    dshape = (dshape if not isinstance(dshape, basestring)
-          else _dshape_builder(dshape))
-
+    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
     if 'efficient-write' in caps:
         dd = NumPyDataDescriptor(np.zeros(*to_numpy(dshape)))
     elif 'compress' in caps:
@@ -136,8 +145,7 @@ def ones(dshape, caps={'efficient-write': True}):
     out: a concrete blaze array
 
     """
-    dshape = (dshape if not isinstance(dshape, basestring)
-          else _dshape_builder(dshape))
+    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
 
     if 'efficient-write' in caps:
         dd = NumPyDataDescriptor(np.ones(*to_numpy(dshape)))

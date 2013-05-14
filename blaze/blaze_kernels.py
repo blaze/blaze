@@ -9,20 +9,47 @@ from __future__ import print_function
 #
 #    simple:  out_type @func(in1_type %a, in2_type %b)
 #    ptrs:  void @func(in1_type * %a, in2_type * %b, out_type * %out)
-#    array:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
-
-import sys
+#    array_0:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
+#    array_1:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
+#    array_2:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
+#
+#   where array_n is one of the array_kinds in llvm_array
+#   
+#   Notice that while the examples have functions with all the
+#   same kinds, the kind is a per-argument notion and thus
+#   can be mixed and matched.
 
 import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
-from .llvm_array import isarray, void_type
+from . import llvm_array as lla
+from .llvm_array import void_type, array_kinds, check_array
 
 SCALAR = 0
 POINTER = 1
-ARRAY = 2
 
-arg_kinds = (SCALAR, POINTER, ARRAY)
+arg_kinds = (SCALAR, POINTER) + array_kinds
+
+_g = globals()
+for this in array_kinds:
+    _g[lla.kind_to_str(this)] = this
+del this, _g
+
+_invmap = {}
+
+def kind_to_str(kind):
+    global _invmap    
+    if not _invmap:
+        for key, value in globals().items():
+            if isinstance(value, int) and value in arg_kinds:
+                _invmap[value] = key
+    return _invmap[kind]
+
+def str_to_kind(str):
+    trial = eval(str)
+    if trial not in arg_kinds:
+        raise ValueError("Invalid Argument Kind")
+    return eval(str)
 
 # A wrapper around an LLVM Function object
 # Every LLVM Function object comes attached to a particular module
@@ -34,12 +61,20 @@ arg_kinds = (SCALAR, POINTER, ARRAY)
 #     function 'f'
 #  2) Execute llvm.core.inline_function(callinst) on the output of the
 #     call function when the function is used.
+
+# If dshapes is provided then this will be a seq of data-shape objects
+#  which can be helpful in generating a ctypes-callable wrapper
+#  otherwise the dshape will be inferred from llvm function (but this loses
+#   information like the sign).
 class BlazeElementKernel(object):
+    _func_ptr = None
+    _ctypes_func = None
+    _ee = None
+    _dshapes = None
     def __init__(self, func):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
                                 " Try a converter method.")
-
 
         func.add_attribute(lc.ATTR_ALWAYS_INLINE)
         self.func = func
@@ -48,26 +83,105 @@ class BlazeElementKernel(object):
         self.return_type = func_type.return_type
         kindlist = [None]*func_type.arg_count
         if not (func_type.return_type == void_type):  # Scalar output
-            kindlist += [SCALAR]
+            kindlist.append(SCALAR)
 
         for i, arg in enumerate(func_type.args):
             if not isinstance(arg, lc.PointerType):
                 kindlist[i] = SCALAR
-            elif isarray(arg.pointee):
-                kindlist[i] = ARRAY
-                kindlist[i] = None  # unknown
-            else:
-                kindlist[i] = POINTER
-        self.kind = tuple(kindlist)
+            else: # kind is a tuple if an array
+                kind = check_array(arg.pointee)
+                if kind is None:
+                    kind = POINTER
+                kindlist[i] = kind
+        self.kinds = tuple(kindlist)
         # Keep a handle on the module object
         self.module = func.module
 
-    def verify_ranks(self, ranks):
-        for i, kind in enumerate(self.kind):
-            if (kind == ARRAY or kind is None) and self.rank[0] == 0:
-                raise ValueError("Non-scalar function argument "\
-                                 "but scalar rank in argument %d" % i)
+    @property
+    def dshapes(self):
+        if self._dshapes is None:
+            # Create dshapes from llvm if none provided
+            from .datashape.util import from_llvm
+            ds = [from_llvm(llvm, kind)
+                   for llvm, kind in zip(self.argtypes, self.kinds)]
+            if self.kinds[-1] == SCALAR:
+                ds.append(from_llvm(self.return_type))
+            self._dshapes = ds
+        return self._dshapes
 
+    # FIXME:  Needs more verification...
+    @dshapes.setter
+    def dshapes(self, _dshapes):
+        for i, kind in enumerate(self.kinds):
+             if isinstance(kind, tuple) and kind[0] in array_kinds and \
+                      len(_dshapes[i]) == 1:
+                raise ValueError("Non-scalar function argument "
+                                 "but scalar rank in argument %d" % i)
+        self._dshapes = tuple(_dshapes)
+        return
+
+    def _get_ctypes(self):
+        from .datashape.util import to_ctypes
+        if self.return_type == void_type:
+            out_type = None
+        else:
+            out_type = to_ctypes(self.dshapes[-1])
+        return out_type, map(to_ctypes, self.dshapes[:-1])
+
+    def _get_wrapper(self, raw_func_ptr):
+        raise NotImplementedError
+        import ctypes
+        from .datashape.util import to_ctypes    
+        import numpy as np    
+        
+        argtypes = self.argtypes
+        raw_dshape = [to_ctypes(dshape) for dshape in self.dshapes]
+        cfunc_argtypes = []
+        transform = []
+        func_at_runtime = False
+        for i, (kind, dshape) in enumerate(zip(self.kinds, self.dshapes)):
+            if kind == SCALAR:
+                cfunc_argtypes.append(to_ctypes(dshape))
+                transform.append(None)
+            elif kind == POINTER:
+                ctyp = to_ctypes(dshape)
+                cfunc_argtypes.append(ctypes.POINTER(ctyp))
+                if issubclass(ctyp, ctypes.Structure):
+                    func = lambda x: ctypes.pointer(ctyp(*x))
+                else:
+                    func = lambda x: ctypes.pointer(ctyp(x))
+                transform.append(func)
+            else: # array kind -- must complete at run-time
+                cfunc_argtypes.append(to_ctypes(dshape.measure))
+                transform.append(lambda x: np.asarray(x))
+
+        #Output
+        kind = self.kinds[-1]
+        dshape = self.dshapes[-1]
+
+        if not func_at_runtime:
+            FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
+            ctypes_func = FUNC_TYPE(ptr_to_func)
+
+        def func(*args):
+            new_args = [transform(arg) for transform, arg in zip(transforms,args)]
+
+            if not _out_scalar:
+                pass
+
+            for i, arg in enumerate(args):
+                if self.kinds[i] == POINTER:
+                    new_arg = ctypes.pointer(argtypes[i])
+                elif isinstance(self.kinds[i], tuple):
+                    pass
+
+            res = raw_func(*new_args)
+            if self.kinds[-1] == SCALAR:
+                return res
+            elif self.kinds[-1] == POINTER:
+                new_args[-1]
+
+        return func
 
     @property
     def nin(self):
@@ -77,7 +191,14 @@ class BlazeElementKernel(object):
     @staticmethod
     def frompyfunc(pyfunc, signature):
         import numba
-        return BlazeElementKernel(numba.jit(signature)(pyfunc).lfunc)
+        numbafunc = numba.jit(signature)(pyfunc)
+        krnl = BlazeElementKernel(numbafunc.lfunc)
+        from .datashape.util import from_numba
+        dshapes = [from_numba(arg) for arg in numbafunc.signature.args]
+        dshapes.append(from_numba(numbafunc.signature.return_type))
+        krnl.dshapes = dshapes
+        return krnl
+
 
     @staticmethod
     def fromblir(str):
@@ -102,9 +223,33 @@ class BlazeElementKernel(object):
     def fromcfunc(cfunc):
         raise NotImplementedError
 
+    @property
+    def func_ptr(self):
+        if self._func_ptr is None:
+            if self._ee is None:
+                from llvm.ee import ExecutionEngine
+                self._ee = ExecutionEngine.new(self.module)            
+            self._func_ptr = self._ee.get_pointer_to_function(self.func)
+        return self._func_ptr
+
+    @property
+    def ctypes_func(self):
+        if self._ctypes_func is None:
+            import ctypes
+            ptr_to_func = self.func_ptr
+            if not all(kind == SCALAR for kind in self.kinds):
+                self._ctypes_func = self._get_wrapper(ptr_to_func)
+            else:
+                out_type, argtypes = self._get_ctypes()
+                FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
+                self._ctypes_func = FUNC_TYPE(ptr_to_func)
+        return self._ctypes_func
+
     # Should check to ensure kinds still match
     def replace_func(self, func):
         self.func = func
+        self._func_ptr = None
+        self._ctypes_func = None
 
     def attach(self, module):
         """Update this kernel to be attached to a particular module
@@ -120,7 +265,7 @@ class BlazeElementKernel(object):
             # This assumes unique names for functions and just
             # replaces the function with one named from module
             # Should check to ensure kinds still match
-            self.func = module.get_function_named(self.func.name)
+            self.replace_func(module.get_function_named(self.func.name))
             self.module = module
             return
         except LLVMException:
@@ -160,7 +305,6 @@ class KernelObj(object):
         self.kernel = kernel
         self.ranks = ranks
         self.name = name  # name of kernel
-        kernel.verify_ranks(ranks)
 
     def attach_to(self, module):
         """attach the kernel to a different LLVM module
@@ -194,7 +338,7 @@ def get_fused_type(tree):
     """
     outkrn = tree.node.kernel
     # If this is not a SCALAR then we need to attach another node
-    out_kind = outkrn.kind[-1]
+    out_kind = outkrn.kinds[-1]
     out_type = outkrn.func.type.pointee.return_type
 
     unique_args = []
@@ -210,7 +354,7 @@ def get_fused_type(tree):
 # This modifies the node to add a reference to the llvm_obj
 def insert_instructions(node, builder):
     kernel = node.node.kernel
-    is_scalar = (kernel.kind[-1] == SCALAR)
+    is_scalar = (kernel.kinds[-1] == SCALAR)
     #allocate space for output if necessary
     if not is_scalar:
         # FIXME
@@ -273,7 +417,7 @@ def fuse_kerneltree(tree, newname):
         node.node.attach_to(module)
         insert_instructions(node, builder)
 
-    if tree.node.kernel.kind[-1] == SCALAR:
+    if tree.node.kernel.kinds[-1] == SCALAR:
         builder.ret(nodelist[-1].llvm_obj)
     else:
         builder.ret_void()

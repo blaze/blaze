@@ -9,13 +9,10 @@ def _add(a,b):
 def _mul(a,b):
     return a * b
 
-krnl = BlazeElementKernel.frompyfunc(_add, 'f8(f8,f8)')
-krnl2 = BlazeElementKernel.frompyfunc(_add, 'c16(c16,c16)')
-add = BlazeFunc('add', ['','',''],{(double, double, double): krnl,
-                                   (c128, c128, c128): krnl2})
+add = BlazeFunc('add',[(_add, 'f8(f8,f8)'),
+                       (_add, 'c16(c16,c16)')])
 
-krnl = BlazeElementKernel.frompyfunc(_mul, 'f8(f8,f8)')
-mul = BlazeFunc('mul', ['']*3, {(double,)*3: krnl})
+mul = BlazeFunc('mul', {(double,)*3: _mul})
 
 a = blaze.array([1,2,3],dshape=double)
 b = blaze.array([2,3,4],dshape=double)
