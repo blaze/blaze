@@ -415,7 +415,7 @@ class DataShape(Mono):
     def __hash__(self):
         for val in self:
             if isinstance(val, Wild):
-                raise TypeError, "Data-shape with 'Wildcard' is unhashable"
+                raise TypeError("Data-shape with 'Wildcard' is unhashable")
         return hash(tuple(a for a in self))
 
     def __ne__(self, other):
