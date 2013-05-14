@@ -18,6 +18,7 @@ from .datashape import dshape as _dshape_builder, to_numpy, to_dtype
 import numpy as np
 import inspect
 from . import blz
+from .py3help import basestring
 
 try:
     basestring

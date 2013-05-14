@@ -11,12 +11,14 @@ if PY3:
     _strtypes = (str,)
     unicode = str
     imap = map
+    basestring = str
 else:
     import __builtin__
     def dict_iteritems(d):
         return d.iteritems()
     xrange = __builtin__.xrange
     unicode = __builtin__.unicode
+    basestring = __builtin__.basestring
 
     _strtypes = (str, unicode)
 
