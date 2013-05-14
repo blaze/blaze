@@ -49,7 +49,18 @@ class Array(object):
         self.labels = labels or [None] * (len(self._data.dshape) - 1)
         self.user = user
 
-        # Need to inject attributes on the Array depending on dshape attributes
+        # Need to inject attributes on the Array depending on dshape
+        # attributes
+
+    def append(self, values):
+        """Append a list of values."""
+        # XXX If not efficient appends supported, this should raise
+        # a `PerformanceWarning`
+        if hasattr(self._data, 'append'):
+            self._data.append(values)
+        else:
+            raise NotImplementedError('append is not implemented for this '
+                                      'object')
 
 """
 These should be functions

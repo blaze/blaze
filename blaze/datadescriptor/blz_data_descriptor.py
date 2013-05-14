@@ -112,6 +112,10 @@ class BLZDataDescriptor(IDataDescriptor):
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
 
+    def append(self, values):
+        """Append a list of values."""
+        self.blzarr.append(values)
+
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
 

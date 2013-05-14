@@ -22,9 +22,19 @@ class TestEphemeral(unittest.TestCase):
         # self.assertEqual(a[1], 2)
         # self.assertEqual(a[2], 3)
 
+    def test_create_append(self):
+        # A default array (backed by NumPy, append not supported yet)
+        a = blaze.array([])
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertRaises(NotImplementedError, a.append, [1,2,3])
+        # XXX The tests below still do not work
+        # self.assertEqual(a[0], 1)
+        # self.assertEqual(a[1], 2)
+        # self.assertEqual(a[2], 3)
+
     def test_create_compress(self):
         # A compressed array (backed by BLZ)
-        a = blaze.array([1,2,3], caps={'compress': True})
+        a = blaze.array(np.arange(1,4), caps={'compress': True})
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3])
         # XXX The tests below still do not work
@@ -74,9 +84,15 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
     uri = True
 
     def test_create(self):
-        a = blaze.create(self.rooturi, 'float64', np.arange(3))
+        a = blaze.create(self.rooturi, 'float64')
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [])
+
+    def test_append(self):
+        a = blaze.create(self.rooturi, 'float64')
+        self.assert_(isinstance(a, blaze.Array))
+        a.append(range(10))
+        self.assertEqual(dd_as_py(a._data), range(10))
 
 
 if __name__ == '__main__':

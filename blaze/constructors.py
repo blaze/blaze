@@ -188,7 +188,14 @@ def create(uri, dshape, caps={'efficient-append': True}):
     dt = to_dtype(dshape)
     uri = urlparse(uri)
     path = uri.netloc + uri.path
-    dd = BLZDataDescriptor(blz.barray([], dtype=dt, rootdir=path))
+    if 'efficient-append' in caps:
+        dd = BLZDataDescriptor(blz.barray([], dtype=dt, rootdir=path))
+    elif 'efficient-write' in caps:
+        raise ValueError('efficient-write objects not supported for '
+                         'persistence')
+    else:
+        # BLZ will be the default
+        dd = BLZDataDescriptor(blz.barray([], dtype=dt, rootdir=path))
     return Array(dd)
 
 
