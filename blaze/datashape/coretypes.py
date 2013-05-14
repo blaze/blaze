@@ -288,6 +288,9 @@ class String(Mono):
         else:
             return False
 
+    def __hash__(self):
+        return hash((self.fixlen, self.encoding))
+
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
@@ -386,6 +389,12 @@ class DataShape(Mono):
         else:
             raise TypeError(('Cannot compare non-datashape '
                             'type %s to datashape') % type(other))
+
+    def __hash__(self):
+        for val in self:
+            if isinstance(val, Wild):
+                raise TypeError, "Data-shape with 'Wildcard' is unhashable"
+        return hash(hash(a) for a in self)        
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -528,6 +537,9 @@ class CType(Mono):
         else:
             return False
 
+    def __hash__(self):
+        return hash(self.name)
+
     @property
     def type(self):
         raise NotImplementedError()
@@ -580,6 +592,9 @@ class Fixed(Atom):
             return self.val == other
         else:
             return False
+
+    def __hash__(self):
+        return hash(self.val)
 
     def __gt__(self, other):
         if type(other) is Fixed:
@@ -761,6 +776,9 @@ class Record(Mono):
             return self.__d == other.__d
         else:
             return False
+
+    def __hash__(self):
+        return hash(self.__d)
 
     def __str__(self):
         return record_string(self.__k, self.__v)
