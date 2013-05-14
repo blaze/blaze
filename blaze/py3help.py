@@ -12,6 +12,8 @@ if PY3:
     unicode = str
     imap = map
     basestring = str
+    import urllib
+    urlparse = urllib.parse
 else:
     import __builtin__
     def dict_iteritems(d):
@@ -24,3 +26,4 @@ else:
 
     _inttypes = (int, long)
     imap = itertools.imap
+    import urlparse
