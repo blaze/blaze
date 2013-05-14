@@ -115,10 +115,11 @@ def get_signature(typetuple):
     return process_signature(sig)
 
 def convert_kernel(value, key=None):
+    from llvm.core import FunctionType
     if isinstance(value, tuple):
-        if len(value) == 2 and isinstance(value[0], types.FunctionType) and \
-                 isinstance(value[1], _strtypes):
-                krnl = BlazeElementKernel.frompyfunc(value[0], value[1])
+        if len(value) == 2 and isinstance(value[1], types.FunctionType) and \
+                 isinstance(value[0], _strtypes):
+                krnl = BlazeElementKernel.frompyfunc(value[1], value[0])
         else:
             raise TypeError("Cannot parse kernel specification %s" % value)
     elif isinstance(value, types.FunctionType):
@@ -126,6 +127,10 @@ def convert_kernel(value, key=None):
         signature = '{0}({1})'.format(str(to_numba(key[-1])), args)
         krnl = BlazeElementKernel.frompyfunc(value, signature)
         krnl.dshapes = key
+    elif isinstance(value, FunctionType):
+        krnl = BlazeElementKernel(value)
+        if key is not None:
+            krnl.dhapes = key
     return krnl
 
 # Process type-table dictionary which maps a signature list with
@@ -180,14 +185,21 @@ class BlazeFunc(object):
         tuple of types has Input types first with the Output Type last
 
         Arguments
-        =========
-        ranksignature : ['name1,M', 'M,name3', 'L']
-                        a list of comma-separated strings where names indicate
-                        unique sizes.  The last argument is the rank-signature
-                        of the output.  An empty-string or None means a scalar.
+        =========    
+        name  :  String name of the Blaze Function
 
         typetable :  dictionary mapping argument types to an implementation
-                     kernel which is an instance of a BlazeScalarKernel object
+                     kernel which is an instance of a BlazeElementKernel object
+
+                     The kernel may also be several other objects which will 
+                     be converted to the BlazeElementKernel: 
+                        python-function:  converted via numba
+                        blir-string:      converted via blir
+                        llvm-function:    directly wrapped
+                        ctypes-function:  wrapped via an llvm function call 
+
+                    This may also be a list of tuples which will be interpreted as 
+                    a dict with the first-argument first converted to dshape depending 
 
         inouts : list of integers corresponding to arguments which are
                   input and output arguments (NotImplemented)
