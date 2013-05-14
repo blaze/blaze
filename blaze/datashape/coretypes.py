@@ -137,6 +137,17 @@ class IntegerConstant(Mono):
     def __str__(self):
         return str(self.val)
 
+    def __eq__(self, other):
+        if isinstance(other, _inttypes):
+            return self.val == other
+        elif isinstance(other, IntegerConstant):
+            return self.val == other.val
+        else:
+            raise TypeError(_invalid_compare(self, other))
+
+    def __hash__(self):
+        return hash(self.val)
+
 class StringConstant(Mono):
     """
     Strings at the level of the constructor.
@@ -152,6 +163,17 @@ class StringConstant(Mono):
 
     def __str__(self):
         return repr(self.val)
+
+    def __eq__(self, other):
+        if isinstance(other, _strtypes):
+            return self.val == other
+        elif isinstance(other, StringConstant):
+            return self.val == other.val
+        else:
+            raise TypeError(_invalid_compare(self, other))
+
+    def __hash__(self):
+        return hash(self.val)
 
 class Dynamic(Mono):
     """
@@ -394,7 +416,7 @@ class DataShape(Mono):
         for val in self:
             if isinstance(val, Wild):
                 raise TypeError, "Data-shape with 'Wildcard' is unhashable"
-        return hash(hash(a) for a in self)        
+        return hash(tuple(a for a in self))
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -463,6 +485,14 @@ class Atom(DataShape):
 
     def __repr__(self):
         return str(self)
+
+    def __eq__(self, other):
+        raise NotImplementedError
+
+    # Inherits __ne__ from DataShape which is just not __eq__
+
+    def __hash__(self):
+        raise NotImplementedError
 
 #------------------------------------------------------------------------
 # CType
@@ -537,6 +567,9 @@ class CType(Mono):
         else:
             return False
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
         return hash(self.name)
 
@@ -605,6 +638,10 @@ class Fixed(Atom):
     def __str__(self):
         return str(self.val)
 
+
+def _invalid_compare(obj1, obj2):
+    return "Cannot compare type %s to type %s" % (type(obj1), type(obj2))
+
 #------------------------------------------------------------------------
 # Variable
 #------------------------------------------------------------------------
@@ -625,6 +662,17 @@ class TypeVar(Atom):
         # Use the F# notation
         return str(self.symbol)
         # return "'" + str(self.symbol)
+
+    # All TypeVariables compare equal
+    # dshape('M,int32') = dshape('N,int32')
+    def __eq__(self, other):
+        if not isinstance(other, TypeVar):
+            return False
+        else:
+            return True
+
+    def __hash__(self):
+        return hash(self.__class__)
 
 class Range(Atom):
     """
@@ -682,12 +730,22 @@ class Range(Atom):
         else:
             return self.a
 
+    def __eq__(self, other):
+        if not isinstance(other, Range):
+            raise TypeError(_invalid_compare(self, other))
+        else:
+            return self.a == other.a and self.b == other.b
+
+    def __hash__(self):
+        return hash((self.a, self.b))
+
     def __str__(self):
         return expr_string('Range', [self.lower, self.upper])
 
 #------------------------------------------------------------------------
 # Aggregate
 #------------------------------------------------------------------------
+
 
 class Either(Atom):
     """
@@ -700,6 +758,15 @@ class Either(Atom):
         self.a = a
         self.b = b
         self.parameters = (a,b)
+
+    def __eq__(self, other):
+        if not isinstance(other, Either):
+            raise TypeError(_invalid_compare(self, other))
+        else:
+            return self.a == other.a and self.b == other.b
+
+    def __hash__(self):
+        return hash((self.a, self.b))
 
 class Option(Atom):
     """
