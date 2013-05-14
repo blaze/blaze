@@ -10,6 +10,7 @@ from os.path import join
 
 from distutils.core import Command, setup
 from distutils.sysconfig import get_python_inc, get_config_var
+from distutils.command.install_data import install_data
 
 #------------------------------------------------------------------------
 # Top Level Packages
@@ -238,6 +239,16 @@ class CleanCommand(Command):
                 pass
 
 #------------------------------------------------------------------------
+# Parser
+#------------------------------------------------------------------------
+
+class BuildParser(install_data):
+    """ Build the parse tables for datashape """
+    def run(self):
+        from blaze.datashape.parser import rebuild
+        rebuild()
+
+#------------------------------------------------------------------------
 # Setup
 #------------------------------------------------------------------------
 
@@ -270,6 +281,7 @@ setup(
     cmdclass = {
         'build_ext' : build_ext,
         'clean'     : CleanCommand,
+        'parser'    : BuildParser,
     },
     scripts=['bin/blirc'],
 )

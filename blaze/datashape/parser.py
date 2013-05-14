@@ -58,13 +58,7 @@ from functools import partial
 from collections import namedtuple
 from . import coretypes as T
 
-try:
-    from . import dlex
-    from . import dyacc
-    DEBUG = False
-except:
-    DEBUG = True
-
+from ply import lex, yacc
 from blaze.plyhacks import yaccfrom, lexfrom
 from blaze.error import CustomSyntaxError
 
@@ -399,35 +393,36 @@ def debug_parse(data, lexer, parser):
     log = logging.getLogger()
     return parser.parse(data, debug=log)
 
-def load_parser(debug=False):
-    if debug:
-        from ply import lex, yacc
-        # Must be abspath instead of relpath because
-        # of Windows multi-rooted filesystem.
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
-        lexer = lex.lex(lextab="dlex", outputdir=dir_path, optimize=1)
-        parser = yacc.yacc(tabmodule='dyacc',outputdir=dir_path,
-                write_tables=1, debug=0, optimize=1)
-        return partial(debug_parse, lexer=lexer, parser=parser)
-    else:
-        module = sys.modules[__name__]
-        lexer = lexfrom(module, dlex)
-        parser = yaccfrom(module, dyacc, lexer)
-
-        # curry the lexer into the parser
-        return partial(parser.parse, lexer=lexer)
-
 #------------------------------------------------------------------------
 # Toplevel
 #------------------------------------------------------------------------
 
+def rebuild():
+    """ Rebuild the parser and lexer tables. """
+    path = os.path.relpath(__file__)
+    output = os.path.dirname(path)
+    module = sys.modules[__name__]
+
+    lex.lex(module=module, lextab="dlex", outputdir=output, debug=0, optimize=1)
+    yacc.yacc(tabmodule='dyacc',outputdir=output, write_tables=1, debug=0, optimize=1)
+
+    sys.stdout.write("Parse and lexer tables rebuilt.\n")
+
+def _parse(source):
+    try:
+        from . import dlex
+        from . import dyacc
+    except ImportError:
+        raise RuntimeError("Parse tables not built, run install script.")
+
+    module = sys.modules[__name__]
+    lexer  = lexfrom(module, dlex)
+    parser = yaccfrom(module, dyacc, lexer)
+
+    return parser.parse(source, lexer=lexer)
+
 def parse(pattern):
-    # NOTE: If you change the lexer/parser, you should
-    #       run with load_parser(True)
-    #       to trigger a re-creation of the parser.
-    parser = load_parser(False)
-    ds = parser(pattern)
+    ds = _parse(pattern)
 
     # Just take the type from "type X = Y" statements
     if isinstance(ds, tydecl):
@@ -443,22 +438,22 @@ def parse(pattern):
     return ds
 
 def parse_extern(pattern):
-    parser = load_parser()
-    res = parser(pattern)
+    res = parse(pattern)
 
     ds = build_ds_extern(res)
     return ds
 
 if __name__ == '__main__':
     import readline
-    parser = load_parser()
+    # build the parse tablr
+    rebuild()
+
     readline.parse_and_bind('')
 
     while True:
         try:
             line = raw_input('>> ')
-            ast = parser(line)
+            ast = parse(line)
             print(ast)
-            #print(build_ds(ast))
         except EOFError:
             break
