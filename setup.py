@@ -23,6 +23,8 @@ packages = [
     'blaze.blz',
     'blaze.blz.tests',
     'blaze.cgen',
+    'blaze.ckernel',
+    'blaze.ckernel.tests',
     'blaze.datadescriptor',
     'blaze.datadescriptor.tests',
     'blaze.datashape',
