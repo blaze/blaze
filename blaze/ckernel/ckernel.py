@@ -1,7 +1,20 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+__all__ = ['KernelDataPrefix', 'UnarySingleOperation', 'UnaryStridedOperation',
+        'ExprSingleOperation', 'ExprStridedOperation', 'BinarySinglePredicate',
+        'DynamicKernelInstance', 'DynamicKernelInstanceP', 'CKernel']
+
+import sys
 import ctypes
+
+if sys.version_info >= (2, 7):
+    c_ssize_t = ctypes.c_ssize_t
+else:
+    if ctypes.sizeof(ctypes.c_void_p) == 4:
+        c_ssize_t = ctypes.c_int32
+    else:
+        c_ssize_t = ctypes.c_int64
 
 class KernelDataPrefix(ctypes.Structure):
     pass
@@ -15,30 +28,30 @@ KernelDataPrefix._fields_ = [("function", ctypes.c_void_p),
 UnarySingleOperation = ctypes.CFUNCTYPE(None,
                 ctypes.c_void_p,                  # dst
                 ctypes.c_void_p,                  # src
-                KernelDataPrefixP)               # extra
+                KernelDataPrefixP)                # extra
 UnaryStridedOperation = ctypes.CFUNCTYPE(None,
-                ctypes.c_void_p, ctypes.c_ssize_t, # dst, dst_stride
-                ctypes.c_void_p, ctypes.c_ssize_t, # src, src_stride
-                ctypes.c_ssize_t,                  # count
+                ctypes.c_void_p, c_ssize_t,      # dst, dst_stride
+                ctypes.c_void_p, c_ssize_t,      # src, src_stride
+                c_ssize_t,                       # count
                 KernelDataPrefixP)               # extra
 
 # Expr operations (array of src operands, how many operands is baked in)
 ExprSingleOperation = ctypes.CFUNCTYPE(None,
                 ctypes.c_void_p,                  # dst
                 ctypes.POINTER(ctypes.c_void_p),  # src
-                KernelDataPrefixP)               # extra
+                KernelDataPrefixP)                # extra
 ExprStridedOperation = ctypes.CFUNCTYPE(None,
-                ctypes.c_void_p, ctypes.c_ssize_t, # dst, dst_stride
+                ctypes.c_void_p, c_ssize_t,        # dst, dst_stride
                 ctypes.POINTER(ctypes.c_void_p),
-                        ctypes.POINTER(ctypes.c_ssize_t), # src, src_stride
-                ctypes.c_ssize_t,                  # count
-                KernelDataPrefixP)               # extra
+                        ctypes.POINTER(c_ssize_t), # src, src_stride
+                c_ssize_t,                         # count
+                KernelDataPrefixP)                 # extra
 
 # Predicates
 BinarySinglePredicate = ctypes.CFUNCTYPE(ctypes.c_int, # boolean result
                 ctypes.c_void_p,                  # src0
                 ctypes.c_void_p,                  # src1
-                KernelDataPrefixP)               # extra
+                KernelDataPrefixP)                # extra
 
 class DynamicKernelInstance(ctypes.Structure):
     _fields_ = [('kernel', KernelDataPrefixP),
