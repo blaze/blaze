@@ -157,8 +157,7 @@ def ones(dshape, caps={'efficient-write': True}):
 
 # Persistent constructors:
 def create(uri, dshape, caps={'efficient-append': True}):
-    dshape = (dshape if not isinstance(dshape, basestring)
-          else _dshape_builder(dshape))
+    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
     # Only BLZ supports efficient appends right now
     dt = to_dtype(dshape)
     uri = urlparse(uri)
