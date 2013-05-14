@@ -16,6 +16,7 @@ from .datadescriptor import (IDataDescriptor,
 from .datashape import dshape, to_numpy
 
 import numpy as np
+import inspect
 from . import blz
 
 # note that this is rather naive. In fact, a proper way to implement
@@ -58,18 +59,37 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         dd = NumPyDataDescriptor(obj)
     elif isinstance(obj, blz.barray):
         dd = BLZDataDescriptor(obj)
+    elif inspect.isgenerator(obj):
+        return _fromiter(obj, dshape, caps)
     elif 'efficient-write' in caps:
         dt = None if dshape is None else dshape.to_dtype()
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.array(obj, dtype=dt))
     elif 'compress' in caps:
+        dt = None if dshape is None else dshape.to_dtype()
         # BLZ provides compression
-        dd = BLZDataDescriptor(blz.barray(obj))
+        dd = BLZDataDescriptor(blz.barray(obj, dtype=dt))
     else:
         raise TypeError(('Failed to construct blaze array from '
                         'object of type %r') % type(obj))
     return Array(dd)
 
+
+# XXX This should probably be made public because the `count` param
+# for BLZ is very important for getting good performance.
+def _fromiter(gen, dshape, caps):
+    """Create an array out of an iterator."""
+
+    if 'efficient-write' in caps:
+        dt = None if dshape is None else dshape.to_dtype()
+        # NumPy provides efficient writes
+        dd = NumPyDataDescriptor(np.fromiter(gen, dtype=dt))
+    elif 'compress' in caps:
+        dt = None if dshape is None else dshape.to_dtype()
+        # BLZ provides compression
+        dd = BLZDataDescriptor(blz.fromiter(gen, dtype=dt, count=-1))
+    return Array(dd)
+    
 
 def zeros(ds):
     """Create an array and fill it with zeros
