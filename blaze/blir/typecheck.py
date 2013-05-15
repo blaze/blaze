@@ -9,50 +9,54 @@ from syntax import *
 from errors import error
 
 from ast import AST, NodeVisitor
-from collections import defaultdict
+from collections import defaultdict, deque
 
 #------------------------------------------------------------------------
 # Symbol Table
 #------------------------------------------------------------------------
 
-GLOBAL = 0
+class Scope(object):
 
-class SymbolTable(object):
+    def __contains__(self, name):
+        try:
+            self.lookup(name)
+            return True
+        except:
+            return False
 
-    def __init__(self):
-        self._locals = defaultdict(dict)
-        self._globals = {}
+    def __repr__(self):
+        return "<%s: %s>" % (self.__class__.__name__, self.name)
 
-    def is_global(self, symbol):
-        return symbol in self._globals
+class ModuleScope(Scope):
 
-    def is_local(self, symbol):
-        return any(symbol in scope for scope in self._locals)
+    def __init__(self, name):
+        self.name = name
+        self.locals = {}
 
-    def extend(self, scope, name, node):
-        if scope == GLOBAL:
-            self._globals[name] = node
+    def lookup(self, name):
+        return self.locals[name]
+
+    def extend(self, name, node):
+        self.locals[name] = node
+
+class FunctionScope(Scope):
+
+    def __init__(self, name, parents):
+        self.name = name
+        self.locals = {}
+        self.parents = list(parents)
+
+    def lookup(self, name):
+        if name in self.locals:
+            return self.locals[name]
         else:
-            if name in self._locals[scope]:
-                otherdef = self._locals[scope][name]
+            for parent in self.parents:
+                if name in parent:
+                    return parent.lookup(name)
+            raise KeyError(name)
 
-                # If we're dealing with an AST propogate error
-                if isinstance(node, AST):
-                    error(node.lineno,
-                        "%s already defined. Previous definition on line %s"
-                        % (name, getattr(otherdef, "lineno", "<unknown>"))
-                    )
-            else:
-                self._locals[scope][name] = node
-
-    def visible(self, symbol, scope):
-        return self.lookup(symbol, scope) is not None
-
-    def lookup(self, symbol, scope=None):
-        if scope == GLOBAL:
-            return self._globals.get(symbol)
-        else:
-            return self._globals.get(symbol) or self._locals[scope].get(symbol)
+    def extend(self, name, node):
+        self.locals[name] = node
 
 #------------------------------------------------------------------------
 # Type Checker
@@ -61,26 +65,23 @@ class SymbolTable(object):
 class TypeChecker(NodeVisitor):
 
     def __init__(self, typesystem):
-        self.symtab = SymbolTable()
+        self.typesystem = typesystem
         self.can_declare = True
         self.has_return = False
-        self.typesystem = typesystem
 
         # mutated by visits
-        self._current_scope = GLOBAL
+        self.globals = ModuleScope([])
+        self._scope = deque([self.globals])
 
         # references to type names
         for ty in typesystem.__all__:
             typ = getattr(typesystem, ty)
-            self.symtab.extend(GLOBAL, typ.name, typ)
+            self.scope.extend(typ.name, typ)
             #ty.is_global = True
 
     @property
     def scope(self):
-        if self._current_scope == GLOBAL:
-            return GLOBAL
-        else:
-            return self._current_scope.sig.name
+        return self._scope[-1]
 
     def visit_Module(self, node):
         self.visit(node.body)
@@ -121,7 +122,10 @@ class TypeChecker(NodeVisitor):
             node.type = node.left.type
 
     def visit_FunctionCall(self, node):
-        symnode = self.symtab.lookup(node.name, self.scope)
+        try:
+            symnode = self.scope.lookup(node.name)
+        except KeyError:
+            symnode = None
 
         # call to an intrinsics
         if node.name in intrinsics.llvm_intrinsics:
@@ -177,7 +181,7 @@ class TypeChecker(NodeVisitor):
             error(node.lineno, "Type Error: '%s' initializer element is not a constant" % node.name)
         else:
             node.type = node.expr.type
-            self.symtab.extend(GLOBAL, node.name, node)
+            self.scope.extend(node.name, node)
             node.is_global = True
 
     def visit_VarDecl(self, node):
@@ -201,7 +205,7 @@ class TypeChecker(NodeVisitor):
             node.expr = Const(node.type.zero)
             node.expr.type = node.type
 
-        self.symtab.extend(self.scope, node.name, node)
+        self.scope.extend(node.name, node)
         node.is_global = False
 
     def visit_ParmDeclaration(self, node):
@@ -218,7 +222,7 @@ class TypeChecker(NodeVisitor):
             self.visit(param)
         self.visit(node.typename)
         node.type = node.typename.type
-        self.symtab.extend(GLOBAL, node.name, node)
+        self.scope.extend(node.name, node)
 
     def visit_ParamType(self, node):
         self.visit(node.cons)
@@ -227,7 +231,7 @@ class TypeChecker(NodeVisitor):
         node.type = btypes.TParam(node.cons, node.arg)
 
     def visit_Type(self, node):
-        ty = self.symtab.lookup(node.name, self.scope)
+        ty = self.scope.lookup(node.name)
         if ty:
             if isinstance(ty, btypes.Type):
                 node.type = ty
@@ -241,7 +245,7 @@ class TypeChecker(NodeVisitor):
     #------------------------------------------------------------------------
 
     def visit_LoadVariable(self, node):
-        sym = self.symtab.lookup(node.name, self.scope)
+        sym = self.scope.lookup(node.name)
         if sym:
             if isinstance(sym, (ConstDecl, VarDecl, ParmDeclaration)):
                 node.type = sym.type
@@ -256,7 +260,7 @@ class TypeChecker(NodeVisitor):
         node.sym = sym
 
     def visit_StoreVariable(self, node):
-        sym = self.symtab.lookup(node.name, self.scope)
+        sym = self.scope.lookup(node.name)
 
         if sym:
             if isinstance(sym, (VarDecl, ParmDeclaration)):
@@ -277,7 +281,7 @@ class TypeChecker(NodeVisitor):
     def visit_LoadIndex(self, node):
         # XXX: need to assert a lot of things about the index
         # types in the typecheck phase, bounds checking
-        sym = self.symtab.lookup(node.name, self.scope)
+        sym = self.scope.lookup(node.name)
         self.visit(node.indexer)
 
         if sym is not None:
@@ -293,7 +297,7 @@ class TypeChecker(NodeVisitor):
             node.type = btypes.undefined
 
     def visit_StoreIndex(self, node):
-        sym = self.symtab.lookup(node.name, self.scope)
+        sym = self.scope.lookup(node.name)
         self.visit(node.indexer)
 
         if sym:
@@ -371,7 +375,7 @@ class TypeChecker(NodeVisitor):
         self.can_declare = False
 
         self.visit(node.iter)
-        if self.scope is GLOBAL:
+        if self.scope is self.globals:
             error(node.lineno, "Syntax Error: for loop outside of function")
         else:
             self.visit(node.body)
@@ -379,32 +383,34 @@ class TypeChecker(NodeVisitor):
         self.can_declare = True
 
     def visit_ReturnStatement(self, node):
-        if self.scope is GLOBAL:
+        if self.scope is self.globals:
             error(node.lineno, "Syntax Error: return outside function")
         else:
             self.visit(node.expr)
-            fn = self._current_scope
+            #fn = self._current_scope
 
-            if node.expr.type != fn.sig.type:
-                error(node.lineno, "Type Error: Value returned does match function signature  %s != %s" % (
-                        node.expr.type.name, fn.sig.type.name))
+            #if node.expr.type != fn.sig.type:
+                #error(node.lineno, "Type Error: Value returned does match function signature  %s != %s" % (
+                        #node.expr.type.name, fn.sig.type.name))
             self.has_return = True
 
     #------------------------------------------------------------------------
 
     def visit_FunctionDef(self, node):
-        if self.scope is not GLOBAL:
+        if self.scope is not self.globals:
             error(node.lineno, "Syntax Error: Cannot define functions within function.")
         else:
             self.visit(node.sig)
-            self._current_scope = node
+            fn_scope = FunctionScope(node.sig.name, list(self._scope))
+
+            self._scope.append(fn_scope)
             self.has_return = False
 
             for parm in node.sig.parameters:
-                self.symtab.extend(self.scope, parm.name, parm)
+                self.scope.extend(parm.name, parm)
 
             self.visit(node.statements)
-            self._current_scope = GLOBAL
+            self._scope.pop()
 
             if (not self.has_return) and (not node.sig.type == btypes.void_type):
                 error(node.lineno, "Syntax Error: Control reaches end of non-void function '%s'" % node.sig.name)
@@ -416,27 +422,4 @@ class TypeChecker(NodeVisitor):
 def typecheck(node, typesystem):
     checker = TypeChecker(typesystem)
     checker.visit(node)
-    return checker.symtab
-
-#------------------------------------------------------------------------
-# --ddump-tc
-#------------------------------------------------------------------------
-
-def ddump_tc(source, verbose=False):
-    import sys
-    import parser
-    import errors
-    import pprint
-
-    with errors.listen():
-        ast = parser.parse(source)
-        symtab = typecheck(ast, verbose)
-
-    if errors.occurred():
-        sys.stdout.write("Not well-typed!\n")
-    else:
-        print('Locals'.center(80, '='))
-        sys.stdout.write(pprint.pformat(symtab._locals.items()) + '\n')
-        print('Globals'.center(80, '='))
-        sys.stdout.write(pprint.pformat(symtab._globals) + '\n')
-        sys.stdout.write("Well-typed!\n")
+    return checker.scope
