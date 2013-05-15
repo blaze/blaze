@@ -11,7 +11,7 @@ from .datashape import dshape
 from .datadescriptor import (IDataDescriptor,
                 NumPyDataDescriptor,
                 BLZDataDescriptor)
-from ._printing import array2string
+from ._printing import array2string as _printer
 
 # An Array contains:
 #   DataDescriptor
@@ -37,7 +37,14 @@ class Array(object):
         return self._data.dshape[0]
 
     def __str__(self):
-        return array2string(self._data)
+        return _printer(self._data)
+
+    def __repr__(self):
+        pre = 'array('
+        post =  ',\n' + ' '*len(pre) + "dshape='" + str(self.dshape) + "'" + ')'
+        return pre + _printer(self._data, 
+                              separator=', ',
+                              prefix=' '*len(pre)) + post
 
     def __init__(self, data, axes=None, labels=None, user={}):
         if not isinstance(data, IDataDescriptor):
