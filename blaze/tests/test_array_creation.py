@@ -42,13 +42,13 @@ class TestEphemeral(unittest.TestCase):
         # A default array (backed by NumPy)
         a = blaze.array((i for i in range(10)))
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), range(10))
+        self.assertEqual(dd_as_py(a._data), list(range(10)))
 
     def test_create_compress_iter(self):
         # A compressed array (backed by BLZ)
         a = blaze.array((i for i in range(10)), caps={'compress': True})
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), range(10))
+        self.assertEqual(dd_as_py(a._data), list(range(10)))
 
     def test_create_zeros(self):
         # A default array (backed by NumPy)
@@ -88,7 +88,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         a = blaze.create(self.rooturi, 'float64')
         self.assert_(isinstance(a, blaze.Array))
         a.append(range(10))
-        self.assertEqual(dd_as_py(a._data), range(10))
+        self.assertEqual(dd_as_py(a._data), list(range(10)))
 
     def test_open(self):
         a = blaze.create(self.rooturi, 'float64')
@@ -96,7 +96,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         # Re-open the dataset in URI
         a2 = blaze.open(self.rooturi)
         self.assert_(isinstance(a2, blaze.Array))
-        self.assertEqual(dd_as_py(a2._data), range(10))
+        self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
 
 if __name__ == '__main__':
