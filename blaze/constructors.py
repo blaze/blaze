@@ -153,6 +153,12 @@ def ones(dshape, caps={'efficient-write': True}):
         dd = BLZDataDescriptor(blz.ones(*to_numpy(dshape)))
     return Array(dd)
 
+# XXX A big hack for some quirks in current datashape. The next deals
+# with the cases where the shape is not present like in 'float32'
+def _to_numpy(ds):
+    res = to_numpy(ds)
+    res = res if type(res) is tuple else ((), to_dtype(ds))
+    return res
 
 # Persistent constructors:
 def create(uri, dshape, caps={'efficient-append': True}):
@@ -184,17 +190,18 @@ def create(uri, dshape, caps={'efficient-append': True}):
     """
     dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
     # Only BLZ supports efficient appends right now
-    dt = to_dtype(dshape)
+    shape, dt = _to_numpy(dshape)
+    shape = (0,) + shape  # the leading dimension will be 0
     uri = urlparse.urlparse(uri)
     path = uri.netloc + uri.path
     if 'efficient-append' in caps:
-        dd = BLZDataDescriptor(blz.barray([], dtype=dt, rootdir=path))
+        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt, rootdir=path))
     elif 'efficient-write' in caps:
         raise ValueError('efficient-write objects not supported for '
                          'persistence')
     else:
         # BLZ will be the default
-        dd = BLZDataDescriptor(blz.barray([], dtype=dt, rootdir=path))
+        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt, rootdir=path))
     return Array(dd)
 
 

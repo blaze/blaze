@@ -80,15 +80,24 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
     uri = True
 
     def test_create(self):
-        a = blaze.create(self.rooturi, 'float64')
+        a = blaze.create(self.rooturi, '1, float64')
         self.assert_(isinstance(a, blaze.Array))
+        self.assert_(a.dshape.shape == (0,1))
         self.assertEqual(dd_as_py(a._data), [])
 
     def test_append(self):
         a = blaze.create(self.rooturi, 'float64')
         self.assert_(isinstance(a, blaze.Array))
-        a.append(range(10))
+        a.append(list(range(10)))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
+
+    # Using a 1-dim as internal dimensions
+    def test_append2(self):
+        a = blaze.create(self.rooturi, '2, float64')
+        self.assert_(isinstance(a, blaze.Array))
+        lvals = [[i,i*2] for i in range(10)]
+        a.append(lvals)
+        self.assertEqual(dd_as_py(a._data), lvals)
 
     def test_open(self):
         a = blaze.create(self.rooturi, 'float64')
