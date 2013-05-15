@@ -180,9 +180,9 @@ def execute(ctx, args=None, fname=None, timing=False):
     elif len(lfn.argtypes) == len(args):
         res = lfn(*largs)
     else:
-        print('Invalid number of arguments to main function.')
+        print 'Invalid number of arguments to main function.'
 
     if timing:
-        print('Time %.6f' % (time.time() - start))
+        print 'Time %.6f' % (time.time() - start)
 
     return res

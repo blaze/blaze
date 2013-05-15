@@ -1,4 +1,5 @@
 import sys
+import logging
 from contextlib import contextmanager
 
 _listeners = []
@@ -23,6 +24,9 @@ def error(lineno, message, filename=None):
 def _default_handler(msg):
     sys.stderr.write(msg+"\n")
     return None
+
+def logger(msg):
+    return logging.error(msg+"\n")
 
 def reset():
     global _count

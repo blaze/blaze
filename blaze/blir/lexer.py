@@ -11,7 +11,7 @@ tokens = [
  'RPAREN', 'SEMI', 'SHL', 'SHR', 'STRING', 'TIMES', 'TRUE', 'VAR', 'WHILE'
 ]
 
-reserved = set([
+reserved = {
     'False',
     'True',
     # --
@@ -27,7 +27,7 @@ reserved = set([
     'return',
     'var',
     'while'
-])
+}
 
 _escapes_re = r'(\\b[0-9a-fA-F]{2})|(\\.)'
 _escape_map = {
@@ -129,7 +129,7 @@ def escape_token(m):
     if escape_code in _escape_map:
         return _escape_map[escape_code]
     else:
-        raise Unescaped(escape_code)
+        raise Unescaped, escape_code
 
 def _escape_token(t):
     try:

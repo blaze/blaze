@@ -16,7 +16,7 @@ class BlazeMagics(Magics):
 
     @staticmethod
     def err_redirect(msg):
-        print(msg)
+        print msg
 
     @cell_magic
     def blir(self, line, cell):
@@ -28,10 +28,10 @@ class BlazeMagics(Magics):
                 ast, env = compile(str(cell))
             llvm = env['cgen'].module
 
-            print(' LLVM '.center(80, '='))
-            print(str(llvm))
+            print ' LLVM '.center(80, '=')
+            print str(llvm)
         except CompileError as e:
-            print('FAIL: Failure in compiler phase:', e.args[0])
+            print 'FAIL: Failure in compiler phase:', e.args[0]
 
 def load_ipython_extension(ip):
     global _loaded

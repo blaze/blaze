@@ -128,12 +128,6 @@ def optimizer_pass(ast, env):
 
     return ast, env
 
-# ------------------------------
-
-@ppass("Linker")
-def linker_pass(ast, env):
-    return ast, env
-
 #------------------------------------------------------------------------
 # Pipeline Structure
 #------------------------------------------------------------------------
@@ -146,7 +140,6 @@ frontend = Pipeline('frontend', [parse_pass,
 backend = Pipeline('backend', [ssa_pass,
                                codegen_pass,
                                optimizer_pass,
-                               linker_pass,
                                ])
 
 compiler = Pipeline('compile', [frontend,
@@ -174,9 +167,12 @@ def compile(source, **opts):
          * 'noprelude' : Don't link against the prelude.
 
     """
+    if len(source) == '':
+        raise ValueError("Empty source string")
+
     opts.setdefault('O', 2)
     env = {'args': opts}
-    with compilelock:
+    with compilelock, errors.listen(errors.logger):
         ast, env = compiler(source, env)
     return ast, env
 
@@ -217,9 +213,6 @@ def main():
 
     if args.ddump_optimizer:
         codegen.ddump_optimizer(source)
-
-    if args.ddump_tc:
-        typecheck.ddump_tc(source)
 
     try:
         # =====================================

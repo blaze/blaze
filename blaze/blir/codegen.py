@@ -23,6 +23,8 @@ bool_type  = lc.Type.int(1)
 void_type  = lc.Type.void()
 char_type  = lc.Type.int(8)
 
+vec_type = lambda width, elt_type: Type.vector(elt_type, width)
+
 pointer = Type.pointer
 
 any_type = pointer(Type.int(ptrsize))
@@ -66,11 +68,23 @@ ptypemap = {
     'blaze' : blaze_type,
 }
 
+_cache = {}
+
 def arg_typemap(ty):
     if isinstance(ty, btypes.TParam):
         cons = ptypemap[ty.cons.name]
         args = typemap[ty.arg.name]
-        return pointer(cons(args))
+
+        # llvm doesn't do structural typing, so only create one
+        # instance of the parameterized type, ie. array[int],
+        # array[float]
+        if (cons, args) in _cache:
+            ty = _cache[(cons, args)]
+        else:
+            ty = pointer(cons(args))
+            _cache[(cons, args)] = ty
+        return ty
+
     elif isinstance(ty, btypes.Type):
         return typemap[ty.name]
     else:
@@ -668,7 +682,7 @@ class LLVMOptimizer(object):
 
     def __init__(self, module, opt_level=3):
         tc = le.TargetMachine.new(features='', cm=le.CM_JITDEFAULT)
-        self.pm, self.fpm = lp.build_pass_managers(tc, loop_vectorize=False,
+        self.pm, self.fpm = lp.build_pass_managers(tc, loop_vectorize=True,
                 vectorize=False, fpm=False, mod=module, opt=opt_level)
         self.module = module
 
@@ -685,7 +699,7 @@ class LLVMOptimizer(object):
 
         diff = d.compare(before.splitlines(), after.splitlines())
         for line in diff:
-            print(line)
+            print line
 
 #------------------------------------------------------------------------
 
@@ -697,11 +711,11 @@ def ddump_optimizer(source):
 
     with errors.listen():
         ast       = parser.parse(source)
-        symtab    = typecheck.typecheck(ast)
+        symtab    = typecheck.typecheck(ast, btypes)
         functions = cfg.ssa_pass(ast)
         cgen      = codegen.LLVMEmitter(symtab)
         blockgen  = codegen.BlockEmitter(cgen)
         optimizer = codegen.LLVMOptimizer(cgen.module)
 
-        print('Optimizer Diff'.center(80, '='))
+        print 'Optimizer Diff'.center(80, '=')
         optimizer.diff()
