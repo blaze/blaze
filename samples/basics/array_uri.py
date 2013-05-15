@@ -101,7 +101,7 @@ print(created_array.dshape)
 print(created_array)
 
 def fib(n):
-    a, b = 1, 1
+    a, b = 0, 1
     while n != 0:
         yield a
         a, b = b, a+b
