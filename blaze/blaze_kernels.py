@@ -357,9 +357,7 @@ def insert_instructions(node, builder):
     is_scalar = (kernel.kinds[-1] == SCALAR)
     #allocate space for output if necessary
     if not is_scalar:
-        # FIXME
-        print("Adding alloc %s" % kernel.argtypes[-1])
-        output = builder.alloca(kernel.argtypes[-1])
+        output = builder.alloca(kernel.argtypes[-1].pointee)
 
     #Setup the argument list
     args = [child.llvm_obj for child in node.children]
@@ -368,7 +366,7 @@ def insert_instructions(node, builder):
         args.append(output)
 
     #call the kernel corresponding to this node
-    res = builder.call(kernel.func, args, name=node.name)
+    res = builder.call(kernel.func, args)
 
     if is_scalar:
         node.llvm_obj = res
