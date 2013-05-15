@@ -12,10 +12,11 @@ def _mul(a,b):
 add = BlazeFunc('add',[('f8(f8,f8)', _add),
                        ('c16(c16,c16)', _add)])
 
-mul = BlazeFunc('mul', {(double,)*3: _mul})
+mul = BlazeFunc('mul', {(double,)*3: _mul,
+                        (c128,)*3: _mul})
 
-a = blaze.array([1,2,3],dshape=double)
-b = blaze.array([2,3,4],dshape=double)
+a = blaze.array([1,2,3],dshape=c128)
+b = blaze.array([2,3,4],dshape=c128)
 
 c = add(a,b)
 d = mul(c,c)

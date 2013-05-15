@@ -136,6 +136,8 @@ def convert_kernel(value, key=None):
 # Process type-table dictionary which maps a signature list with
 #   (input-type1, input-type2, output_type) to a kernel into a
 #   lookup-table dictionary which maps a input-only signature list
+#   to a kernel matching those inputs.  The output 
+#   is placed 
 #   with a tuple of the output-type plus the signature
 # So far it assumes the types all have the same rank
 #   and deduces the signature from the first kernel found
@@ -145,7 +147,7 @@ def process_typetable(typetable):
         for item in typetable:
             krnl = convert_kernel(item)
             in_shapes = krnl.dshapes[:-1]
-            newtable.setdefault(in_shapes,[]).append(krnl)
+            newtable[in_shapes] = krnl
         key = krnl.dshapes
     else:
         for key, value in typetable.items():
@@ -153,7 +155,7 @@ def process_typetable(typetable):
                 value = convert_kernel(value, key)
             value.dshapes = key
             in_shapes = value.dshapes[:-1]
-            newtable.setdefault(in_shapes,[]).append(value)
+            newtable[in_shapes] = value
 
     # FIXME: 
     #   Assumes the same ranklist and connections for all the keys
@@ -232,12 +234,10 @@ class BlazeFunc(object):
 
         # Find the kernel from the dispatch table
         types = tuple(arr._data.dshape.measure for arr in args)
-        kernels = self.dispatch[types]
+        kernel = self.dispatch[types]
 
         # Check rank-signature compatibility and broadcastability of arguments
         outshape = self.compatible(args)
-
-        kernel = kernels[0]
 
         # Construct output dshape
         out_type = kernel.dshapes[-1]
