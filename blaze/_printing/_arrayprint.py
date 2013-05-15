@@ -489,8 +489,6 @@ def array2string(a, max_line_width=None, precision=None,
 
     """
     try:
-        print (a.dshape)
-        print (_to_numpy(a.dshape))
         shape, dtype = _to_numpy(a.dshape)
     except AttributeError:
         raise # not a blaze array
