@@ -33,6 +33,9 @@ class Array(object):
     def __getitem__(self, key):
         return Array(self._data.__getitem__(key))
 
+    def __setitem__(self, key, val):
+        self._data.__setitem__(key, val)
+
     def __len__(self):
         return self._data.dshape[0]
 

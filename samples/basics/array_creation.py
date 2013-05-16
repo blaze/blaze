@@ -3,7 +3,10 @@ from __future__ import print_function
 
 import blaze
 
-def print_section(a_string, spacing=2, underline='='):
+def print_section(a_string, level=0):
+    spacing = 2 if level == 0 else 1
+    underline = ['=', '-', '~', ' '][min(level,3)]
+
     print ('%s%s\n%s' % ('\n'*spacing,
                          a_string,
                          underline*len(a_string)))
@@ -26,13 +29,13 @@ print (b)
 print (b.dshape)
 
 # Arrays can be bi-dimensional
-print_section('going 2d', spacing=1, underline='-')
+print_section('going 2d', level=1)
 c = blaze.array([ [1, 2], [3, 4] ]) 
 print (c)
 print (c.dshape)
 
 # or as many dimensions as you like
-print_section('going 3d', spacing=1, underline='-')
+print_section('going 3d', level=1)
 d = blaze.array([ [ [1, 2], [3, 4] ], [ [5, 6], [7, 8] ] ])
 print (d)
 print (d.dshape)
@@ -76,6 +79,7 @@ print (h)
 
 print_section('Indexing')
 
+print_section('Indexing for read', level=1)
 print ('starting with a 4d array')
 array4d = blaze.ones('10,10,10,10, float32')
 
@@ -89,6 +93,25 @@ describe_array('index once', array4d[3])
 describe_array('index twice', array4d[3,2])
 describe_array('index thrice', array4d[3,2,4])
 describe_array('index four times', array4d[3,2,4,1])
+
+
+print_section('Indexing for write', level=1)
+array4d[3,2,4,1] = 16.0
+
+describe_array('base', array4d)
+describe_array('index once', array4d[3])
+describe_array('index twice', array4d[3,2])
+describe_array('index thrice', array4d[3,2,4])
+describe_array('index four times', array4d[3,2,4,1])
+
+array4d[3,2,1] = 3.0
+
+describe_array('base', array4d)
+describe_array('index once', array4d[3])
+describe_array('index twice', array4d[3,2])
+describe_array('index thrice', array4d[3,2,4])
+describe_array('index four times', array4d[3,2,4,1])
+
 
 del describe_array
 
@@ -109,8 +132,6 @@ maybe_remove(dname)
 p = blaze.create(dname, 'float64')
 # Feed it with some data
 p.append(range(10))
-
-from blaze.datadescriptor import dd_as_py
 
 print('Before re-opening:', p)
 
