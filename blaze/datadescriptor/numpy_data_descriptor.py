@@ -117,6 +117,9 @@ class NumPyDataDescriptor(IDataDescriptor):
         else:
             return NumPyDataDescriptor(self.npyarr[key])
 
+    def __setitem__(self, key, value):
+        self.npyarr.__setitem__(key, value)
+
     def __iter__(self):
         return numpy_descriptor_iter(self.npyarr)
 
