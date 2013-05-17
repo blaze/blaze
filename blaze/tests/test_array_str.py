@@ -1,5 +1,35 @@
+import sys
 import unittest
+import ctypes
 import blaze
+from blaze.datadescriptor import data_descriptor_from_ctypes
+
+try:
+    import dynd
+    from dynd import nd, ndt
+    from blaze.datadescriptor import DyNDDataDescriptor
+except ImportError:
+    dynd = None
+
+if sys.version_info >= (2, 7):
+    from unittest import skipIf
+else:
+    from nose.plugins.skip import SkipTest
+    class skipIf(object):
+        def __init__(self, condition, reason):
+            self.condition = condition
+            self.reason = reason
+
+        def __call__(self, func):
+            if self.condition:
+                from nose.plugins.skip import SkipTest
+                def wrapped(*args, **kwargs):
+                    raise SkipTest("Test %s is skipped because: %s" %
+                                    (func.__name__, self.reason))
+                wrapped.__name__ = func.__name__
+                return wrapped
+            else:
+                return func
 
 class TestArrayStr(unittest.TestCase):
     def test_scalar(self):
@@ -8,5 +38,29 @@ class TestArrayStr(unittest.TestCase):
         self.assertEqual(str(blaze.array(True)), 'True')
         self.assertEqual(str(blaze.array(False)), 'False')
 
+    def test_ctypes_scalar(self):
+        dd = data_descriptor_from_ctypes(ctypes.c_int32(1022))
+        a = blaze.array(dd)
+        self.assertEqual(str(a), '1022')
+
     def test_1d_array(self):
         self.assertEqual(str(blaze.array([1,2,3])), '[1 2 3]')
+
+    def test_ctypes_1d_array(self):
+        cdat = (ctypes.c_int64 * 3)()
+        cdat[0] = 3
+        cdat[1] = 6
+        cdat[2] = 10
+        dd = data_descriptor_from_ctypes(cdat)
+        a = blaze.array(dd)
+        self.assertEqual(str(a), '[ 3  6 10]')
+
+    @skipIf(dynd is None, 'dynd is not installed')
+    def test_ragged_array(self):
+        dd = DyNDDataDescriptor(nd.ndobject([[1,2,3],[4,5]]))
+        a = blaze.array(dd)
+        self.assertEqual(str(a),
+            '[[        1         2         3]\n [        4         5]]')
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

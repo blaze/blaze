@@ -336,7 +336,10 @@ def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
                   prefix="", formatter=None):
 
     shape, dtype = _to_numpy(a.dshape)
-    dim_size = reduce(product, shape, 1)
+    if any([s < 0 for s in shape]):
+        dim_size = -1
+    else:
+        dim_size = reduce(product, shape, 1)
 
     if max_line_width is None:
         max_line_width = _line_width
@@ -587,11 +590,12 @@ class FloatFormat(object):
         self.max_str_len = 0
         try:
             self.fillFormat(data)
-        except (TypeError, NotImplementedError):
-            # if reduce(data) fails, this instance will not be called, just
-            # instantiated in formatdict.
-            print("exception raised in fillFormat")
-            raise
+        except (TypeError, NotImplementedError) as e:
+            # If reduce(data) fails, this instance will not be called, just
+            # instantiated in formatdict. This is failing presently
+            # for dynd types, for example.
+            print("exception raised in fillFormat: %s" % (e))
+            # raise
             pass
 
     def fillFormat(self, data):
@@ -711,7 +715,6 @@ class IntegerFormat(object):
             pass
 
     def __call__(self, x):
-        print('format is %s, value is %s' % (self.format, x))
         if _MININT < x < _MAXINT:
             return self.format % x
         else:
