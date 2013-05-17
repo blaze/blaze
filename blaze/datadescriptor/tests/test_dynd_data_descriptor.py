@@ -103,5 +103,15 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         # raw ints which are pointers
         self.assertTrue(isinstance(ge.read_single((1,2)), _inttypes))
 
+    @skipIf(dynd is None, 'dynd is not installed')
+    def test_var_dim(self):
+        a = nd.ndobject([[1,2,3], [4,5], [6]])
+        dd = DyNDDataDescriptor(a)
+
+        self.assertEqual(dd_as_py(dd), [[1,2,3], [4,5], [6]])
+        self.assertEqual(dd_as_py(dd[0]), [1,2,3])
+        self.assertEqual(dd_as_py(dd[1]), [4,5])
+        self.assertEqual(dd_as_py(dd[2]), [6])
+
 if __name__ == '__main__':
     unittest.main()
