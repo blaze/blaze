@@ -44,8 +44,7 @@ class NumPyElementReader(IElementReader):
         # Make it C-contiguous and in native byte order
         x = np.ascontiguousarray(x, dtype=x.dtype.newbyteorder('='))
         self._tmpbuffer = x
-        import ctypes
-        return x.ctypes.data_as(ctypes.c_void_p)
+        return x.ctypes.data
 
 class NumPyElementReadIter(IElementReadIter):
     def __init__(self, npyarr):
@@ -71,8 +70,7 @@ class NumPyElementReadIter(IElementReadIter):
             # Make it C-contiguous and in native byte order
             x = np.ascontiguousarray(x, dtype=x.dtype.newbyteorder('='))
             self._tmpbuffer = x
-            import ctypes
-            return x.ctypes.data_as(ctypes.c_void_p)
+            return x.ctypes.data
         else:
             raise StopIteration
 
