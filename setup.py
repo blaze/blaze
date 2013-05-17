@@ -2,6 +2,8 @@
 
 #------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
 import os
 import sys
 import shutil
@@ -246,7 +248,10 @@ class BuildParser(build):
     """ Build the parse tables for datashape """
 
     def run(self):
-        build.run(self) # run the default build command first
+        # run the default build command first
+        build.run(self)
+        # add the build destination to the module path so we can load it
+        sys.path.insert(0, self.build_lib)
         from blaze.datashape.parser import rebuild
         rebuild()
 
