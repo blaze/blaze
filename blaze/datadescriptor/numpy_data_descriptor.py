@@ -6,6 +6,7 @@ from . import (IElementReader, IElementWriter,
                 IDataDescriptor)
 from .. import datashape
 from ..datashape import dshape
+from ..error import ArrayWriteError
 import numpy as np
 
 def numpy_descriptor_iter(npyarr):
@@ -46,6 +47,35 @@ class NumPyElementReader(IElementReader):
         self._tmpbuffer = x
         return x.ctypes.data
 
+class NumPyElementWriter(IElementWriter):
+    def __init__(self, npyarr, nindex):
+        if nindex > npyarr.ndim:
+            raise IndexError('Cannot have more indices than dimensions')
+        self._nindex = nindex
+        self._shape = npyarr.shape[nindex:]
+        self._dtype = npyarr.dtype
+        self._dshape = datashape.from_numpy(self._shape, self._dtype)
+        self.npyarr = npyarr
+
+    @property
+    def dshape(self):
+        return self._dshape
+
+    @property
+    def nindex(self):
+        return self._nindex
+
+    def write_single(self, idx, ptr):
+        if len(idx) != self.nindex:
+            raise IndexError('Incorrect number of indices (got %d, require %d)' %
+                           (len(idx), self.nindex))
+        idx = tuple([operator.index(i) for i in idx])
+        # Create a temporary NumPy array around the ptr data
+        buf = np.core.multiarray.int_asbuffer(ptr, self.dshape.itemsize)
+        tmp = np.frombuffer(buf, self._dtype).reshape(self._shape)
+        # Use NumPy's assignment to set the values
+        self.npyarr[idx] = tmp
+
 class NumPyElementReadIter(IElementReadIter):
     def __init__(self, npyarr):
         if npyarr.ndim <= 0:
@@ -74,6 +104,42 @@ class NumPyElementReadIter(IElementReadIter):
         else:
             raise StopIteration
 
+class NumPyElementWriteIter(IElementWriteIter):
+    def __init__(self, npyarr):
+        if npyarr.ndim <= 0:
+            raise IndexError('Need at least one dimension for iteration')
+        self._index = 0
+        self._len = npyarr.shape[0]
+        self._dshape = datashape.from_numpy(npyarr.shape[1:], npyarr.dtype)
+        self._usebuffer = not (npyarr[0].flags.c_contiguous and npyarr.dtype.isnative)
+        self._buffer_index = -1
+        self.npyarr = npyarr
+
+    @property
+    def dshape(self):
+        return self._dshape
+
+    def __len__(self):
+        return self._len
+
+    def __next__(self):
+        # Copy the previous element to the array if it is buffered
+        if self._usebuffer and self._buffer_index >= 0:
+            self.npyarr[self._buffer_index] = self._buffer
+            self._buffer_index = -1
+        if self._index < self._len:
+            i = self._index
+            self._index = i + 1
+            if self._usebuffer:
+                if self._buffer is None:
+                    self._buffer = np.empty(self.npyarr.shape[1:], self.npyarr.dtype.newbyteorder('='))
+                self._buffer_index = i
+                return self._buffer.ctypes.data
+            else:
+                return self.npyarr.ctypes.data + self.npyarr.strides[0] * i
+        else:
+            raise StopIteration
+
 class NumPyDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a NumPy array.
@@ -89,6 +155,15 @@ class NumPyDataDescriptor(IDataDescriptor):
     @property
     def dshape(self):
         return self._dshape
+
+    @property
+    def writable(self):
+        return self.npyarr.flags.writeable
+
+    @property
+    def immutable(self):
+        # NumPy arrays lack an immutability concept
+        return False
 
     @property
     def shape(self):
@@ -126,3 +201,15 @@ class NumPyDataDescriptor(IDataDescriptor):
 
     def element_read_iter(self):
         return NumPyElementReadIter(self.npyarr)
+
+    def element_writer(self, nindex):
+        if self.writable:
+            return NumPyElementWriter(self.npyarr, nindex)
+        else:
+            raise ArrayWriteError('Cannot write to readonly NumPy array')
+
+    def element_write_iter(self):
+        if self.writable:
+            return NumPyElementWriteIter(self.npyarr)
+        else:
+            raise ArrayWriteError('Cannot write to readonly NumPy array')
