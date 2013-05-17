@@ -5,17 +5,29 @@ from .data_descriptor import IDataDescriptor
 import struct
 import ctypes
 
-_dshape_name_to_ctypes = {
-    'int8' : ctypes.POINTER(ctypes.c_int8),
-    'int16' : ctypes.POINTER(ctypes.c_int16),
-    'int32' : ctypes.POINTER(ctypes.c_int32),
-    'int64' : ctypes.POINTER(ctypes.c_int64),
-    'uint8' : ctypes.POINTER(ctypes.c_uint8),
-    'uint16' : ctypes.POINTER(ctypes.c_uint16),
-    'uint32' : ctypes.POINTER(ctypes.c_uint32),
-    'uint64' : ctypes.POINTER(ctypes.c_uint64),
-    'float32' : ctypes.POINTER(ctypes.c_float),
-    'float64' : ctypes.POINTER(ctypes.c_double),
+def ctypes_ptr_to_py(ptr_t):
+    def ptr_to_py(ptr):
+        cptr = ctypes.cast(ptr, ptr_t)
+        return cptr.contents.value
+    return ptr_to_py
+
+_char_ptr_t = ctypes.POINTER(ctypes.c_uint8)
+def bool_to_py(ptr):
+    cptr = ctypes.cast(ptr, _char_ptr_t)
+    return (cptr.contents.value != 0)
+
+_dshape_name_to_py = {
+    'bool' : bool_to_py,
+    'int8' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_int8)),
+    'int16' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_int16)),
+    'int32' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_int32)),
+    'int64' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_int64)),
+    'uint8' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_uint8)),
+    'uint16' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_uint16)),
+    'uint32' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_uint32)),
+    'uint64' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_uint64)),
+    'float32' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_float)),
+    'float64' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_double)),
 }
 
 def dshaped_ptr_to_py(ds):
@@ -24,13 +36,10 @@ def dshaped_ptr_to_py(ds):
     """
     if isinstance(ds, CType):
         # Use the ctypes library to convert these
-        ptr_t = _dshape_name_to_ctypes.get(ds.name, None)
-        if ptr_t is None:
-            raise TypeError(('Converting data with dshape'
+        ptr_to_py = _dshape_name_to_py.get(ds.name, None)
+        if ptr_to_py is None:
+            raise TypeError(('Converting data with '
                             '%r to a python object is not yet supported') % (ds))
-        def ptr_to_py(ptr):
-            cptr = ctypes.cast(ptr, ptr_t)
-            return cptr.contents.value
         return ptr_to_py
     elif isinstance(ds, Record):
         # TODO Add a c_offsets to the Record dshape similar to c_strides
