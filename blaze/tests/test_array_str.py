@@ -39,7 +39,7 @@ class TestArrayStr(unittest.TestCase):
         self.assertEqual(str(blaze.array(False)), 'False')
 
     def test_ctypes_scalar(self):
-        dd = data_descriptor_from_ctypes(ctypes.c_int32(1022))
+        dd = data_descriptor_from_ctypes(ctypes.c_int32(1022), writable=True)
         a = blaze.array(dd)
         self.assertEqual(str(a), '1022')
 
@@ -51,7 +51,7 @@ class TestArrayStr(unittest.TestCase):
         cdat[0] = 3
         cdat[1] = 6
         cdat[2] = 10
-        dd = data_descriptor_from_ctypes(cdat)
+        dd = data_descriptor_from_ctypes(cdat, writable=True)
         a = blaze.array(dd)
         self.assertEqual(str(a), '[ 3  6 10]')
 

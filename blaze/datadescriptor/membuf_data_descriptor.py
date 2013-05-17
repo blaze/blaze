@@ -27,7 +27,7 @@ def membuf_descriptor_iter(mbdd):
         raise IndexError('Cannot iterate over a scalar')
 
     for ptr in range(mbdd.ptr, end, c_outer_stride):
-        yield MemBufDataDescriptor(ptr, mbdd.ptr_owner, ds)
+        yield MemBufDataDescriptor(ptr, mbdd.ptr_owner, ds, mbdd._writable)
 
 class MemBufElementReader(IElementReader):
     def __init__(self, mbdd, nindex):
@@ -88,7 +88,7 @@ class MemBufDataDescriptor(IDataDescriptor):
     A Blaze data descriptor which exposes a raw memory buffer,
     which is in C-order with C struct alignment.
     """
-    def __init__(self, ptr, ptr_owner, ds):
+    def __init__(self, ptr, ptr_owner, ds, writable):
         """
         Parameters
         ----------
@@ -96,17 +96,32 @@ class MemBufDataDescriptor(IDataDescriptor):
             A raw pointer to the data. This data must be
             in C-order and follow C struct alignment,
             matching a C interpretation of the datashape.
+        ptr_owner : object
+            An object which owns or holds a reference to
+            the data pointed to by `ptr`.
         ds : Blaze dshape
             The data shape of the data pointed to by ptr.
+        writable : bool
+            Should be true if the data is writable, flase
+            if it's read-only.
         """
         assert isinstance(ptr, _inttypes)
         self._ptr = ptr
         self._ptr_owner = ptr_owner
         self._dshape = ds
+        self._writable = bool(writable)
 
     @property
     def dshape(self):
         return self._dshape
+
+    @property
+    def writable(self):
+        return self._writable
+
+    @property
+    def immutable(self):
+        return False
 
     @property
     def ptr(self):
@@ -150,7 +165,7 @@ class MemBufDataDescriptor(IDataDescriptor):
             ptr = ptr + idx * c_strides[i]
         # Create the data shape of the result
         ds = ds.subarray(len(key))
-        return MemBufDataDescriptor(ptr, self.ptr_owner, ds)
+        return MemBufDataDescriptor(ptr, self.ptr_owner, ds, self._writable)
 
     def __iter__(self):
         return membuf_descriptor_iter(self)
@@ -161,17 +176,20 @@ class MemBufDataDescriptor(IDataDescriptor):
     def element_read_iter(self):
         return MemBufElementReadIter(self)
 
-def data_descriptor_from_ctypes(cdata):
+def data_descriptor_from_ctypes(cdata, writable):
     """
     Parameters
     ----------
     cdata : ctypes data instance
         The ctypes data object which owns the data.
+    writable : bool
+        Should be true if the data is writable, flase
+        if it's read-only.
     """
     return MemBufDataDescriptor(ctypes.addressof(cdata), cdata,
-                    datashape.from_ctypes(type(cdata)))
+                    datashape.from_ctypes(type(cdata)), writable)
 
-def data_descriptor_from_cffi(ffi, cdata):
+def data_descriptor_from_cffi(ffi, cdata, writable):
     """
     Parameters
     ----------
@@ -179,6 +197,9 @@ def data_descriptor_from_cffi(ffi, cdata):
         The cffi namespace which contains the cdata.
     cdata : cffi.CData
         The cffi data object which owns the data.
+    writable : bool
+        Should be true if the data is writable, flase
+        if it's read-only.
     """
     if not isinstance(cdata, ffi.CData):
         raise TypeError('object is not a cffi.CData object, has type %s' %
@@ -192,5 +213,5 @@ def data_descriptor_from_cffi(ffi, cdata):
         # If the outermost dimension is an array without fixed
         # size, get its size from the data
         ds = datashape.DataShape((datashape.Fixed(len(cdata)),) + ds[1:])
-    return MemBufDataDescriptor(ptr, owner, ds)
+    return MemBufDataDescriptor(ptr, owner, ds, writable)
 
