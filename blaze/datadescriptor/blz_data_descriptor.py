@@ -94,6 +94,15 @@ class BLZDataDescriptor(IDataDescriptor):
     def dshape(self):
         return self._dshape
 
+    @property
+    def writable(self):
+        # TODO: Not sure this is right
+        return self.blzarr.mode == 'a'
+
+    @property
+    def immutable(self):
+        return False
+
     def __len__(self):
         # BLZ arrays are never scalars
         return self.blzarr.shape[0]

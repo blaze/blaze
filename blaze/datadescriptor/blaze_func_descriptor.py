@@ -60,6 +60,16 @@ class BlazeFuncDescriptor(IDataDescriptor):
     def dshape(self):
         return self.outdshape
 
+    @property
+    def writable(self):
+        return False
+
+    @property
+    def immutable(self):
+        # TODO: If all the args are immutable, the result
+        #       is also immutable
+        return False
+
     def __iter__(self):
         # Figure out how the outermost dimension broadcasts, by
         # subtracting the rank sizes of the blaze func elements from

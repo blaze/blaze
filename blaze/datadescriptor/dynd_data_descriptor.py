@@ -93,12 +93,12 @@ class DyNDDataDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def shape(self):
-        return self._dshape.shape
+    def writable(self):
+        return self.dyndarr.access_flags == 'readwrite'
 
     @property
-    def nd(self):
-        return len(self._dshape.shape)
+    def immutable(self):
+        return self.dyndarr.access_flags == 'immutable'
 
     def __len__(self):
         return len(self.dyndarr)
