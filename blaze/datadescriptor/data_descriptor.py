@@ -66,7 +66,7 @@ class IElementReader:
         Returns a tuple with a [CFFI or ctypes?] function pointer
         to a C get method, and a void* pointer to pass to
         the function's 'extra' parameter.
-        
+
         Possible alternative: Returns a blaze kernel with a
         'get_element' function prototype. (This wraps destruction
         and the void* pointer in the blaze kernel low level interface)
@@ -108,35 +108,24 @@ class IElementWriter:
         raise NotImplemented
 
     @abc.abstractmethod
-    def read_single(self, idx):
+    def write_single(self, idx, ptr):
         """
-        Returns a char* pointer to the element
+        Writes a char* pointer to the element
         at the specified index. The value in
-        'idx' must be a tuple of 'nindex' integers.
+        'idx' must be a tuple of 'nindex' integers,
+        and 'ptr' must be a pointer to an element
+        with the element writer's dshape.
         """
         raise NotImplemented
-
-    def read_single_into(self, idx, dst_ptr):
-        """
-        Reads a single element, placing into
-        the memory location provided by dst_ptr.
-
-        By default this is implemented in terms of
-        read_single, but data descriptors which do
-        processing can write directly into that pointer
-        instead of allocating their own buffer.
-        """
-        src_ptr = self.read_single(idx)
-        ctypes.memmove(dst_ptr, src_ptr, self.dshape.itemsize)
 
     def c_api(self):
         """
         Returns a tuple with a [CFFI or ctypes?] function pointer
-        to a C get method, and a void* pointer to pass to
+        to a C set method, and a void* pointer to pass to
         the function's 'extra' parameter.
-        
+
         Possible alternative: Returns a blaze kernel with a
-        'get_element' function prototype. (This wraps destruction
+        'set_element' function prototype. (This wraps destruction
         and the void* pointer in the blaze kernel low level interface)
         """
         raise NotImplemented
@@ -153,7 +142,7 @@ class IElementReadIter:
     In interface for iterating over the outermost dimension of
     a data descriptor for reading. It must return a char* pointer
     for each element along the dimension.
-    
+
     If the dimension has a known size, it should be returned
     in the __len__ method. A streaming dimension does not
     have a size known ahead of time, and should not implement __len__.
@@ -201,7 +190,12 @@ class IElementReadIter:
 class IElementWriteIter:
     """
     In interface for iterating over the outermost dimension of
-    a data descriptor for writing.
+    a data descriptor for writing. Each iteration returns a
+    pointer to a write buffer into which an element can be written.
+
+    The iterator may be using buffering, flushing the buffer
+    on some iterations, and in that case it must flush everything
+    before it raises a StopIteration.
 
     If the dimension has a known size, it should be returned
     in the __len__ method. A streaming dimension does not
@@ -298,6 +292,22 @@ class IDataDescriptor:
         """
         Returns the datashape for the data behind this datadescriptor.
         Every data descriptor implementation must provide a dshape.
+        """
+        raise NotImplemented
+
+    @abc.abstractproperty
+    def writable(self):
+        """
+        Returns True if the data is writable,
+        False otherwise.
+        """
+        raise NotImplemented
+
+    @abc.abstractproperty
+    def immutable(self):
+        """
+        Returns True if the data is immutable,
+        False otherwise.
         """
         raise NotImplemented
 

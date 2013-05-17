@@ -3,7 +3,9 @@ __all__ = [
     'NoDispatch',
     'InvalidLibraryDefinition',
     'CustomSyntaxError',
-    'StreamingDimensionError'
+    'StreamingDimensionError',
+    'BroadcastError',
+    'ArrayWriteError'
 ]
 
 # TODO: BlazeException base class ?
@@ -89,5 +91,11 @@ class StreamingDimensionError(Exception):
 class BroadcastError(Exception):
     """
     An error for when arrays can't be broadcast together.
+    """
+    pass
+
+class ArrayWriteError(Exception):
+    """
+    An error for when trying to write to an array which is read only.
     """
     pass
