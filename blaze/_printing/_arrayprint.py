@@ -6,6 +6,8 @@ from __future__ import print_function
 __all__ = ["array2string", "set_printoptions", "get_printoptions"]
 __docformat__ = 'restructuredtext'
 
+from ..py3help import xrange
+
 #
 # Written by Konrad Hinsen <hinsenk@ere.umontreal.ca>
 # last revision: 1996-3-13
@@ -39,7 +41,7 @@ def _to_numpy(ds):
 
 # debug help
 def _dump_data_info(x, ident=None):
-    ident = (ident if ident is not None 
+    ident = (ident if ident is not None
              else inspect.currentframe().f_back.f_lineno)
     if isinstance(x, IDataDescriptor):
         subclass = 'DATA DESCRIPTOR'
@@ -382,7 +384,7 @@ def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
 
     lst = _formatArray(a, format_function, len(shape), max_line_width,
                        next_line_prefix, separator,
-                       _summaryEdgeItems, summary_insert)[:-1]
+                       _summaryEdgeItems, summary_insert).rstrip()
     return lst
 
 def _convert_arrays(obj):
@@ -521,7 +523,7 @@ def _formatArray(a, format_function, rank, max_line_len,
 
     """
     if rank == 0:
-        return format_function(dd_as_py(a))
+        return format_function(dd_as_py(a)).strip()
 
     if summary_insert and 2*edge_items < len(a):
         leading_items, trailing_items, summary_insert1 = \
@@ -709,6 +711,7 @@ class IntegerFormat(object):
             pass
 
     def __call__(self, x):
+        print('format is %s, value is %s' % (self.format, x))
         if _MININT < x < _MAXINT:
             return self.format % x
         else:
