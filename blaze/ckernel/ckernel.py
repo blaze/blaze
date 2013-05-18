@@ -103,7 +103,7 @@ class CKernel(object):
         return self.kernel_function(*(args + (ctypes.byref(self.kernel_prefix),)))
 
     def close(self):
-        if self._dki.kernel:
+        if self._dki and self._dki.kernel:
             # Call the kernel destructor if available
             kp = self.kernel_prefix
             if kp.destructor:
