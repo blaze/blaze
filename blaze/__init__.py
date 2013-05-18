@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 # build the blaze namespace with selected functions
 
-from . import datashape
+from . import datashape, ckernel
 from .datashape import dshape
 from .array import Array
 from .constructors import array, open, ones, zeros, create, open
