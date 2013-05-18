@@ -1,6 +1,7 @@
 import unittest
 
 import sys
+from ...py3help import skipIf
 import blaze
 from blaze import datashape
 from blaze.datadescriptor import (MemBufDataDescriptor,
@@ -12,26 +13,6 @@ try:
     ffi = cffi.FFI()
 except ImportError:
     cffi = None
-
-if sys.version_info >= (2, 7):
-    from unittest import skipIf
-else:
-    from nose.plugins.skip import SkipTest
-    class skipIf(object):
-        def __init__(self, condition, reason):
-            self.condition = condition
-            self.reason = reason
-
-        def __call__(self, func):
-            if self.condition:
-                from nose.plugins.skip import SkipTest
-                def wrapped(*args, **kwargs):
-                    raise SkipTest("Test %s is skipped because: %s" %
-                                    (func.__name__, self.reason))
-                wrapped.__name__ = func.__name__
-                return wrapped
-            else:
-                return func
 
 class TestCFFIMemBufDataDescriptor(unittest.TestCase):
     @skipIf(cffi is None, 'cffi is not installed')

@@ -7,20 +7,7 @@ from __future__ import absolute_import
 
 import sys
 from unittest import TestCase
-if sys.version_info >= (2, 7):
-    from unittest import skip
-else:
-    from nose.plugins.skip import SkipTest
-    class skip(object):
-        def __init__(self, reason):
-            self.reason = reason
-
-        def __call__(self, func):
-            from nose.plugins.skip import SkipTest
-            def wrapped(*args, **kwargs):
-                raise SkipTest("Test %s is skipped because: %s" % (func.__name__, self.reason))
-            wrapped.__name__ = func.__name__
-            return wrapped
+from ...py3help import skip
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
