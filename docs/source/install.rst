@@ -18,7 +18,7 @@ distribution, a free Python distribution that comes with a host of
 scientific and numeric packages bundled and precompiled into a userspace
 Python environment.
 
-Anaconda can be downloaded for all platforms here: http://continuum.io/anacondace.html .
+Anaconda can be downloaded for all platforms here: http://continuum.io/anaconda.html .
 
 Introduction
 ~~~~~~~~~~~~
@@ -40,3 +40,23 @@ To run tests:
 ::
 
     $ python -m blaze.testing
+
+Dependencies
+~~~~~~~~~~~~
+
+* numpy_ >= 1.5
+* cython_ >= 0.11.1
+* llvmpy_
+* ply_
+* python-blosc_
+* pycparser_
+* dynd_ (optional, master branch)
+
+.. _numpy: http://www.numpy.org/
+.. _cython: http://www.cython.org/
+.. _llvmpy: http://www.llvmpy.org/
+.. _ply: http://www.dabeaz.com/ply/
+.. _python-blosc: http://blosc.pytables.org
+.. _pycparser: https://bitbucket.org/eliben/pycparser
+.. _dynd: https://github.com/ContinuumIO/dynd-python
+
