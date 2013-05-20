@@ -2,6 +2,7 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 import numpy as np
 import unittest
+from ..py3help import skip
 from .common import MayBeUriTest
 
 
@@ -12,6 +13,7 @@ class getitem(unittest.TestCase):
         a = blaze.array(np.arange(3), caps=self.caps)
         self.assertEqual(dd_as_py(a[0]._data), 0)
 
+    @skip('slices should implemented')
     def test_1d(self):
         a = blaze.array(np.arange(3), caps=self.caps)
         print("a:", a, self.caps)
@@ -32,6 +34,7 @@ class setitem(unittest.TestCase):
         a[0] = 1
         self.assertEqual(dd_as_py(a[0]._data), 1)
 
+    @skip('slices should be implemented')
     def test_1d(self):
         a = blaze.array(np.arange(3), caps=self.caps)
         a[0:2] = 2
