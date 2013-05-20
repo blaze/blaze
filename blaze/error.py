@@ -46,10 +46,10 @@ class CustomSyntaxError(Exception):
     Makes datashape parse errors look like Python SyntaxError.
     """
     def __init__(self, lexpos, filename, text, msg=None):
-        self.lexpos = lexpos
-        self.filename   = filename
-        self.text       = text
-        self.msg        = msg or 'invalid syntax'
+        self.lexpos   = lexpos
+        self.filename = filename
+        self.text     = text
+        self.msg      = msg or 'invalid syntax'
         self.lineno = text.count('\n', 0, lexpos) + 1
         # Get the extent of the line with the error
         linestart = text.rfind('\n', 0, lexpos)
@@ -65,11 +65,12 @@ class CustomSyntaxError(Exception):
 
     def __str__(self):
         pointer = ' '*self.col_offset + '^'
+
         return syntax_error.format(
             filename = self.filename,
             lineno   = self.lineno,
             line     = self.line,
-            pointer  = ' '*self.col_offset + '^',
+            pointer  = pointer,
             msg      = self.msg,
             error    = self.__class__.__name__,
         )
