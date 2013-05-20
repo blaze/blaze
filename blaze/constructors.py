@@ -71,6 +71,8 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         # Note by Francesc: but if it is already an IDataDescriptor I wonder
         # if `caps` should be ignored.  Hmm, probably not...
         dd = obj
+    elif inspect.isgenerator(obj):
+        return _fromiter(obj, dshape, caps)
     elif 'efficient-write' in caps:
         dt = None if dshape is None else to_dtype(dshape)
         # NumPy provides efficient writes
@@ -83,8 +85,6 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         dd = NumPyDataDescriptor(obj)
     elif isinstance(obj, blz.barray):
         dd = BLZDataDescriptor(obj)
-    elif inspect.isgenerator(obj):
-        return _fromiter(obj, dshape, caps)
     else:
         raise TypeError(('Failed to construct blaze array from '
                         'object of type %r') % type(obj))
