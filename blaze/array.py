@@ -8,9 +8,7 @@ from __future__ import absolute_import
 from . import blz
 import numpy as np
 from .datashape import dshape
-from .datadescriptor import (IDataDescriptor,
-                NumPyDataDescriptor,
-                BLZDataDescriptor)
+from .datadescriptor import IDataDescriptor
 from ._printing import array2string as _printer
 
 # An Array contains:

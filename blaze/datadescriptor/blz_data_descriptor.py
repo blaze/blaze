@@ -118,6 +118,9 @@ class BLZDataDescriptor(IDataDescriptor):
         else:
             return NumPyDataDescriptor(blzarr[key])
 
+    def __setitem__(self, key, value):
+        self.blzarr.__setitem__(key, value)
+
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
 
