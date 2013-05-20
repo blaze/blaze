@@ -27,7 +27,7 @@
 
 from __future__ import print_function
 
-from blaze
+import blaze
 
 def print_section(a_string, spacing=2, underline='='):
     print ('%s%s\n%s' % ('\n'*spacing,

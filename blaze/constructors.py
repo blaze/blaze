@@ -15,21 +15,11 @@ import inspect
 from .array import Array
 from .datadescriptor import (IDataDescriptor,
                 NumPyDataDescriptor, BLZDataDescriptor)
-from .datashape import dshape as _dshape_builder, to_numpy, to_dtype
+from .datashape import to_numpy, to_dtype
 
 import numpy as np
 from . import blz
-from .py3help import basestring, urlparse
-
-try:
-    basestring
-    # if basestring exists... use it (fails on python 3)
-    def _is_str(s):
-        return isinstance(s, basestring)
-except NameError:
-    # python 3 version
-    def _is_str(s):
-        return isinstance(s, str)
+from ._api_helpers import _normalize_dshape
 
 # note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "obj"
@@ -63,7 +53,7 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
     an exception should be raised.
 
     """
-    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
+    dshape = _normalize_dshape(dshape)
 
     if isinstance(obj, IDataDescriptor):
         # TODO: Validate the 'caps', convert to another kind
@@ -95,7 +85,7 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
 # for BLZ is very important for getting good performance.
 def _fromiter(gen, dshape, caps):
     """Create an array out of an iterator."""
-    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
+    dshape = _normalize_dshape(dshape)
 
     if 'efficient-write' in caps:
         dt = None if dshape is None else to_dtype(dshape)
@@ -122,7 +112,8 @@ def zeros(dshape, caps={'efficient-write': True}):
     out : a concrete, in-memory blaze array.
 
     """
-    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
+    dshape = _normalize_dshape(dshape)
+
     if 'efficient-write' in caps:
         dd = NumPyDataDescriptor(np.zeros(*to_numpy(dshape)))
     elif 'compress' in caps:
@@ -146,7 +137,7 @@ def ones(dshape, caps={'efficient-write': True}):
     out: a concrete blaze array.
 
     """
-    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
+    dshape = _normalize_dshape(dshape)
 
     if 'efficient-write' in caps:
         dd = NumPyDataDescriptor(np.ones(*to_numpy(dshape)))
@@ -155,77 +146,3 @@ def ones(dshape, caps={'efficient-write': True}):
         dd = BLZDataDescriptor(blz.ones(*to_numpy(dshape)))
     return Array(dd)
 
-# XXX A big hack for some quirks in current datashape. The next deals
-# with the cases where the shape is not present like in 'float32'
-def _to_numpy(ds):
-    res = to_numpy(ds)
-    res = res if type(res) is tuple else ((), to_dtype(ds))
-    return res
-
-# Persistent constructors:
-def create(uri, dshape, caps={'efficient-append': True}):
-    """Create a 0-length persistent array.
-
-    Parameters
-    ----------
-    uri : URI string
-        The URI of where the array will be stored (e.g. blz://myfile.blz).
-
-    dshape : datashape
-        The datashape for the resulting array.
-
-    caps : capabilities dictionary
-        A dictionary containing the desired capabilities of the array.
-
-    Returns
-    -------
-    out: a concrete blaze array.
-
-    Notes
-    -----
-
-    The shape part of the `dshape` is ignored.  This should be fixed
-    by testing that the shape is actually empty.
-
-    Only the BLZ format is supported currently.
-
-    """
-    dshape = dshape if not _is_str(dshape) else _dshape_builder(dshape)
-    # Only BLZ supports efficient appends right now
-    shape, dt = _to_numpy(dshape)
-    shape = (0,) + shape  # the leading dimension will be 0
-    uri = urlparse.urlparse(uri)
-    path = uri.netloc + uri.path
-    if 'efficient-append' in caps:
-        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt, rootdir=path))
-    elif 'efficient-write' in caps:
-        raise ValueError('efficient-write objects not supported for '
-                         'persistence')
-    else:
-        # BLZ will be the default
-        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt, rootdir=path))
-    return Array(dd)
-
-
-def open(uri):
-    """Open an existing persistent array.
-
-    Parameters
-    ----------
-    uri : URI string
-        The URI of where the array is stored (e.g. blz://myfile.blz).
-
-    Returns
-    -------
-    out: a concrete blaze array.
-
-    Notes
-    -----
-    Only the BLZ format is supported currently.
-
-    """
-    uri = urlparse.urlparse(uri)
-    path = uri.netloc + uri.path
-    d = blz.open(rootdir=path)
-    dd = BLZDataDescriptor(d)
-    return Array(dd)
