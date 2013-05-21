@@ -1,7 +1,7 @@
 /*********************************************************************
   Blosc - Blocked Suffling and Compression Library
 
-  Author: Francesc Alted (faltet@pytables.org)
+  Author: Francesc Alted <faltet@gmail.com>
   Creation date: 2009-05-20
 
   See LICENSES/BLOSC.txt for details about copyright and rights to use.
@@ -86,9 +86,9 @@
 #endif
 
 
-static BLOSCLZ_INLINE uint32_t hash_function(uint8_t* p, uint8_t hash_log)
+static BLOSCLZ_INLINE int32_t hash_function(uint8_t* p, uint8_t hash_log)
 {
-  uint32_t v;
+  int32_t v;
 
   v = BLOSCLZ_READU16(p);
   v ^= BLOSCLZ_READU16(p+1)^(v>>(16-hash_log));
@@ -115,14 +115,14 @@ int blosclz_compress(int opt_level, const void* input,
   uint16_t *htab;
   uint8_t* op_limit;
 
-  uint32_t hslot;
-  uint32_t hval;
+  int32_t hslot;
+  int32_t hval;
   uint8_t copy;
 
   double maxlength_[10] = {-1, .1, .15, .2, .5, .7, .85, .925, .975, 1.0};
-  uint32_t maxlength = (uint32_t) (length * maxlength_[opt_level]);
-  if (maxlength > (uint32_t) maxout) {
-    maxlength = (uint32_t) maxout;
+  int32_t maxlength = (int32_t) (length * maxlength_[opt_level]);
+  if (maxlength > (int32_t) maxout) {
+    maxlength = (int32_t) maxout;
   }
   op_limit = op + maxlength;
 
@@ -132,7 +132,7 @@ int blosclz_compress(int opt_level, const void* input,
     return 0;                   /* Mark this as uncompressible */
   }
 
-  htab = malloc(hash_size*sizeof(uint16_t));
+  htab = (uint16_t *) malloc(hash_size*sizeof(uint16_t));
 
   /* sanity check */
   if(BLOSCLZ_UNEXPECT_CONDITIONAL(length < 4)) {
@@ -161,8 +161,8 @@ int blosclz_compress(int opt_level, const void* input,
   /* main loop */
   while(BLOSCLZ_EXPECT_CONDITIONAL(ip < ip_limit)) {
     const uint8_t* ref;
-    uint32_t distance;
-    uint32_t len = 3;         /* minimum match length */
+    int32_t distance;
+    int32_t len = 3;         /* minimum match length */
     uint8_t* anchor = ip;  /* comparison starting-point */
 
     /* check for a run */
@@ -180,7 +180,7 @@ int blosclz_compress(int opt_level, const void* input,
     htab[hval] = (uint16_t)(anchor - ibase);
 
     /* calculate distance to the match */
-    distance = (uint32_t)(anchor - ref);
+    distance = (int32_t)(anchor - ref);
 
     /* is this a match? check the first 3 bytes */
     if (distance==0 || (distance >= MAX_FARDISTANCE) ||
@@ -248,7 +248,7 @@ int blosclz_compress(int opt_level, const void* input,
         }
         /* Last correction before exiting loop */
         if (ip > ip_bound) {
-          uint32_t l = (uint32_t)(ip - ip_bound);
+          int32_t l = (int32_t)(ip - ip_bound);
           ip -= l;
           ref -= l;
         }   /* End of optimization */
@@ -269,7 +269,7 @@ int blosclz_compress(int opt_level, const void* input,
 
     /* length is biased, '1' means a match of 3 bytes */
     ip -= 3;
-    len = (uint32_t)(ip - anchor);
+    len = (int32_t)(ip - anchor);
 
     /* check that we have space enough to encode the match for all the cases */
     if (BLOSCLZ_UNEXPECT_CONDITIONAL(op+(len/255)+6 > op_limit)) goto out;
@@ -368,13 +368,13 @@ int blosclz_decompress(const void* input, int length, void* output, int maxout)
   const uint8_t* ip_limit  = ip + length;
   uint8_t* op = (uint8_t*) output;
   uint8_t* op_limit = op + maxout;
-  uint32_t ctrl = (*ip++) & 31;
-  uint32_t loop = 1;
+  int32_t ctrl = (*ip++) & 31;
+  int32_t loop = 1;
 
   do {
     const uint8_t* ref = op;
-    uint32_t len = ctrl >> 5;
-    uint32_t ofs = (ctrl & 31) << 8;
+    int32_t len = ctrl >> 5;
+    int32_t ofs = (ctrl & 31) << 8;
 
     if(ctrl >= 32) {
       uint8_t code;
@@ -453,7 +453,7 @@ int blosclz_decompress(const void* input, int length, void* output, int maxout)
       ip += ctrl;
       op += ctrl;
 
-      loop = BLOSCLZ_EXPECT_CONDITIONAL(ip < ip_limit);
+      loop = (int32_t)BLOSCLZ_EXPECT_CONDITIONAL(ip < ip_limit);
       if(loop)
         ctrl = *ip++;
     }

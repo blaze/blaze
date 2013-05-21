@@ -48,6 +48,7 @@ def print_versions():
     print("Blaze version: %s" % __version__)
     print("NumPy version: %s" % np.__version__)
     print("BLZ version: %s" % blz.__version__)
+    print("Blosc version: %s (%s)" % blz.blosc_version())
     print("Python version: %s" % sys.version)
     (sysname, nodename, release, version, machine, processor) = \
         platform.uname()
