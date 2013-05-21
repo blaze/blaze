@@ -18,7 +18,7 @@ from ._api_helpers import _normalize_dshape
 from .datashape import to_numpy, to_dtype
 from .py3help import urlparse
 from . import blz
-from .datadescriptor import (BLZDataDescriptor)
+from .datadescriptor import (BLZDataDescriptor, dd_as_py)
 from .array import Array
 
 # ----------------------------------------------------------------------
@@ -32,17 +32,33 @@ def _to_numpy(ds):
     return res
 
 
+def _path_from_uri(uri_in):
+    """ returns a blz path for a given uri """
+    uri = urlparse.urlparse(uri_in)
+    path = uri.netloc + uri.path
+    return path
+
 # ----------------------------------------------------------------------
 # The actual URI API
 
-def save(array, uri):
+def save(a, uri):
     """save an array to an URI"""
-    pass
+    assert(isinstance(a, Array))
+
+    shape, dtype = _to_numpy(a.dshape)
+    if len(shape):
+        shape = (0,) + shape[1:]
+        path = _path_from_uri(uri)
+        on_disk = blz.zeros(shape, dtype=dtype, rootdir=path)
+        on_disk.append(dd_as_py(a._data))
+        on_disk.flush()
+    else:
+        raise NotImplementedError('save not implemented for scalars')
 
 
 def load(uri):
     """load and array into memory from an URI"""
-    pass
+    raise NotImplementedError
 
 
 def open(uri):
@@ -71,7 +87,7 @@ def open(uri):
 
 def drop(uri):
     """removing an URI"""
-    pass
+    raise NotImplementedError
 
 
 # Persistent constructors:
@@ -107,8 +123,7 @@ def create(uri, dshape, caps={'efficient-append': True}):
     # Only BLZ supports efficient appends right now
     shape, dt = _to_numpy(dshape)
     shape = (0,) + shape  # the leading dimension will be 0
-    uri = urlparse.urlparse(uri)
-    path = uri.netloc + uri.path
+    path = _path_from_uri(uri)
     if 'efficient-append' in caps:
         dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt, rootdir=path))
     elif 'efficient-write' in caps:
@@ -123,4 +138,4 @@ def create(uri, dshape, caps={'efficient-append': True}):
 def create_fromiter(uri, dshape, iterator):
     """create persistent array at the URI initialized with the
     iterator iterator"""
-    pass
+    raise NotImplementedError
