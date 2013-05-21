@@ -9,36 +9,6 @@ from .constructors import array, ones, zeros
 from .persistence import load, save, open, drop, create, create_fromiter
 __version__ = '0.0.1'
 
-def detect_number_of_cores():
-    """
-    detect_number_of_cores()
-
-    Detect the number of cores in this system.
-
-    Returns
-    -------
-    out : int
-        The number of cores in this system.
-
-    """
-    import os
-    # Linux, Unix and MacOS:
-    if hasattr(os, "sysconf"):
-        if "SC_NPROCESSORS_ONLN" in os.sysconf_names:
-            # Linux & Unix:
-            ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
-            if isinstance(ncpus, int) and ncpus > 0:
-                return ncpus
-        else:  # OSX:
-            return int(os.popen2("sysctl -n hw.ncpu")[1].read())
-    # Windows:
-    if "NUMBER_OF_PROCESSORS" in os.environ:
-        ncpus = int(os.environ["NUMBER_OF_PROCESSORS"])
-        if ncpus > 0:
-            return ncpus
-    return 1  # Default
-
-
 def print_versions():
     """Print all the versions of software that Blaze relies on."""
     import sys, platform
@@ -59,7 +29,7 @@ def print_versions():
         processor = "not recognized"
     print("Processor: %s" % processor)
     print("Byte-ordering: %s" % sys.byteorder)
-    print("Detected cores: %s" % detect_number_of_cores())
+    print("Detected cores: %s" % blz.detect_number_of_cores())
     print("-=" * 38)
 
 
