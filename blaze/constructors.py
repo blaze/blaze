@@ -60,6 +60,14 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         #       of data descriptor if necessary
         # Note by Francesc: but if it is already an IDataDescriptor I wonder
         # if `caps` should be ignored.  Hmm, probably not...
+        #
+        # Note by Oscar: Maybe we shouldn't accept a datadescriptor at
+        #   all at this level. If you've got a DataDescriptor you are
+        #   playing with internal datastructures anyways, go to the
+        #   Array constructor directly. If you want to transform to
+        #   another datadescriptor... convert it yourself (you are
+        #   playing with internal datastructures, remember? you should
+        #   be able to do it in your own.
         dd = obj
     elif inspect.isgenerator(obj):
         return _fromiter(obj, dshape, caps)
