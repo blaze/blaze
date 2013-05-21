@@ -18,7 +18,9 @@ from ._api_helpers import _normalize_dshape
 from .datashape import to_numpy, to_dtype
 from .py3help import urlparse
 from . import blz
-from .datadescriptor import (BLZDataDescriptor, dd_as_py)
+from .datadescriptor import (BLZDataDescriptor,
+                             NumPyDataDescriptor,
+                             dd_as_py)
 from .array import Array
 
 # ----------------------------------------------------------------------
@@ -58,7 +60,11 @@ def save(a, uri):
 
 def load(uri):
     """load and array into memory from an URI"""
-    raise NotImplementedError
+    # preliminary way... open it and copy!
+    on_disk = open(uri)
+    assert (isinstance(on_disk._data, BLZDataDescriptor))
+    dd = NumPyDataDescriptor(on_disk._data.blzarr[:])
+    return Array(dd)
 
 
 def open(uri):
@@ -80,14 +86,21 @@ def open(uri):
     """
     uri = urlparse.urlparse(uri)
     path = uri.netloc + uri.path
-    d = blz.open(rootdir=path)
+    d = blz.barray(rootdir=path)
     dd = BLZDataDescriptor(d)
     return Array(dd)
 
 
 def drop(uri):
     """removing an URI"""
-    raise NotImplementedError
+    try:
+        path = _path_from_uri(uri)
+        blz.open(rootdir=path)
+        from shutil import rmtree
+        rmtree(path)
+
+    except RuntimeError: #maybe blz should throw other exceptions for this!
+        raise Exception("No blaze array at uri '%s'" % uri)
 
 
 # Persistent constructors:
