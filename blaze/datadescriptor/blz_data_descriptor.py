@@ -114,7 +114,7 @@ class BLZDataDescriptor(IDataDescriptor):
         key = tuple([operator.index(i) for i in key])
         blzarr = self.blzarr
         if len(key) == blzarr.ndim:
-            return NumPyDataDescriptor(np.array(blzarr[i]))
+            return NumPyDataDescriptor(np.array(blzarr[key]))
         else:
             return NumPyDataDescriptor(blzarr[key])
 
