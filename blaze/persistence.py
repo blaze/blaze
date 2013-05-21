@@ -148,7 +148,11 @@ def create(uri, dshape, caps={'efficient-append': True}):
     return Array(dd)
 
 
-def create_fromiter(uri, dshape, iterator):
+def create_fromiter(uri, dshape, iterator, caps={'efficient-append': True}):
     """create persistent array at the URI initialized with the
     iterator iterator"""
-    raise NotImplementedError
+    arr = create(uri, dshape, caps)
+    for row in iterator:
+        arr.append(row)
+    return arr
+

@@ -92,7 +92,7 @@ print_section('creating uri arrays')
 # '0', and will grow as data gets appended.
 
 create_uri = 'blz://create_sample'
-create_dshape = 'uint32'
+create_dshape = 'uint64'
 created_array = blaze.create(create_uri, create_dshape)
 
 # created_array should now have a dshape of '0, uint32'
@@ -107,7 +107,7 @@ def fib(n):
         a, b = b, a+b
         n -= 1
 
-for i in fib(300):
+for i in fib(64):
     created_array.append(i)
 
 # The created array should now have a dshape of '300, uint32'
@@ -117,7 +117,7 @@ print(created_array.dshape)
 print(created_array)
 
 del created_array
-drop(create_uri)
+blaze.drop(create_uri)
 
 # ----------------------------------------------------------------------
 
@@ -126,6 +126,6 @@ print_section('creating uri arrays from iterators')
 # it is possible to create an uri array directly from an iterator. For
 # example, we could achieve the same result as in the previous section
 # with just the following:
-created_array = create_fromiter(create_uri, create_dshape, fib(300))
+created_array = blaze.create_fromiter(create_uri, create_dshape, fib(64))
 print(created_array.dshape)
 print(created_array)
