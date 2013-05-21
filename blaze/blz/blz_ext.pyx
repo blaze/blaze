@@ -72,6 +72,8 @@ cdef extern from "blosc.h":
     BLOSC_VERSION_STRING,
     BLOSC_VERSION_DATE
 
+  void blosc_init()
+  void blosc_destroy()
   void blosc_get_versions(char *version_str, char *version_date)
   int blosc_set_nthreads(int nthreads)
   int blosc_compress(int clevel, int doshuffle, size_t typesize,
@@ -98,9 +100,9 @@ import_array()
 #-------------------------------------------------------------
 
 # Some utilities
-def blz_set_nthreads(nthreads):
+def _blosc_set_nthreads(nthreads):
   """
-  blz_set_nthreads(nthreads)
+  _blosc_set_nthreads(nthreads)
 
   Sets the number of threads that Blosc can use.
 
@@ -116,6 +118,24 @@ def blz_set_nthreads(nthreads):
 
   """
   return blosc_set_nthreads(nthreads)
+
+def _blosc_init():
+  """
+  _blosc_init()
+
+  Initialize the Blosc library.
+
+  """
+  blosc_init()
+
+def _blosc_destroy():
+  """
+  _blosc_destroy()
+
+  Finalize the Blosc library.
+
+  """
+  blosc_destroy()
 
 def blosc_version():
   """
