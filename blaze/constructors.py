@@ -71,11 +71,11 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         dd = obj
     elif inspect.isgenerator(obj):
         return _fromiter(obj, dshape, caps)
-    elif 'efficient-write' in caps:
+    elif 'efficient-write' in caps and caps['efficient-write'] is True:
         dt = None if dshape is None else to_dtype(dshape)
         # NumPy provides efficient writes
         dd = NumPyDataDescriptor(np.array(obj, dtype=dt))
-    elif 'compress' in caps:
+    elif 'compress' in caps and caps['compress'] is True:
         dt = None if dshape is None else to_dtype(dshape)
         # BLZ provides compression
         dd = BLZDataDescriptor(blz.barray(obj, dtype=dt))
@@ -95,12 +95,20 @@ def _fromiter(gen, dshape, caps):
     """Create an array out of an iterator."""
     dshape = _normalize_dshape(dshape)
 
-    if 'efficient-write' in caps:
+    # TODO: deal with non-supported capabilities.  Perhaps it would be
+    # better to convert caps into a class to check for supported
+    # capabilities only.
+    if 'efficient-write' in caps and caps['efficient-write'] is True:
         dt = None if dshape is None else to_dtype(dshape)
         dd = NumPyDataDescriptor(np.fromiter(gen, dtype=dt))
-    elif 'compress' in caps:
+    elif 'compress' in caps and caps['compress'] is True:
         dt = None if dshape is None else to_dtype(dshape)
         dd = BLZDataDescriptor(blz.fromiter(gen, dtype=dt, count=-1))
+    else:
+        # Fall-back is NumPy
+        dt = None if dshape is None else to_dtype(dshape)
+        dd = NumPyDataDescriptor(np.fromiter(gen, dtype=dt))
+
     return Array(dd)
 
 
