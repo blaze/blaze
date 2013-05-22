@@ -25,7 +25,7 @@ class Array(object):
     def dshape(self):
         return self._data.dshape
 
-    def __iter__(self, iter):
+    def __iter__(self):
         return self._data.__iter__()
 
     def __getitem__(self, key):
