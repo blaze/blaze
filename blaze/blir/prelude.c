@@ -1,6 +1,10 @@
+#include <math.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,20 +19,35 @@ typedef struct {
 } ndarray;
 
 // ------------------------------------------------------------------------
-// String Operations
+// Math Operations
 // ------------------------------------------------------------------------
 
-int isNull(void* ptr)
-{
-    return ptr==NULL;
+int8_t abs_i8(int8_t i) {
+  return i >= 0 ? i : -i;
 }
+
+int16_t abs_i16(int16_t i) {
+  return i >= 0 ? i : -i;
+}
+
+int32_t abs_i32(int32_t i) {
+  return i >= 0 ? i : -i;
+}
+
+int64_t abs_i64(int64_t i) {
+  return i >= 0 ? i : -i;
+}
+
+// ------------------------------------------------------------------------
+// String Operations
+// ------------------------------------------------------------------------
 
 int length(char* string)
 {
     return strlen(string);
 }
 
-char strIndex(char* string, int i)
+char indexof(char* string, int i)
 {
     return string[i];
 }
@@ -40,6 +59,11 @@ char* append(char* x, char* y)
     strcpy(buf, x);
     strcat(buf, y);
     return buf;
+}
+
+int isNull(void* ptr)
+{
+    return ptr==NULL;
 }
 
 int strHead(char* str)
