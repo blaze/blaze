@@ -351,7 +351,11 @@ def p_error(p):
             p.lexer.lexdata,
         )
     else:
-        print("Syntax error at EOF")
+        raise DatashapeSyntaxError(
+            0,
+            '<stdin>',
+            '',
+        )
 
 #------------------------------------------------------------------------
 # Toplevel
