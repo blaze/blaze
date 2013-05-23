@@ -8,7 +8,7 @@ from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
 from .cgen.utils import letters
-from .blaze_kernels import KernelObj, Argument, fuse_kerneltree, BlazeElementKernel
+from .blaze_kernels import Argument, fuse_kerneltree, BlazeElementKernel
 from .py3help import dict_iteritems, _strtypes
 
 # A KernelTree is just the bare element-wise kernel functions
@@ -26,11 +26,11 @@ class KernelTree(object):
     _funcptr = None
     _ctypes = None
 
-    def __init__(self, node, children=[], name=None):
-        assert isinstance(node, KernelObj)
+    def __init__(self, kernel, children=[], name=None):
+        assert isinstance(kernel, BlazeElementKernel)
         for el in children:
             assert isinstance(el, (KernelTree, Argument))
-        self.node = node
+        self.kernel = kernel
         self.children = children
         if name is None:
             name = 'node_' + next(self._stream_of_unique_names)
@@ -246,8 +246,6 @@ class BlazeFunc(object):
 
         outdshape = DataShape(outshape+(out_type,))
 
-        kernelobj = KernelObj(kernel, self.ranks, self.name)
-
         # Create a new BlazeFuncDescriptor with this
         # kerneltree and a new set of args depending on
         #  unique new arguments in the expression.
@@ -261,7 +259,7 @@ class BlazeFunc(object):
                                     self.ranks[i], kernel.argtypes[i])
                 children.append(tree_arg)
 
-        kerneltree = KernelTree(kernelobj, children)
+        kerneltree = KernelTree(kernel, children)
         data = BlazeFuncDescriptor(kerneltree, outdshape)
 
         # Construct an Array object from new data descriptor

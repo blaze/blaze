@@ -97,7 +97,8 @@ class BlazeElementKernel(object):
         # Keep a handle on the module object
         self.module = func.module
         if ranks is None:
-            self.ranks = len(kindlist)*[0]
+            ranks = len(kindlist)*[0]
+        self.ranks = ranks
 
     @property
     def dshapes(self):
@@ -340,13 +341,13 @@ def get_fused_type(tree):
     return unique_args, Type.function(out_type, args)
 
 # This modifies the node to add a reference to the llvm_obj
-def insert_instructions(node, builder):
+def insert_instructions(node, builder, output=None):
     kernel = node.kernel
     is_scalar = (kernel.kinds[-1] == SCALAR)
     #allocate space for output if necessary
-    if not is_scalar:
-        output = builder.alloca(kernel.argtypes[-1].pointee)
-
+    if output is None:
+        if not is_scalar: # FIXME --- add array handling
+            output = builder.alloca(kernel.argtypes[-1].pointee)
 
     #Setup the argument list
     args = [child.llvm_obj for child in node.children]
@@ -400,13 +401,15 @@ def fuse_kerneltree(tree, newname):
     #  site we issue instructions to compute the value
     nodelist = tree.sorted_nodes()
 
-    for node in nodelist:
-        node.attach_to(module)
+    for node in nodelist[:-1]:
+        node.kernel.attach(module)
         insert_instructions(node, builder)
 
     if tree.kernel.kinds[-1] == SCALAR:
+        insert_instructions(nodelist[-1], builder)
         builder.ret(nodelist[-1].llvm_obj)
     else:
+        insert_instructions(nodelist[-1], builder, func.args[-1])
         builder.ret_void()
 
     ranks = [arg.rank for arg in args]
