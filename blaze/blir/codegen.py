@@ -1,15 +1,19 @@
-import btypes
-import errors
-import intrinsics
+import sys
+import ctypes
+from collections import defaultdict
+
+from . import btypes
+from . import intrinsics
 
 import llvm.ee as le
 import llvm.core as lc
 import llvm.passes as lp
 
+from llvm import tbaa
 from llvm.core import Module, Builder, Function, Type, Constant
+from llvm.workaround.avx_support import detect_avx_support
 
-import ctypes
-from collections import defaultdict
+PY3 = bool(sys.version_info[0] == 3)
 
 #------------------------------------------------------------------------
 # LLVM Types
@@ -75,6 +79,9 @@ def arg_typemap(ty):
         cons = ptypemap[ty.cons.name]
         args = typemap[ty.arg.name]
 
+        if PY3: # hack
+           return pointer(cons(args))
+
         # llvm doesn't do structural typing, so only create one
         # instance of the parameterized type, ie. array[int],
         # array[float]
@@ -90,6 +97,7 @@ def arg_typemap(ty):
     else:
         raise NotImplementedError
 
+# float instrs
 float_instrs = {
     '>'  : lc.FCMP_OGT,
     '<'  : lc.FCMP_OLT,
@@ -99,18 +107,24 @@ float_instrs = {
     '!=' : lc.FCMP_ONE
 }
 
-int_instrs = {
-    '>'  : lc.ICMP_SGT,
-    '<'  : lc.ICMP_SLT,
+# signed
+signed_int_instrs = {
     '==' : lc.ICMP_EQ,
-    '>=' : lc.ICMP_SGE,
+    '!=' : lc.ICMP_NE,
+    '<'  : lc.ICMP_SLT,
+    '>'  : lc.ICMP_SGT,
     '<=' : lc.ICMP_SLE,
-    '!=' : lc.ICMP_NE
+    '>=' : lc.ICMP_SGE,
 }
 
-bool_instr = {
+# unsigned
+unsigned_int_instrs = {
     '==' : lc.ICMP_EQ,
-    '!=' : lc.ICMP_NE
+    '!=' : lc.ICMP_NE,
+    '<'  : lc.ICMP_ULT,
+    '>'  : lc.ICMP_UGT,
+    '<=' : lc.ICMP_ULE,
+    '>=' : lc.ICMP_UGE,
 }
 
 logic_instrs = set([ '&&', '||' ])
@@ -131,11 +145,11 @@ def build_intrinsics(mod):
     # XXX define in seperate module and then link in
     ins = {}
 
-    for name, intr in intrinsics.llvm_intrinsics.iteritems():
+    for name, intr in intrinsics.llvm_intrinsics.items():
          # get the function signature
         name, retty, argtys = getattr(intrinsics, name)
 
-        largtys = map(arg_typemap, argtys)
+        largtys = list(map(arg_typemap, argtys))
         lretty  = arg_typemap(retty)
 
         lfunc = Function.intrinsic(mod, intr, largtys)
@@ -174,6 +188,8 @@ class LLVMEmitter(object):
         intmod, intrinsics = build_intrinsics(self.module)
         self.globals.update(intrinsics)
 
+        self.tbaa = tbaa.TBAABuilder.new(self.module, "tbaa.root")
+
     def visit_op(self, instr):
         for op in instr:
             op_code = op[0]
@@ -184,8 +200,11 @@ class LLVMEmitter(object):
                 raise Exception("Can't translate opcode: op_"+op_code)
 
     def add_prelude(self):
-        for name, function in prelude.iteritems():
-            self.intrinsics[name] = Function.new(self.module, function, name)
+        for name, function in prelude.items():
+            lfunc = Function.new(self.module, function, name)
+            lfunc.linkage = lc.LINKAGE_EXTERNAL
+            lfunc.visibility = lc.VISIBILITY_HIDDEN
+            self.intrinsics[name] = lfunc
 
     def start_function(self, name, retty, argtys):
         rettype = arg_typemap(retty)
@@ -193,6 +212,7 @@ class LLVMEmitter(object):
         func_type = Type.function(rettype, argtypes, False)
 
         self.function = Function.new(self.module, func_type, name)
+        self.function.add_attribute(lc.ATTR_ALWAYS_INLINE)
 
         self.block = self.function.append_basic_block("entry")
         self.builder = Builder.new(self.block)
@@ -234,7 +254,7 @@ class LLVMEmitter(object):
         self.builder.call(lfn, argv)
 
     def const(self, val):
-        if isinstance(val, (int, long)):
+        if isinstance(val, int):
             return Constant.int(int_type, val)
         elif isinstance(val, float):
             return Constant.real(float_type, val)
@@ -274,7 +294,7 @@ class LLVMEmitter(object):
             self.stack[target] = Constant.int(bool_type, value)
         elif isinstance(value, int):
             self.stack[target] = Constant.int(int_type, value)
-        elif isinstance(value, (float, long)):
+        elif isinstance(value, (float, int)):
             self.stack[target] = Constant.real(float_type, value)
         elif isinstance(value, str):
             content = Constant.stringz(value)
@@ -456,7 +476,7 @@ class LLVMEmitter(object):
         rv = self.stack[right]
 
         if ty == btypes.int_type:
-            instr = int_instrs[op]
+            instr = signed_int_instrs[op]
             self.stack[val] = self.builder.icmp(instr, lv, rv, val)
 
         elif ty == btypes.float_type:
@@ -470,8 +490,23 @@ class LLVMEmitter(object):
                 elif op == '||':
                     self.stack[val] = self.builder.or_(lv, rv, val)
             else:
-                instr = int_instrs[op]
+                instr = signed_int_instrs[op]
                 self.stack[val] = self.builder.icmp(instr, lv, rv, val)
+
+    #------------------------------------------------------------------------
+    # Ref Functions
+    #------------------------------------------------------------------------
+
+    def op_REF(self, ty, source, target):
+        self.stack[target] = self.builder.gep([zero], source)
+
+    #------------------------------------------------------------------------
+    # Vec Functions
+    #------------------------------------------------------------------------
+
+    def op_VEC(self, ty, width, source, target):
+        self.stack[target] = self.builder.bitcast(source,
+                vec_type(width, ty))
 
     #------------------------------------------------------------------------
     # Show Functions
@@ -497,7 +532,7 @@ class LLVMEmitter(object):
     #------------------------------------------------------------------------
 
     def op_DEF_FOREIGN(self, name, retty, argtys):
-        largtys = map(arg_typemap, argtys)
+        largtys = list(map(arg_typemap, argtys))
         lretty  = arg_typemap(retty)
 
         func_type = Type.function(lretty, largtys, False)
@@ -679,43 +714,34 @@ class BlockEmitter(object):
 #------------------------------------------------------------------------
 
 class LLVMOptimizer(object):
+    inline_threshold = 1000
 
-    def __init__(self, module, opt_level=3):
-        tc = le.TargetMachine.new(features='', cm=le.CM_JITDEFAULT)
-        self.pm, self.fpm = lp.build_pass_managers(tc, loop_vectorize=True,
-                vectorize=False, fpm=False, mod=module, opt=opt_level)
-        self.module = module
+    def __init__(self, module, opt_level=3, loop_vectorize=False):
+        # opt_level is used for both module level (opt) and
+        # instruction level optimization (cg) for TargetMachine
+        # and PassManager
 
-    def run(self):
-        return self.pm.run(self.module)
+        if not detect_avx_support():
+            tm = le.TargetMachine.new(
+                opt=opt_level,
+                features='-avx',
+                cm=le.CM_JITDEFAULT,
+            )
+        else:
+            tm = le.TargetMachine.new(
+                opt=opt_level,
+                features='' ,
+                cm=le.CM_JITDEFAULT,
+            )
 
-    def diff(self):
-        from difflib import Differ
+        pass_opts = dict(
+            fpm = False,
+            mod = module,
+            opt = opt_level,
+            vectorize = False,
+            loop_vectorize = loop_vectorize,
+            inline_threshold=self.inline_threshold,
+        )
 
-        d = Differ()
-        before = str(self.module)
-        self.run()
-        after = str(self.module)
-
-        diff = d.compare(before.splitlines(), after.splitlines())
-        for line in diff:
-            print line
-
-#------------------------------------------------------------------------
-
-def ddump_optimizer(source):
-    import cfg
-    import parser
-    import codegen
-    import typecheck
-
-    with errors.listen():
-        ast       = parser.parse(source)
-        symtab    = typecheck.typecheck(ast, btypes)
-        functions = cfg.ssa_pass(ast)
-        cgen      = codegen.LLVMEmitter(symtab)
-        blockgen  = codegen.BlockEmitter(cgen)
-        optimizer = codegen.LLVMOptimizer(cgen.module)
-
-        print 'Optimizer Diff'.center(80, '=')
-        optimizer.diff()
+        pms = lp.build_pass_managers(tm = tm, **pass_opts)
+        pms.pm.run(module)

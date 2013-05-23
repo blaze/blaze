@@ -3,13 +3,13 @@ This module does most of the standard C type checking and returns
 Python-esque error messages for common errors.
 """
 
-import btypes
-import intrinsics
-from syntax import *
-from errors import error
+from . import btypes
+from . import intrinsics
+from .errors import error
+from .syntax import *
 
-from ast import AST, NodeVisitor
-from collections import defaultdict, deque
+from ast import NodeVisitor
+from collections import deque
 
 #------------------------------------------------------------------------
 # Symbol Table
@@ -146,7 +146,7 @@ class TypeChecker(NodeVisitor):
                 if len(node.arglist) != len(symnode.parameters):
                     error(node.lineno,"Type Error: %s expected %d arguments. Got %d." % (node.name, len(symnode.parameters), len(node.arglist)))
 
-                for n, (arg, parm) in enumerate(zip(node.arglist, symnode.parameters),1):
+                for n, (arg, parm) in enumerate(list(zip(node.arglist, symnode.parameters)),1):
                     self.visit(arg)
                     arg.type == parm.type
                     if arg.type != parm.type:
@@ -231,7 +231,13 @@ class TypeChecker(NodeVisitor):
         node.type = btypes.TParam(node.cons, node.arg)
 
     def visit_Type(self, node):
-        ty = self.scope.lookup(node.name)
+        try:
+            ty = self.scope.lookup(node.name)
+        except KeyError:
+            error(node.lineno, "Syntax Error: '%s' no such type" % node.name)
+            node.type = btypes.undefined
+            return
+
         if ty:
             if isinstance(ty, btypes.Type):
                 node.type = ty
@@ -387,11 +393,11 @@ class TypeChecker(NodeVisitor):
             error(node.lineno, "Syntax Error: return outside function")
         else:
             self.visit(node.expr)
-            #fn = self._current_scope
+            fn_sig = self.scope.lookup(self.scope.name)
 
-            #if node.expr.type != fn.sig.type:
-                #error(node.lineno, "Type Error: Value returned does match function signature  %s != %s" % (
-                        #node.expr.type.name, fn.sig.type.name))
+            if node.expr.type != fn_sig.type:
+                error(node.lineno, "Type Error: Value returned does match function signature  %s != %s" % (
+                        node.expr.type.name, fn_sig.type.name))
             self.has_return = True
 
     #------------------------------------------------------------------------

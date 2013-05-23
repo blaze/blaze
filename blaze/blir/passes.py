@@ -1,9 +1,9 @@
-import cfg
-import exc
-import parser
-import errors
-import codegen
-import typecheck
+from . import cfg
+from . import exc
+from . import parser
+from . import errors
+from . import codegen
+from . import typecheck
 
 import sys
 import time
@@ -55,11 +55,10 @@ def parse_pass(ast, env):
 
 @ppass("Type checker")
 def typecheck_pass(ast, env):
-    import btypes
+    from . import btypes
     symtab = typecheck.typecheck(ast, typesystem=btypes)
 
     env['symtab'] = symtab
-
     return ast, env
 
 # ------------------------------
@@ -75,7 +74,6 @@ def ssa_pass(ast, env):
     functions = cfg.ssa_pass(ast)
 
     env['functions'] = functions
-
     return ast, env
 
 # ------------------------------
@@ -104,7 +102,6 @@ def codegen_pass(ast, env):
         lfunctions.append(function)
 
     env['lfunctions'] = lfunctions
-
     return ast, env
 
 # ------------------------------
@@ -112,18 +109,22 @@ def codegen_pass(ast, env):
 @ppass("LLVM Optimizer")
 def optimizer_pass(ast, env):
     cgen = env['cgen']
+    args = env['args']
 
-    opt_level = env['args']['O']
+    opt_level = args['O']
     llmodule = cgen.module
-
-    optimizer = codegen.LLVMOptimizer(llmodule, opt_level)
-
-    # module-level optimization
-    if not env['args'].get('nooptimize', None):
-        optimizer.run()
 
     llmodule.verify()
 
+    # module-level optimization
+    if not args.get('nooptimize', None):
+        optimizer = codegen.LLVMOptimizer(
+            llmodule,
+            opt_level,
+            loop_vectorize=args.get('vectorize', False)
+        )
+
+    llmodule.verify()
     env['lmodule'] = llmodule
 
     return ast, env
@@ -188,9 +189,9 @@ def main():
     argp.add_argument('--ddump-lex', action='store_true', help='Dump token stream')
     argp.add_argument('--ddump-blocks', action='store_true', help='Dump the block structure')
     argp.add_argument('--ddump-tc', action='store_true', help='Dump the type checker state')
-    argp.add_argument('--ddump-optimizer', action='store_true', help='Dump diff of the LLVM optimizer pass')
     argp.add_argument('--noprelude', action='store_true', help='Don\'t link against the prelude')
     argp.add_argument('--nooptimize', action='store_true', help='Don\'t run LLVM optimization pass')
+    argp.add_argument('--vectorize', action='store_true', help='Enable SIMD loop vectorization')
     argp.add_argument('--emit-llvm', '-S', action='store_true', help=' Generate output files in LLVM formats ')
     argp.add_argument('--emit-x86', action='store_true', help=' Generate output files in x86 assembly ')
     argp.add_argument('--run', action='store_true', help='Execute main() in generated code ')
@@ -210,9 +211,6 @@ def main():
 
     if args.ddump_blocks:
         cfg.ddump_blocks(source)
-
-    if args.ddump_optimizer:
-        codegen.ddump_optimizer(source)
 
     try:
         # =====================================

@@ -1,5 +1,5 @@
 import llvm.core as lc
-from btypes import int_type, float_type
+from .btypes import int_type, float_type
 
 #------------------------------------------------------------------------
 # Intrinsics Signatures
@@ -33,18 +33,24 @@ ceil  = 'ceil', float_type, [float_type]
 floor = 'floor', float_type, [float_type]
 fmod  = 'fmod', float_type, [float_type, float_type]
 
+# byteswapping
+
+bswap = 'bswap', int_type, [int_type]
+
 #------------------------------------------------------------------------
 # Intrinsic Symbols
 #------------------------------------------------------------------------
 
 llvm_intrinsics = {
-    'sin'  : lc.INTR_SIN,
-    'cos'  : lc.INTR_COS,
+    'sin'   : lc.INTR_SIN,
+    'cos'   : lc.INTR_COS,
 
-    'sqrt' : lc.INTR_SQRT,
-    'pow'  : lc.INTR_POW,
-    'exp'  : lc.INTR_EXP,
-    'log'  : lc.INTR_LOG,
-    'sqrt' : lc.INTR_SQRT,
-    'abs'  : lc.INTR_FABS,
+    'sqrt'  : lc.INTR_SQRT,
+    'pow'   : lc.INTR_POW,
+    'exp'   : lc.INTR_EXP,
+    'log'   : lc.INTR_LOG,
+    'sqrt'  : lc.INTR_SQRT,
+    'abs'   : lc.INTR_FABS,
+
+    'bswap' : lc.INTR_BSWAP,
 }

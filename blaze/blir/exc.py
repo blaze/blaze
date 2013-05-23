@@ -6,7 +6,7 @@ import numpy as np
 from types import ModuleType
 from os.path import realpath, dirname, join
 
-from bind import wrap_llvm_module
+from .bind import wrap_llvm_module
 
 import llvm.ee as le
 from llvm.workaround.avx_support import detect_avx_support
@@ -79,7 +79,7 @@ def adapt(arg, val):
 
         return ndarray(data, dims, strides)
 
-    elif isinstance(val, (int, long, str, float)):
+    elif isinstance(val, (int, str, float)):
         return val
 
     elif isinstance(val, tuple):
@@ -93,7 +93,7 @@ def adapt(arg, val):
 
 def wrap_arguments(fn, args):
     if args:
-        largs = map(adapt, fn.argtypes, args)
+        largs = list(map(adapt, fn.argtypes, args))
     else:
         largs = ()
     return largs
@@ -101,6 +101,8 @@ def wrap_arguments(fn, args):
 #------------------------------------------------------------------------
 # Toplevel
 #------------------------------------------------------------------------
+
+engine = None
 
 class Context(object):
 
@@ -122,7 +124,7 @@ class Context(object):
         cgen = env['cgen']
 
         self.__namespace = cgen.globals
-        self.__llmodule = cgen.module.clone()
+        self.__llmodule = cgen.module
 
         if not detect_avx_support():
             tc = le.TargetMachine.new(features='-avx', cm=le.CM_JITDEFAULT)
@@ -136,13 +138,20 @@ class Context(object):
         mod = ModuleType('blir_wrapper')
         wrap_llvm_module(cgen.module, self.__engine, mod)
 
+        mod.__doc__ = 'Compiled LLVM wrapper module'
         self.__mod = mod
 
     def lookup_fn(self, fname):
-        return getattr(self.__mod, fname)
+        if not self.destroyed:
+            return getattr(self.__mod, fname)
+        else:
+            raise RuntimeError("Context already destroyed")
 
     def lookup_fnptr(self, fname):
-        return self.__engine.get_pointer_to_function(self.__namespace[fname])
+        if not self.destoryed:
+            return self.__engine.get_pointer_to_function(self.__namespace[fname])
+        else:
+            raise RuntimeError("Context already destroyed")
 
     @property
     def mod(self):
@@ -180,9 +189,9 @@ def execute(ctx, args=None, fname=None, timing=False):
     elif len(lfn.argtypes) == len(args):
         res = lfn(*largs)
     else:
-        print 'Invalid number of arguments to main function.'
+        print('Invalid number of arguments to main function.')
 
     if timing:
-        print 'Time %.6f' % (time.time() - start)
+        print('Time %.6f' % (time.time() - start))
 
     return res

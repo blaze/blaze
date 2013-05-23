@@ -1,6 +1,6 @@
-import btypes
-import syntax
-import blocks
+from . import btypes
+from . import syntax
+from . import blocks
 
 from ast import NodeVisitor
 from collections import Counter
@@ -372,8 +372,8 @@ class BlockDebug(object):
 #------------------------------------------------------------------------
 
 def ddump_blocks(source):
-    import errors
-    from passes import compile
+    from . import errors
+    from .passes import compile
 
     with errors.listen():
         ast, env = compile(source)

@@ -1,7 +1,7 @@
 import re
 from ply.lex import lex
 
-from errors import error
+from .errors import error
 
 tokens = [
  'ARROW', 'ASSIGN', 'COLON', 'COMMA', 'CONST', 'DEF', 'DIVIDE', 'ELSE', 'EQ',
@@ -129,7 +129,7 @@ def escape_token(m):
     if escape_code in _escape_map:
         return _escape_map[escape_code]
     else:
-        raise Unescaped, escape_code
+        raise Unescaped(escape_code)
 
 def _escape_token(t):
     try:
