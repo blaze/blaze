@@ -71,7 +71,7 @@ class BlazeElementKernel(object):
     _ctypes_func = None
     _ee = None
     _dshapes = None
-    def __init__(self, func):
+    def __init__(self, func, ranks=None):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
                                 " Try a converter method.")
@@ -96,6 +96,8 @@ class BlazeElementKernel(object):
         self.kinds = tuple(kindlist)
         # Keep a handle on the module object
         self.module = func.module
+        if ranks is None:
+            self.ranks = len(kindlist)*[0]
 
     @property
     def dshapes(self):
@@ -297,20 +299,6 @@ class BlazeElementKernel(object):
 
         raise NotImplementedError
 
-# A Node on the kernel Tree
-class KernelObj(object):
-    def __init__(self, kernel, ranks, name):
-        if not isinstance(kernel, BlazeElementKernel):
-            raise ValueError("Must pass in kernel object of type BlazeElementKernel")
-        self.kernel = kernel
-        self.ranks = ranks
-        self.name = name  # name of kernel
-
-    def attach_to(self, module):
-        """attach the kernel to a different LLVM module
-        """
-        self.kernel.attach(module)
-
 # An Argument to a kernel tree (encapsulates the array, argument kind and rank)
 class Argument(object):
     def __init__(self, arg, kind, rank, llvmtype):
@@ -336,7 +324,7 @@ def find_unique_args(tree, unique_args):
 def get_fused_type(tree):
     """Get the function type of the compound kernel
     """
-    outkrn = tree.node.kernel
+    outkrn = tree.kernel
     # If this is not a SCALAR then we need to attach another node
     out_kind = outkrn.kinds[-1]
     out_type = outkrn.func.type.pointee.return_type
@@ -353,11 +341,12 @@ def get_fused_type(tree):
 
 # This modifies the node to add a reference to the llvm_obj
 def insert_instructions(node, builder):
-    kernel = node.node.kernel
+    kernel = node.kernel
     is_scalar = (kernel.kinds[-1] == SCALAR)
     #allocate space for output if necessary
     if not is_scalar:
         output = builder.alloca(kernel.argtypes[-1].pointee)
+
 
     #Setup the argument list
     args = [child.llvm_obj for child in node.children]
@@ -412,17 +401,15 @@ def fuse_kerneltree(tree, newname):
     nodelist = tree.sorted_nodes()
 
     for node in nodelist:
-        node.node.attach_to(module)
+        node.attach_to(module)
         insert_instructions(node, builder)
 
-    if tree.node.kernel.kinds[-1] == SCALAR:
+    if tree.kernel.kinds[-1] == SCALAR:
         builder.ret(nodelist[-1].llvm_obj)
     else:
         builder.ret_void()
 
-    newkernel = BlazeElementKernel(func)
     ranks = [arg.rank for arg in args]
+    newkernel = BlazeElementKernel(func, ranks)
 
-    krnlobj = KernelObj(newkernel, ranks, newname)
-
-    return krnlobj, args
+    return newkernel, args
