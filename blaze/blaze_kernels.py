@@ -9,9 +9,9 @@ from __future__ import print_function
 #
 #    simple:  out_type @func(in1_type %a, in2_type %b)
 #    ptrs:  void @func(in1_type * %a, in2_type * %b, out_type * %out)
-#    array_0:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
-#    array_1:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
-#    array_2:  void @func(in1_array * %a, in2_array * %b, out_array * %out)
+#    array_0:  void @func(in1_array0 * %a, in2_array0 * %b, out_array0* %out)
+#    array_1:  void @func(in1_array1 * %a, in2_array1 * %b, out_array1* %out)
+#    array_2:  void @func(in1_array2 * %a, in2_array2 * %b, out_array2* %out)
 #
 #   where array_n is one of the array_kinds in llvm_array
 #   
@@ -397,7 +397,7 @@ def fuse_kerneltree(tree, newname):
     for i, arg in enumerate(args):
         arg.llvm_obj = func.args[i]
 
-    # topologically sort the kernel-tree nodes at then for each node
+    # topologically sort the kernel-tree nodes and then for each node
     #  site we issue instructions to compute the value
     nodelist = tree.sorted_nodes()
 
