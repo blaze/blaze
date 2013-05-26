@@ -95,7 +95,7 @@ STRIDED_DK = STRIDED + HAS_DIMKIND
 STRIDED_SOA_DK = STRIDED_SOA + HAS_DIMKIND
 
 array_kinds = (C_CONTIGUOUS, F_CONTIGUOUS, STRIDED, STRIDED_SOA,
-               C_CONTIGUOUS_ND, F_CONTIGUOUS_ND, STRIDED_ND, STRIDED_SOA_DK, 
+               C_CONTIGUOUS_ND, F_CONTIGUOUS_ND, STRIDED_ND, STRIDED_SOA_ND, 
                C_CONTIGUOUS_DK, F_CONTIGUOUS_DK, STRIDED_DK, STRIDED_SOA_DK)
 
 _invmap = {}
@@ -198,7 +198,6 @@ def _raw_check_array(arrtyp):
         else:
             c_contig = True
 
-
     if a1 == int32_type:
         num = 2
         strided = STRIDED_ND
@@ -244,6 +243,99 @@ def _raw_check_array(arrtyp):
     else:
         return None
 
+# Returns c++ templates for Array_S, Array_F, Array_C, Array_A...
+_template_cache = []
+def get_cpp_template(typ='all'):
+    if len(_template_cache) == 0:
+        _make_cpp_templates()
+    templates = _template_cache
+    if typ in array_kinds:
+        indx = array_kinds.index(typ)
+        try: 
+            if (typ & HAS_DIMKIND):
+                base = [templates[0], templates[2]]
+            elif (typ & HAS_ND):
+                base = [templates[0], templates[1]]
+            else:
+                base = [templates[0]]
+            if (typ & (~(HAS_ND | HAS_DIMKIND))) == STRIDED:
+                base.append(templates[3])
+        except TypeError:
+            base = templates[:4]
+        return '\n'.join(base+[templates[indx+4]])
+    else:
+        return '\n'.join(templates)
+    return
+
+# Warning!  This assumes that clang on the system
+#   has the same architecture as ctypes...
+def _make_cpp_templates():
+    global _template_cache
+    _template_cache = []
+    import ctypes
+    plen = ctypes.sizeof(ctypes.c_size_t)
+    spaces = ' '*4
+    lsize = ctypes.sizeof(ctypes.c_long)
+    isize = ctypes.sizeof(ctypes.c_int)
+    llsize = ctypes.sizeof(ctypes.c_longlong)
+    shsize = ctypes.sizeof(ctypes.c_short)
+
+    if plen == lsize:
+        header = "%stypedef long intp;" % spaces
+    elif plen == isize:
+        header = "%stypdef int intp;" % spaces
+    elif plen == llsize:
+        header = "%stypedef longlong intp;" % spaces
+    else:
+        raise ValueError("Size of pointer not recognized.")
+
+    if lsize == 4:
+        header2 = "%typedef long int32;" % spaces
+    elif isize == 4:
+        header2 = "%stypedef int int32;" % spaces
+    else:
+        raise ValueError("Cannot find typedef for 32-bit int;")
+
+    if isize == 2:
+        header3 = "%stypedef int int16;" % spaces
+    elif shsize == 2:
+        header3 = "%stypedef short int16;" % spaces
+
+    template_core = """
+    template<class T, int ndim>
+    struct {name} {{
+        T *data;
+        {middle}{dims};
+    }};
+    """
+
+    header4 = """
+    template<class T>
+    struct diminfo {
+        T dim;
+        T stride; 
+    };
+    """
+    spaces = ' '*8
+    middle_map = {'': '',
+                  'ND': 'int32 nd;\n%s' % spaces,
+                  'DK': 'int16 nd;\n%sint16 dimkind;\n%s' % (spaces, spaces)
+                 }
+
+    dims_map = {'F': 'intp dims[ndim]',
+                'C': 'intp dims[ndim]',
+                'S': 'diminfo<intp> dims[ndim]',
+                'A': 'intp dims[ndim];\n%sintp strides[ndim]' % spaces
+               }
+    templates = [header, header2, header3, header4]
+    for end in ['', 'ND', 'DK']:
+        for typ in ['C', 'F', 'S', 'A']:
+            name = '_'.join(['Array_%s' % typ]+([end] if end else []))
+            templates.append(template_core.format(name=name, 
+                                                  middle=middle_map[end],
+                                                  dims=dims_map[typ]))
+    _template_cache.extend(templates)
+    return
 
 def test():
     arr = array_type(5, C_CONTIGUOUS)

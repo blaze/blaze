@@ -23,7 +23,8 @@ import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
 from . import llvm_array as lla
-from .llvm_array import void_type, array_kinds, check_array
+from .llvm_array import void_type, array_kinds, check_array, get_cpp_template
+from .blir import compile
 
 SCALAR = 0
 POINTER = 1
@@ -121,7 +122,7 @@ class BlazeElementKernel(object):
                 raise ValueError("Non-scalar function argument "
                                  "but scalar rank in argument %d" % i)
         self._dshapes = tuple(_dshapes)
-        return
+        self.ranks = [len(el)-1 for el in _dshapes]
 
     def _get_ctypes(self):
         from .datashape.util import to_ctypes
@@ -204,12 +205,30 @@ class BlazeElementKernel(object):
 
 
     @staticmethod
-    def fromblir(str):
-        raise NotImplementedError
+    def fromblir(codestr):
+        from .datashape.util import from_blir
+        ast, env = compile(codestr)
+        NUM = 1
+        krnl = BlazeElementKernel(env['lfunctions'][NUM])
+        func = env['functions'][NUM]
+        RET, ARGS = 1, 2
+        dshapes = [from_blir(arg) for arg in func[ARGS]]
+        dshapes.append(from_blir(func[RET]))
+        krnl.dshapes = dshapes
+        return krnl
 
     @staticmethod
     def fromcffi(cffifunc):
         raise NotImplementedError
+
+    @staticmethod
+    def fromcpp(source):
+        raise NotImplementedError
+        import io
+        import subprocess
+        llvm_module = Module.from_bitcode(io.BytesIO(bitcode))
+        # Call out to clang and load the module
+
 
     @staticmethod
     def fromctypes(func, module=None):
@@ -362,7 +381,6 @@ def insert_instructions(node, builder, output=None):
         node.llvm_obj = res
     else:
         node.llvm_obj = output
-
 
 def fuse_kerneltree(tree, newname):
     """Fuse the kernel tree into a single kernel object with the common names
