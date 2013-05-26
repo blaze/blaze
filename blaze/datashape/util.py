@@ -292,7 +292,9 @@ from ..blaze_kernels import SCALAR, POINTER
 
 def from_llvm(typ, argkind=SCALAR):
     """
-    Map an LLVM type to an equivalent data-shape type.
+    Map an LLVM type to an equivalent datashape type
+
+    argkind is SCALAR, POINTER, or a tuple of (arrkind, nd, el_type) for Arrays
     """
     from ..llvm_array import check_array
     import llvm.core

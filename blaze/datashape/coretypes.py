@@ -428,6 +428,14 @@ class DataShape(Mono):
     def measure(self):
         return self.parameters[-1]
 
+    def sigform(self):
+        """Return a data shape object with Fixed dimensions replaced
+        by TypeVar dimensions.
+        """
+        newparams = [TypeVar('i%s'%n) for n in range(len(self.parameters)-1)]
+        newparams.append(self.parameters[-1])
+        return DataShape(newparams)
+
     def subarray(self, leading):
         """Returns a data shape object of the subarray with 'leading'
         dimensions removed.

@@ -52,6 +52,8 @@ def str_to_kind(str):
         raise ValueError("Invalid Argument Kind")
     return eval(str)
 
+
+
 # A wrapper around an LLVM Function object
 # Every LLVM Function object comes attached to a particular module
 # But, Blaze Element Kernels may be re-attached to different LLVM modules
@@ -72,7 +74,7 @@ class BlazeElementKernel(object):
     _ctypes_func = None
     _ee = None
     _dshapes = None
-    def __init__(self, func, ranks=None):
+    def __init__(self, func, dshapes=None):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
                                 " Try a converter method.")
@@ -97,9 +99,10 @@ class BlazeElementKernel(object):
         self.kinds = tuple(kindlist)
         # Keep a handle on the module object
         self.module = func.module
-        if ranks is None:
-            ranks = len(kindlist)*[0]
-        self.ranks = ranks
+        if dshapes is None:
+            dshapes = self.dshapes
+        else:
+            self.dshapes = dshapes
 
     @property
     def dshapes(self):
@@ -110,7 +113,8 @@ class BlazeElementKernel(object):
                    for llvm, kind in zip(self.argtypes, self.kinds)]
             if self.kinds[-1] == SCALAR:
                 ds.append(from_llvm(self.return_type))
-            self._dshapes = ds
+            self._dshapes = tuple(ds)
+            self.ranks = [len(el)-1 if el else 0 for el in ds]
         return self._dshapes
 
     # FIXME:  Needs more verification...
@@ -191,55 +195,6 @@ class BlazeElementKernel(object):
     def nin(self):
         return len(self.kind)-1
 
-    # Currently only works for scalar kernels
-    @staticmethod
-    def frompyfunc(pyfunc, signature):
-        import numba
-        numbafunc = numba.jit(signature)(pyfunc)
-        krnl = BlazeElementKernel(numbafunc.lfunc)
-        from .datashape.util import from_numba
-        dshapes = [from_numba(arg) for arg in numbafunc.signature.args]
-        dshapes.append(from_numba(numbafunc.signature.return_type))
-        krnl.dshapes = dshapes
-        return krnl
-
-
-    @staticmethod
-    def fromblir(codestr):
-        from .datashape.util import from_blir
-        ast, env = compile(codestr)
-        NUM = 1
-        krnl = BlazeElementKernel(env['lfunctions'][NUM])
-        func = env['functions'][NUM]
-        RET, ARGS = 1, 2
-        dshapes = [from_blir(arg) for arg in func[ARGS]]
-        dshapes.append(from_blir(func[RET]))
-        krnl.dshapes = dshapes
-        return krnl
-
-    @staticmethod
-    def fromcffi(cffifunc):
-        raise NotImplementedError
-
-    @staticmethod
-    def fromcpp(source):
-        raise NotImplementedError
-        import io
-        import subprocess
-        llvm_module = Module.from_bitcode(io.BytesIO(bitcode))
-        # Call out to clang and load the module
-
-
-    @staticmethod
-    def fromctypes(func, module=None):
-        if func.argtypes is None:
-            raise ValueError("ctypes function must have argtypes and restype set")
-        if module is None:
-            names = [arg.__name__ for arg in func.argtypes]
-            names.append(func.restype.__name__)
-            name = "mod__{0}_{1}".format(func.__name__, '_'.join(names))
-            module = Module.new(name)
-        raise NotImplementedError
 
     @staticmethod
     def fromcfunc(cfunc):
@@ -258,18 +213,18 @@ class BlazeElementKernel(object):
     def ctypes_func(self):
         if self._ctypes_func is None:
             import ctypes
-            ptr_to_func = self.func_ptr
             if not all(kind == SCALAR for kind in self.kinds):
-                self._ctypes_func = self._get_wrapper(ptr_to_func)
+                self._ctypes_func = self._get_wrapper(self.func_ptr)
             else:
                 out_type, argtypes = self._get_ctypes()
                 FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
-                self._ctypes_func = FUNC_TYPE(ptr_to_func)
+                self._ctypes_func = FUNC_TYPE(self.func_ptr)
         return self._ctypes_func
 
-    # Should check to ensure kinds still match
+    # Should probably check to ensure kinds still match
     def replace_func(self, func):
         self.func = func
+        self._ee = None
         self._func_ptr = None
         self._ctypes_func = None
 
@@ -319,10 +274,70 @@ class BlazeElementKernel(object):
 
         raise NotImplementedError
 
+
+# Currently only works for scalar kernels
+def frompyfunc(pyfunc, signature):
+    import numba
+    from .datashape.util import from_numba
+    numbafunc = numba.jit(signature)(pyfunc)    
+    dshapes = [from_numba(arg) for arg in numbafunc.signature.args]
+    dshapes.append(from_numba(numbafunc.signature.return_type))
+    krnl = BlazeElementKernel(numbafunc.lfunc, dshapes)
+    return krnl
+
+def fromblir(codestr):
+    from .datashape.util import from_blir
+    ast, env = compile(codestr)
+    NUM = 1
+    func = env['functions'][NUM]
+    RET, ARGS = 1, 2
+    dshapes = [from_blir(arg) for arg in func[ARGS]]
+    dshapes.append(from_blir(func[RET]))    
+    krnl = BlazeElementKernel(env['lfunctions'][NUM], dshapes)
+    return krnl
+
+def fromcffi(cffifunc):
+    raise NotImplementedError
+
+def fromcpp(source):
+    import tempfile, os, subprocess
+    header = get_cpp_template()
+    fid_cpp, name_cpp = tempfile.mkstemp(suffix='.cpp', text=True)
+    os.write(fid_cpp, header + source)
+    os.close(fid_cpp)
+    args = ['clang','-S','-emit-llvm','-O3','-o','-',name_cpp]
+    p1 = subprocess.Popen(args, stdout=subprocess.PIPE)
+    assembly, err = p1.communicate()
+    if err:
+        raise RuntimeError("Error trying to compile", err)
+    os.remove(name_cpp)
+    llvm_module = Module.from_assembly(assembly)
+
+    # Always get the first function --- 
+    #    assume it is source
+    # FIXME:  We could improve this with an independent
+    #    parser of the source file
+    func = llvm_module.functions[0]
+    krnl = BlazeElementKernel(func)
+    # Use default llvm dshapes --
+    #  could improve this with a parser of source
+    return krnl
+
+def fromctypes(func, module=None):
+    if func.argtypes is None:
+        raise ValueError("ctypes function must have argtypes and restype set")
+    if module is None:
+        names = [arg.__name__ for arg in func.argtypes]
+        names.append(func.restype.__name__)
+        name = "mod__{0}_{1}".format(func.__name__, '_'.join(names))
+        module = Module.new(name)
+    raise NotImplementedError
+
+
 # An Argument to a kernel tree (encapsulates the array, argument kind and rank)
 class Argument(object):
     def __init__(self, arg, kind, rank, llvmtype):
-        self.arg = arg
+        self.arr = arg
         self.kind = kind
         self.rank = rank
         self.llvmtype = llvmtype
@@ -330,7 +345,7 @@ class Argument(object):
     def __eq__(self, other):
         if not isinstance(other, Argument):
             return NotImplemented
-        return (self.arg is other.arg) and (self.rank == other.rank)
+        return (self.arr is other.arr) and (self.rank == other.rank)
 
 # This find args that are used uniquely as well.
 def find_unique_args(tree, unique_args):
@@ -407,6 +422,7 @@ def fuse_kerneltree(tree, newname):
     func = Function.new(module, func_type, tree.name+"_fused")
     block = func.append_basic_block('entry')
     builder = lc.Builder.new(block)
+    outdshape = tree.kernel.dshapes[-1]
 
     # TODO: Create wrapped function for functions
     #   that need to loop over their inputs
@@ -430,7 +446,16 @@ def fuse_kerneltree(tree, newname):
         insert_instructions(nodelist[-1], builder, func.args[-1])
         builder.ret_void()
 
-    ranks = [arg.rank for arg in args]
-    newkernel = BlazeElementKernel(func, ranks)
+    dshapes = [get_kernel_dshape(arg) for arg in args]
+    dshapes.append(outdshape)
+    newkernel = BlazeElementKernel(func, dshapes)
 
     return newkernel, args
+
+# Given an Argument object, return the correspoding kernel data-shape
+def get_kernel_dshape(arg):
+    rank = arg.rank
+    total_dshape = arg.arr.dshape
+    sub = len(total_dshape)-1-rank
+    return total_dshape.subarray(sub)
+

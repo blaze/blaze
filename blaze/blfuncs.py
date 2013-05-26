@@ -8,7 +8,9 @@ from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
 from .cgen.utils import letters
-from .blaze_kernels import Argument, fuse_kerneltree, BlazeElementKernel
+from .blaze_kernels import (Argument, fuse_kerneltree, BlazeElementKernel,
+                frompyfunc)
+from . import blaze_kernels
 from .py3help import dict_iteritems, _strtypes
 
 # A KernelTree is just the bare element-wise kernel functions
@@ -72,7 +74,7 @@ class KernelTree(object):
     def func_ptr(self):
         if self._funcptr is None:
             self.fuse()
-            kernel = self._fused.node.kernel
+            kernel = self._fused.kernel
             self._funcptr = kernel.func_ptr
             self._ctypes = kernel.ctypes_func
         return self._funcptr
@@ -81,7 +83,7 @@ class KernelTree(object):
     def ctypes_func(self):
         if self._ctypes is None:
             self.fuse()
-            kernel = self._fused.node.kernel
+            kernel = self._fused.kernel
             self._funcptr = kernel.func_ptr
             self._ctypes = kernel.ctypes_func
         return self._ctypes            
@@ -114,31 +116,44 @@ def get_signature(typetuple):
     sig = [','.join((str(x) for x in arg.shape)) for arg in typetuple]
     return process_signature(sig)
 
+def _convert_string(kind, source):
+    try:
+        func = getattr(blaze_kernels, 'from%s' % kind)
+    except AttributeError:
+        return ValueError("No conversion function for %s found." % kind)
+    return func(source)
+
 def convert_kernel(value, key=None):
     from llvm.core import FunctionType
     if isinstance(value, tuple):
         if len(value) == 2 and isinstance(value[1], types.FunctionType) and \
                  isinstance(value[0], _strtypes):
-                krnl = BlazeElementKernel.frompyfunc(value[1], value[0])
+                krnl = frompyfunc(value[1], value[0])
+        elif len(value) == 2 and isinstance(value[1], _strtypes) and \
+                 isinstance(value[0], _strtypes):
+            krnl = _convert_string(value[0], value[1])
         else:
             raise TypeError("Cannot parse kernel specification %s" % value)
-    elif isinstance(value, types.FunctionType):
+    elif isinstance(value, types.FunctionType) and key is not None:
+        # Requires key to be provided as the mapping.
         args = ','.join(str(to_numba(ds)) for ds in key[:-1])
         signature = '{0}({1})'.format(str(to_numba(key[-1])), args)
-        krnl = BlazeElementKernel.frompyfunc(value, signature)
+        krnl = frompyfunc(value, signature)
         krnl.dshapes = key
     elif isinstance(value, FunctionType):
         krnl = BlazeElementKernel(value)
         if key is not None:
             krnl.dhapes = key
+    else:
+        raise TypeError("Cannot convert value = %s and key = %s" % (value, key))
+
     return krnl
 
 # Process type-table dictionary which maps a signature list with
 #   (input-type1, input-type2, output_type) to a kernel into a
-#   lookup-table dictionary which maps a input-only signature list
+#   lookup-table dictionary which maps an input-only signature list
 #   to a kernel matching those inputs.  The output 
-#   is placed 
-#   with a tuple of the output-type plus the signature
+#   is placed with a tuple of the output-type plus the signature
 # So far it assumes the types all have the same rank
 #   and deduces the signature from the first kernel found
 def process_typetable(typetable):
@@ -196,7 +211,7 @@ class BlazeFunc(object):
                      The kernel may also be several other objects which will 
                      be converted to the BlazeElementKernel: 
                         python-function:  converted via numba
-                        blir-string:      converted via blir
+                        string:           converted via blir
                         llvm-function:    directly wrapped
                         ctypes-function:  wrapped via an llvm function call 
 
@@ -222,6 +237,25 @@ class BlazeFunc(object):
         return broadcastable(dshapes, self.ranks,
                                 rankconnect=self.rankconnect)
 
+    # FIXME: This just does a dumb look-up
+    #        assumes input kernels all have the same rank
+    def find_best_kernel(self, types):
+        mtypes = [ds.sigform() for ds in types]
+        ranks = [len(ds)-1 for ds in types]
+        test_rank = min(ranks)
+        mtypes = tuple(ds.subarray(rank-test_rank) 
+                      for ds, rank in zip(mtypes, ranks))
+        krnl = None
+        while test_rank >= 0:
+            krnl = self.dispatch.get(mtypes, None)
+            if krnl is not None:
+                break
+            test_rank -= 1
+            mtypes = tuple(ds.subarray(1) for ds in mtypes)
+        if krnl is None:
+            raise ValueError("Did not find matching kernel for " + str(mtypes))
+        return krnl
+
     def __call__(self, *args, **kwds):
         # convert inputs to Arrays
         # build an AST and return Arrays with a Deferred Data Descriptor
@@ -233,8 +267,8 @@ class BlazeFunc(object):
         #          function even if the types are not all the same
 
         # Find the kernel from the dispatch table
-        types = tuple(arr._data.dshape.measure for arr in args)
-        kernel = self.dispatch[types]
+        types = tuple(arr.dshape for arr in args)
+        kernel = self.find_best_kernel(types)
 
         # Check rank-signature compatibility and broadcastability of arguments
         outshape = self.compatible(args)
@@ -244,7 +278,10 @@ class BlazeFunc(object):
         if len(out_type) > 1:
             out_type = out_type.measure
 
-        outdshape = DataShape(outshape+(out_type,))
+        if len(outshape)==0:
+            outdshape = out_type
+        else:
+            outdshape = DataShape(outshape+(out_type,))
 
         # Create a new BlazeFuncDescriptor with this
         # kerneltree and a new set of args depending on
