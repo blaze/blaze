@@ -1,18 +1,6 @@
 from collections import namedtuple
 
 #------------------------------------------------------------------------
-# Kinds
-#------------------------------------------------------------------------
-
-Kind   = namedtuple('Kind', 'ty')
-KArrow = namedtuple('KArrow', 'left, right')
-
-Star  = Kind(None)
-Unit  = Star
-Param = KArrow(Star, Star)
-KArrow = KArrow(KArrow(Star, Star), Star)
-
-#------------------------------------------------------------------------
 # Types
 #------------------------------------------------------------------------
 
@@ -22,6 +10,18 @@ Type.__repr__ = lambda s: s.name
 TParam = namedtuple('TParam', 'cons, arg')
 TArrow = namedtuple('TArrow', 'dom, cod')
 TVar   = str
+
+#------------------------------------------------------------------------
+# Kinds
+#------------------------------------------------------------------------
+
+Kind   = namedtuple('Kind', 'ty')
+KArrow = namedtuple('KArrow', 'left, right')
+
+Star  = Kind(None)
+
+Unit  = Star
+Param = KArrow(Star, Star)
 
 #------------------------------------------------------------------------
 # Scalars

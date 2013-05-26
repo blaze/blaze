@@ -1,7 +1,7 @@
 import re
 from ply.lex import lex
 
-from errors import error
+from .errors import error
 
 tokens = [
  'ARROW', 'ASSIGN', 'COLON', 'COMMA', 'CONST', 'DEF', 'DIVIDE', 'ELSE', 'EQ',
@@ -11,7 +11,7 @@ tokens = [
  'RPAREN', 'SEMI', 'SHL', 'SHR', 'STRING', 'TIMES', 'TRUE', 'VAR', 'WHILE'
 ]
 
-reserved = set([
+reserved = {
     'False',
     'True',
     # --
@@ -27,7 +27,7 @@ reserved = set([
     'return',
     'var',
     'while'
-])
+}
 
 _escapes_re = r'(\\b[0-9a-fA-F]{2})|(\\.)'
 _escape_map = {

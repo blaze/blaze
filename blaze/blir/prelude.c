@@ -1,8 +1,10 @@
+#include <math.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
-
-#include "Python.h"
+#include <stdbool.h>
+#include <string.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,20 +19,35 @@ typedef struct {
 } ndarray;
 
 // ------------------------------------------------------------------------
-// String Operations
+// Math Operations
 // ------------------------------------------------------------------------
 
-int isNull(void* ptr)
-{
-    return ptr==NULL;
+int8_t abs_i8(int8_t i) {
+  return i >= 0 ? i : -i;
 }
+
+int16_t abs_i16(int16_t i) {
+  return i >= 0 ? i : -i;
+}
+
+int32_t abs_i32(int32_t i) {
+  return i >= 0 ? i : -i;
+}
+
+int64_t abs_i64(int64_t i) {
+  return i >= 0 ? i : -i;
+}
+
+// ------------------------------------------------------------------------
+// String Operations
+// ------------------------------------------------------------------------
 
 int length(char* string)
 {
     return strlen(string);
 }
 
-char strIndex(char* string, int i)
+char indexof(char* string, int i)
 {
     return string[i];
 }
@@ -44,13 +61,24 @@ char* append(char* x, char* y)
     return buf;
 }
 
+int isNull(void* ptr)
+{
+    return ptr==NULL;
+}
+
 int strHead(char* str)
 {
+    if (str[0]=='\0') {
+        return NULL;
+    }
     return (int)(str[0]);
 }
 
 char* strTail(char* str)
 {
+    if (str[0]=='\0') {
+        return NULL;
+    }
     return str+1;
 }
 
@@ -98,29 +126,6 @@ void show_bool(int b)
 void show_array(ndarray *a) {
     printf("array(%p)", a->data);
 }
-
-#if PY_VERSION_HEX >= 0x03000000
-PyMODINIT_FUNC
-PyInit_prelude(void)
-{
-    PyObject *m;
-
-    m = PyModule_Create(NULL);
-    if (m == NULL)
-        return NULL;
-    return m;
-}
-#else
-PyMODINIT_FUNC
-initprelude(void)
-{
-    PyObject *m;
-
-    m = Py_InitModule("prelude", NULL);
-    if (m == NULL)
-        return;
-}
-#endif
 
 #ifdef __cplusplus
 }

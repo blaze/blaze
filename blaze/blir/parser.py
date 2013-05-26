@@ -1,12 +1,12 @@
 import sys
 from ply import lex, yacc
-from plyhacks import lexfrom, yaccfrom
+from .plyhacks import lexfrom, yaccfrom
 
-import lexer
-import errors
-from syntax import *
-from errors import error
-from astutils import dump
+from . import lexer
+from . import errors
+from .syntax import *
+from .errors import error
+from .astutils import dump
 
 tokens = lexer.tokens
 
@@ -397,7 +397,7 @@ def p_error(p):
 def rebuild():
     """ Rebuild the parser and lexer tables. """
     import os
-    import lexer
+    from . import lexer
 
     path = os.path.relpath(__file__)
     output = os.path.dirname(path)
@@ -409,12 +409,12 @@ def rebuild():
 
 def parse(source):
     try:
-        import blex
-        import byacc
+        from . import blex
+        from . import byacc
     except ImportError:
         raise RuntimeError("Parse tables not built, run install script.")
 
-    import lexer
+    from . import lexer
 
     module = sys.modules[__name__]
     lexer  = lexfrom(lexer, blex)
@@ -427,8 +427,8 @@ def parse(source):
 #------------------------------------------------------------------------
 
 def ddump_lex(source):
-    import blex
-    import lexer
+    from . import blex
+    from . import lexer
     lexer  = lexfrom(lexer, blex)
     lexer.input(source)
 
