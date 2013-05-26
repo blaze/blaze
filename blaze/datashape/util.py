@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
-           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm']
+           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm', 'from_blir']
 
 import operator
 import itertools
@@ -365,3 +365,6 @@ def from_numba(nty):
 def to_numba(ds):
     import numba
     return getattr(numba, (str(ds)))
+
+def from_blir(bltype):
+    raise NotImplementedError
