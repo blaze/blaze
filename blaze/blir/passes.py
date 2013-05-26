@@ -4,6 +4,7 @@ from . import parser
 from . import errors
 from . import codegen
 from . import typecheck
+from . import optimizations
 
 import sys
 import time
@@ -118,10 +119,12 @@ def optimizer_pass(ast, env):
 
     # module-level optimization
     if not args.get('nooptimize', None):
-        optimizer = codegen.LLVMOptimizer(
+        novectorize = args.get('novectorize', False)
+
+        optimizer = optimizations.LLVMOptimizer(
             llmodule,
             opt_level,
-            loop_vectorize=args.get('vectorize', False)
+            loop_vectorize=(not novectorize),
         )
 
     llmodule.verify()
@@ -130,7 +133,7 @@ def optimizer_pass(ast, env):
     return ast, env
 
 #------------------------------------------------------------------------
-# Pipeline Structure
+# Pipeline
 #------------------------------------------------------------------------
 
 frontend = Pipeline('frontend', [parse_pass,
@@ -173,7 +176,9 @@ def compile(source, **opts):
 
     opts.setdefault('O', 2)
     env = {'args': opts}
-    with compilelock, errors.listen(errors.logger):
+
+    # llvm compilation is very not thread safe
+    with compilelock:
         ast, env = compiler(source, env)
     return ast, env
 
@@ -191,7 +196,7 @@ def main():
     argp.add_argument('--ddump-tc', action='store_true', help='Dump the type checker state')
     argp.add_argument('--noprelude', action='store_true', help='Don\'t link against the prelude')
     argp.add_argument('--nooptimize', action='store_true', help='Don\'t run LLVM optimization pass')
-    argp.add_argument('--vectorize', action='store_true', help='Enable SIMD loop vectorization')
+    argp.add_argument('--novectorize', action='store_true', help='Enable SIMD loop vectorization')
     argp.add_argument('--emit-llvm', '-S', action='store_true', help=' Generate output files in LLVM formats ')
     argp.add_argument('--emit-x86', action='store_true', help=' Generate output files in x86 assembly ')
     argp.add_argument('--run', action='store_true', help='Execute main() in generated code ')

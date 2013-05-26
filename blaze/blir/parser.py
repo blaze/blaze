@@ -114,32 +114,31 @@ def p_signature(p):
     '''
     p[0] = FunctionSig(p[2], p[4], p[7], lineno=p.lineno(1))
 
-def p_signature_empty(p):
-    '''
-    signature : DEF ID LPAREN RPAREN ARROW type
-    '''
-    p[0] = FunctionSig(p[2], [], p[6], lineno=p.lineno(1))
-
 def p_signature_void(p):
     '''
-    signature : DEF ID LPAREN RPAREN empty
+    signature : DEF ID LPAREN params RPAREN empty
     '''
-    p[0] = FunctionSig(p[2], [], Type('void'), lineno=p.lineno(1))
+    p[0] = FunctionSig(p[2], p[4], Type('void'), lineno=p.lineno(1))
 
 #------------------------------------------------------------------------
 
 def p_params(p):
     '''
-    params : params COMMA param
+    params : params COMMA params
     '''
-    p[0] = p[1]
-    p[0].append(p[3])
+    p[0] = p[1] + p[3]
 
 def p_params_single(p):
     '''
     params : param
     '''
     p[0] = [p[1]]
+
+def p_params_empty(p):
+    '''
+    params : empty
+    '''
+    p[0] = []
 
 def p_param_decl(p):
     '''
@@ -257,6 +256,12 @@ def p_expr_location(p):
     '''
     p[0] = p[1]
 
+def p_expr_project(p):
+    '''
+    expr : proj
+    '''
+    p[0] = p[1]
+
 def p_expr_literal(p):
     '''
     expr : literal
@@ -343,6 +348,14 @@ def p_tuple2(p):
     tuple : expr
     '''
     p[0] = [p[1]]
+
+#------------------------------------------------------------------------
+
+def p_proj(p):
+    '''
+    proj : ID DOT ID
+    '''
+    p[0] = Project(p[1], p[3], lineno=p.lineno(1))
 
 #------------------------------------------------------------------------
 

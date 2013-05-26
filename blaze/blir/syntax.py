@@ -33,6 +33,12 @@ class ParamType(AST):
     def __repr__(self):
         return "ParamType(%s,%s)" % (repr(self.cons),repr(self.arg))
 
+class Project(AST):
+    _fields = ['name', 'field']
+
+    def __repr__(self):
+        return "Proj(%s, %s)" % (repr(self.name), repr(self.field))
+
 class LoadVariable(AST):
     _fields = ['name']
 

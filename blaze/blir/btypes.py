@@ -4,7 +4,7 @@ from collections import namedtuple
 # Types
 #------------------------------------------------------------------------
 
-Type = namedtuple('Type', 'name, kind, zero, binary_ops, unary_ops, cmp_ops')
+Type = namedtuple('Type', 'name, kind, zero, binary_ops, unary_ops, cmp_ops, fields')
 Type.__repr__ = lambda s: s.name
 
 TParam = namedtuple('TParam', 'cons, arg')
@@ -33,7 +33,8 @@ int_type = Type(
     zero       = 0,
     binary_ops = set(['+','-','*','/','&','|','^','>>','<<']),
     unary_ops  = set(['+','-','~']),
-    cmp_ops    = set(['<','<=','>','>=','==','!='])
+    cmp_ops    = set(['<','<=','>','>=','==','!=']),
+    fields     = {}
 )
 
 float_type = Type(
@@ -42,7 +43,8 @@ float_type = Type(
     zero       = 0.0,
     binary_ops = set(['+','-','*','/']),
     unary_ops  = set(['+','-']),
-    cmp_ops    = set(['<','<=','>','>=','==','!='])
+    cmp_ops    = set(['<','<=','>','>=','==','!=']),
+    fields     = {}
 )
 
 string_type = Type(
@@ -51,7 +53,8 @@ string_type = Type(
     zero       = "",
     binary_ops = set(['+']),
     unary_ops  = set(),
-    cmp_ops    = set(['<','<=','>','>=','==','!='])
+    cmp_ops    = set(['<','<=','>','>=','==','!=']),
+    fields     = {}
 )
 
 bool_type = Type(
@@ -60,7 +63,8 @@ bool_type = Type(
     zero       = False,
     binary_ops = set(),
     unary_ops  = set(['!']),
-    cmp_ops    = set(['==','!=','&&','||'])
+    cmp_ops    = set(['==','!=','&&','||']),
+    fields     = {}
 )
 
 #------------------------------------------------------------------------
@@ -73,16 +77,11 @@ array_type = Type(
     zero       = None,
     binary_ops = set(),
     unary_ops  = { },
-    cmp_ops    = { }
-)
-
-blaze_type = Type(
-    name       = "blaze",
-    kind       = Param, # parameterized by datashape
-    zero       = None,
-    binary_ops = set(),
-    unary_ops  = set(),
-    cmp_ops    = set()
+    cmp_ops    = { },
+    fields = {
+        'data' : (0, int_type),
+        'nd'   : (1, int_type),
+    }
 )
 
 #------------------------------------------------------------------------
@@ -95,7 +94,8 @@ void_type = Type(
     kind       = Unit,
     binary_ops = set(),
     unary_ops  = set(),
-    cmp_ops    = set()
+    cmp_ops    = set(),
+    fields     = {}
 )
 
 any_type = Type(
@@ -104,7 +104,8 @@ any_type = Type(
     kind       = Unit,
     binary_ops = set(),
     unary_ops  = set(),
-    cmp_ops    = set()
+    cmp_ops    = set(),
+    fields     = {}
 )
 
 undefined = Type(
@@ -113,7 +114,8 @@ undefined = Type(
     kind       = Exception,
     binary_ops = set(),
     unary_ops  = set(),
-    cmp_ops    = set()
+    cmp_ops    = set(),
+    fields     = {}
 )
 
 __all__ = [
@@ -122,7 +124,6 @@ __all__ = [
     'string_type',
     'bool_type',
     'array_type',
-    'blaze_type',
     'void_type',
     'any_type',
 ]

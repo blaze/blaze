@@ -8,7 +8,8 @@ tokens = [
  'FALSE', 'FLOAT', 'FOR', 'FOREIGN', 'GE', 'GT', 'ID', 'IF', 'IN', 'INTEGER',
  'LAND', 'LBRACE', 'LBRACKET', 'LE', 'LOR', 'LPAREN', 'LT', 'MINUS',
  'NE', 'NOT', 'PLUS', 'PRINT', 'RANGE', 'RBRACE', 'RBRACKET', 'RETURN',
- 'RPAREN', 'SEMI', 'SHL', 'SHR', 'STRING', 'TIMES', 'TRUE', 'VAR', 'WHILE'
+ 'RPAREN', 'SEMI', 'SHL', 'SHR', 'STRING', 'TIMES', 'TRUE', 'VAR', 'WHILE',
+ 'DOT',
 ]
 
 reserved = {
@@ -62,6 +63,7 @@ t_LE        = r'<='
 t_GE        = r'>='
 t_EQ        = r'=='
 t_NE        = r'!='
+t_DOT       = r'\.'
 
 t_SHL       = '<<'
 t_SHR       = '>>'

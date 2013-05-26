@@ -118,6 +118,13 @@ class SSARewrite(NodeVisitor):
         inst = ('STORE_NAME', node.expr.ssa_name, node.name)
         self.block.append(inst)
 
+    def visit_Project(self, node):
+        target = self.atemp(node.type)
+
+        inst = ('PROJECT', node.name, node.proj, target)
+        self.block.append(inst)
+        node.ssa_name = target
+
     def visit_LoadIndex(self, node):
         self.visit(node.indexer)
         target = self.atemp(node.type)

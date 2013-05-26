@@ -2,9 +2,15 @@ import sys
 import logging
 from contextlib import contextmanager
 
-_listeners = []
-_errlog = []
 _count = 0
+_errlog = []
+_listeners = []
+
+logger = logging.getLogger(__name__)
+
+FORMAT = '%(message)s'
+logging.basicConfig(format=FORMAT)
+logging.basicConfig(level=logging.ERROR)
 
 #------------------------------------------------------------------------
 # Error Reporting
@@ -22,11 +28,7 @@ def error(lineno, message, filename=None):
     _count += 1
 
 def _default_handler(msg):
-    sys.stderr.write(msg+"\n")
-    return None
-
-def logger(msg):
-    return logging.error(msg+"\n")
+    return logger.error(msg+"\n")
 
 def reset():
     global _count

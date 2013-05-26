@@ -11,7 +11,6 @@ import llvm.passes as lp
 
 from llvm import tbaa
 from llvm.core import Module, Builder, Function, Type, Constant
-from llvm.workaround.avx_support import detect_avx_support
 
 PY3 = bool(sys.version_info[0] == 3)
 
@@ -43,6 +42,16 @@ array_type = lambda elt_type: Type.struct([
 
 # opaque for now
 blaze_type = lambda datashape: Type.opaque(name="blaze")
+
+# typedef struct {
+#     float real;
+#     float imag;
+# } complex64;
+#
+# typedef struct {
+#     double real;
+#     double imag;
+# } complex128;
 
 #------------------------------------------------------------------------
 # Constants
@@ -325,6 +334,17 @@ class LLVMEmitter(object):
         else:
             self.globals[name] = var
 
+    def op_PROJECT(self, name, proj_idx, target):
+        var = self.lookup_var(name)
+
+        if name in self.refs:
+            ref = self.refs[name]['_struct']
+            field = self.const(proj_idx)
+            ptr = self.builder.gep(ref, [zero, field])
+
+            elt = self.builder.load(ptr)
+            self.stack[target] = elt
+
     def op_LOAD_NAME(self, name, target):
         var = self.lookup_var(name)
 
@@ -341,6 +361,9 @@ class LLVMEmitter(object):
         # simple type ( value )
         else:
             self.stack[target] = self.builder.load(var, target)
+
+    def op_STORE_NAME(self, source, target):
+        self.builder.store(self.stack[source], self.lookup_var(target))
 
     def op_STORE_NAME(self, source, target):
         self.builder.store(self.stack[source], self.lookup_var(target))
@@ -708,40 +731,3 @@ class BlockEmitter(object):
         self.cgen.branch(test_block)
 
         self.cgen.set_block(after_loop)
-
-#------------------------------------------------------------------------
-# Optimizer
-#------------------------------------------------------------------------
-
-class LLVMOptimizer(object):
-    inline_threshold = 1000
-
-    def __init__(self, module, opt_level=3, loop_vectorize=False):
-        # opt_level is used for both module level (opt) and
-        # instruction level optimization (cg) for TargetMachine
-        # and PassManager
-
-        if not detect_avx_support():
-            tm = le.TargetMachine.new(
-                opt=opt_level,
-                features='-avx',
-                cm=le.CM_JITDEFAULT,
-            )
-        else:
-            tm = le.TargetMachine.new(
-                opt=opt_level,
-                features='' ,
-                cm=le.CM_JITDEFAULT,
-            )
-
-        pass_opts = dict(
-            fpm = False,
-            mod = module,
-            opt = opt_level,
-            vectorize = False,
-            loop_vectorize = loop_vectorize,
-            inline_threshold=self.inline_threshold,
-        )
-
-        pms = lp.build_pass_managers(tm = tm, **pass_opts)
-        pms.pm.run(module)

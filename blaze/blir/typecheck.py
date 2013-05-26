@@ -265,6 +265,32 @@ class TypeChecker(NodeVisitor):
         # Annotate with the type
         node.sym = sym
 
+    def visit_Project(self, node):
+        sym = self.scope.lookup(node.name)
+
+        if sym:
+            if isinstance(sym.type, btypes.TParam):
+                # dumb dumb hack
+                ptype = sym.type.cons
+                fields = ptype.type.fields
+
+                try:
+                    gep = fields[node.field]
+                    node.proj = gep[0] # stupid hack!!!
+                    node.type = gep[1] # stupid hack
+                except KeyError:
+                    error(node.lineno, "Parameterized type %s has no field named %s" % (ptype.name, node.field))
+                    node.type = btypes.undefined
+            else:
+                error(node.lineno,"Type Error: Cannot project into constant type" % node.name)
+                node.type = btypes.undefined
+        else:
+            error(node.lineno,"Name Error: '%s' undeclared (first use in this function)" % node.name)
+            node.type = btypes.undefined
+
+        # Annotate with the type
+        node.sym = sym
+
     def visit_StoreVariable(self, node):
         sym = self.scope.lookup(node.name)
 
