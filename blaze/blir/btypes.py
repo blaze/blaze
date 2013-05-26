@@ -4,7 +4,10 @@ from collections import namedtuple
 # Types
 #------------------------------------------------------------------------
 
-Type = namedtuple('Type', 'name, kind, zero, binary_ops, unary_ops, cmp_ops, fields')
+Type = namedtuple('Type',
+    'name, kind, zero, binary_ops,\
+    unary_ops, cmp_ops, fields, order'
+)
 Type.__repr__ = lambda s: s.name
 
 TParam = namedtuple('TParam', 'cons, arg')
@@ -34,7 +37,8 @@ int_type = Type(
     binary_ops = set(['+','-','*','/','&','|','^','>>','<<']),
     unary_ops  = set(['+','-','~']),
     cmp_ops    = set(['<','<=','>','>=','==','!=']),
-    fields     = {}
+    fields     = {},
+    order      = None,
 )
 
 float_type = Type(
@@ -44,7 +48,8 @@ float_type = Type(
     binary_ops = set(['+','-','*','/']),
     unary_ops  = set(['+','-']),
     cmp_ops    = set(['<','<=','>','>=','==','!=']),
-    fields     = {}
+    fields     = {},
+    order      = None,
 )
 
 string_type = Type(
@@ -54,7 +59,8 @@ string_type = Type(
     binary_ops = set(['+']),
     unary_ops  = set(),
     cmp_ops    = set(['<','<=','>','>=','==','!=']),
-    fields     = {}
+    fields     = {},
+    order      = None,
 )
 
 bool_type = Type(
@@ -64,7 +70,8 @@ bool_type = Type(
     binary_ops = set(),
     unary_ops  = set(['!']),
     cmp_ops    = set(['==','!=','&&','||']),
-    fields     = {}
+    fields     = {},
+    order      = None,
 )
 
 #------------------------------------------------------------------------
@@ -79,9 +86,47 @@ array_type = Type(
     unary_ops  = { },
     cmp_ops    = { },
     fields = {
-        'data' : (0, int_type),
         'nd'   : (1, int_type),
-    }
+    },
+    order      = None,
+)
+
+#------------------------------------------------------------------------
+# Polymorphic Arrays
+#------------------------------------------------------------------------
+
+# struct {
+#   eltype *data;
+#   int32 nd;
+#   intp shape[nd];
+# } contiguous_array_nd(eltype)
+
+Array_C = Type(
+    name       = "Array_C",
+    kind       = Param,
+    zero       = None,
+    binary_ops = set(),
+    unary_ops  = { },
+    cmp_ops    = { },
+    fields = {
+        'nd'    : (1, int_type),
+        'shape' : (2, array_type),
+    },
+    order      = None,
+)
+
+Array_F = Type(
+    name       = "Array_F",
+    kind       = Param,
+    zero       = None,
+    binary_ops = set(),
+    unary_ops  = { },
+    cmp_ops    = { },
+    fields = {
+        'nd'    : (1, int_type),
+        'shape' : (2, array_type),
+    },
+    order      = None,
 )
 
 #------------------------------------------------------------------------
@@ -95,7 +140,8 @@ void_type = Type(
     binary_ops = set(),
     unary_ops  = set(),
     cmp_ops    = set(),
-    fields     = {}
+    fields     = {},
+    order      = None,
 )
 
 any_type = Type(
@@ -105,7 +151,8 @@ any_type = Type(
     binary_ops = set(),
     unary_ops  = set(),
     cmp_ops    = set(),
-    fields     = {}
+    fields     = {},
+    order      = None,
 )
 
 undefined = Type(
@@ -115,7 +162,8 @@ undefined = Type(
     binary_ops = set(),
     unary_ops  = set(),
     cmp_ops    = set(),
-    fields     = {}
+    fields     = {},
+    order      = None,
 )
 
 __all__ = [
@@ -126,4 +174,6 @@ __all__ = [
     'array_type',
     'void_type',
     'any_type',
+    'Array_C',
+    'Array_F',
 ]

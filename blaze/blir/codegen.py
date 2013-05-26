@@ -40,18 +40,23 @@ array_type = lambda elt_type: Type.struct([
     pointer(int_type), # strides      | int*
 ], name='ndarray_' + str(elt_type))
 
-# opaque for now
-blaze_type = lambda datashape: Type.opaque(name="blaze")
+# struct {
+#   eltype *data;
+#   int32 nd;
+#   intp shape[nd];
+# } contiguous_array_nd(eltype)
 
-# typedef struct {
-#     float real;
-#     float imag;
-# } complex64;
-#
-# typedef struct {
-#     double real;
-#     double imag;
-# } complex128;
+# TODO: port from either llvmpy or ../ depending on where this
+# lives, but whatever just hack it together for now
+ArrayC_Type = lambda elt_type: Type.struct([
+    pointer(elt_type), # data     | (<type>)*
+    int_type,          # nd       | int
+    pointer(int_type), # shape    | int*
+], name='Array_C<' + str(elt_type) + '>')
+
+
+# stupid hacks
+poly_arrays = set(['Array_C'])
 
 #------------------------------------------------------------------------
 # Constants
@@ -77,8 +82,8 @@ typemap = {
 }
 
 ptypemap = {
-    'array' : array_type,
-    'blaze' : blaze_type,
+    'array'   : array_type,
+    'Array_C' : ArrayC_Type,
 }
 
 _cache = {}
@@ -587,14 +592,9 @@ class LLVMEmitter(object):
 
         if isinstance(ty, btypes.TParam):
 
-            # Blaze Types
-            # -----------
-            if ty.cons.name == 'blaze':
-                self.locals[name] = arg
-
-            # NumPy ndarray
+            # primitive array
             # -------------
-            elif ty.cons.name == 'array':
+            if ty.cons.name == 'array':
                 struct_ptr = arg
 
                 data    = self.builder.gep(struct_ptr, [zero, zero], name=(name + '_data'))
@@ -606,6 +606,21 @@ class LLVMEmitter(object):
                 self.refs[name]['data']    = self.builder.load(data)
                 self.refs[name]['dims']    = self.builder.load(dims)
                 self.refs[name]['strides'] = self.builder.load(strides)
+
+                self.locals[name] = self.refs[name]
+
+            elif ty.cons.name in poly_arrays:
+                struct_ptr = arg
+                self.refs[name]['_struct'] = struct_ptr
+                self.refs[name]['_dtype']  = typemap[ty.arg.type.name]
+
+                fields = ty.cons.type.fields
+
+                for fname, (idx, field) in fields.iteritems():
+                    proj_idx = self.const(idx)
+                    field = self.builder.gep(struct_ptr, [zero, proj_idx],
+                            name=(fname + '_field'))
+                    self.refs[name][fname] = self.builder.load(field)
 
                 self.locals[name] = self.refs[name]
 
