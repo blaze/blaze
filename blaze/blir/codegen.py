@@ -58,6 +58,8 @@ ArrayC_Type = lambda elt_type: Type.struct([
 # stupid hacks
 poly_arrays = set(['Array_C'])
 
+intp = Type.pointer(int_type)
+
 #------------------------------------------------------------------------
 # Constants
 #------------------------------------------------------------------------
@@ -300,6 +302,15 @@ class LLVMEmitter(object):
             raise NotImplementedError
 
     #------------------------------------------------------------------------
+    # Indexing Coordinates
+    #------------------------------------------------------------------------
+
+    def change_coordinates(self, order, arr):
+        assert order in ['C', 'F', 'S']
+
+        return ptr
+
+    #------------------------------------------------------------------------
     # Opcodes
     #------------------------------------------------------------------------
 
@@ -370,31 +381,47 @@ class LLVMEmitter(object):
     def op_STORE_NAME(self, source, target):
         self.builder.store(self.stack[source], self.lookup_var(target))
 
-    def op_STORE_NAME(self, source, target):
-        self.builder.store(self.stack[source], self.lookup_var(target))
-
     def op_BINARY_SUBSCR(self, source, index, target, cc=False):
         arr = self.refs[source]
-        data_ptr = arr['data']
+        data = arr['data']
+        order = arr['_order']
+        import pdb; pdb.set_trace()
+
+        assert order in ['C', 'F', 'S']
 
         if cc:
-            offset = zero
 
-            for i, idx in enumerate(index.elts):
-                ic = self.const(i)
-                idxv = self.stack[idx.ssa_name]
+            if order == 'S':
                 stride = arr['strides']
-                stride_elt = self.builder.load(self.builder.gep(stride, [ic]))
+                offset = Constant.null(intp)
 
-                offset = self.builder.add(
-                    offset,
-                    self.builder.mul(stride_elt, idxv)
-                )
+                for i, idx in enumerate(index.elts):
+                    ic = self.const(i)
+                    ix = self.stack[idx.ssa_name]
+                    s = self.builder.load(self.builder.gep(stride, [ic]))
+
+                    tmp = self.buidler.mul(s, ix)
+                    loc = self.builder.add(offset, tmp)
+
+            elif order == 'C' or order =='F':
+                shape = arr['shape']
+                ndim = len(index.elts)
+
+                for i, idx in enumerate(index.elts):
+                    ic = self.const(i)
+                    sc = self.builder.load(self.builder.gep(shape, [ic]))
+                    if order == 'C' and i == (ndim - 1):
+                        tmp = ic
+                    elif order == 'F' and i == 0:
+                        tmp = ic
+                    else:
+                        tmp = self.builder.mul(ic, sc)
+                    loc = self.builder.add(offset, tmp)
 
         else:
-            offset = self.stack[index]
+            loc = self.stack[index]
 
-        val = self.builder.gep(data_ptr, [offset])
+        val = self.builder.gep(data, [loc])
         elt = self.builder.load(val)
         self.stack[target] = elt
 
@@ -601,6 +628,7 @@ class LLVMEmitter(object):
                 dims    = self.builder.gep(struct_ptr, [zero, one], name=(name + '_dims'))
                 strides = self.builder.gep(struct_ptr, [zero, two], name=(name + '_strides'))
 
+                self.refs[name]['_order'] = 'C' # hack
                 self.refs[name]['_struct'] = struct_ptr
                 self.refs[name]['_dtype']  = typemap[ty.arg.type.name]
                 self.refs[name]['data']    = self.builder.load(data)
@@ -612,6 +640,7 @@ class LLVMEmitter(object):
             elif ty.cons.name in poly_arrays:
                 struct_ptr = arg
                 self.refs[name]['_struct'] = struct_ptr
+                self.refs[name]['_order']  = ty.cons.type.order
                 self.refs[name]['_dtype']  = typemap[ty.arg.type.name]
 
                 fields = ty.cons.type.fields

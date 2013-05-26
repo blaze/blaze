@@ -95,12 +95,6 @@ array_type = Type(
 # Polymorphic Arrays
 #------------------------------------------------------------------------
 
-# struct {
-#   eltype *data;
-#   int32 nd;
-#   intp shape[nd];
-# } contiguous_array_nd(eltype)
-
 Array_C = Type(
     name       = "Array_C",
     kind       = Param,
@@ -109,10 +103,11 @@ Array_C = Type(
     unary_ops  = { },
     cmp_ops    = { },
     fields = {
+        'data'  : (0, '$0'),
         'nd'    : (1, int_type),
         'shape' : (2, array_type),
     },
-    order      = None,
+    order      = 'C',
 )
 
 Array_F = Type(
@@ -123,10 +118,26 @@ Array_F = Type(
     unary_ops  = { },
     cmp_ops    = { },
     fields = {
+        'data'  : (0, '$0'),
         'nd'    : (1, int_type),
         'shape' : (2, array_type),
     },
-    order      = None,
+    order      = 'F',
+)
+
+Array_S = Type(
+    name       = "Array_S",
+    kind       = Param,
+    zero       = None,
+    binary_ops = set(),
+    unary_ops  = { },
+    cmp_ops    = { },
+    fields = {
+        'data'    : (0, '$0'),
+        'nd'      : (1, int_type),
+        'strides' : (2, array_type),
+    },
+    order      = 'S',
 )
 
 #------------------------------------------------------------------------
