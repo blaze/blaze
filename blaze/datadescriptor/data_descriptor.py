@@ -132,7 +132,7 @@ class IElementWriter:
 
     def llvm_api(self, module):
         """
-        Inserts a getter function into the llvm module, and
+        Inserts a setter function into the llvm module, and
         returns it as a function object.
         """
         raise NotImplemented
