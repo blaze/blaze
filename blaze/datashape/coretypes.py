@@ -163,16 +163,12 @@ class StringConstant(Mono):
     def __hash__(self):
         return hash(self.val)
 
-class Blob(Mono):
-    """ Blob type, large variable length string """
+class Bytes(Mono):
+    """ Bytes type """
     cls = MEASURE
 
     def __str__(self):
-        return 'blob'
-
-    def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+        return 'bytes'
 
 _canonical_string_encodings = {
     u'A' : u'A',
@@ -920,7 +916,7 @@ object_ = pyobj = CType('object', c_intptr.itemsize)
 
 na = Null
 NullRecord = Record(())
-blob = Blob()
+bytes_ = Bytes()
 
 string = String()
 
@@ -928,8 +924,7 @@ Type.register('int', c_int)
 Type.register('float', c_float)
 Type.register('double', c_double)
 
-Type.register('NA', Null)
-Type.register('blob', blob)
+Type.register('bytes', bytes_)
 
 Type.register('string', String())
 
