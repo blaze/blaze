@@ -210,15 +210,15 @@ def to_ctypes(dshape):
         elif dshape == complex64:
             class Complex64(ctypes.Structure):
                 _fields_ = [('real', ctypes.c_float),
-                            ('imag', ctypes.c_float)]                            
+                            ('imag', ctypes.c_float)]
             return Complex64
         elif dshape == complex128:
             class Complex128(ctypes.Structure):
                 _fields_ = [('real', ctypes.c_double),
-                            ('imag', ctypes.c_double)]                            
-            return Complex128            
+                            ('imag', ctypes.c_double)]
+            return Complex128
         elif isinstance(dshape, Record):
-            fields = [(name, to_ctypes(dshape.fields[name])) 
+            fields = [(name, to_ctypes(dshape.fields[name]))
                                           for name in dshape.names]
             class temp(ctypes.Structure):
                 _fields_ = fields
@@ -348,7 +348,7 @@ def from_llvm(typ, argkind=SCALAR):
 
         fields = [(name, from_llvm(elem))
                    for name, elem in zip(names, typ.elements)]
-        typstr = "{ %s }" % ("; ".join(["{0}: {1}".format(*field) 
+        typstr = "{ %s }" % ("; ".join(["{0}: {1}".format(*field)
                                             for field in fields]))
 
         ds = dshape(typstr)

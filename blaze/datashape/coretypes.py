@@ -530,7 +530,6 @@ class CType(Mono):
         else:
             return self
 
-
     @property
     def type(self):
         raise NotImplementedError()
