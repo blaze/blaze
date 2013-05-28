@@ -45,5 +45,6 @@ class setitem(unittest.TestCase):
         a[1] = 2
         self.assertEqual(dd_as_py(a[1]._data), [2,2,2])
 
-class setitem_blz(setitem):
-    caps={'compress': True}
+# BLZ is going to be read and append only for the time being
+# class setitem_blz(setitem):
+#     caps={'compress': True}

@@ -119,7 +119,9 @@ class BLZDataDescriptor(IDataDescriptor):
             return NumPyDataDescriptor(blzarr[key])
 
     def __setitem__(self, key, value):
-        self.blzarr.__setitem__(key, value)
+        # We decided that BLZ should be read and append only
+        # self.blzarr.__setitem__(key, value)
+        raise NotImplementedError
 
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
