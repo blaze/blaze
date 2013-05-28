@@ -37,7 +37,7 @@ Original Index
    quickstart
    overview
    vision
-   format
+   persistence
    memory
    datashape
    module
@@ -51,7 +51,7 @@ API Reference
    toplevel
    types
    eclass
-   persistence
+   format
    typeinference
    aterm
    layout
