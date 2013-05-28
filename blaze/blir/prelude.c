@@ -1,10 +1,25 @@
+#include <Python.h>
+
 #include <math.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
+typedef signed char      int8_t;
+typedef short            int16_t;
+typedef int              int32_t;
+typedef __int64          int64_t;
+typedef ptrdiff_t        intptr_t;
+typedef unsigned char    uint8_t;
+typedef unsigned short   uint16_t;
+typedef unsigned int     uint32_t;
+typedef unsigned __int64 uint64_t;
+typedef size_t           uintptr_t;
+#else
+#include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -126,6 +141,19 @@ void show_bool(int b)
 void show_array(ndarray *a) {
     printf("array(%p)", a->data);
 }
+
+#if PY_VERSION_HEX >= 0x03000000
+PyMODINIT_FUNC
+PyInit_prelude(void)
+{
+    return NULL;
+}
+#else
+PyMODINIT_FUNC
+initprelude(void)
+{
+}
+#endif
 
 #ifdef __cplusplus
 }
