@@ -189,7 +189,7 @@ class IElementReadIter:
 
 class IElementWriteIter:
     """
-    In interface for iterating over the outermost dimension of
+    An interface for iterating over the outermost dimension of
     a data descriptor for writing. Each iteration returns a
     pointer to a write buffer into which an element can be written.
 
@@ -271,9 +271,9 @@ class IDataDescriptor:
             # Python access
             for rawptr in itr: do_something(rawptr)
             # C access
-            cffi_fn, ...(TBD) = ixr.c_iter()
+            cffi_fn, ...(TBD) = itr.c_iter()
             # LLVM access
-            (TBD) = ixr.llvm_iter()
+            (TBD) = itr.llvm_iter()
 
     The descriptor-based indexing methods operate only through the
     Python interface, while the element-based methods allow C
