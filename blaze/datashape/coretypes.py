@@ -826,6 +826,10 @@ half = float16
 single = float32
 double = float64
 
+# TODO: the semantics of these are still being discussed
+int_ = float32
+float_ = float32
+
 void = CType('void', 0)
 object_ = pyobj = CType('object', c_intptr.itemsize)
 
@@ -1048,13 +1052,3 @@ def table_like(ds):
 
 def array_like(ds):
     return not table_like(ds)
-
-def _reduce(x):
-    if isinstance(x, Record):
-        return [(k, _reduce(v)) for k,v in x.parameters[0]]
-    elif isinstance(x, DataShape):
-        return map(_reduce, x.parameters)
-    elif isinstance(x, TypeVar):
-        import pdb; pdb.set_trace()
-    else:
-        return x
