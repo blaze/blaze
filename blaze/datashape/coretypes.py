@@ -2,15 +2,15 @@
 from __future__ import absolute_import
 
 """
-This defines the DataShape type system. The unification of shape and
-dtype.
+This defines the DataShape type system. The unification of shape
+and dtype.
 """
 
-import operator
-import numpy as np
-import datetime
-import ctypes
 import sys
+import ctypes
+import operator
+import datetime
+import numpy as np
 from ..py3help import _inttypes, _strtypes, unicode
 
 instanceof = lambda T: lambda X: isinstance(X, T)
@@ -72,35 +72,14 @@ class Mono(object):
         lst = [self]
         return lst[key]
 
-    def __mul__(self, other):
-        if not isinstance(other, (DataShape, Mono)):
-            if type(other) is int:
-                other = IntegerConstant(other)
-            else:
-                raise NotImplementedError()
-        return product(self, other)
-
-    def __rmul__(self, other):
-        if not isinstance(other, (DataShape, Mono)):
-            if type(other) is int:
-                other = IntegerConstant(other)
-            else:
-                raise NotImplementedError()
-        return product(other, self)
-
-
-class Poly(object):
-    """
-    Polytype
-    """
-    def __init__(self, qualifier, *params):
-        self.parameters = params
-
 #------------------------------------------------------------------------
 # Parse Types
 #------------------------------------------------------------------------
 
 class Wild(Mono):
+    """
+    Wild card type for hashing
+    """
     def __str__(self):
         return '*'
 
@@ -168,54 +147,16 @@ class StringConstant(Mono):
     def __hash__(self):
         return hash(self.val)
 
-class Dynamic(Mono):
-    """
-    The dynamic type allows an explicit upcast and downcast from any
-    type to ``?``.
-    """
-
-    def __str__(self):
-        return '?'
-
-    def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
-
-class Top(Mono):
-    """ The top type """
-
-    def __str__(self):
-        return 'top'
-
-    def __repr__(self):
-        # emulate numpy
-        return ''.join(["dshape(\"", str(self), "\")"])
-
-class Blob(Mono):
-    """ Blob type, large variable length string """
+class Bytes(Mono):
+    """ Bytes type """
     cls = MEASURE
 
     def __str__(self):
-        return 'blob'
+        return 'bytes'
 
-    def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
-
-class Varchar(Mono):
-    """ Blob type, small variable length string """
-    cls = MEASURE
-
-
-    def __init__(self, maxlen):
-        assert isinstance(maxlen, IntegerConstant)
-        self.maxlen = maxlen.val
-
-    def __str__(self):
-        return 'varchar(maxlen=%i)' % self.maxlen
-
-    def __repr__(self):
-        return expr_string('varchar', [self.maxlen])
+#------------------------------------------------------------------------
+# String Type
+#------------------------------------------------------------------------
 
 _canonical_string_encodings = {
     u'A' : u'A',
@@ -232,7 +173,8 @@ _canonical_string_encodings = {
     u'utf-32' : u'U32',
     u'utf_32' : u'U32',
     u'utf32' : u'U32'
-    }
+}
+
 class String(Mono):
     """ String container """
     cls = MEASURE
@@ -309,11 +251,6 @@ class String(Mono):
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
-
-# TODO: figure out consistent spelling for this
-#
-#   - DataShape
-#   - Datashape
 
 class DataShape(Mono):
     """The Datashape class, implementation for generic composite
@@ -448,28 +385,6 @@ class DataShape(Mono):
         else:
             return DataShape(self.parameters[leading:])
 
-    # Alternative constructors
-    # ------------------------
-
-    def __or__(self, other):
-        return Either(self, other)
-
-    def __mul__(self, other):
-        if not isinstance(other, (DataShape, Mono)):
-            if type(other) is int:
-                other = IntegerConstant(other)
-            else:
-                raise NotImplementedError()
-        return product(self, other)
-
-    def __rmul__(self, other):
-        if not isinstance(other, (DataShape, Mono)):
-            if type(other) is int:
-                other = IntegerConstant(other)
-            else:
-                raise NotImplementedError()
-        return product(other, self)
-
 class Atom(DataShape):
     """
     Atoms for arguments to constructors of types, not types in
@@ -498,10 +413,6 @@ class Atom(DataShape):
 #------------------------------------------------------------------------
 # CType
 #------------------------------------------------------------------------
-
-NATIVE = '='
-LITTLE = '<'
-BIG    = '>'
 
 class CType(Mono):
     """
@@ -585,7 +496,6 @@ class CType(Mono):
         else:
             return self
 
-
     @property
     def type(self):
         raise NotImplementedError()
@@ -607,7 +517,7 @@ class CType(Mono):
         raise NotImplementedError()
 
 #------------------------------------------------------------------------
-# Fixed
+# Dimensions
 #------------------------------------------------------------------------
 
 class Fixed(Atom):
@@ -651,6 +561,12 @@ class Fixed(Atom):
     def __str__(self):
         return str(self.val)
 
+class Var(Mono):
+    """ Variable dimension """
+    cls = DIMENSION
+
+    def __str__(self):
+        return 'var'
 
 def _invalid_compare(obj1, obj2):
     return "Cannot compare type %s to type %s" % (type(obj1), type(obj2))
@@ -756,59 +672,8 @@ class Range(Atom):
         return expr_string('Range', [self.lower, self.upper])
 
 #------------------------------------------------------------------------
-# Aggregate
+# Record Types
 #------------------------------------------------------------------------
-
-
-class Either(Atom):
-    """
-    A datashape for tagged union of values that can take on two
-    different, but fixed, types called tags ``left`` and ``right``. The
-    tag deconstructors for this type are :func:`inl` and :func:`inr`.
-    """
-
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        self.parameters = (a,b)
-
-    def __eq__(self, other):
-        if not isinstance(other, Either):
-            raise TypeError(_invalid_compare(self, other))
-        else:
-            return self.a == other.a and self.b == other.b
-
-    def __hash__(self):
-        return hash((self.a, self.b))
-
-class Option(Atom):
-    """
-    A sum type for nullable measures unit types. Can be written
-    as a tagged union with with ``left`` as ``null`` and
-    ``right`` as a measure.
-    """
-    cls = MEASURE
-
-    def __init__(self, ty):
-        self.parameters = (ty,)
-
-class Factor(Atom):
-    """
-    A finite enumeration of Fixed dimensions.
-    """
-
-    def __str__(self):
-        # Use c-style enumeration syntax
-        return expr_string('', self.parameters, '{}')
-
-class Union(Atom):
-    """
-    A untagged union is a datashape for a value that may hold
-    several but fixed datashapes.
-    """
-
-    def __str__(self):
-        return expr_string('', self.parameters, '{}')
 
 class Record(Mono):
     """
@@ -866,6 +731,17 @@ class Record(Mono):
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+
+#------------------------------------------------------------------------
+# JSON
+#------------------------------------------------------------------------
+
+class JSON(Mono):
+    """ JSON mesuare """
+    cls = MEASURE
+
+    def __str__(self):
+        return 'json'
 
 #------------------------------------------------------------------------
 # Constructions
@@ -958,28 +834,24 @@ half = float16
 single = float32
 double = float64
 
+# TODO: the semantics of these are still being discussed
+int_ = float32
+float_ = float32
+
 void = CType('void', 0)
 object_ = pyobj = CType('object', c_intptr.itemsize)
 
 na = Null
-top = Top()
-dynamic = Dynamic()
 NullRecord = Record(())
-blob = Blob()
+bytes_ = Bytes()
 
 string = String()
-
-Stream = Range(IntegerConstant(0), None)
 
 Type.register('int', c_int)
 Type.register('float', c_float)
 Type.register('double', c_double)
 
-Type.register('NA', Null)
-Type.register('Stream', Stream)
-Type.register('?', Dynamic)
-Type.register('top', top)
-Type.register('blob', blob)
+Type.register('bytes', bytes_)
 
 Type.register('string', String())
 
@@ -1084,10 +956,6 @@ def to_numpy(ds):
     if isinstance(ds, CType):
         return ds.to_dtype()
 
-    # XXX: fix circular deps for DeclMeta
-    if hasattr(ds, 'to_dtype'):
-        return None, ds.to_dtype()
-
     shape = tuple()
     dtype = None
 
@@ -1108,8 +976,6 @@ def to_numpy(ds):
     msr = extract_measure(ds)
     if isinstance(msr, CType):
         dtype = msr.to_dtype()
-    elif isinstance(msr, Blob):
-        dtype = np.dtype('object')
     elif isinstance(msr, Record):
         dtype = msr.to_dtype()
     else:
@@ -1194,13 +1060,3 @@ def table_like(ds):
 
 def array_like(ds):
     return not table_like(ds)
-
-def _reduce(x):
-    if isinstance(x, Record):
-        return [(k, _reduce(v)) for k,v in x.parameters[0]]
-    elif isinstance(x, DataShape):
-        return map(_reduce, x.parameters)
-    elif isinstance(x, TypeVar):
-        import pdb; pdb.set_trace()
-    else:
-        return x
