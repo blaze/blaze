@@ -6,11 +6,11 @@ This defines the DataShape type system. The unification of shape and
 dtype.
 """
 
-import operator
-import numpy as np
-import datetime
-import ctypes
 import sys
+import ctypes
+import operator
+import datetime
+import numpy as np
 from ..py3help import _inttypes, _strtypes, unicode
 
 instanceof = lambda T: lambda X: isinstance(X, T)
@@ -88,19 +88,14 @@ class Mono(object):
                 raise NotImplementedError()
         return product(other, self)
 
-
-class Poly(object):
-    """
-    Polytype
-    """
-    def __init__(self, qualifier, *params):
-        self.parameters = params
-
 #------------------------------------------------------------------------
 # Parse Types
 #------------------------------------------------------------------------
 
 class Wild(Mono):
+    """
+    Wild card type for hashing
+    """
     def __str__(self):
         return '*'
 
@@ -168,29 +163,6 @@ class StringConstant(Mono):
     def __hash__(self):
         return hash(self.val)
 
-class Dynamic(Mono):
-    """
-    The dynamic type allows an explicit upcast and downcast from any
-    type to ``?``.
-    """
-
-    def __str__(self):
-        return '?'
-
-    def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
-
-class Top(Mono):
-    """ The top type """
-
-    def __str__(self):
-        return 'top'
-
-    def __repr__(self):
-        # emulate numpy
-        return ''.join(["dshape(\"", str(self), "\")"])
-
 class Blob(Mono):
     """ Blob type, large variable length string """
     cls = MEASURE
@@ -201,21 +173,6 @@ class Blob(Mono):
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
-
-class Varchar(Mono):
-    """ Blob type, small variable length string """
-    cls = MEASURE
-
-
-    def __init__(self, maxlen):
-        assert isinstance(maxlen, IntegerConstant)
-        self.maxlen = maxlen.val
-
-    def __str__(self):
-        return 'varchar(maxlen=%i)' % self.maxlen
-
-    def __repr__(self):
-        return expr_string('varchar', [self.maxlen])
 
 _canonical_string_encodings = {
     u'A' : u'A',
@@ -491,10 +448,6 @@ class Atom(DataShape):
 # CType
 #------------------------------------------------------------------------
 
-NATIVE = '='
-LITTLE = '<'
-BIG    = '>'
-
 class CType(Mono):
     """
     Symbol for a sized type mapping uniquely to a native type.
@@ -748,50 +701,59 @@ class Range(Atom):
         return expr_string('Range', [self.lower, self.upper])
 
 #------------------------------------------------------------------------
-# Aggregate
+# Missing Data ( Deferred )
 #------------------------------------------------------------------------
 
+# Missing data
 
-class Either(Atom):
-    """
-    A datashape for tagged union of values that can take on two
-    different, but fixed, types called tags ``left`` and ``right``. The
-    tag deconstructors for this type are :func:`inl` and :func:`inr`.
-    """
+#class Either(Atom):
+    #"""
+    #A datashape for tagged union of values that can take on two
+    #different, but fixed, types called tags ``left`` and ``right``. The
+    #tag deconstructors for this type are :func:`inl` and :func:`inr`.
+    #"""
 
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        self.parameters = (a,b)
+    #def __init__(self, a, b):
+        #self.a = a
+        #self.b = b
+        #self.parameters = (a,b)
 
-    def __eq__(self, other):
-        if not isinstance(other, Either):
-            raise TypeError(_invalid_compare(self, other))
-        else:
-            return self.a == other.a and self.b == other.b
+    #def __eq__(self, other):
+        #if not isinstance(other, Either):
+            #raise TypeError(_invalid_compare(self, other))
+        #else:
+            #return self.a == other.a and self.b == other.b
 
-    def __hash__(self):
-        return hash((self.a, self.b))
+    #def __hash__(self):
+        #return hash((self.a, self.b))
 
-class Option(Atom):
-    """
-    A sum type for nullable measures unit types. Can be written
-    as a tagged union with with ``left`` as ``null`` and
-    ``right`` as a measure.
-    """
-    cls = MEASURE
+#class Option(Atom):
+    #"""
+    #A sum type for nullable measures unit types. Can be written
+    #as a tagged union with with ``left`` as ``null`` and
+    #``right`` as a measure.
+    #"""
+    #cls = MEASURE
 
-    def __init__(self, ty):
-        self.parameters = (ty,)
+    #def __init__(self, ty):
+        #self.parameters = (ty,)
 
-class Factor(Atom):
-    """
-    A finite enumeration of Fixed dimensions.
-    """
+#------------------------------------------------------------------------
+# Categorical Types
+#------------------------------------------------------------------------
 
-    def __str__(self):
-        # Use c-style enumeration syntax
-        return expr_string('', self.parameters, '{}')
+#class Factor(Atom):
+    #"""
+    #A finite enumeration of Fixed dimensions.
+    #"""
+
+    #def __str__(self):
+        ## Use c-style enumeration syntax
+        #return expr_string('', self.parameters, '{}')
+
+#------------------------------------------------------------------------
+# Sum Types
+#------------------------------------------------------------------------
 
 class Union(Atom):
     """
@@ -801,6 +763,10 @@ class Union(Atom):
 
     def __str__(self):
         return expr_string('', self.parameters, '{}')
+
+#------------------------------------------------------------------------
+# Record Types
+#------------------------------------------------------------------------
 
 class Record(Mono):
     """
@@ -954,23 +920,16 @@ void = CType('void', 0)
 object_ = pyobj = CType('object', c_intptr.itemsize)
 
 na = Null
-top = Top()
-dynamic = Dynamic()
 NullRecord = Record(())
 blob = Blob()
 
 string = String()
-
-Stream = Range(IntegerConstant(0), None)
 
 Type.register('int', c_int)
 Type.register('float', c_float)
 Type.register('double', c_double)
 
 Type.register('NA', Null)
-Type.register('Stream', Stream)
-Type.register('?', Dynamic)
-Type.register('top', top)
 Type.register('blob', blob)
 
 Type.register('string', String())
