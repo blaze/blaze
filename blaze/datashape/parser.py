@@ -25,7 +25,8 @@ class DatashapeSyntaxError(CustomSyntaxError):
 
 tokens = (
     'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR', 'EQUALS',
-    'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT'
+    'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT',
+    'VAR', 'JSON'
 )
 
 literals = [
@@ -64,6 +65,9 @@ bits = set([
     'datetime64',
     'timedelta64',
 ])
+
+t_JSON = r'json'
+t_VAR  = r'var'
 
 t_EQUALS = r'='
 t_COMMA  = r','
@@ -200,6 +204,14 @@ def p_rhs_expression_list__name(p):
 def p_rhs_expression_list__number(p):
     '''rhs_expression_list : NUMBER'''
     p[0] = (T.Fixed(p[1]),)
+
+def p_rhs_expression_list__var(p):
+    '''rhs_expression_list : VAR'''
+    p[0] = (T.Var(),)
+
+def p_rhs_expression_list__json(p):
+    '''rhs_expression_list : JSON'''
+    p[0] = (T.JSON(),)
 
 def p_rhs_expression_list__wild(p):
     '''rhs_expression_list : STAR'''
