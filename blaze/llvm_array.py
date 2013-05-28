@@ -1,18 +1,18 @@
 # This should be moved to llvmpy
-# 
+#
 # There are different array kinds parameterized by eltype and nd
-# 
-# Contiguous or Fortran 
+#
+# Contiguous or Fortran
 # struct {
 #    eltype *data;
-#    intp shape[nd]; 
+#    intp shape[nd];
 # } contiguous_array(eltype, nd)
 #
 # struct {
 #    eltype *data;
 #    diminfo shape[nd];
 # } strided_array(eltype, nd)
-# 
+#
 # struct {
 #    eltype *data;
 #    intp shape[nd];
@@ -40,7 +40,7 @@
 #    int32 nd;
 #    diminfo shape[nd];
 # } strided_array_nd(eltype)
-# 
+#
 #
 # Backward compatible but deprecated:
 # struct {
@@ -50,25 +50,25 @@
 #    intp stride[nd];
 # } strided_soa_array_nd(eltype)
 #
-# 
+#
 # The most general (where the kind of array is stored as well as number
 #                   of dimensions)
 # Rarely needed.
-# 
+#
 # struct {
 #   eltype *data;
 #   int16 nd;
 #   int16 dimkind;
 #   ???
 # } array_nd(eltype)
-# 
+#
 # where ??? is run-time interpreted based on the dimkind to either:
 # intp shape[nd];  for dimkind = C_CONTIGUOUS or F_CONTIGUOUS
 #
 # diminfo shape[nd]; for dimkind = STRIDED
 #
 # intp shape[ind];
-# intp strides[ind]; dimkind = STRIDED_SOA 
+# intp strides[ind]; dimkind = STRIDED_SOA
 #
 
 import llvm.core as lc
@@ -95,7 +95,7 @@ STRIDED_DK = STRIDED + HAS_DIMKIND
 STRIDED_SOA_DK = STRIDED_SOA + HAS_DIMKIND
 
 array_kinds = (C_CONTIGUOUS, F_CONTIGUOUS, STRIDED, STRIDED_SOA,
-               C_CONTIGUOUS_ND, F_CONTIGUOUS_ND, STRIDED_ND, STRIDED_SOA_ND, 
+               C_CONTIGUOUS_ND, F_CONTIGUOUS_ND, STRIDED_ND, STRIDED_SOA_ND,
                C_CONTIGUOUS_DK, F_CONTIGUOUS_DK, STRIDED_DK, STRIDED_SOA_DK)
 
 _invmap = {}
@@ -105,7 +105,7 @@ def kind_to_str(kind):
     if not _invmap:
         for key, value in globals().items():
             if isinstance(value, int) and value in array_kinds:
-                _invmap[value] = key    
+                _invmap[value] = key
     return _invmap[kind]
 
 def str_to_kind(str):
@@ -157,7 +157,7 @@ def array_type(nd, kind, el_type=char_type):
         terms.append(Type.array(intp_type, nd))     # shape
     elif base == STRIDED:
         terms.append(Type.array(diminfo_type, nd))       # diminfo
-    elif base == STRIDED_SOA: 
+    elif base == STRIDED_SOA:
         terms.extend([Type.array(intp_type, nd),    # shape
                       Type.array(intp_type, nd)])   # strides
 
@@ -184,8 +184,8 @@ def _raw_check_array(arrtyp):
     a0 = arrtyp.elements[0]
     a1 = arrtyp.elements[1]
     if not isinstance(a0, lc.PointerType) or \
-          not (isinstance(a1, lc.ArrayType) or 
-               (a1 == int32_type) or (a1 == int16_type)): 
+          not (isinstance(a1, lc.ArrayType) or
+               (a1 == int32_type) or (a1 == int16_type)):
         return None
 
     data_type = a0.pointee
@@ -213,7 +213,7 @@ def _raw_check_array(arrtyp):
         c_contiguous = C_CONTIGUOUS_DK
         f_contiguous = F_CONTIGUOUS_DK
     else:
-        num = 1       
+        num = 1
         strided = STRIDED
         strided_soa = STRIDED_SOA
         c_contiguous = C_CONTIGUOUS
@@ -251,7 +251,7 @@ def get_cpp_template(typ='all'):
     templates = _template_cache
     if typ in array_kinds:
         indx = array_kinds.index(typ)
-        try: 
+        try:
             if (typ & HAS_DIMKIND):
                 base = [templates[0], templates[2]]
             elif (typ & HAS_ND):
@@ -290,7 +290,7 @@ def _make_cpp_templates():
         raise ValueError("Size of pointer not recognized.")
 
     if lsize == 4:
-        header2 = "%typedef long int32;" % spaces
+        header2 = "%stypedef long int32;" % spaces
     elif isize == 4:
         header2 = "%stypedef int int32;" % spaces
     else:
@@ -313,7 +313,7 @@ def _make_cpp_templates():
     template<class T>
     struct diminfo {
         T dim;
-        T stride; 
+        T stride;
     };
     """
     spaces = ' '*8
@@ -331,7 +331,7 @@ def _make_cpp_templates():
     for end in ['', 'ND', 'DK']:
         for typ in ['C', 'F', 'S', 'A']:
             name = '_'.join(['Array_%s' % typ]+([end] if end else []))
-            templates.append(template_core.format(name=name, 
+            templates.append(template_core.format(name=name,
                                                   middle=middle_map[end],
                                                   dims=dims_map[typ]))
     _template_cache.extend(templates)
