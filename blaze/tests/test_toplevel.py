@@ -5,7 +5,7 @@ from blaze.test_utils import temp_dir
 import blaze.toplevel as toplevel
 from blaze.params import params
 from blaze import dshape
-from blaze.sources.chunked import CArraySource, CTableSource
+from blaze.sources.chunked import BArraySource, BTableSource
 from blaze.eclass import eclass
 
 def test_open_carray():
@@ -14,7 +14,7 @@ def test_open_carray():
         array_filename = os.path.join(temp, 'carray')
         p = params(storage=array_filename)
         ds = dshape('1,int32')
-        a = CArraySource([2], dshape=ds, params=p)
+        a = BArraySource([2], dshape=ds, params=p)
         del a
 
         # Open array with open function
@@ -32,7 +32,7 @@ def test_open_ctable():
         table_filename = os.path.join(temp, 'ctable')
         p = params(storage=table_filename)
         ds = dshape('1,{ x: int32; y: int32 }')
-        t = CTableSource(data=[(1, 1), (2, 2)], dshape=ds, params=p)
+        t = BTableSource(data=[(1, 1), (2, 2)], dshape=ds, params=p)
         del t
 
         # Open table with open function

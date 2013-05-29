@@ -12,6 +12,7 @@
 import sys, os, os.path, subprocess, math
 from time import time, clock
 import numpy as np
+import blz_ext
 
 
 def show_stats(explain, tref):
@@ -41,6 +42,48 @@ def show_stats(explain, tref):
     print "WallClock time:", round(tnow - tref, 3)
     return tnow
 
+def detect_number_of_cores():
+    """
+    detect_number_of_cores()
+
+    Return the number of cores in this system.
+
+    """
+    # Linux, Unix and MacOS:
+    if hasattr(os, "sysconf"):
+        if os.sysconf_names.has_key("SC_NPROCESSORS_ONLN"):
+            # Linux & Unix:
+            ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
+            if isinstance(ncpus, int) and ncpus > 0:
+                return ncpus
+        else: # OSX:
+            return int(os.popen2("sysctl -n hw.ncpu")[1].read())
+    # Windows:
+    if os.environ.has_key("NUMBER_OF_PROCESSORS"):
+        ncpus = int(os.environ["NUMBER_OF_PROCESSORS"]);
+        if ncpus > 0:
+            return ncpus
+    return 1 # Default
+
+def set_nthreads(nthreads):
+    """
+    set_nthreads(nthreads)
+
+    Sets the number of threads to be used during BLZ operation (Blosc).
+
+    Parameters
+    ----------
+    nthreads : int
+        The number of threads to be used during barray operation.
+
+    Returns
+    -------
+    out : int
+        The previous setting for the number of threads.
+
+    """
+    nthreads_old = blz_ext.blz_set_nthreads(nthreads)
+    return nthreads_old
 
 ##### Code for computing optimum chunksize follows  #####
 

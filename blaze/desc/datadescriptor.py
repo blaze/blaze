@@ -151,17 +151,17 @@ class SqlDataDescriptor(DataDescriptor):
         self.conn.execute(self.query)
         return self.conn.fetchone()
 
-class CArrayDataDescriptor(DataDescriptor):
+class BArrayDataDescriptor(DataDescriptor):
 
     def __init__(self, id, nbytes, datashape, carray):
-        super(CArrayDataDescriptor, self).__init__(id, nbytes, datashape)
+        super(BArrayDataDescriptor, self).__init__(id, nbytes, datashape)
         self.carray = carray
         self.itemsize = carray.itemsize
 
     def as_chunked_iterator(self, copy=False):
         """Return a ChunkIterator
         """
-        return llindexers.CArrayChunkIterator(self.carray, self.datashape)
+        return llindexers.BArrayChunkIterator(self.carray, self.datashape)
 
 class NumPyDataDescriptor(DataDescriptor):
 

@@ -4,12 +4,12 @@ Test querying data from a data source with the overlayed layout
 
 from blaze.layouts.query import retrieve
 from blaze.layouts.scalar import ContiguousL
-from blaze.sources.chunked import CArraySource
+from blaze.sources.chunked import BArraySource
 from blaze.sources.canonical import ArraySource
 
 
 def test_simple():
-    a = CArraySource([1,2,3])
+    a = BArraySource([1,2,3])
     layout = ContiguousL(a)
     indexer = (0,)
 

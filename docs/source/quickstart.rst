@@ -18,7 +18,7 @@ Blaze Arrays
     >>> a
     Array
       datashape := 2 2 int64
-      values    := [CArray(ptr=36111200)]
+      values    := [BArray(ptr=36111200)]
       metadata  := [manifest]
       layout    := Chunked(dim=0)
 
@@ -38,7 +38,7 @@ Disk Backed Array
     >>> Array(data, dshape('2,2, float64'), params=params(storage='a'))
     Array
       datashape := 2, 2, float64
-      values    := [CArray(ptr=56992176)]
+      values    := [BArray(ptr=56992176)]
       metadata  := [manifest, arraylike]
       layout    := Chunked(dim=0)
     [[ 0.  0.]
@@ -50,7 +50,7 @@ Disk Backed Array
     >>> open('a')
     Array
       datashape := 2, 2, float64
-      values    := [CArray(ptr=56992176)]
+      values    := [BArray(ptr=56992176)]
       metadata  := [manifest, arraylike]
       layout    := Chunked(dim=0)
     [[ 0.  0.]

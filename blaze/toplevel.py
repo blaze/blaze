@@ -1,15 +1,15 @@
 import os, os.path
 
 from urlparse import urlparse
-from params import params, to_cparams
+from params import params, to_bparams
 from params import params as _params
 from sources.sql import SqliteSource
-from sources.chunked import CArraySource, CTableSource
+from sources.chunked import BArraySource, BTableSource
 
 from table import NDArray, Array, NDTable, Table
 from blaze.datashape import from_numpy, to_numpy, TypeVar, Fixed
 from blaze.expr import graph, ops
-from blaze import carray, dshape as _dshape
+from blaze import blz, dshape as _dshape
 from eclass import eclass as _eclass
 
 import numpy as np
@@ -26,8 +26,8 @@ def open(uri, mode='a',  eclass=_eclass.manifest):
         Specifies the URI for the Blaze object.  It can be a regular file too.
         The URL scheme indicates the storage type:
 
-          * carray: Chunked array
-          * ctable: Chunked table
+          * barray: BLZ array
+          * btable: BLZ table
           * sqlite: SQLite table (the URI 'sqlite://' creates in-memory table)
 
         If no URI scheme is given, carray is assumed.
@@ -53,11 +53,11 @@ def open(uri, mode='a',  eclass=_eclass.manifest):
     parms = params(storage=path)
 
     if uri.scheme == 'carray':
-        source = CArraySource(params=parms)
+        source = BArraySource(params=parms)
         structure = ARRAY
 
     elif uri.scheme == 'ctable':
-        source = CTableSource(params=parms)
+        source = BTableSource(params=parms)
         structure = TABLE
 
     elif uri.scheme == 'sqlite':
@@ -69,7 +69,7 @@ def open(uri, mode='a',  eclass=_eclass.manifest):
     else:
         # Default is to treat the URI as a regular path
         parms = params(storage=path)
-        source = CArraySource(params=parms)
+        source = BArraySource(params=parms)
         structure = ARRAY
 
     # Don't want a deferred array (yet)
@@ -109,12 +109,12 @@ def zeros(dshape, params=None, eclass=_eclass.manifest):
     if isinstance(dshape, basestring):
         dshape = _dshape(dshape)
     shape, dtype = to_numpy(dshape)
-    cparams, rootdir, format_flavor = to_cparams(params or _params())
+    bparams, rootdir, format_flavor = to_bparams(params or _params())
     if rootdir is not None:
-        carray.zeros(shape, dtype, rootdir=rootdir, cparams=cparams)
+        blz.zeros(shape, dtype, rootdir=rootdir, bparams=bparams)
         return open(rootdir)
     else:
-        source = CArraySource(carray.zeros(shape, dtype, cparams=cparams),
+        source = BArraySource(blz.zeros(shape, dtype, bparams=bparams),
                               params=params)
         if eclass is _eclass.manifest:
             return Array(source)
@@ -139,12 +139,12 @@ def ones(dshape, params=None, eclass=_eclass.manifest):
     if isinstance(dshape, basestring):
         dshape = _dshape(dshape)
     shape, dtype = to_numpy(dshape)
-    cparams, rootdir, format_flavor = to_cparams(params or _params())
+    bparams, rootdir, format_flavor = to_bparams(params or _params())
     if rootdir is not None:
-        carray.ones(shape, dtype, rootdir=rootdir, cparams=cparams)
+        blz.ones(shape, dtype, rootdir=rootdir, bparams=bparams)
         return open(rootdir)
     else:
-        source = CArraySource(carray.ones(shape, dtype, cparams=cparams),
+        source = BArraySource(blz.ones(shape, dtype, bparams=bparams),
                               params=params)
         if eclass is _eclass.manifest:
             return Array(source)
@@ -157,7 +157,7 @@ def fromiter(iterable, dshape, params=None):
     Parameters
     ----------
     iterable : iterable object
-        An iterable object providing data for the carray.
+        An iterable object providing data for the blz.
     dshape : str, blaze.dshape instance
         Specifies the datashape of the outcome object.  Only 1d shapes
         are supported right now. When the `iterator` should return an
@@ -185,14 +185,14 @@ def fromiter(iterable, dshape, params=None):
 
     dtype = dtype.to_dtype()
     # Now, create the Array itself (using the carray backend)
-    cparams, rootdir, format_flavor = to_cparams(params or _params())
+    bparams, rootdir, format_flavor = to_bparams(params or _params())
     if rootdir is not None:
-        carray.fromiter(iterable, dtype, count=count,
-                        rootdir=rootdir, cparams=cparams)
+        blz.fromiter(iterable, dtype, count=count,
+                        rootdir=rootdir, bparams=bparams)
         return open(rootdir)
     else:
-        ica = carray.fromiter(iterable, dtype, count=count, cparams=cparams)
-        source = CArraySource(ica, params=params)
+        ica = blz.fromiter(iterable, dtype, count=count, bparams=bparams)
+        source = BArraySource(ica, params=params)
         return Array(source)
 
 def loadtxt(filetxt, storage):

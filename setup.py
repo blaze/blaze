@@ -21,7 +21,7 @@ packages = [
     'blaze.algo.linalg',
     'blaze.aterm',
     'blaze.blir',
-    'blaze.carray',
+    'blaze.blz',
     'blaze.datashape',
     'blaze.desc',
     'blaze.dist',
@@ -69,12 +69,12 @@ def check_import(pkgname, pkgver):
         mod = __import__(pkgname)
     except ImportError:
             exit_with_error(
-                "You need %(pkgname)s %(pkgver)s or greater to run carray!"
+                "You need %(pkgname)s %(pkgver)s or greater to run Blaze!"
                 % {'pkgname': pkgname, 'pkgver': pkgver} )
     else:
         if mod.__version__ < pkgver:
             exit_with_error(
-                "You need %(pkgname)s %(pkgver)s or greater to run carray!"
+                "You need %(pkgname)s %(pkgver)s or greater to run Blaze!"
                 % {'pkgname': pkgname, 'pkgver': pkgver} )
 
     print ( "* Found %(pkgname)s %(pkgver)s package installed."
@@ -90,7 +90,7 @@ try:
     from Cython.Compiler.Main import Version
 except:
     exit_with_error(
-        "You need %(pkgname)s %(pkgver)s or greater to compile carray!"
+        "You need %(pkgname)s %(pkgver)s or greater to compile Blaze!"
         % {'pkgname': 'Cython', 'pkgver': min_cython_version} )
 
 if Version.version < min_cython_version:
@@ -155,11 +155,11 @@ blosc_path  = 'blaze/include/blosc/'
 desc_path   = "blaze/desc/"
 
 
-carray_source = [
-    "blaze/carray/carrayExtension.pyx"
+blz_source = [
+    "blaze/blz/blz_ext.pyx"
 ]
 
-carray_depends = [
+blz_depends = [
 ]
 
 blosc_source = [
@@ -182,14 +182,14 @@ descriptor_depends = [
 
 extensions = [
     Extension(
-        "blaze.carray.carrayExtension",
+        "blaze.blz.blz_ext",
         include_dirs=[
             blosc_path,
             numpy_path,
         ],
 
-        sources = list(carray_source + blosc_source),
-        depends = list(carray_depends + blosc_depends),
+        sources = list(blz_source + blosc_source),
+        depends = list(blz_depends + blosc_depends),
 
         library_dirs=lib_dirs,
         libraries=libs,
