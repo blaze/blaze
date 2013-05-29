@@ -16,10 +16,13 @@ if "%PYTHON_VERSION%" == "" exit /b 1
 REM Jenkins has '/' in its workspace. Fix it to '\' to simplify the DOS commands.
 set WORKSPACE=%WORKSPACE:/=\%
 
+rd /q /s %WORKSPACE%\build
+REM Fail if we couldn't fully remove the temporary dir
+if EXIST %WORKSPACE%\build\ exit /b 1
+
 REM Use conda to create a conda environment of the required
 REM python version and containing the dependencies.
 SET PYENV_PREFIX=%WORKSPACE%\build\pyenv
-rd /q /s %PYENV_PREFIX%
 REM TODO: Add cffi to this list once it is added to anaconda windows.
 call C:\Anaconda\Scripts\conda create --yes -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython=0.19 scipy llvmpy ply numba
 IF %ERRORLEVEL% NEQ 0 exit /b 1
