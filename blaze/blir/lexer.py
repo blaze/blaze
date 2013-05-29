@@ -12,7 +12,7 @@ tokens = [
  'DOT',
 ]
 
-reserved = {
+reserved = set([
     'False',
     'True',
     # --
@@ -28,7 +28,7 @@ reserved = {
     'return',
     'var',
     'while'
-}
+])
 
 _escapes_re = r'(\\b[0-9a-fA-F]{2})|(\\.)'
 _escape_map = {
