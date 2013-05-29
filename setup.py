@@ -279,15 +279,18 @@ class BuildPrelude(build_ext):
     """ Build the Blir prelude """
 
     def run(self):
-        assert on_path('clang') or on_path('gcc') or on_path('minggw')
-        extensions.append(
-            Extension(
-                 "blaze.blir.prelude",
-                 sources = ["blaze/blir/prelude.c"],
-                 depends = [],
-                 include_dirs = [],
+        if sys.platform == 'win32':
+            print('WARNING: Skipping build of prelude on Windows')
+        else:
+            assert on_path('clang') or on_path('gcc') or on_path('minggw')
+            extensions.append(
+                Extension(
+                     "blaze.blir.prelude",
+                     sources = ["blaze/blir/prelude.c"],
+                     depends = [],
+                     include_dirs = [],
+                )
             )
-        )
         build_ext.run(self)
 
 #------------------------------------------------------------------------
