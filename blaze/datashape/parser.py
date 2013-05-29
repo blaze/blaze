@@ -1,55 +1,5 @@
 from __future__ import absolute_import
 
-"""
-The improved parser for Datashape grammar.
-
-Grammar::
-
-    top : mod
-
-    mod : mod mod
-        | stmt
-
-    stmt : TYPE lhs_expression EQUALS rhs_expression
-         | rhs_expression
-
-    lhs_expression : lhs_expression lhs_expression
-                   | NAME
-
-    rhs_expression : rhs_expression_list
-
-    rhs_expression_list : rhs_expression_list COMMA rhs_expression_list
-                   | appl
-                   | record
-                   | BIT
-                   | NAME
-                   | NUMBER
-
-    appl_args : appl_args COMMA appl_args
-              | appl
-              | record
-              | '(' rhs_expression ')'
-              | BIT
-              | NAME
-              | NUMBER
-              | STRING
-
-    appl : NAME '(' appl_args ')'
-
-    record : LBRACE record_opt RBRACE
-    record_opt : record_opt SEMI record_opt
-               | record_item
-               | empty
-    record_name : NAME
-                | BIT
-                | TYPE
-    record_item : record_name COLON '(' rhs_expression ')'
-                | record_name COLON rhs_expression'
-
-    empty :
-
-"""
-
 import os
 import sys
 import ast
@@ -74,8 +24,9 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR',
-    'EQUALS', 'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT'
+    'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR', 'EQUALS',
+    'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT',
+    'VAR', 'JSON'
 )
 
 literals = [
@@ -91,7 +42,7 @@ literals = [
 
 bits = set([
     'bool',
-    'blob', # XXX deprecated
+    'bytes',
     'int',
     'float',
     'int8',
@@ -111,10 +62,12 @@ bits = set([
     'complex128',
     'complex256',
     'string',
-    'object',
     'datetime64',
     'timedelta64',
 ])
+
+t_JSON = r'json'
+t_VAR  = r'var'
 
 t_EQUALS = r'='
 t_COMMA  = r','
@@ -252,6 +205,14 @@ def p_rhs_expression_list__number(p):
     '''rhs_expression_list : NUMBER'''
     p[0] = (T.Fixed(p[1]),)
 
+def p_rhs_expression_list__var(p):
+    '''rhs_expression_list : VAR'''
+    p[0] = (T.Var(),)
+
+def p_rhs_expression_list__json(p):
+    '''rhs_expression_list : JSON'''
+    p[0] = (T.JSON(),)
+
 def p_rhs_expression_list__wild(p):
     '''rhs_expression_list : STAR'''
     p[0] = (T.Wild(),)
@@ -364,21 +325,12 @@ def p_error(p):
 reserved = {
     'Record'   : T.Record,
     'Range'    : T.Range,
-    'Either'   : T.Either,
-    'Varchar'  : T.Varchar,
-    'Union'    : T.Union,
-    'Option'   : T.Option,
+    #'Either'   : T.Either,
+    #'Union'    : T.Union,
+    #'Option'   : T.Option,
     'string'   : T.String, # String type per proposal
     'Wild'     : T.Wild
 }
-
-def build_ds_extern(ds):
-    if isinstance(ds, list):
-        return map(build_ds, ds)
-    elif isinstance(ds, simpletype):
-        pass # XXX
-    elif isinstance(ds, tydecl):
-        pass
 
 def debug_parse(data, lexer, parser):
     lexer.input(data)
@@ -439,12 +391,6 @@ def parse(pattern):
     if isinstance(ds, T.TypeVar):
         raise TypeError(('Only a measure can appear on the last '
                         'position of a datashape, not %s') % repr(ds))
-    return ds
-
-def parse_extern(pattern):
-    res = parse(pattern)
-
-    ds = build_ds_extern(res)
     return ds
 
 if __name__ == '__main__':

@@ -69,7 +69,7 @@ class NumPyElementWriter(IElementWriter):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        idx = tuple([operator.index(i) for i in idx])
+        idx = tuple(operator.index(i) for i in idx)
         # Create a temporary NumPy array around the ptr data
         buf = np.core.multiarray.int_asbuffer(ptr, self.dshape.itemsize)
         tmp = np.frombuffer(buf, self._dtype).reshape(self._shape)
@@ -81,7 +81,7 @@ class NumPyElementReadIter(IElementReadIter):
         if npyarr.ndim <= 0:
             raise IndexError('Need at least one dimension for iteration')
         self._index = 0
-        self._len = npyarr.shape[0]
+        self._len = len(npyarr)
         self._dshape = datashape.from_numpy(npyarr.shape[1:], npyarr.dtype)
         self.npyarr = npyarr
 
@@ -109,7 +109,7 @@ class NumPyElementWriteIter(IElementWriteIter):
         if npyarr.ndim <= 0:
             raise IndexError('Need at least one dimension for iteration')
         self._index = 0
-        self._len = npyarr.shape[0]
+        self._len = len(npyarr)
         self._dshape = datashape.from_numpy(npyarr.shape[1:], npyarr.dtype)
         self._usebuffer = not (npyarr[0].flags.c_contiguous and npyarr.dtype.isnative)
         self._buffer_index = -1

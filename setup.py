@@ -192,12 +192,12 @@ extensions = [
         define_macros=def_macros,
    ),
 
-   Extension(
-        "blaze.blir.prelude",
-        sources = ["blaze/blir/prelude.c"],
-        depends = [],
-        include_dirs = [],
-   ),
+#   Extension(
+#        "blaze.blir.prelude",
+#        sources = ["blaze/blir/prelude.c"],
+#        depends = [],
+#        include_dirs = [],
+#   ),
 ]
 
 #------------------------------------------------------------------------

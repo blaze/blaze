@@ -4,8 +4,9 @@ import blaze
 from blaze import datashape
 from blaze.datadescriptor import (DyNDDataDescriptor,
                 IDataDescriptor, IElementReader, IElementReadIter,
+                IElementWriter, IElementWriteIter,
                 dd_as_py)
-from ...py3help import _inttypes, skipIf
+from blaze.py3help import _inttypes, skipIf, izip
 import ctypes
 
 try:
@@ -29,6 +30,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.ndobject([[1, 2, 3], [4, 5, 6]])
         dd = DyNDDataDescriptor(a)
 
+        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int32'))
         # Iteration should produce DyNDDataDescriptor instances
         vals = []
         for el in dd:
@@ -42,6 +44,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.ndobject([[1, 2, 3], [4, 5, 6]])
         dd = DyNDDataDescriptor(a)
 
+        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int32'))
         # Indexing should produce DyNDDataDescriptor instances
         self.assertTrue(isinstance(dd[0], DyNDDataDescriptor))
         self.assertEqual(dd_as_py(dd[0]), [1,2,3])
@@ -53,6 +56,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.ndobject([[1, 2, 3], [4, 5, 6]])
         dd = DyNDDataDescriptor(a)
 
+        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int32'))
         # Requesting element iteration should produce an
         # IElementReadIter object
         ei = dd.element_read_iter()
@@ -67,7 +71,8 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.ndobject([[1, 2, 3], [4, 5, 6]])
         dd = DyNDDataDescriptor(a)
 
-        # Requesting get_element with one index should produce an
+        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int32'))
+        # Requesting element_reader with one index should produce an
         # IElementReader object
         ge = dd.element_reader(1)
         self.assertTrue(isinstance(ge, IElementReader))
@@ -88,10 +93,68 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.ndobject([[1,2,3], [4,5], [6]])
         dd = DyNDDataDescriptor(a)
 
+        self.assertEqual(dd.dshape, datashape.dshape('3, Var, int32'))
         self.assertEqual(dd_as_py(dd), [[1,2,3], [4,5], [6]])
         self.assertEqual(dd_as_py(dd[0]), [1,2,3])
         self.assertEqual(dd_as_py(dd[1]), [4,5])
         self.assertEqual(dd_as_py(dd[2]), [6])
+
+    @skipIf(dynd is None, 'dynd is not installed')
+    def test_element_write(self):
+        a = nd.ndobject([1, 2, 3, 4, 5])
+        dd = DyNDDataDescriptor(a)
+
+        self.assertEqual(dd.dshape, datashape.dshape('5, int32'))
+        ge = dd.element_writer(1)
+        self.assertTrue(isinstance(ge, IElementWriter))
+        x = ctypes.c_int32(123)
+        ge.write_single((1,), ctypes.addressof(x))
+        self.assertEqual(dd_as_py(dd), [1,123,3,4,5])
+
+    @skipIf(dynd is None, 'dynd is not installed')
+    def test_element_iter_write(self):
+        a = nd.ndobject([1, 2, 3, 4, 5])
+        dd = DyNDDataDescriptor(a)
+
+        self.assertEqual(dd.dshape, datashape.dshape('5, int32'))
+        ge = dd.element_write_iter()
+        self.assertTrue(isinstance(ge, IElementWriteIter))
+        for val, ptr in izip([5,7,4,5,3], ge):
+            x = ctypes.c_int32(val)
+            ctypes.memmove(ptr, ctypes.addressof(x), 4)
+        # TODO: the fact this is needed indicates the element_write_iter is wrong
+        for i in ge: pass
+        self.assertEqual(dd_as_py(dd), [5,7,4,5,3])
+
+
+    @skipIf(dynd is None, 'dynd is not installed')
+    def test_element_write_buffered(self):
+        a = nd.ndobject([1, 2, 3, 4, 5]).ucast(ndt.int64)
+        dd = DyNDDataDescriptor(a)
+
+        self.assertEqual(dd.dshape, datashape.dshape('5, int64'))
+        ge = dd.element_writer(1)
+        self.assertTrue(isinstance(ge, IElementWriter))
+        x = ctypes.c_int64(123)
+        ge.write_single((1,), ctypes.addressof(x))
+        self.assertEqual(dd_as_py(dd), [1,123,3,4,5])
+
+    @skipIf(dynd is None, 'dynd is not installed')
+    def test_element_iter_write_buffered(self):
+        a = nd.ndobject([1, 2, 3, 4, 5]).ucast(ndt.int64)
+        dd = DyNDDataDescriptor(a)
+
+        self.assertEqual(dd.dshape, datashape.dshape('5, int64'))
+        ge = dd.element_write_iter()
+        self.assertTrue(isinstance(ge, IElementWriteIter))
+        for val, ptr in izip([5,7,4,5,3], ge):
+            x = ctypes.c_int64(val)
+            ctypes.memmove(ptr, ctypes.addressof(x), 8)
+        # TODO: the fact this is needed indicates the element_write_iter is wrong
+        for i in ge: pass
+        self.assertEqual(dd_as_py(dd), [5,7,4,5,3])
+
+
 
 if __name__ == '__main__':
     unittest.main()
