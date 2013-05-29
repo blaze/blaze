@@ -14,8 +14,8 @@ too).  The goals of the BLZ format are:
    than data in memory.
 
 2. The persistence layer should support the same access capabilities
-   than Blaze objects including: modifying, appending and removing data,
-   as well as direct access to data (in the same way than RAM).
+   than Blaze objects including: modifying, appending and removing
+   data, as well as direct access to data (in the same way than RAM).
 
 3. Transparent data compression must be possible.
 
@@ -26,20 +26,14 @@ too).  The goals of the BLZ format are:
 6. Data is not allowed to be modified.
 
 7. And last but not least, the data should be easily 'shardable' for
-   optimal behavior in distributed storage.  Providing a format that is
-   already 'sharded' by default would represent a big advantage for
+   optimal behavior in distributed storage.  Providing a format that
+   is already 'sharded' by default represents a big advantage for
    allowing spreading a Blaze object among different nodes.
 
 These points, in combination with a distributed filesystem, and with a
 system that would be aware of the physical topology of the underlying
-infrastructure would allow to largely avoid the need for a
-Disco/Hadoop infrastructure, permitting much better flexibility and
-performance.
-
-The data files will be made of a series of chunks put together using
-the Blosc metacompressor by default.  Blosc being a metacompressor,
-means that it can use different compressors and filters, while
-leveraging its blocking and multithreading capabilities.
+infrastructure allows to largely avoid the need for a Disco/Hadoop
+infrastructure, permitting much better flexibility and performance.
 
 The low level description for the BLZ format follows.  It must be
 noted that with Blaze 0.1 the implementation is almost complete,
@@ -48,6 +42,11 @@ except for the fact that that superchunks are not yet there.
 
 The BLZ format
 ==============
+
+The data files will be made of a series of chunks put together using
+the Blosc metacompressor by default.  Blosc being a metacompressor,
+means that it can use different compressors and filters, while
+leveraging its blocking and multithreading capabilities.
 
 The layout
 ----------
