@@ -14,6 +14,7 @@ if PY3:
     imap = map
     basestring = str
     import urllib.parse as urlparse
+    from collections import Counter
 else:
     import __builtin__
     def dict_iteritems(d):
@@ -28,6 +29,10 @@ else:
     _inttypes = (int, long)
     imap = itertools.imap
     import urlparse
+    if sys.version_info >= (2, 7):
+        from collections import Counter
+    else:
+        from .counter_py26 import Counter
 
 if sys.version_info[:2] >= (2, 7):
     from unittest import skip, skipIf
@@ -40,7 +45,8 @@ else:
         def __call__(self, func):
             from nose.plugins.skip import SkipTest
             def wrapped(*args, **kwargs):
-                raise SkipTest("Test %s is skipped because: %s" % (func.__name__, self.reason))
+                raise SkipTest("Test %s is skipped because: %s" %
+                                (func.__name__, self.reason))
             wrapped.__name__ = func.__name__
             return wrapped
     class skipIf(object):

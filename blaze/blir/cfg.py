@@ -3,7 +3,7 @@ from . import syntax
 from . import blocks
 
 from ast import NodeVisitor
-from collections import Counter
+from ..py3help import Counter
 
 binary_ops = {
     '+'  : 'BINARY_ADD',
