@@ -13,6 +13,7 @@ from os.path import join
 from distutils.core import Command, setup
 from distutils.sysconfig import get_python_inc, get_config_var
 from distutils.command.build import build
+from distutils.command.build_ext import build_ext
 
 #------------------------------------------------------------------------
 # Top Level Packages
@@ -192,12 +193,6 @@ extensions = [
         define_macros=def_macros,
    ),
 
-#   Extension(
-#        "blaze.blir.prelude",
-#        sources = ["blaze/blir/prelude.c"],
-#        depends = [],
-#        include_dirs = [],
-#   ),
 ]
 
 #------------------------------------------------------------------------
@@ -244,6 +239,31 @@ class CleanCommand(Command):
 # Parser
 #------------------------------------------------------------------------
 
+# Clang and libclang.so is hard dependency of Blaze at the
+# moment. On Linux this is included with Anaconda, on other
+# platforms it's up to the user to install clang with XCode.
+
+# Blir requires the LLVM math intrinsics which need to be in the
+# process space with libm. This will be fixed when we have
+# support OpenLibM that works across all plaforms.
+
+def on_path(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return False
+
 class BuildParser(build):
     """ Build the parse tables for datashape """
 
@@ -255,9 +275,36 @@ class BuildParser(build):
         from blaze.datashape.parser import rebuild
         rebuild()
 
+class BuildPrelude(build_ext):
+    """ Build the Blir prelude """
+
+    def run(self):
+        assert on_path('clang') or on_path('gcc') or on_path('minggw')
+        extensions.append(
+            Extension(
+                 "blaze.blir.prelude",
+                 sources = ["blaze/blir/prelude.c"],
+                 depends = [],
+                 include_dirs = [],
+            )
+        )
+        build_ext.run(self)
+
 #------------------------------------------------------------------------
 # Setup
 #------------------------------------------------------------------------
+
+try:
+    assert sys.version[0] != 3
+except AssertionError:
+    print("Python 3 is not supported as this time.")
+
+# Kernel tree code requires clang++ for LLVM generation.
+
+try:
+    assert on_path('clang++')
+except AssertionError:
+    print("Clang++ is required to build Blaze.")
 
 longdesc = open('README.md').read()
 
@@ -289,6 +336,7 @@ setup(
         'build_ext' : build_ext,
         'clean'     : CleanCommand,
         'build'     : BuildParser,
+        'build_ext' : BuildPrelude,
     },
     scripts=['bin/blirc'],
 )
