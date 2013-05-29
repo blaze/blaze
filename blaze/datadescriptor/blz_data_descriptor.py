@@ -128,7 +128,7 @@ class BLZElementAppender(IElementAppender):
 
     def append_single(self, ptr):
         # Create a temporary NumPy array around the ptr data
-        buf = np.core.multiarray.int_asbuffer(ptr, self.dshape.itemsize)
+        buf = np.core.multiarray.int_asbuffer(ptr, self._dtype.itemsize)
         tmp = np.frombuffer(buf, self._dtype).reshape(self._shape)
         # Actually append the values
         self.blzarr.append(tmp)
@@ -200,7 +200,9 @@ class BLZDataDescriptor(IDataDescriptor):
     def append(self, values):
         """Append a list of values."""
         eap = self.element_appender()
-        values_ptr = np.array(values).ctypes.data
+        values_arr = np.array(values)
+        print "arr:", values_arr
+        values_ptr = values_arr.ctypes.data
         eap.append_single(values_ptr)
         # Flush data and update the dshape
         self._dshape = eap.finalize()
