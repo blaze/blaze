@@ -7,6 +7,7 @@ if PY3:
     def dict_iteritems(d):
         return d.items().__iter__()
     xrange = range
+    izip = zip
     _inttypes = (int,)
     _strtypes = (str,)
     unicode = str
@@ -18,6 +19,7 @@ else:
     def dict_iteritems(d):
         return d.iteritems()
     xrange = __builtin__.xrange
+    from itertools import izip
     unicode = __builtin__.unicode
     basestring = __builtin__.basestring
 
