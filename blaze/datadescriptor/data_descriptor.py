@@ -222,6 +222,14 @@ class IElementWriteIter:
     def __next__(self):
         raise NotImplemented
 
+    @abc.abstractmethod
+    def close(self):
+        """
+        This method should flush any buffers that are still
+        outstanding in the writing process.
+        """
+        raise NotImplemented
+
     def next(self):
         return self.__next__()
 
@@ -394,6 +402,9 @@ class IDataDescriptor:
         returning a char* at a time. The returned object can also
         expose a C-level chunked iterator interface, similar
         to NumPy nditer.
+
+        # Example implementation
+        return contextlib.closing(_MyElementWriteIter(self))
         """
         raise TypeError('data descriptor %r is read only'
                         % type(self))
