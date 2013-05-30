@@ -126,11 +126,12 @@ class BLZElementAppender(IElementAppender):
     def dshape(self):
         return self._dshape
 
-    def append_single(self, ptr):
+    def append(self, ptr, nrows):
         # Create a temporary NumPy array around the ptr data
-        rowsize = self._dtype.itemsize * sum(self._shape)
+        shape = (nrows,) + self._shape
+        rowsize = self._dtype.itemsize * np.product(shape)
         buf = np.core.multiarray.int_asbuffer(ptr, rowsize)
-        tmp = np.frombuffer(buf, self._dtype).reshape((1,) + self._shape)
+        tmp = np.frombuffer(buf, self._dtype).reshape(shape)
         # Actually append the values
         self.blzarr.append(tmp)
 
@@ -202,10 +203,15 @@ class BLZDataDescriptor(IDataDescriptor):
         """Append a list of values."""
         eap = self.element_appender()
         shape, dtype = datashape.to_numpy(self._dshape)
-        for value in values:
-            values_arr = np.array(value, dtype=dtype)
-            values_ptr = values_arr.ctypes.data
-            eap.append_single(values_ptr)
+        values_arr = np.array(values, dtype=dtype)
+        shape_vals = values_arr.shape
+        if len(shape_vals) < len(shape):
+            shape_vals = (1,) + shape_vals
+        if len(shape_vals) <> len(shape):
+            raise ValueError("shape of values is not compatible")
+        # Now, do the actual append   
+        values_ptr = values_arr.ctypes.data
+        eap.append(values_ptr, shape_vals[0])
         # Flush data and update the dshape
         self._dshape = eap.finalize()
 

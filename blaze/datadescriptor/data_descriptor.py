@@ -155,11 +155,12 @@ class IElementAppender:
         raise NotImplemented
 
     @abc.abstractmethod
-    def append_single(self, ptr):
+    def append(self, ptr, nrows):
         """
         Appends a char* pointer to the element at the end of
         data. 'ptr' must be a pointer to an element with the element
-        appender's dshape.
+        appender's dshape. 'nrows' is the number of values to appended
+        in the outer dimension.
         """
         raise NotImplemented
 
