@@ -207,7 +207,7 @@ class BLZDataDescriptor(IDataDescriptor):
         shape_vals = values_arr.shape
         if len(shape_vals) < len(shape):
             shape_vals = (1,) + shape_vals
-        if len(shape_vals) <> len(shape):
+        if len(shape_vals) != len(shape):
             raise ValueError("shape of values is not compatible")
         # Now, do the actual append   
         values_ptr = values_arr.ctypes.data
