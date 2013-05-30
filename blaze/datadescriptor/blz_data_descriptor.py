@@ -136,11 +136,8 @@ class BLZElementAppender(IElementAppender):
         self.blzarr.append(tmp)
 
     def finalize(self):
-        obj = self.blzarr
         # Flush the remaining data in buffers
-        obj.flush()
-        # Return the new dshape for the underlying BLZ object
-        return datashape.from_numpy(obj.shape, obj.dtype)
+        self.blzarr.flush()
 
 
 class BLZDataDescriptor(IDataDescriptor):
@@ -154,11 +151,12 @@ class BLZDataDescriptor(IDataDescriptor):
             raise TypeError(('object is not a blz array, '
                              'it has type %r') % type(obj))
         self.blzarr = obj
-        self._dshape = datashape.from_numpy(obj.shape, obj.dtype)
 
     @property
     def dshape(self):
-        return self._dshape
+        # This cannot be cached because the BLZ can change the dshape
+        obj = self.blzarr
+        return datashape.from_numpy(obj.shape, obj.dtype)
 
     @property
     def writable(self):
@@ -202,7 +200,7 @@ class BLZDataDescriptor(IDataDescriptor):
     def append(self, values):
         """Append a list of values."""
         eap = self.element_appender()
-        shape, dtype = datashape.to_numpy(self._dshape)
+        shape, dtype = datashape.to_numpy(self.dshape)
         values_arr = np.array(values, dtype=dtype)
         shape_vals = values_arr.shape
         if len(shape_vals) < len(shape):
@@ -212,8 +210,8 @@ class BLZDataDescriptor(IDataDescriptor):
         # Now, do the actual append   
         values_ptr = values_arr.ctypes.data
         eap.append(values_ptr, shape_vals[0])
-        # Flush data and update the dshape
-        self._dshape = eap.finalize()
+        # Flush data
+        eap.finalize()
 
     def element_appender(self):
         if self.appendable:
