@@ -2,8 +2,8 @@ from __future__ import absolute_import
 import operator
 
 from . import (IElementReader, IElementWriter,
-                IElementReadIter, IElementWriteIter,
-                IDataDescriptor)
+               IElementReadIter, IElementWriteIter,
+               IElementAppender, IDataDescriptor)
 from .. import datashape
 import numpy as np
 from blaze import blz
@@ -18,7 +18,7 @@ def blz_descriptor_iter(blzarr):
         for el in blzarr:
             yield NumPyDataDescriptor(el)
     else:
-        for i in range(blzarr.shape[0]):
+        for i in range(len(blzarr)):
             # BLZ doesn't have a convenient way to avoid collapsing
             # to a scalar, this is a way to avoid that
             el = np.array(blzarr[i], dtype=blzarr.dtype)
@@ -56,7 +56,7 @@ class BLZElementReadIter(IElementReadIter):
             raise IndexError('Need at least one dimension for iteration')
         self.blzarr = blzarr
         self._index = 0
-        self._len = self.blzarr.shape[0]
+        self._len = len(self.blzarr)
         self._dshape = ds
 
     @property
@@ -77,6 +77,72 @@ class BLZElementReadIter(IElementReadIter):
         else:
             raise StopIteration
 
+# Keep this private until we decide if this interface should be public or not
+class _BLZElementWriteIter(IElementWriteIter):
+    def __init__(self, blzarr):
+        if blzarr.ndim <= 0:
+            raise IndexError('Need at least one dimension for iteration')
+        self._index = 0
+        self._len = len(blzarr)
+        self._dshape = datashape.from_numpy(blzarr.shape[1:], blzarr.dtype)
+        self._buffer_index = -1
+        self.blzarr = blzarr
+        self._rshape = blzarr.shape[1:]
+        self._dtype = blzarr.dtype.newbyteorder('=')
+
+    @property
+    def dshape(self):
+        return self._dshape
+
+    def __len__(self):
+        return self._len
+
+    def __next__(self):
+        # Copy the previous element to the array if it is buffered
+        if self._buffer_index >= 0:
+            self.blzarr.append(self._buffer)
+            self._buffer_index = -1
+        if self._index < self._len:
+            i = self._index
+            self._index = i + 1
+            if self._buffer is None:
+                self._buffer = np.empty(self._rshape, self._dtype)
+            self._buffer_index = i
+            return self._buffer.ctypes.data
+        else:
+            raise StopIteration
+
+
+class BLZElementAppender(IElementAppender):
+    def __init__(self, blzarr):
+        if blzarr.ndim <= 0:
+            raise IndexError('Need at least one dimension for append')
+        self._shape = blzarr.shape[1:]
+        self._dtype = blzarr.dtype
+        self._dshape = datashape.from_numpy(self._shape, self._dtype)
+        self.blzarr = blzarr
+
+    @property
+    def dshape(self):
+        return self._dshape
+
+    def append(self, ptr, nrows):
+        # Create a temporary NumPy array around the ptr data
+        shape = (nrows,) + self._shape
+        rowsize = self._dtype.itemsize * np.product(shape)
+        buf = np.core.multiarray.int_asbuffer(ptr, rowsize)
+        tmp = np.frombuffer(buf, self._dtype).reshape(shape)
+        # Actually append the values
+        self.blzarr.append(tmp)
+
+    def finalize(self):
+        obj = self.blzarr
+        # Flush the remaining data in buffers
+        obj.flush()
+        # Return the new dshape for the underlying BLZ object
+        return datashape.from_numpy(obj.shape, obj.dtype)
+
+
 class BLZDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a BLZ array.
@@ -96,6 +162,11 @@ class BLZDataDescriptor(IDataDescriptor):
 
     @property
     def writable(self):
+        # The BLZ supports this, but we don't want to expose that yet
+        return False
+
+    @property
+    def appendable(self):
         # TODO: Not sure this is right
         return self.blzarr.mode == 'a'
 
@@ -105,7 +176,7 @@ class BLZDataDescriptor(IDataDescriptor):
 
     def __len__(self):
         # BLZ arrays are never scalars
-        return self.blzarr.shape[0]
+        return len(self.blzarr)
 
     def __getitem__(self, key):
         # Just integer indices (no slices) for now
@@ -120,19 +191,35 @@ class BLZDataDescriptor(IDataDescriptor):
 
     def __setitem__(self, key, value):
         # We decided that BLZ should be read and append only
-        # self.blzarr.__setitem__(key, value)
         raise NotImplementedError
 
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
 
+    # This is not part of the DataDescriptor interface itself, but can
+    # be handy for other situations not requering full compliance with
+    # it.
     def append(self, values):
         """Append a list of values."""
-        obj = self.blzarr
-        obj.append(values)
-        obj.flush()  # XXX This should be in BLZ barray object instead?
-        # Update the dshape
-        self._dshape = datashape.from_numpy(obj.shape, obj.dtype)
+        eap = self.element_appender()
+        shape, dtype = datashape.to_numpy(self._dshape)
+        values_arr = np.array(values, dtype=dtype)
+        shape_vals = values_arr.shape
+        if len(shape_vals) < len(shape):
+            shape_vals = (1,) + shape_vals
+        if len(shape_vals) <> len(shape):
+            raise ValueError("shape of values is not compatible")
+        # Now, do the actual append   
+        values_ptr = values_arr.ctypes.data
+        eap.append(values_ptr, shape_vals[0])
+        # Flush data and update the dshape
+        self._dshape = eap.finalize()
+
+    def element_appender(self):
+        if self.appendable:
+            return BLZElementAppender(self.blzarr)
+        else:
+            raise ArrayWriteError('Cannot write to readonly BLZ array')
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).

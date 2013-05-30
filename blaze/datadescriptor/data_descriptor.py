@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
 __all__ = ['IElementReader', 'IElementWriter',
-                'IElementReadIter', 'IElementWriteIter',
-                'IDataDescriptor']
+           'IElementReadIter', 'IElementWriteIter',
+           'IElementAppender', 'IDataDescriptor']
 
 import abc
 import ctypes
@@ -136,6 +136,60 @@ class IElementWriter:
         returns it as a function object.
         """
         raise NotImplemented
+
+class IElementAppender:
+    """
+    An interface for appending elements at the end of the
+    data. Provides additional C and llvm function interfaces to use in
+    a jitting context.
+
+    """
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def dshape(self):
+        """
+        The dshape of elements to be appended to the
+        element appender.
+        """
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def append(self, ptr, nrows):
+        """
+        Appends a char* pointer to the element at the end of
+        data. 'ptr' must be a pointer to an element with the element
+        appender's dshape. 'nrows' is the number of values to appended
+        in the outer dimension.
+        """
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def finalize(self, ptr):
+        """
+        Flush whatever data remains in buffers.
+        """
+        raise NotImplemented
+
+    def c_api(self):
+        """
+        Returns a tuple with a [CFFI or ctypes?] function pointer
+        to a C set method, and a void* pointer to pass to
+        the function's 'extra' parameter.
+
+        Possible alternative: Returns a blaze kernel with a
+        'append_element' function prototype. (This wraps destruction
+        and the void* pointer in the blaze kernel low level interface)
+        """
+        raise NotImplemented
+
+    def llvm_api(self, module):
+        """
+        Inserts a appender function into the llvm module, and
+        returns it as a function object.
+        """
+        raise NotImplemented
+
 
 class IElementReadIter:
     """
@@ -319,6 +373,13 @@ class IDataDescriptor:
         """
         raise NotImplemented
 
+    def appendable(self):
+        """
+        Returns True if the data is appendable,
+        False otherwise.
+        """
+        raise NotImplemented
+
     def __len__(self):
         """
         The default implementation of __len__ is for the
@@ -369,6 +430,15 @@ class IDataDescriptor:
         expose a C-level function to set an element.
         """
         raise TypeError('data descriptor %r is read only'
+                        % type(self))
+
+    def element_appender(self):
+        """
+        This returns an object which implements the IElementAppender
+        interface. The returned object can also expose a C-level
+        function to append an element.
+        """
+        raise TypeError('data descriptor %r does not support appends'
                         % type(self))
 
     # TODO: When/If this becomes needed
