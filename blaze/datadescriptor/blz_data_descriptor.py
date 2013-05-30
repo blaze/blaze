@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import operator
 import contextlib
+import ctypes
 
 from . import (IElementReader, IElementWriter,
                IElementReadIter, IElementWriteIter,
@@ -130,8 +131,8 @@ class BLZElementAppender(IElementAppender):
     def append(self, ptr, nrows):
         # Create a temporary NumPy array around the ptr data
         shape = (nrows,) + self._shape
-        rowsize = self._dtype.itemsize * np.product(shape)
-        buf = np.core.multiarray.int_asbuffer(ptr, rowsize)
+        rowsize = self._dtype.itemsize * np.prod(shape)
+        buf = (ctypes.c_char * rowsize).from_address(ptr)
         tmp = np.frombuffer(buf, self._dtype).reshape(shape)
         # Actually append the values
         self.blzarr.append(tmp)
