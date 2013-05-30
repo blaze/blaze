@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import operator
+import contextlib
 
 from . import (IElementReader, IElementWriter,
                 IElementReadIter, IElementWriteIter,
@@ -124,11 +125,14 @@ class DyNDElementWriteIter(IElementWriteIter):
     def __len__(self):
         return self._len
 
-    def __next__(self):
-        # Copy the previous element to the array if it is buffered
+    def flush(self):
         if self._usebuffer and self._buffer_index >= 0:
             self.dyndarr[self._buffer_index] = self._buffer
             self._buffer_index = -1
+
+    def __next__(self):
+        # Copy the previous element to the array if it is buffered
+        self.flush()
         if self._index < self._len:
             i = self._index
             self._index = i + 1
@@ -141,6 +145,9 @@ class DyNDElementWriteIter(IElementWriteIter):
                 return lowlevel.data_address_of(self.dyndarr[i])
         else:
             raise StopIteration
+
+    def close(self):
+        self.flush()
 
 class DyNDDataDescriptor(IDataDescriptor):
     """
@@ -191,6 +198,6 @@ class DyNDDataDescriptor(IDataDescriptor):
 
     def element_write_iter(self):
         if self.writable:
-            return DyNDElementWriteIter(self.dyndarr)
+            return contextlib.closing(DyNDElementWriteIter(self.dyndarr))
         else:
             raise ArrayWriteError('Cannot write to readonly DyND array')

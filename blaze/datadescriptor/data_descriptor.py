@@ -388,8 +388,8 @@ class IDataDescriptor:
 
     def element_write_iter(self):
         """
-        This returns an iterator with the IElementWriteIter
-        interface which iterates over
+        This returns an context manager for an iterator with
+        the IElementWriteIter interface which iterates over
         the leftmost dimension of the data for writing,
         returning a char* at a time. The returned object can also
         expose a C-level chunked iterator interface, similar

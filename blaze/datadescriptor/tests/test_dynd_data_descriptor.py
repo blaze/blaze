@@ -117,13 +117,11 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         dd = DyNDDataDescriptor(a)
 
         self.assertEqual(dd.dshape, datashape.dshape('5, int32'))
-        ge = dd.element_write_iter()
-        self.assertTrue(isinstance(ge, IElementWriteIter))
-        for val, ptr in izip([5,7,4,5,3], ge):
-            x = ctypes.c_int32(val)
-            ctypes.memmove(ptr, ctypes.addressof(x), 4)
-        # TODO: the fact this is needed indicates the element_write_iter is wrong
-        for i in ge: pass
+        with dd.element_write_iter() as ge:
+            self.assertTrue(isinstance(ge, IElementWriteIter))
+            for val, ptr in izip([5,7,4,5,3], ge):
+                x = ctypes.c_int32(val)
+                ctypes.memmove(ptr, ctypes.addressof(x), 4)
         self.assertEqual(dd_as_py(dd), [5,7,4,5,3])
 
 
@@ -145,16 +143,12 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         dd = DyNDDataDescriptor(a)
 
         self.assertEqual(dd.dshape, datashape.dshape('5, int64'))
-        ge = dd.element_write_iter()
-        self.assertTrue(isinstance(ge, IElementWriteIter))
-        for val, ptr in izip([5,7,4,5,3], ge):
-            x = ctypes.c_int64(val)
-            ctypes.memmove(ptr, ctypes.addressof(x), 8)
-        # TODO: the fact this is needed indicates the element_write_iter is wrong
-        for i in ge: pass
+        with dd.element_write_iter() as ge:
+            self.assertTrue(isinstance(ge, IElementWriteIter))
+            for val, ptr in izip([5,7,4,5,3], ge):
+                x = ctypes.c_int64(val)
+                ctypes.memmove(ptr, ctypes.addressof(x), 8)
         self.assertEqual(dd_as_py(dd), [5,7,4,5,3])
-
-
 
 if __name__ == '__main__':
     unittest.main()

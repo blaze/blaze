@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 import operator
+import contextlib
+import ctypes
+import numpy as np
 
 from . import (IElementReader, IElementWriter,
                 IElementReadIter, IElementWriteIter,
@@ -7,7 +10,6 @@ from . import (IElementReader, IElementWriter,
 from .. import datashape
 from ..datashape import dshape
 from ..error import ArrayWriteError
-import numpy as np
 
 def numpy_descriptor_iter(npyarr):
     if npyarr.ndim > 1:
@@ -53,7 +55,8 @@ class NumPyElementWriter(IElementWriter):
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
         self._shape = npyarr.shape[nindex:]
-        self._dtype = npyarr.dtype
+        self._dtype = npyarr.dtype.newbyteorder('=')
+        self._element_size = np.prod(self._shape) * self._dtype.itemsize
         self._dshape = datashape.from_numpy(self._shape, self._dtype)
         self.npyarr = npyarr
 
@@ -71,7 +74,7 @@ class NumPyElementWriter(IElementWriter):
                            (len(idx), self.nindex))
         idx = tuple(operator.index(i) for i in idx)
         # Create a temporary NumPy array around the ptr data
-        buf = np.core.multiarray.int_asbuffer(ptr, self.dshape.itemsize)
+        buf = (ctypes.c_char * self._element_size).from_address(ptr)
         tmp = np.frombuffer(buf, self._dtype).reshape(self._shape)
         # Use NumPy's assignment to set the values
         self.npyarr[idx] = tmp
@@ -113,6 +116,8 @@ class NumPyElementWriteIter(IElementWriteIter):
         self._dshape = datashape.from_numpy(npyarr.shape[1:], npyarr.dtype)
         self._usebuffer = not (npyarr[0].flags.c_contiguous and npyarr.dtype.isnative)
         self._buffer_index = -1
+        self._buffer = None
+        self._buffer_index = -1
         self.npyarr = npyarr
 
     @property
@@ -122,11 +127,14 @@ class NumPyElementWriteIter(IElementWriteIter):
     def __len__(self):
         return self._len
 
-    def __next__(self):
-        # Copy the previous element to the array if it is buffered
+    def flush(self):
         if self._usebuffer and self._buffer_index >= 0:
             self.npyarr[self._buffer_index] = self._buffer
             self._buffer_index = -1
+
+    def __next__(self):
+        # Copy the previous element to the array if it is buffered
+        self.flush()
         if self._index < self._len:
             i = self._index
             self._index = i + 1
@@ -139,6 +147,9 @@ class NumPyElementWriteIter(IElementWriteIter):
                 return self.npyarr.ctypes.data + self.npyarr.strides[0] * i
         else:
             raise StopIteration
+
+    def close(self):
+        self.flush()
 
 class NumPyDataDescriptor(IDataDescriptor):
     """
@@ -210,6 +221,6 @@ class NumPyDataDescriptor(IDataDescriptor):
 
     def element_write_iter(self):
         if self.writable:
-            return NumPyElementWriteIter(self.npyarr)
+            return contextlib.closing(NumPyElementWriteIter(self.npyarr))
         else:
             raise ArrayWriteError('Cannot write to readonly NumPy array')
