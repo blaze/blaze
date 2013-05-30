@@ -165,7 +165,7 @@ class IElementAppender:
         raise NotImplemented
 
     @abc.abstractmethod
-    def finalize(self, ptr):
+    def close(self, ptr):
         """
         Flush whatever data remains in buffers.
         """

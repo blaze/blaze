@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import operator
+import contextlib
 
 from . import (IElementReader, IElementWriter,
                IElementReadIter, IElementWriteIter,
@@ -135,7 +136,7 @@ class BLZElementAppender(IElementAppender):
         # Actually append the values
         self.blzarr.append(tmp)
 
-    def finalize(self):
+    def close(self):
         # Flush the remaining data in buffers
         self.blzarr.flush()
 
@@ -199,23 +200,21 @@ class BLZDataDescriptor(IDataDescriptor):
     # it.
     def append(self, values):
         """Append a list of values."""
-        eap = self.element_appender()
-        shape, dtype = datashape.to_numpy(self.dshape)
-        values_arr = np.array(values, dtype=dtype)
-        shape_vals = values_arr.shape
-        if len(shape_vals) < len(shape):
-            shape_vals = (1,) + shape_vals
-        if len(shape_vals) != len(shape):
-            raise ValueError("shape of values is not compatible")
-        # Now, do the actual append   
-        values_ptr = values_arr.ctypes.data
-        eap.append(values_ptr, shape_vals[0])
-        # Flush data
-        eap.finalize()
+        with self.element_appender() as eap:
+            shape, dtype = datashape.to_numpy(self.dshape)
+            values_arr = np.array(values, dtype=dtype)
+            shape_vals = values_arr.shape
+            if len(shape_vals) < len(shape):
+                shape_vals = (1,) + shape_vals
+            if len(shape_vals) != len(shape):
+                raise ValueError("shape of values is not compatible")
+            # Now, do the actual append   
+            values_ptr = values_arr.ctypes.data
+            eap.append(values_ptr, shape_vals[0])
 
     def element_appender(self):
         if self.appendable:
-            return BLZElementAppender(self.blzarr)
+            return contextlib.closing(BLZElementAppender(self.blzarr))
         else:
             raise ArrayWriteError('Cannot write to readonly BLZ array')
 
