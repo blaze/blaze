@@ -3,6 +3,7 @@ from __future__ import absolute_import
 __all__ = ['execute_unary_single']
 
 from ..error import BroadcastError
+from ..py3help import izip
 
 def execute_unary_single(dst, src, dst_ds, src_ds, ck):
     """Executes a unary single kernel on all elements of
@@ -78,7 +79,7 @@ def execute_unary_single(dst, src, dst_ds, src_ds, ck):
             else:
                 se = src.element_read_iter()
                 with dst.element_write_iter() as de:
-                    for dst_ptr in de, src_ptr in se:
+                    for dst_ptr, src_ptr in izip(de, se):
                         ck(dst_ptr, src_ptr)
         else:
             # Use the Python-level looping constructs
@@ -88,5 +89,5 @@ def execute_unary_single(dst, src, dst_ds, src_ds, ck):
                 for dst_dd in dst:
                     execute_unary_single(dst_dd, src_dd, dst_ds, src_ds, ck)
             else:
-                for dst_dd, src_dd in src, dst:
+                for dst_dd, src_dd in izip(dst, src):
                     execute_unary_single(dst_dd, src_dd, dst_ds, src_ds, ck)
