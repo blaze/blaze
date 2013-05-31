@@ -53,7 +53,7 @@ class TestDatashapeCreation(unittest.TestCase):
                         '{ field : M, int32 }')
 
     def test_ragged_array(self):
-        self.assertTrue(isinstance(blaze.dshape('3, Var, int32')[1], datashape.Var))
+        self.assertTrue(isinstance(blaze.dshape('3, var, int32')[1], datashape.Var))
 
 if __name__ == '__main__':
     unittest.main()

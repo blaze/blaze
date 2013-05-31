@@ -248,6 +248,17 @@ class String(Mono):
     def __hash__(self):
         return hash((self.fixlen, self.encoding))
 
+    def subarray(self, leading):
+        """Returns a data shape object of the subarray with 'leading'
+        dimensions removed. In the case of a measure such as CType,
+        'leading' must be 0, and self is returned.
+        """
+        if leading >= 1:
+            raise IndexError(('Not enough dimensions in data shape '
+                            'to remove %d leading dimensions.') % leading)
+        else:
+            return self
+
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
@@ -336,8 +347,10 @@ class DataShape(Mono):
         return all(eq(a,b) for a,b in zip(self, other))
 
     def __eq__(self, other):
-        if type(other) is DataShape:
+        if isinstance(other, DataShape):
             return self._equal(other)
+        elif isinstance(other, Mono):
+            return False
         else:
             raise TypeError(('Cannot compare non-datashape '
                             'type %s to datashape') % type(other))
