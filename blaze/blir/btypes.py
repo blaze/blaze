@@ -95,6 +95,23 @@ array_type = Type(
 # Polymorphic Arrays
 #------------------------------------------------------------------------
 
+# Parameters are indicted with $0 and $1 to indicate the first
+# and second parameters of the type instance.
+
+DimInfo = Type(
+    'DimInfo',
+    kind       = Param,
+    zero       = None,
+    binary_ops = set(),
+    unary_ops  = { },
+    cmp_ops    = { },
+    fields = {
+        'dim'     : (0, int_type),
+        'strides' : (1, int_type),
+    },
+    order      = None,
+)
+
 Array_C = Type(
     name       = "Array_C",
     kind       = Param,
@@ -104,8 +121,7 @@ Array_C = Type(
     cmp_ops    = { },
     fields = {
         'data'  : (0, '$0'),
-        'nd'    : (1, int_type),
-        'shape' : (2, array_type),
+        'shape' : (1, array_type),
     },
     order      = 'C',
 )
@@ -119,8 +135,7 @@ Array_F = Type(
     cmp_ops    = { },
     fields = {
         'data'  : (0, '$0'),
-        'nd'    : (1, int_type),
-        'shape' : (2, array_type),
+        'shape' : (1, array_type),
     },
     order      = 'F',
 )
@@ -133,9 +148,8 @@ Array_S = Type(
     unary_ops  = { },
     cmp_ops    = { },
     fields = {
-        'data'    : (0, '$0'),
-        'nd'      : (1, int_type),
-        'strides' : (2, array_type),
+        'data'  : (0, '$0'),
+        'shape' : (1, array_type),
     },
     order      = 'S',
 )

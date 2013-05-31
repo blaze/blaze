@@ -33,32 +33,72 @@ pointer = Type.pointer
 any_type = pointer(Type.int(ptrsize))
 string_type = pointer(char_type)
 
-# { i32*, i32, i32* }
+# naive array
 array_type = lambda elt_type: Type.struct([
     pointer(elt_type), # data         | (<type>)*
     int_type,          # dimensions   | int
     pointer(int_type), # strides      | int*
 ], name='ndarray_' + str(elt_type))
 
+intp_type = Type.pointer(int_type)
+
+#------------------------------------------------------------------------
+# Array Types
+#------------------------------------------------------------------------
+
+# Contiguous or Fortran
+# ---------------------
+#
 # struct {
-#   eltype *data;
-#   int32 nd;
-#   intp shape[nd];
-# } contiguous_array_nd(eltype)
+#    eltype *data;
+#    intp shape[nd];
+# } contiguous_array(eltype, nd)
+#
+# struct {
+#    eltype *data;
+#    diminfo shape[nd];
+# } strided_array(eltype, nd)
+#
+# Structure of Arrays
+# -------------------
+#
+# struct {
+#    eltype *data;
+#    intp shape[nd];
+#    intp stride[nd];
+# } strided_soa_array(eltype, nd)
+#
+# Dimension Info
+# -------------
+#
+# struct {
+#   intp dim;
+#   intp stride;
+#} diminfo
 
-# TODO: port from either llvmpy or ../ depending on where this
-# lives, but whatever just hack it together for now
-ArrayC_Type = lambda elt_type: Type.struct([
-    pointer(elt_type), # data     | (<type>)*
-    int_type,          # nd       | int
-    pointer(int_type), # shape    | int*
-], name='Array_C<' + str(elt_type) + '>')
+diminfo_type = Type.struct([intp_type,    # shape
+                            intp_type     # stride
+                            ], name='diminfo')
 
+def ArrayC_Type(nd, eltype):
+    return Type.struct([
+        pointer(eltype),            # data   | (<type>)*
+        Type.array(intp_type, nd),  # shape  | intp
+    ], name='Array_F<' + str(eltype) + '>')
 
-# stupid hacks
-poly_arrays = set(['Array_C'])
+def ArrayF_Type(nd, eltype):
+    return Type.struct([
+        pointer(eltype),            # data   | (<type>)*
+        Type.array(intp_type, nd),  # shape  | intp
+    ], name='Array_F<' + str(eltype) + '>')
 
-intp = Type.pointer(int_type)
+def ArrayS_Type(nd, eltype):
+    return Type.struct([
+        pointer(eltype),              # data   | (<type>)*
+        Type.array(diminfo_type, nd), # shape  | diminfo
+    ], name='Array_S<' + str(eltype) + '>')
+
+poly_arrays = set(['Array_C', 'Array_F', 'Array_S'])
 
 #------------------------------------------------------------------------
 # Constants
@@ -84,8 +124,10 @@ typemap = {
 }
 
 ptypemap = {
-    'array'   : array_type,
+    'array'   : array_type, # naive array
     'Array_C' : ArrayC_Type,
+    'Array_F' : ArrayF_Type,
+    'Array_S' : ArrayS_Type,
 }
 
 _cache = {}
@@ -98,9 +140,6 @@ def arg_typemap(ty):
         if PY3: # hack
            return pointer(cons(args))
 
-        # llvm doesn't do structural typing, so only create one
-        # instance of the parameterized type, ie. array[int],
-        # array[float]
         if (cons, args) in _cache:
             ty = _cache[(cons, args)]
         else:
