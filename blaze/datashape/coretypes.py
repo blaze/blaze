@@ -581,6 +581,9 @@ class Var(Mono):
     def __str__(self):
         return 'var'
 
+    def __eq__(self, other):
+        return isinstance(other, Var)
+
 def _invalid_compare(obj1, obj2):
     return "Cannot compare type %s to type %s" % (type(obj1), type(obj2))
 
@@ -750,7 +753,7 @@ class Record(Mono):
 #------------------------------------------------------------------------
 
 class JSON(Mono):
-    """ JSON mesuare """
+    """ JSON measure """
     cls = MEASURE
 
     def __str__(self):
