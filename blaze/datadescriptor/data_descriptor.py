@@ -11,7 +11,7 @@ import contextlib
 from blaze.error import StreamingDimensionError
 
 @contextlib.contextmanager
-def buffered_ptr_ctxmgr(ptr, buffer):
+def buffered_ptr_ctxmgr(ptr, buffer_flush):
     """
     A context manager to help implement the
     buffered_ptr method of IElementWriter.
@@ -22,12 +22,12 @@ def buffered_ptr_ctxmgr(ptr, buffer):
         The pointer to wrap.
     buffer : object
         Either None if the pointer is in the original array,
-        and requires no buffering, or an object with a
-        'flush' method to flush the pointer back to the array.
+        and requires no buffering, or a callable which
+        flushes the buffer.
     """
     yield ptr
-    if buffer is not None:
-        buffer.flush()
+    if buffer_flush:
+        buffer_flush()
 
 class IElementReader:
     """

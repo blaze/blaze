@@ -107,9 +107,15 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         self.assertEqual(dd.dshape, datashape.dshape('5, int32'))
         ge = dd.element_writer(1)
         self.assertTrue(isinstance(ge, IElementWriter))
+
         x = ctypes.c_int32(123)
         ge.write_single((1,), ctypes.addressof(x))
         self.assertEqual(dd_as_py(dd), [1,123,3,4,5])
+
+        with ge.buffered_ptr((3,)) as dst_ptr:
+            x = ctypes.c_int32(456)
+            ctypes.memmove(dst_ptr, ctypes.addressof(x), 4)
+        self.assertEqual(dd_as_py(dd), [1,123,3,456,5])
 
     @skipIf(dynd is None, 'dynd is not installed')
     def test_element_iter_write(self):
@@ -133,9 +139,15 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         self.assertEqual(dd.dshape, datashape.dshape('5, int64'))
         ge = dd.element_writer(1)
         self.assertTrue(isinstance(ge, IElementWriter))
-        x = ctypes.c_int64(123)
+
+        x = ctypes.c_int32(123)
         ge.write_single((1,), ctypes.addressof(x))
         self.assertEqual(dd_as_py(dd), [1,123,3,4,5])
+
+        with ge.buffered_ptr((3,)) as dst_ptr:
+            x = ctypes.c_int32(456)
+            ctypes.memmove(dst_ptr, ctypes.addressof(x), 4)
+        self.assertEqual(dd_as_py(dd), [1,123,3,456,5])
 
     @skipIf(dynd is None, 'dynd is not installed')
     def test_element_iter_write_buffered(self):

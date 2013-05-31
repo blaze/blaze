@@ -2,9 +2,9 @@ from __future__ import absolute_import
 import operator
 import contextlib
 
-from . import (IElementReader, IElementWriter,
+from .data_descriptor import (IElementReader, IElementWriter,
                 IElementReadIter, IElementWriteIter,
-                IDataDescriptor)
+                IDataDescriptor, buffered_ptr_ctxmgr)
 from .. import datashape
 from ..datashape import dshape
 
@@ -52,6 +52,7 @@ class DyNDElementWriter(IElementWriter):
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
         self._dshape = datashape.dshape(dyndarr.dshape).subarray(nindex)
+        self._c_dtype = nd.dtype(str(self._dshape))
         self.dyndarr = dyndarr
 
     @property
@@ -70,10 +71,25 @@ class DyNDElementWriter(IElementWriter):
         # Create a temporary DyND array around the ptr data.
         # Note that we can't provide an owner because the parameter
         # is just the bare pointer.
-        tmp = lowlevel.py_api.ndobject_from_ptr(nd.dtype(str(self._dshape)), ptr,
+        tmp = lowlevel.py_api.ndobject_from_ptr(self._c_dtype, ptr,
                         None, 'readonly')
         # Use DyND's assignment to set the values
         self.dyndarr[idx] = tmp
+
+    def buffered_ptr(self, idx):
+        if len(idx) != self.nindex:
+            raise IndexError('Incorrect number of indices (got %d, require %d)' %
+                           (len(idx), self.nindex))
+        dst_arr = self.dyndarr[idx]
+        buf_arr = dst_arr.cast(self._c_dtype).eval()
+        buf_ptr = lowlevel.data_address_of(buf_arr)
+        if buf_ptr == lowlevel.data_address_of(dst_arr):
+            # If no buffering is needed, just return the pointer
+            return buffered_ptr_ctxmgr(buf_ptr, None)
+        else:
+            def buffer_flush():
+                dst_arr[...] = buf_arr
+            return buffered_ptr_ctxmgr(buf_ptr, buffer_flush)
 
 class DyNDElementReadIter(IElementReadIter):
     def __init__(self, dyndarr):

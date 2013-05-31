@@ -4,9 +4,9 @@ import contextlib
 import ctypes
 import numpy as np
 
-from . import (IElementReader, IElementWriter,
+from .data_descriptor import (IElementReader, IElementWriter,
                 IElementReadIter, IElementWriteIter,
-                IDataDescriptor)
+                IDataDescriptor, buffered_ptr_ctxmgr)
 from .. import datashape
 from ..datashape import dshape
 from ..error import ArrayWriteError
@@ -78,6 +78,26 @@ class NumPyElementWriter(IElementWriter):
         tmp = np.frombuffer(buf, self._dtype).reshape(self._shape)
         # Use NumPy's assignment to set the values
         self.npyarr[idx] = tmp
+
+    def buffered_ptr(self, idx):
+        if len(idx) != self.nindex:
+            raise IndexError('Incorrect number of indices (got %d, require %d)' %
+                           (len(idx), self.nindex))
+        # Index into the numpy array without producing a scalar
+        if len(idx) == self.npyarr.ndim:
+            dst_arr = self.npyarr[...,np.newaxis][idx].reshape(())
+        else:
+            dst_arr = self.npyarr[key]
+        if dst_arr.flags.c_contiguous and dst_arr.dtype.isnative:
+            # If no buffering is needed, just return the pointer
+            return buffered_ptr_ctxmgr(dst_arr.ctypes.data, None)
+        else:
+            # Allocate a buffer and return a context manager
+            # which flushes the buffer
+            buf = np.empty(dst_arr.shape, dst_arr.dtype.newbyteorder('='))
+            def buffer_flush():
+                dst_arr[...] = buf
+            return buffered_ptr_ctxmgr(buf.ctypes.data, buffer_flush)
 
 class NumPyElementReadIter(IElementReadIter):
     def __init__(self, npyarr):
