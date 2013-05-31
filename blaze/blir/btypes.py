@@ -135,7 +135,7 @@ Array_F = Type(
     cmp_ops    = { },
     fields = {
         'data'  : (0, '$0'),
-        'shape' : (1, array_type),
+        'shape' : (1, (array_type, '$0')),
     },
     order      = 'F',
 )
@@ -149,7 +149,7 @@ Array_S = Type(
     cmp_ops    = { },
     fields = {
         'data'  : (0, '$0'),
-        'shape' : (1, array_type),
+        'shape' : (1, (array_type, '$0')),
     },
     order      = 'S',
 )

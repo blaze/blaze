@@ -35,9 +35,9 @@ string_type = pointer(char_type)
 
 # naive array
 array_type = lambda elt_type: Type.struct([
-    pointer(elt_type), # data         | (<type>)*
-    int_type,          # dimensions   | int
-    pointer(int_type), # strides      | int*
+    pointer(elt_type), # data      | (<type>)*
+    int_type,          # nd        | int
+    pointer(int_type), # strides   | int*
 ], name='ndarray_' + str(elt_type))
 
 intp_type = Type.pointer(int_type)
@@ -80,22 +80,22 @@ diminfo_type = Type.struct([intp_type,    # shape
                             intp_type     # stride
                             ], name='diminfo')
 
-def ArrayC_Type(nd, eltype):
+def ArrayC_Type(eltype):
     return Type.struct([
-        pointer(eltype),            # data   | (<type>)*
-        Type.array(intp_type, nd),  # shape  | intp
+        pointer(eltype),   # data   | (<type>)*
+        intp_type          # shape  | intp
+    ], name='Array_C<' + str(eltype) + '>')
+
+def ArrayF_Type(eltype):
+    return Type.struct([
+        pointer(eltype),    # data   | (<type>)*
+        intp_type,          # shape  | intp
     ], name='Array_F<' + str(eltype) + '>')
 
-def ArrayF_Type(nd, eltype):
+def ArrayS_Type(eltype):
     return Type.struct([
-        pointer(eltype),            # data   | (<type>)*
-        Type.array(intp_type, nd),  # shape  | intp
-    ], name='Array_F<' + str(eltype) + '>')
-
-def ArrayS_Type(nd, eltype):
-    return Type.struct([
-        pointer(eltype),              # data   | (<type>)*
-        Type.array(diminfo_type, nd), # shape  | diminfo
+        pointer(eltype),             # data   | (<type>)*
+        Type.array(diminfo_type, 2), # shape  | diminfo
     ], name='Array_S<' + str(eltype) + '>')
 
 poly_arrays = set(['Array_C', 'Array_F', 'Array_S'])
@@ -422,17 +422,21 @@ class LLVMEmitter(object):
 
     def op_BINARY_SUBSCR(self, source, index, target, cc=False):
         arr = self.refs[source]
+
+        # assert that the the array contains a field called
+        # 'data'
+        assert 'data' in arr
+
         data = arr['data']
         order = arr['_order']
-        import pdb; pdb.set_trace()
 
         assert order in ['C', 'F', 'S']
 
+        # Multidimensional indexing
         if cc:
-
             if order == 'S':
                 stride = arr['strides']
-                offset = Constant.null(intp)
+                offset = zero
 
                 for i, idx in enumerate(index.elts):
                     ic = self.const(i)
@@ -445,10 +449,12 @@ class LLVMEmitter(object):
             elif order == 'C' or order =='F':
                 shape = arr['shape']
                 ndim = len(index.elts)
+                offset = zero
 
                 for i, idx in enumerate(index.elts):
                     ic = self.const(i)
                     sc = self.builder.load(self.builder.gep(shape, [ic]))
+                    import pdb; pdb.set_trace()
                     if order == 'C' and i == (ndim - 1):
                         tmp = ic
                     elif order == 'F' and i == 0:
@@ -457,6 +463,7 @@ class LLVMEmitter(object):
                         tmp = self.builder.mul(ic, sc)
                     loc = self.builder.add(offset, tmp)
 
+        # Single dimensional indexing
         else:
             loc = self.stack[index]
 
@@ -687,7 +694,7 @@ class LLVMEmitter(object):
                 for fname, (idx, field) in fields.iteritems():
                     proj_idx = self.const(idx)
                     field = self.builder.gep(struct_ptr, [zero, proj_idx],
-                            name=(fname + '_field'))
+                            name=fname)
                     self.refs[name][fname] = self.builder.load(field)
 
                 self.locals[name] = self.refs[name]
