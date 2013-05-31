@@ -17,6 +17,7 @@ except ImportError:
     dynd = None
 
 class TestDyNDBroadcastCKernel(unittest.TestCase):
+    @skipIf(dynd is None, 'dynd is not installed')
     def test_assign_scalar(self):
         # Set up our data buffers
         src = data_descriptor_from_ctypes(ctypes.c_int64(1028), writable=False)
@@ -30,6 +31,7 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
         execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
         self.assertEqual(dd_as_py(dst), 1028.0)
 
+    @skipIf(dynd is None, 'dynd is not installed')
     def test_assign_scalar_to_array(self):
         # Set up our data buffers
         src = data_descriptor_from_ctypes(ctypes.c_int64(1028), writable=False)
