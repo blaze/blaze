@@ -87,7 +87,7 @@ class NumPyElementWriter(IElementWriter):
         if len(idx) == self.npyarr.ndim:
             dst_arr = self.npyarr[...,np.newaxis][idx].reshape(())
         else:
-            dst_arr = self.npyarr[key]
+            dst_arr = self.npyarr[idx]
         if dst_arr.flags.c_contiguous and dst_arr.dtype.isnative:
             # If no buffering is needed, just return the pointer
             return buffered_ptr_ctxmgr(dst_arr.ctypes.data, None)
