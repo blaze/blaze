@@ -17,22 +17,22 @@ print_section('building basic arrays')
 a = blaze.array([ 2, 3, 4 ])
 
 # Arrays can be printed
-print (a)
+print(a)
 
 # The array will have a datashape. A datashape is a combination of the
 # shape and dtype concept found in numpy. Note that when creating from
 # a Python iterable, a datashape will be inferred.
-print (a.dshape)
+print(a.dshape)
 
 b = blaze.array([1.2, 3.5, 5.1])
-print (b)
-print (b.dshape)
+print(b)
+print(b.dshape)
 
 # Arrays can be bi-dimensional
 print_section('going 2d', level=1)
 c = blaze.array([ [1, 2], [3, 4] ]) 
-print (c)
-print (c.dshape)
+print(c)
+print(c.dshape)
 
 # or as many dimensions as you like
 print_section('going 3d', level=1)
@@ -46,7 +46,7 @@ print_section ('building compressed in-memory arrays')
 
 # A compressed array (backed by BLZ):
 blz = blaze.array([1,2,3], caps={'compress': True})
-print (blz)
+print(blz)
 
 # --------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ print (e)
 # be inferred. The following is thus equivalent:
 
 f = blaze.array([ 1, 2, 3], dshape='float32')
-print (f)
+print(f)
 
 # --------------------------------------------------------------------
 
@@ -69,11 +69,11 @@ print_section('Alternative  constructors')
 
 # Arrays can be created to be all zeros:
 g = blaze.zeros('10, 10, int32')
-print (g)
+print(g)
 
 # All ones
 h = blaze.ones('10, 10, float64')
-print (h)
+print(h)
 
 # --------------------------------------------------------------------
 
@@ -84,9 +84,9 @@ print ('starting with a 4d array')
 array4d = blaze.ones('10,10,10,10, float32')
 
 def describe_array(label, array):
-    print (label)
-    print ('dshape: ', array.dshape)
-    print (array)
+    print(label)
+    print('dshape: ', array.dshape)
+    print(array)
 
 describe_array('base', array4d)
 describe_array('index once', array4d[3])

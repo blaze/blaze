@@ -37,6 +37,7 @@ Original Index
    quickstart
    overview
    vision
+   tutorials
    persistence
    memory
    datashape
