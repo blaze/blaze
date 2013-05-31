@@ -66,9 +66,6 @@ bits = set([
     'timedelta64',
 ])
 
-t_JSON = r'json'
-t_VAR  = r'var'
-
 t_EQUALS = r'='
 t_COMMA  = r','
 t_COLON  = r':'
@@ -85,6 +82,16 @@ def t_TYPE(t):
 def t_newline(t):
     r'\n+'
     #t.lexer.lineno += t.value.count("\n")
+
+def t_JSON(t):
+    # Must be before NAME to match
+    r'json'
+    return t
+
+def t_VAR(t):
+    # Must be before NAME to match
+    r'var'
+    return t
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -287,7 +294,9 @@ def p_record_opt3(p):
 def p_record_name(p):
     '''record_name : NAME
                    | BIT
-                   | TYPE'''
+                   | TYPE
+                   | JSON
+                   | VAR'''
     p[0] = p[1]
 
 def p_record_item1(p):

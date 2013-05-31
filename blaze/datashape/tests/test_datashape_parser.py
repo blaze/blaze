@@ -83,6 +83,7 @@ def test_fields_with_reserved_names():
             timedelta: string;
             timedelta64: string;
             json: string;
+            var: string;
         }""")
 
 def test_kiva_datashape():

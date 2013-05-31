@@ -24,6 +24,8 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertEqual(blaze.dshape('float64'), datashape.float64)
         self.assertEqual(blaze.dshape('complex64'), datashape.complex64)
         self.assertEqual(blaze.dshape('complex128'), datashape.complex128)
+        self.assertEqual(blaze.dshape("string"), blaze.datashape.string)
+        self.assertEqual(blaze.dshape("json"), blaze.datashape.json)
 
     def test_atom_shape_errors(self):
         self.assertRaises(TypeError, blaze.dshape, 'boot')

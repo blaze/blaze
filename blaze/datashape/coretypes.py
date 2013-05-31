@@ -756,6 +756,9 @@ class JSON(Mono):
     def __str__(self):
         return 'json'
 
+    def __eq__(self, other):
+        return isinstance(other, JSON)
+
 #------------------------------------------------------------------------
 # Constructions
 #------------------------------------------------------------------------
@@ -859,6 +862,7 @@ NullRecord = Record(())
 bytes_ = Bytes()
 
 string = String()
+json = JSON()
 
 Type.register('int', c_int)
 Type.register('float', c_float)
