@@ -1,13 +1,14 @@
 from __future__ import absolute_import
 import operator
-
+import contextlib
 import sys
-from blaze import dshape, datashape
-from . import (IElementReader, IElementWriter,
-                IElementReadIter, IElementWriteIter,
-                IDataDescriptor)
-from ..datashape import DataShape
 import ctypes
+
+from blaze import dshape, datashape
+from .data_descriptor import (IElementReader, IElementWriter,
+                IElementReadIter, IElementWriteIter,
+                IDataDescriptor, buffered_ptr_ctxmgr)
+from ..datashape import DataShape
 
 if sys.version_info >= (3, 0):
     _inttypes = (int,)
@@ -57,6 +58,44 @@ class MemBufElementReader(IElementReader):
         else:
             return self._mbdd.ptr
 
+class MemBufElementWriter(IElementWriter):
+    def __init__(self, mbdd, nindex):
+        if nindex > len(mbdd.dshape) - 1:
+            raise IndexError('Cannot have more indices than dimensions')
+        self._mbdd = mbdd
+        self._dshape = mbdd.dshape.subarray(nindex)
+        self._nindex = nindex
+
+    @property
+    def dshape(self):
+        return self._dshape
+
+    @property
+    def nindex(self):
+        return self._nindex
+
+    def _get_item_ptr(self, idx):
+        if len(idx) != self.nindex:
+            raise IndexError('Incorrect number of indices (got %d, require %d)' %
+                           (len(idx), self.nindex))
+        idx = tuple(operator.index(i) for i in idx)
+        if self.nindex > 0:
+            idx = tuple([operator.index(i) for i in idx])
+            c_strides = self._mbdd.dshape.c_strides[:self.nindex]
+            offset = sum(stride * idx for stride, idx in zip(c_strides, idx))
+            return self._mbdd.ptr + offset
+        else:
+            return self._mbdd.ptr
+
+    def write_single(self, idx, ptr):
+        # The memory is all in C order, so just a memcopy is needed
+        ctypes.memmove(self._get_item_ptr(idx), ptr, self._dshape.c_itemsize)
+
+    def buffered_ptr(self, idx):
+        # The membuf is always in C format, so no
+        # buffering is ever needed
+        return buffered_ptr_ctxmgr(self._get_item_ptr(idx), None)
+
 class MemBufElementReadIter(IElementReadIter):
     def __init__(self, mbdd):
         if len(mbdd.dshape) <= 1:
@@ -82,6 +121,37 @@ class MemBufElementReadIter(IElementReadIter):
             return result
         else:
             raise StopIteration
+
+class MemBufElementWriteIter(IElementWriteIter):
+    def __init__(self, mbdd):
+        if len(mbdd.dshape) <= 1:
+            raise IndexError('Need at least one dimension for iteration')
+        self._outer_stride = mbdd.dshape.c_strides[0]
+        self._mbdd = mbdd
+        self._dshape = mbdd.dshape.subarray(1)
+        self._ptr = mbdd.ptr
+        self._end = (self._ptr +
+                        self._outer_stride * operator.index(mbdd.dshape[0]))
+
+    @property
+    def dshape(self):
+        return self._dshape
+
+    def __len__(self):
+        return self._len
+
+    def __next__(self):
+        # Because the membuf data is always in C
+        # layout, it never needs buffering
+        if self._ptr < self._end:
+            result = self._ptr
+            self._ptr += self._outer_stride
+            return result
+        else:
+            raise StopIteration
+
+    def close(self):
+        pass
 
 class MemBufDataDescriptor(IDataDescriptor):
     """
@@ -175,6 +245,18 @@ class MemBufDataDescriptor(IDataDescriptor):
 
     def element_read_iter(self):
         return MemBufElementReadIter(self)
+
+    def element_writer(self, nindex):
+        if self.writable:
+            return MemBufElementWriter(self, nindex)
+        else:
+            raise ArrayWriteError('Cannot write to readonly MemBuf array')
+
+    def element_write_iter(self):
+        if self.writable:
+            return contextlib.closing(MemBufElementWriteIter(self))
+        else:
+            raise ArrayWriteError('Cannot write to readonly MemBuf array')
 
 def data_descriptor_from_ctypes(cdata, writable):
     """

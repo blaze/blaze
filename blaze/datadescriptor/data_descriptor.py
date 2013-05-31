@@ -2,12 +2,32 @@ from __future__ import absolute_import
 
 __all__ = ['IElementReader', 'IElementWriter',
            'IElementReadIter', 'IElementWriteIter',
-           'IElementAppender', 'IDataDescriptor']
+           'IElementAppender', 'IDataDescriptor',
+           'buffered_ptr_ctxmgr']
 
 import abc
 import ctypes
+import contextlib
 from blaze.error import StreamingDimensionError
 
+@contextlib.contextmanager
+def buffered_ptr_ctxmgr(ptr, buffer):
+    """
+    A context manager to help implement the
+    buffered_ptr method of IElementWriter.
+
+    Parameters
+    ----------
+    ptr : integer
+        The pointer to wrap.
+    buffer : object
+        Either None if the pointer is in the original array,
+        and requires no buffering, or an object with a
+        'flush' method to flush the pointer back to the array.
+    """
+    yield ptr
+    if buffer is not None:
+        buffer.flush()
 
 class IElementReader:
     """
@@ -115,6 +135,21 @@ class IElementWriter:
         'idx' must be a tuple of 'nindex' integers,
         and 'ptr' must be a pointer to an element
         with the element writer's dshape.
+        """
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def buffered_ptr(self, idx):
+        """
+        Returns a context manager object which provides
+        a pointer to a buffer (or a pointer to the final
+        destination if the layout matches exactly), which
+        is flushed when the 'with' context finishes.
+
+        Example
+        -------
+        >>> with elw.buffered_ptr((3,5)) as dst_ptr:
+                ctypes.memmove(dst_ptr, src_ptr, elw.dshape.c_itemsize)
         """
         raise NotImplemented
 

@@ -18,7 +18,7 @@ def blaze_func_iter(bfd, noiter_dims):
             if dim_size == 1:
                 dim_size = arg_dim_size
             elif dim_size != arg_dim_size:
-                raise BroadcastError(('Cannot broadcast dimensions of '
+                raise BroadcastError(('Cannot broadcast dimensions of ' +
                                 'size %d and %d together') % (dim_size, arg_dim_size))
             iters.append(a.__iter__())
     # TODO continue...
