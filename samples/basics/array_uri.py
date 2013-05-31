@@ -93,6 +93,7 @@ print_section('creating uri arrays')
 
 create_uri = 'blz://create_sample'
 create_dshape = 'uint64'
+blaze.drop(create_uri)
 created_array = blaze.create(create_uri, create_dshape)
 
 # created_array should now have a dshape of '0, uint32'
