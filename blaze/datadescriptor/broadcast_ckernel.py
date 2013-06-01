@@ -126,8 +126,9 @@ def execute_expr_single(dst, src_arr, dst_ds, src_ds_arr, ck):
         raise TypeError(('Kernel dshape %s must be a suffix ' +
                         'of data descriptor dshape %s') % (dst_ds, dst.dshape))
 
-    se_list = []
-    src_obj_list = []
+    SINGLE = 1
+    ITER = 2
+    src_work_list = []
     # Process all the src argument iterators/elements
     for src, src_ndim in izip(src_list, src_ndim_list):
         if src_ndim < dst_ndim:
@@ -137,20 +138,17 @@ def execute_expr_single(dst, src_arr, dst_ds, src_ds_arr, ck):
                 # If there's a one-dimensional loop left,
                 # use the element interfaces to process it
                 se = src.element_reader(0)
-                se_list.append(se)
                 src_ptr = se.read_single(())
-                src_obj_list.append(src_ptr)
+                src_work_list.append((SINGLE, src_ptr, se))
             else:
-                se_list.append(src)
-                src_obj_list.append(None)
+                src_work_list.append((SINGLE, src, None))
         elif src_ndim > dst_ndim:
             raise BroadcastError('Cannot broadcast into a dshape with fewer dimensions')
         elif dst_ndim == 0:
             # Call the kernel once
             se = src.element_reader(0)
-            se_list.append(se)
             src_ptr = se.read_single(())
-            src_obj_list.append(src_ptr)
+            src_work_list.append((SINGLE, src_ptr, se))
         else:
             dst_dim_size, src_dim_size = len(dst), len(src)
             if src_dim_size not in [1, dst_dim_size]:
@@ -162,21 +160,42 @@ def execute_expr_single(dst, src_arr, dst_ds, src_ds_arr, ck):
                 # Use the element pointer interfaces for the last dimension
                 if src_dim_size == 1:
                     se = src.element_reader(1)
-                    se_list.append(se)
                     src_ptr = se.read_single((0,))
-                    src_obj_list.append(src_ptr)
+                    src_work_list.append((SINGLE, src_ptr, se))
                 else:
                     se = src.element_read_iter()
-                    se_list.append(se)
-                    src_obj_list.append(None)
+                    src_work_list.append((ITER, se, None))
             else:
                 # Use the Python-level looping constructs
                 # for processing higher numbers of dimensions.
                 if src_dim_size == 1:
-                    se_list.append(src[0])
-                    src_obj_list.append(None)
+                    src_work_list.append((SINGLE, src[0], None))
                 else:
-                    se_list.append(None)
-                    src_obj_list.append(src)
+                    src_work_list.append((ITER, src, None))
     # Loop through the outermost dimension
-    # TODO: finish this
+    # Broadcast the src data descriptor across
+    # the outermost dst dimension
+    if dst_ndim == 1:
+        # If there's a one-dimensional loop left,
+        # use the element write iter to process
+        # it.
+        with dst.element_write_iter() as de:
+            for dst_ptr in de:
+                src_ptr_list = []
+                for tp, obj, aux in src_work_list:
+                    if tp == SINGLE:
+                        src_ptr_list.append(obj)
+                    else:
+                        src_ptr_list.append(next(obj))
+                ck(dst_ptr, src_ptr_list)
+    else:
+        # Use the Python-level looping constructs
+        # for processing higher numbers of dimensions.
+        for dd in dst:
+            src_dd_list = []
+            for tp, obj, aux in src_work_list:
+                if tp == SINGLE:
+                    src_dd_list.append(obj)
+                else:
+                    src_dd_list.append(next(obj))
+            execute_unary_single(dd, src_dd_list, dst_ds, src_ds, ck)
