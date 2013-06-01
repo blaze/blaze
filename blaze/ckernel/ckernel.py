@@ -32,6 +32,8 @@ _free = _free_proto(ctypes.c_void_p.from_address(ctypes.addressof(_free)).value)
 
 _py_decref = ctypes.pythonapi.Py_DecRef
 _py_decref.argtypes = (ctypes.py_object,)
+_py_incref = ctypes.pythonapi.Py_IncRef
+_py_incref.argtypes = (ctypes.py_object,)
 
 class KernelDataPrefix(ctypes.Structure):
     _fields_ = [("function", ctypes.c_void_p),
@@ -178,5 +180,6 @@ def wrap_ckernel_func(func, owner):
     jkd.base.function = ctypes.c_void_p.from_address(ctypes.addressof(func))
     jkd.base.destructor = _jitkerneldata_destructor
     jkd.owner = ctypes.py_object(owner)
+    _py_incref(jkd.owner)
 
     return ck

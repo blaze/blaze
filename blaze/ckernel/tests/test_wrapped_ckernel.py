@@ -12,6 +12,8 @@ class TestWrappedCKernel(unittest.TestCase):
         my_callback = ckernel.UnarySingleOperation(my_kernel_func)
         # The ctypes callback object is both the function and the owner
         ck = ckernel.wrap_ckernel_func(my_callback, my_callback)
+        # Delete the callback to make sure the ckernel is holding a reference
+        del my_callback
         # Make some memory and call the kernel
         src_val = ctypes.c_double(4.0)
         dst_val = ctypes.c_int32(-1)
