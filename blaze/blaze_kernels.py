@@ -23,7 +23,8 @@ import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
 from . import llvm_array as lla
-from .llvm_array import void_type, array_kinds, check_array, get_cpp_template
+from .llvm_array import (void_type, array_kinds, check_array, get_cpp_template,
+                         array_type)
 from .blir import compile
 
 SCALAR = 0
@@ -51,7 +52,6 @@ def str_to_kind(str):
     if trial not in arg_kinds:
         raise ValueError("Invalid Argument Kind")
     return eval(str)
-
 
 
 # A wrapper around an LLVM Function object
@@ -129,67 +129,26 @@ class BlazeElementKernel(object):
         self.ranks = [len(el)-1 for el in _dshapes]
 
     def _get_ctypes(self):
-        from .datashape.util import to_ctypes
+        from .blir.bind import map_llvm_to_ctypes
+        import sys
         if self.return_type == void_type:
             out_type = None
+            indx = slice(None)
         else:
-            out_type = to_ctypes(self.dshapes[-1])
-        return out_type, map(to_ctypes, self.dshapes[:-1])
-
-    def _get_wrapper(self, raw_func_ptr):
-        raise NotImplementedError
-        import ctypes
-        from .datashape.util import to_ctypes    
-        import numpy as np    
-        
-        argtypes = self.argtypes
-        raw_dshape = [to_ctypes(dshape) for dshape in self.dshapes]
-        cfunc_argtypes = []
-        transform = []
-        func_at_runtime = False
-        for i, (kind, dshape) in enumerate(zip(self.kinds, self.dshapes)):
-            if kind == SCALAR:
-                cfunc_argtypes.append(to_ctypes(dshape))
-                transform.append(None)
-            elif kind == POINTER:
-                ctyp = to_ctypes(dshape)
-                cfunc_argtypes.append(ctypes.POINTER(ctyp))
-                if issubclass(ctyp, ctypes.Structure):
-                    func = lambda x: ctypes.pointer(ctyp(*x))
-                else:
-                    func = lambda x: ctypes.pointer(ctyp(x))
-                transform.append(func)
-            else: # array kind -- must complete at run-time
-                cfunc_argtypes.append(to_ctypes(dshape.measure))
-                transform.append(lambda x: np.asarray(x))
-
-        #Output
-        kind = self.kinds[-1]
-        dshape = self.dshapes[-1]
-
-        if not func_at_runtime:
-            FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
-            ctypes_func = FUNC_TYPE(ptr_to_func)
-
-        def func(*args):
-            new_args = [transform(arg) for transform, arg in zip(transforms,args)]
-
-            if not _out_scalar:
-                pass
-
-            for i, arg in enumerate(args):
-                if self.kinds[i] == POINTER:
-                    new_arg = ctypes.pointer(argtypes[i])
-                elif isinstance(self.kinds[i], tuple):
-                    pass
-
-            res = raw_func(*new_args)
-            if self.kinds[-1] == SCALAR:
-                return res
-            elif self.kinds[-1] == POINTER:
-                new_args[-1]
-
-        return func
+            out_type = map_llvm_to_ctypes(self.return_type)
+            indx = slice(None,-1)
+        names = []
+        for x in self.dshapes[indx]:
+            if hasattr(x, 'measure'):
+                name = str(x.measure)
+            elif hasattr(x, 'name'):
+                name = str(x.name)
+            else:
+                name = None
+            names.append(name)
+        mod = sys.modules['blaze']
+        modules = [mod]*len(names)
+        return out_type, map(map_llvm_to_ctypes, self.argtypes, modules, names)
 
     @property
     def nin(self):
@@ -213,12 +172,9 @@ class BlazeElementKernel(object):
     def ctypes_func(self):
         if self._ctypes_func is None:
             import ctypes
-            if not all(kind == SCALAR for kind in self.kinds):
-                self._ctypes_func = self._get_wrapper(self.func_ptr)
-            else:
-                out_type, argtypes = self._get_ctypes()
-                FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
-                self._ctypes_func = FUNC_TYPE(self.func_ptr)
+            out_type, argtypes = self._get_ctypes()
+            FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
+            self._ctypes_func = FUNC_TYPE(self.func_ptr)
         return self._ctypes_func
 
     # Should probably check to ensure kinds still match
@@ -255,12 +211,13 @@ class BlazeElementKernel(object):
         self.module = module
 
 
-    def create_wrapper_kernel(input_ranks, output_rank):
-        """Take the current kernel and available input argument ranks
-         and create a new kernel that matches the required output rank
-         by using the current kernel multiple-times if necessary.
+    def lift_kernel(output_rank, ranks=None, kind=array_kinds[0]):
+        """Take the current kernel and "lift" it so that the output has
+         rank given by output_rank and the input ranks have ranks
+         given by ranks.  The kernel will be of array_kind given by kind.
 
-         This kernel allows creation of a simple call stack.
+         This creates a new BlazeElementKernel whose corresponding function
+         calls the underlying kernel's function multiple times.
 
         Example: (let rn == rank-n)
           We need an r2, r2 -> r2 kernel and we have an r1, r1 -> r1
@@ -271,9 +228,83 @@ class BlazeElementKernel(object):
           for i in range(n0):
               out[i] = inner_kernel(in0[i], in1[i])
         """
+        if kind not in [array_kind[0]]:
+            raise ValueError("Invalid kind of array %s" % kind)
 
-        raise NotImplementedError
+        cur_rank = self.ranks[-1]
+        if output_rank == cur_rank:
+            return self  # no-op
 
+        diffrank = output_rank - cur_rank
+        if diffrank < 0:
+            raise ValueError("Output rank (%d) must be greater than current "
+                             "rank (%d)" % (output_rank, cur_rank))
+
+        if not all(x in [SCALAR, POINTER, array_kinds[0]] for x in self.kinds):
+            raise ValueError("Cannot lift kernel with argument "
+                             "kinds of %s" % self.kinds)
+        if ranks is None:
+            ranks = [None]*len(self.ranks)
+            ranks[-1]=output_rank
+        else:
+            ranks.append(output_rank)
+
+        # Replace any None values with difference in ranks
+        ranks = [ri + diffrank if x is None else x 
+                        for x,ri in zip(ranks, self.ranks)]
+
+        if any(x < 0 for x in ranks):
+            raise ValueError("Ranks cannot be negative: %s" % ranks)
+
+        func_type = self.get_lifted_func_type(ranks, kind)
+        func = Function.new(self.module, func_type, name=self.func.name +"_lifted")
+        block = func.append_basic_block('entry')
+        builder = lc.Builder.new(block)
+        begins = [0]*diffrank
+        # This is the shape of the output array
+        ends = [0]*diffrank
+        loop_next_ctx = loop_nest(builder, range(len(begins)), begins, ends)
+        with loop_nest_ctx as loop:
+            pass
+        # Function body
+        #   diffrank-dimensional loop (incrementing )
+        # Construct BlazeElementKernel
+
+    def get_lifted_func_type(self, ranks, outkind):
+        argtypes = self.argtypes[:]
+        if self.kinds[-1] == SCALAR:
+            argtypes.append(self.return_type)
+        kinds = self.kinds[:]
+        kinds[-1] = outkind
+        args = []
+        for rank, orig_rank, argtype, kind in zip(ranks, self.ranks, argtypes, kinds):
+            if rank == 0:  # pass-through
+                args.append(argtype)
+            elif rank == orig_rank:
+                args.append(argtype)
+            else: # make contiguous array
+                eltype = get_eltype(argtype, kind)
+                args.append(array_type(rank, array_kinds[0], get_eltype(argtype, kind)))
+            # get element type
+                if kind == SCALAR:
+                    eltype = argtype
+
+
+            if kind == SCALAR:
+                pass
+
+
+
+
+        return Type.function(void_type, args)
+
+def get_eltype(argtype, kind):
+    if kind == SCALAR:
+        return argtype
+    elif kind == POINTER:
+        return argtype.pointee
+    else: # Array
+        return argtype.pointee.elements[0].pointee
 
 # Currently only works for scalar kernels
 def frompyfunc(pyfunc, signature):

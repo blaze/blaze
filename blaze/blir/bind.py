@@ -14,7 +14,7 @@ import sys
 
 PY3 = sys.version_info[0] >= 3
 
-def map_llvm_to_ctypes(llvm_type, py_module=None):
+def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None):
     '''
     Map an LLVM type to an equivalent ctypes type. py_module is an
     optional module that is used for structure wrapping.  If
@@ -44,21 +44,31 @@ def map_llvm_to_ctypes(llvm_type, py_module=None):
             if width == 8:
                 ctype = ctypes.c_char_p
             else:
-                ctype = ctypes.POINTER(map_llvm_to_ctypes(pointee, py_module))
+                ctype = ctypes.POINTER(map_llvm_to_ctypes(pointee, py_module, sname))
 
         # Special case: void * mapped to c_void_p type
         elif p_kind == llvm.core.TYPE_VOID:
             ctype = ctypes.c_void_p
         else:
-            ctype = ctypes.POINTER(map_llvm_to_ctypes(pointee, py_module))
+            ctype = ctypes.POINTER(map_llvm_to_ctypes(pointee, py_module, sname))
 
+    elif kind == llvm.core.TYPE_ARRAY:
+        ctype = llvm_type.count * map_llvm_to_ctypes(llvm_type.element, py_module, sname)
     elif kind == llvm.core.TYPE_STRUCT:
-        struct_name = llvm_type.name.split('.')[-1]
+        lookup = True
+        if llvm_type.is_literal:
+            if sname:
+                struct_name = sname
+            else:
+                struct_name = 'llvm_struct'
+                lookup = False
+        else:
+            struct_name = llvm_type.name.split('.')[-1]
         if not PY3:
             struct_name = struct_name.encode('ascii')
 
         # If the named type is already known, return it
-        if py_module:
+        if py_module and lookup:
             struct_type = getattr(py_module, struct_name, None)
         else:
             struct_type = None
@@ -76,10 +86,13 @@ def map_llvm_to_ctypes(llvm_type, py_module=None):
         # Create a class definition for the type. It is critical that this
         # Take place before the handling of members to avoid issues with
         # self-referential data structures
+        if py_module and lookup:
+            type_dict = { '__module__' : py_module.__name__}
+        else:
+            type_dict = {}
         ctype = type(ctypes.Structure)(struct_name, (ctypes.Structure,),
-                                       { '__module__' : py_module.__name__ })
-
-        if py_module:
+                                       type_dict)
+        if py_module and lookup:
             setattr(py_module, struct_name, ctype)
 
         # Resolve the structure fields

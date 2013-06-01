@@ -7,6 +7,20 @@ from .datashape import dshape
 from .array import Array
 from .constructors import array, ones, zeros
 from .persistence import load, save, open, drop, create, create_fromiter
+import ctypes
+
+# These are so that llvm_structs corresponding to dshapes get converted correctly
+#  when constructing ctypes functions
+# FIXME:  They should probably go into a different module.
+#   See blaze_kernels.py in _get_ctypes() method
+class complex128(ctypes.Structure):
+    _fields_ = [('real', ctypes.c_double),
+                ('imag', ctypes.c_double)]
+
+class complex64(ctypes.Structure):
+    _fields_ = [('real', ctypes.c_float),
+                ('imag', ctypes.c_float)]
+
 __version__ = '0.0.1'
 
 def print_versions():
