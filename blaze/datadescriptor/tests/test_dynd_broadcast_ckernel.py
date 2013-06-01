@@ -1,5 +1,7 @@
 import unittest
 import sys
+import ctypes
+
 import blaze
 from blaze import datashape
 from blaze.datadescriptor import (DyNDDataDescriptor, data_descriptor_from_ctypes,
@@ -8,7 +10,6 @@ from blaze.datadescriptor import (DyNDDataDescriptor, data_descriptor_from_ctype
                 dd_as_py, execute_unary_single)
 from blaze.ckernel import CKernel, UnarySingleOperation
 from blaze.py3help import _inttypes, skipIf, izip
-import ctypes
 
 try:
     import dynd
@@ -17,18 +18,21 @@ except ImportError:
     dynd = None
 
 class TestDyNDBroadcastCKernel(unittest.TestCase):
+    def setUp(self):
+        if dynd is not None:
+            # Get a kernel from dynd
+            self.ck = CKernel(UnarySingleOperation)
+            lowlevel.py_api.make_assignment_kernel(
+                            ndt.float32, ndt.int64, 'single',
+                            ctypes.addressof(self.ck.dynamic_kernel_instance))
+
     @skipIf(dynd is None, 'dynd is not installed')
     def test_assign_scalar(self):
         # Set up our data buffers
         src = data_descriptor_from_ctypes(ctypes.c_int64(1028), writable=False)
         dst = data_descriptor_from_ctypes(ctypes.c_float(-100), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), 1028.0)
 
     @skipIf(dynd is None, 'dynd is not installed')
@@ -36,13 +40,8 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
         # Set up our data buffers
         src = data_descriptor_from_ctypes(ctypes.c_int64(1028), writable=False)
         dst = data_descriptor_from_ctypes((ctypes.c_float * 3)(), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), [1028.0] * 3)
 
     @skipIf(dynd is None, 'dynd is not installed')
@@ -50,13 +49,8 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
         # Set up our data buffers
         src = data_descriptor_from_ctypes(ctypes.c_int64(-50), writable=False)
         dst = data_descriptor_from_ctypes((ctypes.c_float * 3 * 4)(), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), [[-50.0] * 3] * 4)
 
     @skipIf(dynd is None, 'dynd is not installed')
@@ -67,13 +61,8 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
             src_data[i] = val
         src = data_descriptor_from_ctypes(src_data, writable=False)
         dst = data_descriptor_from_ctypes((ctypes.c_float * 3)(), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), [3.0, 6.0, 9.0])
 
     @skipIf(dynd is None, 'dynd is not installed')
@@ -84,13 +73,8 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
             src_data[i] = val
         src = data_descriptor_from_ctypes(src_data, writable=False)
         dst = data_descriptor_from_ctypes((ctypes.c_float * 3 * 4)(), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), [[3.0, 6.0, 9.0]] * 4)
 
     @skipIf(dynd is None, 'dynd is not installed')
@@ -102,13 +86,8 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
                 src_data[i][j] = val
         src = data_descriptor_from_ctypes(src_data, writable=False)
         dst = data_descriptor_from_ctypes((ctypes.c_float * 3 * 4)(), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), [[3, 6, 9], [1, 2, 3], [7,3,4], [12, 10, 2]])
 
     @skipIf(dynd is None, 'dynd is not installed')
@@ -120,13 +99,8 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
                 src_data[i][j] = val
         src = data_descriptor_from_ctypes(src_data, writable=False)
         dst = data_descriptor_from_ctypes((ctypes.c_float * 3 * 4)(), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), [[i]*3 for i in [3,1,7,12]])
 
     @skipIf(dynd is None, 'dynd is not installed')
@@ -138,13 +112,8 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
                 src_data[i][j] = val
         src = data_descriptor_from_ctypes(src_data, writable=False)
         dst = data_descriptor_from_ctypes((ctypes.c_float * 3 * 4)(), writable=True)
-        # Get a kernel from dynd
-        ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(ck.dynamic_kernel_instance))
         # Do the assignment
-        execute_unary_single(dst, src, datashape.float32, datashape.int64, ck)
+        execute_unary_single(dst, src, datashape.float32, datashape.int64, self.ck)
         self.assertEqual(dd_as_py(dst), [[3,1,7]]*4)
 
 if __name__ == '__main__':
