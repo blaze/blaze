@@ -14,7 +14,7 @@ from __future__ import print_function
 #    array_2:  void @func(in1_array2 * %a, in2_array2 * %b, out_array2* %out)
 #
 #   where array_n is one of the array_kinds in llvm_array
-#   
+#
 #   Notice that while the examples have functions with all the
 #   same kinds, the kind is a per-argument notion and thus
 #   can be mixed and matched.
@@ -23,9 +23,11 @@ import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
 from . import llvm_array as lla
-from .llvm_array import (void_type, array_kinds, check_array, get_cpp_template,
+from .llvm_array import (void_type, intp_type, array_kinds, check_array, get_cpp_template,
                          array_type)
 from .blir import compile
+from .ckernel import ExprSingleOperation, wrap_ckernel_func
+from .py3help import izip
 
 SCALAR = 0
 POINTER = 1
@@ -40,7 +42,7 @@ del this, _g
 _invmap = {}
 
 def kind_to_str(kind):
-    global _invmap    
+    global _invmap
     if not _invmap:
         for key, value in globals().items():
             if isinstance(value, int) and value in arg_kinds:
@@ -72,6 +74,7 @@ def str_to_kind(str):
 class BlazeElementKernel(object):
     _func_ptr = None
     _ctypes_func = None
+    _single_ckernel = None
     _ee = None
     _dshapes = None
     def __init__(self, func, dshapes=None):
@@ -150,6 +153,7 @@ class BlazeElementKernel(object):
         modules = [mod]*len(names)
         return out_type, map(map_llvm_to_ctypes, self.argtypes, modules, names)
 
+
     @property
     def nin(self):
         return len(self.kind)-1
@@ -164,7 +168,7 @@ class BlazeElementKernel(object):
         if self._func_ptr is None:
             if self._ee is None:
                 from llvm.ee import ExecutionEngine
-                self._ee = ExecutionEngine.new(self.module)            
+                self._ee = ExecutionEngine.new(self.module)
             self._func_ptr = self._ee.get_pointer_to_function(self.func)
         return self._func_ptr
 
@@ -176,6 +180,58 @@ class BlazeElementKernel(object):
             FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
             self._ctypes_func = FUNC_TYPE(self.func_ptr)
         return self._ctypes_func
+
+    @property
+    def single_ckernel(self):
+        """Creates a CKernel object with prototype ExprSingleOperation
+        """
+        if self._single_ckernel is None:
+            i8_p_type = Type.pointer(Type.int(8))
+            func_type = Type.function(void_type,
+                            [i8_p_type, Type.pointer(i8_p_type), i8_p_type])
+            single_ck_func = Function.new(self.module, func_type, name=self.func.name +"_single_ckernel")
+            block = single_ck_func.append_basic_block('entry')
+            builder = lc.Builder.new(block)
+            # Convert the src pointer args to the appropriate kinds for the llvm call
+            dst_ptr_arg, src_ptr_arr_arg, extra_ptr_arg = single_ck_func.args
+            dst_ptr_arg.name = 'dst_ptr'
+            src_ptr_arr_arg.name = 'src_ptrs'
+            extra_ptr_arg.name = 'extra_ptr'
+            args = []
+            for i, (k, a) in enumerate(izip(self.kinds, self.argtypes)):
+                if k == SCALAR:
+                    src_ptr = builder.bitcast(builder.load(
+                                    builder.gep(src_ptr_arr_arg,
+                                            (lc.Constant.int(intp_type, i),))),
+                                        Type.pointer(a))
+                    src_val = builder.load(src_ptr)
+                    args.append(src_val)
+                elif k == POINTER:
+                    src_ptr = builder.bitcast(builder.load(
+                                    builder.gep(src_ptr_arr_arg,
+                                            (lc.Constant.int(intp_type, i),))), a)
+                    args.append(src_ptr)
+                else:
+                    raise TypeError("single_ckernel codegen doesn't support array types yet")
+            # Call the function and store in the dst
+            dst_ptr = builder.bitcast(dst_ptr_arg, Type.pointer(self.return_type))
+            if self.kinds[-1] == SCALAR:
+                dst_val = builder.call(self.func, args)
+                builder.store(dst_val, dst_ptr)
+            elif self.kinds[-1] == POINTER:
+                builder.call(self.func, args + [dst_ptr])
+            else:
+                raise TypeError("single_ckernel codegen doesn't support array types yet")
+            builder.ret_void()
+            print(single_ck_func)
+            # JIT compile the function
+            if self._ee is None:
+                from llvm.ee import ExecutionEngine
+                self._ee = ExecutionEngine.new(self.module)
+            func_ptr = self._ee.get_pointer_to_function(single_ck_func)
+            self._single_ckernel = wrap_ckernel_func(
+                            ExprSingleOperation(func_ptr), func_ptr)
+        return self._single_ckernel
 
     # Should probably check to ensure kinds still match
     def replace_func(self, func):
@@ -250,7 +306,7 @@ class BlazeElementKernel(object):
             ranks.append(output_rank)
 
         # Replace any None values with difference in ranks
-        ranks = [ri + diffrank if x is None else x 
+        ranks = [ri + diffrank if x is None else x
                         for x,ri in zip(ranks, self.ranks)]
 
         if any(x < 0 for x in ranks):
@@ -310,7 +366,7 @@ def get_eltype(argtype, kind):
 def frompyfunc(pyfunc, signature):
     import numba
     from .datashape.util import from_numba
-    numbafunc = numba.jit(signature)(pyfunc)    
+    numbafunc = numba.jit(signature)(pyfunc)
     dshapes = [from_numba(arg) for arg in numbafunc.signature.args]
     dshapes.append(from_numba(numbafunc.signature.return_type))
     krnl = BlazeElementKernel(numbafunc.lfunc, dshapes)
@@ -323,7 +379,7 @@ def fromblir(codestr):
     func = env['functions'][NUM]
     RET, ARGS = 1, 2
     dshapes = [from_blir(arg) for arg in func[ARGS]]
-    dshapes.append(from_blir(func[RET]))    
+    dshapes.append(from_blir(func[RET]))
     krnl = BlazeElementKernel(env['lfunctions'][NUM], dshapes)
     return krnl
 
@@ -344,7 +400,7 @@ def fromcpp(source):
     os.remove(name_cpp)
     llvm_module = Module.from_assembly(assembly)
 
-    # Always get the first function --- 
+    # Always get the first function ---
     #    assume it is source
     # FIXME:  We could improve this with an independent
     #    parser of the source file

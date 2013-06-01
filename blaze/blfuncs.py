@@ -27,6 +27,7 @@ class KernelTree(object):
     _fused = None
     _funcptr = None
     _ctypes = None
+    _single_ckernel = None
 
     def __init__(self, kernel, children=[], name=None):
         assert isinstance(kernel, BlazeElementKernel)
@@ -86,10 +87,31 @@ class KernelTree(object):
             kernel = self._fused.kernel
             self._funcptr = kernel.func_ptr
             self._ctypes = kernel.ctypes_func
-        return self._ctypes            
+            self._single_ckernel = kernel.single_ckernel
+        return self._ctypes
+
+    @property
+    def ctypes_func(self):
+        if self._ctypes is None:
+            self.fuse()
+            kernel = self._fused.kernel
+            self._funcptr = kernel.func_ptr
+            self._ctypes = kernel.ctypes_func
+            self._single_ckernel = kernel.single_ckernel
+        return self._ctypes
+
+    @property
+    def single_ckernel(self):
+        if self._single_ckernel is None:
+            self.fuse()
+            kernel = self._fused.kernel
+            self._funcptr = kernel.func_ptr
+            self._ctypes = kernel.ctypes_func
+            self._single_ckernel = kernel.single_ckernel
+        return self._single_ckernel
 
     def __call__(self, *args):
-        return self.ctypes_func(*args)      
+        return self.ctypes_func(*args)
 
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
@@ -143,7 +165,7 @@ def convert_kernel(value, key=None):
     elif isinstance(value, FunctionType):
         krnl = BlazeElementKernel(value)
         if key is not None:
-            krnl.dhapes = key
+            krnl.dshapes = key
     else:
         raise TypeError("Cannot convert value = %s and key = %s" % (value, key))
 
@@ -152,7 +174,7 @@ def convert_kernel(value, key=None):
 # Process type-table dictionary which maps a signature list with
 #   (input-type1, input-type2, output_type) to a kernel into a
 #   lookup-table dictionary which maps an input-only signature list
-#   to a kernel matching those inputs.  The output 
+#   to a kernel matching those inputs.  The output
 #   is placed with a tuple of the output-type plus the signature
 # So far it assumes the types all have the same rank
 #   and deduces the signature from the first kernel found
@@ -172,7 +194,7 @@ def process_typetable(typetable):
             in_shapes = value.dshapes[:-1]
             newtable[in_shapes] = value
 
-    # FIXME: 
+    # FIXME:
     #   Assumes the same ranklist and connections for all the keys
     ranklist, connections = get_signature(key)
 
@@ -202,21 +224,21 @@ class BlazeFunc(object):
         tuple of types has Input types first with the Output Type last
 
         Arguments
-        =========    
+        =========
         name  :  String name of the Blaze Function
 
         typetable :  dictionary mapping argument types to an implementation
                      kernel which is an instance of a BlazeElementKernel object
 
-                     The kernel may also be several other objects which will 
-                     be converted to the BlazeElementKernel: 
+                     The kernel may also be several other objects which will
+                     be converted to the BlazeElementKernel:
                         python-function:  converted via numba
                         string:           converted via blir
                         llvm-function:    directly wrapped
-                        ctypes-function:  wrapped via an llvm function call 
+                        ctypes-function:  wrapped via an llvm function call
 
-                    This may also be a list of tuples which will be interpreted as 
-                    a dict with the first-argument first converted to dshape depending 
+                    This may also be a list of tuples which will be interpreted as
+                    a dict with the first-argument first converted to dshape depending
 
         inouts : list of integers corresponding to arguments which are
                   input and output arguments (NotImplemented)
@@ -243,7 +265,7 @@ class BlazeFunc(object):
         mtypes = [ds.sigform() for ds in types]
         ranks = [len(ds)-1 for ds in types]
         test_rank = min(ranks)
-        mtypes = tuple(ds.subarray(rank-test_rank) 
+        mtypes = tuple(ds.subarray(rank-test_rank)
                       for ds, rank in zip(mtypes, ranks))
         krnl = None
         while test_rank >= 0:
