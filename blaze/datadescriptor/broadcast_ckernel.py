@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
-__all__ = ['execute_unary_single']
+__all__ = ['execute_unary_single', 'execute_expr_single']
+
+import ctypes
 
 from ..error import BroadcastError
 from ..py3help import izip
@@ -92,7 +94,7 @@ def execute_unary_single(dst, src, dst_ds, src_ds, ck):
                 for dst_dd, src_dd in izip(dst, src):
                     execute_unary_single(dst_dd, src_dd, dst_ds, src_ds, ck)
 
-def execute_expr_single(dst, src_arr, dst_ds, src_ds_arr, ck):
+def execute_expr_single(dst, src_list, dst_ds, src_ds_list, ck):
     """Executes an expr single kernel on all elements of
     the src data descriptors, writing to the dst data
     descriptor. The number of src data descriptors and
@@ -175,7 +177,14 @@ def execute_expr_single(dst, src_arr, dst_ds, src_ds_arr, ck):
     # Loop through the outermost dimension
     # Broadcast the src data descriptor across
     # the outermost dst dimension
-    if dst_ndim == 1:
+    if dst_ndim == 0:
+        src_ptr_arr = (ctypes.c_void_p * len(src_work_list))()
+        for i, (tp, obj, aux) in enumerate(src_work_list):
+            src_ptr_arr[i] = ctypes.c_void_p(obj)
+        de = dst.element_writer(0)
+        with de.buffered_ptr(()) as dst_ptr:
+            ck(dst_ptr, ctypes.cast(src_ptr_arr, ctypes.POINTER(ctypes.c_void_p)))
+    elif dst_ndim == 1:
         # If there's a one-dimensional loop left,
         # use the element write iter to process
         # it.
