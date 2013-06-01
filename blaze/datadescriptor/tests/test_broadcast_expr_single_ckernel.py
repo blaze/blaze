@@ -22,7 +22,7 @@ class TestBroadcastUnarySingleCKernel(unittest.TestCase):
             src0 = src_args.src0.contents
             src1 = src_args.src1.contents
             src2 = src_args.src2.contents
-            dst.value = src0.value * src1.value + src2.value
+            dst.value = (src0.value + 1) * src1.value + src2.value
             #print(src0, src1, src2, '->', dst)
         # The ctypes callback object is both the function and the owner
         self.muladd = ckernel.wrap_ckernel_func(my_ternary_func, my_ternary_func)
@@ -36,7 +36,51 @@ class TestBroadcastUnarySingleCKernel(unittest.TestCase):
         # Do the assignment
         execute_expr_single(dst, [src0, src1, src2],
                         datashape.float64, [datashape.float64]*3, self.muladd)
-        self.assertEqual(dd_as_py(dst), 1028.0 * 5 - 123)
+        self.assertEqual(dd_as_py(dst), (1028.0 + 1) * 5 - 123)
+
+    def test_scalar_to_one_d(self):
+        # Set up our data buffers
+        src0 = data_descriptor_from_ctypes(ctypes.c_double(1028), writable=False)
+        src1 = data_descriptor_from_ctypes(ctypes.c_double(5), writable=False)
+        src2 = data_descriptor_from_ctypes(ctypes.c_double(-123), writable=False)
+        dst = data_descriptor_from_ctypes((ctypes.c_double * 3)(), writable=True)
+        # Do the assignment
+        execute_expr_single(dst, [src0, src1, src2],
+                        datashape.float64, [datashape.float64]*3, self.muladd)
+        self.assertEqual(dd_as_py(dst), [(1028.0 + 1) * 5 - 123] * 3)
+
+    def test_broadcast_to_one_d(self):
+        # Set up our data buffers
+        src0 = data_descriptor_from_ctypes(ctypes.c_double(12), writable=False)
+        src1_data = (ctypes.c_double * 1)()
+        src1_data[0] = 3
+        src1 = data_descriptor_from_ctypes(src1_data, writable=False)
+        src2_data = (ctypes.c_double * 3)()
+        src2_list = [5, 3, -2]
+        for i, val in enumerate(src2_list):
+            src2_data[i] = val
+        src2 = data_descriptor_from_ctypes(src2_data, writable=False)
+        dst = data_descriptor_from_ctypes((ctypes.c_double * 3)(), writable=True)
+
+        # Do assignments with the different permuations of the source arguments
+        execute_expr_single(dst, [src0, src1, src2],
+                        datashape.float64, [datashape.float64]*3, self.muladd)
+        self.assertEqual(dd_as_py(dst), [(12 + 1) * 3 + x for x in [5, 3, -2]])
+        execute_expr_single(dst, [src0, src2, src1],
+                        datashape.float64, [datashape.float64]*3, self.muladd)
+        self.assertEqual(dd_as_py(dst), [(12 + 1) * x + 3 for x in [5, 3, -2]])
+        execute_expr_single(dst, [src1, src0, src2],
+                        datashape.float64, [datashape.float64]*3, self.muladd)
+        self.assertEqual(dd_as_py(dst), [(3 + 1) * 12 + x for x in [5, 3, -2]])
+        execute_expr_single(dst, [src1, src2, src0],
+                        datashape.float64, [datashape.float64]*3, self.muladd)
+        self.assertEqual(dd_as_py(dst), [(3 + 1) * x + 12 for x in [5, 3, -2]])
+        execute_expr_single(dst, [src2, src0, src1],
+                        datashape.float64, [datashape.float64]*3, self.muladd)
+        self.assertEqual(dd_as_py(dst), [(x + 1) * 12 + 3 for x in [5, 3, -2]])
+        execute_expr_single(dst, [src2, src1, src0],
+                        datashape.float64, [datashape.float64]*3, self.muladd)
+        self.assertEqual(dd_as_py(dst), [(x + 1) * 3 + 12 for x in [5, 3, -2]])
 
 if __name__ == '__main__':
     unittest.main()

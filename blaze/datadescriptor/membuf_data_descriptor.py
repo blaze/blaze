@@ -202,7 +202,7 @@ class MemBufDataDescriptor(IDataDescriptor):
         return self._ptr_owner
 
     def __len__(self):
-        if isinstance(self._dshape, datashape.DataShape):
+        if len(self._dshape) > 1:
             return operator.index(self._dshape[0])
         else:
             raise IndexError('Cannot get the length of a '
@@ -238,7 +238,11 @@ class MemBufDataDescriptor(IDataDescriptor):
         return MemBufDataDescriptor(ptr, self.ptr_owner, ds, self._writable)
 
     def __iter__(self):
-        return membuf_descriptor_iter(self)
+        if len(self._dshape) > 1:
+            return membuf_descriptor_iter(self)
+        else:
+            raise IndexError('Cannot iterate over a '
+                            'zero-dimensional array')
 
     def element_reader(self, nindex):
         return MemBufElementReader(self, nindex)

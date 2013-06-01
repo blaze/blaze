@@ -188,15 +188,15 @@ def execute_expr_single(dst, src_list, dst_ds, src_ds_list, ck):
         # If there's a one-dimensional loop left,
         # use the element write iter to process
         # it.
+        src_ptr_arr = (ctypes.c_void_p * len(src_work_list))()
         with dst.element_write_iter() as de:
             for dst_ptr in de:
-                src_ptr_list = []
-                for tp, obj, aux in src_work_list:
+                for i, (tp, obj, aux) in enumerate(src_work_list):
                     if tp == SINGLE:
-                        src_ptr_list.append(obj)
+                        src_ptr_arr[i] = ctypes.c_void_p(obj)
                     else:
-                        src_ptr_list.append(next(obj))
-                ck(dst_ptr, src_ptr_list)
+                        src_ptr_arr[i] = ctypes.c_void_p(next(obj))
+                ck(dst_ptr, src_ptr_arr)
     else:
         # Use the Python-level looping constructs
         # for processing higher numbers of dimensions.
