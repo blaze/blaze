@@ -93,7 +93,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.ndobject([[1,2,3], [4,5], [6]])
         dd = DyNDDataDescriptor(a)
 
-        self.assertEqual(dd.dshape, datashape.dshape('3, Var, int32'))
+        self.assertEqual(dd.dshape, datashape.dshape('3, var, int32'))
         self.assertEqual(dd_as_py(dd), [[1,2,3], [4,5], [6]])
         self.assertEqual(dd_as_py(dd[0]), [1,2,3])
         self.assertEqual(dd_as_py(dd[1]), [4,5])
