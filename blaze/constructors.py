@@ -112,6 +112,30 @@ def _fromiter(gen, dshape, caps):
     return Array(dd)
 
 
+def empty(dshape, caps={'efficient-write': True}):
+    """Create an array with uninitialized data.
+
+    Parameters
+    ----------
+    dshape : datashape
+        The datashape for the resulting array.
+
+    caps : capabilities dictionary
+        A dictionary containing the desired capabilities of the array.
+
+    Returns
+    -------
+    out : a concrete, in-memory blaze array.
+
+    """
+    dshape = _normalize_dshape(dshape)
+
+    if 'efficient-write' in caps:
+        dd = NumPyDataDescriptor(np.empty(*to_numpy(dshape)))
+    elif 'compress' in caps:
+        dd = BLZDataDescriptor(blz.empty(*to_numpy(dshape)))
+    return Array(dd)
+
 def zeros(dshape, caps={'efficient-write': True}):
     """Create an array and fill it with zeros.
 

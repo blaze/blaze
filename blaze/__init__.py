@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from . import datashape, ckernel
 from .datashape import dshape
 from .array import Array
-from .constructors import array, ones, zeros
+from .constructors import array, empty, ones, zeros
 from .persistence import load, save, open, drop, create, create_fromiter
 import ctypes
 
