@@ -15,6 +15,7 @@ if PY3:
     basestring = str
     import urllib.parse as urlparse
     from collections import Counter
+    from functools import reduce
 else:
     import __builtin__
     def dict_iteritems(d):
@@ -23,6 +24,7 @@ else:
     from itertools import izip
     unicode = __builtin__.unicode
     basestring = __builtin__.basestring
+    reduce = __builtin__.reduce
 
     _strtypes = (str, unicode)
 
