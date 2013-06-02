@@ -189,7 +189,8 @@ class BlazeElementKernel(object):
             i8_p_type = Type.pointer(Type.int(8))
             func_type = Type.function(void_type,
                             [i8_p_type, Type.pointer(i8_p_type), i8_p_type])
-            single_ck_func = Function.new(self.module, func_type, name=self.func.name +"_single_ckernel")
+            single_ck_func = Function.new(self.module, func_type,
+                            name=self.func.name +"_single_ckernel")
             block = single_ck_func.append_basic_block('entry')
             builder = lc.Builder.new(block)
             # Convert the src pointer args to the appropriate kinds for the llvm call
