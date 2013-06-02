@@ -223,7 +223,6 @@ class BlazeElementKernel(object):
             else:
                 raise TypeError("single_ckernel codegen doesn't support array types yet")
             builder.ret_void()
-            print(single_ck_func)
             # JIT compile the function
             if self._ee is None:
                 from llvm.ee import ExecutionEngine

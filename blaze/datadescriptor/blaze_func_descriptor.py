@@ -33,7 +33,7 @@ class BlazeFuncDescriptor(IDataDescriptor):
     def _reset_args(self):
         unique_args = []
         find_unique_args(self.kerneltree, unique_args)
-        self._args = [argument.arg for argument in unique_args]
+        self._args = [argument for argument in unique_args]
 
     @property
     def args(self):

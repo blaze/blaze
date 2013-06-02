@@ -7,6 +7,8 @@ import ctypes
 from ..error import BroadcastError
 from ..py3help import izip
 
+from .as_py import dd_as_py
+
 def execute_unary_single(dst, src, dst_ds, src_ds, ck):
     """Executes a unary single kernel on all elements of
     the src data descriptor, writing to the dst data
@@ -198,6 +200,8 @@ def execute_expr_single(dst, src_list, dst_ds, src_ds_list, ck):
                         src_ptr_arr[i] = ctypes.c_void_p(obj)
                     else:
                         src_ptr_arr[i] = ctypes.c_void_p(next(obj))
+                    #print('src ptr', i, ':', hex(src_ptr_arr[i]))
+                #print('dst ptr', hex(dst_ptr))
                 ck(dst_ptr, src_ptr_arr)
     else:
         # Use the Python-level looping constructs
