@@ -205,7 +205,7 @@ class MemBufDataDescriptor(IDataDescriptor):
         if len(self._dshape) > 1:
             return operator.index(self._dshape[0])
         else:
-            raise IndexError('Cannot get the length of a '
+            raise IndexError('Cannot get the length of a ' +
                             'zero-dimensional array')
 
     def __getitem__(self, key):
@@ -225,11 +225,11 @@ class MemBufDataDescriptor(IDataDescriptor):
             # Implement Python's negative indexing
             if idx >= 0:
                 if idx >= dim_size:
-                    raise IndexError(('Index %d is out of range '
+                    raise IndexError(('Index %d is out of range ' +
                                     'in dimension sized %d') % (idx, dim_size))
             else:
                 if idx < -dim_size:
-                    raise IndexError(('Index %d is out of range '
+                    raise IndexError(('Index %d is out of range ' +
                                     'in dimension sized %d') % (idx, dim_size))
                 idx += dim_size
             ptr = ptr + idx * c_strides[i]
@@ -241,7 +241,7 @@ class MemBufDataDescriptor(IDataDescriptor):
         if len(self._dshape) > 1:
             return membuf_descriptor_iter(self)
         else:
-            raise IndexError('Cannot iterate over a '
+            raise IndexError('Cannot iterate over a ' +
                             'zero-dimensional array')
 
     def element_reader(self, nindex):

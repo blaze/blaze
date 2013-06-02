@@ -117,6 +117,8 @@ def execute_expr_single(dst, src_list, dst_ds, src_ds_list, ck):
         The kernel object to execute, with a
         ExprSingleOperation function prototype
     """
+    if len(src_list) != len(src_ds_list):
+        raise ValueError('The length of src_list and src_ds_list must match')
     src_ndim_list = [len(src.dshape) - len(src_ds)
                     for src, src_ds in izip(src_list, src_ds_list)]
     dst_ndim = len(dst.dshape) - len(dst_ds)
@@ -173,7 +175,7 @@ def execute_expr_single(dst, src_list, dst_ds, src_ds_list, ck):
                 if src_dim_size == 1:
                     src_work_list.append((SINGLE, src[0], None))
                 else:
-                    src_work_list.append((ITER, src, None))
+                    src_work_list.append((ITER, src.__iter__(), None))
     # Loop through the outermost dimension
     # Broadcast the src data descriptor across
     # the outermost dst dimension
@@ -207,4 +209,4 @@ def execute_expr_single(dst, src_list, dst_ds, src_ds_list, ck):
                     src_dd_list.append(obj)
                 else:
                     src_dd_list.append(next(obj))
-            execute_unary_single(dd, src_dd_list, dst_ds, src_ds, ck)
+            execute_expr_single(dd, src_dd_list, dst_ds, src_ds_list, ck)
