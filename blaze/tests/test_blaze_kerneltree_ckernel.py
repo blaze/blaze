@@ -26,6 +26,7 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
         cf = add(af,bf)
         df = mul(cf,cf)
         ck = df._data.kerneltree.single_ckernel
+
         # Allocate the result, and run the kernel across the arguments
         result = blaze.zeros(df.dshape)
         args = [arg.arr._data for arg in df._data.args]
@@ -33,6 +34,20 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
                         df._data.kerneltree.kernel.dshapes[-1],
                         df._data.kerneltree.kernel.dshapes[:-1], ck)
         self.assertEqual(dd_as_py(result._data),
+                        [[(a+b) * (a+b) for a, b in izip(a1, b1)]
+                                for a1, b1 in izip([[1,2,3], [4,5,6]], [[2,3,4]]*2)])
+
+        # Use blaze.eval to evaluate cf and df into concrete arrays
+        # TODO: The following causes an error in LLVMPY, I suspect because
+        #       the func in 'cf' has been assigned to the module for 'df',
+        #       and creating a new execution engine on this module causes
+        #       a problem.
+        #cf2 = blaze.eval(cf)
+        #self.assertEqual(dd_as_py(cf2._data),
+        #                [[(a+b) for a, b in izip(a1, b1)]
+        #                        for a1, b1 in izip([[1,2,3], [4,5,6]], [[2,3,4]]*2)])
+        df2 = blaze.eval(df)
+        self.assertEqual(dd_as_py(df2._data),
                         [[(a+b) * (a+b) for a, b in izip(a1, b1)]
                                 for a1, b1 in izip([[1,2,3], [4,5,6]], [[2,3,4]]*2)])
 

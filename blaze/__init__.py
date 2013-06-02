@@ -6,6 +6,7 @@ from . import datashape, ckernel
 from .datashape import dshape
 from .array import Array
 from .constructors import array, empty, ones, zeros
+from .eval import eval
 from .persistence import load, save, open, drop, create, create_fromiter
 import ctypes
 
@@ -31,6 +32,12 @@ def print_versions():
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("NumPy version: %s" % np.__version__)
+    try:
+        import dynd
+        print("DyND version: %s / LibDyND %s" %
+                        (dynd.__version__, dynd.__libdynd_version__))
+    except ImportError:
+        print("DyND is not installed")
     print("BLZ version: %s" % blz.__version__)
     print("Blosc version: %s (%s)" % blz.blosc_version())
     print("Python version: %s" % sys.version)
@@ -82,8 +89,8 @@ def test(verbosity=1, xunitfile=None, exit=False):
             testsdir = os.path.join(root, 'tests')
             argv.append(testsdir)
             print('Test dir: %s' % testsdir[len(rootdir)+1:])
-    sys.stdout.flush()
     # print versions (handy when reporting problems)
     print_versions()
+    sys.stdout.flush()
     # Ask nose to do its thing
     return nose.main(argv=argv, exit=exit)

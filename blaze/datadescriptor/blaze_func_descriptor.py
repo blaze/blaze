@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from . import (IDataDescriptor, IElementReader, IElementReadIter)
+from .data_descriptor import (IDataDescriptor, IElementReader, IElementReadIter)
 
 
 from ..blaze_kernels import find_unique_args, Argument
