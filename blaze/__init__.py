@@ -17,12 +17,12 @@ import ctypes
 class complex128(ctypes.Structure):
     _fields_ = [('real', ctypes.c_double),
                 ('imag', ctypes.c_double)]
-    _blaze_type_ = dshape('complex128')
+    _blaze_type_ = datashape.complex128
 
 class complex64(ctypes.Structure):
     _fields_ = [('real', ctypes.c_float),
                 ('imag', ctypes.c_float)]
-    _blaze_type_ = dshape('complex64')
+    _blaze_type_ = datashape.complex64
 
 __version__ = '0.0.1'
 

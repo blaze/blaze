@@ -270,6 +270,7 @@ class BuildParser(build):
     def run(self):
         # run the default build command first
         build.run(self)
+        print('Rebuilding the datashape parser...')
         # add the build destination to the module path so we can load it
         sys.path.insert(0, self.build_lib)
         from blaze.datashape.parser import rebuild
