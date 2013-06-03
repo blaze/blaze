@@ -167,15 +167,16 @@ class BlazeElementKernel(object):
     @property
     def func_ptr(self):
         if self._func_ptr is None:
+            module = self.module.clone()
             if self._ee is None:
                 from llvm.passes import build_pass_managers
                 import llvm.ee as le
-                module = self.module.clone()
-                tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
-                pms = build_pass_managers(tm, opt=3, fpm=False)
-                pms.pm.run(module)
+                #tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
+                #pms = build_pass_managers(tm, opt=3, fpm=False)
+                #pms.pm.run(module)
                 self._ee = le.ExecutionEngine.new(module)
-            self._func_ptr = self._ee.get_pointer_to_function(self.func)
+            func = module.get_function_named(self.func.name)
+            self._func_ptr = self._ee.get_pointer_to_function(func)
         return self._func_ptr
 
     @property
@@ -195,9 +196,10 @@ class BlazeElementKernel(object):
             i8_p_type = Type.pointer(Type.int(8))
             func_type = Type.function(void_type,
                             [i8_p_type, Type.pointer(i8_p_type), i8_p_type])
-            single_ck_func_name = self.func.name +"_single_ckernel"
-            single_ck_func = Function.new(self.module, func_type,
-                            name=single_ck_func_name)
+            module = self.module.clone()            
+            single_ck_func_name = self.func.name +"_single_ckernel"            
+            single_ck_func = Function.new(module, func_type,
+                                              name=single_ck_func_name)
             block = single_ck_func.append_basic_block('entry')
             builder = lc.Builder.new(block)
             # Convert the src pointer args to the appropriate kinds for the llvm call
@@ -252,6 +254,7 @@ class BlazeElementKernel(object):
         self._ee = None
         self._func_ptr = None
         self._ctypes_func = None
+        self._single_ckernel = None
 
     def attach(self, module):
         """Update this kernel to be attached to a particular module
@@ -315,7 +318,7 @@ class BlazeElementKernel(object):
             raise ValueError("Output rank (%d) must be greater than current "
                              "rank (%d)" % (outrank, cur_rank))
 
-        if not all(x in [SCALAR, POINTER, outkind] for x in self.kinds):
+        if not all((x in [SCALAR, POINTER] or x[0]==outkind) for x in self.kinds):
             raise ValueError("Incompatible kernel arguments for "
                              "lifting: %s" % self.kinds)
         # Replace any None values with difference in ranks
