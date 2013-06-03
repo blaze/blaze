@@ -1,7 +1,21 @@
-MVP Scaffolding for Blaze 0.1
-=============================
 
-"Last year it was going to be everything.  This year it has to be something."
+Blaze 0.1
+============
+
+Pre-requisites:
+  * llvmpy >= 0.11.1
+  * cython >= 0.16
+  * numpy >= 1.5
+
+Install all pre-requisites and then run:
+
+python setup.py install
+
+Docs are generated using sphinx in the docs directory.
+
+
+Overview of early functionality
+===============================
 
 Concrete Array object
 ---------------------
