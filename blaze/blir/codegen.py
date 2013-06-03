@@ -454,7 +454,6 @@ class LLVMEmitter(object):
                 for i, idx in enumerate(index.elts):
                     ic = self.const(i)
                     sc = self.builder.load(self.builder.gep(shape, [ic]))
-                    import pdb; pdb.set_trace()
                     if order == 'C' and i == (ndim - 1):
                         tmp = ic
                     elif order == 'F' and i == 0:
