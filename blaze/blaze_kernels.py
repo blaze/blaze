@@ -19,6 +19,7 @@ from __future__ import print_function
 #   same kinds, the kind is a per-argument notion and thus
 #   can be mixed and matched.
 
+import operator
 import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
@@ -196,8 +197,8 @@ class BlazeElementKernel(object):
             i8_p_type = Type.pointer(Type.int(8))
             func_type = Type.function(void_type,
                             [i8_p_type, Type.pointer(i8_p_type), i8_p_type])
-            module = self.module.clone()            
-            single_ck_func_name = self.func.name +"_single_ckernel"            
+            module = self.module.clone()
+            single_ck_func_name = self.func.name +"_single_ckernel"
             single_ck_func = Function.new(module, func_type,
                                               name=single_ck_func_name)
             block = single_ck_func.append_basic_block('entry')
@@ -221,8 +222,25 @@ class BlazeElementKernel(object):
                                     builder.gep(src_ptr_arr_arg,
                                             (lc.Constant.int(intp_type, i),))), a)
                     args.append(src_ptr)
-                #elif k == lla.C_CONTIGUOUS:
-                #
+                elif k == lla.C_CONTIGUOUS:
+                    # XXX: This code is not tested, it still needs work
+
+                    # First get the shape of this parameter
+                    # For now, require the full shape to be specified,
+                    # so that the memory layout is fully known by the
+                    # called function (no TypeVars)
+                    shape = tuple(operator.index(x) for x in self.dshapes[i][:-1])
+                    # Make an llvm array
+                    arrtype = lla.array_type(len(shape), lla.C_CONTIGUOUS)
+                    arr_var = builder.alloca(arrtype)
+                    builder.store(builder.gep(arr_var, (lc.Constant.int(intp_type, 0),)),
+                                    src_ptr)
+                    for i, sz in enumerate(shape):
+                        shape_el_ptr = builder.gep(arr_var,
+                                        (lc.Constant.int(intp_type, 1),
+                                         lc.Constant.int(intp_type, i)))
+                        builder.store(shape_el_ptr, lc.Constant.int(intp_type, sz))
+                    args.append(arr_var)
                 else:
                     raise TypeError("single_ckernel codegen doesn't " +
                                     "support the given parameter kind yet")
