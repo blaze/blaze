@@ -3,6 +3,7 @@ from collections import namedtuple
 from llvm.core import Constant
 import llvm.core as lc
 import llvm_cbuilder.shortnames as C
+from .py3help import reduce
 
 @contextmanager
 def position(builder, block):
@@ -56,9 +57,9 @@ _loop_info = namedtuple('loop_info', ['entry', 'body', 'incr', 'end',
 @contextmanager
 def loop_nest(builder, begins, ends, order=None, intp=C.intp, steps=None, dbg=False):
     '''Insert a N-dimension loop nest.
-    
+
     Equivalent to:
-        
+
         ax0 = order[-1]
         ax1 = order[-2]
         ax2 = order[-3]
@@ -73,11 +74,11 @@ def loop_nest(builder, begins, ends, order=None, intp=C.intp, steps=None, dbg=Fa
     steps:  default to 1 for all axis.
     intp:   integer type for indexing.
     dbg:    boolean to enable debug mode; default to false.
-    
+
     Returns a namedtuple of with entry = <entry block>, body  = <body block>,
         incr = <increment block>, end = <ending block>,
         indices = <list of index values>
-    
+
     Note: When the context exits, the builder is at the end of the original
           basicblock.  It is user's responsibilty to add branch into
           the entry of the loop.
