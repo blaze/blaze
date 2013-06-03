@@ -37,8 +37,8 @@ print(c.dshape)
 # or as many dimensions as you like
 print_section('going 3d', level=1)
 d = blaze.array([ [ [1, 2], [3, 4] ], [ [5, 6], [7, 8] ] ])
-print (d)
-print (d.dshape)
+print(d)
+print(d.dshape)
 
 # --------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ print_section('Explicit types in construction')
 # It is possible to force a type in a given array. This allows a
 # broader selection of types on construction.
 e =  blaze.array([ 1, 2, 3], dshape='3, float32') 
-print (e)
+print(e)
 
 # Note that the dimensions in the datashape when creating from a
 # collection can be omitted. If that's the case, the dimensions will
