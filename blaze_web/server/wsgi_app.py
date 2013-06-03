@@ -146,7 +146,7 @@ class wsgi_app:
         ]
         start_response(status, response_headers)
         return [body]
-    
+
     def handle_array_query(self, environ, start_response):
         print('Handling array query')
         try:
@@ -175,7 +175,7 @@ class wsgi_app:
                     response_headers = [('content-type', 'text/plain')]
                     start_response(status, response_headers)
                     return ['Unsupported request method']
-    
+
                 print q
                 if not q.has_key('r'):
                     status = '400 Bad Request'
@@ -194,7 +194,7 @@ class wsgi_app:
                     body = str(arr.dtype)
                 elif q_req == 'dynddebug':
                     content_type = 'text/plain; charset=utf-8'
-                    body = arr.debug_repr()
+                    body = str(nd.debug_repr(arr))
                 elif q_req == 'create_session':
                     session = compute_session(self.array_provider, base_url,
                                               add_indexers_to_url(array_name, indexers))

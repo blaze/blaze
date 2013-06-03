@@ -2,7 +2,7 @@ type KivaLoan = {
     id: int64;
     name: string;
     description: {
-        languages: VarDim, string(2);
+        languages: var, string(2);
         texts: json # map<string(2), string>;
     };
     status: string; # LoanStatusType;
@@ -37,7 +37,7 @@ type KivaLoan = {
     planned_expiration_date: json; # Option(datetime<seconds>);
     loan_amount: float64;
     currency_exchange_loss_amount: json; # Option(float64);
-    borrowers: VarDim, {
+    borrowers: var, {
         first_name: string;
         last_name: string;
         gender: string(1); # GenderType
@@ -48,11 +48,11 @@ type KivaLoan = {
         disbursal_currency: string(3,'A');
         disbursal_amount: float64;
         loan_amount: float64;
-        local_payments: VarDim, {
+        local_payments: var, {
             due_date: json; # datetime<seconds>;
             amount: float64;
         };
-        scheduled_payments: VarDim, {
+        scheduled_payments: var, {
             due_date: json; # datetime<seconds>;
             amount: float64;
         };
@@ -62,7 +62,7 @@ type KivaLoan = {
             currency_exchange_coverage_rate: json; # Option(float64);
         }
     };
-    payments: VarDim, {
+    payments: var, {
         amount: float64;
         local_amount: float64;
         processed_date: json; # datetime<seconds>;
@@ -87,5 +87,5 @@ type KivaLoansFile = {
         date: string;
         page_size: int64;
     };
-    loans: VarDim, KivaLoan;
+    loans: var, KivaLoan;
 }

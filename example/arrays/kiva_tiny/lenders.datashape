@@ -25,5 +25,5 @@ type KivaLendersFile = {
         date: string;
         page_size: int64;
     };
-    lenders: VarDim, KivaLender;
+    lenders: var, KivaLender;
 }
