@@ -170,7 +170,7 @@ class BlazeElementKernel(object):
             if self._ee is None:
                 from llvm.passes import build_pass_managers
                 import llvm.ee as le
-                module = self.module.clone()                  
+                module = self.module.clone()
                 tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
                 pms = build_pass_managers(tm, opt=3, fpm=False)
                 pms.pm.run(module)
@@ -219,8 +219,11 @@ class BlazeElementKernel(object):
                                     builder.gep(src_ptr_arr_arg,
                                             (lc.Constant.int(intp_type, i),))), a)
                     args.append(src_ptr)
+                #elif k == lla.C_CONTIGUOUS:
+                #
                 else:
-                    raise TypeError("single_ckernel codegen doesn't support array types yet")
+                    raise TypeError("single_ckernel codegen doesn't " +
+                                    "support the given parameter kind yet")
             # Call the function and store in the dst
             dst_ptr = builder.bitcast(dst_ptr_arg, Type.pointer(self.return_type))
             if self.kinds[-1] == SCALAR:
@@ -343,7 +346,7 @@ class BlazeElementKernel(object):
             else:
                 inargs = arg_arrays
                 inkinds = self.kinds
-            callargs = [ensure_llvm(arg[loop.indices], kind) 
+            callargs = [ensure_llvm(arg[loop.indices], kind)
                                 for arg, kind in zip(inargs, inkinds)]
             res = builder.call(self.func, callargs)
             if self.kinds[-1] == SCALAR:
