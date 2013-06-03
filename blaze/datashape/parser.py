@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import print_function
 
 import os
 import sys
@@ -449,7 +450,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         ds_mod = open(sys.argv[1]).read()
         ast = list(parse_mod(ds_mod))
-        print ast
+        print(ast)
     else:
         readline.parse_and_bind('')
         while True:

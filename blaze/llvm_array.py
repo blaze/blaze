@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 # This should be moved to llvmpy
 #
 # There are different array kinds parameterized by eltype and nd
@@ -67,7 +69,7 @@
 #
 # intp shape[ind];
 # intp strides[ind]; dimkind = STRIDED
-# 
+#
 # Array_C --- C Contiguous
 # Array_F --- Fortran Contiguous
 # Array_S --- Strided
@@ -141,7 +143,7 @@ _cache = {}
 #  C_CONTIGUOUS, F_CONTIGUOUS, and STRIDED are strongly encouraged...
 def array_type(nd, kind, el_type=char_type):
     key = (kind, nd, str(el_type))
-    if _cache.has_key(key):
+    if key in _cache:
         return _cache[key]
 
     base = kind & (~(HAS_ND | HAS_DIMKIND))
@@ -411,7 +413,7 @@ def _sizeof(_eltype, unpacked=False):
     elif kind is lc.TYPE_ARRAY:
         return _eltype.count * _sizeof(_eltype.element)
     elif kind is lc.TYPE_STRUCT:
-        return sum(_sizeof(element, not _eltype.packed) 
+        return sum(_sizeof(element, not _eltype.packed)
                        for element in _eltype.elements)
     raise ValueError("Unimplemented type % s (kind=%s)" % (_eltype, kind))
 
@@ -442,7 +444,7 @@ def offsetof(struct_type, fieldnum, builder):
     offsetI = builder.bitcast(offset, int_type)
     return offsetI
 
-LLVM_SCALAR = [lc.TYPE_HALF, lc.TYPE_FP128, 
+LLVM_SCALAR = [lc.TYPE_HALF, lc.TYPE_FP128,
                lc.TYPE_DOUBLE, lc.TYPE_INTEGER, lc.TYPE_FLOAT]
 # Embed an llvmvalue into an Array_S array with dimension nd
 # by setting strides of new dimensions to 0.
@@ -495,7 +497,7 @@ class LLArray(object):
         try:
             self._order = orderchar[kind]
         except KeyError:
-            raise ValueError("Unsupported array type %s" % kind)            
+            raise ValueError("Unsupported array type %s" % kind)
         self._itemsize = _sizeof(eltype)
         if builder is not None:
             _ = self.strides  # execute property codes
@@ -549,7 +551,7 @@ class LLArray(object):
         return [load_at(self.builder, llarray_ptr, i) for i in range(count)]
 
     def getview(self, nd=None, kind=None, eltype=None):
-        newtype = array_type(self.nd if nd is None else nd, 
+        newtype = array_type(self.nd if nd is None else nd,
                              self._kind if kind is None else kind,
                              self._eltype if eltype is None else eltype)
         new = self.builder.alloca(newtype)
@@ -587,7 +589,7 @@ class LLArray(object):
 
     #Can be used to get subarrays as well as elements
     def __getitem__(self, key):
-        import llgetitem
+        from . import llgetitem
         isiter = isiterable(key)
         char = orderchar[self._kind]
         # full-indexing
@@ -610,7 +612,7 @@ class LLArray(object):
             raise NotImplementedError
 
     # Could use memcopy and memmove to implement full slicing capability
-    # But for now just works for single element 
+    # But for now just works for single element
     def __setitem__(self, key, value):
         if not isinstance(key, tuple) and len(key) != self.nd:
             raise NotImplementedError
@@ -639,7 +641,7 @@ class LLArray(object):
         new = self.builder.alloca(newtype)
         shape_ptr = get_shape_ptr(self.builder, new)
 
-        # Store shape 
+        # Store shape
         for i, val in enumerate(shape):
             store_at(self.builder, shape_ptr, i, val)
 
@@ -665,7 +667,7 @@ class LLArray(object):
         if kind == STRIDED:
             # Fill the strides array depending on order
             if order == 'K':
-                # if it's strided, I suppose we should choose based on which is 
+                # if it's strided, I suppose we should choose based on which is
                 # larger in self, the first or last stride for now just 'C'
                 order = 'F' if self._kind is F_CONTIGUOUS else 'C'
             if order == 'C':

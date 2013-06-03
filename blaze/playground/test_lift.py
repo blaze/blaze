@@ -14,7 +14,7 @@ def create_func(mod):
     return func
 
 mine = BlazeElementKernel(create_func(mod))
-print mine.func
+print(mine.func)
 res = mine.lift(1, 'C')
 cfunc = res.ctypes_func
 
@@ -38,4 +38,4 @@ out = _convert(odata, struct)
 
 cfunc(cb(val), cb(val), cb(out))
 
-print odata[-10:]
+print(odata[-10:])
