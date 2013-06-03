@@ -4,13 +4,14 @@ import os
 import sys
 import ast
 
-from functools import partial
 from collections import namedtuple
 from . import coretypes as T
 
 from ply import lex, yacc
 from blaze.plyhacks import yaccfrom, lexfrom
 from blaze.error import CustomSyntaxError
+
+instanceof = lambda T: lambda X: isinstance(X, T)
 
 #------------------------------------------------------------------------
 # Errors
@@ -26,11 +27,12 @@ class DatashapeSyntaxError(CustomSyntaxError):
 tokens = (
     'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR', 'EQUALS',
     'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT',
-    'VAR', 'JSON'
+    'VAR', 'JSON', 'DATA'
 )
 
 literals = [
     '=' ,
+    '|' ,
     ',' ,
     '(' ,
     ')' ,
@@ -77,6 +79,10 @@ t_ignore = '[ ]'
 
 def t_TYPE(t):
     r'type'
+    return t
+
+def t_DATA(t):
+    r'data'
     return t
 
 def t_newline(t):
@@ -130,6 +136,7 @@ precedence = (
     ('right' , 'COMMA'),
 )
 
+dtdecl     = namedtuple('dtdecl', 'name, elts')
 tydecl     = namedtuple('tydecl', 'lhs, rhs')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
@@ -149,6 +156,10 @@ def p_decl2(p):
     p[0] = p[1]
 
 #------------------------------------------------------------------------
+
+def p_data_assign(p):
+    'stmt : DATA NAME EQUALS data'
+    p[0] = dtdecl(p[2], p[4])
 
 def p_statement_assign(p):
     'stmt : TYPE lhs_expression EQUALS rhs_expression'
@@ -171,6 +182,14 @@ def p_statement_assign(p):
 def p_statement_expr(p):
     'stmt : rhs_expression'
     p[0] = p[1]
+
+def p_enum_def1(p):
+    "data : data '|' data"
+    p[0] = p[1] + p[3]
+
+def p_enum_def3(p):
+    'data : NAME'
+    p[0] = [p[1]]
 
 #------------------------------------------------------------------------
 
@@ -266,6 +285,12 @@ def p_appl_args(p):
 def p_appl(p):
     """appl : NAME '(' appl_args ')'
             | BIT '(' appl_args ')'""" # BIT is here for 'string(...)'
+
+    if p[1] == 'Categorical': # TODO: don't hardcode
+        if not all(isinstance(x, T.TypeVar) for x in p[3]):
+            raise Exception('Invalid categorical definition')
+
+        p[0] = T.Enum(None, *p[3])
     if p[1] in reserved:
         # The appl_args part of the grammar already produces
         # TypeVar/IntegerConstant/StringConstant values
@@ -332,8 +357,9 @@ def p_error(p):
 #------------------------------------------------------------------------
 
 reserved = {
-    'Record'   : T.Record,
-    'Range'    : T.Range,
+    'Record'      : T.Record,
+    'Range'       : T.Range,
+    'Categorical' : T.Enum,
     #'Either'   : T.Either,
     #'Union'    : T.Union,
     #'Option'   : T.Option,
@@ -386,8 +412,20 @@ def _parse(source):
 
     return parser.parse(source, lexer=lexer)
 
+def parse_mod(pattern):
+    dss = _parse(pattern)
+
+    for ds in dss:
+        if isinstance(ds, tydecl):
+            yield ds.rhs
+        elif isinstance(ds, dtdecl):
+            yield T.Enum(ds.name, ds.elts)
+
 def parse(pattern):
     ds = _parse(pattern)
+
+    if isinstance(ds, dtdecl):
+        raise TypeError('Predeclared categorical types are not allowed inline')
 
     # Just take the type from "type X = Y" statements
     if isinstance(ds, tydecl):
@@ -407,12 +445,17 @@ if __name__ == '__main__':
     # build the parse tablr
     rebuild()
 
-    readline.parse_and_bind('')
 
-    while True:
-        try:
-            line = raw_input('>> ')
-            ast = parse(line)
-            print(ast)
-        except EOFError:
-            break
+    if len(sys.argv) > 1:
+        ds_mod = open(sys.argv[1]).read()
+        ast = list(parse_mod(ds_mod))
+        print ast
+    else:
+        readline.parse_and_bind('')
+        while True:
+            try:
+                line = raw_input('>> ')
+                ast = parse(line)
+                print(ast)
+            except EOFError:
+                break

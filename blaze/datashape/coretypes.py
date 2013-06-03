@@ -53,7 +53,7 @@ class Type(type):
 
 class Mono(object):
     """
-    Monotype
+    Monotype are unqualified 0 parameters.
     """
     composite = False
     __metaclass__ = Type
@@ -419,6 +419,31 @@ class Atom(DataShape):
         raise NotImplementedError
 
     # Inherits __ne__ from DataShape which is just not __eq__
+
+    def __hash__(self):
+        raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Categorical
+#------------------------------------------------------------------------
+
+class Enum(DataShape):
+
+    def __init__(self, name, *elts):
+        self.name = name
+        self.elts = elts
+
+    def __str__(self):
+        if self.name:
+            return 'Enum(%s, %s)' % (self.name, ','.join(map(str, self.elts)))
+        else:
+            return 'Enum(%s)' % ','.join(map(str, self.elts))
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        raise NotImplementedError
 
     def __hash__(self):
         raise NotImplementedError
