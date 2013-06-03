@@ -24,10 +24,11 @@ from llvm.core import Type, Function, Module
 from llvm import LLVMException
 from . import llvm_array as lla
 from .llvm_array import (void_type, intp_type, array_kinds, check_array, get_cpp_template,
-                         array_type)
-from .blir import compile
+                         array_type, const_intp, LLArray)
+from .kernelgen import loop_nest
 from .ckernel import ExprSingleOperation, wrap_ckernel_func
 from .py3help import izip
+from .datashape.util import dshape as make_dshape
 
 SCALAR = 0
 POINTER = 1
@@ -167,8 +168,13 @@ class BlazeElementKernel(object):
     def func_ptr(self):
         if self._func_ptr is None:
             if self._ee is None:
-                from llvm.ee import ExecutionEngine
-                self._ee = ExecutionEngine.new(self.module)
+                from llvm.passes import build_pass_managers
+                import llvm.ee as le
+                module = self.module.clone()                  
+                tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
+                pms = build_pass_managers(tm, opt=3, fpm=False)
+                pms.pm.run(module)
+                self._ee = le.ExecutionEngine.new(module)
             self._func_ptr = self._ee.get_pointer_to_function(self.func)
         return self._func_ptr
 
@@ -226,8 +232,9 @@ class BlazeElementKernel(object):
             builder.ret_void()
             # JIT compile the function
             if self._ee is None:
+                module = self.module.clone()
                 from llvm.ee import ExecutionEngine
-                self._ee = ExecutionEngine.new(self.module)
+                self._ee = ExecutionEngine.new(module)
             func_ptr = self._ee.get_pointer_to_function(single_ck_func)
             self._single_ckernel = wrap_ckernel_func(
                             ExprSingleOperation(func_ptr), func_ptr)
@@ -267,12 +274,15 @@ class BlazeElementKernel(object):
         self.module = module
 
 
-    def lift_kernel(output_rank, ranks=None, kind=array_kinds[0]):
+    def lift(self, outrank, outkind):
         """Take the current kernel and "lift" it so that the output has
-         rank given by output_rank and the input ranks have ranks
-         given by ranks.  The kernel will be of array_kind given by kind.
+         rank given by output_rank and kind given by outkind.
 
-         This creates a new BlazeElementKernel whose corresponding function
+         All arguments will have the same kind as outkind in the
+         signature of the lifted kernel and all ranks will be
+         adjusted the same amount as output_rank
+
+         This creates a new BlazeElementKernel whose function
          calls the underlying kernel's function multiple times.
 
         Example: (let rn == rank-n)
@@ -284,74 +294,80 @@ class BlazeElementKernel(object):
           for i in range(n0):
               out[i] = inner_kernel(in0[i], in1[i])
         """
-        if kind not in [array_kind[0]]:
-            raise ValueError("Invalid kind of array %s" % kind)
+        if outkind in 'CFS':
+            from .llvm_array import kindfromchar
+            outkind = kindfromchar[outkind]
+        if outkind not in array_kinds[:3]:
+            raise ValueError("Invalid kind specified for output: %s" % outkind)
 
         cur_rank = self.ranks[-1]
-        if output_rank == cur_rank:
+        if outrank == cur_rank:
             return self  # no-op
 
-        diffrank = output_rank - cur_rank
-        if diffrank < 0:
+        dr = outrank - cur_rank
+        if dr < 0:
             raise ValueError("Output rank (%d) must be greater than current "
-                             "rank (%d)" % (output_rank, cur_rank))
+                             "rank (%d)" % (outrank, cur_rank))
 
-        if not all(x in [SCALAR, POINTER, array_kinds[0]] for x in self.kinds):
-            raise ValueError("Cannot lift kernel with argument "
-                             "kinds of %s" % self.kinds)
-        if ranks is None:
-            ranks = [None]*len(self.ranks)
-            ranks[-1]=output_rank
-        else:
-            ranks.append(output_rank)
-
+        if not all(x in [SCALAR, POINTER, outkind] for x in self.kinds):
+            raise ValueError("Incompatible kernel arguments for "
+                             "lifting: %s" % self.kinds)
         # Replace any None values with difference in ranks
-        ranks = [ri + diffrank if x is None else x
-                        for x,ri in zip(ranks, self.ranks)]
+        outranks = [ri + dr for ri in self.ranks]
 
-        if any(x < 0 for x in ranks):
-            raise ValueError("Ranks cannot be negative: %s" % ranks)
 
-        func_type = self.get_lifted_func_type(ranks, kind)
+        func_type = self._lifted_func_type(outranks, outkind)
         func = Function.new(self.module, func_type, name=self.func.name +"_lifted")
         block = func.append_basic_block('entry')
         builder = lc.Builder.new(block)
-        begins = [0]*diffrank
-        # This is the shape of the output array
-        ends = [0]*diffrank
-        loop_next_ctx = loop_nest(builder, range(len(begins)), begins, ends)
-        with loop_nest_ctx as loop:
-            pass
-        # Function body
-        #   diffrank-dimensional loop (incrementing )
-        # Construct BlazeElementKernel
 
-    def get_lifted_func_type(self, ranks, outkind):
-        argtypes = self.argtypes[:]
+        def ensure_llvm(arg, kind):
+            if isinstance(arg, LLArray):
+                return arg.array_ptr
+            else:
+                return arg
+
+        arg_arrays = [LLArray(arg, builder) for arg in func.args]
+        begins = [const_intp(0)]*dr
+        # This is the shape of the output array
+        ends = arg_arrays[-1].shape
+        loop_nest_ctx = loop_nest(builder, begins, ends)
+
+        with loop_nest_ctx as loop:
+            if self.kinds[-1] == SCALAR:
+                inargs = arg_arrays[:-1]
+                inkinds = self.kinds[:-1]
+            else:
+                inargs = arg_arrays
+                inkinds = self.kinds
+            callargs = [ensure_llvm(arg[loop.indices], kind) 
+                                for arg, kind in zip(inargs, inkinds)]
+            res = builder.call(self.func, callargs)
+            if self.kinds[-1] == SCALAR:
+                arg_arrays[-1][loop.indices] = res
+            builder.branch(loop.incr)
+
+        builder.branch(loop.entry)
+        builder.position_at_end(loop.end)
+        builder.ret_void()
+
+        def add_rank(dshape, dr):
+            new = ["L%d, " % i for i in range(dr)]
+            new.append(str(dshape))
+            return make_dshape("".join(new))
+
+        dshapes = [add_rank(dshape, dr) for dshape in self.dshapes]
+        return BlazeElementKernel(func, dshapes)
+
+    def _lifted_func_type(self, outranks, outkind):
+        argtypes = self.argtypes
         if self.kinds[-1] == SCALAR:
             argtypes.append(self.return_type)
-        kinds = self.kinds[:]
-        kinds[-1] = outkind
         args = []
-        for rank, orig_rank, argtype, kind in zip(ranks, self.ranks, argtypes, kinds):
-            if rank == 0:  # pass-through
-                args.append(argtype)
-            elif rank == orig_rank:
-                args.append(argtype)
-            else: # make contiguous array
-                eltype = get_eltype(argtype, kind)
-                args.append(array_type(rank, array_kinds[0], get_eltype(argtype, kind)))
-            # get element type
-                if kind == SCALAR:
-                    eltype = argtype
-
-
-            if kind == SCALAR:
-                pass
-
-
-
-
+        for rank, argtype, kind in zip(outranks, argtypes, self.kinds):
+            eltype = get_eltype(argtype, kind)
+            arr_type = array_type(rank, outkind, eltype)
+            args.append(Type.pointer(arr_type))
         return Type.function(void_type, args)
 
 def get_eltype(argtype, kind):

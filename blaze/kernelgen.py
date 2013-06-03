@@ -54,7 +54,7 @@ _loop_info = namedtuple('loop_info', ['entry', 'body', 'incr', 'end',
                                       'indices'])
 
 @contextmanager
-def loop_nest(builder, order, begins, ends, intp=C.intp, steps=None, dbg=False):
+def loop_nest(builder, begins, ends, order=None, intp=C.intp, steps=None, dbg=False):
     '''Insert a N-dimension loop nest.
     
     Equivalent to:
@@ -87,6 +87,9 @@ def loop_nest(builder, order, begins, ends, intp=C.intp, steps=None, dbg=False):
     # default steps to one
     if not steps:
         steps = [Constant.int(intp, 1) for _ in range(len(begins))]
+
+    if not order:
+        order = range(len(begins))
 
     # initialize blocks
     func = builder.basic_block.function
@@ -156,36 +159,3 @@ def loop_nest(builder, order, begins, ends, intp=C.intp, steps=None, dbg=False):
     #### position back to the original block ####
     assert builder.basic_block is orig
 
-
-def array_pointer(builder, data, shape, strides, order, indices):
-    assert order in 'CF*'
-    intp = shape[0].type
-    if order in 'CF':
-        # optimize for C and F contiguous
-        if order == 'F':
-            shape = list(reversed(shape))
-        loc = Constant.null(intp)
-        for i, (ival, sval) in enumerate(zip(indices, shape[1:])):
-            tmp = builder.mul(ival, sval)
-            loc = builder.add(loc, tmp)
-        loc = builder.add(loc, indices[-1])
-        ptr = builder.gep(data, [loc])
-    else:
-        # any order
-        loc = Constant.null(intp)
-        for i, s in zip(indices, strides):
-            tmp = builder.mul(i, s)
-            loc = builder.add(loc, tmp)
-        base = builder.ptrtoint(data, intp)
-        target = builder.add(base, loc)
-        ptr = builder.inttoptr(target, data.type)
-    return ptr
-
-def array_setitem(builder, data, shape, strides, order, indices, value):
-    ptr = array_pointer(builder, data, shape, strides, order, indices)
-    builder.store(value, ptr)
-
-def array_getitem(builder, data, shape, strides, order, indices):
-    ptr = array_pointer(builder, data, shape, strides, order, indices)
-    val = builder.load(ptr)
-    return val

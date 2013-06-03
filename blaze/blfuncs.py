@@ -87,17 +87,7 @@ class KernelTree(object):
             kernel = self._fused.kernel
             self._funcptr = kernel.func_ptr
             self._ctypes = kernel.ctypes_func
-            self._single_ckernel = kernel.single_ckernel
-        return self._ctypes
-
-    @property
-    def ctypes_func(self):
-        if self._ctypes is None:
-            self.fuse()
-            kernel = self._fused.kernel
-            self._funcptr = kernel.func_ptr
-            self._ctypes = kernel.ctypes_func
-            self._single_ckernel = kernel.single_ckernel
+            #self._single_ckernel = kernel.single_ckernel
         return self._ctypes
 
     @property

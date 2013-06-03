@@ -140,7 +140,7 @@ _cache = {}
 # This is the way we define LLVM arrays.
 #  C_CONTIGUOUS, F_CONTIGUOUS, and STRIDED are strongly encouraged...
 def array_type(nd, kind, el_type=char_type):
-    key = (kind, nd, el_type)
+    key = (kind, nd, str(el_type))
     if _cache.has_key(key):
         return _cache[key]
 
@@ -187,7 +187,7 @@ def check_array(arrtyp):
     # Look through _cache and see if it's there
     for key, value in _cache.items():
         if arrtyp is value:
-            return key
+            return key[0], key[1], value.elements[0].pointee
 
     return _raw_check_array(arrtyp)
 
@@ -355,137 +355,28 @@ two_i = lc.Constant.int(int_type, 2)
 three_i = lc.Constant.int(int_type, 3)
 four_i = lc.Constant.int(int_type, 4)
 
-# Takes pointer to actual array
-# load of strides is done at run-time
-# indices is a (Python) sequence of llvm integers
-def array_pointer(builder, kind, array_ptr, indices):
-    data = get_data_ptr(builder, array_ptr)
-    base = kind & (~(HAS_ND | HAS_DIMKIND))
-    if base == NEW_STRIDED or (kind & HAS_ND) or (kind & HAS_DIMKIND):
-        raise ValueError("Unsupported array kind")        
-    shapepos = one_i
-    stridepos = two_i
-    shape = builder.gep(array_ptr, [zero_p, shapepos])
-    strides = builder.gep(array_ptr, [zero_p, stridepos])
-    nd = shape.type.pointee.count
-    loc = Constant.null(intp_type)
-    if base in [C_CONTIGUOUS, F_CONTIGUOUS]:
-        for i in range(nd-1):
-            if base == C_CONTIGUOUS:                   
-                indx = Constant.int(intp_type, i+1)
-            else:
-                indx = Constant.int(intp_type, nd-(i+2))
-            sval = builder.load(builder.gep(shape, [zero_p, indx]))
-            tmp = builder.mul(indices[i], sval)
-            loc = builder.add(loc, tmp)
-        loc = builder.add(loc, indices[-1])
-        ptr = builder.gep(data, [loc])
-    elif base == STRIDED:
-        for i in range(nd):
-            indx = Constant.int(intp_type, i)
-            sval = builder.load(builder.gep(strides,[zero_p, indx]))
-            tmp = builder.mul(indices[i], sval)
-            loc = builder.add(loc, tmp)
-        base = builder.ptrtoint(data, intp_type)
-        target = builder.add(base, loc)
-        ptr = builder.inttoptr(target, data.type)
-    else:
-        raise ValueError('Do not  understand array kind')
-    return ptr
-
-def array_setitem(builder, kind, array, indices, value):
-    ptr = array_pointer(builder, kind, array, indices)
-    builder.store(value, ptr)
-
-def array_getitem(builder, kind, array, indices):
-    ptr = array_pointer(builder, kind, array, indices)
-    val = builder.load(ptr)
-    return val
-
-# Similar to a[i,j] or a[:,i,:,j]
-# Stack allocate an array of the same kind (if possible)
-# and fill it with the correct positions
-# order is a list of Python integer indicating the axes selected
-#    if None, then it is assumed to be equivalent to arange(len(indices)))
-# indicies is a list of indices [i,j,...] to extract along the corresponding dimension
-def array_getsubarray(builder, array_ptr, indices, 
-                        order=None, allow_stride=False):
-    kind, nd, data_type = check_array(array_ptr.type.pointee)
-    if kind not in [C_CONTIGUOUS, F_CONTIGUOUS, STRIDED]:
-        raise ValueError("Not supported for this array-type")
-    new_nd = nd - len(indices)
-    if new_nd < 0:
-        raise ValueError("Two many indices for array shape")
-    if new_nd == 0:
-        if order is not None:
-            raise ValueError("Retrieving single element but order set")
-        return array_getitem(builder, kind, array_ptr, indices)
-    if order is None:
-        order = range(len(indices))
-    keepdims = range(nd)
-    for i in order:
-        keepdims.remove(i)
-
-    if kind == C_CONTIGUOUS:
-        output_strided = (order != range(len(indices)))
-    elif kind == F_CONTIGUOUS:
-        output_strided = (keepdims != range(len(indices)))
-    else: # kind == STRIDED
-        output_strided = True
-
-    oldkind = kind
-    if output_strided:
-        if not allow_stride:
-            raise ValueError("Output will be strided...")
-        kind = STRIDED
-
-    newtype = array_type(new_nd, kind, data_type)
-    new = builder.alloca(newtype)
-    # Load the shape array
-    oldshape = builder.gep(array_ptr, [zero_p, one_i])
-    newshape = builder.gep(newtype, [zero_p, one_i])
-    for i in range(new_nd):
-        val = load_at(builder, oldshape, keepdims[i])
-        store_at(builder, newshape, i, val)
-    if kind == STRIDED and oldkind == STRIDED:
-        oldstride = builder.gep(array_ptr, [zero_p, two_i])
-        newstride = builder.gep(newtype, [zero_p, two_i])        
-        for i in range(new_nd):
-            val = load_at(builder, oldstride, keepdims[i])
-            store_at(builder, newstride, i, val)
-    else:
-        raise ValueError("Cannot convert from contiguous to strided.")
-
-    # Set the data-pointer (for now just using gep)
-    # FIXME:  This needs to be adjusted for case of going from contiguous
-    #   to strided --- but need to have access to the size of data_type
-    old_ptr = builder.gep(array_ptr, [zero_p, one_i])    
-
-    raise NotImplementedError
-    # We should compute this 
-    return new
-
-def const_intp(builder, value):
+def const_intp(value):
     return Constant.int_signextend(intp_type, value)
 
 def ptr_at(builder, ptr, idx):
     return builder.gep(ptr, [auto_const_intp(idx)])
 
 def load_at(builder, ptr, idx):
-    return builder.load(ptr_at(ptr, idx))
+    return builder.load(ptr_at(builder, ptr, idx))
 
 def store_at(builder, ptr, idx, val):
-    builder.store(val, ptr_at(ptr, idx))
+    builder.store(val, ptr_at(builder, ptr, idx))
 
 def get_data_ptr(builder, arrptr):
-    builder.gep(arrptr, [zero_p, zero_i])
+    val = builder.gep(arrptr, [zero_p, zero_i])
+    return builder.load(val)
 
 def get_shape_ptr(builder, arrptr):
-    builder.gep(arrptr, [zero_p, one_i])
+    val = builder.gep(arrptr, [zero_p, one_i, zero_p])
+    return val
 
 def get_strides_ptr(builder, arrptr):
-    builder.gep(arrptr, [zero_p, two_i])
-
+    return builder.gep(arrptr, [zero_p, two_i, zero_p])
 
 def auto_const_intp(v):
     if hasattr(v, '__index__'):
@@ -528,6 +419,10 @@ orderchar = {C_CONTIGUOUS:'C',
              F_CONTIGUOUS:'F',
              STRIDED: 'S'}
 
+kindfromchar = {}
+for key, value in orderchar.items():
+    kindfromchar[value] = key
+
 # Return the sizeof an LLVM-Type as a runtime value
 # This will become a constant at run-time...
 def sizeof(llvm_type, builder):
@@ -546,6 +441,35 @@ def offsetof(struct_type, fieldnum, builder):
     offset = builder.gep(nullval, [zero_p, fieldnum])
     offsetI = builder.bitcast(offset, int_type)
     return offsetI
+
+LLVM_SCALAR = [lc.TYPE_HALF, lc.TYPE_FP128, 
+               lc.TYPE_DOUBLE, lc.TYPE_INTEGER, lc.TYPE_FLOAT]
+# Embed an llvmvalue into an Array_S array with dimension nd
+# by setting strides of new dimensions to 0.
+# return the embedded array as an LLArray
+# preload the shape and strides of the new array if preload
+def embed(builder, llvmval, nd, preload=True):
+    raise NotImplementedError
+    kind = llvmval.type.kind
+    if kind in LLVM_SCALAR:
+        pass
+
+    if preload:
+        builder_val = builder
+    else:
+        builder_val = None
+    return LLArray(new_ptr, builder_val)
+
+def isinteger(val):
+    if hasattr(val, '__index__'):
+        return True
+    if isinstance(val, lc.Value) and val.type.kind == lc.TYPE_INTEGER:
+        return True
+    return False
+
+def isiterable(val):
+    import collections
+    return isinstance(val, collections.Iterable)
 
 # An Array object wrapper around pointer to low-level LLVM array.
 # allows pre-loading of strides, shape, so that
@@ -580,7 +504,7 @@ class LLArray(object):
 
     @property
     def strides(self):
-        if self.kind != STRIDED:
+        if self._kind != STRIDED:
             return None
         if not self._strides:
             if self.builder is None:
@@ -618,20 +542,22 @@ class LLArray(object):
         return self.builder.basic_block.function.module if self.builder else None
 
     def preload(self, llarray_ptr, count=None):
+        if llarray_ptr is None:
+            return None
         if count is None:
             count = self.nd
         return [load_at(self.builder, llarray_ptr, i) for i in range(count)]
 
     def getview(self, nd=None, kind=None, eltype=None):
-        newtype = array_type(arr.nd if nd is None else nd, 
-                             arr._kind if kind is None else kind,
-                             arr._eltype if eltype is None else eltype)
+        newtype = array_type(self.nd if nd is None else nd, 
+                             self._kind if kind is None else kind,
+                             self._eltype if eltype is None else eltype)
         new = self.builder.alloca(newtype)
         return LLArray(new)
 
-
     def getptr(self, *indices):
         assert len(indices) == self.nd
+        indices = [auto_const_intp(x) for x in indices]
         shape = self.shape
         strides = self.strides
         order = self._order
@@ -643,7 +569,7 @@ class LLArray(object):
             if order == 'F':
                 shape = list(reversed(shape))
             loc = Constant.null(intp)
-            for i, (ival, sval) in enumerate(zip(indices, shape[1:])):
+            for ival, sval in zip(indices, shape[1:]):
                 tmp = builder.mul(ival, sval)
                 loc = builder.add(loc, tmp)
             loc = builder.add(loc, indices[-1])
@@ -662,22 +588,22 @@ class LLArray(object):
     #Can be used to get subarrays as well as elements
     def __getitem__(self, key):
         import llgetitem
-        istuple = isinstance(key, tuple)
-        char = orderchar[self.kind]
+        isiter = isiterable(key)
+        char = orderchar[self._kind]
         # full-indexing
-        if (istuple and len(key) == self.nd) or \
-           (self.nd == 1 and hasattr(key,'__index__')):
-            if istuple:
-                if any(isinstance(x,(Ellipsis, None)) for x in key):
+        if (isiter and len(key) == self.nd) or \
+           (self.nd == 1 and isinteger(key)):
+            if isiter:
+                if any(x in [Ellipsis, None] for x in key):
                     func = getattr(llgetitem, 'from_%s' % char)
                     return func(self, key)
                 else:
                     args = key
             else:
                 args = (key.__index__(),)
-            ptr = self.getptr(*key)
+            ptr = self.getptr(*args)
             return self.builder.load(ptr)
-        elif self.kind in [C_CONTIGUOUS, F_CONTIGUOUS, STRIDED]:
+        elif self._kind in [C_CONTIGUOUS, F_CONTIGUOUS, STRIDED]:
             func = getattr(llgetitem, 'from_%s' % char)
             return func(self, key)
         else:
@@ -711,11 +637,11 @@ class LLArray(object):
         nd = len(shape)
         newtype = array_type(nd, kind, eltype)
         new = self.builder.alloca(newtype)
-        shapeptr = get_shape_ptr(self.builder, new)
+        shape_ptr = get_shape_ptr(self.builder, new)
 
         # Store shape 
         for i, val in enumerate(shape):
-            store_at(self.builder, shapeptr, i, val)
+            store_at(self.builder, shape_ptr, i, val)
 
         # if shape is all integers then we can pre-multiply to get size.
         # Otherwise, we will have to compute the size in the code.
@@ -764,7 +690,7 @@ class LLArray(object):
                     store_at(self.builder, strides_ptr, index, sval)
             else:
                 sval = Constant.int(intp_type, sizeof(eltype))
-                store_at(self.builder, strides_ptr, start, sval)
+                store_at(self.builder, strides_ptr, range1[0], sval)
                 for sh_index, st_index in (range1, range3):
                     val = load_at(self.builder, shape_ptr, sh_index)
                     sval = self.builder.mul(sval, val)
@@ -772,8 +698,8 @@ class LLArray(object):
         return LLVMArray(new)
 
     def __del__(self):
-        for freefunc, freedata in zip(self._freefuncs, self._freedata):
-            self.builder.call(freefuncs, [freedata])
+        for freefunc, freedatum in zip(self._freefuncs, self._freedata):
+            self.builder.call(freefunc, [freedatum])
 
 malloc_sig = lc.Type.function(char_p_type, [intp_type])
 free_sig = lc.Type.function(void_type, [char_p_type])

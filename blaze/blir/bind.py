@@ -63,7 +63,8 @@ def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None):
                 struct_name = 'llvm_struct'
                 lookup = False
         else:
-            struct_name = llvm_type.name.split('.')[-1]
+            struct_name = llvm_type.name
+            struct_name = struct_name.replace('.','_')
         if not PY3:
             struct_name = struct_name.encode('ascii')
 

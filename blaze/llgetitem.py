@@ -1,6 +1,7 @@
 from .llvm_array import (array_type, const_intp, auto_const_intp, 
-                         store_at, load_at, get_shape_ptr,
-                         get_strides_ptr, sizeof)
+                         intp_type, int_type,
+                         store_at, load_at, get_shape_ptr, get_data_ptr,
+                         get_strides_ptr, sizeof, isinteger, isiterable)
 from llvm.core import Constant, Type
 import llvm.core as lc
 
@@ -44,6 +45,8 @@ def from_C_ints(arr, key):
     builder = arr.builder
     num = len(key)
     newnd = arr.nd - num
+    if newnd < 0:
+        raise ValueError("Too many keys")
     new = arr.getview(nd=newnd)
 
     oldshape = get_shape_ptr(builder, arr.array_ptr)
@@ -95,8 +98,7 @@ def from_C_slice(arr, start, end):
     return new
 
 def from_C(arr, key):
-    if hasattr(key, '__index__'):
-        key = key.__index()
+    if isinteger(key):
         return from_C_int(arr, key)
     elif isinstance(key, slice):
         if key == slice(None):
@@ -107,13 +109,13 @@ def from_C(arr, key):
                 return from_C_slice(arr, start, end)
             else:
                 return Sarr_from_C_slice(arr, start, end, step)
-    elif isinstance(key, tuple):
+    elif isiterable(key):
         # will be less than arr._nd or have '...' or ':'
         # at the end
         lastint = None
         needstrided = False
         for i, val in enumerate(key):
-            if hasattr(val, '__index__'):
+            if isinteger(val):
                 if lastint is not None:
                     needstrided = True
             elif isinstance(val, (Ellipsis, slice)):
@@ -124,7 +126,13 @@ def from_C(arr, key):
         if needstrided:
             return Sarr_from_C(arr, key)
         # get just the integers
-        key = [x.__index__() for x in key[slice(None, lastint)]]
+        def convert(x):
+            if hasattr(x, '__index__'):
+                return x.__index__()
+            else:
+                return x
+
+        key = [convert(x) for x in key[slice(None, lastint)]]
         if len(key) > arr.nd:
             raise ValueError('Too many indicies')
         return from_C_ints(arr, key)

@@ -211,11 +211,13 @@ def to_ctypes(dshape):
             class Complex64(ctypes.Structure):
                 _fields_ = [('real', ctypes.c_float),
                             ('imag', ctypes.c_float)]
+                _blaze_type_ = complex64
             return Complex64
         elif dshape == complex128:
             class Complex128(ctypes.Structure):
                 _fields_ = [('real', ctypes.c_double),
                             ('imag', ctypes.c_double)]
+                _blaze_type_ = complex128
             return Complex128
         elif isinstance(dshape, Record):
             fields = [(name, to_ctypes(dshape.fields[name]))
@@ -234,20 +236,18 @@ def to_ctypes(dshape):
         return num*to_ctypes(dshape.subarray(1))
 
 
-# TODO: Handle complex values
+# FIXME: Add a field 
 def from_ctypes(ctype):
     """
     Constructs a blaze dshape from a ctypes type.
     """
     if issubclass(ctype, ctypes.Structure):
         fields = []
+        if hasattr(ctype, '_blaze_type_'):
+            return ctype._blaze_type_
         for nm, tp in ctype._fields_:
             child_ds = from_ctypes(tp)
             fields.append((nm, child_ds))
-        if fields == [('real', float32), ('imag', float32)]:
-            return complex64
-        elif fields == [('real', float64), ('imag', float64)]:
-            return complex128
         ds = Record(fields)
         # TODO: Validate that the ctypes offsets match
         #       the C offsets blaze uses
