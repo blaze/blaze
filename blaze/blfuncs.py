@@ -92,11 +92,14 @@ class KernelTree(object):
 
     @property
     def single_ckernel(self):
+        # TODO: The properties func_ptr, ctypes_func,
+        #       single_ckernel look like they might
+        #       be triggering redundant fuse operations.
         if self._single_ckernel is None:
             self.fuse()
             kernel = self._fused.kernel
-            self._funcptr = kernel.func_ptr
-            self._ctypes = kernel.ctypes_func
+            #self._funcptr = kernel.func_ptr
+            #self._ctypes = kernel.ctypes_func
             self._single_ckernel = kernel.single_ckernel
         return self._single_ckernel
 

@@ -195,8 +195,9 @@ class BlazeElementKernel(object):
             i8_p_type = Type.pointer(Type.int(8))
             func_type = Type.function(void_type,
                             [i8_p_type, Type.pointer(i8_p_type), i8_p_type])
+            single_ck_func_name = self.func.name +"_single_ckernel"
             single_ck_func = Function.new(self.module, func_type,
-                            name=self.func.name +"_single_ckernel")
+                            name=single_ck_func_name)
             block = single_ck_func.append_basic_block('entry')
             builder = lc.Builder.new(block)
             # Convert the src pointer args to the appropriate kinds for the llvm call
@@ -233,6 +234,8 @@ class BlazeElementKernel(object):
             # JIT compile the function
             if self._ee is None:
                 module = self.module.clone()
+                # Get the function again from the new module
+                single_ck_func = module.get_function_named(single_ck_func_name)
                 from llvm.ee import ExecutionEngine
                 self._ee = ExecutionEngine.new(module)
             func_ptr = self._ee.get_pointer_to_function(single_ck_func)
