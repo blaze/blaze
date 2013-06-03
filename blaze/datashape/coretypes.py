@@ -101,6 +101,7 @@ class IntegerConstant(Mono):
         Range(1,5) # 1 is IntegerConstant
 
     """
+    cls = None
 
     def __init__(self, i):
         assert isinstance(i, int)
@@ -447,6 +448,27 @@ class Enum(DataShape):
 
     def __hash__(self):
         raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Categorical
+#------------------------------------------------------------------------
+
+class Option(DataShape):
+
+    def __init__(self, *params):
+        if len(params) != 1:
+            raise TypeError('Option only takes 1 argument')
+
+        if not params[0].cls == MEASURE:
+            raise TypeError('Option only takes measure argument')
+
+        self.ty = params[0]
+
+    def __str__(self):
+        return 'Option(%s)' % str(self.ty)
+
+    def __repr__(self):
+        return str(self)
 
 #------------------------------------------------------------------------
 # CType

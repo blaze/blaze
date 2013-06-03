@@ -360,9 +360,9 @@ reserved = {
     'Record'      : T.Record,
     'Range'       : T.Range,
     'Categorical' : T.Enum,
+    'Option'      : T.Option,
     #'Either'   : T.Either,
     #'Union'    : T.Union,
-    #'Option'   : T.Option,
     'string'   : T.String, # String type per proposal
     'Wild'     : T.Wild
 }
@@ -444,7 +444,6 @@ if __name__ == '__main__':
     import readline
     # build the parse tablr
     rebuild()
-
 
     if len(sys.argv) > 1:
         ds_mod = open(sys.argv[1]).read()
