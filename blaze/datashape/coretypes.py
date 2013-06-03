@@ -999,7 +999,7 @@ def to_numpy(ds):
     elif isinstance(msr, Record):
         dtype = msr.to_dtype()
     else:
-        raise NotNumpyCompatible('Datashape measure %s is not NumPy-compatible' % dim)
+        raise NotNumpyCompatible('Datashape measure %s is not NumPy-compatible' % msr)
 
     if type(dtype) != np.dtype:
         raise NotNumpyCompatible('Internal Error: Failed to produce NumPy dtype')
