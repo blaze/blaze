@@ -101,6 +101,7 @@ class IntegerConstant(Mono):
         Range(1,5) # 1 is IntegerConstant
 
     """
+    cls = None
 
     def __init__(self, i):
         assert isinstance(i, int)
@@ -270,7 +271,7 @@ class DataShape(Mono):
     __metaclass__ = Type
     composite = False
 
-    def __init__(self, parameters=None, name=None):
+    def __init__(self, parameters=None, name=None, metadata=None):
 
         if len(parameters) > 1:
             self.parameters = tuple(flatten(parameters))
@@ -311,6 +312,12 @@ class DataShape(Mono):
         self._c_itemsize = c_itemsize
         self._c_strides = tuple(c_strides)
 
+        self._metadata = metadata
+
+    @property
+    def metadata(self):
+        return self._metadata
+
     @property
     def c_itemsize(self):
         """The size of one element of this type, with C-contiguous storage."""
@@ -333,9 +340,14 @@ class DataShape(Mono):
 
     def __str__(self):
         if self.name:
-            return self.name
+            res = self.name
         else:
-            return (', '.join(map(str, self.parameters)))
+            res = (', '.join(map(str, self.parameters)))
+
+        if self.metadata:
+            res += expr_metadata(self._metadata)
+
+        return res
 
     def _equal(self, other):
         """ Structural equality """
@@ -447,6 +459,31 @@ class Enum(DataShape):
 
     def __hash__(self):
         raise NotImplementedError
+
+#------------------------------------------------------------------------
+# Missing
+#------------------------------------------------------------------------
+
+class Option(DataShape):
+    """
+    Measure types which may or may not hold data. Makes not
+    indication of how this is implemented in memory.
+    """
+
+    def __init__(self, *params):
+        if len(params) != 1:
+            raise TypeError('Option only takes 1 argument')
+
+        if not params[0].cls == MEASURE:
+            raise TypeError('Option only takes measure argument')
+
+        self.ty = params[0]
+
+    def __str__(self):
+        return 'Option(%s)' % str(self.ty)
+
+    def __repr__(self):
+        return str(self)
 
 #------------------------------------------------------------------------
 # CType
@@ -1074,6 +1111,9 @@ def expr_string(spine, const_args, outer=None):
         return str(spine) + outer[0] + ','.join(map(str,const_args)) + outer[1]
     else:
         return str(spine)
+
+def expr_metadata(meta):
+    return '!{ %s }' % ', '.join(meta)
 
 def record_string(fields, values):
     # Prints out something like this:
