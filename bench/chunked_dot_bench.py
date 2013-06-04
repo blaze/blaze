@@ -263,7 +263,6 @@ def usage(sname):
 
 def main(args):
     import sys,getopt
-    command = args[1] if len(args) > 1 else 'help'
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hric:dl:bm:",
                                    ["help", "create=", "delete",
@@ -283,7 +282,7 @@ def main(args):
     in_memory = False
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            usage(args[0])
+            usage(__file__)
             sys.exit()
         elif opt in ("-c", "--create"):
             elements = int(arg)
