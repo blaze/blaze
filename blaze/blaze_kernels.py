@@ -172,9 +172,9 @@ class BlazeElementKernel(object):
             if self._ee is None:
                 from llvm.passes import build_pass_managers
                 import llvm.ee as le
-                #tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
-                #pms = build_pass_managers(tm, opt=3, fpm=False)
-                #pms.pm.run(module)
+                tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
+                pms = build_pass_managers(tm, opt=3, fpm=False)
+                pms.pm.run(module)
                 self._ee = le.ExecutionEngine.new(module)
             func = module.get_function_named(self.func.name)
             self._func_ptr = self._ee.get_pointer_to_function(func)
@@ -521,6 +521,7 @@ def insert_instructions(node, builder, output=None):
 
     #call the kernel corresponding to this node
     res = builder.call(kernel.func, args)
+    assert kernel.func.module is builder.basic_block.function.module
 
     if is_scalar:
         node.llvm_obj = res
@@ -568,6 +569,8 @@ def fuse_kerneltree(tree, newname):
     for node in nodelist[:-1]:
         node.kernel.attach(module)
         insert_instructions(node, builder)
+
+    nodelist[-1].kernel.attach(module)
 
     if tree.kernel.kinds[-1] == SCALAR:
         insert_instructions(nodelist[-1], builder)

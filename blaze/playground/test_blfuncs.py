@@ -72,7 +72,6 @@ buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
 shape = (ctypes.c_long * 1)(count)
 struct = result._data.kerneltree.ctypes_func.argtypes[0]._type_
 val = struct(buff, shape)
-print result._data.kerneltree(cb(val), cb(val))
-print 285.0
+assert result._data.kerneltree(cb(val), cb(val)) == 285.0
 
 
