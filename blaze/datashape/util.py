@@ -32,7 +32,7 @@ def dshape(o, multi=False):
         return parser.parse(o)
     elif isinstance(o, DataShape):
         return o
-    elif isinstance(o, types.FileType):
+    elif hasattr(o, 'read'):
         return list(parser.parse_mod(o.read()))
     else:
         raise TypeError('Cannot create dshape from object of type %s' % type(o))
