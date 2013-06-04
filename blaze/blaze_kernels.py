@@ -254,16 +254,13 @@ class BlazeElementKernel(object):
             else:
                 raise TypeError("single_ckernel codegen doesn't support array types yet")
             builder.ret_void()
-            # JIT compile the function
-            if self._ee is None:
-                module = self.module.clone()
-                # Get the function again from the new module
-                single_ck_func = module.get_function_named(single_ck_func_name)
-                from llvm.ee import ExecutionEngine
-                self._ee = ExecutionEngine.new(module)
-            func_ptr = self._ee.get_pointer_to_function(single_ck_func)
+            # TODO: Cache the EE - the interplay with the func_ptr
+            #       was broken, so just avoiding caching for now
+            from llvm.ee import ExecutionEngine
+            ee = ExecutionEngine.new(module)
+            func_ptr = ee.get_pointer_to_function(single_ck_func)
             self._single_ckernel = wrap_ckernel_func(
-                            ExprSingleOperation(func_ptr), func_ptr)
+                            ExprSingleOperation(func_ptr), (ee, func_ptr))
         return self._single_ckernel
 
     # Should probably check to ensure kinds still match
