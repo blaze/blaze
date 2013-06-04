@@ -40,6 +40,7 @@ literals = [
     '{' ,
     '}' ,
     '*' ,
+    '\!' ,
 ]
 
 bits = set([
@@ -136,13 +137,12 @@ precedence = (
     ('right' , 'COMMA'),
 )
 
-dtdecl     = namedtuple('dtdecl', 'name, elts')
-tydecl     = namedtuple('tydecl', 'lhs, rhs')
+dtdecl = namedtuple('dtdecl', 'name, elts')
+tydecl = namedtuple('tydecl', 'lhs, rhs')
 simpletype = namedtuple('simpletype', 'nargs, tycon, tyvars')
 
 def p_top(p):
-    '''top : mod
-    '''
+    '''top : mod '''
     p[0] = p[1]
 
 #------------------------------------------------------------------------
@@ -244,9 +244,19 @@ def p_rhs_expression_list__wild(p):
     p[0] = (T.Wild(),)
 
 def p_rhs_expression_list(p):
-    'rhs_expression_list : rhs_expression_list COMMA rhs_expression_list'
+    'rhs_expression_list : rhs_expression_list COMMA rhs_expression_list metadata'
     # tuple addition
     p[0] = p[1] + p[3]
+
+#------------------------------------------------------------------------
+
+def p_metadata1(p):
+    "metadata : '!' LBRACE appl_args RBRACE "
+    p[0] = p[3]
+
+def p_metadata2(p):
+    "metadata : empty"
+    p[0] = None
 
 #------------------------------------------------------------------------
 
