@@ -13,7 +13,7 @@ from blaze.py3help import _inttypes, skipIf, izip
 
 try:
     import dynd
-    from dynd import nd, ndt, lowlevel
+    from dynd import nd, ndt, _lowlevel
 except ImportError:
     dynd = None
 
@@ -22,7 +22,7 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
         if dynd is not None:
             # Get a kernel from dynd
             self.ck = CKernel(UnarySingleOperation)
-            lowlevel.py_api.make_assignment_kernel(
+            _lowlevel.py_api.make_assignment_kernel(
                             ndt.float32, ndt.int64, 'single',
                             ctypes.addressof(self.ck.dynamic_kernel_instance))
 

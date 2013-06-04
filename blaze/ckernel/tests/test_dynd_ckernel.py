@@ -9,7 +9,7 @@ from blaze.ckernel import (CKernel, UnarySingleOperation,
 
 try:
     import dynd
-    from dynd import nd, ndt, lowlevel
+    from dynd import nd, ndt, _lowlevel
 except ImportError:
     dynd = None
 
@@ -18,7 +18,7 @@ class TestDyNDCKernel(unittest.TestCase):
     def test_single_scalar_assign(self):
         # Make a CKernel that assigns one int64 to one float32
         ck = CKernel(UnarySingleOperation)
-        lowlevel.py_api.make_assignment_kernel(
+        _lowlevel.py_api.make_assignment_kernel(
                         ndt.float32, ndt.int64, 'single',
                         ctypes.addressof(ck.dynamic_kernel_instance))
         # Do an assignment using ctypes
@@ -31,7 +31,7 @@ class TestDyNDCKernel(unittest.TestCase):
     def test_strided_scalar_assign(self):
         # Make a CKernel that assigns fixed-size strings to float32
         ck = CKernel(UnaryStridedOperation)
-        lowlevel.py_api.make_assignment_kernel(
+        _lowlevel.py_api.make_assignment_kernel(
                         ndt.float32, nd.dtype('string(15,"A")'), 'strided',
                         ctypes.addressof(ck.dynamic_kernel_instance))
         # Do an assignment using a numpy array

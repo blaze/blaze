@@ -10,7 +10,7 @@ from ..datashape import dshape
 
 try:
     import dynd
-    from dynd import nd, ndt, lowlevel
+    from dynd import nd, ndt, _lowlevel
 except ImportError:
     dynd = None
 
@@ -44,7 +44,7 @@ class DyNDElementReader(IElementReader):
         # Make it C-contiguous and in native byte order
         x = x.cast(self._c_dtype).eval()
         self._tmpbuffer = x
-        return lowlevel.data_address_of(x)
+        return _lowlevel.data_address_of(x)
 
 class DyNDElementWriter(IElementWriter):
     def __init__(self, dyndarr, nindex):
@@ -71,7 +71,7 @@ class DyNDElementWriter(IElementWriter):
         # Create a temporary DyND array around the ptr data.
         # Note that we can't provide an owner because the parameter
         # is just the bare pointer.
-        tmp = lowlevel.py_api.ndobject_from_ptr(self._c_dtype, ptr,
+        tmp = _lowlevel.py_api.ndobject_from_ptr(self._c_dtype, ptr,
                         None, 'readonly')
         # Use DyND's assignment to set the values
         self.dyndarr[idx] = tmp
@@ -82,8 +82,8 @@ class DyNDElementWriter(IElementWriter):
                            (len(idx), self.nindex))
         dst_arr = self.dyndarr[idx]
         buf_arr = dst_arr.cast(self._c_dtype).eval()
-        buf_ptr = lowlevel.data_address_of(buf_arr)
-        if buf_ptr == lowlevel.data_address_of(dst_arr):
+        buf_ptr = _lowlevel.data_address_of(buf_arr)
+        if buf_ptr == _lowlevel.data_address_of(dst_arr):
             # If no buffering is needed, just return the pointer
             return buffered_ptr_ctxmgr(buf_ptr, None)
         else:
@@ -116,7 +116,7 @@ class DyNDElementReadIter(IElementReadIter):
             # Make it C-contiguous and in native byte order
             x = x.cast(self._c_dtype).eval()
             self._tmpbuffer = x
-            return lowlevel.data_address_of(x)
+            return _lowlevel.data_address_of(x)
         else:
             raise StopIteration
 
@@ -156,9 +156,9 @@ class DyNDElementWriteIter(IElementWriteIter):
                 if self._buffer is None:
                     self._buffer = nd.empty(self._c_dtype)
                 self._buffer_index = i
-                return lowlevel.data_address_of(self._buffer)
+                return _lowlevel.data_address_of(self._buffer)
             else:
-                return lowlevel.data_address_of(self.dyndarr[i])
+                return _lowlevel.data_address_of(self.dyndarr[i])
         else:
             raise StopIteration
 
