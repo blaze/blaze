@@ -28,7 +28,7 @@ struct = cfunc.argtypes[0]._type_
 def _convert(arr, struct):
     address, count = arr.buffer_info()
     buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
-    shape = (ctypes.c_long * 1)(count)
+    shape = (ctypes.c_ssize_t * 1)(count)
     val = struct(buff, shape)
     return val
 
