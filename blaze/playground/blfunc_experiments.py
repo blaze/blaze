@@ -7,6 +7,13 @@ from blaze.datashape import double, complex128 as c128
 
 import blaze
 
+from blaze.datashape import to_numpy
+from blaze.datadescriptor import NumPyDataDescriptor
+from itertools import izip
+import numpy as np
+import ctypes
+
+
 ########################################################################
 #
 # Note: this comes from execute_expr_single... but I want to experiment
@@ -187,37 +194,39 @@ banner("func_ptr")
 print(d._data.kerneltree.func_ptr)
 banner("ctypes_func")
 print(d._data.kerneltree.ctypes_func)
-banner("single_ckernel")
-print(d._data.kerneltree.single_ckernel)
 banner()
 
-banner("llvm fused func")
-print(d._data.kerneltree.kernel.func)
-banner("llvm lifted fused func")
-lifted = d._data.kerneltree.kernel.lift(2,'C') 
-print(lifted.func)
-banner("dshapes")
-print(lifted.dshapes)
 
-banner("ctypes args")
-print (lifted.ctypes_func.argtypes[0]._type_)
 ########################################################################
 #  Try to get the kernel to execute in the context of the kernel tree  #
 ########################################################################
 def execute_datadescriptor(dd):
     # make a lifted fused func...
-    lifted = dd.kerneltree.kernel.lift(1,'C')
+    lifted = dd.kerneltree.kernel.lift(2,'C')
+    cf = lifted.ctypes_func
     # the actual ctypes function to call
+    args = [(ct._type_, 
+            arr.arr._data.element_reader(0).read_single(()),
+            arr.arr.dshape.shape) for ct, arr in izip(cf.argtypes[:-1], dd.args)
 
-    # iterate over outer dimensions
-    #    fetching using pointers from data descriptors
-    #    pack them into array_c for the lifted kernel
-    #    run the lifted function
-    #    profit!
+    res_dd = NumPyDataDescriptor(np.empty(*to_numpy(dd.dshape)))
+    with res_dd.element_writer(0).buffered_ptr(()) as dst_ptr:
+        args.append((cf.argtypes[-1]._type_, dst_ptr, res_dd.shape))
 
-banner("args")
-print(d._data.args)
+        def _convert(c_type, ptr, shape):
+            b = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_double))
+            cs = ctypes.c_ssize_t * len(shape)
+            s = cs(*shape)
+        cf_args = [_convert(*foo) for foo in args]
+    
+        cf(*cf_args)
 
+    return blaze.Array(res_dd)
+
+
+res = execute_datadescriptor(d._data)
+banner("result")
+print(res)
 
 def describe_arg(arg):
     return ("arg arr: %s kind: %s rank: %s llvmtype: %s"
