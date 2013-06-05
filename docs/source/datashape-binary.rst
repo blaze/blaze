@@ -76,7 +76,7 @@ parameter, but one bitpattern has been sacrificed for NA.
 =========================  ====================================================
 Datashape                  Binary Data Layout
 =========================  ====================================================
-Option(bool)               NA is 2.
+Option(bool)               NA is 0xff.
 Option(int<N>)             NA is -2^(N-1).
 Option(float<N>)           NA is 0x7ea2 (float16), 0x7f8007a2 (float32),
                            0x7ff00000000007a2 (float64),
