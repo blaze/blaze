@@ -41,6 +41,7 @@ Original Index
    persistence
    memory
    datashape
+   datashape-binary
    module
 
 API Reference

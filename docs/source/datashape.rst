@@ -267,7 +267,7 @@ Example 2::
         b: Point
     }
 
-Or equivelantly::
+Or equivalently::
 
     type Space = {
         a: { x: int; y: int };
