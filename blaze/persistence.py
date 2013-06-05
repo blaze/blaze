@@ -34,46 +34,82 @@ def _to_numpy(ds):
     return res
 
 
-def _path_from_uri(uri_in):
-    """ returns a blz path for a given uri """
-    uri = urlparse.urlparse(uri_in)
-    path = uri.netloc + uri.path
-    return path
+class Persist(object):
+    """
+    Persist(uri, mode='a', format='blz', permanent=True)
+
+    Class to host parameters for persistency properties.
+
+    Parameters
+    ----------
+    uri : string
+        The URI where the dataset will be stored.
+    mode : string ('r'ead, 'a'ppend) 
+        The mode for creating/opening the storage.
+    format : string
+        The format used for storage (only 'blz' supported at this time)
+    permanent : bool
+        Whether this file should be permanent or not.
+
+    """
+
+    @property
+    def uri(self):
+        """The URI for the dataset."""
+        return self._uri
+
+    @property
+    def mode(self):
+        """The mode for opening the storage."""
+        return self._mode
+
+    @property
+    def format(self):
+        """The format used for storage."""
+        return self._format
+
+    @property
+    def permanent(self):
+        """Whether this file should be permanent or not."""
+        return self._permanent
+
+    @property
+    def path(self):
+        """ returns a blz path for a given uri """
+        uri = urlparse.urlparse(self._uri)
+        return uri.netloc + uri.path
+
+    def __init__(self, uri, mode='r', format='blz', permanent=True):
+        if not isinstance(uri, str):
+            raise ValueError("`uri` must be a string.")
+        self._uri = uri
+        if mode not in 'ra':
+            raise ValueError("`mode` '%s' is not supported." % mode)
+        self._mode = mode
+        if format is not 'blz':
+            raise ValueError("`format` '%s' is not supported." % format)
+        if not permanent:
+            raise ValueError(
+                "`permanent` set to False is not supported yet.")
+        self._permanent = permanent
+
+    def __repr__(self):
+        args = ["uri=%s"%self._uri, "mode=%s"%self._mode]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(args))
+
+
 
 # ----------------------------------------------------------------------
-# The actual URI API
+# The actual API specific for persistence
 
-def save(a, uri):
-    """save an array to an URI"""
-    assert(isinstance(a, Array))
-
-    shape, dtype = _to_numpy(a.dshape)
-    if len(shape):
-        shape = (0,) + shape[1:]
-        path = _path_from_uri(uri)
-        on_disk = blz.zeros(shape, dtype=dtype, rootdir=path)
-        on_disk.append(dd_as_py(a._data))
-        on_disk.flush()
-    else:
-        raise NotImplementedError('save not implemented for scalars')
-
-
-def load(uri):
-    """load and array into memory from an URI"""
-    # preliminary way... open it and copy!
-    on_disk = open(uri)
-    assert (isinstance(on_disk._data, BLZDataDescriptor))
-    dd = NumPyDataDescriptor(on_disk._data.blzarr[:])
-    return Array(dd)
-
-
-def open(uri):
+def open(persist):
     """Open an existing persistent array.
 
     Parameters
     ----------
-    uri : URI string
-        The URI of where the array is stored (e.g. blz://myfile.blz).
+    persist : a Persist instance
+        The Persist instance specifies, among other things, URI of
+        where the array is stored.
 
     Returns
     -------
@@ -84,75 +120,20 @@ def open(uri):
     Only the BLZ format is supported currently.
 
     """
-    uri = urlparse.urlparse(uri)
-    path = uri.netloc + uri.path
-    d = blz.barray(rootdir=path)
+    if not isinstance(persist, Persist):
+        raise ValueError("`persist` must be a Persist instance.")
+    d = blz.barray(rootdir=persist.path)
     dd = BLZDataDescriptor(d)
     return Array(dd)
 
 
-def drop(uri):
-    """removing an URI"""
+def drop(persist):
+    """Remove a persistent storage."""
     try:
-        path = _path_from_uri(uri)
-        blz.open(rootdir=path)
+        blz.open(rootdir=persist.path)
         from shutil import rmtree
         rmtree(path)
 
-    except RuntimeError: #maybe blz should throw other exceptions for this!
+    except RuntimeError:
+         # Maybe BLZ should throw other exceptions for this!
         raise Exception("No blaze array at uri '%s'" % uri)
-
-
-# Persistent constructors:
-def create(uri, dshape, caps={'efficient-append': True}):
-    """Create a 0-length persistent array.
-
-    Parameters
-    ----------
-    uri : URI string
-        The URI of where the array will be stored (e.g. blz://myfile.blz).
-
-    dshape : datashape
-        The datashape for the resulting array.
-
-    caps : capabilities dictionary
-        A dictionary containing the desired capabilities of the array.
-
-    Returns
-    -------
-    out: a concrete blaze array.
-
-    Notes
-    -----
-
-    The shape part of the `dshape` is ignored.  This should be fixed
-    by testing that the shape is actually empty.
-
-    Only the BLZ format is supported currently.
-
-    """
-    dshape = _normalize_dshape(dshape)
-
-    # Only BLZ supports efficient appends right now
-    shape, dt = _to_numpy(dshape)
-    shape = (0,) + shape  # the leading dimension will be 0
-    path = _path_from_uri(uri)
-    if 'efficient-append' in caps:
-        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt, rootdir=path))
-    elif 'efficient-write' in caps:
-        raise ValueError('efficient-write objects not supported for '
-                         'persistence')
-    else:
-        # BLZ will be the default
-        dd = BLZDataDescriptor(blz.zeros(shape, dtype=dt, rootdir=path))
-    return Array(dd)
-
-
-def create_fromiter(uri, dshape, iterator, caps={'efficient-append': True}):
-    """create persistent array at the URI initialized with the
-    iterator iterator"""
-    arr = create(uri, dshape, caps)
-    for row in iterator:
-        arr.append(row)
-    return arr
-

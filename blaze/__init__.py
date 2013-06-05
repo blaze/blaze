@@ -7,7 +7,7 @@ from .datashape import dshape
 from .array import Array
 from .constructors import array, empty, ones, zeros
 from .eval import eval
-from .persistence import load, save, open, drop, create, create_fromiter
+from .persistence import open, drop, Persist
 import ctypes
 
 # These are so that llvm_structs corresponding to dshapes get converted correctly

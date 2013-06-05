@@ -25,8 +25,9 @@ from ._api_helpers import _normalize_dshape
 # the array from a numpy is creating a ByteProvider based on "obj"
 # and infer the indexer from the apropriate information in the numpy
 # array.
-def array(obj, dshape=None, caps={'efficient-write': True}):
-    """Create an in-memory Blaze array.
+def array(obj, dshape=None, caps={'efficient-write': True},
+          persist=None):
+    """Create a Blaze array.
 
     Parameters
     ----------
@@ -39,12 +40,15 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         provided, the input data will be coerced into the provided
         dshape.
 
-        caps : capabilities dictionary
+    caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
+
+    persist : Persist instance
+        A Persist object with the necessary info for persistent storage. 
 
     Returns
     -------
-    out : a concrete, in-memory blaze array.
+    out : a concrete blaze array.
 
     Bugs
     ----
@@ -70,7 +74,11 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
         #   be able to do it in your own.
         dd = obj
     elif inspect.isgenerator(obj):
-        return _fromiter(obj, dshape, caps)
+        return _fromiter(obj, dshape, caps, persist)
+    elif persist is not None:
+        dt = None if dshape is None else to_dtype(dshape)
+        dd = BLZDataDescriptor(
+            blz.barray(obj, dtype=dt, rootdir=persist.path))
     elif 'efficient-write' in caps and caps['efficient-write'] is True:
         dt = None if dshape is None else to_dtype(dshape)
         # NumPy provides efficient writes
@@ -91,14 +99,18 @@ def array(obj, dshape=None, caps={'efficient-write': True}):
 
 # XXX This should probably be made public because the `count` param
 # for BLZ is very important for getting good performance.
-def _fromiter(gen, dshape, caps):
+def _fromiter(gen, dshape, caps, persist):
     """Create an array out of an iterator."""
     dshape = _normalize_dshape(dshape)
 
     # TODO: deal with non-supported capabilities.  Perhaps it would be
     # better to convert caps into a class to check for supported
     # capabilities only.
-    if 'efficient-write' in caps and caps['efficient-write'] is True:
+    if persist is not None:
+        dt = None if dshape is None else to_dtype(dshape)
+        dd = BLZDataDescriptor(blz.barray(gen, dtype=dt, count=-1,
+                                          rootdir=persist.path))
+    elif 'efficient-write' in caps and caps['efficient-write'] is True:
         dt = None if dshape is None else to_dtype(dshape)
         dd = NumPyDataDescriptor(np.fromiter(gen, dtype=dt))
     elif 'compress' in caps and caps['compress'] is True:
@@ -112,7 +124,7 @@ def _fromiter(gen, dshape, caps):
     return Array(dd)
 
 
-def empty(dshape, caps={'efficient-write': True}):
+def empty(dshape, caps={'efficient-write': True}, persist=None):
     """Create an array with uninitialized data.
 
     Parameters
@@ -123,20 +135,27 @@ def empty(dshape, caps={'efficient-write': True}):
     caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
+    persist : Persist instance
+        A Persist object with the necessary info for persistent storage. 
+
     Returns
     -------
-    out : a concrete, in-memory blaze array.
+    out : a concrete blaze array.
 
     """
     dshape = _normalize_dshape(dshape)
+    shape, dt = to_numpy(dshape)
 
-    if 'efficient-write' in caps:
-        dd = NumPyDataDescriptor(np.empty(*to_numpy(dshape)))
+    if persist is not None:
+        dd = BLZDataDescriptor(blz.zeros(shape, dt,
+                                         rootdir=persist.path))
+    elif 'efficient-write' in caps:
+        dd = NumPyDataDescriptor(np.empty(shape, dt))
     elif 'compress' in caps:
-        dd = BLZDataDescriptor(blz.empty(*to_numpy(dshape)))
+        dd = BLZDataDescriptor(blz.zeros(shape, dt))
     return Array(dd)
 
-def zeros(dshape, caps={'efficient-write': True}):
+def zeros(dshape, caps={'efficient-write': True}, persist=None):
     """Create an array and fill it with zeros.
 
     Parameters
@@ -147,21 +166,28 @@ def zeros(dshape, caps={'efficient-write': True}):
     caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
+    persist : Persist instance
+        A Persist object with the necessary info for persistent storage. 
+
     Returns
     -------
-    out : a concrete, in-memory blaze array.
+    out : a concrete blaze array.
 
     """
     dshape = _normalize_dshape(dshape)
+    shape, dt = to_numpy(dshape)
 
-    if 'efficient-write' in caps:
-        dd = NumPyDataDescriptor(np.zeros(*to_numpy(dshape)))
+    if persist is not None:
+        dd = BLZDataDescriptor(blz.zeros(shape, dt,
+                                         rootdir=persist.path))
+    elif 'efficient-write' in caps:
+        dd = NumPyDataDescriptor(np.zeros(shape, dt))
     elif 'compress' in caps:
-        dd = BLZDataDescriptor(blz.zeros(*to_numpy(dshape)))
+        dd = BLZDataDescriptor(blz.zeros(shape, dt))
     return Array(dd)
 
 
-def ones(dshape, caps={'efficient-write': True}):
+def ones(dshape, caps={'efficient-write': True}, persist=None):
     """Create an array and fill it with ones.
 
     Parameters
@@ -172,17 +198,23 @@ def ones(dshape, caps={'efficient-write': True}):
     caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
+    persist : Persist instance
+        A Persist object with the necessary info for persistent storage. 
+
     Returns
     -------
     out: a concrete blaze array.
 
     """
     dshape = _normalize_dshape(dshape)
+    shape, dt = to_numpy(dshape)
 
-    if 'efficient-write' in caps:
-        dd = NumPyDataDescriptor(np.ones(*to_numpy(dshape)))
+    if persist is not None:
+        dd = BLZDataDescriptor(blz.ones(shape, dt,
+                                        rootdir=persist.path))
+    elif 'efficient-write' in caps:
+        dd = NumPyDataDescriptor(np.ones(shape, dt))
     elif 'compress' in caps:
         shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.ones(*to_numpy(dshape)))
+        dd = BLZDataDescriptor(blz.ones(shape, dt))
     return Array(dd)
-
