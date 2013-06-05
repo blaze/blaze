@@ -333,7 +333,12 @@ class DataShape(Mono):
                 else:
                     c_itemsize = None
         self._c_itemsize = c_itemsize
-        self._c_strides = tuple(c_strides)
+        if c_itemsize is None:
+            self._c_alignment = None
+            self._c_strides = None
+        else:
+            self._c_alignment = c_alignment
+            self._c_strides = tuple(c_strides)
 
         self._metadata = metadata
 
@@ -352,7 +357,7 @@ class DataShape(Mono):
     @property
     def c_alignment(self):
         """The alignment of one element of this type, with C-contiguous storage."""
-        if self._c_itemsize is not None:
+        if self._c_alignment is not None:
             return self._c_alignment
         else:
             raise AttributeError('data shape does not have a fixed C alignment')
@@ -361,7 +366,10 @@ class DataShape(Mono):
     def c_strides(self):
         """A tuple of all the strides for the data shape,
         assuming C-contiguous storage."""
-        return self._c_strides
+        if self._c_strides is not None:
+            return self._c_strides
+        else:
+            raise AttributeError('data shape does not have a fixed C layout')
 
     def __len__(self):
         return len(self.parameters)
@@ -838,10 +846,15 @@ class Record(Mono):
         # Advance itemsize so the whole itemsize is aligned
         if c_itemsize is not None:
             c_itemsize = (c_itemsize + c_alignment - 1) & (-c_alignment)
-        c_offsets = c_offsets or tuple(c_offsets)
-        self._c_alignment = c_alignment
-        self._c_itemsize = c_itemsize
-        self._c_offsets = c_offsets
+        c_offsets = c_offsets and tuple(c_offsets)
+        if c_itemsize is None:
+            self._c_itemsize = None
+            self._c_alignment = None
+            self._c_offsets = None
+        else:
+            self._c_itemsize = c_itemsize
+            self._c_alignment = c_alignment
+            self._c_offsets = c_offsets
 
     @property
     def fields(self):
