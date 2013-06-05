@@ -152,8 +152,23 @@ class Bytes(Mono):
     """ Bytes type """
     cls = MEASURE
 
+    def __init__(self):
+        self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
+        self._c_alignment = ctypes.alignment(ctypes.c_void_p)
+
+    @property
+    def c_itemsize(self):
+        return self._c_itemsize
+
+    @property
+    def c_alignment(self):
+        return self._c_alignment
+
     def __str__(self):
         return 'bytes'
+
+    def __eq__(self, other):
+        return isinstance(other, Bytes)
 
 #------------------------------------------------------------------------
 # String Type
@@ -222,6 +237,16 @@ class String(Mono):
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
 
+        self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
+        self._c_alignment = ctypes.alignment(ctypes.c_void_p)
+
+    @property
+    def c_itemsize(self):
+        return self._c_itemsize
+
+    @property
+    def c_alignment(self):
+        return self._c_alignment
 
     def __str__(self):
         if self.fixlen is None and self.encoding == 'U8':
@@ -297,10 +322,8 @@ class DataShape(Mono):
 
         # Calculate the C itemsize and strides, which
         # are based on a C-order contiguous assumption
-        if hasattr(parameters[-1], 'c_itemsize'):
-            c_itemsize = parameters[-1].c_itemsize
-        else:
-            c_itemsize = None
+        c_itemsize = getattr(parameters[-1], 'c_itemsize', None)
+        c_alignment = getattr(parameters[-1], 'c_alignment', None)
         c_strides = []
         for p in parameters[-2::-1]:
             c_strides.insert(0, c_itemsize)
@@ -325,6 +348,14 @@ class DataShape(Mono):
             return self._c_itemsize
         else:
             raise AttributeError('data shape does not have a fixed C itemsize')
+
+    @property
+    def c_alignment(self):
+        """The alignment of one element of this type, with C-contiguous storage."""
+        if self._c_itemsize is not None:
+            return self._c_alignment
+        else:
+            raise AttributeError('data shape does not have a fixed C alignment')
 
     @property
     def c_strides(self):
@@ -479,6 +510,14 @@ class Option(DataShape):
 
         self.ty = params[0]
 
+    @property
+    def c_itemsize(self):
+        return self.ty.c_itemsize
+
+    @property
+    def c_alignment(self):
+        return self.ty.c_alignment
+
     def __str__(self):
         return 'Option(%s)' % str(self.ty)
 
@@ -495,9 +534,10 @@ class CType(Mono):
     """
     cls = MEASURE
 
-    def __init__(self, name, itemsize):
+    def __init__(self, name, itemsize, alignment):
         self.name = name
         self._itemsize = itemsize
+        self._alignment = alignment
         Type.register(name, self)
 
     @classmethod
@@ -529,6 +569,11 @@ class CType(Mono):
     def c_itemsize(self):
         """The size of one element of this type, with C-contiguous storage."""
         return self._itemsize
+
+    @property
+    def c_alignment(self):
+        """The alignment of one element of this type."""
+        return self._alignment
 
     def to_struct(self):
         """
@@ -775,6 +820,29 @@ class Record(Mono):
         self.__v = [f[1] for f in fields]
         self.parameters = (fields,)
 
+        c_alignment = 1
+        c_itemsize = 0
+        c_offsets = []
+        for t in self.__v:
+            al = getattr(t, 'c_alignment', None)
+            sz = getattr(t, 'c_itemsize', None)
+            if None in (al, sz):
+                c_alignment = None
+                c_itemsize = None
+                break
+            c_alignment = max(c_alignment, al)
+            # Advance itemsize so this type is aligned
+            c_itemsize = (c_itemsize + al - 1) & (-al)
+            c_offsets.append(c_itemsize)
+            c_itemsize += sz
+        # Advance itemsize so the whole itemsize is aligned
+        if c_itemsize is not None:
+            c_itemsize = (c_itemsize + c_alignment - 1) & (-c_alignment)
+        c_offsets = c_offsets or tuple(c_offsets)
+        self._c_alignment = c_alignment
+        self._c_itemsize = c_itemsize
+        self._c_offsets = c_offsets
+
     @property
     def fields(self):
         return self.__d
@@ -782,6 +850,30 @@ class Record(Mono):
     @property
     def names(self):
         return self.__k
+
+    @property
+    def c_itemsize(self):
+        """The size of one element of this type stored in a C layout."""
+        if self._c_itemsize is not None:
+            return self._c_itemsize
+        else:
+            raise AttributeError('data shape does not have a fixed C itemsize')
+
+    @property
+    def c_alignment(self):
+        """The alignment of one element of this type stored in a C layout."""
+        if self._c_itemsize is not None:
+            return self._c_alignment
+        else:
+            raise AttributeError('data shape does not have a fixed C alignment')
+
+    @property
+    def c_offsets(self):
+        """The offsets of all the fields of this type stored in a C layout."""
+        if self._c_offsets is not None:
+            return self._c_offsets
+        else:
+            raise AttributeError('data shape does not have fixed C offsets')
 
     def to_dtype(self):
         """
@@ -817,6 +909,18 @@ class Record(Mono):
 class JSON(Mono):
     """ JSON measure """
     cls = MEASURE
+
+    def __init__(self):
+        self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
+        self._c_alignment = ctypes.alignment(ctypes.c_void_p)
+
+    @property
+    def c_itemsize(self):
+        return self._c_itemsize
+
+    @property
+    def c_alignment(self):
+        return self._c_alignment
 
     def __str__(self):
         return 'json'
@@ -857,30 +961,30 @@ def inl(ty):
 # Unit Types
 #------------------------------------------------------------------------
 
-bool_      = CType('bool', 1)
-char       = CType('char', 1)
+bool_      = CType('bool', 1, 1)
+char       = CType('char', 1, 1)
 
-int8       = CType('int8', 1)
-int16      = CType('int16', 2)
-int32      = CType('int32', 4)
-int64      = CType('int64', 8)
+int8       = CType('int8', 1, 1)
+int16      = CType('int16', 2, ctypes.alignment(ctypes.c_int16))
+int32      = CType('int32', 4, ctypes.alignment(ctypes.c_int32))
+int64      = CType('int64', 8, ctypes.alignment(ctypes.c_int64))
 
-uint8      = CType('uint8', 1)
-uint16     = CType('uint16', 2)
-uint32     = CType('uint32', 4)
-uint64     = CType('uint64', 8)
+uint8      = CType('uint8', 1, 1)
+uint16     = CType('uint16', 2, ctypes.alignment(ctypes.c_uint16))
+uint32     = CType('uint32', 4, ctypes.alignment(ctypes.c_uint32))
+uint64     = CType('uint64', 8, ctypes.alignment(ctypes.c_uint64))
 
-float16    = CType('float16', 2)
-float32    = CType('float32', 4)
-float64    = CType('float64', 8)
-float128   = CType('float128', 16)
+float16    = CType('float16', 2, ctypes.alignment(ctypes.c_uint16))
+float32    = CType('float32', 4, ctypes.alignment(ctypes.c_float))
+float64    = CType('float64', 8, ctypes.alignment(ctypes.c_double))
+#float128   = CType('float128', 16)
 
-complex64  = CType('complex64', 8)
-complex128 = CType('complex128', 16)
-complex256 = CType('complex256', 32)
+complex64  = CType('complex64', 8, ctypes.alignment(ctypes.c_float))
+complex128 = CType('complex128', 16, ctypes.alignment(ctypes.c_double))
+#complex256 = CType('complex256', 32)
 
-timedelta64 = CType('timedelta64', 8)
-datetime64 = CType('datetime64', 8)
+timedelta64 = CType('timedelta64', 8, ctypes.alignment(ctypes.c_int64))
+datetime64 = CType('datetime64', 8, ctypes.alignment(ctypes.c_int64))
 
 c_byte = int8
 c_short = int16
@@ -909,7 +1013,7 @@ c_half = float16
 c_float = float32
 c_double = float64
 # TODO: Deal with the longdouble == one of float64/float80/float96/float128 situation
-c_longdouble = float128
+#c_longdouble = float128
 
 half = float16
 single = float32
@@ -919,8 +1023,10 @@ double = float64
 int_ = float32
 float_ = float32
 
-void = CType('void', 0)
-object_ = pyobj = CType('object', c_intptr.itemsize)
+void = CType('void', 0, 1)
+object_ = pyobj = CType('object',
+                ctypes.sizeof(ctypes.py_object),
+                ctypes.alignment(ctypes.py_object))
 
 na = Null
 NullRecord = Record(())
