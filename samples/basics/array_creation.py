@@ -119,24 +119,24 @@ del describe_array
 
 print_section('Persisted arrays')
 
-def maybe_remove(dname):
-    import os.path, shutil, glob
-    if os.path.exists(dname):
+def maybe_remove(persist):
+    import os.path
+    if os.path.exists(persist.path):
         # Remove every directory starting with rootdir
-        for dir_ in glob.glob(dname+'*'):
-            shutil.rmtree(dir_)
+        blaze.drop(persist)
 
 # Create an empty array on-disk
 dname = 'persisted.blz'
-maybe_remove(dname)
-p = blaze.create(dname, 'float64')
+persist = blaze.Persist(dname)
+maybe_remove(persist)
+p = blaze.zeros('0, float64', persist=persist)
 # Feed it with some data
 p.append(range(10))
 
 print('Before re-opening:', p)
 
 # Re-open the dataset in URI
-p2 = blaze.open(dname)
+p2 = blaze.open(persist)
 
 print('After re-opening:', p2)
 

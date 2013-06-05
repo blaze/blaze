@@ -132,7 +132,7 @@ def drop(persist):
     try:
         blz.open(rootdir=persist.path)
         from shutil import rmtree
-        rmtree(path)
+        rmtree(persist.path)
 
     except RuntimeError:
          # Maybe BLZ should throw other exceptions for this!
