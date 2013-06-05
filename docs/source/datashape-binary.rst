@@ -56,8 +56,8 @@ var, <suffix>      One pointer to a separate buffer, followed by
                    datashape <suffix>, one after the other.
 ================   ====================================================
 
-Structures
-----------
+Records
+-------
 
 ================   ====================================================
 Datashape          Binary Data Layout
@@ -98,4 +98,22 @@ and "var", specify pointers into separate data buffers. The
 ownership of these buffers must be held by the data descriptor
 exposing the data, in addition to ownership of the primary data.
 
+Properties of Datashape Objects
+-------------------------------
+
+To support working with data of these data layouts, the objects
+in blaze which represent datashapes have several properties.
+
+All datashapes which have a binary layout as defined here
+must have properties `c_itemsize` and `c_alignment`, which
+are the number of bytes one element of the measure requires,
+and what alignment it must satisfy. This alignment is the
+same alignment C uses when packing the element into a struct.
+
+Records have a property `c_offsets`, which is
+a tuple of offsets to the starts of all the fields.
+
+Array datashapes have a property `c_strides`,
+which is just like the NumPy array strides, a byte offset
+for incrementing by one along each dimension.
 
