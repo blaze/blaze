@@ -202,12 +202,12 @@ banner()
 ########################################################################
 def execute_datadescriptor(dd):
     # make a lifted fused func...
-    lifted = dd.kerneltree.kernel.lift(2,'C')
+    lifted = dd.kerneltree._fused.kernel.lift(2,'C')
     cf = lifted.ctypes_func
     # the actual ctypes function to call
     args = [(ct._type_, 
             arr.arr._data.element_reader(0).read_single(()),
-            arr.arr.dshape.shape) for ct, arr in izip(cf.argtypes[:-1], dd.args)
+            arr.arr.dshape.shape) for ct, arr in izip(cf.argtypes[:-1], dd.args)]
 
     res_dd = NumPyDataDescriptor(np.empty(*to_numpy(dd.dshape)))
     with res_dd.element_writer(0).buffered_ptr(()) as dst_ptr:
@@ -217,9 +217,10 @@ def execute_datadescriptor(dd):
             b = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_double))
             cs = ctypes.c_ssize_t * len(shape)
             s = cs(*shape)
+            return c_type(b,s)
         cf_args = [_convert(*foo) for foo in args]
     
-        cf(*cf_args)
+        cf(*[ctypes.byref(x) for x in cf_args])
 
     return blaze.Array(res_dd)
 
