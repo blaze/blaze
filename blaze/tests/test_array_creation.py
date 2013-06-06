@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import blaze
 from blaze.datadescriptor import dd_as_py
 import numpy as np
@@ -83,7 +85,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         persist = blaze.Persist(self.rooturi)
         a = blaze.array([], 'float64', persist=persist)
         self.assert_(isinstance(a, blaze.Array))
-        print "->", a.dshape.shape
+        print("->", a.dshape.shape)
         self.assert_(a.dshape.shape == (0,))
         self.assertEqual(dd_as_py(a._data), [])
 
