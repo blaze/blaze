@@ -10,7 +10,7 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertRaises(TypeError, blaze.dshape, None)
         self.assertRaises(TypeError, blaze.dshape, lambda x: x+1)
         # Check issue 11
-        self.assertRaises(datashape.DatashapeSyntaxError, blaze.dshape, '1,')
+        self.assertRaises(datashape.parser.DatashapeSyntaxError, blaze.dshape, '1,')
 
     def test_atom_shapes(self):
         self.assertEqual(blaze.dshape('bool'), datashape.bool_)
