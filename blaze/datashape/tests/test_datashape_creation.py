@@ -12,6 +12,10 @@ class TestDatashapeCreation(unittest.TestCase):
         # Check issue 11
         self.assertRaises(datashape.parser.DatashapeSyntaxError, blaze.dshape, '1,')
 
+    def test_reserved_future_int(self):
+        # The "int" datashape is reserved for a future big integer type
+        self.assertRaises(Exception, blaze.dshape, "int")
+
     def test_atom_shapes(self):
         self.assertEqual(blaze.dshape('bool'), datashape.bool_)
         self.assertEqual(blaze.dshape('int8'), datashape.int8)

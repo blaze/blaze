@@ -1048,7 +1048,6 @@ bytes_ = Bytes()
 string = String()
 json = JSON()
 
-Type.register('int', c_int)
 Type.register('float', c_float)
 Type.register('double', c_double)
 

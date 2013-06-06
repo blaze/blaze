@@ -30,7 +30,7 @@ class TestDatashapeParser(unittest.TestCase):
         assert type(p[1]) == datashape.Record
 
     def test_compound_record2(self):
-        p = parse('{ a: { x: int; y: int }; b: {w: int; u: int } }')
+        p = parse('{ a: { x: int32; y: int32 }; b: {w: int32; u: int32 } }')
 
         assert type(p) == datashape.Record
 
