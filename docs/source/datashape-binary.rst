@@ -8,6 +8,15 @@ specifies a mapping of datashape to raw memory layout
 which is the default used when no additional information
 about the data is known.
 
+This mapping from datashape to binary data layout is one
+possible mapping, intended as a default that computational
+kernels can rely on when no additional information about
+this is provided. Another language, possibly an extension
+of datashape, adding richer support for describing data in
+many different formats, is planned. A likely candidate for
+the type system to underly this richer datashape description
+is that of libdynd.
+
 Measures
 --------
 
