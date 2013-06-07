@@ -391,28 +391,28 @@ def auto_const_intp(v):
 def _sizeof(_eltype, unpacked=False):
     msg = "Cannot determine size of unpacked structure with elements of size %d"
     kind = _eltype.kind
-    if kind is lc.TYPE_INTEGER:
+    if kind == lc.TYPE_INTEGER:
         width = _eltype.width
         if width % 8 != 0:
             raise ValueError("Invalid bit-width on Integer")
         if unpacked and width < 32:
             raise ValueError(msg % width)
         return width >> 3
-    elif kind is lc.TYPE_POINTER:
+    elif kind == lc.TYPE_POINTER:
         return intp_type.width >> 3
-    elif kind is lc.TYPE_FLOAT:
+    elif kind == lc.TYPE_FLOAT:
         return 4
-    elif kind is lc.TYPE_DOUBLE:
+    elif kind == lc.TYPE_DOUBLE:
         return 8
-    elif kind is lc.TYPE_HALF:
+    elif kind == lc.TYPE_HALF:
         if unpacked:
             raise ValueError(msg % 2)
         return 2
-    elif kind is lc.TYPE_FP128:
+    elif kind == lc.TYPE_FP128:
         return 16
-    elif kind is lc.TYPE_ARRAY:
+    elif kind == lc.TYPE_ARRAY:
         return _eltype.count * _sizeof(_eltype.element)
-    elif kind is lc.TYPE_STRUCT:
+    elif kind == lc.TYPE_STRUCT:
         return sum(_sizeof(element, not _eltype.packed)
                        for element in _eltype.elements)
     raise ValueError("Unimplemented type % s (kind=%s)" % (_eltype, kind))

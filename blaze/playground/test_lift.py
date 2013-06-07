@@ -1,3 +1,7 @@
+import unittest
+import sys
+import ctypes
+import array
 from blaze.blaze_kernels import BlazeElementKernel
 import llvm.core as lc
 
@@ -13,29 +17,29 @@ def create_func(mod):
     builder.ret(val)
     return func
 
-mine = BlazeElementKernel(create_func(mod))
-print(mine.func)
-res = mine.lift(1, 'C')
-cfunc = res.ctypes_func
 
-import array
-import ctypes
-cb = ctypes.byref
-data = array.array('d',range(10000))
-odata = array.array('d', [0]*10000)
-struct = cfunc.argtypes[0]._type_
+class TestKernelLift(unittest.TestCase):
+    def test_basic_lift(self):
+        addkernel = BlazeElementKernel(create_func(mod))
+        res = addkernel.lift(1, 'C')
+        cfunc = res.ctypes_func
+        cb = ctypes.byref
+        data = array.array('d',range(100))
+        odata = array.array('d', [0]*100)
+        struct = cfunc.argtypes[0]._type_
 
-def _convert(arr, struct):
-    address, count = arr.buffer_info()
-    buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
-    shape = (ctypes.c_ssize_t * 1)(count)
-    val = struct(buff, shape)
-    return val
+        def _convert(arr):
+            address, count = arr.buffer_info()
+            buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
+            shape = (ctypes.c_ssize_t * 1)(count)
+            val = struct(buff, shape)
+            return val
 
-val = _convert(data, struct)
-out = _convert(odata, struct)
+        val = _convert(data)
+        out = _convert(odata)
+        cfunc(cb(val), cb(val), cb(out))
+        print out
+        assert all((outd == ind + ind) for ind, outd in zip(data, odata))
 
-
-cfunc(cb(val), cb(val), cb(out))
-
-print(odata[-10:])
+if __name__ == '__main__':
+    unittest.main()

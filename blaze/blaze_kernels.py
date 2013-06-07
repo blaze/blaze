@@ -25,7 +25,7 @@ from llvm.core import Type, Function, Module
 from llvm import LLVMException
 from . import llvm_array as lla
 from .llvm_array import (void_type, intp_type, array_kinds, check_array, get_cpp_template,
-                         array_type, const_intp, LLArray)
+                         array_type, const_intp, LLArray, orderchar)
 from .kernelgen import loop_nest
 from .ckernel import ExprSingleOperation, wrap_ckernel_func
 from .py3help import izip
@@ -79,6 +79,7 @@ class BlazeElementKernel(object):
     _single_ckernel = None
     _ee = None
     _dshapes = None
+    _lifted_cache = {}
     def __init__(self, func, dshapes=None):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
@@ -328,6 +329,12 @@ class BlazeElementKernel(object):
         if outkind in 'CFS':
             from .llvm_array import kindfromchar
             outkind = kindfromchar[outkind]
+
+        name = self.func.name + "_lifted_%d_%s" % (outrank, orderchar[outkind])
+        try_bk = self._lifted_cache.get(name, None)
+        if try_bk is not None:
+            return try_bk        
+
         if outkind not in array_kinds[:3]:
             raise ValueError("Invalid kind specified for output: %s" % outkind)
 
@@ -348,7 +355,7 @@ class BlazeElementKernel(object):
 
 
         func_type = self._lifted_func_type(outranks, outkind)
-        func = Function.new(self.module, func_type, name=self.func.name +"_lifted")
+        func = Function.new(self.module, func_type, name=name)
         block = func.append_basic_block('entry')
         builder = lc.Builder.new(block)
 
@@ -388,7 +395,9 @@ class BlazeElementKernel(object):
             return make_dshape("".join(new))
 
         dshapes = [add_rank(dshape, dr) for dshape in self.dshapes]
-        return BlazeElementKernel(func, dshapes)
+        try_bk = BlazeElementKernel(func, dshapes)
+        self._lifted_cache[name] = try_bk
+        return try_bk
 
     def _lifted_func_type(self, outranks, outkind):
         argtypes = self.argtypes
