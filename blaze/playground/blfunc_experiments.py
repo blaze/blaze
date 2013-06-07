@@ -200,6 +200,13 @@ banner()
 ########################################################################
 #  Try to get the kernel to execute in the context of the kernel tree  #
 ########################################################################
+def _convert(c_type, ptr, shape):
+    b = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_double))
+    cs = ctypes.c_ssize_t * len(shape)
+    s = cs(*shape)
+    return c_type(b,s)
+
+
 def execute_datadescriptor(dd):
     # make a lifted fused func...
     lifted = dd.kerneltree._fused.kernel.lift(2,'C')
@@ -212,20 +219,38 @@ def execute_datadescriptor(dd):
     res_dd = NumPyDataDescriptor(np.empty(*to_numpy(dd.dshape)))
     with res_dd.element_writer(0).buffered_ptr(()) as dst_ptr:
         args.append((cf.argtypes[-1]._type_, dst_ptr, res_dd.shape))
-
-        def _convert(c_type, ptr, shape):
-            b = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_double))
-            cs = ctypes.c_ssize_t * len(shape)
-            s = cs(*shape)
-            return c_type(b,s)
         cf_args = [_convert(*foo) for foo in args]
-    
         cf(*[ctypes.byref(x) for x in cf_args])
 
     return blaze.Array(res_dd)
 
 
-res = execute_datadescriptor(d._data)
+def execute_datadescriptor_ooc(dd):
+    # only lift by one
+    lifted = dd.kerneltree._fused.kernel.lift(1,'C')
+    cf = lifted.ctypes_func
+    print(dir(cf))
+    # element readers for operands
+    args = [(ct._type_, 
+             arr.arr._data.element_reader(1),
+             arr.arr.dshape.shape[1:]) 
+            for ct, arr in izip(cf.argtypes[:-1], dd.args)]
+
+    res_dd = NumPyDataDescriptor(np.empty(*to_numpy(dd.dshape)))
+    outer_dimension = res_dd.shape[0]
+    dst = res_dd.element_writer(1)
+
+    for i in xrange(outer_dimension):
+        args_i = [(t, er.read_single((i,)), sh) for t, er, sh in args]
+        with dst.buffered_ptr((i,)) as dst_ptr:
+            args_i.append((cf.argtypes[-1]._type_, dst_ptr, res_dd.shape[1:]))
+            cf_args = [_convert(*foo) for foo in args_i]
+            cf(*[ctypes.byref(x) for x in cf_args])
+
+    return blaze.Array(res_dd)
+
+
+res = execute_datadescriptor_ooc(d._data)
 banner("result")
 print(res)
 
