@@ -247,20 +247,27 @@ class BlazeElementKernel(object):
             # Call the function and store in the dst
             dst_ptr = builder.bitcast(dst_ptr_arg, Type.pointer(self.return_type))
             if self.kinds[-1] == SCALAR:
-                dst_val = builder.call(self.func, args)
+                func = module.get_function_named(self.func.name)
+                dst_val = builder.call(func, args)
                 builder.store(dst_val, dst_ptr)
             elif self.kinds[-1] == POINTER:
                 builder.call(self.func, args + [dst_ptr])
             else:
                 raise TypeError("single_ckernel codegen doesn't support array types yet")
             builder.ret_void()
+            #print(single_ck_func)
+            # DEBUGGING: Verify the module.
+            module.verify()
             # TODO: Cache the EE - the interplay with the func_ptr
             #       was broken, so just avoiding caching for now
-            from llvm.ee import ExecutionEngine
-            ee = ExecutionEngine.new(module)
+            import llvm.ee as le
+            # AVX was being generated on linux platforms even when
+            # the processor had no AVX support, so disabling it manually.
+            ee = le.EngineBuilder.new(module).mattrs("-avx").create()
             func_ptr = ee.get_pointer_to_function(single_ck_func)
             self._single_ckernel = wrap_ckernel_func(
                             ExprSingleOperation(func_ptr), (ee, func_ptr))
+        
         return self._single_ckernel
 
     # Should probably check to ensure kinds still match

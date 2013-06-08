@@ -26,6 +26,16 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
         cf = add(af,bf)
         df = mul(cf,cf)
         ck = df._data.kerneltree.single_ckernel
+        
+        # Call the kernel on some sample data to test first
+        tmp0 = ctypes.c_double(1.0)
+        tmp1 = ctypes.c_double(1.0)
+        tmp2 = ctypes.c_double(1.0)
+        src_ptr_arr = (ctypes.c_void_p * 2)()
+        src_ptr_arr[0] = ctypes.addressof(tmp0)
+        src_ptr_arr[1] = ctypes.addressof(tmp1)
+        ck(ctypes.addressof(tmp2), src_ptr_arr)
+        self.assertEqual(tmp2.value, 4)
 
         # Allocate the result, and run the kernel across the arguments
         result = blaze.zeros(df.dshape)
