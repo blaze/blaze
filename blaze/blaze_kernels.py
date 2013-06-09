@@ -331,9 +331,8 @@ class BlazeElementKernel(object):
             pass
 
         # Link the module the function is part of to this module
-        new_module = self.func.module.clone()
         # FIXME:  It seems that this can destroy the Structure names for arguments        
-        module.link_in(new_module)
+        module.link_in(self.func.module, preserve=True)
         # Re-set the function object to the newly linked function
         self.replace_func(module.get_function_named(self.func.name))
 
