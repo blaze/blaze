@@ -149,19 +149,14 @@ diminfo_type = Type.struct([intp_type,    # shape
 zero_p = lc.Constant.int(intp_type, 0)
 one_p = lc.Constant.int(intp_type, 1)
 
+# We use a per-module cache because the LLVM linker wants a new struct 
+#   with the same name in different modules.
+# The linker does *not* like the *same* struct with the *same* name in 
+#   two different modules.
 _cache = {}
-# Called after linking to update the cache with the new struct
-# Apparently LLVM sets source struct names to "" after linking in a module.
-#  See lib/Linker/LinkModules.cpp and routine TypeMapTy::linkDefinedTypeBodies()
-def _update_cache(module):
-    for key, value in _cache.items():
-        newvalue = module.get_type_named(key)
-        if newvalue:
-            _cache[key] = newvalue
-
 # This is the way we define LLVM arrays.
 #  C_CONTIGUOUS, F_CONTIGUOUS, and STRIDED are strongly encouraged...
-def array_type(nd, kind, el_type=char_type):
+def array_type(nd, kind, el_type=char_type, module=None):
     base = kind & (~(HAS_ND | HAS_DIMKIND))
     if base == C_CONTIGUOUS:
         dimstr = 'Array_C'
@@ -174,18 +169,23 @@ def array_type(nd, kind, el_type=char_type):
     else:
         raise TypeError("Do not understand Array kind of %d" % kind)
 
+    if (kind & HAS_ND):
+        dimstr += '_ND'
+    elif (kind & HAS_DIMKIND):
+        dimstr += '_DK'
+
     key = "%s_%s_%d" % (dimstr, str(el_type), nd)
-    if key in _cache:
-        return _cache[key]
+    if module is not None:
+        modcache = _cache.setdefault(module.id,{})
+        if key in modcache:
+            return modcache[key]
 
     terms = [Type.pointer(el_type)]        # data
 
     if (kind & HAS_ND):
         terms.append(int32_type)           # nd
-        dimstr += '_ND'
     elif (kind & HAS_DIMKIND):
         terms.extend([int16_type, int16_type]) # nd, dimkind
-        dimstr += '_DK'
 
     if base in [C_CONTIGUOUS, F_CONTIGUOUS]:
         terms.append(Type.array(intp_type, nd))     # shape
@@ -197,7 +197,8 @@ def array_type(nd, kind, el_type=char_type):
 
     terms.append(void_p_type)
     ret = Type.struct(terms, name=key)
-    _cache[key] = ret
+    if module is not None:
+        modcache[key] = ret
     return ret
 
 def check_array(arrtyp):

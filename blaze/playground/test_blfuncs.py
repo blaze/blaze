@@ -24,16 +24,16 @@ mul = BlazeFunc('mul', {(double,)*3: _mul,
 #  for any source-string approach
 #  BLIR or C++
 dotcpp = r"""
-#include "stdio.h"
+//#include "stdio.h"
 
 double ddot(Array_C<double, 1> *a, Array_C<double, 1> *b) {
        int i;
        double ret;
 
-       printf("dims = %ld, %ld\n", a->dims[0], b->dims[0]);
+       //printf("dims = %ld, %ld\n", a->dims[0], b->dims[0]);
        ret = 0.0;
        for (i=0; i < a->dims[0]; i++) {
-           printf("vals = %f, %f\n", a->data[i], b->data[i]);
+           //printf("vals = %f, %f\n", a->data[i], b->data[i]);
            ret += (a->data[i] * b->data[i]);
        }
        return ret;
@@ -91,7 +91,7 @@ val = _converta(data, struct)
 assert result._data.kerneltree(cb(val), cb(val)) == 285.0
 
 # FIXME:
-# Looks like we are not quite right here...
+# Looks like we are still not quite right here...
 #  Works for some cases but not for others.
 # Adding printf seems to "fix" issues
 #  But then repeated calls causes crash

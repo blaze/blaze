@@ -202,9 +202,9 @@ class BlazeElementKernel(object):
             if self._ee is None:
                 from llvm.passes import build_pass_managers
                 import llvm.ee as le
-                tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
-                pms = build_pass_managers(tm, opt=3, fpm=False)
-                pms.pm.run(module)
+                #tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
+                #pms = build_pass_managers(tm, opt=3, fpm=False)
+                #pms.pm.run(module)
                 self._ee = le.ExecutionEngine.new(module)
             func = module.get_function_named(self.func.name)
             self._func_ptr = self._ee.get_pointer_to_function(func)
@@ -332,12 +332,7 @@ class BlazeElementKernel(object):
 
         # Link the module the function is part of to this module
         new_module = self.func.module.clone()
-        # FIXME:  It seems that this can destroy the Structure names for arguments        
         module.link_in(new_module)
-
-        # Update the llvm_array cache to reset struct names
-        # Not sure if this is really necessary...
-        lla._update_cache(module)
 
         # Re-set the function object to the newly linked function
         self.replace_func(module.get_function_named(self.func.name))
