@@ -16,6 +16,14 @@ def bool_to_py(ptr):
     cptr = ctypes.cast(ptr, _char_ptr_t)
     return (cptr.contents.value != 0)
 
+def complex_ptr_to_py(ptr_t, bytes):
+    def ptr_to_py(ptr):
+        cptr = ctypes.cast(ptr, ptr_t)
+        cptr2 = ctypes.cast(ptr+bytes, ptr_t)
+        return complex(cptr.contents.value, cptr2.contents.value)
+    return ptr_to_py
+
+
 _dshape_name_to_py = {
     'bool' : bool_to_py,
     'int8' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_int8)),
@@ -28,6 +36,8 @@ _dshape_name_to_py = {
     'uint64' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_uint64)),
     'float32' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_float)),
     'float64' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_double)),
+    'complex64': complex_ptr_to_py(ctypes.POINTER(ctypes.c_float), 4),
+    'complex128': complex_ptr_to_py(ctypes.POINTER(ctypes.c_double), 8)
 }
 
 def dshaped_ptr_to_py(ds):

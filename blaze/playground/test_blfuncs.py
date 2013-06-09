@@ -3,11 +3,7 @@ from blaze.datashape import double, complex128 as c128
 import blaze
 import array
 import ctypes
-import unittest
 
-
-#class TestBlazeFunc(unittest.TestCase):
-#    def setUp(self):
 
 def _add(a,b):
     return a + b
@@ -15,18 +11,13 @@ def _add(a,b):
 def _mul(a,b):
     return a * b
 
+print "Begin"
 
 add = BlazeFunc('add',[('f8(f8,f8)', _add),
                ('c16(c16,c16)', _add)])
 
 mul = BlazeFunc('mul', {(double,)*3: _mul,
                            (c128,)*3: _mul})
-
-a = blaze.array([1,2,3],dshape=c128)
-b = blaze.array([2,3,4],dshape=c128)
-
-c = add(a,b)
-d = mul(c,c)
 
 
 # Should think about how to generate many of these at once
@@ -46,8 +37,12 @@ double ddot(Array_C<double, 1> *a, Array_C<double, 1> *b) {
 
 dot = BlazeFunc('dot', [('cpp', dotcpp)])
 
+print "Hello..."
+
 a = blaze.array([1,2,3],dshape=c128)
 b = blaze.array([2,3,4],dshape=c128)
+
+print "Everywhere..."
 
 c = add(a,b)
 d = mul(c,c)
@@ -59,11 +54,11 @@ arg1 = blaze.complex128(3.0, 4.0)
 arg2 = blaze.complex128(2.0, 5.0)
 out = blaze.complex128(0.0, 0.0)
 cb = ctypes.byref
-d._data.kerneltree(cb(arg1), cb(arg2), cb(out))
-out_c = _convert(out)
-arg1_c = _convert(arg1)
-arg2_c = _convert(arg2)
-assert out_c == (arg1_c+arg2_c)**2
+#d._data.kerneltree(cb(arg1), cb(arg2), cb(out))
+#out_c = _convert(out)
+#arg1_c = _convert(arg1)
+#arg2_c = _convert(arg2)
+#assert out_c == (arg1_c+arg2_c)**2
 
 
 af = blaze.array([1,2,3],dshape=double)
@@ -74,7 +69,7 @@ df = mul(cf,cf)
 # Fuse the BlazeFunc DataDescriptor
 # You can call the kerneltree to compute elements (which will fuse the kernel)
 #ck = df._data.kerneltree.single_ckernel
-assert  df._data.kerneltree(3.0, 4.0) == 49.0
+#assert  df._data.kerneltree(3.0, 4.0) == 49.0
 
 result = dot(af, bf)
 import array
@@ -83,8 +78,9 @@ data = array.array('d',range(10))
 address, count = data.buffer_info()
 buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
 shape = (ctypes.c_long * 1)(count)
-struct = result._data.kerneltree.ctypes_func.argtypes[0]._type_
-val = struct(buff, shape)
-assert result._data.kerneltree(cb(val), cb(val)) == 285.0
+#struct = result._data.kerneltree.ctypes_func.argtypes[0]._type_
+#val = struct(buff, shape)
+#assert result._data.kerneltree(cb(val), cb(val)) == 285.0
 
-
+result2 = dot(add(df, cf), mul(af, bf))
+new = result2._data.kerneltree.fuse()

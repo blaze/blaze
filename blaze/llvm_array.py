@@ -8,17 +8,20 @@ from __future__ import absolute_import
 # struct {
 #    eltype *data;
 #    intp shape[nd];
+#    void *meta;
 # } contiguous_array(eltype, nd)
 #
 # struct {
 #    eltype *data;
 #    intp shape[nd];
 #    intp stride[nd];
+#    void *meta;
 # } strided_array(eltype, nd)
 #
 # # struct {
 #    eltype *data;
 #    diminfo shape[nd];
+#    void *meta;
 # } new_strided_array(eltype, nd)
 #
 # struct {
@@ -35,20 +38,26 @@ from __future__ import absolute_import
 #   eltype *data;
 #   int32 nd;
 #   intp shape[nd];
+#   void *meta;
 # } contiguous_array_nd(eltype)
-#
-# struct {
-#    eltype *data;
-#    int32 nd;
-#    diminfo shape[nd];
-# } new_strided_array_nd(eltype)
 #
 # struct {
 #    eltype *data;
 #    int32 nd;
 #    intp shape[nd];
 #    intp stride[nd];
+#    void *meta;
 # } strided_array_nd(eltype)
+#
+# struct {
+#    eltype *data;
+#    int32 nd;
+#    diminfo shape[nd];
+#    void *meta;
+# } new_strided_array_nd(eltype)
+#
+#
+#
 #
 #
 # The most general (where the kind of array is stored as well as number
@@ -60,6 +69,7 @@ from __future__ import absolute_import
 #   int16 nd;
 #   int16 dimkind;
 #   ???
+#   void *meta;
 # } array_nd(eltype)
 #
 # where ??? is run-time interpreted based on the dimkind to either:
@@ -73,9 +83,8 @@ from __future__ import absolute_import
 # Array_C --- C Contiguous
 # Array_F --- Fortran Contiguous
 # Array_S --- Strided
-# Array_CS --- Contiguous in last dimension and strided in others
-# Array_FS --- Contiguous in first dimension and strided in others
-
+# Array_CS --- Contiguous in last dimension and strided in others (same layout as Array_S)
+# Array_FS --- Contiguous in first dimension and strided in others (same layout as Array_S)
 # For 1-d, Array_C, Array_F, Array_CS, and Array_FS behave identically.
 
 import llvm.core as lc
@@ -102,6 +111,8 @@ F_CONTIGUOUS_DK = F_CONTIGUOUS + HAS_DIMKIND
 STRIDED_DK = STRIDED + HAS_DIMKIND
 NEW_STRIDED_DK = NEW_STRIDED + HAS_DIMKIND
 
+# The first three are the most common --- the others are not typically supported
+# STRIDED is basically the equivalent of NumPy
 array_kinds = (C_CONTIGUOUS, F_CONTIGUOUS, STRIDED, NEW_STRIDED,
                C_CONTIGUOUS_ND, F_CONTIGUOUS_ND, STRIDED_ND, NEW_STRIDED_ND,
                C_CONTIGUOUS_DK, F_CONTIGUOUS_DK, STRIDED_DK, NEW_STRIDED_DK)
@@ -129,6 +140,7 @@ int16_type = C.int16
 intp_type = C.intp
 int_type = C.int
 char_p_type = lc.Type.pointer(C.char)
+void_p_type = C.void_p
 
 diminfo_type = Type.struct([intp_type,    # shape
                             intp_type     # stride
@@ -142,7 +154,8 @@ _cache = {}
 # This is the way we define LLVM arrays.
 #  C_CONTIGUOUS, F_CONTIGUOUS, and STRIDED are strongly encouraged...
 def array_type(nd, kind, el_type=char_type):
-    key = (kind, nd, str(el_type))
+    str_el_type = str(el_type)
+    key = (kind, nd, str_el_type)
     if key in _cache:
         return _cache[key]
 
@@ -175,15 +188,16 @@ def array_type(nd, kind, el_type=char_type):
         terms.extend([Type.array(intp_type, nd),    # shape
                       Type.array(intp_type, nd)])   # strides
 
+    terms.append(void_p_type)
+    dimstr = "%s_%s_%d" % (dimstr, str_el_type, nd)
     ret = Type.struct(terms, name=dimstr)
     _cache[key] = ret
     return ret
 
-
 def check_array(arrtyp):
     if not isinstance(arrtyp, lc.StructType):
         return None
-    if arrtyp.element_count not in [2, 3, 4, 5]:
+    if arrtyp.element_count not in [3, 4, 5, 6]:
         return None
 
     # Look through _cache and see if it's there
@@ -200,6 +214,9 @@ def _raw_check_array(arrtyp):
     if not isinstance(a0, lc.PointerType) or \
           not (isinstance(a1, lc.ArrayType) or
                (a1 == int32_type) or (a1 == int16_type)):
+        return None
+
+    if not (arrtyp.elements[-1] == void_p_type):
         return None
 
     data_type = a0.pointee
@@ -233,14 +250,14 @@ def _raw_check_array(arrtyp):
         c_contiguous = C_CONTIGUOUS
         f_contiguous = F_CONTIGUOUS
 
-    elcount = num + 2
     # otherwise we have lc.ArrType as element [1]
-    if arrtyp.element_count not in [num+1,num+2]:
+    if arrtyp.element_count not in [num+2,num+3]:
         return None
     s1 = arrtyp.elements[num]
     nd = s1.count
 
-    if arrtyp.element_count == elcount:
+    # Strided case
+    if arrtyp.element_count == num+3:
         if not isinstance(arrtyp.elements[num+1], lc.ArrayType):
             return None
         s2 = arrtyp.elements[num+1]
@@ -320,6 +337,7 @@ def _make_cpp_templates():
     struct {name} {{
         T *data;
         {middle}{dims};
+        void *meta;
     }};
     """
 
@@ -455,7 +473,6 @@ def embed(builder, llvmval, nd, preload=True):
     kind = llvmval.type.kind
     if kind in LLVM_SCALAR:
         pass
-
     if preload:
         builder_val = builder
     else:
@@ -477,6 +494,8 @@ def isiterable(val):
 # allows pre-loading of strides, shape, so that
 # slicing and element-access computation happens at Python level
 # without un-necessary memory-access (loading)
+# If builder is set during creation, then pre-load
+#  Otherwise, attach builder later as attribute
 class LLArray(object):
     _strides_ptr = None
     _strides = None
@@ -500,7 +519,7 @@ class LLArray(object):
             raise ValueError("Unsupported array type %s" % kind)
         self._itemsize = _sizeof(eltype)
         if builder is not None:
-            _ = self.strides  # execute property codes
+            _ = self.strides  # execute property codes to pre-load
             _ = self.shape
             _ = self.data
 
@@ -626,87 +645,99 @@ class LLArray(object):
     # eltype is an llvm type
     # This is intended for temporary use only.
     def create(self, shape=None, kind=None, eltype=None, malloc=None, free=None, order='K'):
-        import operator
-        if malloc is None:
-            malloc, free = _default_malloc_free(self.module)
+        res =  create_array(self.builder, shape or self.shape, 
+                                          kind or self._kind, 
+                                          eltype or self._eltype, 
+                                          malloc, free, order)
+        new, freefuncs, char_data = res
         self._freefuncs.append(free)
-        if shape is None:
-            shape = self.shape
-        if kind is None:
-            kind = self._kind
-        if eltype is None:
-            eltype = self._eltype
-        nd = len(shape)
-        newtype = array_type(nd, kind, eltype)
-        new = self.builder.alloca(newtype)
-        shape_ptr = get_shape_ptr(self.builder, new)
-
-        # Store shape
-        for i, val in enumerate(shape):
-            store_at(self.builder, shape_ptr, i, val)
-
-        # if shape is all integers then we can pre-multiply to get size.
-        # Otherwise, we will have to compute the size in the code.
-        if all(hasattr(x, '__index__') for x in shape):
-            shape = [x.__index__() for x in shape]
-            total = reduce(operator.mul, shape, 1)
-            arg = Constant.int(intp_type, total)
-            precompute=True
-        else:
-            precompute=False
-            result = Constant.int(intp_type, 1)
-            for val in shape:
-                result = self.builder.mul(result, auto_const_intp(val))
-            arg = result
-        char_data = self.builder.call(malloc, [arg])
         self._freedata.append(char_data)
-        data = self.builder.bitcast(char_data, eltype)
-        data_ptr = get_data_ptr(self.builder, new)
-        self.builder.store(data, data_ptr)
-
-        if kind == STRIDED:
-            # Fill the strides array depending on order
-            if order == 'K':
-                # if it's strided, I suppose we should choose based on which is
-                # larger in self, the first or last stride for now just 'C'
-                order = 'F' if self._kind is F_CONTIGUOUS else 'C'
-            if order == 'C':
-                range2 = range(nd-1, -1, -1)
-                func = operator.sub
-            elif order == 'F':
-                range2 = range(0, nd, 1)
-                func = operator.add
-            else:
-                raise ValueError("Invalid order given")
-            range1 = range2[:-1]
-            range3 = [func(v, 1) for v in range1]
-            strides_ptr = get_strides_ptr(self.builder, new)
-            if precompute:
-                strides_list = [sizeof(eltype)]
-                value = strides_list[0]
-                for index in range1:
-                    value = value * shape[index]
-                    strides_list.append(value)
-                for stride, index in zip(strides_list, range2):
-                    sval = Constant.int(intp_type, stride)
-                    store_at(self.builder, strides_ptr, index, sval)
-            else:
-                sval = Constant.int(intp_type, sizeof(eltype))
-                store_at(self.builder, strides_ptr, range1[0], sval)
-                for sh_index, st_index in (range1, range3):
-                    val = load_at(self.builder, shape_ptr, sh_index)
-                    sval = self.builder.mul(sval, val)
-                    store_at(self.builder, strides_ptr, st_index, sval)
         return LLVMArray(new)
 
-    def __del__(self):
+    def _dealloc(self):
         for freefunc, freedatum in zip(self._freefuncs, self._freedata):
             self.builder.call(freefunc, [freedatum])
+        self._freefuncs = []
+        self._freedata = []
+
+# Static alloca the structure and malloc the data
+# There is no facility for ensuring lifetime of the memory
+# So this array should *not* be used in another thread
+# shape is a Python list of integers or llvm ints
+# eltype is an llvm type
+# This is intended for temporary use only.
+def create_array(builder, shape, kind, eltype, malloc=None, free=None, order='K'):
+    import operator
+    if malloc is None:
+        malloc, free = _default_malloc_free(builder.basic_block.function.module)
+    nd = len(shape)
+    newtype = array_type(nd, kind, eltype)
+    new = builder.alloca(newtype)
+    shape_ptr = get_shape_ptr(builder, new)
+
+    # Store shape
+    for i, val in enumerate(shape):
+        store_at(builder, shape_ptr, i, auto_const_intp(val))
+
+    # if shape is all integers then we can pre-multiply to get size.
+    # Otherwise, we will have to compute the size in the code.
+    if all(hasattr(x, '__index__') for x in shape):
+        shape = [x.__index__() for x in shape]
+        total = reduce(operator.mul, shape, 1)
+        arg = Constant.int(intp_type, total)
+        precompute=True
+    else:
+        precompute=False
+        result = Constant.int(intp_type, 1)
+        for val in shape:
+            result = builder.mul(result, auto_const_intp(val))
+        arg = result
+    char_data = builder.call(malloc, [arg])
+    data = builder.bitcast(char_data, Type.pointer(eltype))
+    data_ptr = builder.gep(new, [zero_p, zero_i])    
+    builder.store(data, data_ptr)
+
+    if kind == STRIDED:
+        # Fill the strides array depending on order
+        if order == 'K':
+            # if it's strided, I suppose we should choose based on which is
+            # larger in self, the first or last stride for now just 'C'
+            order = 'F' if kind is F_CONTIGUOUS else 'C'
+        if order == 'C':
+            range2 = range(nd-1, -1, -1)
+            func = operator.sub
+        elif order == 'F':
+            range2 = range(0, nd, 1)
+            func = operator.add
+        else:
+            raise ValueError("Invalid order given")
+        range1 = range2[:-1]
+        range3 = [func(v, 1) for v in range1]
+        strides_ptr = get_strides_ptr(builder, new)
+        if precompute:
+            strides_list = [sizeof(eltype)]
+            value = strides_list[0]
+            for index in range1:
+                value = value * shape[index]
+                strides_list.append(value)
+            for stride, index in zip(strides_list, range2):
+                sval = Constant.int(intp_type, stride)
+                store_at(builder, strides_ptr, index, sval)
+        else:
+            sval = Constant.int(intp_type, sizeof(eltype))
+            store_at(builder, strides_ptr, range1[0], sval)
+            for sh_index, st_index in (range1, range3):
+                val = load_at(builder, shape_ptr, sh_index)
+                sval = builder.mul(sval, val)
+                store_at(builder, strides_ptr, st_index, sval)
+
+    return new, free, char_data
+
 
 malloc_sig = lc.Type.function(char_p_type, [intp_type])
 free_sig = lc.Type.function(void_type, [char_p_type])
 
-def _defalt_malloc_free(mod):
+def _default_malloc_free(mod):
     malloc = mod.get_or_insert_function(malloc_sig, 'malloc')
     free = mod.get_or_insert_function(free_sig, 'free')
     return malloc, free

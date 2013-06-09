@@ -80,11 +80,12 @@ class BlazeElementKernel(object):
     _ee = None
     _dshapes = None
     _lifted_cache = {}
-    def __init__(self, func, dshapes=None):
+    def __init__(self, func, dshapes=None, shapefunc=None):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
                                 " Try a converter method.")
 
+        self._shape_func = shapefunc
         func.add_attribute(lc.ATTR_ALWAYS_INLINE)
         self.func = func
         func_type = func.type.pointee
@@ -161,6 +162,34 @@ class BlazeElementKernel(object):
     def nin(self):
         return len(self.kind)-1
 
+    @property
+    def shapefunc(self):
+        if self._shape_func is None:
+            if self.ranks[-1] == 0:
+                self._shape_func = lambda *args: ()
+            else:
+                symbols = [[sh.symbol for sh in dshape.shape] for dshape in self.dshapes]
+                outshapes = []
+                for symbol in symbols[-1]:
+                    # Find first occurrence of symbol in other shapes
+                    for i, arg in enumerate(symbols[:-1]):
+                        try:
+                            index = arg.index(symbol)
+                            break
+                        except ValueError:
+                            continue
+                    outshapes.append((i, index))
+                #outshapes is a list of tuples where first argument is which arg
+                #and second is which dim
+                def shape_func(*args):
+                    shape = tuple(args[i][j] for i,j in outshapes)
+                    return shape
+
+                self._shape_func = shape_func
+
+        return self._shape_func
+
+
 
     @staticmethod
     def fromcfunc(cfunc):
@@ -219,6 +248,7 @@ class BlazeElementKernel(object):
                     src_val = builder.load(src_ptr)
                     args.append(src_val)
                 elif k == POINTER:
+                    raise NotImplementedError
                     src_ptr = builder.bitcast(builder.load(
                                     builder.gep(src_ptr_arr_arg,
                                             (lc.Constant.int(intp_type, i),))), a)
@@ -252,6 +282,7 @@ class BlazeElementKernel(object):
                 dst_val = builder.call(func, args)
                 builder.store(dst_val, dst_ptr)
             elif self.kinds[-1] == POINTER:
+                raise NotImplementedError
                 builder.call(self.func, args + [dst_ptr])
             else:
                 raise TypeError("single_ckernel codegen doesn't support array types yet")
@@ -278,6 +309,7 @@ class BlazeElementKernel(object):
         self._func_ptr = None
         self._ctypes_func = None
         self._single_ckernel = None
+        self.module = func.module
 
     def attach(self, module):
         """Update this kernel to be attached to a particular module
@@ -294,17 +326,16 @@ class BlazeElementKernel(object):
             # replaces the function with one named from module
             # Should check to ensure kinds still match
             self.replace_func(module.get_function_named(self.func.name))
-            self.module = module
             return
         except LLVMException:
             pass
 
         # Link the module the function is part of to this module
-        module.link_in(self.func.module, preserve=True)
+        new_module = self.func.module.clone()
+        # FIXME:  It seems that this can destroy the Structure names for arguments        
+        module.link_in(new_module)
         # Re-set the function object to the newly linked function
-        self.func = module.get_function_named(self.func.name)
-        self.module = module
-
+        self.replace_func(module.get_function_named(self.func.name))
 
     def lift(self, outrank, outkind):
         """Take the current kernel and "lift" it so that the output has
@@ -400,7 +431,7 @@ class BlazeElementKernel(object):
         return try_bk
 
     def _lifted_func_type(self, outranks, outkind):
-        argtypes = self.argtypes
+        argtypes = self.argtypes[:]
         if self.kinds[-1] == SCALAR:
             argtypes.append(self.return_type)
         args = []
@@ -439,9 +470,6 @@ def fromblir(codestr):
     krnl = BlazeElementKernel(env['lfunctions'][NUM], dshapes)
     return krnl
 
-def fromcffi(cffifunc):
-    raise NotImplementedError
-
 def fromcpp(source):
     import tempfile, os, subprocess
     header = get_cpp_template()
@@ -476,9 +504,9 @@ def fromctypes(func, module=None):
         module = Module.new(name)
     raise NotImplementedError
 
-
 # An Argument to a kernel tree (encapsulates the array, argument kind and rank)
 class Argument(object):
+    _shape = None
     def __init__(self, arg, kind, rank, llvmtype):
         self.arr = arg
         self.kind = kind
@@ -489,6 +517,20 @@ class Argument(object):
         if not isinstance(other, Argument):
             return NotImplemented
         return (self.arr is other.arr) and (self.rank == other.rank)
+
+    @property
+    def shape(self):
+        if self._shape is None:
+            if self.rank == 0:
+                self._shape = ()
+            else:
+                self._shape = self.arr.dshape.shape[-self.rank:]
+        return self._shape
+
+    def lift(self, newrank, newkind):
+        oldtype = get_eltype(self.llvmtype, self.kind)
+        newtype = lc.Type.pointer(array_type(newrank, newkind, oldtype))
+        return Argument(self.arr, newkind, newrank, newtype)
 
 # This find args that are used uniquely as well.
 def find_unique_args(tree, unique_args):
@@ -517,14 +559,31 @@ def get_fused_type(tree):
 
     return unique_args, Type.function(out_type, args)
 
-# This modifies the node to add a reference to the llvm_obj
+class _cleanup(object):
+    def __init__(self, builder, freefunc, freedata):
+        self.freefunc = freefunc
+        self.freedata = freedata
+        self.builder = builder
+
+    def _dealloc(self):
+        self.builder.call(self.freefunc, [self.freedata])
+
+# This modifies the node to add a reference the output as llvm_obj
 def insert_instructions(node, builder, output=None):
     kernel = node.kernel
     is_scalar = (kernel.kinds[-1] == SCALAR)
     #allocate space for output if necessary
+    new = None
     if output is None:
-        if not is_scalar: # FIXME --- add array handling
+        if kernel.kinds[-1] == POINTER:
             output = builder.alloca(kernel.argtypes[-1].pointee)
+        elif not is_scalar: # Array
+            kind = kernel.kinds[-1][0]
+            eltype = kernel.argtypes[-1].pointee.elements[0].pointee
+            assert node.shape is not None
+            assert kernel.argtypes[-1].pointee.elements[1].count == len(node.shape)
+            output, freefunc, freedata = lla.create_array(builder, node.shape, kind, eltype)
+            new = _cleanup(builder, freefunc, freedata)
 
     #Setup the argument list
     args = [child.llvm_obj for child in node.children]
@@ -540,6 +599,8 @@ def insert_instructions(node, builder, output=None):
         node.llvm_obj = res
     else:
         node.llvm_obj = output
+
+    return new
 
 def fuse_kerneltree(tree, newname):
     """Fuse the kernel tree into a single kernel object with the common names
@@ -579,17 +640,39 @@ def fuse_kerneltree(tree, newname):
     #  site we issue instructions to compute the value
     nodelist = tree.sorted_nodes()
 
+    cleanup = []  # Objects to deallocate any temporary heap memory needed
+                  #   ust have a _dealloc method
+    def _temp_cleanup():
+        for obj in cleanup:
+            if obj is not None:
+                obj._dealloc()
+
     for node in nodelist[:-1]:
         node.kernel.attach(module)
-        insert_instructions(node, builder)
+        new = insert_instructions(node, builder)
+        cleanup.append(new)
 
+    __name = lla._cache.values()[0].name if lla._cache else ""
+    if __name.startswith("Array_C_double_1"):
+        import pdb
+        pdb.set_trace()        
     nodelist[-1].kernel.attach(module)
+    __newname = lla._cache.values()[0].name if lla._cache else ""
+    if __name != __newname:
+        import pdb
+        pdb.set_trace()
+
+
 
     if tree.kernel.kinds[-1] == SCALAR:
-        insert_instructions(nodelist[-1], builder)
+        new = insert_instructions(nodelist[-1], builder)
+        cleanup.append(new)
+        _temp_cleanup()
         builder.ret(nodelist[-1].llvm_obj)
     else:
-        insert_instructions(nodelist[-1], builder, func.args[-1])
+        new = insert_instructions(nodelist[-1], builder, func.args[-1])
+        cleanup.append(new)
+        _temp_cleanup()
         builder.ret_void()
 
     dshapes = [get_kernel_dshape(arg) for arg in args]

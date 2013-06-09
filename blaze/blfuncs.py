@@ -28,7 +28,8 @@ class KernelTree(object):
     _funcptr = None
     _ctypes = None
     _single_ckernel = None
-
+    _mark = False
+    _shape = None
     def __init__(self, kernel, children=[], name=None):
         assert isinstance(kernel, BlazeElementKernel)
         for el in children:
@@ -39,14 +40,29 @@ class KernelTree(object):
             name = 'node_' + next(self._stream_of_unique_names)
         self.name = name
 
+    def _reset_marks(self):
+        self._mark = False
+        if not self.leafnode:
+            for child in self.children:
+                if isinstance(child, KernelTree):
+                    child._reset_marks()
+
     def sorted_nodes(self):
         """Return depth-first list of unique KernelTree Nodes.
 
         The root of the tree will be the last node.
         """
         nodes = []
+        self._reset_marks()
         self.visit(nodes)
         return nodes
+
+    @property
+    def shape(self):
+        if self._shape is None:
+            shapeargs = [child.shape for child in self.children]
+            self._shape = self.kernel.shapefunc(*shapeargs)
+        return self._shape
 
     @property
     def leafnode(self):
@@ -57,51 +73,58 @@ class KernelTree(object):
             for child in self.children:
                 if isinstance(child, KernelTree):
                     child.visit(nodes)
-        if self not in nodes:
+        if not self._mark:
             nodes.append(self)
+            self._mark = True
 
     def fuse(self, name=None):
         if self.leafnode:
-            self._fused = self
+            self._update_kernelptrs(self)
             return self
         if name is None:
             name = 'flat_' + self.name
         krnlobj, children = fuse_kerneltree(self, name)
         new = KernelTree(krnlobj, children)
-        self._fused = new
+        self._update_kernelptrs(new)
         return new
+
+    def _update_kernelptrs(self, elkernel):
+        self._fused = elkernel
+        kernel = elkernel.kernel
+        self._funcptr = self._funcptr or kernel.func_ptr
+        self._ctypes = self._ctypes or kernel.ctypes_func
+        if all(kind == blaze_kernels.SCALAR for kind in kernel.kinds):
+            self._single_ckernel = self._single_ckernel or kernel.single_ckernel
 
     @property
     def func_ptr(self):
         if self._funcptr is None:
             self.fuse()
-            kernel = self._fused.kernel
-            self._funcptr = kernel.func_ptr
-            self._ctypes = kernel.ctypes_func
         return self._funcptr
 
     @property
     def ctypes_func(self):
         if self._ctypes is None:
             self.fuse()
-            kernel = self._fused.kernel
-            self._funcptr = kernel.func_ptr
-            self._ctypes = kernel.ctypes_func
-            #self._single_ckernel = kernel.single_ckernel
         return self._ctypes
 
     @property
     def single_ckernel(self):
-        # TODO: The properties func_ptr, ctypes_func,
-        #       single_ckernel look like they might
-        #       be triggering redundant fuse operations.
         if self._single_ckernel is None:
             self.fuse()
-            kernel = self._fused.kernel
-            #self._funcptr = kernel.func_ptr
-            #self._ctypes = kernel.ctypes_func
-            self._single_ckernel = kernel.single_ckernel
         return self._single_ckernel
+
+    def adapt(self, newrank, newkind):
+        """
+        Take this kernel tree and create a new kerneltree adapted
+        so that the it can be the input to another element kernel
+        with rank newrank and kind newkind
+        """
+        krnlobj, children = fuse_kerneltree(self, "fused_temp_" + self.name)
+        typechar = blaze_kernels.orderchar[newkind[0]]
+        new = krnlobj.lift(newrank, typechar)
+        children = [child.lift(newrank, newkind[0]) for child in children]
+        return KernelTree(new, children)
 
     def __call__(self, *args):
         return self.ctypes_func(*args)
@@ -305,7 +328,16 @@ class BlazeFunc(object):
         for i, arg in enumerate(args):
             data = arg._data
             if isinstance(data, BlazeFuncDescriptor):
-                children.append(data.kerneltree)
+                tree = data.kerneltree
+                treerank = tree.kernel.ranks[-1]
+                argrank = self.ranks[i]
+                if argrank != treerank:
+                    if argrank > treerank:
+                        tree = data.kerneltree.adapt(argrank, kernel.kinds[i])
+                    else:
+                        raise ValueError("Cannot use rank-%d output "
+                            "when rank-%d input is required" % (treerank, argrank))
+                children.append(tree)
             else:
                 tree_arg = Argument(arg, kernel.kinds[i],
                                     self.ranks[i], kernel.argtypes[i])

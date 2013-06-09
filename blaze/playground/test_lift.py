@@ -1,4 +1,3 @@
-import unittest
 import sys
 import ctypes
 import array
@@ -18,28 +17,24 @@ def create_func(mod):
     return func
 
 
-class TestKernelLift(unittest.TestCase):
-    def test_basic_lift(self):
-        addkernel = BlazeElementKernel(create_func(mod))
-        res = addkernel.lift(1, 'C')
-        cfunc = res.ctypes_func
-        cb = ctypes.byref
-        data = array.array('d',range(100))
-        odata = array.array('d', [0]*100)
-        struct = cfunc.argtypes[0]._type_
+addkernel = BlazeElementKernel(create_func(mod))
+res = addkernel.lift(1, 'C')
+cfunc = res.ctypes_func
+cb = ctypes.byref
+data = array.array('d',range(100))
+odata = array.array('d', [0]*100)
+struct = cfunc.argtypes[0]._type_
 
-        def _convert(arr):
-            address, count = arr.buffer_info()
-            buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
-            shape = (ctypes.c_ssize_t * 1)(count)
-            val = struct(buff, shape)
-            return val
+def _convert(arr):
+    address, count = arr.buffer_info()
+    buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
+    shape = (ctypes.c_ssize_t * 1)(count)
+    val = struct(buff, shape)
+    return val
 
-        val = _convert(data)
-        out = _convert(odata)
-        cfunc(cb(val), cb(val), cb(out))
-        print out
-        assert all((outd == ind + ind) for ind, outd in zip(data, odata))
+val = _convert(data)
+out = _convert(odata)
+cfunc(cb(val), cb(val), cb(out))
+print odata
+assert all((outd == ind + ind) for ind, outd in zip(data, odata))
 
-if __name__ == '__main__':
-    unittest.main()
