@@ -149,16 +149,19 @@ diminfo_type = Type.struct([intp_type,    # shape
 zero_p = lc.Constant.int(intp_type, 0)
 one_p = lc.Constant.int(intp_type, 1)
 
-
 _cache = {}
+# Called after linking to update the cache with the new struct
+# Apparently LLVM sets source struct names to "" after linking in a module.
+#  See lib/Linker/LinkModules.cpp and routine TypeMapTy::linkDefinedTypeBodies()
+def _update_cache(module):
+    for key, value in _cache.items():
+        newvalue = module.get_type_named(key)
+        if newvalue:
+            _cache[key] = newvalue
+
 # This is the way we define LLVM arrays.
 #  C_CONTIGUOUS, F_CONTIGUOUS, and STRIDED are strongly encouraged...
 def array_type(nd, kind, el_type=char_type):
-    str_el_type = str(el_type)
-    key = (kind, nd, str_el_type)
-    if key in _cache:
-        return _cache[key]
-
     base = kind & (~(HAS_ND | HAS_DIMKIND))
     if base == C_CONTIGUOUS:
         dimstr = 'Array_C'
@@ -170,6 +173,10 @@ def array_type(nd, kind, el_type=char_type):
         dimstr = 'Array_N'
     else:
         raise TypeError("Do not understand Array kind of %d" % kind)
+
+    key = "%s_%s_%d" % (dimstr, str(el_type), nd)
+    if key in _cache:
+        return _cache[key]
 
     terms = [Type.pointer(el_type)]        # data
 
@@ -189,8 +196,7 @@ def array_type(nd, kind, el_type=char_type):
                       Type.array(intp_type, nd)])   # strides
 
     terms.append(void_p_type)
-    dimstr = "%s_%s_%d" % (dimstr, str_el_type, nd)
-    ret = Type.struct(terms, name=dimstr)
+    ret = Type.struct(terms, name=key)
     _cache[key] = ret
     return ret
 

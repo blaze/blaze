@@ -77,20 +77,20 @@ class KernelTree(object):
             nodes.append(self)
             self._mark = True
 
-    def fuse(self, name=None):
+    def fuse(self):
+        if self._fused is not None:
+            return self._fused
         if self.leafnode:
             self._update_kernelptrs(self)
             return self
-        if name is None:
-            name = 'flat_' + self.name
-        krnlobj, children = fuse_kerneltree(self, name)
+        krnlobj, children = fuse_kerneltree(self, self.kernel.module)
         new = KernelTree(krnlobj, children)
         self._update_kernelptrs(new)
         return new
 
-    def _update_kernelptrs(self, elkernel):
-        self._fused = elkernel
-        kernel = elkernel.kernel
+    def _update_kernelptrs(self, eltree):
+        self._fused = eltree
+        kernel = eltree.kernel
         self._funcptr = self._funcptr or kernel.func_ptr
         self._ctypes = self._ctypes or kernel.ctypes_func
         if all(kind == blaze_kernels.SCALAR for kind in kernel.kinds):
@@ -118,12 +118,12 @@ class KernelTree(object):
         """
         Take this kernel tree and create a new kerneltree adapted
         so that the it can be the input to another element kernel
-        with rank newrank and kind newkind
+        with rank newrank and kind newkin
         """
-        krnlobj, children = fuse_kerneltree(self, "fused_temp_" + self.name)
-        typechar = blaze_kernels.orderchar[newkind[0]]
+        krnlobj, children = fuse_kerneltree(self, self.kernel.module)
+        typechar = blaze_kernels.orderchar[newkind]
         new = krnlobj.lift(newrank, typechar)
-        children = [child.lift(newrank, newkind[0]) for child in children]
+        children = [child.lift(newrank, newkind) for child in children]
         return KernelTree(new, children)
 
     def __call__(self, *args):
@@ -333,7 +333,7 @@ class BlazeFunc(object):
                 argrank = self.ranks[i]
                 if argrank != treerank:
                     if argrank > treerank:
-                        tree = data.kerneltree.adapt(argrank, kernel.kinds[i])
+                        tree = data.kerneltree.adapt(argrank, kernel.kinds[i][0])
                     else:
                         raise ValueError("Cannot use rank-%d output "
                             "when rank-%d input is required" % (treerank, argrank))
