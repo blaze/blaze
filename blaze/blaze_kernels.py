@@ -27,7 +27,7 @@ from . import llvm_array as lla
 from .llvm_array import (void_type, intp_type, array_kinds, check_array, get_cpp_template,
                          array_type, const_intp, LLArray, orderchar)
 from .kernelgen import loop_nest
-from .ckernel import ExprSingleOperation, wrap_ckernel_func
+from .ckernel import ExprSingleOperation, JITKernelData, wrap_ckernel_func
 from .py3help import izip, _strtypes
 from .datashape.util import dshape as make_dshape
 
@@ -223,8 +223,8 @@ class BlazeElementKernel(object):
         return self._ctypes_func
 
     @property
-    def single_ckernel(self):
-        """Creates a CKernel object with prototype ExprSingleOperation
+    def unbound_single_ckernel(self):
+        """Creates an UnboundCKernelFunction with the ExprSingleOperation prototype.
         """
         if self._single_ckernel is None:
             i8_p_type = Type.pointer(Type.int(8))
@@ -236,13 +236,34 @@ class BlazeElementKernel(object):
                                               name=single_ck_func_name)
             block = single_ck_func.append_basic_block('entry')
             builder = lc.Builder.new(block)
-            # Convert the src pointer args to the appropriate kinds for the llvm call
             dst_ptr_arg, src_ptr_arr_arg, extra_ptr_arg = single_ck_func.args
             dst_ptr_arg.name = 'dst_ptr'
             src_ptr_arr_arg.name = 'src_ptrs'
             extra_ptr_arg.name = 'extra_ptr'
-            args = []
+            # Build up the kernel data structure. Currently, this means
+            # adding a shape field for each array argument. First comes
+            # the kernel data prefix with a spot for the 'owner' reference added.
+            input_field_indices = []
+            kernel_data_fields = [Type.struct([i8_p_type]*3)]
+            kernel_data_ctypes_fields = [('base', JITKernelData)]
             for i, (k, a) in enumerate(izip(self.kinds, self.argtypes)):
+                if k == lla.C_CONTIGUOUS:
+                    input_field_indices.append(len(kernel_data_fields))
+                    kernel_data_fields.append(Type.array(
+                                    intp_type, len(self.dshapes[i])-1))
+                    kernel_data_ctypes_fields.append(('src_%d' % i,
+                                    ctypes.c_ssize_t * len(self.dshapes[i])-1))
+                elif k in [SCALAR, POINTER]:
+                    input_field_indices.append(None)
+                else:
+                    raise TypeError("unbound_single_ckernel codegen doesn't " +
+                                    "support the given parameter kind yet")
+            # Make an LLVM and ctypes type for the extra data pointer.
+            kernel_data_llvmtype = Type.struct(kernel_data_fields)
+            class kernel_data_ctypestype(ctypes.Structure):
+                _fields_ = kernel_data_ctypes_fields
+            # Convert the src pointer args to the appropriate kinds for the llvm call
+            for i, (k, a) in enumerate(izip(self.kinds[:-1], self.argtypes[:-1])):
                 if k == SCALAR:
                     src_ptr = builder.bitcast(builder.load(
                                     builder.gep(src_ptr_arr_arg,
@@ -259,25 +280,43 @@ class BlazeElementKernel(object):
                 elif k == lla.C_CONTIGUOUS:
                     # XXX: This code is not tested, it still needs work
 
-                    # First get the shape of this parameter
-                    # For now, require the full shape to be specified,
-                    # so that the memory layout is fully known by the
-                    # called function (no TypeVars)
-                    shape = tuple(operator.index(x) for x in self.dshapes[i][:-1])
+                    # First get the shape of this parameter. This will
+                    # be a combination of Fixed and TypeVar (Var unsupported
+                    # here for now)
+                    shape = self.dshapes[i][:-1]
                     # Make an llvm array
                     arrtype = lla.array_type(len(shape), lla.C_CONTIGUOUS, module)
                     arr_var = builder.alloca(arrtype)
                     builder.store(builder.gep(arr_var, (lc.Constant.int(intp_type, 0),)),
                                     src_ptr)
-                    for i, sz in enumerate(shape):
-                        shape_el_ptr = builder.gep(arr_var,
-                                        (lc.Constant.int(intp_type, 1),
-                                         lc.Constant.int(intp_type, i)))
-                        builder.store(shape_el_ptr, lc.Constant.int(intp_type, sz))
+                    for j, sz in enumerate(shape):
+                        if isinstance(sz, datashape.Fixed):
+                            # If the shape is already known at JIT compile time,
+                            # insert the constant
+                            shape_el_ptr = builder.gep(arr_var,
+                                            (lc.Constant.int(intp_type, 1),
+                                             lc.Constant.int(intp_type, j)))
+                            builder.store(shape_el_ptr,
+                                            lc.Constant.int(intp_type,
+                                                    operator.index(sz)))
+                        elif isinstance(sz, datashape.TypeVar):
+                            # TypeVar types are only known when the kernel is bound,
+                            # so copy it from the extra data pointer
+                            extra_struct = builder.bitcast(extra_ptr_arg,
+                                            kernel_data_llvmtype.pointer)
+                            sz_from_extra_ptr = builder.gep(extra_struct,
+                                            (lc.Constant.int(intp_type,
+                                                    input_field_indices[i]),
+                                             lc.Constant.int(intp_type, j)))
+                            sz_from_extra = builder.load(sz_from_extra_ptr)
+                            shape_el_ptr = builder.gep(arr_var,
+                                            (lc.Constant.int(intp_type, 1),
+                                             lc.Constant.int(intp_type, j)))
+                            builder.store(shape_el_ptr, sz_from_extra)
+                        else:
+                            raise TypeError(("unbound_single_ckernel codegen doesn't " +
+                                            "support dimension type %r") % type(sz))
                     args.append(arr_var)
-                else:
-                    raise TypeError("single_ckernel codegen doesn't " +
-                                    "support the given parameter kind yet")
             # Call the function and store in the dst
             dst_ptr = builder.bitcast(dst_ptr_arg, Type.pointer(self.return_type))
             if self.kinds[-1] == SCALAR:
@@ -287,10 +326,48 @@ class BlazeElementKernel(object):
             elif self.kinds[-1] == POINTER:
                 raise NotImplementedError
                 builder.call(self.func, args + [dst_ptr])
+            elif self.kinds[-1] == lla.C_CONTIGUOUS:
+                # First get the shape of the outpu. This will
+                # be a combination of Fixed and TypeVar (Var unsupported
+                # here for now)
+                shape = self.dshapes[-1][:-1]
+                # Make an llvm array
+                arrtype = lla.array_type(len(shape), lla.C_CONTIGUOUS)
+                arr_var = builder.alloca(arrtype)
+                builder.store(builder.gep(arr_var, (lc.Constant.int(intp_type, 0),)),
+                                src_ptr)
+                for j, sz in enumerate(shape):
+                    if isinstance(sz, datashape.Fixed):
+                        # If the shape is already known at JIT compile time,
+                        # insert the constant
+                        shape_el_ptr = builder.gep(arr_var,
+                                        (lc.Constant.int(intp_type, 1),
+                                         lc.Constant.int(intp_type, j)))
+                        builder.store(shape_el_ptr,
+                                        lc.Constant.int(intp_type,
+                                                operator.index(sz)))
+                    elif isinstance(sz, datashape.TypeVar):
+                        # TypeVar types are only known when the kernel is bound,
+                        # so copy it from the extra data pointer
+                        extra_struct = builder.bitcast(extra_ptr_arg,
+                                        kernel_data_llvmtype.pointer)
+                        sz_from_extra_ptr = builder.gep(extra_struct,
+                                        (lc.Constant.int(intp_type,
+                                                input_field_indices[-1]),
+                                         lc.Constant.int(intp_type, j)))
+                        sz_from_extra = builder.load(sz_from_extra_ptr)
+                        shape_el_ptr = builder.gep(arr_var,
+                                        (lc.Constant.int(intp_type, 1),
+                                         lc.Constant.int(intp_type, j)))
+                        builder.store(shape_el_ptr, sz_from_extra)
+                    else:
+                        raise TypeError(("unbound_single_ckernel codegen doesn't " +
+                                        "support dimension type %r") % type(sz))
+                builder.call(self.func, args + [arr_var])
             else:
                 raise TypeError("single_ckernel codegen doesn't support array types yet")
             builder.ret_void()
-            #print(single_ck_func)
+            print(single_ck_func)
             # DEBUGGING: Verify the module.
             module.verify()
             # TODO: Cache the EE - the interplay with the func_ptr
@@ -302,7 +379,7 @@ class BlazeElementKernel(object):
             func_ptr = ee.get_pointer_to_function(single_ck_func)
             self._single_ckernel = wrap_ckernel_func(
                             ExprSingleOperation(func_ptr), (ee, func_ptr))
-        
+
         return self._single_ckernel
 
     # Should probably check to ensure kinds still match
@@ -368,7 +445,7 @@ class BlazeElementKernel(object):
         name = self.func.name + "_lifted_%d_%s" % (outrank, orderchar[outkind])
         try_bk = self._lifted_cache.get(name, None)
         if try_bk is not None:
-            return try_bk        
+            return try_bk
 
         if outkind not in array_kinds[:3]:
             raise ValueError("Invalid kind specified for output: %s" % outkind)
@@ -509,7 +586,7 @@ def fromctypes(func, module=None):
     raise NotImplementedError
 
 def refresh_name(_llvmtype, module=None):
-    if (_llvmtype.kind == lc.TYPE_POINTER and 
+    if (_llvmtype.kind == lc.TYPE_POINTER and
            _llvmtype.pointee.kind == lc.TYPE_STRUCT and
            _llvmtype.pointee.name == ''):
         res = lla.check_array(_llvmtype.pointee)
@@ -539,7 +616,7 @@ class Argument(object):
         #        in the generated code.
         return (self.arr is other.arr) and (self.rank == other.rank) and (self.kind==other.kind)
 
-    # FIXME:  
+    # FIXME:
     #   Because module linking destroys struct names we need to store
     #   a stringified version of the element type and then
     #   convert as needed...
@@ -626,8 +703,8 @@ def insert_instructions(node, builder, output=None):
         args.append(output)
 
     # call the kernel corresponding to this node
-    # bitcast any arguments that don't match the kernel.function type for array types and 
-    #  pointer types... Needed because inputs might be from different compilers... 
+    # bitcast any arguments that don't match the kernel.function type for array types and
+    #  pointer types... Needed because inputs might be from different compilers...
     newargs = []
     for kind, oldarg, needed_type in zip(kernel.kinds, args, kernel.func.type.pointee.args):
         newarg = oldarg

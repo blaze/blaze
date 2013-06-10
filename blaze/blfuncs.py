@@ -27,9 +27,10 @@ class KernelTree(object):
     _fused = None
     _funcptr = None
     _ctypes = None
-    _single_ckernel = None
+    _unbound_single_ckernel = None
     _mark = False
     _shape = None
+
     def __init__(self, kernel, children=[], name=None):
         assert isinstance(kernel, BlazeElementKernel)
         for el in children:
@@ -93,8 +94,9 @@ class KernelTree(object):
         kernel = eltree.kernel
         self._funcptr = self._funcptr or kernel.func_ptr
         self._ctypes = self._ctypes or kernel.ctypes_func
-        if all(kind == blaze_kernels.SCALAR for kind in kernel.kinds):
-            self._single_ckernel = self._single_ckernel or kernel.single_ckernel
+        if all(kind in [blaze_kernels.SCALAR, blaze_kernels.POINTER,
+                        llvm_array.C_CONTIGUOUS] for kind in kernel.kinds):
+            self._unbound_single_ckernel = self._unbound_single_ckernel or kernel.unbound_single_ckernel
 
     @property
     def func_ptr(self):
@@ -109,10 +111,10 @@ class KernelTree(object):
         return self._ctypes
 
     @property
-    def single_ckernel(self):
+    def unbound_single_ckernel(self):
         if self._single_ckernel is None:
             self.fuse()
-        return self._single_ckernel
+        return self._unbound_single_ckernel
 
     def adapt(self, newrank, newkind):
         """

@@ -3,7 +3,8 @@ from __future__ import print_function
 
 __all__ = ['KernelDataPrefix', 'UnarySingleOperation', 'UnaryStridedOperation',
         'ExprSingleOperation', 'ExprStridedOperation', 'BinarySinglePredicate',
-        'DynamicKernelInstance', 'CKernel', 'wrap_ckernel_func']
+        'DynamicKernelInstance', 'JITKernelData',
+        'CKernel', 'wrap_ckernel_func']
 
 import sys
 import ctypes
@@ -183,3 +184,99 @@ def wrap_ckernel_func(func, owner):
     _py_incref(jkd.owner)
 
     return ck
+
+class UnboundCKernelFunction(object):
+    """
+    Holds a ckernel function, generally created by a JIT compiler,
+    which is for a specified datashape but not bound to particular
+    arguments. This allows a JIT compiler to target the ckernel ABI
+    without knowing the final data layout by creating the function,
+    and later binding the function to the data by filling in the
+    kernel data as needed.
+    """
+    def __init__(self, func_ptr,
+                    kernel_data_struct, bind_func, owner):
+        """
+        Constructs an UnboundCKernelFunction from all its components.
+
+        Parameters
+        ----------
+        func_ptr : ctypes function pointer
+            The function pointer to the ckernel function.
+            The function prototype of the kernel is type(func_ptr).
+        kernel_data_struct : subclass of ctypes.Structure
+            The structure of the kernel data used by the ckernel function.
+            Its first member must be called 'base', an instance
+            of JITKernelData.
+        bind_func : callable
+            This function gets called to populate the kernel data
+            of a fresh CKernel instance with data from the argument
+            data descriptors.
+        owner : object
+            An object which holds ownership of the function pointer and
+            any other data needed to keep the kernel alive.
+        """
+        # Validate the function pointer
+        if not isinstance(func_ptr, ctypes._CFuncPtr):
+            raise TypeError('Require a ctypes function pointer to wrap')
+        if func_ptr.argtypes is None:
+            raise TypeError('The argtypes of the ctypes function ' +
+                            'pointer must be set')
+        if func_ptr.argtypes[-1] != KernelDataPrefixP:
+            raise TypeError('The last argument of the ctypes function ' +
+                            'pointer must be KernelDataPrefixP')
+        # Validate the kernel data struct
+        if kernel_data_struct._fields_[0][0] != 'base':
+            raise TypeError('The first field of the kernel data struct ' +
+                            'must be called base')
+        if kernel_data_struct._fields_[0][1] != JITKernelData:
+            raise TypeError('The first field, base, of the kernel data struct ' +
+                            'must be a JITKernelData')
+        self._func_ptr = func_ptr
+        self._kernel_data_struct = kernel_data_struct
+        self._bind_func = bind_func
+        self._owner = owner
+
+    def bind(self, *args, **kwargs):
+        """Creates a new ckernel, and binds the provided data descriptor
+        arguments to it by forwarding them to the bind_func.
+        """
+        # Allocate the memory for the kernel data
+        ck = CKernel(type(self.func_ptr))
+        ksize = ctypes.sizeof(self.kernel_data_struct)
+        ck.dynamic_kernel_instance.kernel = _malloc(ksize)
+        if not ck.dynamic_kernel_instance.kernel:
+            raise MemoryError('Failed to allocate CKernel data')
+        ck.dynamic_kernel_instance.kernel_size = ksize
+        ck.dynamic_kernel_instance.free_func = _free
+
+        kd = self.kernel_data_struct.from_address(
+                        self.dynamic_kernel_instance.kernel)
+        # Getting the raw pointer address seems to require these acrobatics
+        jkd.base.base.function = ctypes.c_void_p.from_address(ctypes.addressof(self.func_ptr))
+        jkd.base.base.destructor = _jitkerneldata_destructor
+        jkd.base.owner = ctypes.py_object(self.owner)
+        _py_incref(jkd.base.owner)
+        # Call the find function to fill in the rest of the kernel dat
+        # TODO: This assumes all the rest of the kernel data is POD,
+        #       if it turns out not be POD, we will have to use
+        #       a different destructor functions which destroyes
+        #       this part of the kernel data as well.
+        self.bind_func(kd, *args, **kwargs)
+        return ck
+
+    @property
+    def func_ptr(self):
+        return _func_ptr
+
+    @property
+    def kernel_data_struct(self):
+        return _kernel_data_struct
+
+    @property
+    def bind_func(self):
+        return _bind_func
+
+    @property
+    def owner(self):
+        return _owner
