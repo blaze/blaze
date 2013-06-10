@@ -6,9 +6,11 @@ from blaze.blfuncs import BlazeFunc
 from blaze.datashape import double, complex128 as c128
 
 import blaze
+import blaze.blz as blz
 
 from blaze.datashape import to_numpy
-from blaze.datadescriptor import NumPyDataDescriptor
+from blaze.datadescriptor import (NumPyDataDescriptor,
+                                  BLZDataDescriptor)
 from itertools import izip
 import numpy as np
 import ctypes
@@ -225,7 +227,7 @@ def execute_datadescriptor(dd):
     return blaze.Array(res_dd)
 
 
-def execute_datadescriptor_ooc(dd):
+def execute_datadescriptor_outerdim(dd):
     # only lift by one
     lifted = dd.kerneltree._fused.kernel.lift(1,'C')
     cf = lifted.ctypes_func
@@ -249,8 +251,42 @@ def execute_datadescriptor_ooc(dd):
 
     return blaze.Array(res_dd)
 
+def execute_datadescriptor_ooc(dd, res_name=None):
+    # only lift by one
+    res_ds = dd.dshape
+    res_shape, res_dt = to_numpy(dd.dshape)
+    
+    lifted = dd.kerneltree._fused.kernel.lift(1,'C')
+    cf = lifted.ctypes_func
 
-res = execute_datadescriptor_ooc(d._data)
+    # element readers for operands
+    args = [(ct._type_, 
+             arr.arr._data.element_reader(1),
+             arr.arr.dshape.shape[1:]) 
+            for ct, arr in izip(cf.argtypes[:-1], dd.args)]
+
+    res_dd = BLZDataDescriptor(blz.zeros((0,) + res_shape[1:],
+                                         dtype = res_dt,
+                                         rootdir = res_name))
+
+    res_ct = ctypes.c_double*3
+    res_buffer = res_ct()
+    res_buffer_entry = (cf.argtypes[-1]._type_,
+                        ctypes.pointer(res_buffer), 
+                        res_shape[1:])
+    with res_dd.element_appender() as ea:
+        for i in xrange(res_shape[0]):
+            args_i = [(t, er.read_single((i,)), sh) 
+                      for t, er, sh in args]
+            args_i.append(res_buffer_entry)
+            cf_args = [_convert(*foo) for foo in args_i]
+            cf(*[ctypes.byref(x) for x in cf_args])
+            ea.append(ctypes.addressof(res_buffer),1)
+
+    return blaze.Array(res_dd)
+
+
+res = execute_datadescriptor_ooc(d._data, 'foo.blz')
 banner("result")
 print(res)
 
