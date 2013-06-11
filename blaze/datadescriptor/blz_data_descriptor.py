@@ -3,9 +3,10 @@ import operator
 import contextlib
 import ctypes
 
-from . import (IElementReader, IElementWriter,
-               IElementReadIter, IElementWriteIter,
-               IElementAppender, IDataDescriptor)
+from .data_descriptor import (IElementReader, IElementWriter,
+                              IElementReadIter, IElementWriteIter,
+                              IElementAppender, IDataDescriptor,
+                              buffered_ptr_ctxmgr)
 from .. import datashape
 import numpy as np
 from blaze import blz
@@ -119,23 +120,28 @@ class BLZElementAppender(IElementAppender):
     def __init__(self, blzarr):
         if blzarr.ndim <= 0:
             raise IndexError('Need at least one dimension for append')
-        self._shape = blzarr.shape[1:]
-        self._dtype = blzarr.dtype
-        self._dshape = datashape.from_numpy(self._shape, self._dtype)
+        self._buf = np.empty(blzarr.shape[1:], dtype=blzarr.dtype)
         self.blzarr = blzarr
 
     @property
     def dshape(self):
-        return self._dshape
+        return datashape.from_numpy(self.blzarr.shape[1:],
+                                    self.blzarr.dtype)
 
     def append(self, ptr, nrows):
         # Create a temporary NumPy array around the ptr data
-        shape = (nrows,) + self._shape
-        rowsize = self._dtype.itemsize * np.prod(shape)
+        blzarr = self.blzarr
+        shape = (nrows,) + blzarr.shape[1:]
+        rowsize = blzarr.dtype.itemsize * np.prod(shape)
         buf = (ctypes.c_char * rowsize).from_address(ptr)
-        tmp = np.frombuffer(buf, self._dtype).reshape(shape)
+        tmp = np.frombuffer(buf, blzarr.dtype).reshape(shape)
         # Actually append the values
-        self.blzarr.append(tmp)
+        blzarr.append(tmp)
+
+    def buffered_ptr(self):
+        def buffer_flush():
+            self.blzarr.append(self._buf)
+        return buffered_ptr_ctxmgr(self._buf.ctypes.data, buffer_flush)
 
     def close(self):
         # Flush the remaining data in buffers
