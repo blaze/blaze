@@ -45,8 +45,8 @@ dot = BlazeFunc('dot', [('cpp', dotcpp)])
 
 print "Hello..."
 
-a = blaze.array([1,2,3],dshape=c128)
-b = blaze.array([2,3,4],dshape=c128)
+a = blaze.array([1,2,3,4,5],dshape=c128)
+b = blaze.array([2,3,4,5,6],dshape=c128)
 
 print "Everywhere..."
 
@@ -67,8 +67,8 @@ arg2_c = _convert(arg2)
 assert out_c == (arg1_c+arg2_c)**2
 
 
-af = blaze.array([1,2,3],dshape=double)
-bf = blaze.array([2,3,4],dshape=double)
+af = blaze.array([1,2,3,4,5],dshape=double)
+bf = blaze.array([2,3,4,5,6],dshape=double)
 
 cf = add(af,bf)
 df = mul(cf,cf)
@@ -91,27 +91,12 @@ struct = result._data.kerneltree.ctypes_func.argtypes[0]._type_
 val = _converta(data, struct)
 #assert result._data.kerneltree(cb(val), cb(val)) == 0.0
 
-# FIXME:
-# Looks like we are still not quite right here...
-#  Works for some cases but not for others.
-# Adding printf seems to "fix" issues
-#  But then repeated calls causes crash
-# 
-# My guess is we need to look at linking
-#  and the function -> module assumption
-#  Each BlazeElement Kernel should likely be in it's own module
-#  and we make "references" to other named functions
-#  Linking happens only during fusion...
-#  But, for cases where we lift the kernel --- fusion happens and
-#    we need to link a couple of times.
-#cf = add(af, bf)
-gf = mul(af, bf)
-result2 = dot(add(cf, df), gf)
+result2 = dot(add(cf, df), mul(af, bf))
 ktree = result2._data.kerneltree
 struct1 = ktree.ctypes_func.argtypes[0]._type_
 struct2 = ktree.ctypes_func.argtypes[1]._type_
-data1 = array.array('d',[2,3,3])
-data2 = array.array('d',[1,1,1])
+data1 = array.array('d',[1,2,3,4,5])
+data2 = array.array('d',[2,3,4,5,6])
 val1 = _converta(data1, struct1)
 val2 = _converta(data2, struct2)
 import __builtin__
