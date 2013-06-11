@@ -154,7 +154,7 @@ class BlazeElementKernel(object):
             names.append(name)
         mod = sys.modules['blaze']
         modules = [mod]*len(names)
-        argtypes = [refresh_name(typ) for typ in self.argtypes]
+        argtypes = [refresh_name(typ, self.module) for typ in self.argtypes]
         return out_type, map(map_llvm_to_ctypes, argtypes, modules, names)
 
 
@@ -202,9 +202,12 @@ class BlazeElementKernel(object):
             if self._ee is None:
                 from llvm.passes import build_pass_managers
                 import llvm.ee as le
-                #tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
-                #pms = build_pass_managers(tm, opt=3, fpm=False)
-                #pms.pm.run(module)
+                tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
+                pms = build_pass_managers(tm, opt=3, fpm=False, vectorize=True, loop_vectorize=True)
+                pms.pm.run(module)
+                import __builtin__
+                __builtin__._temp = module.clone()
+                __builtin__._tempname = self.func.name
                 self._ee = le.ExecutionEngine.new(module)
             func = module.get_function_named(self.func.name)
             self._func_ptr = self._ee.get_pointer_to_function(func)
@@ -262,7 +265,7 @@ class BlazeElementKernel(object):
                     # called function (no TypeVars)
                     shape = tuple(operator.index(x) for x in self.dshapes[i][:-1])
                     # Make an llvm array
-                    arrtype = lla.array_type(len(shape), lla.C_CONTIGUOUS)
+                    arrtype = lla.array_type(len(shape), lla.C_CONTIGUOUS, module)
                     arr_var = builder.alloca(arrtype)
                     builder.store(builder.gep(arr_var, (lc.Constant.int(intp_type, 0),)),
                                     src_ptr)
@@ -438,7 +441,7 @@ class BlazeElementKernel(object):
         args = []
         for rank, argtype, kind in zip(outranks, argtypes, self.kinds):
             eltype = get_eltype(argtype, kind)
-            arr_type = array_type(rank, outkind, eltype)
+            arr_type = array_type(rank, outkind, eltype, self.module)
             args.append(Type.pointer(arr_type))
         return Type.function(void_type, args)
 
@@ -505,7 +508,7 @@ def fromctypes(func, module=None):
         module = Module.new(name)
     raise NotImplementedError
 
-def refresh_name(_llvmtype):
+def refresh_name(_llvmtype, module=None):
     if (_llvmtype.kind == lc.TYPE_POINTER and 
            _llvmtype.pointee.kind == lc.TYPE_STRUCT and
            _llvmtype.pointee.name == ''):
@@ -513,7 +516,7 @@ def refresh_name(_llvmtype):
         if res is None:
             return _llvmtype
         kindnum, nd, eltype = res
-        _llvmtype = lc.Type.pointer(array_type(nd, kindnum, eltype))
+        _llvmtype = lc.Type.pointer(array_type(nd, kindnum, eltype, module))
     return _llvmtype
 
 # An Argument to a kernel tree (encapsulates the array, argument kind and rank)
@@ -554,9 +557,9 @@ class Argument(object):
                 self._shape = self.arr.dshape.shape[-self.rank:]
         return self._shape
 
-    def lift(self, newrank, newkind):
+    def lift(self, newrank, newkind, module=None):
         oldtype = get_eltype(self.llvmtype, self.kind)
-        newtype = lc.Type.pointer(array_type(newrank, newkind, oldtype))
+        newtype = lc.Type.pointer(array_type(newrank, newkind, oldtype, module))
         return Argument(self.arr, newkind, newrank, newtype)
 
 # This also replaces arguments with the unique argument in the kernel tree
@@ -662,11 +665,12 @@ def fuse_kerneltree(tree, module_or_name):
     add(tmp0, tmp1, &res)
     """
     if isinstance(module_or_name, _strtypes):
-        module = Module.new(newname)
+        module = Module.new(module_or_name)
     else:
         module = module_or_name
     args, func_type = get_fused_type(tree)
     outdshape = tree.kernel.dshapes[-1]
+
 
     try:
         func = module.get_function_named(tree.name+"_fused")
@@ -686,12 +690,16 @@ def fuse_kerneltree(tree, module_or_name):
         #  site we issue instructions to compute the value
         nodelist = tree.sorted_nodes()
 
+
         cleanup = []  # Objects to deallocate any temporary heap memory needed
                       #   ust have a _dealloc method
         def _temp_cleanup():
             for obj in cleanup:
                 if obj is not None:
                     obj._dealloc()
+
+        #import pdb
+        #pdb.set_trace()
 
         for node in nodelist[:-1]:
             node.kernel.attach(module)

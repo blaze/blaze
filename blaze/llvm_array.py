@@ -579,7 +579,8 @@ class LLArray(object):
     def getview(self, nd=None, kind=None, eltype=None):
         newtype = array_type(self.nd if nd is None else nd,
                              self._kind if kind is None else kind,
-                             self._eltype if eltype is None else eltype)
+                             self._eltype if eltype is None else eltype,
+                             self.module)
         new = self.builder.alloca(newtype)
         return LLArray(new)
 
@@ -678,7 +679,7 @@ def create_array(builder, shape, kind, eltype, malloc=None, free=None, order='K'
     if malloc is None:
         malloc, free = _default_malloc_free(builder.basic_block.function.module)
     nd = len(shape)
-    newtype = array_type(nd, kind, eltype)
+    newtype = array_type(nd, kind, eltype, builder.basic_block.function.module)
     new = builder.alloca(newtype)
     shape_ptr = get_shape_ptr(builder, new)
 
@@ -690,12 +691,12 @@ def create_array(builder, shape, kind, eltype, malloc=None, free=None, order='K'
     # Otherwise, we will have to compute the size in the code.
     if all(hasattr(x, '__index__') for x in shape):
         shape = [x.__index__() for x in shape]
-        total = reduce(operator.mul, shape, 1)
+        total = reduce(operator.mul, shape, _sizeof(eltype))
         arg = Constant.int(intp_type, total)
         precompute=True
     else:
         precompute=False
-        result = Constant.int(intp_type, 1)
+        result = sizeof(eltype, builder)
         for val in shape:
             result = builder.mul(result, auto_const_intp(val))
         arg = result

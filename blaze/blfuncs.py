@@ -120,7 +120,11 @@ class KernelTree(object):
         so that the it can be the input to another element kernel
         with rank newrank and kind newkin
         """
-        krnlobj, children = fuse_kerneltree(self, self.kernel.module)
+        if self.leafnode:
+            krnlobj = self.kernel
+            children = self.children
+        else:
+            krnlobj, children = fuse_kerneltree(self, self.kernel.module)
         typechar = blaze_kernels.orderchar[newkind]
         new = krnlobj.lift(newrank, typechar)
         children = [child.lift(newrank, newkind) for child in children]

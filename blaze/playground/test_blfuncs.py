@@ -31,6 +31,7 @@ double ddot(Array_C<double, 1> *a, Array_C<double, 1> *b) {
        double ret;
 
        //printf("dims = %ld, %ld\n", a->dims[0], b->dims[0]);
+       //ret = a->data[0]*b->data[0];
        ret = 0.0;
        for (i=0; i < a->dims[0]; i++) {
            //printf("vals = %f, %f\n", a->data[i], b->data[i]);
@@ -88,7 +89,7 @@ def _converta(arr, struct):
     return val
 struct = result._data.kerneltree.ctypes_func.argtypes[0]._type_
 val = _converta(data, struct)
-assert result._data.kerneltree(cb(val), cb(val)) == 285.0
+#assert result._data.kerneltree(cb(val), cb(val)) == 0.0
 
 # FIXME:
 # Looks like we are still not quite right here...
@@ -103,18 +104,24 @@ assert result._data.kerneltree(cb(val), cb(val)) == 285.0
 #  Linking happens only during fusion...
 #  But, for cases where we lift the kernel --- fusion happens and
 #    we need to link a couple of times.
+#cf = add(af, bf)
 gf = mul(af, bf)
-result2 = dot(cf, gf)
+result2 = dot(add(cf, df), gf)
 ktree = result2._data.kerneltree
 struct1 = ktree.ctypes_func.argtypes[0]._type_
 struct2 = ktree.ctypes_func.argtypes[1]._type_
-data1 = array.array('d',[1,2,3])
-data2 = array.array('d',[2,3,4])
+data1 = array.array('d',[2,3,3])
+data2 = array.array('d',[1,1,1])
 val1 = _converta(data1, struct1)
 val2 = _converta(data2, struct2)
+import __builtin__
+__builtin__.debug = True
+
 new = ktree(cb(val1), cb(val2))
 print new
 gdata = [u*v for u,v in zip(data1, data2)]
 cdata = [u+v for u,v in zip(data1, data2)]
-actual = sum(x*y for x,y in zip(cdata, gdata))
+ddata = [u*u for u in cdata]
+hdata = [u+v for u, v in zip(cdata, ddata)]
+actual = sum(x*y for x,y in zip(hdata, gdata))
 print actual
