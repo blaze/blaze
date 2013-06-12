@@ -25,21 +25,12 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
         bf = blaze.array([2,3,4],dshape=double)
         cf = add(af,bf)
         df = mul(cf,cf)
-        ck = df._data.kerneltree.single_ckernel
-        
-        # Call the kernel on some sample data to test first
-        tmp0 = ctypes.c_double(1.0)
-        tmp1 = ctypes.c_double(1.0)
-        tmp2 = ctypes.c_double(1.0)
-        src_ptr_arr = (ctypes.c_void_p * 2)()
-        src_ptr_arr[0] = ctypes.addressof(tmp0)
-        src_ptr_arr[1] = ctypes.addressof(tmp1)
-        ck(ctypes.addressof(tmp2), src_ptr_arr)
-        self.assertEqual(tmp2.value, 4)
+        ubck = df._data.kerneltree.unbound_single_ckernel
 
         # Allocate the result, and run the kernel across the arguments
         result = blaze.zeros(df.dshape)
         args = [arg.arr._data for arg in df._data.args]
+        ck = ubck.bind(result._data, args)
         execute_expr_single(result._data, args,
                         df._data.kerneltree.kernel.dshapes[-1],
                         df._data.kerneltree.kernel.dshapes[:-1], ck)

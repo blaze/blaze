@@ -3,7 +3,7 @@ from __future__ import print_function
 
 __all__ = ['KernelDataPrefix', 'UnarySingleOperation', 'UnaryStridedOperation',
         'ExprSingleOperation', 'ExprStridedOperation', 'BinarySinglePredicate',
-        'DynamicKernelInstance', 'JITKernelData',
+        'DynamicKernelInstance', 'JITKernelData', 'UnboundCKernelFunction'
         'CKernel', 'wrap_ckernel_func']
 
 import sys

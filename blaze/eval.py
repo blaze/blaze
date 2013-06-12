@@ -18,8 +18,10 @@ def eval(arr, caps={'efficient-write': True}):
     result = empty(arr.dshape, caps)
     args = [arg.arr._data for arg in arr._data.args]
     kt = arr._data.kerneltree
+    ubck = kt.unbound_single_ckernel
+    ck = ubck.bind(result._data, args)
     execute_expr_single(result._data, args,
                     kt.kernel.dshapes[-1],
                     kt.kernel.dshapes[:-1],
-                    kt.single_ckernel)
+                    ck)
     return result

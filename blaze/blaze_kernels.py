@@ -27,7 +27,7 @@ from . import llvm_array as lla
 from .llvm_array import (void_type, intp_type, array_kinds, check_array, get_cpp_template,
                          array_type, const_intp, LLArray, orderchar)
 from .kernelgen import loop_nest
-from .ckernel import ExprSingleOperation, JITKernelData, wrap_ckernel_func
+from .ckernel import (ExprSingleOperation, JITKernelData, UnboundCKernelFunction)
 from .py3help import izip, _strtypes
 from .datashape.util import dshape as make_dshape
 
@@ -377,8 +377,25 @@ class BlazeElementKernel(object):
             # the processor had no AVX support, so disabling it manually.
             ee = le.EngineBuilder.new(module).mattrs("-avx").create()
             func_ptr = ee.get_pointer_to_function(single_ck_func)
-            self._single_ckernel = wrap_ckernel_func(
-                            ExprSingleOperation(func_ptr), (ee, func_ptr))
+            # Create a function which copies the shape from data
+            # descriptors to the extra data struct.
+            if len(kernel_data_ctypes_fields) == 1:
+                def bind_func(estruct, dst_dd, src_dd_list):
+                    pass
+            else:
+                def bind_func(estruct, dst_dd, src_dd_list):
+                    for i, ds = enumerate(self.dshapes[:-1]):
+                        shape = [operator.index(dim)
+                                    for dim in src_dd_list[i][-len(ds):-1]]
+                        cshape = estruct.getattr('src_%d' % i)
+                        for j, dim_size in enumerate(shape):
+                            cshape[j] = dim_size
+
+            self._unbound_single_ckernel = UnboundCKernelFunction(
+                            ExprSingleOperation(func_ptr),
+                            kernel_data_ctypestype,
+                            bind_func
+                            (ee, func_ptr))
 
         return self._single_ckernel
 
