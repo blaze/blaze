@@ -27,14 +27,14 @@ class compute_session:
             else:
                 arr = getattr(arr, i)
         return arr
-        
+
     def creation_response(self):
         content_type = 'application/json; charset=utf-8'
         body = json.dumps({
                 'session' : self.base_url + self.session_name,
                 'version' : 'prototype',
-                'dynd_python_version': dynd.__version_string__,
-                'dynd_version' : dynd.__dynd_version_string__,
+                'dynd_python_version': dynd.__version__,
+                'dynd_version' : dynd.__libdynd_version__,
                 'access' : 'no permission model yet'
             })
         return (content_type, body)
@@ -48,7 +48,7 @@ class compute_session:
                 'action': 'closed'
             })
         return (content_type, body)
-    
+
     def sort(self, json_cmd):
         import numpy as np
         print ('sorting')
@@ -98,7 +98,7 @@ class compute_session:
         res = nd.groupby(arr, nd.fields(arr, *fields))
         groups = res.groups
         res = res.eval()
-        
+
         # Write out the groupby result
         defarr_gb = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'groupby_', res)
@@ -111,7 +111,7 @@ class compute_session:
                 }
             }))
         defarr_gb[0].close()
-        
+
         # Write out the groups
         defarr_groups = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'groups_', groups)
@@ -145,7 +145,7 @@ class compute_session:
         fields = cmd['fields']
         rm_fields = cmd.get('rm_fields', [])
         fnname = cmd.get('fnname', None)
-        
+
         arr = self.get_session_array(array_name)
 
         res = nd.add_computed_fields(arr, fields, rm_fields, fnname)
@@ -180,7 +180,7 @@ class compute_session:
         fields = cmd['fields']
         replace_undim = cmd.get('replace_undim', 0)
         fnname = cmd.get('fnname', None)
-        
+
         arr = self.get_session_array(array_name)
 
         res = nd.make_computed_fields(arr, replace_undim, fields, fnname)
