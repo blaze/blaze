@@ -7,6 +7,7 @@ from .datashape.util import broadcastable, to_numba
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
+from . import llvm_array as lla
 from .cgen.utils import letters
 from .blaze_kernels import (Argument, fuse_kerneltree, BlazeElementKernel,
                 frompyfunc)
@@ -95,7 +96,7 @@ class KernelTree(object):
         self._funcptr = self._funcptr or kernel.func_ptr
         self._ctypes = self._ctypes or kernel.ctypes_func
         if all(kind in [blaze_kernels.SCALAR, blaze_kernels.POINTER,
-                        llvm_array.C_CONTIGUOUS] for kind in kernel.kinds):
+                        lla.C_CONTIGUOUS] for kind in kernel.kinds):
             self._unbound_single_ckernel = self._unbound_single_ckernel or kernel.unbound_single_ckernel
 
     @property
@@ -112,7 +113,7 @@ class KernelTree(object):
 
     @property
     def unbound_single_ckernel(self):
-        if self._single_ckernel is None:
+        if self._unbound_single_ckernel is None:
             self.fuse()
         return self._unbound_single_ckernel
 

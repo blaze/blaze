@@ -58,7 +58,7 @@ class TestKernelLift(unittest.TestCase):
         def _convert(arr):
             address, count = arr.buffer_info()
             buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
-            shape = (ctypes.c_ssize_t * 2)(10, count / 10)
+            shape = (ctypes.c_ssize_t * 2)(10, count // 10)
             val = struct(buff, shape)
             return val
 

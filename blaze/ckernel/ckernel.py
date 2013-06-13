@@ -3,7 +3,7 @@ from __future__ import print_function
 
 __all__ = ['KernelDataPrefix', 'UnarySingleOperation', 'UnaryStridedOperation',
         'ExprSingleOperation', 'ExprStridedOperation', 'BinarySinglePredicate',
-        'DynamicKernelInstance', 'JITKernelData', 'UnboundCKernelFunction'
+        'DynamicKernelInstance', 'JITKernelData', 'UnboundCKernelFunction',
         'CKernel', 'wrap_ckernel_func']
 
 import sys
@@ -251,12 +251,13 @@ class UnboundCKernelFunction(object):
         ck.dynamic_kernel_instance.free_func = _free
 
         kd = self.kernel_data_struct.from_address(
-                        self.dynamic_kernel_instance.kernel)
+                        ck.dynamic_kernel_instance.kernel)
         # Getting the raw pointer address seems to require these acrobatics
-        jkd.base.base.function = ctypes.c_void_p.from_address(ctypes.addressof(self.func_ptr))
-        jkd.base.base.destructor = _jitkerneldata_destructor
-        jkd.base.owner = ctypes.py_object(self.owner)
-        _py_incref(jkd.base.owner)
+        kd.base.base.function = ctypes.c_void_p.from_address(
+                        ctypes.addressof(self.func_ptr))
+        kd.base.base.destructor = _jitkerneldata_destructor
+        kd.base.owner = ctypes.py_object(self.owner)
+        _py_incref(kd.base.owner)
         # Call the find function to fill in the rest of the kernel dat
         # TODO: This assumes all the rest of the kernel data is POD,
         #       if it turns out not be POD, we will have to use
@@ -267,16 +268,16 @@ class UnboundCKernelFunction(object):
 
     @property
     def func_ptr(self):
-        return _func_ptr
+        return self._func_ptr
 
     @property
     def kernel_data_struct(self):
-        return _kernel_data_struct
+        return self._kernel_data_struct
 
     @property
     def bind_func(self):
-        return _bind_func
+        return self._bind_func
 
     @property
     def owner(self):
-        return _owner
+        return self._owner

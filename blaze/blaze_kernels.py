@@ -19,6 +19,7 @@ from __future__ import print_function
 #   same kinds, the kind is a per-argument notion and thus
 #   can be mixed and matched.
 
+import sys
 import operator
 import llvm.core as lc
 from llvm.core import Type, Function, Module
@@ -75,7 +76,7 @@ def str_to_kind(str):
 class BlazeElementKernel(object):
     _func_ptr = None
     _ctypes_func = None
-    _single_ckernel = None
+    _unbound_single_ckernel = None
     _ee = None
     _dshapes = None
     _lifted_cache = {}
@@ -203,11 +204,15 @@ class BlazeElementKernel(object):
                 from llvm.passes import build_pass_managers
                 import llvm.ee as le
                 tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
-                pms = build_pass_managers(tm, opt=3, fpm=False, vectorize=True, loop_vectorize=True)
+                pms = build_pass_managers(tm, opt=3, fpm=False,
+                                vectorize=True, loop_vectorize=True)
                 pms.pm.run(module)
-                import __builtin__
-                __builtin__._temp = module.clone()
-                __builtin__._tempname = self.func.name
+                if sys.version_info >= (3,):
+                    import builtins
+                else:
+                    import __builtin__ as builtins
+                builtins._temp = module.clone()
+                builtins._tempname = self.func.name
                 self._ee = le.ExecutionEngine.new(module)
             func = module.get_function_named(self.func.name)
             self._func_ptr = self._ee.get_pointer_to_function(func)
@@ -226,7 +231,8 @@ class BlazeElementKernel(object):
     def unbound_single_ckernel(self):
         """Creates an UnboundCKernelFunction with the ExprSingleOperation prototype.
         """
-        if self._single_ckernel is None:
+        import ctypes
+        if self._unbound_single_ckernel is None:
             i8_p_type = Type.pointer(Type.int(8))
             func_type = Type.function(void_type,
                             [i8_p_type, Type.pointer(i8_p_type), i8_p_type])
@@ -262,8 +268,10 @@ class BlazeElementKernel(object):
             kernel_data_llvmtype = Type.struct(kernel_data_fields)
             class kernel_data_ctypestype(ctypes.Structure):
                 _fields_ = kernel_data_ctypes_fields
-            # Convert the src pointer args to the appropriate kinds for the llvm call
-            for i, (k, a) in enumerate(izip(self.kinds[:-1], self.argtypes[:-1])):
+            # Convert the src pointer args to the
+            # appropriate kinds for the llvm call
+            args = []
+            for i, (k, a) in enumerate(izip(self.kinds[:-1], self.argtypes)):
                 if k == SCALAR:
                     src_ptr = builder.bitcast(builder.load(
                                     builder.gep(src_ptr_arr_arg,
@@ -318,9 +326,14 @@ class BlazeElementKernel(object):
                                             "support dimension type %r") % type(sz))
                     args.append(arr_var)
             # Call the function and store in the dst
-            dst_ptr = builder.bitcast(dst_ptr_arg, Type.pointer(self.return_type))
+            dst_ptr = builder.bitcast(dst_ptr_arg,
+                            Type.pointer(self.return_type))
             if self.kinds[-1] == SCALAR:
                 func = module.get_function_named(self.func.name)
+                print("self.kinds is:", self.kinds)
+                print("self.argtypes is:", self.argtypes)
+                print("self.dshapes is:", self.dshapes)
+                print("building call with args:", args)
                 dst_val = builder.call(func, args)
                 builder.store(dst_val, dst_ptr)
             elif self.kinds[-1] == POINTER:
@@ -334,7 +347,8 @@ class BlazeElementKernel(object):
                 # Make an llvm array
                 arrtype = lla.array_type(len(shape), lla.C_CONTIGUOUS)
                 arr_var = builder.alloca(arrtype)
-                builder.store(builder.gep(arr_var, (lc.Constant.int(intp_type, 0),)),
+                builder.store(builder.gep(arr_var,
+                                (lc.Constant.int(intp_type, 0),)),
                                 src_ptr)
                 for j, sz in enumerate(shape):
                     if isinstance(sz, datashape.Fixed):
@@ -365,15 +379,25 @@ class BlazeElementKernel(object):
                                         "support dimension type %r") % type(sz))
                 builder.call(self.func, args + [arr_var])
             else:
-                raise TypeError("single_ckernel codegen doesn't support array types yet")
+                raise TypeError("single_ckernel codegen doesn't " +
+                                "support array types yet")
             builder.ret_void()
+
+            import llvm.ee as le
+            print("Function before optimization passes:")
+            print(single_ck_func)
+            from llvm.passes import build_pass_managers
+            tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
+            pms = build_pass_managers(tm, opt=3, fpm=False,
+                            vectorize=True, loop_vectorize=True)
+            pms.pm.run(module)
+            print("Function after optimization passes:")
             print(single_ck_func)
             # DEBUGGING: Verify the module.
-            module.verify()
+            #module.verify()
             # TODO: Cache the EE - the interplay with the func_ptr
             #       was broken, so just avoiding caching for now
-            import llvm.ee as le
-            # AVX was being generated on linux platforms even when
+            # AVX was being generated on some linux VMs even when
             # the processor had no AVX support, so disabling it manually.
             ee = le.EngineBuilder.new(module).mattrs("-avx").create()
             func_ptr = ee.get_pointer_to_function(single_ck_func)
@@ -384,7 +408,7 @@ class BlazeElementKernel(object):
                     pass
             else:
                 def bind_func(estruct, dst_dd, src_dd_list):
-                    for i, ds = enumerate(self.dshapes[:-1]):
+                    for i, ds in enumerate(self.dshapes[:-1]):
                         shape = [operator.index(dim)
                                     for dim in src_dd_list[i][-len(ds):-1]]
                         cshape = estruct.getattr('src_%d' % i)
@@ -394,10 +418,10 @@ class BlazeElementKernel(object):
             self._unbound_single_ckernel = UnboundCKernelFunction(
                             ExprSingleOperation(func_ptr),
                             kernel_data_ctypestype,
-                            bind_func
+                            bind_func,
                             (ee, func_ptr))
 
-        return self._single_ckernel
+        return self._unbound_single_ckernel
 
     # Should probably check to ensure kinds still match
     def replace_func(self, func):

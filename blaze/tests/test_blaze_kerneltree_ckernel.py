@@ -36,17 +36,20 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
                         df._data.kerneltree.kernel.dshapes[:-1], ck)
         self.assertEqual(dd_as_py(result._data),
                         [[(a+b) * (a+b) for a, b in izip(a1, b1)]
-                                for a1, b1 in izip([[1,2,3], [4,5,6]], [[2,3,4]]*2)])
+                                for a1, b1 in izip(
+                                    [[1,2,3], [4,5,6]], [[2,3,4]]*2)])
 
         # Use blaze.eval to evaluate cf and df into concrete arrays
         cf2 = blaze.eval(cf)
         self.assertEqual(dd_as_py(cf2._data),
                         [[(a+b) for a, b in izip(a1, b1)]
-                                for a1, b1 in izip([[1,2,3], [4,5,6]], [[2,3,4]]*2)])
+                                for a1, b1 in izip(
+                                    [[1,2,3], [4,5,6]], [[2,3,4]]*2)])
         df2 = blaze.eval(df)
         self.assertEqual(dd_as_py(df2._data),
                         [[(a+b) * (a+b) for a, b in izip(a1, b1)]
-                                for a1, b1 in izip([[1,2,3], [4,5,6]], [[2,3,4]]*2)])
+                                for a1, b1 in izip(
+                                    [[1,2,3], [4,5,6]], [[2,3,4]]*2)])
 
 if __name__ == '__main__':
     unittest.main()
