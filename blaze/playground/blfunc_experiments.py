@@ -11,7 +11,7 @@ import blaze.blz as blz
 from blaze.datashape import to_numpy
 from blaze.datadescriptor import (NumPyDataDescriptor,
                                   BLZDataDescriptor)
-from itertools import izip
+from itertools import izip, product as it_product
 import numpy as np
 import ctypes
 
@@ -155,6 +155,62 @@ def execute_datadescriptor_ooc(dd, res_name=None):
 
     return blaze.Array(res_dd)
 
+class BlazeExecutor(object):
+    """
+    A simple executor class that is able to convert a BlazeFunc
+    DataDescriptor into a NumPy DataDescriptor
+    """
+    def __init__(self, dd, iter_dims=1):
+        res_ds = dd.dshape
+        total_dims = len(res_ds) - 1
+        lift_dims = total_dims - iter_dims
+
+        cfunc = dd.kerneltree._fused.kernel.lift(lift_dims, 'C').ctypes_func
+        # one reader per arg
+        readers = [arr.arr._data.element_reader(iter_dims)
+                   for arr in dd.args]
+        shapes = [arr.arr.dshape.shape[iter_dims:]
+                  for arr in dd.args]
+        shapes.append(res_ds.shape[iter_dims:])
+        arg_structs = [arg_type._type_(None, shape)
+                       for arg_type, shape in izip(cfunc.argtypes, shapes)]
+
+        self.cfunc = cfunc # kernel to call...
+        self.readers = readers # readers for inputs
+        self.arg_structs = arg_structs # ctypes args
+        self.res_dshape = res_ds # shape of the results
+        self.outer_dims = res_ds[:iter_dims] # shape with elements
+        self.inner_dims = res_ds[iter_dims:]
+
+    def run_append(self, dd):
+        f = self.cfunc
+        arg_s = self.arg_structs
+        r = self.readers
+        with dd.element_appender() as dst:
+            for element in it_product(*[xrange(x) for x in self.outer_dims]):
+                for struct, reader in izip(arg_s[:-1], r):
+                    struct.e0 = ctypes.cast(reader.read_single(element),
+                                            ctypes.POINTER(struct.e0._type_))
+
+                with dst.buffered_ptr() as buf:
+                    arg_s[-1].e0 = ctypes.cast(buf,
+                                               ctypes.POINTER(arg_s[-1].e0._type_))
+                    f(*arg_s)
+
+    def run_write(self, dd):
+        f = self.cfunc
+        arg_s = self.arg_structs
+        r = self.readers
+        dst = dd.element_writer(len(self.outer_dims))
+        for element in it_product(*[xrange(x) for x in self.outer_dims]):
+            for struct, reader in izip(arg_s[:-1], r):
+                struct.e0 = ctypes.cast(reader.read_single(element),
+                                        ctypes.POINTER(struct.e0._type_))
+            with dst.buffered_ptr(element) as buf:
+                arg_s[-1].e0 = ctypes.cast(buf,
+                                           ctypes.POINTER(arg_s[-1].e0._type_))
+                f(*arg_s)
+
 def execute_datadescriptor_ooc_2(dd, res_name=None):
     res_ds = dd.dshape
     res_shape, res_dt = to_numpy(dd.dshape)
@@ -196,3 +252,66 @@ banner("result (ooc)")
 print(res)
 blaze.drop(blaze.Persist('bar.blz'))
 del(res)
+
+banner("Executor iterating")
+ex = BlazeExecutor(d._data, 1)
+shape, dtype = to_numpy(d._data.dshape)
+res_dd = BLZDataDescriptor(blz.zeros((0,)+shape[1:],
+                                     dtype=dtype,
+                                     rootdir='baz.blz'))
+
+
+ex.run_append(res_dd)
+res = blaze.Array(res_dd)
+print(res)
+blaze.drop(blaze.Persist('baz.blz'))
+del res
+del res_dd
+del ex
+
+banner("Executor memory no iter")
+ex = BlazeExecutor(d._data, 0)
+shape, dtype = to_numpy(d._data.dshape)
+res_dd = NumPyDataDescriptor(np.empty(shape, dtype=dtype))
+
+ex.run_write(res_dd)
+res = blaze.Array(res_dd)
+print(res)
+del res
+del res_dd
+del ex
+
+banner("Executor memory 1 iter")
+ex = BlazeExecutor(d._data, 1)
+shape, dtype = to_numpy(d._data.dshape)
+res_dd = NumPyDataDescriptor(np.empty(shape, dtype=dtype))
+
+ex.run_write(res_dd)
+res = blaze.Array(res_dd)
+print(res)
+del res
+del res_dd
+del ex
+
+dims = np.arange(4,11)
+
+a = blaze.array(np.arange(np.prod(dims), dtype=np.float64).reshape(dims))
+b = blaze.array(np.arange(np.prod(dims), dtype=np.float64).reshape(dims))
+
+c = add(a, b)
+d = mul(c, c)
+
+
+print(d._data.kerneltree.ctypes_func)
+
+def test_dims(d,outer):
+    banner("Executer mem %d iters" % outer)
+    ex =BlazeExecutor(d._data, outer)
+    shape, dtype = to_numpy(d._data.dshape)
+    res_dd = NumPyDataDescriptor(np.empty(shape, dtype=dtype))
+    ex.run_write(res_dd)
+    res = blaze.Array(res_dd)
+    print (res)
+
+for i in xrange(len(dims)-1):
+    test_dims(d,i)
