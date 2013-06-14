@@ -6,6 +6,14 @@ from blaze.blaze_kernels import BlazeElementKernel
 import llvm.core as lc
 import llvm
 
+if sys.version_info >= (2,7):
+    c_ssize_t = ctypes.c_ssize_t
+else:
+    if ctypes.sizeof(ctypes.c_void_p) == 4:
+        c_ssize_t = ctypes.c_int32
+    else:
+        c_ssize_t = ctypes.c_int64
+
 mod = lc.Module.new('simple')
 
 def create_func(mod):
@@ -37,7 +45,7 @@ class TestKernelLift(unittest.TestCase):
         def _convert(arr):
             address, count = arr.buffer_info()
             buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
-            shape = (ctypes.c_ssize_t * 1)(count)
+            shape = (c_ssize_t * 1)(count)
             val = struct(buff, shape)
             return val
 
@@ -58,7 +66,7 @@ class TestKernelLift(unittest.TestCase):
         def _convert(arr):
             address, count = arr.buffer_info()
             buff = ctypes.cast(address, ctypes.POINTER(ctypes.c_double))
-            shape = (ctypes.c_ssize_t * 2)(10, count // 10)
+            shape = (c_ssize_t * 2)(10, count // 10)
             val = struct(buff, shape)
             return val
 
