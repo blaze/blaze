@@ -616,7 +616,7 @@ class LLArray(object):
 
     #Can be used to get subarrays as well as elements
     def __getitem__(self, key):
-        from . import llgetitem
+        from .llgetitem import from_Array
         isiter = isiterable(key)
         char = orderchar[self._kind]
         # full-indexing
@@ -624,8 +624,7 @@ class LLArray(object):
            (self.nd == 1 and isinteger(key)):
             if isiter:
                 if any(x in [Ellipsis, None] for x in key):
-                    func = getattr(llgetitem, 'from_%s' % char)
-                    return func(self, key)
+                    return from_Array(self, key, char)
                 else:
                     args = key
             else:
@@ -633,8 +632,7 @@ class LLArray(object):
             ptr = self.getptr(*args)
             return self.builder.load(ptr)
         elif self._kind in [C_CONTIGUOUS, F_CONTIGUOUS, STRIDED]:
-            func = getattr(llgetitem, 'from_%s' % char)
-            return func(self, key)
+            return from_Array(self, key, char)
         else:
             raise NotImplementedError
 
@@ -660,7 +658,7 @@ class LLArray(object):
         new, freefuncs, char_data = res
         self._freefuncs.append(free)
         self._freedata.append(char_data)
-        return LLVMArray(new)
+        return LLArray(new)
 
     def _dealloc(self):
         for freefunc, freedatum in zip(self._freefuncs, self._freedata):

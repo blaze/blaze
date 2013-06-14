@@ -1,7 +1,8 @@
 from .llvm_array import (array_type, const_intp, auto_const_intp, 
                          intp_type, int_type,
                          store_at, load_at, get_shape_ptr, get_data_ptr,
-                         get_strides_ptr, sizeof, isinteger, isiterable)
+                         get_strides_ptr, sizeof, isinteger, isiterable,
+                         F_CONTIGUOUS, C_CONTIGUOUS, STRIDED)
 from llvm.core import Constant, Type
 import llvm.core as lc
 
@@ -30,13 +31,162 @@ def adjust_slice(key, nd):
     return start, end, step
 
 
+# STRIDED
+
+def Sarr_from_S(arr, key):
+    raise NotImplementedError
+
+
+def Sarr_from_S_slice(arr, start, stop, step):
+    raise NotImplementedError
+
+
+def from_S_int(arr, index):
+    return from_S_ints(arr, (index,))
+
+def from_S_ints(arr, key):
+    raise NotImplementedError
+    builder = arr.builder
+    num = len(key)
+    newnd = arr.nd - num
+    if newnd < 0:
+        raise ValueError("Too many keys")
+    new = arr.getview(nd=newnd)
+
+    oldshape = get_shape_ptr(builder, arr.array_ptr)
+    newshape = get_shape_ptr(builder, new.array_ptr)
+    # Load the shape array
+    for i in range(newnd):
+        val = load_at(builder, oldshape, i+num)
+        store_at(builder, newshape, i, val)
+
+    # Load the data-pointer
+    old_data_ptr = get_data_ptr(builder, arr.array_ptr)
+    new_data_ptr = get_data_ptr(builder, new.array_ptr)
+
+    loc = Constant.int(intp_type, 0)
+    factor = Constant.int(intp_type, 1)
+    for index in range(arr.nd-1,-1,-1):
+        val = load_at(builder, oldshape, index)
+        factor = builder.mul(factor, val)
+        if index < num: # 
+            keyval = auto_const_intp(key[index])
+            # Multiply by strides
+            tmp = builder.mul(keyval, factor)
+            # Add to location
+            loc = builder.add(loc, tmp)
+    ptr = builder.gep(old_data_ptr, [loc])
+    builder.store(ptr, new_data_ptr)
+    return new
+
+def from_S_slice(arr, start, end):
+    raise NotImplementedError
+    builder = arr.builder
+    new = arr.getview()
+    # Load the shape array
+    oldshape = get_shape_ptr(builder, arr.array_ptr)
+    newshape = get_shape_ptr(builder, new.array_ptr)
+    diff = Constant.int(intp_int, end-start)
+    store_at(builder, newshape, 0, diff)
+    for i in range(1, new.nd):
+        val = load_at(builder, oldshape, i)
+        store_at(builder, newshape, i, val)
+
+    # Data Pointer
+    old_data_ptr = get_data_ptr(builder, arr.array_ptr)
+    loc = Constant.int(intp_type, start)
+    while dim in arr.shape[1:]:
+        loc = builder.mul(loc, dim)
+    ptr = builder.gep(old_data_ptr, [loc])
+    new_data_ptr = get_data_ptr(builder, new.array_ptr)
+    builder.store(ptr, new_data_ptr)
+    return new
+
+# FORTRAN CONTIGUOUS
+
+def Sarr_from_F(arr, key):
+    raise NotImplementedError
+
+def Sarr_from_F_slice(arr, start, stop, step):
+    raise NotImplementedError
+
+def from_F_int(arr, index):
+    return from_F_ints(arr, (index,))
+
+def from_F_ints(arr, key):
+    raise NotImplementedError
+    builder = arr.builder
+    num = len(key)
+    newnd = arr.nd - num
+    if newnd < 0:
+        raise ValueError("Too many keys")
+    new = arr.getview(nd=newnd)
+
+    oldshape = get_shape_ptr(builder, arr.array_ptr)
+    newshape = get_shape_ptr(builder, new.array_ptr)
+    # Load the shape array
+    for i in range(newnd):
+        val = load_at(builder, oldshape, i+num)
+        store_at(builder, newshape, i, val)
+
+    # Load the data-pointer
+    old_data_ptr = get_data_ptr(builder, arr.array_ptr)
+    new_data_ptr = get_data_ptr(builder, new.array_ptr)
+
+    loc = Constant.int(intp_type, 0)
+    factor = Constant.int(intp_type, 1)
+    for index in range(arr.nd-1,-1,-1):
+        val = load_at(builder, oldshape, index)
+        factor = builder.mul(factor, val)
+        if index < num: # 
+            keyval = auto_const_intp(key[index])
+            # Multiply by strides
+            tmp = builder.mul(keyval, factor)
+            # Add to location
+            loc = builder.add(loc, tmp)
+    ptr = builder.gep(old_data_ptr, [loc])
+    builder.store(ptr, new_data_ptr)
+    return new
+
+def from_F_slice(arr, start, end):
+    raise NotImplementedError
+    builder = arr.builder
+    new = arr.getview()
+    # Load the shape array
+    oldshape = get_shape_ptr(builder, arr.array_ptr)
+    newshape = get_shape_ptr(builder, new.array_ptr)
+    diff = Constant.int(intp_int, end-start)
+    store_at(builder, newshape, 0, diff)
+    for i in range(1, new.nd):
+        val = load_at(builder, oldshape, i)
+        store_at(builder, newshape, i, val)
+
+    # Data Pointer
+    old_data_ptr = get_data_ptr(builder, arr.array_ptr)
+    loc = Constant.int(intp_type, start)
+    while dim in arr.shape[1:]:
+        loc = builder.mul(loc, dim)
+    ptr = builder.gep(old_data_ptr, [loc])
+    new_data_ptr = get_data_ptr(builder, new.array_ptr)
+    builder.store(ptr, new_data_ptr)
+    return new
+
+
+# C-CONTIGUOUS
+
 def Sarr_from_C(arr, key):
     raise NotImplementedError
 
-
 def Sarr_from_C_slice(arr, start, stop, step):
-    raise NotImplementedError
+    builder = arr.builder
+    new = arr.getview(kind=STRIDED)
+    oldshape = get_shape_ptr(builder, arr.array_ptr)
+    newshape = get_shape_ptr(builder, new.array_ptr)
+    newstrides = get_strides_ptr(bulder, new.array_ptr)
 
+    
+
+    raise NotImplementedError
 
 def from_C_int(arr, index):
     return from_C_ints(arr, (index,))
@@ -97,18 +247,19 @@ def from_C_slice(arr, start, end):
     builder.store(ptr, new_data_ptr)
     return new
 
-def from_C(arr, key):
+
+def from_Array(arr, key, char):
     if isinteger(key):
-        return from_C_int(arr, key)
+        return eval('from_%s_int' % char)(arr, key)
     elif isinstance(key, slice):
         if key == slice(None):
             return arr
         else:
             start, stop, step = adjust_slice(key)
             if step == 1:
-                return from_C_slice(arr, start, end)
+                return eval('from_%s_slice' % char)(arr, start, stop)
             else:
-                return Sarr_from_C_slice(arr, start, end, step)
+                return eval('Sarr_from_%s_slice' % char)(arr, start, stop, step)
     elif isiterable(key):
         # will be less than arr._nd or have '...' or ':'
         # at the end
@@ -124,24 +275,18 @@ def from_C(arr, key):
             else:
                 raise ValueError(msg % val)
         if needstrided:
-            return Sarr_from_C(arr, key)
+            return eval('Sarr_from_%s' % char)(arr, key)
         # get just the integers
-        def convert(x):
+        def _convert(x):
             if hasattr(x, '__index__'):
                 return x.__index__()
             else:
                 return x
 
-        key = [convert(x) for x in key[slice(None, lastint)]]
+        key = [_convert(x) for x in key[slice(None, lastint)]]
         if len(key) > arr.nd:
             raise ValueError('Too many indicies')
-        return from_C_ints(arr, key)
+        return eval('from_%s_ints' % char)(arr, key)
     else:
         raise ValueError(msg % key)
 
-
-def from_F(arr, key):
-    raise NotImplementedError
-
-def from_S(arr, key):
-    raise NotImplementedError
