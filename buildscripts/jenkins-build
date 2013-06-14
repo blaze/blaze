@@ -19,7 +19,13 @@ if [ "${PYTHON_VERSION}" == "" ]; then
  exit 1
 fi
 
+# Try to delete the build directory twice, with a pause in
+# between, because on an OSX build machine this was failing
+# on occasion.
 rm -rf ${WORKSPACE}/build
+sleep 1
+rm -rf ${WORKSPACE}/build
+
 if [ -d ${WORKSPACE}/build ]; then
  echo Failed to delete temporary build dir ${WORKSPACE}/build
  exit 1
