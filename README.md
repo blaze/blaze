@@ -1,6 +1,78 @@
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
+</p>
 
-Blaze 0.1
-============
+**Blaze** is the next-generation of NumPy. It is designed as a
+foundational set of abstractions on which to build out-of-core and
+distributed algorithms over a wide variety of data sources and to extend
+the structure of NumPy itself.
+
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png">
+</p>
+
+Blaze allows easy composition of low level computation kernels
+( C, Fortran, Numba ) to form complex data transformations on large
+datasets.
+
+In Blaze, computations are described in a high-level language 
+(Python) but executed on a low-level runtime (outside of Python), 
+enabling the easy mapping of high-level expertise to data without sacrificing
+low-level performance. Blaze aims to bring Python and NumPy into the
+massively-multicore arena, allowing it to able to leverage many CPU and
+GPU cores across computers, virtual machines and cloud services.
+
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
+</p>
+
+Continuum Analytics' vision is to provide open technologies for data
+integration on a massive scale based on a vision of a structured,
+universal "data web". In the same way that URL, HTML, and HTTP form
+the basis of the World Wide Web for documents, Blaze could
+be a fabric for structured and numerical data spearheading
+innovations in data management, analytics, and distributed computation.
+
+Blaze aims to be a foundational project allowing many different users of
+other PyData projects ( Pandas, Theano, Numba, SciPy, Scikit-Learn)
+to interoperate at the application level and at the library level with
+the goal of being able to to lift their existing functionality into a
+distributed context.
+
+<p align="center" style="padding: 20px">
+<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png">
+</p>
+
+Status
+------
+
+Blaze is a work in progress at the moment.  The 0.1 release is imminent with a first-usable release due at the end of August 2013. 
+
+Documentation
+-------------
+
+* [0.1 Dev Docs](http://blaze.pydata.org/docs/)
+
+Installing
+----------
+
+If you are interested in the development version of Blaze you can
+obtain the source from Github.
+
+```bash
+$ git clone git@github.com:ContinuumIO/blaze.git
+```
+
+Many of the dependencies ( i.e. llvmpy ) are non-trivial to install.
+It is **highly recommend** that you build Blaze using the Anaconda
+distribution, a free Python distribution that comes with a host of
+scientific and numeric packages bundled and precompiled into a userspace
+Python environment.
+
+Anaconda can be downloaded for all platforms here: http://continuum.io/downloads.html.
+
+Introduction
+------------
 
 Pre-requisites:
   * llvmpy >= 0.11.1
@@ -14,53 +86,75 @@ python setup.py install
 Docs are generated using sphinx in the docs directory.
 
 
-Overview of early functionality
-===============================
+Alternative Installation
+------------------------
 
-Concrete Array object
----------------------
+If for some reason you wish to avoid using Anaconda 
+it is possible to build Blaze using standard Python tools. 
+This method is not recommended.
 
-* Make immediate Array() to work with the basic data types: bools,
-integers, floats, complex, strings and compound types. Variable length
-should be supported too (although they won't be very efficient for now).
+1) After you have checked out the Blaze source, create a virtualenv
+under the root of the Blaze repo.
 
-* Basic constructors (ones, zeros) should work decently well. The
-Array.fromiter() should work too (currently it has some issues).
+```bash
+$ virtualenv venv --distribute --no-site-packages 
+$ . venv/bin/activate
+```
 
-* Multidimensional indexing should be tested and work by returning a
-NumPy array buffer initially. In the future this operation should return
-a Blaze object (Array or Scalar).
+2) Pull the Conda package manager for use inside of your virtualenv.
 
-* The Array() should work both in memory and on disk, and should support
-appends efficiently. In particular, when it is on disk, the sequence
-create-append-close-open-append-close should work well.
+```bash
+$ git clone git@github.com:ContinuumIO/conda.git
+```
 
-Operations on concrete Array objects
-------------------------------------
+3) Build and install conda.
 
-* Implement basic binary operations: +, -, *, /
+```bash
+$ cd conda
+$ python setup.py install
+$ cd ..
+```
 
-* Implement some unary operations: abs(), neg(), sin(), cos()...
+4) Create a directory in your virtualenv to mimic the behavior of
+Anaconda and allow Continuum signed packages to be installed.
 
-* Implement an interesting operation: madd(a, b, c) -> a + b * c
+```bash
+$ mkdir venv/pkgs
+```
 
-All the operations above will have temporaries in memory, except for
-`madd()`, which will use Blir internally. Deferred machiner will enter
-into action in forthcoming releases.
+5) Add ``conda`` to your path.
 
-Also, we will direct users to have a glimpse at the deferred
-array operations example that Oscar and me setup recently in
-`samples/chunked_dot.py` that uses Blir/numexpr/!NumPy.
+```bash
+$ PATH=venv/bin:$PATH
+```
 
-Blaze Execution Engine
-----------------------
+6) Use Anaconda to resolve Blaze dependencies. This method is
+experimental and not officially supported.
 
-* Setup a !ByteProvider class to uniformize the access to different
-container backends: BLZ, dynd, !NumPy
+```bash
+$ conda install ply
+$ conda install numpy
+$ conda install llvmpy
+$ conda install cython
+$ conda install pycparser
+```
 
-* Build a very basic `execution engine` that would be able to ask for
-slices to the !ByteProvider and perform the operations for them. This
-will be based on Oscar's implementation for the `samples/chunked_dot.py`
-example.
+7) From inside the Blaze directory run the Makefile.
 
-* The execution engine will be able to use plugable on-the-flight compilers: Blir, Numba, numexpr.
+```bash
+$ make build
+```
+
+Contributing
+------------
+
+Anyone wishing to discuss on Blaze should join the
+[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev) 
+mailing list at: blaze-dev@continuum.io
+
+License
+-------
+
+Blaze development is sponsored by Continuum Analytics.
+
+Released under BSD license. See LICENSE for details.
