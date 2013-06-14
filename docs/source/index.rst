@@ -26,6 +26,7 @@ WIP Index
    :maxdepth: 2
 
    data_descriptor
+   blaze_functions
 
 Original Index
 ~~~~~~~~~~~~~~
