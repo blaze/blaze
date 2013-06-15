@@ -25,10 +25,11 @@ import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
 from . import llvm_array as lla
-from .llvm_array import (void_type, intp_type, array_kinds, check_array, get_cpp_template,
-                         array_type, const_intp, LLArray, orderchar)
+from .llvm_array import (void_type, intp_type, array_kinds, check_array,
+                get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .kernelgen import loop_nest
-from .ckernel import (ExprSingleOperation, JITKernelData, UnboundCKernelFunction)
+from .ckernel import (ExprSingleOperation, JITKernelData,
+                UnboundCKernelFunction)
 from .py3help import izip, _strtypes
 from .datashape.util import dshape as make_dshape
 
@@ -103,13 +104,21 @@ class BlazeElementKernel(object):
                 if kind is None:
                     kind = POINTER
                 kindlist[i] = kind
-        self.kinds = tuple(kindlist)
+        self._kinds = tuple(kindlist)
         # Keep a handle on the module object
         self.module = func.module
         if dshapes is None:
             dshapes = self.dshapes
         else:
             self.dshapes = dshapes
+
+    @property
+    def kinds(self):
+        """An array of 'kinds' describing the parameters the
+        kernel function accepts. May be SCALAR, POINTER,
+        or a 3-tuple (array_kind, ndim, llvm_eltype).
+        """
+        return self._kinds
 
     @property
     def dshapes(self):
@@ -169,7 +178,8 @@ class BlazeElementKernel(object):
             if self.ranks[-1] == 0:
                 self._shape_func = lambda *args: ()
             else:
-                symbols = [[sh.symbol for sh in dshape.shape] for dshape in self.dshapes]
+                symbols = [[sh.symbol for sh in dshape.shape]
+                                for dshape in self.dshapes]
                 outshapes = []
                 for symbol in symbols[-1]:
                     # Find first occurrence of symbol in other shapes
@@ -232,6 +242,7 @@ class BlazeElementKernel(object):
         """Creates an UnboundCKernelFunction with the ExprSingleOperation prototype.
         """
         import ctypes
+        print("self.kinds is:", self.kinds)
         if self._unbound_single_ckernel is None:
             i8_p_type = Type.pointer(Type.int(8))
             func_type = Type.function(void_type,
@@ -262,8 +273,8 @@ class BlazeElementKernel(object):
                 elif k in [SCALAR, POINTER]:
                     input_field_indices.append(None)
                 else:
-                    raise TypeError("unbound_single_ckernel codegen doesn't " +
-                                    "support the given parameter kind yet")
+                    raise TypeError(("unbound_single_ckernel codegen doesn't " +
+                                    "support the parameter kind %r yet") % (k,))
             # Make an LLVM and ctypes type for the extra data pointer.
             kernel_data_llvmtype = Type.struct(kernel_data_fields)
             class kernel_data_ctypestype(ctypes.Structure):
@@ -295,7 +306,8 @@ class BlazeElementKernel(object):
                     # Make an llvm array
                     arrtype = lla.array_type(len(shape), lla.C_CONTIGUOUS, module)
                     arr_var = builder.alloca(arrtype)
-                    builder.store(builder.gep(arr_var, (lc.Constant.int(intp_type, 0),)),
+                    builder.store(builder.gep(arr_var,
+                                    (lc.Constant.int(intp_type, 0),)),
                                     src_ptr)
                     for j, sz in enumerate(shape):
                         if isinstance(sz, datashape.Fixed):
@@ -734,7 +746,8 @@ def insert_instructions(node, builder, output=None):
             eltype = kernel.argtypes[-1].pointee.elements[0].pointee
             assert node.shape is not None
             assert kernel.argtypes[-1].pointee.elements[1].count == len(node.shape)
-            output, freefunc, freedata = lla.create_array(builder, node.shape, kind, eltype)
+            output, freefunc, freedata = lla.create_array(
+                            builder, node.shape, kind, eltype)
             new = _cleanup(builder, freefunc, freedata)
 
     #Setup the argument list

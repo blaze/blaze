@@ -149,9 +149,9 @@ diminfo_type = Type.struct([intp_type,    # shape
 zero_p = lc.Constant.int(intp_type, 0)
 one_p = lc.Constant.int(intp_type, 1)
 
-# We use a per-module cache because the LLVM linker wants a new struct 
+# We use a per-module cache because the LLVM linker wants a new struct
 #   with the same name in different modules.
-# The linker does *not* like the *same* struct with the *same* name in 
+# The linker does *not* like the *same* struct with the *same* name in
 #   two different modules.
 _cache = {}
 # This is the way we define LLVM arrays.
@@ -202,6 +202,22 @@ def array_type(nd, kind, el_type=char_type, module=None):
     return ret
 
 def check_array(arrtyp):
+    """Converts an LLVM type into an llvm_array 'kind' for a
+    blaze kernel to use.
+
+    Parameters
+    ----------
+    arrtyp : LLVM type
+        The LLVM type to convert into a 'kind'. This type should
+        have been created with the array_type function.
+
+    Returns
+    -------
+    None if the input parameter is not an array_type instance,
+    or a 3-tuple (array_kind, ndim, llvm_eltype). The array_kind
+    is an integer flags containing values like C_CONTIGUOUS, HAS_ND,
+    etc.
+    """
     if not isinstance(arrtyp, lc.StructType):
         return None
     if arrtyp.element_count not in [3, 4, 5, 6]:
@@ -651,9 +667,9 @@ class LLArray(object):
     # eltype is an llvm type
     # This is intended for temporary use only.
     def create(self, shape=None, kind=None, eltype=None, malloc=None, free=None, order='K'):
-        res =  create_array(self.builder, shape or self.shape, 
-                                          kind or self._kind, 
-                                          eltype or self._eltype, 
+        res =  create_array(self.builder, shape or self.shape,
+                                          kind or self._kind,
+                                          eltype or self._eltype,
                                           malloc, free, order)
         new, freefuncs, char_data = res
         self._freefuncs.append(free)
@@ -700,7 +716,7 @@ def create_array(builder, shape, kind, eltype, malloc=None, free=None, order='K'
         arg = result
     char_data = builder.call(malloc, [arg])
     data = builder.bitcast(char_data, Type.pointer(eltype))
-    data_ptr = builder.gep(new, [zero_p, zero_i])    
+    data_ptr = builder.gep(new, [zero_p, zero_i])
     builder.store(data, data_ptr)
 
     if kind == STRIDED:
