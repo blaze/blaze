@@ -75,8 +75,8 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
         args = [arg.arr._data for arg in df._data.args]
         ck = ubck.bind(result._data, args)
         execute_expr_single(result._data, args,
-                        result._data.dshape[-2:],
-                        [a.dshape[-2:] for a in args],
+                        result._data.dshape.subarray(-2),
+                        [a.dshape.subarray(-2) for a in args],
                         ck)
         self.assertEqual(dd_as_py(result._data),
                         [[(a+b) * (a+b) for a, b in izip(a1, b1)]
