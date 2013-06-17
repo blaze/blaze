@@ -30,7 +30,7 @@ from .llvm_array import (void_type, intp_type, array_kinds, check_array,
 from .kernelgen import loop_nest
 from .ckernel import (ExprSingleOperation, JITKernelData,
                 UnboundCKernelFunction)
-from .py3help import izip, _strtypes
+from .py3help import izip, _strtypes, c_ssize_t
 from .datashape import Fixed, TypeVar
 from .datashape.util import dshape as make_dshape
 
@@ -277,7 +277,7 @@ class BlazeElementKernel(object):
                     kernel_data_fields.append(Type.array(
                                     intp_type, len(self.dshapes[i])-1))
                     kernel_data_ctypes_fields.append(('operand_%d' % i,
-                                    ctypes.c_ssize_t * (len(self.dshapes[i])-1)))
+                                    c_ssize_t * (len(self.dshapes[i])-1)))
                 elif kind in [SCALAR, POINTER]:
                     input_field_indices.append(None)
                 else:

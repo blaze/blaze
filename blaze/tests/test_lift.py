@@ -5,14 +5,7 @@ import array
 from blaze.blaze_kernels import BlazeElementKernel
 import llvm.core as lc
 import llvm
-
-if sys.version_info >= (2,7):
-    c_ssize_t = ctypes.c_ssize_t
-else:
-    if ctypes.sizeof(ctypes.c_void_p) == 4:
-        c_ssize_t = ctypes.c_int32
-    else:
-        c_ssize_t = ctypes.c_int64
+from ..py3help import c_ssize_t
 
 mod = lc.Module.new('simple')
 

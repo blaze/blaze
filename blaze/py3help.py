@@ -37,8 +37,14 @@ else:
         from .counter_py26 import Counter
 
 if sys.version_info[:2] >= (2, 7):
+    from ctypes import c_ssize_t
     from unittest import skip, skipIf
 else:
+    from ctypes import c_void_p, c_int32, c_int64
+    if ctypes.sizeof(c_void_p) == 4:
+        c_ssize_t = c_int32
+    else:
+        c_ssize_t = c_int64
     from nose.plugins.skip import SkipTest
     class skip(object):
         def __init__(self, reason):
