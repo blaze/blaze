@@ -226,7 +226,11 @@ class BlazeElementKernel(object):
                     import __builtin__ as builtins
                 builtins._temp = module.clone()
                 builtins._tempname = self.func.name
-                self._ee = le.ExecutionEngine.new(module)
+                #self._ee = le.ExecutionEngine.new(module)
+                # FIXME: Temporarily disabling AVX, because of misdetection
+                #        in linux VMs. Some code is in llvmpy's workarounds
+                #        submodule related to this.
+                self._ee = le.EngineBuilder.new(module).mattrs("-avx").create()
             func = module.get_function_named(self.func.name)
             self._func_ptr = self._ee.get_pointer_to_function(func)
         return self._func_ptr
@@ -420,8 +424,9 @@ class BlazeElementKernel(object):
             #module.verify()
             # TODO: Cache the EE - the interplay with the func_ptr
             #       was broken, so just avoiding caching for now
-            # AVX was being generated on some linux VMs even when
-            # the processor had no AVX support, so disabling it manually.
+            # FIXME: Temporarily disabling AVX, because of misdetection
+            #        in linux VMs. Some code is in llvmpy's workarounds
+            #        submodule related to this.
             ee = le.EngineBuilder.new(module).mattrs("-avx").create()
             func_ptr = ee.get_pointer_to_function(single_ck_func)
             # Create a function which copies the shape from data
