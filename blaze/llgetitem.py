@@ -5,30 +5,39 @@ from .llvm_array import (array_type, const_intp, auto_const_intp,
                          F_CONTIGUOUS, C_CONTIGUOUS, STRIDED)
 from llvm.core import Constant, Type
 import llvm.core as lc
+import itertools
 
-msg = "Unsupported getitem value %s"
 
-# produce strided array view from contiguous
+def _check_N(N):
+    if N is None:
+        raise ValueError("negative integers not supported")
 
-def adjust_slice(key, nd):
+
+def adjust_slice(key, N=None):
     start = key.start
     if start is None:
         start = 0
-    while start < 0:
-        start += nd
 
-    end = key.end
-    if end is None:
-        end = nd
+    if start < 0:
+        _check_N(N)        
+        while start < 0:
+            start += N
 
-    while end < 0:
-        end += nd
+    stop = key.stop
+    if stop is None:
+        _check_N(N)
+        stop = N
+
+    if stop < 0:
+        _check_N(N)
+        while stop < 0:
+            stop += N
 
     step = key.step
     if step is None:
         step = 1
 
-    return start, end, step
+    return start, stop, step
 
 
 # STRIDED
@@ -113,6 +122,8 @@ def Sarr_from_F_slice(arr, start, stop, step):
 def from_F_int(arr, index):
     return from_F_ints(arr, (index,))
 
+# key will be *just* the final integers to extract
+#  so that resulting array stays F_CONTIGUOUS
 def from_F_ints(arr, key):
     raise NotImplementedError
     builder = arr.builder
@@ -184,9 +195,23 @@ def Sarr_from_C_slice(arr, start, stop, step):
     newshape = get_shape_ptr(builder, new.array_ptr)
     newstrides = get_strides_ptr(bulder, new.array_ptr)
 
-    
+    if all(hasattr(x, '__index__') for x in [start, stop, step]):
+        step = auto_const_intp(step)
+        newdim = auto_const_intp((stop - start) // step)
+    else:
+        start, stop, step = [auto_const_intp(x) for x in [start, stop, step]]
+        tmp = builder.sub(stop, start)
+        newdim = builder.udiv(tmp, step)
+
+    store_at(builder, newshape, 0, newdim)
+    # Copy other dimensions over
+    for i in range(1, arr.nd):
+        val = load_at(builder, oldshape, i)
+        store_at(builder, newshape, i, val)
 
     raise NotImplementedError
+    # Fill-in strides
+    # Update data-ptr
 
 def from_C_int(arr, index):
     return from_C_ints(arr, (index,))
@@ -248,6 +273,85 @@ def from_C_slice(arr, start, end):
     return new
 
 
+# get just the integers
+def _convert(x):
+    if hasattr(x, '__index__'):
+        return x.__index__()
+    else:
+        return x
+    
+_keymsg = "Unsupported getitem value %s"
+# val is either Ellipsis or slice object.
+# check to see if start, stop, and/or step is given for slice
+def _needstride(val):
+    if not isinstance(val, slice):
+        return False
+    if val.start is not None and val.start != 0:
+        return True
+    if val.stop is not None:
+        return True
+    if (val.step is not None) and (val.step != 1):
+        return True
+    return False
+
+
+def _getitem_C(arr, key):
+    lastint = None
+    needstrided = False
+    # determine if 1) the elements of the geitem iterable are
+    #                 integers (LLVM or Python indexable), Ellipsis,
+    #                 or slice objects
+    #              2) the integer elements are all at the front
+    #                 so that the resulting slice is continuous
+    for i, val in enumerate(key):
+        if isinteger(val):
+            if lastint is not None:
+                needstrided = True
+        elif isinstance(val, (Ellipsis, slice)):
+            if lastint is None:
+                lastint = i
+            needstrided = _needstride(val)
+        else:
+            raise ValueError(_keymsg % val)
+
+    if not needstrided:
+        key = [_convert(x) for x in itertools.islice(key, lastint)]
+
+    return needstrided, key
+
+
+def _getitem_F(arr, key):
+    # This looks for integers at the end of the key iterable
+    # arr[:,...,i,j] would not need strided
+    # arr[:,i,:,j] would need strided as would a[:,i,5:20,j]
+    #      and a[:,...,5:10,j]
+    # elements can be integers or LLVM ints
+    #    with indexing being done either at compile time (Python int)
+    #    or run time (LLVM int)
+    last_elsl = None
+    needstrided = False
+    for i, val in enumerate(key):
+        if isinteger(val):
+            if last_elsl is None:
+                last_elsl = i
+        elif isinstance(val, (Ellipsis, slice)):
+            if last_elsl is not None:
+                needstrided = True
+            needstrided = needstrided or _needstride(val)
+        else:
+            raise ValueError(_keymsg % val)
+
+    # Return just the integers fields if needstrided not set
+    if not needstrided:
+        key = [_convert(x) for x in itertools.islice(key, lastint, None)]
+
+    return needstrided, key
+
+
+def _getitem_S(arr, key):
+    return True, key
+
+
 def from_Array(arr, key, char):
     if isinteger(key):
         return eval('from_%s_int' % char)(arr, key)
@@ -255,7 +359,7 @@ def from_Array(arr, key, char):
         if key == slice(None):
             return arr
         else:
-            start, stop, step = adjust_slice(key)
+            start, stop, step = adjust_slice(arr, key)
             if step == 1:
                 return eval('from_%s_slice' % char)(arr, start, stop)
             else:
@@ -263,30 +367,11 @@ def from_Array(arr, key, char):
     elif isiterable(key):
         # will be less than arr._nd or have '...' or ':'
         # at the end
-        lastint = None
-        needstrided = False
-        for i, val in enumerate(key):
-            if isinteger(val):
-                if lastint is not None:
-                    needstrided = True
-            elif isinstance(val, (Ellipsis, slice)):
-                if lastint is None:
-                    lastint = i
-            else:
-                raise ValueError(msg % val)
+        needstrided, key = eval("_getitem_%s" % char)(arr, key)
         if needstrided:
             return eval('Sarr_from_%s' % char)(arr, key)
-        # get just the integers
-        def _convert(x):
-            if hasattr(x, '__index__'):
-                return x.__index__()
-            else:
-                return x
-
-        key = [_convert(x) for x in key[slice(None, lastint)]]
         if len(key) > arr.nd:
             raise ValueError('Too many indicies')
         return eval('from_%s_ints' % char)(arr, key)
     else:
-        raise ValueError(msg % key)
-
+        raise ValueError(_keymsg % key)
