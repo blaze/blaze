@@ -33,6 +33,7 @@ packages = [
     'blaze.datadescriptor.tests',
     'blaze.datashape',
     'blaze.datashape.tests',
+    'blaze.executive',
     'blaze.tests',
     'blaze._printing',
 ]

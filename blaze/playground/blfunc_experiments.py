@@ -11,6 +11,9 @@ import blaze.blz as blz
 from blaze.datashape import to_numpy
 from blaze.datadescriptor import (NumPyDataDescriptor,
                                   BLZDataDescriptor)
+from blaze.executive import (simple_execute_write,
+                             simple_execute_append)
+
 from itertools import izip, product as it_product
 import numpy as np
 import ctypes
@@ -293,7 +296,7 @@ del res
 del res_dd
 del ex
 
-dims = np.arange(4,11)
+dims = (1024*256, 512)
 
 a = blaze.array(np.arange(np.prod(dims), dtype=np.float64).reshape(dims))
 b = blaze.array(np.arange(np.prod(dims), dtype=np.float64).reshape(dims))
@@ -313,5 +316,28 @@ def test_dims(d,outer):
     res = blaze.Array(res_dd)
     print (res)
 
-for i in xrange(len(dims)-1):
-    test_dims(d,i)
+#for i in xrange(len(dims)-1):
+#    test_dims(d,i)
+
+
+src_dd = d._data
+sh, dt = to_numpy(src_dd.dshape)
+
+
+banner('Executive interface (write interface)')
+dst_dd = NumPyDataDescriptor(np.empty(sh, dtype=dt))
+simple_execute_write(src_dd, dst_dd)
+print(blaze.Array(dst_dd))
+del dst_dd
+
+banner('Executive interface (append interface)')
+dst_dd = BLZDataDescriptor(blz.zeros((0,)+sh[1:],
+                                    dtype=dt,
+                                    rootdir='exec_test.blz'))
+
+
+simple_execute_append(src_dd,dst_dd)
+print(blaze.Array(dst_dd))
+blaze.drop(blaze.Persist('exec_test.blz'))
+del(dst_dd)
+
