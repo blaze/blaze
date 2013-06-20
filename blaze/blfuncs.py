@@ -8,7 +8,6 @@ from .datashape.util import (broadcastable, to_numba, from_numba_str, TypeSet,
                              matches_typeset)
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
-from .array import Array
 from . import llvm_array as lla
 from .cgen.utils import letters
 from .blaze_kernels import (Argument, fuse_kerneltree, BlazeElementKernel,
@@ -136,6 +135,18 @@ class KernelTree(object):
 
     def __call__(self, *args):
         return self.ctypes_func(*args)
+
+    def __str__(self):
+        pre = self.name + '('
+        post = ')'
+        strs = []
+        for child in self.children:
+            if isinstance(child, Argument):
+                strs.append('<arg>')
+            else:
+                strs.append(str(child))
+        body = ",".join(strs)
+        return pre + body + post
 
 # Convert list of comma-separated strings into a list of integers showing
 #  the rank of each argument and a list of sets of tuples.  Each set
@@ -281,7 +292,7 @@ def process_typetable(typetable):
 #       etc --- kernels all work on in-memory "elements"
 
 class BlazeFunc(object):
-    def __init__(self, name, typetable=None, inouts=[]):
+    def __init__(self, name, typetable=None, template=None, inouts=[]):
         """
         Construct a Blaze Function from a rank-signature and keyword arguments.
 
@@ -319,6 +330,23 @@ class BlazeFunc(object):
             res = process_typetable(typetable)
             self.ranks, self.rankconnect, self.dispatch, self.templates = res
         self.inouts = inouts
+        self._add_template(template)
+
+
+    def _add_template(self, template):
+        if template is None:
+            return
+        if lla.isiterable(template):
+            for temp in template:
+                self._add_template_sub(temp)
+        else:
+            self._add_template_sub(template)
+
+    def _add_template_sub(self, template):
+        if isinstance(template, tuple):
+            self.add_template(template[0], signature=template[1])
+        else:
+            self.add_template(template)
 
     @property
     def nin(self):
@@ -433,7 +461,7 @@ class BlazeFunc(object):
                                     self.ranks[i], kernel.argtypes[i])
                 children.append(tree_arg)
 
-        kerneltree = KernelTree(kernel, children)
+        kerneltree = KernelTree(kernel, children, name=self.name)
         data = BlazeFuncDescriptor(kerneltree, outdshape)
 
         # Construct an Array object from new data descriptor
@@ -443,6 +471,8 @@ class BlazeFunc(object):
         # FIXME:  Check for axes alignment and labels alignment
         axes = args[0].axes
         labels = args[0].labels
+
+        from .array import Array
 
         return Array(data, axes, labels, user)
 

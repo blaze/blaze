@@ -5,11 +5,14 @@ from __future__ import absolute_import
 #  indexing and basic interpretation of bytes
 #
 
+import sys
+
 from . import blz
 import numpy as np
 from .datashape import dshape
 from .datadescriptor import IDataDescriptor
 from ._printing import array2string as _printer
+from . import bmath
 
 # An Array contains:
 #   DataDescriptor
@@ -20,7 +23,6 @@ from ._printing import array2string as _printer
 #   axis and dimension labels 
 #   user-defined meta-data (whatever are needed --- provenance propagation)
 class Array(object):
-
     @property
     def dshape(self):
         return self._data.dshape
@@ -38,14 +40,21 @@ class Array(object):
         return self._data.dshape[0]
 
     def __str__(self):
+        if hasattr(self._data, '_printer'):
+            return self._data._printer()
         return _printer(self._data)
 
     def __repr__(self):
         pre = 'array('
         post =  ',\n' + ' '*len(pre) + "dshape='" + str(self.dshape) + "'" + ')'
-        return pre + _printer(self._data, 
+        if hasattr(self._data, '_printer'):
+            body = self._data._printer()
+        else:
+            body = _printer(self._data, 
                               separator=', ',
-                              prefix=' '*len(pre)) + post
+                              prefix=' '*len(pre))
+
+        return pre + body + post
 
     def __init__(self, data, axes=None, labels=None, user={}):
         if not isinstance(data, IDataDescriptor):
@@ -69,6 +78,22 @@ class Array(object):
         else:
             raise NotImplementedError('append is not implemented for this '
                                       'object')
+
+_template = """
+def __{name}__(self, other):
+    return bmath.{name}(self, other)
+"""
+
+def inject_special(names):
+    dct = {'bmath':bmath}
+    for name in names:
+        newname = '__%s__' % name
+        exec _template.format(name=name) in dct
+        setattr(Array, newname, dct[newname])
+
+inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
+                           'eq', 'ne', 'gt', 'ge', 'le', 'lt'])
+
 
 """
 These should be functions

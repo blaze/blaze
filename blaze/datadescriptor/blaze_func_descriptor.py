@@ -51,10 +51,8 @@ class BlazeFuncDescriptor(IDataDescriptor):
         else:
             return self
 
-    # Create a new DataDescriptor
-    def reify(self):
-        new = self.fuse()
-
+    def _printer(self):
+        return str(self.kerneltree)
 
     @property
     def dshape(self):
