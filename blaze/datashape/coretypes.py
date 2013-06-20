@@ -72,6 +72,15 @@ class Mono(object):
         lst = [self]
         return lst[key]
 
+    # Form for searching signature in meta-method Dispatch Table
+    def sigform(self):
+        return self
+
+    # Monotypes are their own measure
+    @property
+    def measure(self):
+        return self
+
 #------------------------------------------------------------------------
 # Parse Types
 #------------------------------------------------------------------------
@@ -82,6 +91,12 @@ class Wild(Mono):
     """
     def __str__(self):
         return '*'
+
+    def __repr__(self):
+        return 'dshape("*")'
+
+    def __hash__(self):
+        return hash('*')
 
 class Null(Mono):
     """
@@ -407,7 +422,7 @@ class DataShape(Mono):
                             'type %s to datashape') % type(other))
 
     def __hash__(self):
-        for val in self:
+        for val in self[:-1]:
             if isinstance(val, Wild):
                 raise TypeError("Data-shape with 'Wildcard' is unhashable")
         return hash(tuple(a for a in self))
@@ -505,7 +520,7 @@ class Enum(DataShape):
 
 class Option(DataShape):
     """
-    Measure types which may or may not hold data. Makes not
+    Measure types which may or may not hold data. Makes no
     indication of how this is implemented in memory.
     """
 

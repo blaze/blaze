@@ -302,7 +302,10 @@ class BlazeElementKernel(object):
                     src_val = builder.load(src_ptr)
                     args.append(src_val)
                 elif kind == POINTER:
-                    raise NotImplementedError
+                    src_ptr = builder.bitcast(builder.load(
+                                    builder.gep(src_ptr_arr_arg,
+                                            (lc.Constant.int(intp_type, i),))),
+                                        Type.pointer(atype))                    
                     args.append(src_ptr)
                 elif isinstance(kind, tuple):
                     src_ptr = builder.bitcast(builder.load(
@@ -604,7 +607,16 @@ def get_eltype(argtype, kind):
 def frompyfunc(pyfunc, signature):
     import numba
     from .datashape.util import from_numba
-    numbafunc = numba.jit(signature)(pyfunc)
+    if isinstance(signature, _strtypes):
+        jitter = numba.jit(signature)
+    elif isinstance(signature, tuple):
+        jitter = numba.jit(restype=signature[1], argtypes=signature[0])
+    elif isinstance(signature, list):
+        jitter = numba.jit(argtypes=signature)
+    else:
+        raise ValueError("Signature must be list, tuple, "
+                         "or string, not %s" % type(signature))
+    numbafunc = jitter(pyfunc)
     dshapes = [from_numba(arg) for arg in numbafunc.signature.args]
     dshapes.append(from_numba(numbafunc.signature.return_type))
     krnl = BlazeElementKernel(numbafunc.lfunc, dshapes)

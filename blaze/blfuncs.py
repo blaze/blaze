@@ -2,8 +2,10 @@ from __future__ import absolute_import
 
 import sys
 import types
+import re
 
-from .datashape.util import broadcastable, to_numba
+from .datashape.util import (broadcastable, to_numba, from_numba_str, TypeSet,
+                             matches_typeset)
 from .datashape.coretypes import DataShape
 from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from .array import Array
@@ -168,31 +170,56 @@ def _convert_string(kind, source):
         return ValueError("No conversion function for %s found." % kind)
     return func(source)
 
+# Parse numba-style calling string convention
+#  and construct dshapes
+regex = re.compile('([^(]*)[(]([^)]*)[)]')
+def to_dshapes(mystr, output=False):
+    ma = regex.match(mystr)
+    if ma is None:
+        raise ValueError("Cannot understand signature string % s" % mystr)
+    else:
+        ret, args = ma.groups()
+
+    result = tuple(from_numba_str(x) for x in args.split(','))
+    if output:
+        result += (from_numba_str(ret),)
+    return result
+
 def convert_kernel(value, key=None):
+    template = None
     from llvm.core import FunctionType
-    if isinstance(value, tuple):
+    if isinstance(value, tuple): # Ex: ('cpp', source) or ('f8(f8,f8)', _add)
         if len(value) == 2 and isinstance(value[1], types.FunctionType) and \
-                 isinstance(value[0], _strtypes):
-                krnl = frompyfunc(value[1], value[0])
+                   isinstance(value[0], _strtypes):
+                if '*' in value[0]:
+                    return None, (to_dshapes(value[0]), value[1])
+                krnl = frompyfunc(value[1], value[0])  # use Numba
         elif len(value) == 2 and isinstance(value[1], _strtypes) and \
                  isinstance(value[0], _strtypes):
-            krnl = _convert_string(value[0], value[1])
+            krnl = _convert_string(value[0], value[1]) # Use blaze_kernels.from<val0>
         else:
             raise TypeError("Cannot parse kernel specification %s" % value)
-    elif isinstance(value, types.FunctionType) and key is not None:
-        # Requires key to be provided as the mapping.
-        args = ','.join(str(to_numba(ds)) for ds in key[:-1])
-        signature = '{0}({1})'.format(str(to_numba(key[-1])), args)
-        krnl = frompyfunc(value, signature)
-        krnl.dshapes = key
+    elif isinstance(value, types.FunctionType):
+        # Called when a function is used for value directly
+        # key must be present as the mapping and as datashapes
+        istemplate = any(isinstance(ds, TypeSet) for ds in key[:-1])
+        if istemplate:
+            krnl = None
+            template = (key[:-1], value)
+        else:
+            args = ','.join(str(to_numba(ds)) for ds in key[:-1])
+            signature = '{0}({1})'.format(str(to_numba(key[-1])), args)
+            krnl = frompyfunc(value, signature)
+            krnl.dshapes = key
     elif isinstance(value, FunctionType):
+        # Called whe LLVM Function is used in directly
         krnl = BlazeElementKernel(value)
         if key is not None:
             krnl.dshapes = key
     else:
         raise TypeError("Cannot convert value = %s and key = %s" % (value, key))
 
-    return krnl
+    return krnl, template
 
 # Process type-table dictionary which maps a signature list with
 #   (input-type1, input-type2, output_type) to a kernel into a
@@ -201,27 +228,44 @@ def convert_kernel(value, key=None):
 #   is placed with a tuple of the output-type plus the signature
 # So far it assumes the types all have the same rank
 #   and deduces the signature from the first kernel found
+# Also allows the typetable to have "templates" which don't resolve to
+#   kernels and are used if no matching kernel can be found.
+#   templates are list of 2-tuple (input signature data-shape, template)
+#   Numba will be used to jit the template at call-time to create a 
+#   BlazeElementKernel.   The input signature is a tuple
+#   of data-shape objects and TypeSets
 def process_typetable(typetable):
     newtable = {}
+    templates = []
     if isinstance(typetable, list):
         for item in typetable:
-            krnl = convert_kernel(item)
-            in_shapes = krnl.dshapes[:-1]
-            newtable[in_shapes] = krnl
-        key = krnl.dshapes
+            krnl, template = convert_kernel(item)
+            if template is None:
+                in_shapes = krnl.dshapes[:-1]
+                newtable[in_shapes] = krnl
+            else:
+                templates.append(template)
     else:
         for key, value in typetable.items():
             if not isinstance(value, BlazeElementKernel):
-                value = convert_kernel(value, key)
-            value.dshapes = key
-            in_shapes = value.dshapes[:-1]
-            newtable[in_shapes] = value
+                value, template = convert_kernel(value, key)
+            if template is None:
+                value.dshapes = key
+                in_shapes = value.dshapes[:-1]
+                newtable[in_shapes] = value
+            else:
+                templates.append(template)
 
     # FIXME:
     #   Assumes the same ranklist and connections for all the keys
-    ranklist, connections = get_signature(key)
+    if len(newtable.values()) > 0:
+        key = newtable.values()[0].dshapes
+        ranklist, connections = get_signature(key)
+    else: # Currently templates are all rank-0
+        ranklist = [0]*len(templates[0][0])
+        connections = []
 
-    return ranklist, connections, newtable
+    return ranklist, connections, newtable, templates
 
 # Define the Blaze Function
 #   * A Blaze Function is a callable that takes Concrete Arrays and returns
@@ -238,7 +282,7 @@ def process_typetable(typetable):
 #       etc --- kernels all work on in-memory "elements"
 
 class BlazeFunc(object):
-    def __init__(self, name, typetable, inouts=[]):
+    def __init__(self, name, typetable=None, inouts=[]):
         """
         Construct a Blaze Function from a rank-signature and keyword arguments.
 
@@ -267,8 +311,14 @@ class BlazeFunc(object):
                   input and output arguments (NotImplemented)
         """
         self.name = name
-        res = process_typetable(typetable)
-        self.ranks, self.rankconnect, self.dispatch = res
+        if typetable is None:
+            self.ranks = None
+            self.rankconnect = []
+            self.dispatch = {}
+            self.templates = []
+        else:
+            res = process_typetable(typetable)
+            self.ranks, self.rankconnect, self.dispatch, self.templates = res
         self.inouts = inouts
 
     @property
@@ -293,13 +343,47 @@ class BlazeFunc(object):
         krnl = None
         while test_rank >= 0:
             krnl = self.dispatch.get(mtypes, None)
-            if krnl is not None:
+            if krnl is not None or test_rank==0:
                 break
             test_rank -= 1
             mtypes = tuple(ds.subarray(1) for ds in mtypes)
+
+        # Templates Only works for "measures" 
+        if krnl is None:
+            measures = tuple(ds.measure for ds in types)
+            for sig, template in self.templates:
+                if sig == measures or matches_typeset(measures, sig):
+                    krnl = frompyfunc(template, [to_numba(x) for x in measures])
+                    self.dispatch[measures] = krnl
+                    break
+
         if krnl is None:
             raise ValueError("Did not find matching kernel for " + str(mtypes))
+
         return krnl
+
+    def add_funcs(self, value):
+        res = process_typetable(value)
+        ranklist, connections, newtable, templates = res
+        if self.ranks is None:
+            self.ranks = ranklist
+            self.rankconnect = connections
+
+        self.dispatch.update(newtable)
+        self.templates.extend(templates)
+
+    def add_template(self, func, signature=None):
+        if signature is None:
+            signature = '*(%s)' % (','.join(['*']*func.func_code.co_argcount))
+
+        keysig = to_dshapes(signature)
+        self.templates.append((keysig, func))
+
+        # All templates are 0-rank
+        if self.ranks is None:
+            self.ranks = [0]*len(keysig)
+
+
 
     def __call__(self, *args, **kwds):
         # convert inputs to Arrays

@@ -11,9 +11,9 @@ import sys
 
 from . import parser
 from .coretypes import (DataShape, Fixed, TypeVar, Record, Wild,
-                        uint8, uint16, uint32, uint64,
+                        uint8, uint16, uint32, uint64, CType,
                         int8, int16, int32, int64,
-                        float32, float64, complex64, complex128)
+                        float32, float64, complex64, complex128, Type)
 
 PY3 = (sys.version_info[:2] >= (3,0))
 
@@ -363,9 +363,44 @@ def from_llvm(typ, argkind=SCALAR):
         raise TypeError("Unknown type %s" % kind)
     return ds
 
+class TypeSet(object):
+    def __init__(self, *args):
+        self._set = set(args)
+    def __contains__(self, val):
+        return val in self._set
+    def __repr__(self):
+        return "%s()" % (self.__class__.__name__,)
+
+class AnyType(TypeSet):
+    def __contains__(self, val):
+        return True
+
+class AnyCType(TypeSet):
+    def __contains__(self, val):
+        return isinstance(val, CType)
+
+    def __str__(self):
+        return "*"
+
+def matches_typeset(types, signature):
+    match = True
+    for a, b in zip(types, signature):
+        check = isinstance(b, TypeSet)
+        if check and (a not in b) or (not check and a != b):
+            match = False
+            break
+    return match
+
 # FIXME: This is a hack
 def from_numba(nty):
-    return eval(str(nty))
+    return Type._registry[str(nty)]
+
+def from_numba_str(numba_str):
+    import numba
+    numba_str = numba_str.strip()
+    if numba_str == '*':
+        return AnyCType()
+    return from_numba(getattr(numba, numba_str))
 
 # Just scalars for now
 # FIXME: This could be improved

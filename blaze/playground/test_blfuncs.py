@@ -13,11 +13,11 @@ def _mul(a,b):
 
 print "Begin"
 
-add = BlazeFunc('add',[('f8(f8,f8)', _add),
-               ('c16(c16,c16)', _add)])
+add = BlazeFunc('add')
+add.add_template(_add)
 
-mul = BlazeFunc('mul', {(double,)*3: _mul,
-                           (c128,)*3: _mul})
+mul = BlazeFunc('mul', {(double, double, double):_mul})
+mul.add_template(_mul)
 
 
 # Should think about how to generate many of these at once
@@ -74,7 +74,7 @@ cf = add(af,bf)
 df = mul(cf,cf)
 # Fuse the BlazeFunc DataDescriptor
 # You can call the kerneltree to compute elements (which will fuse the kernel)
-ck = df._data.kerneltree.single_ckernel
+#ck = df._data.kerneltree.single_ckernel
 assert  df._data.kerneltree(3.0, 4.0) == 49.0
 
 result = dot(af, bf)
