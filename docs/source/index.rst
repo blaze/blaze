@@ -56,7 +56,6 @@ API Reference
    eclass
    format
    typeinference
-   aterm
    layout
    sources
    graph
