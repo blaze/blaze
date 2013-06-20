@@ -10,7 +10,7 @@ obtain the source from Github.
 
 ::
 
-    $ git clone git@github.com:ContinuumIO/blaze-core.git
+    $ git clone git@github.com:ContinuumIO/blaze.git
 
 Many of the dependencies ( i.e. llvmpy ) are non-trivial to install.
 It is **highly recommend** that you build Blaze using the Anaconda
@@ -18,7 +18,8 @@ distribution, a free Python distribution that comes with a host of
 scientific and numeric packages bundled and precompiled into a userspace
 Python environment.
 
-Anaconda can be downloaded for all platforms here: http://continuum.io/anaconda.html .
+Anaconda can be downloaded for all platforms here:
+http://continuum.io/anaconda.html .
 
 Introduction
 ~~~~~~~~~~~~
@@ -27,9 +28,9 @@ To build project inside of Anaconda:
 
 ::
 
-    $ make build
+    $ python setup.py install
 
-To build documentation:
+To build documentation on a unix-based system:
 
 ::
 
@@ -39,7 +40,7 @@ To run tests:
 
 ::
 
-    $ python -m blaze.testing
+    $ python -c 'import blaze; blaze.test()'
 
 Dependencies
 ~~~~~~~~~~~~
@@ -50,6 +51,7 @@ Dependencies
 * ply_
 * python-blosc_
 * pycparser_
+* nose_ (optional, for running tests)
 * dynd_ (optional, master branch)
 
 .. _numpy: http://www.numpy.org/
@@ -58,5 +60,6 @@ Dependencies
 .. _ply: http://www.dabeaz.com/ply/
 .. _python-blosc: http://blosc.pytables.org
 .. _pycparser: https://bitbucket.org/eliben/pycparser
+.. _nose: https://pypi.python.org/pypi/nose/
 .. _dynd: https://github.com/ContinuumIO/dynd-python
 

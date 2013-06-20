@@ -7,23 +7,16 @@ Blaze Arrays
 
 ::
 
-    from blaze import Array, dshape
-    ds = dshape('2, 2, int')
-
-    a = Array([1,2,3,4], ds)
-
+    >>> from blaze import array, dshape
+    >>> ds = dshape('2, 2, int32')
+    >>> a = array([[1,2],[3,4]], ds)
 
 ::
 
     >>> a
-    Array
-      datashape := 2 2 int64
-      values    := [CArray(ptr=36111200)]
-      metadata  := [manifest]
-      layout    := Chunked(dim=0)
-
-    [[1, 2],
-     [3, 4]]
+    array([[1, 2],
+           [3, 4]],
+          dshape='2, 2, int32')
 
 
 Disk Backed Array
@@ -31,11 +24,12 @@ Disk Backed Array
 
 ::
 
+    >>> # FIXME
     >>> import numpy as np
-    >>> from blaze import Array, dshape, params
+    >>> from blaze import array, dshape
 
     >>> data = np.zeros(4).reshape(2,2)
-    >>> Array(data, dshape('2,2, float64'), params=params(storage='a'))
+    >>> array(data, dshape('2,2, float64'), ...)
     Array
       datashape := 2, 2, float64
       values    := [CArray(ptr=56992176)]
@@ -46,6 +40,7 @@ Disk Backed Array
 
 ::
 
+    >>> # FIXME
     >>> from blaze import open
     >>> open('a')
     Array
@@ -71,6 +66,7 @@ Custom DShapes
 
 ::
 
+    # FIXME: delete, or tweak?
     from blaze import Table, RecordDecl, derived
     from blaze import int32, string
 
