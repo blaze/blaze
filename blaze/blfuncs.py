@@ -97,8 +97,7 @@ class KernelTree(object):
         kernel = eltree.kernel
         self._funcptr = self._funcptr or kernel.func_ptr
         self._ctypes = self._ctypes or kernel.ctypes_func
-        if all(kind in [blaze_kernels.SCALAR, blaze_kernels.POINTER,
-                        lla.C_CONTIGUOUS] for kind in kernel.kinds):
+        if all(kind in [blaze_kernels.SCALAR] for kind in kernel.kinds):
             self._unbound_single_ckernel = self._unbound_single_ckernel or kernel.unbound_single_ckernel
 
     @property

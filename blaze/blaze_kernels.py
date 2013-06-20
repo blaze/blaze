@@ -360,7 +360,8 @@ class BlazeElementKernel(object):
                 dst_val = builder.call(func, args)
                 builder.store(dst_val, dst_ptr)
             elif kind == POINTER:
-                raise NotImplementedError
+                dst_ptr = builder.bitcast(dst_ptr_arg,
+                                Type.pointer(self.return_type))                
                 builder.call(func, args + [dst_ptr])
             elif isinstance(kind, tuple):
                 dst_ptr = builder.bitcast(dst_ptr_arg,
@@ -409,8 +410,8 @@ class BlazeElementKernel(object):
                                 "support kind %r") % kind)
             builder.ret_void()
 
-            print("Function before optimization passes:")
-            print(single_ck_func)
+            #print("Function before optimization passes:")
+            #print(single_ck_func)
             #module.verify()
 
             import llvm.ee as le
@@ -420,8 +421,8 @@ class BlazeElementKernel(object):
                             vectorize=True, loop_vectorize=True)
             pms.pm.run(module)
 
-            print("Function after optimization passes:")
-            print(single_ck_func)
+            #print("Function after optimization passes:")
+            #print(single_ck_func)
 
             # DEBUGGING: Verify the module.
             #module.verify()
