@@ -7,6 +7,7 @@ from numpy.testing import assert_allclose
 import unittest
 from itertools import product as it_product
 from blaze.datadescriptor import dd_as_py
+from ..py3help import exec_
 
 def _clean_disk_arrays():
     try:
@@ -69,7 +70,7 @@ def test_{1}_{2}_to_{3}{0}(self):
         Rc = blaze.eval(Rd, persist=p)
         self.assert_(isinstance(Rc, blaze.Array))
         assert_allclose(np.array(dd_as_py(Rc._data)), self.npyR)
-        self.assert_(Rc._data.persistent if '{3}' == 'dsk' 
+        self.assert_(Rc._data.persistent if '{3}' == 'dsk'
                                          else not Rc._data.persistent)
     finally:
         if p is not None:
@@ -77,7 +78,7 @@ def test_{1}_{2}_to_{3}{0}(self):
 '''
     for expr in ['_addition']: #, '_expression']: expression not working!
         for i in it_product(_pair, _pair, _pair):
-            exec _template.format(expr,*i)
+            exec_(_template.format(expr,*i))
 
 
 if __name__ == '__main__':

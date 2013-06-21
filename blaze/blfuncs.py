@@ -13,7 +13,7 @@ from .cgen.utils import letters
 from .blaze_kernels import (Argument, fuse_kerneltree, BlazeElementKernel,
                 frompyfunc)
 from . import blaze_kernels
-from .py3help import dict_iteritems, _strtypes
+from .py3help import dict_iteritems, _strtypes, PY3
 
 # A KernelTree is just the bare element-wise kernel functions
 # (no arguments).  Any arguments are identified as unique-names
@@ -241,7 +241,7 @@ def convert_kernel(value, key=None):
 # Also allows the typetable to have "templates" which don't resolve to
 #   kernels and are used if no matching kernel can be found.
 #   templates are list of 2-tuple (input signature data-shape, template)
-#   Numba will be used to jit the template at call-time to create a 
+#   Numba will be used to jit the template at call-time to create a
 #   BlazeElementKernel.   The input signature is a tuple
 #   of data-shape objects and TypeSets
 def process_typetable(typetable):
@@ -375,7 +375,7 @@ class BlazeFunc(object):
             test_rank -= 1
             mtypes = tuple(ds.subarray(1) for ds in mtypes)
 
-        # Templates Only works for "measures" 
+        # Templates Only works for "measures"
         if krnl is None:
             measures = tuple(ds.measure for ds in types)
             for sig, template in self.templates:
@@ -401,7 +401,8 @@ class BlazeFunc(object):
 
     def add_template(self, func, signature=None):
         if signature is None:
-            signature = '*(%s)' % (','.join(['*']*func.func_code.co_argcount))
+            fc = func.__code__ if PY3 else func.func_code
+            signature = '*(%s)' % (','.join(['*']*fc.co_argcount))
 
         keysig = to_dshapes(signature)
         self.templates.append((keysig, func))

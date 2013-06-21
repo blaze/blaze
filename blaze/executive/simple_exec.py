@@ -7,8 +7,9 @@ The blaze function is described by a BlazeFuncDescriptor. The result
 will be placed in a concrete target data_descriptor.
 '''
 
-from itertools import izip, product as it_product
+from itertools import product as it_product
 import ctypes
+from ..py3help import izip
 
 from ..datashape.util import to_ctypes
 
@@ -136,7 +137,7 @@ def _iter_dims_heuristic(in_dd, out_dd):
     Right now execute everything in one go by default
 
     '''
-    
+
     return 0
 
 def simple_execute_write(in_dd, out_dd, iter_dims=None):
