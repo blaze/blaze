@@ -32,6 +32,14 @@ class Array(object):
     def dshape(self):
         return self._data.dshape
 
+    @property
+    def deferred(self):
+        return self._data.deferred
+
+    @property
+    def persistent(self):
+        return self._data.persistent
+
     def __iter__(self):
         return self._data.__iter__()
 
