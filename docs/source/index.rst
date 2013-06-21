@@ -35,6 +35,9 @@ Index
 
    install
    quickstart
+   overview
+   datashape
+   datashape-binary
    data_descriptor
    blaze_functions
 
@@ -44,13 +47,10 @@ Original Index
 .. toctree::
    :maxdepth: 2
 
-   overview
    vision
    tutorials
    persistence
    memory
-   datashape
-   datashape-binary
    module
 
 API Reference
