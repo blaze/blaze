@@ -31,12 +31,14 @@ Disk Backed Array
 
 
 ::
+
     >>> a
     array([[1, 2],
            [3, 4]],
            dshape='2, 2, int32')
 
 ::
+
     >>> from blaze import open, drop, Persist
     >>> open(Persist('foo.blz'))
     array([[1, 2],
@@ -50,7 +52,6 @@ Iterators
 ~~~~~~~~~
 
 ::
-
 
     from blaze import fromiter, params
     a = fromiter(xrange(10), 'x, float64', params=params(clevel=5))
