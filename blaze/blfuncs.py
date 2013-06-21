@@ -461,7 +461,7 @@ class BlazeFunc(object):
                                     self.ranks[i], kernel.argtypes[i])
                 children.append(tree_arg)
 
-        kerneltree = KernelTree(kernel, children, name=self.name)
+        kerneltree = KernelTree(kernel, children)
         data = BlazeFuncDescriptor(kerneltree, outdshape)
 
         # Construct an Array object from new data descriptor

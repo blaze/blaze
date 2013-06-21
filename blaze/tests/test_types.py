@@ -41,4 +41,4 @@ class TestBasicTypes(unittest.TestCase):
             dtype = to_dtype(a.dshape)
             self.assertEqual(dtype, np.dtype(type_))
             # dd_as_py does not support complexes yet..
-            #self.assertEqual(dd_as_py(a._data), [0, 1, 2])
+            self.assertEqual(dd_as_py(a._data), [0, 1, 2])
