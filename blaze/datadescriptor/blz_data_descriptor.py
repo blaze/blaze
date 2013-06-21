@@ -43,7 +43,7 @@ class BLZElementReader(IElementReader):
     def dshape(self):
         return self._dshape
 
-    def get(self, idx):
+    def read_single(self, idx):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
@@ -51,7 +51,9 @@ class BLZElementReader(IElementReader):
         x = self.blzarr[idx]
         # x is already well-behaved (C-contiguous and native order)
         self._tmpbuffer = x
-        return x.ctypes.data()
+        return x.ctypes.data
+
+
 
 class BLZElementReadIter(IElementReadIter):
     def __init__(self, blzarr, ds):
@@ -159,6 +161,10 @@ class BLZDataDescriptor(IDataDescriptor):
             raise TypeError(('object is not a blz array, '
                              'it has type %r') % type(obj))
         self.blzarr = obj
+
+    @property
+    def persistent(self):
+        return self.blzarr.rootdir is not None
 
     @property
     def dshape(self):
