@@ -14,7 +14,7 @@ import sys
 
 PY3 = sys.version_info[0] >= 3
 
-def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None):
+def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None, i8p_str=False):
     '''
     Map an LLVM type to an equivalent ctypes type. py_module is an
     optional module that is used for structure wrapping.  If
@@ -41,7 +41,7 @@ def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None):
             width = pointee.width
 
             # Special case:  char * is mapped to strings
-            if width == 8:
+            if width == 8 and i8p_str:
                 ctype = ctypes.c_char_p
             else:
                 ctype = ctypes.POINTER(map_llvm_to_ctypes(pointee, py_module, sname))

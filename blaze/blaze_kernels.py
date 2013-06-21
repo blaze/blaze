@@ -32,7 +32,7 @@ from .ckernel import (ExprSingleOperation, JITKernelData,
                 UnboundCKernelFunction)
 from .py3help import izip, _strtypes, c_ssize_t
 from .datashape import Fixed, TypeVar
-from .datashape.util import dshape as make_dshape
+from .datashape.util import to_ctypes, dshape as make_dshape
 
 int32_type = Type.int(32)
 
@@ -169,7 +169,6 @@ class BlazeElementKernel(object):
         modules = [mod]*len(names)
         argtypes = [refresh_name(typ, self.module) for typ in self.argtypes]
         return out_type, map(map_llvm_to_ctypes, argtypes, modules, names)
-
 
     @property
     def nin(self):
