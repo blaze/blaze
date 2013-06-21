@@ -110,7 +110,7 @@ different python session by name, using the open function::
   array([ 1.,  2.,  3.],
         dshape='3, float32')
 
-A persistent array is stored on non-volatile storage (currently the
+A persistent array is backed on non-volatile storage (currently the
 filesystem). That means that there are system resources allocated to
 store that array, even when you exit your python session. If you are
 done with the persistent array and want to keep its resources, you can
@@ -118,7 +118,74 @@ just 'drop' it::
 
   >>> f = blaze.drop(blaze.Persist('myarray'))
 
-Note that after dropping a persistent array this way, any 'open'
-version you may had of it will no longer be valid. You won't be able
-to reopen it either. It is effectively deleted.
+After dropping a persistent array this way, any 'open' version you may
+had of it will no longer be valid. You won't be able to reopen it
+either. It is effectively deleted.
 
+
+Evaluation
+==========
+
+Performing basic computations
+-----------------------------
+
+Performing computations in blaze is a 2 step process. First, you just
+use expressions to build a *deferred* array. A *deferred* array,
+instead of holding the result, knows how to build that result::
+
+  >>> import blaze
+  >>> a = blaze.array([ 1, 2, 3])
+  >>> a.deferred
+  False
+
+::
+
+  >>> b = blaze.array([ 4, 5, 6])
+  >>> b.deferred
+  False
+
+::
+
+  >>> r = a+b
+  >>> r.deferred
+  True
+
+In order to obtain the results, just call the eval function with the
+*deferred* array::
+
+  >>> result = blaze.eval(r)
+  >>> result
+  array([5, 7, 9],
+        dshape='3, int64')
+
+So, why this extra step? why the need to evaluate instead of just
+generating the result directly from a+b? The answer is a bit
+complex. Making a long story short, using the *deferred* array allows
+building a complex expression and optimize it as a whole before
+execution. This allows removing the need of arrays for intermediate
+results, as well as the need to perform several passes on data. A
+short answer is that it allows blaze perform better with big data sets.
+
+Also, having an explicit evaluation method gives us a chance to
+specify a few parameters telling how the resulting array should be
+built. As can be seen in the array creation tutorial, an array can be
+made in-memory, compressed in-memory or it can even be backed on the
+file-system. We can eval directly to a persistent array::
+
+  >>> result = blaze.eval(r, persist=blaze.Persist('res'))
+
+In this sample we have used two small in-memory arrays to illustrate
+execution. The same code can work for large arrays that are 'opened'
+instead of being created/read, allowing the easy evaluation of
+expression that is effectively out-of-core::
+
+  >>> ba1 = blaze.open(blaze.Persist('big_array1'))
+  >>> ba2 = blaze.open(blaze.Persist('big_array2'))
+  >>> res = blaze.eval(ba1+ba2, persist=blaze.Persist('big_result'))
+
+So it is possible to build complex array expressions that can be
+executed without building huge intermediate arrays. It is also
+possible to use persistent arrays or in-memory arrays as your operands
+(or a mix of both, they are all Blaze arrays!). You are also able to
+specify what kind of array you want for your result. The possibilities
+are endless!
