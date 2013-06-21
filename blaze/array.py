@@ -6,11 +6,16 @@ from __future__ import absolute_import
 #
 
 import sys
+import ctypes
 
 from . import blz
 import numpy as np
 from .datashape import dshape
-from .datadescriptor import IDataDescriptor
+from .datashape.util import to_ctypes
+from .datadescriptor import (IDataDescriptor, 
+                             data_descriptor_from_ctypes,
+                             MemBufDataDescriptor)
+from .executive import simple_execute_write
 from ._printing import array2string as _printer
 from . import bmath
 
@@ -68,6 +73,23 @@ class Array(object):
 
         # Need to inject attributes on the Array depending on dshape
         # attributes
+
+    def eval(self, out=None):
+        if not self._data.deferred:
+            return self
+        in_dd = self._data.fuse()
+        if out is None:
+            # should create an array based on input tree
+            # for now just create in-memory array
+            ds = self.dshape
+            ct = to_ctypes(ds)()
+            dd = MemBufDataDescriptor(ctypes.addressof(ct), ct,
+                                      ds, True)
+            out = Array(dd, self.axes, self.labels, self.user)
+        else:
+            dd = out._data
+        simple_execute_write(in_dd, dd)
+        return out
 
     def append(self, values):
         """Append a list of values."""

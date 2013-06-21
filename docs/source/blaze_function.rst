@@ -69,8 +69,11 @@ Evaluating BlazeFunctions create KernelTrees which are tree structures of BlazeE
 
 Lifting
 =======
-The concept of lifting is that a BlazeElementKernel is "lifted" to become a kernel accepting array arguments with a larger number of elmeents. 
+The concept of lifting is that a BlazeElementKernel is transformed, or lifted, to become a kernel accepting array arguments with a larger number of dimensions.
 
 
 Broadcasting
 ============ 
+
+When multiple arguments are involved in a calculation, their shapes must 
+either be the same, or broadcastable to the same shape. 

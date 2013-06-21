@@ -384,6 +384,8 @@ class IDataDescriptor:
     """
     __metaclass__ = abc.ABCMeta
 
+    deferred = False
+    
     @abc.abstractproperty
     def dshape(self):
         """

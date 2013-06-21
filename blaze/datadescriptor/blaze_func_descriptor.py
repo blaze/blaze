@@ -25,6 +25,7 @@ def blaze_func_iter(bfd, noiter_dims):
 
 class BlazeFuncDescriptor(IDataDescriptor):
     _args = None
+    deferred = True
 
     def __init__(self, kerneltree, outdshape):
         self.kerneltree = kerneltree

@@ -10,6 +10,8 @@ will be placed in a concrete target data_descriptor.
 from itertools import izip, product as it_product
 import ctypes
 
+from ..datashape.util import to_ctypes
+
 class _Executor(object):
     """
     A simple executor class that is able to convert a BlazeFunc
@@ -20,7 +22,10 @@ class _Executor(object):
         total_dims = len(res_ds) - 1
         lift_dims = total_dims - iter_dims
 
-        cfunc = dd.kerneltree._fused.kernel.lift(lift_dims, 'C').ctypes_func
+        tree = dd.kerneltree.fuse()
+        newkernel = tree.kernel.lift(lift_dims, 'C')
+        cfunc = newkernel.ctypes_func
+        types = [to_ctypes(ds.measure) for ds in newkernel.dshapes]
         # one reader per arg
         readers = [arr.arr._data.element_reader(iter_dims)
                    for arr in dd.args]
@@ -36,9 +41,12 @@ class _Executor(object):
         self.res_dshape = res_ds # shape of the results
         self.outer_dims = res_ds[:iter_dims] # shape with elements
         self.inner_dims = res_ds[iter_dims:]
+        self.c_types = types
 
-    def _patch(self, struct, value):
-        struct.e0 = ctypes.cast(value, ctypes.POINTER(struct.e0._type_))
+    def _patch(self, struct, value, typ=None):
+        if typ is None:
+            typ = struct.e0._type_
+        struct.e0 = ctypes.cast(value, ctypes.POINTER(typ))
 
     def run_append(self, dd):
         f = self.cfunc
@@ -46,11 +54,11 @@ class _Executor(object):
         r = self.readers
         with dd.element_appender() as dst:
             for element in it_product(*[xrange(x) for x in self.outer_dims]):
-                for struct, reader in izip(arg_s[:-1], r):
-                    self._patch(struct, reader.read_single(element))
+                for struct, reader, typ in izip(arg_s[:-1], r, self.c_types[:-1]):
+                    self._patch(struct, reader.read_single(element), typ)
 
                 with dst.buffered_ptr() as dst_buff:
-                    self._patch(arg_s[-1], dst_buff)
+                    self._patch(arg_s[-1], dst_buff, self.c_types[-1])
                     f(*arg_s)
 
     def run_write(self, dd):
@@ -59,11 +67,59 @@ class _Executor(object):
         r = self.readers
         dst = dd.element_writer(len(self.outer_dims))
         for element in it_product(*[xrange(x) for x in self.outer_dims]):
-            for struct, reader in izip(arg_s[:-1], r):
-                self._patch(struct, reader.read_single(element))
+            for struct, reader, typ in izip(arg_s[:-1], r, self.c_types[:-1]):
+                self._patch(struct, reader.read_single(element), typ)
             with dst.buffered_ptr(element) as dst_buf:
-                self._patch(arg_s[-1], dst_buf)
+                self._patch(arg_s[-1], dst_buf, self.c_types[-1])
                 f(*arg_s)
+
+class _CompleteExecutor(object):
+    """
+    A simple executor class that is able to convert a BlazeFunc
+    DataDescriptor into a MemBuf DataDescriptor
+    """
+    def __init__(self, dd):
+        res_ds = dd.dshape
+        total_dims = len(res_ds) - 1
+        lift_dims = total_dims
+
+        tree = dd.kerneltree.fuse()
+        newkernel = tree.kernel.lift(lift_dims, 'C')
+        cfunc = newkernel.ctypes_func
+        types = [to_ctypes(ds.measure) for ds in newkernel.dshapes]
+        # one reader per arg
+        readers = [arr.arr._data.element_reader(0)
+                   for arr in dd.args]
+        shapes = [arr.arr.dshape.shape
+                  for arr in dd.args]
+        shapes.append(res_ds.shape)
+        # Will patch the pointer to data later..
+        arg_structs = [arg_type._type_(None, shape)
+                       for arg_type, shape in izip(cfunc.argtypes, shapes)]
+
+        self.cfunc = cfunc # kernel to call...
+        self.readers = readers # readers for inputs
+        self.arg_structs = arg_structs # ctypes args
+        self.res_dshape = res_ds # shape of the results
+        self.inner_dims = res_ds
+        self.c_types = types
+
+    def _patch(self, struct, value, typ=None):
+        if typ is None:
+            typ = struct.e0._type_
+        struct.e0 = ctypes.cast(value, ctypes.POINTER(typ))
+
+    def run_write(self, dd):
+        f = self.cfunc
+        arg_s = self.arg_structs
+        r = self.readers
+        dst = dd.element_writer(0)
+        element = ()
+        for struct, reader, typ in izip(arg_s[:-1], r, self.c_types[:-1]):
+            self._patch(struct, reader.read_single(element), typ)
+        with dst.buffered_ptr(element) as dst_buf:
+            self._patch(arg_s[-1], dst_buf, self.c_types[-1])
+            f(*arg_s)
 
 
 def _iter_dims_heuristic(in_dd, out_dd):
@@ -85,9 +141,11 @@ def _iter_dims_heuristic(in_dd, out_dd):
 
 def simple_execute_write(in_dd, out_dd, iter_dims=None):
     if iter_dims is None:
-        iter_dims = _iter_dims_heuristic(in_dd, out_dd)
-    ex = _Executor(in_dd)
-    ex.run_write(out_dd)
+        ex = _CompleteExecutor(in_dd)
+        ex.run_write(out_dd)
+    else:
+        ex = _Executor(in_dd, iter_dims)
+        ex.run_write(out_dd)
 
 def simple_execute_append(in_dd, out_dd, iter_dims=1):
     assert(iter_dims==1) # append can only work this way ATM
