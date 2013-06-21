@@ -24,32 +24,27 @@ Disk Backed Array
 
 ::
 
-    >>> # FIXME
-    >>> import numpy as np
-    >>> from blaze import array, dshape
+    >>> from blaze import array, dshape, Persist
+    >>> p = Persist('foo.blz')
+    >>> ds = dshape('2, 2, int32')
+    >>> a = array([[1,2],[3,4]], ds, persist=p)
 
-    >>> data = np.zeros(4).reshape(2,2)
-    >>> array(data, dshape('2,2, float64'), ...)
-    Array
-      datashape := 2, 2, float64
-      values    := [CArray(ptr=56992176)]
-      metadata  := [manifest, arraylike]
-      layout    := Chunked(dim=0)
-    [[ 0.  0.]
-     [ 0.  0.]]
 
 ::
+    >>> a
+    array([[1, 2],
+           [3, 4]],
+           dshape='2, 2, int32')
 
-    >>> # FIXME
-    >>> from blaze import open
-    >>> open('a')
-    Array
-      datashape := 2, 2, float64
-      values    := [CArray(ptr=56992176)]
-      metadata  := [manifest, arraylike]
-      layout    := Chunked(dim=0)
-    [[ 0.  0.]
-     [ 0.  0.]]
+::
+    >>> from blaze import open, drop, Persist
+    >>> open(Persist('foo.blz'))
+    array([[1, 2],
+           [3, 4]],
+           dshape='2, 2, int32')
+
+    >>> drop(Persist('foo.blz'))
+    
 
 Iterators
 ~~~~~~~~~
