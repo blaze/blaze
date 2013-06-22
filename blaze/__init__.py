@@ -6,7 +6,7 @@ from . import datashape, ckernel
 from .datashape import dshape
 from .array import Array
 from .constructors import array, empty, ones, zeros
-from .eval import eval
+from .eval import eval, append
 from .persistence import open, drop, Persist
 import ctypes
 

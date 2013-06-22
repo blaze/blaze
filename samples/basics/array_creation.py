@@ -131,7 +131,7 @@ persist = blaze.Persist(dname)
 maybe_remove(persist)
 p = blaze.zeros('0, float64', persist=persist)
 # Feed it with some data
-p.append(range(10))
+blaze.append(p, range(10))
 
 print('Before re-opening:', p)
 

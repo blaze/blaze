@@ -38,5 +38,8 @@ def evaluation(operand_dict):
     c = blaze.eval(expr, out_caps={}, hints={})
     print(c) #should print the result... rejoice!
 
+def main(argv):
+    pass
+
 if __name__ == '___main___':
-    sys.exit(main(sys.argv)
+    sys.exit(main(sys.argv))
