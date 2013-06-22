@@ -19,6 +19,7 @@ from .executive import simple_execute_write
 from ._printing import array2string as _printer
 from .py3help import exec_
 from . import bmath
+from .py3help import exec_
 
 # An Array contains:
 #   DataDescriptor
@@ -123,7 +124,7 @@ def inject_special(names):
         setattr(Array, newname, dct[newname])
 
 inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
-                           'eq', 'ne', 'gt', 'ge', 'le', 'lt'])
+                'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])
 
 
 """

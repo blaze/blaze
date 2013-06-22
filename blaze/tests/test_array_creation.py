@@ -1,10 +1,11 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
 import blaze
 from blaze.datadescriptor import dd_as_py
 import numpy as np
 import unittest
 from .common import MayBeUriTest
+from blaze.eval import append
 
 
 class TestEphemeral(unittest.TestCase):
@@ -24,7 +25,7 @@ class TestEphemeral(unittest.TestCase):
         # A default array (backed by NumPy, append not supported yet)
         a = blaze.array([])
         self.assert_(isinstance(a, blaze.Array))
-        self.assertRaises(NotImplementedError, a.append, [1,2,3])
+        self.assertRaises(NotImplementedError, append, a, [1,2,3])
         # XXX The tests below still do not work
         # self.assertEqual(a[0], 1)
         # self.assertEqual(a[1], 2)
@@ -93,7 +94,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         persist = blaze.Persist(self.rooturi)
         a = blaze.zeros('0, float64', persist=persist)
         self.assert_(isinstance(a, blaze.Array))
-        a.append(list(range(10)))
+        append(a,list(range(10)))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
 
     # Using a 1-dim as the internal dimension
@@ -102,18 +103,20 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         a = blaze.empty('0, 2, float64', persist=persist)
         self.assert_(isinstance(a, blaze.Array))
         lvals = [[i,i*2] for i in range(10)]
-        a.append(lvals)
+        append(a,lvals)
         self.assertEqual(dd_as_py(a._data), lvals)
 
     def test_open(self):
         persist = blaze.Persist(self.rooturi)
         a = blaze.ones('0, float64', persist=persist)
-        a.append(range(10))
+        append(a,range(10))
         # Re-open the dataset in URI
         a2 = blaze.open(persist)
         self.assert_(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
 
+# Be sure to run this as python -m blaze.tests.test_array_creation
+#  because of the use of relative imports
 if __name__ == '__main__':
     unittest.main(verbosity=2)

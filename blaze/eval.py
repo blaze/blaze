@@ -43,3 +43,14 @@ def eval(arr, persist=None, caps={'efficient-write': True}):
                             kt.kernel.dshapes[:-1],
                             ck)
     return result
+
+def append(arr, values):
+    """Append a list of values."""
+    # XXX If not efficient appends supported, this should raise
+    # a `PerformanceWarning`
+    if hasattr(arr._data, 'append'):
+        arr._data.append(values)
+    else:
+        raise NotImplementedError('append is not implemented for this '
+                                  'object')
+

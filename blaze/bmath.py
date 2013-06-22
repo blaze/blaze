@@ -4,6 +4,7 @@ from blaze.blfuncs import BlazeFunc
 _funcs = {'add':'+',
           'mul':'*',
           'sub':'-',
+          'div':'/',
           'truediv':'/',
           'floordiv':'//',
           'mod': '%',

@@ -24,7 +24,7 @@ to Blaze Arrays and dot, mul, and add are Blaze Functions
 
 result = dot(add(a,b), mul(a,b))
 
-Result will be a "deferred" Blaze Array.  The eval method 
+Result will be a "deferred" Blaze Array.  The eval function
 must be called to create a materialized, concrete, or 
 reified Blaze Array which will apply a generated kernel 
 based on the expression.   The kernel is composed of the kernels
@@ -65,11 +65,15 @@ entry:
 
 KernelTrees
 ===========
-Evaluating BlazeFunctions create KernelTrees which are tree structures of BlazeElementKernels.  These tree structures are used to manage the stitching together and "lifting" of the Element kernels at run-time
+Evaluating BlazeFunctions create KernelTrees which are tree structures 
+of BlazeElementKernels.  These tree structures are used to manage the 
+stitching together and "lifting" of the Element kernels at run-time
 
 Lifting
 =======
-The concept of lifting is that a BlazeElementKernel is transformed, or lifted, to become a kernel accepting array arguments with a larger number of dimensions.
+The concept of lifting is that a BlazeElementKernel is transformed, or 
+lifted, to become a kernel accepting array arguments with a 
+larger number of dimensions.
 
 
 Broadcasting
