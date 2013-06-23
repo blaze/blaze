@@ -84,32 +84,6 @@ class Array(object):
         # Need to inject attributes on the Array depending on dshape
         # attributes
 
-    def eval(self, out=None):
-        if not self._data.deferred:
-            return self
-        in_dd = self._data.fuse()
-        if out is None:
-            # should create an array based on input tree
-            # for now just create in-memory array
-            ds = self.dshape
-            ct = to_ctypes(ds)()
-            dd = MemBufDataDescriptor(ctypes.addressof(ct), ct,
-                                      ds, True)
-            out = Array(dd, self.axes, self.labels, self.user)
-        else:
-            dd = out._data
-        simple_execute_write(in_dd, dd)
-        return out
-
-    def append(self, values):
-        """Append a list of values."""
-        # XXX If not efficient appends supported, this should raise
-        # a `PerformanceWarning`
-        if hasattr(self._data, 'append'):
-            self._data.append(values)
-        else:
-            raise NotImplementedError('append is not implemented for this '
-                                      'object')
 
 _template = """
 def __{name}__(self, other):

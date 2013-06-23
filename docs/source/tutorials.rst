@@ -113,7 +113,7 @@ different python session by name, using the open function::
 A persistent array is backed on non-volatile storage (currently the
 filesystem). That means that there are system resources allocated to
 store that array, even when you exit your python session. If you are
-done with the persistent array and want to keep its resources, you can
+done with the persistent array and want to free its resources, you can
 just 'drop' it::
 
   >>> f = blaze.drop(blaze.Persist('myarray'))
@@ -164,7 +164,7 @@ complex. Making a long story short, using the *deferred* array allows
 building a complex expression and optimize it as a whole before
 execution. This allows removing the need of arrays for intermediate
 results, as well as the need to perform several passes on data. A
-short answer is that it allows blaze perform better with big data sets.
+short answer is that it allows blaze to perform better with big data sets.
 
 Also, having an explicit evaluation method gives us a chance to
 specify a few parameters telling how the resulting array should be
