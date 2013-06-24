@@ -16,6 +16,7 @@ from .array import Array
 from .datadescriptor import (IDataDescriptor,
                 NumPyDataDescriptor, BLZDataDescriptor)
 from .datashape import to_numpy, to_dtype
+from .persistence import Persist
 
 import numpy as np
 from . import blz
@@ -59,6 +60,8 @@ def array(obj, dshape=None, caps={'efficient-write': True},
     """
     dshape = _normalize_dshape(dshape)
 
+    persist = _persist_convert(persist)
+
     if isinstance(obj, IDataDescriptor):
         # TODO: Validate the 'caps', convert to another kind
         #       of data descriptor if necessary
@@ -95,6 +98,12 @@ def array(obj, dshape=None, caps={'efficient-write': True},
         raise TypeError(('Failed to construct blaze array from '
                         'object of type %r') % type(obj))
     return Array(dd)
+
+
+def _persist_convert(persist):
+    if persist is not None and isinstance(persist, str):
+        persist = Persist(persist)
+    return persist
 
 
 # XXX This should probably be made public because the `count` param
@@ -146,6 +155,8 @@ def empty(dshape, caps={'efficient-write': True}, persist=None):
     dshape = _normalize_dshape(dshape)
     shape, dt = to_numpy(dshape)
 
+    persist = _persist_convert(persist)
+
     if persist is not None:
         dd = BLZDataDescriptor(blz.zeros(shape, dt,
                                          rootdir=persist.path))
@@ -176,6 +187,9 @@ def zeros(dshape, caps={'efficient-write': True}, persist=None):
     """
     dshape = _normalize_dshape(dshape)
     shape, dt = to_numpy(dshape)
+
+    persist = _persist_convert(persist)
+
 
     if persist is not None:
         dd = BLZDataDescriptor(blz.zeros(shape, dt,
@@ -208,6 +222,9 @@ def ones(dshape, caps={'efficient-write': True}, persist=None):
     """
     dshape = _normalize_dshape(dshape)
     shape, dt = to_numpy(dshape)
+
+    persist = _persist_convert(persist)
+
 
     if persist is not None:
         dd = BLZDataDescriptor(blz.ones(shape, dt,

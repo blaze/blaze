@@ -98,6 +98,15 @@ class Persist(object):
         return '%s(%s)' % (self.__class__.__name__, ', '.join(args))
 
 
+def _persist_convert(persist):
+    if not isinstance(persist, Persist):
+        if isinstance(persist, str):
+            persist = Persist(persist)
+        else:
+            raise ValueError('persist argument must be either a'
+                             'URI string or Persist object')
+    return persist
+
 
 # ----------------------------------------------------------------------
 # The actual API specific for persistence
@@ -120,8 +129,7 @@ def open(persist):
     Only the BLZ format is supported currently.
 
     """
-    if not isinstance(persist, Persist):
-        raise ValueError("`persist` must be a Persist instance.")
+    persist = _persist_convert(persist)
     d = blz.barray(rootdir=persist.path)
     dd = BLZDataDescriptor(d)
     return Array(dd)
@@ -129,6 +137,9 @@ def open(persist):
 
 def drop(persist):
     """Remove a persistent storage."""
+
+    persist = _persist_convert(persist)
+
     try:
         blz.open(rootdir=persist.path)
         from shutil import rmtree

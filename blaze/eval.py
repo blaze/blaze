@@ -27,7 +27,6 @@ def eval(arr, persist=None, caps={'efficient-write': True}):
     if persist is not None:
         # out of core path
         res_dshape, res_dt = to_numpy(arr._data.dshape)
-        kt = arr._data.kerneltree
         dst_dd = BLZDataDescriptor(blz.zeros((0,)+res_dshape[1:], res_dt,
                                              rootdir=persist.path))
         simple_execute_append(arr._data, dst_dd)
@@ -42,6 +41,10 @@ def eval(arr, persist=None, caps={'efficient-write': True}):
                             kt.kernel.dshapes[-1],
                             kt.kernel.dshapes[:-1],
                             ck)
+        
+    for name in ['axes', 'user', 'labels']:
+        setattr(result, name, getattr(arr, name))
+ 
     return result
 
 def append(arr, values):
