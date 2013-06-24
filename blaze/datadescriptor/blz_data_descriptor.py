@@ -48,7 +48,13 @@ class BLZElementReader(IElementReader):
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
         idx = tuple([operator.index(i) for i in idx])
-        x = self.blzarr[idx]
+
+        if len(idx) == self.blzarr.ndim:
+            # this forces the result into an array instead of scalar
+            new_idx = idx[:-1] + (slice(idx[-1], idx[-1]+1),)
+            x = self.blzarr[new_idx]
+        else:
+            x = self.blzarr[idx]
         # x is already well-behaved (C-contiguous and native order)
         self._tmpbuffer = x
         return x.ctypes.data

@@ -23,18 +23,26 @@ class _Executor(object):
         total_dims = len(res_ds) - 1
         lift_dims = total_dims - iter_dims
 
-        tree = dd.kerneltree.fuse()
-        newkernel = tree.kernel.lift(lift_dims, 'C')
-        cfunc = newkernel.ctypes_func
-        types = [to_ctypes(ds.measure) for ds in newkernel.dshapes]
         # one reader per arg
         readers = [arr.arr._data.element_reader(iter_dims)
                    for arr in dd.args]
-        shapes = [arr.arr.dshape.shape[iter_dims:]
-                  for arr in dd.args]
-        shapes.append(res_ds.shape[iter_dims:])
-        arg_structs = [arg_type._type_(None, shape)
-                       for arg_type, shape in izip(cfunc.argtypes, shapes)]
+
+        tree = dd.kerneltree.fuse()
+        newkernel = tree.kernel.lift(max(1, lift_dims), 'C')
+        cfunc = newkernel.ctypes_func
+        types = [to_ctypes(ds.measure) for ds in newkernel.dshapes]
+
+        if lift_dims < 1 :
+            arg_structs = [arg_type._type_(None, (1,))
+                           for arg_type in cfunc.argtypes]
+        else:
+            shapes = [arr.arr.dshape.shape[iter_dims:]
+                      for arr in dd.args]
+            shapes.append(res_ds.shape[iter_dims:])
+
+            arg_structs = [arg_type._type_(None, shape)
+                           for arg_type, shape in izip(cfunc.argtypes,
+                                                       shapes)]
 
         self.cfunc = cfunc # kernel to call...
         self.readers = readers # readers for inputs
@@ -55,7 +63,8 @@ class _Executor(object):
         r = self.readers
         with dd.element_appender() as dst:
             for element in it_product(*[xrange(x) for x in self.outer_dims]):
-                for struct, reader, typ in izip(arg_s[:-1], r, self.c_types[:-1]):
+                for struct, reader, typ in izip(arg_s[:-1], r,
+                                                self.c_types[:-1]):
                     self._patch(struct, reader.read_single(element), typ)
 
                 with dst.buffered_ptr() as dst_buff:

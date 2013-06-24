@@ -144,7 +144,9 @@ def to_ndarray(array, dtype, arrlen=None):
             return np.array(array)
 
     # Arrays with a 0 stride are special
-    if type(array) == np.ndarray and array.strides[0] == 0:
+    if (type(array) == np.ndarray and
+        len(array.strides) > 0 and
+        array.strides[0] == 0):
         if array.dtype != dtype.base:
             raise TypeError("dtypes do not match")
         return array
