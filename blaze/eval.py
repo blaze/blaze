@@ -23,7 +23,7 @@ def eval(arr, persist=None, caps={'efficient-write': True}):
     if not arr._data.deferred:
         return arr
 
-    kt = arr._data.kerneltree
+    kt = arr._data.kerneltree.fuse()
     if persist is not None:
         # out of core path
         res_dshape, res_dt = to_numpy(arr._data.dshape)
@@ -31,8 +31,7 @@ def eval(arr, persist=None, caps={'efficient-write': True}):
                                              rootdir=persist.path))
         simple_execute_append(arr._data, dst_dd)
         result = Array(dst_dd)
-    else:
-        # in memory path
+    else: # in memory path
         result = empty(arr.dshape, caps)
         args = [arg.arr._data for arg in arr._data.args]
         ubck = kt.unbound_single_ckernel
