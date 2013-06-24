@@ -96,14 +96,24 @@ def loop_nest(builder, begins, ends, order=None, intp=C.intp, steps=None, dbg=Fa
     func = builder.basic_block.function
     orig = builder.basic_block
     entry = func.append_basic_block('loop.entry')
-    cond = func.append_basic_block('loop.cond')
     body = func.append_basic_block('loop.body')
     incr = func.append_basic_block('loop.incr')
     end = func.append_basic_block('loop.end')
 
     ndim = len(order)
 
-    outer_axis = order[-1]
+    if ndim == 0:
+        with position(builder, entry):
+            builder.branch(body)
+        with position(builder, incr):
+            builder.branch(end)
+        with position(builder, body):
+            yield _loop_info(entry=entry, body=body, incr=incr, end=end, indices=[])
+        return
+
+    cond = func.append_basic_block('loop.cond')
+
+    outer_axis = order[-1] 
 
     #### populate loop entry ####
     with position(builder, entry):

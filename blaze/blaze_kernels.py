@@ -141,7 +141,7 @@ class BlazeElementKernel(object):
     def dshapes(self, _dshapes):
         for i, kind in enumerate(self.kinds):
              if isinstance(kind, tuple) and kind[0] in array_kinds and \
-                      len(_dshapes[i]) == 1:
+                      len(_dshapes[i]) == 1 and not kind[1]==0:
                 raise ValueError("Non-scalar function argument "
                                  "but scalar rank in argument %d" % i)
         self._dshapes = tuple(_dshapes)
@@ -525,7 +525,8 @@ class BlazeElementKernel(object):
 
         cur_rank = self.ranks[-1]
         if outrank == cur_rank:
-            return self  # no-op
+            if not (outrank == 0 and all(x in [SCALAR, POINTER] for x in self.kinds)):
+                return self  # no-op
 
         dr = outrank - cur_rank
         if dr < 0:

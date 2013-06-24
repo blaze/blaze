@@ -87,6 +87,7 @@ from __future__ import absolute_import
 # Array_FS --- Contiguous in first dimension and strided in others (same layout as Array_S)
 # For 1-d, Array_C, Array_F, Array_CS, and Array_FS behave identically.
 
+
 import llvm.core as lc
 from llvm.core import Type, Constant
 import llvm_cbuilder.shortnames as C
@@ -553,7 +554,8 @@ class LLArray(object):
         if not self._strides:
             if self.builder is None:
                 raise ValueError(self._builder_msg)
-            self._strides_ptr = get_strides_ptr(self.builder, self.array_ptr)
+            if self.nd > 0:
+                self._strides_ptr = get_strides_ptr(self.builder, self.array_ptr)
             self._strides = self.preload(self._strides_ptr)
         return self._strides
 
@@ -562,7 +564,8 @@ class LLArray(object):
         if not self._shape:
             if self.builder is None:
                 raise ValueError(self._builder_msg)
-            self._shape_ptr = get_shape_ptr(self.builder, self.array_ptr)
+            if self.nd > 0:
+                self._shape_ptr = get_shape_ptr(self.builder, self.array_ptr)
             self._shape = self.preload(self._shape_ptr)
         return self._shape
 
@@ -609,8 +612,10 @@ class LLArray(object):
         data = self._data_ptr
         builder = self.builder
         intp = intp_type
-        if order in 'CF':
-            # optimzie for C and F contiguous
+        if self.nd == 0:
+            ptr = builder.gep(data, [zero_p])
+        elif order in 'CF':
+            # optimize for C and F contiguous
             if order == 'F':
                 shape = list(reversed(shape))
             loc = Constant.null(intp)

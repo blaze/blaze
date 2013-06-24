@@ -9,7 +9,7 @@ class TestBasic(unittest.TestCase):
         types = ['int8', 'int16', 'int32', 'int64']
         for type_ in types:
             a = blaze.array(range(3), dshape=type_)
-            c = ((a+a)*a).eval()
+            c = blaze.eval(((a+a)*a))
             self.assertEqual(dd_as_py(c._data), [0, 2, 8])
 
     #FIXME:  Need to convert uint8 from dshape to ctypes
@@ -21,7 +21,7 @@ class TestBasic(unittest.TestCase):
             a = blaze.array(range(1,6), dshape=ty1)
             b = blaze.array(range(5), dshape=ty2)
             c = (a+b)*(a-b) 
-            c = c.eval()
+            c = blaze.eval(c)
             result = [a*a - b*b for (a,b) in zip(range(1,6),range(5))]
             self.assertEqual(dd_as_py(c._data), result)
 if __name__ == '__main__':
