@@ -78,7 +78,7 @@ class TestEphemeral(unittest.TestCase):
         self.assertEqual(dd_as_py(a._data), [1]*10)
 
 
-class TestStorageent(MayBeUriTest, unittest.TestCase):
+class TestPersistent(MayBeUriTest, unittest.TestCase):
 
     uri = True
 
