@@ -16,7 +16,7 @@ from .array import Array
 from .datadescriptor import (IDataDescriptor,
                 NumPyDataDescriptor, BLZDataDescriptor)
 from .datashape import to_numpy, to_dtype
-from .persistence import Persist
+from .persistence import Storage
 
 import numpy as np
 from . import blz
@@ -44,8 +44,8 @@ def array(obj, dshape=None, caps={'efficient-write': True},
     caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
-    persist : Persist instance
-        A Persist object with the necessary info for persistent storage. 
+    persist : Storage instance
+        A Storage object with the necessary info for persistent storage. 
 
     Returns
     -------
@@ -102,7 +102,7 @@ def array(obj, dshape=None, caps={'efficient-write': True},
 
 def _persist_convert(persist):
     if persist is not None and isinstance(persist, str):
-        persist = Persist(persist)
+        persist = Storage(persist)
     return persist
 
 
@@ -144,8 +144,8 @@ def empty(dshape, caps={'efficient-write': True}, persist=None):
     caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
-    persist : Persist instance
-        A Persist object with the necessary info for persistent storage. 
+    persist : Storage instance
+        A Storage object with the necessary info for persistent storage. 
 
     Returns
     -------
@@ -177,8 +177,8 @@ def zeros(dshape, caps={'efficient-write': True}, persist=None):
     caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
-    persist : Persist instance
-        A Persist object with the necessary info for persistent storage. 
+    persist : Storage instance
+        A Storage object with the necessary info for persistent storage. 
 
     Returns
     -------
@@ -212,8 +212,8 @@ def ones(dshape, caps={'efficient-write': True}, persist=None):
     caps : capabilities dictionary
         A dictionary containing the desired capabilities of the array.
 
-    persist : Persist instance
-        A Persist object with the necessary info for persistent storage. 
+    persist : Storage instance
+        A Storage object with the necessary info for persistent storage. 
 
     Returns
     -------

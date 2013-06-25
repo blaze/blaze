@@ -247,13 +247,13 @@ def execute_datadescriptor_ooc_2(dd, res_name=None):
 res = execute_datadescriptor_ooc_2(d._data, 'foo.blz')
 banner("result (ooc_2)")
 print(res)
-blaze.drop(blaze.Persist('foo.blz'))
+blaze.drop(blaze.Storage('foo.blz'))
 del(res)
 
 res = execute_datadescriptor_ooc(d._data, 'bar.blz')
 banner("result (ooc)")
 print(res)
-blaze.drop(blaze.Persist('bar.blz'))
+blaze.drop(blaze.Storage('bar.blz'))
 del(res)
 
 banner("Executor iterating")
@@ -267,7 +267,7 @@ res_dd = BLZDataDescriptor(blz.zeros((0,)+shape[1:],
 ex.run_append(res_dd)
 res = blaze.Array(res_dd)
 print(res)
-blaze.drop(blaze.Persist('baz.blz'))
+blaze.drop(blaze.Storage('baz.blz'))
 del res
 del res_dd
 del ex
@@ -338,6 +338,6 @@ dst_dd = BLZDataDescriptor(blz.zeros((0,)+sh[1:],
 
 simple_execute_append(src_dd,dst_dd)
 print(blaze.Array(dst_dd))
-blaze.drop(blaze.Persist('exec_test.blz'))
+blaze.drop(blaze.Storage('exec_test.blz'))
 del(dst_dd)
 

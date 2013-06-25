@@ -22,7 +22,7 @@ def _mk_dir():
     makedirs('test_eval_tmp_dir')
 
 def _persist(name):
-    return blaze.Persist('test_eval_tmp_dir/' + name + '.blz')
+    return blaze.Storage('test_eval_tmp_dir/' + name + '.blz')
 
 def _addition(a,b):
     return (a+b)

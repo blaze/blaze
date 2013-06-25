@@ -34,9 +34,9 @@ def _to_numpy(ds):
     return res
 
 
-class Persist(object):
+class Storage(object):
     """
-    Persist(uri, mode='a', format='blz', permanent=True)
+    Storage(uri, mode='a', format='blz', permanent=True)
 
     Class to host parameters for persistency properties.
 
@@ -99,12 +99,12 @@ class Persist(object):
 
 
 def _persist_convert(persist):
-    if not isinstance(persist, Persist):
+    if not isinstance(persist, Storage):
         if isinstance(persist, str):
-            persist = Persist(persist)
+            persist = Storage(persist)
         else:
             raise ValueError('persist argument must be either a'
-                             'URI string or Persist object')
+                             'URI string or Storage object')
     return persist
 
 
@@ -116,8 +116,8 @@ def open(persist):
 
     Parameters
     ----------
-    persist : a Persist instance
-        The Persist instance specifies, among other things, URI of
+    persist : a Storage instance
+        The Storage instance specifies, among other things, URI of
         where the array is stored.
 
     Returns
