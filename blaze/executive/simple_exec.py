@@ -10,8 +10,8 @@ will be placed in a concrete target data_descriptor.
 from itertools import product as it_product
 import ctypes
 from ..py3help import izip
-
 from ..datashape.util import to_ctypes
+
 
 class _Executor(object):
     """
@@ -28,21 +28,17 @@ class _Executor(object):
                    for arr in dd.args]
 
         tree = dd.kerneltree.fuse()
-        newkernel = tree.kernel.lift(max(1, lift_dims), 'C')
+        newkernel = tree.kernel.lift(lift_dims, 'C')
         cfunc = newkernel.ctypes_func
         types = [to_ctypes(ds.measure) for ds in newkernel.dshapes]
 
-        if lift_dims < 1 :
-            arg_structs = [arg_type._type_(None, (1,))
-                           for arg_type in cfunc.argtypes]
-        else:
-            shapes = [arr.arr.dshape.shape[iter_dims:]
-                      for arr in dd.args]
-            shapes.append(res_ds.shape[iter_dims:])
+        shapes = [arr.arr.dshape.shape[iter_dims:]
+                  for arr in dd.args]
+        shapes.append(res_ds.shape[iter_dims:])
 
-            arg_structs = [arg_type._type_(None, shape)
-                           for arg_type, shape in izip(cfunc.argtypes,
-                                                       shapes)]
+        arg_structs = [arg_type._type_(None, shape)
+                       for arg_type, shape in izip(cfunc.argtypes,
+                                                   shapes)]
 
         self.cfunc = cfunc # kernel to call...
         self.readers = readers # readers for inputs
@@ -51,6 +47,7 @@ class _Executor(object):
         self.outer_dims = res_ds[:iter_dims] # shape with elements
         self.inner_dims = res_ds[iter_dims:]
         self.c_types = types
+
 
     def _patch(self, struct, value, typ=None):
         if typ is None:
@@ -82,6 +79,7 @@ class _Executor(object):
             with dst.buffered_ptr(element) as dst_buf:
                 self._patch(arg_s[-1], dst_buf, self.c_types[-1])
                 f(*arg_s)
+
 
 class _CompleteExecutor(object):
     """
@@ -149,6 +147,7 @@ def _iter_dims_heuristic(in_dd, out_dd):
 
     return 0
 
+
 def simple_execute_write(in_dd, out_dd, iter_dims=None):
     if iter_dims is None:
         ex = _CompleteExecutor(in_dd)
@@ -156,6 +155,7 @@ def simple_execute_write(in_dd, out_dd, iter_dims=None):
     else:
         ex = _Executor(in_dd, iter_dims)
         ex.run_write(out_dd)
+
 
 def simple_execute_append(in_dd, out_dd, iter_dims=1):
     assert(iter_dims==1) # append can only work this way ATM
