@@ -63,8 +63,8 @@ class TestEval1D(unittest.TestCase):
     def setUpClass(cls):
         cls.npyA = np.arange(0.0, 100.0)
         cls.npyB = np.arange(0.0, 100.0)
-        cls.npyR = (cls.npyA + cls.npyB)
-        cls.npyQ = (cls.npyA + cls.npyB)*(cls.npyA + cls.npyB)
+        cls.npyR = _addition(cls.npyA, cls.npyB)
+        cls.npyQ = _expression(cls.npyA, cls.npyB)
         cls.memA = blaze.array(cls.npyA)
         cls.memB = blaze.array(cls.npyB)
 
@@ -96,8 +96,8 @@ class TestEval2D(unittest.TestCase):
     def setUpClass(cls):
         cls.npyA = np.arange(0.0, 100.0).reshape(20, 5)
         cls.npyB = np.arange(0.0, 100.0).reshape(20, 5)
-        cls.npyR = (cls.npyA + cls.npyB)
-        cls.npyQ = (cls.npyA + cls.npyB)*(cls.npyA+cls.npyB)
+        cls.npyR = _addition(cls.npyA, cls.npyB)
+        cls.npyQ = _expression(cls.npyA, cls.npyB)
         cls.memA = blaze.array(cls.npyA)
         cls.memB = blaze.array(cls.npyB)
 
@@ -122,6 +122,7 @@ class TestEval2D(unittest.TestCase):
 
     # add all tests for all permutations
     _add_tests()
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
