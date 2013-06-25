@@ -41,7 +41,7 @@ def test_{1}_{2}_to_{3}{0}(self):
     try:
         Rc = blaze.eval(Rd, persist=p)
         self.assert_(isinstance(Rc, blaze.Array))
-        assert_allclose(np.array(dd_as_py(Rc._data)), self.npyR)
+        assert_allclose(np.array(dd_as_py(Rc._data)), self.npy{4})
         self.assert_(Rc._data.persistent if '{3}' == 'dsk'
                                          else not Rc._data.persistent)
     finally:
@@ -49,9 +49,10 @@ def test_{1}_{2}_to_{3}{0}(self):
             blaze.drop(p)
 '''
     frame = sys._getframe(1)
-    for expr in ['_addition']: #, '_expression']: expression not working!
+    for expr, ltr in zip(['_addition', '_expression'], ['R', 'Q']):
         for i in it_product(_pair, _pair, _pair):
-            exec_(_template.format(expr,*i),
+            args = i + (ltr,)
+            exec_(_template.format(expr,*args),
                   frame.f_globals,
                   frame.f_locals)
 
@@ -63,6 +64,7 @@ class TestEval1D(unittest.TestCase):
         cls.npyA = np.arange(0.0, 100.0)
         cls.npyB = np.arange(0.0, 100.0)
         cls.npyR = (cls.npyA + cls.npyB)
+        cls.npyQ = (cls.npyA + cls.npyB)*(cls.npyA + cls.npyB)
         cls.memA = blaze.array(cls.npyA)
         cls.memB = blaze.array(cls.npyB)
 
@@ -95,6 +97,7 @@ class TestEval2D(unittest.TestCase):
         cls.npyA = np.arange(0.0, 100.0).reshape(20, 5)
         cls.npyB = np.arange(0.0, 100.0).reshape(20, 5)
         cls.npyR = (cls.npyA + cls.npyB)
+        cls.npyQ = (cls.npyA + cls.npyB)*(cls.npyA+cls.npyB)
         cls.memA = blaze.array(cls.npyA)
         cls.memB = blaze.array(cls.npyB)
 
