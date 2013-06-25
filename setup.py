@@ -315,7 +315,7 @@ longdesc = open('README.md').read()
 
 setup(
     name='blaze',
-    version='dev',
+    version='0.1',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',
