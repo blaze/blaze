@@ -60,7 +60,7 @@ class IElementReader:
         raise NotImplemented
 
     @abc.abstractmethod
-    def read_single(self, idx):
+    def read_single(self, idx, count=1):
         """
         Returns a char* pointer to the element
         at the specified index. The value in
@@ -68,7 +68,7 @@ class IElementReader:
         """
         raise NotImplemented
 
-    def read_single_into(self, idx, dst_ptr):
+    def read_single_into(self, idx, dst_ptr, count=1):
         """
         Reads a single element, placing into
         the memory location provided by dst_ptr.
@@ -128,7 +128,7 @@ class IElementWriter:
         raise NotImplemented
 
     @abc.abstractmethod
-    def write_single(self, idx, ptr):
+    def write_single(self, idx, ptr, count=1):
         """
         Writes a char* pointer to the element
         at the specified index. The value in
@@ -139,7 +139,7 @@ class IElementWriter:
         raise NotImplemented
 
     @abc.abstractmethod
-    def buffered_ptr(self, idx):
+    def buffered_ptr(self, idx, count=1):
         """
         Returns a context manager object which provides
         a pointer to a buffer (or a pointer to the final
@@ -190,12 +190,18 @@ class IElementAppender:
         raise NotImplemented
 
     @abc.abstractmethod
-    def append(self, ptr, nrows):
+    def append(self, ptr, count=1):
         """
         Appends a char* pointer to the element at the end of
         data. 'ptr' must be a pointer to an element with the element
-        appender's dshape. 'nrows' is the number of values to appended
+        appender's dshape. 'count' is the number of elements to append
         in the outer dimension.
+        """
+        raise NotImplemented
+
+    def buffered_ptr(self, count=1):
+        """
+        TODO: provide a default implementation based on append?
         """
         raise NotImplemented
 

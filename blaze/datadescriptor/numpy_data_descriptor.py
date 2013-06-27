@@ -38,11 +38,12 @@ class NumPyElementReader(IElementReader):
     def nindex(self):
         return self._nindex
 
-    def read_single(self, idx):
+    def read_single(self, idx, count=1):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
         idx = tuple([operator.index(i) for i in idx])
+        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
         x = self.npyarr[idx]
         # Make it C-contiguous and in native byte order
         x = np.ascontiguousarray(x, dtype=x.dtype.newbyteorder('='))
@@ -68,26 +69,26 @@ class NumPyElementWriter(IElementWriter):
     def nindex(self):
         return self._nindex
 
-    def write_single(self, idx, ptr):
+    def write_single(self, idx, ptr, count=1):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
         idx = tuple(operator.index(i) for i in idx)
+        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
         # Create a temporary NumPy array around the ptr data
-        buf = (ctypes.c_char * self._element_size).from_address(ptr)
-        tmp = np.frombuffer(buf, self._dtype).reshape(self._shape)
+        buf = (ctypes.c_char * self._element_size * count).from_address(ptr)
+        tmp = np.frombuffer(buf, self._dtype).reshape((count,) + self._shape)
         # Use NumPy's assignment to set the values
         self.npyarr[idx] = tmp
 
-    def buffered_ptr(self, idx):
+    def buffered_ptr(self, idx, count=1):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        # Index into the numpy array without producing a scalar
-        if len(idx) == self.npyarr.ndim:
-            dst_arr = self.npyarr[...,np.newaxis][idx].reshape(())
-        else:
-            dst_arr = self.npyarr[idx]
+        idx = tuple(operator.index(i) for i in idx)
+        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count), self._dshape[-1]),)
+        dst_arr = self.npyarr[idx]
+
         if dst_arr.flags.c_contiguous and dst_arr.dtype.isnative:
             # If no buffering is needed, just return the pointer
             return buffered_ptr_ctxmgr(dst_arr.ctypes.data, None)

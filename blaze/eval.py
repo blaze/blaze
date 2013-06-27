@@ -25,11 +25,19 @@ def eval(arr, persist=None, caps={'efficient-write': True}):
 
     kt = arr._data.kerneltree.fuse()
     if persist is not None:
+        from operator import mul
         # out of core path
         res_dshape, res_dt = to_numpy(arr._data.dshape)
         dst_dd = BLZDataDescriptor(blz.zeros((0,)+res_dshape[1:], res_dt,
                                              rootdir=persist.path))
-        simple_execute_append(arr._data, dst_dd)
+
+        # this is a simple heuristic for chunk size:
+        row_size = res_dt.itemsize
+        if len(res_dshape) > 1:
+            row_size *= reduce(mul, res_dshape[1:])
+
+        chunk_size = max(1, (1024*1024) // row_size)
+        simple_execute_append(arr._data, dst_dd, chunk=chunk_size)
         result = Array(dst_dd)
     else: # in memory path
         result = empty(arr.dshape, caps)

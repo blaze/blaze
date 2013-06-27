@@ -43,18 +43,15 @@ class BLZElementReader(IElementReader):
     def dshape(self):
         return self._dshape
 
-    def read_single(self, idx):
+    def read_single(self, idx, count=1):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
         idx = tuple([operator.index(i) for i in idx])
+        #by making always a slice on the inner dimension of the index, we allow handling
 
-        if len(idx) == self.blzarr.ndim:
-            # this forces the result into an array instead of scalar
-            new_idx = idx[:-1] + (slice(idx[-1], idx[-1]+1),)
-            x = self.blzarr[new_idx]
-        else:
-            x = self.blzarr[idx]
+        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+        x = self.blzarr[idx]
         # x is already well-behaved (C-contiguous and native order)
         self._tmpbuffer = x
         return x.ctypes.data
@@ -128,7 +125,6 @@ class BLZElementAppender(IElementAppender):
     def __init__(self, blzarr):
         if blzarr.ndim <= 0:
             raise IndexError('Need at least one dimension for append')
-        self._buf = np.empty(blzarr.shape[1:], dtype=blzarr.dtype)
         self.blzarr = blzarr
 
     @property
@@ -136,7 +132,7 @@ class BLZElementAppender(IElementAppender):
         return datashape.from_numpy(self.blzarr.shape[1:],
                                     self.blzarr.dtype)
 
-    def append(self, ptr, nrows):
+    def append(self, ptr, count):
         # Create a temporary NumPy array around the ptr data
         blzarr = self.blzarr
         shape = (nrows,) + blzarr.shape[1:]
@@ -146,9 +142,16 @@ class BLZElementAppender(IElementAppender):
         # Actually append the values
         blzarr.append(tmp)
 
-    def buffered_ptr(self):
+    def buffered_ptr(self, count=1):
         def buffer_flush():
             self.blzarr.append(self._buf)
+
+        # if no buffer yet, or too small of a buffer, allocate a new one.
+        if not hasattr(self, "_buf") or self._buf_size < count:
+            self._buf = np.empty((count,) + self.blzarr.shape[1:],
+                                 dtype=self.blzarr.dtype)
+            self._buf_size = count
+
         return buffered_ptr_ctxmgr(self._buf.ctypes.data, buffer_flush)
 
     def close(self):

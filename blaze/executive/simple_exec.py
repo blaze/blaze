@@ -54,7 +54,7 @@ class _Executor(object):
             typ = struct.e0._type_
         struct.e0 = ctypes.cast(value, ctypes.POINTER(typ))
 
-    def run_append(self, dd):
+    def run_append(self, dd, chunk_size=1):
         f = self.cfunc
         arg_s = self.arg_structs
         r = self.readers
@@ -62,21 +62,23 @@ class _Executor(object):
             for element in it_product(*[xrange(x) for x in self.outer_dims]):
                 for struct, reader, typ in izip(arg_s[:-1], r,
                                                 self.c_types[:-1]):
-                    self._patch(struct, reader.read_single(element), typ)
+                    self._patch(struct,
+                                reader.read_single(element, chunk_size), typ)
 
                 with dst.buffered_ptr() as dst_buff:
                     self._patch(arg_s[-1], dst_buff, self.c_types[-1])
                     f(*arg_s)
 
-    def run_write(self, dd):
+    def run_write(self, dd, chunk_size=1):
         f = self.cfunc
         arg_s = self.arg_structs
         r = self.readers
         dst = dd.element_writer(len(self.outer_dims))
         for element in it_product(*[xrange(x) for x in self.outer_dims]):
             for struct, reader, typ in izip(arg_s[:-1], r, self.c_types[:-1]):
-                self._patch(struct, reader.read_single(element), typ)
-            with dst.buffered_ptr(element) as dst_buf:
+                self._patch(struct,
+                            reader.read_single(element, chunk_size), typ)
+            with dst.buffered_ptr(element, chunk_size) as dst_buf:
                 self._patch(arg_s[-1], dst_buf, self.c_types[-1])
                 f(*arg_s)
 
@@ -148,16 +150,16 @@ def _iter_dims_heuristic(in_dd, out_dd):
     return 0
 
 
-def simple_execute_write(in_dd, out_dd, iter_dims=None):
+def simple_execute_write(in_dd, out_dd, iter_dims=None, chunk=1):
     if iter_dims is None:
         ex = _CompleteExecutor(in_dd)
         ex.run_write(out_dd)
     else:
         ex = _Executor(in_dd, iter_dims)
-        ex.run_write(out_dd)
+        ex.run_write(out_dd, chunk)
 
 
-def simple_execute_append(in_dd, out_dd, iter_dims=1):
+def simple_execute_append(in_dd, out_dd, iter_dims=1, chunk=1):
     assert(iter_dims==1) # append can only work this way ATM
     ex = _Executor(in_dd)
-    ex.run_append(out_dd)
+    ex.run_append(out_dd, chunk)
