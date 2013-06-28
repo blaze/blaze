@@ -135,7 +135,7 @@ class BLZElementAppender(IElementAppender):
     def append(self, ptr, count):
         # Create a temporary NumPy array around the ptr data
         blzarr = self.blzarr
-        shape = (nrows,) + blzarr.shape[1:]
+        shape = (count,) + blzarr.shape[1:]
         rowsize = blzarr.dtype.itemsize * np.prod(shape)
         buf = (ctypes.c_char * rowsize).from_address(ptr)
         tmp = np.frombuffer(buf, blzarr.dtype).reshape(shape)

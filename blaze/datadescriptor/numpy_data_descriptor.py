@@ -39,11 +39,14 @@ class NumPyElementReader(IElementReader):
         return self._nindex
 
     def read_single(self, idx, count=1):
-        if len(idx) != self.nindex:
+        l = len(idx)
+        if l != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        idx = tuple([operator.index(i) for i in idx])
-        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+        if l > 0:
+            idx = tuple([operator.index(i) for i in idx])
+            idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+
         x = self.npyarr[idx]
         # Make it C-contiguous and in native byte order
         x = np.ascontiguousarray(x, dtype=x.dtype.newbyteorder('='))
@@ -70,11 +73,15 @@ class NumPyElementWriter(IElementWriter):
         return self._nindex
 
     def write_single(self, idx, ptr, count=1):
-        if len(idx) != self.nindex:
+        l = len(idx)
+        if l != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        idx = tuple(operator.index(i) for i in idx)
-        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+
+        if l > 0 :
+            idx = tuple(operator.index(i) for i in idx)
+            idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+
         # Create a temporary NumPy array around the ptr data
         buf = (ctypes.c_char * self._element_size * count).from_address(ptr)
         tmp = np.frombuffer(buf, self._dtype).reshape((count,) + self._shape)
@@ -82,11 +89,14 @@ class NumPyElementWriter(IElementWriter):
         self.npyarr[idx] = tmp
 
     def buffered_ptr(self, idx, count=1):
-        if len(idx) != self.nindex:
+        l = len(idx)
+        if l != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        idx = tuple(operator.index(i) for i in idx)
-        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count), self._dshape[-1]),)
+
+        if l > 0:
+            idx = tuple(operator.index(i) for i in idx)
+            idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
         dst_arr = self.npyarr[idx]
 
         if dst_arr.flags.c_contiguous and dst_arr.dtype.isnative:
