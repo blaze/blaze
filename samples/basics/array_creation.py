@@ -127,16 +127,16 @@ def maybe_remove(persist):
 
 # Create an empty array on-disk
 dname = 'persisted.blz'
-persist = blaze.Storage(dname)
-maybe_remove(persist)
-p = blaze.zeros('0, float64', persist=persist)
+store = blaze.Storage(dname)
+maybe_remove(store)
+p = blaze.zeros('0, float64', persist=store)
 # Feed it with some data
 blaze.append(p, range(10))
 
 print('Before re-opening:', p)
 
 # Re-open the dataset in URI
-p2 = blaze.open(persist)
+p2 = blaze.open(store)
 
 print('After re-opening:', p2)
 
