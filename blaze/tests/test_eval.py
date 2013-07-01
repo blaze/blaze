@@ -24,7 +24,7 @@ def _mk_dir():
     tmpdir = tempfile.mkdtemp(prefix='blztmp')
 
 def _persist(name):
-    return blaze.Storage(os.path.join(tmpdir, name + '.blz'))
+    return blaze.Storage('blz://' + os.path.join(tmpdir, name + '.blz'))
 
 def _addition(a,b):
     return (a+b)

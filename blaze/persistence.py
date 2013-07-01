@@ -76,25 +76,24 @@ class Storage(object):
     @property
     def path(self):
         """ returns a blz path for a given uri """
-        return self._uri
-        # TODO: The following was removed because it
-        #       treats windows paths like r'c:\windows\temp\x.blz'
-        #       incorrectly.
-        #uri = urlparse.urlparse(self._uri)
-        #return uri.netloc + uri.path
+        return self._path
 
-    def __init__(self, uri, mode='r', format='blz', permanent=True):
+    def __init__(self, uri, mode='r', permanent=True):
         if not isinstance(uri, str):
             raise ValueError("`uri` must be a string.")
         self._uri = uri
+        # Parse the uri into the format (URI scheme) and path
+        up = urlparse.urlparse(self._uri)
+        self._format = up.scheme
+        self._path = up.netloc + up.path
         if mode not in 'ra':
-            raise ValueError("`mode` '%s' is not supported." % mode)
+            raise ValueError("BLZ `mode` '%s' is not supported." % mode)
         self._mode = mode
-        if format is not 'blz':
-            raise ValueError("`format` '%s' is not supported." % format)
+        if self._format != 'blz':
+            raise ValueError("BLZ `format` '%s' is not supported." % self._format)
         if not permanent:
             raise ValueError(
-                "`permanent` set to False is not supported yet.")
+                "BLZ `permanent` set to False is not supported yet.")
         self._permanent = permanent
 
     def __repr__(self):
