@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 # This file contains the part of the blaze API dealing with URIs. The
 # "URI API". In Blaze persistence is provided by the means of this URI
-# API, that allows specifying a "location" for an array as an URI.
+# API, that allows specifying a "location" for an array as an URI. 
 #
 # The URI API allows:
 #
@@ -25,7 +25,7 @@ from .array import Array
 
 # ----------------------------------------------------------------------
 # Some helper functions to workaround quirks
-
+ 
 # XXX A big hack for some quirks in current datashape. The next deals
 # with the cases where the shape is not present like in 'float32'
 def _to_numpy(ds):
@@ -44,7 +44,7 @@ class Storage(object):
     ----------
     uri : string
         The URI where the dataset will be stored.
-    mode : string ('r'ead, 'a'ppend)
+    mode : string ('r'ead, 'a'ppend) 
         The mode for creating/opening the storage.
     format : string
         The format used for storage (only 'blz' supported at this time)

@@ -24,10 +24,10 @@ Disk Backed Array
 
 ::
 
-    >>> from blaze import array, dshape, Persist
-    >>> p = Persist('foo.blz')
+    >>> from blaze import array, dshape, Storage
+    >>> p = Storage('foo.blz')
     >>> ds = dshape('2, 2, int32')
-    >>> a = array([[1,2],[3,4]], ds, persist=p)
+    >>> a = array([[1,2],[3,4]], ds, storage=p)
 
 
 ::
@@ -39,13 +39,13 @@ Disk Backed Array
 
 ::
 
-    >>> from blaze import open, drop, Persist
-    >>> open(Persist('foo.blz'))
+    >>> from blaze import open, drop, Storage
+    >>> open(Storage('foo.blz'))
     array([[1, 2],
            [3, 4]],
            dshape='2, 2, int32')
 
-    >>> drop(Persist('foo.blz'))
+    >>> drop(Storage('foo.blz'))
     
 
 Iterators
