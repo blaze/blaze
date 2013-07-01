@@ -8,11 +8,7 @@ from .data_descriptor import (IElementReader, IElementWriter,
 from .. import datashape
 from ..datashape import dshape
 
-try:
-    import dynd
-    from dynd import nd, ndt, _lowlevel
-except ImportError:
-    dynd = None
+from dynd import nd, ndt, _lowlevel
 
 def dynd_descriptor_iter(dyndarr):
     for el in dyndarr:
@@ -71,7 +67,7 @@ class DyNDElementWriter(IElementWriter):
         # Create a temporary DyND array around the ptr data.
         # Note that we can't provide an owner because the parameter
         # is just the bare pointer.
-        tmp = _lowlevel.py_api.ndobject_from_ptr(self._c_dtype, ptr,
+        tmp = _lowlevel.py_api.array_from_ptr(self._c_dtype, ptr,
                         None, 'readonly')
         # Use DyND's assignment to set the values
         self.dyndarr[idx] = tmp
@@ -170,10 +166,7 @@ class DyNDDataDescriptor(IDataDescriptor):
     A Blaze data descriptor which exposes a DyND array.
     """
     def __init__(self, dyndarr):
-        if dynd is None:
-            raise ImportError('dynd is not installed, all dynd '
-                            'functionality is disabled')
-        if not isinstance(dyndarr, nd.ndobject):
+        if not isinstance(dyndarr, nd.array):
             raise TypeError('object is not a dynd array, has type %s' %
                             type(dyndarr))
         self.dyndarr = dyndarr

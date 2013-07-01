@@ -30,16 +30,13 @@ def print_versions():
     """Print all the versions of software that Blaze relies on."""
     import sys, platform
     import numpy as np
+    import dynd
     from . import blz
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("NumPy version: %s" % np.__version__)
-    try:
-        import dynd
-        print("DyND version: %s / LibDyND %s" %
-                        (dynd.__version__, dynd.__libdynd_version__))
-    except ImportError:
-        print("DyND is not installed")
+    print("DyND version: %s / LibDyND %s" %
+                    (dynd.__version__, dynd.__libdynd_version__))
     print("BLZ version: %s" % blz.__version__)
     print("Blosc version: %s (%s)" % blz.blosc_version())
     print("Python version: %s" % sys.version)

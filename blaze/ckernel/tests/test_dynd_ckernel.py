@@ -7,14 +7,9 @@ from ...py3help import skipIf
 from blaze.ckernel import (CKernel, UnarySingleOperation,
         UnaryStridedOperation)
 
-try:
-    import dynd
-    from dynd import nd, ndt, _lowlevel
-except ImportError:
-    dynd = None
+from dynd import nd, ndt, _lowlevel
 
 class TestDyNDCKernel(unittest.TestCase):
-    @skipIf(dynd is None, 'dynd is not installed')
     def test_single_scalar_assign(self):
         # Make a CKernel that assigns one int64 to one float32
         ck = CKernel(UnarySingleOperation)
@@ -27,7 +22,6 @@ class TestDyNDCKernel(unittest.TestCase):
         ck(ctypes.addressof(f32), ctypes.addressof(i64))
         self.assertEqual(f32.value, 1234.0)
 
-    @skipIf(dynd is None, 'dynd is not installed')
     def test_strided_scalar_assign(self):
         # Make a CKernel that assigns fixed-size strings to float32
         ck = CKernel(UnaryStridedOperation)

@@ -1,16 +1,12 @@
 import sys
 import unittest
 import ctypes
-from ..py3help import skipIf
+from ..py3help import skip
 import blaze
 from blaze.datadescriptor import data_descriptor_from_ctypes
 
-try:
-    import dynd
-    from dynd import nd, ndt
-    from blaze.datadescriptor import DyNDDataDescriptor
-except ImportError:
-    dynd = None
+from dynd import nd, ndt
+from blaze.datadescriptor import DyNDDataDescriptor
 
 class TestArrayStr(unittest.TestCase):
     def test_scalar(self):
@@ -36,13 +32,13 @@ class TestArrayStr(unittest.TestCase):
         a = blaze.array(dd)
         self.assertEqual(str(a), '[ 3  6 10]')
 
-    # This got broken in the meantime - need dynd running in the jenkins environment
-    #@skipIf(dynd is None, 'dynd is not installed')
-    #def test_ragged_array(self):
-    #    dd = DyNDDataDescriptor(nd.ndobject([[1,2,3],[4,5]]))
-    #    a = blaze.array(dd)
-    #    self.assertEqual(str(a),
-    #        '[[        1         2         3]\n [        4         5]]')
+    # This is broken, needs to be revisited
+    @skip('ragged array printing not working')
+    def test_ragged_array(self):
+        dd = DyNDDataDescriptor(nd.array([[1,2,3],[4,5]]))
+        a = blaze.array(dd)
+        self.assertEqual(str(a),
+            '[[        1         2         3]\n [        4         5]]')
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
