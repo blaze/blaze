@@ -2,10 +2,12 @@ from __future__ import (print_function, absolute_import)
 
 import blaze
 
+import os
 import sys
 import numpy as np
 from numpy.testing import assert_allclose
 import unittest
+import tempfile
 from itertools import product as it_product
 from blaze.datadescriptor import dd_as_py
 from blaze.py3help import exec_
@@ -13,16 +15,16 @@ from blaze.py3help import exec_
 def _clean_disk_arrays():
     try:
         from shutil import rmtree
-        rmtree('test_eval_tmp_dir')
-    except:
-        pass
+        rmtree(tmpdir)
+    except Exception as e:
+        print('Error cleaning up temp dir %s:\n%s' % (tmpdir, e))
 
 def _mk_dir():
-    from os import makedirs
-    makedirs('test_eval_tmp_dir')
+    global tmpdir
+    tmpdir = tempfile.mkdtemp(prefix='blztmp')
 
 def _persist(name):
-    return blaze.Storage('test_eval_tmp_dir/' + name + '.blz')
+    return blaze.Storage(os.path.join(tmpdir, name + '.blz'))
 
 def _addition(a,b):
     return (a+b)
@@ -68,24 +70,20 @@ class TestEval1D(unittest.TestCase):
         cls.memA = blaze.array(cls.npyA)
         cls.memB = blaze.array(cls.npyB)
 
-        _clean_disk_arrays()
         _mk_dir()
         cls.dskA = blaze.array(cls.npyA, persist=_persist('dskA'))
         cls.dskB = blaze.array(cls.npyB, persist=_persist('dskB'))
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            _clean_disk_arrays()
-            del(cls.npyA)
-            del(cls.npyB)
-            del(cls.npyR)
-            del(cls.memA)
-            del(cls.memB)
-            del(cls.dskA)
-            del(cls.dskB)
-        except:
-            pass
+        _clean_disk_arrays()
+        del(cls.npyA)
+        del(cls.npyB)
+        del(cls.npyR)
+        del(cls.memA)
+        del(cls.memB)
+        del(cls.dskA)
+        del(cls.dskB)
 
     # add all tests for all permutations
     _add_tests()
@@ -101,24 +99,20 @@ class TestEval2D(unittest.TestCase):
         cls.memA = blaze.array(cls.npyA)
         cls.memB = blaze.array(cls.npyB)
 
-        _clean_disk_arrays()
         _mk_dir()
         cls.dskA = blaze.array(cls.npyA, persist=_persist('dskA'))
         cls.dskB = blaze.array(cls.npyB, persist=_persist('dskB'))
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            _clean_disk_arrays()
-            del(cls.npyA)
-            del(cls.npyB)
-            del(cls.npyR)
-            del(cls.memA)
-            del(cls.memB)
-            del(cls.dskA)
-            del(cls.dskB)
-        except:
-            pass
+        _clean_disk_arrays()
+        del(cls.npyA)
+        del(cls.npyB)
+        del(cls.npyR)
+        del(cls.memA)
+        del(cls.memB)
+        del(cls.dskA)
+        del(cls.dskB)
 
     # add all tests for all permutations
     _add_tests()
