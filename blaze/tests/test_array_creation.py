@@ -84,7 +84,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
 
     def test_create(self):
         persist = blaze.Storage(self.rooturi)
-        a = blaze.array([], 'float64', persist=persist)
+        a = blaze.array([], 'float64', storage=persist)
         self.assert_(isinstance(a, blaze.Array))
         print("->", a.dshape.shape)
         self.assert_(a.dshape.shape == (0,))
@@ -92,7 +92,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
 
     def test_append(self):
         persist = blaze.Storage(self.rooturi)
-        a = blaze.zeros('0, float64', persist=persist)
+        a = blaze.zeros('0, float64', storage=persist)
         self.assert_(isinstance(a, blaze.Array))
         append(a,list(range(10)))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
@@ -100,7 +100,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
     # Using a 1-dim as the internal dimension
     def test_append2(self):
         persist = blaze.Storage(self.rooturi)
-        a = blaze.empty('0, 2, float64', persist=persist)
+        a = blaze.empty('0, 2, float64', storage=persist)
         self.assert_(isinstance(a, blaze.Array))
         lvals = [[i,i*2] for i in range(10)]
         append(a,lvals)
@@ -108,7 +108,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
 
     def test_open(self):
         persist = blaze.Storage(self.rooturi)
-        a = blaze.ones('0, float64', persist=persist)
+        a = blaze.ones('0, float64', storage=persist)
         append(a,range(10))
         # Re-open the dataset in URI
         a2 = blaze.open(persist)

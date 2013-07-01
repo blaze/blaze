@@ -14,7 +14,7 @@ from .executive import simple_execute_append
 from . import blz
 
 
-def eval(arr, persist=None, caps={'efficient-write': True}):
+def eval(arr, storage=None, caps={'efficient-write': True}):
     """Evaluates a deferred blaze kernel tree
     data descriptor into a concrete array.
     If the array is already concrete, merely
@@ -24,12 +24,12 @@ def eval(arr, persist=None, caps={'efficient-write': True}):
         return arr
 
     kt = arr._data.kerneltree.fuse()
-    if persist is not None:
+    if storage is not None:
         from operator import mul
         # out of core path
         res_dshape, res_dt = to_numpy(arr._data.dshape)
         dst_dd = BLZDataDescriptor(blz.zeros((0,)+res_dshape[1:], res_dt,
-                                             rootdir=persist.path))
+                                             rootdir=storage.path))
 
         # this is a simple heuristic for chunk size:
         row_size = res_dt.itemsize
