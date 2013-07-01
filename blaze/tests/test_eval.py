@@ -23,7 +23,7 @@ def _mk_dir():
     global tmpdir
     tmpdir = tempfile.mkdtemp(prefix='blztmp')
 
-def _persist(name):
+def _store(name):
     return blaze.Storage('blz://' + os.path.join(tmpdir, name + '.blz'))
 
 def _addition(a,b):
@@ -39,9 +39,9 @@ def test_{1}_{2}_to_{3}{0}(self):
     Rd = {0}(self.{1}A, self.{2}B)
     self.assert_(isinstance(Rd, blaze.Array))
     self.assert_(Rd._data.deferred)
-    p = _persist('{3}Rd') if '{3}' == 'dsk' else None
+    p = _store('{3}Rd') if '{3}' == 'dsk' else None
     try:
-        Rc = blaze.eval(Rd, persist=p)
+        Rc = blaze.eval(Rd, storage=p)
         self.assert_(isinstance(Rc, blaze.Array))
         assert_allclose(np.array(dd_as_py(Rc._data)), self.npy{4})
         self.assert_(Rc._data.persistent if '{3}' == 'dsk'
@@ -71,8 +71,8 @@ class TestEval1D(unittest.TestCase):
         cls.memB = blaze.array(cls.npyB)
 
         _mk_dir()
-        cls.dskA = blaze.array(cls.npyA, persist=_persist('dskA'))
-        cls.dskB = blaze.array(cls.npyB, persist=_persist('dskB'))
+        cls.dskA = blaze.array(cls.npyA, storage=_store('dskA'))
+        cls.dskB = blaze.array(cls.npyB, storage=_store('dskB'))
 
     @classmethod
     def tearDownClass(cls):
@@ -100,8 +100,8 @@ class TestEval2D(unittest.TestCase):
         cls.memB = blaze.array(cls.npyB)
 
         _mk_dir()
-        cls.dskA = blaze.array(cls.npyA, persist=_persist('dskA'))
-        cls.dskB = blaze.array(cls.npyB, persist=_persist('dskB'))
+        cls.dskA = blaze.array(cls.npyA, storage=_store('dskA'))
+        cls.dskB = blaze.array(cls.npyB, storage=_store('dskB'))
 
     @classmethod
     def tearDownClass(cls):

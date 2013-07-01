@@ -129,7 +129,7 @@ def maybe_remove(persist):
 dname = 'persisted.blz'
 store = blaze.Storage(dname)
 maybe_remove(store)
-p = blaze.zeros('0, float64', persist=store)
+p = blaze.zeros('0, float64', storage=store)
 # Feed it with some data
 blaze.append(p, range(10))
 
