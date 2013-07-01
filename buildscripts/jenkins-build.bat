@@ -24,7 +24,7 @@ REM Use conda to create a conda environment of the required
 REM python version and containing the dependencies.
 SET PYENV_PREFIX=%WORKSPACE%\build\pyenv
 REM TODO: Add cffi to this list once it is added to anaconda windows.
-call C:\Anaconda\Scripts\conda create --yes -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython=0.19 nose scipy llvmpy ply numba
+call C:\Anaconda\Scripts\conda create --yes -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython=0.19 scipy llvmpy ply numba dynd-python nose
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
