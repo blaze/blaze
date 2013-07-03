@@ -43,6 +43,31 @@ def load_json_directory_array(root, array_name):
     arr.flag_as_immutable()
     return arr
 
+def load_json_file_list_array(root, array_name):
+    # Load the datashape
+    dsfile = root + '.datashape'
+    if not path.isfile(dsfile):
+        raise Exception('No datashape file found for array %s' % array_name)
+    with open(dsfile) as f:
+        dt = nd.dtype(f.read())
+    
+    # Scan for JSON files -- no assumption on file suffix
+    
+    #open list of files and load into python list
+    files = root + '.files'
+    with open(files) as f:
+        l_files = [fs.strip() for fs in f]
+
+    # Make an array with an extra fixed dimension, then
+    # read a JSON file into each element of that array
+    dt = ndt.make_fixed_dim_dtype(len(l_files), dt)
+    arr = nd.empty(dt)
+    for i, fname in enumerate(l_files):
+        with open(fname) as f:
+            nd.parse_json(arr[i], f.read())
+    arr.flag_as_immutable()
+    return arr
+
 class json_array_provider:
     def __init__(self, root_dir):
         if not path.isdir(root_dir):
@@ -56,6 +81,7 @@ class json_array_provider:
         root = path.join(self.root_dir, array_name[1:])
         if not path.isfile(root + '.json') and \
                         not path.isfile(root + '.deferred.json') and \
+                        not path.isfile(root + '.files') and \
                         not path.isdir(root):
             return None
 
@@ -75,7 +101,10 @@ class json_array_provider:
                             (array_name, root + '.deferred.json'))
             with open(root + '.deferred.json') as f:
                 print(f.read())
-            raise RuntimeError('TODO: Deferred loading not implemented!')
+            raise RuntimeError('TODO: Deferred loading not implemented!')       
+        elif path.isfile(root + '.files'):
+            print ('Loading files from file list: %s' % (root + '.files'))
+            arr = load_json_file_list_array(root, array_name)
         else:
             print 'Loading array %s from directory %s' % (array_name, root)
             arr = load_json_directory_array(root, array_name)
