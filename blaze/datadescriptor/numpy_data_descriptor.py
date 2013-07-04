@@ -39,11 +39,11 @@ class NumPyElementReader(IElementReader):
         return self._nindex
 
     def read_single(self, idx, count=1):
-        l = len(idx)
-        if l != self.nindex:
+        idxlen = len(idx)
+        if idxlen != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        if l > 0:
+        if idxlen > 0:
             idx = tuple([operator.index(i) for i in idx])
             idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
 
@@ -233,6 +233,7 @@ class NumPyDataDescriptor(IDataDescriptor):
             return NumPyDataDescriptor(self.npyarr[key])
 
     def __setitem__(self, key, value):
+        # TODO: This is a horrible hack
         self.npyarr.__setitem__(key, value)
 
     def __iter__(self):

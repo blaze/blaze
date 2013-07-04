@@ -24,7 +24,7 @@ import numpy.core.umath as _um
 import numpy as np
 
 from ..datashape import (to_numpy as _internal_to_numpy,
-                         to_dtype, NotNumpyCompatible)
+                         to_numpy_dtype, NotNumpyCompatible)
 from ..datadescriptor import IDataDescriptor, dd_as_py
 
 # These are undesired dependencies:

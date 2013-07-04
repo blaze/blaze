@@ -2,8 +2,8 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 import numpy as np
 import unittest
-from ..py3help import skip
-from .common import MayBeUriTest
+from blaze.py3help import skip
+from blaze.tests.common import MayBeUriTest
 
 
 class getitem(unittest.TestCase):
@@ -48,3 +48,6 @@ class setitem(unittest.TestCase):
 # BLZ is going to be read and append only for the time being
 # class setitem_blz(setitem):
 #     caps={'compress': True}
+
+if __name__ == '__main__':
+    unittest.main()

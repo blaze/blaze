@@ -1,6 +1,6 @@
 import blaze
 from blaze.datadescriptor import dd_as_py
-from blaze.datashape import to_numpy, to_dtype
+from blaze.datashape import to_numpy, to_numpy_dtype
 import numpy as np
 import unittest
 from .common import MayBeUriTest
@@ -12,7 +12,7 @@ class TestBasicTypes(unittest.TestCase):
         types = ['int8', 'int16', 'int32', 'int64']
         for type_ in types:
             a = blaze.array(np.arange(3), dshape=type_)
-            dtype = to_dtype(a.dshape)
+            dtype = to_numpy_dtype(a.dshape)
             self.assertEqual(dtype, np.dtype(type_))
             self.assertEqual(dd_as_py(a._data), [0, 1, 2])
 
@@ -20,7 +20,7 @@ class TestBasicTypes(unittest.TestCase):
         types = ['uint8', 'uint16', 'uint32', 'uint64']
         for type_ in types:
             a = blaze.array(np.arange(3), dshape=type_)
-            dtype = to_dtype(a.dshape)
+            dtype = to_numpy_dtype(a.dshape)
             self.assertEqual(dtype, np.dtype(type_))
             self.assertEqual(dd_as_py(a._data), [0, 1, 2])
 
@@ -28,7 +28,7 @@ class TestBasicTypes(unittest.TestCase):
         types = ['float16', 'float32', 'float64']
         for type_ in types:
             a = blaze.array(np.arange(3), dshape=type_)
-            dtype = to_dtype(a.dshape)
+            dtype = to_numpy_dtype(a.dshape)
             self.assertEqual(dtype, np.dtype(type_))
             if type_ != 'float16':
                 # dd_as_py does not support this yet
@@ -38,7 +38,7 @@ class TestBasicTypes(unittest.TestCase):
         types = ['complex64', 'complex128']
         for type_ in types:
             a = blaze.array(np.arange(3), dshape=type_)
-            dtype = to_dtype(a.dshape)
+            dtype = to_numpy_dtype(a.dshape)
             self.assertEqual(dtype, np.dtype(type_))
             # dd_as_py does not support complexes yet..
             self.assertEqual(dd_as_py(a._data), [0, 1, 2])

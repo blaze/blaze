@@ -31,16 +31,25 @@ class DyNDElementReader(IElementReader):
     def nindex(self):
         return self._nindex
 
-    def read_single(self, idx):
-        if len(idx) != self.nindex:
+    def read_single(self, idx, count=1):
+        idxlen = len(idx)
+        if idxlen != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
         idx = tuple([operator.index(i) for i in idx])
-        x = self.dyndarr[idx]
-        # Make it C-contiguous and in native byte order
-        x = x.cast(self._c_dtype).eval()
-        self._tmpbuffer = x
-        return _lowlevel.data_address_of(x)
+        if count == 1:
+            x = self.dyndarr[idx]
+            # Make it C-contiguous and in native byte order
+            x = x.cast(self._c_dtype).eval()
+            self._tmpbuffer = x
+            return _lowlevel.data_address_of(x)
+        else:
+            idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
+            x = self.dyndarr[idx]
+            # Make it C-contiguous and in native byte order
+            x = x.cast(ndt.make_fixed_dim_dtype(count, self._c_dtype)).eval()
+            self._tmpbuffer = x
+            return _lowlevel.data_address_of(x)
 
 class DyNDElementWriter(IElementWriter):
     def __init__(self, dyndarr, nindex):
@@ -189,6 +198,11 @@ class DyNDDataDescriptor(IDataDescriptor):
 
     def __getitem__(self, key):
         return DyNDDataDescriptor(self.dyndarr[key])
+
+    def __setitem__(self, key, value):
+        # TODO: This is a horrible hack, we need to specify item setting
+        #       via well-defined interfaces, not punt to another system.
+        self.dyndarr.__setitem__(key, value)
 
     def __iter__(self):
         return dynd_descriptor_iter(self.dyndarr)

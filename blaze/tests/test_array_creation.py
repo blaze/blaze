@@ -4,7 +4,7 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 import numpy as np
 import unittest
-from .common import MayBeUriTest
+from blaze.tests.common import MayBeUriTest
 from blaze.eval import append
 
 
@@ -115,8 +115,5 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         self.assert_(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
-
-# Be sure to run this as python -m blaze.tests.test_array_creation
-#  because of the use of relative imports
 if __name__ == '__main__':
     unittest.main(verbosity=2)

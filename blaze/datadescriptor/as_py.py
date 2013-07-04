@@ -36,8 +36,8 @@ _dshape_name_to_py = {
     'uint64' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_uint64)),
     'float32' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_float)),
     'float64' : ctypes_ptr_to_py(ctypes.POINTER(ctypes.c_double)),
-    'complex64': complex_ptr_to_py(ctypes.POINTER(ctypes.c_float), 4),
-    'complex128': complex_ptr_to_py(ctypes.POINTER(ctypes.c_double), 8)
+    'cfloat32': complex_ptr_to_py(ctypes.POINTER(ctypes.c_float), 4),
+    'cfloat64': complex_ptr_to_py(ctypes.POINTER(ctypes.c_double), 8)
 }
 
 def dshaped_ptr_to_py(ds):

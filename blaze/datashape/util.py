@@ -406,7 +406,10 @@ def from_numba_str(numba_str):
 # FIXME: This could be improved
 def to_numba(ds):
     import numba
-    return getattr(numba, (str(ds)))
+    # Fixup the complex type to how numba does it
+    s = str(ds)
+    s = {'cfloat32':'complex64', 'cfloat64':'complex128'}.get(s, s)
+    return getattr(numba, s)
 
 def from_blir(bltype):
     raise NotImplementedError
