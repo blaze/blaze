@@ -108,7 +108,7 @@ class btable(object):
     """
     btable(cols, names=None, **kwargs)
 
-    This class represents a compressed, column-wise, in-memory table.
+    This class represents a compressed, column-wise table.
 
     Create a new btable from `cols` with optional `names`.
 
@@ -735,12 +735,13 @@ class btable(object):
 
         Parameters
         ----------
-        key : string
-            The corresponding btable column name will be returned.  If
-            not a column name, it will be interpret as a boolean
-            expression (computed via `btable.eval`) and the rows where
-            these values are true will be returned as a NumPy
-            structured array.
+        key : string, int, tuple, list
+            The corresponding btable column name will be returned.  If not a
+            column name, it will be interpret as a boolean expression
+            (computed via `btable.eval`) and the rows where these values are
+            true will be returned as a NumPy structured array.  If `key` is an
+            integer, slice or list then the typical NumPy indexing operation
+            will be performed over the table.
 
         See Also
         --------
