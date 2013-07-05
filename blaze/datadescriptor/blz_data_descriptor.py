@@ -50,7 +50,7 @@ class BLZElementReader(IElementReader):
         idx = tuple([operator.index(i) for i in idx])
         #by making always a slice on the inner dimension of the index, we allow handling
 
-        idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+        idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
         x = self.blzarr[idx]
         # x is already well-behaved (C-contiguous and native order)
         self._tmpbuffer = x
@@ -230,7 +230,7 @@ class BLZDataDescriptor(IDataDescriptor):
                 shape_vals = (1,) + shape_vals
             if len(shape_vals) != len(shape):
                 raise ValueError("shape of values is not compatible")
-            # Now, do the actual append   
+            # Now, do the actual append
             values_ptr = values_arr.ctypes.data
             eap.append(values_ptr, shape_vals[0])
 

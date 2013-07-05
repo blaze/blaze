@@ -8,7 +8,7 @@ from .datadescriptor import (IDataDescriptor,
                              BlazeFuncDescriptor,
                              BLZDataDescriptor,
                              execute_expr_single)
-
+from .py3help import reduce
 from .datashape import to_numpy
 from .executive import simple_execute_append
 from . import blz
@@ -48,10 +48,10 @@ def eval(arr, storage=None, caps={'efficient-write': True}):
                             kt.kernel.dshapes[-1],
                             kt.kernel.dshapes[:-1],
                             ck)
-        
+
     for name in ['axes', 'user', 'labels']:
         setattr(result, name, getattr(arr, name))
- 
+
     return result
 
 def append(arr, values):

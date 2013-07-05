@@ -10,7 +10,7 @@ will be placed in a concrete target data_descriptor.
 from itertools import product as it_product
 import ctypes
 import operator
-from ..py3help import izip
+from ..py3help import izip, reduce, xrange
 from ..datashape.util import to_ctypes
 
 

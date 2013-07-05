@@ -1196,9 +1196,6 @@ def to_numpy(ds):
 
     # The datashape measure
     msr = ds[-1]
-    print ds
-    print type(msr), msr
-    print type(complex64), complex64
     if isinstance(msr, CType):
         dtype = msr.to_numpy_dtype()
     elif isinstance(msr, Record):

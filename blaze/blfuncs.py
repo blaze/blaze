@@ -269,7 +269,7 @@ def process_typetable(typetable):
     # FIXME:
     #   Assumes the same ranklist and connections for all the keys
     if len(newtable.values()) > 0:
-        key = newtable.values()[0].dshapes
+        key = next(iter(newtable.values())).dshapes
         ranklist, connections = get_signature(key)
     else: # Currently templates are all rank-0
         ranklist = [0]*len(templates[0][0])

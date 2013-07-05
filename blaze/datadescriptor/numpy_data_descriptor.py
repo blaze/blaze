@@ -45,7 +45,7 @@ class NumPyElementReader(IElementReader):
                            (len(idx), self.nindex))
         if idxlen > 0:
             idx = tuple([operator.index(i) for i in idx])
-            idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+            idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
 
         x = self.npyarr[idx]
         # Make it C-contiguous and in native byte order
@@ -73,14 +73,14 @@ class NumPyElementWriter(IElementWriter):
         return self._nindex
 
     def write_single(self, idx, ptr, count=1):
-        l = len(idx)
-        if l != self.nindex:
+        idxlen = len(idx)
+        if idxlen != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
 
-        if l > 0 :
+        if idxlen > 0 :
             idx = tuple(operator.index(i) for i in idx)
-            idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+            idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
 
         # Create a temporary NumPy array around the ptr data
         buf = (ctypes.c_char * self._element_size * count).from_address(ptr)
@@ -96,7 +96,7 @@ class NumPyElementWriter(IElementWriter):
 
         if l > 0:
             idx = tuple(operator.index(i) for i in idx)
-            idx = idx[:-1] + (slice(idx[-1], min(idx[-1]+count, self._dshape[-1])),)
+            idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
         dst_arr = self.npyarr[idx]
 
         if dst_arr.flags.c_contiguous and dst_arr.dtype.isnative:
