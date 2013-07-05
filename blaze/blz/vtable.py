@@ -15,8 +15,12 @@ from __future__ import absolute_import
 import numpy as np
 
 from ..py3help import _inttypes, imap, xrange
-
 _inttypes += (np.integer,)
+
+# BLZ utilities
+from . import utils, attrs, arrayprint
+
+
 
 class vtable(object):
     """
@@ -48,20 +52,26 @@ class vtable(object):
 
         self.btables = list(btables)
         # Check that all dtypes in btables are consistent
-        for i, bt in enumerate(self.btables):
-            if i == 0:
-                dt = bt.dtype
-            else:
-                if dt != bt.dtype:
-                    raise TypeError("dtypes are not consistent")
+        self.dtype = dt = btables[0].dtype
+        for bt in self.btables:
+            if dt != bt.dtype:
+                raise TypeError("dtypes are not consistent")
                 
-        self.sizes = [len(bt) for bt in btables]
+        self.sizes = [0] + [len(bt) for bt in btables]
         self.cumsizes = np.cumsum(self.sizes)
+        self.len = self.cumsizes[-1]
 
-    def gettable_idx(self, idx):
-        itable = self.cumsizes.searchsorted(idx)
+    def __len__(self):
+        return self.len
+
+    def gettable_idx(self, idx, stop=False):
+        if stop:
+            idx = idx - 1
+        itable = self.cumsizes.searchsorted(idx, side='right') - 1
         iidx = idx - self.cumsizes[itable]
-        return self.btables[itable], iidx
+        if stop:
+            iidx += 1
+        return itable, iidx
         
     def __getitem__(self, key):
         """
@@ -86,11 +96,41 @@ class vtable(object):
         # First, check for integer
         if isinstance(key, _inttypes):
             # Get the index for the btable
-            bt, idx = self.gettable_idx(key)
-            return bt[idx]
-        # # Slices
-        # elif type(key) == slice:
-        #     (start, stop, step) = key.start, key.stop, key.step
-        #     if step and step <= 0 :
-        #         raise NotImplementedError(
-        #             "step in slice can only be positive")
+            ibt, idx = self.gettable_idx(key)
+            return self.btables[ibt][idx]
+        # Slices
+        elif type(key) == slice:
+            (start, stop, step) = key.start, key.stop, key.step
+            if step and step <= 0 :
+                raise NotImplementedError(
+                    "step in slice can only be positive")
+
+        # From now on, will only deal with [start:stop:step] slices
+
+        # Get the corrected values for start, stop, step
+        (start, stop, step) = slice(start, stop, step).indices(self.len)
+        # Build a numpy container
+        n = utils.get_len_of_range(start, stop, step=1)
+        ra = np.empty(shape=(n,), dtype=self.dtype)
+
+        # Fill it by iterating through all the arrays
+        stable, sidx = self.gettable_idx(start)
+        etable, eidx = self.gettable_idx(stop, stop=True)
+        sstart = sidx
+        if etable == stable:
+            sstop = eidx
+        else:
+            sstop = len(self.btables[stable])
+        sout, eout = 0, sstop - sstart
+        for i, bt in enumerate(self.btables[stable:etable+1]):
+            ra[sout:eout] = bt[sstart:sstop]
+            sout = eout
+            sstart = 0
+            if stable + i + 1 == etable:
+                sstop = eidx 
+            elif (stable + i + 1) < len(self.btables):
+                sstop = len(self.btables[stable + i + 1])
+            eout += sstop - sstart
+        if step > 1:
+            ra = ra[::step]
+        return ra
