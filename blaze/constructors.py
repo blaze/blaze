@@ -77,8 +77,6 @@ def array(obj, dshape=None, caps={'efficient-write': True},
         #   playing with internal datastructures, remember? you should
         #   be able to do it in your own.
         dd = obj
-    elif inspect.isgenerator(obj):
-        return _fromiter(obj, dshape, caps, storage)
     elif storage is not None:
         dt = None if dshape is None else to_numpy_dtype(dshape)
         dd = BLZDataDescriptor(

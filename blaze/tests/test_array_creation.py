@@ -6,7 +6,7 @@ import numpy as np
 import unittest
 from blaze.tests.common import MayBeUriTest
 from blaze.eval import append
-
+from blaze.py3help import skip
 
 class TestEphemeral(unittest.TestCase):
 
@@ -47,6 +47,7 @@ class TestEphemeral(unittest.TestCase):
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
 
+    @skip("BLZ barray doesn't support construction from iterators yet")
     def test_create_compress_iter(self):
         # A compressed array (backed by BLZ)
         a = blaze.array((i for i in range(10)), caps={'compress': True})
