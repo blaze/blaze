@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from ..datashape import DataShape, CType, Record
+from ..py3help import izip
 from .data_descriptor import IDataDescriptor
 import struct
 import ctypes
@@ -21,6 +22,16 @@ def complex_ptr_to_py(ptr_t, bytes):
         cptr = ctypes.cast(ptr, ptr_t)
         cptr2 = ctypes.cast(ptr+bytes, ptr_t)
         return complex(cptr.contents.value, cptr2.contents.value)
+    return ptr_to_py
+
+def _dshape_record_to_py(ds):
+    cvt_funcs = [dshaped_ptr_to_py(ds_field) for ds_field in ds.types]
+    def ptr_to_py(ptr):
+        # Build a dictionary of the fields
+        result = {}
+        for name, cvt, offset in izip(ds.names, cvt_funcs, ds.c_offsets):
+            result[name] = cvt(ptr + offset)
+        return result
     return ptr_to_py
 
 
@@ -52,8 +63,7 @@ def dshaped_ptr_to_py(ds):
                             '%r to a python object is not yet supported') % (ds))
         return ptr_to_py
     elif isinstance(ds, Record):
-        # TODO Add a c_offsets to the Record dshape similar to c_strides
-        raise NotImplemented
+        return _dshape_record_to_py(ds)
     else:
         raise TypeError(('Converting data with dshape'
                         '%r to a python object is not yet supported') % (ds))

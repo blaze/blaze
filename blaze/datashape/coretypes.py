@@ -883,6 +883,10 @@ class Record(Mono):
         return self.__k
 
     @property
+    def types(self):
+        return self.__v
+
+    @property
     def c_itemsize(self):
         """The size of one element of this type stored in a C layout."""
         if self._c_itemsize is not None:
@@ -932,6 +936,17 @@ class Record(Mono):
     def __repr__(self):
         # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+
+    def subarray(self, leading):
+        """Returns a data shape object of the subarray with 'leading'
+        dimensions removed. In the case of a measure such as CType,
+        'leading' must be 0, and self is returned.
+        """
+        if leading >= 1:
+            raise IndexError(('Not enough dimensions in data shape '
+                            'to remove %d leading dimensions.') % leading)
+        else:
+            return self
 
 #------------------------------------------------------------------------
 # JSON
