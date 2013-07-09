@@ -1661,7 +1661,7 @@ cdef class barray:
     blocksize = chunk_.blocksize
     blocklen = <npy_intp>cython.cdiv(blocksize, atomsize)
 
-    if atomsize > blocksize:
+    if ((atomsize > blocksize) or ((pos + blocklen) > chunklen)):
       # This request cannot be resolved here
       return 0
 
