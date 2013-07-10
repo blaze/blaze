@@ -12,7 +12,7 @@ def load_json_file_array(root, array_name):
         if not path.isfile(dsfile):
             raise Exception('No datashape file found for array %s' % array_name)
     with open(dsfile) as f:
-        dt = nd.dtype(f.read())
+        dt = ndt.type(f.read())
 
     # Load the JSON
     with open(root + '.json') as f:
@@ -26,7 +26,7 @@ def load_json_directory_array(root, array_name):
     if not path.isfile(dsfile):
         raise Exception('No datashape file found for array %s' % array_name)
     with open(dsfile) as f:
-        dt = nd.dtype(f.read())
+        dt = ndt.type(f.read())
 
     # Scan for JSON files, assuming they're just #.json
     # Sort them numerically
@@ -49,10 +49,10 @@ def load_json_file_list_array(root, array_name):
     if not path.isfile(dsfile):
         raise Exception('No datashape file found for array %s' % array_name)
     with open(dsfile) as f:
-        dt = nd.dtype(f.read())
-    
+        dt = ndt.type(f.read())
+
     # Scan for JSON files -- no assumption on file suffix
-    
+
     #open list of files and load into python list
     files = root + '.files'
     with open(files) as f:
@@ -101,14 +101,14 @@ class json_array_provider:
                             (array_name, root + '.deferred.json'))
             with open(root + '.deferred.json') as f:
                 print(f.read())
-            raise RuntimeError('TODO: Deferred loading not implemented!')       
+            raise RuntimeError('TODO: Deferred loading not implemented!')
         elif path.isfile(root + '.files'):
             print ('Loading files from file list: %s' % (root + '.files'))
             arr = load_json_file_list_array(root, array_name)
         else:
             print 'Loading array %s from directory %s' % (array_name, root)
             arr = load_json_directory_array(root, array_name)
-            
+
         self.array_cache[array_name] = arr
         return arr
 
@@ -135,5 +135,5 @@ class json_array_provider:
 
         if cache_array is not None:
             self.array_cache[array_name] = cache_array
-        
+
         return (os.fdopen(d[0], "w"), array_name, d[1])

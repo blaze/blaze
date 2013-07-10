@@ -20,7 +20,7 @@ class DyNDElementReader(IElementReader):
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
         self._dshape = datashape.dshape(dyndarr.dshape).subarray(nindex)
-        self._c_dtype = nd.dtype(str(self._dshape))
+        self._c_dtype = ndt.type(str(self._dshape))
         self.dyndarr = dyndarr
 
     @property
@@ -57,7 +57,7 @@ class DyNDElementWriter(IElementWriter):
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
         self._dshape = datashape.dshape(dyndarr.dshape).subarray(nindex)
-        self._c_dtype = nd.dtype(str(self._dshape))
+        self._c_dtype = ndt.type(str(self._dshape))
         self.dyndarr = dyndarr
 
     @property
@@ -103,7 +103,7 @@ class DyNDElementReadIter(IElementReadIter):
         self._index = 0
         self._len = len(dyndarr)
         self._dshape = datashape.dshape(dyndarr.dshape).subarray(1)
-        self._c_dtype = nd.dtype(str(self._dshape))
+        self._c_dtype = ndt.type(str(self._dshape))
         self.dyndarr = dyndarr
 
     @property
@@ -133,8 +133,8 @@ class DyNDElementWriteIter(IElementWriteIter):
         self._len = len(dyndarr)
         ds = datashape.dshape(dyndarr.dshape)
         self._dshape = ds.subarray(1)
-        self._c_dtype = nd.dtype(str(self._dshape))
-        self._usebuffer = (nd.dtype(str(ds)) != dyndarr.dtype)
+        self._c_dtype = ndt.type(str(self._dshape))
+        self._usebuffer = (ndt.type(str(ds)) != dyndarr.dtype)
         self._buffer = None
         self._buffer_index = -1
         self.dyndarr = dyndarr

@@ -93,7 +93,7 @@ def array(obj, dshape=None, caps={'efficient-write': True},
         else:
             # Use the uniform/full dtype specification in dynd depending
             # on whether the datashape has a uniform dim
-            dt = nd.dtype(str(dshape))
+            dt = ndt.type(str(dshape))
             if dt.undim > 0:
                 dd = DyNDDataDescriptor(nd.array(obj, dtype=dt))
             else:

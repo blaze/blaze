@@ -8,7 +8,7 @@ def json_comment(array_url):
 
 def render_dynd_datashape_recursive(base_url, arr, indent):
     result = ''
-    if type(arr) is nd.dtype:
+    if type(arr) is ndt.type:
         dt = arr.value_dtype
     else:
         dt = arr.dtype.value_dtype
@@ -32,17 +32,17 @@ def render_dynd_datashape_recursive(base_url, arr, indent):
         result += (indent + '}')
     elif dt.kind == 'uniform_dim':
         if dt.type_id == 'strided_dim':
-            if (type(arr) is not nd.dtype):
+            if (type(arr) is not ndt.type):
                 result += (str(arr.shape[0]) + ', ')
             else:
-                result += 'VarDim, '
+                result += 'var, '
         elif dt.type_id == 'fixed_dim':
             result += (str(dt.fixed_dim_size) + ', ')
         elif dt.type_id == 'var_dim':
-            result += 'VarDim, '
+            result += 'var, '
         else:
             raise TypeError('Unrecognized DyND uniform array type ' + str(dt))
-        if (type(arr) is not nd.dtype):
+        if (type(arr) is not ndt.type):
             arr = arr.dtype
         result += render_dynd_datashape_recursive(base_url, arr[0], indent)
     elif dt.kind in ['bool', 'int', 'uint', 'real', 'datetime', 'json', 'string']:
