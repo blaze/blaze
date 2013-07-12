@@ -21,8 +21,6 @@ from distutils.command.build_ext import build_ext
 
 packages = [
     'blaze',
-    'blaze.aterm',
-    'blaze.aterm.tests',
     'blaze.blir',
     'blaze.blz',
     'blaze.blz.tests',

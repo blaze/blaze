@@ -275,8 +275,6 @@ class String(Mono):
                             (self.fixlen, repr(self.encoding).strip('u'))
 
     def __repr__(self):
-        # need double quotes to form valid aterm, also valid
-        # Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     def __eq__(self, other):
@@ -431,7 +429,6 @@ class DataShape(Mono):
         return not self.__eq__(other)
 
     def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"",
                         str(self).encode('unicode_escape').decode('ascii'),
                         "\")"])
@@ -934,7 +931,6 @@ class Record(Mono):
         return record_string(self.__k, self.__v)
 
     def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     def subarray(self, leading):

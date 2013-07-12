@@ -7,7 +7,6 @@ build:
 
 test: build
 	python -m unittest discover blaze/blz/tests
-	python -m unittest discover blaze/aterm/tests
 
 parser: cleanparser
 	python -m blaze.blir.parser
