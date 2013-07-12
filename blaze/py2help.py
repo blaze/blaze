@@ -24,23 +24,9 @@ import itertools
 # SOFTWARE.
 
 
-PY3 = sys.version_info[:2] >= (3,0)
+PY2 = sys.version_info[0] == 2
 
-if PY3:
-    def dict_iteritems(d):
-        return d.items().__iter__()
-    xrange = range
-    izip = zip
-    _inttypes = (int,)
-    _strtypes = (str,)
-    unicode = str
-    imap = map
-    basestring = str
-    import urllib.parse as urlparse
-    from functools import reduce
-    import builtins
-    exec_ = getattr(builtins, "exec")
-else:
+if PY2:
     import __builtin__
     def dict_iteritems(d):
         return d.iteritems()
@@ -66,6 +52,20 @@ else:
         elif _locs_ is None:
             _locs_ = _globs_
         exec("""exec _code_ in _globs_, _locs_""")
+else:
+    def dict_iteritems(d):
+        return d.items().__iter__()
+    xrange = range
+    izip = zip
+    _inttypes = (int,)
+    _strtypes = (str,)
+    unicode = str
+    imap = map
+    basestring = str
+    import urllib.parse as urlparse
+    from functools import reduce
+    import builtins
+    exec_ = getattr(builtins, "exec")
 
 if sys.version_info[:2] >= (2, 7):
     from ctypes import c_ssize_t

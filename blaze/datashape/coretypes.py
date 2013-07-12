@@ -11,7 +11,7 @@ import ctypes
 import operator
 import datetime
 import numpy as np
-from ..py3help import _inttypes, _strtypes, unicode
+from ..py2help import _inttypes, _strtypes, unicode
 
 instanceof = lambda T: lambda X: isinstance(X, T)
 

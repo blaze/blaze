@@ -3,7 +3,6 @@ import sys
 import blaze
 import ctypes
 import numpy as np
-from ...py3help import skipIf
 from blaze.ckernel import (CKernel, UnarySingleOperation,
         UnaryStridedOperation)
 

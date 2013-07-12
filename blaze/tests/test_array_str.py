@@ -1,7 +1,7 @@
 import sys
 import unittest
 import ctypes
-from ..py3help import skip
+from ..py2help import skip
 import blaze
 from blaze.datadescriptor import data_descriptor_from_ctypes
 

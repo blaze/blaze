@@ -7,7 +7,7 @@ from blaze.datadescriptor import (NumPyDataDescriptor,
                 IDataDescriptor, IElementReader, IElementReadIter,
                 IElementWriter, IElementWriteIter,
                 dd_as_py)
-from blaze.py3help import _inttypes, izip
+from blaze.py2help import _inttypes, izip
 import ctypes
 
 class TestNumPyDataDescriptor(unittest.TestCase):

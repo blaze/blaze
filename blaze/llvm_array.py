@@ -91,7 +91,7 @@ from __future__ import absolute_import
 import llvm.core as lc
 from llvm.core import Type, Constant
 import llvm_cbuilder.shortnames as C
-from .py3help import reduce
+from .py2help import reduce
 
 # Different Array Types
 ARRAYBIT = 1<<4

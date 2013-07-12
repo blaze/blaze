@@ -6,7 +6,7 @@ import blaze
 from blaze.blfuncs import BlazeFunc
 from blaze.datashape import double, complex128 as c128
 from blaze.datadescriptor import (execute_expr_single, dd_as_py)
-from blaze.py3help import izip
+from blaze.py2help import izip
 
 class TestBlazeKernelTreeCKernel(unittest.TestCase):
     def test_binary_kerneltree(self):

@@ -6,7 +6,6 @@ import numpy as np
 import unittest
 from blaze.tests.common import MayBeUriTest
 from blaze.eval import append
-from blaze.py3help import skip
 
 class TestEphemeral(unittest.TestCase):
 

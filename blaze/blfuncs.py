@@ -13,7 +13,7 @@ from . import llvm_array as lla
 from .blaze_kernels import (Argument, fuse_kerneltree, BlazeElementKernel,
                 frompyfunc)
 from . import blaze_kernels
-from .py3help import dict_iteritems, _strtypes, PY3
+from .py2help import dict_iteritems, _strtypes, PY2
 
 def letters(source=string.ascii_lowercase):
     k = 0
@@ -405,7 +405,7 @@ class BlazeFunc(object):
 
     def add_template(self, func, signature=None):
         if signature is None:
-            fc = func.__code__ if PY3 else func.func_code
+            fc = func.func_code if PY2 else func.__code__
             signature = '*(%s)' % (','.join(['*']*fc.co_argcount))
 
         keysig = to_dshapes(signature)

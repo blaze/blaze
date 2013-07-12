@@ -12,7 +12,7 @@ from __future__ import absolute_import
 import sys
 import os, os.path
 import json
-from ..py3help import xrange, dict_iteritems
+from ..py2help import xrange, dict_iteritems
 
 ATTRSDIR = "__attrs__"
 

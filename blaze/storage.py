@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 from ._api_helpers import _normalize_dshape
 from .datashape import to_numpy, to_numpy_dtype
-from .py3help import urlparse
+from .py2help import urlparse
 from . import blz
 from .datadescriptor import (BLZDataDescriptor,
                              NumPyDataDescriptor,

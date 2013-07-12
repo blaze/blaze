@@ -10,7 +10,7 @@ import unittest
 import tempfile
 from itertools import product as it_product
 from blaze.datadescriptor import dd_as_py
-from blaze.py3help import exec_
+from blaze.py2help import exec_
 
 def _clean_disk_arrays():
     try:

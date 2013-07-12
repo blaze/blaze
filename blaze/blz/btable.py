@@ -19,7 +19,7 @@ import shutil
 from .blz_ext import barray
 from .bparams import bparams
 from .chunked_eval import evaluate
-from ..py3help import _inttypes, imap, xrange
+from ..py2help import _inttypes, imap, xrange
 
 # BLZ utilities
 from . import utils, attrs, arrayprint

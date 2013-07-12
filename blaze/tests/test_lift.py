@@ -5,7 +5,7 @@ import array
 from blaze.blaze_kernels import BlazeElementKernel
 import llvm.core as lc
 import llvm
-from ..py3help import c_ssize_t
+from ..py2help import c_ssize_t
 
 mod = lc.Module.new('simple')
 

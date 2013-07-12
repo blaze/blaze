@@ -31,7 +31,7 @@ from .llvm_array import (void_type, intp_type, array_kinds, check_array,
 from .kernelgen import loop_nest
 from .ckernel import (ExprSingleOperation, JITKernelData,
                 UnboundCKernelFunction)
-from .py3help import izip, _strtypes, c_ssize_t, PY3
+from .py2help import izip, _strtypes, c_ssize_t, PY2
 from .datashape import Fixed, TypeVar
 from .datashape.util import to_ctypes, dshape as make_dshape
 
@@ -114,7 +114,7 @@ def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None, i8p_str=False):
         else:
             struct_name = llvm_type.name
             struct_name = struct_name.replace('.','_')
-        if not PY3:
+        if PY2:
             struct_name = struct_name.encode('ascii')
 
         # If the named type is already known, return it

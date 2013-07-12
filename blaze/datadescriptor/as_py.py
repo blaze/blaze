@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from ..datashape import DataShape, CType, Record
-from ..py3help import izip
+from ..py2help import izip
 from .data_descriptor import IDataDescriptor
 import struct
 import ctypes

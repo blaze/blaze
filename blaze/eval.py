@@ -8,7 +8,7 @@ from .datadescriptor import (IDataDescriptor,
                              BlazeFuncDescriptor,
                              BLZDataDescriptor,
                              execute_expr_single)
-from .py3help import reduce
+from .py2help import reduce
 from .datashape import to_numpy
 from .executive import simple_execute_append
 from . import blz

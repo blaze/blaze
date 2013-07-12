@@ -5,7 +5,7 @@ __all__ = ['execute_unary_single', 'execute_expr_single']
 import ctypes
 
 from ..error import BroadcastError
-from ..py3help import izip
+from ..py2help import izip
 
 from .as_py import dd_as_py
 

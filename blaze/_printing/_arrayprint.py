@@ -6,7 +6,7 @@ from __future__ import print_function
 __all__ = ["array2string", "set_printoptions", "get_printoptions"]
 __docformat__ = 'restructuredtext'
 
-from ..py3help import xrange
+from ..py2help import xrange
 
 #
 # Written by Konrad Hinsen <hinsenk@ere.umontreal.ca>
