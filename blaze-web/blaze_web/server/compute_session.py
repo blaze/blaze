@@ -64,7 +64,7 @@ class compute_session:
         res = nd.ndobject(nparr[idxs])
         defarr = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'sort_', res)
-        dshape = res.dshape
+        dshape = nd.dshape_of(res)
         defarr[0].write(json.dumps({
                 'dshape': dshape,
                 'command': 'sort',
@@ -102,7 +102,7 @@ class compute_session:
         # Write out the groupby result
         defarr_gb = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'groupby_', res)
-        dshape_gb = res.dshape
+        dshape_gb = nd.dshape_of(res)
         defarr_gb[0].write(json.dumps({
                 'dshape': dshape_gb,
                 'command': 'groupby',
@@ -115,7 +115,7 @@ class compute_session:
         # Write out the groups
         defarr_groups = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'groups_', groups)
-        dshape_groups = groups.dshape
+        dshape_groups = nd.dshape_of(groups)
         defarr_groups[0].write(json.dumps({
                 'dshape': dshape_groups,
                 'command': 'groupby.groups',
@@ -151,7 +151,7 @@ class compute_session:
         res = nd.add_computed_fields(arr, fields, rm_fields, fnname)
         defarr = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'computed_fields_', res)
-        dshape = res.dshape
+        dshape = nd.dshape_of(res)
         defarr[0].write(json.dumps({
                 'dshape': dshape,
                 'command': 'add_computed_fields',
@@ -186,7 +186,7 @@ class compute_session:
         res = nd.make_computed_fields(arr, replace_undim, fields, fnname)
         defarr = self.array_provider.create_deferred_array_filename(
                         self.session_name, 'computed_fields_', res)
-        dshape = res.dshape
+        dshape = nd.dshape_of(res)
         defarr[0].write(json.dumps({
                 'dshape': dshape,
                 'command': 'make_computed_fields',
