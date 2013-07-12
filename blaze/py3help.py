@@ -37,7 +37,6 @@ if PY3:
     imap = map
     basestring = str
     import urllib.parse as urlparse
-    from collections import Counter
     from functools import reduce
     import builtins
     exec_ = getattr(builtins, "exec")
@@ -56,10 +55,6 @@ else:
     _inttypes = (int, long)
     imap = itertools.imap
     import urlparse
-    if sys.version_info >= (2, 7):
-        from collections import Counter
-    else:
-        from .counter_py26 import Counter
     def exec_(_code_, _globs_=None, _locs_=None):
         """Execute code in a namespace."""
         if _globs_ is None:
