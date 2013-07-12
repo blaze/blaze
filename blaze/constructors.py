@@ -94,10 +94,10 @@ def array(obj, dshape=None, caps={'efficient-write': True},
             # Use the uniform/full dtype specification in dynd depending
             # on whether the datashape has a uniform dim
             dt = ndt.type(str(dshape))
-            if dt.undim > 0:
-                dd = DyNDDataDescriptor(nd.array(obj, dtype=dt))
+            if dt.ndim > 0:
+                dd = DyNDDataDescriptor(nd.array(obj, type=dt))
             else:
-                dd = DyNDDataDescriptor(nd.array(obj, udtype=dt))
+                dd = DyNDDataDescriptor(nd.array(obj, dtype=dt))
     elif 'compress' in caps and caps['compress'] is True:
         dt = None if dshape is None else to_numpy_dtype(dshape)
         # BLZ provides compression
