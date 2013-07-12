@@ -170,7 +170,7 @@ def match(fname, table):
     return matcher
 
 def oracle(expr):
-    return random.choice(['numpy', 'blir', 'numexpr'])
+    return random.choice(['numpy', 'numexpr'])
 
 # This is normally called at modoule registration time, for
 # instruction purposese just here...
@@ -203,8 +203,6 @@ class Node(object):
 
         if engine == 'numpy':
             return compile.eval_numpy(expr)
-        elif engine == 'blir':
-            return compile.eval_blir(expr)
         elif engine == 'numexpr':
             return compile.eval_numexpr(expr)
         else:
@@ -311,7 +309,6 @@ if __name__ == '__main__':
     print('D'.center(80, '='))
     print(dump((a+a+a+b).ast()))
 
-    print((a+b*b).eval(engine='blir'))
     print((a+b).eval(engine='numexpr'))
 
     print(a+1)

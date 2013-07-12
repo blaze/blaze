@@ -22,7 +22,6 @@ mul.add_template(_mul)
 
 # Should think about how to generate many of these at once
 #  for any source-string approach
-#  BLIR or C++
 dotcpp = r"""
 //#include "stdio.h"
 
