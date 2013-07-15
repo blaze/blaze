@@ -16,6 +16,7 @@ import struct
 import shutil
 import tempfile
 import json
+import datetime
 import cython
 
 if sys.version_info >= (3, 0):
@@ -1182,6 +1183,10 @@ cdef class barray:
       storagef = os.path.join(self.metadir, STORAGE_FILE)
       with open(storagef, 'wb') as storagefh:
         dflt_list = self.dflt.tolist()
+        if type(dflt_list) in (datetime.datetime,
+                               datetime.date, datetime.time):
+            # The datetime cannot be serialized with JSON.  Use a 0 int.
+            dflt_list = 0
         # In Python 3, the json encoder doesn't accept bytes objects
         if sys.version_info >= (3, 0):
             dflt_list = list_bytes_to_str(dflt_list)
