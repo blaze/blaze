@@ -753,7 +753,11 @@ class btable(object):
             # Get a copy of the len-1 array
             ra = self._arr1.copy()
             # Fill it
-            ra[0] = tuple([self.cols[name][key] for name in self.names])
+            for name in self.names:
+                ra[0][name] = self.cols[name][key]
+            # The next gives conversion problems with unicode
+            # (the responsible being probably numpy)
+            #ra[0] = tuple([self.cols[name][key] for name in self.names])
             return ra[0]
         # Slices
         elif type(key) == slice:
