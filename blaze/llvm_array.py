@@ -93,6 +93,10 @@ from llvm.core import Type, Constant
 import llvm_cbuilder.shortnames as C
 from .py2help import reduce
 
+# Non-array parameter types
+SCALAR = 0
+POINTER = 1
+
 # Different Array Types
 ARRAYBIT = 1<<4
 C_CONTIGUOUS = ARRAYBIT + 0

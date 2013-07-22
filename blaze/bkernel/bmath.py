@@ -1,5 +1,5 @@
 #bmath.py
-from blaze.blfuncs import BlazeFunc
+from .blfuncs import BlazeFunc
 
 def make_blazefunc(f):
     return BlazeFunc(f.__name__, template=f)

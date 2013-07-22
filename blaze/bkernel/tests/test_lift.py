@@ -2,10 +2,10 @@ import unittest
 import sys
 import ctypes
 import array
-from blaze.blaze_kernels import BlazeElementKernel
+from blaze.bkernel import BlazeElementKernel
 import llvm.core as lc
 import llvm
-from ..py2help import c_ssize_t
+from blaze.py2help import c_ssize_t
 
 mod = lc.Module.new('simple')
 

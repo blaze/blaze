@@ -25,20 +25,17 @@ import ctypes
 import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
-from . import llvm_array as lla
-from .llvm_array import (void_type, intp_type, array_kinds, check_array,
+from .. import llvm_array as lla
+from ..llvm_array import (void_type, intp_type, SCALAR, POINTER, array_kinds, check_array,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .kernelgen import loop_nest
-from .ckernel import (ExprSingleOperation, JITKernelData,
+from ..ckernel import (ExprSingleOperation, JITKernelData,
                 UnboundCKernelFunction)
-from .py2help import izip, _strtypes, c_ssize_t, PY2
-from .datashape import Fixed, TypeVar
-from .datashape.util import to_ctypes, dshape as make_dshape
+from ..py2help import izip, _strtypes, c_ssize_t, PY2
+from ..datashape import Fixed, TypeVar
+from ..datashape.util import to_ctypes, dshape as make_dshape
 
 int32_type = Type.int(32)
-
-SCALAR = 0
-POINTER = 1
 
 arg_kinds = (SCALAR, POINTER) + array_kinds
 
@@ -220,7 +217,7 @@ class BlazeElementKernel(object):
     def dshapes(self):
         if self._dshapes is None:
             # Create dshapes from llvm if none provided
-            from .datashape.util import from_llvm
+            from ..datashape.util import from_llvm
             ds = [from_llvm(llvm, kind)
                    for llvm, kind in zip(self.argtypes, self.kinds)]
             if self.kinds[-1] == SCALAR:
@@ -604,7 +601,7 @@ class BlazeElementKernel(object):
               out[i] = inner_kernel(in0[i], in1[i])
         """
         if outkind in 'CFS':
-            from .llvm_array import kindfromchar
+            from ..llvm_array import kindfromchar
             outkind = kindfromchar[outkind]
 
         name = self.func.name + "_lifted_%d_%s" % (outrank, orderchar[outkind])
@@ -699,7 +696,7 @@ def get_eltype(argtype, kind):
 # Currently only works for scalar kernels
 def frompyfunc(pyfunc, signature):
     import numba
-    from .datashape.util import from_numba
+    from ..datashape.util import from_numba
     if isinstance(signature, _strtypes):
         jitter = numba.jit(signature)
     elif isinstance(signature, tuple):

@@ -18,7 +18,7 @@ from .datadescriptor import (IDataDescriptor,
 from .executive import simple_execute_write
 from ._printing import array2string as _printer
 from .py2help import exec_
-from . import bmath
+from .bkernel import bmath
 
 # An Array contains:
 #   DataDescriptor

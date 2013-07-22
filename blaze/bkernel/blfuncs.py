@@ -5,15 +5,14 @@ import types
 import string
 import re
 
-from .datashape.util import (broadcastable, to_numba, from_numba_str, TypeSet,
-                             matches_typeset)
-from .datashape.coretypes import DataShape
-from .datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
-from . import llvm_array as lla
+from ..datashape import (DataShape, broadcastable, to_numba,
+                from_numba_str, TypeSet, matches_typeset)
+from ..datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
+from .. import llvm_array as lla
 from .blaze_kernels import (Argument, fuse_kerneltree, BlazeElementKernel,
                 frompyfunc)
 from . import blaze_kernels
-from .py2help import dict_iteritems, _strtypes, PY2
+from ..py2help import dict_iteritems, _strtypes, PY2
 
 def letters(source=string.ascii_lowercase):
     k = 0
@@ -477,7 +476,7 @@ class BlazeFunc(object):
         axes = args[0].axes
         labels = args[0].labels
 
-        from .array import Array
+        from ..array import Array
 
         return Array(data, axes, labels, user)
 

@@ -3,7 +3,7 @@ from collections import namedtuple
 from llvm.core import Constant
 import llvm.core as lc
 import llvm_cbuilder.shortnames as C
-from .py2help import reduce
+from ..py2help import reduce
 
 @contextmanager
 def position(builder, block):

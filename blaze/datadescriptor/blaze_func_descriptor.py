@@ -2,8 +2,7 @@ from __future__ import absolute_import
 
 from .data_descriptor import (IDataDescriptor, IElementReader, IElementReadIter)
 
-
-from ..blaze_kernels import find_unique_args, Argument
+from ..bkernel.blaze_kernels import find_unique_args, Argument
 
 def blaze_func_iter(bfd, noiter_dims):
     args = bfd.args

@@ -3,7 +3,7 @@ import sys
 import ctypes
 
 import blaze
-from blaze.blfuncs import BlazeFunc
+from blaze.bkernel import BlazeFunc
 from blaze.datashape import double, complex128 as c128
 from blaze.datadescriptor import (execute_expr_single, dd_as_py)
 from blaze.py2help import izip

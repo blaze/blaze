@@ -4,11 +4,11 @@ import contextlib
 import sys
 import ctypes
 
-from blaze import dshape, datashape
+from .. import datashape
+from ..datashape import dshape, DataShape
 from .data_descriptor import (IElementReader, IElementWriter,
                 IElementReadIter, IElementWriteIter,
                 IDataDescriptor, buffered_ptr_ctxmgr)
-from ..datashape import DataShape
 
 if sys.version_info >= (3, 0):
     _inttypes = (int,)

@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
 __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
-           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm']
+           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
+           'to_numba', 'from_numba_str', 'TypeSet', 'matches_typeset']
 
 import operator
 import itertools
@@ -293,7 +294,7 @@ def PointerDshape(object):
     def __init__(self, dshape):
         self.dshape = dshape
 
-from ..blaze_kernels import SCALAR, POINTER
+from ..llvm_array import SCALAR, POINTER
 
 def from_llvm(typ, argkind=SCALAR):
     """
