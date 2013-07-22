@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 
 """
-This defines the DataShape type system. The unification of shape
-and dtype.
+This defines the DataShape type system, with unified
+shape and data type.
 """
 
 import sys
@@ -11,9 +11,7 @@ import ctypes
 import operator
 import datetime
 import numpy as np
-from ..py3help import _inttypes, _strtypes, unicode
-
-instanceof = lambda T: lambda X: isinstance(X, T)
+from ..py2help import _inttypes, _strtypes, unicode
 
 #------------------------------------------------------------------------
 # Type Metaclass
@@ -28,20 +26,19 @@ class Type(type):
 
     def __new__(meta, name, bases, dct):
         cls = type(name, bases, dct)
-
         # Don't register abstract classes
         if not dct.get('abstract'):
             Type._registry[name] = cls
-            return cls
+        return cls
 
-    @staticmethod
-    def register(name, type):
+    @classmethod
+    def register(cls, name, type):
         # Don't clobber existing types.
-        if name in Type._registry:
+        if name in cls._registry:
             raise TypeError('There is another type registered with name %s'
                             % name)
 
-        Type._registry[name] = type
+        cls._registry[name] = type
 
     @classmethod
     def lookup_type(cls, name):
@@ -81,6 +78,17 @@ class Mono(object):
     def measure(self):
         return self
 
+    def subarray(self, leading):
+        """Returns a data shape object of the subarray with 'leading'
+        dimensions removed. In the case of a measure such as CType,
+        'leading' must be 0, and self is returned.
+        """
+        if leading >= 1:
+            raise IndexError(('Not enough dimensions in data shape '
+                            'to remove %d leading dimensions.') % leading)
+        else:
+            return self
+
 #------------------------------------------------------------------------
 # Parse Types
 #------------------------------------------------------------------------
@@ -105,13 +113,11 @@ class Null(Mono):
     def __str__(self):
         return expr_string('null', None)
 
-class IntegerConstant(Mono):
+class IntegerConstant(object):
     """
-    Integers at the level of constructor it just means integer in the
-    sense of of just an integer value to a constructor.
+    An integer which is a parameter to a type constructor.
 
     ::
-
         1, int32   # 1 is Fixed
         Range(1,5) # 1 is IntegerConstant
 
@@ -119,7 +125,7 @@ class IntegerConstant(Mono):
     cls = None
 
     def __init__(self, i):
-        assert isinstance(i, int)
+        assert isinstance(i, _inttypes)
         self.val = i
 
     def __str__(self):
@@ -131,17 +137,16 @@ class IntegerConstant(Mono):
         elif isinstance(other, IntegerConstant):
             return self.val == other.val
         else:
-            raise TypeError(_invalid_compare(self, other))
+            raise TypeError("Cannot compare type %s to type %s" % (type(self), type(other)))
 
     def __hash__(self):
         return hash(self.val)
 
-class StringConstant(Mono):
+class StringConstant(object):
     """
     Strings at the level of the constructor.
 
     ::
-
         string(3, "utf-8")   # "utf-8" is StringConstant
     """
 
@@ -158,7 +163,7 @@ class StringConstant(Mono):
         elif isinstance(other, StringConstant):
             return self.val == other.val
         else:
-            raise TypeError(_invalid_compare(self, other))
+            raise TypeError("Cannot compare type %s to type %s" % (type(self), type(other)))
 
     def __hash__(self):
         return hash(self.val)
@@ -275,8 +280,6 @@ class String(Mono):
                             (self.fixlen, repr(self.encoding).strip('u'))
 
     def __repr__(self):
-        # need double quotes to form valid aterm, also valid
-        # Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     def __eq__(self, other):
@@ -289,17 +292,6 @@ class String(Mono):
     def __hash__(self):
         return hash((self.fixlen, self.encoding))
 
-    def subarray(self, leading):
-        """Returns a data shape object of the subarray with 'leading'
-        dimensions removed. In the case of a measure such as CType,
-        'leading' must be 0, and self is returned.
-        """
-        if leading >= 1:
-            raise IndexError(('Not enough dimensions in data shape '
-                            'to remove %d leading dimensions.') % leading)
-        else:
-            return self
-
 #------------------------------------------------------------------------
 # Base Types
 #------------------------------------------------------------------------
@@ -311,10 +303,9 @@ class DataShape(Mono):
     __metaclass__ = Type
     composite = False
 
-    def __init__(self, parameters=None, name=None, metadata=None):
-
+    def __init__(self, parameters=None, name=None):
         if len(parameters) > 1:
-            self.parameters = tuple(flatten(parameters))
+            self.parameters = tuple(parameters)
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
                 raise TypeError(('Only a measure can appear on the'
                                 ' last position of a datashape, not %s') %
@@ -355,12 +346,6 @@ class DataShape(Mono):
             self._c_alignment = c_alignment
             self._c_strides = tuple(c_strides)
 
-        self._metadata = metadata
-
-    @property
-    def metadata(self):
-        return self._metadata
-
     @property
     def c_itemsize(self):
         """The size of one element of this type, with C-contiguous storage."""
@@ -398,9 +383,6 @@ class DataShape(Mono):
         else:
             res = (', '.join(map(str, self.parameters)))
 
-        if self.metadata:
-            res += expr_metadata(self._metadata)
-
         return res
 
     def _equal(self, other):
@@ -431,7 +413,6 @@ class DataShape(Mono):
         return not self.__eq__(other)
 
     def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"",
                         str(self).encode('unicode_escape').decode('ascii'),
                         "\")"])
@@ -463,31 +444,6 @@ class DataShape(Mono):
             return self.parameters[-1]
         else:
             return DataShape(self.parameters[leading:])
-
-class Atom(DataShape):
-    """
-    Atoms for arguments to constructors of types, not types in
-    and of themselves.
-    """
-    abstract = True
-
-    def __init__(self, *parameters):
-        self.parameters = parameters
-
-    def __str__(self):
-        clsname = self.__class__.__name__
-        return expr_string(clsname, self.parameters)
-
-    def __repr__(self):
-        return str(self)
-
-    def __eq__(self, other):
-        raise NotImplementedError
-
-    # Inherits __ne__ from DataShape which is just not __eq__
-
-    def __hash__(self):
-        raise NotImplementedError
 
 #------------------------------------------------------------------------
 # Categorical
@@ -564,16 +520,6 @@ class CType(Mono):
         Type.register(name, self)
 
     @classmethod
-    def from_str(self, s):
-        """
-        To Numpy dtype.
-
-        >>> CType.from_str('int32')
-        int32
-        """
-        return Type._registry[s]
-
-    @classmethod
     def from_numpy_dtype(self, dt):
         """
         From Numpy dtype.
@@ -597,12 +543,6 @@ class CType(Mono):
     def c_alignment(self):
         """The alignment of one element of this type."""
         return self._alignment
-
-    def to_struct(self):
-        """
-        To struct code.
-        """
-        return np.dtype(self.name).char
 
     def to_numpy_dtype(self):
         """
@@ -631,42 +571,11 @@ class CType(Mono):
     def __hash__(self):
         return hash(self.name)
 
-    def subarray(self, leading):
-        """Returns a data shape object of the subarray with 'leading'
-        dimensions removed. In the case of a measure such as CType,
-        'leading' must be 0, and self is returned.
-        """
-        if leading >= 1:
-            raise IndexError(('Not enough dimensions in data shape '
-                            'to remove %d leading dimensions.') % leading)
-        else:
-            return self
-
-    @property
-    def type(self):
-        raise NotImplementedError()
-
-    @property
-    def kind(self):
-        raise NotImplementedError()
-
-    @property
-    def char(self):
-        raise NotImplementedError()
-
-    @property
-    def num(self):
-        raise NotImplementedError()
-
-    @property
-    def str(self):
-        raise NotImplementedError()
-
 #------------------------------------------------------------------------
 # Dimensions
 #------------------------------------------------------------------------
 
-class Fixed(Atom):
+class Fixed(Mono):
     """
     Fixed dimension.
     """
@@ -698,12 +607,6 @@ class Fixed(Atom):
     def __hash__(self):
         return hash(self.val)
 
-    def __gt__(self, other):
-        if type(other) is Fixed:
-            return self.val > other.val
-        else:
-            return False
-
     def __str__(self):
         return str(self.val)
 
@@ -717,14 +620,11 @@ class Var(Mono):
     def __eq__(self, other):
         return isinstance(other, Var)
 
-def _invalid_compare(obj1, obj2):
-    return "Cannot compare type %s to type %s" % (type(obj1), type(obj2))
-
 #------------------------------------------------------------------------
 # Variable
 #------------------------------------------------------------------------
 
-class TypeVar(Atom):
+class TypeVar(Mono):
     """
     A free variable in the signature. Not user facing.
     """
@@ -752,7 +652,7 @@ class TypeVar(Atom):
     def __hash__(self):
         return hash(self.__class__)
 
-class Range(Atom):
+class Range(Mono):
     """
     Range type representing a bound or unbound interval of
     of possible Fixed dimensions.
@@ -810,7 +710,8 @@ class Range(Atom):
 
     def __eq__(self, other):
         if not isinstance(other, Range):
-            raise TypeError(_invalid_compare(self, other))
+            raise TypeError("Cannot compare type %s to type %s" % (type(self), type(other)))
+
         else:
             return self.a == other.a and self.b == other.b
 
@@ -883,6 +784,10 @@ class Record(Mono):
         return self.__k
 
     @property
+    def types(self):
+        return self.__v
+
+    @property
     def c_itemsize(self):
         """The size of one element of this type stored in a C layout."""
         if self._c_itemsize is not None:
@@ -930,7 +835,6 @@ class Record(Mono):
         return record_string(self.__k, self.__v)
 
     def __repr__(self):
-        # need double quotes to form valid aterm, also valid Python
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
 #------------------------------------------------------------------------
@@ -958,35 +862,6 @@ class JSON(Mono):
 
     def __eq__(self, other):
         return isinstance(other, JSON)
-
-#------------------------------------------------------------------------
-# Constructions
-#------------------------------------------------------------------------
-
-def product(A, B):
-    if A.composite and B.composite:
-        f = A.parameters
-        g = B.parameters
-
-    elif A.composite:
-        f = A.parameters
-        g = (B,)
-
-    elif B.composite:
-        f = (A,)
-        g = B.parameters
-
-    else:
-        f = (A,)
-        g = (B,)
-
-    return DataShape(parameters=(f+g))
-
-def inr(ty):
-    return ty.a
-
-def inl(ty):
-    return ty.b
 
 #------------------------------------------------------------------------
 # Unit Types
@@ -1078,79 +953,6 @@ Type.register('bytes', bytes_)
 Type.register('string', String())
 
 #------------------------------------------------------------------------
-# Deconstructors
-#------------------------------------------------------------------------
-
-#  Dimensions
-#      |
-#  ----------
-#  1, 2, 3, 4,  int32
-#               -----
-#                 |
-#              Measure
-
-def extract_dims(ds):
-    """ Discard measure information and just return the
-    dimensions
-    """
-    return ds[:-1]
-
-def extract_measure(ds):
-    """ Discard shape information and just return the measure
-    """
-    return ds[-1]
-
-def is_simple(ds):
-    # Unit Type
-    if not ds.composite:
-        if isinstance(ds, (Fixed, IntegerConstant, CType)):
-            return True
-    # Composite Type
-    else:
-        for dim in ds:
-            if not isinstance(dim, (Fixed, IntegerConstant, CType)):
-                return False
-        return True
-
-def promote_cvals(*vals):
-    """
-    Promote Python values into the most general dshape containing
-    all of them. Only defined over simple CType instances.
-
-    >>> promote_vals(1,2.)
-    dshape("float64")
-    >>> promote_vals(1,2,3j)
-    dshape("complex128")
-    """
-
-    promoted = np.result_type(*vals)
-    datashape = CType.from_numpy_dtype(promoted)
-    return datashape
-
-#------------------------------------------------------------------------
-# Python Compatibility
-#------------------------------------------------------------------------
-
-def from_python_scalar(scalar):
-    """
-    Return a datashape ctype for a python scalar.
-    """
-    if isinstance(scalar, int):
-        return int32
-    elif isinstance(scalar, float):
-        return float64
-    elif isinstance(scalar, complex):
-        return cfloat64
-    elif isinstance(scalar, _strtypes):
-        return string
-    elif isinstance(scalar, datetime.timedelta):
-        return timedelta64
-    elif isinstance(scalar, datetime.datetime):
-        return datetime64
-    else:
-        return pyobj
-
-#------------------------------------------------------------------------
 # NumPy Compatibility
 #------------------------------------------------------------------------
 
@@ -1164,7 +966,7 @@ class NotNumpyCompatible(Exception):
 def to_numpy_dtype(ds):
     """ Throw away the shape information and just return the
     measure as NumPy dtype instance."""
-    return to_numpy(extract_measure(ds))
+    return to_numpy(ds[-1])
 
 def to_numpy(ds):
     """
@@ -1184,7 +986,7 @@ def to_numpy(ds):
     #assert isinstance(ds, DataShape)
 
     # The datashape dimensions
-    for dim in extract_dims(ds):
+    for dim in ds[:-1]:
         if isinstance(dim, IntegerConstant):
             shape += (dim,)
         elif isinstance(dim, Fixed):
@@ -1232,13 +1034,6 @@ def from_numpy(shape, dt):
     else:
         return DataShape(parameters=(tuple(map(Fixed, shape))+(measure,)))
 
-def from_char(c):
-    dtype = np.typeDict[c]
-    return from_numpy((), np.dtype(dtype))
-
-def from_dtype(dt):
-    return from_numpy((), dt)
-
 #------------------------------------------------------------------------
 # Printing
 #------------------------------------------------------------------------
@@ -1252,9 +1047,6 @@ def expr_string(spine, const_args, outer=None):
     else:
         return str(spine)
 
-def expr_metadata(meta):
-    return '!{ %s }' % ', '.join(meta)
-
 def record_string(fields, values):
     # Prints out something like this:
     #   {a : int32, b: float32, ... }
@@ -1267,21 +1059,3 @@ def record_string(fields, values):
         else:
             body += '%s : %s; ' % (k,v)
     return '{ ' + body + ' }'
-
-#------------------------------------------------------------------------
-# Argument Munging
-#------------------------------------------------------------------------
-
-def flatten(it):
-    for a in it:
-        if a.composite:
-            for b in iter(a):
-                yield b
-        else:
-            yield a
-
-def table_like(ds):
-    return type(ds[-1]) is Record
-
-def array_like(ds):
-    return not table_like(ds)

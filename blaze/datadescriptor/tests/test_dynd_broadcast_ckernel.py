@@ -9,7 +9,7 @@ from blaze.datadescriptor import (DyNDDataDescriptor, data_descriptor_from_ctype
                 IElementWriter, IElementWriteIter,
                 dd_as_py, execute_unary_single)
 from blaze.ckernel import CKernel, UnarySingleOperation
-from blaze.py3help import _inttypes, skipIf, izip
+from blaze.py2help import _inttypes, izip
 
 from dynd import nd, ndt, _lowlevel
 

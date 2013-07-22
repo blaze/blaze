@@ -3,7 +3,7 @@ from collections import namedtuple
 from llvm.core import Constant
 import llvm.core as lc
 import llvm_cbuilder.shortnames as C
-from .py3help import reduce
+from .py2help import reduce
 
 @contextmanager
 def position(builder, block):
@@ -113,7 +113,7 @@ def loop_nest(builder, begins, ends, order=None, intp=C.intp, steps=None, dbg=Fa
 
     cond = func.append_basic_block('loop.cond')
 
-    outer_axis = order[-1] 
+    outer_axis = order[-1]
 
     #### populate loop entry ####
     with position(builder, entry):

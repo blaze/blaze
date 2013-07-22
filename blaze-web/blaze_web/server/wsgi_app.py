@@ -72,7 +72,7 @@ class wsgi_app:
             if type(i) in [slice, int, tuple]:
                 arr = arr[i]
             else:
-                if i in arr.dtype.property_names:
+                if i in nd.type_of(arr).property_names:
                     arr = getattr(arr, i)
                 else:
                     raise Exception('Blaze array does not have field ' + i)
@@ -188,10 +188,10 @@ class wsgi_app:
                     body = nd.as_py(nd.format_json(arr).view_scalars(ndt.bytes))
                 elif q_req == 'datashape':
                     content_type = 'text/plain; charset=utf-8'
-                    body = arr.dshape
+                    body = nd.dshape_of(arr)
                 elif q_req == 'dyndtype':
                     content_type = 'application/json; charset=utf-8'
-                    body = str(arr.dtype)
+                    body = str(nd.type_of(arr))
                 elif q_req == 'dynddebug':
                     content_type = 'text/plain; charset=utf-8'
                     body = str(nd.debug_repr(arr))

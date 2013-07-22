@@ -16,6 +16,7 @@ import struct
 import shutil
 import tempfile
 import json
+import datetime
 import cython
 
 if sys.version_info >= (3, 0):
@@ -70,7 +71,8 @@ cdef extern from "blosc.h":
   cdef enum:
     BLOSC_MAX_OVERHEAD,
     BLOSC_VERSION_STRING,
-    BLOSC_VERSION_DATE
+    BLOSC_VERSION_DATE,
+    BLOSC_MAX_TYPESIZE
 
   void blosc_init()
   void blosc_destroy()
@@ -252,7 +254,8 @@ cdef class chunk:
   cdef void _getitem(self, int start, int stop, char *dest)
   cdef compress_data(self, char *data, size_t itemsize, size_t nbytes,
                      object bparams)
-  cdef compress_arrdata(self, ndarray array, object bparams, object _memory)
+  cdef compress_arrdata(self, ndarray array, int itemsize,
+                        object bparams, object _memory)
 
   property dtype:
     "The NumPy dtype for this chunk."
@@ -269,8 +272,21 @@ cdef class chunk:
     self.atom = atom
     self.atomsize = atom.itemsize
     dtype_ = atom.base
-    self.itemsize = itemsize = dtype_.elsize
     self.typekind = dtype_.kind
+    # Temporary hack for allowing strings with len > BLOSC_MAX_TYPESIZE
+    # In the future DyND should offer more flexibility for coping
+    # with strings.
+    if self.typekind == 'S':
+      itemsize = 1
+    elif self.typekind == 'U':
+      itemsize = 4
+    else:
+      itemsize = dtype_.elsize
+    if itemsize > BLOSC_MAX_TYPESIZE:
+      raise TypeError(
+        "typesize is %d and BLZ does not currently support data types larger "
+        "than %d bytes" % (itemsize, BLOSC_MAX_TYPESIZE))
+    self.itemsize = itemsize
     self.dobject = None
     footprint = 0
 
@@ -289,7 +305,7 @@ cdef class chunk:
     else:
       # Compress the data object (a NumPy object)
       nbytes, cbytes, blocksize, footprint = self.compress_arrdata(
-        dobject, bparams, _memory)
+        dobject, itemsize, bparams, _memory)
     footprint += 128  # add the (aprox) footprint of this instance in bytes
 
     # Fill instance data
@@ -298,13 +314,13 @@ cdef class chunk:
     self.cdbytes = cbytes
     self.blocksize = blocksize
 
-  cdef compress_arrdata(self, ndarray array, object bparams, object _memory):
+  cdef compress_arrdata(self, ndarray array, int itemsize, 
+                        object bparams, object _memory):
     """Compress data in `array` and put it in ``self.data``"""
-    cdef size_t nbytes, cbytes, blocksize, itemsize, footprint
+    cdef size_t nbytes, cbytes, blocksize, footprint
 
     # Compute the total number of bytes in this array
-    itemsize = array.itemsize
-    nbytes = itemsize * array.size
+    nbytes = array.itemsize * array.size
     cbytes = 0
     footprint = 0
 
@@ -1182,6 +1198,10 @@ cdef class barray:
       storagef = os.path.join(self.metadir, STORAGE_FILE)
       with open(storagef, 'wb') as storagefh:
         dflt_list = self.dflt.tolist()
+        if type(dflt_list) in (datetime.datetime,
+                               datetime.date, datetime.time):
+            # The datetime cannot be serialized with JSON.  Use a 0 int.
+            dflt_list = 0
         # In Python 3, the json encoder doesn't accept bytes objects
         if sys.version_info >= (3, 0):
             dflt_list = list_bytes_to_str(dflt_list)
@@ -1661,7 +1681,7 @@ cdef class barray:
     blocksize = chunk_.blocksize
     blocklen = <npy_intp>cython.cdiv(blocksize, atomsize)
 
-    if atomsize > blocksize:
+    if ((atomsize > blocksize) or ((pos + blocklen) > chunklen)):
       # This request cannot be resolved here
       return 0
 

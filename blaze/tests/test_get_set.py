@@ -2,7 +2,7 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 import numpy as np
 import unittest
-from blaze.py3help import skip
+from blaze.py2help import skip
 from blaze.tests.common import MayBeUriTest
 
 

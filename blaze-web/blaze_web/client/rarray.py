@@ -12,7 +12,7 @@ class rarray:
             self.dshape = requests.get_remote_datashape(url)
         else:
             self.dshape = dshape
-        self.dtype = nd.dtype(self.dshape)
+        self.dtype = ndt.type(self.dshape)
 
     def __repr__(self):
         return 'Remote Blaze Array\nurl: %s\ndshape: %s\n' % \

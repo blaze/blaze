@@ -3,7 +3,6 @@ import sys
 import blaze
 import ctypes
 import numpy as np
-from ...py3help import skipIf
 from blaze.ckernel import (CKernel, UnarySingleOperation,
         UnaryStridedOperation)
 
@@ -26,7 +25,7 @@ class TestDyNDCKernel(unittest.TestCase):
         # Make a CKernel that assigns fixed-size strings to float32
         ck = CKernel(UnaryStridedOperation)
         _lowlevel.py_api.make_assignment_kernel(
-                        ndt.float32, nd.dtype('string(15,"A")'), 'strided',
+                        ndt.float32, ndt.type('string(15,"A")'), 'strided',
                         ctypes.addressof(ck.dynamic_kernel_instance))
         # Do an assignment using a numpy array
         src = np.array(['3.25', '-1000', '1e5'], dtype='S15')

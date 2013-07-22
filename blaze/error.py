@@ -1,7 +1,4 @@
 __all__ = [
-    'ExecutionError',
-    'NoDispatch',
-    'InvalidLibraryDefinition',
     'CustomSyntaxError',
     'StreamingDimensionError',
     'BroadcastError',
@@ -9,24 +6,6 @@ __all__ = [
 ]
 
 # TODO: BlazeException base class ?
-
-# for Numba
-class ExecutionError(Exception):
-    """
-    Raised when we are unable to execute a certain lazy or immediate
-    expression.
-    """
-
-# for the RTS
-class NoDispatch(Exception):
-    def __init__(self, aterm):
-        self.aterm = aterm
-    def __str__(self):
-        return "No implementation for '%r'" % self.aterm
-
-# for the RTS
-class InvalidLibraryDefinition(Exception):
-    pass
 
 #------------------------------------------------------------------------
 # Generic Syntax Errors

@@ -10,14 +10,14 @@ import ctypes
 
 from . import blz
 import numpy as np
-from .datashape import dshape
+from .datashape import dshape, coretypes as T
 from .datashape.util import to_ctypes
 from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
-                             MemBufDataDescriptor)
+                             DyNDDataDescriptor)
 from .executive import simple_execute_write
 from ._printing import array2string as _printer
-from .py3help import exec_
+from .py2help import exec_
 from . import bmath
 
 # An Array contains:
@@ -80,9 +80,24 @@ class Array(object):
         self.labels = labels or [None] * (len(self._data.dshape) - 1)
         self.user = user
 
-        # Need to inject attributes on the Array depending on dshape
-        # attributes
+        # In the case of dynd arrays, inject the record attributes.
+        # This is a hack to help get the blaze-web server onto blaze arrays.
+        if isinstance(data, DyNDDataDescriptor):
+            ms = data.dshape[-1]
+            if isinstance(ms, T.Record):
+                props = {}
+                for name in ms.names:
+                    props[name] = _named_property(name)
+                self.__class__ = type('blaze.Array', (Array,), props)
 
+        # Need to inject attributes on the Array depending on dshape
+        # attributes, in cases other than Record
+
+def _named_property(name):
+    @property
+    def getprop(self):
+        return Array(DyNDDataDescriptor(getattr(self._data.dyndarr, name)))
+    return getprop
 
 _template = """
 def __{name}__(self, other):

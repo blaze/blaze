@@ -1,7 +1,7 @@
 import unittest
 
 import sys
-from ...py3help import skipIf
+from ...py2help import skipIf
 import blaze
 from blaze import datashape
 from blaze.datadescriptor import (MemBufDataDescriptor,

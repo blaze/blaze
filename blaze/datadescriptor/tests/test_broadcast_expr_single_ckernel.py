@@ -7,7 +7,7 @@ from blaze import datashape
 from blaze import ckernel
 from blaze.datadescriptor import (data_descriptor_from_ctypes,
                 execute_expr_single, dd_as_py)
-from blaze.py3help import izip
+from blaze.py2help import izip
 
 class TestBroadcastUnarySingleCKernel(unittest.TestCase):
     def setUp(self):

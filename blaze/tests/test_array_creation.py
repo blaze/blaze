@@ -7,7 +7,6 @@ import unittest
 from blaze.tests.common import MayBeUriTest
 from blaze.eval import append
 
-
 class TestEphemeral(unittest.TestCase):
 
     def test_create_from_numpy(self):
@@ -77,6 +76,17 @@ class TestEphemeral(unittest.TestCase):
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1]*10)
 
+    def test_create_record(self):
+        # A simple record array
+        a = blaze.array([(10, 3.5), (15, 2.25)],
+                        dshape="var, {val: int32; flt: float32}")
+        self.assertEqual(dd_as_py(a._data), [{'val': 10, 'flt': 3.5},
+                        {'val': 15, 'flt': 2.25}])
+        # Test field access via attributes
+        aval = a.val
+        self.assertEqual(dd_as_py(aval._data), [10, 15])
+        aflt = a.flt
+        self.assertEqual(dd_as_py(aflt._data), [3.5, 2.25])
 
 class TestPersistent(MayBeUriTest, unittest.TestCase):
 

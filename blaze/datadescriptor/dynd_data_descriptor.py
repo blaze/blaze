@@ -16,11 +16,11 @@ def dynd_descriptor_iter(dyndarr):
 
 class DyNDElementReader(IElementReader):
     def __init__(self, dyndarr, nindex):
-        if nindex > dyndarr.undim:
+        if nindex > nd.ndim_of(dyndarr):
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
-        self._dshape = datashape.dshape(dyndarr.dshape).subarray(nindex)
-        self._c_dtype = nd.dtype(str(self._dshape))
+        self._dshape = datashape.dshape(nd.dshape_of(dyndarr)).subarray(nindex)
+        self._c_dtype = ndt.type(str(self._dshape))
         self.dyndarr = dyndarr
 
     @property
@@ -53,11 +53,11 @@ class DyNDElementReader(IElementReader):
 
 class DyNDElementWriter(IElementWriter):
     def __init__(self, dyndarr, nindex):
-        if nindex > dyndarr.undim:
+        if nindex > nd.ndim_of(dyndarr):
             raise IndexError('Cannot have more indices than dimensions')
         self._nindex = nindex
-        self._dshape = datashape.dshape(dyndarr.dshape).subarray(nindex)
-        self._c_dtype = nd.dtype(str(self._dshape))
+        self._dshape = datashape.dshape(nd.dshape_of(dyndarr)).subarray(nindex)
+        self._c_dtype = ndt.type(str(self._dshape))
         self.dyndarr = dyndarr
 
     @property
@@ -98,12 +98,12 @@ class DyNDElementWriter(IElementWriter):
 
 class DyNDElementReadIter(IElementReadIter):
     def __init__(self, dyndarr):
-        if dyndarr.undim <= 0:
+        if nd.ndim_of(dyndarr) <= 0:
             raise IndexError('Need at least one dimension for iteration')
         self._index = 0
         self._len = len(dyndarr)
-        self._dshape = datashape.dshape(dyndarr.dshape).subarray(1)
-        self._c_dtype = nd.dtype(str(self._dshape))
+        self._dshape = datashape.dshape(nd.dshape_of(dyndarr)).subarray(1)
+        self._c_dtype = ndt.type(str(self._dshape))
         self.dyndarr = dyndarr
 
     @property
@@ -127,14 +127,14 @@ class DyNDElementReadIter(IElementReadIter):
 
 class DyNDElementWriteIter(IElementWriteIter):
     def __init__(self, dyndarr):
-        if dyndarr.undim <= 0:
+        if nd.ndim_of(dyndarr) <= 0:
             raise IndexError('Need at least one dimension for iteration')
         self._index = 0
         self._len = len(dyndarr)
-        ds = datashape.dshape(dyndarr.dshape)
+        ds = datashape.dshape(nd.dshape_of(dyndarr))
         self._dshape = ds.subarray(1)
-        self._c_dtype = nd.dtype(str(self._dshape))
-        self._usebuffer = (nd.dtype(str(ds)) != dyndarr.dtype)
+        self._c_dtype = ndt.type(str(self._dshape))
+        self._usebuffer = (ndt.type(str(ds)) != nd.type_of(dyndarr))
         self._buffer = None
         self._buffer_index = -1
         self.dyndarr = dyndarr
@@ -179,7 +179,7 @@ class DyNDDataDescriptor(IDataDescriptor):
             raise TypeError('object is not a dynd array, has type %s' %
                             type(dyndarr))
         self.dyndarr = dyndarr
-        self._dshape = dshape(dyndarr.dshape)
+        self._dshape = dshape(nd.dshape_of(dyndarr))
 
     @property
     def dshape(self):

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 """ helper functions for common functionality required by different
 parts of the APIs"""
 
-from .py3help import basestring
+from .py2help import basestring
 from .datashape import dshape as _dshape_builder
 
 def _normalize_dshape(ds):

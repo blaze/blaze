@@ -76,7 +76,6 @@ Developer Guide
 ~~~~~~~~~~~~~~~
 
 .. toctree::
-   compiler
    datashape-spec
    extending
 

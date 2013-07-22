@@ -8,43 +8,47 @@ def json_comment(array_url):
 
 def render_dynd_datashape_recursive(base_url, arr, indent):
     result = ''
-    if type(arr) is nd.dtype:
-        dt = arr.value_dtype
+    if isinstance(arr, ndt.type):
+        dt = arr.value_type
     else:
-        dt = arr.dtype.value_dtype
+        dt = nd.type_of(arr).value_type
 
     if dt.kind == 'struct':
         result += '{' + json_comment(base_url)
-        field_names = nd.as_py(dt.field_names)
-        field_types = nd.as_py(dt.field_types)
-        for i, fname in enumerate(field_names):
-            farr = field_types[i]
+        for farr, fname in zip(dt.field_types, dt.field_names):
+            farr = nd.as_py(farr)
             child_url = base_url + '.' + str(fname)
             child_result = render_dynd_datashape_recursive(child_url,
                             farr, indent + '  ')
             result += (indent + '  ' +
                 '<a href="' + child_url + '">' + str(fname) + '</a>'
                 ': ' + child_result + ';')
-            if farr.udtype.kind != 'struct':
+            dt = nd.dtype_of(farr) if isinstance(farr, nd.array) else farr
+            if dt.kind != 'struct':
                 result += json_comment(child_url)
             else:
                 result += '\n'
         result += (indent + '}')
     elif dt.kind == 'uniform_dim':
-        if dt.type_id == 'strided_dim':
-            if (type(arr) is not nd.dtype):
-                result += (str(arr.shape[0]) + ', ')
+        if dt.type_id in ['strided_dim', 'var_dim']:
+            if isinstance(arr, ndt.type):
+                result += 'var, '
             else:
-                result += 'VarDim, '
+                result += ('%d, ' % len(arr))
         elif dt.type_id == 'fixed_dim':
-            result += (str(dt.fixed_dim_size) + ', ')
-        elif dt.type_id == 'var_dim':
-            result += 'VarDim, '
+            result += ('%d, ' % dt.fixed_dim_size)
         else:
             raise TypeError('Unrecognized DyND uniform array type ' + str(dt))
-        if (type(arr) is not nd.dtype):
-            arr = arr.dtype
-        result += render_dynd_datashape_recursive(base_url, arr[0], indent)
+        # Descend to the element type
+        if isinstance(arr, ndt.type):
+            arr = arr.element_type
+        elif len(arr) == 1:
+            # If there's only one element in the array, can
+            # keep using the array sizes in the datashape
+            arr = arr[0]
+        else:
+            arr = nd.type_of(arr).element_type
+        result += render_dynd_datashape_recursive(base_url, arr, indent)
     elif dt.kind in ['bool', 'int', 'uint', 'real', 'datetime', 'json', 'string']:
         result += str(dt.dshape)
     else:
