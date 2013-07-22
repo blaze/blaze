@@ -49,13 +49,22 @@ class cols(object):
         self.names = [str(name) for name in data['names']]
         # Initialize the cols by instatiating the barrays
         for name, dir_ in data['dirs'].items():
+            # The next step step should not be be necessary, but we have
+            # some tables with the long directories, so this is a way
+            # to get rid of the parent dirs.
+            dir_ = os.path.basename(dir_)
+            dir_ = os.path.join(self.rootdir, dir_)
             self._cols[str(name)] = barray(rootdir=dir_, mode=self.mode)
 
     def update_meta(self):
         """Update metainfo about directories on-disk."""
         if not self.rootdir:
             return
-        dirs = dict((n, o.rootdir) for n,o in self._cols.items())
+        # The str() below is to avoid basename to fail when rootdir is None.
+        # It is not clear to me if updating tables with in-memory columns
+        # (rootdir == None) would require a copy or not...
+        dirs = dict((n, os.path.basename(str(o.rootdir)))
+                    for n,o in self._cols.items())
         data = {'names': self.names, 'dirs': dirs}
         rootsfile = os.path.join(self.rootdir, ROOTDIRS)
         with open(rootsfile, 'wb') as rfile:
