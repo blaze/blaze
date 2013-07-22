@@ -14,7 +14,7 @@ btables in a single, virtual one.
 from __future__ import absolute_import
 import numpy as np
 
-from ..py3help import _inttypes, imap, xrange
+from ..py2help import _inttypes, imap, xrange
 _inttypes += (np.integer,)
 
 # BLZ utilities
