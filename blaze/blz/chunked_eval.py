@@ -31,6 +31,8 @@ except ImportError:
 else:
     if numexpr.__version__ >= min_numexpr_version:
         numexpr_here = True
+        from numexpr.expressions import functions as numexpr_functions
+
 
 class Defaults(object):
     """Class to taylor the setters and getters of default values."""
@@ -85,7 +87,10 @@ The flavor for the output object in `eval()`.  It can be 'barray' or
 
 """
 
-defaults.eval_vm = "python"
+if numexpr_here:
+    defaults.eval_vm = "numexpr"
+else:
+    defaults.eval_vm = "python"
 """
 The virtual machine to be used in computations (via `eval`).  It can
 be 'numexpr' or 'python'.  Default is 'numexpr', if installed.  If
