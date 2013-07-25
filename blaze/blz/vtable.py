@@ -117,6 +117,12 @@ class vtable(object):
             if step and step <= 0 :
                 raise NotImplementedError(
                     "step in slice can only be positive")
+        # Queries
+        elif type(key) == str:
+            l = []
+            for t in self.btables:
+                l.append(t[key])
+            return np.array(l, dtype=self.dtype)
 
         # From now on, will only deal with [start:stop:step] slices
 
