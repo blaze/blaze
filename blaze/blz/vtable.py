@@ -19,7 +19,8 @@ _inttypes += (np.integer,)
 
 # BLZ utilities
 from . import utils, attrs, arrayprint
-
+import os, os.path
+from .btable import btable
 
 
 class vtable(object):
@@ -49,7 +50,11 @@ class vtable(object):
     def __init__(self, btables, rootdir=None):
         if rootdir != None:
             raise ValueError("Persistent vtable are not yet supported")
+        if os.path.isdir(btables):
+            btables = self._get_dir(btables)
+        self._open(btables)
 
+    def _open(self, btables):
         self.btables = list(btables)
         # Check that all dtypes in btables are consistent
         self.dtype = dt = btables[0].dtype
@@ -61,6 +66,14 @@ class vtable(object):
         self.cumsizes = np.cumsum(self.sizes)
         self.len = self.cumsizes[-1]
 
+    def _get_dir(self, fsdir):
+        """Open a directory made of BLZ files"""
+        blzs = [ os.path.join(fsdir, d) for d in os.listdir(fsdir)
+                 if os.path.isdir(os.path.join(fsdir, d)) ]
+        print "blzs:", blzs
+        btables = [ btable(rootdir=d) for d in blzs ]
+        return btables
+        
     def __len__(self):
         return self.len
 
