@@ -57,7 +57,7 @@ class Defaults(object):
     @eval_vm.setter
     def eval_vm(self, value):
         self.check_choices('eval_vm', value)
-        if value == "numexpr" and not ca.numexpr_here:
+        if value == "numexpr" and not numexpr_here:
             raise ValueError(
                    "cannot use `numexpr` virtual machine "
                    "(minimum required version is probably not installed)")
