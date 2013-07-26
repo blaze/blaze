@@ -165,8 +165,8 @@ def evaluate(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
                 raise ValueError("arrays must have the same length")
             vlen = len(var)
 
-    if typesize == 0:
-        # All scalars
+    if typesize == 0 or vlen == 0:
+        # All scalars or zero-length objects
         if vm == "python":
             return eval(expression, vars)
         else:
