@@ -50,7 +50,7 @@ class vtable(object):
     def __init__(self, btables, rootdir=None):
         if rootdir != None:
             raise ValueError("Persistent vtable are not yet supported")
-        if os.path.isdir(btables):
+        if type(btables) is str and os.path.isdir(btables):
             btables = self._get_dir(btables)
         self._open(btables)
 
