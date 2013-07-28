@@ -110,7 +110,10 @@ class vtable(object):
         if isinstance(key, _inttypes):
             # Get the index for the btable
             ibt, idx = self.gettable_idx(key)
-            return self.btables[ibt][idx]
+            bt = self.btables[ibt]
+            ret = bt[idx]
+            bt.free_cachemem()
+            return ret
         # Slices
         elif type(key) == slice:
             (start, stop, step) = key.start, key.stop, key.step
@@ -120,8 +123,9 @@ class vtable(object):
         # Queries
         elif type(key) == str:
             l = []
-            for t in self.btables:
-                l.append(t[key])
+            for bt in self.btables:
+                l.append(bt[key])
+                bt.free_cachemem()
             return np.array(l, dtype=self.dtype)
 
         # From now on, will only deal with [start:stop:step] slices
@@ -150,6 +154,8 @@ class vtable(object):
             elif (stable + i + 1) < len(self.btables):
                 sstop = len(self.btables[stable + i + 1])
             eout += sstop - sstart
+            bt.free_cachemem()
+
         if step > 1:
             ra = ra[::step]
         return ra

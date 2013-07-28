@@ -708,6 +708,10 @@ cdef class chunks(object):
   def __len__(self):
     return self.nchunks
 
+  def free_cachemem(self):
+      self.nchunk_cached = -1
+      self.chunk_cached = None
+
   def append(self, chunk_):
     """Append an new chunk to the barray."""
     self._save(self.nchunks, chunk_)
@@ -1712,6 +1716,12 @@ cdef class barray:
     self.idxcache = idxcache
     return 1
 
+  def free_cachemem(self):
+    if type(self.chunks) is not list:
+      self.chunks.free_cachemem()
+    self.idxcache = -1
+    self.blockcache = None
+  
   def getitem_object(self, start, stop=None, step=None):
     """Retrieve elements of type object."""
     import pickle

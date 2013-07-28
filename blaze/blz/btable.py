@@ -924,6 +924,17 @@ class btable(object):
         for name in self.names:
             self.cols[name].flush()
 
+    def free_cachemem(self):
+        """Get rid of internal caches to free memory.
+
+        This call should typically be made after reading from the table in
+        some way or another so as to free the memory used internally to cache
+        data blocks/chunks.
+
+        """
+        for name in self.names:
+            self.cols[name].free_cachemem()
+
     def _get_stats(self):
         """
         _get_stats()
