@@ -36,7 +36,7 @@ def _to_numpy(ds):
 
 class Storage(object):
     """
-    Storage(uri, mode='a', format='blz', permanent=True)
+    Storage(uri, mode='a', permanent=True)
 
     Class to host parameters for persistency properties.
 
@@ -46,10 +46,12 @@ class Storage(object):
         The URI where the dataset will be stored.
     mode : string ('r'ead, 'a'ppend)
         The mode for creating/opening the storage.
-    format : string
-        The format used for storage (only 'blz' supported at this time)
     permanent : bool
         Whether this file should be permanent or not.
+
+    Examples
+    --------
+    >>> store = Storage('blz://blz-store')
 
     """
 
