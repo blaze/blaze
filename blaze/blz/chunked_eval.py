@@ -31,6 +31,8 @@ except ImportError:
 else:
     if numexpr.__version__ >= min_numexpr_version:
         numexpr_here = True
+        from numexpr.expressions import functions as numexpr_functions
+
 
 class Defaults(object):
     """Class to taylor the setters and getters of default values."""
@@ -57,7 +59,7 @@ class Defaults(object):
     @eval_vm.setter
     def eval_vm(self, value):
         self.check_choices('eval_vm', value)
-        if value == "numexpr" and not ca.numexpr_here:
+        if value == "numexpr" and not numexpr_here:
             raise ValueError(
                    "cannot use `numexpr` virtual machine "
                    "(minimum required version is probably not installed)")
@@ -85,7 +87,10 @@ The flavor for the output object in `eval()`.  It can be 'barray' or
 
 """
 
-defaults.eval_vm = "python"
+if numexpr_here:
+    defaults.eval_vm = "numexpr"
+else:
+    defaults.eval_vm = "python"
 """
 The virtual machine to be used in computations (via `eval`).  It can
 be 'numexpr' or 'python'.  Default is 'numexpr', if installed.  If
@@ -160,8 +165,8 @@ def evaluate(expression, vm=None, out_flavor=None, user_dict={}, **kwargs):
                 raise ValueError("arrays must have the same length")
             vlen = len(var)
 
-    if typesize == 0:
-        # All scalars
+    if typesize == 0 or vlen == 0:
+        # All scalars or zero-length objects
         if vm == "python":
             return eval(expression, vars)
         else:
