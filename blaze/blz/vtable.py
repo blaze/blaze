@@ -11,7 +11,7 @@ vtable stands for 'virtual table' and it is a way to group different
 btables in a single, virtual one.
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import numpy as np
 
 from ..py2help import _inttypes, imap, xrange
@@ -61,7 +61,7 @@ class vtable(object):
         for bt in self.btables:
             if dt != bt.dtype:
                 raise TypeError("dtypes are not consistent")
-                
+
         self.sizes = [0] + [len(bt) for bt in btables]
         self.cumsizes = np.cumsum(self.sizes)
         self.len = self.cumsizes[-1]
@@ -70,10 +70,10 @@ class vtable(object):
         """Open a directory made of BLZ files"""
         blzs = [ os.path.join(fsdir, d) for d in os.listdir(fsdir)
                  if os.path.isdir(os.path.join(fsdir, d)) ]
-        print "blzs:", blzs
+        print("blzs:", blzs)
         btables = [ btable(rootdir=d) for d in blzs ]
         return btables
-        
+
     def __len__(self):
         return self.len
 
@@ -85,7 +85,7 @@ class vtable(object):
         if stop:
             iidx += 1
         return itable, iidx
-        
+
     def __getitem__(self, key):
         """
         x.__getitem__(key) <==> x[key]
@@ -104,7 +104,7 @@ class vtable(object):
             integer, slice or list then the typical NumPy indexing operation
             will be performed over the table.
 
-        """        
+        """
 
         # First, check for integer
         if isinstance(key, _inttypes):
@@ -150,7 +150,7 @@ class vtable(object):
             sout = eout
             sstart = 0
             if stable + i + 1 == etable:
-                sstop = eidx 
+                sstop = eidx
             elif (stable + i + 1) < len(self.btables):
                 sstop = len(self.btables[stable + i + 1])
             eout += sstop - sstart
