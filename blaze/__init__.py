@@ -81,6 +81,8 @@ def test(verbosity=1, xunitfile=None, exit=False):
     # Output an xunit file if requested
     if xunitfile:
         argv.extend(['--with-xunit', '--xunit-file=%s' % xunitfile])
+    # Set the logging level to warn
+    argv.extend(['--logging-level=WARN'])
     # Add all 'tests' subdirectories to the options
     rootdir = os.path.dirname(__file__)
     for root, dirs, files in os.walk(rootdir):
