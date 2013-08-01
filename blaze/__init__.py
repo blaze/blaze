@@ -24,7 +24,7 @@ class complex64(ctypes.Structure):
                 ('imag', ctypes.c_float)]
     _blaze_type_ = datashape.complex64
 
-__version__ = '0.0.1'
+__version__ = '0.3dev'
 
 def print_versions():
     """Print all the versions of software that Blaze relies on."""
