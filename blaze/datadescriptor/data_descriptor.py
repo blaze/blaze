@@ -397,12 +397,20 @@ class IDataDescriptor:
         return False
 
     @abc.abstractproperty
+    def is_concrete(self):
+        """Returns True if the data can be returned as an
+           in-memory dynd array. Returns False for deferred
+           expressions and persistent arrays.
+        """
+        raise NotImplementedError
+
+    @abc.abstractproperty
     def dshape(self):
         """
         Returns the datashape for the data behind this datadescriptor.
         Every data descriptor implementation must provide a dshape.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @abc.abstractproperty
     def writable(self):
@@ -410,7 +418,7 @@ class IDataDescriptor:
         Returns True if the data is writable,
         False otherwise.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @abc.abstractproperty
     def immutable(self):
@@ -418,14 +426,14 @@ class IDataDescriptor:
         Returns True if the data is immutable,
         False otherwise.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def appendable(self):
         """
         Returns True if the data is appendable,
         False otherwise.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def __len__(self):
         """
@@ -449,7 +457,7 @@ class IDataDescriptor:
         be implemented. The iterator must return data
         descriptors.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @abc.abstractmethod
     def __getitem__(self, key):
@@ -457,7 +465,16 @@ class IDataDescriptor:
         This does integer/slice indexing, producing another
         data descriptor.
         """
-        raise NotImplemented
+        raise NotImplementedError
+
+    def dynd_arr(self):
+        """Concrete data descriptors must provide their array data
+           as a dynd array, accessible via this method.
+        """
+        if self.concrete:
+            raise NotImplementedError(('Data descriptor of type %s' +
+                        ' claims to be concrete, but did not'
+                        ' override dynd_arr()') % type(self))
 
     @abc.abstractmethod
     def element_reader(self, nindex):
@@ -467,7 +484,7 @@ class IDataDescriptor:
         of indices. The returned object can also
         expose a C-level function to get an element.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def element_writer(self, nindex):
         """
@@ -497,7 +514,7 @@ class IDataDescriptor:
     #    of indices. The returned object can also
     #    expose a C-level function to set an element.
     #    """
-    #    raise NotImplemented
+    #    raise NotImplementedError
 
     @abc.abstractmethod
     def element_read_iter(self):
@@ -509,7 +526,7 @@ class IDataDescriptor:
         expose a C-level chunked iterator interface, similar
         to NumPy nditer.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def element_write_iter(self):
         """
@@ -536,5 +553,5 @@ class IDataDescriptor:
     #    expose a C-level chunked iterator interface, similar
     #    to NumPy nditer.
     #    """
-    #    raise NotImplemented
+    #    raise NotImplementedError
 

@@ -7,6 +7,7 @@ from .data_descriptor import (IElementReader, IElementWriter,
                 IDataDescriptor, buffered_ptr_ctxmgr)
 from .. import datashape
 from ..datashape import dshape
+from ..error import ArrayWriteError
 
 from dynd import nd, ndt, _lowlevel
 
@@ -21,7 +22,7 @@ class DyNDElementReader(IElementReader):
         self._nindex = nindex
         self._dshape = datashape.dshape(nd.dshape_of(dyndarr)).subarray(nindex)
         self._c_dtype = ndt.type(str(self._dshape))
-        self.dyndarr = dyndarr
+        self._dyndarr = dyndarr
 
     @property
     def dshape(self):
@@ -38,14 +39,14 @@ class DyNDElementReader(IElementReader):
                            (len(idx), self.nindex))
         idx = tuple([operator.index(i) for i in idx])
         if count == 1:
-            x = self.dyndarr[idx]
+            x = self._dyndarr[idx]
             # Make it C-contiguous and in native byte order
             x = x.cast(self._c_dtype).eval()
             self._tmpbuffer = x
             return _lowlevel.data_address_of(x)
         else:
             idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
-            x = self.dyndarr[idx]
+            x = self._dyndarr[idx]
             # Make it C-contiguous and in native byte order
             x = x.cast(ndt.make_fixed_dim_dtype(count, self._c_dtype)).eval()
             self._tmpbuffer = x
@@ -58,7 +59,7 @@ class DyNDElementWriter(IElementWriter):
         self._nindex = nindex
         self._dshape = datashape.dshape(nd.dshape_of(dyndarr)).subarray(nindex)
         self._c_dtype = ndt.type(str(self._dshape))
-        self.dyndarr = dyndarr
+        self._dyndarr = dyndarr
 
     @property
     def dshape(self):
@@ -76,16 +77,16 @@ class DyNDElementWriter(IElementWriter):
         # Create a temporary DyND array around the ptr data.
         # Note that we can't provide an owner because the parameter
         # is just the bare pointer.
-        tmp = _lowlevel.py_api.array_from_ptr(self._c_dtype, ptr,
+        tmp = _lowlevel.array_from_ptr(self._c_dtype, ptr,
                         None, 'readonly')
         # Use DyND's assignment to set the values
-        self.dyndarr[idx] = tmp
+        self._dyndarr[idx] = tmp
 
     def buffered_ptr(self, idx):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        dst_arr = self.dyndarr[idx]
+        dst_arr = self._dyndarr[idx]
         buf_arr = dst_arr.cast(self._c_dtype).eval()
         buf_ptr = _lowlevel.data_address_of(buf_arr)
         if buf_ptr == _lowlevel.data_address_of(dst_arr):
@@ -104,7 +105,7 @@ class DyNDElementReadIter(IElementReadIter):
         self._len = len(dyndarr)
         self._dshape = datashape.dshape(nd.dshape_of(dyndarr)).subarray(1)
         self._c_dtype = ndt.type(str(self._dshape))
-        self.dyndarr = dyndarr
+        self._dyndarr = dyndarr
 
     @property
     def dshape(self):
@@ -117,7 +118,7 @@ class DyNDElementReadIter(IElementReadIter):
         if self._index < self._len:
             i = self._index
             self._index = i + 1
-            x = self.dyndarr[i]
+            x = self._dyndarr[i]
             # Make it C-contiguous and in native byte order
             x = x.cast(self._c_dtype).eval()
             self._tmpbuffer = x
@@ -137,7 +138,7 @@ class DyNDElementWriteIter(IElementWriteIter):
         self._usebuffer = (ndt.type(str(ds)) != nd.type_of(dyndarr))
         self._buffer = None
         self._buffer_index = -1
-        self.dyndarr = dyndarr
+        self._dyndarr = dyndarr
 
     @property
     def dshape(self):
@@ -148,7 +149,7 @@ class DyNDElementWriteIter(IElementWriteIter):
 
     def flush(self):
         if self._usebuffer and self._buffer_index >= 0:
-            self.dyndarr[self._buffer_index] = self._buffer
+            self._dyndarr[self._buffer_index] = self._buffer
             self._buffer_index = -1
 
     def __next__(self):
@@ -163,7 +164,7 @@ class DyNDElementWriteIter(IElementWriteIter):
                 self._buffer_index = i
                 return _lowlevel.data_address_of(self._buffer)
             else:
-                return _lowlevel.data_address_of(self.dyndarr[i])
+                return _lowlevel.data_address_of(self._dyndarr[i])
         else:
             raise StopIteration
 
@@ -178,8 +179,18 @@ class DyNDDataDescriptor(IDataDescriptor):
         if not isinstance(dyndarr, nd.array):
             raise TypeError('object is not a dynd array, has type %s' %
                             type(dyndarr))
-        self.dyndarr = dyndarr
+        self._dyndarr = dyndarr
         self._dshape = dshape(nd.dshape_of(dyndarr))
+
+    @property
+    def is_concrete(self):
+        """Returns True, dynd arrays are concrete.
+           TODO: Maybe not always, if the dynd array has an expression type?
+        """
+        return True
+
+    def dynd_arr(self):
+        return self._dyndarr
 
     @property
     def dshape(self):
@@ -187,40 +198,40 @@ class DyNDDataDescriptor(IDataDescriptor):
 
     @property
     def writable(self):
-        return self.dyndarr.access_flags == 'readwrite'
+        return self._dyndarr.access_flags == 'readwrite'
 
     @property
     def immutable(self):
-        return self.dyndarr.access_flags == 'immutable'
+        return self._dyndarr.access_flags == 'immutable'
 
     def __len__(self):
-        return len(self.dyndarr)
+        return len(self._dyndarr)
 
     def __getitem__(self, key):
-        return DyNDDataDescriptor(self.dyndarr[key])
+        return DyNDDataDescriptor(self._dyndarr[key])
 
     def __setitem__(self, key, value):
         # TODO: This is a horrible hack, we need to specify item setting
         #       via well-defined interfaces, not punt to another system.
-        self.dyndarr.__setitem__(key, value)
+        self._dyndarr.__setitem__(key, value)
 
     def __iter__(self):
-        return dynd_descriptor_iter(self.dyndarr)
+        return dynd_descriptor_iter(self._dyndarr)
 
     def element_reader(self, nindex):
-        return DyNDElementReader(self.dyndarr, nindex)
+        return DyNDElementReader(self._dyndarr, nindex)
 
     def element_read_iter(self):
-        return DyNDElementReadIter(self.dyndarr)
+        return DyNDElementReadIter(self._dyndarr)
 
     def element_writer(self, nindex):
         if self.writable:
-            return DyNDElementWriter(self.dyndarr, nindex)
+            return DyNDElementWriter(self._dyndarr, nindex)
         else:
             raise ArrayWriteError('Cannot write to readonly DyND array')
 
     def element_write_iter(self):
         if self.writable:
-            return contextlib.closing(DyNDElementWriteIter(self.dyndarr))
+            return contextlib.closing(DyNDElementWriteIter(self._dyndarr))
         else:
             raise ArrayWriteError('Cannot write to readonly DyND array')

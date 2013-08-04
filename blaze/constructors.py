@@ -89,15 +89,15 @@ def array(obj, dshape=None, caps={'efficient-write': True},
     elif 'efficient-write' in caps and caps['efficient-write'] is True:
         # In-Memory array
         if dshape is None:
-            dd = DyNDDataDescriptor(nd.array(obj))
+            dd = DyNDDataDescriptor(nd.array(obj, access='rw'))
         else:
             # Use the uniform/full dtype specification in dynd depending
             # on whether the datashape has a uniform dim
             dt = ndt.type(str(dshape))
             if dt.ndim > 0:
-                dd = DyNDDataDescriptor(nd.array(obj, type=dt))
+                dd = DyNDDataDescriptor(nd.array(obj, type=dt, access='rw'))
             else:
-                dd = DyNDDataDescriptor(nd.array(obj, dtype=dt))
+                dd = DyNDDataDescriptor(nd.array(obj, dtype=dt, access='rw'))
     elif 'compress' in caps and caps['compress'] is True:
         dt = None if dshape is None else to_numpy_dtype(dshape)
         # BLZ provides compression
@@ -108,7 +108,7 @@ def array(obj, dshape=None, caps={'efficient-write': True},
             dd = BLZDataDescriptor(blz.barray(obj, dtype=dt))
 
     elif isinstance(obj, np.ndarray):
-        dd = DyNDDataDescriptor(nd.array(obj))
+        dd = DyNDDataDescriptor(nd.view(obj))
     elif isinstance(obj, nd.array):
         dd = DyNDDataDescriptor(obj)
     elif isinstance(obj, blz.barray):

@@ -12,7 +12,7 @@ class TestDyNDCKernel(unittest.TestCase):
     def test_single_scalar_assign(self):
         # Make a CKernel that assigns one int64 to one float32
         ck = CKernel(UnarySingleOperation)
-        _lowlevel.py_api.make_assignment_kernel(
+        _lowlevel.make_assignment_kernel(
                         ndt.float32, ndt.int64, 'single',
                         ctypes.addressof(ck.dynamic_kernel_instance))
         # Do an assignment using ctypes
@@ -24,7 +24,7 @@ class TestDyNDCKernel(unittest.TestCase):
     def test_strided_scalar_assign(self):
         # Make a CKernel that assigns fixed-size strings to float32
         ck = CKernel(UnaryStridedOperation)
-        _lowlevel.py_api.make_assignment_kernel(
+        _lowlevel.make_assignment_kernel(
                         ndt.float32, ndt.type('string(15,"A")'), 'strided',
                         ctypes.addressof(ck.dynamic_kernel_instance))
         # Do an assignment using a numpy array

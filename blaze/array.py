@@ -96,7 +96,7 @@ class Array(object):
 def _named_property(name):
     @property
     def getprop(self):
-        return Array(DyNDDataDescriptor(getattr(self._data.dyndarr, name)))
+        return Array(DyNDDataDescriptor(getattr(self._data.dynd_arr(), name)))
     return getprop
 
 _template = """

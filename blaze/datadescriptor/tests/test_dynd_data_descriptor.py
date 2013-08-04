@@ -90,7 +90,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         self.assertEqual(dd_as_py(dd[2]), [6])
 
     def test_element_write(self):
-        a = nd.array([1, 2, 3, 4, 5])
+        a = nd.array([1, 2, 3, 4, 5], access='rw')
         dd = DyNDDataDescriptor(a)
 
         self.assertEqual(dd.dshape, datashape.dshape('5, int32'))
@@ -107,7 +107,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         self.assertEqual(dd_as_py(dd), [1,123,3,456,5])
 
     def test_element_iter_write(self):
-        a = nd.array([1, 2, 3, 4, 5])
+        a = nd.array([1, 2, 3, 4, 5], access='rw')
         dd = DyNDDataDescriptor(a)
 
         self.assertEqual(dd.dshape, datashape.dshape('5, int32'))
@@ -120,7 +120,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
 
 
     def test_element_write_buffered(self):
-        a = nd.array([1, 2, 3, 4, 5]).ucast(ndt.int64)
+        a = nd.array([1, 2, 3, 4, 5], access='rw').ucast(ndt.int64)
         dd = DyNDDataDescriptor(a)
 
         self.assertEqual(dd.dshape, datashape.dshape('5, int64'))
@@ -137,7 +137,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         self.assertEqual(dd_as_py(dd), [1,123,3,456,5])
 
     def test_element_iter_write_buffered(self):
-        a = nd.array([1, 2, 3, 4, 5]).ucast(ndt.int64)
+        a = nd.array([1, 2, 3, 4, 5], access='rw').ucast(ndt.int64)
         dd = DyNDDataDescriptor(a)
 
         self.assertEqual(dd.dshape, datashape.dshape('5, int64'))

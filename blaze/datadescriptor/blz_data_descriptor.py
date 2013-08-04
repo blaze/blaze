@@ -9,8 +9,9 @@ from .data_descriptor import (IElementReader, IElementWriter,
                               buffered_ptr_ctxmgr)
 from .. import datashape
 import numpy as np
+from dynd import nd, ndt
 from blaze import blz
-from .numpy_data_descriptor import NumPyDataDescriptor
+from .dynd_data_descriptor import DyNDDataDescriptor
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing
 # operations.  This is why NumPyDataDescriptor is used for returning
@@ -19,13 +20,13 @@ from .numpy_data_descriptor import NumPyDataDescriptor
 def blz_descriptor_iter(blzarr):
     if blzarr.ndim > 1:
         for el in blzarr:
-            yield NumPyDataDescriptor(el)
+            yield DyNDDataDescriptor(nd.array(el))
     else:
         for i in range(len(blzarr)):
             # BLZ doesn't have a convenient way to avoid collapsing
             # to a scalar, this is a way to avoid that
             el = np.array(blzarr[i], dtype=blzarr.dtype)
-            yield NumPyDataDescriptor(el)
+            yield DyNDDataDescriptor(nd.array(el))
 
 class BLZElementReader(IElementReader):
     def __init__(self, blzarr, nindex, ds):
@@ -176,6 +177,11 @@ class BLZDataDescriptor(IDataDescriptor):
         return self.blzarr.rootdir is not None
 
     @property
+    def is_concrete(self):
+        """Returns False, BLZ arrays are not concrete."""
+        return False
+
+    @property
     def dshape(self):
         # This cannot be cached because the BLZ can change the dshape
         obj = self.blzarr
@@ -205,10 +211,9 @@ class BLZDataDescriptor(IDataDescriptor):
             key = (key,)
         key = tuple([operator.index(i) for i in key])
         blzarr = self.blzarr
-        if len(key) == blzarr.ndim:
-            return NumPyDataDescriptor(np.array(blzarr[key]))
-        else:
-            return NumPyDataDescriptor(blzarr[key])
+        # The returned arrays are temporary buffers,
+        # so must be flagged as readonly.
+        return DyNDDataDescriptor(nd.array(blzarr[key], access='readonly'))
 
     def __setitem__(self, key, value):
         # We decided that BLZ should be read and append only

@@ -36,6 +36,11 @@ class BlazeFuncDescriptor(IDataDescriptor):
         self._args = [argument for argument in unique_args]
 
     @property
+    def is_concrete(self):
+        """Returns False, blaze function arrays are not concrete."""
+        return False
+
+    @property
     def args(self):
         if self._args is None:
             self._reset_args()

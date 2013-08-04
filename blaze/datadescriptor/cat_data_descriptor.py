@@ -64,7 +64,12 @@ class CatDataDescriptor(IDataDescriptor):
             dim_size = operator.index(dd.dshape[0])
             boundary_index.append(dim_size + boundary_index[-1])
         self._boundary_index = boundary_index
- 
+
+    @property
+    def is_concrete(self):
+        """The concatenate data descriptor is not concrete."""
+        return False
+
     @property
     def dshape(self):
         return self._dshape

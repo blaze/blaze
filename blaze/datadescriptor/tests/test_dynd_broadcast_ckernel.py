@@ -17,7 +17,7 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
     def setUp(self):
         # Get a kernel from dynd
         self.ck = CKernel(UnarySingleOperation)
-        _lowlevel.py_api.make_assignment_kernel(
+        _lowlevel.make_assignment_kernel(
                         ndt.float32, ndt.int64, 'single',
                         ctypes.addressof(self.ck.dynamic_kernel_instance))
 

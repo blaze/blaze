@@ -19,7 +19,6 @@ from .datashape import to_numpy, to_numpy_dtype
 from .py2help import urlparse
 from . import blz
 from .datadescriptor import (BLZDataDescriptor,
-                             NumPyDataDescriptor,
                              dd_as_py)
 from .array import Array
 
