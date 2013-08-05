@@ -89,7 +89,7 @@ def array(obj, dshape=None, caps={'efficient-write': True},
     elif 'efficient-write' in caps and caps['efficient-write'] is True:
         # In-Memory array
         if dshape is None:
-            dd = DyNDDataDescriptor(nd.array(obj, access='rw'))
+            dd = DyNDDataDescriptor(nd.asarray(obj, access='rw'))
         else:
             # Use the uniform/full dtype specification in dynd depending
             # on whether the datashape has a uniform dim
