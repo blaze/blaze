@@ -26,7 +26,8 @@ import llvm.core as lc
 from llvm.core import Type, Function, Module
 from llvm import LLVMException
 from .. import llvm_array as lla
-from ..llvm_array import (void_type, intp_type, SCALAR, POINTER, array_kinds, check_array,
+from ..llvm_array import (void_type, intp_type,
+                SCALAR, POINTER, array_kinds, check_array,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .kernelgen import loop_nest
 from ..ckernel import (ExprSingleOperation, JITKernelData,
@@ -45,20 +46,6 @@ for this in array_kinds:
 del this, _g
 
 _invmap = {}
-
-def kind_to_str(kind):
-    global _invmap
-    if not _invmap:
-        for key, value in globals().items():
-            if isinstance(value, int) and value in arg_kinds:
-                _invmap[value] = key
-    return _invmap[kind]
-
-def str_to_kind(str):
-    trial = eval(str)
-    if trial not in arg_kinds:
-        raise ValueError("Invalid Argument Kind")
-    return eval(str)
 
 def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None, i8p_str=False):
     '''
@@ -153,21 +140,23 @@ def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None, i8p_str=False):
         raise TypeError("Unknown type %s" % kind)
     return ctype
 
-# A wrapper around an LLVM Function object
-# But, Blaze Element Kernels may be re-attached to different LLVM modules
-# as needed using the attach method.
-#
-# To inline functions we can either:
-#  1) Execute f.add_attribute(lc.ATTR_ALWAYS_INLINE) to always inline a particular
-#     function 'f'
-#  2) Execute llvm.core.inline_function(callinst) on the output of the
-#     call function when the function is used.
-
-# If dshapes is provided then this will be a seq of data-shape objects
-#  which can be helpful in generating a ctypes-callable wrapper
-#  otherwise the dshape will be inferred from llvm function (but this loses
-#   information like the sign).
 class BlazeElementKernel(object):
+    """
+    A wrapper around an LLVM Function object
+    But, Blaze Element Kernels may be re-attached to different LLVM
+    modules as needed using the attach method.
+
+    To inline functions we can either:
+     1) Execute f.add_attribute(lc.ATTR_ALWAYS_INLINE) to always inline
+        a particular function 'f'
+     2) Execute llvm.core.inline_function(callinst) on the output of the
+        call function when the function is used.
+
+    If dshapes is provided then this will be a seq of data-shape objects
+     which can be helpful in generating a ctypes-callable wrapper
+     otherwise the dshape will be inferred from llvm function (but this
+     loses information like the sign).
+    """
     _func_ptr = None
     _ctypes_func = None
     _unbound_single_ckernel = None
