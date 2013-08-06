@@ -14,7 +14,6 @@ from __future__ import absolute_import
 #
 # - dropping the contents of a given URI.
 
-from ._api_helpers import _normalize_dshape
 from .datashape import to_numpy, to_numpy_dtype
 from .py2help import urlparse
 from . import blz

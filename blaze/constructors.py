@@ -16,12 +16,27 @@ from .array import Array
 from .datadescriptor import (IDataDescriptor,
                 DyNDDataDescriptor, BLZDataDescriptor)
 from .datashape import to_numpy, to_numpy_dtype
+from . import datashape
 from .storage import Storage
+from .py2help import basestring
 
 from dynd import nd, ndt
 import numpy as np
 from . import blz
-from ._api_helpers import _normalize_dshape
+
+def _normalize_dshape(ds):
+    """
+    In the API, when a datashape is provided we want to support
+    them in string form as well. This function will convert from any
+    form we want to support in the API inputs into the internal
+    datashape object, so the logic is centralized in a single
+    place. Any API function that receives a dshape as a parameter
+    should convert it using this function.
+    """
+    if isinstance(ds, basestring):
+        return datashape.dshape(ds)
+    else:
+        return ds
 
 # note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "obj"
