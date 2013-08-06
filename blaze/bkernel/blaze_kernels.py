@@ -69,12 +69,12 @@ class BlazeElementKernel(object):
     _ee = None
     _dshapes = None
     _lifted_cache = {}
-    def __init__(self, func, dshapes=None, shapefunc=None):
+    _shape_func = None
+    def __init__(self, func, dshapes=None):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
                                 " Try a converter method.")
 
-        self._shape_func = shapefunc
         func.add_attribute(lc.ATTR_ALWAYS_INLINE)
         self.func = func
         func_type = func.type.pointee
@@ -160,6 +160,13 @@ class BlazeElementKernel(object):
 
     @property
     def shapefunc(self):
+        """a.shapefunc(*shapes)
+
+        This function maps argument shapes to an output shape,
+        using the dshape signature of the blaze kernel. It does
+        this by matching the TypeVar shapes in the input datashapes
+        which have a corresponding entry in the output datashape.
+        """
         if self._shape_func is None:
             if self.ranks[-1] == 0:
                 self._shape_func = lambda *args: ()
@@ -185,8 +192,6 @@ class BlazeElementKernel(object):
                 self._shape_func = shape_func
 
         return self._shape_func
-
-
 
     @staticmethod
     def fromcfunc(cfunc):
