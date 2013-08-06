@@ -25,7 +25,7 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
         bf = blaze.array([2,3,4],dshape=double)
         cf = add(af,bf)
         df = mul(cf,cf)
-        ubck = df._data.kerneltree.unbound_single_ckernel
+        ubck = df._data.kerneltree.make_unbound_single_ckernel()
 
         # Allocate the result, and run the kernel across the arguments
         result = blaze.zeros(df.dshape)
@@ -69,7 +69,7 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
         cf = add(af,bf)
         df = mul(cf,cf)
         lifted_kernel = df._data.kerneltree.fuse().kernel.lift(1, 'C')
-        ubck = lifted_kernel.unbound_single_ckernel
+        ubck = lifted_kernel.make_unbound_single_ckernel()
 
         # Allocate the result, and run the kernel across the arguments
         result = blaze.zeros(df.dshape)

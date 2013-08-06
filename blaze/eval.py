@@ -42,7 +42,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}):
     else: # in memory path
         result = empty(arr.dshape, caps)
         args = [arg.arr._data for arg in arr._data.args]
-        ubck = kt.unbound_single_ckernel
+        ubck = kt.make_unbound_single_ckernel()
         ck = ubck.bind(result._data, args)
         execute_expr_single(result._data, args,
                             kt.kernel.dshapes[-1],

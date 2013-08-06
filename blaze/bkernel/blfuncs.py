@@ -35,7 +35,6 @@ class KernelTree(object):
     _fused = None
     _funcptr = None
     _ctypes = None
-    _unbound_single_ckernel = None
     _mark = False
     _shape = None
 
@@ -102,8 +101,6 @@ class KernelTree(object):
         kernel = eltree.kernel
         self._funcptr = self._funcptr or kernel.func_ptr
         self._ctypes = self._ctypes or kernel.ctypes_func
-        if all(kind in [blaze_kernels.SCALAR] for kind in kernel.kinds):
-            self._unbound_single_ckernel = self._unbound_single_ckernel or kernel.unbound_single_ckernel
 
     @property
     def func_ptr(self):
@@ -117,11 +114,8 @@ class KernelTree(object):
             self.fuse()
         return self._ctypes
 
-    @property
-    def unbound_single_ckernel(self):
-        if self._unbound_single_ckernel is None:
-            self.fuse()
-        return self._unbound_single_ckernel
+    def make_unbound_single_ckernel(self):
+        return self.fuse().kernel.make_unbound_single_ckernel()
 
     def adapt(self, newrank, newkind):
         """
