@@ -2,8 +2,14 @@
 Release Notes
 ======================
 
-v0.1
--------
+Release 0.2
+-----------
 
-* TODO
+* Brings in dynd as a required dependency
+  for in-memory data.
+
+Release 0.1
+-----------
+
+* Initial preview release
 
