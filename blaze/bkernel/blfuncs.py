@@ -148,15 +148,21 @@ class KernelTree(object):
         body = ",".join(strs)
         return pre + body + post
 
-# Convert list of comma-separated strings into a list of integers showing
-#  the rank of each argument and a list of sets of tuples.  Each set
-#  shows dimensions of arguments that must match by indicating a 2-tuple
-#  where the first integer is the argument number (output is argument -1) and
-#  the second integer is the dimension
-# Example:  If the rank-signature is ['M,L', 'L,K', 'K', '']
-#           then the list of integer ranks is [2, 2, 1, 0]
-#           while the list of connections is [{(0,1),(1,0)},{(1,1),(2,0)}]
 def process_signature(ranksignature):
+    """
+    Convert list of comma-separated strings into a list of integers showing
+    the rank of each argument and a list of sets of tuples.  Each set
+    shows dimensions of arguments that must match by indicating a 2-tuple
+    where the first integer is the argument number (output is argument -1) and
+    the second integer is the dimension
+
+    Examples
+    --------
+
+    >>> from blaze.bkernel.blfuncs import process_signature
+    >>> process_signature(['M,L', 'L,K', 'K', ''])
+    ([2, 2, 1, 0], [set([(2, 0), (1, 1)]), set([(0, 1), (1, 0)])])
+    """
     ranklist = [0 if not arg else len(arg.split(',')) for arg in ranksignature]
 
     varmap = {}
@@ -219,32 +225,31 @@ def convert_kernel(value, key=None):
         else:
             args = ','.join(str(to_numba(ds)) for ds in key[:-1])
             signature = '{0}({1})'.format(str(to_numba(key[-1])), args)
-            krnl = frompyfunc(value, signature)
-            krnl.dshapes = key
+            krnl = frompyfunc(value, signature, dshapes=key)
     elif isinstance(value, FunctionType):
-        # Called whe LLVM Function is used in directly
-        krnl = BlazeElementKernel(value)
-        if key is not None:
-            krnl.dshapes = key
+        # Called the LLVM Function is used in directly
+        krnl = BlazeElementKernel(value, dshapes=key)
     else:
         raise TypeError("Cannot convert value = %s and key = %s" % (value, key))
 
     return krnl, template
 
-# Process type-table dictionary which maps a signature list with
-#   (input-type1, input-type2, output_type) to a kernel into a
-#   lookup-table dictionary which maps an input-only signature list
-#   to a kernel matching those inputs.  The output
-#   is placed with a tuple of the output-type plus the signature
-# So far it assumes the types all have the same rank
-#   and deduces the signature from the first kernel found
-# Also allows the typetable to have "templates" which don't resolve to
-#   kernels and are used if no matching kernel can be found.
-#   templates are list of 2-tuple (input signature data-shape, template)
-#   Numba will be used to jit the template at call-time to create a
-#   BlazeElementKernel.   The input signature is a tuple
-#   of data-shape objects and TypeSets
 def process_typetable(typetable):
+    """
+    Process type-table dictionary which maps a signature list with
+      (input-type1, input-type2, output_type) to a kernel into a
+      lookup-table dictionary which maps an input-only signature list
+      to a kernel matching those inputs.  The output
+      is placed with a tuple of the output-type plus the signature
+    So far it assumes the types all have the same rank
+      and deduces the signature from the first kernel found
+    Also allows the typetable to have "templates" which don't resolve to
+      kernels and are used if no matching kernel can be found.
+      templates are list of 2-tuple (input signature data-shape, template)
+      Numba will be used to jit the template at call-time to create a
+      BlazeElementKernel.   The input signature is a tuple
+      of data-shape objects and TypeSets
+    """
     newtable = {}
     templates = []
     if isinstance(typetable, list):
@@ -260,7 +265,6 @@ def process_typetable(typetable):
             if not isinstance(value, BlazeElementKernel):
                 value, template = convert_kernel(value, key)
             if template is None:
-                value.dshapes = key
                 in_shapes = value.dshapes[:-1]
                 newtable[in_shapes] = value
             else:

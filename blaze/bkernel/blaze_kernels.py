@@ -385,7 +385,7 @@ def get_eltype(argtype, kind):
         return argtype.pointee.elements[0].pointee
 
 # Currently only works for scalar kernels
-def frompyfunc(pyfunc, signature):
+def frompyfunc(pyfunc, signature, dshapes=None):
     import numba
     from ..datashape.util import from_numba
     if isinstance(signature, _strtypes):
@@ -398,8 +398,9 @@ def frompyfunc(pyfunc, signature):
         raise ValueError("Signature must be list, tuple, "
                          "or string, not %s" % type(signature))
     numbafunc = jitter(pyfunc)
-    dshapes = [from_numba(arg) for arg in numbafunc.signature.args]
-    dshapes.append(from_numba(numbafunc.signature.return_type))
+    if dshapes is None:
+        dshapes = [from_numba(arg) for arg in numbafunc.signature.args]
+        dshapes.append(from_numba(numbafunc.signature.return_type))
     krnl = BlazeElementKernel(numbafunc.lfunc, dshapes)
     return krnl
 
