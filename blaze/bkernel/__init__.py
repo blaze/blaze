@@ -6,4 +6,5 @@ compilation with LLVM.
 """
 
 from .blaze_kernels import BlazeElementKernel
-from .blfuncs import KernelTree, BlazeFunc
+from .kernel_tree import KernelTree
+from .blaze_func import BlazeFunc

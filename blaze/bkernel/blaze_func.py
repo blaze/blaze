@@ -1,152 +1,15 @@
 from __future__ import absolute_import
 
-import sys
 import types
-import string
 import re
 
-from ..datashape import (DataShape, broadcastable, to_numba,
-                from_numba_str, TypeSet, matches_typeset)
+from ..datashape import (DataShape, from_numba_str, matches_typeset,
+                to_numba, TypeSet, broadcastable)
 from ..datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
+from ..py2help import _strtypes, PY2
 from .. import llvm_array as lla
-from .blaze_kernels import (Argument, fuse_kerneltree, BlazeElementKernel,
-                frompyfunc)
-from . import blaze_kernels
-from ..py2help import dict_iteritems, _strtypes, PY2
-
-def letters(source=string.ascii_lowercase):
-    k = 0
-    while 1:
-        for a in source:
-            yield a+str(k) if k else a
-        k = k+1
-
-# A KernelTree is just the bare element-wise kernel functions
-# (no arguments).  Any arguments are identified as unique-names
-# in an abstract name-space
-# All nodes in the kernel tree can also be named
-#   or else a unique-name
-# from the abstract name-space will be created.
-# Each KernelTree has a single llvm module name-space
-class KernelTree(object):
-    _stream_of_unique_names = letters()
-    _stream_of_unique_kernels = letters()
-
-    _fused = None
-    _funcptr = None
-    _ctypes = None
-    _mark = False
-    _shape = None
-
-    def __init__(self, kernel, children=[], name=None):
-        assert isinstance(kernel, BlazeElementKernel)
-        for el in children:
-            assert isinstance(el, (KernelTree, Argument))
-        self.kernel = kernel
-        self.children = children
-        if name is None:
-            name = 'node_' + next(self._stream_of_unique_names)
-        self.name = name
-
-    def _reset_marks(self):
-        self._mark = False
-        if not self.leafnode:
-            for child in self.children:
-                if isinstance(child, KernelTree):
-                    child._reset_marks()
-
-    def sorted_nodes(self):
-        """Return depth-first list of unique KernelTree Nodes.
-
-        The root of the tree will be the last node.
-        """
-        nodes = []
-        self._reset_marks()
-        self.visit(nodes)
-        return nodes
-
-    @property
-    def shape(self):
-        if self._shape is None:
-            shapeargs = [child.shape for child in self.children]
-            self._shape = self.kernel.shapefunc(*shapeargs)
-        return self._shape
-
-    @property
-    def leafnode(self):
-        return all(isinstance(child, Argument) for child in self.children)
-
-    def visit(self, nodes):
-        if not self.leafnode:
-            for child in self.children:
-                if isinstance(child, KernelTree):
-                    child.visit(nodes)
-        if not self._mark:
-            nodes.append(self)
-            self._mark = True
-
-    def fuse(self):
-        if self._fused is not None:
-            return self._fused
-        if self.leafnode:
-            self._update_kernelptrs(self)
-            return self
-        krnlobj, children = fuse_kerneltree(self, self.kernel.module)
-        new = KernelTree(krnlobj, children)
-        self._update_kernelptrs(new)
-        return new
-
-    def _update_kernelptrs(self, eltree):
-        self._fused = eltree
-        kernel = eltree.kernel
-        self._funcptr = self._funcptr or kernel.func_ptr
-        self._ctypes = self._ctypes or kernel.ctypes_func
-
-    @property
-    def func_ptr(self):
-        if self._funcptr is None:
-            self.fuse()
-        return self._funcptr
-
-    @property
-    def ctypes_func(self):
-        if self._ctypes is None:
-            self.fuse()
-        return self._ctypes
-
-    def make_unbound_single_ckernel(self):
-        return self.fuse().kernel.make_unbound_single_ckernel()
-
-    def adapt(self, newrank, newkind):
-        """
-        Take this kernel tree and create a new kerneltree adapted
-        so that the it can be the input to another element kernel
-        with rank newrank and kind newkin
-        """
-        if self.leafnode:
-            krnlobj = self.kernel
-            children = self.children
-        else:
-            krnlobj, children = fuse_kerneltree(self, self.kernel.module)
-        typechar = blaze_kernels.orderchar[newkind]
-        new = krnlobj.lift(newrank, typechar)
-        children = [child.lift(newrank, newkind) for child in children]
-        return KernelTree(new, children)
-
-    def __call__(self, *args):
-        return self.ctypes_func(*args)
-
-    def __str__(self):
-        pre = self.name + '('
-        post = ')'
-        strs = []
-        for child in self.children:
-            if isinstance(child, Argument):
-                strs.append('<arg>')
-            else:
-                strs.append(str(child))
-        body = ",".join(strs)
-        return pre + body + post
+from .blaze_kernels import BlazeElementKernel, frompyfunc
+from .kernel_tree import Argument, KernelTree
 
 def process_signature(ranksignature):
     """
@@ -478,7 +341,3 @@ class BlazeFunc(object):
         from ..array import Array
 
         return Array(data, axes, labels, user)
-
-
-
-
