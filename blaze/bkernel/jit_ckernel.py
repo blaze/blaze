@@ -11,6 +11,33 @@ from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
 from ..ckernel import (ExprSingleOperation, JITKernelData,
                 UnboundCKernelFunction)
 
+def args_to_kernel_data_struct(kinds, argtypes):
+    # Build up the kernel data structure. Currently, this means
+    # adding a shape field for each array argument. First comes
+    # the kernel data prefix with a spot for the 'owner' reference added.
+    input_field_indices = []
+    kernel_data_fields = [Type.struct([int8_p_type]*3)]
+    kernel_data_ctypes_fields = [('base', JITKernelData)]
+    for i, (kind, a) in enumerate(izip(kinds, argtypes)):
+        if isinstance(kind, tuple):
+            if kind[0] != lla.C_CONTIGUOUS:
+                raise ValueError('only support C contiguous array presently')
+            input_field_indices.append(len(kernel_data_fields))
+            kernel_data_fields.append(Type.array(
+                            intp_type, len(bek.dshapes[i])-1))
+            kernel_data_ctypes_fields.append(('operand_%d' % i,
+                            c_ssize_t * (len(bek.dshapes[i])-1)))
+        elif kind in [lla.SCALAR, lla.POINTER]:
+            input_field_indices.append(None)
+        else:
+            raise TypeError(("unbound_single_ckernel codegen doesn't " +
+                            "support the parameter kind %r yet") % (k,))
+    # Make an LLVM and ctypes type for the extra data pointer.
+    kernel_data_llvmtype = Type.struct(kernel_data_fields)
+    class kernel_data_ctypestype(ctypes.Structure):
+        _fields_ = kernel_data_ctypes_fields
+    return (kernel_data_llvmtype, kernel_data_ctypestype)
+
 def jit_compile_unbound_single_ckernel(bek):
     """Creates an UnboundCKernelFunction with the ExprSingleOperation prototype.
 
@@ -29,33 +56,14 @@ def jit_compile_unbound_single_ckernel(bek):
     dst_ptr_arg.name = 'dst_ptr'
     src_ptr_arr_arg.name = 'src_ptrs'
     extra_ptr_arg.name = 'extra_ptr'
-    # Build up the kernel data structure. Currently, this means
-    # adding a shape field for each array argument. First comes
-    # the kernel data prefix with a spot for the 'owner' reference added.
-    input_field_indices = []
-    kernel_data_fields = [Type.struct([int8_p_type]*3)]
-    kernel_data_ctypes_fields = [('base', JITKernelData)]
-    for i, (kind, a) in enumerate(izip(bek.kinds, bek.argtypes)):
-        if isinstance(kind, tuple):
-            if kind[0] != lla.C_CONTIGUOUS:
-                raise ValueError('only support C contiguous array presently')
-            input_field_indices.append(len(kernel_data_fields))
-            kernel_data_fields.append(Type.array(
-                            intp_type, len(bek.dshapes[i])-1))
-            kernel_data_ctypes_fields.append(('operand_%d' % i,
-                            c_ssize_t * (len(bek.dshapes[i])-1)))
-        elif kind in [lla.SCALAR, lla.POINTER]:
-            input_field_indices.append(None)
-        else:
-            raise TypeError(("unbound_single_ckernel codegen doesn't " +
-                            "support the parameter kind %r yet") % (k,))
-    # Make an LLVM and ctypes type for the extra data pointer.
-    kernel_data_llvmtype = Type.struct(kernel_data_fields)
-    class kernel_data_ctypestype(ctypes.Structure):
-        _fields_ = kernel_data_ctypes_fields
+
+    # Build llvm and ctypes structures for the kernel data, using
+    # the argument types.
+    kd_llvmtype, kd_ctypestype = args_to_kernel_data_struct(bek.kinds, bek.argtypes)
     # Cast the extra pointer to the right llvm type
     extra_struct = builder.bitcast(extra_ptr_arg,
-                    Type.pointer(kernel_data_llvmtype))
+                    Type.pointer(kd_llvmtype))
+
     # Convert the src pointer args to the
     # appropriate kinds for the llvm call
     args = []
@@ -201,7 +209,7 @@ def jit_compile_unbound_single_ckernel(bek):
     func_ptr = ee.get_pointer_to_function(single_ck_func)
     # Create a function which copies the shape from data
     # descriptors to the extra data struct.
-    if len(kernel_data_ctypes_fields) == 1:
+    if len(kd_ctypestype._fields_) == 1:
         def bind_func(estruct, dst_dd, src_dd_list):
             pass
     else:
@@ -216,6 +224,6 @@ def jit_compile_unbound_single_ckernel(bek):
 
     return UnboundCKernelFunction(
                     ExprSingleOperation(func_ptr),
-                    kernel_data_ctypestype,
+                    kd_ctypestype,
                     bind_func,
                     (ee, func_ptr))
