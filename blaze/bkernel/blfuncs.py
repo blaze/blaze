@@ -201,7 +201,7 @@ def to_dshapes(mystr, output=False):
         result += (from_numba_str(ret),)
     return result
 
-def convert_kernel(value, key=None):
+def convert_kernel(value, dshapes=None):
     template = None
     from llvm.core import FunctionType
     if isinstance(value, tuple): # Ex: ('cpp', source) or ('f8(f8,f8)', _add)
@@ -217,20 +217,20 @@ def convert_kernel(value, key=None):
             raise TypeError("Cannot parse kernel specification %s" % value)
     elif isinstance(value, types.FunctionType):
         # Called when a function is used for value directly
-        # key must be present as the mapping and as datashapes
-        istemplate = any(isinstance(ds, TypeSet) for ds in key[:-1])
+        # dshapes must be present as the mapping and as datashapes
+        istemplate = any(isinstance(ds, TypeSet) for ds in dshapes[:-1])
         if istemplate:
             krnl = None
-            template = (key[:-1], value)
+            template = (dshapes[:-1], value)
         else:
-            args = ','.join(str(to_numba(ds)) for ds in key[:-1])
-            signature = '{0}({1})'.format(str(to_numba(key[-1])), args)
-            krnl = frompyfunc(value, signature, dshapes=key)
+            args = ','.join(str(to_numba(ds)) for ds in dshapes[:-1])
+            signature = '{0}({1})'.format(str(to_numba(dshapes[-1])), args)
+            krnl = frompyfunc(value, signature, dshapes=dshapes)
     elif isinstance(value, FunctionType):
         # Called the LLVM Function is used in directly
-        krnl = BlazeElementKernel(value, dshapes=key)
+        krnl = BlazeElementKernel(value, dshapes=dshapes)
     else:
-        raise TypeError("Cannot convert value = %s and key = %s" % (value, key))
+        raise TypeError("Cannot convert value = %s and dshapes = %s" % (value, dshapes))
 
     return krnl, template
 
@@ -263,7 +263,7 @@ def process_typetable(typetable):
     else:
         for key, value in typetable.items():
             if not isinstance(value, BlazeElementKernel):
-                value, template = convert_kernel(value, key)
+                value, template = convert_kernel(value, dshapes=key)
             if template is None:
                 in_shapes = value.dshapes[:-1]
                 newtable[in_shapes] = value
@@ -304,22 +304,22 @@ class BlazeFunc(object):
 
         Arguments
         =========
-        name  :  String name of the Blaze Function
+        name  : string
+            Name of the Blaze Function.
 
-        typetable :  dictionary mapping argument types to an implementation
-                     kernel which is an instance of a BlazeElementKernel object
+        typetable : dict
+            Dictionary mapping argument types to blaze kernels.
 
-                     The kernel may also be several other objects which will
-                     be converted to the BlazeElementKernel:
-                        python-function:  converted via numba
-                        llvm-function:    directly wrapped
-                        ctypes-function:  wrapped via an llvm function call
+            The kernels must all be BlazeElementKernel instances or
+            convertible to BlazeElementKernel via the following
+            mechanisms:
+                python-function:  converted via numba
+                llvm-function:    directly wrapped
+                ctypes-function:  wrapped via an llvm function call
 
-                    This may also be a list of tuples which will be interpreted as
-                    a dict with the first-argument first converted to dshape depending
-
-        inouts : list of integers corresponding to arguments which are
-                  input and output arguments (NotImplemented)
+        inouts : list of integers
+            A list of the parameter indices which may be written to
+            in addition to read from. (NotImplemented)
         """
         self.name = name
         if typetable is None:
@@ -474,6 +474,7 @@ class BlazeFunc(object):
         axes = args[0].axes
         labels = args[0].labels
 
+        # This import is here to avoid a circular dependency
         from ..array import Array
 
         return Array(data, axes, labels, user)
