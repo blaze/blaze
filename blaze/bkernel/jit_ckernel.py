@@ -138,55 +138,11 @@ def jit_compile_unbound_single_ckernel(bek):
                         Type.pointer(bek.return_type))
         dst_val = builder.call(func, args)
         builder.store(dst_val, dst_ptr)
-    elif kind == lla.POINTER:
-        dst_ptr = builder.bitcast(dst_ptr_arg,
-                        Type.pointer(bek.return_type))
-        builder.call(func, args + [dst_ptr])
-    elif isinstance(kind, tuple):
-        dst_ptr = builder.bitcast(dst_ptr_arg,
-                        Type.pointer(kind[2]))
-        # First get the shape of the output. This will
-        # be a combination of Fixed and TypeVar (Var unsupported
-        # here for now)
-        shape = bek.dshapes[-1][:-1]
-        # Get the llvm array
-        arr_var = builder.alloca(bek.argtypes[-1].pointee)
-        builder.store(dst_ptr,
-                        builder.gep(arr_var,
-                            (lc.Constant.int(int32_type, 0),
-                            lc.Constant.int(int32_type, 0))))
-        for j, sz in enumerate(shape):
-            if isinstance(sz, Fixed):
-                # If the shape is already known at JIT compile time,
-                # insert the constant
-                shape_el_ptr = builder.gep(arr_var,
-                                (lc.Constant.int(int32_type, 0),
-                                 lc.Constant.int(int32_type, 1),
-                                 lc.Constant.int(intp_type, j)))
-                builder.store(lc.Constant.int(intp_type,
-                                        operator.index(sz)),
-                                shape_el_ptr)
-            elif isinstance(sz, TypeVar):
-                # TypeVar types are only known when the kernel is bound,
-                # so copy it from the extra data pointer
-                sz_from_extra_ptr = builder.gep(extra_struct,
-                                (lc.Constant.int(int32_type, 0),
-                                 lc.Constant.int(int32_type,
-                                        input_field_indices[-1]),
-                                 lc.Constant.int(intp_type, j)))
-                sz_from_extra = builder.load(sz_from_extra_ptr)
-                shape_el_ptr = builder.gep(arr_var,
-                                (lc.Constant.int(int32_type, 0),
-                                 lc.Constant.int(int32_type, 1),
-                                 lc.Constant.int(intp_type, j)))
-                builder.store(sz_from_extra, shape_el_ptr)
-            else:
-                raise TypeError(("unbound_single_ckernel codegen doesn't " +
-                                "support dimension type %r") % type(sz))
-        builder.call(func, args + [arr_var])
     else:
-        raise TypeError(("single_ckernel codegen doesn't " +
-                        "support kind %r") % kind)
+        dst_ptr = build_llvm_arg_ptr(builder, dst_ptr_arg,
+                        bek.dshapes[-1], kind, bek.argtypes[-1])
+        builder.call(func, args + [dst_ptr])
+
     builder.ret_void()
 
     #print("Function before optimization passes:")
