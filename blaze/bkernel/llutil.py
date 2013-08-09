@@ -8,9 +8,22 @@ from ..llvm_array import (void_type, intp_type,
 from ..py2help import PY2
 
 int32_type = Type.int(32)
+intp_type = Type.int(8*ctypes.sizeof(ctypes.c_void_p))
 int8_p_type = Type.pointer(Type.int(8))
+
+#typedef void (*expr_single_operation_t)(
+#                char *dst, const char * const *src,
+#                kernel_data_prefix *extra);
 single_ckernel_func_type = Type.function(void_type,
                 [int8_p_type, Type.pointer(int8_p_type), int8_p_type])
+#typedef void (*expr_strided_operation_t)(
+#                char *dst, intptr_t dst_stride,
+#                const char * const *src, const intptr_t *src_stride,
+#                size_t count, kernel_data_prefix *extra);
+strided_ckernel_func_type = Type.function(void_type,
+                [int8_p_type, intp_type,
+                    Type.pointer(int8_p_type), Type.pointer(intp_type),
+                    intp_type, int8_p_type])
 
 def map_llvm_to_ctypes(llvm_type, py_module=None, sname=None, i8p_str=False):
     '''

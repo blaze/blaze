@@ -232,8 +232,8 @@ class BlazeElementKernel(object):
             self._ctypes_func = FUNC_TYPE(self.func_ptr)
         return self._ctypes_func
 
-    def make_unbound_single_ckernel(self):
-        return jit_compile_unbound_single_ckernel(self)
+    def make_unbound_ckernel(self, strided):
+        return jit_compile_unbound_single_ckernel(self, strided=strided)
 
     # Should probably check to ensure kinds still match
     def replace_func(self, func):

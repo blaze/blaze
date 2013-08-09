@@ -7,9 +7,9 @@ from ..llvm_array import (void_type, intp_type,
                 array_kinds, check_array,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
-                map_llvm_to_ctypes)
-from ..ckernel import (ExprSingleOperation, JITKernelData,
-                UnboundCKernelFunction)
+                strided_ckernel_func_type,  map_llvm_to_ctypes)
+from ..ckernel import (ExprSingleOperation, ExprStridedOperation,
+                JITKernelData, UnboundCKernelFunction)
 
 def args_to_kernel_data_struct(kinds, argtypes):
     # Build up the kernel data structure. Currently, this means
@@ -100,21 +100,40 @@ def build_llvm_src_ptrs(builder, src_ptr_arr_arg, dshapes, kinds, argtypes):
         args.append(arg)
     return args
 
-def jit_compile_unbound_single_ckernel(bek):
-    """Creates an UnboundCKernelFunction with the ExprSingleOperation prototype.
+def jit_compile_unbound_single_ckernel(bek, strided):
+    """Creates an UnboundCKernelFunction with either the
+    ExprSingleOperation prototype or the ExprStridedOperation
+    prototype depending on the `strided` parameter.
 
     Parameters
     ----------
     bek : BlazeElementKernel
         The blaze kernel to compile into an unbound single ckernel.
+    strided : bool
+        If true, returns an ExprStridedOperation, otherwise an
+        ExprSingleOperation.
     """
+    inarg_count = len(bek.kinds)-1
     module = bek.module.clone()
-    single_ck_func_name = bek.func.name +"_single_ckernel"
-    single_ck_func = Function.new(module, single_ckernel_func_type,
-                                      name=single_ck_func_name)
-    block = single_ck_func.append_basic_block('entry')
-    builder = lc.Builder.new(block)
-    dst_ptr_arg, src_ptr_arr_arg, extra_ptr_arg = single_ck_func.args
+    if strided:
+        ck_func_name = bek.func.name +"_strided_ckernel"
+        ck_func = Function.new(module, strided_ckernel_func_type,
+                                          name=ck_func_name)
+    else:
+        ck_func_name = bek.func.name +"_single_ckernel"
+        ck_func = Function.new(module, single_ckernel_func_type,
+                                          name=ck_func_name)
+    entry_block = ck_func.append_basic_block('entry')
+    builder = lc.Builder.new(entry_block)
+    if strided:
+        dst_ptr_arg, dst_stride_arg, \
+            src_ptr_arr_arg, src_stride_arr_arg, \
+            count_arg, extra_ptr_arg = ck_func.args
+        dst_stride_arg.name = 'dst_stride'
+        src_stride_arr_arg.name = 'src_strides'
+        count_arg.name = 'count'
+    else:
+        dst_ptr_arg, src_ptr_arr_arg, extra_ptr_arg = ck_func.args
     dst_ptr_arg.name = 'dst_ptr'
     src_ptr_arr_arg.name = 'src_ptrs'
     extra_ptr_arg.name = 'extra_ptr'
@@ -125,6 +144,51 @@ def jit_compile_unbound_single_ckernel(bek):
     # Cast the extra pointer to the right llvm type
     extra_struct = builder.bitcast(extra_ptr_arg,
                     Type.pointer(kd_llvmtype))
+
+    if strided:
+        # Allocate an array of pointer counters for the
+        # strided loop
+        src_ptr_arr_tmp = builder.alloca_array(int8_p_type,
+                        lc.Constant.int(int32_type, inarg_count), 'src_ptr_arr')
+        # Copy the pointers
+        for i in range(inarg_count):
+            builder.store(builder.load(builder.gep(src_ptr_arr_arg,
+                            (lc.Constant.int(int32_type, i),))),
+                          builder.gep(src_ptr_arr_tmp,
+                            (lc.Constant.int(int32_type, i),)))
+        # Get all the src strides
+        src_stride_vals = [builder.load(builder.gep(src_stride_arr_arg,
+                                        (lc.Constant.int(int32_type, i),)))
+                            for i in range(inarg_count)]
+        # Replace src_ptr_arr_arg with this local variable
+        src_ptr_arr_arg = src_ptr_arr_tmp
+
+        # Initialize some more basic blocks for the strided loop
+        looptest_block = ck_func.append_basic_block('looptest')
+        loopbody_block = ck_func.append_basic_block('loopbody')
+        end_block = ck_func.append_basic_block('finish')
+
+        # Finish the entry block by branching
+        # to the looptest block
+        builder.branch(looptest_block)
+
+        # The looptest block continues the loop while counter != 0
+        builder.position_at_end(looptest_block)
+        counter_phi = builder.phi(count_arg.type)
+        counter_phi.add_incoming(count_arg, entry_block)
+        dst_ptr_phi = builder.phi(dst_ptr_arg.type)
+        dst_ptr_phi.add_incoming(dst_ptr_arg, entry_block)
+        dst_ptr_arg = dst_ptr_phi
+        kzero = lc.Constant.int(count_arg.type, 0)
+        pred = builder.icmp(lc.ICMP_NE, counter_phi, kzero)
+        builder.cbranch(pred, loopbody_block, end_block)
+
+        # The loopbody block decrements the counter, and executes
+        # one kernel iteration
+        builder.position_at_end(loopbody_block)
+        kone = lc.Constant.int(counter_phi.type, 1)
+        counter_dec = builder.sub(counter_phi, kone)
+        counter_phi.add_incoming(counter_dec, loopbody_block)
 
     # Convert the src pointer args to the
     # appropriate kinds for the llvm call
@@ -143,10 +207,27 @@ def jit_compile_unbound_single_ckernel(bek):
                         bek.dshapes[-1], kind, bek.argtypes[-1])
         builder.call(func, args + [dst_ptr])
 
+    if strided:
+        # Finish the loopbody block by incrementing all the pointers
+        # and branching to the looptest block
+        dst_ptr_inc = builder.add(dst_ptr_arg, dst_stride_arg)
+        dst_ptr_phi.add_incoming(dst_ptr_inc, loopbody_block)
+        # Increment the src pointers
+        for i in range(inarg_count):
+            src_ptr_val = builder.load(builder.gep(src_ptr_arr_tmp,
+                            (lc.Constant.int(int32_type, i),)))
+            builder.store(builder.add(src_ptr_val, src_stride_vals[i]),
+                          builder.gep(src_ptr_arr_tmp,
+                            (lc.Constant.int(int32_type, i),)))
+        builder.branch(looptest_block)
+
+        # The end block just returns
+        builder.position_at_end(end_block)
+
     builder.ret_void()
 
     #print("Function before optimization passes:")
-    #print(single_ck_func)
+    #print(ck_func)
     #module.verify()
 
     import llvm.ee as le
@@ -157,7 +238,7 @@ def jit_compile_unbound_single_ckernel(bek):
     pms.pm.run(module)
 
     #print("Function after optimization passes:")
-    #print(single_ck_func)
+    #print(ck_func)
 
     # DEBUGGING: Verify the module.
     #module.verify()
@@ -167,10 +248,11 @@ def jit_compile_unbound_single_ckernel(bek):
     #        in linux VMs. Some code is in llvmpy's workarounds
     #        submodule related to this.
     ee = le.EngineBuilder.new(module).mattrs("-avx").create()
-    func_ptr = ee.get_pointer_to_function(single_ck_func)
+    func_ptr = ee.get_pointer_to_function(ck_func)
     # Create a function which copies the shape from data
     # descriptors to the extra data struct.
     if len(kd_ctypestype._fields_) == 1:
+        # If there were no extra data fields, it's a no-op function
         def bind_func(estruct, dst_dd, src_dd_list):
             pass
     else:
@@ -183,8 +265,13 @@ def jit_compile_unbound_single_ckernel(bek):
                 for j, dim_size in enumerate(shape):
                     cshape[j] = dim_size
 
+    if strided:
+        optype = ExprStridedOperation
+    else:
+        optype = ExprSingleOperation
+
     return UnboundCKernelFunction(
-                    ExprSingleOperation(func_ptr),
+                    optype(func_ptr),
                     kd_ctypestype,
                     bind_func,
                     (ee, func_ptr))
