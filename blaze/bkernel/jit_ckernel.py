@@ -210,13 +210,14 @@ def jit_compile_unbound_single_ckernel(bek, strided):
     if strided:
         # Finish the loopbody block by incrementing all the pointers
         # and branching to the looptest block
-        dst_ptr_inc = builder.add(dst_ptr_arg, dst_stride_arg)
+        dst_ptr_inc = builder.gep(dst_ptr_arg, (dst_stride_arg,))
         dst_ptr_phi.add_incoming(dst_ptr_inc, loopbody_block)
         # Increment the src pointers
         for i in range(inarg_count):
             src_ptr_val = builder.load(builder.gep(src_ptr_arr_tmp,
                             (lc.Constant.int(int32_type, i),)))
-            builder.store(builder.add(src_ptr_val, src_stride_vals[i]),
+            src_ptr_inc = builder.gep(src_ptr_val, (src_stride_vals[i],))
+            builder.store(src_ptr_inc,
                           builder.gep(src_ptr_arr_tmp,
                             (lc.Constant.int(int32_type, i),)))
         builder.branch(looptest_block)
