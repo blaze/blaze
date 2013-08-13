@@ -126,7 +126,7 @@ def maybe_remove(persist):
         blaze.drop(persist)
 
 # Create an empty array on-disk
-dname = 'persisted.blz'
+dname = 'blz://persisted.blz'
 store = blaze.Storage(dname)
 maybe_remove(store)
 p = blaze.zeros('0, float64', storage=store)
@@ -140,3 +140,4 @@ p2 = blaze.open(store)
 
 print('After re-opening:', p2)
 
+blaze.drop(dname)
