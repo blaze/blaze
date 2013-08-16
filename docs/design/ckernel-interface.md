@@ -1,6 +1,7 @@
-========================
-Blaze Kernel C Interface
-========================
+Blaze CKernel Interface
+=======================
+
+ * [Blaze Execution System](blaze-execution.md)
 
 This is a draft specification for a low level kernel
 interface ABI. The purpose of this interface is for
@@ -64,28 +65,41 @@ restrictions:
      other code could memcpy it to a location which
      changes that alignment.
 
-As a C struct, this looks like::
+As a C struct, this looks like
 
-    struct kernel_data_prefix;
-    typedef void (*destructor_fn_t)(kernel_data_prefix *);
-    
-    struct kernel_data_prefix {
-        void *function;
-        destructor_fn_t destructor;
-    };
+```cpp
+struct kernel_data_prefix;
+typedef void (*destructor_fn_t)(kernel_data_prefix *);
 
-    struct kernel_data {
-        kernel_data_prefix base;
-        /* Additional kernel data... */
-    };
+struct kernel_data_prefix {
+    void *function;
+    destructor_fn_t destructor;
+};
+
+struct kernel_data {
+    kernel_data_prefix base;
+    /* Additional kernel data... */
+};
+```
 
 An example kernel function prototype is a single assignment kernel,
 which assigns one value from a source memory location
-to a destination.::
+to a destination.
 
-    typedef void (*unary_single_operation_t)(
-                    char *dst, const char *src,
-                    kernel_data_prefix *extra);
+```cpp
+typedef void (*unary_single_operation_t)(
+                char *dst, const char *src,
+                kernel_data_prefix *extra);
+```
+
+Error Handling
+--------------
+
+Requires specification and implementation!
+
+How errors are handled in ckernels needs to be defined. In DyND,
+this is done with C++ exceptions, but this does not appear to be
+reasonable in a cross-platform/cross-language way.
 
 Dynamic Kernel Instance
 -----------------------
@@ -93,13 +107,15 @@ Dynamic Kernel Instance
 Blaze kernels may be allocated on the stack or the heap,
 but for communicating kernels across library boundaries,
 a standard way to pass the kernel and memory allocation
-information is needed.::
+information is needed.
 
-    struct dynamic_kernel_instance {
-        kernel_data_prefix *kernel;
-        size_t kernel_size;
-        void (*free_func)(void *);
-    };
+```cpp
+struct dynamic_kernel_instance {
+    kernel_data_prefix *kernel;
+    size_t kernel_size;
+    void (*free_func)(void *);
+};
+```
 
 In this structure, 'kernel' is a pointer to the
 kernel object as described above, 'kernel_size'
@@ -114,34 +130,36 @@ Example Usage
 
 Here's a simple example of how third-party C code might call
 the Blaze API to get a kernel, call the kernel, and free
-the kernel data.::
+the kernel data.
 
-    /* Blaze API function that returns a unary single kernel */
-    int blaze_get_some_kernel_function(...,
-                    dynamic_kernel_instance *out_kernel);
+```cpp
+/* Blaze API function that returns a unary single kernel */
+int blaze_get_some_kernel_function(...,
+                dynamic_kernel_instance *out_kernel);
 
-    int apply_blaze_kernel(char *dst, const char *src, ...)
-    {
-        dynamic_kernel_instance k;
-        unary_single_operation_t kfunc;
+int apply_blaze_kernel(char *dst, const char *src, ...)
+{
+    dynamic_kernel_instance k;
+    unary_single_operation_t kfunc;
 
-        /* Request a kernel from blaze */
-        if (blaze_get_some_kernel_function(..., &k) < 0) {
-            /* propagate error */
-            return -1;
-        }
-
-        /* Get the kernel function pointer and call it */
-        kfunc = (unary_single_operation_t)k.kernel->function;
-        kfunc(dst, src, k.kernel)
-
-        /* To free the kernel, we must destruct it AND free its memory */
-        k.kernel->destructor(k.kernel);
-        k.free_func(k.kernel);
-
-        /* return success */
-        return 0;
+    /* Request a kernel from blaze */
+    if (blaze_get_some_kernel_function(..., &k) < 0) {
+        /* propagate error */
+        return -1;
     }
+
+    /* Get the kernel function pointer and call it */
+    kfunc = (unary_single_operation_t)k.kernel->function;
+    kfunc(dst, src, k.kernel)
+
+    /* To free the kernel, we must destruct it AND free its memory */
+    k.kernel->destructor(k.kernel);
+    k.free_func(k.kernel);
+
+    /* return success */
+    return 0;
+}
+```
 
 Example Kernel Factories
 ------------------------
@@ -151,4 +169,4 @@ presently. The documentation for kernels there provide some
 examples of how kernels can be constructed and how a kernel
 factory API might look:
 
-https://github.com/ContinuumIO/dynd/blob/master/documents/kernels.md
+https://github.com/ContinuumIO/libdynd/blob/master/documents/kernels.md
