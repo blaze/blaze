@@ -326,6 +326,11 @@ class DataShape(Mono):
         else:
             self.name = None
 
+        ###
+        # TODO: Why are low-level concepts like strides and alignment on
+        # TODO: the datashape?
+        ###
+
         # Calculate the C itemsize and strides, which
         # are based on a C-order contiguous assumption
         c_itemsize = getattr(parameters[-1], 'c_itemsize', None)
@@ -1033,6 +1038,29 @@ def from_numpy(shape, dt):
         return measure
     else:
         return DataShape(parameters=(tuple(map(Fixed, shape))+(measure,)))
+
+#------------------------------------------------------------------------
+# Python Compatibility
+#------------------------------------------------------------------------
+
+def from_python_scalar(scalar):
+    """
+    Return a datashape ctype for a python scalar.
+    """
+    if isinstance(scalar, int):
+        return int_
+    elif isinstance(scalar, float):
+        return double
+    elif isinstance(scalar, complex):
+        return complex128
+    elif isinstance(scalar, (str, unicode)):
+        return string
+    elif isinstance(scalar, datetime.timedelta):
+        return timedelta64
+    elif isinstance(scalar, datetime.datetime):
+        return datetime64
+    else:
+        return pyobj
 
 #------------------------------------------------------------------------
 # Printing

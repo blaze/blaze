@@ -5,17 +5,10 @@ from __future__ import absolute_import
 #  indexing and basic interpretation of bytes
 #
 
-import sys
-import ctypes
-
-from . import blz
-import numpy as np
 from .datashape import dshape, coretypes as T
-from .datashape.util import to_ctypes
 from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor)
-from .executive import simple_execute_write
 from ._printing import array2string as _printer
 from .py2help import exec_
 from .bkernel import bmath
@@ -29,6 +22,31 @@ from .bkernel import bmath
 #   axis and dimension labels
 #   user-defined meta-data (whatever are needed --- provenance propagation)
 class Array(object):
+
+    def __init__(self, data, axes=None, labels=None, user={}):
+        if not isinstance(data, IDataDescriptor):
+            raise TypeError(('Constructing a blaze array directly '
+                            'requires a data descriptor, not type '
+                            '%r') % (type(data)))
+        self._data = data
+        self.axes = axes or [''] * (len(self._data.dshape) - 1)
+        self.labels = labels or [None] * (len(self._data.dshape) - 1)
+        self.user = user
+        self.expr = None
+
+        # In the case of dynd arrays, inject the record attributes.
+        # This is a hack to help get the blaze-web server onto blaze arrays.
+        if isinstance(data, DyNDDataDescriptor):
+            ms = data.dshape[-1]
+            if isinstance(ms, T.Record):
+                props = {}
+                for name in ms.names:
+                    props[name] = _named_property(name)
+                self.__class__ = type('blaze.Array', (Array,), props)
+
+        # Need to inject attributes on the Array depending on dshape
+        # attributes, in cases other than Record
+
     @property
     def dshape(self):
         return self._data.dshape
@@ -70,28 +88,6 @@ class Array(object):
 
         return pre + body + post
 
-    def __init__(self, data, axes=None, labels=None, user={}):
-        if not isinstance(data, IDataDescriptor):
-            raise TypeError(('Constructing a blaze array directly '
-                            'requires a data descriptor, not type '
-                            '%r') % (type(data)))
-        self._data = data
-        self.axes = axes or [''] * (len(self._data.dshape) - 1)
-        self.labels = labels or [None] * (len(self._data.dshape) - 1)
-        self.user = user
-
-        # In the case of dynd arrays, inject the record attributes.
-        # This is a hack to help get the blaze-web server onto blaze arrays.
-        if isinstance(data, DyNDDataDescriptor):
-            ms = data.dshape[-1]
-            if isinstance(ms, T.Record):
-                props = {}
-                for name in ms.names:
-                    props[name] = _named_property(name)
-                self.__class__ = type('blaze.Array', (Array,), props)
-
-        # Need to inject attributes on the Array depending on dshape
-        # attributes, in cases other than Record
 
 def _named_property(name):
     @property
