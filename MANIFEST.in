@@ -1,0 +1,4 @@
+include *.md *.py
+recursive-include docs *.ipynb *.txt *.py Makefile *.rst
+recursive-include blaze/blz *.c *.h
+prune docs/_build
