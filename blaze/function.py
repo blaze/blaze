@@ -1,47 +1,24 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-import sys
+from .overloading import overload
 
-class Dispatcher(object):
-    """Dispatcher for overloaded functions"""
-    def __init__(self):
-        self.overloads = {}
-
-    def add_overload(self, f, signature, kwds):
-        # TODO: assert signature is compatible with current signatures
-        self.overloads[f] = (signature, kwds)
-
-    def dispatch(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def __repr__(self):
-        f = iter(self.overloads).next()
-        return '<%s: %s>' % (f.__name__, list(self.overloads.itervalues()))
-
-def overload(signature, func=None, **kwds):
+def elementwise(signature):
     """
-    Overload `func` with new signature, or find this function in the local
-    scope with the same name.
-
-        @overload('Array[dtype, ndim] -> dtype')
-        def myfunc(...):
-            ...
+    Define an element-wise kernel.
     """
     def decorator(f):
-        dispatcher = func or sys._getframe(1).f_locals.get(f.__name__)
-        dispatcher = dispatcher or Dispatcher()
-        dispatcher.add_overload(f, signature, kwds)
-        return dispatcher
+        return overload(signature)(f, elementwise=True)
+
+    if not isinstance(signature, basestring):
+        # signature
+        f = signature
+        signature = None
+        return decorator(f)
 
     return decorator
 
-def overloadable(f):
-    """
-    Make a function overloadable, useful if there's no useful defaults to
-    overload on
-    """
-    return Dispatcher()
 
 def best_match(overloads, typing_context, partial_solution):
     raise NotImplementedError
+
