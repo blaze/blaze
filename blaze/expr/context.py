@@ -2,8 +2,7 @@
 Graph expression context.
 """
 
-from blaze import array
-from blaze.datashape import coretypes
+import blaze
 
 class ExprContext(object):
     """Context for blaze graph expressions"""
@@ -31,5 +30,5 @@ def unify(signature, *contexts):
 
 def initialize(context, term):
     """Initialize an expression context with a graph term"""
-    if isinstance(term, array.Array):
+    if isinstance(term, blaze.Array):
         context.inputs.append(term)

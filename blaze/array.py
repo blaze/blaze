@@ -10,8 +10,9 @@ from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor)
 from ._printing import array2string as _printer
+from blaze.ops import ufuncs
 from .py2help import exec_
-from .bkernel import bmath
+# from .bkernel import bmath
 
 # An Array contains:
 #   DataDescriptor
@@ -95,17 +96,9 @@ def _named_property(name):
         return Array(DyNDDataDescriptor(getattr(self._data.dynd_arr(), name)))
     return getprop
 
-_template = """
-def __{name}__(self, other):
-    return bmath.{name}(self, other)
-"""
-
 def inject_special(names):
-    dct = {'bmath':bmath}
     for name in names:
-        newname = '__%s__' % name
-        exec_(_template.format(name=name), dct)
-        setattr(Array, newname, dct[newname])
+        setattr(Array, '__%s__' % name, getattr(ufuncs, name))
 
 inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
                 'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])

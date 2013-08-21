@@ -5,11 +5,11 @@ the entry point to graph construction.
 
 from collections import Iterable
 
-from blaze import array
+import blaze
 from blaze.datashape import coretypes as T
 from blaze.bkernel import BlazeFunc
 
-from .graph import Array, Constant, Kernel
+from .graph import ArrayOp, ConstantOp, KernelOp
 from .context import ExprContext, unify
 from .conf import conf
 
@@ -34,14 +34,14 @@ def construct(kernel, *args):
     # Build type unification parameters
 
     for i, arg in enumerate(args):
-        if isinstance(arg, array.Array):
+        if isinstance(arg, blaze.Array):
             # Compose new expression using previously constructed expression
             if arg.expr:
                 params.append(arg.expr)
                 continue
 
-        if isinstance(arg, array.Array):
-            term = Array(arg.dshape, arg)
+        if isinstance(arg, blaze.Array):
+            term = blaze.Array(arg.dshape, arg)
         else:
             term = from_value(arg)
 
@@ -54,13 +54,13 @@ def construct(kernel, *args):
     ## TODO:
     # dshape = reconstruct(kernel, params)
     dshape = T.promote_cvals(*[term.dshape for term, context in params])
-    return Kernel(dshape, *args)
+    return KernelOp(dshape, *args)
 
 def from_value(value):
-    if isinstance(value, array.Array):
-        ctor = Array
+    if isinstance(value, blaze.Array):
+        ctor = ArrayOp
     else:
-        ctor = Constant
+        ctor = ConstantOp
 
     return ctor(T.from_python_scalar(value), value)
 

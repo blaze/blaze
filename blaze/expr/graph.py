@@ -32,6 +32,6 @@ class Op(object):
 # ______________________________________________________________________
 # Graph constructors
 
-Array    = partial(Op, array)
-Constant = partial(Op, const)
-Kernel   = partial(Op, kernel)
+ArrayOp    = partial(Op, array)
+ConstantOp = partial(Op, const)
+KernelOp   = partial(Op, kernel)
