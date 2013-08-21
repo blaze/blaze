@@ -9,6 +9,7 @@ import sys
 import shutil
 import textwrap
 from os.path import join
+from functools import partial
 
 from distutils.core import Command, setup
 from distutils.sysconfig import get_python_inc, get_config_var
@@ -238,22 +239,25 @@ class CleanCommand(Command):
 # Parser
 #------------------------------------------------------------------------
 
-class BuildParser(build):
-    """ Build the parse tables for datashape """
+def make_build(build_command):
+    """Rebuild parse tables. Result must be a class..."""
 
-    def run(self):
-        # run the default build command first
-        build.run(self)
-        print('Rebuilding the datashape parser...')
-        # add the build destination to the module path so we can load it
-        sys.path.insert(0, self.build_lib)
-        rebuild_parse_tables()
+    class BuildParser(build_command):
+        """ Build the parse tables for datashape """
+
+        def run(self):
+            # run the default build command first
+            build_command.run(self)
+            print('Rebuilding the datashape parser...')
+            # add the build destination to the module path so we can load it
+            sys.path.insert(0, self.build_lib)
+            rebuild_parse_tables()
+
+    return BuildParser
 
 def rebuild_parse_tables():
     from blaze.datashape.parser import rebuild
     rebuild()
-
-rebuild_parse_tables()
 
 #------------------------------------------------------------------------
 # Setup
@@ -286,8 +290,8 @@ setup(
     packages=packages,
     ext_modules=extensions,
     cmdclass = {
-        'build_ext' : build_ext,
+        'build_ext' : make_build(build_ext),
         'clean'     : CleanCommand,
-        'build'     : BuildParser
+        'build'     : make_build(build),
     }
 )
