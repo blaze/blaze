@@ -5,7 +5,8 @@ __all__ = [
     'ArrayWriteError'
 ]
 
-# TODO: BlazeException base class ?
+class BlazeException(Exception):
+    """Exception that all blaze exceptions derive from"""
 
 #------------------------------------------------------------------------
 # Generic Syntax Errors
@@ -20,7 +21,7 @@ syntax_error = """
 {error}: {msg}
 """
 
-class CustomSyntaxError(Exception):
+class CustomSyntaxError(BlazeException):
     """
     Makes datashape parse errors look like Python SyntaxError.
     """
@@ -58,23 +59,30 @@ class CustomSyntaxError(Exception):
         return str(self)
 
 #------------------------------------------------------------------------
+# Typing errors
+#------------------------------------------------------------------------
+
+class UnificationError(BlazeException):
+    """Raised when two blaze types cannot be unified"""
+
+#------------------------------------------------------------------------
 # Array-related errors
 #------------------------------------------------------------------------
 
-class StreamingDimensionError(Exception):
+class StreamingDimensionError(BlazeException):
     """
     An error for when a streaming dimension is accessed
     like a dimension of known size.
     """
     pass
 
-class BroadcastError(Exception):
+class BroadcastError(BlazeException):
     """
     An error for when arrays can't be broadcast together.
     """
     pass
 
-class ArrayWriteError(Exception):
+class ArrayWriteError(BlazeException):
     """
     An error for when trying to write to an array which is read only.
     """
