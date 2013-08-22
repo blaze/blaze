@@ -21,8 +21,44 @@ same name.
 """
 
 from itertools import chain
+from functools import partial
+
 from blaze import error
-from .coretypes import DataShape, TypeVar, promote, free, type_constructor
+from blaze.util import IdentityDict
+from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, promote, free,
+                                       type_constructor, IntegerConstant,
+                                       StringConstant, CType)
+
+#------------------------------------------------------------------------
+# Entry point
+#------------------------------------------------------------------------
+
+def unify(constraints, broadcasting):
+    """
+    Unify a set of constraints and return a concrete solution
+
+        >>> import blaze
+        >>> d1 = blaze.dshape('10, int32')
+        >>> d2 = blaze.dshape('T, float32')
+        >>> [result] = unify([(d1, d2)], [True])
+        >>> result
+        dshape("10, float64")
+    """
+    # Compute solution to a set of constraints
+    constraints, b_env = normalize(constraints, broadcasting)
+    solution = unify_constraints(constraints)
+
+    # Compute a type substitute with concrete types from the solution
+    # TODO: incorporate broadcasting environment during reification
+    substitution = reify(solution)
+
+    # Reify and promote the datashapes
+    sub = partial(substitute, substitution)
+    return [promote_units(sub(ds1), sub(ds2)) for ds1, ds2 in constraints]
+
+#------------------------------------------------------------------------
+# Unification
+#------------------------------------------------------------------------
 
 def normalize(constraints, broadcasting):
     """
@@ -45,7 +81,7 @@ def normalize(constraints, broadcasting):
     for broadcast, (ds1, ds2) in zip(broadcasting, constraints):
         if broadcast:
             # Create type variables for leading dimensions
-            len1, len2 = len(ds1.params), len(ds2.params)
+            len1, len2 = len(ds1.parameters), len(ds2.parameters)
             leading = tuple(TypeVar('Broadcasting%d' % i)
                                 for i in range(abs(len1 - len2)))
 
@@ -61,7 +97,7 @@ def normalize(constraints, broadcasting):
     return result, broadcast_env
 
 
-def unify(constraints, solution=None):
+def unify_constraints(constraints, solution=None):
     """
     Blaze type unification. Two types unify if:
 
@@ -100,7 +136,7 @@ def unify(constraints, solution=None):
         of bindings (a substitution) from type variables to type sets.
     """
     if solution is None:
-        solution = {}
+        solution = IdentityDict()
         for t1, t2 in constraints:
             for freevar in chain(free(t1), free(t2)):
                 solution[freevar] = set()
@@ -119,11 +155,19 @@ def unify_single(t1, t2, solution):
         solution[t1] = solution[t2] = solution[t1] | solution[t2]
     elif isinstance(t1, TypeVar):
         if t1 in free(t2):
-            pass
+            raise error.UnificationError("Cannot unify recursive types")
         solution[t1].add(t2)
     elif isinstance(t2, TypeVar):
         unify_single(t2, t1, solution)
+    elif not free(t1) and not free(t2):
+        # No need to recurse, this will be caught by promote()
+        pass
     else:
+        if not isinstance(t1, Mono) or not isinstance(t2, Mono):
+            if t1 != t2:
+                raise error.UnificationError("%s != %s" % (t1, t2))
+            return
+
         args1, args2 = t1.parameters, t2.parameters
         tcon1, tcon2 = type_constructor(t1), type_constructor(t2)
 
@@ -153,22 +197,56 @@ def reify(solution, S=None):
         Returns a solution reduced to concrete types only.
     """
     if S is None:
-        S = {}
+        S = IdentityDict()
 
     for typevar, t in solution.iteritems():
         if typevar in S:
             continue
 
         typeset = solution[typevar]
-        freevars = set(chain(free(t) for t in typeset))
+        freevars = set(chain(*[free(t) for t in typeset]))
         if freevars:
             # Reify dependencies first
             reify(dict((v, solution[v]) for v in freevars), S)
             typeset = set(substitute(S, t) for t in typeset)
 
-        S[typevar] = promote(*typeset)
+        S[typevar] = promote_units(*typeset)
 
     return S
+
+
+def promote_units(*units):
+    """
+    Promote unit types, which are either CTypes or Constants.
+    """
+    unit = units[0]
+    if len(units) == 1:
+        return unit
+    elif isinstance(unit, IntegerConstant):
+        assert all(isinstance(u, IntegerConstant) for u in units)
+        if len(set(units)) > 2:
+            raise error.UnificationError(
+                "Got multiple differing integer constants", units)
+        else:
+            left, right = units
+            if left == IntegerConstant(1):
+                return right
+            elif right == IntegerConstant(1):
+                return left
+            else:
+                assert left == right
+                return left
+    elif isinstance(unit, StringConstant):
+        for u in units:
+            if u != unit:
+                raise error.UnificationError(
+                    "Cannot unify string constants %s and %s" % (unit, u))
+
+        return unit
+
+    else:
+        # Promote CTypes
+        return promote(*units)
 
 
 def substitute(solution, ds):
@@ -177,6 +255,13 @@ def substitute(solution, ds):
     """
     if isinstance(ds, TypeVar):
         return solution[ds]
+    elif not isinstance(ds, Mono) or isinstance(ds, CType):
+        return ds
     else:
         typecon = type_constructor(ds)
         return typecon(*[substitute(solution, p) for p in ds.parameters])
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

@@ -467,6 +467,7 @@ class DataShape(Mono):
 class Enum(DataShape):
 
     def __init__(self, name, *elts):
+        self.parameters = (name,) + elts
         self.name = name
         self.elts = elts
 
@@ -502,6 +503,7 @@ class Option(DataShape):
         if not params[0].cls == MEASURE:
             raise TypeError('Option only takes measure argument')
 
+        self.parameters = (params,)
         self.ty = params[0]
 
     @property
@@ -533,6 +535,7 @@ class CType(Mono):
         self._itemsize = itemsize
         self._alignment = alignment
         Type.register(name, self)
+        self.parameters = (name,)
 
     @classmethod
     def from_numpy_dtype(self, dt):
@@ -971,12 +974,14 @@ Type.register('string', String())
 # Concrete types & Promotion
 #------------------------------------------------------------------------
 
-def promote(*types):
-    """Promote a series of CType types"""
-    for ctype in types:
-        assert isinstance(ctype, CType)
+def promote(a, b):
+    """Promote a series of CType or DataShape types"""
+    if isinstance(a, DataShape):
+        assert isinstance(b, DataShape)
+        assert a.parameters[:-1] == b.parameters[:-1]
+        return DataShape(a.parameters[:-1] + (promote(a.measure, b.measure),))
 
-    return CType.from_numpy_dtype(np.result_type(*map(to_numpy, types)))
+    return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))
 
 #------------------------------------------------------------------------
 # NumPy Compatibility
@@ -1126,9 +1131,14 @@ def free(ds):
 
     return result
 
+# Types are lacking uniformity :(
+datashape_type_constructor = lambda *args: DataShape(args)
+
 def type_constructor(ds):
     """
     Get the type constructor for the blaze type (Mono).
     The type constructor indicates how types unify (see unification.py).
     """
+    if isinstance(ds, DataShape):
+        return datashape_type_constructor
     return type(ds)

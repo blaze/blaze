@@ -21,7 +21,7 @@ def elementwise(signature):
     Define an element-wise kernel.
     """
     def decorator(f):
-        return overload(signature)(f, elementwise=True)
+        return overload(signature, elementwise=True)(f)
 
     if not isinstance(signature, basestring):
         # signature

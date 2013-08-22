@@ -1,4 +1,5 @@
 import inspect
+import UserDict
 
 def flatargs(f, args, kwargs):
     """
@@ -61,6 +62,42 @@ def flatargs(f, args, kwargs):
         unreachable()
 
     return args + tuple(extra_args)
+
+
+class IdentityDict(UserDict.DictMixin):
+    """
+    Map mapping objects on identity to values
+
+        >>> d = IdentityDict({'a': 2, 'b': 3})
+        >>> sorted(d.items())
+        [('a', 2), ('b', 3)]
+
+        >>> class AlwaysEqual(object):
+        ...     def __eq__(self, other):
+        ...         return True
+        ...     def __repr__(self):
+        ...         return "eq"
+        ...
+        >>> x, y = AlwaysEqual(), AlwaysEqual()
+        >>> d[x] = 4 ; d[y] = 5
+        >>> sorted(d.items())
+        [('a', 2), ('b', 3), (eq, 4), (eq, 5)]
+    """
+
+    def __init__(self, d=None):
+        self.data = {}          # id(key) -> value
+        self.ks = set()         # set([key])
+        self.update(d or [])
+
+    def __getitem__(self, key):
+        return self.data[id(key)]
+
+    def __setitem__(self, key, value):
+        self.data[id(key)] = value
+        self.ks.add(key)
+
+    def keys(self):
+        return list(self.ks)
 
 
 if __name__ == '__main__':
