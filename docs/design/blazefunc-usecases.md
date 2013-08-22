@@ -171,3 +171,22 @@ dimensions are handled.
 
 One big difference for blaze over numpy is the addition of variable-sized
 dimensions
+
+Reshaping
+---------
+
+A function that maps a given array to another array with different dimensions:
+
+`reshape :: {shapeD} (shapeS, T) -> (shapeD, T)`
+
+Reshapes the original array into a different shape. In order for this to work
+the source shape (shapeS) and the destination (shapeD) must be compatible.
+This is basically the same concept as a NumpPy's reshape.
+
+Note that a number of Blaze features will place new constraints in what it means
+'compatible shapes'. Variable sized dimensions as well as the ability to grow an
+array may place limits to reshaping.
+
+ravel, flatten can be seen as related in NumPy as well.
+
+
