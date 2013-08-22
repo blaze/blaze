@@ -17,6 +17,11 @@ from ..py2help import _inttypes, _strtypes, unicode
 # Type Metaclass
 #------------------------------------------------------------------------
 
+###########################################################################
+### TODO: itemsize and alignment should not be here, but should rather be #
+###       conveyed externally                                             #
+###########################################################################
+
 # Classes of unit types.
 DIMENSION = 1
 MEASURE   = 2
@@ -113,9 +118,10 @@ class Null(Mono):
     def __str__(self):
         return expr_string('null', None)
 
-class IntegerConstant(object):
+class IntegerConstant(Mono):
     """
-    An integer which is a parameter to a type constructor.
+    An integer which is a parameter to a type constructor. It is itself a
+    degenerate type constructor taking 0 parameters.
 
     ::
         1, int32   # 1 is Fixed
@@ -126,6 +132,7 @@ class IntegerConstant(object):
 
     def __init__(self, i):
         assert isinstance(i, _inttypes)
+        self.parameters = (i,)
         self.val = i
 
     def __str__(self):
@@ -142,7 +149,7 @@ class IntegerConstant(object):
     def __hash__(self):
         return hash(self.val)
 
-class StringConstant(object):
+class StringConstant(Mono):
     """
     Strings at the level of the constructor.
 
@@ -152,6 +159,7 @@ class StringConstant(object):
 
     def __init__(self, i):
         assert isinstance(i, _strtypes)
+        self.parameters = (i,)
         self.val = i
 
     def __str__(self):
@@ -256,6 +264,8 @@ class String(Mono):
                             repr(self.encoding))
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
+
+        self.parameters = (self.fixlen, self.encoding)
 
         self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
         self._c_alignment = ctypes.alignment(ctypes.c_void_p)
@@ -958,6 +968,17 @@ Type.register('bytes', bytes_)
 Type.register('string', String())
 
 #------------------------------------------------------------------------
+# Concrete types & Promotion
+#------------------------------------------------------------------------
+
+def promote(*types):
+    """Promote a series of CType types"""
+    for ctype in types:
+        assert isinstance(ctype, CType)
+
+    return CType.from_numpy_dtype(np.result_type(*map(to_numpy, types)))
+
+#------------------------------------------------------------------------
 # NumPy Compatibility
 #------------------------------------------------------------------------
 
@@ -1087,3 +1108,27 @@ def record_string(fields, values):
         else:
             body += '%s : %s; ' % (k,v)
     return '{ ' + body + ' }'
+
+#------------------------------------------------------------------------
+# Type variables
+#------------------------------------------------------------------------
+
+def free(ds):
+    """
+    Return the free variables (TypeVar) of a blaze type (Mono).
+    """
+    result = []
+    for x in ds.parameters:
+        if isinstance(x, TypeVar):
+            result.append(x)
+        elif isinstance(x, Mono):
+            result.extend(free(x))
+
+    return result
+
+def type_constructor(ds):
+    """
+    Get the type constructor for the blaze type (Mono).
+    The type constructor indicates how types unify (see unification.py).
+    """
+    return type(ds)
