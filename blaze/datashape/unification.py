@@ -20,6 +20,7 @@ from itertools import chain
 from functools import partial
 
 from blaze import error
+from blaze.py2help import dict_iteritems
 from blaze.util import IdentityDict, IdentitySet
 from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, promote, free,
                                        type_constructor, IntegerConstant,
@@ -45,7 +46,7 @@ def unify(constraints, broadcasting):
     # Compute solution to a set of constraints
     constraints, b_env = normalize(constraints, broadcasting)
     solution, remaining = unify_constraints(constraints)
-    resolve_typsets(remaining, solution)
+    resolve_typesets(remaining, solution)
 
     # Compute a type substitution with concrete types from the solution
     # TODO: incorporate broadcasting environment during reification
@@ -96,7 +97,7 @@ def normalize(constraints, broadcasting):
     return result, broadcast_env
 
 
-def unify_constraints(constraints, solution=None):
+def unify_constraints(constraints):
     """
     Blaze type unification. Two types unify if:
 
@@ -117,13 +118,15 @@ def unify_constraints(constraints, solution=None):
         Returns a solution to the set of constraints. The solution is a set
         of bindings (a substitution) from type variables to type sets.
     """
-    if solution is None:
-        solution = IdentityDict()
-        remaining = []
-        for t1, t2 in constraints:
-            for freevar in chain(free(t1), free(t2)):
-                solution[freevar] = set()
+    solution = IdentityDict()
+    remaining = []
 
+    # Initialize solution
+    for t1, t2 in constraints:
+        for freevar in chain(free(t1), free(t2)):
+            solution[freevar] = set()
+
+    # Calculate solution
     for t1, t2 in constraints:
         unify_single(t1, t2, solution, remaining)
 
@@ -166,7 +169,7 @@ def unify_single(t1, t2, solution, remaining):
             unify_single(arg1, arg2, solution, remaining)
 
 
-def resolve_typsets(constraints, solution):
+def resolve_typesets(constraints, solution):
     """
     Fix-point iterate until all type variables are resolved according to the
     constraints.
@@ -197,9 +200,9 @@ def resolve_typsets(constraints, solution):
             solution[b].add(a)
             empty.add(b)
 
-            # # Fix-point our fix-point
-            # if empty:
-            #     resolve_typsets(constraints, solution)
+    # # Fix-point our fix-point
+    # if empty:
+    #     resolve_typesets(constraints, solution)
 
 def reify(solution, S=None):
     """
@@ -217,7 +220,7 @@ def reify(solution, S=None):
     if S is None:
         S = IdentityDict()
 
-    for typevar, t in solution.iteritems():
+    for typevar, t in dict_iteritems(solution):
         if typevar in S:
             continue
 

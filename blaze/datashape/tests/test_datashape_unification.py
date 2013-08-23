@@ -18,7 +18,7 @@ class TestUnification(unittest.TestCase):
         d1 = dshape('10, T1, int32')
         d2 = dshape('T2, T2, float32')
         [result], constraints = unify([(d1, d2)], [True])
-        assert result == dshape('10, 10, float32')
+        self.assertEqual(result, dshape('10, 10, float32'))
 
     def test_unify_datashape_promotion2(self):
         A, B = T.TypeVar('A'), T.TypeVar('B')

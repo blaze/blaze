@@ -1083,7 +1083,7 @@ def from_python_scalar(scalar):
         return double
     elif isinstance(scalar, complex):
         return complex128
-    elif isinstance(scalar, (str, unicode)):
+    elif isinstance(scalar, _strtypes):
         return string
     elif isinstance(scalar, datetime.timedelta):
         return timedelta64
