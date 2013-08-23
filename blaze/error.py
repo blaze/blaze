@@ -62,8 +62,14 @@ class CustomSyntaxError(BlazeException):
 # Typing errors
 #------------------------------------------------------------------------
 
-class UnificationError(BlazeException):
+class BlazeTypeError(BlazeException):
+    "Some typing error"
+
+class UnificationError(BlazeTypeError):
     """Raised when two blaze types cannot be unified"""
+
+class CoercionError(BlazeTypeError):
+    """Raised when we can't coerce a type to another type"""
 
 #------------------------------------------------------------------------
 # Array-related errors

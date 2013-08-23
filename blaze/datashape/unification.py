@@ -82,7 +82,7 @@ def normalize(constraints, broadcasting):
             # Create type variables for leading dimensions
             len1, len2 = len(ds1.parameters), len(ds2.parameters)
             leading = tuple(TypeVar('Broadcasting%d' % i)
-                                for i in range(abs(len1 - len2)))
+                            for i in range(abs(len1 - len2)))
 
             if len1 < len2:
                 ds1 = DataShape(leading + ds1.parameters)
@@ -160,7 +160,7 @@ def unify_single(t1, t2, solution, remaining):
 
         if len(args1) != len(args2):
             raise error.UnificationError("%s got %d and %d arguments" % (
-                            tcon1, len(args1), len(args2)))
+                tcon1, len(args1), len(args2)))
 
         for arg1, arg2 in zip(args1, args2):
             unify_single(arg1, arg2, solution, remaining)
@@ -197,9 +197,9 @@ def resolve_typsets(constraints, solution):
             solution[b].add(a)
             empty.add(b)
 
-    # # Fix-point our fix-point
-    # if empty:
-    #     resolve_typsets(constraints, solution)
+            # # Fix-point our fix-point
+            # if empty:
+            #     resolve_typsets(constraints, solution)
 
 def reify(solution, S=None):
     """
