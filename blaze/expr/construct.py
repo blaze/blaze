@@ -9,7 +9,7 @@ import blaze
 from blaze.datashape import coretypes as T
 from blaze.bkernel import BlazeFunc
 
-from .graph import ArrayOp, ConstantOp, KernelOp
+from .graph import ArrayOp, KernelOp
 from .context import ExprContext, unify
 from .conf import conf
 
@@ -57,12 +57,7 @@ def construct(kernel, *args):
     return KernelOp(dshape, *args)
 
 def from_value(value):
-    if isinstance(value, blaze.Array):
-        ctor = ArrayOp
-    else:
-        ctor = ConstantOp
-
-    return ctor(T.from_python_scalar(value), value)
+    return ArrayOp(T.from_python_scalar(value), value)
 
 #------------------------------------------------------------------------
 # Argument Munging

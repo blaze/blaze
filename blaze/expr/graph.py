@@ -11,7 +11,6 @@ from functools import partial
 #------------------------------------------------------------------------
 
 array = 'array'   # array input
-const = 'const'   # constant value
 kernel = 'kernel' # kernel application, carrying the blaze kernel as a
                   # first argument (Constant)
 
@@ -33,5 +32,4 @@ class Op(object):
 # Graph constructors
 
 ArrayOp    = partial(Op, array)
-ConstantOp = partial(Op, const)
 KernelOp   = partial(Op, kernel)
