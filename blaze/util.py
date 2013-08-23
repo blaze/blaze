@@ -86,19 +86,55 @@ class IdentityDict(UserDict.DictMixin):
 
     def __init__(self, d=None):
         self.data = {}          # id(key) -> value
-        self.ks = set()         # set([key])
+        self.ks = []            # [key]
         self.update(d or [])
 
     def __getitem__(self, key):
-        return self.data[id(key)]
+        try:
+            return self.data[id(key)]
+        except KeyError:
+            raise KeyError(key)
 
     def __setitem__(self, key, value):
+        if id(key) not in self.data:
+            self.ks.append(key)
         self.data[id(key)] = value
-        self.ks.add(key)
+
+    def __repr__(self):
+        """
+        This is not correctly implemented in DictMixin for us, since it takes
+        the dict() of iteritems(), merging back equal keys
+        """
+        return "{ %s }" % ", ".join("%r: %r" % (k, self[k]) for k in self.keys())
 
     def keys(self):
         return list(self.ks)
 
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        d = cls()
+        for key in iterable:
+            d[key] = value
+        return d
+
+
+class IdentitySet(set):
+    def __init__(self, it=()):
+        self.d = IdentityDict()
+        self.update(it)
+
+    def add(self, x):
+        self.d[x] = None
+
+    def remove(self, x):
+        del self.d[x]
+
+    def update(self, it):
+        for x in it:
+            self.add(x)
+
+    def __contains__(self, key):
+        return key in self.d
 
 if __name__ == '__main__':
     import doctest

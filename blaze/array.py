@@ -10,6 +10,7 @@ from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor)
 from ._printing import array2string as _printer
+from blaze.bkernel import bmath
 from blaze.ops import ufuncs
 from .py2help import exec_
 # from .bkernel import bmath
@@ -96,9 +97,16 @@ def _named_property(name):
         return Array(DyNDDataDescriptor(getattr(self._data.dynd_arr(), name)))
     return getprop
 
+def binding(f):
+    def binder(self, *args):
+        return f(self, *args)
+    return binder
+
 def inject_special(names):
     for name in names:
-        setattr(Array, '__%s__' % name, getattr(ufuncs, name))
+        # Swap the lines below to test the new expression graph
+        # setattr(Array, '__%s__' % name, getattr(ufuncs, name))
+        setattr(Array, '__%s__' % name, binding(getattr(bmath, name)))
 
 inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
                 'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])

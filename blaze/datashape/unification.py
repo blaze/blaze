@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 This module implements unification of datashapes. Unification is a general
 problem that solves a system of equations between terms. In our case, the
@@ -5,29 +7,23 @@ terms are types (datashapes).
 
 A difference with conventional unification is that our equations are not
 necessarily looking for equality, they must account for coercions and
-broadcasting. What we do to address this is a normalization phase that
-normalizes the types so they are acceptable for unification.
+broadcasting.
 
-We only allow type variables to be shared in a single "signature". This is
-naturally enforced by the datashape grammar:
-
-    int32_2d   = T, T, int32
-    float64_2d = T, T, float64
-
-In these type specification T is used to specify a local constraint, namely
-that it is a two-dimensional square array. However, the T's in the different
-datashapes specify different type variables that merely happen to carry the
-same name.
+A normalization phase accounts for broadcasting missing leading dimensions
+by padding the types with one-sized dimensions. Coercion is resolved through
+coercion constraints which act like subset relations. A unifier is
+accompanied by a set of constraints but must hold for the free variables in
+that type.
 """
 
 from itertools import chain
 from functools import partial
 
 from blaze import error
-from blaze.util import IdentityDict
+from blaze.util import IdentityDict, IdentitySet
 from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, promote, free,
                                        type_constructor, IntegerConstant,
-                                       StringConstant, CType)
+                                       StringConstant, CType, Fixed)
 
 #------------------------------------------------------------------------
 # Entry point
@@ -40,21 +36,24 @@ def unify(constraints, broadcasting):
         >>> import blaze
         >>> d1 = blaze.dshape('10, int32')
         >>> d2 = blaze.dshape('T, float32')
-        >>> [result] = unify([(d1, d2)], [True])
+        >>> [result], constraints = unify([(d1, d2)], [True])
         >>> result
-        dshape("10, float64")
+        dshape("10, float32")
+        >>> constraints
+        []
     """
     # Compute solution to a set of constraints
     constraints, b_env = normalize(constraints, broadcasting)
-    solution = unify_constraints(constraints)
+    solution, remaining = unify_constraints(constraints)
+    resolve_typsets(remaining, solution)
 
-    # Compute a type substitute with concrete types from the solution
+    # Compute a type substitution with concrete types from the solution
     # TODO: incorporate broadcasting environment during reification
     substitution = reify(solution)
 
     # Reify and promote the datashapes
-    sub = partial(substitute, substitution)
-    return [promote_units(sub(ds1), sub(ds2)) for ds1, ds2 in constraints]
+    result = [substitute(substitution, ds2) for ds1, ds2 in constraints]
+    return result, [(a, solution[b]) for a, b in remaining]
 
 #------------------------------------------------------------------------
 # Unification
@@ -106,25 +105,8 @@ def unify_constraints(constraints, solution=None):
 
     Our algorithm is different from a conventional implementation in that we
     have a different notion of equality since we allow coercion which we
-    solve by tracking sets of types. E.g. if we have
-
-        eq 0: T1 = int32
-        eq 1: T1 = T2
-        eq 2: T1 = float32
-
-    We cannot substitute int32 for T1 in the remaining constraints, since
-    that would result in the equation `int32 = float32`, which is clearly
-    wrong since we recorded { T1 : int32 } as a solution. Instead we obtain
-    successsively in three steps:
-
-        start: solution = { T1: set([]), T2: set([]) }
-        ----------------------------------------------
-        step0: solution = { T1: set([int32]), T2: set([]) }
-        step1: solution = { T1: set([int32]), T2: set([int32]) }
-        step2: solution = { T1: set([int32, float32]), T2: set([int32, float32]) }
-
-    Equation 2 updates the type of type variable T2 since the type is shared
-    between T1 and T2.
+    solve by generating new coercion constraints in the form of
+    [(A coerces to B)], where A and B are type variables.
 
     Parameters
     ----------
@@ -137,28 +119,29 @@ def unify_constraints(constraints, solution=None):
     """
     if solution is None:
         solution = IdentityDict()
+        remaining = []
         for t1, t2 in constraints:
             for freevar in chain(free(t1), free(t2)):
                 solution[freevar] = set()
 
     for t1, t2 in constraints:
-        unify_single(t1, t2, solution)
+        unify_single(t1, t2, solution, remaining)
 
-    return solution
+    return solution, remaining
 
-def unify_single(t1, t2, solution):
+def unify_single(t1, t2, solution, remaining):
     """
     Unify a single type equation and update the solution and remaining
     constraints.
     """
     if isinstance(t1, TypeVar) and isinstance(t2, TypeVar):
-        solution[t1] = solution[t2] = solution[t1] | solution[t2]
+        remaining.append((t1, t2))
     elif isinstance(t1, TypeVar):
         if t1 in free(t2):
             raise error.UnificationError("Cannot unify recursive types")
         solution[t1].add(t2)
     elif isinstance(t2, TypeVar):
-        unify_single(t2, t1, solution)
+        unify_single(t2, t1, solution, remaining)
     elif not free(t1) and not free(t2):
         # No need to recurse, this will be caught by promote()
         pass
@@ -180,8 +163,43 @@ def unify_single(t1, t2, solution):
                             tcon1, len(args1), len(args2)))
 
         for arg1, arg2 in zip(args1, args2):
-            unify_single(arg1, arg2, solution)
+            unify_single(arg1, arg2, solution, remaining)
 
+
+def resolve_typsets(constraints, solution):
+    """
+    Fix-point iterate until all type variables are resolved according to the
+    constraints.
+
+    Parameters
+    ----------
+    constraints: [(TypeVar, TypeVar)]
+        Constraint graph specifying coercion relations:
+            (a, b) ∈ constraints with a ⊆ b
+
+    solution : { TypeVar : set([ Type ]) }
+        Typing solution
+    """
+    # Fix-point update our type sets
+    changed = True
+    while changed:
+        changed = False
+        for a, b in constraints:
+            length = len(solution[b])
+            solution[b].update(solution[a])
+            changed |= length < len(solution[b])
+
+    # Update empty type set solutions with variables from the input
+    # We can do this since there is no contraint on the free variable
+    empty = IdentitySet()
+    for a, b in constraints:
+        if not solution[b] or b in empty:
+            solution[b].add(a)
+            empty.add(b)
+
+    # # Fix-point our fix-point
+    # if empty:
+    #     resolve_typsets(constraints, solution)
 
 def reify(solution, S=None):
     """
@@ -204,8 +222,13 @@ def reify(solution, S=None):
             continue
 
         typeset = solution[typevar]
-        freevars = set(chain(*[free(t) for t in typeset]))
-        if freevars:
+        freevars = IdentityDict.fromkeys(chain(*[free(t) for t in typeset]))
+
+        if not typeset:
+            S[typevar] = typevar
+            typeset.add(typevar)
+            continue
+        elif freevars:
             # Reify dependencies first
             reify(dict((v, solution[v]) for v in freevars), S)
             typeset = set(substitute(S, t) for t in typeset)
@@ -222,8 +245,8 @@ def promote_units(*units):
     unit = units[0]
     if len(units) == 1:
         return unit
-    elif isinstance(unit, IntegerConstant):
-        assert all(isinstance(u, IntegerConstant) for u in units)
+    elif isinstance(unit, Fixed):
+        assert all(isinstance(u, Fixed) for u in units)
         if len(set(units)) > 2:
             raise error.UnificationError(
                 "Got multiple differing integer constants", units)
@@ -234,7 +257,10 @@ def promote_units(*units):
             elif right == IntegerConstant(1):
                 return left
             else:
-                assert left == right
+                if left != right:
+                    raise error.UnificationError(
+                        "Cannot unify differing fixed dimensions "
+                        "%s and %s" % (left, right))
                 return left
     elif isinstance(unit, StringConstant):
         for u in units:
@@ -254,7 +280,7 @@ def substitute(solution, ds):
     Substitute a typing solution for a type, resolving all free type variables.
     """
     if isinstance(ds, TypeVar):
-        return solution[ds]
+        return solution[ds] or ds
     elif not isinstance(ds, Mono) or isinstance(ds, CType):
         return ds
     else:

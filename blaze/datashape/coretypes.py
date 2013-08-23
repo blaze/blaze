@@ -74,6 +74,9 @@ class Mono(object):
         lst = [self]
         return lst[key]
 
+    def __repr__(self):
+        return '%s(%s)' % (type(self).__name__, ", ".join(map(str, self.parameters)))
+
     # Form for searching signature in meta-method Dispatch Table
     def sigform(self):
         return self
@@ -654,10 +657,11 @@ class TypeVar(Mono):
         self.symbol = symbol
         self.parameters = (symbol,)
 
+    def __repr__(self):
+        return "TypeVar(%s)" % (str(self),)
+
     def __str__(self):
-        # Use the F# notation
         return str(self.symbol)
-        # return "'" + str(self.symbol)
 
     # All TypeVariables compare equal
     # dshape('M,int32') = dshape('N,int32')
