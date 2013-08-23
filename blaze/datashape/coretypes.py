@@ -17,6 +17,11 @@ from ..py2help import _inttypes, _strtypes, unicode
 # Type Metaclass
 #------------------------------------------------------------------------
 
+###########################################################################
+### TODO: itemsize and alignment should not be here, but should rather be #
+###       conveyed externally                                             #
+###########################################################################
+
 # Classes of unit types.
 DIMENSION = 1
 MEASURE   = 2
@@ -69,6 +74,9 @@ class Mono(object):
         lst = [self]
         return lst[key]
 
+    def __repr__(self):
+        return '%s(%s)' % (type(self).__name__, ", ".join(map(str, self.parameters)))
+
     # Form for searching signature in meta-method Dispatch Table
     def sigform(self):
         return self
@@ -113,9 +121,10 @@ class Null(Mono):
     def __str__(self):
         return expr_string('null', None)
 
-class IntegerConstant(object):
+class IntegerConstant(Mono):
     """
-    An integer which is a parameter to a type constructor.
+    An integer which is a parameter to a type constructor. It is itself a
+    degenerate type constructor taking 0 parameters.
 
     ::
         1, int32   # 1 is Fixed
@@ -126,6 +135,7 @@ class IntegerConstant(object):
 
     def __init__(self, i):
         assert isinstance(i, _inttypes)
+        self.parameters = (i,)
         self.val = i
 
     def __str__(self):
@@ -142,7 +152,7 @@ class IntegerConstant(object):
     def __hash__(self):
         return hash(self.val)
 
-class StringConstant(object):
+class StringConstant(Mono):
     """
     Strings at the level of the constructor.
 
@@ -152,6 +162,7 @@ class StringConstant(object):
 
     def __init__(self, i):
         assert isinstance(i, _strtypes)
+        self.parameters = (i,)
         self.val = i
 
     def __str__(self):
@@ -257,6 +268,8 @@ class String(Mono):
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
 
+        self.parameters = (self.fixlen, self.encoding)
+
         self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
         self._c_alignment = ctypes.alignment(ctypes.c_void_p)
 
@@ -325,6 +338,11 @@ class DataShape(Mono):
             self.__metaclass__._registry[name] = self
         else:
             self.name = None
+
+        ###
+        # TODO: Why are low-level concepts like strides and alignment on
+        # TODO: the datashape?
+        ###
 
         # Calculate the C itemsize and strides, which
         # are based on a C-order contiguous assumption
@@ -452,6 +470,7 @@ class DataShape(Mono):
 class Enum(DataShape):
 
     def __init__(self, name, *elts):
+        self.parameters = (name,) + elts
         self.name = name
         self.elts = elts
 
@@ -487,6 +506,7 @@ class Option(DataShape):
         if not params[0].cls == MEASURE:
             raise TypeError('Option only takes measure argument')
 
+        self.parameters = (params,)
         self.ty = params[0]
 
     @property
@@ -518,6 +538,7 @@ class CType(Mono):
         self._itemsize = itemsize
         self._alignment = alignment
         Type.register(name, self)
+        self.parameters = (name,)
 
     @classmethod
     def from_numpy_dtype(self, dt):
@@ -636,10 +657,11 @@ class TypeVar(Mono):
         self.symbol = symbol
         self.parameters = (symbol,)
 
+    def __repr__(self):
+        return "TypeVar(%s)" % (str(self),)
+
     def __str__(self):
-        # Use the F# notation
         return str(self.symbol)
-        # return "'" + str(self.symbol)
 
     # All TypeVariables compare equal
     # dshape('M,int32') = dshape('N,int32')
@@ -953,6 +975,19 @@ Type.register('bytes', bytes_)
 Type.register('string', String())
 
 #------------------------------------------------------------------------
+# Concrete types & Promotion
+#------------------------------------------------------------------------
+
+def promote(a, b):
+    """Promote a series of CType or DataShape types"""
+    if isinstance(a, DataShape):
+        assert isinstance(b, DataShape)
+        assert a.parameters[:-1] == b.parameters[:-1]
+        return DataShape(a.parameters[:-1] + (promote(a.measure, b.measure),))
+
+    return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))
+
+#------------------------------------------------------------------------
 # NumPy Compatibility
 #------------------------------------------------------------------------
 
@@ -1035,6 +1070,29 @@ def from_numpy(shape, dt):
         return DataShape(parameters=(tuple(map(Fixed, shape))+(measure,)))
 
 #------------------------------------------------------------------------
+# Python Compatibility
+#------------------------------------------------------------------------
+
+def from_python_scalar(scalar):
+    """
+    Return a datashape ctype for a python scalar.
+    """
+    if isinstance(scalar, int):
+        return int_
+    elif isinstance(scalar, float):
+        return double
+    elif isinstance(scalar, complex):
+        return complex128
+    elif isinstance(scalar, _strtypes):
+        return string
+    elif isinstance(scalar, datetime.timedelta):
+        return timedelta64
+    elif isinstance(scalar, datetime.datetime):
+        return datetime64
+    else:
+        return pyobj
+
+#------------------------------------------------------------------------
 # Printing
 #------------------------------------------------------------------------
 
@@ -1059,3 +1117,32 @@ def record_string(fields, values):
         else:
             body += '%s : %s; ' % (k,v)
     return '{ ' + body + ' }'
+
+#------------------------------------------------------------------------
+# Type variables
+#------------------------------------------------------------------------
+
+def free(ds):
+    """
+    Return the free variables (TypeVar) of a blaze type (Mono).
+    """
+    result = []
+    for x in ds.parameters:
+        if isinstance(x, TypeVar):
+            result.append(x)
+        elif isinstance(x, Mono):
+            result.extend(free(x))
+
+    return result
+
+# Types are lacking uniformity :(
+datashape_type_constructor = lambda *args: DataShape(args)
+
+def type_constructor(ds):
+    """
+    Get the type constructor for the blaze type (Mono).
+    The type constructor indicates how types unify (see unification.py).
+    """
+    if isinstance(ds, DataShape):
+        return datashape_type_constructor
+    return type(ds)
