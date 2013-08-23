@@ -2,9 +2,9 @@ from __future__ import absolute_import
 
 import types
 import re
+from blaze.datashape.traits import TypeSet, matches_typeset
 
-from ..datashape import (DataShape, from_numba_str, matches_typeset,
-                to_numba, TypeSet, broadcastable)
+from ..datashape import (DataShape, from_numba_str, to_numba, broadcastable)
 from ..datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
 from ..py2help import _strtypes, PY2
 from .. import llvm_array as lla

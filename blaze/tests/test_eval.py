@@ -119,5 +119,7 @@ class TestEval2D(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    # TestEval2D.setUpClass()
+    # TestEval2D('test_mem_mem_to_dsk_expression').debug()
     unittest.main(verbosity=2)
 

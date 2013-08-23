@@ -1,13 +1,13 @@
 from __future__ import absolute_import
+from blaze.datashape.traits import TypeSet
 
 __all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
            'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
-           'to_numba', 'from_numba_str', 'TypeSet', 'matches_typeset']
+           'to_numba', 'from_numba_str']
 
 import operator
 import itertools
 import ctypes
-import types
 import sys
 
 from . import parser
@@ -364,13 +364,6 @@ def from_llvm(typ, argkind=SCALAR):
         raise TypeError("Unknown type %s" % kind)
     return ds
 
-class TypeSet(object):
-    def __init__(self, *args):
-        self._set = set(args)
-    def __contains__(self, val):
-        return val in self._set
-    def __repr__(self):
-        return "%s()" % (self.__class__.__name__,)
 
 class AnyType(TypeSet):
     def __contains__(self, val):
@@ -383,14 +376,6 @@ class AnyCType(TypeSet):
     def __str__(self):
         return "*"
 
-def matches_typeset(types, signature):
-    match = True
-    for a, b in zip(types, signature):
-        check = isinstance(b, TypeSet)
-        if check and (a not in b) or (not check and a != b):
-            match = False
-            break
-    return match
 
 # FIXME: This is a hack
 def from_numba(nty):
