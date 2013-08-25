@@ -9,10 +9,10 @@ import sys
 import shutil
 import textwrap
 from os.path import join
-from functools import partial
+from fnmatch import fnmatchcase
 
 from distutils.core import Command, setup
-from distutils.sysconfig import get_python_inc, get_config_var
+from distutils.util import convert_path
 from distutils.command.build import build
 from distutils.command.build_ext import build_ext
 
@@ -20,22 +20,28 @@ from distutils.command.build_ext import build_ext
 # Top Level Packages
 #------------------------------------------------------------------------
 
-packages = [
-    'blaze',
-    'blaze.blz',
-    'blaze.blz.tests',
-    'blaze.bkernel',
-    'blaze.bkernel.tests',
-    'blaze.ckernel',
-    'blaze.ckernel.tests',
-    'blaze.datadescriptor',
-    'blaze.datadescriptor.tests',
-    'blaze.datashape',
-    'blaze.datashape.tests',
-    'blaze.executive',
-    'blaze.tests',
-    'blaze._printing',
-]
+def find_packages(where='.', exclude=()):
+    out = []
+    stack = [(convert_path(where), '')]
+    while stack:
+        where, prefix = stack.pop(0)
+        for name in os.listdir(where):
+            fn = os.path.join(where,name)
+            if ('.' not in name and os.path.isdir(fn) and
+                os.path.isfile(os.path.join(fn, '__init__.py'))
+            ):
+                out.append(prefix+name)
+                stack.append((fn, prefix+name+'.'))
+
+    if sys.version_info[0] == 3:
+        exclude = exclude + ('*py2only*', )
+
+    for pat in list(exclude) + ['ez_setup', 'distribute_setup']:
+        out = [item for item in out if not fnmatchcase(item, pat)]
+
+    return out
+
+packages = find_packages()
 
 #------------------------------------------------------------------------
 # Minimum Versions
