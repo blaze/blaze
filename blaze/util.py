@@ -1,5 +1,11 @@
 import inspect
-import UserDict
+
+try:
+    from collections import MutableMapping
+except ImportError as e:
+    # Python 3
+    from UserDict import DictMixin as MutableMapping
+
 
 def flatargs(f, args, kwargs):
     """
@@ -64,7 +70,7 @@ def flatargs(f, args, kwargs):
     return args + tuple(extra_args)
 
 
-class IdentityDict(UserDict.DictMixin):
+class IdentityDict(MutableMapping):
     """
     Map mapping objects on identity to values
 
@@ -100,11 +106,13 @@ class IdentityDict(UserDict.DictMixin):
             self.ks.append(key)
         self.data[id(key)] = value
 
+    def __delitem__(self, key):
+        self.ks.remove(key)
+        del self.data[id(key)]
+
     def __repr__(self):
-        """
-        This is not correctly implemented in DictMixin for us, since it takes
-        the dict() of iteritems(), merging back equal keys
-        """
+        # This is not correctly implemented in DictMixin for us, since it takes
+        # the dict() of iteritems(), merging back equal keys
         return "{ %s }" % ", ".join("%r: %r" % (k, self[k]) for k in self.keys())
 
     def keys(self):
@@ -116,6 +124,12 @@ class IdentityDict(UserDict.DictMixin):
         for key in iterable:
             d[key] = value
         return d
+
+    def __iter__(self):
+        return iter(self.ks)
+
+    def __len__(self):
+        return len(self.ks)
 
 
 class IdentitySet(set):
