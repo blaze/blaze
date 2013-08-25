@@ -28,7 +28,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 tokens = (
     'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR', 'EQUALS',
     'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT',
-    'VAR', 'JSON', 'DATA'
+    'VAR', 'JSON', 'DATA', 'ARROW',
 )
 
 literals = [
@@ -78,6 +78,7 @@ t_SEMI   = r';'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
 t_STAR   = r'\*'
+t_ARROW  = r'->'
 t_ignore = '[ ]'
 
 def t_TYPE(t):
@@ -207,7 +208,13 @@ def p_lhs_expression_node(p):
 #------------------------------------------------------------------------
 
 def p_rhs_expression(p):
-    'rhs_expression : rhs_expression_list'
+    '''rhs_expression : rhs_expr
+                      | rhs_function
+    '''
+    p[0] = p[1]
+
+def p_rhs_expr(p):
+    '''rhs_expr : rhs_expression_list'''
     if len(p[1]) == 1:
         rhs = p[1][0]
         if getattr(rhs, 'cls', T.MEASURE) != T.MEASURE:
@@ -249,6 +256,22 @@ def p_rhs_expression_list(p):
     'rhs_expression_list : rhs_expression_list COMMA rhs_expression_list metadata'
     # tuple addition
     p[0] = p[1] + p[3]
+
+#------------------------------------------------------------------------
+
+def p_rhs_function(p):
+    'rhs_function : rhs_signature'
+    p[0] = T.Function(*p[1])
+
+def p_rhs_signature(p):
+    '''
+    rhs_signature : rhs_signature ARROW rhs_signature
+    '''
+    p[0] = p[1] + p[3]
+
+def p_rhs_signature2(p):
+    'rhs_signature : rhs_expr'
+    p[0] = [p[1]]
 
 #------------------------------------------------------------------------
 
