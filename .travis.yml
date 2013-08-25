@@ -1,0 +1,49 @@
+language: python
+
+python:
+  - "2.6"
+  - "2.7"
+  - "3.2"
+  - "3.3"
+
+branches:
+  only:
+    - master
+    - devel
+    - release
+    - signatures
+
+install:
+  - wget "http://repo.continuum.io/pkgs/free/linux-64/llvm-3.2-0.tar.bz2"
+  - tar -xjf llvm-3.2-0.tar.bz2
+  - PATH+=":`pwd`/bin"
+  - export LD_LIBRARY_PATH="`pwd`/lib"
+  - export LLVM_CONFIG_PATH="`pwd`/bin/llvm-config"
+  - $LLVM_CONFIG_PATH --cflags # test llvm-config
+  - export LLVMPY_DYNLINK=1
+  - export CFLAGS="-Wno-strict-aliasing -Wno-unused -Wno-write-strings -Wno-unused-function"
+  # Install llvmpy
+  - git clone git://github.com/llvmpy/llvmpy.git -q
+  - cd llvmpy ; python setup.py install -q >/dev/null ; cd ..
+  # Install cython
+  - pip -q install cython --install-option="--no-cython-compile" # This takes long
+  # Install llvmmath
+  - git clone git://github.com/ContinuumIO/llvmmath.git -q
+  - cd llvmmath
+  - pip install -r requirements.txt --use-mirrors
+  - python setup.py install -q
+  - cd ..
+  # Install miscellaneous dependencies
+  - pip install -r requirements.txt --use-mirrors
+  # Install numba
+  - pip install numba
+  # Install Blaze
+  - python setup.py install
+
+script: cd ~; python -c 'import blaze; blaze.test(exit=True)'
+
+notifications:
+  email: false
+  flowdock: "b08b3ba4fb86fa48121e90b5f67ccb75"
+  on_success: "change"
+  on_failure: "always" # "change"
