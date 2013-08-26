@@ -12,25 +12,38 @@ def validate(ds):
     Validate a Blaze type to see whether it is well-formed.
 
         >>> import blaze
-        >>> validate(blaze.dshape('10, int32'))
-        >>> validate(blaze.dshape('*, int32'))
-        >>> validate(blaze.dshape('*, *, int32'))
+        >>> blaze.dshape('10, int32')
+        dshape("10, int32")
+        >>> blaze.dshape('..., int32')
+        dshape("..., int32")
+        >>> blaze.dshape('..., ..., int32')
         Traceback (most recent call last):
             ...
         DataShapeError: Can only use a single wildcard
-        >>> validate(blaze.dshape('T, *, T2, *, int32 -> T, X'))
+        >>> blaze.dshape('T, ..., T2, ..., int32 -> T, X')
         Traceback (most recent call last):
             ...
         DataShapeError: Can only use a single wildcard
+        >>> blaze.dshape('T, ...')
+        Traceback (most recent call last):
+            ...
+        DataShapeError: Measure may not be an Ellipsis (...)
     """
     T.traverse(_validate, ds)
 
 def _validate(ds, params):
     if isinstance(ds, T.DataShape):
-        wildcards = [x for x in ds.parameters if isinstance(x, T.Wild)]
-        if len(wildcards) > 1:
-            raise error.DataShapeError("Can only use a single wildcard")
 
+        # -------------------------------------------------
+        # Check ellipses
+        ellipses = [x for x in ds.parameters if isinstance(x, T.Ellipsis)]
+        if len(ellipses) > 1:
+            raise error.DataShapeError("Can only use a single wildcard")
+        elif isinstance(ds.parameters[-1], T.Ellipsis):
+            raise error.DataShapeError("Measure may not be an Ellipsis (...)")
+
+        # -------------------------------------------------
+        # Check constraints
         for x in ds.parameters[:-1]:
             if isinstance(x, T.Implements):
                 # TODO: What about further constaints on the dimensions?

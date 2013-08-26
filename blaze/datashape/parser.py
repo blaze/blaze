@@ -30,7 +30,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR', 'EQUALS',
+    'TYPE', 'NAME', 'NUMBER', 'STRING', 'ELLIPSIS', 'EQUALS',
     'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT',
     'VAR', 'JSON', 'DATA', 'ARROW',
 )
@@ -75,15 +75,15 @@ bits = set([
     'timedelta64',
 ])
 
-t_EQUALS = r'='
-t_COMMA  = r','
-t_COLON  = r':'
-t_SEMI   = r';'
-t_LBRACE = r'\{'
-t_RBRACE = r'\}'
-t_STAR   = r'\*'
-t_ARROW  = r'->'
-t_ignore = '[ ]'
+t_EQUALS    = r'='
+t_COMMA     = r','
+t_COLON     = r':'
+t_SEMI      = r';'
+t_LBRACE    = r'\{'
+t_RBRACE    = r'\}'
+t_ELLIPSIS  = r'\.\.\.'
+t_ARROW     = r'->'
+t_ignore    = '[ ]'
 
 def t_TYPE(t):
     r'type'
@@ -237,13 +237,13 @@ def p_rhs_expression_list__bit(p):
     p[0] = (T.Type._registry[p[1]],)
 
 def p_rhs_expression_list__name(p):
-    '''rhs_expression_list : NAME'''
-    p[0] = (T.TypeVar(p[1]),)
+    '''rhs_expression_list : typevar'''
+    p[0] = (p[1],)
 
 def p_rhs_expression_list__contrained(p):
-    '''rhs_expression_list : NAME COLON NAME'''
+    '''rhs_expression_list : typevar COLON NAME'''
     # Note: This syntax is constrained to type variables only
-    typevar = T.TypeVar(p[1])
+    typevar = p[1]
     try:
         typeset = registry[p[3]]
     except KeyError:
@@ -263,8 +263,12 @@ def p_rhs_expression_list__json(p):
     p[0] = (T.JSON(),)
 
 def p_rhs_expression_list__wild(p):
-    '''rhs_expression_list : STAR'''
-    p[0] = (T.Wild(),)
+    '''rhs_expression_list : ELLIPSIS'''
+    p[0] = (T.Ellipsis(),)
+
+def p_rhs_expression_list__wild_constrained(p):
+    '''rhs_expression_list : typevar ELLIPSIS'''
+    p[0] = (T.Ellipsis(p[1]),)
 
 def p_rhs_expression_list(p):
     'rhs_expression_list : rhs_expression_list COMMA rhs_expression_list metadata'
@@ -289,6 +293,12 @@ def p_rhs_signature2(p):
 
 #------------------------------------------------------------------------
 
+def p_typevar(p):
+    "typevar : NAME"
+    p[0] = T.TypeVar(p[1])
+
+#------------------------------------------------------------------------
+
 def p_metadata1(p):
     "metadata : '!' LBRACE appl_args RBRACE "
     p[0] = p[3]
@@ -309,8 +319,8 @@ def p_appl_args__rhs_expression(p):
     p[0] = (p[2],)
 
 def p_appl_args__name(p):
-    '''appl_args : NAME'''
-    p[0] = (T.TypeVar(p[1]),)
+    '''appl_args : typevar'''
+    p[0] = (p[1],)
 
 def p_appl_args__bit(p):
     '''appl_args : BIT'''
@@ -413,7 +423,6 @@ reserved = {
     #'Either'   : T.Either,
     #'Union'    : T.Union,
     'string'   : T.String, # String type per proposal
-    'Wild'     : T.Wild
 }
 
 def debug_parse(data, lexer, parser):

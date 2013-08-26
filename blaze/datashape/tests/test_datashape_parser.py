@@ -62,6 +62,18 @@ class TestDatashapeParser(unittest.TestCase):
         assert type(x.parameters[1]) == datashape.Implements
         assert type(x.parameters[1].typeset == integral)
 
+    def test_ellipsis(self):
+        x = parse('..., T')
+        assert type(x.parameters[0]) == datashape.Ellipsis
+        assert type(x.parameters[1]) == datashape.TypeVar
+        assert x.parameters[0].typevar is None
+
+    def test_ellipsis2(self):
+        x = parse('A..., T')
+        assert type(x.parameters[0]) == datashape.Ellipsis
+        assert type(x.parameters[1]) == datashape.TypeVar
+        assert type(x.parameters[0].typevar) == datashape.TypeVar
+
     def test_fields_with_reserved_names(self):
         # Should be able to name a field 'type', 'int64'
         # or any other word otherwise reserved in the

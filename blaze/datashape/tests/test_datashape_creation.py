@@ -42,6 +42,9 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertRaises(error.BlazeTypeError, dshape,
                           'A : integral, B : numeric')
 
+    def test_ellipsis_error(self):
+        self.assertRaises(error.BlazeTypeError, dshape, 'T, ...')
+
     def test_type_decl(self):
         self.assertRaises(TypeError, blaze.dshape, 'type X T = 3, T')
         self.assertEqual(blaze.dshape('3, int32'), blaze.dshape('type X = 3, int32'))

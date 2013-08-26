@@ -102,18 +102,33 @@ class Mono(object):
 # Parse Types
 #------------------------------------------------------------------------
 
-class Wild(Mono):
+class Ellipsis(Mono):
     """
-    Wild card type for hashing
+    Ellipsis (...). Used to indicate a variable number of dimensions.
+    E.g.:
+
+        ..., float32    # float32 array w/ any number of dimensions
+        A..., float32   # float32 array w/ any number of dimensions,
+                        # associated with type variable A
     """
+
+    def __init__(self, typevar=None):
+        self.parameters = (typevar,)
+
+    @property
+    def typevar(self):
+        return self.parameters[0]
+
     def __str__(self):
-        return '*'
+        if self.typevar:
+            return str(self.typevar) + '...'
+        return '...'
 
     def __repr__(self):
-        return 'dshape("*")'
+        return 'dshape("...")'
 
     def __hash__(self):
-        return hash('*')
+        return hash('...')
 
 class Null(Mono):
     """
@@ -407,7 +422,7 @@ class DataShape(Mono):
     def _equal(self, other):
         """ Structural equality """
         def eq(a,b):
-            if isinstance(a, Wild) or isinstance(b, Wild):
+            if isinstance(a, Ellipsis) or isinstance(b, Ellipsis):
                 return True
             else:
                 return a == b
@@ -424,8 +439,8 @@ class DataShape(Mono):
 
     def __hash__(self):
         for val in self[:-1]:
-            if isinstance(val, Wild):
-                raise TypeError("Data-shape with 'Wildcard' is unhashable")
+            if isinstance(val, Ellipsis):
+                raise TypeError("Data-shape with '...' is unhashable")
         return hash(tuple(a for a in self))
 
     def __ne__(self, other):

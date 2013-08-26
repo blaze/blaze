@@ -12,7 +12,7 @@ import sys
 
 from . import parser
 from .validation import validate
-from .coretypes import (DataShape, Fixed, TypeVar, Record, Wild,
+from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis,
                         uint8, uint16, uint32, uint64, CType,
                         int8, int16, int32, int64,
                         float32, float64, complex64, complex128, Type)
@@ -241,7 +241,7 @@ def to_ctypes(dshape):
             raise TypeError("Cannot convert datashape %r into ctype" % dshape)
     # Create arrays
     else:
-        if isinstance(dshape[0], (TypeVar, Wild)):
+        if isinstance(dshape[0], (TypeVar, Ellipsis)):
             num = 0
         else:
             num = int(dshape[0])
