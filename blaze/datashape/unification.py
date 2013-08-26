@@ -26,8 +26,12 @@ from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, free,
                                        type_constructor, CType)
 
 #------------------------------------------------------------------------
-# Entry point
+# Entry points
 #------------------------------------------------------------------------
+
+def unify_simple(a, b):
+    """Unify two blaze types"""
+    return unify([(a, b)], [True])
 
 def unify(constraints, broadcasting):
     """

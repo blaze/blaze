@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-This module implements type coercion rules for data shapes.
-
-Note that transitive coercions could be supported, but we decide not to since
-it may involve calling a whole bunch of functions with a whole bunch of types
-to figure out whether this is possible in the face of polymorphic overloads.
+Type promotion.
 """
 
 from blaze import error
