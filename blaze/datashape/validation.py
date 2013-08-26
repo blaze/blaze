@@ -7,10 +7,6 @@ Datashape validation.
 from blaze import error
 from blaze.datashape import coretypes as T
 
-#------------------------------------------------------------------------
-# Entry point
-#------------------------------------------------------------------------
-
 def validate(ds):
     """
     Validate a Blaze type to see whether it is well-formed.
@@ -34,6 +30,12 @@ def _validate(ds, params):
         wildcards = [x for x in ds.parameters if isinstance(x, T.Wild)]
         if len(wildcards) > 1:
             raise error.DataShapeError("Can only use a single wildcard")
+
+        for x in ds.parameters[:-1]:
+            if isinstance(x, T.Implements):
+                # TODO: What about further constaints on the dimensions?
+                raise error.DataShapeError(
+                    "Only the measure can have constraints")
 
 
 if __name__ == '__main__':

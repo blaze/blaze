@@ -6,11 +6,15 @@ import sys
 import ast
 
 from collections import namedtuple
+
+# TODO: Ideally this module creates a simple AST that is mapped into the type
+#       domain by coretypes.py
 from . import coretypes as T
+from .traits import registry, lookup
 
 from ply import lex, yacc
 from blaze.plyhacks import yaccfrom, lexfrom
-from blaze.error import CustomSyntaxError
+from blaze.error import CustomSyntaxError, BlazeTypeError
 
 instanceof = lambda T: lambda X: isinstance(X, T)
 
@@ -235,6 +239,16 @@ def p_rhs_expression_list__bit(p):
 def p_rhs_expression_list__name(p):
     '''rhs_expression_list : NAME'''
     p[0] = (T.TypeVar(p[1]),)
+
+def p_rhs_expression_list__contrained(p):
+    '''rhs_expression_list : NAME COLON NAME'''
+    # Note: This syntax is constrained to type variables only
+    typevar = T.TypeVar(p[1])
+    try:
+        typeset = registry[p[3]]
+    except KeyError:
+        raise BlazeTypeError("No typeset '%s' registered" % (p[3],))
+    p[0] = (T.Implements(typevar, typeset),)
 
 def p_rhs_expression_list__number(p):
     '''rhs_expression_list : NUMBER'''

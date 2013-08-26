@@ -675,6 +675,22 @@ class TypeVar(Mono):
     def __hash__(self):
         return hash(self.__class__)
 
+
+class Implements(Mono):
+    """
+    Type representing a constraint on the subtype term (which must be a
+    TypeVar), namely that it must belong to a given type set.
+    """
+
+    @property
+    def typevar(self):
+        return self.parameters[0]
+
+    @property
+    def typeset(self):
+        return self.parameters[1]
+
+
 class Range(Mono):
     """
     Range type representing a bound or unbound interval of
@@ -894,6 +910,7 @@ class JSON(Mono):
     cls = MEASURE
 
     def __init__(self):
+        self.parameters = ()
         self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
         self._c_alignment = ctypes.alignment(ctypes.c_void_p)
 
@@ -999,11 +1016,6 @@ Type.register('double', c_double)
 Type.register('bytes', bytes_)
 
 Type.register('string', String())
-
-#------------------------------------------------------------------------
-# Concrete types & Promotion
-#------------------------------------------------------------------------
-
 
 #------------------------------------------------------------------------
 # NumPy Compatibility

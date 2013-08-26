@@ -11,6 +11,7 @@ import ctypes
 import sys
 
 from . import parser
+from .validation import validate
 from .coretypes import (DataShape, Fixed, TypeVar, Record, Wild,
                         uint8, uint16, uint32, uint64, CType,
                         int8, int16, int32, int64,
@@ -27,6 +28,11 @@ def dopen(fname):
     return parser.parse_extern(contents)
 
 def dshape(o, multi=False):
+    ds = _dshape(o, multi)
+    validate(ds)
+    return ds
+
+def _dshape(o, multi=False):
     if multi:
         return list(parser.parse_mod(o))
     if isinstance(o, str):
