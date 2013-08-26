@@ -1172,3 +1172,16 @@ def type_constructor(ds):
     if isinstance(ds, DataShape):
         return datashape_type_constructor
     return type(ds)
+
+#------------------------------------------------------------------------
+# Type Traversal
+#------------------------------------------------------------------------
+
+def traverse(f, t):
+    """
+    Map f over t, calling `f` with type `t` and the map result of the mapping
+    `f` over `t`s parameters.
+    """
+    if isinstance(t, Mono):
+        return f(t, [traverse(f, p) for p in t.parameters])
+    return t

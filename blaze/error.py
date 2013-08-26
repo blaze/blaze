@@ -65,6 +65,9 @@ class CustomSyntaxError(BlazeException):
 class BlazeTypeError(BlazeException):
     "Some typing error"
 
+class DataShapeError(BlazeTypeError):
+    """Raised for malformed datashape types"""
+
 class UnificationError(BlazeTypeError):
     """Raised when two blaze types cannot be unified"""
 
