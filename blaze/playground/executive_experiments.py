@@ -11,11 +11,15 @@ import random
 import math
 import time
 from itertools import product as it_product
-
-def running_simple_executor():
-    pass
+from blaze.executive import simple_execute_write
 
 
+
+def eval_in_mem(arr, iter_dims, chunk=1):
+    res = blaze.empty(arr.dshape)
+    simple_execute_write(arr._data, res._data,
+                         iter_dims=iter_dims, chunk=1)
+    return res
 
 
 if __name__ == '__main__':
@@ -37,10 +41,30 @@ if __name__ == '__main__':
     expr = op0*op0 + op1*op1
 
     t = time.time()
-    result = blaze.eval(expr)
-    print("evaluation took %f seconds" % (time.time()-t))
+    result = eval_in_mem(expr, None)
+    print("evaluation-in-mem complete took %f seconds"
+          % (time.time()-t))
+    print(result)
 
     t = time.time()
-    result = blaze.eval(expr,
-                        storage=blaze.Storage('blz://persisted.blz'))
-    print("evalutation2 took %f seconds" % (time.time()-t))
+    result = eval_in_mem(expr, 0)
+    print("evaluation-in-mem iter_dims=0 took %f seconds"
+          % (time.time()-t))
+    print(result)
+
+    t = time.time()
+    result = eval_in_mem(expr, 1)
+    print("evaluation-in-mem iter_dims=1 took %f seconds"
+          % (time.time()-t))
+    print(result)
+
+    stor = blaze.Storage('blz://persisted.blz')
+    t = time.time()
+    result = blaze.eval(expr, storage=stor)
+    print("evaluation blz took %f seconds" % (time.time()-t))
+    blaze.drop(stor)
+
+    t = time.time()
+    result = blaze.eval(expr)
+    print("evaluation hierarchical %f seconds" % (time.time()-t))
+
