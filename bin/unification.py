@@ -4,11 +4,19 @@
 Blaze types interpreter.
 """
 
+import os
+import sys
 import code
-import readline # don't kill this import
+import atexit
+import readline
+import warnings
+import rlcompleter
 
 import blaze
-from blaze.datashape import unify, unify_simple, promote
+from blaze import dshape
+from blaze.datashape import (unify_simple as unify,
+                             normalize_simple as normalize,
+                             promote)
 
 banner = """
 The Blaze typing interpreter.
@@ -26,18 +34,36 @@ The Blaze typing interpreter.
     promote(t1, t2):
         promote two blaze types to a common type general enough to represent
         values of either type
+
+    normalize(ds1, ds2):
+        normalize two datashapes for unification (ellipses, broadcasting)
 """
 
 env = {
-    'blaze': blaze,
-    'dshape': blaze.dshape,
-    'unify': unify_simple,
-    'promote': promote,
+    'blaze':     blaze,
+    'dshape':    dshape,
+    'unify':     unify,
+    'promote':   promote,
+    'normalize': normalize,
 }
 
+def init_readline():
+    readline.parse_and_bind('tab: menu-complete')
+    histfile = os.path.expanduser('~/.blaze_history%s' % sys.version[:3])
+    atexit.register(readline.write_history_file, histfile)
+    if not os.path.exists(histfile):
+        open(histfile, 'w').close()
+    readline.read_history_file(histfile)
+
 def main():
-    interp = code.InteractiveConsole(env)
-    interp.interact(banner)
+    init_readline()
+    try:
+        import fancycompleter
+        fancycompleter.interact(persist_history=True)
+    except ImportError:
+        warnings.warn("fancycompleter not installed")
+        interp = code.InteractiveConsole(env)
+        interp.interact(banner)
 
 if __name__ == '__main__':
     main()

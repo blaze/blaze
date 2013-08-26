@@ -17,13 +17,14 @@ that type.
 """
 
 from itertools import chain
+from collections import defaultdict, deque
 
 from blaze import error
 from blaze.py2help import dict_iteritems
 from blaze.util import IdentityDict, IdentitySet
 from .promotion import promote_units
 from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, free,
-                                       type_constructor, CType)
+                                       type_constructor, CType, Ellipsis)
 
 #------------------------------------------------------------------------
 # Entry points
@@ -46,7 +47,7 @@ def unify(constraints, broadcasting):
         >>> constraints
         []
     """
-    # Compute solution to a set of constraints
+    # Compute a solution to a set of constraints
     constraints, b_env = normalize(constraints, broadcasting)
     solution, remaining = unify_constraints(constraints)
     resolve_typesets(remaining, solution)
@@ -60,8 +61,13 @@ def unify(constraints, broadcasting):
     return result, [(a, solution[b]) for a, b in remaining]
 
 #------------------------------------------------------------------------
-# Unification
+# Normalization
 #------------------------------------------------------------------------
+
+def normalize_simple(a, b):
+    return normalize_ellipses(a, b)
+    # [(x, y)], _ = normalize([(a, b)], [True])
+    # return x, y
 
 def normalize(constraints, broadcasting):
     """
@@ -78,11 +84,17 @@ def normalize(constraints, broadcasting):
         broadcasting environment listing all type variables which may
         broadcast together.
     """
+    constraints1 = [normalize_ellipses(*C) for C in constraints]
+    constraints2, b_env = normalize_broadcasting(constraints1, broadcasting)
+    return constraints2, b_env
+
+def normalize_broadcasting(constraints, broadcasting):
     result = []        # [(DataShape, DataShape)]
     broadcast_env = [] # [(typevar1, typevar2)]
 
     for broadcast, (ds1, ds2) in zip(broadcasting, constraints):
-        if broadcast:
+        if broadcast and (isinstance(ds1, DataShape) and
+                          isinstance(ds2, DataShape)):
             # Create type variables for leading dimensions
             len1, len2 = len(ds1.parameters), len(ds2.parameters)
             leading = tuple(TypeVar('Broadcasting%d' % i)
@@ -99,6 +111,81 @@ def normalize(constraints, broadcasting):
 
     return result, broadcast_env
 
+def normalize_ellipses(ds1, ds2):
+    if not (isinstance(ds1, DataShape) and isinstance(ds2, DataShape)):
+        return
+
+    # -------------------------------------------------
+    # Find ellipses
+
+    a = [x for x in  ds1.parameters if isinstance(x, Ellipsis)]
+    b = [x for x in  ds2.parameters if isinstance(x, Ellipsis)]
+    xs, ys = list(ds1.parameters[-2::-1]), list(ds2.parameters[-2::-1])
+
+    # -------------------------------------------------
+    # Match ellipses
+
+    if a and (len(xs) <= len(ys) or not b):
+        S = match(xs, ys)
+    elif b and (len(ys) <= len(xs) or not a):
+        S = match(b, a)
+    elif a or b:
+        assert len(xs) == len(ys)
+        S = match(a, b)
+    else:
+        return ds1, ds2 # no ellipses, nothing to do
+
+    # -------------------------------------------------
+    # Reverse the reversed matches
+
+    for x, L in S.iteritems():
+        S[x] = L[::-1]
+
+    # -------------------------------------------------
+    # Error checking
+
+    if a and b:
+        # We have an ellipsis in either operand. We mandate that one
+        # 'contains' the other, since it is unclear how to unify them if
+        # they are disjoint
+        [x], [y] = a, b
+        if x not in S[y] and y not in S[x]:
+            raise error.BlazeTypeError(
+                "Unable to line up Ellipses in %s and %s" % (ds1, ds2))
+
+        if not S[x]:
+            S[x].append(y)
+        if not S[y]:
+            S[y].append(x)
+
+    # -------------------------------------------------
+    # Substitute and flatten parameters
+
+    sub_param = lambda x: S[x] if isinstance(x, Ellipsis) else [x]
+    sub = lambda ds: DataShape(list(chain(*map(sub_param, ds.parameters))))
+    return sub(ds1), sub(ds2)
+
+def match(xs, ys, S=None):
+    if S is None:
+        S = defaultdict(list)
+
+    xs, ys = deque(xs), deque(ys)
+    while xs and ys:
+        x = xs.popleft()
+        if isinstance(x, Ellipsis):
+            while len(ys) > len(xs):
+                S[x].append(ys.popleft())
+        else:
+            y = ys.popleft()
+            if isinstance(y, Ellipsis):
+                S[y].append(x)
+                xs, ys = ys, xs # match(ys, xs, S)
+
+    return S
+
+#------------------------------------------------------------------------
+# Unification
+#------------------------------------------------------------------------
 
 def unify_constraints(constraints):
     """

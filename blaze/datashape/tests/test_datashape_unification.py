@@ -4,7 +4,71 @@ import unittest
 import blaze
 from blaze import error
 from blaze import datashape, dshape
-from blaze.datashape import unify, coretypes as T, DataShape
+from blaze.datashape import (unify, coretypes as T, DataShape,
+                             normalize_simple as normalize)
+
+
+class TestNormalization(unittest.TestCase):
+
+    def test_normalize_ellipses1(self):
+        ds1 = dshape('..., T')
+        ds2 = dshape('X, Y, T')
+        res1, res2 = normalize(ds1, ds2)
+        self.assertEqual(str(res1), 'X, Y, T')
+        self.assertEqual(str(res2), 'X, Y, T')
+
+    def test_normalize_ellipses2(self):
+        ds1 = dshape('A, ..., int32')
+        ds2 = dshape('X, Y, float32')
+        res1, res2 = normalize(ds1, ds2)
+        self.assertEqual(str(res1), 'A, Y, int32')
+        self.assertEqual(str(res2), 'X, Y, float32')
+
+    def test_normalize_ellipses3(self):
+        ds1 = dshape('..., A, int32')
+        ds2 = dshape('X, Y, float32')
+        res1, res2 = normalize(ds1, ds2)
+        self.assertEqual(str(res1), 'X, A, int32')
+        self.assertEqual(str(res2), 'X, Y, float32')
+
+    def test_normalize_ellipses4(self):
+        ds1 = dshape('..., A, B, int32')
+        ds2 = dshape('X, Y, float32')
+        res1, res2 = normalize(ds1, ds2)
+        self.assertEqual(str(res1), 'A, B, int32')
+        self.assertEqual(str(res2), 'X, Y, float32')
+
+    def test_normalize_ellipses5(self):
+        ds1 = dshape('..., A, B, int32')
+        ds2 = dshape('..., X, Y, float32')
+        res1, res2 = normalize(ds1, ds2)
+        self.assertEqual(str(res1), '..., A, B, int32')
+        self.assertEqual(str(res2), '..., X, Y, float32')
+
+    def test_normalize_ellipses_2_ellipses(self):
+        ds1 = dshape('...,    A, int32')
+        ds2 = dshape('X, ..., Y, Z, float32')
+        res1, res2 = normalize(ds1, ds2)
+        self.assertEqual(str(res1), 'X, ..., Y, A, int32')
+        self.assertEqual(str(res2), 'X, ..., Y, Z, float32')
+
+    def test_normalize_ellipses_2_ellipses2(self):
+        ds1 = dshape('A, ..., B, int32')
+        ds2 = dshape('M, N, ..., S, T, float32')
+        res1, res2 = normalize(ds1, ds2)
+        self.assertEqual(str(res1), 'A, N, ..., S, B, int32')
+        self.assertEqual(str(res2), 'M, N, ..., S, T, float32')
+
+    def test_normalize_ellipses_2_ellipses3_error(self):
+        ds1 = dshape('A, ..., int32')
+        ds2 = dshape('..., B, float32')
+        self.assertRaises(error.BlazeTypeError, normalize, ds1, ds2)
+
+    def test_normalize_ellipses_2_ellipses4_error(self):
+        ds1 = dshape('..., A, int32')
+        ds2 = dshape('B, ..., float32')
+        self.assertRaises(error.BlazeTypeError, normalize, ds1, ds2)
+
 
 def symsub(ds, S):
     """Substitute type variables by name"""
@@ -57,6 +121,7 @@ class TestUnification(unittest.TestCase):
         self.assertRaises(error.UnificationError, unify, [(d1, d2)], [True])
 
 
-# TestUnification('test_unify_datashape_promotion').debug()
-# TestUnification('test_unify_datashape_promotion2').debug()
-# TestUnification('test_unify_datashape_error').debug()
+if __name__ == '__main__':
+    # TestUnification('test_unify_datashape_promotion').debug()
+    # TestNormalization('test_normalize_ellipses5').debug()
+    unittest.main()
