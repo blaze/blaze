@@ -37,7 +37,7 @@ class DyNDElementReader(IElementReader):
         if idxlen != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
-        idx = tuple([operator.index(i) for i in idx])
+        idx = tuple(operator.index(i) for i in idx)
         if count == 1:
             x = self._dyndarr[idx]
             # Make it C-contiguous and in native byte order
@@ -69,25 +69,40 @@ class DyNDElementWriter(IElementWriter):
     def nindex(self):
         return self._nindex
 
-    def write_single(self, idx, ptr):
+    def write_single(self, idx, ptr, count=1):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
+
         idx = tuple(operator.index(i) for i in idx)
+        c_dtype = self._c_dtype
+
+        if count != 1:
+            idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
+            c_dtype = ndt.make_fixed_dim(count, c_dtype)
+
         # Create a temporary DyND array around the ptr data.
         # Note that we can't provide an owner because the parameter
         # is just the bare pointer.
-        tmp = _lowlevel.array_from_ptr(self._c_dtype, ptr,
+        tmp = _lowlevel.array_from_ptr(c_dtype, ptr,
                         None, 'readonly')
         # Use DyND's assignment to set the values
         self._dyndarr[idx] = tmp
 
-    def buffered_ptr(self, idx):
+    def buffered_ptr(self, idx, count=1):
         if len(idx) != self.nindex:
             raise IndexError('Incorrect number of indices (got %d, require %d)' %
                            (len(idx), self.nindex))
+
+        idx = tuple(operator.index(i) for i in idx)
+        c_dtype = self._c_dtype
+
+        if count != 1:
+            idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
+            c_dtype = ndt.make_fixed_dim(count, c_dtype)
+
         dst_arr = self._dyndarr[idx]
-        buf_arr = dst_arr.cast(self._c_dtype).eval()
+        buf_arr = dst_arr.cast(c_dtype).eval()
         buf_ptr = _lowlevel.data_address_of(buf_arr)
         if buf_ptr == _lowlevel.data_address_of(dst_arr):
             # If no buffering is needed, just return the pointer

@@ -106,6 +106,24 @@ class TestDyNDDataDescriptor(unittest.TestCase):
             ctypes.memmove(dst_ptr, ctypes.addressof(x), 4)
         self.assertEqual(dd_as_py(dd), [1,123,3,456,5])
 
+    def test_element_write_count(self):
+        a = nd.array([1, 2, 3, 4, 5], access='rw')
+        dd = DyNDDataDescriptor(a)
+
+        self.assertEqual(dd.dshape, datashape.dshape('5, int32'))
+        ge = dd.element_writer(1)
+        self.assertTrue(isinstance(ge, IElementWriter))
+
+        x = (ctypes.c_int32*2)(12,34)
+        ge.write_single((1,), ctypes.addressof(x), count=2)
+        self.assertEqual(dd_as_py(dd), [1,12,34,4,5])
+
+        with ge.buffered_ptr((3,), count=2) as dst_ptr:
+            x = (ctypes.c_int32*2)(56,78)
+            ctypes.memmove(dst_ptr, ctypes.addressof(x),
+                           ctypes.sizeof(x))
+        self.assertEqual(dd_as_py(dd), [1,12,34,56,78])
+
     def test_element_iter_write(self):
         a = nd.array([1, 2, 3, 4, 5], access='rw')
         dd = DyNDDataDescriptor(a)
