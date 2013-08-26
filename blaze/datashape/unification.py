@@ -17,14 +17,13 @@ that type.
 """
 
 from itertools import chain
-from functools import partial
 
 from blaze import error
 from blaze.py2help import dict_iteritems
 from blaze.util import IdentityDict, IdentitySet
-from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, promote, free,
-                                       type_constructor, IntegerConstant,
-                                       StringConstant, CType, Fixed)
+from .promotion import promote_units
+from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, free,
+                                       type_constructor, CType)
 
 #------------------------------------------------------------------------
 # Entry point
@@ -239,44 +238,6 @@ def reify(solution, S=None):
         S[typevar] = promote_units(*typeset)
 
     return S
-
-
-def promote_units(*units):
-    """
-    Promote unit types, which are either CTypes or Constants.
-    """
-    unit = units[0]
-    if len(units) == 1:
-        return unit
-    elif isinstance(unit, Fixed):
-        assert all(isinstance(u, Fixed) for u in units)
-        if len(set(units)) > 2:
-            raise error.UnificationError(
-                "Got multiple differing integer constants", units)
-        else:
-            left, right = units
-            if left == IntegerConstant(1):
-                return right
-            elif right == IntegerConstant(1):
-                return left
-            else:
-                if left != right:
-                    raise error.UnificationError(
-                        "Cannot unify differing fixed dimensions "
-                        "%s and %s" % (left, right))
-                return left
-    elif isinstance(unit, StringConstant):
-        for u in units:
-            if u != unit:
-                raise error.UnificationError(
-                    "Cannot unify string constants %s and %s" % (unit, u))
-
-        return unit
-
-    else:
-        # Promote CTypes
-        return promote(*units)
-
 
 def substitute(solution, ds):
     """

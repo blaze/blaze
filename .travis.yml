@@ -8,7 +8,7 @@ branches:
     - master
     - devel
     - release
-    - signatures
+    - overload
 
 install:
   # Create pkgs directory for conda

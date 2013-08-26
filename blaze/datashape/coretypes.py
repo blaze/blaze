@@ -1004,14 +1004,6 @@ Type.register('string', String())
 # Concrete types & Promotion
 #------------------------------------------------------------------------
 
-def promote(a, b):
-    """Promote a series of CType or DataShape types"""
-    if isinstance(a, DataShape):
-        assert isinstance(b, DataShape)
-        assert a.parameters[:-1] == b.parameters[:-1]
-        return DataShape(a.parameters[:-1] + (promote(a.measure, b.measure),))
-
-    return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))
 
 #------------------------------------------------------------------------
 # NumPy Compatibility
