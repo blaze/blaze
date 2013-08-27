@@ -8,7 +8,7 @@ from itertools import chain
 from collections import defaultdict, deque
 
 from blaze import error
-from .coretypes import DataShape, TypeVar, Ellipsis
+from .coretypes import DataShape, Ellipsis, Fixed
 
 #------------------------------------------------------------------------
 # Normalization
@@ -127,8 +127,7 @@ def normalize_broadcasting(constraints, broadcasting):
                           isinstance(ds2, DataShape)):
             # Create type variables for leading dimensions
             len1, len2 = len(ds1.parameters), len(ds2.parameters)
-            leading = tuple(TypeVar('Broadcasting%d' % i)
-                            for i in range(abs(len1 - len2)))
+            leading = tuple(Fixed(1) for i in range(abs(len1 - len2)))
 
             if len1 < len2:
                 ds1 = DataShape(leading + ds1.parameters)

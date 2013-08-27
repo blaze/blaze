@@ -59,6 +59,24 @@ class TestUnification(unittest.TestCase):
         self.assertEqual(arg1, dshape('10, B, int16'))
         self.assertEqual(arg2, dshape('10, 10, float32'))
 
+    def test_unify_broadcasting1(self):
+        ds1 = dshape('A, B, int32')
+        ds2 = dshape('K, M, N, float32')
+        [result], constraints = unify([(ds1, ds2)], [True])
+        self.assertEqual(str(result), '1, A, B, float32')
+
+    def test_unify_broadcasting2(self):
+        ds1 = dshape('A, B, C, int32')
+        ds2 = dshape('M, N, float32')
+        [result], constraints = unify([(ds1, ds2)], [True])
+        self.assertEqual(str(result), '1, B, C, float32')
+
+    def test_unify_ellipsis(self):
+        ds1 = dshape('A, ..., B, int32')
+        ds2 = dshape('M, N, ..., S, T, float32')
+        [result], constraints = unify([(ds1, ds2)], [True])
+        self.assertEqual(str(result), 'A, N, ..., S, B, float32')
+
     def test_unify_datashape_error(self):
         d1 = dshape('10, 11, int32')
         d2 = dshape('T2, T2, int32')
@@ -66,6 +84,6 @@ class TestUnification(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # TestUnification('test_unify_datashape_promotion2').debug()
+    # TestUnification('test_unify_broadcasting1').debug()
     # TestNormalization('test_normalize_ellipses5').debug()
     unittest.main()
