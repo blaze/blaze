@@ -5,7 +5,7 @@ Datashape validation.
 """
 
 from blaze import error
-from blaze.datashape import coretypes as T
+from blaze.datashape import traverse, coretypes as T
 
 def validate(ds):
     """
@@ -29,7 +29,7 @@ def validate(ds):
             ...
         DataShapeError: Measure may not be an Ellipsis (...)
     """
-    T.traverse(_validate, ds)
+    traverse(_validate, ds)
 
 def _validate(ds, params):
     if isinstance(ds, T.DataShape):

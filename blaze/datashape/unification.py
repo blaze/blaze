@@ -330,17 +330,22 @@ def reify(solution, S=None):
 
     return S
 
+#------------------------------------------------------------------------
+# Substitution
+#------------------------------------------------------------------------
+
+class Substitutor(object):
+    def __init__(self, solution):
+        self.solution = solution
+
+    def TypeVar(self, typevar):
+        return self.solution[typevar] or typevar
+
 def substitute(solution, ds):
     """
     Substitute a typing solution for a type, resolving all free type variables.
     """
-    if isinstance(ds, TypeVar):
-        return solution[ds] or ds
-    elif not isinstance(ds, Mono) or isinstance(ds, CType):
-        return ds
-    else:
-        typecon = type_constructor(ds)
-        return typecon(*[substitute(solution, p) for p in ds.parameters])
+    return transform(Substitutor(solution), ds)
 
 
 if __name__ == '__main__':
