@@ -15,7 +15,7 @@ import rlcompleter
 import blaze
 from blaze import dshape
 from blaze.datashape import (unify_simple as unify,
-                             normalize_simple as normalize,
+                             normalize_ellipses as normalize,
                              promote)
 
 banner = """
