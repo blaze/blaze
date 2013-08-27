@@ -8,6 +8,7 @@ import os
 import sys
 import code
 import atexit
+import logging
 import readline
 import warnings
 import rlcompleter
@@ -17,6 +18,8 @@ from blaze import dshape
 from blaze.datashape import (unify_simple as unify,
                              normalize_ellipses as normalize,
                              promote)
+
+logging.getLogger('blaze').setLevel(logging.DEBUG)
 
 banner = """
 The Blaze typing interpreter.

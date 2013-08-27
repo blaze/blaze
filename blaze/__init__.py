@@ -1,5 +1,11 @@
 from __future__ import absolute_import
 
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+
 # build the blaze namespace with selected functions
 
 from . import datashape, bkernel, ckernel

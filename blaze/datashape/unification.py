@@ -16,13 +16,16 @@ accompanied by a set of constraints but must hold for the free variables in
 that type.
 """
 
+import logging
 from itertools import chain
 
 from blaze import error
-from blaze.py2help import dict_iteritems
+from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
-from . import promote_units, normalize, transform
+from . import promote_units, normalize, transform, dshape
 from blaze.datashape.coretypes import Mono, TypeVar, free, type_constructor
+
+logger = logging.getLogger(__name__)
 
 #------------------------------------------------------------------------
 # Entry points
@@ -30,6 +33,10 @@ from blaze.datashape.coretypes import Mono, TypeVar, free, type_constructor
 
 def unify_simple(a, b):
     """Unify two blaze types"""
+    if isinstance(a, _strtypes):
+        a = dshape(a)
+    if isinstance(b, _strtypes):
+        b = dshape(b)
     return unify([(a, b)], [True])
 
 def unify(constraints, broadcasting):
@@ -47,22 +54,28 @@ def unify(constraints, broadcasting):
     """
     # Compute a solution to a set of constraints
     constraints, b_env = normalize(constraints, broadcasting)
+    logger.debug("Normalized constraints: %s", constraints)
+
     solution, remaining = unify_constraints(constraints)
+    logger.debug("Initial solution: %s", solution)
+
     resolve_typesets(remaining, solution)
 
     # Compute a type substitution with concrete types from the solution
     # TODO: incorporate broadcasting environment during reification
     substitution = reify(solution)
+    logger.debug("Substitution: %s", substitution)
 
     # Reify and promote the datashapes
     result = [substitute(substitution, ds2) for ds1, ds2 in constraints]
-    return result, [(a, solution[b]) for a, b in remaining]
+    remaining = [(a, c) for a, b in remaining for c in solution[b] if a is not c]
+    return result, remaining
 
 #------------------------------------------------------------------------
 # Unification
 #------------------------------------------------------------------------
 
-def unify_constraints(constraints):
+def unify_constraints(constraints, solution=None):
     """
     Blaze type unification. Two types unify if:
 
@@ -83,13 +96,14 @@ def unify_constraints(constraints):
         Returns a solution to the set of constraints. The solution is a set
         of bindings (a substitution) from type variables to type sets.
     """
-    solution = IdentityDict()
+    solution = IdentityDict(solution)
     remaining = []
 
     # Initialize solution
     for t1, t2 in constraints:
         for freevar in chain(free(t1), free(t2)):
-            solution[freevar] = set()
+            if freevar not in solution:
+                solution[freevar] = set()
 
     # Calculate solution
     for t1, t2 in constraints:
