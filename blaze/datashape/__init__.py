@@ -8,3 +8,4 @@ from .normalization import normalize, normalize_ellipses, normalize_broadcasting
 from .validation import validate
 from .promotion import promote, promote_units
 from .unification import unify, unify_simple
+from .coercion import coerce

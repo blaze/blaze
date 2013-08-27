@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
+
 import inspect
+import functools
 
 try:
     from collections import MutableMapping
@@ -6,6 +10,20 @@ except ImportError as e:
     # Python 3
     from UserDict import DictMixin as MutableMapping
 
+#------------------------------------------------------------------------
+# General purpose
+#------------------------------------------------------------------------
+
+def listify(f):
+    """Decorator to turn generator results into lists"""
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        return list(f(*args, **kwargs))
+    return wrapper
+
+#------------------------------------------------------------------------
+# Argument parsing
+#------------------------------------------------------------------------
 
 def flatargs(f, args, kwargs):
     """
@@ -69,6 +87,10 @@ def flatargs(f, args, kwargs):
 
     return args + tuple(extra_args)
 
+
+#------------------------------------------------------------------------
+# Data Structures
+#------------------------------------------------------------------------
 
 class IdentityDict(MutableMapping):
     """

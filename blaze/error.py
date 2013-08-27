@@ -74,6 +74,12 @@ class UnificationError(BlazeTypeError):
 class CoercionError(BlazeTypeError):
     """Raised when we can't coerce a type to another type"""
 
+class OverloadError(BlazeTypeError):
+    """
+    Raised when we can't determine which overload to select for given input
+    types.
+    """
+
 #------------------------------------------------------------------------
 # Array-related errors
 #------------------------------------------------------------------------
