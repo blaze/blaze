@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from blaze.datashape.traits import TypeSet
 
-__all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
+__all__ = ['dopen', 'dshape', 'dshapes', 'cat_dshapes', 'broadcastable',
            'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
            'to_numba', 'from_numba_str']
 
@@ -13,9 +13,11 @@ import sys
 from . import parser
 from .validation import validate
 from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis,
-                        uint8, uint16, uint32, uint64, CType,
-                        int8, int16, int32, int64,
-                        float32, float64, complex64, complex128, Type)
+               uint8, uint16, uint32, uint64, CType,
+               int8, int16, int32, int64,
+               float32, float64, complex64, complex128, Type, free)
+from .traversal import tmap
+from blaze.util import IdentityDict
 
 PY3 = (sys.version_info[:2] >= (3,0))
 
@@ -27,7 +29,36 @@ def dopen(fname):
     contents = open(fname).read()
     return parser.parse_extern(contents)
 
+def dshapes(*args):
+    """
+    Parse all datashapes a single context. This means two datashapes
+    'A, B, int32' and 'X, B, float32' will now share type variable 'B'.
+    """
+    from . import substitute
+
+    result = map(dshape, args)
+    S = IdentityDict()
+    for t in result:
+        for typevar in free(t):
+            S.setdefault(typevar.symbol, typevar)
+
+    def f(t):
+        if isinstance(t, TypeVar):
+            return S[t.symbol]
+        return t
+
+    return [tmap(f, t) for t in result]
+
 def dshape(o, multi=False):
+    """
+    Parse a blaze type. For a thorough description see
+    http://blaze.pydata.org/docs/datashape.html
+
+    Parameters
+    ----------
+    multi: bool
+        indicates whether the input is a single type or a series of types.
+    """
     ds = _dshape(o, multi)
     validate(ds)
     return ds

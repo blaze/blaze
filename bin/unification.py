@@ -14,10 +14,10 @@ import warnings
 import rlcompleter
 
 import blaze
-from blaze import dshape
+from blaze import dshape, dshapes
 from blaze.datashape import (unify_simple as unify,
                              normalize_ellipses as normalize,
-                             promote)
+                             promote, tmap)
 
 logging.getLogger('blaze').setLevel(logging.DEBUG)
 
@@ -30,6 +30,10 @@ The Blaze typing interpreter.
     dshape('<type string>'):
         parse a blaze type
 
+    dshapes('<type string1>', ..., '<type string N>')
+        parse a series of blaze types in the same context, so they will
+        shared type variables of equal name.
+
     unify(t1, t2):
         unify t1 with t2, and return a result type and a list of additional
         constraints
@@ -40,14 +44,19 @@ The Blaze typing interpreter.
 
     normalize(ds1, ds2):
         normalize two datashapes for unification (ellipses, broadcasting)
+
+    tmap(f, t):
+        map function `f` over type `t` and its sub-terms post-order
 """
 
 env = {
     'blaze':     blaze,
     'dshape':    dshape,
+    'dshapes':   dshapes,
     'unify':     unify,
     'promote':   promote,
     'normalize': normalize,
+    'tmap':      tmap,
 }
 
 def init_readline():

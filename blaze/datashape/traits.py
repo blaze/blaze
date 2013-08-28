@@ -32,6 +32,10 @@ class TypeSet(Mono):
     def parameters(self):
         return tuple(self._order)
 
+    def __eq__(self, other):
+        return (isinstance(other, type(self)) and
+                self.parameters == other.parameters)
+
     def __contains__(self, val):
         return val in self._set
 
