@@ -11,9 +11,11 @@ from ..error import ArrayWriteError
 
 from dynd import nd, ndt, _lowlevel
 
+
 def dynd_descriptor_iter(dyndarr):
     for el in dyndarr:
         yield DyNDDataDescriptor(el)
+
 
 class DyNDElementReader(IElementReader):
     def __init__(self, dyndarr, nindex):
@@ -48,9 +50,10 @@ class DyNDElementReader(IElementReader):
             idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
             x = self._dyndarr[idx]
             # Make it C-contiguous and in native byte order
-            x = x.cast(ndt.make_fixed_dim_dtype(count, self._c_dtype)).eval()
+            x = x.cast(ndt.make_fixed_dim(count, self._c_dtype)).eval()
             self._tmpbuffer = x
             return _lowlevel.data_address_of(x)
+
 
 class DyNDElementWriter(IElementWriter):
     def __init__(self, dyndarr, nindex):
@@ -105,12 +108,15 @@ class DyNDElementWriter(IElementWriter):
         buf_arr = dst_arr.cast(c_dtype).eval()
         buf_ptr = _lowlevel.data_address_of(buf_arr)
         if buf_ptr == _lowlevel.data_address_of(dst_arr):
+            print("in-place (%s)" % hex(buf_ptr) )
             # If no buffering is needed, just return the pointer
             return buffered_ptr_ctxmgr(buf_ptr, None)
         else:
+            print("buffer")
             def buffer_flush():
                 dst_arr[...] = buf_arr
             return buffered_ptr_ctxmgr(buf_ptr, buffer_flush)
+
 
 class DyNDElementReadIter(IElementReadIter):
     def __init__(self, dyndarr):
@@ -140,6 +146,7 @@ class DyNDElementReadIter(IElementReadIter):
             return _lowlevel.data_address_of(x)
         else:
             raise StopIteration
+
 
 class DyNDElementWriteIter(IElementWriteIter):
     def __init__(self, dyndarr):
@@ -185,6 +192,7 @@ class DyNDElementWriteIter(IElementWriteIter):
 
     def close(self):
         self.flush()
+
 
 class DyNDDataDescriptor(IDataDescriptor):
     """
