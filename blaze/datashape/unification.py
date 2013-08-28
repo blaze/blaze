@@ -22,7 +22,7 @@ from itertools import chain
 from blaze import error
 from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
-from . import promote_units, normalize, transform, dshape
+from . import promote_units, normalize, simplify, transform, dshape
 from blaze.datashape.coretypes import Mono, TypeVar, free, type_constructor
 
 logger = logging.getLogger(__name__)
@@ -52,11 +52,15 @@ def unify(constraints, broadcasting):
         >>> constraints
         []
     """
+    S = IdentityDict()
+    constraints = [(simplify(ds1, S), simplify(ds2, S))
+                        for ds1, ds2 in constraints]
+
     # Compute a solution to a set of constraints
     constraints, b_env = normalize(constraints, broadcasting)
     logger.debug("Normalized constraints: %s", constraints)
 
-    solution, remaining = unify_constraints(constraints)
+    solution, remaining = unify_constraints(constraints, S)
     logger.debug("Initial solution: %s", solution)
 
     resolve_typesets(remaining, solution)

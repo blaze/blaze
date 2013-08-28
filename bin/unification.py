@@ -62,6 +62,7 @@ def main():
     init_readline()
     try:
         import fancycompleter
+        print(banner)
         fancycompleter.interact(persist_history=True)
     except ImportError:
         warnings.warn("fancycompleter not installed")

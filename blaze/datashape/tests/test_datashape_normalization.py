@@ -5,7 +5,8 @@ import unittest
 
 from blaze import error
 from blaze import dshape
-from blaze.datashape import normalize_ellipses as normalize
+from blaze.util import IdentityDict
+from blaze.datashape import normalize_ellipses as normalize, simplify, numeric
 
 
 class TestNormalization(unittest.TestCase):
@@ -70,6 +71,20 @@ class TestNormalization(unittest.TestCase):
         self.assertRaises(error.BlazeTypeError, normalize, ds1, ds2)
 
 
+class TestSimplification(unittest.TestCase):
+
+    def test_simplify_implements(self):
+        ds = dshape('10, A : numeric')
+        self.assertEqual(str(ds), '10, A : numeric')
+
+        solution = IdentityDict()
+        ds = simplify(ds, solution)
+
+        self.assertEqual(str(ds), '10, A')
+        A = ds.parameters[-1]
+        self.assertEqual(solution[A], set([numeric]))
+
 if __name__ == '__main__':
     # TestNormalization('test_normalize_ellipses5').debug()
+    # TestSimplification('test_simplify_implements').debug()
     unittest.main()

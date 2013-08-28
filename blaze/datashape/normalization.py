@@ -8,6 +8,7 @@ from itertools import chain
 from collections import defaultdict, deque
 
 from blaze import error
+from . import transform
 from .coretypes import DataShape, Ellipsis, Fixed
 
 #------------------------------------------------------------------------
@@ -139,3 +140,45 @@ def normalize_broadcasting(constraints, broadcasting):
         result.append((ds1, ds2))
 
     return result, broadcast_env
+
+
+#------------------------------------------------------------------------
+# Simplification
+#------------------------------------------------------------------------
+
+def simplify(t, solution):
+    """
+    Simplify constraints by eliminating Implements (e.g. '10, A : numeric') and
+    type variables associated with Ellipsis (e.g. 'A..., int32'), and by
+    updating the given typing solution.
+
+    Parameters
+    ----------
+    t : Mono
+        Blaze type
+
+    Returns: Mono
+        Simplified blaze type
+    """
+    return transform(Simplifier(solution), t)
+
+
+class Simplifier(object):
+    """Simplify a type and update a typing solution"""
+
+    def __init__(self, S):
+        self.S = S
+
+    def Implements(self, term):
+        typeset = self.S.setdefault(term.typevar, set())
+        typeset.add(term.typeset)
+        # typeset.update(term.typeset)
+        return term.typevar
+
+    # TODO: ellipsis
+    # def Ellipsis(self, term):
+    #     if term.typevar:
+    #         typeset = self.S.setdefault(term.typevar, set()
+    #         typeset.update(term)
+    #         return term.typevar
+    #     return term

@@ -705,6 +705,9 @@ class Implements(Mono):
     def typeset(self):
         return self.parameters[1]
 
+    def __repr__(self):
+        return '%s : %s' % (self.typevar, self.typeset.name)
+
 
 class Range(Mono):
     """
