@@ -18,12 +18,12 @@ from blaze.executive import simple_execute_write
 def eval_in_mem(arr, iter_dims, chunk=1):
     res = blaze.empty(arr.dshape)
     simple_execute_write(arr._data, res._data,
-                         iter_dims=iter_dims, chunk=1)
+                         iter_dims=iter_dims, chunk=chunk)
     return res
 
 
 if __name__ == '__main__':
-    operand_datashape = blaze.dshape('1000, 100, 4, float64')
+    operand_datashape = blaze.dshape('10, 10, 10, float64')
 
     op0 = blaze.empty(operand_datashape)
     op1 = blaze.empty(operand_datashape)
@@ -53,8 +53,14 @@ if __name__ == '__main__':
     print(result)
 
     t = time.time()
-    result = eval_in_mem(expr, 1)
+    result = eval_in_mem(expr, iter_dims=1)
     print("evaluation-in-mem iter_dims=1 took %f seconds"
+          % (time.time()-t))
+    print(result)
+
+    t = time.time()
+    result = eval_in_mem(expr, iter_dims=1, chunk=4)
+    print("evaluation-in-mem iter_dims=1 chunksize=4 took %f seconds"
           % (time.time()-t))
     print(result)
 
@@ -62,6 +68,7 @@ if __name__ == '__main__':
     t = time.time()
     result = blaze.eval(expr, storage=stor)
     print("evaluation blz took %f seconds" % (time.time()-t))
+    print(result)
     blaze.drop(stor)
 
     t = time.time()
