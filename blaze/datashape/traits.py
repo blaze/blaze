@@ -25,6 +25,10 @@ class TypeSet(Mono):
             register_typeset(self.name, self)
 
     @property
+    def types(self):
+        return self._order
+
+    @property
     def parameters(self):
         return tuple(self._order)
 

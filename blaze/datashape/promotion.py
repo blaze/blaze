@@ -4,10 +4,11 @@
 Type promotion.
 """
 
+from itertools import product
+
 from blaze import error
-from blaze.datashape.coretypes import (DataShape, IntegerConstant,
-                                       StringConstant, CType, Fixed,
-                                       to_numpy)
+from blaze.datashape import (DataShape, IntegerConstant, StringConstant,
+                             CType, Fixed, to_numpy, TypeSet)
 
 import numpy as np
 
@@ -19,37 +20,46 @@ def promote_units(*units):
     """
     Promote unit types, which are either CTypes or Constants.
     """
-    unit = units[0]
-    if len(units) == 1:
-        return unit
-    elif isinstance(unit, Fixed):
-        assert all(isinstance(u, Fixed) for u in units)
-        if len(set(units)) > 2:
-            raise error.UnificationError(
-                "Got multiple differing integer constants", units)
-        else:
-            left, right = units
-            if left == IntegerConstant(1):
-                return right
-            elif right == IntegerConstant(1):
-                return left
-            else:
-                if left != right:
-                    raise error.UnificationError(
-                        "Cannot unify differing fixed dimensions "
-                        "%s and %s" % (left, right))
-                return left
-    elif isinstance(unit, StringConstant):
-        for u in units:
-            if u != unit:
-                raise error.UnificationError(
-                    "Cannot unify string constants %s and %s" % (unit, u))
+    return reduce(_promote_units, units)
 
-        return unit
+def _promote_units(a, b):
+    if isinstance(a, Fixed):
+        assert isinstance(b, Fixed)
+        if a == IntegerConstant(1):
+            return b
+        elif b == IntegerConstant(1):
+            return a
+        else:
+            if a != b:
+                raise error.UnificationError(
+                    "Cannot unify differing fixed dimensions "
+                    "%s and %s" % (a, b))
+            return a
+
+    elif isinstance(a, StringConstant):
+        if a != b:
+            raise error.UnificationError(
+                "Cannot unify string constants %s and %s" % (a, b))
+
+        return a
+
+    elif isinstance(a, TypeSet) and isinstance(b, TypeSet):
+        # TODO: Find the join in the lattice with the below as a fallback ?
+        return TypeSet(*set(_promote_units(t1, t2)
+                                for t1, t2 in product(a.types, b.types)))
+
+    elif isinstance(a, TypeSet):
+        if b not in a.types:
+            raise error.UnificationError(
+                "Type %s does not belong to typeset %s" % (b, a))
+        return b
+
+    elif isinstance(b, TypeSet):
+        return _promote_units(b, a)
 
     else:
         # Promote CTypes -- this should go through coerce()
-        return promote(*units)
+        return promote(a, b)
 
 def promote(a, b):
     """Promote a series of CType or DataShape types"""
