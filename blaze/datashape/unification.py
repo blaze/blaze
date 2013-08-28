@@ -22,7 +22,7 @@ from itertools import chain
 from blaze import error
 from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
-from . import promote_units, normalize, simplify, transform, dshape
+from . import promote_units, normalize, simplify, tmap, dshape
 from blaze.datashape.coretypes import Mono, TypeVar, free, type_constructor
 
 logger = logging.getLogger(__name__)
@@ -227,18 +227,15 @@ def reify(solution, S=None):
 # Substitution
 #------------------------------------------------------------------------
 
-class Substitutor(object):
-    def __init__(self, solution):
-        self.solution = solution
-
-    def TypeVar(self, typevar):
-        return self.solution[typevar] or typevar
-
 def substitute(solution, ds):
     """
     Substitute a typing solution for a type, resolving all free type variables.
     """
-    return transform(Substitutor(solution), ds)
+    def f(t):
+        if isinstance(t, TypeVar):
+            return solution[t] or t
+        return t
+    return tmap(f, ds)
 
 
 if __name__ == '__main__':

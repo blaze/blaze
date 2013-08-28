@@ -82,9 +82,10 @@ class TestSimplification(unittest.TestCase):
 
         self.assertEqual(str(ds), '10, A')
         A = ds.parameters[-1]
-        self.assertEqual(solution[A], set([numeric]))
+        [x] = solution[A]
+        self.assertEqual(set(x), set(numeric))
+
 
 if __name__ == '__main__':
-    # TestNormalization('test_normalize_ellipses5').debug()
     # TestSimplification('test_simplify_implements').debug()
     unittest.main()

@@ -74,6 +74,9 @@ class Mono(object):
         lst = [self]
         return lst[key]
 
+    def __ne__(self, other):
+        return not (self == other)
+
     def __repr__(self):
         return '%s(%s)' % (type(self).__name__,
                            ", ".join(map(repr, self.parameters)))
