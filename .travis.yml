@@ -1,9 +1,9 @@
 language: python
 
 python:
-  - "2.6"
+  # - "2.6" conda install dynd-python python=2.6 -> installs dynd for 2.7
   - "2.7"
-  - "3.3"
+  #- "3.3"
 
 branches:
   only:
@@ -20,19 +20,25 @@ install:
   - unzip distribute-0.7.3.zip
   - cd distribute-0.7.3
   - sudo python2.7 setup.py install
+  - cd ..
   # - sudo easy_install pip
   # Create pkgs directory for conda
   - prefix=$(python -c 'import sys; print sys.exec_prefix')
   - mkdir "$prefix/pkgs"
   # Install conda
   - cp .condarc ~
-  - sudo easy_install pyyaml conda
+  - sudo /usr/local/bin/easy_install pyyaml conda
   # Install dependencies
-  - conda install -p "$prefix" llvmpy cython numba numpy dynd-python llvmmath ply pycparser "python=$TRAVIS_PYTHON_VERSION" <<< y
+  # Doesn't work?
+  # mkdir $HOME/pkgs
+  # export CONDA_PACKAGE_CACHE=$HOME/pkgs
+  - sudo mkdir /usr/pkgs
+  - sudo conda create -p ~/py llvmpy cython numba numpy dynd-python llvmmath ply pycparser "python=$TRAVIS_PYTHON_VERSION" <<< y
+  - sudo chmod -R 755 ~/py
   # Install Blaze
-  - python setup.py install
+  - sudo ~/py/bin/python setup.py install
 
-script: cd ~; python -c 'import blaze; blaze.test(exit=True)'
+script: cd ~; ~/py/bin/python -c 'import blaze; blaze.test(exit=True)'
 
 notifications:
   email: false
