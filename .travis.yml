@@ -33,7 +33,7 @@ install:
   # mkdir $HOME/pkgs
   # export CONDA_PACKAGE_CACHE=$HOME/pkgs
   - sudo mkdir /usr/pkgs
-  - sudo conda create -p ~/py llvmpy cython numba numpy dynd-python llvmmath ply pycparser "python=$TRAVIS_PYTHON_VERSION" <<< y
+  - sudo conda create -p ~/py --yes llvmpy cython numba numpy dynd-python llvmmath ply pycparser "python=$TRAVIS_PYTHON_VERSION"
   - sudo chmod -R 755 ~/py
   # Install Blaze
   - sudo ~/py/bin/python setup.py install
