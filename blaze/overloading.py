@@ -6,25 +6,50 @@ import collections
 from pprint import pformat
 
 from blaze import error
-from blaze.util import listify
-from blaze.datashape import coretypes as T, unify
+from blaze.util import flatargs, listify
+from blaze.datashape import coretypes as T, unify, dshape, dummy_signature
 
 class Dispatcher(object):
     """Dispatcher for overloaded functions"""
 
     def __init__(self):
-        self.overloads = {}
+        self.f = None
+        self.overloads = []
 
     def add_overload(self, f, signature, kwds):
         # TODO: assert signature is compatible with current signatures
-        self.overloads[f] = (signature, kwds)
+        if self.f is None:
+            self.f = f
+        self.overloads.append((f, signature, kwds))
 
     def dispatch(self, *args, **kwargs):
-        raise NotImplementedError
+        assert self.f is not None
+        args = flatargs(self.f, args, kwargs)
+        types = list(map(T.typeof, args))
+        dst_sig, sig, func = best_match(self, types)
+        # TODO: convert argument types using dst_sig
+        return func(*args)
+
+    def simple_dispatch(self, *args, **kwargs):
+        assert self.f is not None
+        args = flatargs(self.f, args, kwargs)
+        types = list(map(T.typeof, args))
+        candidates = find_matches(self.overloads, types)
+        if len(candidates) != 1:
+            raise error.OverloadError(
+                "Cannot perform simple dispatch with %d input types")
+
+        [dst_sig, sig, func] = candidates
+        # TODO: convert argument types using dst_sig
+        return func(*args)
+
+    __call__ = dispatch
 
     def __repr__(self):
-        f = iter(self.overloads).next()
-        return '<%s: %s>' % (f.__name__, list(self.overloads.itervalues()))
+        f, _, _ = iter(self.overloads).next()
+        signatures = [sig for f, sig, _ in self.overloads]
+        return '<%s: \n%s>' % (f.__name__,
+                               "\n".join("    %s" % (s,) for s in signatures))
 
 def overload(signature, func=None, **kwds):
     """
@@ -35,7 +60,12 @@ def overload(signature, func=None, **kwds):
         def myfunc(...):
             ...
     """
-    def decorator(f):
+    def decorator(f, signature=signature):
+        if signature is None:
+            signature = dummy_signature(f)
+        else:
+            signature = dshape(signature)
+
         dispatcher = func or sys._getframe(1).f_locals.get(f.__name__)
         dispatcher = dispatcher or Dispatcher()
         dispatcher.add_overload(f, signature, kwds)
@@ -68,6 +98,10 @@ def best_match(func, argtypes, constraints=None):
 
     constraints: [(TypeVar, Mono)]
         Optional set of constraints, see unification.py
+
+    Returns
+    -------
+    (dst_sig, sig, func)
     """
     from blaze.datashape import coerce
     overloads = func.overloads
@@ -85,9 +119,12 @@ def best_match(func, argtypes, constraints=None):
     for candidate in candidates:
         dst_sig, sig, func = candidate
         try:
-            weight = coerce(input, dst_sig)
-        except error.CoercionError:
+            # weight = coerce(input, dst_sig)
+            weight = sum(coerce(a, p) for a, p in zip(argtypes,
+                                                      dst_sig.parameters[:-1]))
+        except error.CoercionError, e:
             pass
+            # print(input, dst_sig, e)
         else:
             matches[weight].append(candidate)
 
@@ -110,7 +147,7 @@ def best_match(func, argtypes, constraints=None):
 def find_matches(overloads, argtypes, constraints=None):
     """Find all overloads that unify with the given inputs"""
     input = T.Function(*argtypes + [T.TypeVar('R')])
-    for sig, func in overloads:
+    for func, sig, kwds in overloads:
         assert isinstance(sig, T.Function), sig
 
         # -------------------------------------------------
@@ -127,8 +164,12 @@ def find_matches(overloads, argtypes, constraints=None):
         broadcasting = [True] * l1
 
         try:
-            [dst_sig], _ = unify(constraints, broadcasting)
-        except error.UnificationError:
+            result, _ = unify(constraints, broadcasting)
+        except error.UnificationError, e:
+            print("error", e)
+            raise
             continue
         else:
+            print(result)
+            dst_sig = result[0]
             yield dst_sig, sig, func
