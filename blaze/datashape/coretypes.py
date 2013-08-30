@@ -684,14 +684,14 @@ class TypeVar(Mono):
 
     # All TypeVariables compare equal
     # dshape('M,int32') = dshape('N,int32')
-    def __eq__(self, other):
-        if not isinstance(other, TypeVar):
-            return False
-        else:
-            return True
+    # def __eq__(self, other):
+    #     if not isinstance(other, TypeVar):
+    #         return False
+    #     else:
+    #         return True
 
-    def __hash__(self):
-        return hash(self.__class__)
+    # def __hash__(self):
+    #     return hash(self.__class__)
 
 
 class Implements(Mono):
@@ -1124,7 +1124,7 @@ def from_numpy(shape, dt):
 # Python Compatibility
 #------------------------------------------------------------------------
 
-def from_python_scalar(scalar):
+def typeof(scalar):
     """
     Return a datashape ctype for a python scalar.
     """

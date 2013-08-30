@@ -8,7 +8,7 @@ from itertools import product
 
 from blaze import error
 from blaze.datashape import (DataShape, IntegerConstant, StringConstant,
-                             CType, Fixed, to_numpy, TypeSet)
+                             CType, Fixed, to_numpy, TypeSet, TypeVar)
 
 import numpy as np
 
@@ -61,11 +61,17 @@ def _promote_units(a, b):
         # Promote CTypes -- this should go through coerce()
         return promote(a, b)
 
+def eq(a, b):
+    if isinstance(a, TypeVar) and isinstance(b, TypeVar):
+        return True
+    return a == b
+
 def promote(a, b):
     """Promote a series of CType or DataShape types"""
     if isinstance(a, DataShape):
         assert isinstance(b, DataShape)
-        assert a.parameters[:-1] == b.parameters[:-1]
+        assert all(eq(p1, p2) for p1, p2 in zip(a.parameters[:-1],
+                                                b.parameters[:-1]))
         return DataShape(a.parameters[:-1] + (promote(a.measure, b.measure),))
 
     return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))

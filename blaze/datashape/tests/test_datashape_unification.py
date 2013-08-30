@@ -43,8 +43,8 @@ class TestUnification(unittest.TestCase):
         # Fixed(1))
 
         [arg1, arg2], remaining_constraints = unify(constraints, [True, True])
-        self.assertEqual(arg1, dshape('10, B, int16'))
-        self.assertEqual(arg2, dshape('10, 10, float32'))
+        self.assertEqual(str(arg1), '10, B, int16')
+        self.assertEqual(str(arg2), '10, 10, float32')
 
     def test_unify_broadcasting1(self):
         ds1 = dshape('A, B, int32')
