@@ -1,23 +1,28 @@
-from __future__ import absolute_import
-from blaze.datashape.traits import TypeSet
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
 
-__all__ = ['dopen', 'dshape', 'dshapes', 'cat_dshapes', 'broadcastable',
-           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
-           'to_numba', 'from_numba_str']
-
+import inspect
 import operator
 import itertools
 import ctypes
 import sys
 
+from blaze import error
+from blaze.util import IdentityDict, gensym
 from . import parser
 from .validation import validate
 from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis,
-               uint8, uint16, uint32, uint64, CType,
+               uint8, uint16, uint32, uint64, CType, Mono, type_constructor,
                int8, int16, int32, int64,
                float32, float64, complex64, complex128, Type, free)
 from .traversal import tmap
-from blaze.util import IdentityDict
+from blaze.datashape.traits import TypeSet
+
+__all__ = ['dopen', 'dshape', 'dshapes', 'cat_dshapes', 'broadcastable',
+           'dummy_signature', 'verify',
+           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
+           'to_numba', 'from_numba_str']
+
 
 PY3 = (sys.version_info[:2] >= (3,0))
 
@@ -104,6 +109,32 @@ def cat_dshapes(dslist):
     return DataShape([Fixed(outer_dim_size)] + list(inner_ds))
 
 
+def dummy_signature(f):
+    """Create a dummy signature for `f`"""
+    from . import coretypes as T
+    argspec = inspect.getargspec(f)
+    n = len(argspec.args)
+    return T.Function(*[T.TypeVar(gensym()) for i in range(n + 1)])
+
+
+def verify(t1, t2):
+    """Verify that two immediate type constructors are valid for unification"""
+    if not isinstance(t1, Mono) or not isinstance(t2, Mono):
+        if t1 != t2:
+            raise error.UnificationError("%s != %s" % (t1, t2))
+        return
+
+    args1, args2 = t1.parameters, t2.parameters
+    tcon1, tcon2 = type_constructor(t1), type_constructor(t2)
+
+    if tcon1 != tcon2:
+        raise error.UnificationError(
+            "Got differing type constructors %s and %s" % (tcon1, tcon2))
+
+    if len(args1) != len(args2):
+        raise error.UnificationError("%s got %d and %d arguments" % (
+            tcon1, len(args1), len(args2)))
+
 def broadcastable(dslist, ranks=None, rankconnect=[]):
     """Return output (outer) shape if datashapes are broadcastable.
 
@@ -148,6 +179,10 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
                                 "argument %d and argument %d" % (arg1, arg2))
 
     return tuple(Fixed(s) for s in outshape)
+
+#------------------------------------------------------------------------
+# DataShape Conversion
+#------------------------------------------------------------------------
 
 def _from_cffi_internal(ffi, ctype):
     k = ctype.kind

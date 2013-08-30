@@ -22,7 +22,7 @@ from itertools import chain
 from blaze import error
 from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
-from . import promote_units, normalize, simplify, tmap, dshape
+from . import promote_units, normalize, simplify, tmap, dshape, verify
 from blaze.datashape.coretypes import Mono, TypeVar, free, type_constructor
 
 logger = logging.getLogger(__name__)
@@ -132,23 +132,8 @@ def unify_single(t1, t2, solution, remaining):
         # No need to recurse, this will be caught by promote()
         pass
     else:
-        if not isinstance(t1, Mono) or not isinstance(t2, Mono):
-            if t1 != t2:
-                raise error.UnificationError("%s != %s" % (t1, t2))
-            return
-
-        args1, args2 = t1.parameters, t2.parameters
-        tcon1, tcon2 = type_constructor(t1), type_constructor(t2)
-
-        if tcon1 != tcon2:
-            raise error.UnificationError(
-                "Got differing type constructors %s and %s" % (tcon1, tcon2))
-
-        if len(args1) != len(args2):
-            raise error.UnificationError("%s got %d and %d arguments" % (
-                tcon1, len(args1), len(args2)))
-
-        for arg1, arg2 in zip(args1, args2):
+        verify(t1, t2)
+        for arg1, arg2 in zip(t1.parameters, t2.parameters):
             unify_single(arg1, arg2, solution, remaining)
 
 
