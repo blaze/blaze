@@ -10,8 +10,32 @@ will be placed in a concrete target data_descriptor.
 from itertools import product as it_product
 import ctypes
 import operator
+import logging
+
 from ..py2help import izip, reduce, xrange
 from ..datashape.util import to_ctypes
+
+
+def _chunk_size_gen(total, chunk):
+    a = 0
+    while a + chunk < total:
+        yield (a, chunk)
+        a += chunk
+
+    yield (a, total - a)
+
+
+def _chunk_split(dims, chunk_size):
+    # returns for each chunk its "index" as well as its actual chunk size.
+    if len(dims) > 0:
+        helper_it = it_product(*([xrange(x) for x in dims[:-1]] +
+                                 [_chunk_size_gen(dims[-1], chunk_size)]))
+
+        for i in helper_it:
+            yield i[:-1]+(i[-1][0],), i[-1][1]
+    else:
+        yield tuple(), 1
+
 
 
 class _Executor(object):
@@ -19,25 +43,29 @@ class _Executor(object):
     A simple executor class that is able to convert a BlazeFunc
     DataDescriptor into a raw memory DataDescriptor
     """
+
     def __init__(self, dd, iter_dims=1):
         res_ds = dd.dshape
-        total_dims = len(res_ds) - 1
-        lift_dims = total_dims - iter_dims
+        lift_dims = len(res_ds) - iter_dims # -1 due to measure in ds +1 due to chunked dimension
 
+        # generate the specialization.
+        tree = dd.kerneltree.fuse()
+        newkernel = tree.kernel.lift(lift_dims, 'C')
+        cfunc = newkernel.ctypes_func
+
+
+        logging.debug("types newkernel: %s", newkernel.dshapes)
         # one reader per arg
         readers = [arr.arr._data.element_reader(iter_dims)
                    for arr in dd.args]
 
-        tree = dd.kerneltree.fuse()
-        newkernel = tree.kernel.lift(lift_dims, 'C')
-        cfunc = newkernel.ctypes_func
         types = [to_ctypes(ds.measure) for ds in newkernel.dshapes]
 
         shapes = [arr.arr.dshape.shape[iter_dims:]
                   for arr in dd.args]
         shapes.append(res_ds.shape[iter_dims:])
 
-        arg_structs = [arg_type._type_(None, shape)
+        arg_structs = [arg_type._type_(None, (0,) + shape)
                        for arg_type, shape in izip(cfunc.argtypes,
                                                    shapes)]
 
@@ -45,42 +73,50 @@ class _Executor(object):
         self.readers = readers # readers for inputs
         self.arg_structs = arg_structs # ctypes args
         self.res_dshape = res_ds # shape of the results
-        self.outer_dims = res_ds[:iter_dims] # shape with elements
-        self.inner_dims = res_ds[iter_dims:]
+        # shape with elements (including the iteration dimension)
+        self.outer_dims = tuple(operator.index(i) for i in res_ds[:iter_dims])
         self.c_types = types
 
+        logging.debug("types: %s", types)
 
-    def _patch(self, struct, value, typ=None):
+
+    def _patch(self, struct, value, count, typ=None):
         if typ is None:
             typ = struct.e0._type_
         struct.e0 = ctypes.cast(value, ctypes.POINTER(typ))
+        struct.e1[0] = count
+
 
     def run_append(self, dd, chunk_size=1):
         f = self.cfunc
         arg_s = self.arg_structs
         r = self.readers
-        with dd.element_appender() as dst:
-            for element in it_product(*[xrange(x) for x in self.outer_dims]):
-                for struct, reader, typ in izip(arg_s[:-1], r,
-                                                self.c_types[:-1]):
-                    self._patch(struct,
-                                reader.read_single(element), typ)
 
-                with dst.buffered_ptr() as dst_buff:
-                    self._patch(arg_s[-1], dst_buff, self.c_types[-1])
+        with dd.element_appender() as dst:
+
+            for element, chunk_size in _chunk_split(self.outer_dims, chunk_size):
+                for struct, reader, typ in izip(arg_s[:-1], r, self.c_types[:-1]):
+                    self._patch(struct,
+                                reader.read_single(element, count=chunk_size),
+                                chunk_size, typ)
+
+                with dst.buffered_ptr(count=chunk_size) as dst_buff:
+                    self._patch(arg_s[-1], dst_buff, chunk_size, self.c_types[-1])
                     f(*arg_s)
 
     def run_write(self, dd, chunk_size=1):
         f = self.cfunc
         arg_s = self.arg_structs
         r = self.readers
+
         dst = dd.element_writer(len(self.outer_dims))
-        for element in it_product(*[xrange(x) for x in self.outer_dims]):
+        for element, chunk_size in _chunk_split(self.outer_dims, chunk_size):
             for struct, reader, typ in izip(arg_s[:-1], r, self.c_types[:-1]):
                 self._patch(struct,
-                            reader.read_single(element, chunk_size), typ)
-            with dst.buffered_ptr(element, chunk_size) as dst_buf:
-                self._patch(arg_s[-1], dst_buf, self.c_types[-1])
+                            reader.read_single(element, count=chunk_size),
+                            chunk_size, typ)
+            with dst.buffered_ptr(element, count=chunk_size) as dst_buf:
+                self._patch(arg_s[-1], dst_buf, chunk_size, self.c_types[-1])
                 f(*arg_s)
 
 

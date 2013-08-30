@@ -10,19 +10,31 @@ import blaze
 import random
 import math
 import time
+import logging
+
 from itertools import product as it_product
 from blaze.executive import simple_execute_write
 
 
 
-def eval_in_mem(arr, iter_dims, chunk=1):
-    res = blaze.empty(arr.dshape)
+def eval_in_mem(arr, iter_dims, chunk=1, dump_result=False):
+    logging.info("starting in-mem with dims=%s chunk=%d",
+                 str(iter_dims), chunk)
+    t = time.time()
+    res = blaze.zeros(arr.dshape)
     simple_execute_write(arr._data, res._data,
                          iter_dims=iter_dims, chunk=chunk)
+    logging.info("took %f secs.\n", time.time()-t);
+    if dump_result:
+        logging.debug(res)
+
     return res
 
 
 if __name__ == '__main__':
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+ 
     operand_datashape = blaze.dshape('10, 10, 10, float64')
 
     op0 = blaze.empty(operand_datashape)
@@ -36,42 +48,24 @@ if __name__ == '__main__':
         op0[i] = math.sin(val)
         op1[i] = math.cos(val)
 
-    print("initialization took %f seconds" % (time.time()-t))
+    logging.info("initialization took %f seconds", (time.time()-t))
 
     expr = op0*op0 + op1*op1
 
-    t = time.time()
-    result = eval_in_mem(expr, None)
-    print("evaluation-in-mem complete took %f seconds"
-          % (time.time()-t))
-    print(result)
-
-    t = time.time()
-    result = eval_in_mem(expr, 0)
-    print("evaluation-in-mem iter_dims=0 took %f seconds"
-          % (time.time()-t))
-    print(result)
-
-    t = time.time()
-    result = eval_in_mem(expr, iter_dims=1)
-    print("evaluation-in-mem iter_dims=1 took %f seconds"
-          % (time.time()-t))
-    print(result)
-
-    t = time.time()
-    result = eval_in_mem(expr, iter_dims=1, chunk=4)
-    print("evaluation-in-mem iter_dims=1 chunksize=4 took %f seconds"
-          % (time.time()-t))
-    print(result)
+    result = eval_in_mem(expr, None, dump_result=True)
+    result = eval_in_mem(expr, 0, dump_result=True)
+    result = eval_in_mem(expr, iter_dims=1, dump_result=True)
+    result = eval_in_mem(expr, iter_dims=1, chunk=4, dump_result=True)
 
     stor = blaze.Storage('blz://persisted.blz')
     t = time.time()
     result = blaze.eval(expr, storage=stor)
-    print("evaluation blz took %f seconds" % (time.time()-t))
-    print(result)
+    logging.info("evaluation blz took %f seconds", time.time()-t)
+    logging.debug(str(result))
     blaze.drop(stor)
 
     t = time.time()
     result = blaze.eval(expr)
-    print("evaluation hierarchical %f seconds" % (time.time()-t))
+    logging.info("evaluation hierarchical %f seconds", time.time()-t)
+    logging.debug(str(result))
 
