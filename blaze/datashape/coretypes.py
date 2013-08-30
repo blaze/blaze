@@ -56,6 +56,10 @@ class Type(type):
 class Mono(object):
     """
     Monotype are unqualified 0 parameters.
+
+    Each type must be reconstructable using its parameters:
+
+        type(blaze_type)(*type.parameters)
     """
     composite = False
     __metaclass__ = Type
@@ -101,11 +105,16 @@ class Mono(object):
         else:
             return self
 
+class Unit(Mono):
+    """
+    Unit type that does not need to be reconstructed.
+    """
+
 #------------------------------------------------------------------------
 # Parse Types
 #------------------------------------------------------------------------
 
-class Ellipsis(Mono):
+class Ellipsis(Unit):
     """
     Ellipsis (...). Used to indicate a variable number of dimensions.
     E.g.:
@@ -133,14 +142,14 @@ class Ellipsis(Mono):
     def __hash__(self):
         return hash('...')
 
-class Null(Mono):
+class Null(Unit):
     """
     The null datashape.
     """
     def __str__(self):
         return expr_string('null', None)
 
-class IntegerConstant(Mono):
+class IntegerConstant(Unit):
     """
     An integer which is a parameter to a type constructor. It is itself a
     degenerate type constructor taking 0 parameters.
@@ -171,7 +180,7 @@ class IntegerConstant(Mono):
     def __hash__(self):
         return hash(self.val)
 
-class StringConstant(Mono):
+class StringConstant(Unit):
     """
     Strings at the level of the constructor.
 
@@ -198,7 +207,7 @@ class StringConstant(Mono):
     def __hash__(self):
         return hash(self.val)
 
-class Bytes(Mono):
+class Bytes(Unit):
     """ Bytes type """
     cls = MEASURE
 
@@ -241,11 +250,12 @@ _canonical_string_encodings = {
     u'utf32' : u'U32'
 }
 
-class String(Mono):
+class String(Unit):
     """ String container """
     cls = MEASURE
 
     def __init__(self, fixlen=None, encoding=None):
+        # TODO: Do this constructor better...
         if fixlen is None and encoding is None:
             # String()
             self.fixlen = None
@@ -280,15 +290,14 @@ class String(Mono):
         else:
             raise ValueError(('Unexpected types to String constructor '
                             '(%s, %s)') % (type(fixlen), type(encoding)))
+
         # Validate the encoding
         if not self.encoding in _canonical_string_encodings:
             raise ValueError('Unsupported string encoding %s' %
                             repr(self.encoding))
+
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
-
-        self.parameters = (self.fixlen, self.encoding)
-
         self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
         self._c_alignment = ctypes.alignment(ctypes.c_void_p)
 
@@ -335,7 +344,7 @@ class DataShape(Mono):
     __metaclass__ = Type
     composite = False
 
-    def __init__(self, parameters=None, name=None):
+    def __init__(self, *parameters, **kwds):
         if len(parameters) > 1:
             self.parameters = tuple(parameters)
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
@@ -352,6 +361,7 @@ class DataShape(Mono):
                             ' more parameters, only got %s') % (len(parameters)))
         self.composite = True
 
+        name = kwds.get('name')
         if name:
             self.name = name
             self.__metaclass__._registry[name] = self
@@ -468,7 +478,7 @@ class DataShape(Mono):
         """
         newparams = [TypeVar('i%s'%n) for n in range(len(self.parameters)-1)]
         newparams.append(self.parameters[-1])
-        return DataShape(newparams)
+        return DataShape(*newparams)
 
     def subarray(self, leading):
         """Returns a data shape object of the subarray with 'leading'
@@ -480,7 +490,7 @@ class DataShape(Mono):
         elif leading in [len(self.parameters) - 1, -1]:
             return self.parameters[-1]
         else:
-            return DataShape(self.parameters[leading:])
+            return DataShape(*self.parameters[leading:])
 
 #------------------------------------------------------------------------
 # Categorical
@@ -525,7 +535,7 @@ class Option(DataShape):
         if not params[0].cls == MEASURE:
             raise TypeError('Option only takes measure argument')
 
-        self.parameters = (params,)
+        self.parameters = params
         self.ty = params[0]
 
     @property
@@ -546,7 +556,7 @@ class Option(DataShape):
 # CType
 #------------------------------------------------------------------------
 
-class CType(Mono):
+class CType(Unit):
     """
     Symbol for a sized type mapping uniquely to a native type.
     """
@@ -615,7 +625,7 @@ class CType(Mono):
 # Dimensions
 #------------------------------------------------------------------------
 
-class Fixed(Mono):
+class Fixed(Unit):
     """
     Fixed dimension.
     """
@@ -650,7 +660,7 @@ class Fixed(Mono):
     def __str__(self):
         return str(self.val)
 
-class Var(Mono):
+class Var(Unit):
     """ Variable dimension """
     cls = DIMENSION
 
@@ -664,7 +674,7 @@ class Var(Mono):
 # Variable
 #------------------------------------------------------------------------
 
-class TypeVar(Mono):
+class TypeVar(Unit):
     """
     A free variable in the signature. Not user facing.
     """
@@ -1118,7 +1128,7 @@ def from_numpy(shape, dt):
     if shape == ():
         return measure
     else:
-        return DataShape(parameters=(tuple(map(Fixed, shape))+(measure,)))
+        return DataShape(*tuple(map(Fixed, shape))+(measure,))
 
 #------------------------------------------------------------------------
 # Python Compatibility
@@ -1177,23 +1187,19 @@ def free(ds):
     """
     Return the free variables (TypeVar) of a blaze type (Mono).
     """
-    result = []
-    for x in ds.parameters:
-        if isinstance(x, TypeVar):
-            result.append(x)
-        elif isinstance(x, Mono):
+    if isinstance(ds, TypeVar):
+        return [ds]
+    elif isinstance(ds, Mono) and not isinstance(ds, Unit):
+        result = []
+        for x in ds.parameters:
             result.extend(free(x))
-
-    return result
-
-# Types are lacking uniformity :(
-datashape_type_constructor = lambda *args: DataShape(args)
+        return result
+    else:
+        return []
 
 def type_constructor(ds):
     """
     Get the type constructor for the blaze type (Mono).
     The type constructor indicates how types unify (see unification.py).
     """
-    if isinstance(ds, DataShape):
-        return datashape_type_constructor
     return type(ds)

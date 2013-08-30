@@ -130,7 +130,7 @@ def match(xs, ys, S=None):
 def substitute(S, ds):
     """Substitute a solution mapping Elipses to parameters"""
     sub_param = lambda x: S[x] if isinstance(x, Ellipsis) else [x]
-    return DataShape(list(chain(*map(sub_param, ds.parameters))))
+    return DataShape(*chain(*map(sub_param, ds.parameters)))
 
 
 #------------------------------------------------------------------------
@@ -148,9 +148,9 @@ def normalize_broadcasting(constraints, broadcasting):
             leading = tuple(Fixed(1) for i in range(abs(len1 - len2)))
 
             if len1 < len2:
-                ds1 = DataShape(leading + ds1.parameters)
+                ds1 = DataShape(*leading + ds1.parameters)
             elif len2 < len1:
-                ds2 = DataShape(leading + ds2.parameters)
+                ds2 = DataShape(*leading + ds2.parameters)
 
             broadcast_env.extend(zip(ds1.parameters[:-1], ds2.parameters[:-1]))
 

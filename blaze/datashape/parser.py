@@ -223,7 +223,7 @@ def p_rhs_expr(p):
             raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(rhs))
         p[0] = rhs
     else:
-        p[0] = T.DataShape(p[1])
+        p[0] = T.DataShape(*p[1])
 
 def p_rhs_expression_list_node1(p):
     '''rhs_expression_list : appl

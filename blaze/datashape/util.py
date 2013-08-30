@@ -122,7 +122,7 @@ def cat_dshapes(dslist):
                             ' all match after'
                             ' the first dimension (%s vs %s)') %
                             (inner_ds, ds[1:]))
-    return DataShape([Fixed(outer_dim_size)] + list(inner_ds))
+    return DataShape(*[Fixed(outer_dim_size)] + list(inner_ds))
 
 
 def dummy_signature(f):
@@ -222,7 +222,7 @@ def _from_cffi_internal(ffi, ctype):
             dsparams.append(Fixed(ctype.length))
             ctype = ctype.item
         dsparams.append(_from_cffi_internal(ffi, ctype))
-        return DataShape(dsparams)
+        return DataShape(*dsparams)
     elif k == 'primitive':
         cn = ctype.cname
         if cn in ['signed char', 'short', 'int',
@@ -352,7 +352,7 @@ def from_ctypes(ctype):
             dstup.append(Fixed(ctype._length_))
             ctype = ctype._type_
         dstup.append(from_ctypes(ctype))
-        return DataShape(tuple(dstup))
+        return DataShape(*dstup)
     elif ctype == ctypes.c_int8:
         return int8
     elif ctype == ctypes.c_int16:
@@ -429,7 +429,7 @@ def from_llvm(typ, argkind=SCALAR):
                 eltype = from_llvm(argkind[2])
                 obj = [TypeVar('i'+str(n)) for n in range(nd)]
                 obj.append(eltype)
-                ds = DataShape(tuple(obj))
+                ds = DataShape(*obj)
                 ds._array_kind = argkind[0]
 
     elif kind == llvm.core.TYPE_STRUCT:

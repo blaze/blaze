@@ -5,11 +5,11 @@ Type visitor that reconstructs types.
 """
 
 from __future__ import print_function, division, absolute_import
-from blaze.datashape.coretypes import Mono, CType, TypeVar, type_constructor
+from blaze.datashape.coretypes import Mono, Unit, type_constructor
 
 def descend(t):
     """Determine whether to descend down the given term (which is a type)"""
-    return isinstance(t, Mono) and not isinstance(t, (TypeVar, CType))
+    return isinstance(t, Mono) and not isinstance(t, Unit)
 
 def transform(visitor, t, descend=descend):
     """
@@ -48,6 +48,6 @@ def traverse(f, t):
     Map f over t, calling `f` with type `t` and the map result of the mapping
     `f` over `t`s parameters.
     """
-    if isinstance(t, Mono):
+    if descend(t):
         return f(t, [traverse(f, p) for p in t.parameters])
     return t

@@ -72,6 +72,6 @@ def promote(a, b):
         assert isinstance(b, DataShape)
         assert all(eq(p1, p2) for p1, p2 in zip(a.parameters[:-1],
                                                 b.parameters[:-1]))
-        return DataShape(a.parameters[:-1] + (promote(a.measure, b.measure),))
+        return DataShape(*a.parameters[:-1] + (promote(a.measure, b.measure),))
 
     return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))

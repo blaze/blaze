@@ -11,7 +11,7 @@ __all__ = ['TypeSet', 'matches_typeset', 'signed', 'unsigned', 'integral',
            'floating', 'complexes', 'boolean', 'numeric', 'scalar']
 
 
-class TypeSet(Mono):
+class TypeSet(Unit):
     """
     Create a new set of types. Keyword argument 'name' may create a registered
     typeset for use in datashape type strings.
@@ -28,13 +28,9 @@ class TypeSet(Mono):
     def types(self):
         return self._order
 
-    @property
-    def parameters(self):
-        return tuple(self._order)
-
     def __eq__(self, other):
         return (isinstance(other, type(self)) and
-                self.parameters == other.parameters)
+                self.name == other.name and self.types == other.types)
 
     def __contains__(self, val):
         return val in self._set
