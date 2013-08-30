@@ -17,7 +17,7 @@ import blaze
 from blaze import dshape, dshapes
 from blaze.datashape import (unify_simple as unify,
                              normalize_ellipses as normalize,
-                             promote, tmap)
+                             promote, tmap, coerce)
 
 logging.getLogger('blaze').setLevel(logging.DEBUG)
 
@@ -45,6 +45,9 @@ The Blaze typing interpreter.
     normalize(ds1, ds2):
         normalize two datashapes for unification (ellipses, broadcasting)
 
+    coerce(t1, t2):
+        Determine a coercion cost for coercing type t1 to type t2
+
     tmap(f, t):
         map function `f` over type `t` and its sub-terms post-order
 """
@@ -56,6 +59,7 @@ env = {
     'unify':     unify,
     'promote':   promote,
     'normalize': normalize,
+    'coerce':    coerce,
     'tmap':      tmap,
 }
 
