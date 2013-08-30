@@ -16,8 +16,6 @@ from ply import lex, yacc
 from blaze.plyhacks import yaccfrom, lexfrom
 from blaze.error import CustomSyntaxError, BlazeTypeError
 
-instanceof = lambda T: lambda X: isinstance(X, T)
-
 #------------------------------------------------------------------------
 # Errors
 #------------------------------------------------------------------------
@@ -225,7 +223,7 @@ def p_rhs_expr(p):
             raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(rhs))
         p[0] = rhs
     else:
-        p[0] = build_dshape(p[1])
+        p[0] = T.DataShape(p[1])
 
 def p_rhs_expression_list_node1(p):
     '''rhs_expression_list : appl
@@ -498,25 +496,6 @@ def parse(pattern):
                         'position of a datashape, not %s') % repr(ds))
     return ds
 
-
-#------------------------------------------------------------------------
-# Util
-#------------------------------------------------------------------------
-
-def build_dshape(params):
-    """
-    Build a DataShape, making sure type variables are unique in this context.
-    E.g. in 'T, T, int32', make sure the two type variables 'T' are the same
-    object.
-    """
-    typevars = {}
-    parameters = []
-    for p in params:
-        if isinstance(p, T.TypeVar):
-            p = typevars.setdefault(p.symbol, p)
-        parameters.append(p)
-
-    return T.DataShape(parameters)
 
 if __name__ == '__main__':
     import readline

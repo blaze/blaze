@@ -66,7 +66,7 @@ def dshape(o, multi=False):
     """
     ds = _dshape(o, multi)
     validate(ds)
-    return ds
+    return _unique_typevars(ds)
 
 def _dshape(o, multi=False):
     if multi:
@@ -79,6 +79,22 @@ def _dshape(o, multi=False):
         return list(parser.parse_mod(o.read()))
     else:
         raise TypeError('Cannot create dshape from object of type %s' % type(o))
+
+def _unique_typevars(ds):
+    """
+    Build a blaze type, making sure type variables are unique in this context.
+    E.g. in 'T, T, int32', make sure the two type variables 'T' are the same
+    object.
+    """
+    typevars = {}
+    def f(x):
+        if isinstance(x, TypeVar):
+            if x.symbol not in typevars:
+                typevars[x.symbol] = x
+            return typevars[x.symbol]
+        return x
+
+    return tmap(f, ds)
 
 def cat_dshapes(dslist):
     """
