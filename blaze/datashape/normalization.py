@@ -7,9 +7,9 @@ Datashape normalization. This handles Ellipses and broadcasting.
 from itertools import chain
 from collections import defaultdict, deque
 
-from blaze import error
-from . import transform
-from .coretypes import DataShape, Ellipsis, Fixed
+from blaze import error, util
+from . import transform, verify
+from .coretypes import DataShape, Ellipsis, Fixed, Function
 
 #------------------------------------------------------------------------
 # Normalization
@@ -31,10 +31,27 @@ def normalize(constraints, broadcasting):
         broadcast together.
     """
     is_ds = lambda ds: isinstance(ds, DataShape)
-    constraints1 = [normalize_ellipses(ds1, ds2)
-                        for ds1, ds2 in constraints if is_ds(ds1) and is_ds(ds2)]
-    constraints2, b_env = normalize_broadcasting(constraints1, broadcasting)
-    return constraints2, b_env
+    result = []
+    for ds1, ds2 in constraints:
+        if is_ds(ds1) and is_ds(ds2):
+            ds1, ds2 = normalize_ellipses(ds1, ds2)
+        result.append((ds1, ds2))
+
+    constraints, b_env = normalize_broadcasting(result, broadcasting)
+    return constraints, b_env
+
+#------------------------------------------------------------------------
+# Functions
+
+@util.listify
+def normalize_functions(constaints):
+    for t1, t2 in constaints:
+        if isinstance(t1, Function) and isinstance(t2, Function):
+            verify(t1, t2)
+            for x, y in zip(t1.parameters, t2.parameters):
+                yield (x, y)
+        else:
+            yield t1, t2
 
 #------------------------------------------------------------------------
 # Ellipses
@@ -60,10 +77,10 @@ def _normalize_ellipses(ds1, ds2):
     if a and (len(xs) <= len(ys) or not b):
         S = match(xs, ys)
     elif b and (len(ys) <= len(xs) or not a):
-        S = match(b, a)
+        S = match(ys, xs)
     elif a or b:
         assert len(xs) == len(ys)
-        S = match(a, b)
+        S = match(xs, ys)
     else:
         return ds1, ds2 # no ellipses, nothing to do
 
