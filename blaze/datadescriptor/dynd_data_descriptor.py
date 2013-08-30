@@ -108,11 +108,9 @@ class DyNDElementWriter(IElementWriter):
         buf_arr = dst_arr.cast(c_dtype).eval()
         buf_ptr = _lowlevel.data_address_of(buf_arr)
         if buf_ptr == _lowlevel.data_address_of(dst_arr):
-            print("in-place (%s)" % hex(buf_ptr) )
             # If no buffering is needed, just return the pointer
             return buffered_ptr_ctxmgr(buf_ptr, None)
         else:
-            print("buffer")
             def buffer_flush():
                 dst_arr[...] = buf_arr
             return buffered_ptr_ctxmgr(buf_ptr, buffer_flush)
