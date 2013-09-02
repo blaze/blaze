@@ -3,11 +3,13 @@ from __future__ import print_function, division, absolute_import
 
 import sys
 import collections
+from itertools import chain
 from pprint import pformat
 
 from blaze import error
 from blaze.util import flatargs, listify
-from blaze.datashape import coretypes as T, unify, dshape, dummy_signature
+from blaze.datashape import (coretypes as T, unify, dshape,
+                             dummy_signature)
 
 class Dispatcher(object):
     """Dispatcher for overloaded functions"""
@@ -84,7 +86,7 @@ def overloadable(f):
 # Matching
 #------------------------------------------------------------------------
 
-def best_match(func, argtypes, constraints=None):
+def best_match(func, argtypes, constraints=()):
     """
     Find a best match in for overloaded function `func` given `argtypes`.
 
@@ -110,7 +112,6 @@ def best_match(func, argtypes, constraints=None):
     # Find candidates
 
     candidates = find_matches(overloads, argtypes, constraints)
-    input = T.Function(*argtypes + [T.TypeVar('R')])
 
     # -------------------------------------------------
     # Weigh candidates
@@ -118,19 +119,18 @@ def best_match(func, argtypes, constraints=None):
     matches = collections.defaultdict(list)
     for candidate in candidates:
         dst_sig, sig, func = candidate
+        params = dst_sig.parameters[:-1]
         try:
-            # weight = coerce(input, dst_sig)
-            weight = sum(coerce(a, p) for a, p in zip(argtypes,
-                                                      dst_sig.parameters[:-1]))
+            weight = sum([coerce(a, p) for a, p in zip(argtypes, params)])
         except error.CoercionError, e:
             pass
-            # print(input, dst_sig, e)
         else:
             matches[weight].append(candidate)
 
     if not matches:
         raise error.OverloadError(
-            "No overload for function %s matches input %s" % (func, input))
+            "No overload for function %s matches for argtypes (%s)" % (
+                                    func, ", ".join(map(str, argtypes))))
 
     # -------------------------------------------------
     # Return candidate with minimum weight
@@ -144,7 +144,7 @@ def best_match(func, argtypes, constraints=None):
         return candidates[0]
 
 @listify
-def find_matches(overloads, argtypes, constraints=None):
+def find_matches(overloads, argtypes, constraints=()):
     """Find all overloads that unify with the given inputs"""
     input = T.Function(*argtypes + [T.TypeVar('R')])
     for func, sig, kwds in overloads:
@@ -160,16 +160,13 @@ def find_matches(overloads, argtypes, constraints=None):
         # -------------------------------------------------
         # Unification
 
-        constraints = [(input, sig)] + (constraints or [])
+        constraints = list(chain([(input, sig)], constraints))
         broadcasting = [True] * l1
 
         try:
             result, _ = unify(constraints, broadcasting)
         except error.UnificationError, e:
-            print("error", e)
-            raise
             continue
         else:
-            print(result)
             dst_sig = result[0]
             yield dst_sig, sig, func

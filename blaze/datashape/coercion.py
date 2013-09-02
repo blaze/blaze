@@ -66,7 +66,7 @@ def coerce(a, b, normalized=None, seen=None):
     if not normalized:
         normalized, _ = normalize([(a, b)], [True])
 
-    return sum(_coerce(x, y, seen) for x, y in normalized)
+    return sum([_coerce(x, y, seen) for x, y in normalized])
 
 def _coerce(a, b, seen=None):
     if a == b or isinstance(a, TypeVar):

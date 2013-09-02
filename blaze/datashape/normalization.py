@@ -41,19 +41,6 @@ def normalize(constraints, broadcasting):
     return constraints, b_env
 
 #------------------------------------------------------------------------
-# Functions
-
-@util.listify
-def normalize_functions(constaints):
-    for t1, t2 in constaints:
-        if isinstance(t1, Function) and isinstance(t2, Function):
-            verify(t1, t2)
-            for x, y in zip(t1.parameters, t2.parameters):
-                yield (x, y)
-        else:
-            yield t1, t2
-
-#------------------------------------------------------------------------
 # Ellipses
 
 def normalize_ellipses(a, b):

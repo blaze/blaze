@@ -17,13 +17,15 @@ that type.
 """
 
 import logging
+from collections import deque
 from itertools import chain
 
 from blaze import error
 from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
-from . import promote_units, normalize, simplify, tmap, dshape, verify
-from blaze.datashape.coretypes import Mono, TypeVar, free, type_constructor
+from blaze.datashape import (promote_units, normalize, simplify, tmap,
+                             dshape, verify)
+from blaze.datashape.coretypes import TypeVar, free
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,8 @@ def unify_simple(a, b):
         a = dshape(a)
     if isinstance(b, _strtypes):
         b = dshape(b)
-    return unify([(a, b)], [True])
+    [res], _ = unify([(a, b)], [True])
+    return res
 
 def unify(constraints, broadcasting):
     """
@@ -63,7 +66,8 @@ def unify(constraints, broadcasting):
     solution, remaining = unify_constraints(constraints, S)
     logger.debug("Initial solution: %s", solution)
 
-    resolve_typesets(remaining, solution)
+    seed_typesets(remaining, solution)
+    merge_typevar_sets(remaining, solution)
 
     # Compute a type substitution with concrete types from the solution
     # TODO: incorporate broadcasting environment during reification
@@ -137,40 +141,46 @@ def unify_single(t1, t2, solution, remaining):
             unify_single(arg1, arg2, solution, remaining)
 
 
-def resolve_typesets(constraints, solution):
+def seed_typesets(constraints, solution):
     """
-    Fix-point iterate until all type variables are resolved according to the
-    constraints.
-
-    Parameters
-    ----------
-    constraints: [(TypeVar, TypeVar)]
-        Constraint graph specifying coercion relations:
-            (a, b) ∈ constraints with a ⊆ b
-
-    solution : { TypeVar : set([ Type ]) }
-        Typing solution
+    Resolve type sets by seeding empty sets with type variables.
     """
-    # Fix-point update our type sets
-    changed = True
-    while changed:
-        changed = False
-        for a, b in constraints:
-            length = len(solution[b])
-            solution[b].update(solution[a])
-            changed |= length < len(solution[b])
-
     # Update empty type set solutions with variables from the input
-    # We can do this since there is no contraint on the free variable
+    # We can do this since there is no constraint on the free variable
     empty = IdentitySet()
     for a, b in constraints:
         if not solution[b] or b in empty:
             solution[b].add(a)
             empty.add(b)
 
-    # # Fix-point our fix-point
-    # if empty:
-    #     resolve_typesets(constraints, solution)
+def merge_typevar_sets(constraints, solution):
+    """
+    Update  the solution of sets that contain only type variables with a new
+    type variable along with new coercion constraints.
+
+    Consider the example:
+
+        x, y, z = dshapes('A, B, int32', 'C, D, float32', 'X, Y, float32')
+
+    with x ⊆ z and y ⊆ z:
+
+        >>> A, B, C, D, X, Y = map(TypeVar, 'ABCDXY')
+        >>> constraints = [(A, X), (C, X), (B, Y), (D, Y)]
+        >>> solution = {X: set([A, C]), Y: set([B, D])}
+        >>> merge_typevar_sets(constraints, solution)
+        >>> solution[X]
+        set([TypeVar(A_C)])
+        >>> solution[Y]
+        set([TypeVar(B_D)])
+    """
+    for src_var, typeset in list(dict_iteritems(solution)):
+        if len(typeset) > 1 and all(isinstance(v, TypeVar) for v in typeset):
+            new_var = TypeVar("_".join(sorted(v.symbol for v in typeset)))
+            solution[src_var] = set([new_var])
+            solution[new_var] = set()
+            for v in typeset:
+                constraints.append((v, new_var))
+                constraints.remove((v, src_var))
 
 def reify(solution, S=None):
     """
@@ -188,7 +198,10 @@ def reify(solution, S=None):
     if S is None:
         S = IdentityDict()
 
-    for typevar, t in dict_iteritems(solution):
+    seen = set()
+    queue = deque(dict_iteritems(solution))
+    while queue:
+        typevar, t = queue.popleft()
         if typevar in S:
             continue
 
@@ -199,9 +212,11 @@ def reify(solution, S=None):
             S[typevar] = typevar
             typeset.add(typevar)
             continue
-        elif freevars:
+        elif freevars and (typevar, t) not in seen:
             # Reify dependencies first
-            reify(dict((v, solution[v]) for v in freevars), S)
+            queue.append((typevar, t))
+            seen.add((typevar, t))
+        elif freevars:
             typeset = set(substitute(S, t) for t in typeset)
 
         S[typevar] = promote_units(*typeset)

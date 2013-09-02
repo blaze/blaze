@@ -6,7 +6,7 @@ import unittest
 from blaze import error
 from blaze.overloading import best_match, overload
 from blaze import dshape
-from blaze.datashape import unify, dshapes
+from blaze.datashape import unify, unify_simple, dshapes
 
 #------------------------------------------------------------------------
 # Tests
@@ -31,9 +31,14 @@ class TestOverloading(unittest.TestCase):
         d1 = dshape('10, T1, int32')
         d2 = dshape('T2, T2, float32')
         dst_sig, sig, func = best_match(f, [d1, d2])
-        print(dst_sig, sig)
+        self.assertEqual(str(sig),
+                         'X, Y, float32 -> X, Y, float32 -> X, Y, float32')
+
+        input = dshape('1, 1, float32 -> 1, 1, float32 -> R')
+        self.assertEqual(str(unify_simple(input, dst_sig)),
+                         '10, 1, float32 -> 10, 1, float32 -> 10, 1, float32')
 
 
 if __name__ == '__main__':
-    TestOverloading('test_best_match').debug()
-    # unittest.main()
+    # TestOverloading('test_best_match').debug()
+    unittest.main()
