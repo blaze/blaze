@@ -98,9 +98,7 @@ class TestDatashapeParser(unittest.TestCase):
                 float64: float64;
                 float128: float64;
                 complex64: float32;
-                cfloat32: float32;
                 complex128: float64;
-                cfloat64: float64;
                 string: string;
                 object: string;
                 datetime: string;

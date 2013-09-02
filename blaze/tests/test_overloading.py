@@ -54,9 +54,9 @@ class TestOverloading(unittest.TestCase):
         d2 = dshape('10, float32')
         dst_sig, sig, func = best_match(f, [d1, d2])
         self.assertEqual(str(sig),
-                         'X, Y, cfloat32 -> X, Y, cfloat32 -> X, Y, cfloat32')
+                         'X, Y, complex64 -> X, Y, complex64 -> X, Y, complex64')
         self.assertEqual(str(dst_sig),
-                         '1, 10, cfloat32 -> 1, 10, cfloat32 -> 1, 10, cfloat32')
+                         '1, 10, complex64 -> 1, 10, complex64 -> 1, 10, complex64')
 
     def test_best_match_ellipses(self):
         d1 = dshape('10, T1, int32')

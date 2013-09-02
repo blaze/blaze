@@ -64,8 +64,6 @@ bits = set([
     'float32',
     'float64',
     'float128',
-    'cfloat32',
-    'cfloat64',
     'complex64',
     'complex128',
     'string',
