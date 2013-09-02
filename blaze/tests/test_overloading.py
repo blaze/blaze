@@ -38,6 +38,15 @@ class TestOverloading(unittest.TestCase):
         self.assertEqual(str(unify_simple(input, dst_sig)),
                          '10, 1, float32 -> 10, 1, float32 -> 10, 1, float32')
 
+    def test_best_match_broadcasting(self):
+        d1 = dshape('10, complex64')
+        d2 = dshape('10, float32')
+        dst_sig, sig, func = best_match(f, [d1, d2])
+        self.assertEqual(str(sig),
+                         'X, Y, cfloat32 -> X, Y, cfloat32 -> X, Y, cfloat32')
+        self.assertEqual(str(dst_sig),
+                         '1, 10, cfloat32 -> 1, 10, cfloat32 -> 1, 10, cfloat32')
+
 
 if __name__ == '__main__':
     # TestOverloading('test_best_match').debug()

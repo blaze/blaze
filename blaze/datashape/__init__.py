@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from .traversal import transform, tmap, traverse
+from .traversal import transform, tmap, tzip, traverse
 from .coretypes import *
 from .traits import *
 from .util import *

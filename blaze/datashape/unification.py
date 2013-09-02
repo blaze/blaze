@@ -97,8 +97,8 @@ def unify_constraints(constraints, solution=None):
 
     Parameters
     ----------
-    constraints : [(DataShape, DataShape)]
-        List of constraints (datashape type equations)
+    constraints : [(Mono, Mono)]
+        List of constraints (blaze type equations)
 
     Returns: { TypeVar : set([ Mono ]) }
         Returns a solution to the set of constraints. The solution is a set

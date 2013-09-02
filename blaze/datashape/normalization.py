@@ -7,9 +7,9 @@ Datashape normalization. This handles Ellipses and broadcasting.
 from itertools import chain
 from collections import defaultdict, deque
 
-from blaze import error, util
-from . import transform, verify
-from .coretypes import DataShape, Ellipsis, Fixed, Function
+from blaze import error
+from . import transform, tzip
+from .coretypes import DataShape, Ellipsis, Fixed
 
 #------------------------------------------------------------------------
 # Normalization
@@ -44,8 +44,12 @@ def normalize(constraints, broadcasting):
 # Ellipses
 
 def normalize_ellipses(a, b):
-    S = _normalize_ellipses(a, b)
-    return substitute(S, a), substitute(S, b)
+    """Eliminate ellipses in DataShape"""
+    if isinstance(a, DataShape) and isinstance(b, DataShape):
+        S = _normalize_ellipses(a, b)
+        return substitute(S, a), substitute(S, b)
+    else:
+        return tzip(normalize_ellipses, a, b)
 
 def _normalize_ellipses(ds1, ds2):
     if not (isinstance(ds1, DataShape) and isinstance(ds2, DataShape)):
@@ -124,27 +128,23 @@ def substitute(S, ds):
 # Broadcasting
 
 def normalize_broadcasting(constraints, broadcasting):
-    result = []        # [(DataShape, DataShape)]
-    broadcast_env = [] # [(typevar1, typevar2)]
+    """Add broadcasting dimensions to DataShapes"""
+    return [_normalize_broadcasting(a, b) for a, b in constraints], None
 
-    for broadcast, (ds1, ds2) in zip(broadcasting, constraints):
-        if broadcast and (isinstance(ds1, DataShape) and
-                          isinstance(ds2, DataShape)):
-            # Create type variables for leading dimensions
-            len1, len2 = len(ds1.parameters), len(ds2.parameters)
-            leading = tuple(Fixed(1) for i in range(abs(len1 - len2)))
+def _normalize_broadcasting(a, b):
+    if isinstance(a, DataShape) and isinstance(b, DataShape):
+        # Create type variables for leading dimensions
+        len1, len2 = len(a.parameters), len(b.parameters)
+        leading = tuple(Fixed(1) for i in range(abs(len1 - len2)))
 
-            if len1 < len2:
-                ds1 = DataShape(*leading + ds1.parameters)
-            elif len2 < len1:
-                ds2 = DataShape(*leading + ds2.parameters)
+        if len1 < len2:
+            a = DataShape(*leading + a.parameters)
+        elif len2 < len1:
+            b = DataShape(*leading + b.parameters)
+    else:
+        a, b = tzip(_normalize_broadcasting, a, b)
 
-            broadcast_env.extend(zip(ds1.parameters[:-1], ds2.parameters[:-1]))
-
-        result.append((ds1, ds2))
-
-    return result, broadcast_env
-
+    return a, b
 
 #------------------------------------------------------------------------
 # Simplification
