@@ -36,14 +36,25 @@ class TestCoercion(unittest.TestCase):
         a, b, c = dshapes('10, 10, float32', '10, Y, Z, float64', 'X, Y, float64')
         self.assertGreater(coerce(a, b), coerce(a, c))
 
+    def test_coerce_broadcasting2(self):
+        a, b, c = dshapes('10, 10, float32', '1, 10, 10, float32', '10, 10, float32')
+        self.assertGreater(coerce(a, b), coerce(a, c))
+
+    def test_coerce_broadcasting3(self):
+        a, b, c = dshapes('10, 10, float32', '10, 10, 10, float32', '1, 10, 10, float32')
+        self.assertGreater(coerce(a, b), coerce(a, c))
+
     def test_coerce_traits(self):
         a, b, c = dshapes('10, 10, float32', '10, X, A : floating', '10, X, float32')
         self.assertGreater(coerce(a, b), coerce(a, c))
 
-    # TODO: Penalize ellipses
-    # def test_coerce_ellipsis(self):
-    #     a, b, c = dshapes('10, 10, float32', 'X, ..., float64', 'X, Y, float64')
-    #     self.assertGreater(coerce(a, b), coerce(a, c))
+    def test_coerce_dst_ellipsis(self):
+        a, b, c = dshapes('10, 10, float32', 'X, ..., float64', 'X, Y, float64')
+        self.assertGreater(coerce(a, b), coerce(a, c))
+
+    def test_coerce_src_ellipsis(self):
+        a, b, c = dshapes('10, ..., float32', 'X, Y, float64', 'X, ..., float64')
+        self.assertGreater(coerce(a, b), coerce(a, c))
 
 
 class TestCoercionErrors(unittest.TestCase):
@@ -54,5 +65,5 @@ class TestCoercionErrors(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # TestCoercion('test_coerce_ellipsis').debug()
+    # TestCoercion('test_coerce_src_ellipsis').debug()
     unittest.main()

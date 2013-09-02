@@ -15,7 +15,7 @@ from itertools import chain, product
 from blaze import error
 from .coretypes import CType, TypeVar
 from .traits import *
-from . import verify, normalize, Implements, Fixed, Ellipsis
+from . import verify, normalize, Implements, Fixed, Ellipsis, DataShape
 
 class CoercionTable(object):
     """Table to hold coercion rules"""
@@ -53,7 +53,7 @@ coercion_cost = _table.coercion_cost
 # Coercion function
 #------------------------------------------------------------------------
 
-def coerce(a, b, normalized=None, seen=None):
+def coerce(a, b, seen=None):
     """
     Determine a coercion cost from type `a` to type `b`.
 
@@ -61,17 +61,11 @@ def coerce(a, b, normalized=None, seen=None):
     """
     # TODO: Cost functions for conversion between type constructors in the
     # lattice (implement a "type join")
+
     if seen is None:
         seen = set()
-    if not normalized:
-        normalized, _ = normalize([(a, b)], [True])
 
-    return sum([_coerce(x, y, seen) for x, y in normalized])
-
-def _coerce(a, b, seen=None):
-    if isinstance(a, TypeVar):
-        # Note; don't match this with 'a == b', since we need to verify atoms
-        # even if equal (e.g. (..., ...) returns -1)
+    if a == b or isinstance(a, TypeVar):
         return 0
     elif isinstance(a, CType) and isinstance(b, CType):
         try:
@@ -92,13 +86,31 @@ def _coerce(a, b, seen=None):
         if a.val != b.val:
             return 0.1 # broadcasting penalty
         return 0
-    elif isinstance(a, Ellipsis) and isinstance(b, Ellipsis):
-        # If we throw in an ellipsis without any constraints, then we should
-        # coerce to something that accepts an arbitrary number of dimensions
-        return -1
+    elif isinstance(a, DataShape) and isinstance(b, DataShape):
+        return coerce_datashape(a, b, seen)
     else:
         verify(a, b)
-        return sum(_coerce(x, y, seen) for x, y in zip(a.parameters, b.parameters))
+        return sum([coerce(x, y, seen) for x, y in zip(a.parameters, b.parameters)])
+
+def coerce_datashape(a, b, seen):
+    # Penalize broadcasting
+    broadcast_penalty = abs(len(a.parameters) - len(b.parameters))
+
+    # Penalize ellipsis if one side has it but not the other
+    ellipses_a = sum(isinstance(p, Ellipsis) for p in a.parameters)
+    ellipses_b = sum(isinstance(p, Ellipsis) for p in b.parameters)
+    ellipsis_penalty = ellipses_a ^ ellipses_b
+
+    penalty = broadcast_penalty + ellipsis_penalty
+
+    # Process rest of parameters
+    [(a, b)], _ = normalize([(a, b)], [True])
+    verify(a, b)
+    for x, y in zip(a.parameters, b.parameters):
+        penalty += coerce(x, y, seen)
+
+    return penalty
+
 
 #------------------------------------------------------------------------
 # Coercion invariants
