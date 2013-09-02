@@ -64,6 +64,12 @@ class TestUnification(unittest.TestCase):
         [result], constraints = unify([(ds1, ds2)], [True])
         self.assertEqual(str(result), 'A, N, ..., S, B, float32')
 
+    def test_unify_ellipsis2(self):
+        ds1 = dshape('X, Y, float32 -> ..., float32 -> Z')
+        ds2 = dshape('10, T1, int32 -> T2, T2, float32 -> R')
+        [result], constraints = unify([(ds1, ds2)], [True])
+        self.assertEqual(str(result), '10, Y, int32 -> T2, T2, float32 -> Z')
+
     def test_unify_implements(self):
         d1 = dshape('10, int32')
         d2 = dshape('T, A : numeric')
@@ -86,5 +92,5 @@ class TestUnificationErrors(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # TestNormalization('test_normalize_ellipses5').debug()
+    # TestUnification('test_unify_ellipsis2').debug()
     unittest.main()

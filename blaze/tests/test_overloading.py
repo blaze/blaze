@@ -8,9 +8,7 @@ from blaze.overloading import best_match, overload
 from blaze import dshape
 from blaze.datashape import unify, unify_simple, dshapes
 
-#------------------------------------------------------------------------
-# Tests
-#------------------------------------------------------------------------
+# f
 
 @overload('X, Y, float32 -> X, Y, float32 -> X, Y, float32')
 def f(a, b):
@@ -24,6 +22,19 @@ def f(a, b):
 def f(a, b):
     return a
 
+# g
+
+@overload('X, Y, float32 -> X, Y, float32 -> X, int32')
+def g(a, b):
+    return a
+
+@overload('X, Y, float32 -> ..., float32 -> X, int32')
+def g(a, b):
+    return a
+
+#------------------------------------------------------------------------
+# Tests
+#------------------------------------------------------------------------
 
 class TestOverloading(unittest.TestCase):
 
@@ -47,7 +58,15 @@ class TestOverloading(unittest.TestCase):
         self.assertEqual(str(dst_sig),
                          '1, 10, cfloat32 -> 1, 10, cfloat32 -> 1, 10, cfloat32')
 
+    def test_best_match_ellipses(self):
+        d1 = dshape('10, T1, int32')
+        d2 = dshape('..., float32')
+        dst_sig, sig, func = best_match(g, [d1, d2])
+        self.assertEqual(str(sig), 'X, Y, float32 -> ..., float32 -> X, int32')
+        self.assertEqual(str(dst_sig),
+                         '10, T1, float32 -> ..., float32 -> 10, int32')
+
 
 if __name__ == '__main__':
-    # TestOverloading('test_best_match').debug()
+    # TestOverloading('test_best_match_ellipses').debug()
     unittest.main()

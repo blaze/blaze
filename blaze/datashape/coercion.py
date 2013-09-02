@@ -15,7 +15,7 @@ from itertools import chain, product
 from blaze import error
 from .coretypes import CType, TypeVar
 from .traits import *
-from . import verify, normalize, Implements, Fixed
+from . import verify, normalize, Implements, Fixed, Ellipsis
 
 class CoercionTable(object):
     """Table to hold coercion rules"""
@@ -69,7 +69,9 @@ def coerce(a, b, normalized=None, seen=None):
     return sum([_coerce(x, y, seen) for x, y in normalized])
 
 def _coerce(a, b, seen=None):
-    if a == b or isinstance(a, TypeVar):
+    if isinstance(a, TypeVar):
+        # Note; don't match this with 'a == b', since we need to verify atoms
+        # even if equal (e.g. (..., ...) returns -1)
         return 0
     elif isinstance(a, CType) and isinstance(b, CType):
         try:
@@ -90,6 +92,10 @@ def _coerce(a, b, seen=None):
         if a.val != b.val:
             return 0.1 # broadcasting penalty
         return 0
+    elif isinstance(a, Ellipsis) and isinstance(b, Ellipsis):
+        # If we throw in an ellipsis without any constraints, then we should
+        # coerce to something that accepts an arbitrary number of dimensions
+        return -1
     else:
         verify(a, b)
         return sum(_coerce(x, y, seen) for x, y in zip(a.parameters, b.parameters))

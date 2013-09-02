@@ -30,15 +30,8 @@ def normalize(constraints, broadcasting):
         broadcasting environment listing all type variables which may
         broadcast together.
     """
-    is_ds = lambda ds: isinstance(ds, DataShape)
-    result = []
-    for ds1, ds2 in constraints:
-        if is_ds(ds1) and is_ds(ds2):
-            ds1, ds2 = normalize_ellipses(ds1, ds2)
-        result.append((ds1, ds2))
-
-    constraints, b_env = normalize_broadcasting(result, broadcasting)
-    return constraints, b_env
+    constraints = [normalize_ellipses(a, b) for a, b in constraints]
+    return normalize_broadcasting(constraints, broadcasting)
 
 #------------------------------------------------------------------------
 # Ellipses
