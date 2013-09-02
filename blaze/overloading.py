@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-import sys
+import inspect
 import collections
 from itertools import chain
 from pprint import pformat
 
 from blaze import error
-from blaze.util import flatargs, listify
+from blaze.util import flatargs, listify, alpha_equivalent
 from blaze.datashape import (coretypes as T, unify, dshape,
                              dummy_signature)
 
@@ -17,19 +17,32 @@ class Dispatcher(object):
     def __init__(self):
         self.f = None
         self.overloads = []
+        self.argspec = None
 
-    def add_overload(self, f, signature, kwds):
-        # TODO: assert signature is compatible with current signatures
+    def add_overload(self, f, signature, kwds, argspec=None):
+        # TODO: assert signature is "compatible" with current signatures
         if self.f is None:
             self.f = f
+
+        # Process signature
+        argspec = argspec or inspect.getargspec(f)
+        if self.argspec is None:
+            self.argspec = argspec
+        alpha_equivalent(self.argspec, argspec)
+
+        # TODO: match signature to be a Function type with correct arity
         self.overloads.append((f, signature, kwds))
 
-    def dispatch(self, *args, **kwargs):
+    def lookup_dispatcher(self, args, kwargs):
         assert self.f is not None
         args = flatargs(self.f, args, kwargs)
         types = list(map(T.typeof, args))
         dst_sig, sig, func = best_match(self, types)
         # TODO: convert argument types using dst_sig
+        return func, dst_sig, args
+
+    def dispatch(self, *args, **kwargs):
+        func, dst_sig, args = self.lookup_dispatcher(args, kwargs)
         return func(*args)
 
     def simple_dispatch(self, *args, **kwargs):
@@ -68,7 +81,7 @@ def overload(signature, func=None, **kwds):
         else:
             signature = dshape(signature)
 
-        dispatcher = func or sys._getframe(1).f_locals.get(f.__name__)
+        dispatcher = func or f.func_globals.get(f.__name__)
         dispatcher = dispatcher or Dispatcher()
         dispatcher.add_overload(f, signature, kwds)
         return dispatcher

@@ -17,7 +17,7 @@ from .conf import conf
 # Graph construction (entry point)
 #------------------------------------------------------------------------
 
-def construct(kernel, *args):
+def construct(kernel, signature, *args):
     """
     Parameters
     ----------

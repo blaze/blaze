@@ -5,10 +5,22 @@ The purpose of this module is to create blaze functions. A Blaze Function
 carries a polymorphic signature which allows it to verify well-typedness over
 the input arguments, and to infer the result of the operation.
 
-A blaze function also creates a deferred expression graph.
+Blaze function also create a deferred expression graph when executed over
+operands. A blaze function carries *implementations* that ultimately perform
+the work. Implementations are indicated through the 'impl' keyword argument,
+and may include:
+
+    'py'    : Pure python implementation
+    'numba' : Compiled numba function or compilable numba function
+    'llvm'  : LLVM-compiled implementation
+    'ctypes': A ctypes function pointer
+
+Or a tuple for a combination of the above.
 """
 
 from __future__ import print_function, division, absolute_import
+import types
+import inspect
 import functools
 
 from .overloading import overload
@@ -17,38 +29,108 @@ from .util import flatargs
 
 from blaze.py2help import basestring
 
+#------------------------------------------------------------------------
+# Utils
+#------------------------------------------------------------------------
 
-def elementwise(signature):
+def lookup_func(f=None):
+    return f or f.func_globals.get(f.__name__)
+
+def optional_decorator(f, continuation, args, kwargs):
+    def decorator(f):
+        return continuation(f, *args, **kwargs)
+
+    if f is None:
+        return decorator
+    else:
+        return decorator(f)
+
+#------------------------------------------------------------------------
+# Decorators
+#------------------------------------------------------------------------
+
+def kernel(signature, **metadata):
     """
-    Define an element-wise kernel.
+    Define an blaze python-level kernel. Further implementations may be
+    associated with this overloaded kernel using the 'implement' method.
+
+    Parameters
+    ----------
+    signature: string or Type
+        Optional function signature
+
+    Usage
+    -----
+
+        @kernel
+        def add(a, b):
+            return a + b
+
+    or
+
+        @kernel('a -> a -> a') # All types are unified
+        def add(a, b):
+            return a + b
     """
     def decorator(f):
-        return overload(signature, elementwise=True)(f)
+        f = lookup_func(f)
+        dispatcher = overload(signature, f)
+
+        if isinstance(f, types.FunctionType):
+            kernel = Kernel(dispatcher)
+        else:
+            assert isinstance(f, Kernel), f
+            kernel = f
+
+        kernel.add_metadata(metadata)
+        return kernel
 
     if not isinstance(signature, basestring):
-        # signature
+        # @kernel
+        # def f(...): ...
         f = signature
         signature = None
         return decorator(f)
+    else:
+        # @kernel('a -> a -> b')
+        # def f(...): ...
+        return decorator
 
-    return decorator
-
-def deferred_wrapper(f):
+def elementwise(*args):
     """
-    Given a (typed) Blaze function, capture the arguments, type the result,
-    create a new node in the expression graph and return a Deferred.
+    Define a blaze element-wise kernel.
     """
-    from .expr import construct
+    return kernel(*args, elementwise=True)
 
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        args = flatargs(args, kwargs)
-        expr = construct.construct(f, *args)
+#------------------------------------------------------------------------
+# Implementations
+#------------------------------------------------------------------------
+
+class Kernel(object):
+    def __init__(self, dispatcher):
+        self.dispatcher = dispatcher
+        self.impls = {}
+        self.metadata = {}
+
+    def implement(self, signature, impl, func=None):
+        return optional_decorator(func, self._implement, signature, impl)
+
+    def _implement(self, func, signature, impl):
+        self.impls[impl].append((signature, func))
+        return func
+
+    def add_metadata(self, md):
+        # Verify compatibility
+        for k in md:
+            if k in self.metadata:
+                assert self.metadata[k] == md[k], (self.metadata[k], md[k])
+        # Update
+        self.metadata.update(md)
+
+    def __call__(self, *args, **kwargs):
+        from .expr import construct
+
+        func, dst_sig, args = self.dispatcher.lookup_dispatcher(args, kwargs)
+        expr = construct.construct(func, dst_sig, *args)
         (term, context) = expr
         return Deferred(term.dshape, expr)
-    return wrapper
-
-
-def best_match(overloads, typing_context, partial_solution):
-    raise NotImplementedError
-
