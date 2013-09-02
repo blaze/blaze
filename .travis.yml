@@ -1,0 +1,47 @@
+language: python
+
+python:
+  # - "2.6" conda install dynd-python python=2.6 -> installs dynd for 2.7
+  - "2.7"
+  #- "3.3"
+
+branches:
+  only:
+    - master
+    - devel
+    - release
+    - overload
+
+# Note: conda is not available for anything but python 2.7. So below we try to install
+# conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
+install:
+  # Install setuptools in python 2.7
+  - wget https://pypi.python.org/packages/source/d/distribute/distribute-0.7.3.zip#md5=c6c59594a7b180af57af8a0cc0cf5b4a
+  - unzip distribute-0.7.3.zip
+  - cd distribute-0.7.3
+  - sudo python2.7 setup.py install
+  - cd ..
+  # - sudo easy_install pip
+  # Create pkgs directory for conda
+  - prefix=$(python -c 'import sys; print sys.exec_prefix')
+  - mkdir "$prefix/pkgs"
+  # Install conda
+  - cp .condarc ~
+  - sudo /usr/local/bin/easy_install pyyaml conda
+  # Install dependencies
+  # Doesn't work?
+  # mkdir $HOME/pkgs
+  # export CONDA_PACKAGE_CACHE=$HOME/pkgs
+  - sudo mkdir /usr/pkgs
+  - sudo conda create -p ~/py --yes llvmpy cython numba numpy dynd-python llvmmath ply pycparser "python=$TRAVIS_PYTHON_VERSION"
+  - sudo chmod -R 755 ~/py
+  # Install Blaze
+  - sudo ~/py/bin/python setup.py install
+
+script: cd ~; ~/py/bin/python -c 'import blaze; blaze.test(exit=True)'
+
+notifications:
+  email: false
+  flowdock: "b08b3ba4fb86fa48121e90b5f67ccb75"
+  on_success: "change"
+  on_failure: "always" # "change"

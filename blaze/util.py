@@ -1,5 +1,31 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
+
+import string
 import inspect
-import UserDict
+import functools
+import collections
+
+try:
+    from collections import MutableMapping
+except ImportError as e:
+    # Python 3
+    from UserDict import DictMixin as MutableMapping
+
+#------------------------------------------------------------------------
+# General purpose
+#------------------------------------------------------------------------
+
+def listify(f):
+    """Decorator to turn generator results into lists"""
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        return list(f(*args, **kwargs))
+    return wrapper
+
+#------------------------------------------------------------------------
+# Argument parsing
+#------------------------------------------------------------------------
 
 def flatargs(f, args, kwargs):
     """
@@ -20,6 +46,7 @@ def flatargs(f, args, kwargs):
         TypeError: f() got multiple values for keyword argument 'a'
     """
     argspec = inspect.getargspec(f)
+    defaults = argspec.defaults or ()
     kwargs = dict(kwargs)
 
     def unreachable():
@@ -32,7 +59,7 @@ def flatargs(f, args, kwargs):
     # -------------------------------------------------
     # Validate argcount
 
-    if (len(args) < len(argspec.args) - len(argspec.defaults) - len(kwargs) or
+    if (len(args) < len(argspec.args) - len(defaults) - len(kwargs) or
             len(args) > len(argspec.args)):
         # invalid number of arguments
         unreachable()
@@ -40,7 +67,7 @@ def flatargs(f, args, kwargs):
     # -------------------------------------------------
 
     # Insert defaults
-    defaults = argspec.defaults
+
     tail = min(len(defaults), len(argspec.args) - len(args))
     if tail:
         for argname, default in zip(argspec.args[-tail:], defaults[-tail:]):
@@ -64,7 +91,11 @@ def flatargs(f, args, kwargs):
     return args + tuple(extra_args)
 
 
-class IdentityDict(UserDict.DictMixin):
+#------------------------------------------------------------------------
+# Data Structures
+#------------------------------------------------------------------------
+
+class IdentityDict(MutableMapping):
     """
     Map mapping objects on identity to values
 
@@ -100,11 +131,13 @@ class IdentityDict(UserDict.DictMixin):
             self.ks.append(key)
         self.data[id(key)] = value
 
+    def __delitem__(self, key):
+        self.ks.remove(key)
+        del self.data[id(key)]
+
     def __repr__(self):
-        """
-        This is not correctly implemented in DictMixin for us, since it takes
-        the dict() of iteritems(), merging back equal keys
-        """
+        # This is not correctly implemented in DictMixin for us, since it takes
+        # the dict() of iteritems(), merging back equal keys
         return "{ %s }" % ", ".join("%r: %r" % (k, self[k]) for k in self.keys())
 
     def keys(self):
@@ -116,6 +149,12 @@ class IdentityDict(UserDict.DictMixin):
         for key in iterable:
             d[key] = value
         return d
+
+    def __iter__(self):
+        return iter(self.ks)
+
+    def __len__(self):
+        return len(self.ks)
 
 
 class IdentitySet(set):
@@ -135,6 +174,34 @@ class IdentitySet(set):
 
     def __contains__(self, key):
         return key in self.d
+
+#------------------------------------------------------------------------
+# Temporary names
+#------------------------------------------------------------------------
+
+def make_temper():
+    """Return a function that returns temporary names"""
+    temps = collections.defaultdict(int)
+
+    def temper(name=""):
+        varname = name.rstrip(string.digits)
+        count = temps[varname]
+        temps[varname] += 1
+        if varname and count == 0:
+            return varname
+        return varname + str(count)
+
+    return temper
+
+def make_stream(seq, _temp=make_temper()):
+    """Create a stream of temporaries seeded by seq"""
+    while 1:
+        for x in seq:
+            yield _temp(x)
+
+gensym = make_stream(string.uppercase).next
+
+# ______________________________________________________________________
 
 if __name__ == '__main__':
     import doctest

@@ -1,0 +1,5 @@
+ply
+pycparser
+distribute
+nose
+numba

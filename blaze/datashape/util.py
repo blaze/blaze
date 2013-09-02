@@ -1,20 +1,28 @@
-from __future__ import absolute_import
-from blaze.datashape.traits import TypeSet
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
 
-__all__ = ['dopen', 'dshape', 'cat_dshapes', 'broadcastable',
-           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
-           'to_numba', 'from_numba_str']
-
+import inspect
 import operator
 import itertools
 import ctypes
 import sys
 
+from blaze import error
+from blaze.util import IdentityDict, gensym
 from . import parser
-from .coretypes import (DataShape, Fixed, TypeVar, Record, Wild,
-                        uint8, uint16, uint32, uint64, CType,
-                        int8, int16, int32, int64,
-                        float32, float64, complex64, complex128, Type)
+from .validation import validate
+from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis,
+               uint8, uint16, uint32, uint64, CType, Mono, type_constructor,
+               int8, int16, int32, int64,
+               float32, float64, complex64, complex128, Type, free)
+from .traversal import tmap
+from blaze.datashape.traits import TypeSet
+
+__all__ = ['dopen', 'dshape', 'dshapes', 'cat_dshapes', 'broadcastable',
+           'dummy_signature', 'verify',
+           'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
+           'to_numba', 'from_numba_str']
+
 
 PY3 = (sys.version_info[:2] >= (3,0))
 
@@ -26,7 +34,41 @@ def dopen(fname):
     contents = open(fname).read()
     return parser.parse_extern(contents)
 
+def dshapes(*args):
+    """
+    Parse all datashapes a single context. This means two datashapes
+    'A, B, int32' and 'X, B, float32' will now share type variable 'B'.
+    """
+    from . import substitute
+
+    result = map(dshape, args)
+    S = IdentityDict()
+    for t in result:
+        for typevar in free(t):
+            S.setdefault(typevar.symbol, typevar)
+
+    def f(t):
+        if isinstance(t, TypeVar):
+            return S[t.symbol]
+        return t
+
+    return [tmap(f, t) for t in result]
+
 def dshape(o, multi=False):
+    """
+    Parse a blaze type. For a thorough description see
+    http://blaze.pydata.org/docs/datashape.html
+
+    Parameters
+    ----------
+    multi: bool
+        indicates whether the input is a single type or a series of types.
+    """
+    ds = _dshape(o, multi)
+    validate(ds)
+    return _unique_typevars(ds)
+
+def _dshape(o, multi=False):
     if multi:
         return list(parser.parse_mod(o))
     if isinstance(o, str):
@@ -37,6 +79,22 @@ def dshape(o, multi=False):
         return list(parser.parse_mod(o.read()))
     else:
         raise TypeError('Cannot create dshape from object of type %s' % type(o))
+
+def _unique_typevars(ds):
+    """
+    Build a blaze type, making sure type variables are unique in this context.
+    E.g. in 'T, T, int32', make sure the two type variables 'T' are the same
+    object.
+    """
+    typevars = {}
+    def f(x):
+        if isinstance(x, TypeVar):
+            if x.symbol not in typevars:
+                typevars[x.symbol] = x
+            return typevars[x.symbol]
+        return x
+
+    return tmap(f, ds)
 
 def cat_dshapes(dslist):
     """
@@ -64,8 +122,34 @@ def cat_dshapes(dslist):
                             ' all match after'
                             ' the first dimension (%s vs %s)') %
                             (inner_ds, ds[1:]))
-    return DataShape([Fixed(outer_dim_size)] + list(inner_ds))
+    return DataShape(*[Fixed(outer_dim_size)] + list(inner_ds))
 
+
+def dummy_signature(f):
+    """Create a dummy signature for `f`"""
+    from . import coretypes as T
+    argspec = inspect.getargspec(f)
+    n = len(argspec.args)
+    return T.Function(*[T.TypeVar(gensym()) for i in range(n + 1)])
+
+
+def verify(t1, t2):
+    """Verify that two immediate type constructors are valid for unification"""
+    if not isinstance(t1, Mono) or not isinstance(t2, Mono):
+        if t1 != t2:
+            raise error.UnificationError("%s != %s" % (t1, t2))
+        return
+
+    args1, args2 = t1.parameters, t2.parameters
+    tcon1, tcon2 = type_constructor(t1), type_constructor(t2)
+
+    if tcon1 != tcon2:
+        raise error.UnificationError(
+            "Got differing type constructors %s and %s" % (tcon1, tcon2))
+
+    if len(args1) != len(args2):
+        raise error.UnificationError("%s got %d and %d arguments" % (
+            tcon1, len(args1), len(args2)))
 
 def broadcastable(dslist, ranks=None, rankconnect=[]):
     """Return output (outer) shape if datashapes are broadcastable.
@@ -112,6 +196,10 @@ def broadcastable(dslist, ranks=None, rankconnect=[]):
 
     return tuple(Fixed(s) for s in outshape)
 
+#------------------------------------------------------------------------
+# DataShape Conversion
+#------------------------------------------------------------------------
+
 def _from_cffi_internal(ffi, ctype):
     k = ctype.kind
     if k == 'struct':
@@ -134,7 +222,7 @@ def _from_cffi_internal(ffi, ctype):
             dsparams.append(Fixed(ctype.length))
             ctype = ctype.item
         dsparams.append(_from_cffi_internal(ffi, ctype))
-        return DataShape(dsparams)
+        return DataShape(*dsparams)
     elif k == 'primitive':
         cn = ctype.cname
         if cn in ['signed char', 'short', 'int',
@@ -235,7 +323,7 @@ def to_ctypes(dshape):
             raise TypeError("Cannot convert datashape %r into ctype" % dshape)
     # Create arrays
     else:
-        if isinstance(dshape[0], (TypeVar, Wild)):
+        if isinstance(dshape[0], (TypeVar, Ellipsis)):
             num = 0
         else:
             num = int(dshape[0])
@@ -264,7 +352,7 @@ def from_ctypes(ctype):
             dstup.append(Fixed(ctype._length_))
             ctype = ctype._type_
         dstup.append(from_ctypes(ctype))
-        return DataShape(tuple(dstup))
+        return DataShape(*dstup)
     elif ctype == ctypes.c_int8:
         return int8
     elif ctype == ctypes.c_int16:
@@ -341,7 +429,7 @@ def from_llvm(typ, argkind=SCALAR):
                 eltype = from_llvm(argkind[2])
                 obj = [TypeVar('i'+str(n)) for n in range(nd)]
                 obj.append(eltype)
-                ds = DataShape(tuple(obj))
+                ds = DataShape(*obj)
                 ds._array_kind = argkind[0]
 
     elif kind == llvm.core.TYPE_STRUCT:
@@ -394,5 +482,4 @@ def to_numba(ds):
     import numba
     # Fixup the complex type to how numba does it
     s = str(ds)
-    s = {'cfloat32':'complex64', 'cfloat64':'complex128'}.get(s, s)
     return getattr(numba, s)

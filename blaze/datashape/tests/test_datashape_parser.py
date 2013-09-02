@@ -1,9 +1,10 @@
 import unittest
 
 import blaze
-from blaze import datashape
+from blaze import error, datashape
 from blaze.datashape.parser import parse
-from blaze.datashape.coretypes import Enum, Option
+from blaze.datashape.coretypes import Enum, Option, Function
+from blaze.datashape.traits import integral
 
 class TestDatashapeParser(unittest.TestCase):
 
@@ -55,6 +56,24 @@ class TestDatashapeParser(unittest.TestCase):
         assert x[0].lower == 1
         assert x[0].upper == 2
 
+    def test_constraints(self):
+        x = parse('A, B : numeric')
+        assert type(x.parameters[0]) == datashape.TypeVar
+        assert type(x.parameters[1]) == datashape.Implements
+        assert type(x.parameters[1].typeset == integral)
+
+    def test_ellipsis(self):
+        x = parse('..., T')
+        assert type(x.parameters[0]) == datashape.Ellipsis
+        assert type(x.parameters[1]) == datashape.TypeVar
+        assert x.parameters[0].typevar is None
+
+    def test_ellipsis2(self):
+        x = parse('A..., T')
+        assert type(x.parameters[0]) == datashape.Ellipsis
+        assert type(x.parameters[1]) == datashape.TypeVar
+        assert type(x.parameters[0].typevar) == datashape.TypeVar
+
     def test_fields_with_reserved_names(self):
         # Should be able to name a field 'type', 'int64'
         # or any other word otherwise reserved in the
@@ -79,9 +98,7 @@ class TestDatashapeParser(unittest.TestCase):
                 float64: float64;
                 float128: float64;
                 complex64: float32;
-                cfloat32: float32;
                 complex128: float64;
-                cfloat64: float64;
                 string: string;
                 object: string;
                 datetime: string;
@@ -209,3 +226,13 @@ class TestOption(unittest.TestCase):
         res = blaze.dshape('2, 3, Option(int32)')
 
         assert isinstance(res[2], Option)
+
+class TestFunction(unittest.TestCase):
+
+    def test_function_signature(self):
+        res = parse("A, int32 -> B, float64 -> T, T, X")
+        self.assertIsInstance(res, Function)
+        self.assertEqual(str(res), 'A, int32 -> B, float64 -> T, T, X')
+
+if __name__ == '__main__':
+    unittest.main()

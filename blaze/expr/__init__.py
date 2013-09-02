@@ -1,1 +1,1 @@
-from viz import dump
+from .viz import dump

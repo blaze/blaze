@@ -16,19 +16,31 @@ accompanied by a set of constraints but must hold for the free variables in
 that type.
 """
 
+import logging
+from collections import deque
 from itertools import chain
-from functools import partial
 
 from blaze import error
-from blaze.py2help import dict_iteritems
+from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
-from blaze.datashape.coretypes import (Mono, DataShape, TypeVar, promote, free,
-                                       type_constructor, IntegerConstant,
-                                       StringConstant, CType, Fixed)
+from blaze.datashape import (promote_units, normalize, simplify, tmap,
+                             dshape, verify)
+from blaze.datashape.coretypes import TypeVar, free
+
+logger = logging.getLogger(__name__)
 
 #------------------------------------------------------------------------
-# Entry point
+# Entry points
 #------------------------------------------------------------------------
+
+def unify_simple(a, b):
+    """Unify two blaze types"""
+    if isinstance(a, _strtypes):
+        a = dshape(a)
+    if isinstance(b, _strtypes):
+        b = dshape(b)
+    [res], _ = unify([(a, b)], [True])
+    return res
 
 def unify(constraints, broadcasting):
     """
@@ -43,61 +55,35 @@ def unify(constraints, broadcasting):
         >>> constraints
         []
     """
-    # Compute solution to a set of constraints
+    S = IdentityDict()
+    constraints = [(simplify(ds1, S), simplify(ds2, S))
+                        for ds1, ds2 in constraints]
+
+    # Compute a solution to a set of constraints
     constraints, b_env = normalize(constraints, broadcasting)
-    solution, remaining = unify_constraints(constraints)
-    resolve_typesets(remaining, solution)
+    logger.debug("Normalized constraints: %s", constraints)
+
+    solution, remaining = unify_constraints(constraints, S)
+    logger.debug("Initial solution: %s", solution)
+
+    seed_typesets(remaining, solution)
+    merge_typevar_sets(remaining, solution)
 
     # Compute a type substitution with concrete types from the solution
     # TODO: incorporate broadcasting environment during reification
     substitution = reify(solution)
+    logger.debug("Substitution: %s", substitution)
 
     # Reify and promote the datashapes
     result = [substitute(substitution, ds2) for ds1, ds2 in constraints]
-    return result, [(a, solution[b]) for a, b in remaining]
+    remaining = [(a, c) for a, b in remaining for c in solution[b] if a is not c]
+    return result, remaining
 
 #------------------------------------------------------------------------
 # Unification
 #------------------------------------------------------------------------
 
-def normalize(constraints, broadcasting):
-    """
-    Parameters
-    ----------
-
-    constraints : [(DataShape, DataShape)]
-        List of constraints (datashape type equations)
-    broadcasting: [bool]
-        indicates for each constraint whether the two DataShapes broadcast
-
-    Returns: (constraints, broadcast_env)
-        A two-tuple containing a list of normalized constraints and a
-        broadcasting environment listing all type variables which may
-        broadcast together.
-    """
-    result = []        # [(DataShape, DataShape)]
-    broadcast_env = [] # [(typevar1, typevar2)]
-
-    for broadcast, (ds1, ds2) in zip(broadcasting, constraints):
-        if broadcast:
-            # Create type variables for leading dimensions
-            len1, len2 = len(ds1.parameters), len(ds2.parameters)
-            leading = tuple(TypeVar('Broadcasting%d' % i)
-                            for i in range(abs(len1 - len2)))
-
-            if len1 < len2:
-                ds1 = DataShape(leading + ds1.parameters)
-            elif len2 < len1:
-                ds2 = DataShape(leading + ds2.parameters)
-
-            broadcast_env.extend(zip(ds1.parameters, ds2.parameters))
-
-        result.append((ds1, ds2))
-
-    return result, broadcast_env
-
-
-def unify_constraints(constraints):
+def unify_constraints(constraints, solution=None):
     """
     Blaze type unification. Two types unify if:
 
@@ -111,20 +97,21 @@ def unify_constraints(constraints):
 
     Parameters
     ----------
-    constraints : [(DataShape, DataShape)]
-        List of constraints (datashape type equations)
+    constraints : [(Mono, Mono)]
+        List of constraints (blaze type equations)
 
     Returns: { TypeVar : set([ Mono ]) }
         Returns a solution to the set of constraints. The solution is a set
         of bindings (a substitution) from type variables to type sets.
     """
-    solution = IdentityDict()
+    solution = IdentityDict(solution)
     remaining = []
 
     # Initialize solution
     for t1, t2 in constraints:
         for freevar in chain(free(t1), free(t2)):
-            solution[freevar] = set()
+            if freevar not in solution:
+                solution[freevar] = set()
 
     # Calculate solution
     for t1, t2 in constraints:
@@ -149,60 +136,51 @@ def unify_single(t1, t2, solution, remaining):
         # No need to recurse, this will be caught by promote()
         pass
     else:
-        if not isinstance(t1, Mono) or not isinstance(t2, Mono):
-            if t1 != t2:
-                raise error.UnificationError("%s != %s" % (t1, t2))
-            return
-
-        args1, args2 = t1.parameters, t2.parameters
-        tcon1, tcon2 = type_constructor(t1), type_constructor(t2)
-
-        if tcon1 != tcon2:
-            raise error.UnificationError(
-                "Got differing type constructors %s and %s" % (tcon1, tcon2))
-
-        if len(args1) != len(args2):
-            raise error.UnificationError("%s got %d and %d arguments" % (
-                tcon1, len(args1), len(args2)))
-
-        for arg1, arg2 in zip(args1, args2):
+        verify(t1, t2)
+        for arg1, arg2 in zip(t1.parameters, t2.parameters):
             unify_single(arg1, arg2, solution, remaining)
 
 
-def resolve_typesets(constraints, solution):
+def seed_typesets(constraints, solution):
     """
-    Fix-point iterate until all type variables are resolved according to the
-    constraints.
-
-    Parameters
-    ----------
-    constraints: [(TypeVar, TypeVar)]
-        Constraint graph specifying coercion relations:
-            (a, b) ∈ constraints with a ⊆ b
-
-    solution : { TypeVar : set([ Type ]) }
-        Typing solution
+    Resolve type sets by seeding empty sets with type variables.
     """
-    # Fix-point update our type sets
-    changed = True
-    while changed:
-        changed = False
-        for a, b in constraints:
-            length = len(solution[b])
-            solution[b].update(solution[a])
-            changed |= length < len(solution[b])
-
     # Update empty type set solutions with variables from the input
-    # We can do this since there is no contraint on the free variable
+    # We can do this since there is no constraint on the free variable
     empty = IdentitySet()
     for a, b in constraints:
         if not solution[b] or b in empty:
             solution[b].add(a)
             empty.add(b)
 
-    # # Fix-point our fix-point
-    # if empty:
-    #     resolve_typesets(constraints, solution)
+def merge_typevar_sets(constraints, solution):
+    """
+    Update  the solution of sets that contain only type variables with a new
+    type variable along with new coercion constraints.
+
+    Consider the example:
+
+        x, y, z = dshapes('A, B, int32', 'C, D, float32', 'X, Y, float32')
+
+    with x ⊆ z and y ⊆ z:
+
+        >>> A, B, C, D, X, Y = map(TypeVar, 'ABCDXY')
+        >>> constraints = [(A, X), (C, X), (B, Y), (D, Y)]
+        >>> solution = {X: set([A, C]), Y: set([B, D])}
+        >>> merge_typevar_sets(constraints, solution)
+        >>> solution[X]
+        set([TypeVar(A_C)])
+        >>> solution[Y]
+        set([TypeVar(B_D)])
+    """
+    for src_var, typeset in list(dict_iteritems(solution)):
+        if len(typeset) > 1 and all(isinstance(v, TypeVar) for v in typeset):
+            new_var = TypeVar("_".join(sorted(v.symbol for v in typeset)))
+            solution[src_var] = set([new_var])
+            solution[new_var] = set()
+            for v in typeset:
+                constraints.append((v, new_var))
+                constraints.remove((v, src_var))
 
 def reify(solution, S=None):
     """
@@ -220,7 +198,10 @@ def reify(solution, S=None):
     if S is None:
         S = IdentityDict()
 
-    for typevar, t in dict_iteritems(solution):
+    seen = set()
+    queue = deque(dict_iteritems(solution))
+    while queue:
+        typevar, t = queue.popleft()
         if typevar in S:
             continue
 
@@ -231,64 +212,30 @@ def reify(solution, S=None):
             S[typevar] = typevar
             typeset.add(typevar)
             continue
-        elif freevars:
+        elif freevars and (typevar, t) not in seen:
             # Reify dependencies first
-            reify(dict((v, solution[v]) for v in freevars), S)
+            queue.append((typevar, t))
+            seen.add((typevar, t))
+        elif freevars:
             typeset = set(substitute(S, t) for t in typeset)
 
         S[typevar] = promote_units(*typeset)
 
     return S
 
-
-def promote_units(*units):
-    """
-    Promote unit types, which are either CTypes or Constants.
-    """
-    unit = units[0]
-    if len(units) == 1:
-        return unit
-    elif isinstance(unit, Fixed):
-        assert all(isinstance(u, Fixed) for u in units)
-        if len(set(units)) > 2:
-            raise error.UnificationError(
-                "Got multiple differing integer constants", units)
-        else:
-            left, right = units
-            if left == IntegerConstant(1):
-                return right
-            elif right == IntegerConstant(1):
-                return left
-            else:
-                if left != right:
-                    raise error.UnificationError(
-                        "Cannot unify differing fixed dimensions "
-                        "%s and %s" % (left, right))
-                return left
-    elif isinstance(unit, StringConstant):
-        for u in units:
-            if u != unit:
-                raise error.UnificationError(
-                    "Cannot unify string constants %s and %s" % (unit, u))
-
-        return unit
-
-    else:
-        # Promote CTypes
-        return promote(*units)
-
+#------------------------------------------------------------------------
+# Substitution
+#------------------------------------------------------------------------
 
 def substitute(solution, ds):
     """
     Substitute a typing solution for a type, resolving all free type variables.
     """
-    if isinstance(ds, TypeVar):
-        return solution[ds] or ds
-    elif not isinstance(ds, Mono) or isinstance(ds, CType):
-        return ds
-    else:
-        typecon = type_constructor(ds)
-        return typecon(*[substitute(solution, p) for p in ds.parameters])
+    def f(t):
+        if isinstance(t, TypeVar):
+            return solution[t] or t
+        return t
+    return tmap(f, ds)
 
 
 if __name__ == '__main__':
