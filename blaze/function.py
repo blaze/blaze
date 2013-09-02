@@ -185,11 +185,11 @@ class Kernel(object):
         # -------------------------------------------------
         # Find match to overloaded function
 
-        match = self.dispatcher.lookup_dispatcher(args, kwargs, ctx.constraints)
-        func, dst_sig, constraints, args = match
+        match, args = self.dispatcher.lookup_dispatcher(args, kwargs,
+                                                        ctx.constraints)
 
         # -------------------------------------------------
         # Construct graph
 
-        term = construct.construct(self, func, dst_sig, args)
+        term = construct.construct(self, match.func, match.dst_sig, args)
         return blaze.Deferred(term.dshape, (term, ctx))

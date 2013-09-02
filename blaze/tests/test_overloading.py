@@ -41,29 +41,29 @@ class TestOverloading(unittest.TestCase):
     def test_best_match(self):
         d1 = dshape('10, T1, int32')
         d2 = dshape('T2, T2, float32')
-        dst_sig, sig, func, constraints = best_match(f, [d1, d2])
-        self.assertEqual(str(sig),
+        match = best_match(f, [d1, d2])
+        self.assertEqual(str(match.sig),
                          'X, Y, float32 -> X, Y, float32 -> X, Y, float32')
 
         input = dshape('1, 1, float32 -> 1, 1, float32 -> R')
-        self.assertEqual(str(unify_simple(input, dst_sig)),
+        self.assertEqual(str(unify_simple(input, match.dst_sig)),
                          '10, 1, float32 -> 10, 1, float32 -> 10, 1, float32')
 
     def test_best_match_broadcasting(self):
         d1 = dshape('10, complex64')
         d2 = dshape('10, float32')
-        dst_sig, sig, func, constraints = best_match(f, [d1, d2])
-        self.assertEqual(str(sig),
+        match = best_match(f, [d1, d2])
+        self.assertEqual(str(match.sig),
                          'X, Y, cfloat32 -> X, Y, cfloat32 -> X, Y, cfloat32')
-        self.assertEqual(str(dst_sig),
+        self.assertEqual(str(match.dst_sig),
                          '1, 10, cfloat32 -> 1, 10, cfloat32 -> 1, 10, cfloat32')
 
     def test_best_match_ellipses(self):
         d1 = dshape('10, T1, int32')
         d2 = dshape('..., float32')
-        dst_sig, sig, func, constraints = best_match(g, [d1, d2])
-        self.assertEqual(str(sig), 'X, Y, float32 -> ..., float32 -> X, int32')
-        self.assertEqual(str(dst_sig),
+        match = best_match(g, [d1, d2])
+        self.assertEqual(str(match.sig), 'X, Y, float32 -> ..., float32 -> X, int32')
+        self.assertEqual(str(match.dst_sig),
                          '10, T1, float32 -> ..., float32 -> 10, int32')
 
 

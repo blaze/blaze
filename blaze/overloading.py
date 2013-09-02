@@ -2,7 +2,7 @@
 from __future__ import print_function, division, absolute_import
 
 import inspect
-import collections
+from collections import namedtuple, defaultdict
 from itertools import chain
 from pprint import pformat
 
@@ -37,13 +37,13 @@ class Dispatcher(object):
         assert self.f is not None
         args = flatargs(self.f, tuple(args), kwargs)
         types = list(map(T.typeof, args))
-        dst_sig, sig, func, constraints = best_match(self, types, constraints)
+        match = best_match(self, types, constraints)
         # TODO: convert argument types using dst_sig
-        return func, dst_sig, constraints, args
+        return match, args
 
     def dispatch(self, *args, **kwargs):
-        func, dst_sig, args = self.lookup_dispatcher(args, kwargs)
-        return func(*args)
+        match, args = self.lookup_dispatcher(args, kwargs)
+        return match.func(*args)
 
     def simple_dispatch(self, *args, **kwargs):
         assert self.f is not None
@@ -99,6 +99,8 @@ def overloadable(f):
 # Matching
 #------------------------------------------------------------------------
 
+MatchResult = namedtuple('MatchResult', 'dst_sig, sig, func, constraints')
+
 def best_match(func, argtypes, constraints=None):
     """
     Find a best match in for overloaded function `func` given `argtypes`.
@@ -129,16 +131,15 @@ def best_match(func, argtypes, constraints=None):
     # -------------------------------------------------
     # Weigh candidates
 
-    matches = collections.defaultdict(list)
-    for candidate in candidates:
-        dst_sig, sig, func, remaining = candidate
-        params = dst_sig.parameters[:-1]
+    matches = defaultdict(list)
+    for match in candidates:
+        params = match.dst_sig.parameters[:-1]
         try:
             weight = sum([coerce(a, p) for a, p in zip(argtypes, params)])
         except error.CoercionError, e:
             pass
         else:
-            matches[weight].append(candidate)
+            matches[weight].append(match)
 
     if not matches:
         raise error.OverloadError(
@@ -183,4 +184,4 @@ def find_matches(overloads, argtypes, constraints=()):
             continue
         else:
             dst_sig = result[0]
-            yield dst_sig, sig, func, remaining
+            yield MatchResult(dst_sig, sig, func, remaining)
