@@ -8,7 +8,7 @@ try:
 except ImportError:
     have_pydot = False
 
-from cStringIO import StringIO
+from io import StringIO
 from collections import Counter
 from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile

@@ -3,7 +3,7 @@ import unittest
 import blaze
 from blaze import datashape
 from blaze.datashape.parser import parse
-from blaze.datashape.coretypes import Enum, Option
+from blaze.datashape.coretypes import Enum, Option, Function
 
 class TestDatashapeParser(unittest.TestCase):
 
@@ -209,3 +209,13 @@ class TestOption(unittest.TestCase):
         res = blaze.dshape('2, 3, Option(int32)')
 
         assert isinstance(res[2], Option)
+
+class TestFunction(unittest.TestCase):
+
+    def test_function_signature(self):
+        res = parse("A, int32 -> B, float64 -> T, T, X")
+        self.assertIsInstance(res, Function)
+        self.assertEqual(str(res), 'A, int32 -> B, float64 -> T, T, X')
+
+if __name__ == '__main__':
+    unittest.main()
