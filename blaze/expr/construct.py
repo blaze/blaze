@@ -7,7 +7,7 @@ from collections import Iterable
 
 import blaze
 from blaze.datashape import coretypes as T
-from blaze.bkernel import BlazeFunc
+from blaze import Kernel
 
 from .graph import ArrayOp, KernelOp
 from .context import ExprContext, unify
@@ -17,7 +17,7 @@ from .conf import conf
 # Graph construction (entry point)
 #------------------------------------------------------------------------
 
-def construct(kernel, signature, *args):
+def construct(kernel, f, signature, args):
     """
     Parameters
     ----------
@@ -26,7 +26,7 @@ def construct(kernel, signature, *args):
     args   : list
         kernel parameters
     """
-    assert isinstance(kernel, BlazeFunc)
+    assert isinstance(kernel, Kernel)
 
     params = [] # [(graph_term, ExprContext)]
 
@@ -39,9 +39,7 @@ def construct(kernel, signature, *args):
             if arg.expr:
                 params.append(arg.expr)
                 continue
-
-        if isinstance(arg, blaze.Array):
-            term = blaze.Array(arg.dshape, arg)
+            term = ArrayOp(arg.dshape, arg)
         else:
             term = from_value(arg)
 
@@ -51,10 +49,12 @@ def construct(kernel, signature, *args):
 
     # -------------------------------------------------
 
-    ## TODO:
-    # dshape = reconstruct(kernel, params)
-    dshape = T.promote_cvals(*[term.dshape for term, context in params])
-    return KernelOp(dshape, *args)
+    assert isinstance(signature, T.Function)
+    restype = signature.parameters[-1]
+
+    # -------------------------------------------------
+
+    return KernelOp(restype, *args, kernel=kernel, func=f, signature=signature)
 
 def from_value(value):
     return ArrayOp(T.typeof(value), value)

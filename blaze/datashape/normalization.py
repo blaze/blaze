@@ -15,7 +15,7 @@ from .coretypes import DataShape, Ellipsis, Fixed
 # Normalization
 #------------------------------------------------------------------------
 
-def normalize(constraints, broadcasting):
+def normalize(constraints, broadcasting=None):
     """
     Parameters
     ----------
@@ -120,7 +120,7 @@ def substitute(S, ds):
 #------------------------------------------------------------------------
 # Broadcasting
 
-def normalize_broadcasting(constraints, broadcasting):
+def normalize_broadcasting(constraints, broadcasting=None):
     """Add broadcasting dimensions to DataShapes"""
     return [_normalize_broadcasting(a, b) for a, b in constraints], None
 

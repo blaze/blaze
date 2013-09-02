@@ -33,13 +33,13 @@ class Dispatcher(object):
         # TODO: match signature to be a Function type with correct arity
         self.overloads.append((f, signature, kwds))
 
-    def lookup_dispatcher(self, args, kwargs):
+    def lookup_dispatcher(self, args, kwargs, constraints=None):
         assert self.f is not None
-        args = flatargs(self.f, args, kwargs)
+        args = flatargs(self.f, tuple(args), kwargs)
         types = list(map(T.typeof, args))
-        dst_sig, sig, func = best_match(self, types)
+        dst_sig, sig, func, constraints = best_match(self, types, constraints)
         # TODO: convert argument types using dst_sig
-        return func, dst_sig, args
+        return func, dst_sig, constraints, args
 
     def dispatch(self, *args, **kwargs):
         func, dst_sig, args = self.lookup_dispatcher(args, kwargs)
@@ -99,7 +99,7 @@ def overloadable(f):
 # Matching
 #------------------------------------------------------------------------
 
-def best_match(func, argtypes, constraints=()):
+def best_match(func, argtypes, constraints=None):
     """
     Find a best match in for overloaded function `func` given `argtypes`.
 
@@ -124,14 +124,14 @@ def best_match(func, argtypes, constraints=()):
     # -------------------------------------------------
     # Find candidates
 
-    candidates = find_matches(overloads, argtypes, constraints)
+    candidates = find_matches(overloads, argtypes, constraints or [])
 
     # -------------------------------------------------
     # Weigh candidates
 
     matches = collections.defaultdict(list)
     for candidate in candidates:
-        dst_sig, sig, func = candidate
+        dst_sig, sig, func, remaining = candidate
         params = dst_sig.parameters[:-1]
         try:
             weight = sum([coerce(a, p) for a, p in zip(argtypes, params)])
@@ -174,13 +174,13 @@ def find_matches(overloads, argtypes, constraints=()):
         # -------------------------------------------------
         # Unification
 
-        constraints = list(chain([(input, sig)], constraints))
+        equations = list(chain([(input, sig)], constraints))
         broadcasting = [True] * l1
 
         try:
-            result, _ = unify(constraints, broadcasting)
+            result, remaining = unify(equations, broadcasting)
         except error.UnificationError, e:
             continue
         else:
             dst_sig = result[0]
-            yield dst_sig, sig, func
+            yield dst_sig, sig, func, remaining

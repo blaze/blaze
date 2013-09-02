@@ -23,10 +23,17 @@ class Op(object):
     Single node in blaze expression graph.
     """
 
-    def __init__(self, opcode, dshape, *args):
+    def __init__(self, opcode, dshape, *args, **metadata):
         self.opcode = opcode
         self.dshape = dshape
         self.args   = list(args)
+        self.metadata = metadata
+
+    def __repr__(self):
+        subtrees = " -+- ".join(map(str, self.args))
+        node = "%s(%s){%s}" % (self.opcode, self.dshape, ", ".join(self.metadata))
+        length = max(len(subtrees), len(node))
+        return "%s\n%s" % (node.center(len(subtrees) / 2), subtrees.center(length))
 
 # ______________________________________________________________________
 # Graph constructors

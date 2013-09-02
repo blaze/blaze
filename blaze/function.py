@@ -22,19 +22,26 @@ from __future__ import print_function, division, absolute_import
 import types
 import inspect
 import functools
+from itertools import chain
 
+import blaze
+from blaze.datashape import coretypes as T
+from blaze.expr.context import merge
 from .overloading import overload
-from .deferred import Deferred
 from .util import flatargs
 
-from blaze.py2help import basestring
+from blaze.py2help import basestring, dict_iteritems
 
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
 
-def lookup_func(f=None):
-    return f or f.func_globals.get(f.__name__)
+def lookup_previous(f):
+    """
+    Lookup a previous function definition in the current namespace, i.e.
+    for overloading purposes.
+    """
+    return f.func_globals.get(f.__name__)
 
 def optional_decorator(f, continuation, args, kwargs):
     def decorator(f):
@@ -44,6 +51,26 @@ def optional_decorator(f, continuation, args, kwargs):
         return decorator
     else:
         return decorator(f)
+
+def make_blaze(value):
+    if not isinstance(value, (blaze.Deferred, blaze.Array)):
+        dshape = T.typeof(value)
+        if not dshape.shape:
+            value = [value]
+        value = blaze.Array([value], dshape)
+    return value
+
+def blaze_args(args, kwargs):
+    """Build blaze arrays from inputs to a blaze kernel"""
+    args = [make_blaze(a) for a in args]
+    kwargs = dict((v, make_blaze(k)) for k, v in dict_iteritems(kwargs))
+    return args, kwargs
+
+def collect_contexts(args):
+    for term in args:
+        if term.expr:
+            t, ctx = term.expr
+            yield ctx
 
 #------------------------------------------------------------------------
 # Decorators
@@ -73,8 +100,10 @@ def kernel(signature, **metadata):
             return a + b
     """
     def decorator(f):
-        f = lookup_func(f)
-        dispatcher = overload(signature, f)
+        func = lookup_previous(f)
+        if isinstance(func, Kernel):
+            func = func.dispatcher
+        dispatcher = overload(signature, func=func)(f)
 
         if isinstance(f, types.FunctionType):
             kernel = Kernel(dispatcher)
@@ -107,6 +136,22 @@ def elementwise(*args):
 #------------------------------------------------------------------------
 
 class Kernel(object):
+    """
+    Blaze kernel.
+
+    Attributes
+    ----------
+    dispatcher: Dispatcher
+        Used to find the right overload
+
+    impls: { str : object }
+        Overloaded implementations, mapping from implementation 'kind'
+        (e.g. python, ctypes, llvm, etc) to an implementation
+
+    metadata: { str : object }
+        Additional metadata that may be interpreted by a Blaze AIR interpreter
+    """
+
     def __init__(self, dispatcher):
         self.dispatcher = dispatcher
         self.impls = {}
@@ -130,7 +175,21 @@ class Kernel(object):
     def __call__(self, *args, **kwargs):
         from .expr import construct
 
-        func, dst_sig, args = self.dispatcher.lookup_dispatcher(args, kwargs)
-        expr = construct.construct(func, dst_sig, *args)
-        (term, context) = expr
-        return Deferred(term.dshape, expr)
+        # -------------------------------------------------
+        # Merge input contexts
+
+        args, kwargs = blaze_args(args, kwargs)
+        ctxs = collect_contexts(chain(args, kwargs.values()))
+        ctx = merge(ctxs)
+
+        # -------------------------------------------------
+        # Find match to overloaded function
+
+        match = self.dispatcher.lookup_dispatcher(args, kwargs, ctx.constraints)
+        func, dst_sig, constraints, args = match
+
+        # -------------------------------------------------
+        # Construct graph
+
+        term = construct.construct(self, func, dst_sig, args)
+        return blaze.Deferred(term.dshape, (term, ctx))
