@@ -1,5 +1,5 @@
 import blaze
-from blaze import datashape
+from blaze import dshape, error, datashape
 import numpy as np
 import unittest
 
@@ -37,6 +37,13 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertRaises(TypeError, blaze.dshape, 'boot')
         self.assertRaises(TypeError, blaze.dshape, 'int33')
         self.assertRaises(TypeError, blaze.dshape, '12')
+
+    def test_constraints_error(self):
+        self.assertRaises(error.BlazeTypeError, dshape,
+                          'A : integral, B : numeric')
+
+    def test_ellipsis_error(self):
+        self.assertRaises(error.BlazeTypeError, dshape, 'T, ...')
 
     def test_type_decl(self):
         self.assertRaises(TypeError, blaze.dshape, 'type X T = 3, T')

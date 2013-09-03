@@ -49,7 +49,7 @@ def data_descriptor_from_cffi(ffi, cdata, writable):
                     isinstance(ds[0], datashape.TypeVar)):
         # If the outermost dimension is an array without fixed
         # size, get its size from the data
-        ds = datashape.DataShape((datashape.Fixed(len(cdata)),) + ds[1:])
+        ds = datashape.DataShape(*(datashape.Fixed(len(cdata)),) + ds[1:])
     access = "readwrite" if writable else "readonly"
     dyndarr = _lowlevel.array_from_ptr(ndt.type(str(ds)),
                     ptr, owner, access)
