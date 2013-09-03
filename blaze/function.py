@@ -27,7 +27,7 @@ from itertools import chain
 import blaze
 from blaze.datashape import coretypes as T
 from blaze.expr.context import merge
-from .overloading import overload
+from .overloading import overload, Dispatcher
 from .util import flatargs
 
 from blaze.py2help import basestring, dict_iteritems
@@ -103,6 +103,12 @@ def kernel(signature, **metadata):
         func = lookup_previous(f)
         if isinstance(func, Kernel):
             func = func.dispatcher
+        elif isinstance(func, types.FunctionType):
+            raise TypeError(
+                "Function %s in current scope is not overloadable" % (func,))
+        else:
+            func = Dispatcher()
+
         dispatcher = overload(signature, func=func)(f)
 
         if isinstance(f, types.FunctionType):
@@ -191,5 +197,13 @@ class Kernel(object):
         # -------------------------------------------------
         # Construct graph
 
-        term = construct.construct(self, match.func, match.dst_sig, args)
+        term = construct.construct(self, ctx, match.func, match.dst_sig, args)
         return blaze.Deferred(term.dshape, (term, ctx))
+
+    def __str__(self):
+        arg = self.dispatcher.f
+        if arg is None:
+            arg = "<empty>"
+        else:
+            arg = ".".join([arg.__module__, arg.__name__])
+        return "Kernel(%s)" % (arg,)

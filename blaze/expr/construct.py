@@ -17,16 +17,20 @@ from .conf import conf
 # Graph construction (entry point)
 #------------------------------------------------------------------------
 
-def construct(kernel, f, signature, args):
+def construct(kernel, ctx, f, signature, args):
     """
     Parameters
     ----------
     kernel : Blaze Function
         (Overloaded) blaze function representing the operation
+
+    ctx: ExprContext
+        Context of the expression
+
     args   : list
         kernel parameters
     """
-    assert isinstance(kernel, Kernel)
+    assert isinstance(kernel, Kernel), kernel
 
     params = [] # [(graph_term, ExprContext)]
 
@@ -37,15 +41,17 @@ def construct(kernel, f, signature, args):
         if isinstance(arg, blaze.Array):
             # Compose new expression using previously constructed expression
             if arg.expr:
-                params.append(arg.expr)
+                term, context = arg.expr
+                params.append(term)
                 continue
-            term = ArrayOp(arg.dshape, arg)
+            term = ArrayOp(arg.dshape)
+            ctx.add_input(term, arg)
         else:
             term = from_value(arg)
 
         empty = ExprContext()
         arg.expr = (term, empty)
-        params.append(arg.expr)
+        params.append(term)
 
     # -------------------------------------------------
 
@@ -54,7 +60,7 @@ def construct(kernel, f, signature, args):
 
     # -------------------------------------------------
 
-    return KernelOp(restype, *args, kernel=kernel, func=f, signature=signature)
+    return KernelOp(restype, *params, kernel=kernel, func=f, signature=signature)
 
 def from_value(value):
     return ArrayOp(T.typeof(value), value)

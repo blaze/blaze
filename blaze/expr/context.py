@@ -11,7 +11,10 @@ class ExprContext(object):
     def __init__(self):
         # Coercion constraints between types with free variables
         self.constraints = []
-        self.inputs = []      # Accumulated input parameters (arrays)
+        self.inputs = {}      # Accumulated input parameters (arrays)
+
+    def add_input(self, term, data):
+        self.inputs[term] = data
 
 
 def merge(contexts):

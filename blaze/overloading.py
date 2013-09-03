@@ -4,7 +4,6 @@ from __future__ import print_function, division, absolute_import
 import inspect
 from collections import namedtuple, defaultdict
 from itertools import chain
-from pprint import pformat
 
 from blaze import error
 from blaze.util import flatargs, listify, alpha_equivalent
@@ -61,9 +60,8 @@ class Dispatcher(object):
     __call__ = dispatch
 
     def __repr__(self):
-        f, _, _ = iter(self.overloads).next()
         signatures = [sig for f, sig, _ in self.overloads]
-        return '<%s: \n%s>' % (f.__name__,
+        return '<%s: \n%s>' % (self.f and self.f.__name__,
                                "\n".join("    %s" % (s,) for s in signatures))
 
 def overload(signature, func=None, **kwds):
