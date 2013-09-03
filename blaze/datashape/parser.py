@@ -6,13 +6,15 @@ import sys
 import ast
 
 from collections import namedtuple
+
+# TODO: Ideally this module creates a simple AST that is mapped into the type
+#       domain by coretypes.py
 from . import coretypes as T
+from .traits import registry, lookup
 
 from ply import lex, yacc
 from blaze.plyhacks import yaccfrom, lexfrom
-from blaze.error import CustomSyntaxError
-
-instanceof = lambda T: lambda X: isinstance(X, T)
+from blaze.error import CustomSyntaxError, BlazeTypeError
 
 #------------------------------------------------------------------------
 # Errors
@@ -26,7 +28,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 #------------------------------------------------------------------------
 
 tokens = (
-    'TYPE', 'NAME', 'NUMBER', 'STRING', 'STAR', 'EQUALS',
+    'TYPE', 'NAME', 'NUMBER', 'STRING', 'ELLIPSIS', 'EQUALS',
     'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT',
     'VAR', 'JSON', 'DATA', 'ARROW',
 )
@@ -71,15 +73,15 @@ bits = set([
     'timedelta64',
 ])
 
-t_EQUALS = r'='
-t_COMMA  = r','
-t_COLON  = r':'
-t_SEMI   = r';'
-t_LBRACE = r'\{'
-t_RBRACE = r'\}'
-t_STAR   = r'\*'
-t_ARROW  = r'->'
-t_ignore = '[ ]'
+t_EQUALS    = r'='
+t_COMMA     = r','
+t_COLON     = r':'
+t_SEMI      = r';'
+t_LBRACE    = r'\{'
+t_RBRACE    = r'\}'
+t_ELLIPSIS  = r'\.\.\.'
+t_ARROW     = r'->'
+t_ignore    = '[ ]'
 
 def t_TYPE(t):
     r'type'
@@ -221,7 +223,7 @@ def p_rhs_expr(p):
             raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(rhs))
         p[0] = rhs
     else:
-        p[0] = build_dshape(p[1])
+        p[0] = T.DataShape(*p[1])
 
 def p_rhs_expression_list_node1(p):
     '''rhs_expression_list : appl
@@ -233,8 +235,18 @@ def p_rhs_expression_list__bit(p):
     p[0] = (T.Type._registry[p[1]],)
 
 def p_rhs_expression_list__name(p):
-    '''rhs_expression_list : NAME'''
-    p[0] = (T.TypeVar(p[1]),)
+    '''rhs_expression_list : typevar'''
+    p[0] = (p[1],)
+
+def p_rhs_expression_list__contrained(p):
+    '''rhs_expression_list : typevar COLON NAME'''
+    # Note: This syntax is constrained to type variables only
+    typevar = p[1]
+    try:
+        typeset = registry[p[3]]
+    except KeyError:
+        raise BlazeTypeError("No typeset '%s' registered" % (p[3],))
+    p[0] = (T.Implements(typevar, typeset),)
 
 def p_rhs_expression_list__number(p):
     '''rhs_expression_list : NUMBER'''
@@ -249,8 +261,12 @@ def p_rhs_expression_list__json(p):
     p[0] = (T.JSON(),)
 
 def p_rhs_expression_list__wild(p):
-    '''rhs_expression_list : STAR'''
-    p[0] = (T.Wild(),)
+    '''rhs_expression_list : ELLIPSIS'''
+    p[0] = (T.Ellipsis(),)
+
+def p_rhs_expression_list__wild_constrained(p):
+    '''rhs_expression_list : typevar ELLIPSIS'''
+    p[0] = (T.Ellipsis(p[1]),)
 
 def p_rhs_expression_list(p):
     'rhs_expression_list : rhs_expression_list COMMA rhs_expression_list metadata'
@@ -275,6 +291,12 @@ def p_rhs_signature2(p):
 
 #------------------------------------------------------------------------
 
+def p_typevar(p):
+    "typevar : NAME"
+    p[0] = T.TypeVar(p[1])
+
+#------------------------------------------------------------------------
+
 def p_metadata1(p):
     "metadata : '!' LBRACE appl_args RBRACE "
     p[0] = p[3]
@@ -295,8 +317,8 @@ def p_appl_args__rhs_expression(p):
     p[0] = (p[2],)
 
 def p_appl_args__name(p):
-    '''appl_args : NAME'''
-    p[0] = (T.TypeVar(p[1]),)
+    '''appl_args : typevar'''
+    p[0] = (p[1],)
 
 def p_appl_args__bit(p):
     '''appl_args : BIT'''
@@ -399,7 +421,6 @@ reserved = {
     #'Either'   : T.Either,
     #'Union'    : T.Union,
     'string'   : T.String, # String type per proposal
-    'Wild'     : T.Wild
 }
 
 def debug_parse(data, lexer, parser):
@@ -475,25 +496,6 @@ def parse(pattern):
                         'position of a datashape, not %s') % repr(ds))
     return ds
 
-
-#------------------------------------------------------------------------
-# Util
-#------------------------------------------------------------------------
-
-def build_dshape(params):
-    """
-    Build a DataShape, making sure type variables are unique in this context.
-    E.g. in 'T, T, int32', make sure the two type variables 'T' are the same
-    object.
-    """
-    typevars = {}
-    parameters = []
-    for p in params:
-        if isinstance(p, T.TypeVar):
-            p = typevars.setdefault(p.symbol, p)
-        parameters.append(p)
-
-    return T.DataShape(parameters)
 
 if __name__ == '__main__':
     import readline

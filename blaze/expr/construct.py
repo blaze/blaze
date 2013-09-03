@@ -57,7 +57,7 @@ def construct(kernel, *args):
     return KernelOp(dshape, *args)
 
 def from_value(value):
-    return ArrayOp(T.from_python_scalar(value), value)
+    return ArrayOp(T.typeof(value), value)
 
 #------------------------------------------------------------------------
 # Argument Munging

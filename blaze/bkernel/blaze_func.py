@@ -302,7 +302,7 @@ class BlazeFunc(object):
         if len(outshape)==0:
             outdshape = out_type
         else:
-            outdshape = DataShape(outshape+(out_type,))
+            outdshape = DataShape(*outshape+(out_type,))
 
         # Create a new BlazeFuncDescriptor with this
         # kerneltree and a new set of args depending on

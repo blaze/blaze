@@ -1,9 +1,10 @@
 import unittest
 
 import blaze
-from blaze import datashape
+from blaze import error, datashape
 from blaze.datashape.parser import parse
 from blaze.datashape.coretypes import Enum, Option, Function
+from blaze.datashape.traits import integral
 
 class TestDatashapeParser(unittest.TestCase):
 
@@ -54,6 +55,24 @@ class TestDatashapeParser(unittest.TestCase):
 
         assert x[0].lower == 1
         assert x[0].upper == 2
+
+    def test_constraints(self):
+        x = parse('A, B : numeric')
+        assert type(x.parameters[0]) == datashape.TypeVar
+        assert type(x.parameters[1]) == datashape.Implements
+        assert type(x.parameters[1].typeset == integral)
+
+    def test_ellipsis(self):
+        x = parse('..., T')
+        assert type(x.parameters[0]) == datashape.Ellipsis
+        assert type(x.parameters[1]) == datashape.TypeVar
+        assert x.parameters[0].typevar is None
+
+    def test_ellipsis2(self):
+        x = parse('A..., T')
+        assert type(x.parameters[0]) == datashape.Ellipsis
+        assert type(x.parameters[1]) == datashape.TypeVar
+        assert type(x.parameters[0].typevar) == datashape.TypeVar
 
     def test_fields_with_reserved_names(self):
         # Should be able to name a field 'type', 'int64'
