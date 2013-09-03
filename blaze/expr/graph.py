@@ -21,13 +21,31 @@ kernel = 'kernel' # kernel application, carrying the blaze kernel as a
 class Op(object):
     """
     Single node in blaze expression graph.
+
+    Attributes
+    ----------
+    opcode: string
+        Kind of the operation, i.e. 'array' or 'kernel'
+
+    uses: [Op]
+        Consumers (or parents) of this result. This is useful to keep
+        track of, since we always start evaluation from the 'root', and we
+        may miss tracking outside uses. However, for correct behaviour, these
+        need to be retained
     """
 
-    def __init__(self, opcode, dshape, *args, **metadata):
+    def __init__(self, opcode, dshape, args, **metadata):
         self.opcode = opcode
         self.dshape = dshape
+        self.uses = []
         self.args   = list(args)
         self.metadata = metadata
+
+        for arg in self.args:
+            arg.add_use(self)
+
+    def add_use(self, use):
+        self.uses.append(use)
 
     def __str__(self):
         opcode = self.opcode

@@ -45,6 +45,7 @@ class TestBlazeKernel(unittest.TestCase):
         self.assertEqual(len(graph.args), 2)
         self.assertEqual(len(ctx.constraints), 0)
         self.assertEqual(len(ctx.inputs), 1)
+        # res.view()
 
 
 if __name__ == '__main__':
