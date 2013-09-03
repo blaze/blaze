@@ -75,7 +75,8 @@ class Mono(object):
         return lst[key]
 
     def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, ", ".join(map(str, self.parameters)))
+        return '%s(%s)' % (type(self).__name__,
+                           ", ".join(map(repr, self.parameters)))
 
     # Form for searching signature in meta-method Dispatch Table
     def sigform(self):
@@ -742,6 +743,31 @@ class Range(Mono):
 
     def __str__(self):
         return expr_string('Range', [self.lower, self.upper])
+
+#------------------------------------------------------------------------
+# Function signatures
+#------------------------------------------------------------------------
+
+class Function(Mono):
+    """
+    Used for function signatures.
+    """
+    def __init__(self, *parameters):
+        self.parameters = parameters
+
+    @property
+    def restype(self):
+        return self.parameters[-1]
+
+    @property
+    def argtypes(self):
+        return self.parameters[:-1]
+
+    # def __repr__(self):
+    #     return " -> ".join(map(repr, self.parameters))
+
+    def __str__(self):
+        return " -> ".join(map(str, self.parameters))
 
 #------------------------------------------------------------------------
 # Record Types

@@ -15,6 +15,8 @@ from .overloading import overload
 from .deferred import Deferred
 from .util import flatargs
 
+from blaze.py2help import basestring
+
 
 def elementwise(signature):
     """

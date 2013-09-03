@@ -1,0 +1,31 @@
+language: python
+
+python:
+  - "2.7"
+
+branches:
+  only:
+    - master
+    - devel
+    - release
+    - signatures
+
+install:
+  # Create pkgs directory for conda
+  - prefix=$(python -c 'import sys; print sys.exec_prefix')
+  - mkdir "$prefix/pkgs"
+  # Install conda
+  - cp .condarc ~
+  - pip install pyyaml conda
+  # Install dependencies
+  - conda install llvmpy cython numba dynd-python llvmmath ply pycparser <<< y
+  # Install Blaze
+  - python setup.py install
+
+script: cd ~; python -c 'import blaze; blaze.test(exit=True)'
+
+notifications:
+  email: false
+  flowdock: "b08b3ba4fb86fa48121e90b5f67ccb75"
+  on_success: "change"
+  on_failure: "always" # "change"
