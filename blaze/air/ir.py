@@ -44,6 +44,12 @@ def _from_expr(expr, f, builder, values):
     else:
         result = Op("kernel", types.Opaque, [_from_expr(arg, f, builder, values)
                                              for arg in expr.args])
+        result.add_metadata({
+            'kernel': expr.metadata['kernel'],
+            'func': expr.metadata['func'],
+            'signature': expr.metadata['signature'],
+
+        })
         builder.emit(result)
 
     values[expr] = result

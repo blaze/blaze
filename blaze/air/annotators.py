@@ -13,8 +13,8 @@ from __future__ import print_function, division, absolute_import
 def annotate_uses(func, values):
     """
     Annotate the Blaze AIR function with metadata indicating the
-    number of external uses. These points need to have data associated with
-    it.
+    number of external uses. These points need to have concrete arrays
+    associated with it and represent fusion boundaries.
 
     Parameters
     ----------

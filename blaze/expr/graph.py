@@ -34,7 +34,7 @@ class Op(object):
         need to be retained
     """
 
-    def __init__(self, opcode, dshape, args, **metadata):
+    def __init__(self, opcode, dshape, *args, **metadata):
         self.opcode = opcode
         self.dshape = dshape
         self.uses = []
@@ -64,4 +64,10 @@ class Op(object):
 # Graph constructors
 
 ArrayOp    = partial(Op, array)
+
+# Kernel application. Associated metadata:
+#   kernel: the blaze.function.Kernel that was applied
+#   func: the overloaded function from the kernel
+#   signature: the unified signature
+
 KernelOp   = partial(Op, kernel)

@@ -47,7 +47,7 @@ def construct(kernel, ctx, f, signature, args):
             term = ArrayOp(arg.dshape)
             ctx.add_input(term, arg)
         else:
-            term = from_value(arg)
+            term = ArrayOp(T.typeof(arg))
 
         empty = ExprContext()
         arg.expr = (term, empty)
