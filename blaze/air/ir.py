@@ -2,9 +2,18 @@
 from __future__ import print_function, division, absolute_import
 
 from pykit import types
-from pykit.ir import Function, Builder, Value, Op
+from pykit.ir import Function, Builder, Value, Op, Const
 
-from blaze.py2help import dict_iteritems
+#------------------------------------------------------------------------
+# Utils
+#------------------------------------------------------------------------
+
+def qualified_name(f):
+    return ".".join([f.__module__, f.__name__])
+
+#------------------------------------------------------------------------
+# AIR construction
+#------------------------------------------------------------------------
 
 def from_expr(graph, expr_context, ctx):
     """
@@ -23,27 +32,48 @@ def from_expr(graph, expr_context, ctx):
     inputs = expr_context.inputs
 
     # -------------------------------------------------
+    # Types
+
+    argtypes = [operand.dshape for operand in inputs]
+    signature = types.Function(graph.dshape, argtypes)
+
+    # -------------------------------------------------
     # Setup function
 
     name = "expr%d" % ctx.incr()
     argnames = ["e%d" % i for i in range(len(inputs))]
-    signature = types.Function(graph.dshape, [types.Opaque] * len(inputs))
     f = Function(name, argnames, signature)
     builder = Builder(f)
+    builder.position_at_beginning(f.new_block('entry'))
 
     # -------------------------------------------------
+    # Generate function
 
-    values = {} # term -> arg #
+    values = dict((expr, f.get_arg("e%d" % i))
+                      for i, expr in enumerate(inputs))
     _from_expr(graph, f, builder, values)
-    return f, values
 
+    retval = values[graph]
+    builder.ret(retval)
+
+    return f, values
 
 def _from_expr(expr, f, builder, values):
     if expr.opcode == 'array':
-        result = values.get(expr) or f.get_arg("e%d" % len(values))
+        result = values[expr]
     else:
-        result = Op("kernel", types.Opaque, [_from_expr(arg, f, builder, values)
-                                             for arg in expr.args])
+        # -------------------------------------------------
+        # Construct args
+
+        # This is purely for IR readability
+        name = qualified_name(expr.metadata['func'])
+        args = [_from_expr(arg, f, builder, values) for arg in expr.args]
+        args = [Const(name)] + args
+
+        # -------------------------------------------------
+        # Construct Op
+
+        result = Op("kernel", types.Opaque, args)
         result.add_metadata({
             'kernel': expr.metadata['kernel'],
             'func': expr.metadata['func'],
@@ -54,19 +84,6 @@ def _from_expr(expr, f, builder, values):
 
     values[expr] = result
     return result
-
-def build_args(inputs):
-    """
-    Given a dict of inputs (term -> Array), return a map mapping original
-    terms to unique terms according to the data inputs.
-    """
-    terms = {}
-    arrays = {}
-    for term, array in dict_iteritems(inputs):
-        arrays.setdefault(array, term)
-        terms[term] = arrays[term]
-
-    return terms
 
 #------------------------------------------------------------------------
 # Execution context

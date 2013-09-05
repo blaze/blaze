@@ -38,12 +38,12 @@ def construct(kernel, ctx, f, signature, args):
     # Build type unification parameters
 
     for i, arg in enumerate(args):
-        if isinstance(arg, blaze.Array):
+        if isinstance(arg, (blaze.Array, blaze.Deferred)) and arg.expr:
             # Compose new expression using previously constructed expression
-            if arg.expr:
-                term, context = arg.expr
-                params.append(term)
-                continue
+            term, context = arg.expr
+            params.append(term)
+            continue
+        elif isinstance(arg, blaze.Array):
             term = ArrayOp(arg.dshape)
             ctx.add_input(term, arg)
         else:

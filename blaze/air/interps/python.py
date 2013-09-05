@@ -42,8 +42,10 @@ handlers = {
     'convert': op_convert,
 }
 
-def run(func, env=None, exc_model=None, args=()):
+def py_interp(func, env=None, exc_model=None, args=()):
     args = [np.array(arg) for arg in args]
     env = env or {}
     env.setdefault('interp.handlers', {}).update(handlers)
     return interp.run(func, env, exc_model, args=args)
+
+run = py_interp

@@ -12,8 +12,11 @@ class ExprContext(object):
         # Coercion constraints between types with free variables
         self.constraints = []
         self.inputs = {}      # Accumulated input parameters (arrays)
+        self.params = []
 
     def add_input(self, term, data):
+        if term not in self.inputs:
+            self.params.append(term)
         self.inputs[term] = data
 
 
@@ -26,12 +29,8 @@ def merge(contexts):
 
     for ctx in contexts:
         result.constraints.extend(ctx.constraints)
-        result.inputs.extend(ctx.inputs)
+        result.inputs.update(ctx.inputs)
+        result.params.extend(ctx.params)
 
     result.constraints, _ = unify(result.constraints)
     return result
-
-def initialize(context, term):
-    """Initialize an expression context with a graph term"""
-    if isinstance(term, blaze.Array):
-        context.inputs.append(term)

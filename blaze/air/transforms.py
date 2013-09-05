@@ -20,15 +20,18 @@ def explicit_coercions(func):
     b = Builder(func)
 
     for op in func.ops:
+        if op.opcode != 'kernel':
+            continue
+
         signature = op.metadata['signature']
         parameters = signature.parameters[:-1]
-        assert len(op.args) == len(parameters)
+        assert len(op.args) - 1 == len(parameters)
 
         # -------------------------------------------------
         # Identify conversion points
 
         replacements = {} # { arg : replacement_conversion }
-        for arg, param_type in zip(op.args, parameters):
+        for arg, param_type in zip(op.args[1:], parameters):
             if arg.type != param_type:
                 conversion = conversions.get(arg, param_type)
                 if not conversion:
