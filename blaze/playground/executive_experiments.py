@@ -42,20 +42,26 @@ if __name__ == '__main__':
 
     shape = (a.val for a in operand_datashape.shape)
 
+    from operator import add
     t = time.time()
-    for i in it_product(*[xrange(i) for i in shape]):
+    for el in it_product(*[xrange(i) for i in shape]):
         val = random.uniform(-math.pi, math.pi)
-        op0[i] = math.sin(val)
-        op1[i] = math.cos(val)
+        factor = math.sqrt(reduce(add, [j * 10**i for i, j in enumerate(reversed(el))]))
+
+        op0[el] = math.sin(val) * factor
+        op1[el] = math.cos(val) * factor
 
     logging.info("initialization took %f seconds", (time.time()-t))
 
     expr = op0*op0 + op1*op1
 
-    result = eval_in_mem(expr, None, dump_result=True)
-    result = eval_in_mem(expr, 0, dump_result=True)
-    result = eval_in_mem(expr, iter_dims=1, dump_result=True)
-    result = eval_in_mem(expr, iter_dims=1, chunk=4, dump_result=True)
+    eval_in_mem(expr, 0, dump_result=True)   
+    eval_in_mem(expr, 0, dump_result=True)
+    eval_in_mem(expr, iter_dims=1, dump_result=True)
+    eval_in_mem(expr, iter_dims=1, chunk=3, dump_result=True)
+    eval_in_mem(expr, iter_dims=1, chunk=4, dump_result=True)
+    eval_in_mem(expr, iter_dims=1, chunk=5, dump_result=True)
+
 
     stor = blaze.Storage('blz://persisted.blz')
     t = time.time()
