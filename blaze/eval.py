@@ -14,7 +14,7 @@ from .datadescriptor import (IDataDescriptor,
                              execute_expr_single)
 from .py2help import reduce
 from .datashape import to_numpy
-from .air import interps
+from .air import prepare, interps
 from .executive import simple_execute_append
 from . import blz
 
@@ -23,7 +23,7 @@ from . import blz
 #------------------------------------------------------------------------
 
 _eval_strategy = threading.local()
-_eval_strategy.strategy = 'llvm'
+default_strategy = 'eval'
 
 @contextmanager
 def strategy(strategy):
@@ -52,7 +52,10 @@ def strategy(strategy):
 
 def current_strategy():
     """Return the current evaluation strategy"""
-    return _eval_strategy.strategy
+    try:
+        return _eval_strategy.strategy
+    except AttributeError:
+        return default_strategy
 
 #------------------------------------------------------------------------
 # Eval
@@ -101,8 +104,18 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     return result
 
 def eval_deferred(arr, storage, caps, out, strategy):
+    graph, ctx = arr.expr
+
+    # Construct and transform AIR
+    func, env = prepare(arr, strategy)
+
+    # Find evaluator
     interp = interps.lookup_interp(strategy)
-    return interp.run(arr)
+
+    # Run with collected 'params' from the expression
+    result = interp.run(func, args=ctx.params)
+
+    return result
 
 def eval_blz(arr, storage, caps, out, strategy):
     from operator import mul

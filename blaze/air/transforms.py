@@ -12,7 +12,7 @@ from pykit.ir import Function, Builder, Value, Op
 # Coercions -> Conversions
 #------------------------------------------------------------------------
 
-def explicit_coercions(func):
+def explicit_coercions(func, env=None):
     """
     Turn implicit coercions into explicit conversion operations.
     """

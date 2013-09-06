@@ -5,11 +5,7 @@ Python evaluation of blaze AIR.
 """
 
 from __future__ import print_function, division, absolute_import
-
-from blaze.py2help import dict_iteritems
-
-from pykit import types
-from pykit.ir import Function, Builder, Value, Op, interp
+from pykit.ir import interp
 
 # Use numpy for now until dynd supports reshape
 import numpy as np

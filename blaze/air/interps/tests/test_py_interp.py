@@ -20,7 +20,7 @@ class TestPython(unittest.TestCase):
         a = array(range(10), dshape=dshape('10, int32'))
         b = array(range(10), dshape=dshape('10, float32'))
         expr = add(a, mul(a, b))
-        # result = blaze.eval(expr, strategy='py')
+        result = blaze.eval(expr, strategy='py')
 
 
 if __name__ == '__main__':
