@@ -33,11 +33,13 @@ def explicit_coercions(func):
         replacements = {} # { arg : replacement_conversion }
         for arg, param_type in zip(op.args[1:], parameters):
             if arg.type != param_type:
-                conversion = conversions.get(arg, param_type)
+                conversion = conversions.get((arg, param_type))
                 if not conversion:
                     conversion = Op('convert', param_type, [arg])
-                    b.position_after(op)
+                    b.position_after(arg)
                     b.emit(conversion)
+                    conversions[arg, param_type] = conversion
+
                 replacements[arg] = conversion
 
         # -------------------------------------------------

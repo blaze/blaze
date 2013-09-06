@@ -73,7 +73,7 @@ def _from_expr(expr, f, builder, values):
         # -------------------------------------------------
         # Construct Op
 
-        result = Op("kernel", types.Opaque, args)
+        result = Op("kernel", expr.dshape, args)
         result.add_metadata({
             'kernel': expr.metadata['kernel'],
             'func': expr.metadata['func'],
