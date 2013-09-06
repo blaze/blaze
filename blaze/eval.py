@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 # Implements the blaze.eval function
 
+import threading
+from contextlib import contextmanager
+
 from .array import Array
 from .constructors import empty
 from .datadescriptor import (IDataDescriptor,
@@ -13,8 +16,29 @@ from .datashape import to_numpy
 from .executive import simple_execute_append
 from . import blz
 
+#------------------------------------------------------------------------
+# Execution Strategy
+#------------------------------------------------------------------------
 
-def eval(arr, storage=None, caps={'efficient-write': True}):
+_eval_strategy = threading.local()
+_eval_strategy.strategy = 'llvm'
+
+@contextmanager
+def strategy(strategy):
+    old = _eval_strategy.strategy
+    _eval_strategy.strategy = strategy
+    yield
+    _eval_strategy.strategy = old
+
+def current_strategy():
+    return _eval_strategy.strategy
+
+#------------------------------------------------------------------------
+# Eval
+#------------------------------------------------------------------------
+
+def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
+         strategy=None):
     """Evaluates a deferred blaze kernel tree
     data descriptor into a concrete array.
     If the array is already concrete, merely
@@ -22,6 +46,9 @@ def eval(arr, storage=None, caps={'efficient-write': True}):
     """
     if not arr._data.deferred:
         return arr
+
+    if strategy is None:
+        strategy = _eval_strategy.strategy
 
     kt = arr._data.kerneltree.fuse()
     if storage is not None:
