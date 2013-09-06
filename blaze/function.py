@@ -20,17 +20,11 @@ Or a tuple for a combination of the above.
 
 from __future__ import print_function, division, absolute_import
 import types
-import inspect
-import functools
-from itertools import chain
 
-import blaze
-from blaze.datashape import coretypes as T
-from blaze.expr.context import merge
+from .deferred import apply_kernel
 from .overloading import overload, Dispatcher
-from .util import flatargs
 
-from blaze.py2help import basestring, dict_iteritems
+from blaze.py2help import basestring
 
 #------------------------------------------------------------------------
 # Utils
@@ -51,26 +45,6 @@ def optional_decorator(f, continuation, args, kwargs):
         return decorator
     else:
         return decorator(f)
-
-def make_blaze(value):
-    if not isinstance(value, (blaze.Deferred, blaze.Array)):
-        dshape = T.typeof(value)
-        if not dshape.shape:
-            value = [value]
-        value = blaze.Array([value], dshape)
-    return value
-
-def blaze_args(args, kwargs):
-    """Build blaze arrays from inputs to a blaze kernel"""
-    args = [make_blaze(a) for a in args]
-    kwargs = dict((v, make_blaze(k)) for k, v in dict_iteritems(kwargs))
-    return args, kwargs
-
-def collect_contexts(args):
-    for term in args:
-        if term.expr:
-            t, ctx = term.expr
-            yield ctx
 
 #------------------------------------------------------------------------
 # Decorators
@@ -178,27 +152,7 @@ class Kernel(object):
         # Update
         self.metadata.update(md)
 
-    def __call__(self, *args, **kwargs):
-        from .expr import construct
-
-        # -------------------------------------------------
-        # Merge input contexts
-
-        args, kwargs = blaze_args(args, kwargs)
-        ctxs = collect_contexts(chain(args, kwargs.values()))
-        ctx = merge(ctxs)
-
-        # -------------------------------------------------
-        # Find match to overloaded function
-
-        match, args = self.dispatcher.lookup_dispatcher(args, kwargs,
-                                                        ctx.constraints)
-
-        # -------------------------------------------------
-        # Construct graph
-
-        term = construct.construct(self, ctx, match.func, match.dst_sig, args)
-        return blaze.Deferred(term.dshape, (term, ctx))
+    __call__ = apply_kernel
 
     def __str__(self):
         arg = self.dispatcher.f
