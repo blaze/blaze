@@ -61,6 +61,16 @@ class Array(object):
     def persistent(self):
         return self._data.persistent
 
+    def __array__(self):
+        import numpy as np
+
+        # TODO: Expose PEP-3118 buffer interface
+
+        if isinstance(self._data, DyNDDataDescriptor):
+            return np.array(self._data.dynd_arr())
+        else:
+            raise NotImplementedError(self._data)
+
     def __iter__(self):
         return self._data.__iter__()
 

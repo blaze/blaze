@@ -5,10 +5,7 @@ import unittest
 
 import blaze
 from blaze import array, dshape
-from blaze import error
 from blaze.ops.ufuncs import add, mul
-from blaze.air import interps
-from blaze.datashape import unify, dshapes, coerce, normalize
 
 #------------------------------------------------------------------------
 # Tests
@@ -21,6 +18,9 @@ class TestPython(unittest.TestCase):
         b = array(range(10), dshape=dshape('10, float32'))
         expr = add(a, mul(a, b))
         result = blaze.eval(expr, strategy='py')
+        expected = blaze.array([ 0,  2,  6, 12, 20, 30, 42, 56, 72, 90])
+        self.assertEqual(type(result), blaze.Array)
+        self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':

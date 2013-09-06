@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import threading
 from contextlib import contextmanager
 
+import blaze
 from .deferred import Deferred
 from .array import Array
 from .constructors import empty
@@ -98,8 +99,8 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
         else: # in memory path
             result = eval_ckernel(arr, storage, caps, out, strategy, kt)
 
-    for name in ['axes', 'user', 'labels']:
-        setattr(result, name, getattr(arr, name))
+        for name in ['axes', 'user', 'labels']:
+            setattr(result, name, getattr(arr, name))
 
     return result
 
@@ -113,9 +114,9 @@ def eval_deferred(arr, storage, caps, out, strategy):
     interp = interps.lookup_interp(strategy)
 
     # Run with collected 'params' from the expression
-    result = interp.run(func, args=ctx.params)
+    result = interp.run(func, args=[ctx.inputs[param] for param in ctx.params])
 
-    return result
+    return blaze.array(result)
 
 def eval_blz(arr, storage, caps, out, strategy):
     from operator import mul
