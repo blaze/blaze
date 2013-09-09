@@ -10,10 +10,7 @@ from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor)
 from ._printing import array2string as _printer
-from blaze.bkernel import bmath
-from blaze.ops import ufuncs
 from .py2help import exec_
-# from .bkernel import bmath
 
 # An Array contains:
 #   DataDescriptor
@@ -105,7 +102,9 @@ def binding(f):
 def inject_special(names):
     for name in names:
         # Swap the lines below to test the new expression graph
+        # from blaze.ops import ufuncs
         # setattr(Array, '__%s__' % name, getattr(ufuncs, name))
+        from .bkernel import bmath
         setattr(Array, '__%s__' % name, binding(getattr(bmath, name)))
 
 inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
