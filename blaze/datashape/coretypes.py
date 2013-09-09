@@ -348,7 +348,7 @@ class DataShape(Mono):
     composite = False
 
     def __init__(self, *parameters, **kwds):
-        if len(parameters) > 1:
+        if len(parameters) > 0:
             self.parameters = tuple(parameters)
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
                 raise TypeError(('Only a measure can appear on the'
@@ -360,8 +360,8 @@ class DataShape(Mono):
                                     ' last position of a datashape, not %s') %
                                     repr(dim))
         else:
-            raise ValueError(('the data shape should be constructed from 2 or'
-                            ' more parameters, only got %s') % (len(parameters)))
+            raise ValueError(('the data shape requires at least one arugment, '
+                              'only got %s') % (len(parameters)))
         self.composite = True
 
         name = kwds.get('name')
@@ -1141,22 +1141,22 @@ def typeof(obj):
     """
     Return a datashape ctype for a python scalar.
     """
-    if isinstance(obj, (blaze.Array, blaze.Deferred)):
+    if isinstance(obj, blaze.Array):
         return obj.dshape
     elif isinstance(obj, int):
-        return int_
+        return DataShape(int_)
     elif isinstance(obj, float):
-        return double
+        return DataShape(double)
     elif isinstance(obj, complex):
-        return complex128
+        return DataShape(complex128)
     elif isinstance(obj, _strtypes):
-        return string
+        return DataShape(string)
     elif isinstance(obj, datetime.timedelta):
-        return timedelta64
+        return DataShape(timedelta64)
     elif isinstance(obj, datetime.datetime):
-        return datetime64
+        return DataShape(datetime64)
     else:
-        return pyobj
+        return DataShape(pyobj)
 
 #------------------------------------------------------------------------
 # Printing
