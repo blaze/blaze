@@ -1,16 +1,17 @@
 from __future__ import (print_function, absolute_import)
 
-import blaze
-
 import os
 import sys
-import numpy as np
-from numpy.testing import assert_allclose
 import unittest
 import tempfile
 from itertools import product as it_product
+
+import blaze
 from blaze.datadescriptor import dd_as_py
 from blaze.py2help import exec_
+
+import numpy as np
+from numpy.testing import assert_allclose
 
 def _clean_disk_arrays():
     try:
@@ -117,6 +118,14 @@ class TestEval2D(unittest.TestCase):
     # add all tests for all permutations
     _add_tests()
 
+
+class TestStrategy(unittest.TestCase):
+
+    def test_strategy(self):
+        current = blaze.current_strategy()
+        with blaze.strategy('blah'):
+            self.assertEqual(blaze.current_strategy(), 'blah')
+        self.assertEqual(blaze.current_strategy(), current)
 
 if __name__ == '__main__':
     # TestEval2D.setUpClass()

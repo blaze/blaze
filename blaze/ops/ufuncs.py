@@ -8,31 +8,31 @@ from __future__ import print_function, division, absolute_import
 
 from blaze.function import overload, elementwise
 
-@elementwise # A -> A -> A
+@elementwise('a -> a -> a')
 def add(a, b):
     return a + b
 
-@elementwise
+@elementwise('a -> a -> a')
 def mul(a, b):
     return a * b
 
-@elementwise
+@elementwise('a -> a -> a')
 def sub(a, b):
     return a - b
 
-@elementwise
+@elementwise('a -> a -> a')
 def div(a, b):
     return a / b
 
-@elementwise
+@elementwise('a -> a -> a')
 def truediv(a, b):
     return a / b
 
-@elementwise
+@elementwise('a -> a -> a')
 def floordiv(a, b):
     return a // b
 
-@elementwise
+@elementwise('a -> a -> a')
 def mod(a, b):
     return a % b
 

@@ -7,7 +7,7 @@ from collections import Iterable
 
 import blaze
 from blaze.datashape import coretypes as T
-from blaze.bkernel import BlazeFunc
+from blaze import Kernel
 
 from .graph import ArrayOp, KernelOp
 from .context import ExprContext, unify
@@ -17,16 +17,20 @@ from .conf import conf
 # Graph construction (entry point)
 #------------------------------------------------------------------------
 
-def construct(kernel, *args):
+def construct(kernel, ctx, f, signature, args):
     """
     Parameters
     ----------
     kernel : Blaze Function
         (Overloaded) blaze function representing the operation
+
+    ctx: ExprContext
+        Context of the expression
+
     args   : list
         kernel parameters
     """
-    assert isinstance(kernel, BlazeFunc)
+    assert isinstance(kernel, Kernel), kernel
 
     params = [] # [(graph_term, ExprContext)]
 
@@ -34,27 +38,29 @@ def construct(kernel, *args):
     # Build type unification parameters
 
     for i, arg in enumerate(args):
-        if isinstance(arg, blaze.Array):
+        if isinstance(arg, (blaze.Array, blaze.Deferred)) and arg.expr:
             # Compose new expression using previously constructed expression
-            if arg.expr:
-                params.append(arg.expr)
-                continue
-
-        if isinstance(arg, blaze.Array):
-            term = blaze.Array(arg.dshape, arg)
+            term, context = arg.expr
+            params.append(term)
+            continue
+        elif isinstance(arg, blaze.Array):
+            term = ArrayOp(arg.dshape)
+            ctx.add_input(term, arg)
         else:
-            term = from_value(arg)
+            term = ArrayOp(T.typeof(arg))
 
         empty = ExprContext()
         arg.expr = (term, empty)
-        params.append(arg.expr)
+        params.append(term)
 
     # -------------------------------------------------
 
-    ## TODO:
-    # dshape = reconstruct(kernel, params)
-    dshape = T.promote_cvals(*[term.dshape for term, context in params])
-    return KernelOp(dshape, *args)
+    assert isinstance(signature, T.Function)
+    restype = signature.parameters[-1]
+
+    # -------------------------------------------------
+
+    return KernelOp(restype, *params, kernel=kernel, func=f, signature=signature)
 
 def from_value(value):
     return ArrayOp(T.typeof(value), value)

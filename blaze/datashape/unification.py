@@ -42,7 +42,7 @@ def unify_simple(a, b):
     [res], _ = unify([(a, b)], [True])
     return res
 
-def unify(constraints, broadcasting):
+def unify(constraints, broadcasting=None):
     """
     Unify a set of constraints and return a concrete solution
 

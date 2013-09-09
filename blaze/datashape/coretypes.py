@@ -10,8 +10,11 @@ import sys
 import ctypes
 import operator
 import datetime
-import numpy as np
+
+import blaze
 from ..py2help import _inttypes, _strtypes, unicode
+
+import numpy as np
 
 #------------------------------------------------------------------------
 # Type Metaclass
@@ -1134,21 +1137,23 @@ def from_numpy(shape, dt):
 # Python Compatibility
 #------------------------------------------------------------------------
 
-def typeof(scalar):
+def typeof(obj):
     """
     Return a datashape ctype for a python scalar.
     """
-    if isinstance(scalar, int):
+    if isinstance(obj, (blaze.Array, blaze.Deferred)):
+        return obj.dshape
+    elif isinstance(obj, int):
         return int_
-    elif isinstance(scalar, float):
+    elif isinstance(obj, float):
         return double
-    elif isinstance(scalar, complex):
+    elif isinstance(obj, complex):
         return complex128
-    elif isinstance(scalar, _strtypes):
+    elif isinstance(obj, _strtypes):
         return string
-    elif isinstance(scalar, datetime.timedelta):
+    elif isinstance(obj, datetime.timedelta):
         return timedelta64
-    elif isinstance(scalar, datetime.datetime):
+    elif isinstance(obj, datetime.datetime):
         return datetime64
     else:
         return pyobj
