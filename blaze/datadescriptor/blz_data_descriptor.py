@@ -201,6 +201,9 @@ class BLZDataDescriptor(IDataDescriptor):
     def immutable(self):
         return False
 
+    def __array__(self):
+        return np.array(self.blzarr)
+
     def __len__(self):
         # BLZ arrays are never scalars
         return len(self.blzarr)

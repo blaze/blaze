@@ -6,7 +6,6 @@ import threading
 from contextlib import contextmanager
 
 import blaze
-from .deferred import Deferred
 from .array import Array
 from .constructors import empty
 from .datadescriptor import (IDataDescriptor,
@@ -25,7 +24,7 @@ from . import blz
 #------------------------------------------------------------------------
 
 _eval_strategy = threading.local()
-default_strategy = 'eval'
+default_strategy = 'py'
 
 @contextmanager
 def strategy(strategy):

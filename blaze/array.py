@@ -8,9 +8,9 @@ from __future__ import absolute_import
 from .datashape import dshape, coretypes as T
 from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
-                             DyNDDataDescriptor, DeferredDescriptor)
+                             DyNDDataDescriptor,
+                             DeferredDescriptor)
 from ._printing import array2string as _printer
-from blaze.bkernel import bmath
 from blaze.expr import dump
 from blaze.ops import ufuncs
 from .py2help import exec_
@@ -85,10 +85,10 @@ class Array(object):
 
         # TODO: Expose PEP-3118 buffer interface
 
-        if isinstance(self._data, DyNDDataDescriptor):
-            return np.array(self._data.dynd_arr())
-        else:
-            raise NotImplementedError(self._data)
+        if hasattr(self._data, "__array__"):
+            return np.array(self._data)
+
+        raise NotImplementedError(self._data)
 
     def __iter__(self):
         return self._data.__iter__()

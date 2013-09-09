@@ -22,7 +22,7 @@ def force_evaluation(methname):
     def method(self, *args, **kwargs):
         result = blaze.eval(blaze.Array(self))
         self._result = result
-        method = getattr(result, methname)
+        method = getattr(result._data, methname)
         return method(*args, **kwargs)
 
     return method
@@ -78,7 +78,13 @@ class DeferredDescriptor(IDataDescriptor):
         #       is also immutable
         return False
 
-    __iter__            = force_evaluation('__iter__')
-    __getitem__         = force_evaluation('__getitem__')
     element_read_iter   = force_evaluation('element_read_iter')
     element_reader      = force_evaluation('element_reader')
+
+    __array__           = force_evaluation('__array__')
+
+    __iter__            = force_evaluation('__iter__')
+    __getitem__         = force_evaluation('__getitem__')
+    __len__             = force_evaluation('__len__')
+
+
