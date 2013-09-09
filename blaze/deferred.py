@@ -76,13 +76,13 @@ def apply_kernel(kernel, *args, **kwargs):
     # -------------------------------------------------
     # Find match to overloaded function
 
-    match, args = kernel.dispatcher.lookup_dispatcher(args, kwargs,
-                                                    ctx.constraints)
+    overload, args = kernel.dispatcher.lookup_dispatcher(args, kwargs,
+                                                         ctx.constraints)
 
     # -------------------------------------------------
     # Construct graph
 
-    term = construct.construct(kernel, ctx, match.func, match.dst_sig, args)
+    term = construct.construct(kernel, ctx, overload, args)
     return blaze.Deferred(term.dshape, (term, ctx))
 
 #------------------------------------------------------------------------

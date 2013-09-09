@@ -23,7 +23,8 @@ def explicit_coercions(func, env=None):
         if op.opcode != 'kernel':
             continue
 
-        signature = op.metadata['signature']
+        overload = op.metadata['overload']
+        signature = overload.resolved_sig
         parameters = signature.parameters[:-1]
         assert len(op.args) - 1 == len(parameters)
 

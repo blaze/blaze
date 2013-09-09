@@ -66,7 +66,7 @@ def _from_expr(expr, f, builder, values):
         # Construct args
 
         # This is purely for IR readability
-        name = qualified_name(expr.metadata['func'])
+        name = qualified_name(expr.metadata['overload'].func)
         args = [_from_expr(arg, f, builder, values) for arg in expr.args]
         args = [Const(name)] + args
 
@@ -76,9 +76,7 @@ def _from_expr(expr, f, builder, values):
         result = Op("kernel", expr.dshape, args)
         result.add_metadata({
             'kernel': expr.metadata['kernel'],
-            'func': expr.metadata['func'],
-            'signature': expr.metadata['signature'],
-
+            'overload': expr.metadata['overload'],
         })
         builder.emit(result)
 

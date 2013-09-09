@@ -29,10 +29,10 @@ run = py_interp
 def op_kernel(interp, funcname, *args):
     op = interp.op
 
-    kernel    = op.metadata['kernel']
-    func      = op.metadata['func']
-    signature = op.metadata['signature']
+    kernel   = op.metadata['kernel']
+    overload = op.metadata['overload']
 
+    func = overload.func
     return func(*args)
 
 def op_convert(interp, arg):

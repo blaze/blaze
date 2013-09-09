@@ -17,7 +17,7 @@ from .conf import conf
 # Graph construction (entry point)
 #------------------------------------------------------------------------
 
-def construct(kernel, ctx, f, signature, args):
+def construct(kernel, ctx, overload, args):
     """
     Parameters
     ----------
@@ -27,7 +27,10 @@ def construct(kernel, ctx, f, signature, args):
     ctx: ExprContext
         Context of the expression
 
-    args   : list
+    overload: blaze.overload.Overload
+        Instance representing the overloaded function
+
+    args: list
         kernel parameters
     """
     assert isinstance(kernel, Kernel), kernel
@@ -55,12 +58,12 @@ def construct(kernel, ctx, f, signature, args):
 
     # -------------------------------------------------
 
-    assert isinstance(signature, T.Function)
-    restype = signature.parameters[-1]
+    assert isinstance(overload.resolved_sig, T.Function)
+    restype = overload.resolved_sig.parameters[-1]
 
     # -------------------------------------------------
 
-    return KernelOp(restype, *params, kernel=kernel, func=f, signature=signature)
+    return KernelOp(restype, *params, kernel=kernel, overload=overload)
 
 def from_value(value):
     return ArrayOp(T.typeof(value), value)
