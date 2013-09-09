@@ -131,13 +131,16 @@ def binding(f):
         return f(self, *args)
     return binder
 
+def __rufunc__(f):
+    def __rop__(self, other):
+        return f(other, self)
+    return __rop__
+
 def inject_special(names):
     for name in names:
-        # Swap the lines below to test the new expression graph
-        # from blaze.ops import ufuncs
-        # setattr(Array, '__%s__' % name, getattr(ufuncs, name))
-        from .bkernel import bmath
-        setattr(Array, '__%s__' % name, binding(getattr(bmath, name)))
+        ufunc = getattr(ufuncs, name)
+        setattr(Array, '__%s__' % name, binding(ufunc))
+        setattr(Array, '__r%s__' % name, binding(__rufunc__(ufunc)))
 
 inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
                 'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])
