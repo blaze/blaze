@@ -5,6 +5,10 @@ Blaze element-wise ufuncs.
 """
 
 from __future__ import print_function, division, absolute_import
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
 
 from blaze.kernel import overload, elementwise
 
@@ -122,3 +126,11 @@ less            = lt
 less_equal      = le
 greater         = gt
 greater_equal   = ge
+
+#------------------------------------------------------------------------
+# Math
+#------------------------------------------------------------------------
+
+@elementwise('A -> A')
+def abs(x):
+    return builtins.abs(x)
