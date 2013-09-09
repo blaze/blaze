@@ -44,6 +44,8 @@ def construct(kernel, ctx, overload, args):
         if isinstance(arg, blaze.Array) and arg.expr:
             # Compose new expression using previously constructed expression
             term, context = arg.expr
+            if not arg.deferred:
+                ctx.add_input(term, arg)
         elif isinstance(arg, blaze.Array):
             term = ArrayOp(arg.dshape)
             ctx.add_input(term, arg)
