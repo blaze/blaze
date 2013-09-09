@@ -12,6 +12,7 @@ from .constructors import empty
 from .datadescriptor import (IDataDescriptor,
                              BlazeFuncDescriptor,
                              BLZDataDescriptor,
+                             DeferredDescriptor,
                              execute_expr_single)
 from .py2help import reduce
 from .datashape import to_numpy
@@ -88,10 +89,10 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     """
     strategy = strategy or current_strategy()
 
-    if isinstance(arr, Deferred):
+    if not arr._data.deferred:
+        result = arr
+    elif isinstance(arr._data, DeferredDescriptor):
         result = eval_deferred(arr, storage, caps, out, strategy)
-    elif not arr._data.deferred:
-        return arr
     else:
         kt = arr._data.kerneltree.fuse()
         if storage is not None:
@@ -105,10 +106,11 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     return result
 
 def eval_deferred(arr, storage, caps, out, strategy):
-    graph, ctx = arr.expr
+    expr = arr._data.expr
+    graph, ctx = expr
 
     # Construct and transform AIR
-    func, env = prepare(arr, strategy)
+    func, env = prepare(expr, strategy)
 
     # Find evaluator
     interp = interps.lookup_interp(strategy)
@@ -117,7 +119,7 @@ def eval_deferred(arr, storage, caps, out, strategy):
     func = interp.compile(func, env)
 
     # Run with collected 'params' from the expression
-    result = interp.run(func, args=[ctx.inputs[param] for param in ctx.params])
+    result = interp.run(func, args=[ctx.terms[param] for param in ctx.params])
 
     return result
 

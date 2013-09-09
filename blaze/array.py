@@ -8,8 +8,11 @@ from __future__ import absolute_import
 from .datashape import dshape, coretypes as T
 from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
-                             DyNDDataDescriptor)
+                             DyNDDataDescriptor, DeferredDescriptor)
 from ._printing import array2string as _printer
+from blaze.bkernel import bmath
+from blaze.expr import dump
+from blaze.ops import ufuncs
 from .py2help import exec_
 
 # An Array contains:
@@ -32,6 +35,12 @@ class Array(object):
         self.labels = labels or [None] * (len(self._data.dshape) - 1)
         self.user = user
         self.expr = None
+
+        if isinstance(data, DeferredDescriptor):
+            # NOTE: we need 'expr' on the Array to perform dynamic programming:
+            #       Two concrete arrays should have a single Op! We cannot
+            #       store this in the data descriptor, since there are many
+            self.expr = data.expr # hurgh
 
         # In the case of dynd arrays, inject the record attributes.
         # This is a hack to help get the blaze-web server onto blaze arrays.
@@ -57,6 +66,19 @@ class Array(object):
     @property
     def persistent(self):
         return self._data.persistent
+
+    def view(self):
+        if not self.deferred:
+            raise ValueError("Cannot call 'view' on a concrete array")
+
+        term, context = self.expr
+        ipython = False
+        try:
+            ipython = __IPYTHON__
+        except NameError:
+            pass
+
+        return dump(term, ipython=ipython)
 
     def __array__(self):
         import numpy as np

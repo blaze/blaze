@@ -6,7 +6,7 @@ Blaze element-wise ufuncs.
 
 from __future__ import print_function, division, absolute_import
 
-from blaze.function import overload, elementwise
+from blaze.kernel import overload, elementwise
 
 @elementwise('a -> a -> a')
 def add(a, b):

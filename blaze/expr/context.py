@@ -11,14 +11,13 @@ class ExprContext(object):
     def __init__(self):
         # Coercion constraints between types with free variables
         self.constraints = []
-        self.inputs = {}      # Accumulated input parameters (arrays)
+        self.terms = {} # All terms in the graph, { Array : Op }
         self.params = []
 
     def add_input(self, term, data):
-        if term not in self.inputs:
+        if term not in self.terms:
             self.params.append(term)
-        self.inputs[term] = data
-
+        self.terms[term] = data
 
 def merge(contexts):
     """
@@ -29,7 +28,7 @@ def merge(contexts):
 
     for ctx in contexts:
         result.constraints.extend(ctx.constraints)
-        result.inputs.update(ctx.inputs)
+        result.terms.update(ctx.terms)
         result.params.extend(ctx.params)
 
     result.constraints, _ = unify(result.constraints)

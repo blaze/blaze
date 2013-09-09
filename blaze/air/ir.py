@@ -29,7 +29,7 @@ def from_expr(graph, expr_context, ctx):
 
     ctx: ExecutionContext
     """
-    inputs = expr_context.inputs
+    inputs = expr_context.params
 
     # -------------------------------------------------
     # Types
