@@ -2,9 +2,10 @@
 from __future__ import print_function, division, absolute_import
 
 from . import python
-from .python import py_interp
+from . import jit
 
 interpreters = {
     'py': python,
+    'jit': jit,
 }
 lookup_interp = interpreters.__getitem__

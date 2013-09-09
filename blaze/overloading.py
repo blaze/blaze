@@ -37,7 +37,6 @@ class Dispatcher(object):
         args = flatargs(self.f, tuple(args), kwargs)
         types = list(map(T.typeof, args))
         match = best_match(self, types, constraints)
-        # TODO: convert argument types using dst_sig
         return match, args
 
     def dispatch(self, *args, **kwargs):

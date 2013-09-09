@@ -113,10 +113,13 @@ def eval_deferred(arr, storage, caps, out, strategy):
     # Find evaluator
     interp = interps.lookup_interp(strategy)
 
+    # Interpreter-specific compilation/assembly
+    func = interp.compile(func, env)
+
     # Run with collected 'params' from the expression
     result = interp.run(func, args=[ctx.inputs[param] for param in ctx.params])
 
-    return blaze.array(result)
+    return result
 
 def eval_blz(arr, storage, caps, out, strategy):
     from operator import mul
