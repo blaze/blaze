@@ -100,7 +100,22 @@ class Array(object):
         self._data.__setitem__(key, val)
 
     def __len__(self):
-        return self._data.dshape[0]
+        shape = self.dshape.shape
+        if shape:
+            return shape[0]
+        return 1 # 0d
+
+    def __nonzero__(self):
+        shape = self.dshape.shape
+        if len(self) == 1 and len(shape) <= 1:
+            if len(shape) == 1:
+                item = self[0]
+            else:
+                item = self[()]
+            return bool(item)
+        else:
+            raise ValueError("The truth value of an array with more than one "
+                             "element is ambiguous. Use a.any() or a.all()")
 
     def __str__(self):
         if hasattr(self._data, '_printer'):
