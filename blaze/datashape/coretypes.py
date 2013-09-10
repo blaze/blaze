@@ -1141,7 +1141,7 @@ def typeof(obj):
     """
     Return a datashape ctype for a python scalar.
     """
-    if isinstance(obj, (blaze.Array, blaze.Deferred)):
+    if isinstance(obj, blaze.Array):
         return obj.dshape
     elif isinstance(obj, int):
         return int_
