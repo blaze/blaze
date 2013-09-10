@@ -27,7 +27,7 @@ def listify(f):
 # Argument parsing
 #------------------------------------------------------------------------
 
-def flatargs(f, args, kwargs):
+def flatargs(f, args, kwargs, argspec=None):
     """
     Return a single args tuple matching the actual function signature, with
     extraneous args appended to a new tuple 'args' and extraneous keyword
@@ -45,7 +45,7 @@ def flatargs(f, args, kwargs):
             ...
         TypeError: f() got multiple values for keyword argument 'a'
     """
-    argspec = inspect.getargspec(f)
+    argspec = inspect.getargspec(f) if argspec is None else argspec
     defaults = argspec.defaults or ()
     kwargs = dict(kwargs)
 
@@ -90,6 +90,15 @@ def flatargs(f, args, kwargs):
 
     return args + tuple(extra_args)
 
+
+def alpha_equivalent(spec1, spec2):
+    """
+    Return whether the inspect argspec `spec1` and `spec2` are equivalent
+    modulo naming.
+    """
+    return (len(spec1.args) == len(spec2.args) and
+            bool(spec1.varargs) == bool(spec2.varargs) and
+            bool(spec1.keywords) == bool(spec2.keywords))
 
 #------------------------------------------------------------------------
 # Data Structures

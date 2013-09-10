@@ -3,98 +3,54 @@ Visualize expression graphs using graphviz.
 """
 
 try:
-    import pydot
-    have_pydot = True
+    import networkx
+    have_networkx = True
 except ImportError:
-    have_pydot = False
+    have_networkx = False
 
-from io import StringIO
-from collections import Counter
+from io import BytesIO
+import warnings
 from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile
 
-def dump(node, ipython=True, filename=None, tree=False):
+def dump(node, ipython=True):
     """
     Dump the expression graph to either a file or IPython.
     """
-    if not have_pydot:
+    if not networkx:
+        warnings.warn("networkx not installed, unable to view graph")
         return
 
-    _, graph = build_graph(node, tree=tree)
-    if filename:
-        return view(filename, graph)
-    elif ipython:
+    graph = build_graph(networkx.DiGraph(), node, set())
+    if ipython:
         return browser(graph)
+    else:
+        return view(graph)
 
-def build_graph(node, graph=None, context=None, tree=False):
-    top = pydot.Node( id(node), label=node.name )
+def build_graph(graph, term, seen):
+    if term in seen:
+        return
 
-    if not graph:
-        graph = pydot.Graph(graph_type='digraph')
-        graph.add_node( top )
-        context = Counter()
-        context[node.name] += 1
+    seen.add(term)
+    for arg in term.args:
+        graph.add_edge(term, arg)
+        build_graph(graph, arg, seen)
 
-    # Increment the name of the top node
-
-    cluster = pydot.Cluster(str(id(node.children)), label=' ')
-    graph.add_subgraph(cluster)
-
-    for child in node.children:
-        nd, _ = build_graph(child, graph, context, tree=tree)
-
-        # Ensure the graph is a tree by adding numbers to the
-        # labels of nodes.
-        if tree:
-
-            if context[nd.name] == 0:
-                # a
-                name = nd.name
-            else:
-                # a1, a2, a3
-                name = nd.name + str(context[nd.name])
-                #name = nd.name + "_" + str(context[nd.name])
-
-            context[nd.name] += 1
-
-        # Allow cycles or "level-jumping" graphs
-        else:
-            name = nd.name
-
-        nd = pydot.Node(id(nd), label=name)
-        cluster.add_node(nd)
-
-        graph.add_node( nd )
-        graph.add_edge( pydot.Edge(top, nd) )
-
-    return node, graph
+    return graph
 
 def browser(graph):
     from IPython.core.display import Image
-
-    dotstr = graph.to_string()
+    import networkx
 
     with NamedTemporaryFile(delete=True) as tempdot:
-        tempdot.write(dotstr)
+        networkx.write_dot(graph, tempdot.name)
         tempdot.flush()
-        p = Popen(['dot','-Tpng',tempdot.name] ,stdout=PIPE)
-
-        pngdata = StringIO(p.communicate()[0]).read()
+        p = Popen(['dot', '-Tpng', tempdot.name], stdout=PIPE)
+        pngdata = BytesIO(p.communicate()[0]).read()
 
     return Image(data=pngdata)
 
-def view(fname, graph):
-    dotstr = graph.to_string()
-
-    with NamedTemporaryFile(delete=True) as tempdot:
-        tempdot.write(dotstr)
-        tempdot.flush()
-
-        p = Popen(['dot','-Tpng',tempdot.name,'-o','%s.png' % fname])
-        p.wait()
-        assert p.returncode == 0
-
-        # Linux
-        p = Popen(['feh', '%s.png' % fname])
-        # Macintosh
-        #p = Popen(['open', fname])
+def view(self):
+    import matplotlib.pyplot as plt
+    networkx.draw(self)
+    plt.show()

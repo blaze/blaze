@@ -11,8 +11,10 @@ logger.setLevel(logging.WARNING)
 from . import datashape, bkernel, ckernel
 from .datashape import dshape, dshapes
 from .array import Array
+from .deferred import Deferred
+from .function import kernel, elementwise, Kernel
 from .constructors import array, empty, ones, zeros
-from .eval import eval, append
+from .eval import strategy, current_strategy, eval, append
 from .storage import open, drop, Storage
 import ctypes
 
