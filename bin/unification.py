@@ -17,7 +17,7 @@ import blaze
 from blaze import dshape, dshapes
 from blaze.datashape import (unify_simple as unify,
                              normalize_ellipses as normalize,
-                             promote, tmap, coerce, typeof)
+                             promote, tmap, coerce)
 
 logging.getLogger('blaze').setLevel(logging.DEBUG)
 
@@ -33,9 +33,6 @@ The Blaze typing interpreter.
     dshapes('<type string1>', ..., '<type string N>')
         parse a series of blaze types in the same context, so they will
         shared type variables of equal name.
-
-    typeof(val)
-        Return a blaze DataShape for a python object
 
     unify(t1, t2):
         unify t1 with t2, and return a result type and a list of additional
@@ -59,7 +56,6 @@ env = {
     'blaze':     blaze,
     'dshape':    dshape,
     'dshapes':   dshapes,
-    'typeof':    typeof,
     'unify':     unify,
     'promote':   promote,
     'normalize': normalize,

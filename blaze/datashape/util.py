@@ -11,7 +11,7 @@ from blaze import error
 from blaze.util import IdentityDict, gensym
 from . import parser
 from .validation import validate
-from .coretypes import (DataShape, CType, Fixed, TypeVar, Record, Ellipsis,
+from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis,
                uint8, uint16, uint32, uint64, CType, Mono, type_constructor,
                int8, int16, int32, int64,
                float32, float64, complex64, complex128, Type, free)
@@ -64,10 +64,7 @@ def dshape(o, multi=False):
     """
     ds = _dshape(o, multi)
     validate(ds)
-    result = _unique_typevars(ds)
-    if isinstance(result, CType):
-        result = DataShape(result)
-    return result
+    return _unique_typevars(ds)
 
 def _dshape(o, multi=False):
     if multi:
