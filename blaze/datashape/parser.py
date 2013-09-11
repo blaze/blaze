@@ -446,7 +446,7 @@ def debug_parse(data, lexer, parser):
 
 def rebuild():
     """ Rebuild the parser and lexer tables. """
-    path = os.path.relpath(__file__)
+    path = os.path.abspath(__file__)
     output = os.path.dirname(path)
     module = sys.modules[__name__]
 
@@ -460,7 +460,9 @@ def _parse(source):
         from . import dlex
         from . import dyacc
     except ImportError:
-        raise RuntimeError("Parse tables not built, run install script.")
+        rebuild()
+        from . import dlex
+        from . import dyacc
 
     module = sys.modules[__name__]
     lexer  = lexfrom(module, dlex)

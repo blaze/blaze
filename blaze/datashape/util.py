@@ -39,9 +39,7 @@ def dshapes(*args):
     Parse all datashapes a single context. This means two datashapes
     'A, B, int32' and 'X, B, float32' will now share type variable 'B'.
     """
-    from . import substitute
-
-    result = map(dshape, args)
+    result = [dshape(arg) for arg in args]
     S = IdentityDict()
     for t in result:
         for typevar in free(t):
