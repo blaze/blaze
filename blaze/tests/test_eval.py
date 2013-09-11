@@ -34,33 +34,50 @@ def _addition(a,b):
 def _expression(a, b):
     return (a+b)*(a+b)
 
+#------------------------------------------------------------------------
+# Test Generation
+#------------------------------------------------------------------------
+
 def _add_tests():
     _pair = ['mem', 'dsk']
-
-    _template = '''
-def test_{1}_{2}_to_{3}{0}(self):
-    Rd = {0}(self.{1}A, self.{2}B)
-    self.assert_(isinstance(Rd, blaze.Array))
-    self.assert_(Rd._data.deferred)
-    p = _store('{3}Rd') if '{3}' == 'dsk' else None
-    try:
-        Rc = blaze.eval(Rd, storage=p)
-        self.assert_(isinstance(Rc, blaze.Array))
-        assert_allclose(np.array(dd_as_py(Rc._data)), self.npy{4})
-        self.assert_(Rc._data.persistent if '{3}' == 'dsk'
-                                         else not Rc._data.persistent)
-    finally:
-        if p is not None:
-            blaze.drop(p)
-'''
     frame = sys._getframe(1)
-    for expr, ltr in zip(['_addition', '_expression'], ['R', 'Q']):
+    for expr, ltr in zip([_addition, _expression], ['R', 'Q']):
         for i in it_product(_pair, _pair, _pair):
             args = i + (ltr,)
-            exec_(_template.format(expr,*args),
-                  frame.f_globals,
-                  frame.f_locals)
+            f = _build_tst(expr, *args)
+            f.__name__ = 'test_{1}_{2}_to_{3}{0}'.format(f.__name__, *args)
+            frame.f_locals[f.__name__] = f
 
+def _build_tst(kernel, storage1, storage2, storage3, R):
+    def function(self):
+        A = getattr(self, storage1 + 'A')
+        B = getattr(self, storage2 + 'B')
+
+        Rd = kernel(A, B)
+        self.assert_(isinstance(Rd, blaze.Array))
+        self.assert_(Rd._data.deferred)
+        p = _store(storage3 + 'Rd') if storage3 == 'dsk' else None
+        try:
+            Rc = blaze.eval(Rd, storage=p)
+            self.assert_(isinstance(Rc, blaze.Array))
+            npy_data = getattr(self, 'npy' + R)
+            assert_allclose(np.array(dd_as_py(Rc._data)), npy_data)
+
+            if storage3 == 'dsk':
+                self.assert_(Rc._data.persistent)
+            else:
+                self.assert_(not Rc._data.persistent)
+
+        finally:
+            if p is not None:
+                blaze.drop(p)
+
+    return function
+
+
+#------------------------------------------------------------------------
+# Tests
+#------------------------------------------------------------------------
 
 class TestEval1D(unittest.TestCase):
     @classmethod
