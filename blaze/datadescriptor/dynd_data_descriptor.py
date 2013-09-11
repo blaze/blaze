@@ -225,6 +225,10 @@ class DyNDDataDescriptor(IDataDescriptor):
     def immutable(self):
         return self._dyndarr.access_flags == 'immutable'
 
+    def __array__(self):
+        import numpy as np
+        return np.array(self.dynd_arr())
+
     def __len__(self):
         return len(self._dyndarr)
 

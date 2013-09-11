@@ -8,8 +8,11 @@ from __future__ import absolute_import
 from .datashape import dshape, coretypes as T
 from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
-                             DyNDDataDescriptor)
+                             DyNDDataDescriptor,
+                             DeferredDescriptor)
 from ._printing import array2string as _printer
+from blaze.expr import dump
+from blaze.ops import ufuncs
 from .py2help import exec_
 
 # An Array contains:
@@ -32,6 +35,12 @@ class Array(object):
         self.labels = labels or [None] * (len(self._data.dshape) - 1)
         self.user = user
         self.expr = None
+
+        if isinstance(data, DeferredDescriptor):
+            # NOTE: we need 'expr' on the Array to perform dynamic programming:
+            #       Two concrete arrays should have a single Op! We cannot
+            #       store this in the data descriptor, since there are many
+            self.expr = data.expr # hurgh
 
         # In the case of dynd arrays, inject the record attributes.
         # This is a hack to help get the blaze-web server onto blaze arrays.
@@ -58,15 +67,28 @@ class Array(object):
     def persistent(self):
         return self._data.persistent
 
+    def view(self):
+        if not self.deferred:
+            raise ValueError("Cannot call 'view' on a concrete array")
+
+        term, context = self.expr
+        ipython = False
+        try:
+            ipython = __IPYTHON__
+        except NameError:
+            pass
+
+        return dump(term, ipython=ipython)
+
     def __array__(self):
         import numpy as np
 
         # TODO: Expose PEP-3118 buffer interface
 
-        if isinstance(self._data, DyNDDataDescriptor):
-            return np.array(self._data.dynd_arr())
-        else:
-            raise NotImplementedError(self._data)
+        if hasattr(self._data, "__array__"):
+            return np.array(self._data)
+
+        raise NotImplementedError(self._data)
 
     def __iter__(self):
         return self._data.__iter__()
@@ -78,7 +100,22 @@ class Array(object):
         self._data.__setitem__(key, val)
 
     def __len__(self):
-        return self._data.dshape[0]
+        shape = self.dshape.shape
+        if shape:
+            return shape[0]
+        return 1 # 0d
+
+    def __nonzero__(self):
+        shape = self.dshape.shape
+        if len(self) == 1 and len(shape) <= 1:
+            if len(shape) == 1:
+                item = self[0]
+            else:
+                item = self[()]
+            return bool(item)
+        else:
+            raise ValueError("The truth value of an array with more than one "
+                             "element is ambiguous. Use a.any() or a.all()")
 
     def __str__(self):
         if hasattr(self._data, '_printer'):
@@ -109,13 +146,16 @@ def binding(f):
         return f(self, *args)
     return binder
 
+def __rufunc__(f):
+    def __rop__(self, other):
+        return f(other, self)
+    return __rop__
+
 def inject_special(names):
     for name in names:
-        # Swap the lines below to test the new expression graph
-        # from blaze.ops import ufuncs
-        # setattr(Array, '__%s__' % name, getattr(ufuncs, name))
-        from .bkernel import bmath
-        setattr(Array, '__%s__' % name, binding(getattr(bmath, name)))
+        ufunc = getattr(ufuncs, name)
+        setattr(Array, '__%s__' % name, binding(ufunc))
+        setattr(Array, '__r%s__' % name, binding(__rufunc__(ufunc)))
 
 inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
                 'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])

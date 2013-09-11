@@ -19,12 +19,16 @@ Or a tuple for a combination of the above.
 """
 
 from __future__ import print_function, division, absolute_import
+
 import types
+from itertools import chain
 
-from .deferred import apply_kernel
-from .overloading import overload, Dispatcher
-
-from blaze.py2help import basestring
+import blaze
+from blaze.datashape import coretypes as T
+from blaze.overloading import overload, Dispatcher
+from blaze.datadescriptor import DeferredDescriptor
+from blaze.expr.context import merge
+from blaze.py2help import basestring, dict_iteritems
 
 #------------------------------------------------------------------------
 # Utils
@@ -45,6 +49,27 @@ def optional_decorator(f, continuation, args, kwargs):
         return decorator
     else:
         return decorator(f)
+
+def blaze_args(args, kwargs):
+    """Build blaze arrays from inputs to a blaze kernel"""
+    args = [make_blaze(a) for a in args]
+    kwargs = dict((v, make_blaze(k)) for k, v in dict_iteritems(kwargs))
+    return args, kwargs
+
+def make_blaze(value):
+    if not isinstance(value, blaze.Array):
+        dshape = T.typeof(value)
+        if not dshape.shape:
+            value = blaze.array(value, dshape)
+        else:
+            value = blaze.array([value], dshape)
+    return value
+
+def collect_contexts(args):
+    for term in args:
+        if isinstance(term, blaze.Array) and term.expr:
+            t, ctx = term.expr
+            yield ctx
 
 #------------------------------------------------------------------------
 # Decorators
@@ -110,6 +135,40 @@ def elementwise(*args):
     Define a blaze element-wise kernel.
     """
     return kernel(*args, elementwise=True)
+
+#------------------------------------------------------------------------
+# Application
+#------------------------------------------------------------------------
+
+def apply_kernel(kernel, *args, **kwargs):
+    """
+    Apply blaze kernel `kernel` to the given arguments.
+
+    Returns: a Deferred node representation the delayed computation
+    """
+    from .expr import construct
+
+    # -------------------------------------------------
+    # Merge input contexts
+
+    args, kwargs = blaze_args(args, kwargs)
+    ctxs = collect_contexts(chain(args, kwargs.values()))
+    ctx = merge(ctxs)
+
+    # -------------------------------------------------
+    # Find match to overloaded function
+
+    overload, args = kernel.dispatcher.lookup_dispatcher(args, kwargs,
+                                                         ctx.constraints)
+
+    # -------------------------------------------------
+    # Construct graph
+
+    term = construct.construct(kernel, ctx, overload, args)
+    desc = DeferredDescriptor(term.dshape, (term, ctx))
+
+    # TODO: preserve `user` metadata
+    return blaze.Array(desc)
 
 #------------------------------------------------------------------------
 # Implementations

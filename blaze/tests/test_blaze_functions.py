@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from blaze.function import kernel
+from blaze.kernel import kernel
 from blaze import dshape, array
 
 # f
@@ -44,7 +44,7 @@ class TestBlazeKernel(unittest.TestCase):
         graph, ctx = res.expr
         self.assertEqual(len(graph.args), 2)
         self.assertEqual(len(ctx.constraints), 0)
-        self.assertEqual(len(ctx.inputs), 1)
+        self.assertEqual(len(ctx.params), 1)
         # res.view()
 
 
