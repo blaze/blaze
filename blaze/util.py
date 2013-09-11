@@ -5,6 +5,7 @@ import string
 import inspect
 import functools
 import collections
+from functools import partial
 
 try:
     from collections import MutableMapping
@@ -208,7 +209,7 @@ def make_stream(seq, _temp=make_temper()):
         for x in seq:
             yield _temp(x)
 
-gensym = make_stream(string.uppercase).next
+gensym = partial(next, make_stream(string.ascii_uppercase))
 
 # ______________________________________________________________________
 

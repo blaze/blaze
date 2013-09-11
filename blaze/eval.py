@@ -46,7 +46,7 @@ def strategy(strategy):
         The above strategies are listed in order of fast- to slow-assembly,
         and from slow evaluation to fast evaluation.
     """
-    old = _eval_strategy.strategy
+    old = current_strategy()
     _eval_strategy.strategy = strategy
     yield
     _eval_strategy.strategy = old

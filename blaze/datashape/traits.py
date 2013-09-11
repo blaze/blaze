@@ -32,6 +32,9 @@ class TypeSet(Unit):
         return (isinstance(other, type(self)) and
                 self.name == other.name and self.types == other.types)
 
+    def __hash__(self):
+        return hash((self.name, self.types))
+
     def __contains__(self, val):
         return val in self._set
 

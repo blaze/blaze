@@ -202,6 +202,7 @@ def reify(solution, S=None):
     queue = deque(dict_iteritems(solution))
     while queue:
         typevar, t = queue.popleft()
+        t = frozenset(t)
         if typevar in S:
             continue
 

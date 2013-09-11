@@ -10,7 +10,7 @@ branches:
     - master
     - devel
     - release
-    - overload
+    - py3
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
@@ -35,6 +35,9 @@ install:
   - sudo mkdir /usr/pkgs
   - sudo conda create -p ~/py --yes llvmpy cython numba numpy dynd-python llvmmath ply pycparser "python=$TRAVIS_PYTHON_VERSION"
   - sudo chmod -R 755 ~/py
+  # INstall pykit
+  - git clone https://github.com/pykit/pykit.git
+  - cd pykit ; sudo ~/py setup.py install ; cd ..
   # Install Blaze
   - sudo ~/py/bin/python setup.py install
 

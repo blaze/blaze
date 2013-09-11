@@ -35,7 +35,7 @@ def lookup_previous(f):
     Lookup a previous function definition in the current namespace, i.e.
     for overloading purposes.
     """
-    return f.func_globals.get(f.__name__)
+    return f.__globals__.get(f.__name__)
 
 def optional_decorator(f, continuation, args, kwargs):
     def decorator(f):

@@ -71,7 +71,7 @@ def _normalize_ellipses(ds1, ds2):
     # -------------------------------------------------
     # Reverse the reversed matches
 
-    for x, L in S.iteritems():
+    for x, L in S.items():
         S[x] = L[::-1]
 
     # -------------------------------------------------

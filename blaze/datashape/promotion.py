@@ -5,6 +5,7 @@ Type promotion.
 """
 
 from itertools import product
+from functools import reduce
 
 from blaze import error
 from blaze.datashape import (DataShape, IntegerConstant, StringConstant,

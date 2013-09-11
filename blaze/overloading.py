@@ -134,7 +134,7 @@ def best_match(func, argtypes, constraints=None):
         params = match.dst_sig.parameters[:-1]
         try:
             weight = sum([coerce(a, p) for a, p in zip(argtypes, params)])
-        except error.CoercionError, e:
+        except error.CoercionError:
             pass
         else:
             matches[weight].append(match)
@@ -178,7 +178,7 @@ def find_matches(overloads, argtypes, constraints=()):
 
         try:
             result, remaining = unify(equations, broadcasting)
-        except error.UnificationError, e:
+        except error.UnificationError:
             continue
         else:
             dst_sig = result[0]
