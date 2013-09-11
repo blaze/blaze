@@ -13,7 +13,7 @@ from .datashape import dshape, dshapes
 from .array import Array
 from .kernel import kernel, elementwise, Kernel
 from .constructors import array, empty, ones, zeros
-from .eval import strategy, current_strategy, eval, append
+from .eval import strategy, current_strategy, set_strategy, eval, append
 from .storage import open, drop, Storage
 import ctypes
 

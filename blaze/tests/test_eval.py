@@ -10,6 +10,8 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 from blaze.py2help import exec_
 
+blaze.set_strategy('jit')
+
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -58,7 +60,6 @@ def test_{1}_{2}_to_{3}{0}(self):
             exec_(_template.format(expr,*args),
                   frame.f_globals,
                   frame.f_locals)
-
 
 
 class TestEval1D(unittest.TestCase):

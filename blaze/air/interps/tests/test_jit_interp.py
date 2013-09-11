@@ -7,6 +7,8 @@ import blaze
 from blaze import array, dshape
 from blaze.ops.ufuncs import add, mul
 
+import numpy as np
+
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
@@ -28,7 +30,7 @@ class TestJit(unittest.TestCase):
         result = blaze.eval(expr, strategy='jit')
         expected = blaze.array([ 0,  2,  6, 12, 20, 30, 42, 56, 72, 90])
         self.assertEqual(type(result), blaze.Array)
-        self.assertEqual(result, expected)
+        self.assertTrue(np.all(result == expected))
 
     def test_jit_promotion(self):
         expr = make_expr(dshape('10, int32'), dshape('10, float32'))
@@ -36,7 +38,7 @@ class TestJit(unittest.TestCase):
         expected = blaze.array([ 0,  2,  6, 12, 20, 30, 42, 56, 72, 90],
                                dshape=dshape('10, float64'))
         self.assertEqual(type(result), blaze.Array)
-        self.assertEqual(result, expected)
+        self.assertTrue(np.all(result == expected))
 
 
 

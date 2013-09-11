@@ -7,6 +7,8 @@ import blaze
 from blaze import array, dshape
 from blaze.ops.ufuncs import add, mul
 
+import numpy as np
+
 #------------------------------------------------------------------------
 # Tests
 #------------------------------------------------------------------------
@@ -20,7 +22,7 @@ class TestPython(unittest.TestCase):
         result = blaze.eval(expr, strategy='py')
         expected = blaze.array([ 0,  2,  6, 12, 20, 30, 42, 56, 72, 90])
         self.assertEqual(type(result), blaze.Array)
-        self.assertEqual(result, expected)
+        self.assertTrue(np.all(result == expected))
 
 
 if __name__ == '__main__':

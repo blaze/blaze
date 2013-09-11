@@ -27,9 +27,9 @@ def compile(func, env):
     #       a problem for offline compilation strategies.
     return func
 
-def run(func, args):
+def run(func, args, **kwds):
     deferred_array = jit_interp(func, args=args)
-    result = blaze.eval(deferred_array)
+    result = blaze.eval(deferred_array, **kwds)
     return result
 
 #------------------------------------------------------------------------

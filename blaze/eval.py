@@ -47,9 +47,12 @@ def strategy(strategy):
         and from slow evaluation to fast evaluation.
     """
     old = current_strategy()
-    _eval_strategy.strategy = strategy
+    set_strategy(strategy)
     yield
-    _eval_strategy.strategy = old
+    set_strategy(old)
+
+def set_strategy(strategy):
+    _eval_strategy.strategy = strategy
 
 def current_strategy():
     """Return the current evaluation strategy"""
@@ -118,7 +121,8 @@ def eval_deferred(arr, storage, caps, out, strategy):
     func = interp.compile(func, env)
 
     # Run with collected 'params' from the expression
-    result = interp.run(func, args=[ctx.terms[param] for param in ctx.params])
+    result = interp.run(func, args=[ctx.terms[param] for param in ctx.params],
+                        storage=storage, caps=caps, out=out, strategy=strategy)
 
     return result
 
