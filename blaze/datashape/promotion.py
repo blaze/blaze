@@ -9,8 +9,8 @@ from functools import reduce
 
 from blaze import error
 from blaze.util import gensym
-from blaze.datashape import (DataShape, IntegerConstant, StringConstant,
-                             CType, Fixed, to_numpy, TypeSet, TypeVar)
+from blaze.datashape import (DataShape, CType, Fixed, to_numpy,
+                             TypeSet, TypeVar)
 
 import numpy as np
 
@@ -25,6 +25,11 @@ def promote_units(*units):
     return reduce(promote, units)
 
 def promote(a, b):
+    """Promote two blaze types"""
+
+    # -------------------------------------------------
+    # Fixed
+
     if isinstance(a, Fixed):
         assert isinstance(b, Fixed)
         if a == Fixed(1):
@@ -38,12 +43,8 @@ def promote(a, b):
                     "%s and %s" % (a, b))
             return a
 
-    elif isinstance(a, StringConstant):
-        if a != b:
-            raise error.UnificationError(
-                "Cannot unify string constants %s and %s" % (a, b))
-
-        return a
+    # -------------------------------------------------
+    # Typeset
 
     elif isinstance(a, TypeSet) and isinstance(b, TypeSet):
         # TODO: Find the join in the lattice with the below as a fallback ?
@@ -59,22 +60,18 @@ def promote(a, b):
     elif isinstance(b, TypeSet):
         return promote(b, a)
 
+    # -------------------------------------------------
+    # Units
+
     elif isinstance(a, CType) and isinstance(b, CType):
         # Promote CTypes -- this should go through coerce()
         return promote_scalars(a, b)
 
+    # -------------------------------------------------
+    # DataShape
+
     elif isinstance(a, (DataShape, CType)) and isinstance(b, (DataShape, CType)):
-        from .unification import unify
-        from .normalization import normalize_simple
-
-        a, b = normalize_simple(a, b)
-        n = len(a.parameters[:-1])
-
-        dst = DataShape(*[TypeVar(gensym()) for i in range(n + 1)])
-        [result1, result2], _ = unify([(a, dst), (b, dst)], [True, True])
-        assert result1 == result2
-
-        return result1
+        return promote_datashapes(a, b)
 
     else:
         raise TypeError("Unknown types, cannot promote: %s and %s" % (a, b))
@@ -86,11 +83,23 @@ def eq(a, b):
     return a == b
 
 def promote_scalars(a, b):
-    """Promote a series of CType or DataShape types"""
-    if isinstance(a, DataShape):
-        assert isinstance(b, DataShape)
-        assert all(eq(p1, p2) for p1, p2 in zip(a.parameters[:-1],
-                                                b.parameters[:-1]))
-        return DataShape(*a.parameters[:-1] + (promote(a.measure, b.measure),))
-
+    """Promote two CTypes"""
     return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))
+
+def promote_datashapes(a, b):
+    """Promote two DataShapes"""
+    from .unification import unify
+    from .normalization import normalize_simple
+
+    # Normalize to determine parameters (eliminate broadcasting, etc)
+    a, b = normalize_simple(a, b)
+    n = len(a.parameters[:-1])
+
+    # Allocate dummy result type for unification
+    dst = DataShape(*[TypeVar(gensym()) for i in range(n + 1)])
+
+    # Unify
+    [result1, result2], _ = unify([(a, dst), (b, dst)], [True, True])
+
+    assert result1 == result2
+    return result1
