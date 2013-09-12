@@ -36,7 +36,6 @@ def normalize(constraints, broadcasting=None):
 
 def normalize_simple(a, b):
     if isinstance(a, (CType, DataShape)) and isinstance(a, (CType, DataShape)):
-        a, b = normalize_constructors(a, b)
         if (type(a), type(b)) == (DataShape, DataShape):
             a, b = normalize_ellipses(a, b)
         a, b = normalize_broadcasting(a, b)
@@ -48,23 +47,6 @@ def normalize_simple(a, b):
 #------------------------------------------------------------------------
 # DataShape Normalizers
 #------------------------------------------------------------------------
-
-def normalize_constructors(a, b):
-    """
-    Normalize a pair (DataShape, CType) constructors by "promoting" the CType
-    to a DataShape.
-
-    Since a DataShape has at least one dimension, we know we
-    have at least one broadcastind dimension.
-
-    FIXME: We should not have CType at all! Just 0d DataShape
-    """
-    if isinstance(a, DataShape) and isinstance(b, CType):
-        return a, DataShape(Fixed(1), b)
-    elif isinstance(a, CType) and isinstance(b, DataShape):
-        return DataShape(Fixed(1), a), b
-    else:
-        return a, b
 
 def normalize_ellipses(a, b):
     """Eliminate ellipses in DataShape"""
