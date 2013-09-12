@@ -46,7 +46,7 @@ class TestOverloading(unittest.TestCase):
                          'X, Y, float32 -> X, Y, float32 -> X, Y, float32')
 
         input = dshape('1, 1, float32 -> 1, 1, float32 -> R')
-        self.assertEqual(str(unify_simple(input, match.dst_sig)),
+        self.assertEqual(str(unify_simple(input, match.resolved_sig)),
                          '10, 1, float32 -> 10, 1, float32 -> 10, 1, float32')
 
     def test_best_match_broadcasting(self):
@@ -55,7 +55,7 @@ class TestOverloading(unittest.TestCase):
         match = best_match(f, [d1, d2])
         self.assertEqual(str(match.sig),
                          'X, Y, cfloat32 -> X, Y, cfloat32 -> X, Y, cfloat32')
-        self.assertEqual(str(match.dst_sig),
+        self.assertEqual(str(match.resolved_sig),
                          '1, 10, cfloat32 -> 1, 10, cfloat32 -> 1, 10, cfloat32')
 
     def test_best_match_ellipses(self):
@@ -63,7 +63,7 @@ class TestOverloading(unittest.TestCase):
         d2 = dshape('..., float32')
         match = best_match(g, [d1, d2])
         self.assertEqual(str(match.sig), 'X, Y, float32 -> ..., float32 -> X, int32')
-        self.assertEqual(str(match.dst_sig),
+        self.assertEqual(str(match.resolved_sig),
                          '10, T1, float32 -> ..., float32 -> 10, int32')
 
 

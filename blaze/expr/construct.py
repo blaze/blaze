@@ -17,7 +17,7 @@ from .conf import conf
 # Graph construction (entry point)
 #------------------------------------------------------------------------
 
-def construct(kernel, ctx, f, signature, args):
+def construct(kernel, ctx, overload, args):
     """
     Parameters
     ----------
@@ -27,7 +27,10 @@ def construct(kernel, ctx, f, signature, args):
     ctx: ExprContext
         Context of the expression
 
-    args   : list
+    overload: blaze.overload.Overload
+        Instance representing the overloaded function
+
+    args: list
         kernel parameters
     """
     assert isinstance(kernel, Kernel), kernel
@@ -38,29 +41,30 @@ def construct(kernel, ctx, f, signature, args):
     # Build type unification parameters
 
     for i, arg in enumerate(args):
-        if isinstance(arg, (blaze.Array, blaze.Deferred)) and arg.expr:
+        if isinstance(arg, blaze.Array) and arg.expr:
             # Compose new expression using previously constructed expression
             term, context = arg.expr
-            params.append(term)
-            continue
+            if not arg.deferred:
+                ctx.add_input(term, arg)
         elif isinstance(arg, blaze.Array):
             term = ArrayOp(arg.dshape)
             ctx.add_input(term, arg)
-        else:
+            empty = ExprContext()
+            arg.expr = (term, empty)
+        elif not isinstance(arg, blaze.Array):
             term = ArrayOp(T.typeof(arg))
 
-        empty = ExprContext()
-        arg.expr = (term, empty)
+        ctx.terms[term] = arg
         params.append(term)
 
     # -------------------------------------------------
 
-    assert isinstance(signature, T.Function)
-    restype = signature.parameters[-1]
+    assert isinstance(overload.resolved_sig, T.Function)
+    restype = overload.resolved_sig.parameters[-1]
 
     # -------------------------------------------------
 
-    return KernelOp(restype, *params, kernel=kernel, func=f, signature=signature)
+    return KernelOp(restype, *params, kernel=kernel, overload=overload)
 
 def from_value(value):
     return ArrayOp(T.typeof(value), value)

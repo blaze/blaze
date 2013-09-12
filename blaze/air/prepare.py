@@ -23,11 +23,11 @@ def current_ctx():
 # Prepare
 #------------------------------------------------------------------------
 
-def prepare(deferred, strategy):
+def prepare(expr, strategy):
     """
     Prepare a Deferred for interpretation
     """
-    graph, expr_ctx = deferred.expr
+    graph, expr_ctx = expr
     f, values = ir.from_expr(graph, expr_ctx, current_ctx())
 
     env = {'strategy': strategy}

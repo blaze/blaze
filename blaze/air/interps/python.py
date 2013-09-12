@@ -7,6 +7,8 @@ Python evaluation of blaze AIR.
 from __future__ import print_function, division, absolute_import
 from pykit.ir import interp
 
+import blaze
+
 # Use numpy for now until dynd supports reshape
 import numpy as np
 
@@ -14,11 +16,14 @@ import numpy as np
 # Interpreter
 #------------------------------------------------------------------------
 
-def py_interp(func, env=None, exc_model=None, args=()):
+def py_interp(func, args, **kwds):
     args = [np.array(arg) for arg in args]
-    env = env or {}
-    env.setdefault('interp.handlers', {}).update(handlers)
-    return interp.run(func, env, exc_model, args=args)
+    env = {'interp.handlers' : handlers}
+    result = interp.run(func, env, None, args=args)
+    return blaze.array(result)
+
+def compile(func, env):
+    return func
 
 run = py_interp
 
@@ -29,10 +34,10 @@ run = py_interp
 def op_kernel(interp, funcname, *args):
     op = interp.op
 
-    kernel    = op.metadata['kernel']
-    func      = op.metadata['func']
-    signature = op.metadata['signature']
+    kernel   = op.metadata['kernel']
+    overload = op.metadata['overload']
 
+    func = overload.func
     return func(*args)
 
 def op_convert(interp, arg):

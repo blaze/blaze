@@ -410,6 +410,9 @@ class IDataDescriptor:
         Returns the datashape for the data behind this datadescriptor.
         Every data descriptor implementation must provide a dshape.
         """
+        # TODO: Does dshape make sense for a data descriptor? A data descriptor
+        # may have a lower-level concept of a data type that corresponds to a
+        # higher-level data shape. IMHO dshape should be on Array only
         raise NotImplementedError
 
     @abc.abstractproperty

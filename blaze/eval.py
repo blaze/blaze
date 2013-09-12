@@ -6,12 +6,12 @@ import threading
 from contextlib import contextmanager
 
 import blaze
-from .deferred import Deferred
 from .array import Array
 from .constructors import empty
 from .datadescriptor import (IDataDescriptor,
                              BlazeFuncDescriptor,
                              BLZDataDescriptor,
+                             DeferredDescriptor,
                              execute_expr_single)
 from .py2help import reduce
 from .datashape import to_numpy
@@ -24,7 +24,7 @@ from . import blz
 #------------------------------------------------------------------------
 
 _eval_strategy = threading.local()
-default_strategy = 'eval'
+default_strategy = 'py'
 
 @contextmanager
 def strategy(strategy):
@@ -47,9 +47,12 @@ def strategy(strategy):
         and from slow evaluation to fast evaluation.
     """
     old = current_strategy()
-    _eval_strategy.strategy = strategy
+    set_strategy(strategy)
     yield
-    _eval_strategy.strategy = old
+    set_strategy(old)
+
+def set_strategy(strategy):
+    _eval_strategy.strategy = strategy
 
 def current_strategy():
     """Return the current evaluation strategy"""
@@ -88,10 +91,10 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     """
     strategy = strategy or current_strategy()
 
-    if isinstance(arr, Deferred):
+    if not arr._data.deferred:
+        result = arr
+    elif isinstance(arr._data, DeferredDescriptor):
         result = eval_deferred(arr, storage, caps, out, strategy)
-    elif not arr._data.deferred:
-        return arr
     else:
         kt = arr._data.kerneltree.fuse()
         if storage is not None:
@@ -105,18 +108,23 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     return result
 
 def eval_deferred(arr, storage, caps, out, strategy):
-    graph, ctx = arr.expr
+    expr = arr._data.expr
+    graph, ctx = expr
 
     # Construct and transform AIR
-    func, env = prepare(arr, strategy)
+    func, env = prepare(expr, strategy)
 
     # Find evaluator
     interp = interps.lookup_interp(strategy)
 
-    # Run with collected 'params' from the expression
-    result = interp.run(func, args=[ctx.inputs[param] for param in ctx.params])
+    # Interpreter-specific compilation/assembly
+    func = interp.compile(func, env)
 
-    return blaze.array(result)
+    # Run with collected 'params' from the expression
+    result = interp.run(func, args=[ctx.terms[param] for param in ctx.params],
+                        storage=storage, caps=caps, out=out, strategy=strategy)
+
+    return result
 
 def eval_blz(arr, storage, caps, out, strategy):
     from operator import mul

@@ -67,7 +67,6 @@ ArrayOp    = partial(Op, array)
 
 # Kernel application. Associated metadata:
 #   kernel: the blaze.function.Kernel that was applied
-#   func: the overloaded function from the kernel
-#   signature: the unified signature
+#   overload: the blaze.overload.Overload that selected for the input args
 
 KernelOp   = partial(Op, kernel)
