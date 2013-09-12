@@ -31,17 +31,17 @@ def normalize(constraints, broadcasting=None):
         broadcast together.
     """
     broadcasting_env = None
-    result = [_normalize(a, b) for a, b in constraints]
+    result = [normalize_simple(a, b) for a, b in constraints]
     return result, broadcasting_env
 
-def _normalize(a, b):
+def normalize_simple(a, b):
     if isinstance(a, (CType, DataShape)) and isinstance(a, (CType, DataShape)):
         a, b = normalize_constructors(a, b)
         if (type(a), type(b)) == (DataShape, DataShape):
             a, b = normalize_ellipses(a, b)
         a, b = normalize_broadcasting(a, b)
     else:
-        a, b = tzip(_normalize, a, b)
+        a, b = tzip(normalize_simple, a, b)
 
     return a, b
 
