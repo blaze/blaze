@@ -11,10 +11,11 @@ from blaze import error
 from blaze.util import IdentityDict, gensym
 from . import parser
 from .validation import validate
-from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis,
-               uint8, uint16, uint32, uint64, CType, Mono, type_constructor,
+from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis, String,
+               uint8, uint16, uint32, uint64, CType, Mono, JSON,
                int8, int16, int32, int64,
-               float32, float64, complex64, complex128, Type, free)
+               float32, float64, complex64, complex128,
+               Type, free, type_constructor)
 from .traversal import tmap
 from blaze.datashape.traits import TypeSet
 
@@ -64,6 +65,8 @@ def dshape(o, multi=False):
     """
     ds = _dshape(o, multi)
     validate(ds)
+    if isinstance(ds, CType):
+        ds = DataShape(ds)
     return _unique_typevars(ds)
 
 def _dshape(o, multi=False):
@@ -73,6 +76,8 @@ def _dshape(o, multi=False):
         return parser.parse(o)
     elif isinstance(o, DataShape):
         return o
+    elif isinstance(o, (CType, String, Record, JSON)):
+        return DataShape(o)
     elif hasattr(o, 'read'):
         return list(parser.parse_mod(o.read()))
     else:

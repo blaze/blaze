@@ -324,7 +324,7 @@ class String(Unit):
                             (self.fixlen, repr(self.encoding).strip('u'))
 
     def __repr__(self):
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+        return ''.join(["ctype(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     def __eq__(self, other):
         if type(other) is String:
@@ -348,11 +348,7 @@ class DataShape(Mono):
     composite = False
 
     def __init__(self, *parameters, **kwds):
-        if len(parameters) > 1:
-            # !!!
-            # TODO: I'd say this is wrong. A 0d array should be represented by
-            #       a DataShape with 1 parameter!
-            # !!!
+        if len(parameters) > 0:
             self.parameters = tuple(parameters)
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
                 raise TypeError(('Only a measure can appear on the'
@@ -614,7 +610,7 @@ class CType(Unit):
         return self.name
 
     def __repr__(self):
-        return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
+        return ''.join(["ctype(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])
 
     def __eq__(self, other):
         if type(other) is CType:
@@ -1148,19 +1144,19 @@ def typeof(obj):
     if isinstance(obj, blaze.Array):
         return obj.dshape
     elif isinstance(obj, int):
-        return int_
+        return DataShape(int_)
     elif isinstance(obj, float):
-        return double
+        return DataShape(double)
     elif isinstance(obj, complex):
-        return complex128
+        return DataShape(complex128)
     elif isinstance(obj, _strtypes):
-        return string
+        return DataShape(string)
     elif isinstance(obj, datetime.timedelta):
-        return timedelta64
+        return DataShape(timedelta64)
     elif isinstance(obj, datetime.datetime):
-        return datetime64
+        return DataShape(datetime64)
     else:
-        return pyobj
+        return DataShape(pyobj)
 
 #------------------------------------------------------------------------
 # Printing

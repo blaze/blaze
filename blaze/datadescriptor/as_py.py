@@ -65,7 +65,7 @@ def dshaped_ptr_to_py(ds):
     elif isinstance(ds, Record):
         return _dshape_record_to_py(ds)
     else:
-        raise TypeError(('Converting data with dshape'
+        raise TypeError(('Converting data with dshape '
                         '%r to a python object is not yet supported') % (ds))
 
 def dd_as_py(dd):
@@ -81,7 +81,7 @@ def dd_as_py(dd):
     if len(ds) == 1:
         # Use the get_element interface to get
         # the data as a C pointer
-        ptr_to_py = dshaped_ptr_to_py(ds)
+        ptr_to_py = dshaped_ptr_to_py(ds.parameters[-1])
         ge = dd.element_reader(0)
         return ptr_to_py(ge.read_single(()))
     elif len(ds) == 2:
