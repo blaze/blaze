@@ -30,12 +30,23 @@ def normalize(constraints, broadcasting=None):
         broadcasting environment listing all type variables which may
         broadcast together.
     """
-    constraints = [normalize_constructors(a, b) for a, b in constraints]
-    constraints = [normalize_ellipses(a, b) for a, b in constraints]
-    return normalize_broadcasting(constraints, broadcasting)
+    broadcasting_env = None
+    result = [_normalize(a, b) for a, b in constraints]
+    return result, broadcasting_env
+
+def _normalize(a, b):
+    if isinstance(a, (CType, DataShape)) and isinstance(a, (CType, DataShape)):
+        a, b = normalize_constructors(a, b)
+        if (type(a), type(b)) == (DataShape, DataShape):
+            a, b = normalize_ellipses(a, b)
+        a, b = normalize_broadcasting(a, b)
+    else:
+        a, b = tzip(_normalize, a, b)
+
+    return a, b
 
 #------------------------------------------------------------------------
-# Constructors
+# DataShape Normalizers
 #------------------------------------------------------------------------
 
 def normalize_constructors(a, b):
@@ -53,24 +64,22 @@ def normalize_constructors(a, b):
     elif isinstance(a, CType) and isinstance(b, DataShape):
         return DataShape(Fixed(1), a), b
     else:
-        return tzip(normalize_constructors, a, b)
+        return a, b
+
+def normalize_ellipses(a, b):
+    """Eliminate ellipses in DataShape"""
+    S = _normalize_ellipses(a, b)
+    return substitute(S, a), substitute(S, b)
+
+def normalize_broadcasting(a, b):
+    """Add broadcasting dimensions to DataShapes"""
+    return _normalize_broadcasting(a, b)
 
 #------------------------------------------------------------------------
 # Ellipses
 #------------------------------------------------------------------------
 
-def normalize_ellipses(a, b):
-    """Eliminate ellipses in DataShape"""
-    if isinstance(a, DataShape) and isinstance(b, DataShape):
-        S = _normalize_ellipses(a, b)
-        return substitute(S, a), substitute(S, b)
-    else:
-        return tzip(normalize_ellipses, a, b)
-
 def _normalize_ellipses(ds1, ds2):
-    if not (isinstance(ds1, DataShape) and isinstance(ds2, DataShape)):
-        return
-
     # -------------------------------------------------
     # Find ellipses
 
@@ -142,10 +151,7 @@ def substitute(S, ds):
 
 #------------------------------------------------------------------------
 # Broadcasting
-
-def normalize_broadcasting(constraints, broadcasting=None):
-    """Add broadcasting dimensions to DataShapes"""
-    return [_normalize_broadcasting(a, b) for a, b in constraints], None
+#------------------------------------------------------------------------
 
 def _normalize_broadcasting(a, b):
     if isinstance(a, DataShape) and isinstance(b, DataShape):

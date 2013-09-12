@@ -47,10 +47,10 @@ class TestUnification(unittest.TestCase):
         self.assertEqual(str(arg2), '10, 10, float32')
 
     def test_unify_datashape_scalar(self):
-        d1 = dshape('10, T1, int32')
+        d1 = dshape('1, T1, int32')
         d2 = dshape('float64')
         result = unify_simple(d1, d2)
-        self.assertEqual(result, dshape('10, T1, float64'))
+        self.assertEqual(result, dshape('1, 1, float64'))
 
     def test_unify_broadcasting1(self):
         ds1 = dshape('A, B, int32')

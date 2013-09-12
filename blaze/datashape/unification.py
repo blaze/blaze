@@ -151,7 +151,7 @@ def seed_typesets(constraints, solution):
     # We can do this since there is no constraint on the free variable
     empty = IdentitySet()
     for a, b in constraints:
-        if solution.get(b) is None or b in empty:
+        if not solution.get(b) or b in empty:
             solution.setdefault(b, IdentitySet()).add(a)
             empty.add(b)
 
