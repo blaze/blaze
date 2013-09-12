@@ -9,7 +9,7 @@ from collections import defaultdict, deque
 
 from blaze import error
 from . import transform, tzip
-from .coretypes import DataShape, Ellipsis, Fixed
+from .coretypes import DataShape, Ellipsis, Fixed, CType
 
 #------------------------------------------------------------------------
 # Normalization
@@ -30,11 +30,34 @@ def normalize(constraints, broadcasting=None):
         broadcasting environment listing all type variables which may
         broadcast together.
     """
+    constraints = [normalize_constructors(a, b) for a, b in constraints]
     constraints = [normalize_ellipses(a, b) for a, b in constraints]
     return normalize_broadcasting(constraints, broadcasting)
 
 #------------------------------------------------------------------------
+# Constructors
+#------------------------------------------------------------------------
+
+def normalize_constructors(a, b):
+    """
+    Normalize a pair (DataShape, CType) constructors by "promoting" the CType
+    to a DataShape.
+
+    Since a DataShape has at least one dimension, we know we
+    have at least one broadcastind dimension.
+
+    FIXME: We should not have CType at all! Just 0d DataShape
+    """
+    if isinstance(a, DataShape) and isinstance(b, CType):
+        return a, DataShape(Fixed(1), b)
+    elif isinstance(a, CType) and isinstance(b, DataShape):
+        return DataShape(Fixed(1), a), b
+    else:
+        return tzip(normalize_constructors, a, b)
+
+#------------------------------------------------------------------------
 # Ellipses
+#------------------------------------------------------------------------
 
 def normalize_ellipses(a, b):
     """Eliminate ellipses in DataShape"""

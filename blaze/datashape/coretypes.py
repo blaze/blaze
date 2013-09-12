@@ -349,6 +349,10 @@ class DataShape(Mono):
 
     def __init__(self, *parameters, **kwds):
         if len(parameters) > 1:
+            # !!!
+            # TODO: I'd say this is wrong. A 0d array should be represented by
+            #       a DataShape with 1 parameter!
+            # !!!
             self.parameters = tuple(parameters)
             if getattr(self.parameters[-1], 'cls', MEASURE) != MEASURE:
                 raise TypeError(('Only a measure can appear on the'

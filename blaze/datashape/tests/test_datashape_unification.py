@@ -5,7 +5,7 @@ import unittest
 
 from blaze import error
 from blaze import dshape
-from blaze.datashape import unify, dshapes
+from blaze.datashape import unify, unify_simple, dshapes
 
 #------------------------------------------------------------------------
 # Tests
@@ -45,6 +45,12 @@ class TestUnification(unittest.TestCase):
         [arg1, arg2], remaining_constraints = unify(constraints, [True, True])
         self.assertEqual(str(arg1), '10, B, int16')
         self.assertEqual(str(arg2), '10, 10, float32')
+
+    def test_unify_datashape_scalar(self):
+        d1 = dshape('10, T1, int32')
+        d2 = dshape('float64')
+        result = unify_simple(d1, d2)
+        self.assertEqual(result, dshape('10, T1, float64'))
 
     def test_unify_broadcasting1(self):
         ds1 = dshape('A, B, int32')

@@ -76,7 +76,6 @@ def unify(constraints, broadcasting=None):
 
     # Reify and promote the datashapes
     result = [substitute(substitution, ds2) for ds1, ds2 in constraints]
-    remaining = [(a, c) for a, b in remaining for c in solution[b] if a is not c]
     return result, remaining
 
 #------------------------------------------------------------------------
@@ -130,8 +129,11 @@ def unify_single(t1, t2, solution, remaining):
         if t1 in free(t2):
             raise error.UnificationError("Cannot unify recursive types")
         solution[t1].add(t2)
+        remaining.append((t1, t2))
     elif isinstance(t2, TypeVar):
-        unify_single(t2, t1, solution, remaining)
+        if t2 in free(t1):
+            raise error.UnificationError("Cannot unify recursive types")
+        solution[t2].add(t1)
     elif not free(t1) and not free(t2):
         # No need to recurse, this will be caught by promote()
         pass
@@ -149,8 +151,8 @@ def seed_typesets(constraints, solution):
     # We can do this since there is no constraint on the free variable
     empty = IdentitySet()
     for a, b in constraints:
-        if not solution[b] or b in empty:
-            solution[b].add(a)
+        if solution.get(b) is None or b in empty:
+            solution.setdefault(b, IdentitySet()).add(a)
             empty.add(b)
 
 def merge_typevar_sets(constraints, solution):
