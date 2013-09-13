@@ -40,6 +40,14 @@ class TestJit(unittest.TestCase):
         self.assertEqual(type(result), blaze.Array)
         self.assertTrue(np.all(result == expected))
 
+    def test_jit_scalar(self):
+        a = blaze.array(range(10), dshape=dshape('10, int32'))
+        b = 10
+        expr = add(a, mul(a, b))
+        result = blaze.eval(expr)
+        np_a = np.arange(10)
+        expected = np_a + np_a * b
+        self.assertTrue(np.all(result == expected))
 
 
 if __name__ == '__main__':

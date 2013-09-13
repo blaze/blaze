@@ -47,8 +47,12 @@ def op_convert(interp, arg):
     # Broadcasting
     out_shape = arg.shape
     in_shape = dshape.shape
-    if len(out_shape) < len(in_shape):
-        arg = arg.reshape(in_shape)
+
+    for i in range(len(out_shape), len(in_shape)):
+        out_shape = (1,) + out_shape
+
+    # Reshape with the output shape, since it may have broadcasting dimensions
+    arg = arg.reshape(out_shape)
 
     # Dtype conversion
     in_dtype = dshape.measure.to_numpy_dtype()

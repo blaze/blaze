@@ -60,9 +60,9 @@ def make_blaze(value):
     if not isinstance(value, blaze.Array):
         dshape = T.typeof(value)
         if not dshape.shape:
-            value = blaze.array(value, dshape)
-        else:
             value = blaze.array([value], dshape)
+        else:
+            value = blaze.array(value, dshape)
     return value
 
 def collect_contexts(args):

@@ -60,7 +60,7 @@ def construct(kernel, ctx, overload, args):
     # -------------------------------------------------
 
     assert isinstance(overload.resolved_sig, T.Function)
-    restype = overload.resolved_sig.parameters[-1]
+    restype = blaze.dshape(overload.resolved_sig.parameters[-1])
 
     # -------------------------------------------------
 

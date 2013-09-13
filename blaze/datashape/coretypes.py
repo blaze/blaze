@@ -1029,7 +1029,7 @@ single = float32
 double = float64
 
 # TODO: the semantics of these are still being discussed
-int_ = float32
+int_ = int32
 float_ = float32
 
 void = CType('void', 0, 1)
@@ -1143,7 +1143,9 @@ def typeof(obj):
     """
     if isinstance(obj, blaze.Array):
         return obj.dshape
-    elif isinstance(obj, int):
+    elif isinstance(obj, np.ndarray):
+        return from_numpy(obj.shape, obj.dtype)
+    elif isinstance(obj, _inttypes):
         return DataShape(int_)
     elif isinstance(obj, float):
         return DataShape(double)

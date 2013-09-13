@@ -79,6 +79,36 @@ def _build_tst(kernel, storage1, storage2, storage3, R):
 # Tests
 #------------------------------------------------------------------------
 
+class TestEvalScalar(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.npyA = np.array(10)
+        cls.npyB = np.arange(0.0, 100.0)
+        cls.npyR = _addition(cls.npyA, cls.npyB)
+        cls.npyQ = _expression(cls.npyA, cls.npyB)
+        cls.memA = blaze.array(cls.npyA)
+        cls.memB = blaze.array(cls.npyB)
+
+        _mk_dir()
+        cls.dskA = blaze.array(cls.npyA, storage=_store('dskA'))
+        cls.dskB = blaze.array(cls.npyB, storage=_store('dskB'))
+
+    @classmethod
+    def tearDownClass(cls):
+        _clean_disk_arrays()
+        del(cls.npyA)
+        del(cls.npyB)
+        del(cls.npyR)
+        del(cls.memA)
+        del(cls.memB)
+        del(cls.dskA)
+        del(cls.dskB)
+
+    # add all tests for all permutations
+    # TODO: Enable. Currently segfaults
+    # _add_tests()
+
+
 class TestEval1D(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
