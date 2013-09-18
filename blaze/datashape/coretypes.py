@@ -963,6 +963,47 @@ class JSON(Mono):
         return isinstance(other, JSON)
 
 #------------------------------------------------------------------------
+# Generic type constructors
+#------------------------------------------------------------------------
+
+class TypeConstructor(type):
+    """
+    Generic type constructor.
+
+    Attributes:
+    ===========
+        n: int
+            number of parameters
+
+        flags: [{str: object}]
+            flag for each parameter. Built-in flags include:
+
+                * 'coercible': True/False. The default is False
+    """
+
+    def __new__(cls, name, n, flags):
+        def __init__(self, *params):
+            assert len(params) == n
+            self.parameters = params
+
+        def __eq__(self, other):
+            return (isinstance(other, type(self)) and
+                    self.parameters == other.parameters and
+                    self.flags == other.flags)
+
+        def __str__(self):
+            return "%s(%s)" % (name, ", ".join(map(str, self.parameters)))
+
+        d = {
+            '__init__': __init__,
+            '__str__': __str__,
+            '__eq__': __eq__,
+            '__ne__': lambda self, other: not (self == other),
+            'flags': flags,
+        }
+        return super(TypeConstructor, cls).__new__(cls, name, (Mono,), d)
+
+#------------------------------------------------------------------------
 # Unit Types
 #------------------------------------------------------------------------
 

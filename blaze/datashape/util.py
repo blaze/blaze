@@ -8,6 +8,7 @@ import ctypes
 import sys
 
 from blaze import error
+from blaze.datashape.coretypes import TypeConstructor
 from blaze.util import IdentityDict, gensym
 from . import parser
 from .validation import validate
@@ -153,6 +154,7 @@ def verify(t1, t2):
     if len(args1) != len(args2):
         raise error.UnificationError("%s got %d and %d arguments" % (
             tcon1, len(args1), len(args2)))
+
 
 def broadcastable(dslist, ranks=None, rankconnect=[]):
     """Return output (outer) shape if datashapes are broadcastable.

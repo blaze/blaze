@@ -5,7 +5,7 @@ import unittest
 
 from blaze import error
 from blaze import dshape
-from blaze.datashape import unify, unify_simple, dshapes
+from blaze.datashape import unify, unify_simple, dshapes, coretypes as T
 
 #------------------------------------------------------------------------
 # Tests

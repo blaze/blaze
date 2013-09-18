@@ -10,7 +10,7 @@ from functools import reduce
 from blaze import error
 from blaze.util import gensym
 from blaze.datashape import (DataShape, CType, Fixed, to_numpy,
-                             TypeSet, TypeVar)
+                             TypeSet, TypeVar, TypeConstructor, verify)
 
 import numpy as np
 
@@ -73,6 +73,9 @@ def promote(a, b):
     elif isinstance(a, (DataShape, CType)) and isinstance(b, (DataShape, CType)):
         return promote_datashapes(a, b)
 
+    elif isinstance(type(a), TypeConstructor) and isinstance(type(b), TypeConstructor):
+        return promote_type_constructor(a, b)
+
     else:
         raise TypeError("Unknown types, cannot promote: %s and %s" % (a, b))
 
@@ -103,3 +106,24 @@ def promote_datashapes(a, b):
 
     assert result1 == result2
     return result1
+
+def promote_type_constructor(a, b):
+    """Promote two generic type constructors"""
+    # Verify type constructor equality
+    verify(a, b)
+
+    # Promote parameters according to flags
+    args = []
+    for flag, t1, t2 in zip(a.flags, a.parameters, b.parameters):
+        if flag['coercible']:
+            result = promote(t1, t2)
+        else:
+            if t1 != t2:
+                raise error.UnificationError(
+                    "Got differing types %s and %s for unpromotable type "
+                    "parameter" % (t1, t2))
+            result = t1
+
+        args.append(result)
+
+    return type(a)(*args)

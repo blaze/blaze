@@ -25,7 +25,7 @@ from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
 from blaze.datashape import (promote_units, normalize, simplify, tmap,
                              dshape, verify)
-from blaze.datashape.coretypes import TypeVar, free
+from blaze.datashape.coretypes import TypeVar, Mono, free, TypeConstructor
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +134,8 @@ def unify_single(t1, t2, solution, remaining):
         if t2 in free(t1):
             raise error.UnificationError("Cannot unify recursive types")
         solution[t2].add(t1)
+    elif isinstance(t1, TypeConstructor):
+        verify(t1, t2)
     elif not free(t1) and not free(t2):
         # No need to recurse, this will be caught by promote()
         pass
