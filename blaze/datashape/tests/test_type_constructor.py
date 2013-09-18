@@ -43,6 +43,11 @@ class TestTypeConstructors(unittest.TestCase):
         self.assertEqual(promote(t3, t2), t1)
         self.assertEqual(promote(rt1, rt2), rt1)
 
+    def test_coercion(self):
+        self.assertEqual(coerce(t1, t2), 0)
+        self.assertGreater(coerce(t3, t2), 0)
+        self.assertEqual(coerce(rt1, rt2), 0)
+
 
 class TestErrors(unittest.TestCase):
 
@@ -50,5 +55,4 @@ class TestErrors(unittest.TestCase):
         self.assertRaises(error.UnificationError, promote, rt1, rt3)
 
 if __name__ == '__main__':
-    # TestTypeConstructors('test_unification').debug()
     unittest.main()
