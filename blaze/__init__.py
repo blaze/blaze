@@ -9,7 +9,7 @@ logger.setLevel(logging.WARNING)
 # build the blaze namespace with selected functions
 
 from . import datashape, bkernel, ckernel
-from .datashape import dshape, dshapes
+from .datashape import dshape, dshapes, parser
 from .array import Array
 from .kernel import kernel, elementwise, Kernel
 from .constructors import array, empty, ones, zeros
