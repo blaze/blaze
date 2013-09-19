@@ -30,7 +30,7 @@ class DatashapeSyntaxError(CustomSyntaxError):
 tokens = (
     'TYPE', 'NAME', 'NUMBER', 'STRING', 'ELLIPSIS', 'EQUALS',
     'COMMA', 'COLON', 'LBRACE', 'RBRACE', 'SEMI', 'BIT',
-    'VAR', 'JSON', 'DATA', 'ARROW',
+    'VAR', 'JSON', 'DATA', 'ARROW', 'LBRACK', 'RBRACK',
 )
 
 literals = [
@@ -81,7 +81,9 @@ t_LBRACE    = r'\{'
 t_RBRACE    = r'\}'
 t_ELLIPSIS  = r'\.\.\.'
 t_ARROW     = r'->'
-t_ignore    = '[ ]'
+t_LBRACK    = r'\['
+t_RBRACK    = r'\]'
+t_ignore    = ' '
 
 def t_TYPE(t):
     r'type'
@@ -227,7 +229,9 @@ def p_rhs_expr(p):
 
 def p_rhs_expression_list_node1(p):
     '''rhs_expression_list : appl
-                           | record'''
+                           | record
+                           | ctor
+    '''
     p[0] = (p[1],)
 
 def p_rhs_expression_list__bit(p):
@@ -354,6 +358,33 @@ def p_appl(p):
         p[0] = reserved[p[1]](*p[3])
     else:
         raise NameError('Cannot use the name %s for type application' % repr(p[1]))
+
+#------------------------------------------------------------------------
+
+def p_ctor(p):
+    """ctor : NAME LBRACK ctor_args RBRACK"""
+
+    # Application of a type constructor. Square brackets are more apt for
+    # type constructor application than parentheses when types are implemented
+    # as Python classes (e.g. in Numba). Parentheses then instantiate the type
+    # to a value, and square brackets parameterize the type.
+
+    name = p[1]
+    args = p[3]
+
+    n = len(args)
+    flags = [{'coercible': False} for i in range(n)]
+    p[0] = T.TypeConstructor(name, n, flags)
+
+def p_ctor_args(p):
+    """
+    ctor_args : NAME
+              | NAME COMMA ctor_args
+    """
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + p[3]
 
 #------------------------------------------------------------------------
 

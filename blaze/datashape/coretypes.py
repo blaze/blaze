@@ -992,7 +992,7 @@ class TypeConstructor(type):
                     self.flags == other.flags)
 
         def __str__(self):
-            return "%s(%s)" % (name, ", ".join(map(str, self.parameters)))
+            return "%s[%s]" % (name, ", ".join(map(str, self.parameters)))
 
         d = {
             '__init__': __init__,

@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from blaze import error
-from blaze.datashape import unify_simple, promote, coerce, dshapes, coretypes as T
+from blaze.datashape import unify_simple, promote, coerce, dshape, coretypes as T
 
 #------------------------------------------------------------------------
 # Test data
@@ -48,11 +48,21 @@ class TestTypeConstructors(unittest.TestCase):
         self.assertGreater(coerce(t3, t2), 0)
         self.assertEqual(coerce(rt1, rt2), 0)
 
+    def test_parsing(self):
+        type = dshape('Int[X]')
+        self.assertIsInstance(type, T.TypeConstructor)
+        self.assertEqual(str(type(32)), 'Int[32]')
+        self.assertIsInstance(type(32), type)
+
+        flags0 = type.flags[0]
+        self.assertEqual(flags0, {'coercible': False})
+
 
 class TestErrors(unittest.TestCase):
 
     def test_promotion_error(self):
         self.assertRaises(error.UnificationError, promote, rt1, rt3)
+
 
 if __name__ == '__main__':
     unittest.main()
