@@ -813,6 +813,13 @@ class Function(Mono):
     def argtypes(self):
         return self.parameters[:-1]
 
+    def __eq__(self, other):
+        return (isinstance(other, type(self)) and
+                self.parameters == other.parameters)
+
+    def __ne__(self, other):
+        return not self == other
+
     # def __repr__(self):
     #     return " -> ".join(map(repr, self.parameters))
 
