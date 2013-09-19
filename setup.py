@@ -262,8 +262,8 @@ def make_build(build_command):
     return BuildParser
 
 def rebuild_parse_tables():
-    from blaze.datashape.parser import rebuild
-    rebuild()
+    os.environ['BLAZE_REBUILD_PARSER'] = '1'
+    from blaze.datashape import parser
 
 #------------------------------------------------------------------------
 # Setup

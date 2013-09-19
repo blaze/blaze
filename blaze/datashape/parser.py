@@ -541,3 +541,7 @@ if __name__ == '__main__':
                 print(ast)
             except EOFError:
                 break
+
+if int(os.environ.get('BLAZE_REBUILD_PARSER', 0)):
+    # Rebuild the parser before it is used anywhere
+    rebuild()
