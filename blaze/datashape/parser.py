@@ -374,7 +374,8 @@ def p_ctor(p):
 
     n = len(args)
     flags = [{'coercible': False} for i in range(n)]
-    p[0] = T.TypeConstructor(name, n, flags)
+    ctor = T.TypeConstructor(name, n, flags)
+    p[0] = ctor(*args)
 
 def p_ctor_args(p):
     """

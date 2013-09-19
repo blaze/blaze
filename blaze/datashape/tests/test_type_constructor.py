@@ -49,12 +49,14 @@ class TestTypeConstructors(unittest.TestCase):
         self.assertEqual(coerce(rt1, rt2), 0)
 
     def test_parsing(self):
-        type = dshape('Int[X]')
-        self.assertIsInstance(type, T.TypeConstructor)
-        self.assertEqual(str(type(32)), 'Int[32]')
-        self.assertIsInstance(type(32), type)
+        t = dshape('Int[X]')
+        cls = type(t)
 
-        flags0 = type.flags[0]
+        self.assertIsInstance(cls, T.TypeConstructor)
+        self.assertEqual(str(cls(32)), 'Int[32]')
+        self.assertIsInstance(cls(32), cls)
+
+        flags0 = t.flags[0]
         self.assertEqual(flags0, {'coercible': False})
 
 
