@@ -998,6 +998,7 @@ class TypeConstructor(type):
 
         d = {
             '__init__': __init__,
+            '__repr__': __str__,
             '__str__': __str__,
             '__eq__': __eq__,
             '__ne__': lambda self, other: not (self == other),

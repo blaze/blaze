@@ -221,8 +221,10 @@ def p_rhs_expr(p):
     '''rhs_expr : rhs_expression_list'''
     if len(p[1]) == 1:
         rhs = p[1][0]
-        if getattr(rhs, 'cls', T.MEASURE) != T.MEASURE:
-            raise TypeError('Only a measure can appear on the last position of a datashape, not %s' % repr(rhs))
+        # if getattr(rhs, 'cls', T.MEASURE) != T.MEASURE:
+        #     raise TypeError(
+        #         'Only a measure can appear on the last position of a '
+        #         'datashape, not %s' % repr(rhs))
         p[0] = rhs
     else:
         p[0] = T.DataShape(*p[1])
@@ -362,7 +364,7 @@ def p_appl(p):
 #------------------------------------------------------------------------
 
 def p_ctor(p):
-    """ctor : NAME LBRACK ctor_args RBRACK"""
+    """ctor : NAME LBRACK rhs_expression RBRACK"""
 
     # Application of a type constructor. Square brackets are more apt for
     # type constructor application than parentheses when types are implemented
@@ -376,16 +378,6 @@ def p_ctor(p):
     flags = [{'coercible': False} for i in range(n)]
     ctor = T.TypeConstructor(name, n, flags)
     p[0] = ctor(*args)
-
-def p_ctor_args(p):
-    """
-    ctor_args : NAME
-              | NAME COMMA ctor_args
-    """
-    if len(p) == 2:
-        p[0] = [p[1]]
-    else:
-        p[0] = p[1] + p[3]
 
 #------------------------------------------------------------------------
 

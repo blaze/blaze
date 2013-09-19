@@ -59,6 +59,15 @@ class TestTypeConstructors(unittest.TestCase):
         flags0 = t.flags[0]
         self.assertEqual(flags0, {'coercible': False})
 
+    def test_parsing2(self):
+        t = dshape('Int[32]')
+        self.assertEqual(len(t.parameters), 1)
+        self.assertIsInstance(t.parameters[0], T.Fixed)
+
+        t = dshape('Int[Float[32] -> Complex[64]]')
+        self.assertEqual(len(t.parameters), 1)
+        self.assertIsInstance(t.parameters[0], T.Function)
+
 
 class TestErrors(unittest.TestCase):
 
