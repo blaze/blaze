@@ -1000,6 +1000,9 @@ class TypeConstructor(type):
                     self.parameters == other.parameters and
                     self.flags == other.flags)
 
+        def __hash__(self):
+            return hash((name, n, self.parameters))
+
         def __str__(self):
             return "%s[%s]" % (name, ", ".join(map(str, self.parameters)))
 
@@ -1009,9 +1012,27 @@ class TypeConstructor(type):
             '__str__': __str__,
             '__eq__': __eq__,
             '__ne__': lambda self, other: not (self == other),
+            '__hash__': __hash__,
             'flags': flags,
         }
-        return super(TypeConstructor, cls).__new__(cls, name, (Mono,), d)
+        self = super(TypeConstructor, cls).__new__(cls, name, (Mono,), d)
+
+        self.name = name
+        self.n = n
+        self.flags = flags
+        return self
+
+
+    def __eq__(cls, other):
+        return (isinstance(other, TypeConstructor) and
+                cls.name == other.name and cls.n == other.n and
+                cls.flags == other.flags)
+
+    def __ne__(cls, other):
+        return not (cls == other)
+
+    def __hash__(cls):
+        return hash((cls.name, cls.n))
 
 #------------------------------------------------------------------------
 # Unit Types
