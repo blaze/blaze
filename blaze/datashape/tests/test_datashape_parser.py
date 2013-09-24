@@ -2,11 +2,12 @@ import unittest
 
 import blaze
 from blaze import error, datashape
+from blaze.tests import common
 from blaze.datashape.parser import parse
 from blaze.datashape.coretypes import Enum, Option, Function
 from blaze.datashape.traits import integral
 
-class TestDatashapeParser(unittest.TestCase):
+class TestDatashapeParser(common.BTestCase):
 
     def test_simple_parse(self):
         x = parse('2, 3, int32')
