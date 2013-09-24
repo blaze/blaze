@@ -1084,11 +1084,13 @@ else:
     c_ulong = uint64
 
 if ctypes.sizeof(ctypes.c_void_p) == 4:
-    c_intptr = c_ssize_t = int32
-    c_uintptr = c_size_t = uint32
+    intptr = c_ssize_t = int32
+    uintptr = c_size_t = uint32
 else:
-    c_intptr = c_ssize_t = int64
-    c_uintptr = c_size_t = uint64
+    intptr = c_ssize_t = int64
+    uintptr = c_size_t = uint64
+Type.register('intptr', intptr)
+Type.register('uintptr', uintptr)
 
 c_half = float16
 c_float = float32

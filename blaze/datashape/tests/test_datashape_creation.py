@@ -1,4 +1,5 @@
 import blaze
+import ctypes
 from blaze import dshape, error, datashape
 import numpy as np
 import unittest
@@ -32,6 +33,12 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertEqual(blaze.dshape('complex128'), dshape(datashape.complex128))
         self.assertEqual(blaze.dshape("string"),     blaze.datashape.string)
         self.assertEqual(blaze.dshape("json"),       blaze.datashape.json)
+        if ctypes.sizeof(ctypes.c_void_p) == 4:
+            self.assertEqual(blaze.dshape('intptr'), datashape.int32)
+            self.assertEqual(blaze.dshape('uintptr'), datashape.uint32)
+        else:
+            self.assertEqual(blaze.dshape('intptr'), datashape.int64)
+            self.assertEqual(blaze.dshape('uintptr'), datashape.uint64)
 
     def test_atom_shape_errors(self):
         self.assertRaises(TypeError, blaze.dshape, 'boot')
