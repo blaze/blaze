@@ -4,13 +4,14 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from blaze import error
+from blaze.tests import common
 from blaze.datashape import unify, dshapes, coerce, normalize
 
 #------------------------------------------------------------------------
 # Tests
 #------------------------------------------------------------------------
 
-class TestCoercion(unittest.TestCase):
+class TestCoercion(common.BTestCase):
 
     def test_coerce_ctype(self):
         a, b = dshapes('float32', 'float32')

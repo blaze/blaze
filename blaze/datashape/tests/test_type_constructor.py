@@ -4,6 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from blaze import error
+from blaze.tests import common
 from blaze.datashape import unify_simple, promote, coerce, dshape, coretypes as T
 
 #------------------------------------------------------------------------
@@ -24,7 +25,7 @@ rt3 = RigidComplex(T.int32)
 # Tests
 #------------------------------------------------------------------------
 
-class TestTypeConstructors(unittest.TestCase):
+class TestTypeConstructors(common.BTestCase):
 
     def test_equality(self):
         self.assertEqual(t1, t2)
