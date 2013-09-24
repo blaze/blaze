@@ -30,6 +30,12 @@ echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
 set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
 
+REM Temporary hack to install pykit
+git clone https://github.com/ContinuumIO/pykit.git
+pushd pykit
+%PYTHON_EXECUTABLE% setup.py install || exit /b 1
+popd
+
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install
 IF %ERRORLEVEL% NEQ 0 exit /b 1
