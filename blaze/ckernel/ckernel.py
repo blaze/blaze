@@ -1,13 +1,21 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-__all__ = ['KernelDataPrefix', 'UnarySingleOperation', 'UnaryStridedOperation',
+__all__ = ['CKernelPrefixStruct', 'CKernelPrefixDestructor',
+        'CKernelBuilder', 'CKernelDeferred',
+        'UnarySingleOperation', 'UnaryStridedOperation',
         'ExprSingleOperation', 'ExprStridedOperation', 'BinarySinglePredicate',
-        'DynamicKernelInstance', 'JITKernelData', 'UnboundCKernelFunction',
+        'DynamicKernelInstance', 'JITCKernelData', 'UnboundCKernelFunction',
         'CKernel', 'wrap_ckernel_func']
 
 import sys
 import ctypes
+
+from dynd._lowlevel import (CKernelPrefixStruct, CKernelPrefixStructPtr,
+        CKernelPrefixDestructor,
+        CKernelBuilder, CKernelDeferred,
+        UnarySingleOperation, UnaryStridedOperation,
+        ExprSingleOperation, ExprStridedOperation, BinarySinglePredicate)
 
 if sys.version_info >= (2, 7):
     c_ssize_t = ctypes.c_ssize_t
@@ -35,42 +43,6 @@ _py_decref = ctypes.pythonapi.Py_DecRef
 _py_decref.argtypes = (ctypes.py_object,)
 _py_incref = ctypes.pythonapi.Py_IncRef
 _py_incref.argtypes = (ctypes.py_object,)
-
-class KernelDataPrefix(ctypes.Structure):
-    _fields_ = [("function", ctypes.c_void_p),
-                    ("destructor", ctypes.CFUNCTYPE(None,
-                                    ctypes.c_void_p))]
-KernelDataPrefixP = ctypes.POINTER(KernelDataPrefix)
-KernelDataPrefixDestructor = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
-
-# Unary operations (including assignment functions)
-UnarySingleOperation = ctypes.CFUNCTYPE(None,
-                ctypes.c_void_p,                  # dst
-                ctypes.c_void_p,                  # src
-                KernelDataPrefixP)                # extra
-UnaryStridedOperation = ctypes.CFUNCTYPE(None,
-                ctypes.c_void_p, c_ssize_t,      # dst, dst_stride
-                ctypes.c_void_p, c_ssize_t,      # src, src_stride
-                c_ssize_t,                       # count
-                KernelDataPrefixP)               # extra
-
-# Expr operations (array of src operands, how many operands is baked in)
-ExprSingleOperation = ctypes.CFUNCTYPE(None,
-                ctypes.c_void_p,                   # dst
-                ctypes.POINTER(ctypes.c_void_p),   # src
-                KernelDataPrefixP)                 # extra
-ExprStridedOperation = ctypes.CFUNCTYPE(None,
-                ctypes.c_void_p, c_ssize_t,        # dst, dst_stride
-                ctypes.POINTER(ctypes.c_void_p),
-                        ctypes.POINTER(c_ssize_t), # src, src_stride
-                c_ssize_t,                         # count
-                KernelDataPrefixP)                 # extra
-
-# Predicates
-BinarySinglePredicate = ctypes.CFUNCTYPE(ctypes.c_int, # boolean result
-                ctypes.c_void_p,                   # src0
-                ctypes.c_void_p,                   # src1
-                KernelDataPrefixP)                 # extra
 
 class DynamicKernelInstance(ctypes.Structure):
     _fields_ = [('kernel', ctypes.c_void_p),
@@ -113,7 +85,7 @@ class CKernel(object):
 
     @property
     def kernel_prefix(self):
-        return KernelDataPrefix.from_address(self._dki.kernel)
+        return CKernelPrefixStruct.from_address(self._dki.kernel)
 
     @property
     def kernel_proto(self):
@@ -135,23 +107,23 @@ class CKernel(object):
     def __del__(self):
         self.close()
 
-class JITKernelData(ctypes.Structure):
-    _fields_ = [('base', KernelDataPrefix),
+class JITCKernelData(ctypes.Structure):
+    _fields_ = [('base', CKernelPrefixStruct),
                 ('owner', ctypes.py_object)]
 
 def _jitkerneldata_destructor(jkd_ptr):
-    jkd = JITKernelData.from_address(jkd_ptr)
+    jkd = JITCKernelData.from_address(jkd_ptr)
     # Free the reference to the owner object
     _py_decref(jkd.owner)
     jkd.owner = 0
-_jitkerneldata_destructor = KernelDataPrefixDestructor(_jitkerneldata_destructor)
+_jitkerneldata_destructor = CKernelPrefixDestructor(_jitkerneldata_destructor)
 
 def wrap_ckernel_func(func, owner):
     """This function builds a CKernel object around a ctypes
     function pointer, typically created using a JIT like
     Numba or directly using LLVM. The func must have its
     argtypes set, and its last parameter must be a
-    KernelDataPrefixP to be a valid CKernel function.
+    CKernelPrefixStructPtr to be a valid CKernel function.
     The owner should be a pointer to an object which
     keeps the function pointer alive.
     """
@@ -162,13 +134,13 @@ def wrap_ckernel_func(func, owner):
     if func.argtypes is None:
         raise TypeError('The argtypes of the ctypes function ' +
                         'pointer must be set')
-    if func.argtypes[-1] != KernelDataPrefixP:
+    if func.argtypes[-1] != CKernelPrefixStructPtr:
         raise TypeError('The last argument of the ctypes function ' +
-                        'pointer must be KernelDataPrefixP')
+                        'pointer must be CKernelPrefixStructPtr')
 
     # Allocate the memory for the kernel data
     ck = CKernel(functype)
-    ksize = ctypes.sizeof(JITKernelData)
+    ksize = ctypes.sizeof(JITCKernelData)
     ck.dynamic_kernel_instance.kernel = _malloc(ksize)
     if not ck.dynamic_kernel_instance.kernel:
         raise MemoryError('Failed to allocate CKernel data')
@@ -176,7 +148,7 @@ def wrap_ckernel_func(func, owner):
     ck.dynamic_kernel_instance.free_func = _free
 
     # Populate the kernel data with the function
-    jkd = JITKernelData.from_address(ck.dynamic_kernel_instance.kernel)
+    jkd = JITCKernelData.from_address(ck.dynamic_kernel_instance.kernel)
     # Getting the raw pointer address seems to require these acrobatics
     jkd.base.function = ctypes.c_void_p.from_address(ctypes.addressof(func))
     jkd.base.destructor = _jitkerneldata_destructor
@@ -207,7 +179,7 @@ class UnboundCKernelFunction(object):
         kernel_data_struct : subclass of ctypes.Structure
             The structure of the kernel data used by the ckernel function.
             Its first member must be called 'base', an instance
-            of JITKernelData.
+            of JITCKernelData.
         bind_func : callable
             This function gets called to populate the kernel data
             of a fresh CKernel instance with data from the argument
@@ -222,16 +194,16 @@ class UnboundCKernelFunction(object):
         if func_ptr.argtypes is None:
             raise TypeError('The argtypes of the ctypes function ' +
                             'pointer must be set')
-        if func_ptr.argtypes[-1] != KernelDataPrefixP:
+        if func_ptr.argtypes[-1] != CKernelPrefixStructPtr:
             raise TypeError('The last argument of the ctypes function ' +
-                            'pointer must be KernelDataPrefixP')
+                            'pointer must be CKernelPrefixStructPtr')
         # Validate the kernel data struct
         if kernel_data_struct._fields_[0][0] != 'base':
             raise TypeError('The first field of the kernel data struct ' +
                             'must be called base')
-        if kernel_data_struct._fields_[0][1] != JITKernelData:
+        if kernel_data_struct._fields_[0][1] != JITCKernelData:
             raise TypeError('The first field, base, of the kernel data struct ' +
-                            'must be a JITKernelData')
+                            'must be a JITCKernelData')
         self._func_ptr = func_ptr
         self._kernel_data_struct = kernel_data_struct
         self._bind_func = bind_func

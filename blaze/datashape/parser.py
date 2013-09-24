@@ -517,7 +517,7 @@ def parse(pattern):
             raise TypeError('building a simple dshape with '
                             'type parameters is not supported')
     # Require that the type be concrete, not parameterized
-    if isinstance(ds, T.TypeVar):
+    if isinstance(ds, (T.TypeVar, T.Fixed, T.Var)):
         raise TypeError(('Only a measure can appear on the last '
                         'position of a datashape, not %s') % repr(ds))
     return ds

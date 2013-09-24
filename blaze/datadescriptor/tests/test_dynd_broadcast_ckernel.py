@@ -16,10 +16,17 @@ from dynd import nd, ndt, _lowlevel
 class TestDyNDBroadcastCKernel(unittest.TestCase):
     def setUp(self):
         # Get a kernel from dynd
-        self.ck = CKernel(UnarySingleOperation)
-        _lowlevel.make_assignment_kernel(
-                        ndt.float32, ndt.int64, 'single',
-                        ctypes.addressof(self.ck.dynamic_kernel_instance))
+        self.ckb = _lowlevel.CKernelBuilder()
+        _lowlevel.make_assignment_ckernel(
+                        ndt.float32, None,
+                        ndt.int64, None,
+                        'single',
+                        self.ckb)
+        self.ck = self.ckb.ckernel(UnarySingleOperation)
+
+    def tearDown(self):
+        self.ck = None
+        self.ckb.close()
 
     def test_assign_scalar(self):
         # Set up our data buffers

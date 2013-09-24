@@ -9,7 +9,7 @@ from ..llvm_array import (void_type, intp_type,
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
                 strided_ckernel_func_type,  map_llvm_to_ctypes)
 from ..ckernel import (ExprSingleOperation, ExprStridedOperation,
-                JITKernelData, UnboundCKernelFunction)
+                JITCKernelData, UnboundCKernelFunction)
 
 def args_to_kernel_data_struct(kinds, argtypes):
     # Build up the kernel data structure. Currently, this means
@@ -17,7 +17,7 @@ def args_to_kernel_data_struct(kinds, argtypes):
     # the kernel data prefix with a spot for the 'owner' reference added.
     input_field_indices = []
     kernel_data_fields = [Type.struct([int8_p_type]*3)]
-    kernel_data_ctypes_fields = [('base', JITKernelData)]
+    kernel_data_ctypes_fields = [('base', JITCKernelData)]
     for i, (kind, a) in enumerate(izip(kinds, argtypes)):
         if isinstance(kind, tuple):
             if kind[0] != lla.C_CONTIGUOUS:

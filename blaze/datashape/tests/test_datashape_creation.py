@@ -37,6 +37,8 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertRaises(TypeError, blaze.dshape, 'boot')
         self.assertRaises(TypeError, blaze.dshape, 'int33')
         self.assertRaises(TypeError, blaze.dshape, '12')
+        self.assertRaises(TypeError, blaze.dshape, 'var')
+        self.assertRaises(TypeError, blaze.dshape, 'N')
 
     def test_constraints_error(self):
         self.assertRaises(error.BlazeTypeError, dshape,
