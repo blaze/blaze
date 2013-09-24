@@ -50,7 +50,7 @@ fi
 rm -rf pykit
 git clone https://github.com/ContinuumIO/pykit.git
 pushd pykit
-%PYTHON_EXECUTABLE% setup.py install || exit 1
+${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
 
