@@ -34,11 +34,11 @@ class TestDatashapeCreation(unittest.TestCase):
         self.assertEqual(blaze.dshape("string"),     blaze.datashape.string)
         self.assertEqual(blaze.dshape("json"),       blaze.datashape.json)
         if ctypes.sizeof(ctypes.c_void_p) == 4:
-            self.assertEqual(blaze.dshape('intptr'), datashape.int32)
-            self.assertEqual(blaze.dshape('uintptr'), datashape.uint32)
+            self.assertEqual(blaze.dshape('intptr'), dshape(datashape.int32))
+            self.assertEqual(blaze.dshape('uintptr'), dshape(datashape.uint32))
         else:
-            self.assertEqual(blaze.dshape('intptr'), datashape.int64)
-            self.assertEqual(blaze.dshape('uintptr'), datashape.uint64)
+            self.assertEqual(blaze.dshape('intptr'), dshape(datashape.int64))
+            self.assertEqual(blaze.dshape('uintptr'), dshape(datashape.uint64))
 
     def test_atom_shape_errors(self):
         self.assertRaises(TypeError, blaze.dshape, 'boot')

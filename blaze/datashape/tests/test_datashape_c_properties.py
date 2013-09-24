@@ -24,9 +24,9 @@ class TestDatashapeCreation(unittest.TestCase):
                         ctypes.sizeof(ctypes.c_long))
         self.assertEqual(datashape.c_longlong.c_itemsize,
                         ctypes.sizeof(ctypes.c_longlong))
-        self.assertEqual(datashape.c_intptr.c_itemsize,
+        self.assertEqual(datashape.intptr.c_itemsize,
                         ctypes.sizeof(ctypes.c_void_p))
-        self.assertEqual(datashape.c_uintptr.c_itemsize,
+        self.assertEqual(datashape.uintptr.c_itemsize,
                         ctypes.sizeof(ctypes.c_void_p))
 
     def test_ctypes_alignment(self):
