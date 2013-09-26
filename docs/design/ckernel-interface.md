@@ -33,21 +33,21 @@ format for kernels, similar to how '.o' or '.obj' files
 provide a format for compiled code before it gets linked
 together.
 
-Kernel Definition
------------------
+CKernel Definition
+------------------
 
-A blaze kernel is a chunk of memory which begins with
-two function pointers, a kernel function pointer and a
+A blaze ckernel is a chunk of memory which begins with
+two function pointers, a ckernel function pointer and a
 destructor. This is followed by an arbitrary amount of
-additional memory owned by the kernel.
+additional memory owned by the ckernel.
 
-The kernel function prototype is context-specific,
+The ckernel function prototype is context-specific,
 it must be known by the caller from separate information.
-It may be known because the kernel is the result of
-a request for a specific kind of assignment kernel, or
+It may be known because the ckernel is the result of
+a request for a specific kind of assignment ckernel, or
 for a binary predicate, for example.
 
-The memory of a blaze kernel must satisfy the following
+The memory of a blaze ckernel must satisfy the following
 restrictions:
 
  * Its alignment must be that of a pointer, i.e.
@@ -68,28 +68,28 @@ restrictions:
 As a C struct, this looks like
 
 ```cpp
-struct kernel_data_prefix;
-typedef void (*destructor_fn_t)(kernel_data_prefix *);
+struct ckernel_prefix;
+typedef void (*destructor_fn_t)(ckernel_prefix *);
 
-struct kernel_data_prefix {
+struct ckernel_prefix {
     void *function;
     destructor_fn_t destructor;
 };
 
-struct kernel_data {
-    kernel_data_prefix base;
+struct ckernel_data {
+    ckernel_prefix base;
     /* Additional kernel data... */
 };
 ```
 
-An example kernel function prototype is a single assignment kernel,
+An example ckernel function prototype is a single assignment ckernel,
 which assigns one value from a source memory location
 to a destination.
 
 ```cpp
 typedef void (*unary_single_operation_t)(
                 char *dst, const char *src,
-                kernel_data_prefix *extra);
+                ckernel_prefix *extra);
 ```
 
 Error Handling
@@ -101,72 +101,82 @@ How errors are handled in ckernels needs to be defined. In DyND,
 this is done with C++ exceptions, but this does not appear to be
 reasonable in a cross-platform/cross-language way.
 
-Dynamic Kernel Instance
------------------------
+CKernel Builder
+---------------
 
-Blaze kernels may be allocated on the stack or the heap,
-but for communicating kernels across library boundaries,
-a standard way to pass the kernel and memory allocation
-information is needed.
+Blaze ckernels may be allocated on the stack or the heap,
+and are usually contained within a ckernel_builder object.
+This object is defined by libdynd, which exposes C constructor,
+destructor, and operation functions for code using a ckernel.
+The ckernel_builder object itself may be on the stack or on
+the heap, as the code managing the object sees fit.
+
+Note that this object is not copyable or relocatable, it must
+be constructed and destructed from the same memory location.
 
 ```cpp
-struct dynamic_kernel_instance {
-    kernel_data_prefix *kernel;
-    size_t kernel_size;
-    void (*free_func)(void *);
+struct ckernel_builder {
+    // Pointer to the kernel function pointers + data
+    intptr_t *m_data;
+    intptr_t m_capacity;
+    // When the amount of data is small, this static data is used,
+    // otherwise dynamic memory is allocated when it gets too big
+    intptr_t m_static_data[16];
 };
 ```
 
-In this structure, 'kernel' is a pointer to the
-kernel object as described above, 'kernel_size'
-is the size of the data held in the kernel, and
-'free_func' is the function to call for deallocating
-the memory 'kernel' points to. By providing this function
-explicitly, different libraries can use different
-memory subsystems without any linking incompatibilities.
+The pointer `m_data` points to a block of memory, guaranteed to
+be aligned to `sizeof(void*)`, whose total size is `m_capacity`.
+When initialized, `m_data` points to the data in `m_static_data`,
+so small ckernels can be constructed with
 
-Example Usage
--------------
+CKernel Builder Functions From DyND
+-----------------------------------
 
-Here's a simple example of how third-party C code might call
-the Blaze API to get a kernel, call the kernel, and free
-the kernel data.
+DyND's `dynd._lowlevel` namespace provides some functions to
+construct and work with ckernel_builder objects. These functions
+are in the form of `ctypes` function pointers.
 
-```cpp
-/* Blaze API function that returns a unary single kernel */
-int blaze_get_some_kernel_function(...,
-                dynamic_kernel_instance *out_kernel);
+When using the object, get the contained ckernel by directly
+reading `m_data`, and its capacity by directly reading
+`m_capacity`.
 
-int apply_blaze_kernel(char *dst, const char *src, ...)
-{
-    dynamic_kernel_instance k;
-    unary_single_operation_t kfunc;
+`void _lowlevel.ckernel_builder_construct(void *ckb)`
 
-    /* Request a kernel from blaze */
-    if (blaze_get_some_kernel_function(..., &k) < 0) {
-        /* propagate error */
-        return -1;
-    }
+Given an appropriately sized (18 * sizeof(void *)) and
+aligned (sizeof(void *)) buffer, this constructs a ckernel_builder
+object in that memory.
 
-    /* Get the kernel function pointer and call it */
-    kfunc = (unary_single_operation_t)k.kernel->function;
-    kfunc(dst, src, k.kernel)
+`void _lowlevel.ckernel_builder_destruct(void *ckb)`
 
-    /* To free the kernel, we must destruct it AND free its memory */
-    k.kernel->destructor(k.kernel);
-    k.free_func(k.kernel);
+Given a memory pointer which was previously constructed with
+`ckernel_builder_construct`, this destroys it, freeing any
+memory it may own.
 
-    /* return success */
-    return 0;
-}
-```
+`void _lowlevel.ckernel_builder_reset(void *ckb)`
 
-Example Kernel Factories
-------------------------
+Given a `ckernel_builder` instance, this resets it to a state
+equivalent to being newly constructed.
 
-The proposed interface is almost exactly that used in DyND
-presently. The documentation for kernels there provide some
+`int _lowlevel.ckernel_builder_ensure_capacity_leaf(void *ckb, intptr_t requested_capacity)`
+
+Given a `ckernel_builder` instance, this ensures that the ckernel
+builder has at least the requested capacity. Returns 0 on success and
+-1 on failure. If it succeeds, it is guaranteed that the `m_capacity`
+field of the ckernel builder is at least `requested_capacity`.
+
+`int _lowlevel.ckernel_builder_ensure_capacity(void *ckb, intptr_t requested_capacity)`
+
+This is just like the matching `*_leaf` function, but allocates extra
+space of `sizeof(ckernel_prefix)`, intended for ckernel factories which
+produce ckernels with children.
+
+More Documentation
+------------------
+
+The proposed interface is also used in DyND.
+The documentation for kernels there provide some
 examples of how kernels can be constructed and how a kernel
 factory API might look:
 
-https://github.com/ContinuumIO/libdynd/blob/master/documents/kernels.md
+https://github.com/ContinuumIO/libdynd/blob/master/documents/ckernels.md
