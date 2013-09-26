@@ -58,14 +58,19 @@ enum kernel_funcproto_t {
  * the metadata must be provided as well.
  *
  * \param self_data_ptr  This is dckernel->data_ptr.
- * \param out_ckernel  This is where the ckernel is placed.
+ * \param out_ckb  A ckernel_builder into which the ckernel is placed
+ * \param ckb_offset  An offset within the out_ckb ckernel where to place it.
  * \param dynd_metadata  An array of dynd metadata pointers,
  *                       matching ckrenel->data_dynd_types.
  * \param kerntype  Either kernel_request_single or kernel_request_strided,
  *                  as required by the caller.
+ *
+ * \returns  The offset immediately after the created ckernel. This must
+ *           be returned so ckernels with multiple children can place them
+ *           one after another.
  */
-typedef void (*instantiate_fn_t)(void *self_data_ptr,
-                dynd::kernel_data_prefix *out_ckernel,
+typedef intptr_t (*instantiate_fn_t)(void *self_data_ptr,
+                dynd::ckernel_builder *out_ckb, intptr_t ckb_offset,
                 const char *const* dynd_metadata, uint32_t kerntype);
 
 struct deferred_ckernel {
@@ -75,8 +80,6 @@ struct deferred_ckernel {
     // 1: expr_single_operation_t/expr_strided_operation_t
     // 2: binary_single_predicate_t
     size_t ckernel_funcproto;
-    // The size of the ckernel which this object instantiates
-    size_t ckernel_size;
     // The number of types in the data_types array
     size_t data_types_size;
     // An array of dynd types for the kernel's data pointers.
@@ -132,10 +135,14 @@ void int32_triple_strided(char *dst, intptr_t dst_stride,
     }
 }
 
-static void instantiate_triple_int32(void *self_data_ptr,
-                dynd::kernel_data_prefix *out_ckernel,
+static intptr_t instantiate_triple_int32(void *self_data_ptr,
+                dynd::ckernel_builder *out_ckb, intptr_t ckb_offset,
                 const char *const* dynd_metadata, uint32_t kerntype)
 {
+    // Make sure the ckernel builder has enough space
+    intptr_t ckb_end = ckb_offset + sizeof(ckernel_prefix);
+    ckernel_builder_ensure_capacity_leaf(out_ckb, ckb_end);
+    ckernel_prefix *out_ckernel = (ckernel_prefix *)(out_ckb->data + ckb_offset);
     if (kerntype == kernel_request_single) {
         out_ckernel->function = (void *)&int32_triple_single;
     } else if (kerntype == kernel_request_strided) {
@@ -143,6 +150,8 @@ static void instantiate_triple_int32(void *self_data_ptr,
     } else {
         // raise an error...
     }
+
+    return ckb_end;
 }
 
 static void empty_free_func(void *self_data_ptr)
@@ -226,23 +235,26 @@ struct deferred_constant_int32_multiply_kernel_extra {
     intptr_t factor;
 };
 
-static void instantiate_deferred_constant_int32_multiply(void *self_data_ptr,
-                dynd::kernel_data_prefix *out_ckernel,
+static intptr_t instantiate_deferred_constant_int32_multiply(void *self_data_ptr,
+                dynd::ckernel_builder *out_ckb, intptr_t ckb_offset,
                 const char *const* dynd_metadata, uint32_t kerntype)
 {
     deferred_constant_int32_multiply_kernel_extra *self =
             (deferred_constant_int32_multiply_kernel_extra *)self_data_ptr;
-
+    intptr_t ckb_end = ckb_offset + sizeof(constant_int32_multiply_kernel_extra);
+    constant_int32_multiply_kernel_extra *out_ckernel =
+            (constant_int32_multiply_kernel_extra *)(out_ckb->data + ckb_offset);
     if (kerntype == kernel_request_single) {
-        out_ckernel->function = (void *)&constant_int32_multiply_kernel_extra::single;
+        out_ckernel->base.function = (void *)&constant_int32_multiply_kernel_extra::single;
     } else if (kerntype == kernel_request_strided) {
-        out_ckernel->function = (void *)&constant_int32_multiply_kernel_extra::strided;
+        out_ckernel->base.function = (void *)&constant_int32_multiply_kernel_extra::strided;
     } else {
         // raise an error...
     }
 
     // Copy the multiplication factor to the ckernel
-    ((constant_int32_multiply_kernel_extra *)out_ckernel)->factor = self->factor;
+    out_ckernel->factor = self->factor;
+    return ckb_end;
 }
 
 static const dynd::base_type *constant_int32_multiply_data_types = {
@@ -287,12 +299,22 @@ example which constructs a deferred ckernel, then instantiates it
 in both the `single` and `strided` variants.
 
 ```cpp
-void call_single(deferred_ckernel *ck)
+void call_single(ckernel_deferred *ckd)
 {
+    // This example is for a unary expr_function
+    assert(ckd->ckernel_funcproto == expr_operation_funcproto);
+    assert(ckd->data_types_size == 2);
+
+    // Create a ckernel_builder object
+    // (In C++ libdynd, just "ckernel_builder ckb;", a normal object).
+    ckernel_builder_struct ckb;
+    ckernel_builder_construct(&ckb);
+
     // Instantiate the ckernel
-    dynd::kernel_data_prefix *ck =
-            (dynd::kernel_data_prefix *)malloc(ck->ckernel_size);
-    ck->instantiate_func(ck->data_ptr, ck, NULL, kernel_request_single);
+    const char *meta[2] = {0, 0}; // Pointers to dynd metadata for the operands
+    ckd->instantiate_func(ckd->data_ptr, &ckb, 0, meta, kernel_request_single);
+
+    ckernel_prefix *ck = (ckernel_prefix *)ckb->m_data;
 
     // Get the kernel function
     expr_single_operation_t kfunc;
@@ -307,16 +329,25 @@ void call_single(deferred_ckernel *ck)
     printf("called kernel: %d -> %d\n", (int)src_val, (int)dst_val);
 
     // Destroy the ckernel instance
-    ck->destructor(ck);
-    free(ck);
+    ckernel_builder_destruct(&ckb);
 }
 
 void call_strided(deferred_ckernel *ck)
 {
+    // This example is for a unary expr_function
+    assert(ckd->ckernel_funcproto == expr_operation_funcproto);
+    assert(ckd->data_types_size == 2);
+
+    // Create a ckernel_builder object
+    // (In C++ libdynd, just "ckernel_builder ckb;", a normal object).
+    ckernel_builder_struct ckb;
+    ckernel_builder_construct(&ckb);
+
     // Instantiate the ckernel
-    dynd::kernel_data_prefix *ck =
-            (dynd::kernel_data_prefix *)malloc(ck->ckernel_size);
-    ck->instantiate_func(ck->data_ptr, ck, NULL, kernel_request_strided);
+    const char *meta[2] = {0, 0}; // Pointers to dynd metadata for the operands
+    ckd->instantiate_func(ckd->data_ptr, &ckb, 0, meta, kernel_request_strided);
+
+    ckernel_prefix *ck = (ckernel_prefix *)ckb->m_data;
 
     // Get the kernel function
     expr_strided_operation_t kfunc;
@@ -334,8 +365,7 @@ void call_strided(deferred_ckernel *ck)
         printf("[%d]: %d -> %d\n", i, (int)src_val[i], (int)dst_val[i]);
 
     // Destroy the ckernel instance
-    ck->destructor(ck);
-    free(ck);
+    ckernel_builder_destruct(&ckb);
 }
 
 void example_deferred_ckernel_usage()

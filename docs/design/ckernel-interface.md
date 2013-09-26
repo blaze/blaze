@@ -117,7 +117,7 @@ be constructed and destructed from the same memory location.
 ```cpp
 struct ckernel_builder {
     // Pointer to the kernel function pointers + data
-    intptr_t *m_data;
+    char *m_data;
     intptr_t m_capacity;
     // When the amount of data is small, this static data is used,
     // otherwise dynamic memory is allocated when it gets too big

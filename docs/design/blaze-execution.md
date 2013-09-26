@@ -18,20 +18,20 @@ standard libraries. These low level interfaces are used by the
 higher level systems as JIT compilation targets, and as a way to
 import implementation kernels from outside of blaze.
 
-The CKernel Interface
----------------------
+The CKernel Builder
+-------------------
 
- * [CKernel Interface Documentation](ckernel-interface.md)
+ * [CKernel Documentation](ckernel-interface.md)
 
 The lowest level execution interface in blaze is the ckernel.
 Any time an operation gets executed in blaze, it is first reduced
 down into a ckernel, either via JIT compilation or assembling together
 other ckernels, and then executed as a ckernel.
 
-When passing ownership of a ckernel from one software component
-to another, it gets wrapped as a dynamic kernel instance. This
-is defined as a small C struct with some basic information about
-the ckernel, as well as a method to free its resources.
+When constructing a ckernel from JIT compilation or deferred ckernels,
+the `ckernel_builder` object is used. This is a small C struct with a
+static buffer which can hold small ckernels, and API functions for
+dynamically growing the ckernel buffer for larger ones.
 
 At the ckernel level, all information about types and possible variations
 about memory layout has been baked into the code and data that make
@@ -48,7 +48,7 @@ The Deferred CKernel Interface
 
 One fundamental aspect of both blaze and dynd is deferred execution.
 For supporting deferred and cached execution at the low level, just one
-small step above the ckernel interface, is the deferred dynamic kernel.
+small step above the ckernel interface, is the deferred ckernel.
 This object provides a simple interface to building a ckernel whose
 structure has already been determined up to the dynd type level, and
 just needs dynd metadata and a kernel type (i.e. single or strided) to
