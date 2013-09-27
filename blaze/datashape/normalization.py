@@ -35,8 +35,15 @@ def normalize(constraints, broadcasting=None):
     return result, broadcasting_env
 
 def normalize_simple(a, b):
-    if isinstance(a, (CType, DataShape)) and isinstance(a, (CType, DataShape)):
-        if (type(a), type(b)) == (DataShape, DataShape):
+    # Normalize (CType, DataShape) pairs
+    if (type(a), type(b)) == (CType, DataShape):
+        a = DataShape(a)
+    if (type(a), type(b)) == (DataShape, CType):
+        b = DataShape(b)
+
+    # Normalize ellipses and broadcasting
+    if (type(a), type(b)) == (DataShape, DataShape):
+        if (len(a.parameters), len(b.parameters)) != (1, 1):
             a, b = normalize_ellipses(a, b)
         a, b = normalize_broadcasting(a, b)
     else:
