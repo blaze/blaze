@@ -474,10 +474,13 @@ class IDataDescriptor:
         """Concrete data descriptors must provide their array data
            as a dynd array, accessible via this method.
         """
-        if self.concrete:
+        if self.is_concrete:
             raise NotImplementedError(('Data descriptor of type %s' +
                         ' claims to be concrete, but did not'
                         ' override dynd_arr()') % type(self))
+        else:
+            raise TypeError(('Data descriptor of type %s is not ' +
+                        'concrete') % type(self))
 
     @abc.abstractmethod
     def element_reader(self, nindex):

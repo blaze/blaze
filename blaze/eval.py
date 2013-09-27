@@ -29,7 +29,7 @@ default_strategy = 'py'
 @contextmanager
 def strategy(strategy):
     """
-    Set the evalutation strategy for expressions evaluating in this thread.
+    Set the evaluation strategy for expressions evaluating in this thread.
 
     Parameters
     ----------
