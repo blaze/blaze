@@ -75,7 +75,7 @@ def _dshape(o, multi=False):
         return list(parser.parse_mod(o))
     if isinstance(o, str):
         return parser.parse(o)
-    elif isinstance(o, DataShape):
+    elif isinstance(o, Mono):
         return o
     elif isinstance(o, (CType, String, Record, JSON)):
         return DataShape(o)
