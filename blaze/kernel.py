@@ -183,9 +183,9 @@ class Kernel(object):
     dispatcher: Dispatcher
         Used to find the right overload
 
-    impls: { str : object }
+    impls: { (py_func, signature) : object }
         Overloaded implementations, mapping from implementation 'kind'
-        (e.g. python, ctypes, llvm, etc) to an implementation
+        (e.g. python, numba, ckernel, llvm, etc) to an implementation
 
     metadata: { str : object }
         Additional metadata that may be interpreted by a Blaze AIR interpreter
@@ -196,12 +196,29 @@ class Kernel(object):
         self.impls = {}
         self.metadata = {}
 
-    def implement(self, signature, impl, func=None):
-        return optional_decorator(func, self._implement, signature, impl)
+    def implement(self, py_func, signature, impl_kind, kernel):
+        """
+        Add an implementation kernel for the overloaded function `py_func`.
 
-    def _implement(self, func, signature, impl):
-        self.impls[impl].append((signature, func))
-        return func
+        Arguments
+        ---------
+        py_func: FunctionType
+            The original overloaded Python function.
+
+            Note: Decorators like @overload etc do not return the original
+                  Python function!
+
+        signature: Type
+            The function signature of the overload in question
+
+        impl_kind: str
+            Type of implementation, e.g. 'python', 'numba', 'ckernel', etc
+
+        kernel: some implementation object
+            Some object depending on impl_kind, which implements the
+            overload.
+        """
+        self.impls[(py_func, signature)].append((impl_kind, kernel))
 
     def add_metadata(self, md):
         # Verify compatibility
