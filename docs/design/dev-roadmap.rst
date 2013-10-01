@@ -3,46 +3,97 @@ Development Roadmap
 ===================
 
 This document sets out a roadmap for the development of Blaze.
-It is split into multiple roadmaps for different functional
-components. This document is presently a draft
 
-Data Descriptors
-================
+Version 0.3
+===========
 
-The goal for data data descriptors is to solidify its design,
-in particular how it uses dynd for in-memory array data.
+- Modify the blaze data descriptor to use dynd as its memory
+  representation instead of the current C-order/C-aligned subset. [done]
 
-In dynd, there is an array type/metadata/data abstraction which
-is the basis of the array memory layout. This will serve a role
-similar to the Python buffer protocol, with an ABI lockdown at
-the point where the type system extensibility, completeness,
-and stability are at the desired level.
+- Change all KernelTree JIT compilation to target ckernels, remove
+  other C function prototype targets. Note that this does not impose
+  constraints at the LLVM interface level, it can still use simple
+  by-value functions for primitive scalar functions. [not done, at
+  least the other C function prototypes are still present, the
+  execution system used for chunked execution still depends on it]
 
-In blaze, the data descriptor builds higher level abstractions,
-for deferred evaluation, describing data from persistent formats
-like BLZ and others, and describing data that is distributed
-across multiple servers.
+- Design document for the deferred representation of blaze
+  operations. This is shared between blaze and dynd. One major goal is
+  to convert all implicit broadcasting of dimensions into explicit
+  operations, so all mappings of dimensions are specified in the
+  representation. [explicit broadcasting step missing yet]
 
-This is part of the foundation for execution, as executing
-a blaze expression requires creating 
+- Lifting of dynd functions to blaze funcions. [TO DO?]
 
-Release 0.3
------------
+- Lifting of numpy ufuncs to dynd/blaze. [TO DO?]
 
-* Modify the blaze data descriptor to use dynd as its memory
-  representation instead of the current C-order/C-aligned
-  subset.
+- Modify BLZ to internally use DyND.
 
-Release 0.4
------------
+After Version 0.3
+=================
 
-* Design how more advanced indexing and filtering interact with
+- Change string representation to be a char type (32-bit code point),
+  with a string having identical data layout to var array of char.
+
+- Teach KernelTree JIT to understand dynd dimension types, so it can
+  JIT broadcasting across variable-sized dimensions. [status of this?]
+
+- Bug in executors when using arrays with many dimensions. It seems
+  related to code generation for lifted kernels. [not solved, but we
+  said will be left as-is for this release].
+
+- Mechanism for associating methods and properties with a blaze scalar
+  type, including promotion from scalar to array types. [TO DO?]
+
+- Add BLZ support for more DyND types. The objective being having a
+  feasible interface for variable length strings/ragged arrays without
+  relying in python objects.
+
+- Blazefy virtual tables (well, it was mentioned as "probably at 0.3
+  or 0.4). Virtual tables are a concept implemented for XDATA, made at
+  BLZ level. Blazefying means moving it from the BLZ level to a Data
+  Descriptor level (concatenated data descriptor).
+
+- Design how more advanced indexing and filtering interact with
   dynd and the data descriptor. How can blaze cleanly represent
   slicing, boolean indexing, and indirect indexing
   (from numpy, "fancy indexing").
 
+- Develop some ETL datashape prototypes, for example flexible string
+  to date parsing.
+
+- Make dshape objects be python types, which create
+  blaze arrays. (e.g. blaze.int32([1,2,3]) would create
+  a 3-element array of 32-bit integers).
+
+- Define the bytes streaming dimension protocol for bytes/string. [TO
+  DO?]
+
+- Define the var streaming dimension protocol for elements (like
+  var_dim). [TO DO?]
+
+- Implement an adapter from python file handle-like object (with
+  read/readfrom/close methods) to bytes and string objects- [TO DO?]
+
+- Implement an adapter from a python iterator object to a blaze
+  array. [TO DO?]
+
+- Consider how the bytes/string streaming dimension protocol should
+  support an optional seek. [TO DO?]
+
+- Consider how the var streaming dimension protocol should optionally
+  support restarting the sequence. [TO DO?]
+
+- Catalog of arrays in blaze server context.
+
+- RPC mechanism. "Moving code to data".
+
+
+Notes on General Development Directions
+=======================================
+
 Execution System
-================
+----------------
 
 The goal for execution is to lay down a solid design and implementation
 for elementwise kernel execution. This includes simple elementwise
@@ -74,23 +125,6 @@ read chunks of a large BLZ input, writing computed results to a
 new BLZ output. A distributed algorithm may orchestrate computations
 on a number of blaze servers by scheduling tasks to them.
 
-Release 0.3
------------
-
-* Change all KernelTree JIT compilation to target ckernels, remove
-  other C function prototype targets. Note that this does not impose
-  constraints at the LLVM interface level, it can still use simple
-  by-value functions for primitive scalar functions.
-* Teach KernelTree JIT to understand dynd dimension types, so it
-  can JIT broadcasting across variable-sized dimensions.
-* Design document for the deferred representation of blaze operations.
-  This is shared between blaze and dynd. One major goal is to convert
-  all implicit broadcasting of dimensions into explicit operations,
-  so all mappings of dimensions are specified in the representation.
-
-Release 0.4
------------
-
 Streaming Dimensions
 ====================
 
@@ -110,28 +144,6 @@ An eventual stretch goal would be to have this result flow
 through some generator functions and expressions that blaze
 could convert into native code using numba.
 
-Release 0.3
------------
-
-* Define the bytes streaming dimension protocol for bytes/string.
-* Define the var streaming dimension protocol for elements (like var_dim).
-* Implement an adapter from a python file handle-like object
-  (with read/readfrom/close methods) to bytes and string objects.
-* Implement an adapter from a python iterator object to
-  a blaze array.
-* Consider how the bytes/string streaming dimension protocol
-  should support an optional seek.
-* Consider how the var streaming dimension protocol should
-  optionally support restarting the sequence.  
-
-Release 0.4
------------
-
-* Implement an adapter from blaze arrays to a python file handle-like
-  object (with write/close methods).
-* Implement an adapter from blaze arrays to the python iterator
-  protocol, based on the var streaming dimension protocol.
-
 Kernel Libraries
 ================
 
@@ -149,18 +161,6 @@ including promoting methods and properties from scalars to array
 dimensions. These dynd functions need to be liftable to
 blaze functions.
 
-Release 0.3
------------
-
-* Mechanism for associating methods and properties with a
-  blaze scalar type, including promotion from scalar to
-  array types.
-* Lifting of dynd functions to blaze functions.
-* Lifting of numpy ufuncs to dynd/blaze.
-
-Release 0.4
------------
-
 Datashape System
 ================
 
@@ -175,18 +175,25 @@ the python type system. This is one of the difficulties identified
 in numpy, where there is a dtype system independent of python
 types along with a scalar type system.
 
-Release 0.3
------------
+Data Descriptors
+================
 
-* Develop some ETL datashape prototypes, for example flexible string
-  to date parsing.
+The goal for data data descriptors is to solidify its design,
+in particular how it uses dynd for in-memory array data.
 
-Release 0.4
------------
+In dynd, there is an array type/metadata/data abstraction which
+is the basis of the array memory layout. This will serve a role
+similar to the Python buffer protocol, with an ABI lockdown at
+the point where the type system extensibility, completeness,
+and stability are at the desired level.
 
-* Make dshape objects be python types, which create
-  blaze arrays. (e.g. blaze.int32([1,2,3]) would create
-  a 3-element array of 32-bit integers).
+In blaze, the data descriptor builds higher level abstractions,
+for deferred evaluation, describing data from persistent formats
+like BLZ and others, and describing data that is distributed
+across multiple servers.
+
+This is part of the foundation for execution, as executing
+a blaze expression requires creating 
 
 Missing Data
 ============
