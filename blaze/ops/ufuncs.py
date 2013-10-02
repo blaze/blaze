@@ -10,7 +10,7 @@ try:
 except ImportError:
     import builtins
 
-from blaze.kernel import overload, elementwise
+from blaze.function import overload, elementwise
 
 @elementwise('a -> a -> a')
 def add(a, b):

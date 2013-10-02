@@ -7,7 +7,7 @@ Reduction functions.
 from __future__ import print_function, division, absolute_import
 
 from blaze.ops import logical_and, logical_or, abs
-from blaze.kernel import kernel, elementwise
+from blaze.function import kernel, elementwise
 
 #------------------------------------------------------------------------
 # Reduce Impl

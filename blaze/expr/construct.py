@@ -7,7 +7,7 @@ from collections import Iterable
 
 import blaze
 from blaze.datashape import coretypes as T
-from blaze import Kernel
+from blaze import BlazeFunc
 
 from .graph import ArrayOp, KernelOp
 from .context import ExprContext, unify
@@ -17,11 +17,11 @@ from .conf import conf
 # Graph construction (entry point)
 #------------------------------------------------------------------------
 
-def construct(kernel, ctx, overload, args):
+def construct(bfunc, ctx, overload, args):
     """
     Parameters
     ----------
-    kernel : Blaze Function
+    bfunc : Blaze Function
         (Overloaded) blaze function representing the operation
 
     ctx: ExprContext
@@ -31,9 +31,9 @@ def construct(kernel, ctx, overload, args):
         Instance representing the overloaded function
 
     args: list
-        kernel parameters
+        bfunc parameters
     """
-    assert isinstance(kernel, Kernel), kernel
+    assert isinstance(bfunc, BlazeFunc), bfunc
 
     params = [] # [(graph_term, ExprContext)]
 
@@ -64,7 +64,7 @@ def construct(kernel, ctx, overload, args):
 
     # -------------------------------------------------
 
-    return KernelOp(restype, *params, kernel=kernel, overload=overload)
+    return KernelOp(restype, *params, kernel=bfunc, overload=overload)
 
 def from_value(value):
     return ArrayOp(T.typeof(value), value)

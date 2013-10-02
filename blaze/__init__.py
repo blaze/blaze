@@ -11,7 +11,7 @@ logger.setLevel(logging.WARNING)
 from . import datashape, bkernel, ckernel
 from .datashape import dshape, dshapes, parser
 from .array import Array
-from .kernel import kernel, elementwise, Kernel
+from .function import kernel, elementwise, BlazeFunc
 from .constructors import array, empty, ones, zeros
 from .eval import strategy, current_strategy, set_strategy, eval, append
 from .storage import open, drop, Storage

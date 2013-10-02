@@ -100,7 +100,7 @@ def kernel(signature, **metadata):
     """
     def decorator(f):
         func = lookup_previous(f)
-        if isinstance(func, Kernel):
+        if isinstance(func, BlazeFunc):
             func = func.dispatcher
         elif isinstance(func, types.FunctionType):
             raise TypeError(
@@ -111,9 +111,9 @@ def kernel(signature, **metadata):
         dispatcher = overload(signature, func=func)(f)
 
         if isinstance(f, types.FunctionType):
-            kernel = Kernel(dispatcher)
+            kernel = BlazeFunc(dispatcher)
         else:
-            assert isinstance(f, Kernel), f
+            assert isinstance(f, BlazeFunc), f
             kernel = f
 
         kernel.add_metadata(metadata)
@@ -174,9 +174,13 @@ def apply_kernel(kernel, *args, **kwargs):
 # Implementations
 #------------------------------------------------------------------------
 
-class Kernel(object):
+class BlazeFunc(object):
     """
-    Blaze kernel.
+    Blaze function. This is like the numpy ufunc object, in that it
+    holds all the overloaded implementations of a function, and provides
+    dispatch when called as a function. Objects of this type can be
+    created directly, or using one of the decorators like @kernel
+    or @elementwise.
 
     Attributes
     ----------
@@ -236,4 +240,4 @@ class Kernel(object):
             arg = "<empty>"
         else:
             arg = ".".join([arg.__module__, arg.__name__])
-        return "Kernel(%s)" % (arg,)
+        return "BlazeFunc(%s)" % (arg,)

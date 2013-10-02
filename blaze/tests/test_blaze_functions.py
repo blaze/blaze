@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from blaze.kernel import kernel
+from blaze.function import kernel
 from blaze import dshape, array
 
 # f
