@@ -18,15 +18,11 @@ from .dynd_data_descriptor import DyNDDataDescriptor
 # the values here.  Ideally, BLZ should return pure buffers instead.
 
 def blz_descriptor_iter(blzarr):
-    if blzarr.ndim > 1:
-        for el in range(len(blzarr)):
-            yield DyNDDataDescriptor(nd.array(el))
-    else:
-        for i in range(len(blzarr)):
-            # BLZ doesn't have a convenient way to avoid collapsing
-            # to a scalar, this is a way to avoid that
-            el = np.array(blzarr[i], dtype=blzarr.dtype)
-            yield DyNDDataDescriptor(nd.array(el))
+    for i in range(len(blzarr)):
+        # BLZ doesn't have a convenient way to avoid collapsing
+        # to a scalar, this is a way to avoid that
+        el = np.array(blzarr[i], dtype=blzarr.dtype)
+        yield DyNDDataDescriptor(nd.array(el))
 
 class BLZElementReader(IElementReader):
     def __init__(self, blzarr, nindex, ds):

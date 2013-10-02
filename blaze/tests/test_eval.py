@@ -175,8 +175,32 @@ class TestStrategy(unittest.TestCase):
             self.assertEqual(blaze.current_strategy(), 'blah')
         self.assertEqual(blaze.current_strategy(), current)
 
+def isolated():
+    npyA = np.arange(0.0, 100.0).reshape(20, 5)
+    npyB = np.arange(0.0, 100.0).reshape(20, 5)
+
+    memA = blaze.array(npyA)
+    memB = blaze.array(npyB)
+
+    _mk_dir()
+    dskA = blaze.array(npyA, storage=_store('dskA'))
+    dskB = blaze.array(npyB, storage=_store('dskB'))
+
+    expr = memA + memA
+    #expr = memA + dskA
+    #expr = dskA + dskA
+
+    print(memA.dshape, expr.dshape)
+    p = _store('dskRd')
+
+    result = blaze.eval(expr, storage=p)
+    #print(result)
+    result2 = blaze.eval(result == npyA + npyA)
+
+    assert np.all(result2)
+
 if __name__ == '__main__':
-    TestEval2D.setUpClass()
-    TestEval2D('test_dsk_mem_to_memfunction').debug()
-    #unittest.main(verbosity=2)
+    #TestEval2D.setUpClass()
+    #TestEval2D('test_dsk_mem_to_memfunction').debug()
+    unittest.main(verbosity=2)
 
