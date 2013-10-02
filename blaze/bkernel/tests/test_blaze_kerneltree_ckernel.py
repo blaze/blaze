@@ -34,7 +34,7 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
 
         # Allocate the result, and run the kernel across the arguments
         result = blaze.zeros(df.dshape)
-        args = [arg.arr._data for arg in df._data.args]
+        args = [arr._data for arr in df._data.args]
         ck = ubck.bind(result._data, args)
         execute_expr_single(result._data, args,
                         df._data.kerneltree.kernel.dshapes[-1],
