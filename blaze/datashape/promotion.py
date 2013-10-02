@@ -64,7 +64,7 @@ def promote(a, b):
     # Units
 
     elif isinstance(a, CType) and isinstance(b, CType):
-        # Promote CTypes -- this should go through coerce()
+        # Promote CTypes -- this should use coercion_cost()
         return promote_scalars(a, b)
 
     # -------------------------------------------------

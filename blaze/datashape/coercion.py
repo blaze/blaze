@@ -47,13 +47,13 @@ class CoercionTable(object):
 
 _table = CoercionTable()
 add_coercion = _table.add_coercion
-coercion_cost = _table.coercion_cost
+coercion_cost_table = _table.coercion_cost
 
 #------------------------------------------------------------------------
 # Coercion function
 #------------------------------------------------------------------------
 
-def coerce(a, b, seen=None):
+def coercion_cost(a, b, seen=None):
     """
     Determine a coercion cost from type `a` to type `b`.
 
@@ -69,7 +69,7 @@ def coerce(a, b, seen=None):
         return 0
     elif isinstance(a, CType) and isinstance(b, CType):
         try:
-            return coercion_cost(a, b)
+            return coercion_cost_table(a, b)
         except KeyError:
             raise error.CoercionError(a, b)
     elif isinstance(b, TypeVar):
@@ -90,7 +90,7 @@ def coerce(a, b, seen=None):
         return coerce_datashape(a, b, seen)
     else:
         verify(a, b)
-        return sum([coerce(x, y, seen) for x, y in zip(a.parameters, b.parameters)])
+        return sum([coercion_cost(x, y, seen) for x, y in zip(a.parameters, b.parameters)])
 
 def coerce_datashape(a, b, seen):
     # Penalize broadcasting
@@ -107,7 +107,7 @@ def coerce_datashape(a, b, seen):
     [(a, b)], _ = normalize([(a, b)], [True])
     verify(a, b)
     for x, y in zip(a.parameters, b.parameters):
-        penalty += coerce(x, y, seen)
+        penalty += coercion_cost(x, y, seen)
 
     return penalty
 

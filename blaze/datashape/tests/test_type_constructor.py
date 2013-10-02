@@ -5,7 +5,7 @@ import unittest
 
 from blaze import error
 from blaze.tests import common
-from blaze.datashape import unify_simple, promote, coerce, dshape, coretypes as T
+from blaze.datashape import unify_simple, promote, coercion_cost, dshape, coretypes as T
 
 #------------------------------------------------------------------------
 # Test data
@@ -45,9 +45,9 @@ class TestTypeConstructors(common.BTestCase):
         self.assertEqual(promote(rt1, rt2), rt1)
 
     def test_coercion(self):
-        self.assertEqual(coerce(t1, t2), 0)
-        self.assertGreater(coerce(t3, t2), 0)
-        self.assertEqual(coerce(rt1, rt2), 0)
+        self.assertEqual(coercion_cost(t1, t2), 0)
+        self.assertGreater(coercion_cost(t3, t2), 0)
+        self.assertEqual(coercion_cost(rt1, rt2), 0)
 
     def test_parsing(self):
         t = dshape('Int[X]')

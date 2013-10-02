@@ -117,7 +117,7 @@ def best_match(func, argtypes, constraints=None):
     -------
     Overloaded function as an `Overload` instance.
     """
-    from blaze.datashape import coerce
+    from blaze.datashape import coercion_cost
     overloads = func.overloads
 
     # -------------------------------------------------
@@ -132,7 +132,7 @@ def best_match(func, argtypes, constraints=None):
     for match in candidates:
         params = match.resolved_sig.parameters[:-1]
         try:
-            weight = sum([coerce(a, p) for a, p in zip(argtypes, params)])
+            weight = sum([coercion_cost(a, p) for a, p in zip(argtypes, params)])
         except error.CoercionError:
             pass
         else:
