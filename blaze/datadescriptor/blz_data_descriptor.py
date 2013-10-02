@@ -19,7 +19,7 @@ from .dynd_data_descriptor import DyNDDataDescriptor
 
 def blz_descriptor_iter(blzarr):
     if blzarr.ndim > 1:
-        for el in blzarr:
+        for el in range(len(blzarr)):
             yield DyNDDataDescriptor(nd.array(el))
     else:
         for i in range(len(blzarr)):

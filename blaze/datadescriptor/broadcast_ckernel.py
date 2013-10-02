@@ -120,7 +120,8 @@ def execute_expr_single(dst, src_list, dst_ds, src_ds_list, ck):
         ExprSingleOperation function prototype
     """
     if len(src_list) != len(src_ds_list):
-        raise ValueError('The length of src_list and src_ds_list must match')
+        raise ValueError('The length of src_list and src_ds_list must match,'
+                         ' got (%d, %d)' % (len(src_list), len(src_ds_list)))
     src_ndim_list = [len(src.dshape) - len(src_ds)
                     for src, src_ds in izip(src_list, src_ds_list)]
     dst_ndim = len(dst.dshape) - len(dst_ds)
