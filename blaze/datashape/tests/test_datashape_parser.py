@@ -194,7 +194,7 @@ class TestDatashapeParser(common.BTestCase):
         """)
 
 
-class TestCategorical(unittest.BTestCase):
+class TestCategorical(common.BTestCase):
 
     def test_categorical_single(self):
         res = blaze.dshape('Categorical(Foo)')
@@ -218,7 +218,7 @@ class TestCategorical(unittest.BTestCase):
 
         assert isinstance(res[0], Enum)
 
-class TestOption(unittest.BTestCase):
+class TestOption(common.BTestCase):
 
     def test_categorical_single(self):
         res = blaze.dshape('Option(int32)')
@@ -230,7 +230,7 @@ class TestOption(unittest.BTestCase):
 
         assert isinstance(res[2], Option)
 
-class TestFunction(unittest.BTestCase):
+class TestFunction(common.BTestCase):
 
     def test_function_signature(self):
         res = parse("A, int32 -> B, float64 -> T, T, X")
