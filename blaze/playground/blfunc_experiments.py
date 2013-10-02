@@ -2,7 +2,7 @@ from __future__ import print_function
 
 # inspired from test_blfuncs.py
 
-from blaze.blfuncs import BlazeFunc
+from blaze.blfuncs import BlazeFuncDeprecated
 from blaze.datashape import double, complex128 as c128
 
 import blaze
@@ -25,9 +25,9 @@ def _add(a,b):
 def _mul(a,b):
     return a*b
 
-add = BlazeFunc('add', [ ('f8(f8,f8)', _add),
+add = BlazeFuncDeprecated('add', [ ('f8(f8,f8)', _add),
                          ('c16(c16,c16)', _add)])
-mul = BlazeFunc('mul', {(double,)*3: _mul,
+mul = BlazeFuncDeprecated('mul', {(double,)*3: _mul,
                           (c128,)*3: _mul })
 
 
@@ -39,7 +39,7 @@ mul = BlazeFunc('mul', {(double,)*3: _mul,
 #}
 #"""
 #
-#d_add = BlazeFunc('d_add', [('cpp', dummy_add)])
+#d_add = BlazeFuncDeprecated('d_add', [('cpp', dummy_add)])
 
 
 a = blaze.array([[1,2,3]]*10000,dshape=double)
@@ -160,7 +160,7 @@ def execute_datadescriptor_ooc(dd, res_name=None):
 
 class BlazeExecutor(object):
     """
-    A simple executor class that is able to convert a BlazeFunc
+    A simple executor class that is able to convert a BlazeFuncDeprecated
     DataDescriptor into a NumPy DataDescriptor
     """
     def __init__(self, dd, iter_dims=1):

@@ -9,7 +9,7 @@ import blaze
 from .array import Array
 from .constructors import empty
 from .datadescriptor import (IDataDescriptor,
-                             BlazeFuncDescriptor,
+                             BlazeFuncDeprecatedDescriptor,
                              BLZDataDescriptor,
                              DeferredDescriptor,
                              execute_expr_single)

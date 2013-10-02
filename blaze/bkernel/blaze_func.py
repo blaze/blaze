@@ -5,7 +5,7 @@ import re
 from blaze.datashape.traits import TypeSet, matches_typeset
 
 from ..datashape import (DataShape, from_numba_str, to_numba, broadcastable)
-from ..datadescriptor.blaze_func_descriptor import BlazeFuncDescriptor
+from ..datadescriptor.blaze_func_descriptor import BlazeFuncDeprecatedDescriptor
 from ..py2help import _strtypes, PY2
 from .. import llvm_array as lla
 from .blaze_kernels import BlazeElementKernel, frompyfunc
@@ -151,12 +151,16 @@ def process_typetable(typetable):
 #        element-wise expression graph where elements can be any contiguous
 #        primitive type (right-most part of the data-shape)
 #   * Kernels have a type signature which we break up into the rank-signature
-#       and the primitive type signature because a BlazeFunc will have one
+#       and the primitive type signature because a BlazeFuncDeprecated will have one
 #       rank-signature but possibly multiple primitive type signatures.
-#   * Example BlazeFuncs are sin, svd, eig, fft, sum, prod, inner1d, add, mul
+#   * Example BlazeFuncDeprecateds are sin, svd, eig, fft, sum, prod, inner1d, add, mul
 #       etc --- kernels all work on in-memory "elements"
 
-class BlazeFunc(object):
+class BlazeFuncDeprecated(object):
+    # DEPRECATION NOTE:
+    #   This particular blaze func class is being deprecated in favour of
+    #   a new implementation, using the pykit system. Functionality will
+    #   be moved/copied from here as needed until this class can be removed.
     def __init__(self, name, typetable=None, template=None, inouts=[]):
         """
         Construct a Blaze Function from a rank-signature and keyword arguments.
@@ -304,13 +308,13 @@ class BlazeFunc(object):
         else:
             outdshape = DataShape(*outshape+(out_type,))
 
-        # Create a new BlazeFuncDescriptor with this
+        # Create a new BlazeFuncDeprecatedDescriptor with this
         # kerneltree and a new set of args depending on
         #  unique new arguments in the expression.
         children = []
         for i, arg in enumerate(args):
             data = arg._data
-            if isinstance(data, BlazeFuncDescriptor):
+            if isinstance(data, BlazeFuncDeprecatedDescriptor):
                 tree = data.kerneltree
                 treerank = tree.kernel.ranks[-1]
                 argrank = self.ranks[i]
@@ -327,7 +331,7 @@ class BlazeFunc(object):
                 children.append(tree_arg)
 
         kerneltree = KernelTree(kernel, children)
-        data = BlazeFuncDescriptor(kerneltree, outdshape)
+        data = BlazeFuncDeprecatedDescriptor(kerneltree, outdshape)
 
         # Construct an Array object from new data descriptor
         # Standard propagation of user-defined meta-data.

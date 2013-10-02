@@ -3,7 +3,7 @@ from __future__ import absolute_import
 '''This module contains a sample, rather naive, executor of blaze
 functions over blaze arrays.
 
-The blaze function is described by a BlazeFuncDescriptor. The result
+The blaze function is described by a BlazeFuncDeprecatedDescriptor. The result
 will be placed in a concrete target data_descriptor.
 '''
 
@@ -39,7 +39,7 @@ def _chunk_split(dims, chunk_size):
 
 class _Executor(object):
     """
-    A simple executor class that is able to convert a BlazeFunc
+    A simple executor class that is able to convert a BlazeFuncDeprecated
     DataDescriptor into a raw memory DataDescriptor
     """
 

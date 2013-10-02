@@ -7,4 +7,4 @@ compilation with LLVM.
 
 from .blaze_kernels import BlazeElementKernel
 from .kernel_tree import KernelTree
-from .blaze_func import BlazeFunc
+from .blaze_func import BlazeFuncDeprecated

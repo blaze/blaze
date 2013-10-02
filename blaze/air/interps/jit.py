@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 from pykit.ir import interp
 
 import blaze
-from blaze.bkernel import BlazeFunc
+from blaze.bkernel import BlazeFuncDeprecated
 from blaze.datashape.util import to_numba
 
 #------------------------------------------------------------------------
@@ -65,7 +65,7 @@ handlers = {
 #------------------------------------------------------------------------
 
 def make_blazefunc(f):
-    return BlazeFunc(f.__name__, template=f)
+    return BlazeFuncDeprecated(f.__name__, template=f)
 
 def converter(blaze_type):
     """

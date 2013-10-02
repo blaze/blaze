@@ -3,7 +3,7 @@ import sys
 import ctypes
 
 import blaze
-from blaze.bkernel import BlazeFunc
+from blaze.bkernel import BlazeFuncDeprecated
 from blaze.datashape import double, complex128 as c128
 from blaze.datadescriptor import (execute_expr_single, dd_as_py)
 from blaze.py2help import izip
@@ -21,9 +21,9 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
 
         def _mul(a,b):
             return a * b
-        add = BlazeFunc('add',[('f8(f8,f8)', _add),
+        add = BlazeFuncDeprecated('add',[('f8(f8,f8)', _add),
                                ('c16(c16,c16)', _add)])
-        mul = BlazeFunc('mul', {(double,)*3: _mul,
+        mul = BlazeFuncDeprecated('mul', {(double,)*3: _mul,
                                 (c128,)*3: _mul})
         # Array data and expression
         af = blaze.array([[1,2,3], [4,5,6]],dshape=double)
@@ -61,7 +61,7 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
         def _testfunc(a,b):
             return a * a + b
 
-        testfunc = BlazeFunc('testfunc',[('f8(f8,f8)', _testfunc)])
+        testfunc = BlazeFuncDeprecated('testfunc',[('f8(f8,f8)', _testfunc)])
         # Use some dummy array data to create a kernel tree
         # and get both single and strided ckernels out of it
         af = blaze.array(1,dshape=double)
@@ -119,9 +119,9 @@ class TestBlazeKernelTreeCKernel(unittest.TestCase):
 
         def _mul(a,b):
             return a * b
-        add = BlazeFunc('add',[('f8(f8,f8)', _add),
+        add = BlazeFuncDeprecated('add',[('f8(f8,f8)', _add),
                                ('c16(c16,c16)', _add)])
-        mul = BlazeFunc('mul', {(double,)*3: _mul,
+        mul = BlazeFuncDeprecated('mul', {(double,)*3: _mul,
                                 (c128,)*3: _mul})
         # Array data and expression
         af = blaze.array([[1,2,3], [4,5,6]], dshape=double)

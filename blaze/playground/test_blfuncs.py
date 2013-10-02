@@ -1,4 +1,4 @@
-from blaze.blfuncs import BlazeFunc
+from blaze.blfuncs import BlazeFuncDeprecated
 from blaze.datashape import double, complex128 as c128
 import blaze
 import array
@@ -13,10 +13,10 @@ def _mul(a,b):
 
 print "Begin"
 
-add = BlazeFunc('add')
+add = BlazeFuncDeprecated('add')
 add.add_template(_add)
 
-mul = BlazeFunc('mul', {(double, double, double):_mul})
+mul = BlazeFuncDeprecated('mul', {(double, double, double):_mul})
 mul.add_template(_mul)
 
 
@@ -40,7 +40,7 @@ double ddot(Array_C<double, 1> *a, Array_C<double, 1> *b) {
 }
 """
 
-dot = BlazeFunc('dot', [('cpp', dotcpp)])
+dot = BlazeFuncDeprecated('dot', [('cpp', dotcpp)])
 
 print "Hello..."
 
@@ -71,7 +71,7 @@ bf = blaze.array([2,3,4,5,6],dshape=double)
 
 cf = add(af,bf)
 df = mul(cf,cf)
-# Fuse the BlazeFunc DataDescriptor
+# Fuse the BlazeFuncDeprecated DataDescriptor
 # You can call the kerneltree to compute elements (which will fuse the kernel)
 #ck = df._data.kerneltree.single_ckernel
 assert  df._data.kerneltree(3.0, 4.0) == 49.0

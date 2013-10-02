@@ -22,7 +22,7 @@ def blaze_func_iter(bfd, noiter_dims):
             iters.append(a.__iter__())
     # TODO continue...
 
-class BlazeFuncDescriptor(IDataDescriptor):
+class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
     _args = None
     deferred = True
 
