@@ -74,10 +74,15 @@ def _from_expr(expr, f, builder, values):
         # Construct Op
 
         result = Op("kernel", expr.dshape, args)
-        result.add_metadata({
-            'kernel': expr.metadata['kernel'],
-            'overload': expr.metadata['overload'],
-        })
+
+        # Copy metadata verbatim
+        assert 'kernel' in expr.metadata
+        assert 'overload' in expr.metadata
+        result.add_metadata(expr.metadata)
+
+        # -------------------------------------------------
+        # Emit Op in code stream
+
         builder.emit(result)
 
     values[expr] = result

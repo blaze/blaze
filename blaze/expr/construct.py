@@ -19,6 +19,8 @@ from .conf import conf
 
 def construct(bfunc, ctx, overload, args):
     """
+    Blaze expression graph construction for deferred evaluation.
+
     Parameters
     ----------
     bfunc : Blaze Function
@@ -64,7 +66,8 @@ def construct(bfunc, ctx, overload, args):
 
     # -------------------------------------------------
 
-    return KernelOp(restype, *params, kernel=bfunc, overload=overload)
+    return KernelOp(restype, *params, kernel=bfunc, overload=overload,
+                    **bfunc.metadata)
 
 def from_value(value):
     return ArrayOp(T.typeof(value), value)

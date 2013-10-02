@@ -87,7 +87,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
 
     strategy: str
         Evaluation strategy.
-        Currently supported: 'py', 'eval',
+        Currently supported: 'py', 'jit'
     """
     strategy = strategy or current_strategy()
 
