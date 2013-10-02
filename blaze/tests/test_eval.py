@@ -176,7 +176,7 @@ class TestStrategy(unittest.TestCase):
         self.assertEqual(blaze.current_strategy(), current)
 
 if __name__ == '__main__':
-    # TestEval2D.setUpClass()
-    # TestEval2D('test_mem_mem_to_dsk_expression').debug()
-    unittest.main(verbosity=2)
+    TestEval2D.setUpClass()
+    TestEval2D('test_dsk_mem_to_memfunction').debug()
+    #unittest.main(verbosity=2)
 

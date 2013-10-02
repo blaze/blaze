@@ -58,15 +58,17 @@ class _Executor(object):
         newkernel = tree.kernel.lift(lift_dims, 'C')
         cfunc = newkernel.ctypes_func
 
+        # TODO: BlazeFuncDescriptor must not be coupled with any execution backend!
+        array_inputs = dd.args
 
         # one reader per arg
-        readers = [arr.arr._data.element_reader(iter_dims)
-                   for arr in dd.args]
+        readers = [arr._data.element_reader(iter_dims)
+                       for arr in array_inputs]
 
         ptr_types = [ctypes.POINTER(to_ctypes(ds.measure)) for ds in newkernel.dshapes]
 
-        shapes = [arr.arr.dshape.shape[iter_dims:]
-                  for arr in dd.args]
+        shapes = [arr.dshape.shape[iter_dims:]
+                      for arr in array_inputs]
         shapes.append(res_ds.shape[iter_dims:])
 
         # fill the attributes

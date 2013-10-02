@@ -23,22 +23,22 @@ def letters(source=string.ascii_lowercase):
 #     to the correct llvmtype when needed.
 class Argument(object):
     _shape = None
-    def __init__(self, arg, kind, rank, llvmtype):
-        self.arr = arg
+    def __init__(self, dshape, kind, rank, llvmtype):
+        self.dshape = dshape
         if isinstance(kind, tuple):
             kind = kind[0]
         self.kind = kind
         self.rank = rank
         self._llvmtype = llvmtype
 
-    def __eq__(self, other):
-        if not isinstance(other, Argument):
-            return NotImplemented
-        # FIXME: Should remove kind check and cast different kinds
-        #        in the generated code.
-        return ((self.arr is other.arr) and
-                (self.rank == other.rank) and
-                (self.kind==other.kind))
+    #def __eq__(self, other):
+    #    if not isinstance(other, Argument):
+    #        return NotImplemented
+    #    # FIXME: Should remove kind check and cast different kinds
+    #    #        in the generated code.
+    #    return ((self.dshape is other.dshape) and
+    #            (self.rank == other.rank) and
+    #            (self.kind==other.kind))
 
     # FIXME:
     #   Because module linking destroys struct names we need to store
@@ -58,15 +58,15 @@ class Argument(object):
                 self._shape = self.arr.dshape.shape[-self.rank:]
         return self._shape
 
-    def lift(self, newrank, newkind, module=None):
-        oldtype = get_eltype(self.llvmtype, self.kind)
-        newtype = lc.Type.pointer(array_type(newrank, newkind, oldtype, module))
-        return Argument(self.arr, newkind, newrank, newtype)
+    #def lift(self, newrank, newkind, module=None):
+    #    oldtype = get_eltype(self.llvmtype, self.kind)
+    #    newtype = lc.Type.pointer(array_type(newrank, newkind, oldtype, module))
+    #    return Argument(self.arr, newkind, newrank, newtype)
 
     def get_kernel_dshape(self):
         """Returns the kernel data-shape of the argument."""
         rank = self.rank
-        total_dshape = self.arr.dshape
+        total_dshape = self.dshape
         sub = len(total_dshape)-1-rank
         return total_dshape.subarray(sub)
 

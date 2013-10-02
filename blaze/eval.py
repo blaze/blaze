@@ -24,7 +24,7 @@ from . import blz
 #------------------------------------------------------------------------
 
 _eval_strategy = threading.local()
-default_strategy = 'py'
+default_strategy = 'jit'
 
 @contextmanager
 def strategy(strategy):
@@ -146,10 +146,10 @@ def eval_blz(arr, storage, caps, out, strategy):
 
 def eval_ckernel(arr, storage, caps, out, strategy, kt):
     result = empty(arr.dshape, caps)
-    args = [arg.arr._data for arg in arr._data.args]
+    args = arr._data.args
     ubck = kt.make_unbound_ckernel(strided=False)
     ck = ubck.bind(result._data, args)
-    execute_expr_single(result._data, args,
+    execute_expr_single(result._data, [a._data for a in args],
                         kt.kernel.dshapes[-1],
                         kt.kernel.dshapes[:-1],
                         ck)

@@ -311,11 +311,14 @@ class BlazeFuncDeprecated(object):
         # Create a new BlazeFuncDeprecatedDescriptor with this
         # kerneltree and a new set of args depending on
         #  unique new arguments in the expression.
+        argmap = {}
         children = []
         for i, arg in enumerate(args):
             data = arg._data
             if isinstance(data, BlazeFuncDeprecatedDescriptor):
                 tree = data.kerneltree
+                argmap.update(data.argmap)
+
                 treerank = tree.kernel.ranks[-1]
                 argrank = self.ranks[i]
                 if argrank != treerank:
@@ -326,12 +329,13 @@ class BlazeFuncDeprecated(object):
                             "when rank-%d input is required" % (treerank, argrank))
                 children.append(tree)
             else:
-                tree_arg = Argument(arg, kernel.kinds[i],
+                tree_arg = Argument(arg.dshape, kernel.kinds[i],
                                     self.ranks[i], kernel.argtypes[i])
+                argmap[tree_arg] = arg
                 children.append(tree_arg)
 
         kerneltree = KernelTree(kernel, children)
-        data = BlazeFuncDeprecatedDescriptor(kerneltree, outdshape)
+        data = BlazeFuncDeprecatedDescriptor(kerneltree, outdshape, argmap)
 
         # Construct an Array object from new data descriptor
         # Standard propagation of user-defined meta-data.
