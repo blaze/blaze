@@ -40,6 +40,7 @@ Index
    datashape-binary
    data_descriptor
    blaze_functions
+   deferred
 
 Original Index
 ~~~~~~~~~~~~~~
