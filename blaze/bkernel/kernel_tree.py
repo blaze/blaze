@@ -49,14 +49,14 @@ class Argument(object):
         self._llvmtype = refresh_name(self._llvmtype)
         return self._llvmtype
 
-    @property
-    def shape(self):
-        if self._shape is None:
-            if self.rank == 0:
-                self._shape = ()
-            else:
-                self._shape = self.arr.dshape.shape[-self.rank:]
-        return self._shape
+    #@property
+    #def shape(self):
+    #    if self._shape is None:
+    #        if self.rank == 0:
+    #            self._shape = ()
+    #        else:
+    #            self._shape = self.arr.dshape.shape[-self.rank:]
+    #    return self._shape
 
     #def lift(self, newrank, newkind, module=None):
     #    oldtype = get_eltype(self.llvmtype, self.kind)

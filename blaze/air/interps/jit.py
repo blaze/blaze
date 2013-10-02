@@ -5,7 +5,9 @@ Use blaze.bkernel to assemble ckernels for evaluation.
 """
 
 from __future__ import print_function, division, absolute_import
-from pykit.ir import interp, visit
+import collections
+
+from pykit.ir import interp, visit, transform, Op
 
 import blaze
 from blaze.bkernel import BlazeFuncDeprecated
@@ -21,8 +23,10 @@ def compile(func, env):
     # NOTE: A problem of using a DataDescriptor as part of KernelTree is that
     #       we can now only compile kernels when we have actual data. This is
     #       a problem for offline compilation strategies.
-    jitted = jitter(func, env)
-    condense_jitted_kernels(func, env, jitted)
+    jit_env = dict(root_jit_env)
+    jitter(func, jit_env)
+    treebuilder(func, jit_env)
+    ckernel_transformer(func, jit_env)
     return func
 
 def run(func, args, **kwds):
@@ -31,11 +35,44 @@ def run(func, args, **kwds):
     return result
 
 #------------------------------------------------------------------------
+# Environment
+#------------------------------------------------------------------------
+
+root_jit_env = {
+    'jitted':       None, # Jitted kernels, { Op : BlazeElementKernel }
+    'trees':        None, # (partial) kernel tree, { Op : KernelTree }
+    'arguments':    None, # Accumulated arguments, { Op : [ Op ] }
+}
+
+#------------------------------------------------------------------------
+# Pipeline
+#------------------------------------------------------------------------
+
+def jitter(func, jit_env):
+    v = Jitter(func)
+    visit(v, func)
+    jit_env['jitted'] = v.jitted
+
+def treebuilder(func, jit_env):
+    fuser = JitFuser(func, jit_env['jitted'])
+    visit(fuser, func)
+    jit_env['trees'] = fuser.trees
+    jit_env['arguments'] = fuser.arguments
+
+def ckernel_transformer(func, jit_env):
+    transformer = CKernelTransformer(func, jit_env['jitted'],
+                                     jit_env['trees'], jit_env['arguments'])
+    transform(transformer, func)
+
+#------------------------------------------------------------------------
 # Jit kernels
 #------------------------------------------------------------------------
 
 class Jitter(object):
-    """Jit kernels"""
+    """
+    Jit kernels. Produces a dict `jitted` that maps Operations to jitted
+    BlazeElementKernels
+    """
 
     def __init__(self, func):
         self.func = func
@@ -83,26 +120,24 @@ def construct_blaze_kernel(function, overload):
     else:
         return None
 
-
-def jitter(func, env=None):
-    v = Jitter(func)
-    visit(v, func)
-    return v.jitted
-
 #------------------------------------------------------------------------
 # Fuse jitted kernels
 #------------------------------------------------------------------------
 
 class JitFuser(object):
+    """
+    Build KernelTrees from jitted BlazeElementKernels.
+    """
 
     def __init__(self, func, jitted):
         self.func = func
         self.jitted = jitted
         self.trees = {}
 
+        # Accumulated arguments (registers) for a kerneltree
+        self.arguments = collections.defaultdict(list)
+
     def op_kernel(self, op):
-        function = op.metadata['kernel']
-        overload = op.metadata['overload']
         jitted = self.jitted.get(op)
         if not jitted:
             return op
@@ -115,19 +150,59 @@ class JitFuser(object):
         # TODO: Check external references in metadata in order to determine
         #       whether this is a fusion boundary
 
-        args = []
-        for arg in op.args[1:]:
+        children = []
+        for i, arg in enumerate(op.args[1:]):
+            rank = len(arg.type.shape)
             if arg in self.trees:
                 tree = self.trees[arg]
-            else:
+                self.arguments[op].extend(self.arguments[arg])
+            elif arg in self.jitted:
                 kernel = self.jitted[arg]
-                tree_arg = Argument(arg, kernel.kinds[i],
-                                    self.ranks[i], kernel.argtypes[i])
-                children.append(tree_arg)
+                tree = Argument(arg.type, kernel.kinds[i], rank, kernel.argtypes[i])
+                self.arguments[op].append(tree)
+            else:
+                # Function argument, construct Argument and `kind` (see
+                # BlazeElementKernel.kinds)
+                raise NotImplementedError("function arguments...")
 
+            children.append(tree)
 
-def condense_jitted_kernels(func, env, jitted):
-    visit(JitFuser(func, jitted), func)
+        return KernelTree(jitted, children)
+
+#------------------------------------------------------------------------
+# Rewrite to CKernels
+#------------------------------------------------------------------------
+
+class CKernelTransformer(object):
+
+    def __init__(self, func, jitted, trees, arguments):
+        self.func = func
+        self.jitted = jitted
+        self.trees = trees
+        self.arguments = arguments
+
+    def op_kernel(self, op):
+        if op not in self.trees:
+            return op
+
+        uses = self.func.uses[op]
+
+        if all(u in self.trees for u in uses):
+            # All our consumers know about us and have us as an argument
+            # in their tree! Delete this op, only the root will perform a
+            # rewrite.
+            return None
+        elif any(u in self.trees for u in uses):
+            # Some consumers have us as a node, but others don't. This
+            # forms a ckernel boundary, so we need to detach ourselves!
+            raise NotImplementedError
+        else:
+            # No consumer has us as an internal node in the kernel tree, we
+            # are a kerneltree root
+            tree = self.trees[op]
+            unbound_ckernel = tree.make_unbound_ckernel(strided=False)
+            return Op('ckernel', op.type, [unbound_ckernel, args], op.result)
+
 
 #------------------------------------------------------------------------
 # Utils
