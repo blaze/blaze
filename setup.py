@@ -255,16 +255,14 @@ def make_build(build_command):
             build_command.run(self)
             print('Rebuilding the datashape parser...')
             import subprocess
-            # Add the build directory to the python path
-            # so it finds the temporary files
-            os.environ['PYTHONPATH'] = self.build_lib
             # This signals to the parser module to rebuild
             os.environ['BLAZE_REBUILD_PARSER'] = '1'
             # Call python to do the rebuild in a separate process
+            # We add the build directory to the beginning of the python path
+            # so it finds the right temporary files.
             subprocess.check_call([sys.executable, "-c",
-                        "from blaze.datashape import parser"])
+                        "import sys;sys.path.insert(0, r'%s');from blaze.datashape import parser"% self.build_lib])
             del os.environ['BLAZE_REBUILD_PARSER']
-            del os.environ['PYTHONPATH']
 
     return BuildParser
 
