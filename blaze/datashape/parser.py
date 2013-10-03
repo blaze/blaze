@@ -476,10 +476,24 @@ def rebuild():
     output = os.path.dirname(path)
     module = sys.modules[__name__]
 
+    # Remove the cached files if they exist
+    dlexfile = os.path.join(output, 'dlex.py')
+    dyaccfile = os.path.join(output, 'dyacc.py')
+    if os.path.exists(dlexfile):
+        os.remove(dlexfile)
+    if os.path.exists(dyaccfile):
+        os.remove(dyaccfile)
+
     lex.lex(module=module, lextab="dlex", outputdir=output, debug=0, optimize=1)
     yacc.yacc(tabmodule='dyacc',outputdir=output, write_tables=1, debug=0, optimize=1)
 
-    sys.stdout.write("Parse and lexer tables rebuilt.\n")
+    if not os.path.exists(dlexfile):
+        raise RuntimeError('Failed to rebuild %s' % dlexfile)
+    if not os.path.exists(dyaccfile):
+        raise RuntimeError('Failed to rebuild %s' % dyaccfile)
+
+    sys.stdout.write("Parse and lexer tables rebuilt in path:\n")
+    sys.stdout.write("    %s\n" % output)
 
 def _parse(source):
     try:
