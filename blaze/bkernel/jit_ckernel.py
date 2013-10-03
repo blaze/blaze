@@ -1,6 +1,14 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
+
 import ctypes
+import operator
+
 import llvm.core as lc
 from llvm.core import Type, Function, Module
+import llvm.ee as le
+from llvm.passes import build_pass_managers
+
 from .. import llvm_array as lla
 from ..py2help import izip, _strtypes, c_ssize_t, PY2
 from ..llvm_array import (void_type, intp_type,
@@ -10,6 +18,7 @@ from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
                 strided_ckernel_func_type,  map_llvm_to_ctypes)
 from ..ckernel import (ExprSingleOperation, ExprStridedOperation,
                 JITCKernelData, UnboundCKernelFunction)
+
 
 def args_to_kernel_data_struct(kinds, argtypes):
     # Build up the kernel data structure. Currently, this means
@@ -113,6 +122,60 @@ def jit_compile_unbound_single_ckernel(bek, strided):
         If true, returns an ExprStridedOperation, otherwise an
         ExprSingleOperation.
     """
+    module, lfunc = create_ckernel_interface(bek, strided)
+    optimize(module, lfunc)
+    ee, func_ptr = get_pointer(module, lfunc)
+
+    # Build llvm and ctypes structures for the kernel data, using
+    # the argument types.
+    kd_llvmtype, kd_ctypestype = args_to_kernel_data_struct(bek.kinds, bek.argtypes)
+    # Cast the extra pointer to the right llvm type
+    #extra_struct = builder.bitcast(extra_ptr_arg,
+    #                Type.pointer(kd_llvmtype))
+
+    # Create a function which copies the shape from data
+    # descriptors to the extra data struct.
+    if len(kd_ctypestype._fields_) == 1:
+        # If there were no extra data fields, it's a no-op function
+        def bind_func(estruct, dst_dd, src_dd_list):
+            pass
+    else:
+        def bind_func(estruct, dst_dd, src_dd_list):
+            for i, (ds, dd) in enumerate(
+                            izip(bek.dshapes, src_dd_list + [dst_dd])):
+                shape = [operator.index(dim)
+                                for dim in dd.dshape[-len(ds):-1]]
+                cshape = getattr(estruct, 'operand_%d' % i)
+                for j, dim_size in enumerate(shape):
+                    cshape[j] = dim_size
+
+    if strided:
+        optype = ExprStridedOperation
+    else:
+        optype = ExprSingleOperation
+
+    return UnboundCKernelFunction(
+                    optype(func_ptr),
+                    kd_ctypestype,
+                    bind_func,
+                    (ee, func_ptr))
+
+
+def create_ckernel_interface(bek, strided):
+    """Create a function wrapper with a CKernel interface according to
+    `strided`.
+
+    Parameters
+    ----------
+    bek : BlazeElementKernel
+        The blaze kernel to compile into an unbound single ckernel.
+    strided : bool
+        If true, returns an ExprStridedOperation, otherwise an
+        ExprSingleOperation.
+    """
+
+    # TODO: Decouple this from BlazeElementKernel
+
     inarg_count = len(bek.kinds)-1
     module = bek.module.clone()
     if strided:
@@ -137,13 +200,6 @@ def jit_compile_unbound_single_ckernel(bek, strided):
     dst_ptr_arg.name = 'dst_ptr'
     src_ptr_arr_arg.name = 'src_ptrs'
     extra_ptr_arg.name = 'extra_ptr'
-
-    # Build llvm and ctypes structures for the kernel data, using
-    # the argument types.
-    kd_llvmtype, kd_ctypestype = args_to_kernel_data_struct(bek.kinds, bek.argtypes)
-    # Cast the extra pointer to the right llvm type
-    extra_struct = builder.bitcast(extra_ptr_arg,
-                    Type.pointer(kd_llvmtype))
 
     if strided:
         # Allocate an array of pointer counters for the
@@ -231,8 +287,10 @@ def jit_compile_unbound_single_ckernel(bek, strided):
     #print(ck_func)
     #module.verify()
 
-    import llvm.ee as le
-    from llvm.passes import build_pass_managers
+    return module, ck_func
+
+
+def optimize(module, lfunc):
     tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
     pms = build_pass_managers(tm, opt=3, fpm=False,
                     vectorize=True, loop_vectorize=True)
@@ -241,6 +299,8 @@ def jit_compile_unbound_single_ckernel(bek, strided):
     #print("Function after optimization passes:")
     #print(ck_func)
 
+
+def get_pointer(module, lfunc):
     # DEBUGGING: Verify the module.
     #module.verify()
     # TODO: Cache the EE - the interplay with the func_ptr
@@ -249,30 +309,5 @@ def jit_compile_unbound_single_ckernel(bek, strided):
     #        in linux VMs. Some code is in llvmpy's workarounds
     #        submodule related to this.
     ee = le.EngineBuilder.new(module).mattrs("-avx").create()
-    func_ptr = ee.get_pointer_to_function(ck_func)
-    # Create a function which copies the shape from data
-    # descriptors to the extra data struct.
-    if len(kd_ctypestype._fields_) == 1:
-        # If there were no extra data fields, it's a no-op function
-        def bind_func(estruct, dst_dd, src_dd_list):
-            pass
-    else:
-        def bind_func(estruct, dst_dd, src_dd_list):
-            for i, (ds, dd) in enumerate(
-                            izip(bek.dshapes, src_dd_list + [dst_dd])):
-                shape = [operator.index(dim)
-                                for dim in dd.dshape[-len(ds):-1]]
-                cshape = getattr(estruct, 'operand_%d' % i)
-                for j, dim_size in enumerate(shape):
-                    cshape[j] = dim_size
-
-    if strided:
-        optype = ExprStridedOperation
-    else:
-        optype = ExprSingleOperation
-
-    return UnboundCKernelFunction(
-                    optype(func_ptr),
-                    kd_ctypestype,
-                    bind_func,
-                    (ee, func_ptr))
+    func_ptr = ee.get_pointer_to_function(lfunc)
+    return ee, func_ptr

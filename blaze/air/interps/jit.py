@@ -29,6 +29,7 @@ def compile(func, env):
     jitter(func, jit_env)
     treebuilder(func, jit_env)
     ckernel_transformer(func, jit_env)
+    print(func)
     return func
 
 def run(func, args, **kwds):
