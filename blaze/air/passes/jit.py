@@ -21,20 +21,12 @@ from blaze import llvm_array
 # Interpreter
 #------------------------------------------------------------------------
 
-def compile(func, env):
-    # NOTE: A problem of using a DataDescriptor as part of KernelTree is that
-    #       we can now only compile kernels when we have actual data. This is
-    #       a problem for offline compilation strategies.
+def run(func, env):
     jit_env = dict(root_jit_env)
     jitter(func, jit_env)
     treebuilder(func, jit_env)
     ckernel_transformer(func, jit_env)
     return func
-
-def run(func, args, **kwds):
-    deferred_array = jit_interp(func, args=args)
-    result = blaze.eval(deferred_array, **kwds)
-    return result
 
 #------------------------------------------------------------------------
 # Environment
@@ -218,7 +210,10 @@ class CKernelTransformer(object):
             # Skip kernel string name, first arg to 'kernel' Operations
             args = [ir_arg for arg in op.args[1:]
                                for ir_arg, kt_arg in self.arguments[arg]]
-            return Op('ckernel', op.type, [unbound_ckernel, args], op.result)
+            new_op = Op('ckernel', op.type, [unbound_ckernel, args], op.result)
+            new_op.add_metadata({'rank': len(new_op.type.shape),
+                                 'parallel': True})
+            return new_op
 
 
 #------------------------------------------------------------------------
