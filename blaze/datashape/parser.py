@@ -561,3 +561,6 @@ if __name__ == '__main__':
 if int(os.environ.get('BLAZE_REBUILD_PARSER', 0)):
     # Rebuild the parser before it is used anywhere
     rebuild()
+    # Exit immediately with success
+    import sys
+    sys.exit(0)
