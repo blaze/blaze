@@ -29,7 +29,6 @@ def compile(func, env):
     jitter(func, jit_env)
     treebuilder(func, jit_env)
     ckernel_transformer(func, jit_env)
-    print(func)
     return func
 
 def run(func, args, **kwds):
@@ -66,6 +65,8 @@ def ckernel_transformer(func, jit_env):
     transformer = CKernelTransformer(func, jit_env['jitted'],
                                      jit_env['trees'], jit_env['arguments'])
     transform(transformer, func)
+    for op in transformer.delete:
+        op.delete()
 
 #------------------------------------------------------------------------
 # Jit kernels
@@ -162,7 +163,7 @@ class JitFuser(object):
             elif arg in self.jitted:
                 kernel = self.jitted[arg]
                 tree = Argument(arg.type, kernel.kinds[i], rank, kernel.argtypes[i])
-                self.arguments[op].append(tree)
+                self.arguments[op].append((arg, tree))
             else:
                 # Function argument, construct Argument and `kind` (see
                 # BlazeElementKernel.kinds)
@@ -175,7 +176,7 @@ class JitFuser(object):
                 rank = 0
                 llvmtype = to_numba(arg.type.measure).to_llvm()
                 tree = Argument(arg.type, kind, rank, llvmtype)
-                self.arguments[op].append(tree)
+                self.arguments[op].append((arg, tree))
 
             children.append(tree)
 
@@ -192,6 +193,7 @@ class CKernelTransformer(object):
         self.jitted = jitted
         self.trees = trees
         self.arguments = arguments
+        self.delete = set() # Ops to delete afterwards
 
     def op_kernel(self, op):
         if op not in self.trees:
@@ -203,7 +205,7 @@ class CKernelTransformer(object):
             # All our consumers know about us and have us as an argument
             # in their tree! Delete this op, only the root will perform a
             # rewrite.
-            return None
+            self.delete.add(op)
         elif any(u in self.trees for u in uses):
             # Some consumers have us as a node, but others don't. This
             # forms a ckernel boundary, so we need to detach ourselves!
@@ -214,7 +216,8 @@ class CKernelTransformer(object):
             tree = self.trees[op]
             unbound_ckernel = tree.make_unbound_ckernel(strided=False)
             # Skip kernel string name, first arg to 'kernel' Operations
-            args = op.args[1:]
+            args = [ir_arg for arg in op.args[1:]
+                               for ir_arg, kt_arg in self.arguments[arg]]
             return Op('ckernel', op.type, [unbound_ckernel, args], op.result)
 
 
