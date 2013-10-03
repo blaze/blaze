@@ -15,6 +15,8 @@ from blaze.bkernel.blaze_kernels import frompyfunc, fromctypes, BlazeElementKern
 from blaze.bkernel.kernel_tree import Argument, KernelTree
 from blaze.datashape.util import to_numba
 
+from blaze import llvm_array
+
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
@@ -163,11 +165,20 @@ class JitFuser(object):
             else:
                 # Function argument, construct Argument and `kind` (see
                 # BlazeElementKernel.kinds)
-                raise NotImplementedError("function arguments...")
+                if not all(c.metadata['elementwise']
+                               for c in consumers if c.opcode == 'kernel'):
+                    raise NotImplementedError(
+                        "We have non-elementwise consumers that we don't know "
+                        "how to deal with")
+                kind = llvm_array.SCALAR
+                rank = 0
+                llvmtype = to_numba(arg.type.measure).to_llvm()
+                tree = Argument(arg.type, kind, rank, llvmtype)
+                self.arguments[op].append(tree)
 
             children.append(tree)
 
-        return KernelTree(jitted, children)
+        self.trees[op] = KernelTree(jitted, children)
 
 #------------------------------------------------------------------------
 # Rewrite to CKernels
@@ -201,6 +212,8 @@ class CKernelTransformer(object):
             # are a kerneltree root
             tree = self.trees[op]
             unbound_ckernel = tree.make_unbound_ckernel(strided=False)
+            # Skip kernel string name, first arg to 'kernel' Operations
+            args = op.args[1:]
             return Op('ckernel', op.type, [unbound_ckernel, args], op.result)
 
 
