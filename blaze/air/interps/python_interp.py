@@ -16,16 +16,14 @@ import numpy as np
 # Interpreter
 #------------------------------------------------------------------------
 
-def py_interp(func, args, **kwds):
+def compile(func, env):
+    return func, env
+
+def interpret(func, args, **kwds):
     args = [np.array(arg) for arg in args]
     env = {'interp.handlers' : handlers}
     result = interp.run(func, env, None, args=args)
     return blaze.array(result)
-
-def compile(func, env):
-    return func
-
-run = py_interp
 
 #------------------------------------------------------------------------
 # Handlers

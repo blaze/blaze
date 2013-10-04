@@ -10,18 +10,10 @@ import types
 from . import ir, transforms
 
 #------------------------------------------------------------------------
-# Passes
-#------------------------------------------------------------------------
-
-passes = [
-    transforms.explicit_coercions,
-]
-
-#------------------------------------------------------------------------
 # Pipeline
 #------------------------------------------------------------------------
 
-def run_pipeline(func, env, passes=passes):
+def run_pipeline(func, env, passes):
     """
     Run a sequence of transforms (given as functions or modules) on the
     AIR function.
