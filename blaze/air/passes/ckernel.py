@@ -26,7 +26,7 @@ class CKernelLifter(object):
     """
 
     def op_ckernel(self, op):
-        if op.metadata['rank'] < op.type.rank:
+        if op.metadata['rank'] < len(op.type.shape):
             ckernel, args = op.args
             in_dshapes = [arg.type for arg in args]
             out_dshape = op.type

@@ -118,7 +118,7 @@ def eval_deferred(arr, storage, caps, out, strategy):
     interp = interps.lookup_interp(strategy)
 
     # Interpreter-specific compilation/assembly
-    func = interp.compile(func, env)
+    func, env = interp.compile(func, env)
 
     # Run with collected 'params' from the expression
     args = [ctx.terms[param] for param in ctx.params]

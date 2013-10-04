@@ -6,10 +6,11 @@ JIT evaluation of blaze AIR.
 
 from __future__ import print_function, division, absolute_import
 
+import blaze
 from ..pipeline import run_pipeline
 from ..passes import ckernel, allocation
 
-import blaze
+from pykit.ir import visit
 
 #------------------------------------------------------------------------
 # Interpreter
@@ -20,7 +21,9 @@ def compile(func, env):
     return func, env
 
 def interpret(func, args, **kwds):
-    return blaze.eval(func)
+    assert len(args) == len(func.args)
+    values = dict(zip(func.args, args))
+    visit(CKernelInterp(values), func)
 
 #------------------------------------------------------------------------
 # Passes
@@ -57,8 +60,8 @@ class CKernelInterp(object):
     disjoint sub-expressions in parallel.
     """
 
-    def __init__(self):
-        self.values = {} # { Op : py_val }
+    def __init__(self, values):
+        self.values = values # { Op : py_val }
 
     def op_alloc(self, op):
         dshape = op.type
