@@ -122,7 +122,7 @@ def eval_deferred(arr, storage, caps, out, strategy):
 
     # Run with collected 'params' from the expression
     args = [ctx.terms[param] for param in ctx.params]
-    result = interp.interpret(func, args=args, storage=storage,
+    result = interp.interpret(func, env, args=args, storage=storage,
                               caps=caps, out=out, strategy=strategy)
 
     return result

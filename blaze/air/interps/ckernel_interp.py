@@ -7,21 +7,37 @@ JIT evaluation of blaze AIR.
 from __future__ import print_function, division, absolute_import
 
 import blaze
+from blaze.datadescriptor import DyNDDataDescriptor
 from ..pipeline import run_pipeline
 from ..passes import ckernel, allocation
 
-from pykit.ir import visit
+from pykit.ir import visit, copy_function
+from dynd import nd
 
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
 
 def compile(func, env):
-    func, env = run_pipeline(func, env, passes)
+    func, env = run_pipeline(func, env, compile_time_passes)
     return func, env
 
-def interpret(func, args, **kwds):
+def interpret(func, env, args, **kwds):
     assert len(args) == len(func.args)
+
+    # Make a copy, since we're going to mutate our IR!
+    func = copy_function(func)
+
+    # Update environment with dynd type information
+    dynd_types = dict((arg, get_dynd_type(array))
+                          for arg, array in zip(func.args, args)
+                              if isinstance(array._data, DyNDDataDescriptor))
+    env['dynd-types'] = dynd_types
+
+    # Lift ckernels
+    func, env = run_pipeline(func, env, run_time_passes)
+
+    # Evaluate
     values = dict(zip(func.args, args))
     visit(CKernelInterp(values), func)
 
@@ -29,9 +45,12 @@ def interpret(func, args, **kwds):
 # Passes
 #------------------------------------------------------------------------
 
-passes = [
-    ckernel,
+compile_time_passes = [
     allocation,
+]
+
+run_time_passes = [
+    ckernel,
 ]
 
 #------------------------------------------------------------------------
@@ -77,3 +96,10 @@ class CKernelInterp(object):
         args = [self.values[arg] for arg in op.args[1]]
         self.values[op] = ckernel(*args)
 
+
+#------------------------------------------------------------------------
+# Utils
+#------------------------------------------------------------------------
+
+def get_dynd_type(array):
+    return nd.type_of(array._data.dynd_arr())
