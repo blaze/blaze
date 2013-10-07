@@ -7,7 +7,7 @@ JIT evaluation of blaze AIR.
 from __future__ import print_function, division, absolute_import
 
 import blaze
-from blaze.datadescriptor import DyNDDataDescriptor
+from blaze.datadescriptor import DyNDDataDescriptor, broadcast_ckernel
 from ..pipeline import run_pipeline
 from ..passes import ckernel, allocation
 
@@ -92,9 +92,27 @@ class CKernelInterp(object):
         del self.values[alloc]
 
     def op_ckernel(self, op):
-        ckernel = op.args[0]
+        unbound_ckernel = op.args[0]
         args = [self.values[arg] for arg in op.args[1]]
-        self.values[op] = ckernel(*args)
+
+        dst = args[0]
+        srcs = args[1:]
+
+        dst_descriptor  = dst._data
+        src_descriptors = [src._data for src in srcs]
+        ckernel = unbound_ckernel.bind(dst_descriptor, src_descriptors)
+
+        print('execute...')
+        #import pdb; pdb.set_trace()
+        broadcast_ckernel.execute_expr_single(
+            dst_descriptor, src_descriptors,
+            dst.dshape, [src.dshape for src in srcs],
+            ckernel)
+        print(":)))")
+
+        # Operations are rewritten to already refer to 'dst'
+        # We are essentially a 'void' operation
+        self.values[op] = None
 
 
 #------------------------------------------------------------------------
