@@ -17,6 +17,8 @@ from blaze.datashape.util import to_numba
 
 from blaze import llvm_array
 
+from numba import jit
+
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
@@ -84,11 +86,9 @@ class Jitter(object):
     def op_convert(self, op):
         # TODO: Use a heuristic to see whether we need to handle this, or
         #       someone else does
-        [arg] = op.args
-
         dtype = op.type.measure
-        blaze_func = make_blazefunc(converter(dtype))
-        self.jitted[op] = blaze_func(arg)
+        blaze_func = make_blazefunc(converter(dtype, op.args[0].type))
+        self.jitted[op] = blaze_func
 
 
 def construct_blaze_kernel(function, overload):
@@ -132,6 +132,13 @@ class JitFuser(object):
 
         # Accumulated arguments (registers) for a kerneltree
         self.arguments = collections.defaultdict(list)
+
+    def op_convert(self, op):
+        if op in self.jitted:
+            arg = op.args[0]
+            children = [self.trees[arg]]
+            self.trees[op] = KernelTree(self.jitted[op], children)
+            self.arguments[op] = list(self.arguments[arg])
 
     def op_kernel(self, op):
         jitted = self.jitted.get(op)
@@ -194,6 +201,9 @@ class CKernelTransformer(object):
         self.arguments = arguments
         self.delete = set() # Ops to delete afterwards
 
+    def op_convert(self, op):
+        if op.args[0] in self.trees and op in self.jitted:
+            self.delete.add(op)
 
     def op_kernel(self, op):
         if op not in self.trees:
@@ -229,15 +239,18 @@ class CKernelTransformer(object):
 #------------------------------------------------------------------------
 
 def make_blazefunc(f):
-    return BlazeFuncDeprecated(f.__name__, template=f)
+    #return BlazeFuncDeprecated(f.__name__, template=f)
+    return BlazeElementKernel(f.lfunc)
 
-def converter(blaze_type):
+def converter(blaze_dtype, blaze_argtype):
     """
     Generate an element-wise conversion function that numba can jit-compile.
     """
-    T = to_numba(blaze_type)
+    dtype = to_numba(blaze_dtype.measure)
+    argtype = to_numba(blaze_argtype.measure)
+    @jit(dtype(argtype))
     def convert(value):
-        return T(value)
+        return dtype(value)
     return convert
 
 def make_ckernel(blaze_func):
