@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 __all__ = ['CKernelPrefixStruct', 'CKernelPrefixDestructor',
-        'CKernelBuilder', 'CKernelDeferred',
+        'CKernelBuilder',
         'UnarySingleOperation', 'UnaryStridedOperation',
         'ExprSingleOperation', 'ExprStridedOperation', 'BinarySinglePredicate',
         'DynamicKernelInstance', 'JITCKernelData', 'UnboundCKernelFunction',
@@ -13,7 +13,7 @@ import ctypes
 
 from dynd._lowlevel import (CKernelPrefixStruct, CKernelPrefixStructPtr,
         CKernelPrefixDestructor,
-        CKernelBuilder, CKernelDeferred,
+        CKernelBuilder,
         UnarySingleOperation, UnaryStridedOperation,
         ExprSingleOperation, ExprStridedOperation, BinarySinglePredicate)
 
