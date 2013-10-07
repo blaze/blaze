@@ -37,9 +37,13 @@ def interpret(func, env, args, **kwds):
     # Lift ckernels
     func, env = run_pipeline(func, env, run_time_passes)
 
+    print(func)
+
     # Evaluate
     values = dict(zip(func.args, args))
-    visit(CKernelInterp(values), func)
+    interp = CKernelInterp(values)
+    visit(interp, func)
+    return interp.result
 
 #------------------------------------------------------------------------
 # Passes
@@ -102,18 +106,18 @@ class CKernelInterp(object):
         src_descriptors = [src._data for src in srcs]
         ckernel = unbound_ckernel.bind(dst_descriptor, src_descriptors)
 
-        print('execute...')
-        #import pdb; pdb.set_trace()
         broadcast_ckernel.execute_expr_single(
             dst_descriptor, src_descriptors,
             dst.dshape, [src.dshape for src in srcs],
             ckernel)
-        print(":)))")
 
         # Operations are rewritten to already refer to 'dst'
         # We are essentially a 'void' operation
         self.values[op] = None
 
+    def op_ret(self, op):
+        retvar = op.args[0]
+        self.result = self.values[retvar]
 
 #------------------------------------------------------------------------
 # Utils

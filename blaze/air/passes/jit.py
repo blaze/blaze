@@ -7,7 +7,7 @@ Use blaze.bkernel to assemble ckernels for evaluation.
 from __future__ import print_function, division, absolute_import
 import collections
 
-from pykit.ir import interp, visit, transform, Op
+from pykit.ir import interp, visit, transform, Op, FuncArg
 
 import blaze
 from blaze.bkernel import BlazeFuncDeprecated
@@ -146,6 +146,12 @@ class JitFuser(object):
         # TODO: Check external references in metadata in order to determine
         #       whether this is a fusion boundary
 
+        def add_arg(arg, tree):
+            self.arguments[op].append((arg, tree))
+            self.trees[arg] = tree
+            if isinstance(arg, FuncArg):
+                self.arguments[arg] = [(arg, tree)]
+
         children = []
         for i, arg in enumerate(op.args[1:]):
             rank = len(arg.type.shape)
@@ -155,7 +161,7 @@ class JitFuser(object):
             elif arg in self.jitted:
                 kernel = self.jitted[arg]
                 tree = Argument(arg.type, kernel.kinds[i], rank, kernel.argtypes[i])
-                self.arguments[op].append((arg, tree))
+                add_arg(arg, tree)
             else:
                 # Function argument, construct Argument and `kind` (see
                 # BlazeElementKernel.kinds)
@@ -168,11 +174,12 @@ class JitFuser(object):
                 rank = 0
                 llvmtype = to_numba(arg.type.measure).to_llvm()
                 tree = Argument(arg.type, kind, rank, llvmtype)
-                self.arguments[op].append((arg, tree))
+                add_arg(arg, tree)
 
             children.append(tree)
 
         self.trees[op] = KernelTree(jitted, children)
+
 
 #------------------------------------------------------------------------
 # Rewrite to CKernels
@@ -186,6 +193,7 @@ class CKernelTransformer(object):
         self.trees = trees
         self.arguments = arguments
         self.delete = set() # Ops to delete afterwards
+
 
     def op_kernel(self, op):
         if op not in self.trees:
