@@ -120,6 +120,13 @@ def construct_blaze_kernel(function, overload):
 # Fuse jitted kernels
 #------------------------------------------------------------------------
 
+def tree_arg(type):
+    kind = llvm_array.SCALAR
+    rank = 0
+    llvmtype = to_numba(type.measure).to_llvm()
+    tree = Argument(type, kind, rank, llvmtype)
+    return tree
+
 class JitFuser(object):
     """
     Build KernelTrees from jitted BlazeElementKernels.
@@ -132,8 +139,13 @@ class JitFuser(object):
 
         # Accumulated arguments (registers) for a kerneltree
         self.arguments = collections.defaultdict(list)
+        for arg in func.args:
+            tree = tree_arg(arg.type)
+            self.trees[arg] = tree
+            self.arguments[arg] = [(arg, tree)]
 
     def op_convert(self, op):
+        # TODO: Rewrite 'convert' ops before any of this stuff to kernel appl
         if op in self.jitted:
             arg = op.args[0]
             children = [self.trees[arg]]
@@ -156,8 +168,6 @@ class JitFuser(object):
         def add_arg(arg, tree):
             self.arguments[op].append((arg, tree))
             self.trees[arg] = tree
-            if isinstance(arg, FuncArg):
-                self.arguments[arg] = [(arg, tree)]
 
         children = []
         for i, arg in enumerate(op.args[1:]):
@@ -177,10 +187,7 @@ class JitFuser(object):
                     raise NotImplementedError(
                         "We have non-elementwise consumers that we don't know "
                         "how to deal with")
-                kind = llvm_array.SCALAR
-                rank = 0
-                llvmtype = to_numba(arg.type.measure).to_llvm()
-                tree = Argument(arg.type, kind, rank, llvmtype)
+                tree = tree_arg(arg.type)
                 add_arg(arg, tree)
 
             children.append(tree)
