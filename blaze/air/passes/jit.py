@@ -231,12 +231,14 @@ class CKernelTransformer(object):
             # No consumer has us as an internal node in the kernel tree, we
             # are a kerneltree root
             tree = self.trees[op]
+            # out_rank = len(op.type.shape)
+            # tree = tree.adapt(out_rank, llvm_array.C_CONTIGUOUS)
             unbound_ckernel = tree.make_unbound_ckernel(strided=False)
             # Skip kernel string name, first arg to 'kernel' Operations
             args = [ir_arg for arg in op.args[1:]
                                for ir_arg, kt_arg in self.arguments[arg]]
             new_op = Op('ckernel', op.type, [unbound_ckernel, args], op.result)
-            new_op.add_metadata({'rank': len(new_op.type.shape),
+            new_op.add_metadata({'rank': 0,
                                  'parallel': True})
             return new_op
 
