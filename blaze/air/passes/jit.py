@@ -59,7 +59,10 @@ def ckernel_transformer(func, jit_env):
     transformer = CKernelTransformer(func, jit_env['jitted'],
                                      jit_env['trees'], jit_env['arguments'])
     transform(transformer, func)
-    for op in transformer.delete:
+
+    # Delete dead ops in reverse dominating order, so as to only delete ops
+    # with 0 live uses
+    for op in reversed(transformer.delete_later):
         op.delete()
 
 #------------------------------------------------------------------------
@@ -206,11 +209,11 @@ class CKernelTransformer(object):
         self.jitted = jitted
         self.trees = trees
         self.arguments = arguments
-        self.delete = set() # Ops to delete afterwards
+        self.delete_later = [] # Ops to delete afterwards
 
     def op_convert(self, op):
         if op.args[0] in self.trees and op in self.jitted:
-            self.delete.add(op)
+            self.delete_later.append(op)
 
     def op_kernel(self, op):
         if op not in self.trees:
@@ -222,7 +225,7 @@ class CKernelTransformer(object):
             # All our consumers know about us and have us as an argument
             # in their tree! Delete this op, only the root will perform a
             # rewrite.
-            self.delete.add(op)
+            self.delete_later.append(op)
         elif any(u in self.trees for u in uses):
             # Some consumers have us as a node, but others don't. This
             # forms a ckernel boundary, so we need to detach ourselves!
