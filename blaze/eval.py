@@ -87,7 +87,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
 
     strategy: str
         Evaluation strategy.
-        Currently supported: 'py', 'eval',
+        Currently supported: 'py', 'jit'
     """
     strategy = strategy or current_strategy()
 
@@ -118,11 +118,12 @@ def eval_deferred(arr, storage, caps, out, strategy):
     interp = interps.lookup_interp(strategy)
 
     # Interpreter-specific compilation/assembly
-    func = interp.compile(func, env)
+    func, env = interp.compile(func, env)
 
     # Run with collected 'params' from the expression
-    result = interp.run(func, args=[ctx.terms[param] for param in ctx.params],
-                        storage=storage, caps=caps, out=out, strategy=strategy)
+    args = [ctx.terms[param] for param in ctx.params]
+    result = interp.interpret(func, env, args=args, storage=storage,
+                              caps=caps, out=out, strategy=strategy)
 
     return result
 

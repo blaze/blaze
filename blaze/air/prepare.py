@@ -3,7 +3,15 @@ from __future__ import print_function, division, absolute_import
 
 import threading
 
-from . import ir, pipeline
+from . import ir, pipeline, transforms
+
+#------------------------------------------------------------------------
+# Passes
+#------------------------------------------------------------------------
+
+passes = [
+    transforms.explicit_coercions,
+]
 
 #------------------------------------------------------------------------
 # Execution Context
@@ -31,6 +39,6 @@ def prepare(expr, strategy):
     f, values = ir.from_expr(graph, expr_ctx, current_ctx())
 
     env = {'strategy': strategy}
-    func, env = pipeline.run_pipeline(f, env)
+    func, env = pipeline.run_pipeline(f, env, passes)
 
     return func, env

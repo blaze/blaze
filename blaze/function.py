@@ -24,7 +24,7 @@ import types
 from itertools import chain
 
 import blaze
-from blaze.datashape import coretypes as T
+from blaze.datashape import coretypes as T, dshape
 from blaze.overloading import overload, Dispatcher
 from blaze.datadescriptor import DeferredDescriptor
 from blaze.expr.context import merge
@@ -75,7 +75,7 @@ def collect_contexts(args):
 # Decorators
 #------------------------------------------------------------------------
 
-def kernel(signature, **metadata):
+def kernel(signature, impl='python', **metadata):
     """
     Define an blaze python-level kernel. Further implementations may be
     associated with this overloaded kernel using the 'implement' method.
@@ -116,10 +116,15 @@ def kernel(signature, **metadata):
             assert isinstance(f, BlazeFunc), f
             kernel = f
 
+        metadata.setdefault('elementwise', True)
         kernel.add_metadata(metadata)
+        if impl != 'python':
+            kernel.implement(f, signature, impl, f)
         return kernel
 
-    if not isinstance(signature, basestring):
+    signature = dshape(signature)
+
+    if not isinstance(signature, T.Mono):
         # @kernel
         # def f(...): ...
         f = signature
@@ -130,11 +135,17 @@ def kernel(signature, **metadata):
         # def f(...): ...
         return decorator
 
-def elementwise(*args):
+def elementwise(*args, **kwds):
     """
     Define a blaze element-wise kernel.
     """
-    return kernel(*args, elementwise=True)
+    return kernel(*args, elementwise=True, **kwds)
+
+def jit_elementwise(*args):
+    """
+    Define a blaze element-wise kernel that can be jitted with numba.
+    """
+    return elementwise(*args, impl='numba')
 
 #------------------------------------------------------------------------
 # Application
@@ -222,7 +233,12 @@ class BlazeFunc(object):
             Some object depending on impl_kind, which implements the
             overload.
         """
-        self.impls[(py_func, signature)].append((impl_kind, kernel))
+        impls_dict = self.impls.setdefault((py_func, str(signature)), {})
+        impls_list = impls_dict.setdefault(impl_kind, [])
+        impls_list.append(kernel)
+
+    def find_impls(self, py_func, signature, impl_kind):
+        return self.impls.get((py_func, str(signature)), {}).get(impl_kind)
 
     def add_metadata(self, md):
         # Verify compatibility

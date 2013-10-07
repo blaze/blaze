@@ -39,6 +39,10 @@ class Op(object):
         self.dshape = dshape
         self.uses = []
         self.args   = list(args)
+
+        if opcode == 'kernel':
+            assert 'kernel' in metadata
+            assert 'overload' in metadata
         self.metadata = metadata
 
         for arg in self.args:
