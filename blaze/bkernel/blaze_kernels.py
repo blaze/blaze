@@ -232,8 +232,8 @@ class BlazeElementKernel(object):
             self._ctypes_func = FUNC_TYPE(self.func_ptr)
         return self._ctypes_func
 
-    def make_ckernel_deferred(self):
-        return jit_compile_ckernel_deferred(self)
+    def make_ckernel_deferred(self, out_dshape):
+        return jit_compile_ckernel_deferred(self, out_dshape)
 
     # Should probably check to ensure kinds still match
     def replace_func(self, func):

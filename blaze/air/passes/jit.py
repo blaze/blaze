@@ -236,7 +236,7 @@ class CKernelTransformer(object):
             tree = self.trees[op]
             # out_rank = len(op.type.shape)
             # tree = tree.adapt(out_rank, llvm_array.C_CONTIGUOUS)
-            ckernel_deferred = tree.make_ckernel_deferred()
+            ckernel_deferred = tree.make_ckernel_deferred(op.type)
             # Skip kernel string name, first arg to 'kernel' Operations
             args = [ir_arg for arg in op.args[1:]
                                for ir_arg, kt_arg in self.arguments[arg]]

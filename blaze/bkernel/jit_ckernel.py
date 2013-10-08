@@ -109,7 +109,7 @@ def build_llvm_src_ptrs(builder, src_ptr_arr_arg, dshapes, kinds, argtypes):
         args.append(arg)
     return args
 
-def jit_compile_ckernel_deferred(bek):
+def jit_compile_ckernel_deferred(bek, out_dshape):
     """
     Creates a ckernel_deferred  from the blaze element kernel.
     Actual JIT compilation is done at instantiation.
@@ -162,8 +162,9 @@ def jit_compile_ckernel_deferred(bek):
         return wrap_ckernel_func(out_ckb, ckb_offset, optype(func_ptr),
                         (ee, func_ptr))
     # Wrap the function in a ckernel_deferred
+    in_dshapes = list(bek.dshapes)
     return _lowlevel.ckernel_deferred_from_pyfunc(instantiate_ckernel,
-                    [ndt.type(str(t)) for t in bek.dshapes])
+                    [ndt.type(str(t)) for t in [out_dshape] + in_dshapes])
 
 def create_ckernel_interface(bek, strided):
     """Create a function wrapper with a CKernel interface according to
