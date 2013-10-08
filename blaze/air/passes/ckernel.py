@@ -7,6 +7,7 @@ arguments.
 
 from __future__ import print_function, division, absolute_import
 from pykit.ir import visit
+from dynd import nd, ndt, _lowlevel
 
 #------------------------------------------------------------------------
 # Run
@@ -35,4 +36,7 @@ class CKernelLifter(object):
 
 
 def lift_ckernel(ckernel, out_dshape, in_dshapes):
-    raise NotImplementedError
+    lifted_types = [ndt.type(str(ds)) for ds in [out_dshape] + in_dshapes]
+    print("original types:", repr(ckernel.types))
+    print("lifted types:", lifted_types)
+    return _lowlevel.lift_ckernel_deferred(ckernel, lifted_types)
