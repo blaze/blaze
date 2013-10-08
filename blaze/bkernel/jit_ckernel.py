@@ -163,8 +163,11 @@ def jit_compile_ckernel_deferred(bek, out_dshape):
                         (ee, func_ptr))
     # Wrap the function in a ckernel_deferred
     in_dshapes = list(bek.dshapes)
+
+    out_type = out_dshape.measure
+    in_types = [in_dshape.measure for in_dshape in in_dshapes]
     return _lowlevel.ckernel_deferred_from_pyfunc(instantiate_ckernel,
-                    [ndt.type(str(t)) for t in [out_dshape] + in_dshapes])
+                    [ndt.type(str(t)) for t in [out_type] + in_types])
 
 def create_ckernel_interface(bek, strided):
     """Create a function wrapper with a CKernel interface according to
@@ -289,7 +292,7 @@ def create_ckernel_interface(bek, strided):
     builder.ret_void()
 
     #print("Function before optimization passes:")
-    print(ck_func)
+    #print(ck_func)
     #module.verify()
 
     return module, ck_func
