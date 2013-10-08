@@ -16,8 +16,8 @@ from ..llvm_array import (void_type, intp_type,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
                 strided_ckernel_func_type,  map_llvm_to_ctypes)
-from ..ckernel import (ExprSingleOperation, ExprStridedOperation,
-                JITCKernelData, UnboundCKernelFunction)
+from ..ckernel import JITCKernelData, wrap_ckernel_func
+from dynd import nd, ndt, _lowlevel
 
 
 def args_to_kernel_data_struct(kinds, argtypes):
@@ -109,57 +109,61 @@ def build_llvm_src_ptrs(builder, src_ptr_arr_arg, dshapes, kinds, argtypes):
         args.append(arg)
     return args
 
-def jit_compile_unbound_single_ckernel(bek, strided):
-    """Creates an UnboundCKernelFunction with either the
-    ExprSingleOperation prototype or the ExprStridedOperation
-    prototype depending on the `strided` parameter.
+def jit_compile_ckernel_deferred(bek):
+    """
+    Creates a ckernel_deferred  from the blaze element kernel.
+    Actual JIT compilation is done at instantiation.
 
     Parameters
     ----------
     bek : BlazeElementKernel
-        The blaze kernel to compile into an unbound single ckernel.
-    strided : bool
-        If true, returns an ExprStridedOperation, otherwise an
-        ExprSingleOperation.
+        The blaze kernel.
     """
-    module, lfunc = create_ckernel_interface(bek, strided)
-    optimize(module, lfunc)
-    ee, func_ptr = get_pointer(module, lfunc)
+    # Create a deferred ckernel via a closure
+    def instantiate_ckernel(out_ckb, ckb_offset, types, meta, kerntype):
+        out_ckb = _lowlevel.CKernelBuilder(out_ckb)
+        strided = (kerntype == 'strided')
+        # TODO cache the compiled kernels
+        module, lfunc = create_ckernel_interface(bek, strided)
+        optimize(module, lfunc)
+        ee, func_ptr = get_pointer(module, lfunc)
 
-    # Build llvm and ctypes structures for the kernel data, using
-    # the argument types.
-    kd_llvmtype, kd_ctypestype = args_to_kernel_data_struct(bek.kinds, bek.argtypes)
-    # Cast the extra pointer to the right llvm type
-    #extra_struct = builder.bitcast(extra_ptr_arg,
-    #                Type.pointer(kd_llvmtype))
+        # TODO: Something like the following needs to be reenabled
+        #       to handle array types
 
-    # Create a function which copies the shape from data
-    # descriptors to the extra data struct.
-    if len(kd_ctypestype._fields_) == 1:
-        # If there were no extra data fields, it's a no-op function
-        def bind_func(estruct, dst_dd, src_dd_list):
-            pass
-    else:
-        def bind_func(estruct, dst_dd, src_dd_list):
-            for i, (ds, dd) in enumerate(
-                            izip(bek.dshapes, src_dd_list + [dst_dd])):
-                shape = [operator.index(dim)
-                                for dim in dd.dshape[-len(ds):-1]]
-                cshape = getattr(estruct, 'operand_%d' % i)
-                for j, dim_size in enumerate(shape):
-                    cshape[j] = dim_size
+        # Build llvm and ctypes structures for the kernel data, using
+        # the argument types.
+        ##kd_llvmtype, kd_ctypestype = args_to_kernel_data_struct(bek.kinds, bek.argtypes)
+        # Cast the extra pointer to the right llvm type
+        #extra_struct = builder.bitcast(extra_ptr_arg,
+        #                Type.pointer(kd_llvmtype))
 
-    if strided:
-        optype = ExprStridedOperation
-    else:
-        optype = ExprSingleOperation
+        # Create a function which copies the shape from data
+        # descriptors to the extra data struct.
+        ##if len(kd_ctypestype._fields_) == 1:
+        ##    # If there were no extra data fields, it's a no-op function
+        ##    def bind_func(estruct, dst_dd, src_dd_list):
+        ##        pass
+        ##else:
+        ##    def bind_func(estruct, dst_dd, src_dd_list):
+        ##        for i, (ds, dd) in enumerate(
+        ##                        izip(bek.dshapes, src_dd_list + [dst_dd])):
+        ##            shape = [operator.index(dim)
+        ##                            for dim in dd.dshape[-len(ds):-1]]
+        ##            cshape = getattr(estruct, 'operand_%d' % i)
+        ##            for j, dim_size in enumerate(shape):
+        ##                cshape[j] = dim_size
 
-    return UnboundCKernelFunction(
-                    optype(func_ptr),
-                    kd_ctypestype,
-                    bind_func,
-                    (ee, func_ptr))
+        if strided:
+            optype = _lowlevel.ExprStridedOperation
+        else:
+            optype = _lowlevel.ExprSingleOperation
 
+        return wrap_ckernel_func(out_ckb, ckb_offset, optype(func_ptr),
+                        (ee, func_ptr))
+    # Wrap the function in a ckernel_deferred
+    return _lowlevel.ckernel_deferred_from_pyfunc(instantiate_ckernel,
+                    [ndt.type(str(t)) for t in bek.dshapes])
 
 def create_ckernel_interface(bek, strided):
     """Create a function wrapper with a CKernel interface according to

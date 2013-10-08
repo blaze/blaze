@@ -35,7 +35,7 @@ from ..datashape import Fixed, TypeVar
 from ..datashape.util import to_ctypes, dshape as make_dshape
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
                 map_llvm_to_ctypes)
-from .jit_ckernel import jit_compile_unbound_single_ckernel
+from .jit_ckernel import jit_compile_ckernel_deferred
 
 arg_kinds = (SCALAR, POINTER) + array_kinds
 
@@ -232,8 +232,8 @@ class BlazeElementKernel(object):
             self._ctypes_func = FUNC_TYPE(self.func_ptr)
         return self._ctypes_func
 
-    def make_unbound_ckernel(self, strided):
-        return jit_compile_unbound_single_ckernel(self, strided=strided)
+    def make_ckernel_deferred(self):
+        return jit_compile_ckernel_deferred(self)
 
     # Should probably check to ensure kinds still match
     def replace_func(self, func):

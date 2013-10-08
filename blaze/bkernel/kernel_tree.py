@@ -163,8 +163,8 @@ class KernelTree(object):
             self.fuse()
         return self._ctypes
 
-    def make_unbound_ckernel(self, strided):
-        return self.fuse().kernel.make_unbound_ckernel(strided=strided)
+    def make_ckernel_deferred(self):
+        return self.fuse().kernel.make_ckernel_deferred()
 
     def adapt(self, newrank, newkind):
         """
