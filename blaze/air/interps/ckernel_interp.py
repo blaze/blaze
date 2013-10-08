@@ -102,14 +102,12 @@ class CKernelInterp(object):
 
         dst_descriptor  = dst._data
         src_descriptors = [src._data for src in srcs]
-        #ckernel = unbound_ckernel.bind(dst_descriptor, src_descriptors)
 
-        raise NotImplementedError("Build pointers etc")
+        out = dst_descriptor.dynd_arr()
+        inputs = [desc.dynd_arr() for desc in src_descriptors]
 
-        broadcast_ckernel.execute_expr_single(
-            dst_descriptor, src_descriptors,
-            dst.dshape, [src.dshape for src in srcs],
-            deferred_ckernel)
+        # Execute!
+        deferred_ckernel.__call__(out, *inputs)
 
         # Operations are rewritten to already refer to 'dst'
         # We are essentially a 'void' operation

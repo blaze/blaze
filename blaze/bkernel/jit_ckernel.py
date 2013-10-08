@@ -289,7 +289,7 @@ def create_ckernel_interface(bek, strided):
     builder.ret_void()
 
     #print("Function before optimization passes:")
-    #print(ck_func)
+    print(ck_func)
     #module.verify()
 
     return module, ck_func
