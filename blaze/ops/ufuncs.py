@@ -44,15 +44,15 @@ def mod(a, b):
 # Compare
 #------------------------------------------------------------------------
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def eq(a, b):
     return a == b
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def ne(a, b):
     return a != b
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def lt(a, b):
     return a < b
 

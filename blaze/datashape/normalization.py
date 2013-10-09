@@ -10,7 +10,7 @@ from collections import defaultdict, deque
 
 from blaze import error
 from . import transform, tzip
-from .coretypes import DataShape, Ellipsis, Fixed, CType
+from .coretypes import DataShape, Ellipsis, Fixed, CType, int32
 
 #------------------------------------------------------------------------
 # Normalization
@@ -36,38 +36,44 @@ def normalize(constraints, broadcasting=None):
     return result, broadcasting_env
 
 def normalize_simple(a, b):
-    ellipsis_ctx = {}
-
-    def _normalize_simple(a, b):
-        # Normalize (CType, DataShape) pairs
-        if (type(a), type(b)) == (CType, DataShape):
-            a = DataShape(a)
-        if (type(a), type(b)) == (DataShape, CType):
-            b = DataShape(b)
-
-        # Normalize ellipses and broadcasting
-        if (type(a), type(b)) == (DataShape, DataShape):
-            if (len(a.parameters), len(b.parameters)) != (1, 1):
-                (a, b) = normalize_ellipses(a, b, ellipsis_ctx)
-            a, b = normalize_broadcasting(a, b)
-        else:
-            a, b = tzip(_normalize_simple, a, b)
-
-        return a, b
-
-    return _normalize_simple(a, b)
+    a1, b1 = normalize_datashapes(a, b)
+    a2, b2 = normalize_ellipses(a1, b1)
+    a3, b3 = normalize_broadcasting(a2, b2)
+    return a3, b3
 
 #------------------------------------------------------------------------
 # DataShape Normalizers
 #------------------------------------------------------------------------
 
-def normalize_ellipses(a, b, solution={}):
-    """Eliminate ellipses in DataShape"""
-    S = _normalize_ellipses(a, b)
-    check_ellipsis_consistency(S, solution)
-    result = substitute(S, a), substitute(S, b)
-    solution.update(S)
-    return result
+def normalize_datashapes(a, b):
+    # Normalize (CType, DataShape) pairs
+    if (type(a), type(b)) == (CType, DataShape):
+        a = DataShape(a)
+    if (type(a), type(b)) == (DataShape, CType):
+        b = DataShape(b)
+
+    if (type(a), type(b)) == (DataShape, DataShape):
+        return a, b
+    return tzip(normalize_datashapes, a, b)
+
+
+def normalize_ellipses(a, b):
+    """
+    Normalize ellipses:
+
+        1) '..., T'   : a data shape accepting any number of dimensions
+        2) 'A..., T'  : a data shape with a type variable accepting any number
+                        of dimensions
+
+    Case 2) needs to be handled specially: Type variable `A` may be used in
+    the context several times, and all occurrences must unify, i.e. the
+    shapes must broadcast together.
+    """
+    contexts = _collect_ellipses_contexts({}, a, b)
+    partitions = _partition_ellipses_contexts(contexts)
+    ndims = _broadcast_ellipses_partitions(partitions)
+    return _normalize_ellipses(contexts, ndims, a, b)
+
 
 def normalize_broadcasting(a, b):
     """Add broadcasting dimensions to DataShapes"""
@@ -77,7 +83,85 @@ def normalize_broadcasting(a, b):
 # Ellipses
 #------------------------------------------------------------------------
 
-def _normalize_ellipses(ds1, ds2):
+def _collect_ellipses_contexts(ctx, a, b):
+    """
+    Collect ellipses contexts for each datashape pair.
+
+    Returns
+    =======
+    contexts: { (DataShape, DataShape) : { Ellipsis : dimensions } }
+        The contexts of the different occurring ellipses.
+        `dimensions` is the list of matched dimensions, e.g. [Fixed(10)]
+    """
+    if (type(a), type(b)) == (DataShape, DataShape):
+        ctx[a, b] = _normalize_ellipses_datashapes(a, b)
+        return a, b
+    else:
+        return tzip(partial(_collect_ellipses_contexts, ctx), a, b)
+
+
+def _partition_ellipses_contexts(contexts):
+    """
+    Partition the ellipses contexts, mapping ellipsis type variables to
+    all the matched dimensions.
+
+    Returns
+    =======
+    partitions: { TypeVar : [dimensions] }
+    """
+    partitions = defaultdict(list)
+    for ctx in contexts.itervalues():
+        for ellipsis, dims in ctx.iteritems():
+            if ellipsis.typevar:
+                partitions[ellipsis.typevar].append(dims)
+
+    return partitions
+
+
+def _broadcast_ellipses_partitions(partitions):
+    """
+    Unify and broadcast all parts of the ellipsis together.
+
+    Returns
+    =======
+    ndims: { TypeVar : ndim }
+        A mapping from each ellipsis type variable to the number of required
+        dimensions.
+    """
+    from .unification import unify_simple
+
+    def dummy_ds(dims):
+        return DataShape(*[dims] + [int32])
+
+    ndims = {}
+    for typevar, partition in partitions.iteritems():
+        broadcast_result = reduce(unify_simple, map(dummy_ds, partition))
+        ndims[typevar] = len(broadcast_result.parameters) - 1
+
+    return ndims
+
+
+def _normalize_ellipses(contexts, ndims, a, b):
+    """
+    Apply the substitution contexts to all the datashapes, filling out any
+    missing leading dimensions.
+    """
+    if (type(a), type(b)) == (DataShape, DataShape):
+        S = contexts[a, b]
+        for ellipsis, dims in S.iteritems():
+            if ellipsis.typevar:
+                expected_ndim = ndims[ellipsis.typevar]
+                got_ndim = len(dims)
+                missing_ndim = (expected_ndim - got_ndim)
+                dims[:] = [Fixed(1)] * missing_ndim + dims
+
+        return substitute(S, a), substitute(S, b)
+    else:
+        return tzip(partial(_normalize_ellipses, contexts, ndims), a, b)
+
+####--- DataShape ellipsis resolution ---####
+
+def _normalize_ellipses_datashapes(ds1, ds2):
     # -------------------------------------------------
     # Find ellipses
 
