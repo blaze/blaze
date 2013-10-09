@@ -179,7 +179,7 @@ def _resolve_ellipsis_return_type(final_dims, result1, result2):
     if (type(result1), type(result2)) == (Function, Function):
         r1 = result1.restype
         r2 = result2.restype
-        if isinstance(r1, TypeVar):
+        if isinstance(r1, TypeVar) and isinstance(r2, DataShape):
             def get_dims(e):
                 if isinstance(e, Ellipsis) and e.typevar:
                     return final_dims.get(e.typevar, [e])
@@ -337,11 +337,3 @@ class Simplifier(object):
         typeset.add(term.typeset)
         # typeset.update(term.typeset)
         return term.typevar
-
-    # TODO: ellipsis
-    # def Ellipsis(self, term):
-    #     if term.typevar:
-    #         typeset = self.S.setdefault(term.typevar, set()
-    #         typeset.update(term)
-    #         return term.typevar
-    #     return term
