@@ -163,6 +163,9 @@ def jit_compile_ckernel_deferred(bek, out_dshape):
                         (ee, func_ptr))
     # Wrap the function in a ckernel_deferred
     in_dshapes = list(bek.dshapes)
+    # HACK: sometimes the return type is there, sometimes not,
+    #       exclude it unconditionally.
+    in_dshapes = in_dshapes[:len(bek.kinds)-1]
 
     out_type = out_dshape.measure
     in_types = [in_dshape.measure for in_dshape in in_dshapes]
