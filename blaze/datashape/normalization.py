@@ -4,6 +4,7 @@
 Datashape normalization. This handles Ellipses and broadcasting.
 """
 
+from functools import partial
 from itertools import chain
 from collections import defaultdict, deque
 
@@ -35,30 +36,38 @@ def normalize(constraints, broadcasting=None):
     return result, broadcasting_env
 
 def normalize_simple(a, b):
-    # Normalize (CType, DataShape) pairs
-    if (type(a), type(b)) == (CType, DataShape):
-        a = DataShape(a)
-    if (type(a), type(b)) == (DataShape, CType):
-        b = DataShape(b)
+    ellipsis_ctx = {}
 
-    # Normalize ellipses and broadcasting
-    if (type(a), type(b)) == (DataShape, DataShape):
-        if (len(a.parameters), len(b.parameters)) != (1, 1):
-            a, b = normalize_ellipses(a, b)
-        a, b = normalize_broadcasting(a, b)
-    else:
-        a, b = tzip(normalize_simple, a, b)
+    def _normalize_simple(a, b):
+        # Normalize (CType, DataShape) pairs
+        if (type(a), type(b)) == (CType, DataShape):
+            a = DataShape(a)
+        if (type(a), type(b)) == (DataShape, CType):
+            b = DataShape(b)
 
-    return a, b
+        # Normalize ellipses and broadcasting
+        if (type(a), type(b)) == (DataShape, DataShape):
+            if (len(a.parameters), len(b.parameters)) != (1, 1):
+                (a, b) = normalize_ellipses(a, b, ellipsis_ctx)
+            a, b = normalize_broadcasting(a, b)
+        else:
+            a, b = tzip(_normalize_simple, a, b)
+
+        return a, b
+
+    return _normalize_simple(a, b)
 
 #------------------------------------------------------------------------
 # DataShape Normalizers
 #------------------------------------------------------------------------
 
-def normalize_ellipses(a, b):
+def normalize_ellipses(a, b, solution={}):
     """Eliminate ellipses in DataShape"""
     S = _normalize_ellipses(a, b)
-    return substitute(S, a), substitute(S, b)
+    check_ellipsis_consistency(S, solution)
+    result = substitute(S, a), substitute(S, b)
+    solution.update(S)
+    return result
 
 def normalize_broadcasting(a, b):
     """Add broadcasting dimensions to DataShapes"""
@@ -87,7 +96,7 @@ def _normalize_ellipses(ds1, ds2):
         assert len(xs) == len(ys)
         S = match(xs, ys)
     else:
-        return ds1, ds2 # no ellipses, nothing to do
+        return {} # no ellipses, nothing to do
 
     # -------------------------------------------------
     # Reverse the reversed matches
@@ -114,6 +123,7 @@ def _normalize_ellipses(ds1, ds2):
 
     return S
 
+
 def match(xs, ys, S=None):
     if S is None:
         S = defaultdict(list)
@@ -132,11 +142,32 @@ def match(xs, ys, S=None):
 
     return S
 
+
 def substitute(S, ds):
     """Substitute a solution mapping Elipses to parameters"""
     sub_param = lambda x: S[x] if isinstance(x, Ellipsis) else [x]
     return DataShape(*chain(*map(sub_param, ds.parameters)))
 
+
+def check_ellipsis_consistency(solutions1, solutions2):
+    """
+    Check that all ellipsis type variables has valid dimensions within the
+    given solution contexts.
+    """
+    # Collect all typevars in A..., int32 etc
+    ellipsis_typevars = {}
+    for ellipsis, dims in chain(solutions1.iteritems(), solutions2.iteritems()):
+        if not ellipsis.typevar:
+            continue
+
+        seen_ndim = ellipsis_typevars.get(ellipsis.typevar)
+        if seen_ndim is not None and len(dims) != seen_ndim:
+            # TODO: Broadcasting?
+            raise error.UnificationError(
+                "Differing dimensionality for type variable %s, got %s "
+                "and %s" % (ellipsis.typevar, seen_ndim, len(dims)))
+
+        ellipsis_typevars[ellipsis.typevar] = len(dims)
 
 #------------------------------------------------------------------------
 # Broadcasting

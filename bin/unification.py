@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -45,8 +46,8 @@ The Blaze typing interpreter.
         promote two blaze types to a common type general enough to represent
         values of either type
 
-    normalize(ds1, ds2):
-        normalize two datashapes for unification (ellipses, broadcasting)
+    normalize_ellipses(ds1, ds2):
+        normalize_ellipses takes two datashapes for unification (ellipses, broadcasting)
 
     coercion_cost(t1, t2):
         Determine a coercion cost for coercing type t1 to type t2
@@ -62,7 +63,7 @@ env = {
     'typeof':    typeof,
     'unify':     unify,
     'promote':   promote,
-    'normalize': normalize,
+    'normalize_ellipses': normalize,
     'coercion_cost': coercion_cost,
     'tmap':      tmap,
 }

@@ -117,7 +117,7 @@ class Unit(Mono):
 # Parse Types
 #------------------------------------------------------------------------
 
-class Ellipsis(Unit):
+class Ellipsis(Mono):
     """
     Ellipsis (...). Used to indicate a variable number of dimensions.
     E.g.:
@@ -140,7 +140,7 @@ class Ellipsis(Unit):
         return '...'
 
     def __repr__(self):
-        return 'dshape("...")'
+        return 'dshape("%s")' % (str(self),)
 
     def __hash__(self):
         return hash('...')
