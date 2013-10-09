@@ -85,8 +85,9 @@ def coercion_cost(a, b, seen=None):
         if isinstance(a, Var):
             return 0.1 # broadcasting penalty
 
-        assert isinstance(a, Fixed) and a.val in (1, b.val)
+        assert isinstance(a, Fixed)
         if a.val != b.val:
+            assert a.val == 1 or b.val == 1
             return 0.1 # broadcasting penalty
         return 0
     elif isinstance(b, Var):
@@ -98,7 +99,8 @@ def coercion_cost(a, b, seen=None):
         return coerce_datashape(a, b, seen)
     else:
         verify(a, b)
-        return sum([coercion_cost(x, y, seen) for x, y in zip(a.parameters, b.parameters)])
+        return sum([coercion_cost(x, y, seen) for x, y in zip(a.parameters,
+                                                              b.parameters)])
 
 def coerce_datashape(a, b, seen):
     # Penalize broadcasting

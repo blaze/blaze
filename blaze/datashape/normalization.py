@@ -10,7 +10,8 @@ from collections import defaultdict, deque
 
 from blaze import error
 from . import transform, tzip
-from .coretypes import DataShape, Ellipsis, Fixed, CType, int32
+from .coretypes import (DataShape, Ellipsis, Fixed, CType, Function,
+                        TypeVar, int32)
 
 #------------------------------------------------------------------------
 # Normalization
@@ -69,10 +70,12 @@ def normalize_ellipses(a, b):
     the context several times, and all occurrences must unify, i.e. the
     shapes must broadcast together.
     """
-    contexts = _collect_ellipses_contexts({}, a, b)
+    contexts = {}
+    _collect_ellipses_contexts(contexts, a, b)
     partitions = _partition_ellipses_contexts(contexts)
-    ndims = _broadcast_ellipses_partitions(partitions)
-    return _normalize_ellipses(contexts, ndims, a, b)
+    final_dims, ndims = _broadcast_ellipses_partitions(partitions)
+    result1, result2 = _normalize_ellipses(contexts, ndims, a, b)
+    return _resolve_ellipsis_return_type(final_dims, result1, result2)
 
 
 def normalize_broadcasting(a, b):
@@ -94,7 +97,8 @@ def _collect_ellipses_contexts(ctx, a, b):
         `dimensions` is the list of matched dimensions, e.g. [Fixed(10)]
     """
     if (type(a), type(b)) == (DataShape, DataShape):
-        ctx[a, b] = _normalize_ellipses_datashapes(a, b)
+        result = _normalize_ellipses_datashapes(a, b)
+        ctx[a, b] = result
         return a, b
     else:
         return tzip(partial(_collect_ellipses_contexts, ctx), a, b)
@@ -107,13 +111,14 @@ def _partition_ellipses_contexts(contexts):
 
     Returns
     =======
-    partitions: { TypeVar : [dimensions] }
+    partitions: { Ellipses : [dimensions] }
+        Map ellipses with type variables to the dimensions they correspond to
     """
     partitions = defaultdict(list)
     for ctx in contexts.itervalues():
         for ellipsis, dims in ctx.iteritems():
             if ellipsis.typevar:
-                partitions[ellipsis.typevar].append(dims)
+                partitions[ellipsis].append(dims)
 
     return partitions
 
@@ -131,14 +136,16 @@ def _broadcast_ellipses_partitions(partitions):
     from .unification import unify_simple
 
     def dummy_ds(dims):
-        return DataShape(*[dims] + [int32])
+        return DataShape(*dims + [int32])
 
     ndims = {}
-    for typevar, partition in partitions.iteritems():
-        broadcast_result = reduce(unify_simple, map(dummy_ds, partition))
-        ndims[typevar] = len(broadcast_result.parameters) - 1
+    final_dims = {}
+    for ellipsis, partition in partitions.iteritems():
+        final_dshape = reduce(unify_simple, map(dummy_ds, partition))
+        final_dims[ellipsis.typevar] = final_dshape.shape
+        ndims[ellipsis.typevar] = len(final_dshape.parameters) - 1
 
-    return ndims
+    return final_dims, ndims
 
 
 def _normalize_ellipses(contexts, ndims, a, b):
@@ -158,6 +165,32 @@ def _normalize_ellipses(contexts, ndims, a, b):
         return substitute(S, a), substitute(S, b)
     else:
         return tzip(partial(_normalize_ellipses, contexts, ndims), a, b)
+
+def _resolve_ellipsis_return_type(final_dims, result1, result2):
+    """
+    Given the broadcast dimensions, and results with ellipses resolved, see
+    if we need to manually resolve the return type of functions.
+
+    Arguments
+    =========
+    final_dims: { TypeVar : [dims] }
+        Ellipses with type variables mapping to the final broadcast dimensions
+    """
+    if (type(result1), type(result2)) == (Function, Function):
+        r1 = result1.restype
+        r2 = result2.restype
+        if isinstance(r1, TypeVar):
+            def get_dims(e):
+                if isinstance(e, Ellipsis) and e.typevar:
+                    return final_dims.get(e.typevar, [e])
+                return [e]
+
+            params = list(chain(*[get_dims(e) for e in r2.parameters]))
+            r2 = DataShape(*params)
+            params = result2.argtypes + (r2,)
+            result2 = Function(*params)
+
+    return result1, result2
 
 ####--- DataShape ellipsis resolution ---####
 

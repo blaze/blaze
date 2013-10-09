@@ -70,9 +70,10 @@ class TestNormalization(unittest.TestCase):
         self.assertRaises(error.BlazeTypeError, normalize_ellipses, ds1, ds2)
 
     def test_normalize_ellipsis_context_error(self):
-        ds1 = dshape('T, int32 -> T, T, float32')
+        ds1 = dshape('T, int32 -> T, T, int32')
         ds2 = dshape('A..., int32 -> A..., float32')
-        self.assertRaises(error.BlazeTypeError, normalize, [(ds1, ds2)])
+        [(x, y)], _ = normalize([(ds1, ds2)])
+        self.assertEqual(str(y), '1, T, int32 -> T, T, float32')
 
 
 class TestSimplification(unittest.TestCase):
