@@ -9,7 +9,7 @@ from functools import reduce
 
 from blaze import error
 from blaze.util import gensym
-from blaze.datashape import (DataShape, CType, Fixed, to_numpy,
+from blaze.datashape import (DataShape, CType, Fixed, Var, to_numpy,
                              TypeSet, TypeVar, TypeConstructor, verify)
 
 import numpy as np
@@ -31,17 +31,38 @@ def promote(a, b):
     # Fixed
 
     if isinstance(a, Fixed):
-        assert isinstance(b, Fixed)
-        if a == Fixed(1):
-            return b
-        elif b == Fixed(1):
+        if isinstance(b, Fixed):
+            if a == Fixed(1):
+                return b
+            elif b == Fixed(1):
+                return a
+            else:
+                if a != b:
+                    raise error.UnificationError(
+                        "Cannot unify differing fixed dimensions "
+                        "%s and %s" % (a, b))
+                return a
+        elif isinstance(b, Var):
+            if a == Fixed(1):
+                return b
+            else:
+                return a
+        else:
+            raise TypeError("Unknown types, cannot promote: %s and %s" % (a, b))
+
+    # -------------------------------------------------
+    # Var
+
+    elif isinstance(a, Var):
+        if isinstance(b, Fixed):
+            if b == Fixed(1):
+                return a
+            else:
+                return b
+        elif isinstance(b, Var):
             return a
         else:
-            if a != b:
-                raise error.UnificationError(
-                    "Cannot unify differing fixed dimensions "
-                    "%s and %s" % (a, b))
-            return a
+            raise TypeError("Unknown types, cannot promote: %s and %s" % (a, b))
 
     # -------------------------------------------------
     # Typeset

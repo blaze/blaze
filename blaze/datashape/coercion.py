@@ -15,7 +15,7 @@ from itertools import chain, product
 from blaze import error
 from .coretypes import CType, TypeVar
 from .traits import *
-from . import verify, normalize, Implements, Fixed, Ellipsis, DataShape
+from . import verify, normalize, Implements, Fixed, Var, Ellipsis, DataShape
 
 class CoercionTable(object):
     """Table to hold coercion rules"""
@@ -57,7 +57,7 @@ def coercion_cost(a, b, seen=None):
     """
     Determine a coercion cost from type `a` to type `b`.
 
-    Type `a` and `b'` must be unifyable and normalized.
+    Type `a` and `b'` must be unifiable and normalized.
     """
     # TODO: Cost functions for conversion between type constructors in the
     # lattice (implement a "type join")
@@ -82,8 +82,16 @@ def coercion_cost(a, b, seen=None):
         else:
             raise error.CoercionError(a, b)
     elif isinstance(b, Fixed):
+        if isinstance(a, Var):
+            return 0.1 # broadcasting penalty
+
         assert isinstance(a, Fixed) and a.val in (1, b.val)
         if a.val != b.val:
+            return 0.1 # broadcasting penalty
+        return 0
+    elif isinstance(b, Var):
+        assert type(a) in [Var, Fixed]
+        if isinstance(a, Fixed):
             return 0.1 # broadcasting penalty
         return 0
     elif isinstance(a, DataShape) and isinstance(b, DataShape):
