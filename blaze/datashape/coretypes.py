@@ -454,9 +454,6 @@ class DataShape(Mono):
                             'type %s to datashape') % type(other))
 
     def __hash__(self):
-        for val in self[:-1]:
-            if isinstance(val, Ellipsis):
-                raise TypeError("Data-shape with '...' is unhashable")
         return hash(tuple(a for a in self))
 
     def __ne__(self, other):
