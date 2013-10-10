@@ -8,11 +8,12 @@ from blaze import ckernel
 from blaze.datadescriptor import (data_descriptor_from_ctypes,
                 execute_expr_single, dd_as_py)
 from blaze.py2help import izip
+from dynd import nd, ndt, _lowlevel
 
 class TestBroadcastUnarySingleCKernel(unittest.TestCase):
     def setUp(self):
         # Create a ternary single ckernel
-        @ckernel.ExprSingleOperation
+        @_lowlevel.ExprSingleOperation
         def my_ternary_func(dst_ptr, src_ptr, kdp):
             dst = ctypes.c_double.from_address(dst_ptr)
             class binary_src_arg(ctypes.Structure):
@@ -26,7 +27,10 @@ class TestBroadcastUnarySingleCKernel(unittest.TestCase):
             dst.value = (src0.value + 1) * src1.value + src2.value
             #print(src0, src1, src2, '->', dst, '--', hex(dst_ptr))
         # The ctypes callback object is both the function and the owner
-        self.muladd = ckernel.wrap_ckernel_func(my_ternary_func, my_ternary_func)
+        self.ckb = _lowlevel.CKernelBuilder()
+        ckernel.wrap_ckernel_func(self.ckb, 0,
+                        my_ternary_func, my_ternary_func)
+        self.muladd = self.ckb.ckernel(_lowlevel.ExprSingleOperation)
 
     def test_scalar(self):
         # Set up our data buffers
@@ -129,5 +133,5 @@ class TestBroadcastUnarySingleCKernel(unittest.TestCase):
                         for tmp in izip(src0_broadcast, src1_broadcast, src2_broadcast)])
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
 
