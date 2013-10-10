@@ -151,7 +151,7 @@ def best_match(func, argtypes, constraints=None):
         raise error.OverloadError(
             "Ambiguous overload for function %s with inputs (%s): \n%s" % (
                 func, ", ".join(map(str, argtypes)),
-                "\n".join("    %s" % (sig,) for _, sig, _ in candidates)))
+                "\n".join("    %s" % (overload.resolved_sig,) for overload in candidates)))
     else:
         return candidates[0]
 
