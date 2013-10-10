@@ -289,8 +289,8 @@ class btable(object):
             elif ratype:
                 column = barray(columns[name], **kwargs)
             self.cols[name] = column
-            if clen >= 0 and clen != len(column):
-                raise ValueError("all `columns` must have the same length")
+            # if clen >= 0 and clen != len(column):
+            #     raise ValueError("all `columns` must have the same length")
             clen = len(column)
 
         self.len = clen
@@ -372,8 +372,8 @@ class btable(object):
                 clen2 = 1
             else:
                 clen2 = len(column)
-            if clen >= 0 and clen != clen2:
-                raise ValueError("all cols in `rows` must have the same length")
+            # if clen >= 0 and clen != clen2:
+            #     raise ValueError("all cols in `rows` must have the same length")
             clen = clen2
         self.len += clen
 
@@ -807,7 +807,7 @@ class btable(object):
                 raise IndexError(
                       "arrays used as indices must be integer (or boolean)")
         # Column name or expression
-        elif type(key) is str:
+        elif type(key) in (str, unicode):
             if key not in self.names:
                 # key is not a column name, try to evaluate
                 arr = self.eval(key, depth=4)
