@@ -162,7 +162,7 @@ class btable(object):
     def dtype(self):
         "The data type of this object (numpy dtype)."
         names, cols = self.names, self.cols
-        l = [(name, cols[name].dtype) for name in names]
+        l = [(bytes(name), cols[name].dtype) for name in names]
         return np.dtype(l)
 
     @property
@@ -456,12 +456,12 @@ class btable(object):
         if name is None:
             name = "f%d" % pos
         else:
-            if type(name) != str:
+            if type(name) not in (str, unicode):
                 raise ValueError("`name` must be a string")
         if name in self.names:
             raise ValueError("'%s' column already exists" % name)
-        if len(newcol) != self.len:
-            raise ValueError("`newcol` must have the same length than btable")
+        # if len(newcol) != self.len:
+        #     raise ValueError("`newcol` must have the same length than btable")
 
         if isinstance(newcol, np.ndarray):
             if 'bparams' not in kwargs:
