@@ -7,7 +7,7 @@ import io
 import csv
 from dynd import nd, ndt
 from blaze import blz
-import numpy as np
+
 
 # The toy CSV example
 csvbuf = u"""k1,v1
