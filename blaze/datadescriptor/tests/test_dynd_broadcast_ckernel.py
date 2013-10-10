@@ -8,7 +8,6 @@ from blaze.datadescriptor import (DyNDDataDescriptor, data_descriptor_from_ctype
                 IDataDescriptor, IElementReader, IElementReadIter,
                 IElementWriter, IElementWriteIter,
                 dd_as_py, execute_unary_single)
-from blaze.ckernel import CKernel, UnarySingleOperation
 from blaze.py2help import _inttypes, izip
 
 from dynd import nd, ndt, _lowlevel
@@ -18,11 +17,11 @@ class TestDyNDBroadcastCKernel(unittest.TestCase):
         # Get a kernel from dynd
         self.ckb = _lowlevel.CKernelBuilder()
         _lowlevel.make_assignment_ckernel(
+                        self.ckb, 0,
                         ndt.float32, None,
                         ndt.int64, None,
-                        'single',
-                        self.ckb)
-        self.ck = self.ckb.ckernel(UnarySingleOperation)
+                        'unary', 'single')
+        self.ck = self.ckb.ckernel(_lowlevel.UnarySingleOperation)
 
     def tearDown(self):
         self.ck = None

@@ -7,6 +7,7 @@ from blaze import datashape
 from blaze import ckernel
 from blaze.datadescriptor import (data_descriptor_from_ctypes,
                 execute_unary_single, dd_as_py)
+from dynd import nd, ndt, _lowlevel
 
 class TestBroadcastUnarySingleCKernel(unittest.TestCase):
     def setUp(self):
@@ -15,9 +16,11 @@ class TestBroadcastUnarySingleCKernel(unittest.TestCase):
             dst = ctypes.c_double.from_address(dst_ptr)
             src = ctypes.c_float.from_address(src_ptr)
             dst.value = src.value * src.value
-        my_callback = ckernel.UnarySingleOperation(my_kernel_func)
+        my_callback = _lowlevel.UnarySingleOperation(my_kernel_func)
         # The ctypes callback object is both the function and the owner
-        self.sqr = ckernel.wrap_ckernel_func(my_callback, my_callback)
+        self.ckb = _lowlevel.CKernelBuilder()
+        ckernel.wrap_ckernel_func(self.ckb, 0, my_callback, my_callback)
+        self.sqr = self.ckb.ckernel(_lowlevel.UnarySingleOperation)
 
     def test_assign_scalar(self):
         # Set up our data buffers
