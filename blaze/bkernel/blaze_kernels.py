@@ -241,7 +241,6 @@ class BlazeElementKernel(object):
         self._ee = None
         self._func_ptr = None
         self._ctypes_func = None
-        self._single_ckernel = None
         self.module = func.module
 
     def attach(self, module):

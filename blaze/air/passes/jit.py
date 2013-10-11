@@ -98,7 +98,7 @@ def construct_blaze_kernel(function, overload):
     """
     Parameters
     ==========
-    function: blaze.kernel.Kernel
+    function: blaze.function.BlazeFunc
     overload: blaze.overloading.Overload
     """
     func = overload.func
@@ -237,9 +237,15 @@ class CKernelTransformer(object):
             # out_rank = len(op.type.shape)
             # tree = tree.adapt(out_rank, llvm_array.C_CONTIGUOUS)
             ckernel_deferred = tree.make_ckernel_deferred(op.type)
-            # Skip kernel string name, first arg to 'kernel' Operations
-            args = [ir_arg for arg in op.args[1:]
-                               for ir_arg, kt_arg in self.arguments[arg]]
+
+            # Flatten the tree of args, removing duplicates just
+            # as the kernel tree does.
+            args = []
+            for arg in op.args[1:]: # Skip op.args[0], the kernel string name
+                for ir_arg, kt_arg in self.arguments[arg]:
+                    if ir_arg not in args:
+                        args.append(ir_arg)
+
             new_op = Op('ckernel', op.type, [ckernel_deferred, args], op.result)
             new_op.add_metadata({'rank': 0,
                                  'parallel': True})
