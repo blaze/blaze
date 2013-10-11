@@ -137,8 +137,7 @@ def unify_single(t1, t2, solution, remaining):
     elif isinstance(t1, TypeConstructor):
         verify(t1, t2)
     elif not free(t1) and not free(t2):
-        # No need to recurse, this will be caught by promote()
-        pass
+        verify(t1, t2)
     else:
         verify(t1, t2)
         for arg1, arg2 in zip(t1.parameters, t2.parameters):
