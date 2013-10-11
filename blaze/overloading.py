@@ -96,7 +96,7 @@ def overloadable(f):
 # Matching
 #------------------------------------------------------------------------
 
-Overload = namedtuple('Overload', 'resolved_sig, sig, func, constraints')
+Overload = namedtuple('Overload', 'resolved_sig, sig, func, constraints, kwds')
 
 def best_match(func, argtypes, constraints=None):
     """
@@ -182,4 +182,4 @@ def find_matches(overloads, argtypes, constraints=()):
             continue
         else:
             dst_sig = result[0]
-            yield Overload(dst_sig, sig, func, remaining)
+            yield Overload(dst_sig, sig, func, remaining, kwds)
