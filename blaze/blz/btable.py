@@ -463,6 +463,10 @@ class btable(object):
         # if len(newcol) != self.len:
         #     raise ValueError("`newcol` must have the same length than btable")
 
+        # The default is to persist columns if the table is persisted
+        if self.rootdir and 'rootdir' not in kwargs:
+            kwargs['rootdir'] = os.path.join(self.rootdir, name)
+
         if isinstance(newcol, np.ndarray):
             if 'bparams' not in kwargs:
                 kwargs['bparams'] = self.bparams

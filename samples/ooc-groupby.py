@@ -7,6 +7,8 @@ import io
 import csv
 from dynd import nd, ndt
 from blaze import blz
+import os.path
+from shutil import rmtree
 
 
 # The toy CSV example
@@ -36,10 +38,8 @@ reader = csv.reader(io.StringIO(csvbuf))
 dname = 'persisted.blz'
 
 def maybe_remove(persist):
-    import os.path
     if os.path.exists(persist):
         # Remove every directory starting with rootdir
-        from shutil import rmtree
         rmtree(persist)
 
 
@@ -79,8 +79,9 @@ while True:
 
     prev_keys |= skeys
 
-# Finally, print the result (do not try to dump it in the traditional
-# way because the length of the columns is not the same)
+
+# Finally, print the ssby table (do not try to dump it in the
+# traditional way because the length of the columns is not the same)
 # print "ssby:", ssby
 for key in prev_keys:
     print "key:", key, ssby[key]
