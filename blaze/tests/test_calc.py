@@ -27,5 +27,15 @@ class TestBasic(unittest.TestCase):
             result = [a*a - b*b for (a,b) in zip(range(1,6),range(5))]
             self.assertEqual(dd_as_py(c._data), result)
 
+    def test_ragged(self):
+        a = blaze.array([[1], [2, 3], [4, 5, 6]])
+        b = blaze.array([[1, 2, 3], [4, 5], [6]])
+        c = blaze.eval(a + b)
+        self.assertEqual(dd_as_py(c._data),
+                    [[2, 3, 4], [6, 8], [10, 11, 12]])
+        c = blaze.eval(2 * a - b)
+        self.assertEqual(dd_as_py(c._data),
+                    [[1, 0, -1], [0, 1], [2, 4, 6]])
+
 if __name__ == '__main__':
     unittest.main()
