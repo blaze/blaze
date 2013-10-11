@@ -54,19 +54,16 @@ while True:
         new_keys = skeys.difference(prev_keys)
         for new_key in new_keys:
             # Get the index of the new key
-            i = keys.index(new_key)
+            idx = keys.index(new_key)
             # and add the values as a new columns
-            ssby.addcol(sby[i], new_key)
+            ssby.addcol(sby[idx], new_key)
         # Now fill the pre-existing keys
-        for prev_key in prev_keys:
+        existing_keys = skeys.intersection(prev_keys)
+        for existing_key in existing_keys:
             # Get the index of the existing key
-            try:
-                i = keys.index(prev_key)
-            except ValueError:
-                pass
-            else:
-                # and, if it exists, append the values here
-                ssby[prev_key].append(sby[i])
+            idx = keys.index(existing_key)
+            # and append the values here
+            ssby[existing_key].append(sby[idx])
 
     prev_keys |= skeys
 
