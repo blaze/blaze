@@ -69,8 +69,11 @@ def _build_tst(kernel, storage1, storage2, storage3, R):
                 self.assert_(not Rc._data.persistent)
 
         finally:
-            if p is not None:
-                blaze.drop(p)
+            try:
+                if p is not None:
+                    blaze.drop(p)
+            except:
+                pass # show the real error...
 
     return function
 
