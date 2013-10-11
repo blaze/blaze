@@ -32,11 +32,8 @@ class TestArrayStr(unittest.TestCase):
         a = blaze.array(dd)
         self.assertEqual(str(a), '[ 3  6 10]')
 
-    # This is broken, needs to be revisited
-    @skip('ragged array printing not working')
     def test_ragged_array(self):
-        dd = DyNDDataDescriptor(nd.array([[1,2,3],[4,5]]))
-        a = blaze.array(dd)
+        a = blaze.array([[1,2,3],[4,5]])
         self.assertEqual(str(a),
             '[[        1         2         3]\n [        4         5]]')
 
