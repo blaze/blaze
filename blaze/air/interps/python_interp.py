@@ -19,7 +19,7 @@ import numpy as np
 def compile(func, env):
     return func, env
 
-def interpret(func, args, **kwds):
+def interpret(func, env, args, **kwds):
     args = [np.array(arg) for arg in args]
     env = {'interp.handlers' : handlers}
     result = interp.run(func, env, None, args=args)
