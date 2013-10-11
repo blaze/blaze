@@ -24,7 +24,8 @@ import numpy.core.umath as _um
 import numpy as np
 
 from ..datashape import (to_numpy as _internal_to_numpy,
-                         to_numpy_dtype, NotNumpyCompatible)
+                         to_numpy_dtype, NotNumpyCompatible,
+                         Fixed, Var)
 from ..datadescriptor import IDataDescriptor, dd_as_py
 
 # These are undesired dependencies:
@@ -332,11 +333,10 @@ def _choose_format(formatdict, dtypeobj):
     return format_function
 
 
-def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
+def _array2string(a, shape, dtype, max_line_width, precision, suppress_small, separator=' ',
                   prefix="", formatter=None):
 
-    shape, dtype = _to_numpy(a.dshape)
-    if any([s < 0 for s in shape]):
+    if any(isinstance(s, Var) for s in shape):
         dim_size = -1
     else:
         dim_size = reduce(product, shape, 1)
@@ -378,7 +378,7 @@ def _array2string(a, max_line_width, precision, suppress_small, separator=' ',
     assert(not hasattr(a, '_format'))
 
     # find the right formatting function for the array
-    format_function = _choose_format(formatdict, dtype.type)
+    format_function = _choose_format(formatdict, _to_numpy(dtype)[-1].type)
 
     # skip over "["
     next_line_prefix = " "
@@ -493,19 +493,16 @@ def array2string(a, max_line_width=None, precision=None,
     '[0x0L 0x1L 0x2L]'
 
     """
-    try:
-        shape, dtype = _to_numpy(a.dshape)
-    except AttributeError:
-        raise # not a blaze array
-    except NotNumpyCompatible:
-        raise # only arrays that are numpy like are supported right now
+    shape, dtype = (a.dshape[:-1], a.dshape[-1])
+    shape = tuple(int(x) if isinstance(x, Fixed) else x for x in shape)
 
-    if reduce(product, shape, 1) == 0:
+    if all(not isinstance(x, Var) for x in shape) and reduce(product, shape, 1) == 0:
         # treat as a null array if any of shape elements == 0
         lst = "[]"
     else:
-        lst = _array2string(a, max_line_width, precision, suppress_small,
-                            separator, prefix, formatter=formatter)
+        lst = _array2string(a, shape, dtype, max_line_width,
+                        precision, suppress_small,
+                        separator, prefix, formatter=formatter)
     return lst
 
 def _extendLine(s, line, word, max_line_len, next_line_prefix):
