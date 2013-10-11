@@ -9,6 +9,8 @@ class TestBasic(unittest.TestCase):
         types = ['int8', 'int16', 'int32', 'int64']
         for type_ in types:
             a = blaze.array(range(3), dshape=type_)
+            c = blaze.eval(a+a)
+            self.assertEqual(dd_as_py(c._data), [0, 2, 4])
             c = blaze.eval(((a+a)*a))
             self.assertEqual(dd_as_py(c._data), [0, 2, 8])
 
