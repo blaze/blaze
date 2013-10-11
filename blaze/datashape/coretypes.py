@@ -989,7 +989,8 @@ class TypeConstructor(type):
         def __init__(self, *params):
             if len(params) != n:
                 raise TypeError(
-                    "Expected %d parameters, got %d" % (n, len(params)))
+                    "Expected %d parameters for constructor %s, got %d" % (
+                        n, name, len(params)))
             self.parameters = params
 
         def __eq__(self, other):
