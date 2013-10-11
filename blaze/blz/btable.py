@@ -162,7 +162,7 @@ class btable(object):
     def dtype(self):
         "The data type of this object (numpy dtype)."
         names, cols = self.names, self.cols
-        l = [(name, cols[name].dtype) for name in names]
+        l = [(bytes(name), cols[name].dtype) for name in names]
         return np.dtype(l)
 
     @property
@@ -289,8 +289,8 @@ class btable(object):
             elif ratype:
                 column = barray(columns[name], **kwargs)
             self.cols[name] = column
-            if clen >= 0 and clen != len(column):
-                raise ValueError("all `columns` must have the same length")
+            # if clen >= 0 and clen != len(column):
+            #     raise ValueError("all `columns` must have the same length")
             clen = len(column)
 
         self.len = clen
@@ -372,8 +372,8 @@ class btable(object):
                 clen2 = 1
             else:
                 clen2 = len(column)
-            if clen >= 0 and clen != clen2:
-                raise ValueError("all cols in `rows` must have the same length")
+            # if clen >= 0 and clen != clen2:
+            #     raise ValueError("all cols in `rows` must have the same length")
             clen = clen2
         self.len += clen
 
@@ -456,12 +456,16 @@ class btable(object):
         if name is None:
             name = "f%d" % pos
         else:
-            if type(name) != str:
+            if type(name) not in (str, unicode):
                 raise ValueError("`name` must be a string")
         if name in self.names:
             raise ValueError("'%s' column already exists" % name)
-        if len(newcol) != self.len:
-            raise ValueError("`newcol` must have the same length than btable")
+        # if len(newcol) != self.len:
+        #     raise ValueError("`newcol` must have the same length than btable")
+
+        # The default is to persist columns if the table is persisted
+        if self.rootdir and 'rootdir' not in kwargs:
+            kwargs['rootdir'] = os.path.join(self.rootdir, name)
 
         if isinstance(newcol, np.ndarray):
             if 'bparams' not in kwargs:
@@ -807,7 +811,7 @@ class btable(object):
                 raise IndexError(
                       "arrays used as indices must be integer (or boolean)")
         # Column name or expression
-        elif type(key) is str:
+        elif type(key) in (str, unicode):
             if key not in self.names:
                 # key is not a column name, try to evaluate
                 arr = self.eval(key, depth=4)
