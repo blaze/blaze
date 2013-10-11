@@ -32,6 +32,17 @@ dt = ndt.type('{key: string; val: string}')
 # The iterator for reading the CSV file
 reader = csv.reader(io.StringIO(csvbuf))
 
+# The name of the persisted table where the groupby will be stored
+dname = 'persisted.blz'
+
+def maybe_remove(persist):
+    import os.path
+    if os.path.exists(persist):
+        # Remove every directory starting with rootdir
+        from shutil import rmtree
+        rmtree(persist)
+
+
 # Start reading chunks
 prev_keys = set()
 while True:
@@ -48,7 +59,8 @@ while True:
 
     # Add the initial keys to a BLZ table
     if len(prev_keys) == 0:
-        ssby = blz.btable(columns=sby, names=keys)
+        maybe_remove(dname)
+        ssby = blz.btable(columns=sby, names=keys, rootdir=dname)
     else:
         # Have we new keys?
         new_keys = skeys.difference(prev_keys)
