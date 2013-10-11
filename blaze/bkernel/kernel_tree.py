@@ -137,9 +137,9 @@ class KernelTree(object):
     def fuse(self):
         if self._fused is not None:
             return self._fused
-        if self.leafnode:
-            self._update_kernelptrs(self)
-            return self
+        # Even if self is a leaf node (self.leafnode is True), do
+        # this processing, so as to consistently combine repeated
+        # arguments.
         krnlobj, children = fuse_kerneltree(self, self.kernel.module)
         new = KernelTree(krnlobj, children)
         self._update_kernelptrs(new)
