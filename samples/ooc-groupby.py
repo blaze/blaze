@@ -10,8 +10,87 @@ from blaze import blz
 import os.path
 from shutil import rmtree
 
+# Number of lines to read per each iteration
+LPC = 2
 
-# The toy CSV example
+
+def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
+    """Group the `val` field in `sreader` stream of lines by `key` index.
+
+    Parameters
+    ----------
+    sreader : iterator
+        Iterator over a stream of CSV lines.
+    key : string
+        The name of the field to be grouped by.
+    val : string
+        The field name with the values that have to be grouped.
+    dtype : dynd dtype
+        The DyND data type with all the fields of the CSV lines,
+        including the `key` and `val` names.
+    path : string
+        The path of the file where the BLZ array with the final
+        grouping will be stored.  If None (default), the BLZ will be
+        stored in-memory (and hence non-persistent).
+    lines_per_chunk : int
+        The number of chunks that have to be read to be grouped by
+        in-memory.  For optimal perfomance, some experimentation
+        should be needed.  The default value should work reasonably
+        well, though.
+        
+    Returns
+    -------
+    output : BLZ table
+        Returns a BLZ table with column names that are the groups
+        resulting from the groupby operation.  The columns are filled
+        with the `val` field of the lines delivered by `sreader`.
+
+    """
+
+    # Start reading chunks
+    prev_keys = set()
+    while True:
+        a = nd.array(islice(sreader, lines_per_chunk), dtype)
+        if len(a) == 0: break   # CSV data exhausted
+
+        # Get the set of keys for this chunk
+        keys = nd.as_py(getattr(a, key))
+        skeys = set(keys)
+        keys = list(skeys)
+        
+        # Do the groupby for this chunk
+        sby = nd.groupby(getattr(a, val), getattr(a, key), keys).eval()
+        sby = nd.as_py(sby)
+
+        if len(prev_keys) == 0:
+            # Check path and if exists, remove it and every directory below it
+            if os.path.exists(path): rmtree(path)
+            # Add the initial keys to a BLZ table
+            ssby = blz.btable(columns=sby, names=keys, rootdir=path)
+        else:
+            # Have we new keys?
+            new_keys = skeys.difference(prev_keys)
+            for new_key in new_keys:
+                # Get the index of the new key
+                idx = keys.index(new_key)
+                # and add the values as a new columns
+                ssby.addcol(sby[idx], new_key)
+            # Now fill the pre-existing keys
+            existing_keys = skeys.intersection(prev_keys)
+            for existing_key in existing_keys:
+                # Get the index of the existing key
+                idx = keys.index(existing_key)
+                # and append the values here
+                ssby[existing_key].append(sby[idx])
+            assert skeys == existing_keys | new_keys
+
+        # Add the new keys to the existing ones
+        prev_keys |= skeys
+
+    return ssby
+
+
+# A CSV toy example
 csvbuf = u"""k1,v1
 k2,v2
 k3,v3
@@ -25,63 +104,22 @@ k1,v10
 k5,v11
 """
 
-# Number of rows to read per each iteration
-nrows_in_chunk = 2
+if __name__ == "__main__":
+    
+    # The iterator for reading the CSV file line by line
+    sreader = csv.reader(io.StringIO(csvbuf))
+    
+    # The dynd dtype for the CSV file above
+    dt = ndt.type('{key: string; val: string}')
+    
+    # The name of the persisted table where the groupby will be stored
+    path = 'persisted.blz'
 
-# The dynd dtype for the CSV file above
-dt = ndt.type('{key: string; val: string}')
-
-# The iterator for reading the CSV file
-reader = csv.reader(io.StringIO(csvbuf))
-
-# The name of the persisted table where the groupby will be stored
-dname = 'persisted.blz'
-
-def maybe_remove(persist):
-    if os.path.exists(persist):
-        # Remove every directory starting with rootdir
-        rmtree(persist)
-
-
-# Start reading chunks
-prev_keys = set()
-while True:
-    a = nd.array(islice(reader, nrows_in_chunk), dt)
-    if len(a) == 0: break   # CSV data exhausted
-
-    keys = nd.as_py(a.key)
-    skeys = set(keys)
-    keys = list(skeys)
-
-    # Do the groupby for this chunk using dynd
-    sby = nd.groupby(a.val, a.key, keys).eval()
-    sby = nd.as_py(sby)
-
-    # Add the initial keys to a BLZ table
-    if len(prev_keys) == 0:
-        maybe_remove(dname)
-        ssby = blz.btable(columns=sby, names=keys, rootdir=dname)
-    else:
-        # Have we new keys?
-        new_keys = skeys.difference(prev_keys)
-        for new_key in new_keys:
-            # Get the index of the new key
-            idx = keys.index(new_key)
-            # and add the values as a new columns
-            ssby.addcol(sby[idx], new_key)
-        # Now fill the pre-existing keys
-        existing_keys = skeys.intersection(prev_keys)
-        for existing_key in existing_keys:
-            # Get the index of the existing key
-            idx = keys.index(existing_key)
-            # and append the values here
-            ssby[existing_key].append(sby[idx])
-
-    prev_keys |= skeys
-
-
-# Finally, print the ssby table (do not try to dump it in the
-# traditional way because the length of the columns is not the same)
-# print "ssby:", ssby
-for key in prev_keys:
-    print "key:", key, ssby[key]
+    # Do the actual sortby
+    ssby = groupby(sreader, 'key', 'val', dtype=dt, path=path)
+    
+    # Finally, print the ssby table (do not try to dump it in the
+    # traditional way because the length of the columns is not the same)
+    # print "ssby:", ssby
+    for key in ssby.names:
+        print "key:", key, ssby[key]
