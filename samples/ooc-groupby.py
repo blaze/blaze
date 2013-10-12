@@ -2,6 +2,20 @@
 ## F. Alted
 ## 2013-10-10
 
+"""
+This script performs an out of core groupby operation for different datasets.
+
+The datasets to be processed are normally in CSV files and the key and
+values to be used in the grouped are defined programatically via small
+functions (see toy_stream() and statsmodel_stream() for examples).
+
+Those datasets included in statsmodel will require this package
+installed (it is available in Anaconda, so it should be an easy
+dependency to solve).
+
+Usage: `script` dataset_name
+"""
+
 from itertools import islice
 import io
 import csv
@@ -12,7 +26,7 @@ from shutil import rmtree
 import numpy as np
 
 # Number of lines to read per each iteration
-LPC = 2
+LPC = 100
 
 # Max number of chars to map for a bytes or string in NumPy
 MAXCHARS = 64
@@ -51,7 +65,7 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
     """
 
     # Convert the `val` field into a numpy dtype
-    dytype = dtype[nd.as_py(dtype.field_names).index('val')]
+    dytype = dtype[nd.as_py(dtype.field_names).index(val)]
     # strings and bytes cannot be natively represented in numpy
     if dytype == ndt.string:
         nptype = "U%d" % MAXCHARS
@@ -59,7 +73,7 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
         nptype = "S%d" % MAXCHARS
     else:
         # There should be no problems with the rest
-        nptype = dydtype.as_numpy()
+        nptype = dytype.as_numpy()
     
     # Start reading chunks
     prev_keys = set()
@@ -120,22 +134,66 @@ k1,v10
 k5,v11
 """
 
-if __name__ == "__main__":
-    
-    # The iterator for reading the CSV file line by line
+def toy_stream():
     sreader = csv.reader(io.StringIO(csvbuf))
-    
     # The dynd dtype for the CSV file above
     dt = ndt.type('{key: string; val: string}')
-    
     # The name of the persisted table where the groupby will be stored
-    path = 'persisted.blz'
+    path = 'toy.blz'
+    return sreader, dt, path
 
-    # Do the actual sortby
-    ssby = groupby(sreader, 'key', 'val', dtype=dt, path=path)
-    
+
+# This access different datasets in statsmodel package
+def statsmodel_stream(stream):
+    import statsmodels.api as sm
+    data = getattr(sm.datasets, stream)
+    f = open(data.PATH, 'rb')
+    if stream == 'randhie':
+        # For a description of this dataset, see:
+        # http://statsmodels.sourceforge.net/devel/datasets/generated/randhie.html
+        f.readline()   # read out the headers line
+        dtypes = ('{mdvis: string; lncoins: float32; idp: int32;'
+                  ' lpi:float32; fmde: float32; physlm: float32;'
+                  ' disea: float32; hlthg: int32; hlthf: int32;'
+                  ' hlthp: int32}')
+    else:
+        raise NotImplementedError(
+            "Importing this dataset has not been implemented yet")
+
+    sreader = csv.reader(f)
+    dtype = ndt.type(dtypes)
+    return sreader, dtype, stream+".blz"
+
+
+if __name__ == "__main__":
+    import sys
+
+    # Which dataset do we want to group?
+    which = sys.argv[1] if len(sys.argv) > 1 else "toy"
+
+    if which == "toy":
+        # The iterator for reading the toy CSV file line by line
+        sreader, dt, path = toy_stream()
+        # Do the actual sortby
+        ssby = groupby(sreader, 'key', 'val', dtype=dt, path=path,
+                       lines_per_chunk=2)
+    elif which == "randhie":
+        # The iterator and dtype for datasets included in statsmodel
+        sreader, dt, path = statsmodel_stream(which)
+        # Do the actual sortby
+        ssby = groupby(sreader, 'mdvis', 'lncoins', dtype=dt, path=path)
+    else:
+        raise ValueError(
+            "parsing for `%s` dataset not implemented"
+            "(try either 'toy' or 'randhie')" % which)
+
+    # Reopen the BLZ object on-disk for retrieving the grouped data
+    ssby = blz.open(path)
     # Finally, print the ssby table (do not try to dump it in the
     # traditional way because the length of the columns is not the same)
     # print "ssby:", ssby
-    for key in ssby.names:
+    names = ssby.names[:]
+    # Additional sort for guaranteeing sorted keys too
+    names.sort()
+    for key in names:
         print "key:", key, ssby[key]
