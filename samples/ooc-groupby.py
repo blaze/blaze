@@ -78,38 +78,38 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
     # Start reading chunks
     prev_keys = set()
     while True:
-        a = nd.array(islice(sreader, lines_per_chunk), dtype)
-        if len(a) == 0: break   # CSV data exhausted
+        ndbuf = nd.array(islice(sreader, lines_per_chunk), dtype)
+        if len(ndbuf) == 0: break   # CSV data exhausted
 
-        # Get the set of keys for this chunk
-        keys = nd.as_py(getattr(a, key))
-        skeys = set(keys)
-        keys = list(skeys)
-        
         # Do the groupby for this chunk
-        sby = nd.groupby(getattr(a, val), getattr(a, key), keys).eval()
-        sby = nd.as_py(sby)
+        keys = getattr(ndbuf, key)
+        lkeys = nd.as_py(keys)
+        skeys = set(lkeys)
+        lkeys = list(skeys)
+        vals = getattr(ndbuf, val)
+        sby = nd.groupby(vals, keys, lkeys)
+        sby = nd.as_py(sby.eval())
 
         if len(prev_keys) == 0:
             # Check path and if it exists, remove it and every
             # directory below it
             if os.path.exists(path): rmtree(path)
             # Add the initial keys to a BLZ table
-            columns = [np.array(sby[i], nptype) for i in range(len(keys))]
-            ssby = blz.btable(columns=columns, names=keys, rootdir=path)
+            columns = [np.array(sby[i], nptype) for i in range(len(lkeys))]
+            ssby = blz.btable(columns=columns, names=lkeys, rootdir=path)
         else:
             # Have we new keys?
             new_keys = skeys.difference(prev_keys)
             for new_key in new_keys:
                 # Get the index of the new key
-                idx = keys.index(new_key)
+                idx = lkeys.index(new_key)
                 # and add the values as a new columns
                 ssby.addcol(sby[idx], new_key, dtype=nptype)
             # Now fill the pre-existing keys
             existing_keys = skeys.intersection(prev_keys)
             for existing_key in existing_keys:
                 # Get the index of the existing key
-                idx = keys.index(existing_key)
+                idx = lkeys.index(existing_key)
                 # and append the values here
                 ssby[existing_key].append(sby[idx])
             assert skeys == existing_keys | new_keys
@@ -186,6 +186,8 @@ if __name__ == "__main__":
         raise ValueError(
             "parsing for `%s` dataset not implemented"
             "(try either 'toy' or 'randhie')" % which)
+
+    ssby.flush()   # flush all the data in blz object
 
     # Reopen the BLZ object on-disk for retrieving the grouped data
     ssby = blz.open(path)
