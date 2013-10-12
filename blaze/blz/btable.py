@@ -246,8 +246,10 @@ class btable(object):
                 raise ValueError(
                     "`columns` and `names` must have the same length")
         # Check names validity
-        nt = namedtuple('_nt', names, verbose=False)
-        names = list(nt._fields)
+        # XXX This is too strict for the vltable object. Disabled temporarily.
+        # nt = namedtuple('_nt', names, verbose=False)
+        # names = list(nt._fields)
+        names = [str(name) for name in names]
 
         # Guess the kind of columns input
         calist, nalist, ratype = False, False, False
@@ -289,6 +291,8 @@ class btable(object):
             elif ratype:
                 column = barray(columns[name], **kwargs)
             self.cols[name] = column
+            # XXX This is too strict for the vltable object.
+            # Disabled temporarily.
             # if clen >= 0 and clen != len(column):
             #     raise ValueError("all `columns` must have the same length")
             clen = len(column)
@@ -372,6 +376,8 @@ class btable(object):
                 clen2 = 1
             else:
                 clen2 = len(column)
+            # XXX This is too strict for the vltable object.
+            # Disabled temporarily.
             # if clen >= 0 and clen != clen2:
             #     raise ValueError("all cols in `rows` must have the same length")
             clen = clen2
