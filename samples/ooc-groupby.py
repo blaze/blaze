@@ -9,10 +9,13 @@ from dynd import nd, ndt
 from blaze import blz
 import os.path
 from shutil import rmtree
+import numpy as np
 
 # Number of lines to read per each iteration
 LPC = 2
 
+# Max number of chars to map for a bytes or string in NumPy
+MAXCHARS = 64
 
 def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
     """Group the `val` field in `sreader` stream of lines by `key` index.
@@ -47,6 +50,17 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
     """
 
+    # Convert the `val` field into a numpy dtype
+    dytype = dtype[nd.as_py(dtype.field_names).index('val')]
+    # strings and bytes cannot be natively represented in numpy
+    if dytype == ndt.string:
+        nptype = "U%d" % MAXCHARS
+    elif dytype == ndt.bytes:
+        nptype = "S%d" % MAXCHARS
+    else:
+        # There should be no problems with the rest
+        nptype = dydtype.as_numpy()
+    
     # Start reading chunks
     prev_keys = set()
     while True:
@@ -63,10 +77,12 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
         sby = nd.as_py(sby)
 
         if len(prev_keys) == 0:
-            # Check path and if exists, remove it and every directory below it
+            # Check path and if it exists, remove it and every
+            # directory below it
             if os.path.exists(path): rmtree(path)
             # Add the initial keys to a BLZ table
-            ssby = blz.btable(columns=sby, names=keys, rootdir=path)
+            columns = [np.array(sby[i], nptype) for i in range(len(keys))]
+            ssby = blz.btable(columns=columns, names=keys, rootdir=path)
         else:
             # Have we new keys?
             new_keys = skeys.difference(prev_keys)
@@ -74,7 +90,7 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
                 # Get the index of the new key
                 idx = keys.index(new_key)
                 # and add the values as a new columns
-                ssby.addcol(sby[idx], new_key)
+                ssby.addcol(sby[idx], new_key, dtype=nptype)
             # Now fill the pre-existing keys
             existing_keys = skeys.intersection(prev_keys)
             for existing_key in existing_keys:
