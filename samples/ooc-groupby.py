@@ -83,11 +83,11 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
         # Do the groupby for this chunk
         keys = getattr(ndbuf, key)
-        lkeys = nd.as_py(keys)
-        skeys = set(lkeys)
-        lkeys = list(skeys)
         vals = getattr(ndbuf, val)
-        sby = nd.groupby(vals, keys, lkeys)
+        sby = nd.groupby(vals, keys)
+        skeys = set(nd.as_py(sby.groups))
+        lkeys = list(skeys)
+        # BLZ does not understand dynd objects (yet)
         sby = nd.as_py(sby.eval())
 
         if len(prev_keys) == 0:
