@@ -5,7 +5,7 @@ from ...py2help import skipIf
 import blaze
 from blaze import datashape
 from blaze.datadescriptor import (data_descriptor_from_cffi, dd_as_py,
-                IDataDescriptor, IElementReader, IElementReadIter)
+                IDataDescriptor)
 import ctypes
 try:
     import cffi

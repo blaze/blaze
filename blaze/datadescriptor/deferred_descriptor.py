@@ -8,7 +8,7 @@ actual deferred expression graph.
 from __future__ import print_function, division, absolute_import
 
 import blaze
-from .data_descriptor import (IDataDescriptor, IElementReader, IElementReadIter)
+from .data_descriptor import IDataDescriptor
 
 #------------------------------------------------------------------------
 # Decorators
@@ -77,9 +77,6 @@ class DeferredDescriptor(IDataDescriptor):
         # TODO: If all the args are immutable, the result
         #       is also immutable
         return False
-
-    element_read_iter   = force_evaluation('element_read_iter')
-    element_reader      = force_evaluation('element_reader')
 
     __array__           = force_evaluation('__array__')
 

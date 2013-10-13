@@ -3,41 +3,12 @@ import operator
 import bisect
 
 from blaze.datashape import dshape
-from . import (IElementReader, IElementWriter,
-                IElementReadIter, IElementWriteIter,
-                IDataDescriptor)
+from . import IDataDescriptor
 
 def cat_descriptor_iter(ddlist):
     for i, dd in enumerate(ddlist):
         for el in dd:
             yield el
-
-class CatElementReader(IElementReader):
-    def __init__(self, catdd, nindex):
-        if nindex > catdd._ndim:
-            raise IndexError('Cannot have more indices than dimensions')
-        self._nindex = nindex
-        self._catdd = catdd
-
-    @property
-    def nindex(self):
-        return self._nindex
-
-    def get(self, idx):
-        raise NotImplemented
-
-class CatElementReadIter(IElementReadIter):
-    def __init__(self, catdd):
-        assert catdd.ndim > 0
-        self._catdd = catdd
-        self._index = 0
-        self._len = self._catdd.shape[0]
-
-    def __len__(self):
-        return self._len
-
-    def __next__(self):
-        raise NotImplemented
 
 class CatDataDescriptor(IDataDescriptor):
     """
@@ -83,6 +54,7 @@ class CatDataDescriptor(IDataDescriptor):
         # Just integer indices (no slices) for now
         boundary_index = self._boundary_index
         dim_size = boundary_index[-1]
+        # TODO: Handle a slice in key[0] too!
         idx0 = operator.index(key[0])
         # Determine which data descriptor in the list to use
         if idx0 >= 0:
@@ -100,10 +72,3 @@ class CatDataDescriptor(IDataDescriptor):
 
     def __iter__(self):
         return cat_descriptor_iter(self._ddlist)
-
-    def element_reader(self, nindex):
-        return CatElementReader(self, nindex)
-
-    def element_read_iter(self):
-        return CatElementReadIter(self)
-

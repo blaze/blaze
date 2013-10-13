@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from .data_descriptor import (IDataDescriptor, IElementReader, IElementReadIter)
+from .data_descriptor import IDataDescriptor
 
 from ..bkernel.kernel_tree import find_unique_args, Argument
 
@@ -109,10 +109,5 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
             raise IndexError('Cannot iterate over a scalar')
 
     def __getitem__(self, key):
-        raise NotImplemented
+        raise NotImplementedError
 
-    def element_read_iter(self):
-        raise NotImplemented
-
-    def element_reader(self, nindex):
-        raise NotImplemented

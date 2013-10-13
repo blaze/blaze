@@ -11,8 +11,7 @@ from .constructors import empty
 from .datadescriptor import (IDataDescriptor,
                              BlazeFuncDeprecatedDescriptor,
                              BLZDataDescriptor,
-                             DeferredDescriptor,
-                             execute_expr_single)
+                             DeferredDescriptor)
 from .py2help import reduce
 from .datashape import to_numpy
 from .air import prepare, interps

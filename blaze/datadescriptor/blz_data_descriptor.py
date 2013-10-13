@@ -3,10 +3,7 @@ import operator
 import contextlib
 import ctypes
 
-from .data_descriptor import (IElementReader, IElementWriter,
-                              IElementReadIter, IElementWriteIter,
-                              IElementAppender, IDataDescriptor,
-                              buffered_ptr_ctxmgr)
+from .data_descriptor import IDataDescriptor
 from .. import datashape
 import numpy as np
 from dynd import nd, ndt
@@ -23,138 +20,6 @@ def blz_descriptor_iter(blzarr):
         # to a scalar, this is a way to avoid that
         el = np.array(blzarr[i], dtype=blzarr.dtype)
         yield DyNDDataDescriptor(nd.array(el))
-
-class BLZElementReader(IElementReader):
-    def __init__(self, blzarr, nindex, ds):
-        if nindex > blzarr.ndim:
-            raise IndexError('Cannot have more indices than dimensions')
-        self._nindex = nindex
-        self.blzarr = blzarr
-        self._dshape = ds
-
-    @property
-    def nindex(self):
-        return self._nindex
-
-    @property
-    def dshape(self):
-        return self._dshape
-
-    def read_single(self, idx, count=1):
-        if len(idx) != self.nindex:
-            raise IndexError('Incorrect number of indices (got %d, require %d)' %
-                           (len(idx), self.nindex))
-        idx = tuple([operator.index(i) for i in idx])
-        #by making always a slice on the inner dimension of the index, we allow handling
-
-        idx = idx[:-1] + (slice(idx[-1], idx[-1]+count),)
-        x = self.blzarr[idx]
-        # x is already well-behaved (C-contiguous and native order)
-        self._tmpbuffer = x
-        return x.ctypes.data
-
-
-
-class BLZElementReadIter(IElementReadIter):
-    def __init__(self, blzarr, ds):
-        if blzarr.ndim <= 0:
-            raise IndexError('Need at least one dimension for iteration')
-        self.blzarr = blzarr
-        self._index = 0
-        self._len = len(self.blzarr)
-        self._dshape = ds
-
-    @property
-    def dshape(self):
-        return self._dshape
-
-    def __len__(self):
-        return self._len
-
-    def __next__(self):
-        if self._index < self._len:
-            i = self._index
-            self._index = i + 1
-            x = self.blzarr[i:i+1]
-            # x is already well-behaved (C-contiguous and native order)
-            self._tmpbuffer = x
-            return x.ctypes.data
-        else:
-            raise StopIteration
-
-# Keep this private until we decide if this interface should be public or not
-class _BLZElementWriteIter(IElementWriteIter):
-    def __init__(self, blzarr):
-        if blzarr.ndim <= 0:
-            raise IndexError('Need at least one dimension for iteration')
-        self._index = 0
-        self._len = len(blzarr)
-        self._dshape = datashape.from_numpy(blzarr.shape[1:], blzarr.dtype)
-        self._buffer_index = -1
-        self.blzarr = blzarr
-        self._rshape = blzarr.shape[1:]
-        self._dtype = blzarr.dtype.newbyteorder('=')
-
-    @property
-    def dshape(self):
-        return self._dshape
-
-    def __len__(self):
-        return self._len
-
-    def __next__(self):
-        # Copy the previous element to the array if it is buffered
-        if self._buffer_index >= 0:
-            self.blzarr.append(self._buffer)
-            self._buffer_index = -1
-        if self._index < self._len:
-            i = self._index
-            self._index = i + 1
-            if self._buffer is None:
-                self._buffer = np.empty(self._rshape, self._dtype)
-            self._buffer_index = i
-            return self._buffer.ctypes.data
-        else:
-            raise StopIteration
-
-
-class BLZElementAppender(IElementAppender):
-    def __init__(self, blzarr):
-        if blzarr.ndim <= 0:
-            raise IndexError('Need at least one dimension for append')
-        self.blzarr = blzarr
-
-    @property
-    def dshape(self):
-        return datashape.from_numpy(self.blzarr.shape[1:],
-                                    self.blzarr.dtype)
-
-    def append(self, ptr, count):
-        # Create a temporary NumPy array around the ptr data
-        blzarr = self.blzarr
-        shape = (count,) + blzarr.shape[1:]
-        rowsize = blzarr.dtype.itemsize * np.prod(shape)
-        buf = (ctypes.c_char * rowsize).from_address(ptr)
-        tmp = np.frombuffer(buf, blzarr.dtype).reshape(shape)
-        # Actually append the values
-        blzarr.append(tmp)
-
-    def buffered_ptr(self, count=1):
-        def buffer_flush():
-            self.blzarr.append(self._buf)
-
-        # if no buffer yet, or too small of a buffer, allocate a new one.
-        if not hasattr(self, "_buf") or self._buf_size < count:
-            self._buf = np.empty((count,) + self.blzarr.shape[1:],
-                                 dtype=self.blzarr.dtype)
-            self._buf_size = count
-
-        return buffered_ptr_ctxmgr(self._buf.ctypes.data, buffer_flush)
-
-    def close(self):
-        # Flush the remaining data in buffers
-        self.blzarr.flush()
-
 
 class BLZDataDescriptor(IDataDescriptor):
     """
@@ -222,23 +87,16 @@ class BLZDataDescriptor(IDataDescriptor):
     # it.
     def append(self, values):
         """Append a list of values."""
-        with self.element_appender() as eap:
-            shape, dtype = datashape.to_numpy(self.dshape)
-            values_arr = np.array(values, dtype=dtype)
-            shape_vals = values_arr.shape
-            if len(shape_vals) < len(shape):
-                shape_vals = (1,) + shape_vals
-            if len(shape_vals) != len(shape):
-                raise ValueError("shape of values is not compatible")
-            # Now, do the actual append
-            values_ptr = values_arr.ctypes.data
-            eap.append(values_ptr, shape_vals[0])
-
-    def element_appender(self):
-        if self.appendable:
-            return contextlib.closing(BLZElementAppender(self.blzarr))
-        else:
-            raise ArrayWriteError('Cannot write to readonly BLZ array')
+        shape, dtype = datashape.to_numpy(self.dshape)
+        values_arr = np.array(values, dtype=dtype)
+        shape_vals = values_arr.shape
+        if len(shape_vals) < len(shape):
+            shape_vals = (1,) + shape_vals
+        if len(shape_vals) != len(shape):
+            raise ValueError("shape of values is not compatible")
+        # Now, do the actual append
+        self.blzarr.append(values_arr.reshape(shape_vals))
+        self.blzarr.flush()
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
@@ -308,9 +166,3 @@ class BLZDataDescriptor(IDataDescriptor):
 	# Return the iterable
         return blz.whereblocks(self.blzarr, expression, blen,
 			       outfields, limit, skip)
-
-    def element_reader(self, nindex):
-        return BLZElementReader(self.blzarr, nindex, self.dshape.subarray(nindex))
-
-    def element_read_iter(self):
-        return BLZElementReadIter(self.blzarr, self.dshape.subarray(1))
