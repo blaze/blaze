@@ -64,20 +64,25 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
     """
 
-    def get_numpy_dtype(dtype):
+    def get_nptype(dtype, val):
         # Convert the `val` field into a numpy dtype
         dytype = dtype[nd.as_py(dtype.field_names).index(val)]
         # strings and bytes cannot be natively represented in numpy
         if dytype == ndt.string:
-            nptype = "U%d" % MAXCHARS
+            nptype = np.dtype("U%d" % MAXCHARS)
         elif dytype == ndt.bytes:
-            nptype = "S%d" % MAXCHARS
+            nptype = np.dtype("S%d" % MAXCHARS)
         else:
             # There should be no problems with the rest
             nptype = dytype.as_numpy()
-        return npdtype
+        return nptype
 
-    npdtype = get_numpy_dtype(dytype)
+    if val is None:
+        types = [(bytes(name), get_nptype(dtype, name))
+                 for name in nd.as_py(dtype.field_names)]
+        nptype = np.dtype(types)
+    else:
+        nptype = get_nptype(dtype, val)
         
     # Start reading chunks
     prev_keys = set()
@@ -87,7 +92,10 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
         # Do the groupby for this chunk
         keys = getattr(ndbuf, key)
-        vals = getattr(ndbuf, val)
+        if val is None:
+            vals = ndbuf
+        else:
+            vals = getattr(ndbuf, val)
         sby = nd.groupby(vals, keys)
         skeys = set(nd.as_py(sby.groups))
         lkeys = list(skeys)
