@@ -64,17 +64,21 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
     """
 
-    # Convert the `val` field into a numpy dtype
-    dytype = dtype[nd.as_py(dtype.field_names).index(val)]
-    # strings and bytes cannot be natively represented in numpy
-    if dytype == ndt.string:
-        nptype = "U%d" % MAXCHARS
-    elif dytype == ndt.bytes:
-        nptype = "S%d" % MAXCHARS
-    else:
-        # There should be no problems with the rest
-        nptype = dytype.as_numpy()
-    
+    def get_numpy_dtype(dtype):
+        # Convert the `val` field into a numpy dtype
+        dytype = dtype[nd.as_py(dtype.field_names).index(val)]
+        # strings and bytes cannot be natively represented in numpy
+        if dytype == ndt.string:
+            nptype = "U%d" % MAXCHARS
+        elif dytype == ndt.bytes:
+            nptype = "S%d" % MAXCHARS
+        else:
+            # There should be no problems with the rest
+            nptype = dytype.as_numpy()
+        return npdtype
+
+    npdtype = get_numpy_dtype(dytype)
+        
     # Start reading chunks
     prev_keys = set()
     while True:
