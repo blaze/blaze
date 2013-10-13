@@ -19,7 +19,7 @@ import shutil
 from .blz_ext import barray
 from .bparams import bparams
 from .chunked_eval import evaluate
-from ..py2help import _inttypes, imap, xrange
+from ..py2help import _inttypes, _strtypes, imap, xrange
 
 # BLZ utilities
 from . import utils, attrs, arrayprint
@@ -162,7 +162,7 @@ class btable(object):
     def dtype(self):
         "The data type of this object (numpy dtype)."
         names, cols = self.names, self.cols
-        l = [(bytes(name), cols[name].dtype) for name in names]
+        l = [(str(name), cols[name].dtype) for name in names]
         return np.dtype(l)
 
     @property
@@ -462,7 +462,7 @@ class btable(object):
         if name is None:
             name = "f%d" % pos
         else:
-            if type(name) not in (str, unicode):
+            if type(name) not in _strtypes:
                 raise ValueError("`name` must be a string")
         if name in self.names:
             raise ValueError("'%s' column already exists" % name)
@@ -817,7 +817,7 @@ class btable(object):
                 raise IndexError(
                       "arrays used as indices must be integer (or boolean)")
         # Column name or expression
-        elif type(key) in (str, unicode):
+        elif type(key) in _strtypes:
             if key not in self.names:
                 # key is not a column name, try to evaluate
                 arr = self.eval(key, depth=4)

@@ -12,6 +12,7 @@ from blaze import error
 from . import transform, tzip
 from .coretypes import (DataShape, Ellipsis, Fixed, CType, Function,
                         TypeVar, int32)
+from ..py2help import reduce
 
 #------------------------------------------------------------------------
 # Normalization
