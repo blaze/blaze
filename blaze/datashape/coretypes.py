@@ -20,11 +20,6 @@ import numpy as np
 # Type Metaclass
 #------------------------------------------------------------------------
 
-###########################################################################
-### TODO: itemsize and alignment should not be here, but should rather be #
-###       conveyed externally                                             #
-###########################################################################
-
 # Classes of unit types.
 DIMENSION = 1
 MEASURE   = 2
@@ -214,18 +209,6 @@ class Bytes(Unit):
     """ Bytes type """
     cls = MEASURE
 
-    def __init__(self):
-        self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
-        self._c_alignment = ctypes.alignment(ctypes.c_void_p)
-
-    @property
-    def c_itemsize(self):
-        return self._c_itemsize
-
-    @property
-    def c_alignment(self):
-        return self._c_alignment
-
     def __str__(self):
         return 'bytes'
 
@@ -301,16 +284,6 @@ class String(Unit):
 
         # Put it in a canonical form
         self.encoding = _canonical_string_encodings[self.encoding]
-        self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
-        self._c_alignment = ctypes.alignment(ctypes.c_void_p)
-
-    @property
-    def c_itemsize(self):
-        return self._c_itemsize
-
-    @property
-    def c_alignment(self):
-        return self._c_alignment
 
     def __str__(self):
         if self.fixlen is None and self.encoding == 'U8':
@@ -375,51 +348,6 @@ class DataShape(Mono):
         # TODO: Why are low-level concepts like strides and alignment on
         # TODO: the datashape?
         ###
-
-        # Calculate the C itemsize and strides, which
-        # are based on a C-order contiguous assumption
-        c_itemsize = getattr(parameters[-1], 'c_itemsize', None)
-        c_alignment = getattr(parameters[-1], 'c_alignment', None)
-        c_strides = []
-        for p in parameters[-2::-1]:
-            c_strides.insert(0, c_itemsize)
-            if c_itemsize is not None:
-                if isinstance(p, Fixed):
-                    c_itemsize *= operator.index(p)
-                else:
-                    c_itemsize = None
-        self._c_itemsize = c_itemsize
-        if c_itemsize is None:
-            self._c_alignment = None
-            self._c_strides = None
-        else:
-            self._c_alignment = c_alignment
-            self._c_strides = tuple(c_strides)
-
-    @property
-    def c_itemsize(self):
-        """The size of one element of this type, with C-contiguous storage."""
-        if self._c_itemsize is not None:
-            return self._c_itemsize
-        else:
-            raise AttributeError('data shape does not have a fixed C itemsize')
-
-    @property
-    def c_alignment(self):
-        """The alignment of one element of this type, with C-contiguous storage."""
-        if self._c_alignment is not None:
-            return self._c_alignment
-        else:
-            raise AttributeError('data shape does not have a fixed C alignment')
-
-    @property
-    def c_strides(self):
-        """A tuple of all the strides for the data shape,
-        assuming C-contiguous storage."""
-        if self._c_strides is not None:
-            return self._c_strides
-        else:
-            raise AttributeError('data shape does not have a fixed C layout')
 
     def __len__(self):
         return len(self.parameters)
@@ -537,14 +465,6 @@ class Option(DataShape):
 
         self.parameters = params
         self.ty = params[0]
-
-    @property
-    def c_itemsize(self):
-        return self.ty.c_itemsize
-
-    @property
-    def c_alignment(self):
-        return self.ty.c_alignment
 
     def __str__(self):
         return 'Option(%s)' % str(self.ty)
@@ -852,34 +772,6 @@ class Record(Mono):
         self.__v = [f[1] for f in fields]
         self.parameters = (fields,)
 
-        c_alignment = 1
-        c_itemsize = 0
-        c_offsets = []
-        for t in self.__v:
-            al = getattr(t, 'c_alignment', None)
-            sz = getattr(t, 'c_itemsize', None)
-            if None in (al, sz):
-                c_alignment = None
-                c_itemsize = None
-                break
-            c_alignment = max(c_alignment, al)
-            # Advance itemsize so this type is aligned
-            c_itemsize = (c_itemsize + al - 1) & (-al)
-            c_offsets.append(c_itemsize)
-            c_itemsize += sz
-        # Advance itemsize so the whole itemsize is aligned
-        if c_itemsize is not None:
-            c_itemsize = (c_itemsize + c_alignment - 1) & (-c_alignment)
-        c_offsets = c_offsets and tuple(c_offsets)
-        if c_itemsize is None:
-            self._c_itemsize = None
-            self._c_alignment = None
-            self._c_offsets = None
-        else:
-            self._c_itemsize = c_itemsize
-            self._c_alignment = c_alignment
-            self._c_offsets = c_offsets
-
     @property
     def fields(self):
         return self.__d
@@ -891,30 +783,6 @@ class Record(Mono):
     @property
     def types(self):
         return self.__v
-
-    @property
-    def c_itemsize(self):
-        """The size of one element of this type stored in a C layout."""
-        if self._c_itemsize is not None:
-            return self._c_itemsize
-        else:
-            raise AttributeError('data shape does not have a fixed C itemsize')
-
-    @property
-    def c_alignment(self):
-        """The alignment of one element of this type stored in a C layout."""
-        if self._c_itemsize is not None:
-            return self._c_alignment
-        else:
-            raise AttributeError('data shape does not have a fixed C alignment')
-
-    @property
-    def c_offsets(self):
-        """The offsets of all the fields of this type stored in a C layout."""
-        if self._c_offsets is not None:
-            return self._c_offsets
-        else:
-            raise AttributeError('data shape does not have fixed C offsets')
 
     def to_numpy_dtype(self):
         """
@@ -952,16 +820,6 @@ class JSON(Mono):
 
     def __init__(self):
         self.parameters = ()
-        self._c_itemsize = 2 * ctypes.sizeof(ctypes.c_void_p)
-        self._c_alignment = ctypes.alignment(ctypes.c_void_p)
-
-    @property
-    def c_itemsize(self):
-        return self._c_itemsize
-
-    @property
-    def c_alignment(self):
-        return self._c_alignment
 
     def __str__(self):
         return 'json'
