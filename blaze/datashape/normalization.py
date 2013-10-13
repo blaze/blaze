@@ -115,7 +115,7 @@ def _partition_ellipses_contexts(contexts):
         Map ellipses with type variables to the dimensions they correspond to
     """
     partitions = defaultdict(list)
-    for ctx in contexts.itervalues():
+    for ctx in contexts.values():
         for ellipsis, dims in ctx.iteritems():
             if ellipsis.typevar:
                 partitions[ellipsis].append(dims)
