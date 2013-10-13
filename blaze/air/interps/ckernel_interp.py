@@ -107,8 +107,6 @@ class CKernelInterp(object):
         inputs = [desc.dynd_arr() for desc in src_descriptors]
 
         # Execute!
-        inputs = [nd.array(input, type=intype)
-                      for input, intype in zip(inputs, deferred_ckernel.types[1:])]
         deferred_ckernel.__call__(out, *inputs)
 
         # Operations are rewritten to already refer to 'dst'
