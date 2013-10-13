@@ -58,11 +58,6 @@ class Argument(object):
     #            self._shape = self.arr.dshape.shape[-self.rank:]
     #    return self._shape
 
-    #def lift(self, newrank, newkind, module=None):
-    #    oldtype = get_eltype(self.llvmtype, self.kind)
-    #    newtype = lc.Type.pointer(array_type(newrank, newkind, oldtype, module))
-    #    return Argument(self.arr, newkind, newrank, newtype)
-
     def get_kernel_dshape(self):
         """Returns the kernel data-shape of the argument."""
         rank = self.rank
@@ -165,25 +160,6 @@ class KernelTree(object):
 
     def make_ckernel_deferred(self, out_dshape):
         return self.fuse().kernel.make_ckernel_deferred(out_dshape)
-
-    def adapt(self, newrank, newkind):
-        """
-        Take this kernel tree and create a new kerneltree adapted
-        so that the it can be the input to another element kernel
-        with rank newrank and kind newkind
-        """
-        if self.leafnode:
-            krnlobj = self.kernel
-            children = self.children
-        else:
-            krnlobj, children = fuse_kerneltree(self, self.kernel.module)
-        typechar = blaze_kernels.orderchar[newkind]
-        new = krnlobj.lift(newrank, typechar)
-        children = [child.lift(newrank, newkind) for child in children]
-        return KernelTree(new, children)
-
-    def __call__(self, *args):
-        return self.ctypes_func(*args)
 
     def __str__(self):
         pre = self.name + '('
