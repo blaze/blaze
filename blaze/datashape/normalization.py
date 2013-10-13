@@ -111,14 +111,14 @@ def _partition_ellipses_contexts(contexts):
 
     Returns
     =======
-    partitions: { Ellipses : [dimensions] }
+    partitions: { TypeVar : [dimensions] }
         Map ellipses with type variables to the dimensions they correspond to
     """
     partitions = defaultdict(list)
     for ctx in contexts.values():
         for ellipsis, dims in ctx.items():
             if ellipsis.typevar:
-                partitions[ellipsis].append(dims)
+                partitions[ellipsis.typevar].append(dims)
 
     return partitions
 
@@ -140,10 +140,10 @@ def _broadcast_ellipses_partitions(partitions):
 
     ndims = {}
     final_dims = {}
-    for ellipsis, partition in partitions.items():
+    for typevar, partition in partitions.items():
         final_dshape = reduce(unify_simple, map(dummy_ds, partition))
-        final_dims[ellipsis.typevar] = final_dshape.shape
-        ndims[ellipsis.typevar] = len(final_dshape.parameters) - 1
+        final_dims[typevar] = final_dshape.shape
+        ndims[typevar] = len(final_dshape.parameters) - 1
 
     return final_dims, ndims
 

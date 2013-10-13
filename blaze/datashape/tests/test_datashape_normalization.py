@@ -59,6 +59,12 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(str(res1), 'A, N, ..., S, B, int32')
         self.assertEqual(str(res2), 'M, N, ..., S, T, float32')
 
+    def test_normalize_ellipsis_broadcasting(self):
+        ds1 = dshape('T, int32 -> T, T, int32')
+        ds2 = dshape('A..., int32 -> A..., float32')
+        [(x, y)], _ = normalize([(ds1, ds2)])
+        self.assertEqual(str(y), '1, T, int32 -> T, T, float32')
+
     def test_normalize_ellipses_2_ellipses3_error(self):
         ds1 = dshape('A, ..., int32')
         ds2 = dshape('..., B, float32')
@@ -68,12 +74,6 @@ class TestNormalization(unittest.TestCase):
         ds1 = dshape('..., A, int32')
         ds2 = dshape('B, ..., float32')
         self.assertRaises(error.BlazeTypeError, normalize_ellipses, ds1, ds2)
-
-    def test_normalize_ellipsis_context_error(self):
-        ds1 = dshape('T, int32 -> T, T, int32')
-        ds2 = dshape('A..., int32 -> A..., float32')
-        [(x, y)], _ = normalize([(ds1, ds2)])
-        self.assertEqual(str(y), '1, T, int32 -> T, T, float32')
 
 
 class TestSimplification(unittest.TestCase):
