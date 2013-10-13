@@ -15,7 +15,6 @@ from .datadescriptor import (IDataDescriptor,
 from .py2help import reduce
 from .datashape import to_numpy
 from .air import prepare, interps
-from .executive import simple_execute_append
 from . import blz
 
 #------------------------------------------------------------------------
