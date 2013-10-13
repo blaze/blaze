@@ -116,7 +116,7 @@ def _partition_ellipses_contexts(contexts):
     """
     partitions = defaultdict(list)
     for ctx in contexts.values():
-        for ellipsis, dims in ctx.iteritems():
+        for ellipsis, dims in ctx.items():
             if ellipsis.typevar:
                 partitions[ellipsis].append(dims)
 
@@ -140,7 +140,7 @@ def _broadcast_ellipses_partitions(partitions):
 
     ndims = {}
     final_dims = {}
-    for ellipsis, partition in partitions.iteritems():
+    for ellipsis, partition in partitions.items():
         final_dshape = reduce(unify_simple, map(dummy_ds, partition))
         final_dims[ellipsis.typevar] = final_dshape.shape
         ndims[ellipsis.typevar] = len(final_dshape.parameters) - 1
@@ -155,7 +155,7 @@ def _normalize_ellipses(contexts, ndims, a, b):
     """
     if (type(a), type(b)) == (DataShape, DataShape):
         S = contexts[a, b]
-        for ellipsis, dims in S.iteritems():
+        for ellipsis, dims in S.items():
             if ellipsis.typevar:
                 expected_ndim = ndims[ellipsis.typevar]
                 got_ndim = len(dims)
@@ -273,7 +273,7 @@ def check_ellipsis_consistency(solutions1, solutions2):
     """
     # Collect all typevars in A..., int32 etc
     ellipsis_typevars = {}
-    for ellipsis, dims in chain(solutions1.iteritems(), solutions2.iteritems()):
+    for ellipsis, dims in chain(solutions1.items(), solutions2.items()):
         if not ellipsis.typevar:
             continue
 
