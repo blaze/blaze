@@ -121,23 +121,23 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
 
 # A CSV toy example
-csvbuf = u"""k1,v1
-k2,v2
-k3,v3
-k4,v4
-k5,v5
-k5,v6
-k4,v7
-k4,v8
-k4,v9
-k1,v10
-k5,v11
+csvbuf = u"""k1,v1,1,u1
+k2,v2,2,u2
+k3,v3,3,u3
+k4,v4,4,u4
+k5,v5,5,u5
+k5,v6,6,u6
+k4,v7,7,u7
+k4,v8,8,u8
+k4,v9,9,u9
+k1,v10,10,u9
+k5,v11,11,u11
 """
 
 def toy_stream():
     sreader = csv.reader(io.StringIO(csvbuf))
     # The dynd dtype for the CSV file above
-    dt = ndt.type('{key: string; val: string}')
+    dt = ndt.type('{key: string; val1: string; val2: int32; val3: bytes}')
     # The name of the persisted table where the groupby will be stored
     path = 'toy.blz'
     return sreader, dt, path
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         # The iterator for reading the toy CSV file line by line
         sreader, dt, path = toy_stream()
         # Do the actual sortby
-        ssby = groupby(sreader, 'key', 'val', dtype=dt, path=path,
+        ssby = groupby(sreader, 'key', 'val1', dtype=dt, path=path,
                        lines_per_chunk=2)
     elif which == "randhie":
         # The iterator and dtype for datasets included in statsmodel
