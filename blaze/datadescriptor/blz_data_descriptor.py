@@ -205,14 +205,10 @@ class BLZDataDescriptor(IDataDescriptor):
         return len(self.blzarr)
 
     def __getitem__(self, key):
-        # Just integer indices (no slices) for now
-        if not isinstance(key, tuple):
-            key = (key,)
-        key = tuple([operator.index(i) for i in key])
         blzarr = self.blzarr
         # The returned arrays are temporary buffers,
         # so must be flagged as readonly.
-        return DyNDDataDescriptor(nd.array(blzarr[key], access='readonly'))
+        return DyNDDataDescriptor(nd.asarray(blzarr[key], access='readonly'))
 
     def __setitem__(self, key, value):
         # We decided that BLZ should be read and append only

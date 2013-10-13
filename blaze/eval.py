@@ -74,9 +74,9 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
 
     Parameters
     ----------
-    storage:
-        Where to store the result
-        TODO: elaborate on values and input type
+    storage: blaze.Storage, optional
+        Where to store the result, if evaluating to a BLZ
+        output or (in the future) to a distributed array.
 
     caps: { str : object }
         Capabilities for evaluation and storage
@@ -92,18 +92,14 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     strategy = strategy or current_strategy()
 
     if not arr._data.deferred:
+        # TODO: This isn't right if the storage is different, requires
+        #       a copy then.
         result = arr
     elif isinstance(arr._data, DeferredDescriptor):
         result = eval_deferred(arr, storage, caps, out, strategy)
     else:
-        kt = arr._data.kerneltree.fuse()
-        if storage is not None:
-            result = eval_blz(arr, storage, caps, out, strategy)
-        else: # in memory path
-            result = eval_ckernel(arr, storage, caps, out, strategy, kt)
-
-        for name in ['axes', 'user', 'labels']:
-            setattr(result, name, getattr(arr, name))
+        raise TypeError(("unexpected input to eval, "
+                    "data desc has type %r") % type(arr._data))
 
     return result
 
@@ -124,36 +120,6 @@ def eval_deferred(arr, storage, caps, out, strategy):
     args = [ctx.terms[param] for param in ctx.params]
     result = interp.interpret(func, env, args=args, storage=storage,
                               caps=caps, out=out, strategy=strategy)
-
-    return result
-
-def eval_blz(arr, storage, caps, out, strategy):
-    from operator import mul
-    # out of core path
-    res_dshape, res_dt = to_numpy(arr._data.dshape)
-    dst_dd = BLZDataDescriptor(blz.zeros((0,)+res_dshape[1:], res_dt,
-                                         rootdir=storage.path))
-
-    # this is a simple heuristic for chunk size:
-    row_size = res_dt.itemsize
-    if len(res_dshape) > 1:
-        row_size *= reduce(mul, res_dshape[1:])
-
-    chunk_size = max(1, (1024*1024) // row_size)
-    simple_execute_append(arr._data, dst_dd, chunk=chunk_size)
-    result = Array(dst_dd)
-
-    return result
-
-def eval_ckernel(arr, storage, caps, out, strategy, kt):
-    result = empty(arr.dshape, caps)
-    args = arr._data.args
-    ubck = kt.make_unbound_ckernel(strided=False)
-    ck = ubck.bind(result._data, args)
-    execute_expr_single(result._data, [a._data for a in args],
-                        kt.kernel.dshapes[-1],
-                        kt.kernel.dshapes[:-1],
-                        ck)
 
     return result
 

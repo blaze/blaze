@@ -6,13 +6,15 @@ JIT evaluation of blaze AIR.
 
 from __future__ import print_function, division, absolute_import
 
+import operator
 import blaze
-from blaze.datadescriptor import DyNDDataDescriptor, broadcast_ckernel
+from blaze.datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
 from ..pipeline import run_pipeline
 from ..passes import ckernel, allocation
 
 from pykit.ir import visit, copy_function
-from dynd import nd
+from dynd import nd, ndt
+from blaze import blz
 
 #------------------------------------------------------------------------
 # Interpreter
@@ -22,11 +24,25 @@ def compile(func, env):
     func, env = run_pipeline(func, env, compile_time_passes)
     return func, env
 
-def interpret(func, env, args, **kwds):
+def interpret(func, env, args, storage=None, **kwds):
     assert len(args) == len(func.args)
 
     # Make a copy, since we're going to mutate our IR!
     func = copy_function(func)
+
+    # If it's a BLZ output, we want an interpreter that streams
+    # the processing through in chunks
+    if storage is not None:
+        if len(func.type.restype.shape) == 0:
+            raise TypeError('Require an array, not a scalar, for outputting to BLZ')
+        env['stream-outer'] = True
+        result_ndim = env['result-ndim'] = len(func.type.restype.shape)
+    else:
+        # Convert any persistent inputs to memory
+        # TODO: should stream the computation in this case
+        for i, arg in enumerate(args):
+            if isinstance(arg._data, BLZDataDescriptor):
+                args[i] = arg[:]
 
     # Update environment with dynd type information
     dynd_types = dict((arg, get_dynd_type(array))
@@ -37,11 +53,36 @@ def interpret(func, env, args, **kwds):
     # Lift ckernels
     func, env = run_pipeline(func, env, run_time_passes)
 
-    # Evaluate
-    values = dict(zip(func.args, args))
-    interp = CKernelInterp(values)
-    visit(interp, func)
-    return interp.result
+    if storage is None:
+        # Evaluate once
+        values = dict(zip(func.args, args))
+        interp = CKernelInterp(values)
+        visit(interp, func)
+        return interp.result
+    else:
+        res_shape, res_dt = blaze.datashape.to_numpy(func.type.restype)
+        dim_size = operator.index(res_shape[0])
+        row_size = ndt.type(str(func.type.restype.subarray(1))).data_size
+        chunk_size = min(max(1, (1024*1024) // row_size), dim_size)
+        # Evaluate by streaming the outermost dimension,
+        # and using the BLZ data descriptor's append
+        dst_dd = BLZDataDescriptor(blz.zeros((0,)+res_shape[1:], res_dt,
+                                             rootdir=storage.path))
+        # Loop through all the chunks
+        for chunk_start in range(0, dim_size, chunk_size):
+            # Tell the interpreter which chunk size to use (last
+            # chunk might be smaller)
+            chunk_size = min(chunk_size, dim_size - chunk_start)
+            # Evaluate the chunk
+            args_chunk = [arg[chunk_start:chunk_start+chunk_size]
+                            if len(arg.dshape.shape) == result_ndim
+                            else arg for arg in args]
+            values = dict(zip(func.args, args_chunk))
+            interp = CKernelChunkInterp(values, chunk_size, result_ndim)
+            visit(interp, func)
+            chunk = interp.result._data.dynd_arr()
+            dst_dd.append(chunk)
+        return blaze.Array(dst_dd)
 
 #------------------------------------------------------------------------
 # Passes
@@ -105,6 +146,60 @@ class CKernelInterp(object):
 
         out = dst_descriptor.dynd_arr()
         inputs = [desc.dynd_arr() for desc in src_descriptors]
+
+        # Execute!
+        deferred_ckernel.__call__(out, *inputs)
+
+        # Operations are rewritten to already refer to 'dst'
+        # We are essentially a 'void' operation
+        self.values[op] = None
+
+    def op_ret(self, op):
+        retvar = op.args[0]
+        self.result = self.values[retvar]
+
+class CKernelChunkInterp(object):
+    """
+    Like CKernelInterp, but for processing one chunk.
+    """
+
+    def __init__(self, values, chunk_size, result_ndim):
+        self.values = values # { Op : py_val }
+        self.chunk_size = chunk_size
+        self.result_ndim = result_ndim
+
+    def op_alloc(self, op):
+        dshape = op.type
+        # Allocate a chunk instead of the whole thing
+        if len(dshape.shape) == self.result_ndim:
+            chunk = nd.empty(self.chunk_size, str(dshape.subarray(1)))
+        else:
+            chunk = nd.empty(str(dshape))
+        self.values[op] = blaze.array(chunk)
+
+    def op_dealloc(self, op):
+        alloc, last_op = op.args
+        del self.values[alloc]
+
+    def op_ckernel(self, op):
+        deferred_ckernel = op.args[0]
+        args = [self.values[arg] for arg in op.args[1]]
+
+        dst = args[0]
+        srcs = args[1:]
+
+        dst_descriptor  = dst._data
+        src_descriptors = [src._data for src in srcs]
+
+        out = dst_descriptor.dynd_arr()
+        inputs = [desc.dynd_arr() for desc in src_descriptors]
+
+        # TODO: Remove later, explicit casting necessary for now because
+        #       of BLZ/numpy interop effect.
+        for i, (inp, tp) in enumerate(zip(inputs, deferred_ckernel.types[1:])):
+            tp = ndt.type(tp)
+            if nd.type_of(inp) != tp:
+                inputs[i] = nd.array(inp, type=tp)
 
         # Execute!
         deferred_ckernel.__call__(out, *inputs)
