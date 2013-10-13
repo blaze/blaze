@@ -6,6 +6,12 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
+# TODO: Don't mess with numba. But for now, numba seems
+#       to default to verbose debugging output.
+import numba.codegen.debug
+numbalogger = logging.getLogger('numba.codegen.debug')
+numbalogger.setLevel(logging.WARNING)
+
 # build the blaze namespace with selected functions
 
 from . import datashape, bkernel, ckernel
