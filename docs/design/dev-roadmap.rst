@@ -17,9 +17,9 @@ Version 0.3
 
 - Deferred representation of execution. [done using pykit-based AIR]
 
-- Lifting of dynd functions to blaze funcions. [TO DO?]
+- Lifting of dynd functions to blaze functions. [TO DO?]
 
-- Lifting of numpy ufuncs to dynd/blaze. [done]
+- Lifting of numpy ufuncs to blaze functions. [done]
 
 After Version 0.3
 =================

@@ -133,7 +133,7 @@ class CKernelInterp(object):
         self.values[op] = blaze.empty(dshape, storage=storage)
 
     def op_dealloc(self, op):
-        alloc, last_op = op.args
+        alloc, = op.args
         del self.values[alloc]
 
     def op_convert(self, op):
@@ -188,7 +188,7 @@ class CKernelChunkInterp(object):
         self.values[op] = blaze.array(chunk)
 
     def op_dealloc(self, op):
-        alloc, last_op = op.args
+        alloc, = op.args
         del self.values[alloc]
 
     def op_convert(self, op):

@@ -36,7 +36,7 @@ def insert_allocations(func, env):
             last_op = oplist[idx]
             if not last_op.opcode == 'ret':
                 b.position_after(last_op)
-                dealloc = Op('dealloc', types.Void, [alloc, last_op])
+                dealloc = Op('dealloc', types.Void, [alloc])
                 b.emit(dealloc)
 
     return func, env

@@ -100,6 +100,19 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         self.assertEqual(a.dshape, blaze.dshape('2, int16'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [2, 2])
 
+        # A little bit of nesting
+        a = blaze.eval(myfunc(myfunc(blaze.array([3,4]), blaze.array([1,2])),
+                        blaze.array([2,10])))
+        self.assertEqual(a.dshape, blaze.dshape('2, int32'))
+        self.assertEqual(nd.as_py(a._data.dynd_arr()), [6, 16])
+
+        # More nesting, with conversions
+        #a = blaze.eval(myfunc(myfunc(blaze.array([1,2]), blaze.array([-2, 10])),
+        #                myfunc(blaze.array([1, 5], dshape='int16'),
+        #                       blaze.array(3, dshape='int16'))))
+        #self.assertEqual(a.dshape, blaze.dshape('2, int32'))
+        #self.assertEqual(nd.as_py(a._data.dynd_arr()), [-3, 14])
+
 if __name__ == '__main__':
     # TestBlazeKernel('test_kernel').debug()
     unittest.main()
