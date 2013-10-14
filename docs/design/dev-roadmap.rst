@@ -19,7 +19,7 @@ Version 0.3
 
 - Lifting of dynd functions to blaze funcions. [TO DO?]
 
-- Lifting of numpy ufuncs to dynd/blaze. [TO DO?]
+- Lifting of numpy ufuncs to dynd/blaze. [done]
 
 After Version 0.3
 =================
