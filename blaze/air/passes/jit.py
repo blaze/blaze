@@ -45,7 +45,9 @@ root_jit_env = {
 #------------------------------------------------------------------------
 
 def jitter(func, jit_env):
-    v = Jitter(func)
+    v = KernelJitter(func)
+    visit(v, func)
+    v = ConvertJitter(func, v.jitted)
     visit(v, func)
     jit_env['jitted'] = v.jitted
 
@@ -69,7 +71,7 @@ def ckernel_transformer(func, jit_env):
 # Jit kernels
 #------------------------------------------------------------------------
 
-class Jitter(object):
+class KernelJitter(object):
     """
     Jit kernels. Produces a dict `jitted` that maps Operations to jitted
     BlazeElementKernels
@@ -86,12 +88,24 @@ class Jitter(object):
         if impl is not None:
             self.jitted[op] = impl
 
+
+class ConvertJitter(object):
+    """
+    Jit convert ops. Produces a dict `jitted` that maps Operations to jitted
+    BlazeElementKernels
+    """
+
+    def __init__(self, func, jitted):
+        self.func = func
+        self.jitted = jitted
+
     def op_convert(self, op):
-        # TODO: Use a heuristic to see whether we need to handle this, or
-        #       someone else does
-        dtype = op.type.measure
-        blaze_func = make_blazefunc(converter(dtype, op.args[0].type))
-        self.jitted[op] = blaze_func
+        # If all the uses of this convert op have been jitted,
+        # then also jit this op
+        if all(use in self.jitted for use in self.func.uses[op]):
+            dtype = op.type.measure
+            blaze_func = make_blazefunc(converter(dtype, op.args[0].type))
+            self.jitted[op] = blaze_func
 
 
 def construct_blaze_kernel(function, overload):
