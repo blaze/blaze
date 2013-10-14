@@ -130,9 +130,10 @@ def best_match(func, argtypes, constraints=None):
 
     matches = defaultdict(list)
     for match in candidates:
-        params = match.sig.parameters[:-1]
+        in_signature = T.Function(*argtypes + [T.TypeVar('R')])
+        signature = match.sig
         try:
-            weight = sum([coercion_cost(a, p) for a, p in zip(argtypes, params)])
+            weight = coercion_cost(in_signature, signature)
         except error.CoercionError:
             pass
         else:
@@ -148,7 +149,6 @@ def best_match(func, argtypes, constraints=None):
 
     candidates = matches[min(matches)]
     if len(candidates) > 1:
-        #print(matches)
         raise error.OverloadError(
             "Ambiguous overload for function %s with inputs (%s): \n%s" % (
                 func, ", ".join(map(str, argtypes)),
