@@ -1,10 +1,20 @@
 import unittest
 import ctypes
+import sys
 
 from blaze import ckernel
+from blaze.py2help import skipIf
 from dynd import nd, ndt, _lowlevel
 
+# On 64-bit windows python 2.6 appears to have
+# ctypes bugs in the C calling convention, so
+# disable these tests.
+win64_py26 = (sys.platform == 'win32' and
+              ctypes.sizeof(ctypes.c_void_p) == 8 and
+              sys.version_info[:2] <= (2, 6))
+
 class TestWrappedCKernel(unittest.TestCase):
+    @skipIf(win64_py26, 'py26 win64 ctypes is buggy')
     def test_ctypes_callback(self):
         # Create a ckernel directly with ctypes
         def my_kernel_func(dst_ptr, src_ptr, kdp):
@@ -24,6 +34,7 @@ class TestWrappedCKernel(unittest.TestCase):
             ck(ctypes.addressof(dst_val), ctypes.addressof(src_val))
             self.assertEqual(dst_val.value, 14)
 
+    @skipIf(win64_py26, 'py26 win64 ctypes is buggy')
     def test_ctypes_callback_deferred(self):
         # Create a deferred ckernel via a closure
         def instantiate_ckernel(out_ckb, ckb_offset, types, meta, kerntype):
