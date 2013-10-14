@@ -54,7 +54,7 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
         in-memory.  For optimal perfomance, some experimentation
         should be needed.  The default value should work reasonably
         well, though.
-        
+
     Returns
     -------
     output : BLZ table
@@ -83,7 +83,7 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
         nptype = np.dtype(types)
     else:
         nptype = get_nptype(dtype, val)
-        
+
     # Start reading chunks
     prev_keys = set()
     while True:
@@ -129,6 +129,8 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
         # Add the new keys to the existing ones
         prev_keys |= skeys
 
+    # Before returning, flush all data into disk
+    ssby.flush()
     return ssby
 
 
@@ -199,7 +201,6 @@ if __name__ == "__main__":
             "parsing for `%s` dataset not implemented"
             "(try either 'toy' or 'randhie')" % which)
 
-    ssby.flush()   # flush all the data in blz object
 
     # Reopen the BLZ object on-disk for retrieving the grouped data
     ssby = blz.open(path)
