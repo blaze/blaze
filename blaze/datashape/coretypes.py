@@ -135,7 +135,7 @@ class Ellipsis(Mono):
         return '...'
 
     def __repr__(self):
-        return 'dshape("%s")' % (str(self),)
+        return 'Ellipsis("%s")' % (str(self),)
 
     def __hash__(self):
         return hash('...')
