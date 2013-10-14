@@ -11,6 +11,7 @@ Release 0.3
 * Supports ufuncs running on ragged array data.
 * Cleans out previous low level data descriptor code,
   the data descriptor will have a higher level focus.
+* Example out of core groupby operation using BLZ.
 
 Release 0.2
 -----------

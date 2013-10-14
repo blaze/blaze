@@ -37,10 +37,6 @@ After Version 0.3
 - Teach KernelTree JIT to understand dynd dimension types, so it can
   JIT broadcasting across variable-sized dimensions. [status of this?]
 
-- Bug in executors when using arrays with many dimensions. It seems
-  related to code generation for lifted kernels. [not solved, but we
-  said will be left as-is for this release].
-
 - Mechanism for associating methods and properties with a blaze scalar
   type, including promotion from scalar to array types. [TO DO?]
 
