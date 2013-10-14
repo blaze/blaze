@@ -49,7 +49,7 @@ class TestDatashapeParser(common.BTestCase):
         x = parse('800, 600, int64')
         y = parse('800, 600, int64')
 
-        assert x._equal(y)
+        assert x == y
 
     def test_parse_vars(self):
         x = parse('Range(1,2), int32')
