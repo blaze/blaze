@@ -10,7 +10,7 @@ import operator
 import blaze
 from blaze.datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
 from ..pipeline import run_pipeline
-from ..passes import ckernel, allocation
+from ..passes import ckernel_impls, ckernel_lift, allocation
 
 from pykit.ir import visit, copy_function
 from dynd import nd, ndt
@@ -22,6 +22,7 @@ from blaze import blz
 
 def compile(func, env):
     func, env = run_pipeline(func, env, compile_time_passes)
+
     return func, env
 
 def interpret(func, env, args, storage=None, **kwds):
@@ -89,11 +90,12 @@ def interpret(func, env, args, storage=None, **kwds):
 #------------------------------------------------------------------------
 
 compile_time_passes = [
-    allocation,
 ]
 
 run_time_passes = [
-    ckernel,
+    ckernel_impls,
+    allocation,
+    ckernel_lift,
 ]
 
 #------------------------------------------------------------------------

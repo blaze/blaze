@@ -6,7 +6,7 @@ arguments.
 """
 
 from __future__ import print_function, division, absolute_import
-from pykit.ir import visit
+from pykit.ir import visit, Op
 from dynd import nd, ndt, _lowlevel
 
 #------------------------------------------------------------------------
