@@ -7,7 +7,7 @@ JIT evaluation of blaze AIR.
 from __future__ import print_function, division, absolute_import
 
 from ..pipeline import run_pipeline
-from ..passes import jit, ckernel, allocation
+from ..passes import jit, allocation
 from .ckernel_interp import (interpret as ckernel_interpret,
                              compile as ckernel_compile)
 
