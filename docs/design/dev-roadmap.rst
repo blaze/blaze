@@ -13,24 +13,23 @@ Version 0.3
 - Change all KernelTree JIT compilation to target ckernels, remove
   other C function prototype targets. Note that this does not impose
   constraints at the LLVM interface level, it can still use simple
-  by-value functions for primitive scalar functions. [not done, at
-  least the other C function prototypes are still present, the
-  execution system used for chunked execution still depends on it]
+  by-value functions for primitive scalar functions. [done]
 
-- Design document for the deferred representation of blaze
-  operations. This is shared between blaze and dynd. One major goal is
-  to convert all implicit broadcasting of dimensions into explicit
-  operations, so all mappings of dimensions are specified in the
-  representation. [explicit broadcasting step missing yet]
+- Deferred representation of execution. [done using pykit-based AIR]
 
 - Lifting of dynd functions to blaze funcions. [TO DO?]
 
 - Lifting of numpy ufuncs to dynd/blaze. [TO DO?]
 
-- Modify BLZ to internally use DyND.
-
 After Version 0.3
 =================
+
+- Modify BLZ to internally use DyND.
+
+- One major goal is of the AIR is to convert all implicit
+  broadcasting of dimensions into explicit
+  operations, so all mappings of dimensions are specified in the
+  representation.
 
 - Change string representation to be a char type (32-bit code point),
   with a string having identical data layout to var array of char.

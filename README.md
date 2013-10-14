@@ -15,8 +15,8 @@ Blaze allows easy composition of low level computation kernels
 ( C, Fortran, Numba ) to form complex data transformations on large
 datasets.
 
-In Blaze, computations are described in a high-level language 
-(Python) but executed on a low-level runtime (outside of Python), 
+In Blaze, computations are described in a high-level language
+(Python) but executed on a low-level runtime (outside of Python),
 enabling the easy mapping of high-level expertise to data without sacrificing
 low-level performance. Blaze aims to bring Python and NumPy into the
 massively-multicore arena, allowing it to able to leverage many CPU and
@@ -34,7 +34,7 @@ be a fabric for structured and numerical data spearheading
 innovations in data management, analytics, and distributed computation.
 
 Blaze aims to be a foundational project allowing many different users of
-other PyData projects ( Pandas, Theano, Numba, SciPy, Scikit-Learn)
+other PyData projects (Pandas, Theano, Numba, SciPy, Scikit-Learn)
 to interoperate at the application level and at the library level with
 the goal of being able to to lift their existing functionality into a
 distributed context.
@@ -46,12 +46,13 @@ distributed context.
 Status
 ------
 
-Blaze is a work in progress at the moment.  The 0.1 release is imminent with a first-usable release due at the end of August 2013. 
+Blaze is a work in progress at the moment, currently at release 0.3.
+Take a look at the [release notes](docs/source/releases.rst).
 
 Documentation
 -------------
 
-* [0.1 Dev Docs](http://blaze.pydata.org/docs/)
+* [Dev Docs](http://blaze.pydata.org/docs/)
 
 Installing
 ----------
@@ -77,7 +78,10 @@ Introduction
 Pre-requisites:
   * llvmpy >= 0.11.1
   * cython >= 0.16
-  * numpy >= 1.5
+  * numpy >= 1.6
+  * dynd-python >= 0.5.0
+  * numba >= 0.11
+  * pykit >= 0.1
 
 Install all pre-requisites and then run:
 
@@ -89,15 +93,15 @@ Docs are generated using sphinx in the docs directory.
 Alternative Installation
 ------------------------
 
-If for some reason you wish to avoid using Anaconda 
-it is possible to build Blaze using standard Python tools. 
+If for some reason you wish to avoid using Anaconda
+it is possible to build Blaze using standard Python tools.
 This method is not recommended.
 
 1) After you have checked out the Blaze source, create a virtualenv
 under the root of the Blaze repo.
 
 ```bash
-$ virtualenv venv --distribute --no-site-packages 
+$ virtualenv venv --distribute --no-site-packages
 $ . venv/bin/activate
 ```
 
@@ -149,7 +153,7 @@ Contributing
 ------------
 
 Anyone wishing to discuss on Blaze should join the
-[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev) 
+[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev)
 mailing list at: blaze-dev@continuum.io
 
 License
