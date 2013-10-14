@@ -7,7 +7,6 @@ arguments.
 
 from __future__ import print_function, division, absolute_import
 from pykit.ir import transform, Op
-from dynd import nd, ndt, _lowlevel
 
 #------------------------------------------------------------------------
 # Run
