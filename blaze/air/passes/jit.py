@@ -213,7 +213,9 @@ class CKernelTransformer(object):
 
     def op_convert(self, op):
         if op.args[0] in self.trees and op in self.jitted:
-            self.delete_later.append(op)
+            uses = self.func.uses[op]
+            if all(u in self.jitted for u in uses):
+                self.delete_later.append(op)
 
     def op_kernel(self, op):
         if op not in self.trees:

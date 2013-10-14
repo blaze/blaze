@@ -136,6 +136,13 @@ class CKernelInterp(object):
         alloc, last_op = op.args
         del self.values[alloc]
 
+    def op_convert(self, op):
+        input = self.values[op.args[0]]
+        input = input._data.dynd_arr()
+        result = nd.array(input, type=ndt.type(str(op.type)))
+        result = blaze.Array(DyNDDataDescriptor(result))
+        self.values[op] = result
+
     def op_ckernel(self, op):
         deferred_ckernel = op.args[0]
         args = [self.values[arg] for arg in op.args[1]]
@@ -160,6 +167,7 @@ class CKernelInterp(object):
         retvar = op.args[0]
         self.result = self.values[retvar]
 
+
 class CKernelChunkInterp(object):
     """
     Like CKernelInterp, but for processing one chunk.
@@ -182,6 +190,13 @@ class CKernelChunkInterp(object):
     def op_dealloc(self, op):
         alloc, last_op = op.args
         del self.values[alloc]
+
+    def op_convert(self, op):
+        input = self.values[op.args[0]]
+        input = input._data.dynd_arr()
+        result = nd.array(input, type=ndt.type(str(op.type)))
+        result = blaze.Array(DyNDDataDescriptor(result))
+        self.values[op] = result
 
     def op_ckernel(self, op):
         deferred_ckernel = op.args[0]
