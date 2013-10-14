@@ -363,18 +363,9 @@ class DataShape(Mono):
 
         return res
 
-    def _equal(self, other):
-        """ Structural equality """
-        def eq(a,b):
-            if isinstance(a, Ellipsis) or isinstance(b, Ellipsis):
-                return True
-            else:
-                return a == b
-        return all(eq(a,b) for a,b in zip(self, other))
-
     def __eq__(self, other):
         if isinstance(other, DataShape):
-            return self._equal(other)
+            return self.parameters == other.parameters
         elif isinstance(other, Mono):
             return False
         else:
