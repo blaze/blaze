@@ -3,3 +3,5 @@ pycparser
 distribute
 nose
 numba
+numexpr
+dynd-python
