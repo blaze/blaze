@@ -136,8 +136,8 @@ def unify_single(t1, t2, solution, remaining):
         solution[t2].add(t1)
     elif isinstance(t1, TypeConstructor):
         verify(t1, t2)
-    elif not free(t1) and not free(t2):
-        verify(t1, t2)
+    elif not isinstance(t1, Mono) and not isinstance(t2, Mono):
+        pass
     else:
         verify(t1, t2)
         for arg1, arg2 in zip(t1.parameters, t2.parameters):
