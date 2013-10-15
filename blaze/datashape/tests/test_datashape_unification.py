@@ -70,6 +70,15 @@ class TestUnification(unittest.TestCase):
         [result], constraints = unify([(ds1, ds2)], [True])
         self.assertEqual(str(result), 'A, N, ..., S, B, float32')
 
+    def test_unify_ellipsis_to_scalar(self):
+        # Test that the A... solved in the argument gets
+        # propagated to the result
+        ds1 = dshape('A..., int32 -> A..., int32')
+        ds2 = dshape('int32 -> R')
+        [result], constraints = unify([(ds1, ds2)], [True])
+        self.assertEqual(str(result), dshape('int32 -> int32'))
+        self.assertEqual(constraints, [])
+
     def test_unify_ellipsis2(self):
         ds1 = dshape('X, Y, float32 -> ..., float32 -> Z')
         ds2 = dshape('10, T1, int32 -> T2, T2, float32 -> R')
