@@ -63,7 +63,7 @@ class TestNormalization(unittest.TestCase):
         ds1 = dshape('T, int32 -> T, T, int32')
         ds2 = dshape('A..., int32 -> A..., float32')
         [(x, y)], _ = normalize([(ds1, ds2)])
-        self.assertEqual(str(y), '1, T, int32 -> T, T, float32')
+        self.assertEqual(str(y), 'T, int32 -> T, T, float32')
 
     def test_normalize_ellipses_2_ellipses3_error(self):
         ds1 = dshape('A, ..., int32')

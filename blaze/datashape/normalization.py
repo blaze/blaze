@@ -38,10 +38,10 @@ def normalize(constraints, broadcasting=None):
     return result, broadcasting_env
 
 def normalize_simple(a, b):
-    a1, b1 = normalize_datashapes(a, b)
-    a2, b2 = normalize_ellipses(a1, b1)
-    a3, b3 = normalize_broadcasting(a2, b2)
-    return a3, b3
+    a, b = normalize_datashapes(a, b)
+    a, b = normalize_ellipses(a, b)
+    a, b = normalize_broadcasting(a, b)
+    return a, b
 
 #------------------------------------------------------------------------
 # DataShape Normalizers
@@ -151,18 +151,10 @@ def _broadcast_ellipses_partitions(partitions):
 
 def _normalize_ellipses(contexts, ndims, a, b):
     """
-    Apply the substitution contexts to all the datashapes, filling out any
-    missing leading dimensions.
+    Apply the substitution contexts to all the datashapes.
     """
     if (type(a), type(b)) == (DataShape, DataShape):
         S = contexts[a, b]
-        for ellipsis, dims in S.items():
-            if ellipsis.typevar:
-                expected_ndim = ndims[ellipsis.typevar]
-                got_ndim = len(dims)
-                missing_ndim = (expected_ndim - got_ndim)
-                dims[:] = [Fixed(1)] * missing_ndim + dims
-
         return substitute(S, a), substitute(S, b)
     else:
         return tzip(partial(_normalize_ellipses, contexts, ndims), a, b)
