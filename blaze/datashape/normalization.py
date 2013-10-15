@@ -180,7 +180,10 @@ def _resolve_ellipsis_return_type(final_dims, result1, result2):
     if (type(result1), type(result2)) == (Function, Function):
         r1 = result1.restype
         r2 = result2.restype
-        if isinstance(r1, TypeVar) and isinstance(r2, DataShape):
+        if isinstance(r2, TypeVar) and isinstance(r1, DataShape):
+            result2, result1 = _resolve_ellipsis_return_type(final_dims,
+                                                             result2, result1)
+        elif isinstance(r1, TypeVar) and isinstance(r2, DataShape):
             def get_dims(e):
                 if isinstance(e, Ellipsis) and e.typevar:
                     return final_dims.get(e.typevar, [e])
@@ -245,6 +248,14 @@ def _normalize_ellipses_datashapes(ds1, ds2):
 def match(xs, ys, S=None):
     if S is None:
         S = defaultdict(list)
+
+    if len(xs) == 1 and len(ys) == 0:
+        # Handle scalars, i.e. ([A...], [])
+        # TODO: Subsume this in the general case
+        [x] = xs
+        if isinstance(x, Ellipsis):
+            S[x] = []
+            return S
 
     xs, ys = deque(xs), deque(ys)
     while xs and ys:
