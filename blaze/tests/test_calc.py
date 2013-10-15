@@ -14,6 +14,16 @@ class TestBasic(unittest.TestCase):
             c = blaze.eval(((a+a)*a))
             self.assertEqual(dd_as_py(c._data), [0, 2, 8])
 
+    def test_add_with_pyobj(self):
+        a = blaze.array(3) + 3
+        self.assertEqual(dd_as_py(a._data), 6)
+        a = 3 + blaze.array(4)
+        self.assertEuqal(dd_as_py(a._data), 7)
+        a = blaze.array([1, 2]) + 4
+        self.assertEqual(dd_as_py(a._data), [5, 6])
+        a = [1, 2] + blaze.array(5)
+        self.assertEqual(dd_as_py(a._data), [6, 7])
+
     #FIXME:  Need to convert uint8 from dshape to ctypes
     #        in _get_ctypes of blaze_kernel.py
     def test_mixed(self):

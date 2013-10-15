@@ -78,7 +78,9 @@ def array(obj, dshape=None, caps={'efficient-write': True},
 
     storage = _storage_convert(storage)
 
-    if isinstance(obj, IDataDescriptor):
+    if isinstance(obj, Array):
+        return obj
+    elif isinstance(obj, IDataDescriptor):
         # TODO: Validate the 'caps', convert to another kind
         #       of data descriptor if necessary
         # Note by Francesc: but if it is already an IDataDescriptor I wonder

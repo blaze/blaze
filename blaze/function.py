@@ -52,18 +52,9 @@ def optional_decorator(f, continuation, args, kwargs):
 
 def blaze_args(args, kwargs):
     """Build blaze arrays from inputs to a blaze kernel"""
-    args = [make_blaze(a) for a in args]
-    kwargs = dict((v, make_blaze(k)) for k, v in dict_iteritems(kwargs))
+    args = [blaze.array(a) for a in args]
+    kwargs = dict((v, blaze.array(k)) for k, v in dict_iteritems(kwargs))
     return args, kwargs
-
-def make_blaze(value):
-    if not isinstance(value, blaze.Array):
-        dshape = T.typeof(value)
-        if not dshape.shape:
-            value = blaze.array([value], dshape)
-        else:
-            value = blaze.array(value, dshape)
-    return value
 
 def collect_contexts(args):
     for term in args:
