@@ -76,7 +76,7 @@ class TestUnification(unittest.TestCase):
         ds1 = dshape('A..., int32 -> A..., int32')
         ds2 = dshape('int32 -> R')
         [result], constraints = unify([(ds1, ds2)], [True])
-        self.assertEqual(str(result), dshape('int32 -> int32'))
+        self.assertEqual(str(result), 'int32 -> int32')
         self.assertEqual(constraints, [])
 
     def test_unify_ellipsis2(self):

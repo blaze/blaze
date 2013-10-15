@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from .data_descriptor import IDataDescriptor
+from .blz_data_descriptor import BLZDataDescriptor
 from dynd import nd, ndt
 
 def dd_as_py(dd):
@@ -13,6 +14,10 @@ def dd_as_py(dd):
     # TODO: This function should probably be removed.
     if not isinstance(dd, IDataDescriptor):
         raise TypeError('expected DataDescriptor, got %r' % type(dd))
+
+    if isinstance(dd, BLZDataDescriptor):
+        return [dd_as_py(child_dd) for child_dd in dd]
+
     if not dd.is_concrete:
         from .. import Array, eval
         dd = eval(Array(dd))._data
