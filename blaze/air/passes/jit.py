@@ -163,8 +163,8 @@ class JitFuser(object):
 
     def op_convert(self, op):
         # TODO: Rewrite 'convert' ops before any of this stuff to kernel appl
-        if op in self.jitted:
-            arg = op.args[0]
+        arg = op.args[0]
+        if op in self.jitted and arg in self.trees:
             children = [self.trees[arg]]
             self.trees[op] = KernelTree(self.jitted[op], children)
             self.arguments[op] = list(self.arguments[arg])
