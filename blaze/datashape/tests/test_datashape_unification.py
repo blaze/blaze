@@ -87,6 +87,22 @@ class TestUnification(unittest.TestCase):
         # We have one constraint, namely that R must be coercible to int32
         self.assertEqual(len(constraints), 1)
 
+    def test_unify_ellipsis_broadcast(self):
+        # Test that the A... broadcasting doesn't add "1, "
+        # dimensions to the front
+        ds1 = dshape('A..., int32 -> A..., int32 -> A..., int32')
+        ds2 = dshape('3, int32 -> int32 -> R')
+
+        # Try with (ds1, ds2)
+        [result], constraints = unify([(ds1, ds2)], [True])
+        self.assertEqual(str(result), '3, int32 -> int32 -> 3, int32')
+        self.assertEqual(constraints, [])
+
+        # Try with (ds2, ds1)
+        [result], constraints = unify([(ds2, ds1)], [True])
+        self.assertEqual(str(result), '3, int32 -> int32 -> 3, int32')
+        # We have one constraint
+        self.assertEqual(len(constraints), 1)
 
     def test_unify_ellipsis2(self):
         ds1 = dshape('X, Y, float32 -> ..., float32 -> Z')
