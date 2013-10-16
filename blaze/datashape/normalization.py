@@ -12,6 +12,7 @@ from blaze import error
 from . import transform, tzip
 from .coretypes import (DataShape, Ellipsis, Fixed, CType, Function,
                         TypeVar, int32)
+from .promotion import promote_datashapes
 from ..py2help import reduce
 
 #------------------------------------------------------------------------
@@ -142,7 +143,7 @@ def _broadcast_ellipses_partitions(partitions):
     ndims = {}
     final_dims = {}
     for typevar, partition in partitions.items():
-        final_dshape = reduce(unify_simple, map(dummy_ds, partition))
+        final_dshape = reduce(promote_datashapes, map(dummy_ds, partition))
         final_dims[typevar] = final_dshape.shape
         ndims[typevar] = len(final_dshape.parameters) - 1
 

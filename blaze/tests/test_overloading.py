@@ -45,7 +45,7 @@ class TestOverloading(unittest.TestCase):
         self.assertEqual(str(match.sig),
                          'X, Y, float32 -> X, Y, float32 -> X, Y, float32')
 
-        input = dshape('1, 1, float32 -> 1, 1, float32 -> R')
+        input = dshape('S, 1, float32 -> T, 1, float32 -> R')
         self.assertEqual(str(unify_simple(input, match.resolved_sig)),
                          '10, 1, float32 -> 10, 1, float32 -> 10, 1, float32')
 

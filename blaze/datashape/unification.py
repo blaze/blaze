@@ -25,7 +25,8 @@ from blaze.py2help import dict_iteritems, _strtypes
 from blaze.util import IdentityDict, IdentitySet
 from blaze.datashape import (promote_units, normalize, simplify, tmap,
                              dshape, verify)
-from blaze.datashape.coretypes import TypeVar, Mono, free, TypeConstructor
+from blaze.datashape.coretypes import (TypeVar, Mono, free, TypeConstructor,
+                MEASURE)
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +138,10 @@ def unify_single(t1, t2, solution, remaining):
     elif isinstance(t1, TypeConstructor):
         verify(t1, t2)
     elif not isinstance(t1, Mono) and not isinstance(t2, Mono):
-        pass
+        verify(t1, t2)
+    elif getattr(t1, 'cls', None) == MEASURE and getattr(t2, 'cls', None) == MEASURE:
+        # If both types are measures, verify they can be promoted
+        promote_units(t1, t2)
     else:
         verify(t1, t2)
         for arg1, arg2 in zip(t1.parameters, t2.parameters):

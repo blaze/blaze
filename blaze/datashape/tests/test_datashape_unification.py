@@ -117,8 +117,19 @@ class TestUnification(unittest.TestCase):
         self.assertEqual(str(res), '10, int32')
         self.assertFalse(constraints)
 
-
 class TestUnificationErrors(unittest.TestCase):
+
+    def test_unify_datashape_bad_unifications(self):
+        d1 = dshape('2, int32')
+        d2 = dshape('3, int32')
+        self.assertRaises(error.UnificationError, unify, [(d1, d2)], [True])
+        d1 = dshape('1, int32')
+        d2 = dshape('3, int32')
+        self.assertRaises(error.UnificationError, unify, [(d1, d2)], [True])
+        self.assertRaises(error.UnificationError, unify, [(d2, d1)], [True])
+        d1 = dshape('3, T, int32')
+        d2 = dshape('1, S, int32')
+        self.assertRaises(error.UnificationError, unify, [(d1, d2)], [True])
 
     def test_unify_datashape_error(self):
         d1 = dshape('10, 11, int32')
@@ -133,4 +144,4 @@ class TestUnificationErrors(unittest.TestCase):
 
 if __name__ == '__main__':
     #TestUnification('test_unify_ellipsis_to_scalar').debug()
-    unittest.main()
+    unittest.main(verbosity=2)
