@@ -4,27 +4,16 @@ Development Roadmap
 
 This document sets out a roadmap for the development of Blaze.
 
-Version 0.3
+Version 0.4
 ===========
 
-- Modify the blaze data descriptor to use dynd as its memory
-  representation instead of the current C-order/C-aligned subset. [done]
-
-- Change all KernelTree JIT compilation to target ckernels, remove
-  other C function prototype targets. Note that this does not impose
-  constraints at the LLVM interface level, it can still use simple
-  by-value functions for primitive scalar functions. [done]
-
-- Deferred representation of execution. [done using pykit-based AIR]
-
-- Lifting of dynd functions to blaze functions. [TO DO?]
-
-- Lifting of numpy ufuncs to blaze functions. [done]
-
-After Version 0.3
-=================
-
 - Modify BLZ to internally use DyND.
+
+- Make the blaze server work (currently depending on dynd)
+  work based on blaze.
+
+After Version 0.4
+=================
 
 - One major goal is of the AIR is to convert all implicit
   broadcasting of dimensions into explicit
@@ -208,4 +197,21 @@ Another aspect of error handling is that it is common to desire for
 accumulated separately. Having something like this be possible, without
 adversely affecting performance when it's not needed, needs to be considered
 to make sure blaze can evolve towards ideas in this vein.
+
+Version 0.3
+===========
+
+- Modify the blaze data descriptor to use dynd as its memory
+  representation instead of the current C-order/C-aligned subset. [done]
+
+- Change all KernelTree JIT compilation to target ckernels, remove
+  other C function prototype targets. Note that this does not impose
+  constraints at the LLVM interface level, it can still use simple
+  by-value functions for primitive scalar functions. [done]
+
+- Deferred representation of execution. [done using pykit-based AIR]
+
+- Lifting of dynd functions to blaze functions. [TO DO?]
+
+- Lifting of numpy ufuncs to blaze functions. [done]
 
