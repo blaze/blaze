@@ -77,6 +77,7 @@ def unify(constraints, broadcasting=None):
 
     # Reify and promote the datashapes
     result = [substitute(substitution, ds2) for ds1, ds2 in constraints]
+    remaining = [(a, b) for a, b in remaining if a != b]
     return result, remaining
 
 #------------------------------------------------------------------------
