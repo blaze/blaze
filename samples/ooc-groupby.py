@@ -16,13 +16,13 @@ dependency to solve).
 Usage: `script` dataset_name
 """
 
+import sys
 from itertools import islice
 import io
 import csv
 from dynd import nd, ndt
 from blaze import blz
 import os.path
-from shutil import rmtree
 import numpy as np
 
 # Number of lines to read per each iteration
@@ -30,6 +30,19 @@ LPC = 100
 
 # Max number of chars to map for a bytes or string in NumPy
 MAXCHARS = 64
+
+def get_nptype(dtype, val):
+    # Convert the `val` field into a numpy dtype
+    dytype = dtype[nd.as_py(dtype.field_names).index(val)]
+    # strings and bytes cannot be natively represented in numpy
+    if dytype == ndt.string:
+        nptype = np.dtype("U%d" % MAXCHARS)
+    elif dytype == ndt.bytes:
+        nptype = np.dtype("S%d" % MAXCHARS)
+    else:
+        # There should be no problems with the rest
+        nptype = dytype.as_numpy()
+    return nptype
 
 def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
     """Group the `val` field in `sreader` stream of lines by `key` index.
@@ -64,19 +77,6 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
     """
 
-    def get_nptype(dtype, val):
-        # Convert the `val` field into a numpy dtype
-        dytype = dtype[nd.as_py(dtype.field_names).index(val)]
-        # strings and bytes cannot be natively represented in numpy
-        if dytype == ndt.string:
-            nptype = np.dtype("U%d" % MAXCHARS)
-        elif dytype == ndt.bytes:
-            nptype = np.dtype("S%d" % MAXCHARS)
-        else:
-            # There should be no problems with the rest
-            nptype = dytype.as_numpy()
-        return nptype
-
     if val is None:
         types = [(bytes(name), get_nptype(dtype, name))
                  for name in nd.as_py(dtype.field_names)]
@@ -103,12 +103,10 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
         sby = nd.as_py(sby.eval())
 
         if len(prev_keys) == 0:
-            # Check path and if it exists, remove it and every
-            # directory below it
-            if os.path.exists(path): rmtree(path)
             # Add the initial keys to a BLZ table
             columns = [np.array(sby[i], nptype) for i in range(len(lkeys))]
-            ssby = blz.btable(columns=columns, names=lkeys, rootdir=path)
+            ssby = blz.btable(columns=columns, names=lkeys, rootdir=path,
+                              mode='w')
         else:
             # Have we new keys?
             new_keys = skeys.difference(prev_keys)
@@ -178,9 +176,91 @@ def statsmodel_stream(stream):
     dtype = ndt.type(dtypes)
     return sreader, dtype, stream+".blz"
 
+# For contributions to state and federal US campaings.
+# CSV files can be downloaded from:
+# http://data.influenceexplorer.com/bulk/
+def contributions_stream(stream_file, blz_name):
+    if stream_file.endswith(".blz"):
+        # The stream is a BLZ file.  That's easy...
+        sreader = blz.open(stream_file)
+        dt = ndt.type(sreader.dtype)
+        return sreader, dt, "contributions.blz"
+
+    # If not BLZ file, it must be a CSV file
+    f = open(stream_file, 'rb')
+    # Description of this dataset
+    headers = f.readline().strip()   # read out the headers line
+    headers = headers.split(',')
+    htypes = [
+        ndt.int32,    # id
+        ndt.int16,    # import_reference_id
+        ndt.int16,    # cycle (year)
+        ndt.string,   # transaction_namespace
+        ndt.string,   # transaction_id
+        ndt.string,   # transaction_type
+        ndt.string,   # filing_id
+        ndt.bool,     # is_amendment
+        ndt.float32,  # amount
+        ndt.string,   # date
+        ndt.string,   # contributor_name
+        ndt.string,   # contributor_ext_id
+        ndt.string,   # contributor_type
+        ndt.string,   # contributor_occupation
+        ndt.string,   # contributor_employer
+        ndt.string,   # contributor_gender
+        ndt.string,   # contributor_address
+        ndt.string,   # contributor_city
+        ndt.string,   # contributor_state
+        ndt.string,   # contributor_zipcode
+        ndt.string,   # contributor_category
+        ndt.string,   # organization_name
+        ndt.string,   # organization_ext_id
+        ndt.string,   # parent_organization_name
+        ndt.string,   # parent_organization_ext_id
+        ndt.string,   # recipient_name
+        ndt.string,   # recipient_ext_id
+        ndt.string,   # recipient_party
+        ndt.string,   # recipient_type
+        ndt.string,   # recipient_state
+        ndt.string,   # recipient_state_held
+        ndt.string,   # recipient_category
+        ndt.string,   # committee_name
+        ndt.string,   # committee_ext_id
+        ndt.string,   # committee_party
+        ndt.bool,     # candidacy_status
+        ndt.string,   # district
+        ndt.string,   # district_held
+        ndt.string,   # seat
+        ndt.string,   # seat_held
+        ndt.string,   # seat_status
+        ndt.string,   # seat_result
+        ]
+
+    dtype = ndt.make_struct(htypes, headers)
+    sreader = csv.reader(f)
+    if blz_name is not None:
+        convert_to_blz(sreader, dtype, blz_name)
+    return sreader, dtype, "contributions.blz"
+
+def convert_to_blz(sreader, dtype, blz_name):
+    print "Converting to BLZ format in %s" % blz_name
+    types = [(bytes(name), get_nptype(dtype, name))
+             for name in nd.as_py(dtype.field_names)]
+    nptype = np.dtype(types)
+    # blz_object = blz.fromiter(iter(sreader), dtype=nptype, count=-1,
+    #                           rootdir=blz_name, mode='w')
+    blz_object = blz.barray([], dtype=nptype, rootdir=blz_name, mode='w')
+    while True:
+        sl = np.fromiter([tuple(n) for n in islice(sreader, LPC)], nptype)
+        #print "slice:", sl
+        blz_object.append(sl)
+        if len(sl) == 0: break   # CSV data exhausted
+    blz_object.flush()
+    sys.exit()
+
+
 
 if __name__ == "__main__":
-    import sys
 
     # Which dataset do we want to group?
     which = sys.argv[1] if len(sys.argv) > 1 else "toy"
@@ -196,6 +276,16 @@ if __name__ == "__main__":
         sreader, dt, path = statsmodel_stream(which)
         # Do the actual sortby
         ssby = groupby(sreader, 'mdvis', 'lncoins', dtype=dt, path=path)
+    elif which == "contributions":
+        # The iterator and dtype for datasets included in statsmodel
+        stream_file = sys.argv[2]
+        blz_name = None
+        if len(sys.argv) > 3:
+            blz_name = sys.argv[3]
+        sreader, dt, path = contributions_stream(stream_file, blz_name)
+        # Do the actual sortby
+        ssby = groupby(sreader, 'recipient_party', 'amount',
+                       dtype=dt, path=path)
     else:
         raise ValueError(
             "parsing for `%s` dataset not implemented"
@@ -211,4 +301,5 @@ if __name__ == "__main__":
     # Additional sort for guaranteeing sorted keys too
     names.sort()
     for key in names:
-        print "key:", key, ssby[key]
+        values = ssby[key]
+        print "key:", key, values, len(values) #, values.sum() 
