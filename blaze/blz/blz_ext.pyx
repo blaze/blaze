@@ -280,6 +280,8 @@ cdef class chunk:
       itemsize = 1
     elif self.typekind == 'U':
       itemsize = 4
+    elif self.typekind == 'V' and dtype_.elsize > BLOSC_MAX_TYPESIZE:
+      itemsize = 1
     else:
       itemsize = dtype_.elsize
     if itemsize > BLOSC_MAX_TYPESIZE:
