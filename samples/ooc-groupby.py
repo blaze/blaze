@@ -13,7 +13,17 @@ Those datasets included in statsmodel will require this package
 installed (it is available in Anaconda, so it should be an easy
 dependency to solve).
 
-Usage: `script` dataset_name
+Usage: $ `script` dataset_class dataset_filename
+
+`dataset_class` can be either 'toy', 'randhie' or 'contributions'.
+The 'toy' is a self-contained dataset and is meant for debugging
+mainly.  The 'randhie' implements suport for the dataset with the same
+name included in the statsmodel package.  Finally 'contributions' is
+meant to compute aggregations on the contributions to the different US
+campaigns.  This latter requires a second argument (datatset_filename)
+which is a CSV file downloaded from:
+http://data.influenceexplorer.com/bulk/
+
 """
 
 import sys
@@ -151,8 +161,7 @@ def toy_stream():
     # The dynd dtype for the CSV file above
     dt = ndt.type('{key: string; val1: string; val2: int32; val3: bytes}')
     # The name of the persisted table where the groupby will be stored
-    path = 'toy.blz'
-    return sreader, dt, path
+    return sreader, dt, 'toy.blz'
 
 
 # This access different datasets in statsmodel package
@@ -179,14 +188,7 @@ def statsmodel_stream(stream):
 # For contributions to state and federal US campaings.
 # CSV files can be downloaded from:
 # http://data.influenceexplorer.com/bulk/
-def contributions_stream(stream_file, blz_name):
-    if stream_file.endswith(".blz"):
-        # The stream is a BLZ file.  That's easy...
-        sreader = blz.open(stream_file)
-        dt = ndt.type(sreader.dtype)
-        return sreader, dt, "contributions.blz"
-
-    # If not BLZ file, it must be a CSV file
+def contributions_stream(stream_file):
     f = open(stream_file, 'rb')
     # Description of this dataset
     headers = f.readline().strip()   # read out the headers line
@@ -238,26 +240,7 @@ def contributions_stream(stream_file, blz_name):
 
     dtype = ndt.make_struct(htypes, headers)
     sreader = csv.reader(f)
-    if blz_name is not None:
-        convert_to_blz(sreader, dtype, blz_name)
     return sreader, dtype, "contributions.blz"
-
-def convert_to_blz(sreader, dtype, blz_name):
-    print "Converting to BLZ format in %s" % blz_name
-    types = [(bytes(name), get_nptype(dtype, name))
-             for name in nd.as_py(dtype.field_names)]
-    nptype = np.dtype(types)
-    # blz_object = blz.fromiter(iter(sreader), dtype=nptype, count=-1,
-    #                           rootdir=blz_name, mode='w')
-    blz_object = blz.barray([], dtype=nptype, rootdir=blz_name, mode='w')
-    while True:
-        sl = np.fromiter([tuple(n) for n in islice(sreader, LPC)], nptype)
-        #print "slice:", sl
-        blz_object.append(sl)
-        if len(sl) == 0: break   # CSV data exhausted
-    blz_object.flush()
-    sys.exit()
-
 
 
 if __name__ == "__main__":
@@ -279,27 +262,20 @@ if __name__ == "__main__":
     elif which == "contributions":
         # The iterator and dtype for datasets included in statsmodel
         stream_file = sys.argv[2]
-        blz_name = None
-        if len(sys.argv) > 3:
-            blz_name = sys.argv[3]
-        sreader, dt, path = contributions_stream(stream_file, blz_name)
+        sreader, dt, path = contributions_stream(stream_file)
         # Do the actual sortby
         ssby = groupby(sreader, 'recipient_party', 'amount',
                        dtype=dt, path=path)
     else:
-        raise ValueError(
-            "parsing for `%s` dataset not implemented"
-            "(try either 'toy' or 'randhie')" % which)
-
+        raise NotImplementedError(
+            "parsing for `%s` dataset not implemented" % which)
 
     # Reopen the BLZ object on-disk for retrieving the grouped data
     ssby = blz.open(path)
-    # Finally, print the ssby table (do not try to dump it in the
-    # traditional way because the length of the columns is not the same)
-    # print "ssby:", ssby
-    names = ssby.names[:]
-    # Additional sort for guaranteeing sorted keys too
-    names.sort()
-    for key in names:
+    for key in ssby.names:
         values = ssby[key]
-        print "key:", key, values, len(values) #, values.sum() 
+        if which in ('toy', 'randhie'):
+            print "key:", key, values
+        elif which == 'contributions':
+            print "Party: '%s'\tAmount: %13.2f\t#contribs: %8d" % \
+                  (key, values.sum(), len(values))
