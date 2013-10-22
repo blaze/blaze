@@ -36,7 +36,7 @@ import os.path
 import numpy as np
 
 # Number of lines to read per each iteration
-LPC = 100
+LPC = 1000
 
 # Max number of chars to map for a bytes or string in NumPy
 MAXCHARS = 64
