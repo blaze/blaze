@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Layouts &mdash; Blaze 0.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
+    <link rel="next" title="Sources" href="sources.html" />
+    <link rel="prev" title="Type Reconstruction" href="typeinference.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+        
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+        
+        <li>
+            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+        
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+        </li>
+        
+        <li>
+            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
+        </li>
+        
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+        
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Layouts</a><ul>
+<li><a class="reference internal" href="#combining-chunks">Combining Chunks</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="layouts">
+<h1>Layouts<a class="headerlink" href="#layouts" title="Permalink to this headline">¶</a></h1>
+<p>Scalar layouts are arangements of scalar matrix data on to blocks
+of memory that may or may not be contigious.</p>
+<ul class="simple">
+<li>Chunked</li>
+<li>Multichunks</li>
+<li>Continuous</li>
+<li>Strided</li>
+</ul>
+<img alt="_images/layout.png" class="align-center" src="_images/layout.png" />
+<img alt="_images/layout2.png" class="align-center" src="_images/layout2.png" />
+<p>If we build a composite block structure as some union of two
+multiple blocks of data, then we need only have a invertible linear
+transformation which is able to map coordinates between the local
+coordinates of the chunks as we pull bytes from them.</p>
+<div class="section" id="combining-chunks">
+<h2>Combining Chunks<a class="headerlink" href="#combining-chunks" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><pre>f : (i,j) -&gt; (i', j')
+g : (i',j') -&gt; (i, j)
+f . g = id</pre>
+</div>
+<div class="highlight-python"><pre>  Block 1            Block 2
+
+  1 2 3 4            1 2 3 4
+0 - - - -  vstack  0 * * * *
+1 - - - -          1 * * * *
+
+          \     /
+
+           1 2 3 4
+         0 - - - - + --- Transform =
+         1 - - - -       (i,j) -&gt; (i, j)
+         2 * * * * + --- Transform =
+         3 * * * *       (i,j) -&gt; (i-2, j)</pre>
+</div>
+<div class="highlight-python"><pre>  Block 1            Block 2
+
+  1 2 3 4            1 2 3 4
+0 - - - -  hstack  0 * * * *
+1 - - - -          1 * * * *
+
+          \     /
+
+           1 2 3 4
+         0 - - * *
+         1 - - * *
+         2 - - * *
+         3 - - * *
+           |   |
+           |   |
+           |   + Transform =
+           |     (i,j) -&gt; (i-2, j)
+           + --- Transform =
+                 (i,j) -&gt; (i, j)</pre>
+</div>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>

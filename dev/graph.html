@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Graph &mdash; Blaze 0.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
+    <link rel="next" title="Operators" href="ops.html" />
+    <link rel="prev" title="Sources" href="sources.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+        
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+        
+        <li>
+            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+        
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+        </li>
+        
+        <li>
+            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
+        </li>
+        
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+        
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Graph</a><ul>
+<li><a class="reference internal" href="#kinds">Kinds</a></li>
+<li><a class="reference internal" href="#instances">Instances</a></li>
+<li><a class="reference internal" href="#visualization">Visualization</a><ul>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="graph">
+<h1>Graph<a class="headerlink" href="#graph" title="Permalink to this headline">¶</a></h1>
+<p>All nodes are one of the following types:</p>
+<div class="section" id="kinds">
+<h2>Kinds<a class="headerlink" href="#kinds" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">APP:</th><td class="field-body">Application of a function or operator to a set of values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">OP:</th><td class="field-body">Operator a mapping between multiple operands returning a
+single result.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">FUN:</th><td class="field-body">A function mapping multiple operands to results or effects.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">VAL:</th><td class="field-body">A value providing a byte interface.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="instances">
+<h2>Instances<a class="headerlink" href="#instances" title="Permalink to this headline">¶</a></h2>
+<p>The core graph node types in Blaze are:</p>
+<ul class="simple">
+<li>App</li>
+<li>ArrayNode</li>
+<li>ExpressionNode</li>
+<li>FloatNode</li>
+<li>Fun</li>
+<li>FunApp</li>
+<li>IndexNode</li>
+<li>IntNode</li>
+<li>Literal</li>
+<li>Op</li>
+<li>Slice</li>
+<li>StringNode</li>
+</ul>
+<p>The domain and codomain of an operator are determined only in the
+context of an application binding.</p>
+<p>The domain and codomain of an function are fixed by definition.</p>
+</div>
+<div class="section" id="visualization">
+<h2>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<div class="section" id="api">
+<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>

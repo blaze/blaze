@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Type Reconstruction &mdash; Blaze 0.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
+    <link rel="next" title="Layouts" href="layout.html" />
+    <link rel="prev" title="Evaluation Class" href="eclass.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+        
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+        
+        <li>
+            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+        
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+        </li>
+        
+        <li>
+            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
+        </li>
+        
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+        
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Type Reconstruction</a><ul>
+<li><a class="reference internal" href="#signatures">Signatures</a></li>
+<li><a class="reference internal" href="#type-system">Type System</a></li>
+<li><a class="reference internal" href="#dynamic">Dynamic</a></li>
+<li><a class="reference internal" href="#rigid-free">Rigid &amp; Free</a></li>
+<li><a class="reference internal" href="#context">Context</a></li>
+<li><a class="reference internal" href="#constraints">Constraints</a><ul>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="type-reconstruction">
+<h1>Type Reconstruction<a class="headerlink" href="#type-reconstruction" title="Permalink to this headline">¶</a></h1>
+<p>The goal of type reconstruction is to resolve the relationships between
+type variables and concrete variables within the context of a of an
+expression but without the need for the entire expression to be explicitly
+annotated.</p>
+<p>Holding type variables as first order terms in the signatures encodes
+the fact that a term can be used in many concrete contexts with
+different concrete types. The end result of successful type
+reconstruction and unification is to determine the least general
+type satisfying the constraints on the expression.</p>
+<p>Type inference is performed on the fly, to allow early error detection.</p>
+<div class="section" id="signatures">
+<h2>Signatures<a class="headerlink" href="#signatures" title="Permalink to this headline">¶</a></h2>
+<p>The signature:</p>
+<div class="highlight-python"><pre>(a, b) -&gt; c</pre>
+</div>
+<p>u for a function of two arguments, the first of type <tt class="docutils literal"><span class="pre">a</span></tt>, the second
+of type <tt class="docutils literal"><span class="pre">b</span></tt> and returning type <tt class="docutils literal"><span class="pre">c</span></tt>.</p>
+<p>Would be this in Python 3 signature notation:</p>
+<div class="highlight-python"><pre>def (x : a, y : b) -&gt; c:
+    pass</pre>
+</div>
+</div>
+<div class="section" id="type-system">
+<h2>Type System<a class="headerlink" href="#type-system" title="Permalink to this headline">¶</a></h2>
+<p>A type system in Blaze is collection of three functions:</p>
+<div class="highlight-python"><pre>unifier :: (ty, ty) -&gt; ty
+typeof :: value -&gt; ty</pre>
+</div>
+<p>And a collection of type objects with two special types:</p>
+<div class="highlight-python"><pre>(?)   - dynamic type
+(top) - top type</pre>
+</div>
+<p>This is specified by a namedtuple of the form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">typesystem</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;TypeSystem&#39;</span><span class="p">,</span> <span class="s">&#39;unifier, top, dynamic, typeof&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The type system over Blaze expression expressions is referred to
+as <tt class="docutils literal"><span class="pre">BlazeT</span></tt>.</p>
+</div>
+<div class="section" id="dynamic">
+<h2>Dynamic<a class="headerlink" href="#dynamic" title="Permalink to this headline">¶</a></h2>
+<p>A dynamic type written as ( <tt class="docutils literal"><span class="pre">?</span></tt> ). It allows explicit down casting and
+upcasting from any type to any type. In Blaze we use this to represent
+opaque types that afford no specialization.</p>
+</div>
+<div class="section" id="rigid-free">
+<h2>Rigid &amp; Free<a class="headerlink" href="#rigid-free" title="Permalink to this headline">¶</a></h2>
+<p>Rigid type variables are those that appear in multiple times in the
+signature:</p>
+<div class="highlight-python"><pre>f : (a -&gt; b -&gt; a) -&gt; c
+
+Rigid : [a]
+Free  : [b,c]</pre>
+</div>
+</div>
+<div class="section" id="context">
+<h2>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
+<p>A context records the lexically-bound variables during the progression
+of the type inference algorithm. It is a stateful dict passed through
+the unifiers.</p>
+</div>
+<div class="section" id="constraints">
+<h2>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
+<p>The blaze type system records constraints over any free type variables in the
+inputs. Constraints specify coercion semantics. For dimension variables it
+indicates broadcastability, e.g. <cite>(1, 10)</cite>. For the measure (or element type)
+it encodes the coercion between two types. The coercion relation is reflexive,
+anti-symmetric and transitive, and forms a partial order with <cite>top</cite> as the
+top (⊤). We only allow widening or up-casts, without loss of information.</p>
+<div class="section" id="api">
+<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>
