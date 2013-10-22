@@ -1,0 +1,38 @@
+Blaze Documentation
+===================
+
+The blaze documentation is split over two repositories:
+
+    The user and developer documentation:
+
+         https://github.com/ContinuumIO/blaze/tree/master/docs (the 'docs' directory)
+
+    The webpage, blaze.pydata.org:
+
+        https://github.com/ContinuumIO/blaze-webpage/tree/gh-pages
+
+User and Developer Documentation
+================================
+The documentation is under the 'docs' directory of the blaze repo (this directory).
+
+To build the documentation, you need the basicstrap theme and sphinxjp.themecore:
+
+    $ pip install sphinxjp.themes.basicstrap
+
+You can edit the source files under docs/source/, after which you can build and
+check the documentation:
+
+    $ make html
+    $ open build/html/index.html
+
+This documentation can be uploaded to http://blaze.pydata.org/dev/index.html
+using the gh-pages.py script under docs/:
+
+    $ python gh-pages.py
+
+then verify the repository under the 'gh-pages' directory and use 'git push'.
+
+Webpage
+=======
+The blaze webpage on blaze.pydata.org can be fetched from here: https://github.com/ContinuumIO/blaze-webpage/tree/gh-pages
+The documentation is linked to in the 'dev' subdirectory.
