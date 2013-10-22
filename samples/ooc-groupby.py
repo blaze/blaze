@@ -1,4 +1,4 @@
-## Example of an implementation of an out-of-core groupby for BLZ
+## Example of an implementation of an out-of-core groupby with DyND and BLZ
 ## F. Alted
 ## 2013-10-10
 
@@ -107,8 +107,8 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
         else:
             vals = getattr(ndbuf, val)
         sby = nd.groupby(vals, keys)
-        skeys = set(nd.as_py(sby.groups))
-        lkeys = list(skeys)
+        lkeys = nd.as_py(sby.groups)
+        skeys = set(lkeys)
         # BLZ does not understand dynd objects (yet)
         sby = nd.as_py(sby.eval())
 
