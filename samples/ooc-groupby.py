@@ -202,7 +202,7 @@ def contributions_stream(stream_file):
         ndt.string,   # transaction_type
         ndt.string,   # filing_id
         ndt.bool,     # is_amendment
-        ndt.float32,  # amount
+        ndt.float64,  # amount
         ndt.string,   # date
         ndt.string,   # contributor_name
         ndt.string,   # contributor_ext_id
