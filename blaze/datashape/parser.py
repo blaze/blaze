@@ -47,6 +47,7 @@ literals = [
 ]
 
 bits = set([
+    'void',
     'bool',
     'bytes',
     'int',
