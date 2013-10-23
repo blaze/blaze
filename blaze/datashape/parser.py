@@ -50,6 +50,7 @@ bits = set([
     'void',
     'bool',
     'bytes',
+    'char',
     'int',
     'float',
     'int8',
