@@ -381,6 +381,16 @@ def p_ctor(p):
     ctor = T.TypeConstructor(name, n, flags)
     p[0] = ctor(*args)
 
+def p_ctor_empty(p):
+    """ctor : NAME LBRACK RBRACK"""
+
+    # Application of a type constructor with no parameters
+
+    name = p[1]
+
+    ctor = T.TypeConstructor(name, 0, [])
+    p[0] = ctor()
+
 #------------------------------------------------------------------------
 
 def p_record(p):
