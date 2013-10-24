@@ -1,4 +1,4 @@
-## Example of an implementation of an out-of-core groupby with DyND and BLZ
+## Example of an implementation of an out-of-core groupby with Blaze.
 ## F. Alted
 ## 2013-10-10
 
@@ -6,7 +6,7 @@
 This script performs an out of core groupby operation for different datasets.
 
 The datasets to be processed are normally in CSV files and the key and
-values to be used in the grouped are defined programatically via small
+value to be used for the grouping are defined programatically via small
 functions (see toy_stream() and statsmodel_stream() for examples).
 
 Those datasets included in statsmodel will require this package
@@ -16,12 +16,15 @@ dependency to solve).
 Usage: $ `script` dataset_class dataset_filename
 
 `dataset_class` can be either 'toy', 'randhie' or 'contributions'.
-The 'toy' is a self-contained dataset and is meant for debugging
-mainly.  The 'randhie' implements suport for the dataset with the same
-name included in the statsmodel package.  Finally 'contributions' is
-meant to compute aggregations on the contributions to the different US
-campaigns.  This latter requires a second argument (datatset_filename)
-which is a CSV file downloaded from:
+
+'toy' is a self-contained dataset and is meant for debugging mainly.
+
+The 'randhie' implements suport for the dataset with the same name
+included in the statsmodel package.
+
+Finally 'contributions' is meant to compute aggregations on the
+contributions to the different US campaigns.  This latter requires a
+second argument (datatset_filename) which is a CSV file downloaded from:
 http://data.influenceexplorer.com/bulk/
 
 """
@@ -42,7 +45,7 @@ LPC = 1000
 MAXCHARS = 64
 
 def get_nptype(dtype, val):
-    # Convert the `val` field into a numpy dtype
+    """Convert the `val` field in dtype into a numpy dtype."""
     dytype = dtype[nd.as_py(dtype.field_names).index(val)]
     # strings and bytes cannot be natively represented in numpy
     if dytype == ndt.string:
@@ -53,6 +56,7 @@ def get_nptype(dtype, val):
         # There should be no problems with the rest
         nptype = dytype.as_numpy()
     return nptype
+
 
 def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
     """Group the `val` field in `sreader` stream of lines by `key` index.
@@ -87,12 +91,10 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
 
     """
 
-    if val is None:
-        types = [(bytes(name), get_nptype(dtype, name))
-                 for name in nd.as_py(dtype.field_names)]
-        nptype = np.dtype(types)
-    else:
+    try:
         nptype = get_nptype(dtype, val)
+    except ValueError:
+        raise ValueError("`val` should be a valid field")
 
     # Start reading chunks
     prev_keys = set()
@@ -132,13 +134,13 @@ def groupby(sreader, key, val, dtype, path=None, lines_per_chunk=LPC):
                 idx = lkeys.index(existing_key)
                 # and append the values here
                 ssby[existing_key].append(sby[idx])
-            assert skeys == existing_keys | new_keys
 
         # Add the new keys to the existing ones
         prev_keys |= skeys
 
     # Before returning, flush all data into disk
-    ssby.flush()
+    if path is not None:
+        ssby.flush()
     return ssby
 
 
@@ -161,7 +163,7 @@ def toy_stream():
     # The dynd dtype for the CSV file above
     dt = ndt.type('{key: string; val1: string; val2: int32; val3: bytes}')
     # The name of the persisted table where the groupby will be stored
-    return sreader, dt, 'toy.blz'
+    return sreader, dt
 
 
 # This access different datasets in statsmodel package
@@ -183,7 +185,7 @@ def statsmodel_stream(stream):
 
     sreader = csv.reader(f)
     dtype = ndt.type(dtypes)
-    return sreader, dtype, stream+".blz"
+    return sreader, dtype
 
 # For contributions to state and federal US campaings.
 # CSV files can be downloaded from:
@@ -193,54 +195,15 @@ def contributions_stream(stream_file):
     # Description of this dataset
     headers = f.readline().strip()   # read out the headers line
     headers = headers.split(',')
-    htypes = [
-        ndt.int32,    # id
-        ndt.int16,    # import_reference_id
-        ndt.int16,    # cycle (year)
-        ndt.string,   # transaction_namespace
-        ndt.string,   # transaction_id
-        ndt.string,   # transaction_type
-        ndt.string,   # filing_id
-        ndt.bool,     # is_amendment
-        ndt.float64,  # amount
-        ndt.string,   # date
-        ndt.string,   # contributor_name
-        ndt.string,   # contributor_ext_id
-        ndt.string,   # contributor_type
-        ndt.string,   # contributor_occupation
-        ndt.string,   # contributor_employer
-        ndt.string,   # contributor_gender
-        ndt.string,   # contributor_address
-        ndt.string,   # contributor_city
-        ndt.string,   # contributor_state
-        ndt.string,   # contributor_zipcode
-        ndt.string,   # contributor_category
-        ndt.string,   # organization_name
-        ndt.string,   # organization_ext_id
-        ndt.string,   # parent_organization_name
-        ndt.string,   # parent_organization_ext_id
-        ndt.string,   # recipient_name
-        ndt.string,   # recipient_ext_id
-        ndt.string,   # recipient_party
-        ndt.string,   # recipient_type
-        ndt.string,   # recipient_state
-        ndt.string,   # recipient_state_held
-        ndt.string,   # recipient_category
-        ndt.string,   # committee_name
-        ndt.string,   # committee_ext_id
-        ndt.string,   # committee_party
-        ndt.bool,     # candidacy_status
-        ndt.string,   # district
-        ndt.string,   # district_held
-        ndt.string,   # seat
-        ndt.string,   # seat_held
-        ndt.string,   # seat_status
-        ndt.string,   # seat_result
-        ]
-
+    # The types for the different fields
+    htypes = [ ndt.int32, ndt.int16, ndt.int16] + \
+             [ ndt.string ] * 4 + \
+             [ ndt.bool, ndt.float64 ] + \
+             [ ndt.string ] * 33
+    # Build the DyND data type
     dtype = ndt.make_struct(htypes, headers)
     sreader = csv.reader(f)
-    return sreader, dtype, "contributions.blz"
+    return sreader, dtype
 
 
 if __name__ == "__main__":
@@ -249,29 +212,29 @@ if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "toy"
 
     if which == "toy":
-        # The iterator for reading the toy CSV file line by line
-        sreader, dt, path = toy_stream()
+        # Get the CSV iterator and dtype of fields
+        sreader, dt = toy_stream()
         # Do the actual sortby
-        ssby = groupby(sreader, 'key', 'val1', dtype=dt, path=path,
+        ssby = groupby(sreader, 'key', 'val1', dtype=dt, path=None,
                        lines_per_chunk=2)
     elif which == "randhie":
-        # The iterator and dtype for datasets included in statsmodel
-        sreader, dt, path = statsmodel_stream(which)
+        # Get the CSV iterator and dtype of fields
+        sreader, dt = statsmodel_stream(which)
         # Do the actual sortby
-        ssby = groupby(sreader, 'mdvis', 'lncoins', dtype=dt, path=path)
+        ssby = groupby(sreader, 'mdvis', 'lncoins', dtype=dt, path=None)
     elif which == "contributions":
-        # The iterator and dtype for datasets included in statsmodel
+        # Get the CSV iterator and dtype of fields
         stream_file = sys.argv[2]
-        sreader, dt, path = contributions_stream(stream_file)
+        sreader, dt = contributions_stream(stream_file)
         # Do the actual sortby
-        ssby = groupby(sreader, 'recipient_party', 'amount',
-                       dtype=dt, path=path)
+        ssby = groupby(
+            sreader, 'recipient_party', 'amount', dtype=dt, path='contribs.blz')
     else:
         raise NotImplementedError(
             "parsing for `%s` dataset not implemented" % which)
 
-    # Reopen the BLZ object on-disk for retrieving the grouped data
-    ssby = blz.open(path)
+    # Retrieve the data in the BLZ structure
+    #ssby = blz.open(path)  # open from disk, if ssby would be persistent
     for key in ssby.names:
         values = ssby[key]
         if which in ('toy', 'randhie'):
