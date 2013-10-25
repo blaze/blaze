@@ -14,12 +14,12 @@ from blaze.datashape import unify, dshapes, coercion_cost, normalize
 class TestCoercion(common.BTestCase):
 
     def test_coerce_ctype(self):
-        a, b = dshapes('float32', 'float32')
-        self.assertEqual(coercion_cost(a, b), 0)
+        a, b, c = dshapes('float32', 'float32', 'float64')
+        self.assertLess(coercion_cost(a, b), coercion_cost(a, c))
 
     def test_coerce_numeric(self):
         a, b = dshapes('float32', 'float64')
-        self.assertEqual(coercion_cost(a, b), 1)
+        self.assertGreater(coercion_cost(a, b), 0)
 
     def test_coercion_transitivity(self):
         a, b, c = dshapes('int8', 'complex128', 'float64')

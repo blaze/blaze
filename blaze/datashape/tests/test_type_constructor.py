@@ -45,9 +45,7 @@ class TestTypeConstructors(common.BTestCase):
         self.assertEqual(promote(rt1, rt2), rt1)
 
     def test_coercion(self):
-        self.assertEqual(coercion_cost(t1, t2), 0)
         self.assertGreater(coercion_cost(t3, t2), 0)
-        self.assertEqual(coercion_cost(rt1, rt2), 0)
 
     def test_parsing(self):
         t = dshape('Int[X]')

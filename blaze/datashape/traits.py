@@ -21,6 +21,7 @@ class TypeSet(Unit):
         self._order = args
         self._set = set(args)
         self.name = kwds.get('name')
+        self.parameters = ()
         if self.name:
             register_typeset(self.name, self)
 

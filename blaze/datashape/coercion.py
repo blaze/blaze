@@ -13,7 +13,7 @@ from collections import defaultdict
 from itertools import chain, product
 
 from blaze import error
-from .coretypes import CType, TypeVar
+from .coretypes import CType, TypeVar, Mono
 from .traits import *
 from . import verify, normalize, Implements, Fixed, Var, Ellipsis, DataShape
 
@@ -59,6 +59,13 @@ def coercion_cost(a, b, seen=None):
 
     Type `a` and `b'` must be unifiable and normalized.
     """
+    # Determine the approximate cost and subtract the term size of the
+    # right hand side: the more complicated the RHS, the more specific
+    # the match should be
+    return _coercion_cost(a, b, seen) - (termsize(b) / 100.0)
+
+
+def _coercion_cost(a, b, seen=None):
     # TODO: Cost functions for conversion between type constructors in the
     # lattice (implement a "type join")
 
@@ -99,8 +106,14 @@ def coercion_cost(a, b, seen=None):
         return coerce_datashape(a, b, seen)
     else:
         verify(a, b)
-        return sum([coercion_cost(x, y, seen) for x, y in zip(a.parameters,
-                                                              b.parameters)])
+        return sum([_coercion_cost(x, y, seen) for x, y in zip(a.parameters,
+                                                               b.parameters)])
+
+def termsize(term):
+    """Determine the size of a type term"""
+    if isinstance(term, Mono):
+        return sum(termsize(p) for p in term.parameters) + 1
+    return 0
 
 def coerce_datashape(a, b, seen):
     # Penalize broadcasting
