@@ -34,12 +34,21 @@ from blaze.py2help import basestring, dict_iteritems
 # Utils
 #------------------------------------------------------------------------
 
-def lookup_previous(f):
+def lookup_previous(f, scopes=None):
     """
     Lookup a previous function definition in the current namespace, i.e.
     for overloading purposes.
     """
-    return f.__globals__.get(f.__name__)
+    if scopes is None:
+        scopes = []
+
+    scopes.append(f.__globals__)
+
+    for scope in scopes:
+        if scope.get(f.__name__):
+            return scope[f.__name__]
+
+    return None
 
 def optional_decorator(f, continuation, args, kwargs):
     def decorator(f):
