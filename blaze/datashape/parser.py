@@ -379,8 +379,15 @@ def p_ctor(p):
     args = p[3]
 
     n = len(args)
+    is_vararg = False
+    if isinstance(args[-1], T.Ellipsis):
+        # Ellipsis indicates varargs
+        n -= 1
+        is_vararg = True
+        args = args[:-1]
+
     flags = [{'coercible': False} for i in range(n)]
-    ctor = T.TypeConstructor(name, n, flags)
+    ctor = T.TypeConstructor(name, n, flags, is_vararg=is_vararg)
     p[0] = ctor(*args)
 
 def p_ctor_empty(p):

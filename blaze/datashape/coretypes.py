@@ -837,12 +837,13 @@ class TypeConstructor(type):
                 * 'coercible': True/False. The default is False
     """
 
-    def __new__(cls, name, n, flags):
+    def __new__(cls, name, n, flags, is_vararg=False):
         def __init__(self, *params):
             if len(params) != n:
-                raise TypeError(
-                    "Expected %d parameters for constructor %s, got %d" % (
-                        n, name, len(params)))
+                if not (is_vararg and len(params) >= n):
+                    raise TypeError(
+                        "Expected %d parameters for constructor %s, got %d" % (
+                            n, name, len(params)))
             self.parameters = params
 
         def __eq__(self, other):
@@ -872,6 +873,8 @@ class TypeConstructor(type):
         self.flags = flags
         return self
 
+    def __init__(self, *args, **kwds):
+        pass # Swallow arguments
 
     def __eq__(cls, other):
         return (isinstance(other, TypeConstructor) and
