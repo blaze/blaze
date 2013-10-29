@@ -51,8 +51,8 @@ Dependencies
 * ply_
 * python-blosc_
 * pycparser_
+* dynd_ (master branch)
 * nose_ (optional, for running tests)
-* dynd_ (optional, master branch)
 
 .. _numpy: http://www.numpy.org/
 .. _cython: http://www.cython.org/
