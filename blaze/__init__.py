@@ -77,6 +77,7 @@ def test(verbosity=1, xunitfile=None, exit=False):
 
     Parameters
     ----------
+    verbosity : int, optional
         Value 0 prints very little, 1 prints a little bit,
         and 2 prints the test names while testing.
     xunitfile : string, optional
