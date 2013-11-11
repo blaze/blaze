@@ -114,7 +114,17 @@ A persistent array is backed on non-volatile storage (currently, only
 a filesystem is supported, but the list of supported storages may
 increase in the future). That means that there are system resources
 allocated to store that array, even when you exit your python
-session. If you are done with the persistent array and want to free
+session.
+
+A persistent array can be enlarged anytime by using the `blaze.append()`
+function, e.g.::
+
+>>> blaze.append(g, [4,5,6])
+>>> g
+array([ 1.,  2.,  3.,  4.,  5.,  6.],
+      dshape='6, float32')
+
+If you are done with the persistent array and want to free
 its resources, you can just 'drop' it::
 
   >>> f = blaze.drop(blaze.Storage('myarray'))
