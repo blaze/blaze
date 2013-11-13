@@ -3,6 +3,7 @@ from os import path
 import tempfile
 
 from dynd import nd, ndt
+from .. import array
 
 def load_json_file_array(root, array_name):
     # Load the datashape
@@ -18,7 +19,7 @@ def load_json_file_array(root, array_name):
     with open(root + '.json') as f:
         # TODO: Add stream support to parse_json for compressed JSON, etc.
         arr = nd.parse_json(dt, f.read())
-    return arr
+    return array(arr)
 
 def load_json_directory_array(root, array_name):
     # Load the datashape
@@ -41,7 +42,7 @@ def load_json_directory_array(root, array_name):
         with open(fname) as f:
             nd.parse_json(arr[i], f.read())
     arr.flag_as_immutable()
-    return arr
+    return array(arr)
 
 def load_json_file_list_array(root, array_name):
     # Load the datashape
@@ -66,7 +67,7 @@ def load_json_file_list_array(root, array_name):
         with open(fname) as f:
             nd.parse_json(arr[i], f.read())
     arr.flag_as_immutable()
-    return arr
+    return array(arr)
 
 class json_array_provider:
     def __init__(self, root_dir):

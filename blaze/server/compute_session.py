@@ -1,8 +1,9 @@
 import json
-from blaze_web.common.blaze_url import split_array_base
+from ..catalog.blaze_url import split_array_base
 import dynd
 from dynd import nd, ndt
 from dynd.nd import as_numpy
+from ..constructors import array
 
 class compute_session:
     def __init__(self, array_provider, base_url, array_name):
@@ -90,7 +91,7 @@ class compute_session:
         array_name = array_url[len(self.base_url):]
         fields = cmd['fields']
 
-        arr = self.get_session_array(array_name)[...]
+        arr = self.get_session_array(array_name)[...]._data.dynd_arr()
 
         # Do the groupby, get its groups, then
         # evaluate it because deferred operations
@@ -101,7 +102,7 @@ class compute_session:
 
         # Write out the groupby result
         defarr_gb = self.array_provider.create_deferred_array_filename(
-                        self.session_name, 'groupby_', res)
+                        self.session_name, 'groupby_', array(res))
         dshape_gb = nd.dshape_of(res)
         defarr_gb[0].write(json.dumps({
                 'dshape': dshape_gb,
@@ -146,11 +147,11 @@ class compute_session:
         rm_fields = cmd.get('rm_fields', [])
         fnname = cmd.get('fnname', None)
 
-        arr = self.get_session_array(array_name)
+        arr = self.get_session_array(array_name)._data.dynd_arr()
 
         res = nd.add_computed_fields(arr, fields, rm_fields, fnname)
         defarr = self.array_provider.create_deferred_array_filename(
-                        self.session_name, 'computed_fields_', res)
+                        self.session_name, 'computed_fields_', array(res))
         dshape = nd.dshape_of(res)
         defarr[0].write(json.dumps({
                 'dshape': dshape,
@@ -181,11 +182,11 @@ class compute_session:
         replace_undim = cmd.get('replace_undim', 0)
         fnname = cmd.get('fnname', None)
 
-        arr = self.get_session_array(array_name)
+        arr = self.get_session_array(array_name)._data.dynd_arr()
 
         res = nd.make_computed_fields(arr, replace_undim, fields, fnname)
         defarr = self.array_provider.create_deferred_array_filename(
-                        self.session_name, 'computed_fields_', res)
+                        self.session_name, 'computed_fields_', array(res))
         dshape = nd.dshape_of(res)
         defarr[0].write(json.dumps({
                 'dshape': dshape,

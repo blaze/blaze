@@ -45,7 +45,8 @@ class Array(object):
         # In the case of dynd arrays, inject the record attributes.
         # This is a hack to help get the blaze-web server onto blaze arrays.
         if isinstance(data, DyNDDataDescriptor):
-            ms = data.dshape[-1]
+            ms = data.dshape
+            if isinstance(ms, T.DataShape): ms = ms[-1]
             if isinstance(ms, T.Record):
                 props = {}
                 for name in ms.names:

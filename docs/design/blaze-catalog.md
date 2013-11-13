@@ -55,10 +55,16 @@ Desired Features
 
 ### Data Access
 
+* Retrieve the datashape of an array without getting
+  its data.
+* Retrieve additional metadata ({string : object}
+  dictionary, basically) about the array.
 * Retrieve data from an array in the catalog using
   slices to restrict which data is read.
 * Retrieve data from an array in the catalog filtered
   using a expression.
+* Get the array as a blaze array, numpy array,
+  pandas array, or dynd array.
 
 ### Caching
 

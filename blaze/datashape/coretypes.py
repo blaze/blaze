@@ -758,45 +758,45 @@ class Record(Mono):
         # preserved. Using RecordDecl there is some magic to also
         # ensure that the fields align in the order they are
         # declared.
-        self.__d = dict(fields)
-        self.__k = [f[0] for f in fields]
-        self.__v = [f[1] for f in fields]
+        self.__fdict = dict(fields)
+        self.__fnames = [f[0] for f in fields]
+        self.__ftypes = [f[1] for f in fields]
         self.parameters = (fields,)
 
     @property
     def fields(self):
-        return self.__d
+        return self.__fdict
 
     @property
     def names(self):
-        return self.__k
+        return self.__fnames
 
     @property
     def types(self):
-        return self.__v
+        return self.__ftypes
 
     def to_numpy_dtype(self):
         """
         To Numpy record dtype.
         """
-        dk = self.__k
-        dv = map(to_numpy_dtype, self.__v)
+        dk = self.__fnames
+        dv = map(to_numpy_dtype, self.__ftypes)
         return np.dtype(zip(dk, dv))
 
     def __getitem__(self, key):
-        return self.__d[key]
+        return self.__fdict[key]
 
     def __eq__(self, other):
         if isinstance(other, Record):
-            return self.__d == other.__d
+            return self.__fdict == other.__fdict
         else:
             return False
 
     def __hash__(self):
-        return hash(self.__d)
+        return hash(self.__fdict)
 
     def __str__(self):
-        return record_string(self.__k, self.__v)
+        return record_string(self.__fnames, self.__ftypes)
 
     def __repr__(self):
         return ''.join(["dshape(\"", str(self).encode('unicode_escape').decode('ascii'), "\")"])

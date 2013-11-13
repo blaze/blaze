@@ -1,6 +1,0 @@
-*.pyc
-*.egg-info
-example/arrays/kiva/lenders
-example/arrays/kiva/loans
-*~
-*#*

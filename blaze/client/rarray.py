@@ -2,8 +2,9 @@
 __all__ = ['rarray']
 
 import requests
-from blaze_web.common.blaze_url import add_indexers_to_url
+from ..catalog.blaze_url import add_indexers_to_url
 from dynd import nd, ndt
+from ..constructors import array
 
 class rarray:
     def __init__(self, url, dshape=None):
@@ -27,8 +28,12 @@ class rarray:
     def __getitem__(self, key):
         return rarray(add_indexers_to_url(self.url, (key,)))
 
-    def get_data(self):
-        """Downloads the data and returns a local in-memory ndobject"""
+    def get_dynd(self):
+        """Downloads the data and returns a local in-memory nd.array"""
         j = requests.get_remote_json(self.url)
         return nd.parse_json(self.dtype, j)
+
+    def get_data(self):
+        """Downloads the data and returns a local in-memory blaze.array"""
+        return array(self.get_dynd())
 

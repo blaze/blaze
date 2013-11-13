@@ -4,6 +4,7 @@ __all__ = ['split_array_base', 'add_indexers_to_url', 'slice_as_string',
 
 from pyparsing import Word, Regex, Optional, ZeroOrMore, \
         StringStart, StringEnd, alphas, alphanums
+from ..py2help import _strtypes, _inttypes
 
 # Parser to match the Blaze URL syntax
 intNumber = Regex(r'[-+]?\b\d+\b')
@@ -64,9 +65,9 @@ def split_array_base(array_base):
         else:
             indexers.append(pieces[i])
             i += 1
-            
+
     return array_name, indexers
-    
+
 def slice_as_interior_string(s):
     if type(s) is int:
         return str(s)
@@ -93,12 +94,14 @@ def index_tuple_as_string(s):
 
 def add_indexers_to_url(base_url, indexers):
     for idx in indexers:
-        if type(idx) is str:
+        if isinstance(idx, _strtypes):
             base_url += '.' + idx
-        elif type(idx) is int:
+        elif isinstance(idx, _inttypes):
             base_url += '[' + str(idx) + ']'
-        elif type(idx) is slice:
+        elif isinstance(idx, slice):
             base_url += slice_as_string(idx)
-        elif type(idx) is tuple:
+        elif isinstance(idx, tuple):
             base_url += index_tuple_as_string(idx)
+        else:
+            raise IndexError('Cannot process index object %r' % idx)
     return base_url

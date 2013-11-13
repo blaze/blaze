@@ -2,22 +2,25 @@ import flask
 import sys
 import os
 from flask import request, Response
-from array_provider import json_array_provider
-from datashape_html import render_dynd_datashape
+from ..catalog.array_provider import json_array_provider
+from datashape_html import render_datashape
 from dynd import nd, ndt
 from compute_session import compute_session
-from blaze_web.common.blaze_url import split_array_base, add_indexers_to_url, \
+from .. import datashape
+from ..catalog.blaze_url import split_array_base, add_indexers_to_url, \
      slice_as_string, index_tuple_as_string
-app = flask.Flask('blaze_web.server')
+from ..py2help import _inttypes, _strtypes
+
+app = flask.Flask('blaze.server')
 app.sessions = {}
 def indexers_navigation_html(base_url, array_name, indexers):
     base_url = base_url + array_name
     result = '<a href="' + base_url + '">' + array_name + '</a>'
     for i, idx in enumerate(indexers):
-        if type(idx) is str:
+        if isinstance(idx, _strtypes):
             base_url = base_url + '.' + idx
             result += (' . <a href="' + base_url + '">' + idx + '</a>')
-        elif type(idx) is int:
+        elif isinstance(idx, _inttypes):
             new_base_url = base_url + '[' + str(idx) + ']'
             result += (' <a href="' + new_base_url + '">[' + str(idx) + ']</a>')
             # Links to increment/decrement this indexer
@@ -30,14 +33,16 @@ def indexers_navigation_html(base_url, array_name, indexers):
             #result += '">\\/</a></td></tr>'
             #result += '</table></font>'
             base_url = new_base_url
-        elif type(idx) is slice:
+        elif isinstance(idx, slice):
             s = slice_as_string(idx)
             base_url = base_url + s
             result += (' <a href="' + base_url + '">' + s + '</a>')
-        elif type(idx) is tuple:
+        elif isinstance(idx, tuple):
             s = index_tuple_as_string(idx)
             base_url = base_url + s
             result += (' <a href="' + base_url + '">' + s + '</a>')
+        else:
+            raise IndexError('Invalid indexer %r' % idx)
     return result
 
 def get_array(array_name, indexers):
@@ -48,7 +53,10 @@ def get_array(array_name, indexers):
         if type(i) in [slice, int, tuple]:
             arr = arr[i]
         else:
-            if i in arr.dtype.property_names:
+            ds = arr.dshape
+            if isinstance(ds, datashape.DataShape):
+                ds = ds[-1]
+            if isinstance(ds, datashape.Record) and i in ds.names:
                 arr = getattr(arr, i)
             else:
                 raise Exception('Blaze array does not have field ' + i)
@@ -57,19 +65,15 @@ def get_array(array_name, indexers):
 def html_array(arr, base_url, array_name, indexers):
     array_url = add_indexers_to_url(base_url + array_name, indexers)
     print array_url
-    
+
     nav_html = indexers_navigation_html(base_url, array_name, indexers)
-    datashape_html = render_dynd_datashape(array_url, arr)
+    datashape_html = render_datashape(array_url, arr.dshape)
     body = '<html><head><title>Blaze Array</title></head>\n' + \
         '<body>\n' + \
         'Blaze Array &gt; ' + nav_html + '\n<p />\n' + \
         '<a href="' + array_url + '?r=data.json">JSON</a>\n<p />\n' + \
         datashape_html + \
-        '\n<p /> Debug Links: ' + \
-        '<a href="' + array_url + '?r=dyndtype">DyND Type</a>\n' + \
-        '&nbsp;&nbsp;' + \
-        '<a href="' + array_url + '?r=dynddebug">DyND Debug Repr</a>\n' + \
-        '</body></html>'
+        '\n</body></html>'
     return body
 
 @app.route("/favicon.ico")
@@ -105,7 +109,7 @@ def handle_session_query():
         return Response(body, mimetype='application/json')
     else:
         return 'something with session ' + session.session_name
-    
+
 def handle_array_query():
     array_name, indexers = split_array_base(request.path)
     arr = get_array(array_name, indexers)
@@ -115,11 +119,12 @@ def handle_array_query():
         return html_array(arr, base_url, array_name, indexers)
     q_req = request.values['r']
     if q_req == 'data.json':
-        return Response(nd.as_py(nd.format_json(arr).view_scalars(ndt.bytes)),
+        dat = arr._data.dynd_arr()
+        return Response(nd.as_py(nd.format_json(dat).view_scalars(ndt.bytes)),
                         mimetype='application/json')
     elif q_req == 'datashape':
         content_type = 'text/plain; charset=utf-8'
-        return arr.dshape
+        return str(arr.dshape)
     elif q_req == 'dyndtype':
         content_type = 'application/json; charset=utf-8'
         body = str(arr.dtype)
@@ -134,10 +139,10 @@ def handle_array_query():
         return Response(body, mimetype='application/json')
     else:
         abort(400, "Unknown Blaze server request %s" % q_req)
-        
-    
 
-    
+
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         root_path = sys.argv[1]
@@ -146,4 +151,4 @@ if __name__ == "__main__":
     array_provider = json_array_provider(root_path)
     app.array_provider = array_provider
     app.run(debug=True, port=8080, use_reloader=True)
-    
+
