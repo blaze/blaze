@@ -1,10 +1,16 @@
 from ..datashape import DataShape, Record, Fixed, Var, CType, String, JSON
 #from blaze_server_config import jinja_env
-#from jinja2 import Template
+from jinja2 import Template
 
-def json_comment(array_url):
-    return '<font style="font-size:x-small"> # <a href="' + \
-        array_url + '?r=data.json">JSON</a></font>\n'
+json_comment_templ = Template("""<font style="font-size:x-small"> # <a href="{{base_url}}?r=data.json">JSON</a></font>
+
+""")
+
+datashape_outer_templ = Template("""
+<pre>
+type <a href="{{base_url}}?r=datashape">BlazeDataShape</a> = {{ds_html}}
+</pre>
+""")
 
 def render_datashape_recursive(base_url, ds, indent):
     result = ''
@@ -19,7 +25,7 @@ def render_datashape_recursive(base_url, ds, indent):
                 raise TypeError('Cannot render datashape with dimension %r' % dim)
         result += render_datashape_recursive(base_url, ds[-1], indent)
     elif isinstance(ds, Record):
-        result += '{' + json_comment(base_url)
+        result += '{' + json_comment_templ.render(base_url=base_url)
         for fname, ftype in zip(ds.names, ds.types):
             child_url = base_url + '.' + fname
             child_result = render_datashape_recursive(child_url,
@@ -30,7 +36,7 @@ def render_datashape_recursive(base_url, ds, indent):
             if isinstance(ftype, Record):
                 result += '\n'
             else:
-                result += json_comment(child_url)
+                result += json_comment_templ.render(base_url=child_url)
         result += (indent + '}')
     elif isinstance(ds, (CType, String, JSON)):
         result += str(ds)
@@ -39,8 +45,5 @@ def render_datashape_recursive(base_url, ds, indent):
     return result
 
 def render_datashape(base_url, ds):
-    print('base url is %s' % base_url)
-    result = render_datashape_recursive(base_url, ds, '')
-    result = '<pre>\ntype <a href="' + base_url + \
-            '?r=datashape">BlazeDataShape</a> = ' + result + '\n</pre>'
-    return result
+    ds_html = render_datashape_recursive(base_url, ds, '')
+    return datashape_outer_templ.render(base_url=base_url, ds_html=ds_html)
