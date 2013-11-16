@@ -9,6 +9,35 @@ to serve array and table data in a rich way, and to
 expose a blaze node's computation and storage to
 a cluster.
 
+Use Cases
+---------
+
+### Serving Rich Data On The Internet
+
+The purpose of this mode of the server is to
+be able to easily put datasets on a LAN or the
+internet with the ability to slice and filter
+server-side. An important inspiration for this
+is [OPeNDAP](http://opendap.org/), discussed below.
+
+The key points for this are:
+
+1. Easy to import a dataset into a Blaze Catalog,
+   and start a server for it. Should be similar
+   in ease of use to starting an IPython Notebook.
+2. Easy to connect to a server URL, explore the
+   datasets available on it, and pull all or
+   parts of the data into a Python context.
+
+### Acting As a Node in a Blaze Cluster
+
+The purpose of this mode of the server is to
+expose a node's resources (compute, bandwidth,
+and storage) to Blaze Cluster computations.
+Initially, we are targetting embarrassingly
+parallel jobs, such as elementwise execution
+on large arrays, as well as some reductions.
+
 Requirements
 ------------
 
