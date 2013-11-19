@@ -3,13 +3,16 @@
 
 The Blaze catalog is a component within Blaze which
 provides a mechanism for finding arrays available
-locally, within a Blaze Cluster, or on the internet.
-Each array is identified in a local, cluster, or
-global namespace by a URI.
+within the Blaze Cluster the machine is a part of.
+This means locally on the current machine, if no
+cluster has been explicitly configured, or within
+the directory structure shared across the cluster
+if one has.
 
 Closely connected is the [Blaze Server](blaze-server.md),
 which provides access to the catalog and other
-Blaze functionality via a web service.
+Blaze functionality via a web service, and is how
+members of a cluster communicate with each other.
 
 The catalog is where most of the functionality
 in the [Array Management
@@ -29,29 +32,54 @@ encapsulate the data import/cleaning.
 
 In this case, extending and accessing the local
 catalog without relying on any separate server
-processes is important. It should be easy to add an
-array to the server, possibly with as little work as
-dropping a folder containing the needed data and
-metadata in a specific location.
+processes is important. It should be straightforward
+to add an array to the server, as easy as loading
+data using pandas, for example.
 
 Additionally, it should be possible to access the
 data in many common forms, including blaze, dynd,
-numpy, pandas, and raw python objects.
+numpy, pandas, and raw python objects (e.g. lists
+of dictionaries or tuples). This functionality is
+not specific to the catalog, rather a feature to
+be supported by any Blaze array.
 
 Desired Features
 ----------------
 
 ### Data Abstraction	
 
-* Stores arrays with an associated Blaze Datashape.
-* Associate arbitrary key/value metadata with each array.
-* Represent data directly, or in the form
-  of deferred expressions and queries.
+* Within a configured cluster, a single rooted
+  namespace containing all persisted Blaze Arrays
+  within the cluster.
+* A catalog entry includes the following associated data.
+  * DataShape of the Array. Note that this scales from
+    single values like a boolean or string, up through
+    tables and multi-dimensional arrays.
+  * The information needed to retrieve the Array's
+    data. If a remote data source or file location
+    is known to be fixed, this can be lazily loaded.
+    Alternatively, an import step could snapshot the
+    data when the it may change or disappear.
+  * In the case of a deferred expression, the input
+    arrays need to be tracked as a dependency graph,
+    e.g. affecting how user management tools of the
+    catalog warn about deleting arrays which others
+    depend upon.
+  * User-specified metadata about the array.
+    Likely JSON or JSON-like key/value pairs of data.
+* Local per-machine temporary namespace, `'/tmp'`.
+* Per-user namespace, `'/home/<username>'`.
 
 ### Data Import
 
 * Way to add data from local files (csv, tsv,
-  json, netcdf, hdf5, etc) to the catalog.
+  other delimited text files, npy, json, netcdf, hdf5,
+  etc) to the catalog.
+* Data which is served publically via
+  a [Blaze Server](blaze-server.md) should be
+  importable into the cluster namespace with only
+  the source array URL and the destination catalog
+  path.
 * Ability to insert data cleaning operations
   that work in a streaming fashion, per-element.
 * Ability to insert data cleaning operations
@@ -60,16 +88,12 @@ Desired Features
 
 ### Data Access
 
-* Retrieve the datashape of an array without getting
-  its data.
-* Retrieve additional metadata ({string : object}
-  dictionary, basically) about the array.
-* Retrieve data from an array in the catalog using
-  slices to restrict which data is read.
-* Retrieve data from an array in the catalog filtered
-  using a expression.
-* Get the array as a blaze array, numpy array,
-  pandas array, or dynd array.
+* Retrieve an Array object for any catalog entry
+  with a convenient syntax.
+    * `blaze.catalog.get("/path/to/array")`,
+      `blaze.catalog.get("~/userarray")`
+    * `blaze.root.path.to.array`,
+      `blaze.home.userarray`
 
 ### Caching
 
@@ -126,31 +150,30 @@ on heuristics to determine it.
 ### Accessing Arrays From Blaze
 
 There are two mechanisms for accessing arrays
-from the catalog. One is directly using the URL
+from the catalog. One is directly using the path
 of an array, with the get function.
 
 ```python
 from blaze import catalog as cat
 
-loc = cat.get('local://myarray')
-clust = cat.get('cluster://distarray')
-glob = cat.get('https://blaze.continuum.io/samples/tycho2')
+userarray = cat.get('~/myarray')
+userarray2 = cat.get('/home/<username>/myarray2')
+sharedarray = cat.get('/tycho2')
 ```
 
-These gives back a catalog entry, which provides the
-datashape, as well as methods to retrieve the whole
-or part of the array into memory.
+These gives back Blaze Array objects.
 
 The other mechanism is to get a proxy object for
 the namespace, which gives access to the catalog
 entries as properties.
 
 ```python
-from blaze import catalog as cat
+from blaze.catalog import root, home
 
-loc = cat.local.myarray
-clust = cat.cluster.distarray
+userarray = home.myarray
+userarray2 = root.home.<username>.myarray2
+sharedarray = root.tycho2
 ```
 
-These are the same two catalog entries, but accessed
-from the two namespace proxy objects.
+These are the same two arrays, but accessed
+from the namespace proxy objects.
