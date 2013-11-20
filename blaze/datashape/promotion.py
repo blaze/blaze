@@ -94,7 +94,8 @@ def promote(a, b):
     elif isinstance(a, (DataShape, CType)) and isinstance(b, (DataShape, CType)):
         return promote_datashapes(a, b)
 
-    elif isinstance(type(a), TypeConstructor) and isinstance(type(b), TypeConstructor):
+    elif (isinstance(type(a), TypeConstructor) and
+              isinstance(type(b), TypeConstructor)):
         return promote_type_constructor(a, b)
 
     else:
@@ -145,7 +146,7 @@ def promote_type_constructor(a, b):
             if t1 != t2:
                 raise error.UnificationError(
                     "Got differing types %s and %s for unpromotable type "
-                    "parameter" % (t1, t2))
+                    "parameter in constructors %s and %s" % (t1, t2, a, b))
             result = t1
 
         args.append(result)
