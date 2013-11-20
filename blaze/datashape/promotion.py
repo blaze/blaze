@@ -108,7 +108,10 @@ def eq(a, b):
 
 def promote_scalars(a, b):
     """Promote two CTypes"""
-    return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))
+    try:
+        return CType.from_numpy_dtype(np.result_type(to_numpy(a), to_numpy(b)))
+    except TypeError, e:
+        raise TypeError("Cannot promote %s and %s: %s" % (a, b, e))
 
 def promote_datashapes(a, b):
     """Promote two DataShapes"""
