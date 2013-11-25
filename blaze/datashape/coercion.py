@@ -14,7 +14,7 @@ from itertools import chain, product
 
 from blaze import error
 from .coretypes import CType, TypeVar, Mono
-from .traits import *
+from .typesets import *
 from . import verify, normalize, Implements, Fixed, Var, Ellipsis, DataShape
 
 class CoercionTable(object):

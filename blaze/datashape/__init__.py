@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from . import parser
 from .traversal import transform, tmap, tzip, traverse
 from .coretypes import *
-from .traits import *
+from .typesets import *
 from .util import *
 from .normalization import (normalize, simplify,
                             normalize_ellipses, normalize_broadcasting)

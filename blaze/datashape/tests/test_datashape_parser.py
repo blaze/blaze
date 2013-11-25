@@ -5,7 +5,7 @@ from blaze import error, datashape
 from blaze.tests import common
 from blaze.datashape.parser import parse
 from blaze.datashape.coretypes import Enum, Option, Function
-from blaze.datashape.traits import integral
+from blaze.datashape.typesets import integral
 
 class TestDatashapeParser(common.BTestCase):
 

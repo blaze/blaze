@@ -10,7 +10,7 @@ from collections import namedtuple
 # TODO: Ideally this module creates a simple AST that is mapped into the type
 #       domain by coretypes.py
 from . import coretypes as T
-from .traits import registry, lookup
+from .typesets import registry, lookup
 
 from ply import lex, yacc
 from blaze.plyhacks import yaccfrom, lexfrom

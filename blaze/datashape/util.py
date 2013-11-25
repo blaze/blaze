@@ -18,7 +18,7 @@ from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis, String,
                float32, float64, complex64, complex128,
                Type, free, type_constructor)
 from .traversal import tmap
-from blaze.datashape.traits import TypeSet
+from blaze.datashape.typesets import TypeSet
 
 __all__ = ['dopen', 'dshape', 'dshapes', 'cat_dshapes', 'broadcastable',
            'dummy_signature', 'verify',
