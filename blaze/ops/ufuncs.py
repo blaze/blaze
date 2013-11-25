@@ -40,6 +40,10 @@ def floordiv(a, b):
 def mod(a, b):
     return a % b
 
+@jit_elementwise('a -> a')
+def neg(a):
+    return -a
+
 #------------------------------------------------------------------------
 # Compare
 #------------------------------------------------------------------------
@@ -56,15 +60,15 @@ def ne(a, b):
 def lt(a, b):
     return a < b
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def le(a, b):
     return a <= b
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def gt(a, b):
     return a > b
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def ge(a, b):
     return a >= b
 
@@ -72,19 +76,19 @@ def ge(a, b):
 # Logical
 #------------------------------------------------------------------------
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def logical_and(a, b):
     return a and b
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def logical_or(a, b):
     return a or b
 
-@jit_elementwise('A -> A -> bool')
+@jit_elementwise('A..., T -> A..., T -> A..., bool')
 def logical_xor(a, b):
     return bool(a) ^ bool(b)
 
-@jit_elementwise('A -> bool')
+@jit_elementwise('A..., T -> A..., bool')
 def logical_not(a):
     return not a
 
@@ -92,23 +96,23 @@ def logical_not(a):
 # Bitwise
 #------------------------------------------------------------------------
 
-@jit_elementwise('..., A : integral -> ..., A -> ..., A')
+@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def bitwise_and(a, b):
     return a & b
 
-@jit_elementwise('..., A : integral -> ..., A -> ..., A')
+@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def bitwise_or(a, b):
     return a | b
 
-@jit_elementwise('..., A : integral -> ..., A -> ..., A')
+@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def bitwise_xor(a, b):
     return a ^ b
 
-@jit_elementwise('..., A : integral -> ..., A -> ..., A')
+@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def left_shift(a, b):
     return a << b
 
-@jit_elementwise('..., A : integral -> ..., A -> ..., A')
+@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def right_shift(a, b):
     return a >> b
 
