@@ -2,62 +2,7 @@ from __future__ import absolute_import
 
 # Implements the blaze.eval function
 
-import threading
-from contextlib import contextmanager
-
-import blaze
-from .array import Array
-from .constructors import empty
-from .datadescriptor import (IDataDescriptor,
-                             BlazeFuncDeprecatedDescriptor,
-                             BLZDataDescriptor,
-                             DeferredDescriptor)
-from .py2help import reduce
-from .datashape import to_numpy
 from .air import prepare, interps
-from . import blz
-
-#------------------------------------------------------------------------
-# Execution Strategy
-#------------------------------------------------------------------------
-
-_eval_strategy = threading.local()
-default_strategy = 'jit'
-
-@contextmanager
-def strategy(strategy):
-    """
-    Set the evaluation strategy for expressions evaluating in this thread.
-
-    Parameters
-    ----------
-    strategy: str
-        Evaluation strategy. Currently supported:
-
-            * 'py'      Evaluation using Python and possibly operations of
-                        underlying containers
-            * 'eval'    Try to assemble a more efficient evaluation kernel
-                        that performs fusion as much as possible
-            * 'jit'     JIT-compile the expression to machine code specialized
-                        entirely to the expression
-
-        The above strategies are listed in order of fast- to slow-assembly,
-        and from slow evaluation to fast evaluation.
-    """
-    old = current_strategy()
-    set_strategy(strategy)
-    yield
-    set_strategy(old)
-
-def set_strategy(strategy):
-    _eval_strategy.strategy = strategy
-
-def current_strategy():
-    """Return the current evaluation strategy"""
-    try:
-        return _eval_strategy.strategy
-    except AttributeError:
-        return default_strategy
 
 #------------------------------------------------------------------------
 # Eval
@@ -87,17 +32,14 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
         Evaluation strategy.
         Currently supported: 'py', 'jit'
     """
-    strategy = strategy or current_strategy()
+    strategy = strategy or arr._data.strategy
 
     if not arr._data.deferred:
         # TODO: This isn't right if the storage is different, requires
         #       a copy then.
         result = arr
-    elif isinstance(arr._data, DeferredDescriptor):
-        result = eval_deferred(arr, storage, caps, out, strategy)
     else:
-        raise TypeError(("unexpected input to eval, "
-                    "data desc has type %r") % type(arr._data))
+        result = eval_deferred(arr, storage, caps, out, strategy)
 
     return result
 

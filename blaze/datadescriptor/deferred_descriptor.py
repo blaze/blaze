@@ -68,8 +68,8 @@ class DeferredDescriptor(IDataDescriptor):
 
     @property
     def writable(self):
-        # TODO: This seems wrong, the result is write if evaluated. This would
-        # lead to other code having to check that...
+        # TODO: This seems wrong, the result is writable if evaluated.
+        # This would lead to other code having to check that...
         return False
 
     @property

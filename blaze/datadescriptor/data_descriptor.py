@@ -5,7 +5,9 @@ __all__ = ['IDataDescriptor']
 import abc
 import ctypes
 import contextlib
+
 from blaze.error import StreamingDimensionError
+from blaze.strategy import current_strategy
 
 class IDataDescriptor:
     """
@@ -115,6 +117,10 @@ class IDataDescriptor:
         data descriptor.
         """
         raise NotImplementedError
+
+    @property
+    def strategy(self):
+        return current_strategy()
 
     def dynd_arr(self):
         """Concrete data descriptors must provide their array data

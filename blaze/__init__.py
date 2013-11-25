@@ -19,7 +19,8 @@ from .datashape import dshape, dshapes, parser
 from .array import Array
 from .function import kernel, elementwise, BlazeFunc
 from .constructors import array, empty, ones, zeros
-from .eval import strategy, current_strategy, set_strategy, eval, append
+from .strategy import strategy, current_strategy, set_strategy
+from .eval import eval, append
 from .storage import open, drop, Storage
 import ctypes
 
