@@ -6,7 +6,9 @@ SciDB implementations element-wise ufuncs.
 
 from __future__ import print_function, division, absolute_import
 
+from blaze.function import kernel
 from blaze.datashape import typesets, datetime64
+from blaze.ops import ufuncs
 from blaze.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
                               eq, ne, ge, gt, le, lt,
                               logical_and, logical_or, logical_not, logical_xor,
@@ -16,17 +18,32 @@ from .query import apply, expr, iff, qformat
 
 real = typesets.integral | typesets.floating
 
+#------------------------------------------------------------------------
+# Implement functions
+#------------------------------------------------------------------------
+
 def define_unop(signature, name, op):
+    """Define a unary scidb operator"""
     def unop(op, x):
         return qformat("({0} {1})", op, x)
+
     unop.__name__ = name
+    _implement(unop, signature)
     return unop
 
 def define_binop(signature, name, op):
+    """Define a binary scidb operator"""
     def binop(op, a, b):
         return qformat("({0} {1} {2})", a, op, b)
+
     binop.__name__ = name
+    _implement(binop, signature)
     return binop
+
+def _implement(f, signature):
+    name = f.__name__
+    prevop = getattr(ufuncs, name)
+    prevop.implement_by_sig(signature, 'scidb', f)
 
 #------------------------------------------------------------------------
 # Arithmetic

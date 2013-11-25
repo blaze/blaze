@@ -5,31 +5,41 @@ SciDB array constructors.
 """
 
 from __future__ import print_function, division, absolute_import
+
 import blaze
+from blaze.datashape import from_numpy
 
 from .query import Query, build
 from .datatypes import scidb_dshape
 from .datadesc import SciDBDataDesc
 
-import scidbpy
-
 #------------------------------------------------------------------------
 # Array creation
 #------------------------------------------------------------------------
 
-def _create(dshape, n, chunk_size=1024, overlap=0):
+def _create(dshape, n, conn, chunk_size=1024, overlap=0):
     sdshape = scidb_dshape(dshape, chunk_size, overlap)
-    return SciDBDataDesc(build(sdshape, n))
+    query = build(sdshape, n)
+    return blaze.Array(SciDBDataDesc(dshape, query, conn))
 
 #------------------------------------------------------------------------
 # Constructors
 #------------------------------------------------------------------------
 
-def empty(dshape, chunk_size=1024, overlap=0):
-    return zeros(dshape, chunk_size, overlap)
+def empty(dshape, conn, chunk_size=1024, overlap=0):
+    """Create an empty array"""
+    return zeros(dshape, conn, chunk_size, overlap)
 
-def zeros(dshape, chunk_size=1024, overlap=0):
-    return _create(dshape, "0", chunk_size, overlap)
+def zeros(dshape, conn, chunk_size=1024, overlap=0):
+    """Create an array of zeros"""
+    return _create(dshape, "0", conn, chunk_size, overlap)
 
-def ones(dshape, chunk_size=1024, overlap=0):
-    return _create(dshape, "1", chunk_size, overlap)
+def ones(dshape, conn, chunk_size=1024, overlap=0):
+    """Create an array of ones"""
+    return _create(dshape, "1", conn, chunk_size, overlap)
+
+def handle(conn, arrname):
+    """Obtain an array handle to an existing SciDB array"""
+    scidbpy_arr = conn.wrap_array(arrname)
+    dshape = from_numpy(scidbpy_arr.shape, scidbpy_arr.dtype)
+    return SciDBDataDesc(dshape, Query(arrname, ()), conn)

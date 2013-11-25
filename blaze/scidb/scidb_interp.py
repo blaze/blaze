@@ -29,9 +29,9 @@ def interpret(func, env, args, persist=False, **kwds):
     dshape = func.type.restype
     descs = [arg._data for arg in args]
     inputs = [desc.query for desc in descs]
-    interfaces = [desc.interface for desc in descs]
+    conns = [desc.conn for desc in descs]
 
-    if len(set(interfaces)) > 1:
+    if len(set(conns)) > 1:
         raise InterfaceError(
             "Can only perform query over one scidb interface, got multiple")
 
@@ -40,8 +40,8 @@ def interpret(func, env, args, persist=False, **kwds):
     query = interp.run(func, env, None, args=inputs)
 
     # Execute query
-    [interface] = set(interfaces)
-    result = execute_query(interface, query, persist)
+    [conn] = set(conns)
+    result = execute_query(conn, query, persist)
     return blaze.array(SciDBDataDesc(dshape, result))
 
 #------------------------------------------------------------------------
@@ -51,11 +51,14 @@ def interpret(func, env, args, persist=False, **kwds):
 def op_kernel(interp, funcname, *args):
     op = interp.op
 
-    kernel   = op.metadata['kernel']
+    function = op.metadata['kernel']
     overload = op.metadata['overload']
 
-    func = overload.func
-    return func(*args)
+    py_func, signature = overload.func, overload.sig
+    impl = function.find_impls(py_func, signature, 'scidb')
+
+    print(impl)
+    return kernel(*args)
 
 def op_convert(interp, arg):
     raise TypeError("scidb type conversion not supported yet")

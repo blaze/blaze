@@ -22,6 +22,12 @@ from .constructors import array, empty, ones, zeros
 from .strategy import strategy, current_strategy, set_strategy
 from .eval import eval, append
 from .storage import open, drop, Storage
+from blaze.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
+                              eq, ne, ge, gt, le, lt,
+                              logical_and, logical_or, logical_not, logical_xor,
+                              bitwise_and, bitwise_or, bitwise_xor)
+
+
 import ctypes
 
 # These are so that llvm_structs corresponding to dshapes get converted correctly

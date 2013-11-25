@@ -58,6 +58,22 @@ class DeferredDescriptor(IDataDescriptor):
         self._result = None
 
     @property
+    def inputs(self):
+        graph, ctx = self.expr
+        return [term for term in ctx.terms.itervalues()
+                         if isinstance(term, blaze.Array)]
+
+    @property
+    def strategy(self):
+        strategies = set([input._data.strategy for input in self.inputs])
+        if len(strategies) > 1:
+            raise ValueError(
+                "Multiple execution strategies encounted: %s" % (strategies,))
+
+        [strategy] = strategies
+        return strategy
+
+    @property
     def dshape(self):
         return self._dshape
 
@@ -83,5 +99,3 @@ class DeferredDescriptor(IDataDescriptor):
     __iter__            = force_evaluation('__iter__')
     __getitem__         = force_evaluation('__getitem__')
     __len__             = force_evaluation('__len__')
-
-

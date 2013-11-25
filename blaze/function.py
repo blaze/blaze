@@ -237,6 +237,16 @@ class BlazeFunc(object):
         impls_list = impls_dict.setdefault(impl_kind, [])
         impls_list.append(kernel)
 
+    def implement_by_sig(self, signature, impl_kind, kernel):
+        for f, sig, _ in self.dispatcher.overloads:
+            if sig == signature:
+                py_func = f
+                break
+        else:
+            raise KeyError("No signature %r" % (signature,))
+
+        self.implement(py_func, signature, impl_kind, kernel)
+
     def find_impls(self, py_func, signature, impl_kind):
         return self.impls.get((py_func, str(signature)), {}).get(impl_kind)
 

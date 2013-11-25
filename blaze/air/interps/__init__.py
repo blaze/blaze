@@ -9,3 +9,6 @@ interpreters = {
     'jit': jit_interp,
 }
 lookup_interp = interpreters.__getitem__
+
+def register_interp(interp_kind, interpreter):
+    interpreters[interp_kind] = interpreter

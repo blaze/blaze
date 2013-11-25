@@ -140,6 +140,9 @@ def _storage_convert(storage):
         storage = Storage(storage)
     return storage
 
+# TODO: Make overloaded constructors, taking dshape, **kwds. Overload
+# on keywords
+
 def empty(dshape, caps={'efficient-write': True}, storage=None):
     """Create an array with uninitialized data.
 

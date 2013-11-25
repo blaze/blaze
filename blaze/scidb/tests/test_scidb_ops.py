@@ -1,21 +1,30 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
+
 import unittest
 
-from blaze import dshape, array
-from blaze.ops.ufuncs import add, mul
+from blaze import dshape, add, mul, eval
+from blaze.scidb import connect, empty, zeros, ones
+from blaze.scidb.tests.mock import MockedConn
 
-from dynd import nd, ndt
+ds = dshape('10, 10, int32')
 
-class TestGraph(unittest.TestCase):
+class TestSciDB(unittest.TestCase):
 
-    def test_graph(self):
-        a = array(nd.range(10, dtype=ndt.int32))
-        b = array(nd.range(10, dtype=ndt.float32))
+    def setUp(self):
+        self.conn = MockedConn()
+
+    def test_query(self):
+        a = zeros(ds, self.conn)
+        b = ones(ds, self.conn)
+
         expr = add(a, mul(a, b))
-        graph, ctx = expr.expr
-        self.assertEqual(len(ctx.params), 2)
-        self.assertFalse(ctx.constraints)
-        self.assertEqual(graph.dshape, dshape('10, float64'))
 
+        graph, ctx = expr.expr
+        self.assertEqual(graph.dshape, dshape('10, 10, int32'))
+
+        result = eval(expr)
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+    TestSciDB('test_query').debug()

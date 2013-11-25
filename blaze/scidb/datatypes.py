@@ -17,6 +17,8 @@ def scidb_measure(measure):
 def scidb_dshape(dshape, chunk_size=1024, overlap=0):
     """Construct a SciDB type from a DataShape"""
     # TODO: Validate shape regularity
-    sdshape = scidbpy.SciDBDataShape(dshape.shape, dshape.measure,
-                                     chunk_size=chunk_size, overlap=overlap)
+    shape, dtype = ds.to_numpy(dshape)
+    sdshape = scidbpy.SciDBDataShape(shape, dtype,
+                                     chunk_size=chunk_size,
+                                     chunk_overlap=overlap)
     return sdshape.schema

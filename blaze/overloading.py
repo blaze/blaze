@@ -11,7 +11,18 @@ from blaze.datashape import (coretypes as T, unify, dshape,
                              dummy_signature)
 
 class Dispatcher(object):
-    """Dispatcher for overloaded functions"""
+    """
+    Dispatcher for overloaded functions
+
+    Attributes
+    ==========
+
+    f: FunctionType
+        Initial python function that got overloaded
+
+    overloads: (FunctionType, str, dict)
+        A three-tuple of (py_func, signature, kwds)
+    """
 
     def __init__(self):
         self.f = None

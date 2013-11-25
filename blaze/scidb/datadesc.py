@@ -19,7 +19,7 @@ class SciDBDataDesc(IDataDescriptor):
 
     deferred = True
 
-    def __init__(self, dshape, query):
+    def __init__(self, dshape, query, conn):
         """
         Parameters
         ----------
@@ -30,10 +30,15 @@ class SciDBDataDesc(IDataDescriptor):
         """
         self.query = query
         self._dshape = dshape
+        self.conn = conn
+
+    @property
+    def strategy(self):
+        return 'scidb'
 
     @property
     def dshape(self):
-        return self.dshape
+        return self._dshape
 
     @property
     def is_concrete(self):
