@@ -7,7 +7,7 @@ from blaze import dshape, add, mul, eval
 from blaze.scidb import connect, empty, zeros, ones
 from blaze.scidb.tests.mock import MockedConn
 
-ds = dshape('10, 10, int32')
+ds = dshape('10, 10, float64')
 
 class TestSciDB(unittest.TestCase):
 
@@ -21,7 +21,7 @@ class TestSciDB(unittest.TestCase):
         expr = add(a, mul(a, b))
 
         graph, ctx = expr.expr
-        self.assertEqual(graph.dshape, dshape('10, 10, int32'))
+        self.assertEqual(graph.dshape, dshape('10, 10, float64'))
 
         result = eval(expr)
 

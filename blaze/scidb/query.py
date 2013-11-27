@@ -46,7 +46,7 @@ class Query(object):
         """
         The result in the AFL expression we are building.
         """
-        return self.interpolate(self.pattern, self.args)
+        return self.interpolate(self.pattern, *self.args)
 
     def __str__(self):
         return self.result()
@@ -83,7 +83,7 @@ def execute_query(interface, query, persist=False):
 
 def apply(name, *args):
     arglist = ["{%d}" % (i,) for i in range(len(args))]
-    pattern = "{name}({arglist})".format(name=name, arglist=arglist)
+    pattern = "{name}({arglist})".format(name=name, arglist=", ".join(arglist))
     return qformat(pattern, *args)
 
 def expr(e):

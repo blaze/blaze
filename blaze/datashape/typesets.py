@@ -98,5 +98,7 @@ integral = TypeSet(*[x for t in zip(signed, unsigned) for x in t],
 floating = TypeSet(float32, float64, name='floating')
 complexes = TypeSet(complex64, complex128, name='complexes')
 boolean = TypeSet(bool_, name='boolean')
+
+real = TypeSet(*integral | floating, name='real')
 numeric = TypeSet(*integral | floating | complexes, name='numeric')
 scalar = TypeSet(*boolean | numeric, name='signed')

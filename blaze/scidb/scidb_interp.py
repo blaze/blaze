@@ -9,6 +9,7 @@ from __future__ import print_function, division, absolute_import
 from pykit.ir import interp
 
 import blaze
+from blaze.scidb import AFL
 
 from .error import SciDBError, InterfaceError
 from .query import execute_query
@@ -41,6 +42,7 @@ def interpret(func, env, args, persist=False, **kwds):
 
     # Execute query
     [conn] = set(conns)
+    print("executing query", query)
     result = execute_query(conn, query, persist)
     return blaze.array(SciDBDataDesc(dshape, result))
 
@@ -54,10 +56,14 @@ def op_kernel(interp, funcname, *args):
     function = op.metadata['kernel']
     overload = op.metadata['overload']
 
-    py_func, signature = overload.func, overload.sig
-    impl = function.find_impls(py_func, signature, 'scidb')
+    py_func, signature = overload.func, overload.resolved_sig
 
-    print(impl)
+    impl_overload = function.best_match(AFL, signature.argtypes)
+
+    kernel = impl_overload.func
+    sig    = impl_overload.resolved_sig
+    assert sig == signature, (sig, signature)
+
     return kernel(*args)
 
 def op_convert(interp, arg):

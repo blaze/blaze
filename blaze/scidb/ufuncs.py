@@ -6,17 +6,15 @@ SciDB implementations element-wise ufuncs.
 
 from __future__ import print_function, division, absolute_import
 
-from blaze.function import function
+from blaze.function import function, kernel
 from blaze.datashape import typesets, datetime64
 from blaze.ops import ufuncs
 from blaze.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
                               eq, ne, ge, gt, le, lt,
                               logical_and, logical_or, logical_not, logical_xor,
                               bitwise_and, bitwise_or, bitwise_xor)
-from .kernel import scidb_elementwise
+from .kernel import scidb_elementwise, scidb_kernel
 from .query import apply, expr, iff, qformat
-
-real = typesets.integral | typesets.floating
 
 #------------------------------------------------------------------------
 # Implement functions
@@ -24,7 +22,7 @@ real = typesets.integral | typesets.floating
 
 def define_unop(signature, name, op):
     """Define a unary scidb operator"""
-    def unop(op, x):
+    def unop(x):
         return qformat("({0} {1})", op, x)
 
     unop.__name__ = name
@@ -33,7 +31,7 @@ def define_unop(signature, name, op):
 
 def define_binop(signature, name, op):
     """Define a binary scidb operator"""
-    def binop(op, a, b):
+    def binop(a, b):
         return qformat("({0} {1} {2})", a, op, b)
 
     binop.__name__ = name
@@ -42,20 +40,21 @@ def define_binop(signature, name, op):
 
 def _implement(f, signature):
     name = f.__name__
-    prevop = getattr(ufuncs, name)
-    prevop.implement_by_sig(signature, 'scidb', f)
+    blaze_func = getattr(ufuncs, name)
+    #print("implement", f, signature, blaze_func)
+    scidb_kernel(blaze_func, f, signature)
 
 #------------------------------------------------------------------------
 # Arithmetic
 #------------------------------------------------------------------------
 
-add = define_binop("a : real -> a -> a", "add", "+")
-mul = define_binop("a : real -> a -> a", "add", "*")
-sub = define_binop("a : real -> a -> a", "add", "-")
-div = define_binop("a : real -> a -> a", "add", "/")
-# floordiv = define_binop("a : real -> a -> a", "add", "//")
-# truediv = define_binop("a : real -> a -> a", "add", "/")
-mod = define_binop("a : real -> a -> a", "add", "%")
+add = define_binop("a -> a -> a", "add", "+")
+mul = define_binop("a -> a -> a", "mul", "*")
+sub = define_binop("a : real -> a -> a", "sub", "-")
+div = define_binop("a : real -> a -> a", "div", "/")
+# floordiv = define_binop("a : real -> a -> a", "floordiv", "//")
+# truediv = define_binop("a : real -> a -> a", "truediv", "/")
+mod = define_binop("a : real -> a -> a", "mod", "%")
 
 neg = define_unop("a -> a", "neg", "-")
 

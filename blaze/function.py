@@ -201,7 +201,7 @@ def kernel(blaze_func, impl_kind, kernel, signature, **metadata):
 
     # Overload the right dispatcher
     overload(signature, dispatcher=dispatcher)(kernel)
-
+    blaze_func.add_metadata(metadata, impl_kind=impl_kind)
 
 class BlazeFunc(object):
     """
