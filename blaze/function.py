@@ -106,15 +106,7 @@ def function(signature, impl='python', **metadata):
             blaze_func = BlazeFunc()
 
         for impl in impls:
-            # Get dispatcher for implementation
-            if isinstance(blaze_func, BlazeFunc):
-                dispatcher = blaze_func.get_dispatcher(impl)
-            else:
-                raise TypeError(
-                    "%s in current scope is not overloadable" % (blaze_func,))
-
-            # Overload the right dispatcher
-            overload(signature, dispatcher=dispatcher)(f)
+            kernel(blaze_func, impl, f, signature, **metadata)
 
         # Metadata
         blaze_func.add_metadata(metadata)
@@ -195,6 +187,21 @@ def apply_function(blaze_func, *args, **kwargs):
 #------------------------------------------------------------------------
 # Implementations
 #------------------------------------------------------------------------
+
+def kernel(blaze_func, impl_kind, kernel, signature, **metadata):
+    """
+    Define a new kernel implementation.
+    """
+    # Get dispatcher for implementation
+    if isinstance(blaze_func, BlazeFunc):
+        dispatcher = blaze_func.get_dispatcher(impl_kind)
+    else:
+        raise TypeError(
+            "%s in current scope is not overloadable" % (blaze_func,))
+
+    # Overload the right dispatcher
+    overload(signature, dispatcher=dispatcher)(kernel)
+
 
 class BlazeFunc(object):
     """

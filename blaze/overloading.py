@@ -2,6 +2,7 @@
 from __future__ import print_function, division, absolute_import
 
 import inspect
+import types
 from collections import namedtuple, defaultdict
 from itertools import chain
 
@@ -35,10 +36,11 @@ class Dispatcher(object):
             self.f = f
 
         # Process signature
-        argspec = argspec or inspect.getargspec(f)
-        if self.argspec is None:
-            self.argspec = argspec
-        alpha_equivalent(self.argspec, argspec)
+        if isinstance(f, types.FunctionType):
+            argspec = argspec or inspect.getargspec(f)
+            if self.argspec is None:
+                self.argspec = argspec
+            alpha_equivalent(self.argspec, argspec)
 
         # TODO: match signature to be a Function type with correct arity
         self.overloads.append((f, signature, kwds))
@@ -129,6 +131,11 @@ def best_match(func, argtypes, constraints=None):
     """
     matches = match_by_weight(func, argtypes, constraints=constraints)
 
+    if not matches:
+        raise error.OverloadError(
+            "No overload for function %s matches for argtypes (%s)" % (
+                                    func, ", ".join(map(str, argtypes))))
+
     # -------------------------------------------------
     # Return candidate with minimum weight
 
@@ -181,11 +188,6 @@ def match_by_weight(func, argtypes, constraints=None):
             pass
         else:
             matches[weight].append(match)
-
-    if not matches:
-        raise error.OverloadError(
-            "No overload for function %s matches for argtypes (%s)" % (
-                                    func, ", ".join(map(str, argtypes))))
 
     return matches
 

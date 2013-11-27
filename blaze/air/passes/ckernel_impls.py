@@ -28,12 +28,18 @@ class CKernelImplementations(object):
     def op_kernel(self, op):
         function = op.metadata['kernel']
         overload = op.metadata['overload']
+
         func = overload.func
         polysig = overload.sig
         monosig = overload.resolved_sig
-        impls = function.find_impls(func, polysig, 'ckernel')
-        if impls:
-            [impl] = impls
+        argtypes = monosig.argtypes
+
+        if function.matches('ckernel', argtypes):
+            overload = function.best_match('ckernel', argtypes)
+            impl = overload.func
+            assert monosig == overload.resolved_sig, (monosig,
+                                                      overload.resolved_sig)
+
             new_op = Op('ckernel', op.type, [impl, op.args[1:]], op.result)
             new_op.add_metadata({'rank': 0,
                                  'parallel': True})
