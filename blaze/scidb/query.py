@@ -74,8 +74,8 @@ def qformat(s, *args):
 # Query Execution
 #------------------------------------------------------------------------
 
-def execute_query(interface, query, persist=False):
-    raise NotImplementedError
+def execute_query(conn, query, persist=False):
+    return conn.query(query, persist=persist)
 
 #------------------------------------------------------------------------
 # Query Generation

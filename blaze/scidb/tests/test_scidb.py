@@ -25,6 +25,15 @@ class TestSciDB(unittest.TestCase):
 
         result = eval(expr)
 
+        self.assertEqual(len(self.conn.recorded), 1)
+        [(query, persist)] = self.conn.recorded
+
+        query = str(query)
+
+        self.assertIn("+", query)
+        self.assertIn("*", query)
+        self.assertIn("build", query)
+
 if __name__ == '__main__':
     #unittest.main()
     TestSciDB('test_query').debug()

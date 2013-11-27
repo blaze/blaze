@@ -42,9 +42,8 @@ def interpret(func, env, args, persist=False, **kwds):
 
     # Execute query
     [conn] = set(conns)
-    print("executing query", query)
     result = execute_query(conn, query, persist)
-    return blaze.array(SciDBDataDesc(dshape, result))
+    return blaze.array(SciDBDataDesc(dshape, result, conn))
 
 #------------------------------------------------------------------------
 # Handlers
