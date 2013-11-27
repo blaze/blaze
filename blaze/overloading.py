@@ -74,7 +74,7 @@ class Dispatcher(object):
         return '<%s: \n%s>' % (self.f and self.f.__name__,
                                "\n".join("    %s" % (s,) for s in signatures))
 
-def overload(signature, func=None, **kwds):
+def overload(signature, dispatcher=None, **kwds):
     """
     Overload `func` with new signature, or find this function in the local
     scope with the same name.
@@ -89,10 +89,9 @@ def overload(signature, func=None, **kwds):
         else:
             signature = dshape(signature)
 
-        dispatcher = func or f.__globals__.get(f.__name__)
-        dispatcher = dispatcher or Dispatcher()
-        dispatcher.add_overload(f, signature, kwds)
-        return dispatcher
+        disp = dispatcher or Dispatcher()
+        disp.add_overload(f, signature, kwds)
+        return disp
 
     return decorator
 
@@ -128,32 +127,7 @@ def best_match(func, argtypes, constraints=None):
     -------
     Overloaded function as an `Overload` instance.
     """
-    from blaze.datashape import coercion_cost
-    overloads = func.overloads
-
-    # -------------------------------------------------
-    # Find candidates
-
-    candidates = find_matches(overloads, argtypes, constraints or [])
-
-    # -------------------------------------------------
-    # Weigh candidates
-
-    matches = defaultdict(list)
-    for match in candidates:
-        in_signature = T.Function(*argtypes + [T.TypeVar('R')])
-        signature = match.sig
-        try:
-            weight = coercion_cost(in_signature, signature)
-        except error.CoercionError:
-            pass
-        else:
-            matches[weight].append(match)
-
-    if not matches:
-        raise error.OverloadError(
-            "No overload for function %s matches for argtypes (%s)" % (
-                                    func, ", ".join(map(str, argtypes))))
+    matches = match_by_weight(func, argtypes, constraints=constraints)
 
     # -------------------------------------------------
     # Return candidate with minimum weight
@@ -167,10 +141,58 @@ def best_match(func, argtypes, constraints=None):
     else:
         return candidates[0]
 
+def match_by_weight(func, argtypes, constraints=None):
+    """
+    Return all matched overloads for function `func` given `argtypes`.
+
+    Parameters
+    ----------
+    func: Dispatcher
+        Overloaded Blaze function
+
+    argtypes: [Mono]
+        List of input argument types
+
+    constraints: [(TypeVar, Mono)]
+        Optional set of constraints, see unification.py
+
+    Returns
+    -------
+    { weight : [Overload] }
+    """
+    from blaze.datashape import coercion_cost
+    overloads = func.overloads
+
+    # -------------------------------------------------
+    # Find candidates
+
+    candidates = find_matches(overloads, argtypes, constraints or [])
+
+    # -------------------------------------------------
+    # Weigh candidates
+
+    matches = defaultdict(list)
+    for match in candidates:
+        in_signature = T.Function(*list(argtypes) + [T.TypeVar('R')])
+        signature = match.sig
+        try:
+            weight = coercion_cost(in_signature, signature)
+        except error.CoercionError:
+            pass
+        else:
+            matches[weight].append(match)
+
+    if not matches:
+        raise error.OverloadError(
+            "No overload for function %s matches for argtypes (%s)" % (
+                                    func, ", ".join(map(str, argtypes))))
+
+    return matches
+
 @listify
 def find_matches(overloads, argtypes, constraints=()):
     """Find all overloads that unify with the given inputs"""
-    input = T.Function(*argtypes + [T.TypeVar('R')])
+    input = T.Function(*list(argtypes) + [T.TypeVar('R')])
     for func, sig, kwds in overloads:
         assert isinstance(sig, T.Function), sig
 

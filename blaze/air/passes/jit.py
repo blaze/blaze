@@ -115,23 +115,37 @@ def construct_blaze_kernel(function, overload):
     function: blaze.function.BlazeFunc
     overload: blaze.overloading.Overload
     """
-    func = overload.func
-    polysig = overload.sig
     monosig = overload.resolved_sig
+    argtypes = monosig.argtypes
 
-    numba_impls = function.find_impls(func, polysig, 'numba')
-    llvm_impls = function.find_impls(func, polysig, 'llvm')
+    # Try a numba implementation
+    py_func, signature = find_impl(function, 'numba', argtypes, monosig)
+    if py_func is not None:
+        nb_argtypes = [to_numba(a.measure) for a in signature.argtypes]
+        nb_restype = to_numba(signature.restype.measure)
+        return frompyfunc(py_func, (nb_argtypes, nb_restype), argtypes)
 
-    if numba_impls:
-        [impl] = numba_impls
-        argtypes = [to_numba(a.measure) for a in monosig.argtypes]
-        restype = to_numba(monosig.restype.measure)
-        return frompyfunc(impl, (argtypes, restype), monosig.argtypes)
-    elif llvm_impls:
-        [impl] = llvm_impls
-        return BlazeElementKernel(impl, monosig.argtypes)
-    else:
-        return None
+    # Try an LLVM implementation
+    py_func, signature = find_impl(function, 'numba', argtypes, monosig)
+    if py_func is not None:
+        return BlazeElementKernel(py_func, signature.argtypes)
+
+# TODO: factor this out into a "resolve_kernels" or somesuch pass
+
+def find_impl(function, impl_kind, argtypes, expected_signature):
+    if function.matches(impl_kind, argtypes):
+        overload = function.best_match(impl_kind, argtypes)
+        got_signature = overload.resolved_sig
+
+        # Assert agreeable types for now
+        # TODO: insert conversions if implementation disagrees
+
+        assert got_signature == expected_signature, (got_signature,
+                                                     expected_signature)
+
+        return overload.func, got_signature
+
+    return None, None
 
 #------------------------------------------------------------------------
 # Fuse jitted kernels

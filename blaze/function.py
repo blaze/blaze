@@ -25,7 +25,7 @@ from itertools import chain
 
 import blaze
 from blaze.datashape import coretypes as T, dshape
-from blaze.overloading import overload, Dispatcher
+from blaze.overloading import overload, Dispatcher, match_by_weight, best_match
 from blaze.datadescriptor import DeferredDescriptor
 from blaze.expr.context import merge
 from blaze.py2help import basestring, dict_iteritems
@@ -77,8 +77,8 @@ def collect_contexts(args):
 
 def function(signature, impl='python', **metadata):
     """
-    Define an blaze python-level kernel. Further implementations may be
-    associated with this overloaded kernel using the 'implement' method.
+    Define an overload for a blaze function. Implementations may be associated
+    by indicating a 'kind' through the `impl` argument.
 
     Parameters
     ----------
@@ -88,50 +88,54 @@ def function(signature, impl='python', **metadata):
     Usage
     -----
 
-        @kernel
+        @function
         def add(a, b):
             return a + b
 
     or
 
-        @kernel('a -> a -> a') # All types are unified
+        @function('a -> a -> a') # All types are unified
         def add(a, b):
             return a + b
     """
     def decorator(f):
-        func = lookup_previous(f)
-        if isinstance(func, BlazeFunc):
-            func = func.dispatcher
-        elif isinstance(func, types.FunctionType):
-            raise TypeError(
-                "Function %s in current scope is not overloadable" % (func,))
-        else:
-            func = Dispatcher()
+        # Look up previous blaze function
+        blaze_func = lookup_previous(f)
+        if blaze_func is None:
+            # No previous function, create new one
+            blaze_func = BlazeFunc()
 
-        dispatcher = overload(signature, func=func)(f)
+        for impl in impls:
+            # Get dispatcher for implementation
+            if isinstance(blaze_func, BlazeFunc):
+                dispatcher = blaze_func.get_dispatcher(impl)
+            else:
+                raise TypeError(
+                    "%s in current scope is not overloadable" % (blaze_func,))
 
-        if isinstance(f, types.FunctionType):
-            kernel = BlazeFunc(dispatcher)
-        else:
-            assert isinstance(f, BlazeFunc), f
-            kernel = f
+            # Overload the right dispatcher
+            overload(signature, dispatcher=dispatcher)(f)
 
-        metadata.setdefault('elementwise', True)
-        kernel.add_metadata(metadata)
-        if impl != 'python':
-            kernel.implement(f, signature, impl, f)
-        return kernel
+        # Metadata
+        blaze_func.add_metadata(metadata)
+        if blaze_func.get_metadata('elementwise') is None:
+            blaze_func.add_metadata({'elementwise': False})
+
+        return blaze_func
 
     signature = dshape(signature)
+    impls = impl
+    if not isinstance(impls, tuple):
+        impls = (impls,)
 
     if not isinstance(signature, T.Mono):
-        # @kernel
+        # @blaze_func
         # def f(...): ...
         f = signature
         signature = None
         return decorator(f)
     else:
-        # @kernel('a -> a -> b')
+        # @blaze_func('a -> a -> b')
         # def f(...): ...
         return decorator
 
@@ -141,17 +145,24 @@ def elementwise(*args, **kwds):
     """
     return function(*args, elementwise=True, **kwds)
 
-def jit_elementwise(*args):
+def jit_elementwise(*args, **kwds):
     """
     Define a blaze element-wise kernel that can be jitted with numba.
+
+    Keyword argument `python` indicates whether this is also a valid
+    pure-python function (default: True).
     """
-    return elementwise(*args, impl='numba')
+    if kwds.get('python', True):
+        impl = ('python', 'numba')
+    else:
+        impl = 'numba'
+    return elementwise(*args, impl=impl)
 
 #------------------------------------------------------------------------
 # Application
 #------------------------------------------------------------------------
 
-def apply_kernel(kernel, *args, **kwargs):
+def apply_function(blaze_func, *args, **kwargs):
     """
     Apply blaze kernel `kernel` to the given arguments.
 
@@ -169,13 +180,13 @@ def apply_kernel(kernel, *args, **kwargs):
     # -------------------------------------------------
     # Find match to overloaded function
 
-    overload, args = kernel.dispatcher.lookup_dispatcher(args, kwargs,
-                                                         ctx.constraints)
+    overload, args = blaze_func.dispatcher.lookup_dispatcher(args, kwargs,
+                                                             ctx.constraints)
 
     # -------------------------------------------------
     # Construct graph
 
-    term = construct.construct(kernel, ctx, overload, args)
+    term = construct.construct(blaze_func, ctx, overload, args)
     desc = DeferredDescriptor(term.dshape, (term, ctx))
 
     # TODO: preserve `user` metadata
@@ -198,70 +209,68 @@ class BlazeFunc(object):
     dispatcher: Dispatcher
         Used to find the right overload
 
-    impls: { (py_func, signature) : object }
-        Overloaded implementations, mapping from implementation 'kind'
-        (e.g. python, numba, ckernel, llvm, etc) to an implementation
-
     metadata: { str : object }
         Additional metadata that may be interpreted by a Blaze AIR interpreter
     """
 
-    def __init__(self, dispatcher):
-        self.dispatcher = dispatcher
-        self.impls = {}
+    def __init__(self):
+        self.dispatchers = {}
         self.metadata = {}
 
-    def implement(self, py_func, signature, impl_kind, kernel):
+    @property
+    def py_func(self):
+        """Return the first python function that was subsequently overloaded"""
+        return self.dispatcher.f
+
+    @property
+    def dispatcher(self):
+        """Default dispatcher that define blaze semantics (pure python)"""
+        return self.dispatchers['python']
+
+    def get_dispatcher(self, impl_kind):
+        """Get the overloaded dispatcher for the given implementation kind"""
+        if impl_kind not in self.dispatchers:
+            self.dispatchers[impl_kind] = Dispatcher()
+        return self.dispatchers[impl_kind]
+
+    def matches(self, impl_kind, argtypes, constraints=None):
         """
-        Add an implementation kernel for the overloaded function `py_func`.
-
-        Arguments
-        ---------
-        py_func: FunctionType
-            The original overloaded Python function.
-
-            Note: Decorators like @overload etc do not return the original
-                  Python function!
-
-        signature: Type
-            The function signature of the overload in question
-
-        impl_kind: str
-            Type of implementation, e.g. 'python', 'numba', 'ckernel', etc
-
-        kernel: some implementation object
-            Some object depending on impl_kind, which implements the
-            overload.
+        Find all matching overloads for a given implementation kind and
+        argument types.
         """
-        impls_dict = self.impls.setdefault((py_func, str(signature)), {})
-        impls_list = impls_dict.setdefault(impl_kind, [])
-        impls_list.append(kernel)
+        return match_by_weight(self.get_dispatcher(impl_kind), argtypes,
+                               constraints=constraints)
 
-    def implement_by_sig(self, signature, impl_kind, kernel):
-        for f, sig, _ in self.dispatcher.overloads:
-            if sig == signature:
-                py_func = f
-                break
-        else:
-            raise KeyError("No signature %r" % (signature,))
+    def best_match(self, impl_kind, argtypes, constraints=None):
+        """
+        Find the best implementation of `impl_kind` using `argtypes`.
+        """
+        return best_match(self.get_dispatcher(impl_kind), argtypes,
+                          constraints=constraints)
 
-        self.implement(py_func, signature, impl_kind, kernel)
+    def add_metadata(self, md, impl_kind='python'):
+        """
+        Associate metadata with an overloaded implementation.
+        """
+        if impl_kind not in self.metadata:
+            self.metadata[impl_kind] = {}
 
-    def find_impls(self, py_func, signature, impl_kind):
-        return self.impls.get((py_func, str(signature)), {}).get(impl_kind)
+        metadata = self.metadata[impl_kind]
 
-    def add_metadata(self, md):
         # Verify compatibility
         for k in md:
-            if k in self.metadata:
-                assert self.metadata[k] == md[k], (self.metadata[k], md[k])
+            if k in metadata:
+                assert metadata[k] == md[k], (metadata[k], md[k])
         # Update
-        self.metadata.update(md)
+        metadata.update(md)
 
-    __call__ = apply_kernel
+    def get_metadata(self, key, impl_kind='python'):
+        return self.metadata[impl_kind].get(key)
+
+    __call__ = apply_function
 
     def __str__(self):
-        arg = self.dispatcher.f
+        arg = self.py_func
         if arg is None:
             arg = "<empty>"
         else:
