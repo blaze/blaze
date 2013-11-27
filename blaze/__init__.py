@@ -17,7 +17,7 @@ numbalogger.setLevel(logging.WARNING)
 from . import datashape, bkernel, ckernel
 from .datashape import dshape, dshapes, parser
 from .array import Array
-from .function import kernel, elementwise, BlazeFunc
+from .function import function, elementwise, BlazeFunc
 from .constructors import array, empty, ones, zeros
 from .strategy import strategy, current_strategy, set_strategy
 from .eval import eval, append

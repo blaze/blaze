@@ -6,7 +6,7 @@ SciDB implementations element-wise ufuncs.
 
 from __future__ import print_function, division, absolute_import
 
-from blaze.function import kernel
+from blaze.function import function
 from blaze.datashape import typesets, datetime64
 from blaze.ops import ufuncs
 from blaze.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,

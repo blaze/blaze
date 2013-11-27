@@ -4,32 +4,32 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 import blaze
-from blaze.function import kernel
+from blaze.function import function
 from blaze import dshape, array
 from dynd import nd, ndt, _lowlevel
 import numpy as np
 
 # f
 
-@kernel('X, Y, float32 -> X, Y, float32 -> X, Y, float32')
+@function('X, Y, float32 -> X, Y, float32 -> X, Y, float32')
 def f(a, b):
     return a
 
-@kernel('X, Y, complex64 -> X, Y, complex64 -> X, Y, complex64')
+@function('X, Y, complex64 -> X, Y, complex64 -> X, Y, complex64')
 def f(a, b):
     return a
 
-@kernel('X, Y, complex128 -> X, Y, complex128 -> X, Y, complex128')
+@function('X, Y, complex128 -> X, Y, complex128 -> X, Y, complex128')
 def f(a, b):
     return a
 
 # g
 
-@kernel('X, Y, float32 -> X, Y, float32 -> X, int32')
+@function('X, Y, float32 -> X, Y, float32 -> X, int32')
 def g(a, b):
     return a
 
-@kernel('X, Y, float32 -> ..., float32 -> X, int32')
+@function('X, Y, float32 -> ..., float32 -> X, int32')
 def g(a, b):
     return a
 

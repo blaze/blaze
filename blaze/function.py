@@ -75,7 +75,7 @@ def collect_contexts(args):
 # Decorators
 #------------------------------------------------------------------------
 
-def kernel(signature, impl='python', **metadata):
+def function(signature, impl='python', **metadata):
     """
     Define an blaze python-level kernel. Further implementations may be
     associated with this overloaded kernel using the 'implement' method.
@@ -139,7 +139,7 @@ def elementwise(*args, **kwds):
     """
     Define a blaze element-wise kernel.
     """
-    return kernel(*args, elementwise=True, **kwds)
+    return function(*args, elementwise=True, **kwds)
 
 def jit_elementwise(*args):
     """
