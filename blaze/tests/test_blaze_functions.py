@@ -76,6 +76,7 @@ class TestBlazeKernel(unittest.TestCase):
 
 class TestBlazeFunctionFromUFunc(unittest.TestCase):
 
+
     def test_overload(self):
         myfunc = create_overloaded_add()
 
@@ -88,6 +89,9 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
                         blaze.array([1,2], dshape='int16')))
         self.assertEqual(a.dshape, blaze.dshape('2, int16'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [2, 2])
+
+    def test_overload_coercion(self):
+        myfunc = create_overloaded_add()
 
         # Test type promotion to int32
         a = blaze.eval(myfunc(blaze.array([3,4], dshape='int16'),
@@ -105,11 +109,17 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         self.assertEqual(a.dshape, blaze.dshape('2, int16'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [2, 2])
 
+    def test_nesting(self):
+        myfunc = create_overloaded_add()
+
         # A little bit of nesting
         a = blaze.eval(myfunc(myfunc(blaze.array([3,4]), blaze.array([1,2])),
                         blaze.array([2,10])))
         self.assertEqual(a.dshape, blaze.dshape('2, int32'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [6, 16])
+
+    def test_nesting_and_coercion(self):
+        myfunc = create_overloaded_add()
 
         # More nesting, with conversions
         a = blaze.eval(myfunc(myfunc(blaze.array([1,2]), blaze.array([-2, 10])),
@@ -117,6 +127,7 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
                                blaze.array(3, dshape='int16'))))
         self.assertEqual(a.dshape, blaze.dshape('2, int32'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [-3, 14])
+
 
 if __name__ == '__main__':
     # TestBlazeKernel('test_kernel').debug()
