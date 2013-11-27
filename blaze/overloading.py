@@ -89,7 +89,7 @@ def overload(signature, dispatcher=None, **kwds):
         else:
             signature = dshape(signature)
 
-        disp = dispatcher or Dispatcher()
+        disp = dispatcher or f.__globals__.get(f.__name__) or Dispatcher()
         disp.add_overload(f, signature, kwds)
         return disp
 
