@@ -85,7 +85,7 @@ def _coercion_cost(a, b, seen=None):
         return 0.1 * visited
     elif isinstance(b, Implements):
         if a in b.typeset:
-            return 1 - (1.0 / len(b.typeset.types))
+            return 0.1  - (0.1 / len(b.typeset.types))
         else:
             raise error.CoercionError(a, b)
     elif isinstance(b, Fixed):
