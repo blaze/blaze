@@ -11,20 +11,34 @@ from .dynd_data_descriptor import DyNDDataDescriptor
 
 
 def csv_descriptor_iter(csvfile, schema, blen=1, start=None, stop=None):
-    for row in csv.reader(csvfile):
-        if blen == 1:
+    if blen == 1:
+        for row in csv.reader(csvfile):
             yield DyNDDataDescriptor(nd.array(row, dtype=schema))
-        else:
-            raise NotImplementedError
+    else:        
+        rows = []
+        for nrow, row in enumerate(csv.reader(csvfile)):
+            rows.append(row)
+            if nrow % blen == 0:
+                yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+                rows = []
+
 
 class CSVDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a CSV file.
+
+    Parameters
+    ----------
+    csvfile : file IO handle
+        A file handler for teh CSV file.
+    schema : string or blaze.datashape
+        A blaze datashape (or its string representation) of the schema
+        in the CSV file.
     """
-    def __init__(self, obj, schema):
-        if not hasattr(obj, "__iter__"):
-            raise TypeError('object does not have an iter interface')
-        self.csvfile = obj
+    def __init__(self, csvfile, schema):
+        if not hasattr(csvfile, "__iter__"):
+            raise TypeError('csvfile does not have an iter interface')
+        self.csvfile = csvfile
         if type(schema) in (str, unicode):
             schema = datashape.dshape(schema)
         if not isinstance(schema, datashape.Record):
@@ -74,6 +88,7 @@ class CSVDataDescriptor(IDataDescriptor):
         raise NotImplementedError
 
     def __setitem__(self, key, value):
+        # CSV files cannot be updated (at least, not efficiently)
         raise NotImplementedError
 
     def __iter__(self):
@@ -105,5 +120,6 @@ class CSVDataDescriptor(IDataDescriptor):
 
         """
         # Return the iterable
+        self.csvfile.seek(0)
         return csv_descriptor_iter(self.csvfile, self.schema,
                                    blen, start, stop)
