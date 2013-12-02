@@ -59,6 +59,32 @@ class TestCSVDataDescriptor(unittest.TestCase):
             {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
             {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
 
+    def test_iterchunks_start(self):
+        dd = CSVDataDescriptor(csv_file, csv_schema)
+        vals = []
+        for el in dd.iterchunks(blen=2, start=1):
+            vals.extend(dd_as_py(el))
+        self.assertEqual(vals, [
+            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
+            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
+
+    def test_iterchunks_stop(self):
+        dd = CSVDataDescriptor(csv_file, csv_schema)
+        vals = []
+        for el in dd.iterchunks(blen=1, stop=2):
+            vals.append(dd_as_py(el))
+        self.assertEqual(vals, [
+            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
+            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}])
+
+    def test_iterchunks_start_stop(self):
+        dd = CSVDataDescriptor(csv_file, csv_schema)
+        vals = []
+        for el in dd.iterchunks(blen=1, start=1, stop=2):
+            vals.append(dd_as_py(el))
+        self.assertEqual(vals, [
+            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}])
+
 
 if __name__ == '__main__':
     unittest.main()
