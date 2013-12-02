@@ -90,6 +90,39 @@ class TestCSVDataDescriptor(unittest.TestCase):
         self.assertEqual(vals, [
             {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
 
+    def test_getitem_start(self):
+        dd = CSVDataDescriptor(csv_file, csv_schema)
+        el = dd[0]
+        self.assertTrue(isinstance(el, DyNDDataDescriptor))
+        vals = dd_as_py(el)
+        self.assertEqual(vals, [
+            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False}])
+
+    def test_getitem_stop(self):
+        dd = CSVDataDescriptor(csv_file, csv_schema)
+        el = dd[:1]
+        self.assertTrue(isinstance(el, DyNDDataDescriptor))
+        vals = dd_as_py(el)
+        self.assertEqual(vals, [
+            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False}])
+
+    def test_getitem_step(self):
+        dd = CSVDataDescriptor(csv_file, csv_schema)
+        el = dd[::2]
+        self.assertTrue(isinstance(el, DyNDDataDescriptor))
+        vals = dd_as_py(el)
+        self.assertEqual(vals, [
+            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
+            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
+
+    def test_getitem_start_step(self):
+        dd = CSVDataDescriptor(csv_file, csv_schema)
+        el = dd[1::2]
+        self.assertTrue(isinstance(el, DyNDDataDescriptor))
+        vals = dd_as_py(el)
+        self.assertEqual(vals, [
+        {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}])
+
 
 if __name__ == '__main__':
     unittest.main()
