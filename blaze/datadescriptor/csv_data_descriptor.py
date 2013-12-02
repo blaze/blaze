@@ -16,11 +16,13 @@ def csv_descriptor_iter(csvfile, schema):
 
 def csv_descriptor_iterchunks(csvfile, schema, blen, start=None, stop=None):
     if blen == 1:
+        # In this case we will return single rows, not a list of rows
         for nrow, row in enumerate(csv.reader(csvfile)):
             if start is not None and nrow < start: continue
             if stop is not None and nrow >= stop: return
             yield DyNDDataDescriptor(nd.array(row, dtype=schema))
-    else:        
+    else:
+        # The most general form
         rows = []
         for nrow, row in enumerate(csv.reader(csvfile)):
             if start is not None and nrow < start: continue
@@ -107,9 +109,12 @@ class CSVDataDescriptor(IDataDescriptor):
         self.csvfile.seek(0)
         return csv_descriptor_iter(self.csvfile, self.schema)
 
-    def append(self, values):
-        """Append a list of values."""
-        return NotImplementedError
+    def append(self, row):
+        """Append a row of values (in sequence form)."""
+        self.csvfile.seek(0, 2)  # go to the end of the file
+        values = nd.array(row, dtype=self.schema)  # validate row
+        strrow = ",".join(unicode(v) for v in values) + "\n"
+        self.csvfile.write(strrow)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
