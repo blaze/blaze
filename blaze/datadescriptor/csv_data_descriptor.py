@@ -3,6 +3,7 @@ import operator
 import contextlib
 import ctypes
 import csv
+import itertools as it
 
 from .data_descriptor import IDataDescriptor
 from .. import datashape
@@ -97,8 +98,16 @@ class CSVDataDescriptor(IDataDescriptor):
         return None
 
     def __getitem__(self, key):
-        # CSV files cannot be accessed randomly
-        raise NotImplementedError
+        self.csvfile.seek(0)
+        if type(key) in (int, long):
+            start, stop, step = key, key + 1, 1
+        elif type(key) is slice:
+            start, stop, step = key.start, key.stop, key.step
+        else:
+            raise IndexError("key '%r' is not valid" % key)
+        read_iter = it.islice(csv.reader(self.csvfile), start, stop, step)
+        res = nd.array(read_iter, dtype=self.schema)
+        return DyNDDataDescriptor(res)
 
     def __setitem__(self, key, value):
         # CSV files cannot be updated (at least, not efficiently)
