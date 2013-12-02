@@ -10,13 +10,24 @@ from dynd import nd, ndt
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 
-def csv_descriptor_iter(csvfile, schema, blen=1, start=None, stop=None):
+def csv_descriptor_iter(csvfile, schema):
+    for row in csv.reader(csvfile):
+        yield DyNDDataDescriptor(nd.array(row, dtype=schema))
+
+def csv_descriptor_iterchunks(csvfile, schema, blen, start=None, stop=None):
     if blen == 1:
-        for row in csv.reader(csvfile):
+        for nrow, row in enumerate(csv.reader(csvfile)):
+            if start is not None and nrow < start: continue
+            if stop is not None and nrow >= stop: return
             yield DyNDDataDescriptor(nd.array(row, dtype=schema))
     else:        
         rows = []
         for nrow, row in enumerate(csv.reader(csvfile)):
+            if start is not None and nrow < start: continue
+            if stop is not None and nrow >= stop:
+                # Build the descriptor for the data we have and return
+                yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+                return
             rows.append(row)
             if nrow % blen == 0:
                 yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
@@ -121,5 +132,5 @@ class CSVDataDescriptor(IDataDescriptor):
         """
         # Return the iterable
         self.csvfile.seek(0)
-        return csv_descriptor_iter(self.csvfile, self.schema,
-                                   blen, start, stop)
+        return csv_descriptor_iterchunks(self.csvfile, self.schema,
+                                         blen, start, stop)
