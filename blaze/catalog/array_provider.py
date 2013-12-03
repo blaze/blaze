@@ -16,9 +16,8 @@ def load_json_file_array(root, array_name):
         dt = ndt.type(f.read())
 
     # Load the JSON
-    with open(root + '.json') as f:
-        # TODO: Add stream support to parse_json for compressed JSON, etc.
-        arr = nd.parse_json(dt, f.read())
+    # TODO: Add stream support to parse_json for compressed JSON, etc.
+    arr = nd.parse_json(dt, nd.memmap(root + '.json'))
     return array(arr)
 
 def load_json_directory_array(root, array_name):
@@ -39,8 +38,7 @@ def load_json_directory_array(root, array_name):
     dt = ndt.make_fixed_dim(len(files), dt)
     arr = nd.empty(dt)
     for i, fname in enumerate(files):
-        with open(fname) as f:
-            nd.parse_json(arr[i], f.read())
+        nd.parse_json(arr[i], nd.memmap(fname))
     arr.flag_as_immutable()
     return array(arr)
 
