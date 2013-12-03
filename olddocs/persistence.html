@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Layouts &mdash; Blaze 0.3.0 documentation</title>
+    <title>Persistence &mdash; Blaze 0.1-dev documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.0',
+        VERSION:     '0.1-dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,14 +26,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
-    <link rel="next" title="Sources" href="sources.html" />
-    <link rel="prev" title="Type Reconstruction" href="typeinference.html" />
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Type Reconstruction" href="typeinference.html" />
+    <link rel="prev" title="Evaluation Class" href="eclass.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -83,73 +82,15 @@
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
-<li><a class="reference internal" href="#">Layouts</a><ul>
-<li><a class="reference internal" href="#combining-chunks">Combining Chunks</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Persistence</a></li>
 </ul>
 
          </ul>
       </div>
       <div class="span9">
           
-  <div class="section" id="layouts">
-<h1>Layouts<a class="headerlink" href="#layouts" title="Permalink to this headline">¶</a></h1>
-<p>Scalar layouts are arangements of scalar matrix data on to blocks
-of memory that may or may not be contigious.</p>
-<ul class="simple">
-<li>Chunked</li>
-<li>Multichunks</li>
-<li>Continuous</li>
-<li>Strided</li>
-</ul>
-<img alt="_images/layout.png" class="align-center" src="_images/layout.png" />
-<img alt="_images/layout2.png" class="align-center" src="_images/layout2.png" />
-<p>If we build a composite block structure as some union of two
-multiple blocks of data, then we need only have a invertible linear
-transformation which is able to map coordinates between the local
-coordinates of the chunks as we pull bytes from them.</p>
-<div class="section" id="combining-chunks">
-<h2>Combining Chunks<a class="headerlink" href="#combining-chunks" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><pre>f : (i,j) -&gt; (i', j')
-g : (i',j') -&gt; (i, j)
-f . g = id</pre>
-</div>
-<div class="highlight-python"><pre>  Block 1            Block 2
-
-  1 2 3 4            1 2 3 4
-0 - - - -  vstack  0 * * * *
-1 - - - -          1 * * * *
-
-          \     /
-
-           1 2 3 4
-         0 - - - - + --- Transform =
-         1 - - - -       (i,j) -&gt; (i, j)
-         2 * * * * + --- Transform =
-         3 * * * *       (i,j) -&gt; (i-2, j)</pre>
-</div>
-<div class="highlight-python"><pre>  Block 1            Block 2
-
-  1 2 3 4            1 2 3 4
-0 - - - -  hstack  0 * * * *
-1 - - - -          1 * * * *
-
-          \     /
-
-           1 2 3 4
-         0 - - * *
-         1 - - * *
-         2 - - * *
-         3 - - * *
-           |   |
-           |   |
-           |   + Transform =
-           |     (i,j) -&gt; (i-2, j)
-           + --- Transform =
-                 (i,j) -&gt; (i, j)</pre>
-</div>
-</div>
+  <div class="section" id="persistence">
+<h1>Persistence<a class="headerlink" href="#persistence" title="Permalink to this headline">¶</a></h1>
 </div>
 
 

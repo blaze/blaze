@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Install &mdash; Blaze 0.1-dev documentation</title>
+    <title>Install &mdash; Blaze 0.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1-dev',
+        VERSION:     '0.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,11 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
     <link rel="next" title="Quickstart" href="quickstart.html" />
     <link rel="prev" title="Blaze" href="index.html" />
 <meta charset='utf-8'>
@@ -100,25 +101,26 @@
 <h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
 <p>If you are interested in the development version of Blaze you can
 obtain the source from Github.</p>
-<div class="highlight-python"><pre>$ git clone git@github.com:ContinuumIO/blaze-core.git</pre>
+<div class="highlight-python"><pre>$ git clone git@github.com:ContinuumIO/blaze.git</pre>
 </div>
 <p>Many of the dependencies ( i.e. llvmpy ) are non-trivial to install.
 It is <strong>highly recommend</strong> that you build Blaze using the Anaconda
 distribution, a free Python distribution that comes with a host of
 scientific and numeric packages bundled and precompiled into a userspace
 Python environment.</p>
-<p>Anaconda can be downloaded for all platforms here: <a class="reference external" href="http://continuum.io/anaconda.html">http://continuum.io/anaconda.html</a> .</p>
+<p>Anaconda can be downloaded for all platforms here:
+<a class="reference external" href="http://continuum.io/anaconda.html">http://continuum.io/anaconda.html</a> .</p>
 </div>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>To build project inside of Anaconda:</p>
-<div class="highlight-python"><pre>$ make build</pre>
+<div class="highlight-python"><pre>$ python setup.py install</pre>
 </div>
-<p>To build documentation:</p>
+<p>To build documentation on a unix-based system:</p>
 <div class="highlight-python"><pre>$ make docs</pre>
 </div>
 <p>To run tests:</p>
-<div class="highlight-python"><pre>$ python -m blaze.testing</pre>
+<div class="highlight-python"><pre>$ python -c 'import blaze; blaze.test()'</pre>
 </div>
 </div>
 <div class="section" id="dependencies">
@@ -130,6 +132,8 @@ Python environment.</p>
 <li><a class="reference external" href="http://www.dabeaz.com/ply/">ply</a></li>
 <li><a class="reference external" href="http://blosc.pytables.org">python-blosc</a></li>
 <li><a class="reference external" href="https://bitbucket.org/eliben/pycparser">pycparser</a></li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/nose/">nose</a> (optional, for running tests)</li>
+<li><a class="reference external" href="https://github.com/ContinuumIO/dynd-python">dynd</a> (optional, master branch)</li>
 </ul>
 </div>
 </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datashape &mdash; Blaze 0.3.0 documentation</title>
+    <title>Datashape &mdash; Blaze 0.1-dev documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.0',
+        VERSION:     '0.1-dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,14 +26,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
-    <link rel="next" title="Datashape Binary Data Layout" href="datashape-binary.html" />
-    <link rel="prev" title="Overview" href="overview.html" />
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Module System" href="module.html" />
+    <link rel="prev" title="Memory Layout" href="memory.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -191,29 +190,35 @@ unboxed machine types. These inherit the notation from NumPy.</p>
 <tr class="row-even"><td>bool</td>
 <td>Boolean (True or False) stored as a byte</td>
 </tr>
-<tr class="row-odd"><td>int8</td>
+<tr class="row-odd"><td>int</td>
+<td>Platform integer (normally either <tt class="docutils literal"><span class="pre">int32</span></tt> or <tt class="docutils literal"><span class="pre">int64</span></tt>)</td>
+</tr>
+<tr class="row-even"><td>int8</td>
 <td>Byte (-128 to 127)</td>
 </tr>
-<tr class="row-even"><td>int16</td>
+<tr class="row-odd"><td>int16</td>
 <td>Integer (-32768 to 32767)</td>
 </tr>
-<tr class="row-odd"><td>int32</td>
+<tr class="row-even"><td>int32</td>
 <td>Integer (-2147483648 to 2147483647)</td>
 </tr>
-<tr class="row-even"><td>int64</td>
+<tr class="row-odd"><td>int64</td>
 <td>Integer (-9223372036854775808 to 9223372036854775807)</td>
 </tr>
-<tr class="row-odd"><td>uint8</td>
+<tr class="row-even"><td>uint8</td>
 <td>Unsigned integer (0 to 255)</td>
 </tr>
-<tr class="row-even"><td>uint16</td>
+<tr class="row-odd"><td>uint16</td>
 <td>Unsigned integer (0 to 65535)</td>
 </tr>
-<tr class="row-odd"><td>uint32</td>
+<tr class="row-even"><td>uint32</td>
 <td>Unsigned integer (0 to 4294967295)</td>
 </tr>
-<tr class="row-even"><td>uint64</td>
+<tr class="row-odd"><td>uint64</td>
 <td>Unsigned integer (0 to 18446744073709551615)</td>
+</tr>
+<tr class="row-even"><td>float</td>
+<td>Shorthand for <tt class="docutils literal"><span class="pre">float64</span></tt>.</td>
 </tr>
 <tr class="row-odd"><td>float16</td>
 <td>Half precision float: sign bit, 5 bits exponent,
@@ -227,11 +232,14 @@ unboxed machine types. These inherit the notation from NumPy.</p>
 <td>Double precision float: sign bit, 11 bits exponent,
 52 bits mantissa</td>
 </tr>
-<tr class="row-even"><td>complex64</td>
+<tr class="row-even"><td>complex</td>
+<td>Shorthand for <tt class="docutils literal"><span class="pre">complex128</span></tt>.</td>
+</tr>
+<tr class="row-odd"><td>complex64</td>
 <td>Complex number, represented by two 32-bit floats (real
 and imaginary components)</td>
 </tr>
-<tr class="row-odd"><td>complex128</td>
+<tr class="row-even"><td>complex128</td>
 <td>Complex number, represented by two 64-bit floats (real
 and imaginary components)</td>
 </tr>
@@ -250,14 +258,14 @@ a subset of specialized storage and computation backends.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>string</td>
-<td>Variable length UTF-8 string.</td>
+<tr class="row-even"><td>double</td>
+<td>Fixed point precision</td>
 </tr>
-<tr class="row-odd"><td>bytes</td>
-<td>Variable length arrays of bytes.</td>
+<tr class="row-odd"><td>string</td>
+<td>Variable length UTF-8 string</td>
 </tr>
-<tr class="row-even"><td>json</td>
-<td>Variable length UTF-8 string which contains JSON.</td>
+<tr class="row-even"><td>blob</td>
+<td>Binary large object</td>
 </tr>
 </tbody>
 </table>
@@ -280,25 +288,19 @@ a subset of specialized storage and computation backends.</p>
 <td>bool</td>
 </tr>
 <tr class="row-even"><td>float</td>
-<td>float64</td>
+<td>float</td>
 </tr>
 <tr class="row-odd"><td>complex</td>
-<td>cfloat64</td>
+<td>cfloat</td>
 </tr>
 <tr class="row-even"><td>str</td>
-<td>string</td>
+<td>string(&#8216;ascii&#8217;) or string(&#8216;latin-1&#8217;)</td>
 </tr>
 <tr class="row-odd"><td>unicode</td>
 <td>string</td>
 </tr>
-<tr class="row-even"><td>bytes</td>
-<td>bytes</td>
-</tr>
-<tr class="row-odd"><td>bytearray</td>
-<td>bytes</td>
-</tr>
 <tr class="row-even"><td>buffer</td>
-<td>bytes</td>
+<td>void</td>
 </tr>
 </tbody>
 </table>
@@ -309,11 +311,29 @@ a subset of specialized storage and computation backends.</p>
 in the footsteps of Python 3. The default Blaze string atom, simply
 called &#8220;string&#8221;, is a variable-length string which can contain any
 unicode values.</p>
+<p>There are many possible ways to encode strings, and in some contexts,
+such as NumPy, strings are stored in a fixed-size buffer. These kinds
+of strings are indicated by providing length and encoding parameters
+to the string type.</p>
+<p>For example, variable-length ASCII strings have the Blaze atom
+&#8220;string(&#8216;ascii&#8217;)&#8221;, and UTF-8 strings have the Blaze atom
+&#8220;string(&#8216;utf-8&#8217;)&#8221;.</p>
+<p>When a fixed buffer-size is being used, a number can be included
+to indicate the size of the buffer in encoding primitive units.
+Strings represented this way are NULL-terminated, as in C.
+For example, &#8220;string(16,&#8217;utf-8&#8217;)&#8221; is a 16-byte UTF-8 string,
+while &#8220;string(16,&#8217;utf-32&#8217;)&#8221; is a 64-byte UTF-32 string.</p>
+<p>To keep things short, we may want to adopt shortened forms for the
+most common encodings by default. This could be &#8220;string(&#8216;A&#8217;)&#8221; for
+ASCII, and string(&#8216;U8&#8217;) for UTF-8.</p>
+<p>For encodings, supporting the set of encodings in Python
+(<a class="reference external" href="http://docs.python.org/3/library/codecs.html#standard-encodings">http://docs.python.org/3/library/codecs.html#standard-encodings</a>) is
+the end-goal, initially focused on unicode and the most common
+legacy codepages.</p>
 </div>
 <div class="section" id="endianness">
 <h2>Endianness<a class="headerlink" href="#endianness" title="Permalink to this headline">¶</a></h2>
-<p>The data shape does not specify endianness, data types
-are in native endianness when processed by Blaze functions.</p>
+<p>TODO</p>
 <div class="section" id="products">
 <h3>Products<a class="headerlink" href="#products" title="Permalink to this headline">¶</a></h3>
 <p>A comma between two types signifies a product type. Product types
@@ -441,7 +461,7 @@ but cannot be self-referential:</p>
 <span class="o">}</span>
 </pre></div>
 </div>
-<p>Or equivalently:</p>
+<p>Or equivelantly:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">Space</span> <span class="o">=</span> <span class="o">{</span>
     <span class="n">a</span><span class="o">:</span> <span class="o">{</span> <span class="n">x</span><span class="o">:</span> <span class="kt">int</span><span class="o">;</span> <span class="n">y</span><span class="o">:</span> <span class="kt">int</span> <span class="o">};</span>
     <span class="n">b</span><span class="o">:</span> <span class="o">{</span> <span class="n">x</span><span class="o">:</span> <span class="kt">int</span><span class="o">;</span> <span class="n">y</span><span class="o">:</span> <span class="kt">int</span> <span class="o">}</span>

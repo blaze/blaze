@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Type Reconstruction &mdash; Blaze 0.1-dev documentation</title>
+    <title>Type Reconstruction &mdash; Blaze 0.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1-dev',
+        VERSION:     '0.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,13 +26,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="ATerm" href="aterm.html" />
-    <link rel="prev" title="Persistence" href="persistence.html" />
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
+    <link rel="next" title="Layouts" href="layout.html" />
+    <link rel="prev" title="Evaluation Class" href="eclass.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -89,7 +90,7 @@
 <li><a class="reference internal" href="#rigid-free">Rigid &amp; Free</a></li>
 <li><a class="reference internal" href="#context">Context</a></li>
 <li><a class="reference internal" href="#constraints">Constraints</a><ul>
-<li><a class="reference internal" href="#module-blaze.type_reconstruction">API</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
 </ul>
 </li>
 </ul>
@@ -109,8 +110,9 @@ annotated.</p>
 <p>Holding type variables as first order terms in the signatures encodes
 the fact that a term can be used in many concrete contexts with
 different concrete types. The end result of successful type
-reconstruction and unification is determine the least general
+reconstruction and unification is to determine the least general
 type satisfying the constraints on the expression.</p>
+<p>Type inference is performed on the fly, to allow early error detection.</p>
 <div class="section" id="signatures">
 <h2>Signatures<a class="headerlink" href="#signatures" title="Permalink to this headline">¶</a></h2>
 <p>The signature:</p>
@@ -164,21 +166,14 @@ the unifiers.</p>
 </div>
 <div class="section" id="constraints">
 <h2>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
-<div class="section" id="module-blaze.type_reconstruction">
-<span id="api"></span><h3>API<a class="headerlink" href="#module-blaze.type_reconstruction" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
-<dt id="blaze.type_reconstruction.infer">
-<tt class="descclassname">blaze.type_reconstruction.</tt><tt class="descname">infer</tt><big>(</big><em>env</em>, <em>term</em>, <em>debug=True</em><big>)</big><a class="headerlink" href="#blaze.type_reconstruction.infer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reconstruct types</p>
-<dl class="docutils">
-<dt>env <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>environment of lexically-bound variables with types</dd>
-<dt>term: object</dt>
-<dd>type signature</dd>
-</dl>
-</dd></dl>
-
+<p>The blaze type system records constraints over any free type variables in the
+inputs. Constraints specify coercion semantics. For dimension variables it
+indicates broadcastability, e.g. <cite>(1, 10)</cite>. For the measure (or element type)
+it encodes the coercion between two types. The coercion relation is reflexive,
+anti-symmetric and transitive, and forms a partial order with <cite>top</cite> as the
+top (⊤). We only allow widening or up-casts, without loss of information.</p>
+<div class="section" id="api">
+<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 </div>

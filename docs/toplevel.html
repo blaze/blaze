@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Toplevel &mdash; Blaze 0.1-dev documentation</title>
+    <title>Toplevel &mdash; Blaze 0.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1-dev',
+        VERSION:     '0.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,11 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
     <link rel="next" title="Core Types" href="types.html" />
     <link rel="prev" title="Module System" href="module.html" />
 <meta charset='utf-8'>
@@ -89,206 +90,8 @@
       </div>
       <div class="span9">
           
-  <div class="section" id="module-blaze.toplevel">
-<span id="toplevel"></span><h1>Toplevel<a class="headerlink" href="#module-blaze.toplevel" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
-<dt id="blaze.toplevel.allclose">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">allclose</tt><big>(</big><em>a</em>, <em>b</em>, <em>rtol=1e-05</em>, <em>atol=1e-08</em><big>)</big><a class="headerlink" href="#blaze.toplevel.allclose" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns True if two arrays are element-wise equal within a tolerance.</p>
-<p>The tolerance values are positive, typically very small numbers.  The
-relative difference (<cite>rtol</cite> * abs(<cite>b</cite>)) and the absolute difference
-<cite>atol</cite> are added together to compare against the absolute difference
-between <cite>a</cite> and <cite>b</cite>.</p>
-<p>If either array contains one or more NaNs, False is returned.
-Infs are treated as equal if they are in the same place and of the same
-sign in both arrays.</p>
-<dl class="docutils">
-<dt>a, b <span class="classifier-delimiter">:</span> <span class="classifier">array_like</span></dt>
-<dd>Input arrays to compare.</dd>
-<dt>rtol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>The relative tolerance parameter (see Notes).</dd>
-<dt>atol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>The absolute tolerance parameter (see Notes).</dd>
-</dl>
-<dl class="docutils">
-<dt>allclose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Returns True if the two arrays are equal within the given
-tolerance; False otherwise.</dd>
-</dl>
-<p>all, any, alltrue, sometrue</p>
-<p>If the following equation is element-wise True, then allclose returns
-True.</p>
-<blockquote>
-<div>absolute(<cite>a</cite> - <cite>b</cite>) &lt;= (<cite>atol</cite> + <cite>rtol</cite> * absolute(<cite>b</cite>))</div></blockquote>
-<p>The above equation is not symmetric in <cite>a</cite> and <cite>b</cite>, so that
-<cite>allclose(a, b)</cite> might be different from <cite>allclose(b, a)</cite> in
-some rare cases.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e-7</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.00001e10</span><span class="p">,</span><span class="mf">1e-8</span><span class="p">])</span>
-<span class="go">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e-8</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.00001e10</span><span class="p">,</span><span class="mf">1e-9</span><span class="p">])</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e-8</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0001e10</span><span class="p">,</span><span class="mf">1e-9</span><span class="p">])</span>
-<span class="go">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])</span>
-<span class="go">False</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.blaze_abs">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_abs</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_abs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the absolute value element-wise.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.blaze_all">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_all</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Test whether all array elements along a given axis evaluate to True.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.blaze_any">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_any</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_any" title="Permalink to this definition">¶</a></dt>
-<dd><p>Test whether any array elements along a given axis evaluate to True.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.blaze_sum">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">blaze_sum</tt><big>(</big><em>a</em>, <em>axis=None</em>, <em>out=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.blaze_sum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sum of array elements over a given axis.</p>
-<dl class="docutils">
-<dt>a <span class="classifier-delimiter">:</span> <span class="classifier">array_like</span></dt>
-<dd>Elements to sum.</dd>
-<dt>axis <span class="classifier-delimiter">:</span> <span class="classifier">None or int or tuple of ints, optional</span></dt>
-<dd><p class="first">Axis or axes along which a sum is performed.
-The default (<cite>axis</cite> = <cite>None</cite>) is perform a sum over all
-the dimensions of the input array. <cite>axis</cite> may be negative, in
-which case it counts from the last to the first axis.</p>
-<p class="versionadded">
-<span class="versionmodified">New in version 1.7.0.</span></p>
-<p class="last">If this is a tuple of ints, a sum is performed on multiple
-axes, instead of a single axis or all the axes as before.</p>
-</dd>
-<dt>out <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
-<dd>Array into which the output is placed.  By default, a new array is
-created.  If <cite>out</cite> is given, it must be of the appropriate shape
-(the shape of <cite>a</cite> with <cite>axis</cite> removed, i.e.,
-<tt class="docutils literal"><span class="pre">numpy.delete(a.shape,</span> <span class="pre">axis)</span></tt>).  Its type is preserved. See
-<cite>doc.ufuncs</cite> (Section &#8220;Output arguments&#8221;) for more details.</dd>
-</dl>
-<dl class="docutils">
-<dt>sum_along_axis <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd>An array with the same shape as <cite>a</cite>, with the specified
-axis removed.   If <cite>a</cite> is a 0-d array, or if <cite>axis</cite> is None, a scalar
-is returned.  If an output array is specified, a reference to
-<cite>out</cite> is returned.</dd>
-</dl>
-<p>ndarray.sum : Equivalent method.</p>
-<p>cumsum : Cumulative sum of array elements.</p>
-<p>trapz : Integration of array values using the composite trapezoidal rule.</p>
-<p>mean, average</p>
-<p>Arithmetic is modular when using integer types, and no error is
-raised on overflow.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">])</span>
-<span class="go">2.0</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]])</span>
-<span class="go">6</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="go">array([0, 6])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="go">array([1, 5])</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.fromiter">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">fromiter</tt><big>(</big><em>iterable</em>, <em>dshape</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#blaze.toplevel.fromiter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an Array and fill it with values from <cite>iterable</cite>.</p>
-<dl class="docutils">
-<dt>iterable <span class="classifier-delimiter">:</span> <span class="classifier">iterable object</span></dt>
-<dd>An iterable object providing data for the carray.</dd>
-<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
-<dd>Specifies the datashape of the outcome object.  Only 1d shapes
-are supported right now. When the <cite>iterator</cite> should return an
-unknown number of items, a <tt class="docutils literal"><span class="pre">TypeVar</span></tt> can be used.</dd>
-<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
-<dd>Any parameter supported by the backend library.</dd>
-</dl>
-<p>out : an Array object.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.lazy">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">lazy</tt><big>(</big><em>a</em><big>)</big><a class="headerlink" href="#blaze.toplevel.lazy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Turn an object into its lazy blaze equivalent.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.loadtxt">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">loadtxt</tt><big>(</big><em>filetxt</em>, <em>storage</em><big>)</big><a class="headerlink" href="#blaze.toplevel.loadtxt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert txt file into Blaze native format</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.ones">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">ones</tt><big>(</big><em>dshape</em>, <em>params=None</em>, <em>eclass=1</em><big>)</big><a class="headerlink" href="#blaze.toplevel.ones" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an Array and fill it with ones.</p>
-<dl class="docutils">
-<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
-<dd>Specifies the datashape of the outcome object.</dd>
-<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
-<dd>Any parameter supported by the backend library.</dd>
-</dl>
-<p>out : an Array object.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.open">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">open</tt><big>(</big><em>uri</em>, <em>mode='a'</em>, <em>eclass=1</em><big>)</big><a class="headerlink" href="#blaze.toplevel.open" title="Permalink to this definition">¶</a></dt>
-<dd><p>Open a Blaze object via an <cite>uri</cite> (Uniform Resource Identifier).</p>
-<dl class="docutils">
-<dt>uri <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd><p class="first">Specifies the URI for the Blaze object.  It can be a regular file too.
-The URL scheme indicates the storage type:</p>
-<blockquote>
-<div><ul class="simple">
-<li>carray: Chunked array</li>
-<li>ctable: Chunked table</li>
-<li>sqlite: SQLite table (the URI &#8216;sqlite://&#8217; creates in-memory table)</li>
-</ul>
-</div></blockquote>
-<p class="last">If no URI scheme is given, carray is assumed.</p>
-</dd>
-<dt>mode <span class="classifier-delimiter">:</span> <span class="classifier">the open mode (string)</span></dt>
-<dd><p class="first">Specifies the mode in which the object is opened.  The supported
-values are:</p>
-<blockquote class="last">
-<div><ul class="simple">
-<li>&#8216;r&#8217; for read-only</li>
-<li>&#8216;w&#8217; for emptying the previous underlying data</li>
-<li>&#8216;a&#8217; for allowing read/write on top of existing data</li>
-</ul>
-</div></blockquote>
-</dd>
-</dl>
-<p>out : an Array or Table object.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.toplevel.zeros">
-<tt class="descclassname">blaze.toplevel.</tt><tt class="descname">zeros</tt><big>(</big><em>dshape</em>, <em>params=None</em>, <em>eclass=1</em><big>)</big><a class="headerlink" href="#blaze.toplevel.zeros" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create an Array and fill it with zeros.</p>
-<dl class="docutils">
-<dt>dshape <span class="classifier-delimiter">:</span> <span class="classifier">str, blaze.dshape instance</span></dt>
-<dd>Specifies the datashape of the outcome object.</dd>
-<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">blaze.params object</span></dt>
-<dd>Any parameter supported by the backend library.</dd>
-</dl>
-<p>out : an Array object.</p>
-</dd></dl>
-
+  <div class="section" id="toplevel">
+<h1>Toplevel<a class="headerlink" href="#toplevel" title="Permalink to this headline">¶</a></h1>
 </div>
 
 

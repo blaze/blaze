@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Blaze &mdash; Blaze 0.1-dev documentation</title>
+    <title>Blaze &mdash; Blaze 0.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1-dev',
+        VERSION:     '0.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,11 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.1-dev documentation" href="#" />
+    <link rel="top" title="Blaze 0.3.0 documentation" href="#" />
     <link rel="next" title="Install" href="install.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -82,7 +83,11 @@
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="#"><b>Index</b></a></li>
 <ul>
 <li><a class="reference internal" href="#">Blaze</a><ul>
-<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#documentation-note">Documentation Note</a></li>
+<li><a class="reference internal" href="#index">Index</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#original-index">Original Index</a><ul>
 </ul>
 </li>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
@@ -91,7 +96,7 @@
 <li><a class="reference internal" href="#developer-guide">Developer Guide</a><ul>
 </ul>
 </li>
-<li><a class="reference internal" href="#index">Index</a></li>
+<li><a class="reference internal" href="#id1">Index</a></li>
 </ul>
 </li>
 </ul>
@@ -111,14 +116,21 @@ and efficient code, without getting bogged down in the details of how
 to distribute computation, or worse, how to transport and convert data
 between databases, formats, proprietary data warehouses, and other
 silos.</p>
-<p>The core of Blaze consists of generic N-dimensional Array and Table objects
+<p>The core of Blaze consists of generic multi-dimensional Array and Table objects
 with an associated type system for expressing all kinds of data
 types and layouts, especially semi-structured, sparse, and columnar
 data.  Blaze’s generalized calculation engine can iterate over the
 distributed array or table and dispatch to low-level kernels specialized
 for the layout and type of the data.</p>
-<div class="section" id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="documentation-note">
+<h2>Documentation Note<a class="headerlink" href="#documentation-note" title="Permalink to this headline">¶</a></h2>
+<p>As you read this documentation, please be aware that the project
+is under development. The documentation and implementation of Blaze
+have gone through many changes, and there are many places where they
+have not been properly brought into sync.</p>
+</div>
+<div class="section" id="index">
+<h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Install</a><ul>
@@ -136,18 +148,6 @@ for the layout and type of the data.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="overview.html#blaze-is-a-generalization-of-numpy">Blaze is a Generalization of NumPy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="overview.html#numpy-shapes-two-ways">NumPy Shapes, Two Ways</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="vision.html">Vision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="format.html">Persistent formats</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="format.html#monolithic-format">Monolithic format</a></li>
-<li class="toctree-l2"><a class="reference internal" href="format.html#chunked-format">Chunked format</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="memory.html">Memory Layout</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="memory.html#arrays">Arrays</a></li>
-<li class="toctree-l2"><a class="reference internal" href="memory.html#tables">Tables</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="datashape.html">Datashape</a><ul>
@@ -167,6 +167,52 @@ for the layout and type of the data.</p>
 <li class="toctree-l2"><a class="reference internal" href="datashape.html#numpy-compatability">Numpy Compatability</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="datashape-binary.html">Datashape Binary Data Layout</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#measures">Measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#dimensions">Dimensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#records">Records</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#missing-data">Missing Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#memory-management-note">Memory Management Note</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#properties-of-datashape-objects">Properties of Datashape Objects</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_descriptor.html">Data Descriptors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#python-style-iteration">Python-Style Iteration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#python-style-getitem">Python-Style GetItem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#element-readiteration">Element ReadIteration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#get-element">Get Element</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#element-writeiteration">Element WriteIteration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#set-element">Set Element</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deferred.html">Deferred Execution</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deferred.html#blaze-functions">Blaze Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deferred.html#expression-graph">Expression Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deferred.html#compilation-air">Compilation &amp; AIR</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="original-index">
+<h2>Original Index<a class="headerlink" href="#original-index" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vision.html">Vision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#creating-arrays">Creating arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#evaluation">Evaluation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="persistence.html">Persistent internal format (BLZ)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html#the-blz-format">The BLZ format</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="memory.html">Memory Layout</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#blz-arrays">BLZ Arrays</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="module.html">Module System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="module.html#traits">Traits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="module.html#trait-properties">Trait Properties</a></li>
@@ -184,9 +230,7 @@ for the layout and type of the data.</p>
 <li class="toctree-l1"><a class="reference internal" href="toplevel.html">Toplevel</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">Core Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eclass.html">Evaluation Class</a></li>
-<li class="toctree-l1"><a class="reference internal" href="persistence.html">Persistence</a></li>
 <li class="toctree-l1"><a class="reference internal" href="typeinference.html">Type Reconstruction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aterm.html">ATerm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="layout.html">Layouts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html">Sources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="graph.html">Graph</a></li>
@@ -201,19 +245,6 @@ for the layout and type of the data.</p>
 <h2>Developer Guide<a class="headerlink" href="#developer-guide" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="compiler.html">Blaze Compiler Infrastructure</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#goals">Goals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#example-syntax">Example Syntax</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#library-usage">Library Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#prelude">Prelude</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#external-libraries">External Libraries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#pipeline">Pipeline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#opcodes">Opcodes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#numpy-compat">Numpy Compat</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#standlone-compiler">Standlone Compiler</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compiler.html#directory-structure">Directory Structure</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="extending.html">Extending</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="extending.html#custom-types">Custom Types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="extending.html#custom-functions">Custom Functions</a><ul>
@@ -229,8 +260,8 @@ for the layout and type of the data.</p>
 </ul>
 </div>
 </div>
-<div class="section" id="index">
-<h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h2>Index<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
 <li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>

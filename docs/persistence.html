@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Persistence &mdash; Blaze 0.1-dev documentation</title>
+    <title>Persistent internal format (BLZ) &mdash; Blaze 0.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1-dev',
+        VERSION:     '0.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,13 +26,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
-    <link rel="next" title="Type Reconstruction" href="typeinference.html" />
-    <link rel="prev" title="Evaluation Class" href="eclass.html" />
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
+    <link rel="next" title="Memory Layout" href="memory.html" />
+    <link rel="prev" title="Tutorials" href="tutorials.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -82,15 +83,346 @@
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
-<li><a class="reference internal" href="#">Persistence</a></li>
+<li><a class="reference internal" href="#">Persistent internal format (BLZ)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#the-blz-format">The BLZ format</a><ul>
+<li><a class="reference internal" href="#the-layout">The layout</a></li>
+<li><a class="reference internal" href="#the-data-layout">The <cite>data</cite> layout</a></li>
+<li><a class="reference internal" href="#the-superchunk-layout">The <cite>superchunk</cite> layout</a><ul>
+<li><a class="reference internal" href="#header-format">Header format</a></li>
+<li><a class="reference internal" href="#description-of-the-header-entries">Description of the header entries</a></li>
+<li><a class="reference internal" href="#description-of-the-metadata-section">Description of the metadata section</a></li>
+<li><a class="reference internal" href="#description-of-the-offsets-entries">Description of the offsets entries</a></li>
+<li><a class="reference internal" href="#description-of-the-chunk-format">Description of the chunk format</a></li>
+<li><a class="reference internal" href="#overhead">Overhead</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-meta-files">The <cite>meta</cite> files</a><ul>
+<li><a class="reference internal" href="#the-sizes-file">The <cite>sizes</cite> file</a></li>
+<li><a class="reference internal" href="#the-storage-file">The <cite>storage</cite> file</a></li>
+<li><a class="reference internal" href="#the-attributes-file">The <cite>attributes</cite> file</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
          </ul>
       </div>
       <div class="span9">
           
-  <div class="section" id="persistence">
-<h1>Persistence<a class="headerlink" href="#persistence" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="persistent-internal-format-blz">
+<h1>Persistent internal format (BLZ)<a class="headerlink" href="#persistent-internal-format-blz" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Blaze is designed to work with data that is both in memory and disk in
+a transparent way.  BLZ is the format that is implemented internally
+so as to persist data on-disk (although it supports in-memory starge
+too).  The goals of the BLZ format are:</p>
+<ol class="arabic simple">
+<li>Allow to work with data directly on disk, exactly on the same way
+than data in memory.</li>
+<li>The persistence layer should support the same access capabilities
+than Blaze objects including: modifying, appending and removing
+data, as well as direct access to data (in the same way than RAM).</li>
+<li>Transparent data compression must be possible.</li>
+<li>User metadata addition must be possible too.</li>
+<li>Data objects are allowed to be enlarged or shrunk.</li>
+<li>Data is not allowed to be modified.</li>
+<li>And last but not least, the data should be easily &#8216;shardable&#8217; for
+optimal behavior in distributed storage.  Providing a format that
+is already &#8216;sharded&#8217; by default represents a big advantage for
+allowing spreading a Blaze object among different nodes.</li>
+</ol>
+<p>These points, in combination with a distributed filesystem, and with a
+system that would be aware of the physical topology of the underlying
+infrastructure allows to largely avoid the need for a Disco/Hadoop
+infrastructure, permitting much better flexibility and performance.</p>
+<p>The low level description for the BLZ format follows.  It must be
+noted that with Blaze 0.1 the implementation is almost complete,
+except for the fact that that superchunks are not yet there.</p>
+</div>
+<div class="section" id="the-blz-format">
+<h2>The BLZ format<a class="headerlink" href="#the-blz-format" title="Permalink to this headline">¶</a></h2>
+<p>The data files will be made of a series of chunks put together using
+the Blosc metacompressor by default.  Blosc being a metacompressor,
+means that it can use different compressors and filters, while
+leveraging its blocking and multithreading capabilities.</p>
+<div class="section" id="the-layout">
+<h3>The layout<a class="headerlink" href="#the-layout" title="Permalink to this headline">¶</a></h3>
+<p>For every dataset, it will be created a directory, with a
+user-provided name that, for generality, we will call it <cite>root</cite> here.
+The root will have another couple of subdirectories, named data and
+meta:</p>
+<div class="highlight-python"><pre>   root  (the name of the dataset)
+   /  \
+data  meta</pre>
+</div>
+<p>The <cite>data</cite> directory will contain the actual data of the dataset,
+while the <cite>meta</cite> will contain the metainformation (dtype, shape,
+chunkshape, compression level, filters...).</p>
+</div>
+<div class="section" id="the-data-layout">
+<h3>The <cite>data</cite> layout<a class="headerlink" href="#the-data-layout" title="Permalink to this headline">¶</a></h3>
+<p>Data will be stored by what is called a <cite>superchunk</cite>, and each
+superchunk will use exactly one file.  The size of each superchunk
+will be decided automatically by default, but it could be specified by
+the user too.</p>
+<p>Each of these directories will contain one or more superchunks for
+storing the actual data.  Every data superchunk will be named after
+its sequential number.  For example:</p>
+<div class="highlight-python"><pre>$ ls data
+__1__.bin  __2__.bin  __3__.bin  __4__.bin ... __1030__.bin</pre>
+</div>
+<p>This structure of separate superchunk files allows for two things:</p>
+<ol class="arabic simple">
+<li>Datasets can be enlarged and shrink very easily</li>
+<li>Horizontal sharding in a distributed system is possible (and cheap!)</li>
+</ol>
+<p>At its time, the <cite>data</cite> directory might contain other subdirectories
+that are meant for storing components for a &#8216;nested&#8217; dtype (i.e. an
+structured array, stored in column-wise order):</p>
+<div class="highlight-python"><pre>   data  (the root for a nested datatype)
+   /  \     \
+col1  col2  col3
+     /  \
+   sc1  sc3</pre>
+</div>
+<p>This structure allows for quick access to specific chunks of columns
+without a need to load the complete dataset in memory.</p>
+</div>
+<div class="section" id="the-superchunk-layout">
+<h3>The <cite>superchunk</cite> layout<a class="headerlink" href="#the-superchunk-layout" title="Permalink to this headline">¶</a></h3>
+<p>Here it is how the superchunks are going to be laid out.  It is worth
+to mention that this format will be based on the Bloscpack format <a class="footnote-reference" href="#id2" id="id1">[1]</a>
+and that it will continue to evolve the next future.</p>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td><a class="reference external" href="https://github.com/esc/bloscpack">https://github.com/esc/bloscpack</a></td></tr>
+</tbody>
+</table>
+<div class="section" id="header-format">
+<h4>Header format<a class="headerlink" href="#header-format" title="Permalink to this headline">¶</a></h4>
+<p>The design goals of the header format are to contain as much
+information as possible to achieve interesting things in the future
+and to be as general as possible so as to ensure compatibility with
+the chunked persistence format.</p>
+<p>The following ASCII representation shows the layout of the header:</p>
+<div class="highlight-python"><pre>|-0-|-1-|-2-|-3-|-4-|-5-|-6-|-7-|-8-|-9-|-A-|-B-|-C-|-D-|-E-|-F-|
+| b   l   p   k | ^ | ^ | ^ | ^ |   chunk-size  |  last-chunk   |
+                  |   |   |   |
+      version ----+   |   |   |
+      options --------+   |   |
+     checksum ------------+   |
+     typesize ----------------+
+
+|-0-|-1-|-2-|-3-|-4-|-5-|-6-|-7-|-8-|-9-|-A-|-B-|-C-|-D-|-E-|-F-|
+|            nchunks            |   meta-size   |   RESERVED    |</pre>
+</div>
+<p>The first 4 bytes are the magic string <tt class="docutils literal"><span class="pre">blpk</span></tt>. Then there are 4
+bytes, the first three are described below and the last one is
+reserved. This is followed by 4 bytes for the <tt class="docutils literal"><span class="pre">chunk-size</span></tt>, another
+4 bytes for the <tt class="docutils literal"><span class="pre">last-chunk-size</span></tt> and 8 bytes for the number of
+chunks. Finally, the <tt class="docutils literal"><span class="pre">meta-size</span></tt> accounts for the amount of bytes
+that takes the metadata to be stored.  The last 4 bytes are reserved
+for use in future versions of the format.</p>
+<p>Effectively, storing the number of chunks as a signed 8 byte integer,
+limits the number of chunks to <tt class="docutils literal"><span class="pre">2**63-1</span> <span class="pre">=</span> <span class="pre">9223372036854775807</span></tt>, but
+this should not be relevant in practice, since, even with the moderate
+default value of <tt class="docutils literal"><span class="pre">1MB</span></tt> for chunk-size, we can still stores files as
+large as <tt class="docutils literal"><span class="pre">8ZB</span></tt> (!) Given that in 2012 the maximum size of a single
+file in the Zettabye File System (zfs) is <tt class="docutils literal"><span class="pre">16EB</span></tt>, Bloscpack should
+be safe for a few more years.</p>
+</div>
+<div class="section" id="description-of-the-header-entries">
+<h4>Description of the header entries<a class="headerlink" href="#description-of-the-header-entries" title="Permalink to this headline">¶</a></h4>
+<p>All entries are little-endian.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">version:</th><td class="field-body"><p class="first">(<tt class="docutils literal"><span class="pre">uint8</span></tt>)
+format version of the Bloscpack header, to ensure exceptions in case of
+forward incompatibilities.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">options:</th><td class="field-body"><p class="first">(<tt class="docutils literal"><span class="pre">bitfield</span></tt>)
+A bitfield which allows for setting certain options in this file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">bit</span> <span class="pre">0</span> <span class="pre">(0x01)</span></tt>:</th><td class="field-body">If the offsets to the chunks are present in this file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">bit</span> <span class="pre">1</span> <span class="pre">(0x02)</span></tt>:</th><td class="field-body">If metadata is present in this file.</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">checksum:</th><td class="field-body"><p class="first">(<tt class="docutils literal"><span class="pre">uint8</span></tt>)
+The checksum used. The following checksums, available in the python
+standard library should be supported. The checksum is always computed on
+the compressed data and placed after the chunk.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">0</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">no</span> <span class="pre">checksum</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">1</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">zlib.adler32</span></tt></td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">2</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">zlib.crc32</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">3</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">hashlib.md5</span></tt></td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">4</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">hashlib.sha1</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">5</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">hashlib.sha224</span></tt></td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">6</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">hashlib.sha256</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">7</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">hashlib.sha384</span></tt></td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">8</span></tt>:</th><td class="field-body"><tt class="docutils literal"><span class="pre">hashlib.sha512</span></tt></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">typesize:</th><td class="field-body"><p class="first">(<tt class="docutils literal"><span class="pre">uint8</span></tt>)
+The typesize of the data in the chunks. Currently, assume that the typesize
+is uniform. The space allocated is the same as in the Blosc header.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">chunk-size:</th><td class="field-body"><p class="first">(<tt class="docutils literal"><span class="pre">int32</span></tt>)
+Denotes the chunk-size. Since the maximum buffer size of Blosc is 2GB
+having a signed 32 bit int is enough (<tt class="docutils literal"><span class="pre">2GB</span> <span class="pre">=</span> <span class="pre">2**31</span> <span class="pre">bytes</span></tt>). The special
+value of <tt class="docutils literal"><span class="pre">-1</span></tt> denotes that the chunk-size is unknown or possibly
+non-uniform.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">last-chunk:</th><td class="field-body"><p class="first">(<tt class="docutils literal"><span class="pre">int32</span></tt>)
+Denotes the size of the last chunk. As with the <tt class="docutils literal"><span class="pre">chunk-size</span></tt> an <tt class="docutils literal"><span class="pre">int32</span></tt>
+is enough. Again, <tt class="docutils literal"><span class="pre">-1</span></tt> denotes that this value is unknown.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">nchunks:</th><td class="field-body"><p class="first last">(<tt class="docutils literal"><span class="pre">int64</span></tt>)
+The total number of chunks used in the file. Given a chunk-size of one
+byte, the total number of chunks is <tt class="docutils literal"><span class="pre">2**63</span></tt>. This amounts to a maximum
+file-size of 8EB (<tt class="docutils literal"><span class="pre">8EB</span> <span class="pre">=</span> <span class="pre">2*63</span> <span class="pre">bytes</span></tt>) which should be enough for the next
+couple of years. Again, <tt class="docutils literal"><span class="pre">-1</span></tt> denotes that the number of is unknown.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The overall file-size can be computed as <tt class="docutils literal"><span class="pre">chunk-size</span> <span class="pre">*</span> <span class="pre">(nchunks</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">+</span>
+<span class="pre">last-chunk-size</span></tt>. In a streaming scenario <tt class="docutils literal"><span class="pre">-1</span></tt> can be used as a placeholder.
+For example if the total number of chunks, or the size of the last chunk is not
+known at the time the header is created.</p>
+</div>
+<div class="section" id="description-of-the-metadata-section">
+<h4>Description of the metadata section<a class="headerlink" href="#description-of-the-metadata-section" title="Permalink to this headline">¶</a></h4>
+<p>This section goes after the header, and it is just a JSON serialized
+version of the metadata that is to be saved.  As JSON has its
+limitations as any other serializer, only a subset of Python
+structures can be stored, so probably some additional object handling
+must be done prior to serialize some metadata.</p>
+<p>Example of metadata stored:</p>
+<blockquote>
+<div>{&#8216;dtype&#8217;: &#8216;float64&#8217;, &#8216;shape&#8217;: [1024], &#8216;others&#8217;: []}</div></blockquote>
+</div>
+<div class="section" id="description-of-the-offsets-entries">
+<h4>Description of the offsets entries<a class="headerlink" href="#description-of-the-offsets-entries" title="Permalink to this headline">¶</a></h4>
+<p>Offsets of the chunks into the file are to be used for accelerated
+seeking. The offsets (if activated) follow the metadata section . Each
+offset is a 64 bit signed little-endian integer (<tt class="docutils literal"><span class="pre">int64</span></tt>). A value
+of <tt class="docutils literal"><span class="pre">-1</span></tt> denotes an unknown offset.  Initially, all offsets should be
+initialized to <tt class="docutils literal"><span class="pre">-1</span></tt> and filled in after writing all chunks. Thus, If
+the compression of the file fails prematurely or is aborted, all
+offsets should have the value <tt class="docutils literal"><span class="pre">-1</span></tt>.  Each offset denotes the exact
+position of the chunk in the file such that seeking to the offset,
+will position the file pointer such that, reading the next 16 bytes
+gives the Blosc header, which is at the start of the desired
+chunk. The layout of the file is then:</p>
+<div class="highlight-python"><pre>|-bloscpack-header-|-offset-|-offset-|...|-chunk-|-chunk-|...|</pre>
+</div>
+</div>
+<div class="section" id="description-of-the-chunk-format">
+<h4>Description of the chunk format<a class="headerlink" href="#description-of-the-chunk-format" title="Permalink to this headline">¶</a></h4>
+<p>The header for the Blosc chunk has this format (Blosc 1.0 on):</p>
+<div class="highlight-python"><pre>|-0-|-1-|-2-|-3-|-4-|-5-|-6-|-7-|-8-|-9-|-A-|-B-|-C-|-D-|-E-|-F-|
+  ^   ^   ^   ^ |     nbytes    |   blocksize   |    ctbytes    |
+  |   |   |   |
+  |   |   |   +--typesize
+  |   |   +------flags
+  |   +----------blosclz version
+  +--------------blosc version</pre>
+</div>
+<p>Following the header there will come the compressed data itself.
+Blosc ensures that the compressed buffer will not take more space than
+the original one + 16 bytes (the length of the header).</p>
+<p>At the end of each blosc chunk some empty space could be added (this
+can be parametrized) in order to allow the modification of some data
+elements inside each block.  The reason for the additional space is
+that, as these chunks will be typically compressed, when modifying
+some element of the chunk it is not guaranteed that the resulting
+chunk will fit in the same space than the old one.  Having this
+provision of a small empty space at the end of each chunk will allow
+for storing the modified chunks in many cases, without a need to save
+the entire file on a different part of the disk.</p>
+</div>
+<div class="section" id="overhead">
+<h4>Overhead<a class="headerlink" href="#overhead" title="Permalink to this headline">¶</a></h4>
+<p>Depending on which configuration for the file is used a constant, or
+linear overhead may be added to the file. The Bloscpack header adds 32
+bytes in any case. If the data is non-compressible, Blosc will add 16
+bytes of header to each chunk. If used, both the checksum and the
+offsets will add overhead to the file. The offsets add 8 bytes per
+chunk and the checksum adds a fixed constant value which depends on
+the checksum to each chunk. For example, 32 bytes for the <tt class="docutils literal"><span class="pre">adler32</span></tt>
+checksum.</p>
+<p>Also, depending on the number of reserved bytes at the end of each
+chunk (the default is to not reserve them), that will add another
+overhead to the final size.</p>
+</div>
+</div>
+<div class="section" id="the-meta-files">
+<h3>The <cite>meta</cite> files<a class="headerlink" href="#the-meta-files" title="Permalink to this headline">¶</a></h3>
+<p>Here there can be as many files as necessary.  The format for every
+file will be JSON, so caution should be used for ensuring that all the
+metadata can be serialized and deserialized in this format.  There
+could be three (or more, in the future) files:</p>
+<div class="section" id="the-sizes-file">
+<h4>The <cite>sizes</cite> file<a class="headerlink" href="#the-sizes-file" title="Permalink to this headline">¶</a></h4>
+<p>This contains the shape of the dataset, as well as the uncompressed
+size (<tt class="docutils literal"><span class="pre">nbytes</span></tt>) and the compressed size (<tt class="docutils literal"><span class="pre">cbytes</span></tt>).  For example:</p>
+<div class="highlight-python"><pre>$ cat meta/sizes
+{"shape": [10000000], "nbytes": 80000000, "cbytes": 17316745}</pre>
+</div>
+</div>
+<div class="section" id="the-storage-file">
+<h4>The <cite>storage</cite> file<a class="headerlink" href="#the-storage-file" title="Permalink to this headline">¶</a></h4>
+<p>Here comes the information about the data type, defaults and how data
+is being stored.  Example:</p>
+<div class="highlight-python"><pre>$ cat myarray/meta/storage
+{"dtype": "float64", "cparams": {"shuffle": true, "clevel": 5},
+ "chunklen": 16384, "dflt": 0.0, "expectedlen": 10000000}</pre>
+</div>
+</div>
+<div class="section" id="the-attributes-file">
+<h4>The <cite>attributes</cite> file<a class="headerlink" href="#the-attributes-file" title="Permalink to this headline">¶</a></h4>
+<p>In this file it comes additional user information.  Example:</p>
+<div class="highlight-python"><pre>$ cat myarray/meta/attributes
+{"temperature": 11.4, "scale": "Celsius",
+ "coords": {"lat": 40.1, "lon": 0.5}}</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 

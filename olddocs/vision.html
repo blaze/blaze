@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Release Notes &mdash; Blaze 0.3.0 documentation</title>
+    <title>Vision &mdash; Blaze 0.1-dev documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.0',
+        VERSION:     '0.1-dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,14 +26,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
-    <link rel="next" title="Legal" href="legal.html" />
-    <link rel="prev" title="Tables" href="table.html" />
+    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="next" title="Persistent formats" href="format.html" />
+    <link rel="prev" title="Overview" href="overview.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -83,45 +82,47 @@
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
-<li><a class="reference internal" href="#">Release Notes</a><ul>
-<li><a class="reference internal" href="#release-0-3">Release 0.3</a></li>
-<li><a class="reference internal" href="#release-0-2">Release 0.2</a></li>
-<li><a class="reference internal" href="#release-0-1">Release 0.1</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Vision</a></li>
 </ul>
 
          </ul>
       </div>
       <div class="span9">
           
-  <div class="section" id="release-notes">
-<h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="release-0-3">
-<h2>Release 0.3<a class="headerlink" href="#release-0-3" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Solidifies the execution subsystem around an IR based
-on the pykit project, as well as a ckernel abstraction
-at the ABI level.</li>
-<li>Supports ufuncs running on ragged array data.</li>
-<li>Cleans out previous low level data descriptor code,
-the data descriptor will have a higher level focus.</li>
-<li>Example out of core groupby operation using BLZ.</li>
-</ul>
-</div>
-<div class="section" id="release-0-2">
-<h2>Release 0.2<a class="headerlink" href="#release-0-2" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Brings in dynd as a required dependency
-for in-memory data.</li>
-</ul>
-</div>
-<div class="section" id="release-0-1">
-<h2>Release 0.1<a class="headerlink" href="#release-0-1" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Initial preview release</li>
-</ul>
-</div>
+  <div class="section" id="vision">
+<h1>Vision<a class="headerlink" href="#vision" title="Permalink to this headline">¶</a></h1>
+<p>Blaze is a generalization of NumPy to multiple byte segments, arbitrary
+data-types, and heterogeneous shapes. These generalizations allow Blaze
+to be the foundation for a new generation of large-scale computing
+algorithms and systems.</p>
+<p>Blaze has an array-oriented type system that dresses raw bytes in a
+global address space at run-time with meta-information that informs how
+segments can be referenced and how the data will be used in computation.
+It is a system for allowing information held in bytes to be typed and
+indexed as N-dimensional arrays and tables. These bytes can then be used
+in calculations composed of a single expression or an entire program and
+then executed on heterogeneous hardware (multiple nodes, multiple cores,
+and multiple GPUs). The run-time library and type-system is extensible
+to handle computations of all kinds.</p>
+<p>Just as NumPy is the center of an ecosystem of singe-node, in-memory
+tools that use the NumPy array as a common shared abstraction around
+a single pointer to memory, Blaze is the center of an ecosystem
+of multiple-node, multiple-segment, and multiple calculation-unit
+algorithms and programs. The common meme in effective use of Blaze is
+that developers should think about their data and the operations that
+should be done on their data in an array-oriented fashion, and that code
+should be moved to data as much as possible.</p>
+<p>To enable this, Blaze has a compiler to create machine code based on the
+LLVM infrastructure. It also has a family of adapters to data-storage
+formats of all kinds so that expert time can be spent processing data
+and not converting data from one format to another. A blaze-program
+makes reference to data URLs, or builds up arrays from computed
+results. These arrays or tables of information are then operated on by
+expressions that create resulting output. The expressions are lazily
+evaluated until results are needed at which time computation is broken
+down and scheduled on the available hardware as close to the data as
+possible &#8212; either automatically or using directives provided by the
+programmer.</p>
 </div>
 
 

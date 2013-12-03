@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sources &mdash; Blaze 0.1-dev documentation</title>
+    <title>Sources &mdash; Blaze 0.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1-dev',
+        VERSION:     '0.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,11 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
     <link rel="next" title="Graph" href="graph.html" />
     <link rel="prev" title="Layouts" href="layout.html" />
 <meta charset='utf-8'>
@@ -89,57 +90,8 @@
       </div>
       <div class="span9">
           
-  <div class="section" id="module-blaze.sources.canonical">
-<span id="sources"></span><h1>Sources<a class="headerlink" href="#module-blaze.sources.canonical" title="Permalink to this headline">¶</a></h1>
-<p>Byte provider instances, the substrate that abstracts between raw bytes
-and units of data.</p>
-<dl class="class">
-<dt id="blaze.sources.canonical.ArraySource">
-<em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">ArraySource</tt><big>(</big><em>lst</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ArraySource" title="Permalink to this definition">¶</a></dt>
-<dd><p>The buffer from a Numpy array used a data source</p>
-<p>Only used for bootstrapping. Will be removed later.</p>
-<dl class="staticmethod">
-<dt id="blaze.sources.canonical.ArraySource.infer_datashape">
-<em class="property">static </em><tt class="descname">infer_datashape</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ArraySource.infer_datashape" title="Permalink to this definition">¶</a></dt>
-<dd><p>The user has only provided us with a Python object (
-could be a buffer interface, a string, a list, list of
-lists, etc) try our best to infer what the datashape
-should be in the context of this datasource.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.sources.canonical.ByteSource">
-<em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">ByteSource</tt><big>(</big><em>bits</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ByteSource" title="Permalink to this definition">¶</a></dt>
-<dd><p>A raw block of memory layed out in raditional NumPy fashion.</p>
-<dl class="staticmethod">
-<dt id="blaze.sources.canonical.ByteSource.infer_datashape">
-<em class="property">static </em><tt class="descname">infer_datashape</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.ByteSource.infer_datashape" title="Permalink to this definition">¶</a></dt>
-<dd><p>Just passing in bytes probably means string unless
-dshape otherwise specified.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.sources.canonical.FileSource">
-<em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">FileSource</tt><big>(</big><em>fname</em>, <em>mode='rb+'</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.FileSource" title="Permalink to this definition">¶</a></dt>
-<dd><p>File on local disk.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.sources.canonical.PythonSource">
-<em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">PythonSource</tt><big>(</big><em>pyobject</em>, <em>type=&lt;type 'list'&gt;</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.PythonSource" title="Permalink to this definition">¶</a></dt>
-<dd><p>Work with a immutable Python list as if it were byte interfaces.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.sources.canonical.SocketSource">
-<em class="property">class </em><tt class="descclassname">blaze.sources.canonical.</tt><tt class="descname">SocketSource</tt><big>(</big><em>host</em>, <em>port</em>, <em>flags=None</em><big>)</big><a class="headerlink" href="#blaze.sources.canonical.SocketSource" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stream of bytes over TCP.</p>
-</dd></dl>
-
+  <div class="section" id="sources">
+<h1>Sources<a class="headerlink" href="#sources" title="Permalink to this headline">¶</a></h1>
 </div>
 
 

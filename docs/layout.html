@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Layouts &mdash; Blaze 0.1-dev documentation</title>
+    <title>Layouts &mdash; Blaze 0.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1-dev',
+        VERSION:     '0.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,13 +26,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.1-dev documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
     <link rel="next" title="Sources" href="sources.html" />
-    <link rel="prev" title="ATerm" href="aterm.html" />
+    <link rel="prev" title="Type Reconstruction" href="typeinference.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -148,166 +149,6 @@ f . g = id</pre>
            + --- Transform =
                  (i,j) -&gt; (i, j)</pre>
 </div>
-<span class="target" id="module-blaze.layouts.scalar"></span><p>Scalar layouts are arangements of scalar matrix data on to blocks
-of memory that may or may not be contigious. The only requirement
-of a layout is that there be some unique way of distinguishing an
-&#8220;initial element&#8221; in the container from which to orient.</p>
-<dl class="class">
-<dt id="blaze.layouts.scalar.Chart">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Chart</tt><big>(</big><em>components</em>, <em>ref</em>, <em>tinv=None</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Chart" title="Permalink to this definition">¶</a></dt>
-<dd><p>A interval partition pointing at a Indexable reference.</p>
-<dl class="method">
-<dt id="blaze.layouts.scalar.Chart.inverse">
-<tt class="descname">inverse</tt><big>(</big><em>coords</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Chart.inverse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Invert the given coordinates per the inverse transform
-function associated with this chart.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="blaze.layouts.scalar.Chart.iterdims">
-<tt class="descname">iterdims</tt><big>(</big><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Chart.iterdims" title="Permalink to this definition">¶</a></dt>
-<dd><p>Enumerate the components, yielding the dimension index
-and the component.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="blaze.layouts.scalar.Chart.transform">
-<tt class="descname">transform</tt><big>(</big><em>t</em>, <em>tinv</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Chart.transform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a new chart with coordinates transformed.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.layouts.scalar.ChunkedL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ChunkedL</tt><big>(</big><em>init</em>, <em>cdimension</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ChunkedL" title="Permalink to this definition">¶</a></dt>
-<dd><p>Chunked layout, like CArray.</p>
-<blockquote>
-<div><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">init:</th><td class="field-body">Initial block</td>
-</tr>
-<tr class="field-even field"><th class="field-name">cdimension:</th><td class="field-body">Dimension along which chunks are aligned.
-CArraySource uses 0 by default.</td>
-</tr>
-</tbody>
-</table>
-</div></blockquote>
-<dl class="method">
-<dt id="blaze.layouts.scalar.ChunkedL.change_coordinates">
-<tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ChunkedL.change_coordinates" title="Permalink to this definition">¶</a></dt>
-<dd><p>Identity coordinate transform</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.layouts.scalar.ContiguousL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ContiguousL</tt><big>(</big><em>single</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ContiguousL" title="Permalink to this definition">¶</a></dt>
-<dd><p>A single block with. Coordinate transform is just a passthrough.</p>
-<dl class="method">
-<dt id="blaze.layouts.scalar.ContiguousL.change_coordinates">
-<tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ContiguousL.change_coordinates" title="Permalink to this definition">¶</a></dt>
-<dd><p>Identity coordinate transform</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.layouts.scalar.HilbertL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">HilbertL</tt><big>(</big><em>init</em>, <em>size</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.HilbertL" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simple Hilbert curve layout. Hilbert curves preserve index locality
-but are discontinuous.</p>
-<p>Example of a order 4 (H_4) curve over a 2D array:</p>
-<div class="highlight-python"><pre> 0    3    4    5
- 1    2    7    6
-14   13    8    9
-15   12   11   10
-
- +    +---------+
- |    |         |
- +----+    +----+
-           |
- +----+    +----+
- |    |         |
- +    +----+----+</pre>
-</div>
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.layouts.scalar.Interval">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">Interval</tt><big>(</big><em>inf</em>, <em>sup</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.Interval" title="Permalink to this definition">¶</a></dt>
-<dd><p>A mathematical interval uniquely defined by two parameters</p>
-<p>Parameters</p>
-<blockquote>
-<div><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">inf:</th><td class="field-body">lower bound</td>
-</tr>
-<tr class="field-even field"><th class="field-name">sup:</th><td class="field-body">upper bound</td>
-</tr>
-</tbody>
-</table>
-</div></blockquote>
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.layouts.scalar.MultichunkedL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">MultichunkedL</tt><big>(</big><em>partitions</em>, <em>ndim</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.MultichunkedL" title="Permalink to this definition">¶</a></dt>
-<dd><p>MultichunkL is a layout to contain multiple possibly unaligned
-chunks. It is enough to track the partition points of the
-array in arbitrary dimensions and then binary sort across
-each dimension in order to resolve partition locations.</p>
-<dl class="method">
-<dt id="blaze.layouts.scalar.MultichunkedL.change_coordinates">
-<tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.MultichunkedL.change_coordinates" title="Permalink to this definition">¶</a></dt>
-<dd><p>Change coordinates into the block we&#8217;re indexing into.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="blaze.layouts.scalar.MultichunkedL.iter_components">
-<tt class="descname">iter_components</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.MultichunkedL.iter_components" title="Permalink to this definition">¶</a></dt>
-<dd><p>Iterate through the components of each partition.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="blaze.layouts.scalar.StridedL">
-<em class="property">class </em><tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">StridedL</tt><big>(</big><em>init</em>, <em>strides=None</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.StridedL" title="Permalink to this definition">¶</a></dt>
-<dd><p>Single strided layout. This behaves like strided NumPy arrays.</p>
-<dl class="method">
-<dt id="blaze.layouts.scalar.StridedL.change_coordinates">
-<tt class="descname">change_coordinates</tt><big>(</big><em>indexer</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.StridedL.change_coordinates" title="Permalink to this definition">¶</a></dt>
-<dd><p>Identity coordinate transform</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.layouts.scalar.cdimshuffle">
-<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">cdimshuffle</tt><big>(</big><em>axi</em>, <em>mapping</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.cdimshuffle" title="Permalink to this definition">¶</a></dt>
-<dd><p>Example:</p>
-<p>f : 2, 0, 1 : [1,2,3] -&gt; [3,1,2]
-g : 2, 0, 1 : [3,1,2] -&gt; [1,2,3]</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.layouts.scalar.ctranslate">
-<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">ctranslate</tt><big>(</big><em>factor</em>, <em>axi</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.ctranslate" title="Permalink to this definition">¶</a></dt>
-<dd><p>A coordinate translation.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="blaze.layouts.scalar.stack_transforms">
-<tt class="descclassname">blaze.layouts.scalar.</tt><tt class="descname">stack_transforms</tt><big>(</big><em>c1</em>, <em>c2</em>, <em>axis</em><big>)</big><a class="headerlink" href="#blaze.layouts.scalar.stack_transforms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stack two intervals to form a large interval</p>
-</dd></dl>
-
 </div>
 </div>
 
