@@ -79,6 +79,7 @@ class IDataDescriptor:
         """
         raise NotImplementedError
 
+    #@abc.abstractproperty   # XXX should be there
     def appendable(self):
         """
         Returns True if the data is appendable,
@@ -118,6 +119,13 @@ class IDataDescriptor:
         """
         raise NotImplementedError
 
+    #@abc.abstractmethod   # XXX should be there
+    def append(self, values):
+        """
+        This allows appending values in the data descriptor.
+        """
+        return NotImplementedError
+
     @property
     def strategy(self):
         return current_strategy()
@@ -133,3 +141,4 @@ class IDataDescriptor:
         else:
             raise TypeError(('Data descriptor of type %s is not ' +
                         'concrete') % type(self))
+
