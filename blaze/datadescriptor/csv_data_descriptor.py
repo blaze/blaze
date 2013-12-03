@@ -44,7 +44,7 @@ class CSVDataDescriptor(IDataDescriptor):
     Parameters
     ----------
     csvfile : file IO handle
-        A file handler for teh CSV file.
+        A file handler for the CSV file.
     schema : string or blaze.datashape
         A blaze datashape (or its string representation) of the schema
         in the CSV file.
@@ -66,7 +66,7 @@ class CSVDataDescriptor(IDataDescriptor):
 
     @property
     def is_concrete(self):
-        """Returns False, CSV arrays are not concrete."""
+        """Returns True, CSV arrays are concrete."""
         return True
 
     @property
