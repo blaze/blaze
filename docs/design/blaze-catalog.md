@@ -51,6 +51,9 @@ Desired Features
 * Within a configured cluster, a single rooted
   namespace containing all persisted Blaze Arrays
   within the cluster.
+  * Still want to be able to use URLs from other
+    Blaze servers/catalogs directly without an import
+    step.
 * A catalog entry includes the following associated data.
   * DataShape of the Array. Note that this scales from
     single values like a boolean or string, up through
@@ -85,15 +88,22 @@ Desired Features
 * Ability to insert data cleaning operations
   that work with the whole array at once, basically
   an arbitrary Python function manipulating the data.
+* TODO: Add error handling info (mostly higher level).
+* TODO: Cache invalidation when data changes via
+        push, reevaluation in a lazy way via pull.
+
+Peter - people like in ETL tools, rich error handling.
 
 ### Data Access
 
 * Retrieve an Array object for any catalog entry
   with a convenient syntax.
-    * `blaze.catalog.get("/path/to/array")`,
-      `blaze.catalog.get("~/userarray")`
-    * `blaze.root.path.to.array`,
-      `blaze.home.userarray`
+    * `blaze.get("/path/to/array")`,
+      `blaze.get("~/userarray")`
+* Access permissions is not part of the catalog,
+  just using the permissions of underlying FS for now.
+* Create blaze command line/a series of ipython
+  magics for exploring the catalog structure.
 
 ### Caching
 
@@ -102,11 +112,19 @@ Desired Features
   is not efficient.
 * Caching of array data in memory, with user-configurable
   memory limits.
+* The cache needs tooling, users should be able to
+  control how much space is in the cache, see the
+  usage, etc.
+* Caching is implicit, but with an explicit way
+  to skip the cache if you'll just use data once.
 
 ### Implementation
 
 * Implemented as pure Python code, using other Blaze
   components.
+* Initial implementation is close to the style of
+  Hugo's ArrayManagement repo, not using a sqlite
+  database for now.
 
 Interface
 ---------
@@ -162,18 +180,3 @@ sharedarray = cat.get('/tycho2')
 ```
 
 These gives back Blaze Array objects.
-
-The other mechanism is to get a proxy object for
-the namespace, which gives access to the catalog
-entries as properties.
-
-```python
-from blaze.catalog import root, home
-
-userarray = home.myarray
-userarray2 = root.home.<username>.myarray2
-sharedarray = root.tycho2
-```
-
-These are the same two arrays, but accessed
-from the namespace proxy objects.
