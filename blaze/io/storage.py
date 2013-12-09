@@ -17,7 +17,8 @@ from __future__ import absolute_import
 from ..datashape import to_numpy, to_numpy_dtype
 from ..py2help import urlparse
 from . import blz
-from ..datadescriptor import BLZDataDescriptor, CSVDataDescriptor
+from ..datadescriptor import (BLZDataDescriptor, CSVDataDescriptor,
+                              JSONDataDescriptor)
 from ..objects.array import Array
 
 # ----------------------------------------------------------------------
@@ -83,14 +84,21 @@ class Storage(object):
         self._uri = uri
         # Parse the uri into the format (URI scheme) and path
         up = urlparse.urlparse(self._uri)
-        self._format = up.scheme
-        self._path = up.netloc + up.path
-        if mode not in 'ra':
-            # BLZ and CSV only support 'r'ead and 'a'ppend modes
-            raise ValueError("`mode` '%s' is not supported." % mode)
-        self._mode = mode
-        if self._format not in ('csv', 'blz'):
+        self._format = format = up.scheme
+        if self._format not in ('json', 'csv', 'blz'):
             raise ValueError("`format` '%s' is not supported." % self._format)
+        self._path = up.netloc + up.path
+        if format in ('csv', 'blz') and mode not in 'ra':
+            # BLZ and CSV only support 'r'ead and 'a'ppend modes
+            raise ValueError(
+                "`mode` '%s' is not supported in '%s' format." % \
+                (mode, format))
+        elif format in ('json',) and mode not in 'r':
+            # JSON only supports 'r'ead mode
+            raise ValueError(
+                "`mode` '%s' is not supported in '%s' format." % \
+                (mode, format))
+        self._mode = mode
         if not permanent:
             raise ValueError(
                 "`permanent` set to False is not supported yet.")
@@ -139,6 +147,9 @@ def open(persist, schema=None):
     elif persist.format == 'csv':
         d = file(persist.path, mode=persist.mode)
         dd = CSVDataDescriptor(d, schema=schema)
+    elif persist.format == 'json':
+        d = file(persist.path, mode=persist.mode)
+        dd = JSONDataDescriptor(d, schema=schema)
     return Array(dd)
 
 
