@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from .datashape import to_numpy, to_numpy_dtype
 from .py2help import urlparse
 from . import blz
-from .datadescriptor import (BLZDataDescriptor,
+from .datadescriptor import (BLZDataDescriptor, CSVDataDescriptor,
                              dd_as_py)
 from .array import Array
 
@@ -87,13 +87,14 @@ class Storage(object):
         self._format = up.scheme
         self._path = up.netloc + up.path
         if mode not in 'ra':
-            raise ValueError("BLZ `mode` '%s' is not supported." % mode)
+            # BLZ and CSV only support 'r'ead and 'a'ppend modes
+            raise ValueError("`mode` '%s' is not supported." % mode)
         self._mode = mode
-        if self._format != 'blz':
-            raise ValueError("BLZ `format` '%s' is not supported." % self._format)
+        if self._format not in ('csv', 'blz'):
+            raise ValueError("`format` '%s' is not supported." % self._format)
         if not permanent:
             raise ValueError(
-                "BLZ `permanent` set to False is not supported yet.")
+                "`permanent` set to False is not supported yet.")
         self._permanent = permanent
 
     def __repr__(self):
@@ -114,7 +115,7 @@ def _persist_convert(persist):
 # ----------------------------------------------------------------------
 # The actual API specific for persistence
 
-def open(persist):
+def open(persist, schema=None):
     """Open an existing persistent array.
 
     Parameters
@@ -129,12 +130,16 @@ def open(persist):
 
     Notes
     -----
-    Only the BLZ format is supported currently.
+    Only the BLZ and CSV format are supported currently.
 
     """
     persist = _persist_convert(persist)
-    d = blz.barray(rootdir=persist.path)
-    dd = BLZDataDescriptor(d)
+    if persist.format == 'blz':
+        d = blz.barray(rootdir=persist.path)
+        dd = BLZDataDescriptor(d)
+    elif persist.format == 'csv':
+        d = file(persist.path, mode=persist.mode)
+        dd = CSVDataDescriptor(d, schema=schema)
     return Array(dd)
 
 
@@ -143,11 +148,14 @@ def drop(persist):
 
     persist = _persist_convert(persist)
 
-    try:
-        blz.open(rootdir=persist.path)
-        from shutil import rmtree
-        rmtree(persist.path)
-
-    except RuntimeError:
-         # Maybe BLZ should throw other exceptions for this!
-        raise Exception("No blaze array at uri '%s'" % uri)
+    if persist.format== 'blz':
+        try:
+            blz.open(rootdir=persist.path)
+            from shutil import rmtree
+            rmtree(persist.path)
+        except RuntimeError:
+            # Maybe BLZ should throw other exceptions for this!
+            raise Exception("No dataset at uri '%s'" % uri)
+    elif persist.format== 'csv':
+        import os
+        os.unlink(persist.path)
