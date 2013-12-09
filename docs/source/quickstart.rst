@@ -1,4 +1,3 @@
-===========
 Quickstart
 ===========
 
@@ -55,7 +54,7 @@ Iterators
 
     >>> alst = [1,2,3]
     >>> array(alst.__iter__(), dshape='3, int32')
-    array([ 1.,  2.,  3.],
+    array([ 1,  2,  3],
       dshape='3, int32')
 
 

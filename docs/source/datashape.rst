@@ -102,7 +102,7 @@ Several python types are can be mapped directly on to datashape types:
 ===========  =========================================================
 Python type  Datashape
 ===========  =========================================================
-int          int
+int          int32
 bool         bool
 float        float64
 complex      cfloat64
@@ -286,25 +286,6 @@ Example of table-like::
 
     type TableLike = { x : int; y : float }
 
-Enumeration
------------
-
-A enumeration specifies a number of fixed dimensions sequentially. Example::
-
-    {1,2,4,2,1}, int32
-
-The above could describe a irregularly shaped Python structure of the form::
-
-    [
-        [1],
-        [1,2],
-        [1,3,2,9],
-        [3,2],
-        [3]
-    ]
-
-..
-    (1 + 2 + 4 + 2 + 1) * int32
 
 Type Variables
 ~~~~~~~~~~~~~~
@@ -449,16 +430,20 @@ FAQ
 * How do I convert from Blaze DataShape to NumPy shape and
   dtype?::
 
-    >>> from blaze import dshape, to_numpy
+..doctest
+    >>> from blaze.datashape import dshape, to_numpy
     >>> ds = dshape("5, 5, int32")
     >>> to_numpy(ds)
     ((5, 5), dtype('int32'))
 
 * How do I convert from Numpy Dtype to Datashape?::
 
+..doctest
+    >>> from blaze.datashape import dshape, from_numpy
+    >>> from numpy import dtype
     >>> from_numpy((5,5), dtype('int32'))
-    >>> dshape("5, 5, int32")
     dshape("5, 5, int32")
+
 
 * How do I convert from Blaze DataShape to CTypes?
 

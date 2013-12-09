@@ -24,7 +24,7 @@ Now, let's have a look at the representation of the `a` array::
 
   >>> a
   array([2, 3, 4],
-        dshape='3, int64')
+        dshape='3, int32')
 
 You are seeing here at a first difference with NumPy, and it is the
 `dshape` attribute, which is basically the fusion of `shape` and
@@ -32,7 +32,7 @@ You are seeing here at a first difference with NumPy, and it is the
 handy for performing advanced operations (like views) in a more
 powerful way.
 
-Note that when creating from a Python iterable, a datashape will be
+Note that when creating from a Python iterable, a datashape will boe
 inferred::
 
   >>> print(a.dshape)
@@ -119,10 +119,10 @@ session.
 A persistent array can be enlarged anytime by using the `blaze.append()`
 function, e.g.::
 
->>> blaze.append(g, [4,5,6])
->>> g
-array([ 1.,  2.,  3.,  4.,  5.,  6.],
-      dshape='6, float32')
+  >>> blaze.append(g, [4,5,6])
+  >>> g
+  array([ 1.,  2.,  3.,  4.,  5.,  6.],
+        dshape='6, float32')
 
 If you are done with the persistent array and want to free
 its resources, you can just 'drop' it::

@@ -13,6 +13,7 @@ between databases, formats, proprietary data warehouses, and other
 silos.
 
 The core of Blaze consists of generic multi-dimensional Array and Table objects
+===============================================================================
 with an associated type system for expressing all kinds of data
 types and layouts, especially semi-structured, sparse, and columnar
 data.  Blaze’s generalized calculation engine can iterate over the
@@ -34,12 +35,12 @@ Index
    :maxdepth: 2
 
    install
-   quickstart
    overview
+   quickstart
    datashape
    datashape-binary
    data_descriptor
-   blaze_functions
+   blaze_function
    deferred
 
 Original Index
@@ -63,7 +64,6 @@ API Reference
    toplevel
    types
    eclass
-   format
    typeinference
    layout
    sources
@@ -77,7 +77,6 @@ Developer Guide
 ~~~~~~~~~~~~~~~
 
 .. toctree::
-   datashape-spec
    extending
 
 Index
