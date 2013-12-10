@@ -62,3 +62,13 @@ class SciDBDataDesc(IDataDescriptor):
 
     def dynd_arr(self):
         raise NotImplementedError
+
+    def __repr__(self):
+        return "SciDBDesc(%s)" % (str(self.query),)
+
+    def __str__(self):
+        arrname = str(self.query)
+        sdb_array = self.conn.wrap_array(arrname)
+        return str(sdb_array.toarray())
+
+    _printer = __str__

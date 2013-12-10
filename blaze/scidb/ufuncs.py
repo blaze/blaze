@@ -23,7 +23,7 @@ from .query import apply, expr, iff, qformat
 def define_unop(signature, name, op):
     """Define a unary scidb operator"""
     def unop(x):
-        return qformat("({0} {1})", op, x)
+        return apply_expr(x, qformat('{op} {x}.f0', op=op, x=x))
 
     unop.__name__ = name
     _implement(unop, signature)
@@ -32,7 +32,9 @@ def define_unop(signature, name, op):
 def define_binop(signature, name, op):
     """Define a binary scidb operator"""
     def binop(a, b):
-        return qformat("({0} {1} {2})", a, op, b)
+        arr = qformat("join({a}, {b})", a=a, b=b)
+        expr = qformat("{a}.f0 {op} {b}.f0", a=a, op=op, b=b)
+        return apply_expr(arr, expr)
 
     binop.__name__ = name
     _implement(binop, signature)
@@ -133,6 +135,15 @@ def abs(x):
 
 def ibool(x):
     return ne(x, "0")
+
+def apply_expr(arr, expr):
+    colname = '__blaze_col'
+    query = qformat('apply({arr}, {colname}, {expr})',
+                    arr=arr, colname=colname, expr=expr)
+    return project(query, colname)
+
+def project(arr, colname):
+    return qformat('project({arr}, {colname})', arr=arr, colname=colname)
 
 #------------------------------------------------------------------------
 # Data types
