@@ -4,8 +4,8 @@ Access Data from Different Sources
 
 Blaze can access data from a variety of sources, as long as the format has been implemented as a :ref:`Data Descriptor <data_descriptor>`.  Currently there are data descriptors for CSV and JSON files, although the list is growing.  This section shows how to access these files in a general way.
 
-Open a file
------------
+Open and working with a data file
+---------------------------------
 
 Let's suppose that we have a file named '/tmp/test.csv' that we want to operate with in Blaze.  Blaze normally access data through URLs, so first, let's use the the Storage class so as to parse the URL and determine if we can process the file::
 
@@ -22,4 +22,6 @@ As we see, the `open` function needs you to inform about the schema of the under
 
 If we want to have a look at the contents, then just print the Blaze array:: 
 
-... we end here...
+  In []: arr._data.dynd_arr()  # update this when struct types can be pri
+  Out[]: nd.array([["k1", "v1", 1, false], ["k2", "v2", 2, true], ["k3", "v3", 3, false]], var_dim<{f0 : string; f1 : string; f2 : int16; f3 : bool}>)
+
