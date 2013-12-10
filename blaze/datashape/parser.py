@@ -93,10 +93,6 @@ def t_TYPE(t):
     r'type'
     return t
 
-def t_DATA(t):
-    r'data'
-    return t
-
 def t_newline(t):
     r'\n+'
     #t.lexer.lineno += t.value.count("\n")
