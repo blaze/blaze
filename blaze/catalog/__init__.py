@@ -9,6 +9,12 @@ from .catalog_arr import load_blaze_array
 config = load_default_config()
 _cwd = '/'
 
+def load_config(cfgfile):
+    """Loads a fresh catalog from the specified config file"""
+    global config, _cwd
+    config = CatalogConfig(cfgfile)
+    _cwd = '/'
+
 def cd(key):
     """Change the current working directory of the blaze catalog"""
     global _cwd

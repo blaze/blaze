@@ -1,0 +1,4 @@
+# A catalog of some small sample arrays
+
+# Relative paths are relative to the .yaml config file
+root: ./arrays
