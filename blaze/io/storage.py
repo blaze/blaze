@@ -88,16 +88,6 @@ class Storage(object):
         if self._format not in ('json', 'csv', 'blz'):
             raise ValueError("`format` '%s' is not supported." % self._format)
         self._path = up.netloc + up.path
-        if format in ('csv', 'blz') and mode not in 'ra':
-            # BLZ and CSV only support 'r'ead and 'a'ppend modes
-            raise ValueError(
-                "`mode` '%s' is not supported in '%s' format." % \
-                (mode, format))
-        elif format in ('json',) and mode not in 'r':
-            # JSON only supports 'r'ead mode
-            raise ValueError(
-                "`mode` '%s' is not supported in '%s' format." % \
-                (mode, format))
         self._mode = mode
         if not permanent:
             raise ValueError(
