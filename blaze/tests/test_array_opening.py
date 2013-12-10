@@ -47,6 +47,27 @@ class TestOpenCSV(unittest.TestCase):
             {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False},
             {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
 
+json_buf = u"[1, 2, 3, 4, 5]"
+json_schema = "var, int8"
 
+class TestOpenJSON(unittest.TestCase):
+
+    def setUp(self):
+        _, self.fname = tempfile.mkstemp(suffix='.json')
+        self.url = "json:///" + self.fname
+        with file(self.fname, "wb") as f:
+            f.write(json_buf)
+
+    def tearDown(self):
+        os.unlink(self.fname)
+
+    def test_open(self):
+        store = blaze.Storage(self.url, mode='r')
+        a = blaze.open(store, json_schema)
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
+
+
+        
 if __name__ == '__main__':
     unittest.main(verbosity=2)
