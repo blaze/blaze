@@ -55,6 +55,7 @@ Desired Features
     Blaze servers/catalogs directly without an import
     step.
 * A catalog entry includes the following associated data.
+  * Whether it produces a blaze.Array or a blaze.Table.
   * DataShape of the Array. Note that this scales from
     single values like a boolean or string, up through
     tables and multi-dimensional arrays.
