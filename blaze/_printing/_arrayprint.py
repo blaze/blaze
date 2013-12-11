@@ -19,10 +19,10 @@ from ..py2help import xrange
 import sys
 # import numerictypes as _nt
 # from umath import maximum, minimum, absolute, not_equal, isnan, isinf
-# from multiarray import format_longfloat, datetime_as_string, datetime_data
 import numpy.core.umath as _um
 import numpy as np
 
+from .. import datashape
 from ..datashape import (to_numpy as _internal_to_numpy,
                          to_numpy_dtype, NotNumpyCompatible,
                          Fixed, Var)
@@ -33,12 +33,6 @@ from numpy import ravel, maximum, minimum, absolute, array
 import numpy.core.numerictypes as _nt
 
 import inspect
-
-def _to_numpy(ds):
-    res = _internal_to_numpy(ds)
-    res = res if type(res) is tuple else ((), res)
-    return res
-
 
 # debug help
 def _dump_data_info(x, ident=None):
@@ -130,10 +124,7 @@ def set_printoptions(precision=None, threshold=None, edgeitems=None,
 
             - 'bool'
             - 'int'
-            - 'timedelta' : a `numpy.timedelta64`
-            - 'datetime' : a `numpy.datetime64`
             - 'float'
-            - 'longfloat' : 128-bit floats
             - 'complexfloat'
             - 'longcomplexfloat' : composed of two 128-bit floats
             - 'numpy_str' : types `numpy.string_` and `numpy.unicode_`
@@ -143,8 +134,8 @@ def set_printoptions(precision=None, threshold=None, edgeitems=None,
 
             - 'all' : sets all types
             - 'int_kind' : sets 'int'
-            - 'float_kind' : sets 'float' and 'longfloat'
-            - 'complex_kind' : sets 'complexfloat' and 'longcomplexfloat'
+            - 'float_kind' : sets 'float'
+            - 'complex_kind' : sets 'complexfloat'
             - 'str_kind' : sets 'str' and 'numpystr'
 
     See Also
@@ -292,7 +283,7 @@ def _apply_formatter(format_dict, formatter):
         for key in ['int']:
             formatdict[key] = formatter['int_kind']
     if 'float_kind' in fkeys:
-        for key in ['float', 'longfloat']:
+        for key in ['float']:
             formatdict[key] = formatter['float_kind']
     if 'complex_kind' in fkeys:
         for key in ['complexfloat', 'longcomplexfloat']:
@@ -305,28 +296,23 @@ def _apply_formatter(format_dict, formatter):
             formatdict[key] = formatter[key]
 
 
-def _choose_format(formatdict, dtypeobj):
-    if issubclass(dtypeobj, _nt.bool_):
+def _choose_format(formatdict, ds):
+    if isinstance(ds, datashape.DataShape):
+        ds = ds[-1]
+
+    if ds == datashape.bool_:
         format_function = formatdict['bool']
-    elif issubclass(dtypeobj, _nt.integer):
-        if issubclass(dtypeobj, _nt.timedelta64):
-            format_function = formatdict['timedelta']
-        else:
-            format_function = formatdict['int']
-    elif issubclass(dtypeobj, _nt.floating):
-        if issubclass(dtypeobj, _nt.longfloat):
-            format_function = formatdict['longfloat']
-        else:
-            format_function = formatdict['float']
-    elif issubclass(dtypeobj, _nt.complexfloating):
-        if issubclass(dtypeobj, _nt.clongfloat):
-            format_function = formatdict['longcomplexfloat']
-        else:
-            format_function = formatdict['complexfloat']
-    elif issubclass(dtypeobj, (_nt.unicode_, _nt.string_)):
+    elif ds in [datashape.int8, datashape.int16,
+                datashape.int32, datashape.int64,
+                datashape.uint8, datashape.uint16,
+                datashape.uint32, datashape.uint64]:
+        format_function = formatdict['int']
+    elif ds in [datashape.float32, datashape.float64]:
+        format_function = formatdict['float']
+    elif ds in [datashape.cfloat32, datashape.cfloat64]:
+        format_function = formatdict['complexfloat']
+    elif isinstance(ds, datashape.String):
         format_function = formatdict['numpystr']
-    elif issubclass(dtypeobj, _nt.datetime64):
-        format_function = formatdict['datetime']
     else:
         format_function = formatdict['numpystr']
 
@@ -363,12 +349,8 @@ def _array2string(a, shape, dtype, max_line_width, precision, suppress_small, se
     formatdict = {'bool' : _boolFormatter,
                   'int' : IntegerFormat(data),
                   'float' : FloatFormat(data, precision, suppress_small),
-                  'longfloat' : LongFloatFormat(precision),
                   'complexfloat' : ComplexFormat(data, precision,
                                                  suppress_small),
-                  'longcomplexfloat' : LongComplexFormat(precision),
-                  'datetime' : DatetimeFormat(data),
-                  'timedelta' : TimedeltaFormat(data),
                   'numpystr' : repr_format,
                   'str' : str}
 
@@ -378,7 +360,7 @@ def _array2string(a, shape, dtype, max_line_width, precision, suppress_small, se
     assert(not hasattr(a, '_format'))
 
     # find the right formatting function for the array
-    format_function = _choose_format(formatdict, _to_numpy(dtype)[-1].type)
+    format_function = _choose_format(formatdict, dtype)
 
     # skip over "["
     next_line_prefix = " "
@@ -442,10 +424,7 @@ def array2string(a, max_line_width=None, precision=None,
 
             - 'bool'
             - 'int'
-            - 'timedelta' : a `numpy.timedelta64`
-            - 'datetime' : a `numpy.datetime64`
             - 'float'
-            - 'longfloat' : 128-bit floats
             - 'complexfloat'
             - 'longcomplexfloat' : composed of two 128-bit floats
             - 'numpy_str' : types `numpy.string_` and `numpy.unicode_`
@@ -455,7 +434,7 @@ def array2string(a, max_line_width=None, precision=None,
 
             - 'all' : sets all types
             - 'int_kind' : sets 'int'
-            - 'float_kind' : sets 'float' and 'longfloat'
+            - 'float_kind' : sets 'float'
             - 'complex_kind' : sets 'complexfloat' and 'longcomplexfloat'
             - 'str_kind' : sets 'str' and 'numpystr'
 
@@ -717,46 +696,6 @@ class IntegerFormat(object):
         else:
             return "%s" % x
 
-class LongFloatFormat(object):
-    # XXX Have to add something to determine the width to use a la FloatFormat
-    # Right now, things won't line up properly
-    def __init__(self, precision, sign=False):
-        self.precision = precision
-        self.sign = sign
-
-    def __call__(self, x):
-        if isnan(x):
-            if self.sign:
-                return '+' + _nan_str
-            else:
-                return ' ' + _nan_str
-        elif isinf(x):
-            if x > 0:
-                if self.sign:
-                    return '+' + _inf_str
-                else:
-                    return ' ' + _inf_str
-            else:
-                return '-' + _inf_str
-        elif x >= 0:
-            if self.sign:
-                return '+' + format_longfloat(x, self.precision)
-            else:
-                return ' ' + format_longfloat(x, self.precision)
-        else:
-            return format_longfloat(x, self.precision)
-
-
-class LongComplexFormat(object):
-    def __init__(self, precision):
-        self.real_format = LongFloatFormat(precision)
-        self.imag_format = LongFloatFormat(precision, sign=True)
-
-    def __call__(self, x):
-        r = self.real_format(x.real)
-        i = self.imag_format(x.imag)
-        return r + i + 'j'
-
 
 class ComplexFormat(object):
     def __init__(self, x, precision, suppress_small):
@@ -773,46 +712,6 @@ class ComplexFormat(object):
         else:
             i = i + 'j'
         return r + i
-
-class DatetimeFormat(object):
-    def __init__(self, x, unit=None,
-                timezone=None, casting='same_kind'):
-        # Get the unit from the dtype
-        if unit is None:
-            if x.dtype.kind == 'M':
-                unit = datetime_data(x.dtype)[0]
-            else:
-                unit = 's'
-
-        # If timezone is default, make it 'local' or 'UTC' based on the unit
-        if timezone is None:
-            # Date units -> UTC, time units -> local
-            if unit in ('Y', 'M', 'W', 'D'):
-                self.timezone = 'UTC'
-            else:
-                self.timezone = 'local'
-        else:
-            self.timezone = timezone
-        self.unit = unit
-        self.casting = casting
-
-    def __call__(self, x):
-        return "'%s'" % datetime_as_string(x,
-                                    unit=self.unit,
-                                    timezone=self.timezone,
-                                    casting=self.casting)
-
-class TimedeltaFormat(object):
-    def __init__(self, data):
-        if data.dtype.kind == 'm':
-            v = data.view('i8')
-            max_str_len = max(len(str(maximum.reduce(v))),
-                              len(str(minimum.reduce(v))))
-            self.format = '%' + str(max_str_len) + 'd'
-
-    def __call__(self, x):
-        return self.format % x.astype('i8')
-
 
 def _test():
     import blaze
