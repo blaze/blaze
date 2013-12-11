@@ -15,7 +15,11 @@ k2,v2,2,True
 k3,v3,3,False
 """
 csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
-
+csv_ldict =  [
+    {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
+    {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
+    {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}
+    ]
 
 class TestOpenCSV(unittest.TestCase):
 
@@ -30,22 +34,28 @@ class TestOpenCSV(unittest.TestCase):
 
     def test_open(self):
         store = blaze.Storage(self.url, mode='r')
-        a = blaze.open(store, csv_schema)
+        a = blaze.open(store, schema=csv_schema)
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
+        self.assertEqual(dd_as_py(a._data), csv_ldict)
+
+    def test_open_dialect(self):
+        store = blaze.Storage(self.url, mode='r')
+        a = blaze.open(store, schema=csv_schema, dialect='excel')
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), csv_ldict)
+
+    def test_open_has_header(self):
+        store = blaze.Storage(self.url, mode='r')
+        a = blaze.open(store, schema=csv_schema, has_header=False)
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_append(self):
         store = blaze.Storage(self.url, mode='r+')
-        a = blaze.open(store, csv_schema)
+        a = blaze.open(store, schema=csv_schema)
         append(a, ["k4", "v4", 4, True])
-        self.assertEqual(dd_as_py(a._data), [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False},
-            {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
+        self.assertEqual(dd_as_py(a._data), csv_ldict + \
+            [{u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
 
 json_buf = u"[1, 2, 3, 4, 5]"
 json_schema = "var, int8"
@@ -63,7 +73,7 @@ class TestOpenJSON(unittest.TestCase):
 
     def test_open(self):
         store = blaze.Storage(self.url, mode='r')
-        a = blaze.open(store, json_schema)
+        a = blaze.open(store, schema=json_schema)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
 

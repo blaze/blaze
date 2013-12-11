@@ -16,7 +16,7 @@ The first part of the URL, the network protocol, specifies the format of the dat
 Now, for actually accessing the data in the file we need to know the schema of the files, let's use the `open` function on our `store` instance::
 
   In []: csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
-  In []: arr = blaze.open(store, csv_schema)
+  In []: arr = blaze.open(store, schema=csv_schema)
 
 As we see, the `open` function needs you to inform about the schema of the underlying file; in this case, each line is formed by a couple of strings, an integer of 16 bits and a boolean.
 
