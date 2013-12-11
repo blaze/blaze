@@ -113,7 +113,7 @@ def _persist_convert(persist):
 # ----------------------------------------------------------------------
 # The actual API specific for persistence
 
-def open(persist, schema=None):
+def open(persist, **kwargs):
     """Open an existing persistent array.
 
     Parameters
@@ -121,6 +121,8 @@ def open(persist, schema=None):
     persist : a Storage instance
         The Storage instance specifies, among other things, URI of
         where the array is stored.
+    kwargs : a dictionary
+        Put here different paramaters depending on the format.
 
     Returns
     -------
@@ -128,19 +130,19 @@ def open(persist, schema=None):
 
     Notes
     -----
-    Only the BLZ and CSV format are supported currently.
+    Only BLZ, CSV and JSON formats are supported currently.
 
     """
     persist = _persist_convert(persist)
     if persist.format == 'blz':
-        d = blz.barray(rootdir=persist.path)
+        d = blz.barray(rootdir=persist.path, **kwargs)
         dd = BLZDataDescriptor(d)
     elif persist.format == 'csv':
         d = file(persist.path, mode=persist.mode)
-        dd = CSVDataDescriptor(d, schema=schema)
+        dd = CSVDataDescriptor(d, **kwargs)
     elif persist.format == 'json':
         d = file(persist.path, mode=persist.mode)
-        dd = JSONDataDescriptor(d, schema=schema)
+        dd = JSONDataDescriptor(d, **kwargs)
     return Array(dd)
 
 
