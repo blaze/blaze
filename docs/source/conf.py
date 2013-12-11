@@ -302,3 +302,5 @@ texinfo_documents = [
 intersphinx_mapping = {
     'http://docs.python.org/dev': None,
 }
+
+doctest_global_setup = "import blaze"
