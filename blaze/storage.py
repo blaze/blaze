@@ -17,8 +17,9 @@ from __future__ import absolute_import
 from .datashape import to_numpy, to_numpy_dtype
 from .py2help import urlparse
 from . import blz
-from .datadescriptor import (BLZDataDescriptor,
-                             dd_as_py)
+from .datadescriptor import (
+    BLZDataDescriptor, CSVDataDescriptor, JSONDataDescriptor,
+    dd_as_py)
 from .array import Array
 
 # ----------------------------------------------------------------------
@@ -84,16 +85,14 @@ class Storage(object):
         self._uri = uri
         # Parse the uri into the format (URI scheme) and path
         up = urlparse.urlparse(self._uri)
-        self._format = up.scheme
+        self._format = format = up.scheme
+        if self._format not in ('json', 'csv', 'blz'):
+            raise ValueError("`format` '%s' is not supported." % self._format)
         self._path = up.netloc + up.path
-        if mode not in 'ra':
-            raise ValueError("BLZ `mode` '%s' is not supported." % mode)
         self._mode = mode
-        if self._format != 'blz':
-            raise ValueError("BLZ `format` '%s' is not supported." % self._format)
         if not permanent:
             raise ValueError(
-                "BLZ `permanent` set to False is not supported yet.")
+                "`permanent` set to False is not supported yet.")
         self._permanent = permanent
 
     def __repr__(self):
@@ -114,7 +113,7 @@ def _persist_convert(persist):
 # ----------------------------------------------------------------------
 # The actual API specific for persistence
 
-def open(persist):
+def open(persist, **kwargs):
     """Open an existing persistent array.
 
     Parameters
@@ -122,6 +121,8 @@ def open(persist):
     persist : a Storage instance
         The Storage instance specifies, among other things, URI of
         where the array is stored.
+    kwargs : a dictionary
+        Put here different paramaters depending on the format.
 
     Returns
     -------
@@ -129,12 +130,19 @@ def open(persist):
 
     Notes
     -----
-    Only the BLZ format is supported currently.
+    Only BLZ, CSV and JSON formats are supported currently.
 
     """
     persist = _persist_convert(persist)
-    d = blz.barray(rootdir=persist.path)
-    dd = BLZDataDescriptor(d)
+    if persist.format == 'blz':
+        d = blz.barray(rootdir=persist.path, **kwargs)
+        dd = BLZDataDescriptor(d)
+    elif persist.format == 'csv':
+        d = file(persist.path, mode=persist.mode)
+        dd = CSVDataDescriptor(d, **kwargs)
+    elif persist.format == 'json':
+        d = file(persist.path, mode=persist.mode)
+        dd = JSONDataDescriptor(d, **kwargs)
     return Array(dd)
 
 
@@ -143,11 +151,14 @@ def drop(persist):
 
     persist = _persist_convert(persist)
 
-    try:
-        blz.open(rootdir=persist.path)
-        from shutil import rmtree
-        rmtree(persist.path)
-
-    except RuntimeError:
-         # Maybe BLZ should throw other exceptions for this!
-        raise Exception("No blaze array at uri '%s'" % uri)
+    if persist.format== 'blz':
+        try:
+            blz.open(rootdir=persist.path)
+            from shutil import rmtree
+            rmtree(persist.path)
+        except RuntimeError:
+            # Maybe BLZ should throw other exceptions for this!
+            raise Exception("No dataset at uri '%s'" % uri)
+    elif persist.format== 'csv':
+        import os
+        os.unlink(persist.path)
