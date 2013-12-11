@@ -27,10 +27,11 @@ class JSONDataDescriptor(IDataDescriptor):
         A blaze datashape (or its string representation) of the schema
         in the JSON file.
     """
-    def __init__(self, jsonfile, schema):
+    def __init__(self, jsonfile, **kwargs):
         if not hasattr(jsonfile, "__iter__"):
             raise TypeError('jsonfile does not have an iter interface')
         self.jsonfile = jsonfile
+        schema = kwargs.get("schema", None)
         if type(schema) in (str, unicode):
             schema = datashape.dshape(schema)
         self.schema = str(schema)
