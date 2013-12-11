@@ -2,11 +2,6 @@
 Tutorials
 =========
 
-..testsetup::*
-
-  import blaze
-
-
 This chapter goes through a series of tutorials that exercises different aspects of Blaze on a friendly and step-by-step way.  These are great if you are learning Blaze, or you want better insight on how to do specific things with it.
 
 Creating arrays
@@ -17,7 +12,8 @@ Building basic arrays
 
 Let's start creating a small array:
 
-..doctest
+.. doctest::
+
   >>> import blaze
   >>> a = blaze.array([2, 3, 4])
   >>> print a
@@ -26,9 +22,10 @@ Let's start creating a small array:
 Easy uh?  Blaze tries to follow the NumPy API as much as possible, so
 that people will find it easy to start doing basic things.
 
-Now, let's have a look at the representation of the `a` array::
+Now, let's have a look at the representation of the `a` array:
 
-..doctest
+.. doctest::
+
   >>> a
   array([2, 3, 4],
         dshape='3, int32')
@@ -40,26 +37,29 @@ handy for performing advanced operations (like views) in a more
 powerful way.
 
 Note that when creating from a Python iterable, a datashape will boe
-inferred::
+inferred:
 
-..doctest
+.. doctest::
+
   >>> print(a.dshape)
   3, int32
 
 In this example, the shape part is '3' while the type part is 'int32'.
 
-Let's create an array of floats::
+Let's create an array of floats:
 
-..doctest
+.. doctest::
+
   >>> b = blaze.array([1.2, 3.5, 5.1])
   >>> print(b)
   [ 1.2  3.5  5.1]
   >>> print(b.dshape)
   3, float64
 
-And a bidimensional array::
+And a bidimensional array:
 
-..doctest
+.. doctest::
+
   >>> c = blaze.array([ [1, 2], [3, 4] ]) 
   >>> print(c)
   [[1 2]
@@ -67,9 +67,10 @@ And a bidimensional array::
   >>> print(c.dshape)
   2, 2, int32
 
-or as many dimensions as you like::
+or as many dimensions as you like:
 
-..doctest
+.. doctest::
+
   >>> d = blaze.array([ [ [1, 2], [3, 4] ], [ [5, 6], [7, 8] ] ])
   >>> print(d)
   [[[1 2]
@@ -80,17 +81,19 @@ or as many dimensions as you like::
   >>> print(d.dshape)
   2, 2, 2, int32
 
-You can even build a compressed array in-memory::
+You can even build a compressed array in-memory:
 
-..doctest
+.. doctest::
+
   >>> blz = blaze.array([1,2,3], caps={'compress': True})
   >>> print(blz)
   [1 2 3]
 
 It is possible to force a type in a given array. This allows a broader
-selection of types on construction::
+selection of types on construction:
 
-..doctest
+.. doctest::
+
   >>> e = blaze.array([ 1, 2, 3], dshape='3, float32') 
   >>> e
   array([ 1.,  2.,  3.],
@@ -98,18 +101,21 @@ selection of types on construction::
 
 Note that the dimensions in the datashape when creating from a
 collection can be omitted. If that's the case, the dimensions will be
-inferred. The following is thus equivalent::
+inferred. The following is thus equivalent:
 
-..doctest
+.. doctest::
+
+
   >>> f = blaze.array([ 1, 2, 3], dshape='float32')
   >>> f
   array([ 1.,  2.,  3.],
         dshape='3, float32')
 
 Blaze also supports arrays to be made persistent. This can be achieved
-by adding the storage keyword parameter to an array constructor::
+by adding the storage keyword parameter to an array constructor:
 
-..doctest
+.. doctest::
+
   >>> g = blaze.array([ 1, 2, 3], dshape='float32', storage=blaze.Storage('blz://myarray.blz'))
   >>> g
   array([ 1.,  2.,  3.],
@@ -118,9 +124,10 @@ by adding the storage keyword parameter to an array constructor::
 You can use the persistent array as if it was an in-memory
 array. However, it is persistent and it will survive your python
 session. Later you can gain a reference to the array, even from a
-different python session by name, using the `open` function::
+different python session by name, using the `open` function:
 
-..doctest
+.. doctest::
+
   >>> f = blaze.open(blaze.Storage('blz://myarray.blz'))
   >>> f
   array([ 1.,  2.,  3.],
@@ -133,18 +140,20 @@ allocated to store that array, even when you exit your python
 session.
 
 A persistent array can be enlarged anytime by using the `blaze.append()`
-function, e.g.::
+function, e.g.
 
-..doctest
+.. doctest::
+
   >>> blaze.append(g, [4,5,6])
   >>> g
   array([ 1.,  2.,  3.,  4.,  5.,  6.],
         dshape='6, float32')
 
 If you are done with the persistent array and want to free
-its resources, you can just 'drop' it::
+its resources, you can just 'drop' it:
 
-..doctest
+.. doctest::
+
   >>> f = blaze.drop(blaze.Storage('blz://myarray.blz'))
 
 After dropping a persistent array this way, any 'open' version you may
@@ -160,31 +169,33 @@ Performing basic computations
 
 Performing computations in blaze is a 2 step process. First, you just
 use expressions to build a *deferred* array. A *deferred* array,
-instead of holding the result, knows how to build that result::
+instead of holding the result, knows how to build that result:
 
-..doctest
+.. doctest::
+
   >>> a = blaze.array([ 1, 2, 3])
   >>> a.deferred
   False
 
-::
 
-..doctest
+.. doctest::
+
   >>> b = blaze.array([ 4, 5, 6])
   >>> b.deferred
   False
 
-::
 
-..doctest
+.. doctest::
+
   >>> r = a+b
   >>> r.deferred
   True
 
 In order to obtain the results, just call the eval function with the
-*deferred* array::
+*deferred* array:
 
-..doctest
+.. doctest::
+
   >>> result = blaze.eval(r)
   >>> result
   array([5, 7, 9],
@@ -202,9 +213,10 @@ Also, having an explicit evaluation method gives us a chance to
 specify a few parameters telling how the resulting array should be
 built. As can be seen in the array creation tutorial, an array can be
 made in-memory, compressed in-memory or it can even be backed on the
-file-system. We can eval directly to a persistent array::
+file-system. We can eval directly to a persistent array:
 
-..doctest
+.. doctest::
+
   >>> result = blaze.eval(r, storage=blaze.Storage('blz://res.blz'))
 
 In this sample we have used two small in-memory arrays to illustrate

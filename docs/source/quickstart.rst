@@ -4,13 +4,13 @@ Quickstart
 Blaze Arrays
 ~~~~~~~~~~~~
 
-::
+.. doctest::
 
     >>> from blaze import array, dshape
     >>> ds = dshape('2, 2, int32')
     >>> a = array([[1,2],[3,4]], ds)
 
-::
+.. doctest::
 
     >>> a
     array([[1, 2],
@@ -21,7 +21,7 @@ Blaze Arrays
 Disk Backed Array
 ~~~~~~~~~~~~~~~~~
 
-::
+.. doctest::
 
     >>> from blaze import array, dshape, Storage
     >>> p = Storage('blz://foo.blz')
@@ -29,33 +29,34 @@ Disk Backed Array
     >>> a = array([[1,2],[3,4]], ds, storage=p)
 
 
-::
+.. doctest::
 
     >>> a
     array([[1, 2],
            [3, 4]],
-           dshape='2, 2, int32')
+          dshape='2, 2, int32')
 
-::
+
+.. doctest::
 
     >>> from blaze import open, drop, Storage
     >>> open(Storage('blz://foo.blz'))
     array([[1, 2],
            [3, 4]],
-           dshape='2, 2, int32')
-
+          dshape='2, 2, int32')
     >>> drop(Storage('blz://foo.blz'))
     
 
 Iterators
 ~~~~~~~~~
 
-::
+
+.. doctest::
 
     >>> alst = [1,2,3]
     >>> array(alst.__iter__(), dshape='3, int32')
-    array([ 1,  2,  3],
-      dshape='3, int32')
+    array([1, 2, 3],
+          dshape='3, int32')
 
 
 
@@ -66,5 +67,5 @@ Iterators
 .. Top level functions
 .. ~~~~~~~~~~~~~~~~~~~
 
-.. .. automodule:: blaze.toplevel
+.. .. automodule blaze.toplevel
 ..    :members:
