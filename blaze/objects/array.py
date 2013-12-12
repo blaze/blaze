@@ -1,19 +1,19 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 # This file defines the Concrete Array --- a leaf node in the expression graph
 #
 # A concrete array is constructed from a Data Descriptor Object which handles the
 #  indexing and basic interpretation of bytes
 #
 
-from .datashape import dshape, coretypes as T
-from .io import (IDataDescriptor,
+from ..datashape import dshape, coretypes as T
+from ..io import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor,
                              DeferredDescriptor)
-from .io import _printing
+from ..io import _printing
 from blaze.compute.expr import dump
 from blaze.compute.ops import ufuncs
-from .py2help import exec_
+from ..py2help import exec_
 
 # An Array contains:
 #   DataDescriptor

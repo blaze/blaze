@@ -17,8 +17,8 @@ numbalogger.setLevel(logging.WARNING)
 from . import datashape, catalog
 from . import compute, io
 from .datashape import dshape, dshapes, parser
-from .array import Array
-from .constructors import array, empty, ones, zeros
+from .objects.array import Array
+from .objects.constructors import array, empty, ones, zeros
 from .compute.function import function, elementwise, BlazeFunc
 from .compute.strategy import strategy, current_strategy, set_strategy
 from .compute.eval import eval, append
