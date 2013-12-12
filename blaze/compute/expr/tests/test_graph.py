@@ -1,7 +1,7 @@
 import unittest
 
 from blaze import dshape, array
-from blaze.ops.ufuncs import add, mul
+from blaze.compute.ops.ufuncs import add, mul
 
 from dynd import nd, ndt
 

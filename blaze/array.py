@@ -12,7 +12,7 @@ from .datadescriptor import (IDataDescriptor,
                              DeferredDescriptor)
 from . import _printing
 from blaze.compute.expr import dump
-from blaze.ops import ufuncs
+from blaze.compute.ops import ufuncs
 from .py2help import exec_
 
 # An Array contains:

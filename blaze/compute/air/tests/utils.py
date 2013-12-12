@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import blaze
 from blaze import dshape
-from blaze.ops.ufuncs import add, mul
+from blaze.compute.ops.ufuncs import add, mul
 from blaze.compute.air import from_expr, ExecutionContext
 
 #------------------------------------------------------------------------

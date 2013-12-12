@@ -5,7 +5,7 @@ import unittest
 
 import blaze
 from blaze import array, dshape
-from blaze.ops.ufuncs import add, mul
+from blaze.compute.ops.ufuncs import add, mul
 
 import numpy as np
 
