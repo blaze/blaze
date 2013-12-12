@@ -12,7 +12,7 @@ import blaze
 from blaze.scidb import AFL
 
 from .error import SciDBError, InterfaceError
-from .query import execute_query
+from .query import execute_query, temp_name, Query
 from .datadesc import SciDBDataDesc
 
 #------------------------------------------------------------------------
@@ -39,11 +39,31 @@ def interpret(func, env, args, persist=False, **kwds):
     # Assemble query
     env = {'interp.handlers' : handlers}
     query = interp.run(func, env, None, args=inputs)
-
-    # Execute query
     [conn] = set(conns)
-    result = execute_query(conn, query, persist)
+
+    code = []
+    cleanup = []
+    query.generate_code(code, cleanup, set())
+    expr = query.result()
+
+    result = _execute(conn, code, cleanup, expr, persist)
     return blaze.array(SciDBDataDesc(dshape, result, conn))
+
+
+def _execute(conn, code, cleanup, expr, persist):
+    if code:
+        for stmt in code:
+            execute_query(conn, stmt, persist=False)
+
+    temp = temp_name()
+    query = "store({expr}, {temp})".format(expr=expr, temp=temp)
+    execute_query(conn, query, persist)
+
+    if cleanup:
+        for stmt in cleanup:
+            execute_query(conn, stmt, persist=False)
+
+    return Query(temp, args=(), kwds={})
 
 #------------------------------------------------------------------------
 # Handlers

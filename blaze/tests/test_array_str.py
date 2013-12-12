@@ -41,5 +41,20 @@ class TestArrayStr(unittest.TestCase):
         self.assertEqual(str(a),
             '[[        1         2         3]\n [        4         5]]')
 
+    def test_str_array(self):
+        # Basically check that it doesn't raise an exception to
+        # get the string
+        a = blaze.array(['this', 'is', 'a', 'test'])
+        self.assertTrue(str(a) != '')
+        self.assertTrue(repr(a) != '')
+
+    def test_struct_array(self):
+        # Basically check that it doesn't raise an exception to
+        # get the string
+        a = blaze.array([(1, 2), (3, 4), (5, 6)],
+                dshape='{x: int32; y: float64}')
+        self.assertTrue(str(a) != '')
+        self.assertTrue(repr(a) != '')
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

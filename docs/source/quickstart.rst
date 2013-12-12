@@ -1,17 +1,16 @@
-===========
 Quickstart
 ===========
 
 Blaze Arrays
 ~~~~~~~~~~~~
 
-::
+.. doctest::
 
     >>> from blaze import array, dshape
     >>> ds = dshape('2, 2, int32')
     >>> a = array([[1,2],[3,4]], ds)
 
-::
+.. doctest::
 
     >>> a
     array([[1, 2],
@@ -22,66 +21,43 @@ Blaze Arrays
 Disk Backed Array
 ~~~~~~~~~~~~~~~~~
 
-::
+.. doctest::
 
     >>> from blaze import array, dshape, Storage
-    >>> p = Storage('foo.blz')
+    >>> p = Storage('blz://foo.blz')
     >>> ds = dshape('2, 2, int32')
     >>> a = array([[1,2],[3,4]], ds, storage=p)
 
 
-::
+.. doctest::
 
     >>> a
     array([[1, 2],
            [3, 4]],
-           dshape='2, 2, int32')
+          dshape='2, 2, int32')
 
-::
+
+.. doctest::
 
     >>> from blaze import open, drop, Storage
-    >>> open(Storage('foo.blz'))
+    >>> open(Storage('blz://foo.blz'))
     array([[1, 2],
            [3, 4]],
-           dshape='2, 2, int32')
-
-    >>> drop(Storage('foo.blz'))
+          dshape='2, 2, int32')
+    >>> drop(Storage('blz://foo.blz'))
     
 
 Iterators
 ~~~~~~~~~
 
-::
 
-    from blaze import fromiter, params
-    a = fromiter(xrange(10), 'x, float64', params=params(clevel=5))
+.. doctest::
 
+    >>> alst = [1,2,3]
+    >>> array(alst.__iter__(), dshape='3, int32')
+    array([1, 2, 3],
+          dshape='3, int32')
 
-Custom DShapes
-~~~~~~~~~~~~~~
-
-::
-
-    # FIXME: delete, or tweak?
-    from blaze import Table, RecordDecl, derived
-    from blaze import int32, string
-
-    class CustomStock(RecordDecl):
-        name   = string
-        max    = int32
-        min    = int32
-
-        @derived
-        def mid(self):
-            return (self.min + self.max)/2
-
-
-::
-
-    >>> CustomStock
-    {name:string, max: int32, min: int32, mid: int32}
-
-    >>> a = Table([('GOOG', 120, 153)], CustomStock)
 
 
 .. XXX: Added a dedicated toplevel page
@@ -91,5 +67,5 @@ Custom DShapes
 .. Top level functions
 .. ~~~~~~~~~~~~~~~~~~~
 
-.. .. automodule:: blaze.toplevel
+.. .. automodule blaze.toplevel
 ..    :members:

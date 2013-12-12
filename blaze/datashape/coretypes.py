@@ -485,8 +485,10 @@ class CType(Unit):
         """
         From Numpy dtype.
 
+        >>> from blaze.datashape import CType
+        >>> from numpy import dtype
         >>> CType.from_numpy_dtype(dtype('int32'))
-        int32
+        ctype("int32")
         """
         return Type._registry[dt.name]
 
@@ -999,8 +1001,9 @@ def to_numpy(ds):
     Downcast a datashape object into a Numpy (shape, dtype) tuple if
     possible.
 
+    >>> from blaze.datashape import dshape, to_numpy
     >>> to_numpy(dshape('5, 5, int32'))
-    (5,5), dtype('int32')
+    ((5, 5), dtype('int32'))
     """
 
     if isinstance(ds, CType):
@@ -1040,8 +1043,10 @@ def from_numpy(shape, dt):
     """
     Upcast a (shape, dtype) tuple if possible.
 
+    >>> from blaze.datashape import from_numpy
+    >>> from numpy import dtype
     >>> from_numpy((5,5), dtype('int32'))
-    dshape('5, 5, int32')
+    dshape("5, 5, int32")
     """
     dtype = np.dtype(dt)
 

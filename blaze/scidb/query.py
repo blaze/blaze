@@ -7,10 +7,15 @@ arrays or not.
 """
 
 from __future__ import print_function, division, absolute_import
+import uuid
+from itertools import chain
 
 #------------------------------------------------------------------------
 # Query Interface
 #------------------------------------------------------------------------
+
+def temp_name():
+    return 'arr_' + str(uuid.uuid4()).replace("-", "_")
 
 class Query(object):
     """
@@ -30,45 +35,60 @@ class Query(object):
     E.g. consider function `f(a) = a * a`. Now f(f(f(a))) has `a` 8 times.
     """
 
-    def __init__(self, pattern, args, interpolate=str.format):
+    temp_name = None
+
+    def __init__(self, pattern, args, kwds, interpolate=str.format):
         self.pattern = pattern
         self.args = args
+        self.kwds = kwds
         self.interpolate = interpolate
         self.uses = []
 
-    def generate_code(self, code, cleanup):
+        for arg in chain(self.args, self.kwds.values()):
+            if isinstance(arg, Query):
+                arg.uses.append(self)
+
+    def _result(self):
+        """
+        Format the expression.
+        """
+        return self.interpolate(self.pattern, *self.args, **self.kwds)
+
+    def generate_code(self, code, cleanup, seen):
         """
         Generate a query to produce a temporary array for the expression.
         The temporary array can be referenced multiple times.
         """
+        if self in seen:
+            return
+        seen.add(self)
+
+        for arg in chain(self.args, self.kwds.values()):
+            if isinstance(arg, Query):
+                arg.generate_code(code, cleanup, seen)
+
+        if len(self.uses) > 1:
+            self.temp_name = temp_name()
+            code.append("store({expr}, {temp})".format(expr=self._result(),
+                                                       temp=self.temp_name))
+            cleanup.append("remove({temp})".format(temp=self.temp_name))
 
     def result(self):
         """
         The result in the AFL expression we are building.
         """
-        return self.interpolate(self.pattern, *self.args)
+        if len(self.uses) > 1:
+            return self.temp_name
+        return self._result()
 
     def __str__(self):
+        if self.temp_name:
+            return self.temp_name
         return self.result()
 
 
-class QueryTemp(Query):
-    """
-    Query that assigns itself to a temporary array for multiple use. In an
-    AFL expression, this constitutes the temporary array name.
-    """
-
-    def generate_code(self, code, cleanup):
-        # TODO: implement
-        code.emit(self.expr)
-        self.temp_name = "my_temp_array"
-
-    def result(self):
-        return self.temp_name
-
-
-def qformat(s, *args):
-    return Query(s, args)
+def qformat(s, *args, **kwds):
+    return Query(s, args, kwds)
 
 #------------------------------------------------------------------------
 # Query Execution
