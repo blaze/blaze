@@ -161,7 +161,7 @@ class CSVDataDescriptor(IDataDescriptor):
         self.csvfile.seek(0, 2)  # go to the end of the file
         values = nd.array(row, dtype=self.schema)  # validate row
         writer = csv.writer(self.csvfile, dialect=self.dialect)
-        writer.writerow([unicode(v) for v in values])
+        writer.writerow([v.encode('utf8') for v in values])
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
