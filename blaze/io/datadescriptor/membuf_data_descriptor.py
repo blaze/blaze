@@ -5,8 +5,8 @@ import sys
 import ctypes
 from dynd import nd, ndt, _lowlevel
 
-from .. import datashape
-from ..datashape import dshape, DataShape
+from ... import datashape
+from ...datashape import dshape, DataShape
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 def data_descriptor_from_ctypes(cdata, writable):

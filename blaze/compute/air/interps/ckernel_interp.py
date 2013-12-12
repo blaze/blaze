@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 import operator
 import blaze
-from blaze.datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
+from blaze.io import DyNDDataDescriptor, BLZDataDescriptor
 from ..pipeline import run_pipeline
 from ..passes import ckernel_impls, ckernel_lift, allocation
 

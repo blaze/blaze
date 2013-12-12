@@ -4,7 +4,7 @@ import contextlib
 import ctypes
 
 from .data_descriptor import IDataDescriptor
-from .. import datashape
+from ... import datashape
 import numpy as np
 from dynd import nd, ndt
 from blaze.io import blz

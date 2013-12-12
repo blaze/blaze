@@ -13,11 +13,11 @@ from __future__ import absolute_import
 import inspect
 
 from .array import Array
-from .datadescriptor import (IDataDescriptor,
+from .io import (IDataDescriptor,
                 DyNDDataDescriptor, BLZDataDescriptor)
 from .datashape import to_numpy, to_numpy_dtype
 from . import datashape
-from .storage import Storage
+from .io.storage import Storage
 from .py2help import basestring
 
 from dynd import nd, ndt

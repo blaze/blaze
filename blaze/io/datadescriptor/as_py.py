@@ -19,6 +19,6 @@ def dd_as_py(dd):
         return [dd_as_py(child_dd) for child_dd in dd]
 
     if not dd.is_concrete:
-        from .. import Array, eval
+        from blaze import Array, eval
         dd = eval(Array(dd))._data
     return nd.as_py(dd.dynd_arr())

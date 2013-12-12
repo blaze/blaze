@@ -14,12 +14,12 @@ from __future__ import absolute_import
 #
 # - dropping the contents of a given URI.
 
-from .datashape import to_numpy, to_numpy_dtype
-from .py2help import urlparse
-from .io import blz
+from ..datashape import to_numpy, to_numpy_dtype
+from ..py2help import urlparse
+from . import blz
 from .datadescriptor import (BLZDataDescriptor,
                              dd_as_py)
-from .array import Array
+from ..array import Array
 
 # ----------------------------------------------------------------------
 # Some helper functions to workaround quirks

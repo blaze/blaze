@@ -6,7 +6,7 @@ from __future__ import absolute_import
 #
 
 from .datashape import dshape, coretypes as T
-from .datadescriptor import (IDataDescriptor,
+from .io import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor,
                              DeferredDescriptor)

@@ -26,7 +26,7 @@ from ... import datashape
 from ...datashape import (to_numpy as _internal_to_numpy,
                          to_numpy_dtype, NotNumpyCompatible,
                          Fixed, Var)
-from ...datadescriptor import IDataDescriptor, dd_as_py
+from ..datadescriptor import IDataDescriptor, dd_as_py
 
 # These are undesired dependencies:
 from numpy import ravel, maximum, minimum, absolute, array
