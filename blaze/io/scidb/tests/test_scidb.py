@@ -3,11 +3,15 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from blaze import dshape, add, mul, eval
-from blaze.scidb import connect, empty, zeros, ones
-from blaze.scidb.tests.mock import MockedConn
+from blaze import dshape, add, mul, eval, py2help
+from blaze.io.scidb import connect, empty, zeros, ones
+from blaze.io.scidb.tests.mock import MockedConn
 
-from scidbpy import interface, SciDBQueryError, SciDBArray
+try:
+    import scidbpy
+    from scidbpy import interface, SciDBQueryError, SciDBArray
+except ImportError:
+    scidbpy = None
 
 ds = dshape('10, 10, float64')
 
@@ -36,6 +40,7 @@ class TestSciDB(unittest.TestCase):
         self.assertIn("*", query)
         self.assertIn("build", query)
 
+    @py2help.skipIf(scidbpy is None, 'scidbpy is not installed')
     def test_query_exec(self):
         print("establishing connection...")
         conn = interface.SciDBShimInterface('http://192.168.56.101:8080/')

@@ -10,5 +10,5 @@ from . import scidb_interp
 from . import ufuncs
 
 # Register scidb AIR interpreter
-from blaze.air import interps
+from blaze.compute.air import interps
 interps.register_interp('scidb', scidb_interp)

@@ -6,10 +6,10 @@ SciDB implementations element-wise ufuncs.
 
 from __future__ import print_function, division, absolute_import
 
-from blaze.function import function, kernel
+from blaze.compute.function import function, kernel
 from blaze.datashape import typesets, datetime64
-from blaze.ops import ufuncs
-from blaze.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
+from blaze.compute.ops import ufuncs
+from blaze.compute.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
                               eq, ne, ge, gt, le, lt,
                               logical_and, logical_or, logical_not, logical_xor,
                               bitwise_and, bitwise_or, bitwise_xor)

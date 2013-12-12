@@ -2,14 +2,14 @@ import flask
 import sys
 import os
 from flask import request, Response
-from ..catalog.array_provider import json_array_provider
+from blaze.catalog.array_provider import json_array_provider
 from datashape_html import render_datashape
 from dynd import nd, ndt
 from compute_session import compute_session
-from .. import datashape
-from ..catalog.blaze_url import split_array_base, add_indexers_to_url, \
+from blaze import datashape
+from blaze.catalog.blaze_url import split_array_base, add_indexers_to_url, \
      slice_as_string, index_tuple_as_string
-from ..py2help import _inttypes, _strtypes
+from blaze.py2help import _inttypes, _strtypes
 
 app = flask.Flask('blaze.server')
 app.sessions = {}

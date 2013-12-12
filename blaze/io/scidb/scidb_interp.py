@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 from pykit.ir import interp
 
 import blaze
-from blaze.scidb import AFL
+from blaze.io.scidb import AFL
 
 from .error import SciDBError, InterfaceError
 from .query import execute_query, temp_name, Query

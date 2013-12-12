@@ -1,4 +1,4 @@
-from ..datashape import DataShape, Record, Fixed, Var, CType, String, JSON
+from blaze.datashape import DataShape, Record, Fixed, Var, CType, String, JSON
 #from blaze_server_config import jinja_env
 from jinja2 import Template
 

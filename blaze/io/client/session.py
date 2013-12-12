@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from requests import create_remote_session, close_remote_session, \
+from __future__ import absolute_import
+from .requests import create_remote_session, close_remote_session, \
         add_computed_fields, make_computed_fields, sort, groupby
-from rarray import rarray
+from .rarray import rarray
 
 class session:
     def __init__(self, root_url):
@@ -28,11 +29,11 @@ class session:
     def add_computed_fields(self, arr, fields, rm_fields=[], fnname=None):
         """
         Adds one or more new fields to a struct array.
-        
+
         Each field_expr in 'fields' is a string/ast fragment
         which is called using eval, with the input fields
         in the locals and numpy/scipy in the globals.
-    
+
         arr : rarray
             A remote array on the server.
         fields : list of (field_name, field_type, field_expr)
@@ -56,7 +57,7 @@ class session:
         If replace_undim is positive, that many uniform dimensions
         are provided into the field expressions, so the
         result has fewer dimensions.
-        
+
         arr : rarray
             A remote array on the server.
         replace_undim : integer
@@ -83,12 +84,12 @@ class session:
     def groupby(self, arr, fields):
         """
         Applies a groupby to a struct array based on selected fields.
-        
+
         arr : rarray
             A remote array on the server.
         fields : list of field names
             These are the fields which are used for grouping.
-        
+
         Returns a tuple of the groupby result and the groups.
         """
         j = groupby(self.session_url, arr.url, fields)

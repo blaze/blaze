@@ -1,5 +1,5 @@
 import sys, os
-from blaze.server.app import app
+from blaze.io.server.app import app
 from blaze.catalog.array_provider import json_array_provider
 
 if len(sys.argv) > 1:

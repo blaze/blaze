@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 import urllib, urllib2, json
 
 def get_remote_datashape(url):

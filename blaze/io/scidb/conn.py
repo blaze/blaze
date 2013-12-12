@@ -8,8 +8,6 @@ TODO: instantiate this stuff from the catalog?
 
 from __future__ import print_function, division, absolute_import
 
-from scidbpy import interface
-
 #------------------------------------------------------------------------
 # Connect
 #------------------------------------------------------------------------
@@ -31,4 +29,5 @@ class SciDBConn(object):
 
 def connect(uri):
     """Connect to a SciDB database"""
+    from scidbpy import interface
     return SciDBConn(interface.SciDBShimInterface(uri))

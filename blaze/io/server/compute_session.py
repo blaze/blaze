@@ -1,9 +1,9 @@
 import json
-from ..catalog.blaze_url import split_array_base
+from blaze.catalog.blaze_url import split_array_base
 import dynd
 from dynd import nd, ndt
 from dynd.nd import as_numpy
-from ..constructors import array
+from blaze import array
 
 class compute_session:
     def __init__(self, array_provider, base_url, array_name):

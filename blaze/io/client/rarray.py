@@ -2,9 +2,9 @@
 __all__ = ['rarray']
 
 import requests
-from ..catalog.blaze_url import add_indexers_to_url
+from blaze.catalog.blaze_url import add_indexers_to_url
 from dynd import nd, ndt
-from ..constructors import array
+from blaze.constructors import array
 
 class rarray:
     def __init__(self, url, dshape=None):

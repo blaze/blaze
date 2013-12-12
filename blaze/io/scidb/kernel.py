@@ -5,7 +5,7 @@ Create scidb kernel implementations.
 """
 
 from __future__ import print_function, division, absolute_import
-from blaze.function import function, kernel, elementwise
+from blaze.compute.function import function, kernel, elementwise
 
 AFL = 'AFL'
 AQL = 'AQL'
