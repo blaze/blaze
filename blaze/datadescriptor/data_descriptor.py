@@ -7,7 +7,7 @@ import ctypes
 import contextlib
 
 from blaze.error import StreamingDimensionError
-from blaze.strategy import current_strategy
+from blaze.compute.strategy import current_strategy
 
 class IDataDescriptor:
     """

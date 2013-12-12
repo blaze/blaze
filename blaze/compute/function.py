@@ -25,9 +25,9 @@ from itertools import chain
 
 import blaze
 from blaze.datashape import coretypes as T, dshape
-from blaze.overloading import overload, Dispatcher, match_by_weight, best_match
+from .overloading import overload, Dispatcher, match_by_weight, best_match
 from blaze.datadescriptor import DeferredDescriptor
-from blaze.compute.expr.context import merge
+from .expr.context import merge
 from blaze.py2help import basestring, dict_iteritems
 
 #------------------------------------------------------------------------
@@ -160,7 +160,7 @@ def apply_function(blaze_func, *args, **kwargs):
 
     Returns: a Deferred node representation the delayed computation
     """
-    from .compute.expr import construct
+    from .expr import construct
 
     # -------------------------------------------------
     # Merge input contexts

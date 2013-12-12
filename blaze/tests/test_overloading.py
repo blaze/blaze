@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from blaze import error
-from blaze.overloading import best_match, overload
+from blaze.compute.overloading import best_match, overload
 from blaze import dshape
 from blaze.datashape import unify, unify_simple, dshapes
 

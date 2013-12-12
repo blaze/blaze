@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 import blaze
-from blaze.function import function, kernel
+from blaze.compute.function import function, kernel
 from blaze import dshape, array
 from dynd import nd, ndt, _lowlevel
 import numpy as np

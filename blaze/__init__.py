@@ -18,9 +18,9 @@ from . import datashape, datadescriptor, catalog
 from . import compute
 from .datashape import dshape, dshapes, parser
 from .array import Array
-from .function import function, elementwise, BlazeFunc
 from .constructors import array, empty, ones, zeros
-from .strategy import strategy, current_strategy, set_strategy
+from .compute.function import function, elementwise, BlazeFunc
+from .compute.strategy import strategy, current_strategy, set_strategy
 from .compute.eval import eval, append
 from .storage import open, drop, Storage
 from .compute.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,

@@ -10,7 +10,7 @@ try:
 except ImportError:
     import builtins
 
-from blaze.function import jit_elementwise
+from ..function import jit_elementwise
 
 @jit_elementwise('a -> a -> a')
 def add(a, b):
