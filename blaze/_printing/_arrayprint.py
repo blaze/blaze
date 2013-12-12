@@ -581,15 +581,8 @@ class FloatFormat(object):
         self.exp_format = False
         self.large_exponent = False
         self.max_str_len = 0
-        try:
+        if data.dtype.kind in ['f', 'i', 'u']:
             self.fillFormat(data)
-        except (TypeError, NotImplementedError) as e:
-            # If reduce(data) fails, this instance will not be called, just
-            # instantiated in formatdict. This is failing presently
-            # for dynd types, for example.
-            print("exception raised in fillFormat: %s" % (e))
-            # raise
-            pass
 
     def fillFormat(self, data):
         import numpy.core.numeric as _nc
