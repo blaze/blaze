@@ -34,7 +34,7 @@ import numpy.core.numerictypes as _nt
 
 import inspect
 
-# debug help
+
 def _dump_data_info(x, ident=None):
     ident = (ident if ident is not None
              else inspect.currentframe().f_back.f_lineno)
@@ -48,20 +48,24 @@ def _dump_data_info(x, ident=None):
     print('-> %s: %s: %s' % (ident, subclass, repr(x)))
 
 
-def product(x, y): return x*y
+def product(x, y):
+    return x*y
 
-# hacks to remove when isnan/isinf are available for data descriptors
+
 def isnan(x):
+    # hacks to remove when isnan/isinf are available for data descriptors
     if isinstance(x, IDataDescriptor):
         return _um.isnan(dd_as_py(x))
     else:
         return _um.isnan(x)
+
 
 def isinf(x):
     if isinstance(x, IDataDescriptor):
         return _um.isinf(dd_as_py(x))
     else:
         return _um.isinf(x)
+
 
 def not_equal(x, val):
     if isinstance(x, IDataDescriptor):
@@ -84,6 +88,7 @@ _formatter = None  # formatting function for array elements
 
 if sys.version_info[0] >= 3:
     from functools import reduce
+
 
 def set_printoptions(precision=None, threshold=None, edgeitems=None,
                      linewidth=None, suppress=None,
@@ -187,9 +192,10 @@ def set_printoptions(precision=None, threshold=None, edgeitems=None,
     ... suppress=False, threshold=1000, formatter=None)
     """
 
-    global _summaryThreshold, _summaryEdgeItems, _float_output_precision, \
-           _line_width, _float_output_suppress_small, _nan_str, _inf_str, \
-           _formatter
+    global _summaryThreshold, _summaryEdgeItems, _float_output_precision
+    global _line_width, _float_output_suppress_small, _nan_str, _inf_str
+    global _formatter
+
     if linewidth is not None:
         _line_width = linewidth
     if threshold is not None:
@@ -205,6 +211,7 @@ def set_printoptions(precision=None, threshold=None, edgeitems=None,
     if infstr is not None:
         _inf_str = infstr
     _formatter = formatter
+
 
 def get_printoptions():
     """
@@ -241,16 +248,17 @@ def get_printoptions():
              formatter=_formatter)
     return d
 
+
 def _extract_summary(a):
     return l
+
 
 def _leading_trailing(a):
     import numpy.core.numeric as _nc
     if len(a.dshape.shape) == 1:
         if len(a) > 2*_summaryEdgeItems:
             b = [dd_as_py(a[i]) for i in range(_summaryEdgeItems)]
-            b.extend([dd_as_py(a[i]) for i in range(-_summaryEdgeItems,0)])
-
+            b.extend([dd_as_py(a[i]) for i in range(-_summaryEdgeItems, 0)])
         else:
             b = dd_as_py(a)
     else:
@@ -262,6 +270,7 @@ def _leading_trailing(a):
         else:
             b = [_leading_trailing(a[i]) for i in range(0, len(a))]
     return b
+
 
 def _boolFormatter(x):
     if x:
@@ -319,8 +328,8 @@ def _choose_format(formatdict, ds):
     return format_function
 
 
-def _array2string(a, shape, dtype, max_line_width, precision, suppress_small, separator=' ',
-                  prefix="", formatter=None):
+def _array2string(a, shape, dtype, max_line_width, precision,
+                  suppress_small, separator=' ', prefix="", formatter=None):
 
     if any(isinstance(s, Var) for s in shape):
         dim_size = -1
@@ -346,13 +355,13 @@ def _array2string(a, shape, dtype, max_line_width, precision, suppress_small, se
         summary_insert = ""
         data = ravel(np.array(dd_as_py(a)))
 
-    formatdict = {'bool' : _boolFormatter,
-                  'int' : IntegerFormat(data),
-                  'float' : FloatFormat(data, precision, suppress_small),
-                  'complexfloat' : ComplexFormat(data, precision,
-                                                 suppress_small),
-                  'numpystr' : repr_format,
-                  'str' : str}
+    formatdict = {'bool': _boolFormatter,
+                  'int': IntegerFormat(data),
+                  'float': FloatFormat(data, precision, suppress_small),
+                  'complexfloat': ComplexFormat(data, precision,
+                                                suppress_small),
+                  'numpystr': repr_format,
+                  'str': str}
 
     if formatter is not None:
         _apply_formatter(formatdict, formatter)
@@ -371,6 +380,7 @@ def _array2string(a, shape, dtype, max_line_width, precision, suppress_small, se
                        next_line_prefix, separator,
                        _summaryEdgeItems, summary_insert).rstrip()
     return lst
+
 
 def _convert_arrays(obj):
     import numpy.core.numeric as _nc
@@ -475,14 +485,16 @@ def array2string(a, max_line_width=None, precision=None,
     shape, dtype = (a.dshape[:-1], a.dshape[-1])
     shape = tuple(int(x) if isinstance(x, Fixed) else x for x in shape)
 
-    if all(not isinstance(x, Var) for x in shape) and reduce(product, shape, 1) == 0:
+    if (all(not isinstance(x, Var) for x in shape) and
+            reduce(product, shape, 1) == 0):
         # treat as a null array if any of shape elements == 0
         lst = "[]"
     else:
         lst = _array2string(a, shape, dtype, max_line_width,
-                        precision, suppress_small,
-                        separator, prefix, formatter=formatter)
+                            precision, suppress_small,
+                            separator, prefix, formatter=formatter)
     return lst
+
 
 def _extendLine(s, line, word, max_line_len, next_line_prefix):
     if len(line.rstrip()) + len(word.rstrip()) >= max_line_len:
@@ -505,8 +517,9 @@ def _formatArray(a, format_function, rank, max_line_len,
         return format_function(dd_as_py(a)).strip()
 
     if summary_insert and 2*edge_items < len(a):
-        leading_items, trailing_items, summary_insert1 = \
-                       edge_items, edge_items, summary_insert
+        leading_items = edge_items
+        trailing_items = edge_items
+        summary_insert1 = summary_insert
     else:
         leading_items, trailing_items, summary_insert1 = 0, len(a), ""
 
@@ -515,14 +528,17 @@ def _formatArray(a, format_function, rank, max_line_len,
         line = next_line_prefix
         for i in xrange(leading_items):
             word = format_function(dd_as_py(a[i])) + separator
-            s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
+            s, line = _extendLine(s, line, word, max_line_len,
+                                  next_line_prefix)
 
         if summary_insert1:
-            s, line = _extendLine(s, line, summary_insert1, max_line_len, next_line_prefix)
+            s, line = _extendLine(s, line, summary_insert1,
+                                  max_line_len, next_line_prefix)
 
         for i in xrange(trailing_items, 1, -1):
             word = format_function(dd_as_py(a[-i])) + separator
-            s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
+            s, line = _extendLine(s, line, word, max_line_len,
+                                  next_line_prefix)
 
         word = format_function(dd_as_py(a[-1]))
         s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
@@ -537,7 +553,7 @@ def _formatArray(a, format_function, rank, max_line_len,
             s += _formatArray(a[i], format_function, rank-1, max_line_len,
                               " " + next_line_prefix, separator, edge_items,
                               summary_insert)
-            s = s.rstrip() + sep.rstrip() + '\n'*max(rank-1,1)
+            s = s.rstrip() + sep.rstrip() + '\n'*max(rank-1, 1)
 
         if summary_insert1:
             s += next_line_prefix + summary_insert1 + "\n"
@@ -548,13 +564,14 @@ def _formatArray(a, format_function, rank, max_line_len,
             s += _formatArray(a[-i], format_function, rank-1, max_line_len,
                               " " + next_line_prefix, separator, edge_items,
                               summary_insert)
-            s = s.rstrip() + sep.rstrip() + '\n'*max(rank-1,1)
+            s = s.rstrip() + sep.rstrip() + '\n'*max(rank-1, 1)
         if leading_items or trailing_items > 1:
             s += next_line_prefix
         s += _formatArray(a[-1], format_function, rank-1, max_line_len,
                           " " + next_line_prefix, separator, edge_items,
                           summary_insert).rstrip()+']\n'
     return s
+
 
 class FloatFormat(object):
     def __init__(self, data, precision, suppress_small, sign=False):
@@ -676,6 +693,8 @@ if sys.version_info >= (3, 0):
 else:
     _MAXINT = sys.maxint
     _MININT = -sys.maxint-1
+
+
 class IntegerFormat(object):
     def __init__(self, data):
         try:
@@ -713,10 +732,11 @@ class ComplexFormat(object):
             i = i + 'j'
         return r + i
 
+
 def _test():
     import blaze
 
-    arr = blaze.array([2,3,4.0])
+    arr = blaze.array([2, 3, 4.0])
     print(arr.dshape)
 
     print(array2string(arr._data))
@@ -725,5 +745,3 @@ def _test():
     print(arr.dshape)
 
     print(array2string(arr._data))
-
-
