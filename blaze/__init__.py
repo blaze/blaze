@@ -14,7 +14,7 @@ numbalogger.setLevel(logging.WARNING)
 
 # build the blaze namespace with selected functions
 
-from . import datashape, bkernel, ckernel
+from . import datashape, bkernel, ckernel, catalog
 from .datashape import dshape, dshapes, parser
 from .array import Array
 from .function import function, elementwise, BlazeFunc
@@ -45,6 +45,12 @@ class complex64(ctypes.Structure):
     _blaze_type_ = datashape.complex64
 
 __version__ = '0.3.0'
+
+# If IPython is already loaded, register the Blaze catalog magic
+import sys
+if 'IPython' in sys.modules:
+    catalog.register_ipy_magic()
+del sys
 
 def print_versions():
     """Print all the versions of software that Blaze relies on."""

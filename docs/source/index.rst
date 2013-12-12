@@ -37,6 +37,7 @@ Index
    install
    overview
    quickstart
+   catalog
    datashape
    datashape-binary
    data_descriptor
