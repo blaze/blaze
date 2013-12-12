@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 from .data_descriptor import IDataDescriptor
 
-from ..bkernel.kernel_tree import find_unique_args, Argument
-
 def blaze_func_iter(bfd, noiter_dims):
     args = bfd.args
     dim_size = 1
@@ -49,6 +47,7 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
 
 
     def _reset_args(self):
+        from blaze.compute.bkernel.kernel_tree import find_unique_args
         unique_args = []
         find_unique_args(self.kerneltree, unique_args)
         self._args = [self.argmap[argument] for argument in unique_args]
@@ -66,6 +65,7 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
 
     @property
     def isfused(self):
+        from blaze.compute.bkernel.kernel_tree import Argument
         return all(isinstance(child, Argument) for child in self.kerneltree.children)
 
     def fuse(self):

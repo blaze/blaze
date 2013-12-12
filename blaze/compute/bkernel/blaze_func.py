@@ -4,9 +4,9 @@ import types
 import re
 from blaze.datashape.typesets import TypeSet, matches_typeset
 
-from ..datashape import (DataShape, from_numba_str, to_numba, broadcastable)
-from ..datadescriptor.blaze_func_descriptor import BlazeFuncDeprecatedDescriptor
-from ..py2help import _strtypes, PY2
+from blaze.datashape import (DataShape, from_numba_str, to_numba, broadcastable)
+from ...datadescriptor.blaze_func_descriptor import BlazeFuncDeprecatedDescriptor
+from blaze.py2help import _strtypes, PY2
 from .. import llvm_array as lla
 from .blaze_kernels import BlazeElementKernel, frompyfunc
 from .kernel_tree import Argument, KernelTree

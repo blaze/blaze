@@ -10,12 +10,12 @@ import collections
 from pykit.ir import interp, visit, transform, Op, FuncArg
 
 import blaze
-from blaze.bkernel import BlazeFuncDeprecated
-from blaze.bkernel.blaze_kernels import frompyfunc, fromctypes, BlazeElementKernel
-from blaze.bkernel.kernel_tree import Argument, KernelTree
+from ...bkernel import BlazeFuncDeprecated
+from ...bkernel.blaze_kernels import frompyfunc, fromctypes, BlazeElementKernel
+from ...bkernel.kernel_tree import Argument, KernelTree
 from blaze.datashape.util import to_numba
 
-from blaze import llvm_array
+from ... import llvm_array
 
 from numba import jit
 

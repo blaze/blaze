@@ -5,7 +5,7 @@ from llvm.core import Type, Function, Module
 from ..llvm_array import (void_type, intp_type,
                 SCALAR, POINTER, array_kinds, check_array,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
-from ..py2help import PY2
+from blaze.py2help import PY2
 
 int32_type = Type.int(32)
 intp_type = Type.int(8*ctypes.sizeof(ctypes.c_void_p))

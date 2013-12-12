@@ -387,7 +387,7 @@ def PointerDshape(object):
     def __init__(self, dshape):
         self.dshape = dshape
 
-from ..llvm_array import SCALAR, POINTER
+from ..compute.llvm_array import SCALAR, POINTER
 
 def from_llvm(typ, argkind=SCALAR):
     """
@@ -395,7 +395,7 @@ def from_llvm(typ, argkind=SCALAR):
 
     argkind is SCALAR, POINTER, or a tuple of (arrkind, nd, el_type) for Arrays
     """
-    from ..llvm_array import check_array
+    from ..compute.llvm_array import check_array
     import llvm.core
 
     kind = typ.kind

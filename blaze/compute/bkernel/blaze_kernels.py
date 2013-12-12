@@ -30,9 +30,9 @@ from ..llvm_array import (void_type, intp_type,
                 SCALAR, POINTER, array_kinds, check_array,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .kernelgen import loop_nest
-from ..py2help import izip, _strtypes, c_ssize_t, PY2
-from ..datashape import Fixed, TypeVar
-from ..datashape.util import to_ctypes, dshape as make_dshape
+from blaze.py2help import izip, _strtypes, c_ssize_t, PY2
+from blaze.datashape import Fixed, TypeVar
+from blaze.datashape.util import to_ctypes, dshape as make_dshape
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
                 map_llvm_to_ctypes)
 from .jit_ckernel import jit_compile_ckernel_deferred
@@ -112,7 +112,7 @@ class BlazeElementKernel(object):
     def _init_dshapes(self, dshapes):
         if dshapes is None:
             # Create dshapes from llvm if none provided
-            from ..datashape.util import from_llvm
+            from ...datashape.util import from_llvm
             ds = [from_llvm(llvm, kind)
                    for llvm, kind in zip(self.argtypes, self.kinds)]
             if self.kinds[-1] == SCALAR:
@@ -280,7 +280,7 @@ def get_eltype(argtype, kind):
 # Currently only works for scalar kernels
 def frompyfunc(pyfunc, signature, dshapes=None):
     import numba
-    from ..datashape.util import from_numba
+    from ...datashape.util import from_numba
     if isinstance(signature, _strtypes):
         jitter = numba.jit(signature)
     elif isinstance(signature, tuple):

@@ -8,7 +8,7 @@ from llvm import LLVMException
 from .. import llvm_array as lla
 from .blaze_kernels import BlazeElementKernel, refresh_name
 from . import blaze_kernels
-from ..py2help import _strtypes
+from blaze.py2help import _strtypes
 
 def letters(source=string.ascii_lowercase):
     k = 0

@@ -10,13 +10,13 @@ import llvm.ee as le
 from llvm.passes import build_pass_managers
 
 from .. import llvm_array as lla
-from ..py2help import izip, _strtypes, c_ssize_t, PY2
+from blaze.py2help import izip, _strtypes, c_ssize_t, PY2
 from ..llvm_array import (void_type, intp_type,
                 array_kinds, check_array,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
                 strided_ckernel_func_type,  map_llvm_to_ctypes)
-from ..ckernel import JITCKernelData, wrap_ckernel_func
+from blaze.ckernel import JITCKernelData, wrap_ckernel_func
 from dynd import nd, ndt, _lowlevel
 
 
