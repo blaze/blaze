@@ -10,7 +10,7 @@ from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor,
                              DeferredDescriptor)
-from . import _printing
+from .io import _printing
 from blaze.compute.expr import dump
 from blaze.compute.ops import ufuncs
 from .py2help import exec_

@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 """Array printing function
 
@@ -6,7 +6,7 @@ from __future__ import print_function
 __all__ = ["array2string", "set_printoptions", "get_printoptions"]
 __docformat__ = 'restructuredtext'
 
-from ..py2help import xrange
+from ...py2help import xrange
 
 #
 # Written by Konrad Hinsen <hinsenk@ere.umontreal.ca>
@@ -22,11 +22,11 @@ import sys
 import numpy.core.umath as _um
 import numpy as np
 
-from .. import datashape
-from ..datashape import (to_numpy as _internal_to_numpy,
+from ... import datashape
+from ...datashape import (to_numpy as _internal_to_numpy,
                          to_numpy_dtype, NotNumpyCompatible,
                          Fixed, Var)
-from ..datadescriptor import IDataDescriptor, dd_as_py
+from ...datadescriptor import IDataDescriptor, dd_as_py
 
 # These are undesired dependencies:
 from numpy import ravel, maximum, minimum, absolute, array
