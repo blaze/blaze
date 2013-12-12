@@ -5,8 +5,8 @@ import unittest
 
 from pykit.ir import opcodes
 from blaze import dshape
-from blaze.air import explicit_coercions
-from blaze.air.tests.utils import make_graph
+from blaze.compute.air import explicit_coercions
+from blaze.compute.air.tests.utils import make_graph
 
 #------------------------------------------------------------------------
 # Tests

@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 from blaze import dshape
-from blaze.air.tests.utils import make_graph
+from blaze.compute.air.tests.utils import make_graph
 
 #------------------------------------------------------------------------
 # Tests

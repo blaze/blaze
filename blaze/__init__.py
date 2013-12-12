@@ -20,7 +20,7 @@ from .array import Array
 from .function import function, elementwise, BlazeFunc
 from .constructors import array, empty, ones, zeros
 from .strategy import strategy, current_strategy, set_strategy
-from .eval import eval, append
+from .compute.eval import eval, append
 from .storage import open, drop, Storage
 from blaze.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
                               eq, ne, ge, gt, le, lt,
