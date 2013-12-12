@@ -11,7 +11,7 @@ from .datadescriptor import (IDataDescriptor,
                              DyNDDataDescriptor,
                              DeferredDescriptor)
 from . import _printing
-from blaze.expr import dump
+from blaze.compute.expr import dump
 from blaze.ops import ufuncs
 from .py2help import exec_
 
