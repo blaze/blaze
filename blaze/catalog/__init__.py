@@ -5,7 +5,7 @@ from .catalog_config import CatalogConfig, load_default_config
 from .catalog_dir import CatalogDir, is_rel_bpath, is_abs_bpath, join_bpath
 from .catalog_arr import load_blaze_array
 
-# Load the default config (creates one if none exists)
+# Load the default config
 config = load_default_config()
 _cwd = '/'
 

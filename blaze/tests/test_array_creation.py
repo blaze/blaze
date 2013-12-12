@@ -1,11 +1,11 @@
 from __future__ import print_function, absolute_import
 
 import blaze
-from blaze.datadescriptor import dd_as_py
+from blaze.io.datadescriptor import dd_as_py
 import numpy as np
 import unittest
 from blaze.tests.common import MayBeUriTest
-from blaze.eval import append
+from blaze import append
 
 class TestEphemeral(unittest.TestCase):
 

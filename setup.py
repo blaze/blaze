@@ -157,11 +157,11 @@ def_macros = [('DEBUG', 0)]
 
 numpy_path = get_numpy_include_dirs()[0]
 
-blosc_path  = 'blaze/blz/include/blosc/'
+blosc_path  = 'blaze/io/blz/include/blosc/'
 
 
 blz_source = [
-    "blaze/blz/blz_ext.pyx"
+    "blaze/io/blz/blz_ext.pyx"
 ]
 
 blz_depends = [
@@ -182,7 +182,7 @@ blosc_depends = [
 
 extensions = [
     Extension(
-        "blaze.blz.blz_ext",
+        "blaze.io.blz.blz_ext",
         include_dirs=[
             blosc_path,
             numpy_path,

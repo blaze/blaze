@@ -14,18 +14,19 @@ numbalogger.setLevel(logging.WARNING)
 
 # build the blaze namespace with selected functions
 
-from . import datashape, bkernel, ckernel, catalog
+from . import datashape, catalog
+from . import compute, io
 from .datashape import dshape, dshapes, parser
 from .array import Array
-from .function import function, elementwise, BlazeFunc
 from .constructors import array, empty, ones, zeros
-from .strategy import strategy, current_strategy, set_strategy
-from .eval import eval, append
-from .storage import open, drop, Storage
-from blaze.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
+from .compute.function import function, elementwise, BlazeFunc
+from .compute.strategy import strategy, current_strategy, set_strategy
+from .compute.eval import eval, append
+from .compute.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
                               eq, ne, ge, gt, le, lt,
                               logical_and, logical_or, logical_not, logical_xor,
                               bitwise_and, bitwise_or, bitwise_xor)
+from .io.storage import open, drop, Storage
 
 
 import ctypes
@@ -57,7 +58,7 @@ def print_versions():
     import sys, platform
     import numpy as np
     import dynd
-    from . import blz
+    from .io import blz
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("NumPy version: %s" % np.__version__)

@@ -1,5 +1,5 @@
 import blaze
-from blaze.datadescriptor import dd_as_py
+from blaze.io.datadescriptor import dd_as_py
 import numpy as np
 import unittest
 from blaze.py2help import skip

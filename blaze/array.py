@@ -6,13 +6,13 @@ from __future__ import absolute_import
 #
 
 from .datashape import dshape, coretypes as T
-from .datadescriptor import (IDataDescriptor,
+from .io import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor,
                              DeferredDescriptor)
-from . import _printing
-from blaze.expr import dump
-from blaze.ops import ufuncs
+from .io import _printing
+from blaze.compute.expr import dump
+from blaze.compute.ops import ufuncs
 from .py2help import exec_
 
 # An Array contains:
