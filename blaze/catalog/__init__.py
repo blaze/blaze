@@ -9,35 +9,57 @@ from .catalog_arr import load_blaze_array
 config = load_default_config()
 _cwd = '/'
 
+def _check_config():
+    if config is None:
+        raise RuntimeError('No catalog is loaded. Use ' +
+                           'blaze.catalog.load_config("path"), or ' +
+                           'blaze.catalog.init_default() to create '
+                           'one with default settings.')
+
 def load_config(cfgfile):
     """Loads a fresh catalog from the specified config file"""
     global config, _cwd
     config = CatalogConfig(cfgfile)
     _cwd = '/'
 
+def init_default():
+    global config, _cwd
+    config = load_default_config(create_default=True)
+    _cwd = '/'
+
 def cd(key):
     """Change the current working directory of the blaze catalog"""
     global _cwd
-    _cwd = join_bpath(_cwd, key)
+    _check_config()
+    newcwd = join_bpath(_cwd, key)
+    if not config.isdir(newcwd):
+        print('No directory %r in the blaze catalog' % newcwd)
+    else:
+        _cwd = newcwd
 
 def cwd():
     """The current working directory of the blaze catalog"""
+    _check_config()
     return _cwd
 
 def ls_dirs(dir=None):
     """A list of the directories in the current working directory"""
+    _check_config()
     return config.ls_dirs(join_bpath(_cwd, dir) if dir else _cwd)
 
 def ls_arrs(dir=None):
     """A list of the arrays in the current working directory"""
+    _check_config()
     return config.ls_arrs(join_bpath(_cwd, dir) if dir else _cwd)
 
 def ls(dir=None):
     """A list of the arrays and directories in the current working directory"""
+    _check_config()
     return config.ls(join_bpath(_cwd, dir) if dir else _cwd)
 
 def get(key):
     """Get an array or directory object from the blaze catalog"""
+    _check_config()
     key = join_bpath(_cwd, key)
     if config.isdir(key):
         return CatalogDir(config, key)
@@ -100,4 +122,4 @@ def register_ipy_magic():
         if config.isarray(key):
             return load_blaze_array(config, key)
         else:
-            raise RuntimeError('Blaze path not found: %r' % key)
+            raise RuntimeError('No array at blaze catalog path: %r' % key)

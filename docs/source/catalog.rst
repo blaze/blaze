@@ -14,7 +14,11 @@ Guided Tour
 By default, when you start Blaze for the first time, an empty catalog
 is created for you as a place to put your data. The default catalog
 is configured at ``~/.blaze/catalog.config``, and it is set to point
-to ``~/Arrays`` as the source of array data.
+to ``~/Arrays`` as the source of array data. This is not created
+automatically by Blaze, but is easy to initialize by running.::
+
+    In [1]: blaze.catalog.init_default()
+
 
 Loading Blaze in IPython
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,8 +32,18 @@ the features. To start, load an IPython prompt, and import Blaze.::
 The first thing to do, since we want to demonstrate our sample catalog,
 is to load that catalog's configuration.::
 
-    In [4]: blaze.catalog.load_config(
-       ...:     r"D:\Develop\blaze\samples\server\sample_arrays.yaml")
+    In [2]: blaze.catalog.load_config(
+       ...:     r"~/blaze/samples/server/sample_arrays.yaml")
+
+To see information about the catalog that is currently loaded,
+simply print out the repr of the catalog configuration object.::
+
+    In [3]: blaze.catalog.config
+    Out[3]: 
+    Blaze Catalog Configuration
+    /path/to/sample_arrays.yaml
+
+    root: /path/to/Arrays
 
 Navigating the Catalog
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -75,14 +89,21 @@ which can be used on the right side of an assignment statement.::
     In [12]: x.dshape
     Out[12]: dshape("52, { lender_id : json; name : json; image : { id : int64; template_id : int64 }; whereabouts : string; country_code : json; uid : string; member_since : string; personal_url : string; occupation : string; loan_because : string; occupational_info : string; loan_count : int64; invitee_count : int64; inviter_id : json }")
 
-Presently, the Blaze printing code has some difficulty with structures
-of this complexity, so you may get an error if you try to print this.
-[TODO: update this text when that is fixed.] We can, however, grab a few
-of these fields, and print them using the underlying DyND to illustrate
-the data.::
-
-    In [15]: x.occupation._data.dynd_arr()
-    Out[15]: nd.array(["International Development Manager", "retired dentist", "", "", "", "internet campaigner", "Engineer", "Nursery Manager", "Web designer", "Technical Assistant", "", "", "", "", "Licenses Optician", "physician", "", "Lic. Optician", "", "", "", "Master", "Politician", "guardian", "", "", "Carpenter", "", "IT", "Art Director", "Nomad", "Student", "Teacher", "IT Network consultant", "Pastry Chef", "Student", "", "Writer and Editor", "Union Construction", "veterinarian", "Architect", "Technical Trainer", "pharmacist / farmaceutico", "Marketing Manager", "teacher", "", "", "", "", "retired", "Sales Director", ""], strided_dim<string>)
+    In [15]: x.occupation
+    Out[15]: 
+    array(
+    [u'International Development Manager', u'retired dentist', u'', u'', u'',
+     u'internet campaigner', u'Engineer', u'Nursery Manager', u'Web designer',
+     u'Technical Assistant', u'', u'', u'', u'', u'Licenses Optician',
+     u'physician', u'', u'Lic. Optician', u'', u'', u'', u'Master',
+     u'Politician', u'guardian', u'', u'', u'Carpenter', u'', u'IT',
+     u'Art Director', u'Nomad', u'Student', u'Teacher',
+     u'IT Network consultant', u'Pastry Chef', u'Student', u'',
+     u'Writer and Editor', u'Union Construction', u'veterinarian',
+     u'Architect', u'Technical Trainer', u'pharmacist / farmaceutico',
+     u'Marketing Manager', u'teacher', u'', u'', u'', u'', u'retired',
+     u'Sales Director', u''],
+          dshape='52, string')
 
 The Array Data Structure
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,7 +112,7 @@ Let's now take a look at what the files on disk look like, backing
 the array we loaded. The ``lenders`` array is described by a file ``lenders.array``,
 as follows.::
 
-    In [17]: print open(r"D:\Develop\blaze\samples\server\arrays\kiva_tiny\lenders.array").read()
+    In [17]: print open(r"~/blaze/samples/server/arrays/kiva_tiny/lenders.array").read()
     type: json
     import: {}
     datashape: |
@@ -121,14 +142,25 @@ in JSON format (``lenders.json`` right beside the ``.array`` file), and
 its datashape is provided using YAML's multi-line string literal syntax.
 
 If we go back up one level to the root of the catalog, we can see another
-array ``dates_vals``, which is in CSV format. Here is how it looks,
-once again using DyND to print the values.::
+array ``dates_vals``, which is in CSV format. Here is how it looks.::
 
     In [18]: bcd ..
     /
 
     In [19]: x = %barr dates_vals
 
-    In [20]: x._data.dynd_arr()
-    Out[20]: nd.array([[2013-01-01, 0], [2013-01-02, 1], [2013-01-03, 2], [2013-01-04, 3], [2013-01-05, 4], [2013-01-06, 5], [2013-01-07, 6], [2013-01-08, 7], [2013-01-09, 8], [2013-01-10, 9], [2013-01-11, 10], [2013-01-12, 11], [2013-01-13, 12], [2013-01-14, 13], [2013-01-15, 14], [2013-01-16, 15], [2013-01-17, 16], [2013-01-18, 17], [2013-01-19, 18], [2013-01-20, 19], [2013-01-21, 20], [2013-01-22, 21], [2013-01-23, 22], [2013-01-24, 23], [2013-01-25, 24], [2013-01-26, 25], [2013-01-27, 26], [2013-01-28, 27], [2013-01-29, 28], [2013-01-30, 29], [2013-01-31, 30], [2013-02-01, 31], [2013-02-02, 32], [2013-02-03, 33], [2013-02-04, 34], [2013-02-05, 35], [2013-02-06, 36], [2013-02-07, 37], [2013-02-08, 38], [2013-02-09, 39], [2013-02-10, 40], [2013-02-11, 41], [2013-02-12, 42], [2013-02-13, 43], [2013-02-14, 44], [2013-02-15, 45], [2013-02-16, 46], [2013-02-17, 47], [2013-02-18, 48], [2013-02-19, 49], [2013-02-20, 50], [2013-02-21, 51], [2013-02-22, 52], [2013-02-23, 53], [2013-02-24, 54], [2013-02-25, 55], [2013-02-26, 56], [2013-02-27, 57], [2013-02-28, 58], [2013-03-01, 59], [2013-03-02, 60], [2013-03-03, 61], [2013-03-04, 62], [2013-03-05, 63], [2013-03-06, 64], [2013-03-07, 65], [2013-03-08, 66], [2013-03-09, 67], [2013-03-10, 68], [2013-03-11, 69], [2013-03-12, 70], [2013-03-13, 71], [2013-03-14, 72]], strided_dim<{data : date; values : int32}>)
+    In [19]: x[:10]
+    Out[19]: 
+    array(
+    [{u'values': 0, u'data': datetime.date(2013, 1, 1)},
+     {u'values': 1, u'data': datetime.date(2013, 1, 2)},
+     {u'values': 2, u'data': datetime.date(2013, 1, 3)},
+     {u'values': 3, u'data': datetime.date(2013, 1, 4)},
+     {u'values': 4, u'data': datetime.date(2013, 1, 5)},
+     {u'values': 5, u'data': datetime.date(2013, 1, 6)},
+     {u'values': 6, u'data': datetime.date(2013, 1, 7)},
+     {u'values': 7, u'data': datetime.date(2013, 1, 8)},
+     {u'values': 8, u'data': datetime.date(2013, 1, 9)},
+     {u'values': 9, u'data': datetime.date(2013, 1, 10)}],
+          dshape='10, { data : date; values : int32 }')
 

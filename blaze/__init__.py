@@ -15,7 +15,6 @@ numbalogger.setLevel(logging.WARNING)
 # build the blaze namespace with selected functions
 
 from . import datashape, bkernel, ckernel, catalog
-root = catalog.get('/')
 from .datashape import dshape, dshapes, parser
 from .array import Array
 from .function import function, elementwise, BlazeFunc

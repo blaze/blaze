@@ -95,14 +95,26 @@ class CatalogConfig(object):
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
     def __repr__(self):
-        return ("Blaze Configuration\n%s\n\nroot: %s"
+        return ("Blaze Catalog Configuration\n%s\n\nroot: %s"
                 % (self.configfile, self.root))
 
-def load_default_config():
+def load_default_config(create_default=False):
     dcf = path.expanduser('~/.blaze/catalog.yaml')
     if not path.exists(dcf):
-        with open(dcf) as f:
-            f.write("### Blaze Catalog Configuration File\n")
-            f.write("root: Arrays\n")
-        os.mkdir(path.expanduser('~/.blaze/Arrays'))
+        if create_default:
+            # If requested explicitly, create a default configuration
+            if not path.exists(path.dirname(dcf)):
+                os.mkdir(path.dirname(dcf))
+            with open(dcf, 'w') as f:
+                f.write("### Blaze Catalog Configuration File\n")
+                f.write("root: Arrays\n")
+            arrdir = path.expanduser('~/.blaze/Arrays')
+            if not path.exists(arrdir):
+                os.mkdir(arrdir)
+        else:
+            return None
+    elif create_default:
+        import warnings
+        warnings.warn("Default catalog configuration already exists",
+                      RuntimeWarning)
     return CatalogConfig(dcf)
