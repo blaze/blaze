@@ -16,7 +16,7 @@ from ..llvm_array import (void_type, intp_type,
                 get_cpp_template, array_type, const_intp, LLArray, orderchar)
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
                 strided_ckernel_func_type,  map_llvm_to_ctypes)
-from blaze.ckernel import JITCKernelData, wrap_ckernel_func
+from ..ckernel import JITCKernelData, wrap_ckernel_func
 from dynd import nd, ndt, _lowlevel
 
 

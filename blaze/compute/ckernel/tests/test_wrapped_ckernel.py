@@ -2,7 +2,7 @@ import unittest
 import ctypes
 import sys
 
-from blaze import ckernel
+from blaze.compute import ckernel
 from blaze.py2help import skipIf
 from dynd import nd, ndt, _lowlevel
 
