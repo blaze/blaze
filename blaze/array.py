@@ -10,7 +10,7 @@ from .datadescriptor import (IDataDescriptor,
                              data_descriptor_from_ctypes,
                              DyNDDataDescriptor,
                              DeferredDescriptor)
-from ._printing import array2string as _printer
+from . import _printing
 from blaze.expr import dump
 from blaze.ops import ufuncs
 from .py2help import exec_
@@ -119,22 +119,10 @@ class Array(object):
                              "element is ambiguous. Use a.any() or a.all()")
 
     def __str__(self):
-        if hasattr(self._data, '_printer'):
-            return self._data._printer()
-        return _printer(self._data)
+        return _printing.array_str(self)
 
     def __repr__(self):
-        pre = 'array('
-        post =  ',\n' + ' '*len(pre) + "dshape='" + str(self.dshape) + "'" + ')'
-        if hasattr(self._data, '_printer'):
-            body = self._data._printer()
-        else:
-            body = _printer(self._data,
-                              separator=', ',
-                              prefix=' '*len(pre))
-
-        return pre + body + post
-
+        return _printing.array_repr(self)
 
 def _named_property(name):
     @property
