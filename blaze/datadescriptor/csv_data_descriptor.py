@@ -160,8 +160,9 @@ class CSVDataDescriptor(IDataDescriptor):
         """Append a row of values (in sequence form)."""
         self.csvfile.seek(0, 2)  # go to the end of the file
         values = nd.array(row, dtype=self.schema)  # validate row
-        writer = csv.writer(self.csvfile, dialect=self.dialect)
-        writer.writerow([v.encode('utf8') for v in values])
+        delimiter = self.dialect.delimiter
+        terminator = self.dialect.lineterminator
+        self.csvfile.write(delimiter.join(unicode(v) for v in row)+terminator)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
