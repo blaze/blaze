@@ -16,7 +16,7 @@ from unittest import TestCase
 from numpy.testing.decorators import skipif, knownfailureif
 
 import numpy as np
-from blaze import blz
+from blaze.io import blz
 from .common import MayBeDiskTest
 
 class ObjectBarrayTest(MayBeDiskTest, TestCase):

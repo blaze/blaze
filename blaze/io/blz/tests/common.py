@@ -3,7 +3,7 @@ import tempfile
 import os, os.path
 import glob
 import shutil
-from blaze import blz
+from blaze.io import blz
 import numpy as np
 
 # Global variables for the tests

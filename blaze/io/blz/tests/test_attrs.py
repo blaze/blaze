@@ -7,8 +7,8 @@ import sys
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from blaze import blz
-from blaze.blz.tests import common
+from blaze.io import blz
+from blaze.io.blz.tests import common
 
 class basicTest(common.MayBeDiskTest):
 

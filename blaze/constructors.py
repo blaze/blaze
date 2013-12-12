@@ -22,7 +22,7 @@ from .py2help import basestring
 
 from dynd import nd, ndt
 import numpy as np
-from . import blz
+from .io import blz
 
 def _normalize_dshape(ds):
     """

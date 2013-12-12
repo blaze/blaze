@@ -6,7 +6,7 @@ from unittest import TestCase
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from blaze import blz
+from blaze.io import blz
 
 if sys.version_info >= (3, 0):
     xrange = range

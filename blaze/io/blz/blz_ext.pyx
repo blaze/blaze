@@ -9,8 +9,8 @@
 
 import sys
 import numpy as np
-import blaze.blz as blz
-from blaze.blz import utils, attrs, array2string
+import blaze.io.blz as blz
+from blaze.io.blz import utils, attrs, array2string
 import os, os.path
 import struct
 import shutil
@@ -316,7 +316,7 @@ cdef class chunk:
     self.cdbytes = cbytes
     self.blocksize = blocksize
 
-  cdef compress_arrdata(self, ndarray array, int itemsize, 
+  cdef compress_arrdata(self, ndarray array, int itemsize,
                         object bparams, object _memory):
     """Compress data in `array` and put it in ``self.data``"""
     cdef size_t nbytes, cbytes, blocksize, footprint
@@ -1723,7 +1723,7 @@ cdef class barray:
       self.chunks.free_cachemem()
     self.idxcache = -1
     self.blockcache = None
-  
+
   def getitem_object(self, start, stop=None, step=None):
     """Retrieve elements of type object."""
     import pickle

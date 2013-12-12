@@ -7,12 +7,12 @@ from __future__ import absolute_import
 
 import sys
 from unittest import TestCase
-from ...py2help import skip
+from blaze.py2help import skip
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from blaze import blz
+from blaze.io import blz
 from .common import MayBeDiskTest
 
 

@@ -58,7 +58,7 @@ def print_versions():
     import sys, platform
     import numpy as np
     import dynd
-    from . import blz
+    from .io import blz
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("NumPy version: %s" % np.__version__)

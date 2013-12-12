@@ -7,7 +7,7 @@ from .data_descriptor import IDataDescriptor
 from .. import datashape
 import numpy as np
 from dynd import nd, ndt
-from blaze import blz
+from blaze.io import blz
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing

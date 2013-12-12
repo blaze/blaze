@@ -20,7 +20,7 @@ import math
 from .blz_ext import barray
 from .btable import btable
 from .bparams import bparams
-from ..py2help import xrange, _inttypes
+from ...py2help import xrange, _inttypes
 
 _inttypes += (np.integer,)
 

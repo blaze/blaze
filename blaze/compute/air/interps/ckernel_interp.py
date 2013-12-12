@@ -14,7 +14,7 @@ from ..passes import ckernel_impls, ckernel_lift, allocation
 
 from pykit.ir import visit, copy_function
 from dynd import nd, ndt
-from blaze import blz
+from blaze.io import blz
 
 #------------------------------------------------------------------------
 # Interpreter
