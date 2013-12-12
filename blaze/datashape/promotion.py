@@ -8,9 +8,9 @@ from itertools import product
 from functools import reduce
 
 from blaze import error
-from blaze.util import gensym
-from blaze.datashape import (DataShape, CType, Fixed, Var, to_numpy,
-                             TypeSet, TypeVar, TypeConstructor, verify)
+from .util import gensym, verify
+from .typesets import TypeSet, TypeVar, TypeConstructor
+from .coretypes import DataShape, CType, Fixed, Var, to_numpy
 
 import numpy as np
 

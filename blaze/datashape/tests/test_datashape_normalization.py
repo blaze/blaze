@@ -5,7 +5,7 @@ import unittest
 
 from blaze import error
 from blaze import dshape
-from blaze.util import IdentityDict
+from blaze.datashape.util import IdentityDict
 from blaze.datashape import normalize_ellipses, numeric, normalize, simplify
 
 class TestNormalization(unittest.TestCase):

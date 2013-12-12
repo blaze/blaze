@@ -22,7 +22,7 @@ from itertools import chain
 
 from blaze import error
 from blaze.py2help import dict_iteritems, _strtypes
-from blaze.util import IdentityDict, IdentitySet
+from blaze.datashape.util import IdentityDict, IdentitySet
 from blaze.datashape import (promote_units, normalize, simplify, tmap,
                              dshape, verify)
 from blaze.datashape.coretypes import (TypeVar, Mono, free, TypeConstructor,

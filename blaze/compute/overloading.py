@@ -7,9 +7,9 @@ from collections import namedtuple, defaultdict
 from itertools import chain
 
 from blaze import error
-from blaze.util import flatargs, listify, alpha_equivalent
 from blaze.datashape import (coretypes as T, unify, dshape,
                              dummy_signature)
+from .util import flatargs, listify, alpha_equivalent
 
 class Dispatcher(object):
     """
