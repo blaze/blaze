@@ -52,12 +52,12 @@ json_schema = "var, int8"
 class TestJSONDataDescriptor(unittest.TestCase):
     def test_basic_object_type(self):
         self.assertTrue(issubclass(JSONDataDescriptor, IDataDescriptor))
-        dd = JSONDataDescriptor(json_file, json_schema)
+        dd = JSONDataDescriptor(json_file, schema=json_schema)
         self.assertTrue(isinstance(dd, IDataDescriptor))
         self.assertEqual(dd_as_py(dd), [1, 2, 3, 4, 5])
 
     def test_iter(self):
-        dd = JSONDataDescriptor(json_file, json_schema)
+        dd = JSONDataDescriptor(json_file, schema=json_schema)
         # This equality does not work yet
         # self.assertEqual(dd.dshape, datashape.dshape(
         #     'Var, %s' % json_schema))
@@ -71,7 +71,7 @@ class TestJSONDataDescriptor(unittest.TestCase):
         self.assertEqual(vals, [1, 2, 3, 4, 5])
 
     def test_getitem(self):
-        dd = JSONDataDescriptor(json_file, json_schema)
+        dd = JSONDataDescriptor(json_file, schema=json_schema)
         el = dd[1:3]
         self.assertTrue(isinstance(el, DyNDDataDescriptor))
         vals = dd_as_py(el)

@@ -73,7 +73,11 @@ class CSVDataDescriptor(IDataDescriptor):
         if dialect is None:
             # Guess the dialect
             sniffer = csv.Sniffer()
-            self.dialect = sniffer.sniff(csvfile.read(1024))
+            try:
+                self.dialect = sniffer.sniff(csvfile.read(1024))
+            except:
+                # Cannot guess dialect.  Assume Excel.
+                self.dialect = csv.get_dialect('excel')
             csvfile.seek(0)
         else:
             if isinstance(dialect, csv.Dialect):
