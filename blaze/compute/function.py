@@ -26,7 +26,7 @@ from itertools import chain
 import blaze
 from blaze.datashape import coretypes as T, dshape
 from .overloading import overload, Dispatcher, match_by_weight, best_match
-from ..io import DeferredDescriptor
+from ..datadescriptor import DeferredDescriptor
 from .expr.context import merge
 from blaze.py2help import basestring, dict_iteritems
 

@@ -3,9 +3,9 @@ import operator
 import contextlib
 
 from .data_descriptor import IDataDescriptor
-from ... import datashape
-from ...datashape import dshape
-from ...error import ArrayWriteError
+from .. import datashape
+from ..datashape import dshape
+from ..error import ArrayWriteError
 
 from dynd import nd, ndt, _lowlevel
 

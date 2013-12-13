@@ -6,10 +6,14 @@ import operator
 import itertools
 import ctypes
 import sys
+import string
+import inspect
+import functools
+import collections
+from functools import partial
 
 from blaze import error
 from blaze.datashape.coretypes import TypeConstructor
-from blaze.util import IdentityDict, gensym
 from . import parser
 from .validation import validate
 from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis, String,
@@ -20,10 +24,17 @@ from .coretypes import (DataShape, Fixed, TypeVar, Record, Ellipsis, String,
 from .traversal import tmap
 from blaze.datashape.typesets import TypeSet
 
+try:
+    from collections import MutableMapping
+except ImportError as e:
+    # Python 3
+    from UserDict import DictMixin as MutableMapping
+
 __all__ = ['dopen', 'dshape', 'dshapes', 'cat_dshapes', 'broadcastable',
            'dummy_signature', 'verify',
            'from_ctypes', 'from_cffi', 'to_ctypes', 'from_llvm',
-           'to_numba', 'from_numba_str']
+           'to_numba', 'from_numba_str',
+           'IdentityDict', 'IdentitySet', 'gensym']
 
 
 PY3 = (sys.version_info[:2] >= (3,0))
@@ -489,3 +500,129 @@ def to_numba(ds):
     s = str(ds)
     s = {'cfloat32':'complex64', 'cfloat64':'complex128', 'bool':'bool_'}.get(s, s)
     return getattr(numba, s)
+
+#------------------------------------------------------------------------
+# Data Structures
+#------------------------------------------------------------------------
+
+class IdentityDict(MutableMapping):
+    """
+    Map mapping objects on identity to values
+
+        >>> d = IdentityDict({'a': 2, 'b': 3})
+        >>> sorted(d.items())
+        [('a', 2), ('b', 3)]
+
+        >>> class AlwaysEqual(object):
+        ...     def __eq__(self, other):
+        ...         return True
+        ...     def __repr__(self):
+        ...         return "eq"
+        ...
+        >>> x, y = AlwaysEqual(), AlwaysEqual()
+        >>> d[x] = 4 ; d[y] = 5
+        >>> sorted(d.items())
+        [('a', 2), ('b', 3), (eq, 4), (eq, 5)]
+    """
+
+    def __init__(self, d=None):
+        self.data = {}          # id(key) -> value
+        self.ks = []            # [key]
+        self.update(d or [])
+
+    def __getitem__(self, key):
+        try:
+            return self.data[id(key)]
+        except KeyError:
+            raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        if id(key) not in self.data:
+            self.ks.append(key)
+        self.data[id(key)] = value
+
+    def __delitem__(self, key):
+        self.ks.remove(key)
+        del self.data[id(key)]
+
+    def __contains__(self, item):
+        try:
+            self[item]
+        except KeyError:
+            return False
+        else:
+            return True
+
+    def __repr__(self):
+        # This is not correctly implemented in DictMixin for us, since it takes
+        # the dict() of iteritems(), merging back equal keys
+        return "{ %s }" % ", ".join("%r: %r" % (k, self[k]) for k in self.keys())
+
+    def __iter__(self):
+        return iter(self.ks)
+
+    def __len__(self):
+        return len(self.ks)
+
+    def keys(self):
+        return list(self.ks)
+
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        d = cls()
+        for key in iterable:
+            d[key] = value
+        return d
+
+
+class IdentitySet(set):
+    def __init__(self, it=()):
+        self.d = IdentityDict()
+        self.update(it)
+
+    def add(self, x):
+        self.d[x] = None
+
+    def remove(self, x):
+        del self.d[x]
+
+    def update(self, it):
+        for x in it:
+            self.add(x)
+
+    def __contains__(self, key):
+        return key in self.d
+
+#------------------------------------------------------------------------
+# Temporary names
+#------------------------------------------------------------------------
+
+def make_temper():
+    """Return a function that returns temporary names"""
+    temps = collections.defaultdict(int)
+
+    def temper(name=""):
+        varname = name.rstrip(string.digits)
+        count = temps[varname]
+        temps[varname] += 1
+        if varname and count == 0:
+            return varname
+        return varname + str(count)
+
+    return temper
+
+def make_stream(seq, _temp=make_temper()):
+    """Create a stream of temporaries seeded by seq"""
+    while 1:
+        for x in seq:
+            yield _temp(x)
+
+gensym = partial(next, make_stream(string.ascii_uppercase))
+
+# ______________________________________________________________________
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+
+

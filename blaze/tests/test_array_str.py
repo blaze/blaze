@@ -3,10 +3,10 @@ import unittest
 import ctypes
 from ..py2help import skip
 import blaze
-from blaze.io.datadescriptor import data_descriptor_from_ctypes
+from blaze.datadescriptor import data_descriptor_from_ctypes
 
 from dynd import nd, ndt
-from blaze.io.datadescriptor import DyNDDataDescriptor
+from blaze.datadescriptor import DyNDDataDescriptor
 
 class TestArrayStr(unittest.TestCase):
     def test_scalar(self):
