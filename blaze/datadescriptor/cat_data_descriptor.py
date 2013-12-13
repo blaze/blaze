@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import operator
 import bisect
 
-from blaze.datashape import dshape
+from ..datashape import dshape
 from . import IDataDescriptor
 
 def cat_descriptor_iter(ddlist):

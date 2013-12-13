@@ -4,7 +4,7 @@ import sys
 from blaze.py2help import skipIf
 import blaze
 from blaze import datashape
-from blaze.io.datadescriptor import (data_descriptor_from_cffi, dd_as_py,
+from blaze.datadescriptor import (data_descriptor_from_cffi, dd_as_py,
                 IDataDescriptor)
 import ctypes
 try:

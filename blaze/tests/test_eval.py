@@ -7,7 +7,7 @@ import tempfile
 from itertools import product as it_product
 
 import blaze
-from blaze.io.datadescriptor import dd_as_py
+from blaze.datadescriptor import dd_as_py
 from blaze.py2help import exec_
 
 blaze.set_strategy('jit')

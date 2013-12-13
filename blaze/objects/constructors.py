@@ -13,7 +13,7 @@ from __future__ import absolute_import
 import inspect
 
 from .array import Array
-from ..io import (IDataDescriptor,
+from ..datadescriptor import (IDataDescriptor,
                 DyNDDataDescriptor, BLZDataDescriptor)
 from .. import datashape
 from ..datashape import to_numpy, to_numpy_dtype

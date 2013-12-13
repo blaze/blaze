@@ -2,7 +2,7 @@ import unittest
 import sys
 import blaze
 from blaze import datashape
-from blaze.io.datadescriptor import (DyNDDataDescriptor,
+from blaze.datadescriptor import (DyNDDataDescriptor,
                 IDataDescriptor, dd_as_py)
 from blaze.py2help import _inttypes, izip
 import ctypes
