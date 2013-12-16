@@ -9,6 +9,7 @@ from .catalog_arr import load_blaze_array
 config = load_default_config()
 _cwd = '/'
 
+
 def _check_config():
     if config is None:
         raise RuntimeError('No catalog is loaded. Use ' +
@@ -16,16 +17,19 @@ def _check_config():
                            'blaze.catalog.init_default() to create '
                            'one with default settings.')
 
+
 def load_config(cfgfile):
     """Loads a fresh catalog from the specified config file"""
     global config, _cwd
     config = CatalogConfig(cfgfile)
     _cwd = '/'
 
+
 def init_default():
     global config, _cwd
     config = load_default_config(create_default=True)
     _cwd = '/'
+
 
 def cd(key):
     """Change the current working directory of the blaze catalog"""
@@ -37,25 +41,30 @@ def cd(key):
     else:
         _cwd = newcwd
 
+
 def cwd():
     """The current working directory of the blaze catalog"""
     _check_config()
     return _cwd
+
 
 def ls_dirs(dir=None):
     """A list of the directories in the current working directory"""
     _check_config()
     return config.ls_dirs(join_bpath(_cwd, dir) if dir else _cwd)
 
+
 def ls_arrs(dir=None):
     """A list of the arrays in the current working directory"""
     _check_config()
     return config.ls_arrs(join_bpath(_cwd, dir) if dir else _cwd)
 
+
 def ls(dir=None):
     """A list of the arrays and directories in the current working directory"""
     _check_config()
     return config.ls(join_bpath(_cwd, dir) if dir else _cwd)
+
 
 def get(key):
     """Get an array or directory object from the blaze catalog"""
@@ -67,6 +76,7 @@ def get(key):
         return load_blaze_array(config, key)
     else:
         raise RuntimeError('Blaze path not found: %r' % key)
+
 
 def register_ipy_magic():
     """Register some IPython line magic for the blaze catalog.
@@ -93,15 +103,18 @@ def register_ipy_magic():
     """
     import IPython
     from IPython.core.magic import register_line_magic
+
     @register_line_magic
     def bcd(line):
         """Change the current Blaze catalog working directory"""
         cd(line)
         print(_cwd)
+
     @register_line_magic
     def bpwd(line):
         """Print/return the current Blaze catalog working directory"""
         return _cwd
+
     @register_line_magic
     def bls(line):
         """List the directories and arrays in the specified
@@ -115,6 +128,7 @@ def register_ipy_magic():
         tmp += [(x, dcol + x + ncol) for x in ls_dirs(line)]
         if tmp:
             print(' '.join(x[1] for x in sorted(tmp)))
+
     @register_line_magic
     def barr(line):
         """Returns the Blaze array from the catalog at the specified path"""

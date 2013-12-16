@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 __all__ = ['split_array_base', 'add_indexers_to_url', 'slice_as_string',
-                           'index_tuple_as_string']
+           'index_tuple_as_string']
 
-from pyparsing import Word, Regex, Optional, ZeroOrMore, \
-        StringStart, StringEnd, alphas, alphanums
+from pyparsing import (Word, Regex, Optional, ZeroOrMore,
+                       StringStart, StringEnd, alphas, alphanums)
 from ..py2help import _strtypes, _inttypes
 
 # Parser to match the Blaze URL syntax
 intNumber = Regex(r'[-+]?\b\d+\b')
 arrayName = Regex(r'(/(\.session_)?\w*)*[a-zA-Z0-9_]+\b')
-bracketsIndexer = Optional(intNumber) + \
-            Optional(':' + Optional(intNumber)) + \
-            Optional(':' + Optional(intNumber))
-indexerPattern = ('.' + Word(alphas + '_', alphanums + '_')) ^ \
-        ('[' + bracketsIndexer + ZeroOrMore(',' + bracketsIndexer) + ']')
-arrayBase = StringStart() + \
-    arrayName + ZeroOrMore(indexerPattern) + \
-    StringEnd()
+bracketsIndexer = (Optional(intNumber) +
+                   Optional(':' + Optional(intNumber)) +
+                   Optional(':' + Optional(intNumber)))
+indexerPattern = (('.' + Word(alphas + '_', alphanums + '_')) ^
+                  ('[' + bracketsIndexer +
+                   ZeroOrMore(',' + bracketsIndexer) + ']'))
+arrayBase = (StringStart() +
+             arrayName + ZeroOrMore(indexerPattern) +
+             StringEnd())
+
 
 def split_array_base(array_base):
     pieces = arrayBase.parseString(array_base)
@@ -68,6 +70,7 @@ def split_array_base(array_base):
 
     return array_name, indexers
 
+
 def slice_as_interior_string(s):
     if type(s) is int:
         return str(s)
@@ -82,8 +85,10 @@ def slice_as_interior_string(s):
             result += ':' + str(s.step)
         return result
 
+
 def slice_as_string(s):
     return '[' + slice_as_interior_string(s) + ']'
+
 
 def index_tuple_as_string(s):
     result = '[' + slice_as_interior_string(s[0])
@@ -91,6 +96,7 @@ def index_tuple_as_string(s):
         result += ',' + slice_as_interior_string(i)
     result += ']'
     return result
+
 
 def add_indexers_to_url(base_url, indexers):
     for idx in indexers:

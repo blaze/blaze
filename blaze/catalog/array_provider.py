@@ -1,9 +1,13 @@
-import os, glob, shutil
+from __future__ import absolute_import, division, print_function
+import os
+import glob
+import shutil
 from os import path
 import tempfile
 
 from dynd import nd, ndt
 from .. import array
+
 
 def load_json_file_array(root, array_name):
     # Load the datashape
@@ -11,7 +15,8 @@ def load_json_file_array(root, array_name):
     if not path.isfile(dsfile):
         dsfile = path.dirname(root) + '.datashape'
         if not path.isfile(dsfile):
-            raise Exception('No datashape file found for array %s' % array_name)
+            raise Exception('No datashape file found for array %s'
+                            % array_name)
     with open(dsfile) as f:
         dt = ndt.type(f.read())
 
@@ -19,6 +24,7 @@ def load_json_file_array(root, array_name):
     # TODO: Add stream support to parse_json for compressed JSON, etc.
     arr = nd.parse_json(dt, nd.memmap(root + '.json'))
     return array(arr)
+
 
 def load_json_directory_array(root, array_name):
     # Load the datashape
@@ -41,6 +47,7 @@ def load_json_directory_array(root, array_name):
         nd.parse_json(arr[i], nd.memmap(fname))
     arr.flag_as_immutable()
     return array(arr)
+
 
 def load_json_file_list_array(root, array_name):
     # Load the datashape
@@ -67,6 +74,7 @@ def load_json_file_list_array(root, array_name):
     arr.flag_as_immutable()
     return array(arr)
 
+
 class json_array_provider:
     def __init__(self, root_dir):
         if not path.isdir(root_dir):
@@ -78,26 +86,26 @@ class json_array_provider:
     def __call__(self, array_name):
         # First check that the .json file at the requested address exists
         root = path.join(self.root_dir, array_name[1:])
-        if not path.isfile(root + '.json') and \
-                        not path.isfile(root + '.deferred.json') and \
-                        not path.isfile(root + '.files') and \
-                        not path.isdir(root):
+        if (not path.isfile(root + '.json') and
+                 not path.isfile(root + '.deferred.json') and
+                 not path.isfile(root + '.files') and
+                 not path.isdir(root)):
             return None
 
         # If we've already read this array into cache, just return it
         print('Cache has keys %s' % self.array_cache.keys())
         print('Checking cache for %s' % array_name)
-        if self.array_cache.has_key(array_name):
+        if array_name in self.array_cache:
             print('Returning cached array %s' % array_name)
             return self.array_cache[array_name]
 
         if path.isfile(root + '.json'):
-            print('Loading array %s from file %s' %
-                            (array_name, root + '.json'))
+            print('Loading array %s from file %s'
+                  % (array_name, root + '.json'))
             arr = load_json_file_array(root, array_name)
         elif path.isfile(root + '.deferred.json'):
-            print('Loading deferred array %s from file %s' %
-                            (array_name, root + '.deferred.json'))
+            print('Loading deferred array %s from file %s'
+                  % (array_name, root + '.deferred.json'))
             with open(root + '.deferred.json') as f:
                 print(f.read())
             raise RuntimeError('TODO: Deferred loading not implemented!')

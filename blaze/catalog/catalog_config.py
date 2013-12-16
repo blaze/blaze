@@ -5,6 +5,7 @@ import os
 from os import path
 from .catalog_dir import is_abs_bpath
 
+
 class CatalogConfig(object):
     """This object stores a catalog configuration.
     """
@@ -16,7 +17,7 @@ class CatalogConfig(object):
                 cfg = yaml.load(f)
             if not isinstance(cfg, dict):
                 raise RuntimeError(('Blaze catalog config file "%s" is ' +
-                        'not valid') % catconfigfile)
+                                    'not valid') % catconfigfile)
             self.root = cfg.pop('root')
             # Allow ~/...
             self.root = path.expanduser(self.root)
@@ -29,12 +30,12 @@ class CatalogConfig(object):
 
             if not path.exists(self.root):
                 raise RuntimeError(('Root Blaze catalog dir "%s" ' +
-                        'from config file "%s" does not exist')
-                        % (self.root, catconfigfile))
+                                    'from config file "%s" does not exist')
+                                   % (self.root, catconfigfile))
 
             if len(cfg) != 0:
                 raise KeyError('Extra Blaze catalog config options: %s'
-                        % cfg.keys())
+                               % cfg.keys())
         except KeyError as e:
             raise KeyError('Missing Blaze catalog config option: %s' % e)
 
@@ -65,17 +66,20 @@ class CatalogConfig(object):
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             return [path.splitext(x)[0] for x in listing
-                if x.endswith('.array')]
+                    if x.endswith('.array')]
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
     def ls_dirs(self, dir):
-        """Return a list of all the directories in the provided blaze catalog dir"""
+        """
+        Return a list of all the directories in the provided
+        blaze catalog dir
+        """
         if is_abs_bpath(dir):
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             return [x for x in listing
-                if path.isdir(path.join(fsdir, x))]
+                    if path.isdir(path.join(fsdir, x))]
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
@@ -87,9 +91,9 @@ class CatalogConfig(object):
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             res = [path.splitext(x)[0] for x in listing
-                if x.endswith('.array')]
+                   if x.endswith('.array')]
             res += [x for x in listing
-                if path.isdir(path.join(fsdir, x))]
+                    if path.isdir(path.join(fsdir, x))]
             return res
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
@@ -97,6 +101,7 @@ class CatalogConfig(object):
     def __repr__(self):
         return ("Blaze Catalog Configuration\n%s\n\nroot: %s"
                 % (self.configfile, self.root))
+
 
 def load_default_config(create_default=False):
     dcf = path.expanduser('~/.blaze/catalog.yaml')
