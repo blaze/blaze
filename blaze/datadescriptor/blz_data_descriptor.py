@@ -38,8 +38,8 @@ class BLZDataDescriptor(IDataDescriptor):
         return self.blzarr.rootdir is not None
 
     @property
-    def is_concrete(self):
-        """Returns False, BLZ arrays are not concrete."""
+    def deferred(self):
+        """Returns False, as BLZ arrays can be returned as a dynd array."""
         return False
 
     @property
