@@ -1,9 +1,11 @@
 from __future__ import absolute_import
 import os
 from os import path
-import yaml, csv
+import yaml
+import csv
 from dynd import nd, ndt
 import blaze
+
 
 def compatible_array_dshape(arr, ds):
     """Checks if the array is compatible with the given dshape.
@@ -11,7 +13,8 @@ def compatible_array_dshape(arr, ds):
        Examples
        --------
 
-       >>> compatible_array_dshape(blaze.array([1,2,3]), blaze.dshape("M, int32"))
+       >>> compatible_array_dshape(blaze.array([1,2,3]),
+       ...                         blaze.dshape("M, int32"))
        True
 
        >>>
@@ -20,14 +23,16 @@ def compatible_array_dshape(arr, ds):
     # provided dshape. Because the array's dshape is concrete,
     # the result of unification should be equal, otherwise the
     # the unification promoted its type.
-    try :
+    try:
         print(arr.dshape, ds)
-        [unified_ds], constraints = blaze.datashape.unify([(arr.dshape, ds)],
-                                                            broadcasting=[False])
+        unify_res = blaze.datashape.unify([(arr.dshape, ds)],
+                                          broadcasting=[False])
+        [unified_ds], constraints = unify_res
     except blaze.error.UnificationError:
         return False
 
     return unified_ds == arr.dshape
+
 
 def load_blaze_array(conf, dir):
     """Loads a blaze array from the catalog configuration and catalog path"""
@@ -36,7 +41,7 @@ def load_blaze_array(conf, dir):
     fsdir = conf.get_fsdir(dir)
     if not path.isfile(fsdir + '.array'):
         raise RuntimeError('Could not find blaze array description file %r'
-                % (fsdir + '.array'))
+                           % (fsdir + '.array'))
     with open(fsdir + '.array') as f:
         arrmeta = yaml.load(f)
     tp = arrmeta['type']
@@ -74,17 +79,18 @@ def load_blaze_array(conf, dir):
         # The script is run with the following globals,
         # and should put the loaded array in a global
         # called 'result'.
-        gbl = {'catconf': conf, # Catalog configuration object
-               'impdata': imp,  # Import data from the .array file
-               'catpath': dir,  # Catalog path
-               'fspath': fsdir, # Equivalent filesystem path
-               'dshape': ds     # Datashape the result should have
+        gbl = {'catconf': conf,  # Catalog configuration object
+               'impdata': imp,   # Import data from the .array file
+               'catpath': dir,   # Catalog path
+               'fspath': fsdir,  # Equivalent filesystem path
+               'dshape': ds      # Datashape the result should have
                }
         execfile(fsdir + '.py', gbl)
         arr = gbl.get('result', None)
         if arr is None:
             raise RuntimeError(('Script for blaze catalog path %r did not ' +
-                                'return anything in "result" variable') % (dir))
+                                'return anything in "result" variable')
+                               % (dir))
         elif not isinstance(arr, blaze.Array):
             raise RuntimeError(('Script for blaze catalog path %r returned ' +
                                 'wrong type of object (%r instead of ' +
@@ -95,5 +101,6 @@ def load_blaze_array(conf, dir):
                                 '%r)') % (arr.dshape, ds))
         return arr
     else:
-        raise ValueError('Unsupported array type %r from blaze catalog entry %r' %
-                (tp, dir))
+        raise ValueError(('Unsupported array type %r from ' +
+                          'blaze catalog entry %r')
+                         % (tp, dir))

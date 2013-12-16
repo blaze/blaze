@@ -3,6 +3,7 @@ import os
 from os import path
 from .catalog_arr import load_blaze_array
 
+
 def is_valid_bpath(d):
     """Returns true if it's a valid blaze path"""
     # Disallow backslashes in blaze paths
@@ -13,13 +14,16 @@ def is_valid_bpath(d):
         return False
     return True
 
+
 def is_abs_bpath(d):
     """Returns true if it's an absolute blaze path"""
     return is_valid_bpath(d) and d.startswith('/')
 
+
 def is_rel_bpath(d):
     """Returns true if it's a relative blaze path"""
     return is_valid_bpath(d) and not d.startswith('/')
+
 
 def _clean_bpath_components(components):
     res = []
@@ -41,6 +45,7 @@ def _clean_bpath_components(components):
             res.append(c)
     return res
 
+
 def _split_bpath(d):
     if is_valid_bpath(d):
         if d == '':
@@ -53,11 +58,13 @@ def _split_bpath(d):
     else:
         raise ValueError('Invalid blaze catalog path %r' % d)
 
+
 def _rejoin_bpath(components):
     if components == ['']:
         return '/'
     else:
         return '/'.join(components)
+
 
 def clean_bpath(d):
     if is_valid_bpath(d):
@@ -67,6 +74,7 @@ def clean_bpath(d):
     else:
         raise ValueError('Invalid blaze catalog path %r' % d)
 
+
 def join_bpath(d1, d2):
     if is_abs_bpath(d2):
         return clean_bpath(d2)
@@ -74,6 +82,7 @@ def join_bpath(d1, d2):
         components = _split_bpath(d1) + _split_bpath(d2)
         components = _clean_bpath_components(components)
         return _rejoin_bpath(components)
+
 
 class CatalogDir(object):
     """This object represents a directory path within the blaze catalog"""
@@ -95,7 +104,9 @@ class CatalogDir(object):
         return self.conf.ls_dirs(self.dir)
 
     def ls(self):
-        """Returns a list of all the arrays and directories in this blaze dir"""
+        """
+        Returns a list of all the arrays and directories in this blaze dir
+        """
         return self.conf.ls(self.dir)
 
     def __getindex__(self, key):
