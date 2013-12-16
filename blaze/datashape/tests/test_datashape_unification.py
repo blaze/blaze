@@ -117,6 +117,12 @@ class TestUnification(unittest.TestCase):
         self.assertEqual(str(res), '10, int32')
         self.assertFalse(constraints)
 
+    def test_unify_record_promotion(self):
+        d1 = dshape('10, T1, {x: int32; y: int32}')
+        d2 = dshape('T2, T2, {x: int32; y: int32}')
+        [result], constraints = unify([(d1, d2)], [True])
+        self.assertEqual(result, dshape('10, 10, {x: int32; y: int32}'))
+
 class TestUnificationErrors(unittest.TestCase):
 
     def test_unify_datashape_bad_unifications(self):

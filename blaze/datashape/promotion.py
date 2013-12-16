@@ -27,10 +27,13 @@ def promote_units(*units):
 def promote(a, b):
     """Promote two blaze types"""
 
+    if a == b:
+        return a
+
     # -------------------------------------------------
     # Fixed
 
-    if isinstance(a, Fixed):
+    elif isinstance(a, Fixed):
         if isinstance(b, Fixed):
             if a == Fixed(1):
                 return b

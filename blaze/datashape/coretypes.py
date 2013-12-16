@@ -760,6 +760,7 @@ class Record(Mono):
         # preserved. Using RecordDecl there is some magic to also
         # ensure that the fields align in the order they are
         # declared.
+        self.__fields = tuple(fields)
         self.__fdict = dict(fields)
         self.__fnames = [f[0] for f in fields]
         self.__ftypes = [f[1] for f in fields]
@@ -795,7 +796,7 @@ class Record(Mono):
             return False
 
     def __hash__(self):
-        return hash(self.__fdict)
+        return hash(self.__fields)
 
     def __str__(self):
         return record_string(self.__fnames, self.__ftypes)
