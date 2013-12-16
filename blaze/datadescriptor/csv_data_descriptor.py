@@ -16,25 +16,19 @@ def csv_descriptor_iter(csvfile, schema):
         yield DyNDDataDescriptor(nd.array(row, dtype=schema))
 
 def csv_descriptor_iterchunks(csvfile, schema, blen, start=None, stop=None):
-    if blen == 1:
-        # In this case we will return single rows, not a list of rows
-        for nrow, row in enumerate(csv.reader(csvfile)):
-            if start is not None and nrow < start: continue
-            if stop is not None and nrow >= stop: return
-            yield DyNDDataDescriptor(nd.array(row, dtype=schema))
-    else:
-        # The most general form
-        rows = []
-        for nrow, row in enumerate(csv.reader(csvfile)):
-            if start is not None and nrow < start: continue
-            if stop is not None and nrow >= stop:
+    rows = []
+    for nrow, row in enumerate(csv.reader(csvfile)):
+        if start is not None and nrow < start: continue
+        if stop is not None and nrow >= stop:
+            if rows != []:
                 # Build the descriptor for the data we have and return
                 yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
-                return
-            rows.append(row)
-            if nrow % blen == 0:
-                yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
-                rows = []
+            return
+        rows.append(row)
+        if nrow % blen == 0:
+            print("rows:", rows, schema)
+            yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+            rows = []
 
 
 class CSVDataDescriptor(IDataDescriptor):
