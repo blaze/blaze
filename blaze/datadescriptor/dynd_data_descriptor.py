@@ -26,11 +26,11 @@ class DyNDDataDescriptor(IDataDescriptor):
         self._dshape = dshape(nd.dshape_of(dyndarr))
 
     @property
-    def is_concrete(self):
-        """Returns True, dynd arrays are concrete.
+    def deferred(self):
+        """Returns False, dynd arrays are not deferred.
            TODO: Maybe not always, if the dynd array has an expression type?
         """
-        return True
+        return False
 
     def dynd_arr(self):
         return self._dyndarr

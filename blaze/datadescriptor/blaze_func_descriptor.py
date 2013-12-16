@@ -45,7 +45,6 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
         self.outdshape = outdshape
         self.argmap = argmap
 
-
     def _reset_args(self):
         from blaze.compute.bkernel.kernel_tree import find_unique_args
         unique_args = []
@@ -53,9 +52,9 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
         self._args = [self.argmap[argument] for argument in unique_args]
 
     @property
-    def is_concrete(self):
-        """Returns False, blaze function arrays are not concrete."""
-        return False
+    def deferred(self):
+        """Returns True, blaze function arrays are deferred."""
+        return True
 
     @property
     def args(self):

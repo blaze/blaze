@@ -78,9 +78,9 @@ class DeferredDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def is_concrete(self):
-        """Returns False, blaze function arrays are not concrete."""
-        return False
+    def deferred(self):
+        """Returns True, blaze function arrays are deferred."""
+        return True
 
     @property
     def writable(self):

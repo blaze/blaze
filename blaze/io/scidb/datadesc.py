@@ -39,8 +39,9 @@ class SciDBDataDesc(IDataDescriptor):
         return self._dshape
 
     @property
-    def is_concrete(self):
-        return False # TODO:
+    def deferred(self):
+        """scidb does not give us access to its temps right now."""
+        return False
 
     @property
     def writable(self):
