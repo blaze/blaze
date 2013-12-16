@@ -23,6 +23,7 @@ class TestCSVDataDescriptor(unittest.TestCase):
         self.assertTrue(issubclass(CSVDataDescriptor, IDataDescriptor))
         dd = CSVDataDescriptor(csv_file, schema=csv_schema)
         self.assertTrue(isinstance(dd, IDataDescriptor))
+        self.assertTrue(isinstance(dd.dshape.shape[0], datashape.Var))
         self.assertEqual(dd_as_py(dd), [
             {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
             {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},

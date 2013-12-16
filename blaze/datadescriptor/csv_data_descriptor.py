@@ -97,7 +97,7 @@ class CSVDataDescriptor(IDataDescriptor):
 
     @property
     def dshape(self):
-        return datashape.dshape('Var, %s' % self.schema)
+        return datashape.DataShape(datashape.Var(), self.schema)
 
     @property
     def writable(self):
