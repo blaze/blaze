@@ -37,9 +37,9 @@ class CatDataDescriptor(IDataDescriptor):
         self._boundary_index = boundary_index
 
     @property
-    def is_concrete(self):
-        """The concatenate data descriptor is not concrete."""
-        return False
+    def deferred(self):
+        """The concatenate data descriptor is deferred."""
+        return True
 
     @property
     def dshape(self):

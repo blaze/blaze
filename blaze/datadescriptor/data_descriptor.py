@@ -45,10 +45,10 @@ class IDataDescriptor:
         return False
 
     @abc.abstractproperty
-    def is_concrete(self):
-        """Returns True if the data can be returned as an
-           in-memory dynd array. Returns False for deferred
-           expressions and persistent arrays.
+    def deferred(self):
+        """Returns True for deferred expressions and persistent
+           arrays. Returns False if the data can be returned as an
+           in-memory dynd array.
         """
         raise NotImplementedError
 
