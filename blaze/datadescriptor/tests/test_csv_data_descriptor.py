@@ -72,14 +72,14 @@ class TestCSVDataDescriptor(unittest.TestCase):
         dd = CSVDataDescriptor(csv_file, schema=csv_schema)
         vals = [dd_as_py(v) for v in dd.iterchunks(blen=1, stop=2)]
         self.assertEqual(vals, [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}])
+            [{u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False}],
+            [{u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}]])
 
     def test_iterchunks_start_stop(self):
         dd = CSVDataDescriptor(csv_file, schema=csv_schema)
         vals = [dd_as_py(v) for v in dd.iterchunks(blen=1, start=1, stop=2)]
-        self.assertEqual(vals, [
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}])
+        self.assertEqual(vals, [[
+            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}]])
 
     def test_append(self):
         # Get a private stream so as to not mess the original one
@@ -87,8 +87,8 @@ class TestCSVDataDescriptor(unittest.TestCase):
         dd = CSVDataDescriptor(stream, schema=csv_schema)
         dd.append(["k4", "v4", 4, True])
         vals = [dd_as_py(v) for v in dd.iterchunks(blen=1, start=3)]
-        self.assertEqual(vals, [
-            {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
+        self.assertEqual(vals, [[
+            {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}]])
 
     def test_getitem_start(self):
         dd = CSVDataDescriptor(csv_file, schema=csv_schema)
