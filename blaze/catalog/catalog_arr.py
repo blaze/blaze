@@ -24,7 +24,6 @@ def compatible_array_dshape(arr, ds):
     # the result of unification should be equal, otherwise the
     # the unification promoted its type.
     try:
-        print(arr.dshape, ds)
         unify_res = blaze.datashape.unify([(arr.dshape, ds)],
                                           broadcasting=[False])
         [unified_ds], constraints = unify_res
