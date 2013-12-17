@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 
 from . import blaze_url
-from .catalog_config import CatalogConfig, load_default_config
+from . import catalog_config
 from .catalog_dir import CatalogDir, is_rel_bpath, is_abs_bpath, join_bpath
 from .catalog_arr import load_blaze_array
 
 # Load the default config
-config = load_default_config()
+config = catalog_config.load_default_config()
 _cwd = '/'
 
 
@@ -21,13 +21,24 @@ def _check_config():
 def load_config(cfgfile):
     """Loads a fresh catalog from the specified config file"""
     global config, _cwd
-    config = CatalogConfig(cfgfile)
+    config = catalog_config.CatalogConfig(cfgfile)
+    _cwd = '/'
+
+
+def load_default():
+    """Loads the default catalog configuration"""
+    global config, _cwd
+    config = catalog_config.load_default_config()
     _cwd = '/'
 
 
 def init_default():
+    """
+    Loads the default catalog configuration, creating one
+    if necessary.
+    """
     global config, _cwd
-    config = load_default_config(create_default=True)
+    config = catalog_config.load_default_config(create_default=True)
     _cwd = '/'
 
 

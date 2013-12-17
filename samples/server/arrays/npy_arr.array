@@ -1,0 +1,9 @@
+type: npy
+import: {
+}
+datashape: |
+    M, {
+        first: int32;
+        second: float64;
+        third: string;
+    }

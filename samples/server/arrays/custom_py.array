@@ -1,0 +1,7 @@
+type: py
+import: {
+    begin: 5,
+    end: 100
+}
+datashape: |
+    M, int32
