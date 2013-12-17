@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from .data_descriptor import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 
 def blaze_func_iter(bfd, noiter_dims):
     args = bfd.args
@@ -52,25 +52,15 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
         self._args = [self.argmap[argument] for argument in unique_args]
 
     @property
-    def immutable(self):
-        """Returns True, blaze function arrays are immutable."""
-        return True
-
-    @property
-    def deferred(self):
-        """Returns True, blaze function arrays are deferred."""
-        return True
-
-    @property
-    def persistent(self):
-        """Returns True, blaze function arrays are not persistent."""
-        # TODO: Maybe in the future blaze function arrays can be persistent
-        return False
-
-    @property
-    def appendable(self):
-        """Returns True, blaze function arrays are not appendable."""
-        return False
+    def capabilities(self):
+        """The capabilities for the blaze function data descriptor."""
+        return Capabilities(
+            immutable = True,
+            deferred = True,
+            # persistency is not supported yet
+            persistent = False,
+            appendable = False,
+            )
 
     @property
     def args(self):

@@ -34,7 +34,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     """
     strategy = strategy or arr._data.strategy
 
-    if not arr._data.deferred:
+    if not arr._data.capabilities.deferred:
         # TODO: This isn't right if the storage is different, requires
         #       a copy then.
         result = arr
