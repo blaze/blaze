@@ -11,8 +11,8 @@ from ..io import blz
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing
-# operations.  This is why NumPyDataDescriptor is used for returning
-# the values here.  Ideally, BLZ should return pure buffers instead.
+# operations.  This is why DyNDDataDescriptor is used for returning
+# the values here.
 
 def blz_descriptor_iter(blzarr):
     for i in range(len(blzarr)):
@@ -34,33 +34,30 @@ class BLZDataDescriptor(IDataDescriptor):
         self.blzarr = obj
 
     @property
-    def persistent(self):
-        return self.blzarr.rootdir is not None
-
-    @property
-    def deferred(self):
-        """Returns False, as BLZ arrays can be returned as a dynd array."""
-        return False
-
-    @property
     def dshape(self):
         # This cannot be cached because the BLZ can change the dshape
         obj = self.blzarr
         return datashape.from_numpy(obj.shape, obj.dtype)
 
     @property
-    def writable(self):
-        # The BLZ supports this, but we don't want to expose that yet
+    def immutable(self):
+        """BLZ arrays can be modifyied and enlarged."""
         return False
+
+    @property
+    def deferred(self):
+        """BLZ arrays are concrete."""
+        return False
+
+    @property
+    def persistent(self):
+        """BLZ objects can be either persistent of in-memory."""
+        return self.blzarr.rootdir is not None
 
     @property
     def appendable(self):
-        # TODO: Not sure this is right
-        return self.blzarr.mode == 'a'
-
-    @property
-    def immutable(self):
-        return False
+        """Returns True as BLZ arrays support cheap appends."""
+        return True
 
     def __array__(self):
         return np.array(self.blzarr)

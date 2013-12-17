@@ -25,13 +25,6 @@ class DyNDDataDescriptor(IDataDescriptor):
         self._dyndarr = dyndarr
         self._dshape = dshape(nd.dshape_of(dyndarr))
 
-    @property
-    def deferred(self):
-        """Returns False, dynd arrays are not deferred.
-           TODO: Maybe not always, if the dynd array has an expression type?
-        """
-        return False
-
     def dynd_arr(self):
         return self._dyndarr
 
@@ -40,12 +33,27 @@ class DyNDDataDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def writable(self):
-        return self._dyndarr.access_flags == 'readwrite'
-
-    @property
     def immutable(self):
         return self._dyndarr.access_flags == 'immutable'
+
+    @property
+    def deferred(self):
+        """Returns False, dynd arrays are not deferred.
+           TODO: Maybe not always, if the dynd array has an expression type?
+        """
+        return False
+
+    @property
+    def persistent(self):
+        """Returns False, dynd arrays are not persistent.
+        """
+        return False
+
+    @property
+    def appendable(self):
+        """Returns False, dynd arrays are not appendable.
+        """
+        return False
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())

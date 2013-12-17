@@ -48,8 +48,6 @@ class DeferredDescriptor(IDataDescriptor):
         The expression graph along with the expression context, see blaze.expr
     """
 
-    deferred = True
-
     def __init__(self, dshape, expr):
         self._dshape = dshape
         self.expr = expr
@@ -78,24 +76,26 @@ class DeferredDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
+    def immutable(self):
+        """Returns True, a deferred blaze function is not concrete."""
+        return True
+
+    @property
     def deferred(self):
         """Returns True, blaze function arrays are deferred."""
         return True
 
     @property
-    def writable(self):
-        # TODO: This seems wrong, the result is writable if evaluated.
-        # This would lead to other code having to check that...
+    def persistent(self):
+        # TODO: Maybe in the future we can support this, but not yet.
         return False
 
     @property
-    def immutable(self):
-        # TODO: If all the args are immutable, the result
-        #       is also immutable
+    def appendable(self):
+        """A deferred function is not appendable."""
         return False
 
     __array__           = force_evaluation('__array__')
-
     __iter__            = force_evaluation('__iter__')
     __getitem__         = force_evaluation('__getitem__')
     __len__             = force_evaluation('__len__')
