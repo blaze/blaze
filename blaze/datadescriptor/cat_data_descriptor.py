@@ -37,13 +37,28 @@ class CatDataDescriptor(IDataDescriptor):
         self._boundary_index = boundary_index
 
     @property
+    def dshape(self):
+        return self._dshape
+
+    @property
+    def immutable(self):
+        """The concatenate data descriptor is inmutable."""
+        return True
+
+    @property
     def deferred(self):
         """The concatenate data descriptor is deferred."""
         return True
 
     @property
-    def dshape(self):
-        return self._dshape
+    def persistent(self):
+        """The concatenate data descriptor is not persistent."""
+        return False
+
+    @property
+    def appendable(self):
+        """The concatenate data descriptor is not appendable."""
+        return False
 
     def __len__(self):
         return self._boundary_index[-1]

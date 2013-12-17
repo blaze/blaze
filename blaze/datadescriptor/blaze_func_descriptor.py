@@ -52,9 +52,25 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
         self._args = [self.argmap[argument] for argument in unique_args]
 
     @property
+    def immutable(self):
+        """Returns True, blaze function arrays are immutable."""
+        return True
+
+    @property
     def deferred(self):
         """Returns True, blaze function arrays are deferred."""
         return True
+
+    @property
+    def persistent(self):
+        """Returns True, blaze function arrays are not persistent."""
+        # TODO: Maybe in the future blaze function arrays can be persistent
+        return False
+
+    @property
+    def appendable(self):
+        """Returns True, blaze function arrays are not appendable."""
+        return False
 
     @property
     def args(self):
@@ -79,16 +95,6 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
     @property
     def dshape(self):
         return self.outdshape
-
-    @property
-    def writable(self):
-        return False
-
-    @property
-    def immutable(self):
-        # TODO: If all the args are immutable, the result
-        #       is also immutable
-        return False
 
     def __iter__(self):
         # Figure out how the outermost dimension broadcasts, by
