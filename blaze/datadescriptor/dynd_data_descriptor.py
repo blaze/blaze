@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import operator
 import contextlib
 
-from .data_descriptor import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 from .. import datashape
 from ..datashape import dshape
 from ..error import ArrayWriteError
@@ -33,27 +33,18 @@ class DyNDDataDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def immutable(self):
-        return self._dyndarr.access_flags == 'immutable'
-
-    @property
-    def deferred(self):
-        """Returns False, dynd arrays are not deferred.
-           TODO: Maybe not always, if the dynd array has an expression type?
-        """
-        return False
-
-    @property
-    def persistent(self):
-        """Returns False, dynd arrays are not persistent.
-        """
-        return False
-
-    @property
-    def appendable(self):
-        """Returns False, dynd arrays are not appendable.
-        """
-        return False
+    def capabilities(self):
+        """The capabilities for the dynd data descriptor."""
+        return Capabilities(
+            # whether dynd arrays can be updated
+            immutable = self._dyndarr.access_flags == 'immutable',
+            # dynd arrays are concrete
+            deferred = False,
+            # dynd arrays can be either persistent of in-memory
+            persistent = False,
+            # dynd arrays can be appended efficiently
+            appendable = False,
+            )
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
