@@ -9,6 +9,32 @@ import contextlib
 from blaze.error import StreamingDimensionError
 from blaze.compute.strategy import current_strategy
 
+
+class Capabilities:
+    """
+    A container for storing the different capabilities of the data descriptor.
+
+    Here are the supported ones:
+
+      * immutable: the array cannot be updated/enlarged
+      * deferred: the array needs to be computed to show results
+      * persistent: the array persists on disk between sessions
+      * appendable: the array can be enlarged efficiently
+
+    """
+
+    def __init__(self, immutable, deferred, persistent, appendable):
+        self._caps = ['immutable', 'deferred', 'persistent', 'appendable']
+        self.immutable = immutable
+        self.deferred = deferred
+        self.persistent = persistent
+        self.appendable = appendable
+
+    def __str__(self):
+        caps = [attr+': '+str(getattr(self, attr)) for attr in self._caps]
+        return "capabilities:" + "\n".join(caps)
+
+        
 class IDataDescriptor:
     """
     The Blaze data descriptor is an interface which exposes
@@ -50,23 +76,8 @@ class IDataDescriptor:
         raise NotImplementedError
 
     @abc.abstractproperty
-    def immutable(self):
-        """Returns True if the data is immutable, False otherwise."""
-        raise NotImplementedError
-
-    @abc.abstractproperty
-    def deferred(self):
-        """Returns True for deferred expressions."""
-        raise NotImplementedError
-
-    @abc.abstractproperty
-    def persistent(self):
-        """Returns True if the data is persistent, False otherwise."""
-        raise NotImplementedError
-
-    @abc.abstractproperty
-    def appendable(self):
-        """Returns True if the data is appendable, False otherwise."""
+    def capabilities(self):
+        """A container for the different capabilities."""
         raise NotImplementedError
 
     def __len__(self):

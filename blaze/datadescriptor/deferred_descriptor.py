@@ -8,7 +8,7 @@ actual deferred expression graph.
 from __future__ import print_function, division, absolute_import
 
 import blaze
-from .data_descriptor import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 
 #------------------------------------------------------------------------
 # Decorators
@@ -76,24 +76,15 @@ class DeferredDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def immutable(self):
-        """Returns True, a deferred blaze function is not concrete."""
-        return True
-
-    @property
-    def deferred(self):
-        """Returns True, blaze function arrays are deferred."""
-        return True
-
-    @property
-    def persistent(self):
-        # TODO: Maybe in the future we can support this, but not yet.
-        return False
-
-    @property
-    def appendable(self):
-        """A deferred function is not appendable."""
-        return False
+    def capabilities(self):
+        """The capabilities for the deferred data descriptor."""
+        return Capabilities(
+            immutable = True,
+            deferred = True,
+            # persistency is not supported yet
+            persistent = False,
+            appendable = False,
+            )
 
     __array__           = force_evaluation('__array__')
     __iter__            = force_evaluation('__iter__')

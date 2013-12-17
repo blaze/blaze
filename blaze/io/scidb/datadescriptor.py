@@ -7,7 +7,7 @@ SciDB data descriptor.
 from __future__ import print_function, division, absolute_import
 
 import blaze
-from blaze.datadescriptor import IDataDescriptor
+from blaze.datadescriptor import IDataDescriptor, Capabilities
 from .datatypes import scidb_dshape
 
 class SciDBDataDescriptor(IDataDescriptor):
@@ -39,18 +39,17 @@ class SciDBDataDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def deferred(self):
-        """scidb does not give us access to its temps right now."""
-        return False
-
-    @property
-    def writable(self):
-        return True
-
-    @property
-    def immutable(self):
-        return True
-
+    def capabilities(self):
+        """The capabilities for the scidb data descriptor."""
+        return Capabilities(
+            immutable = True,
+            # scidb does not give us access to its temps right now
+            deferred = False,
+            persistent = True,
+            # Not sure on whether scidb is appendable or not
+            appendable = False,
+            )
+    
     # TODO: below
 
     def __iter__(self):

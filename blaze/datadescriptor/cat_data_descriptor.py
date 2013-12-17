@@ -3,7 +3,7 @@ import operator
 import bisect
 
 from ..datashape import dshape
-from . import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 
 def cat_descriptor_iter(ddlist):
     for i, dd in enumerate(ddlist):
@@ -41,24 +41,15 @@ class CatDataDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def immutable(self):
-        """The concatenate data descriptor is inmutable."""
-        return True
-
-    @property
-    def deferred(self):
-        """The concatenate data descriptor is deferred."""
-        return True
-
-    @property
-    def persistent(self):
-        """The concatenate data descriptor is not persistent."""
-        return False
-
-    @property
-    def appendable(self):
-        """The concatenate data descriptor is not appendable."""
-        return False
+    def capabilities(self):
+        """The capabilities for the cat data descriptor."""
+        return Capabilities(
+            immutable = True,
+            deferred = True,
+            # persistency is not supported yet
+            persistent = False,
+            appendable = False,
+            )
 
     def __len__(self):
         return self._boundary_index[-1]

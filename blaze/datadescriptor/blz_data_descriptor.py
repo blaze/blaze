@@ -3,7 +3,7 @@ import operator
 import contextlib
 import ctypes
 
-from .data_descriptor import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 from .. import datashape
 import numpy as np
 from dynd import nd, ndt
@@ -40,24 +40,18 @@ class BLZDataDescriptor(IDataDescriptor):
         return datashape.from_numpy(obj.shape, obj.dtype)
 
     @property
-    def immutable(self):
-        """BLZ arrays can be modifyied and enlarged."""
-        return False
-
-    @property
-    def deferred(self):
-        """BLZ arrays are concrete."""
-        return False
-
-    @property
-    def persistent(self):
-        """BLZ objects can be either persistent of in-memory."""
-        return self.blzarr.rootdir is not None
-
-    @property
-    def appendable(self):
-        """Returns True as BLZ arrays support cheap appends."""
-        return True
+    def capabilities(self):
+        """The capabilities for the BLZ arrays."""
+        return Capabilities(
+            # BLZ arrays can be updated
+            immutable = False,
+            # BLZ arrays are concrete
+            deferred = False,
+            # BLZ arrays can be either persistent of in-memory
+            persistent = self.blzarr.rootdir is not None,
+            # BLZ arrays can be appended efficiently
+            appendable = True,
+            )
 
     def __array__(self):
         return np.array(self.blzarr)
