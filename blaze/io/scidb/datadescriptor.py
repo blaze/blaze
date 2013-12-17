@@ -10,7 +10,7 @@ import blaze
 from blaze.datadescriptor import IDataDescriptor
 from .datatypes import scidb_dshape
 
-class SciDBDataDesc(IDataDescriptor):
+class SciDBDataDescriptor(IDataDescriptor):
     """
     SciDB data descriptor.
     """
