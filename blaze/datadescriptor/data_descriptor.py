@@ -38,20 +38,6 @@ class IDataDescriptor:
     """
     __metaclass__ = abc.ABCMeta
 
-    deferred = False
-
-    @property
-    def persistent(self):
-        return False
-
-    @abc.abstractproperty
-    def deferred(self):
-        """Returns True for deferred expressions and persistent
-           arrays. Returns False if the data can be returned as an
-           in-memory dynd array.
-        """
-        raise NotImplementedError
-
     @abc.abstractproperty
     def dshape(self):
         """
@@ -64,26 +50,23 @@ class IDataDescriptor:
         raise NotImplementedError
 
     @abc.abstractproperty
-    def writable(self):
-        """
-        Returns True if the data is writable,
-        False otherwise.
-        """
+    def immutable(self):
+        """Returns True if the data is immutable, False otherwise."""
         raise NotImplementedError
 
     @abc.abstractproperty
-    def immutable(self):
-        """
-        Returns True if the data is immutable,
-        False otherwise.
-        """
+    def deferred(self):
+        """Returns True for deferred expressions."""
         raise NotImplementedError
 
+    @abc.abstractproperty
+    def persistent(self):
+        """Returns True if the data is persistent, False otherwise."""
+        raise NotImplementedError
+
+    @abc.abstractproperty
     def appendable(self):
-        """
-        Returns True if the data is appendable,
-        False otherwise.
-        """
+        """Returns True if the data is appendable, False otherwise."""
         raise NotImplementedError
 
     def __len__(self):
