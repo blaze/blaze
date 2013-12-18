@@ -34,7 +34,7 @@ install:
   # export CONDA_PACKAGE_CACHE=$HOME/pkgs
   - sudo mkdir /usr/pkgs
   - sudo conda init
-  - sudo conda create -p ~/py --yes llvmpy cython numba numpy dynd-python llvmmath ply pycparser pyparsing "python=$TRAVIS_PYTHON_VERSION"
+  - sudo conda create -p ~/py --yes llvmpy cython numba numpy dynd-python llvmmath ply pycparser pyparsing pyyaml "python=$TRAVIS_PYTHON_VERSION"
   - sudo chmod -R 755 ~/py
   # INstall pykit
   - git clone https://github.com/pykit/pykit.git
