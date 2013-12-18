@@ -9,6 +9,36 @@ import contextlib
 from blaze.error import StreamingDimensionError
 from blaze.compute.strategy import current_strategy
 
+
+class Capabilities:
+    """
+    A container for storing the different capabilities of the data descriptor.
+
+    Parameters
+    ----------
+    immutable : bool
+        True if the array cannot be updated/enlarged.
+    deferred : bool
+        True if the array is an expression of other arrays.
+    persistent : bool
+        True if the array persists on files between sessions.
+    appendable : bool
+        True if the array can be enlarged efficiently.
+
+    """
+
+    def __init__(self, immutable, deferred, persistent, appendable):
+        self._caps = ['immutable', 'deferred', 'persistent', 'appendable']
+        self.immutable = immutable
+        self.deferred = deferred
+        self.persistent = persistent
+        self.appendable = appendable
+
+    def __str__(self):
+        caps = [attr+': '+str(getattr(self, attr)) for attr in self._caps]
+        return "capabilities:" + "\n".join(caps)
+
+        
 class IDataDescriptor:
     """
     The Blaze data descriptor is an interface which exposes
@@ -38,20 +68,6 @@ class IDataDescriptor:
     """
     __metaclass__ = abc.ABCMeta
 
-    deferred = False
-
-    @property
-    def persistent(self):
-        return False
-
-    @abc.abstractproperty
-    def is_concrete(self):
-        """Returns True if the data can be returned as an
-           in-memory dynd array. Returns False for deferred
-           expressions and persistent arrays.
-        """
-        raise NotImplementedError
-
     @abc.abstractproperty
     def dshape(self):
         """
@@ -64,26 +80,8 @@ class IDataDescriptor:
         raise NotImplementedError
 
     @abc.abstractproperty
-    def writable(self):
-        """
-        Returns True if the data is writable,
-        False otherwise.
-        """
-        raise NotImplementedError
-
-    @abc.abstractproperty
-    def immutable(self):
-        """
-        Returns True if the data is immutable,
-        False otherwise.
-        """
-        raise NotImplementedError
-
-    def appendable(self):
-        """
-        Returns True if the data is appendable,
-        False otherwise.
-        """
+    def capabilities(self):
+        """A container for the different capabilities."""
         raise NotImplementedError
 
     def __len__(self):

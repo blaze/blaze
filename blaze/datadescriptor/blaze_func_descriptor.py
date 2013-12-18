@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from .data_descriptor import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 
 def blaze_func_iter(bfd, noiter_dims):
     args = bfd.args
@@ -45,7 +45,6 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
         self.outdshape = outdshape
         self.argmap = argmap
 
-
     def _reset_args(self):
         from blaze.compute.bkernel.kernel_tree import find_unique_args
         unique_args = []
@@ -53,9 +52,15 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
         self._args = [self.argmap[argument] for argument in unique_args]
 
     @property
-    def is_concrete(self):
-        """Returns False, blaze function arrays are not concrete."""
-        return False
+    def capabilities(self):
+        """The capabilities for the blaze function data descriptor."""
+        return Capabilities(
+            immutable = True,
+            deferred = True,
+            # persistency is not supported yet
+            persistent = False,
+            appendable = False,
+            )
 
     @property
     def args(self):
@@ -80,16 +85,6 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
     @property
     def dshape(self):
         return self.outdshape
-
-    @property
-    def writable(self):
-        return False
-
-    @property
-    def immutable(self):
-        # TODO: If all the args are immutable, the result
-        #       is also immutable
-        return False
 
     def __iter__(self):
         # Figure out how the outermost dimension broadcasts, by
