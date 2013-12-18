@@ -36,9 +36,9 @@ install:
   - sudo conda init
   - sudo conda create -p ~/py --yes llvmpy cython numba numpy dynd-python llvmmath ply pycparser pyparsing pyyaml "python=$TRAVIS_PYTHON_VERSION"
   - sudo chmod -R 755 ~/py
-  # INstall pykit
+  # Install pykit
   - git clone https://github.com/pykit/pykit.git
-  - cd pykit ; sudo ~/py setup.py install ; cd ..
+  - cd pykit ; sudo ~/py/bin/python setup.py install ; cd ..
   # Install Blaze
   - sudo ~/py/bin/python setup.py install
 
