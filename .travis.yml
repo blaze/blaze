@@ -33,6 +33,7 @@ install:
   # mkdir $HOME/pkgs
   # export CONDA_PACKAGE_CACHE=$HOME/pkgs
   - sudo mkdir /usr/pkgs
+  - sudo conda init
   - sudo conda create -p ~/py --yes llvmpy cython numba numpy dynd-python llvmmath ply pycparser "python=$TRAVIS_PYTHON_VERSION"
   - sudo chmod -R 755 ~/py
   # INstall pykit
