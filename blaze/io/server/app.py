@@ -1,11 +1,12 @@
+from __future__ import absolute_import, division, print_function
 import flask
 import sys
 import os
 from flask import request, Response
-from blaze.catalog.array_provider import json_array_provider
-from datashape_html import render_datashape
+from .datashape_html import render_datashape
+from .compute_session import compute_session
 from dynd import nd, ndt
-from compute_session import compute_session
+import blaze
 from blaze import datashape
 from blaze.catalog.blaze_url import split_array_base, add_indexers_to_url, \
      slice_as_string, index_tuple_as_string
@@ -13,6 +14,8 @@ from blaze.py2help import _inttypes, _strtypes
 
 app = flask.Flask('blaze.server')
 app.sessions = {}
+
+
 def indexers_navigation_html(base_url, array_name, indexers):
     base_url = base_url + array_name
     result = '<a href="' + base_url + '">' + array_name + '</a>'
@@ -45,10 +48,9 @@ def indexers_navigation_html(base_url, array_name, indexers):
             raise IndexError('Invalid indexer %r' % idx)
     return result
 
+
 def get_array(array_name, indexers):
-    arr = app.array_provider(array_name)
-    if arr is None:
-        raise Exception('No Blaze Array named ' + array_name)
+    arr = blaze.catalog.get(array_name)
     for i in indexers:
         if type(i) in [slice, int, tuple]:
             arr = arr[i]
@@ -61,6 +63,7 @@ def get_array(array_name, indexers):
             else:
                 raise Exception('Blaze array does not have field ' + i)
     return arr
+
 
 def html_array(arr, base_url, array_name, indexers):
     array_url = add_indexers_to_url(base_url + array_name, indexers)
@@ -76,11 +79,14 @@ def html_array(arr, base_url, array_name, indexers):
         '\n</body></html>'
     return body
 
+
 @app.route("/favicon.ico")
 def favicon():
     return 'no icon'
 
-from crossdomain import crossdomain
+from .crossdomain import crossdomain
+
+
 @app.route("/<path:path>", methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin="*", automatic_options=False, automatic_headers=True)
 def handle(path):
@@ -88,6 +94,7 @@ def handle(path):
         return handle_session_query()
     else:
         return handle_array_query()
+
 
 def handle_session_query():
     session = app.sessions[request.path]
@@ -109,6 +116,7 @@ def handle_session_query():
         return Response(body, mimetype='application/json')
     else:
         return 'something with session ' + session.session_name
+
 
 def handle_array_query():
     array_name, indexers = split_array_base(request.path)
@@ -132,15 +140,13 @@ def handle_array_query():
     elif q_req == 'dynddebug':
         return arr.debug_repr()
     elif q_req == 'create_session':
-        session = compute_session(app.array_provider, base_url,
+        session = compute_session(base_url,
                                   add_indexers_to_url(array_name, indexers))
         app.sessions[session.session_name] = session
         content_type, body = session.creation_response()
         return Response(body, mimetype='application/json')
     else:
         abort(400, "Unknown Blaze server request %s" % q_req)
-
-
 
 
 if __name__ == "__main__":
@@ -151,4 +157,3 @@ if __name__ == "__main__":
     array_provider = json_array_provider(root_path)
     app.array_provider = array_provider
     app.run(debug=True, port=8080, use_reloader=True)
-

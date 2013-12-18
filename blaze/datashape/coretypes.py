@@ -922,6 +922,7 @@ complex128 = cfloat64
 
 timedelta64 = CType('timedelta64', 8, ctypes.alignment(ctypes.c_int64))
 datetime64 = CType('datetime64', 8, ctypes.alignment(ctypes.c_int64))
+date = CType('date', 4, 4)
 
 c_byte = int8
 c_short = int16

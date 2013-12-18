@@ -6,8 +6,7 @@ from dynd.nd import as_numpy
 from blaze import array
 
 class compute_session:
-    def __init__(self, array_provider, base_url, array_name):
-        self.array_provider = array_provider
+    def __init__(self, base_url, array_name):
         session_name, root_dir = array_provider.create_session_dir()
         self.session_name = session_name
         self.root_dir = root_dir
