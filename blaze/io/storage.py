@@ -138,11 +138,9 @@ def open(persist, **kwargs):
         d = blz.barray(rootdir=persist.path, **kwargs)
         dd = BLZDataDescriptor(d)
     elif persist.format == 'csv':
-        d = file(persist.path, mode=persist.mode)
-        dd = CSVDataDescriptor(d, **kwargs)
+        dd = CSVDataDescriptor(persist.path, **kwargs)
     elif persist.format == 'json':
-        d = file(persist.path, mode=persist.mode)
-        dd = JSONDataDescriptor(d, **kwargs)
+        dd = JSONDataDescriptor(persist.path, **kwargs)
     return Array(dd)
 
 
