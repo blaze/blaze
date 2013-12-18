@@ -1,13 +1,13 @@
 import sys, os
+import blaze
 from blaze.io.server.app import app
-from blaze.catalog.array_provider import json_array_provider
 
 if len(sys.argv) > 1:
-    root_path = sys.argv[1]
+    cat_path = sys.argv[1]
 else:
-    root_path = os.path.join(os.getcwdu(), 'arrays')
+    cat_path = os.path.join(os.getcwdu(), 'sample_arrays.yaml')
 
-array_provider = json_array_provider(root_path)
-app.array_provider = array_provider
+# Load the sample catalog, or from the selected path
+blaze.catalog.load_config(cat_path)
 print('Starting Blaze Server')
 app.run(debug=True, port=8080, use_reloader=True)
