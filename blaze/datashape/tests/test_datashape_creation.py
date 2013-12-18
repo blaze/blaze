@@ -40,6 +40,8 @@ class TestDatashapeCreation(unittest.TestCase):
             self.assertEqual(blaze.dshape('intptr'), dshape(datashape.int64))
             self.assertEqual(blaze.dshape('uintptr'), dshape(datashape.uint64))
 
+    # Skip will be factored into datashape package.
+    @unittest.skip
     def test_atom_shape_errors(self):
         self.assertRaises(TypeError, blaze.dshape, 'boot')
         self.assertRaises(TypeError, blaze.dshape, 'int33')
