@@ -1,19 +1,15 @@
 from __future__ import absolute_import
-import operator
-import contextlib
-import ctypes
-import json
-import itertools as it
 
 from .data_descriptor import IDataDescriptor
 from .. import datashape
-from dynd import nd, ndt
+from dynd import nd
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 
 def json_descriptor_iter(array):
     for row in array:
         yield DyNDDataDescriptor(row)
+
 
 class JSONDataDescriptor(IDataDescriptor):
     """
@@ -27,11 +23,10 @@ class JSONDataDescriptor(IDataDescriptor):
         A blaze datashape (or its string representation) of the schema
         in the JSON file.
     """
-    def __init__(self, jsonfile, **kwargs):
+    def __init__(self, jsonfile, schema=None, **kwargs):
         if not hasattr(jsonfile, "__iter__"):
             raise TypeError('jsonfile does not have an iter interface')
         self.jsonfile = jsonfile
-        schema = kwargs.get("schema", None)
         if type(schema) in (str, unicode):
             schema = datashape.dshape(schema)
         self.schema = str(schema)

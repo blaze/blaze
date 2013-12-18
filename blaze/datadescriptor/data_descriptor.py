@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-__all__ = ['IDataDescriptor']
+__all__ = ['Capabilities', 'IDataDescriptor']
 
 import abc
 import ctypes
@@ -79,10 +79,12 @@ class IDataDescriptor:
         # higher-level data shape. IMHO dshape should be on Array only
         raise NotImplementedError
 
-    @abc.abstractproperty
+
+    @property
     def capabilities(self):
         """A container for the different capabilities."""
-        raise NotImplementedError
+        return Capabilities(self.immutable, not self.is_concrete,
+                            self.persistent, self.appendable)
 
     def __len__(self):
         """

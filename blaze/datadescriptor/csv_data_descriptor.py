@@ -1,19 +1,18 @@
 from __future__ import absolute_import
-import operator
-import contextlib
-import ctypes
+
 import csv
 import itertools as it
 
 from .data_descriptor import IDataDescriptor
 from .. import datashape
-from dynd import nd, ndt
+from dynd import nd
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 
 def csv_descriptor_iter(csvfile, schema):
     for row in csv.reader(csvfile):
         yield DyNDDataDescriptor(nd.array(row, dtype=schema))
+
 
 def csv_descriptor_iterchunks(csvfile, schema, blen, start=None, stop=None):
     if blen == 1:
@@ -56,11 +55,10 @@ class CSVDataDescriptor(IDataDescriptor):
         is guessed.
     """
 
-    def __init__(self, csvfile, **kwargs):
+    def __init__(self, csvfile, schema=None, **kwargs):
         if not hasattr(csvfile, "__iter__"):
             raise TypeError('csvfile does not have an iter interface')
         self.csvfile = csvfile
-        schema = kwargs.get("schema", None)
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
         if type(schema) in (str, unicode):

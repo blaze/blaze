@@ -1,14 +1,9 @@
 import unittest
-import sys
 import io
-import blaze
-from blaze import datashape
+
 from blaze.datadescriptor import (
     CSVDataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
-from blaze.py2help import _inttypes, izip
-import ctypes
 
-from dynd import nd, ndt
 
 # A CSV toy example
 csv_buf = u"""k1,v1,1,False
@@ -17,6 +12,7 @@ k3,v3,3,False
 """
 csv_file = io.StringIO(csv_buf)
 csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
+
 
 class TestCSVDataDescriptor(unittest.TestCase):
     def test_basic_object_type(self):
@@ -125,4 +121,5 @@ class TestCSVDataDescriptor(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    
     unittest.main()
