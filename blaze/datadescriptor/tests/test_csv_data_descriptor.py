@@ -41,9 +41,6 @@ class TestCSVDataDescriptor(unittest.TestCase):
 
     def test_iter(self):
         dd = CSVDataDescriptor(self.csv_file, schema=csv_schema)
-        # This equality does not work yet
-        # self.assertEqual(dd.dshape, datashape.dshape(
-        #     'Var, %s' % csv_schema))
 
         # Iteration should produce DyNDDataDescriptor instances
         vals = []
