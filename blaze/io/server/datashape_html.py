@@ -1,6 +1,6 @@
-from blaze.datashape import DataShape, Record, Fixed, Var, CType, String, JSON
-#from blaze_server_config import jinja_env
+from datashape import DataShape, Record, Fixed, Var, CType, String, JSON
 from jinja2 import Template
+
 
 json_comment_templ = Template("""<font style="font-size:x-small"> # <a href="{{base_url}}?r=data.json">JSON</a></font>
 
@@ -11,6 +11,7 @@ datashape_outer_templ = Template("""
 type <a href="{{base_url}}?r=datashape">BlazeDataShape</a> = {{ds_html}}
 </pre>
 """)
+
 
 def render_datashape_recursive(base_url, ds, indent):
     result = ''
@@ -43,6 +44,7 @@ def render_datashape_recursive(base_url, ds, indent):
     else:
         raise TypeError('Cannot render datashape %r' % ds)
     return result
+
 
 def render_datashape(base_url, ds):
     ds_html = render_datashape_recursive(base_url, ds, '')

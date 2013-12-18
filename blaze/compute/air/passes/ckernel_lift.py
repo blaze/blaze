@@ -1,24 +1,12 @@
-# -*- coding: utf-8 -*-
-
 """
 Lift ckernels to their appropriate rank so they always consume the full array
 arguments.
 """
-
 from __future__ import print_function, division, absolute_import
-from pykit.ir import visit, Op
-from dynd import nd, ndt, _lowlevel
 
-#------------------------------------------------------------------------
-# Run
-#------------------------------------------------------------------------
+from pykit.ir import visit
+from dynd import ndt, _lowlevel
 
-def run(func, env):
-    visit(CKernelLifter(env), func)
-
-#------------------------------------------------------------------------
-# Lift CKernels
-#------------------------------------------------------------------------
 
 class CKernelLifter(object):
     """
@@ -58,3 +46,7 @@ class CKernelLifter(object):
 
             op.args[0] = _lowlevel.lift_ckernel_deferred(ckernel,
                             [out_type] + in_types)
+
+
+def run(func, env):
+    visit(CKernelLifter(env), func)

@@ -2,13 +2,14 @@ from __future__ import absolute_import
 import operator
 import bisect
 
-from ..datashape import dshape
 from . import IDataDescriptor, Capabilities
+
 
 def cat_descriptor_iter(ddlist):
     for i, dd in enumerate(ddlist):
         for el in dd:
             yield el
+
 
 class CatDataDescriptor(IDataDescriptor):
     """

@@ -1,16 +1,11 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from pykit.ir import opcodes
-from blaze import dshape
+from datashape import dshape
 from blaze.compute.air import explicit_coercions
 from blaze.compute.air.tests.utils import make_graph
 
-#------------------------------------------------------------------------
-# Tests
-#------------------------------------------------------------------------
 
 class TestCoercions(unittest.TestCase):
 
@@ -33,7 +28,6 @@ class TestCoercions(unittest.TestCase):
         #     %2 = (Void) ret(%1)
         #
         # }
-
 
 
 if __name__ == '__main__':

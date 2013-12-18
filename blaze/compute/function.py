@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 The purpose of this module is to create blaze functions. A Blaze Function
 carries a polymorphic signature which allows it to verify well-typedness over
@@ -18,22 +16,22 @@ and may include:
 Or a tuple for a combination of the above.
 """
 
+
 from __future__ import print_function, division, absolute_import
 
-import types
 from itertools import chain
-
 import blaze
-from blaze.datashape import coretypes as T, dshape
+from blaze.py2help import dict_iteritems
+from datashape import coretypes as T, dshape
+
 from .overloading import overload, Dispatcher, match_by_weight, best_match
 from ..datadescriptor import DeferredDescriptor
 from .expr.context import merge
-from blaze.py2help import basestring, dict_iteritems
+
 
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
-
 def lookup_previous(f, scopes=None):
     """
     Lookup a previous function definition in the current namespace, i.e.
@@ -50,6 +48,7 @@ def lookup_previous(f, scopes=None):
 
     return None
 
+
 def optional_decorator(f, continuation, args, kwargs):
     def decorator(f):
         return continuation(f, *args, **kwargs)
@@ -59,11 +58,13 @@ def optional_decorator(f, continuation, args, kwargs):
     else:
         return decorator(f)
 
+
 def blaze_args(args, kwargs):
     """Build blaze arrays from inputs to a blaze kernel"""
     args = [blaze.array(a) for a in args]
     kwargs = dict((v, blaze.array(k)) for k, v in dict_iteritems(kwargs))
     return args, kwargs
+
 
 def collect_contexts(args):
     for term in args:
@@ -71,10 +72,10 @@ def collect_contexts(args):
             t, ctx = term.expr
             yield ctx
 
+
 #------------------------------------------------------------------------
 # Decorators
 #------------------------------------------------------------------------
-
 def function(signature, impl='python', **metadata):
     """
     Define an overload for a blaze function. Implementations may be associated
@@ -131,11 +132,13 @@ def function(signature, impl='python', **metadata):
         # def f(...): ...
         return decorator
 
+
 def elementwise(*args, **kwds):
     """
     Define a blaze element-wise kernel.
     """
     return function(*args, elementwise=True, **kwds)
+
 
 def jit_elementwise(*args, **kwds):
     """
@@ -150,9 +153,6 @@ def jit_elementwise(*args, **kwds):
         impl = 'numba'
     return elementwise(*args, impl=impl)
 
-#------------------------------------------------------------------------
-# Application
-#------------------------------------------------------------------------
 
 def apply_function(blaze_func, *args, **kwargs):
     """
@@ -184,10 +184,10 @@ def apply_function(blaze_func, *args, **kwargs):
     # TODO: preserve `user` metadata
     return blaze.Array(desc)
 
+
 #------------------------------------------------------------------------
 # Implementations
 #------------------------------------------------------------------------
-
 def kernel(blaze_func, impl_kind, kernel, signature, **metadata):
     """
     Define a new kernel implementation.
@@ -202,6 +202,7 @@ def kernel(blaze_func, impl_kind, kernel, signature, **metadata):
     # Overload the right dispatcher
     overload(signature, dispatcher=dispatcher)(kernel)
     blaze_func.add_metadata(metadata, impl_kind=impl_kind)
+
 
 class BlazeFunc(object):
     """

@@ -1,25 +1,17 @@
-# -*- coding: utf-8 -*-
-
-"""
-SciDB implementations element-wise ufuncs.
-"""
+"""SciDB implementations element-wise ufuncs."""
 
 from __future__ import print_function, division, absolute_import
 
-from blaze.compute.function import function, kernel
-from blaze.datashape import typesets, datetime64
 from blaze.compute.ops import ufuncs
-from blaze.compute.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
-                              eq, ne, ge, gt, le, lt,
-                              logical_and, logical_or, logical_not, logical_xor,
-                              bitwise_and, bitwise_or, bitwise_xor)
+from blaze.compute.ops.ufuncs import ne, lt, logical_not
+
 from .kernel import scidb_elementwise, scidb_kernel
-from .query import apply, expr, iff, qformat
+from .query import apply, iff, qformat
+
 
 #------------------------------------------------------------------------
 # Implement functions
 #------------------------------------------------------------------------
-
 def define_unop(signature, name, op):
     """Define a unary scidb operator"""
     def unop(x):
@@ -28,6 +20,7 @@ def define_unop(signature, name, op):
     unop.__name__ = name
     _implement(unop, signature)
     return unop
+
 
 def define_binop(signature, name, op):
     """Define a binary scidb operator"""
@@ -40,16 +33,17 @@ def define_binop(signature, name, op):
     _implement(binop, signature)
     return binop
 
+
 def _implement(f, signature):
     name = f.__name__
     blaze_func = getattr(ufuncs, name)
     #print("implement", f, signature, blaze_func)
     scidb_kernel(blaze_func, f, signature)
 
+
 #------------------------------------------------------------------------
 # Arithmetic
 #------------------------------------------------------------------------
-
 add = define_binop("a -> a -> a", "add", "+")
 mul = define_binop("a -> a -> a", "mul", "*")
 sub = define_binop("a : real -> a -> a", "sub", "-")
@@ -63,7 +57,6 @@ neg = define_unop("a -> a", "neg", "-")
 #------------------------------------------------------------------------
 # Compare
 #------------------------------------------------------------------------
-
 eq = define_binop("a..., T -> a..., T -> a..., bool", "add", "==")
 ne = define_binop("a..., T -> a..., T -> a..., bool", "add", "!=")
 lt = define_binop("a..., T -> a..., T -> a..., bool", "add", "<")
@@ -74,7 +67,6 @@ ge = define_binop("a..., T -> a..., T -> a..., bool", "add", ">=")
 #------------------------------------------------------------------------
 # Logical
 #------------------------------------------------------------------------
-
 # TODO: We have to implement all combinations of types here for 'and' etc,
 #       given the set {numeric, bool} for both arguments. Overloading at the
 #       kernel level would reduce this. Can we decide between "kernels" and
@@ -120,27 +112,29 @@ def logical_xor(a, b):
 def logical_not(a):
     return apply("not", a)
 
+
 #------------------------------------------------------------------------
 # Math
 #------------------------------------------------------------------------
-
 @scidb_elementwise('A : numeric -> A')
 def abs(x):
     # Fixme: again exponential codegen
     return iff(lt(x, 0), neg(x), x)
 
+
 #------------------------------------------------------------------------
 # Helper functions
 #------------------------------------------------------------------------
-
 def ibool(x):
     return ne(x, "0")
+
 
 def apply_expr(arr, expr):
     colname = '__blaze_col'
     query = qformat('apply({arr}, {colname}, {expr})',
                     arr=arr, colname=colname, expr=expr)
     return project(query, colname)
+
 
 def project(arr, colname):
     return qformat('project({arr}, {colname})', arr=arr, colname=colname)
@@ -149,5 +143,5 @@ def project(arr, colname):
 # Data types
 #------------------------------------------------------------------------
 
-true  = "true"
+true = "true"
 false = "false"

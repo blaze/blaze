@@ -6,7 +6,7 @@ the entry point to graph construction.
 from collections import Iterable
 
 import blaze
-from blaze.datashape import coretypes as T
+from datashape import coretypes as T, dshape
 from blaze import BlazeFunc
 
 from .graph import ArrayOp, KernelOp
@@ -59,12 +59,8 @@ def construct(bfunc, ctx, overload, args):
         ctx.terms[term] = arg
         params.append(term)
 
-    # -------------------------------------------------
-
     assert isinstance(overload.resolved_sig, T.Function)
-    restype = blaze.dshape(overload.resolved_sig.parameters[-1])
-
-    # -------------------------------------------------
+    restype = dshape(overload.resolved_sig.parameters[-1])
 
     return KernelOp(restype, *params, kernel=bfunc, overload=overload,
                     **bfunc.metadata)

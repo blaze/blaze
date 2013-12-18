@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from blaze import error
-from blaze.compute.overloading import best_match, overload
-from blaze import dshape
-from blaze.datashape import unify, unify_simple, dshapes
+from datashape import dshape, unify_simple
 
-# f
+from blaze.compute.overloading import best_match, overload
+
+
+#f
 
 @overload('X, Y, float32 -> X, Y, float32 -> X, Y, float32')
 def f(a, b):
@@ -32,9 +31,6 @@ def g(a, b):
 def g(a, b):
     return a
 
-#------------------------------------------------------------------------
-# Tests
-#------------------------------------------------------------------------
 
 class TestOverloading(unittest.TestCase):
 

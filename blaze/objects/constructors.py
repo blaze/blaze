@@ -1,28 +1,32 @@
-from __future__ import absolute_import
+"""Constructors for the blaze array object.
 
-# This are the constructors for the blaze array objects.  Having them
-# as external functions allows to more flexibility and helps keeping
-# the blaze array object compact, just showing the interface of the
-# array itself.
-#
-# The blaze array __init__ method should be considered private and for
-# advanced users only. It will provide the tools supporting the rest
-# of the constructors, and will use low-level parameters, like
-# ByteProviders, that an end user may not even need to know about.
+Having them as external functions allows to more flexibility and helps keeping
+the blaze array object compact, just showing the interface of the
+array itself.
+
+The blaze array __init__ method should be considered private and for
+advanced users only. It will provide the tools supporting the rest
+of the constructors, and will use low-level parameters, like
+ByteProviders, that an end user may not even need to know about.
+"""
+
+from __future__ import absolute_import
 
 import inspect
 
-from .array import Array
-from ..datadescriptor import (IDataDescriptor,
-                DyNDDataDescriptor, BLZDataDescriptor)
-from .. import datashape
-from ..datashape import to_numpy, to_numpy_dtype
-from ..io.storage import Storage
-from ..py2help import basestring
-
 from dynd import nd, ndt
 import numpy as np
+import datashape
+from datashape import to_numpy, to_numpy_dtype
+
+from .array import Array
+from ..datadescriptor import (IDataDescriptor,
+                              DyNDDataDescriptor,
+                              BLZDataDescriptor)
+from ..io.storage import Storage
+from ..py2help import basestring
 from ..io import blz
+
 
 def _normalize_dshape(ds):
     """
@@ -37,6 +41,7 @@ def _normalize_dshape(ds):
         return datashape.dshape(ds)
     else:
         return ds
+
 
 # note that this is rather naive. In fact, a proper way to implement
 # the array from a numpy is creating a ByteProvider based on "obj"
@@ -135,6 +140,7 @@ def array(obj, dshape=None, caps={'efficient-write': True},
                         'object of type %r') % type(obj))
     return Array(dd)
 
+
 def _storage_convert(storage):
     if storage is not None and isinstance(storage, str):
         storage = Storage(storage)
@@ -142,6 +148,7 @@ def _storage_convert(storage):
 
 # TODO: Make overloaded constructors, taking dshape, **kwds. Overload
 # on keywords
+
 
 def empty(dshape, caps={'efficient-write': True}, storage=None):
     """Create an array with uninitialized data.
@@ -174,6 +181,7 @@ def empty(dshape, caps={'efficient-write': True}, storage=None):
     elif 'compress' in caps:
         dd = BLZDataDescriptor(blz.zeros(shape, dt))
     return Array(dd)
+
 
 def zeros(dshape, caps={'efficient-write': True}, storage=None):
     """Create an array and fill it with zeros.

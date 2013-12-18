@@ -1,13 +1,9 @@
 import unittest
-import sys
-import blaze
-from blaze import datashape
-from blaze.datadescriptor import (DyNDDataDescriptor,
-                IDataDescriptor, dd_as_py)
-from blaze.py2help import _inttypes, izip
-import ctypes
 
-from dynd import nd, ndt
+import datashape
+from dynd import nd
+from blaze.datadescriptor import DyNDDataDescriptor, IDataDescriptor, dd_as_py
+
 
 class TestDyNDDataDescriptor(unittest.TestCase):
     def test_basic_object_type(self):
@@ -43,14 +39,15 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         self.assertEqual(dd_as_py(dd[1,2]), 6)
 
     def test_var_dim(self):
-        a = nd.array([[1,2,3], [4,5], [6]])
+        a = nd.array([[1, 2, 3], [4, 5], [6]])
         dd = DyNDDataDescriptor(a)
 
         self.assertEqual(dd.dshape, datashape.dshape('3, var, int32'))
-        self.assertEqual(dd_as_py(dd), [[1,2,3], [4,5], [6]])
-        self.assertEqual(dd_as_py(dd[0]), [1,2,3])
-        self.assertEqual(dd_as_py(dd[1]), [4,5])
+        self.assertEqual(dd_as_py(dd), [[1, 2, 3], [4, 5], [6]])
+        self.assertEqual(dd_as_py(dd[0]), [1, 2, 3])
+        self.assertEqual(dd_as_py(dd[1]), [4, 5])
         self.assertEqual(dd_as_py(dd[2]), [6])
+
 
 if __name__ == '__main__':
     unittest.main()

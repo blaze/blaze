@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Use blaze.bkernel to assemble ckernels for evaluation.
 """
@@ -7,22 +5,18 @@ Use blaze.bkernel to assemble ckernels for evaluation.
 from __future__ import print_function, division, absolute_import
 import collections
 
-from pykit.ir import interp, visit, transform, Op, FuncArg
+from pykit.ir import visit, transform, Op
+from datashape.util import to_numba
+from numba import jit
 
-import blaze
-from ...bkernel import BlazeFuncDeprecated
-from ...bkernel.blaze_kernels import frompyfunc, fromctypes, BlazeElementKernel
+from ...bkernel.blaze_kernels import frompyfunc, BlazeElementKernel
 from ...bkernel.kernel_tree import Argument, KernelTree
-from blaze.datashape.util import to_numba
-
 from ... import llvm_array
 
-from numba import jit
 
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
-
 def run(func, env):
     jit_env = dict(root_jit_env)
     jitter(func, jit_env)
@@ -30,20 +24,20 @@ def run(func, env):
     ckernel_transformer(func, jit_env)
     return func, env
 
+
 #------------------------------------------------------------------------
 # Environment
 #------------------------------------------------------------------------
-
 root_jit_env = {
     'jitted':       None, # Jitted kernels, { Op : BlazeElementKernel }
     'trees':        None, # (partial) kernel tree, { Op : KernelTree }
     'arguments':    None, # Accumulated arguments, { Op : [ Op ] }
 }
 
+
 #------------------------------------------------------------------------
 # Pipeline
 #------------------------------------------------------------------------
-
 def jitter(func, jit_env):
     v = KernelJitter(func)
     visit(v, func)
@@ -51,11 +45,13 @@ def jitter(func, jit_env):
     visit(v, func)
     jit_env['jitted'] = v.jitted
 
+
 def treebuilder(func, jit_env):
     fuser = JitFuser(func, jit_env['jitted'])
     visit(fuser, func)
     jit_env['trees'] = fuser.trees
     jit_env['arguments'] = fuser.arguments
+
 
 def ckernel_transformer(func, jit_env):
     transformer = CKernelTransformer(func, jit_env['jitted'],
@@ -67,10 +63,10 @@ def ckernel_transformer(func, jit_env):
     for op in reversed(transformer.delete_later):
         op.delete()
 
+
 #------------------------------------------------------------------------
 # Jit kernels
 #------------------------------------------------------------------------
-
 class KernelJitter(object):
     """
     Jit kernels. Produces a dict `jitted` that maps Operations to jitted
@@ -130,8 +126,8 @@ def construct_blaze_kernel(function, overload):
     if py_func is not None:
         return BlazeElementKernel(py_func, signature.argtypes)
 
-# TODO: factor this out into a "resolve_kernels" or somesuch pass
 
+# TODO: factor this out into a "resolve_kernels" or somesuch pass
 def find_impl(function, impl_kind, argtypes, expected_signature):
     if function.matches(impl_kind, argtypes):
         overload = function.best_match(impl_kind, argtypes)
@@ -147,16 +143,17 @@ def find_impl(function, impl_kind, argtypes, expected_signature):
 
     return None, None
 
+
 #------------------------------------------------------------------------
 # Fuse jitted kernels
 #------------------------------------------------------------------------
-
 def tree_arg(type):
     kind = llvm_array.SCALAR
     rank = 0
     llvmtype = to_numba(type.measure).to_llvm()
     tree = Argument(type, kind, rank, llvmtype)
     return tree
+
 
 class JitFuser(object):
     """
@@ -229,7 +226,6 @@ class JitFuser(object):
 #------------------------------------------------------------------------
 # Rewrite to CKernels
 #------------------------------------------------------------------------
-
 class CKernelTransformer(object):
 
     def __init__(self, func, jitted, trees, arguments):
@@ -285,10 +281,10 @@ class CKernelTransformer(object):
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
-
 def make_blazefunc(f):
     #return BlazeFuncDeprecated(f.__name__, template=f)
     return BlazeElementKernel(f.lfunc)
+
 
 def converter(blaze_dtype, blaze_argtype):
     """
@@ -300,6 +296,7 @@ def converter(blaze_dtype, blaze_argtype):
     def convert(value):
         return dtype(value)
     return convert
+
 
 def make_ckernel(blaze_func):
     raise NotImplementedError

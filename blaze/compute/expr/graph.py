@@ -10,9 +10,9 @@ from functools import partial
 # Opcodes
 #------------------------------------------------------------------------
 
-array = 'array'   # array input
-kernel = 'kernel' # kernel application, carrying the blaze kernel as a
-                  # first argument (Constant)
+array = 'array'    # array input
+kernel = 'kernel'  # kernel application, carrying the blaze kernel as a
+                   # first argument (Constant)
 
 #------------------------------------------------------------------------
 # Graph
@@ -38,7 +38,7 @@ class Op(object):
         self.opcode = opcode
         self.dshape = dshape
         self.uses = []
-        self.args   = list(args)
+        self.args = list(args)
 
         if opcode == 'kernel':
             assert 'kernel' in metadata

@@ -6,3 +6,6 @@ nose
 numba
 numexpr
 dynd-python
+pykit
+datashape
+numpy

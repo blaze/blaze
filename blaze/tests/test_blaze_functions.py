@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import unittest
 
+from datashape import dshape
 import blaze
 from blaze.compute.function import function, kernel
-from blaze import dshape, array, py2help
+from blaze import array
 from dynd import nd, _lowlevel
 import numpy as np
 

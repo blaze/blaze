@@ -1,8 +1,9 @@
 from __future__ import print_function, division, absolute_import
 
 import unittest
+from datashape import dshape
 
-from blaze import dshape, add, mul, eval, py2help
+from blaze import add, mul, eval, py2help
 from blaze.io.scidb import zeros, ones
 from blaze.io.scidb.tests.mock import MockedConn
 
@@ -12,7 +13,9 @@ try:
 except ImportError:
     scidbpy = None
 
+
 ds = dshape('10, 10, float64')
+
 
 class TestSciDB(unittest.TestCase):
 
@@ -58,7 +61,5 @@ class TestSciDB(unittest.TestCase):
         print(result)
 
 
-
 if __name__ == '__main__':
-    #unittest.main()
-    TestSciDB('test_query_exec').debug()
+    unittest.main()

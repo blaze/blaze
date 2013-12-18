@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import inspect
@@ -7,9 +6,10 @@ from collections import namedtuple, defaultdict
 from itertools import chain
 
 from blaze import error
-from blaze.datashape import (coretypes as T, unify, dshape,
-                             dummy_signature)
+from datashape import (coretypes as T, unify, dshape, dummy_signature)
+
 from .util import flatargs, listify, alpha_equivalent
+
 
 class Dispatcher(object):
     """
@@ -76,6 +76,7 @@ class Dispatcher(object):
         return '<%s: \n%s>' % (self.f and self.f.__name__,
                                "\n".join("    %s" % (s,) for s in signatures))
 
+
 def overload(signature, dispatcher=None, **kwds):
     """
     Overload `func` with new signature, or find this function in the local
@@ -97,6 +98,7 @@ def overload(signature, dispatcher=None, **kwds):
 
     return decorator
 
+
 def overloadable(f):
     """
     Make a function overloadable, useful if there's no useful defaults to
@@ -107,8 +109,8 @@ def overloadable(f):
 #------------------------------------------------------------------------
 # Matching
 #------------------------------------------------------------------------
-
 Overload = namedtuple('Overload', 'resolved_sig, sig, func, constraints, kwds')
+
 
 def best_match(func, argtypes, constraints=None):
     """
@@ -167,7 +169,7 @@ def match_by_weight(func, argtypes, constraints=None):
     -------
     { weight : [Overload] }
     """
-    from blaze.datashape import coercion_cost
+    from datashape import coercion_cost
     overloads = func.overloads
 
     # -------------------------------------------------
@@ -190,6 +192,7 @@ def match_by_weight(func, argtypes, constraints=None):
             matches[weight].append(match)
 
     return matches
+
 
 @listify
 def find_matches(overloads, argtypes, constraints=()):

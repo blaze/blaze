@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import unittest
-from blaze import dshape
+
+from datashape import dshape
 from blaze.compute.air.tests.utils import make_graph
 
-#------------------------------------------------------------------------
-# Tests
-#------------------------------------------------------------------------
 
 class TestIR(unittest.TestCase):
 

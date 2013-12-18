@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 
 from . import _arrayprint
-from blaze import datashape
-from dynd import nd, ndt
 
 
 def array_repr(a):

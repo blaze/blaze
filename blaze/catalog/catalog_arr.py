@@ -1,9 +1,9 @@
 from __future__ import absolute_import
-import os
 from os import path
 import yaml
 import csv
 from dynd import nd, ndt
+
 import blaze
 from .. import py2help
 
