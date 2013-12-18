@@ -4,6 +4,7 @@ import contextlib
 import ctypes
 import csv
 import itertools as it
+import os
 
 from .data_descriptor import IDataDescriptor
 from .. import datashape
@@ -11,24 +12,34 @@ from dynd import nd, ndt
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 
-def csv_descriptor_iter(csvfile, schema):
-    for row in csv.reader(csvfile):
-        yield DyNDDataDescriptor(nd.array(row, dtype=schema))
+def open_file(filename, has_header, mode='r'):
+    """Return a file handler positionated at the first valid line."""
+    csvfile = file(filename, mode=mode)
+    if has_header:
+        csvfile.readline()
+    return csvfile
 
-def csv_descriptor_iterchunks(csvfile, schema, blen, start=None, stop=None):
+def csv_descriptor_iter(filename, has_header, schema):
+    with open_file(filename, has_header) as csvfile:
+        for row in csv.reader(csvfile):
+            yield DyNDDataDescriptor(nd.array(row, dtype=schema))
+
+def csv_descriptor_iterchunks(filename, has_header, schema,
+                              blen, start=None, stop=None):
     rows = []
-    for nrow, row in enumerate(csv.reader(csvfile)):
-        if start is not None and nrow < start: continue
-        if stop is not None and nrow >= stop:
-            if rows != []:
-                # Build the descriptor for the data we have and return
+    with open_file(filename, has_header) as csvfile:
+        for nrow, row in enumerate(csv.reader(csvfile)):
+            if start is not None and nrow < start: continue
+            if stop is not None and nrow >= stop:
+                if rows != []:
+                    # Build the descriptor for the data we have and return
+                    yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+                return
+            rows.append(row)
+            if nrow % blen == 0:
+                print("rows:", rows, schema)
                 yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
-            return
-        rows.append(row)
-        if nrow % blen == 0:
-            print("rows:", rows, schema)
-            yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
-            rows = []
+                rows = []
 
 
 class CSVDataDescriptor(IDataDescriptor):
@@ -37,8 +48,8 @@ class CSVDataDescriptor(IDataDescriptor):
 
     Parameters
     ----------
-    csvfile : file IO handle
-        A file handler for the CSV file.
+    filename : path string
+        A file name for the CSV file.
     schema : string or blaze.datashape
         A blaze datashape (or its string representation) of the schema
         in the CSV file.
@@ -50,10 +61,12 @@ class CSVDataDescriptor(IDataDescriptor):
         is guessed.
     """
 
-    def __init__(self, csvfile, **kwargs):
-        if not hasattr(csvfile, "__iter__"):
-            raise TypeError('csvfile does not have an iter interface')
-        self.csvfile = csvfile
+    def __init__(self, filename, **kwargs):
+        if os.path.isfile(filename) is not True:
+            raise ValueError(
+                "You need to pass an existing filename for `filename`")
+        self.filename = filename
+        csvfile = file(filename)
         schema = kwargs.get("schema", None)
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
@@ -113,8 +126,8 @@ class CSVDataDescriptor(IDataDescriptor):
 
     def dynd_arr(self):
         # Positionate at the beginning of the file
-        self.reset_file()
-        return nd.array(csv.reader(self.csvfile), dtype=self.schema)
+        with open_file(self.filename, self.has_header) as csvfile:
+            return nd.array(csv.reader(csvfile), dtype=self.schema)
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
@@ -123,22 +136,16 @@ class CSVDataDescriptor(IDataDescriptor):
         # We don't know how many rows we have
         return None
 
-    def reset_file(self):
-        """Positionated at the first valid line."""
-        self.csvfile.seek(0)
-        if self.has_header:
-            self.csvfile.readline()
-    
     def __getitem__(self, key):
-        self.reset_file()
-        if type(key) in (int, long):
-            start, stop, step = key, key + 1, 1
-        elif type(key) is slice:
-            start, stop, step = key.start, key.stop, key.step
-        else:
-            raise IndexError("key '%r' is not valid" % key)
-        read_iter = it.islice(csv.reader(self.csvfile), start, stop, step)
-        res = nd.array(read_iter, dtype=self.schema)
+        with open_file(self.filename, self.has_header) as csvfile:
+            if type(key) in (int, long):
+                start, stop, step = key, key + 1, 1
+            elif type(key) is slice:
+                start, stop, step = key.start, key.stop, key.step
+            else:
+                raise IndexError("key '%r' is not valid" % key)
+            read_iter = it.islice(csv.reader(csvfile), start, stop, step)
+            res = nd.array(read_iter, dtype=self.schema)
         return DyNDDataDescriptor(res)
 
     def __setitem__(self, key, value):
@@ -146,17 +153,16 @@ class CSVDataDescriptor(IDataDescriptor):
         raise NotImplementedError
 
     def __iter__(self):
-        # Positionate at the beginning of the file
-        self.reset_file()
-        return csv_descriptor_iter(self.csvfile, self.schema)
+        return csv_descriptor_iter(self.filename, self.has_header, self.schema)
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
-        self.csvfile.seek(0, 2)  # go to the end of the file
-        values = nd.array(row, dtype=self.schema)  # validate row
-        delimiter = self.dialect.delimiter
-        terminator = self.dialect.lineterminator
-        self.csvfile.write(delimiter.join(unicode(v) for v in row)+terminator)
+        with open_file(self.filename, self.has_header, mode='a') as csvfile:
+            csvfile.seek(0, 2)  # go to the end of the file
+            values = nd.array(row, dtype=self.schema)  # validate row
+            delimiter = self.dialect.delimiter
+            terminator = self.dialect.lineterminator
+            csvfile.write(delimiter.join(unicode(v) for v in row)+terminator)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
@@ -178,6 +184,5 @@ class CSVDataDescriptor(IDataDescriptor):
 
         """
         # Return the iterable
-        self.reset_file()
-        return csv_descriptor_iterchunks(self.csvfile, self.schema,
-                                         blen, start, stop)
+        return csv_descriptor_iterchunks(self.filename, self.has_header,
+                                         self.schema, blen, start, stop)
