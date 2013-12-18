@@ -14,12 +14,16 @@ class Capabilities:
     """
     A container for storing the different capabilities of the data descriptor.
 
-    Here are the supported ones:
-
-      * immutable: the array cannot be updated/enlarged
-      * deferred: the array needs to be computed to show results
-      * persistent: the array persists on disk between sessions
-      * appendable: the array can be enlarged efficiently
+    Parameters
+    ----------
+    immutable : bool
+        True if the array cannot be updated/enlarged.
+    deferred : bool
+        True if the array is an expression of other arrays.
+    persistent : bool
+        True if the array persists on files between sessions.
+    appendable : bool
+        True if the array can be enlarged efficiently.
 
     """
 
