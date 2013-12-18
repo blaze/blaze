@@ -7,6 +7,7 @@ from blaze.datashape.parser import parse
 from blaze.datashape.coretypes import Enum, Option, Function
 from blaze.datashape.typesets import integral
 
+
 class TestDatashapeParser(common.BTestCase):
 
     def test_simple_parse(self):
@@ -206,6 +207,7 @@ class TestCategorical(common.BTestCase):
 
         assert isinstance(res, Enum)
 
+    @unittest.skip
     def test_categorical_module(self):
         source = """
         data Day = Monday | Tuesday | Wednesday | Thursday | Friday

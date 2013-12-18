@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import unittest
 
 from blaze import dshape, add, mul, eval, py2help
-from blaze.io.scidb import connect, empty, zeros, ones
+from blaze.io.scidb import zeros, ones
 from blaze.io.scidb.tests.mock import MockedConn
 
 try:
@@ -20,6 +19,7 @@ class TestSciDB(unittest.TestCase):
     def setUp(self):
         self.conn = MockedConn()
 
+    @py2help.skipIf(scidbpy is None, 'scidbpy is not installed')
     def test_query(self):
         a = zeros(ds, self.conn)
         b = ones(ds, self.conn)
