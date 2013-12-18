@@ -48,8 +48,8 @@ class CSVDataDescriptor(IDataDescriptor):
 
     Parameters
     ----------
-    filename : path string
-        A file name for the CSV file.
+    filename : string
+        A path string for the CSV file.
     schema : string or blaze.datashape
         A blaze datashape (or its string representation) of the schema
         in the CSV file.

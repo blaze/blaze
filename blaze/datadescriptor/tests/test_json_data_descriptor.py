@@ -1,6 +1,8 @@
 import unittest
 import sys
 import io
+import os
+import tempfile
 import blaze
 from blaze import datashape
 from blaze.datadescriptor import (
@@ -46,18 +48,26 @@ _json_schema = """{
 """
 
 json_buf = u"[1, 2, 3, 4, 5]"
-json_file = io.StringIO(json_buf)
 json_schema = "var, int8"
 
 class TestJSONDataDescriptor(unittest.TestCase):
+
+    def setUp(self):
+        self.json_file = tempfile.mktemp(".json")
+        with file(self.json_file, "w") as f:
+            f.write(json_buf)
+
+    def tearDown(self):
+        os.remove(self.json_file)
+
     def test_basic_object_type(self):
         self.assertTrue(issubclass(JSONDataDescriptor, IDataDescriptor))
-        dd = JSONDataDescriptor(json_file, schema=json_schema)
+        dd = JSONDataDescriptor(self.json_file, schema=json_schema)
         self.assertTrue(isinstance(dd, IDataDescriptor))
         self.assertEqual(dd_as_py(dd), [1, 2, 3, 4, 5])
 
     def test_iter(self):
-        dd = JSONDataDescriptor(json_file, schema=json_schema)
+        dd = JSONDataDescriptor(self.json_file, schema=json_schema)
         # This equality does not work yet
         # self.assertEqual(dd.dshape, datashape.dshape(
         #     'Var, %s' % json_schema))
@@ -71,7 +81,7 @@ class TestJSONDataDescriptor(unittest.TestCase):
         self.assertEqual(vals, [1, 2, 3, 4, 5])
 
     def test_getitem(self):
-        dd = JSONDataDescriptor(json_file, schema=json_schema)
+        dd = JSONDataDescriptor(self.json_file, schema=json_schema)
         el = dd[1:3]
         self.assertTrue(isinstance(el, DyNDDataDescriptor))
         vals = dd_as_py(el)

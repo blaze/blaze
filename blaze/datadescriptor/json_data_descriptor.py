@@ -3,6 +3,7 @@ import operator
 import contextlib
 import ctypes
 import json
+import os
 import itertools as it
 
 from .data_descriptor import IDataDescriptor
@@ -21,16 +22,17 @@ class JSONDataDescriptor(IDataDescriptor):
 
     Parameters
     ----------
-    jsonfile : file IO handle
-        A file handler for the JSON file.
+    filename : string
+        A path string for the JSON file.
     schema : string or blaze.datashape
         A blaze datashape (or its string representation) of the schema
         in the JSON file.
     """
-    def __init__(self, jsonfile, **kwargs):
-        if not hasattr(jsonfile, "__iter__"):
-            raise TypeError('jsonfile does not have an iter interface')
-        self.jsonfile = jsonfile
+    def __init__(self, filename, **kwargs):
+        if os.path.isfile(filename) is not True:
+            raise ValueError(
+                "You need to pass an existing filename for `filename`")
+        self.filename = filename
         schema = kwargs.get("schema", None)
         if type(schema) in (str, unicode):
             schema = datashape.dshape(schema)
@@ -67,11 +69,11 @@ class JSONDataDescriptor(IDataDescriptor):
     def _arr_cache(self):
         if self._cache_arr is not None:
             return self._cache_arr
-        self.jsonfile.seek(0)  # go to the beginning of the file
-        # This will read everything in-memory (but a memmap approach
-        # is in the works)
-        self._cache_arr = nd.parse_json(
-            self.schema, self.jsonfile.read())
+        with file(self.filename) as jsonfile:
+            # This will read everything in-memory (but a memmap approach
+            # is in the works)
+            self._cache_arr = nd.parse_json(
+                self.schema, jsonfile.read())
         return self._cache_arr
 
     def dynd_arr(self):
@@ -93,4 +95,3 @@ class JSONDataDescriptor(IDataDescriptor):
 
     def __iter__(self):
         return json_descriptor_iter(self._arr_cache)
-
