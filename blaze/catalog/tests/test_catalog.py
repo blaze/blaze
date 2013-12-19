@@ -2,12 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import blaze
 import unittest
-from blaze.catalog.tests.catalog_harness import TestCatalog
+from blaze.catalog.tests.catalog_harness import CatalogHarness
 
 
-class TestEphemeral(unittest.TestCase):
+class TestCatalog(unittest.TestCase):
     def setUp(self):
-        self.cat = TestCatalog()
+        self.cat = CatalogHarness()
         blaze.catalog.load_config(self.cat.catfile)
 
     def tearDown(self):
