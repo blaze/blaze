@@ -61,15 +61,11 @@ class Array(object):
         return self._data.dshape
 
     @property
-    def deferred(self):
-        return self._data.deferred
-
-    @property
-    def persistent(self):
-        return self._data.persistent
+    def capabilities(self):
+        return self._data.capabilities
 
     def view(self):
-        if not self.deferred:
+        if not self.capabilities.deferred:
             raise ValueError("Cannot call 'view' on a concrete array")
 
         term, context = self.expr

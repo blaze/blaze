@@ -6,6 +6,7 @@ import numpy as np
 import unittest
 from blaze.tests.common import MayBeUriTest
 from blaze import append
+from ..py2help import skip
 
 class TestEphemeral(unittest.TestCase):
 
@@ -20,6 +21,7 @@ class TestEphemeral(unittest.TestCase):
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3])
 
+    @skip('A NotImplementedError should be raised')
     def test_create_append(self):
         # A default array (backed by NumPy, append not supported yet)
         a = blaze.array([])
