@@ -9,7 +9,7 @@ import itertools as it
 from .data_descriptor import IDataDescriptor
 from .. import datashape
 from dynd import nd, ndt
-from .dynd_data_descriptor import DyNDDataDescriptor
+from .dynd_data_descriptor import DyNDDataDescriptor, Capabilities
 
 
 def json_descriptor_iter(array):
@@ -41,29 +41,22 @@ class JSONDataDescriptor(IDataDescriptor):
         self._cache_arr = None
 
     @property
-    def persistent(self):
-        return True
-
-    @property
-    def is_concrete(self):
-        """Returns True, JSON arrays are concrete."""
-        return True
-
-    @property
     def dshape(self):
         return datashape.dshape(self.schema)
 
     @property
-    def writable(self):
-        return False
-
-    @property
-    def appendable(self):
-        return False
-
-    @property
-    def immutable(self):
-        return False
+    def capabilities(self):
+        """The capabilities for the json data descriptor."""
+        return Capabilities(
+            # json datadescriptor cannot be updated
+            immutable = False,
+            # json datadescriptors are concrete
+            deferred = False,
+            # json datadescriptor is persistent
+            persistent = True,
+            # json datadescriptor can be appended efficiently
+            appendable = True,
+            )
 
     @property
     def _arr_cache(self):

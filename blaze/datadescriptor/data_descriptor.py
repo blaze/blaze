@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-__all__ = ['IDataDescriptor']
+__all__ = ['IDataDescriptor', 'Capabilities']
 
 import abc
 import ctypes
