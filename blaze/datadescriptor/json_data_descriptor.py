@@ -16,6 +16,7 @@ def json_descriptor_iter(array):
     for row in array:
         yield DyNDDataDescriptor(row)
 
+
 class JSONDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a JSON file.
