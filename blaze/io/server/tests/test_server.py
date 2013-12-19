@@ -21,12 +21,16 @@ class TestServer(unittest.TestCase):
                                 'start_simple_server.py')
         for attempt in range(5):
             self.port = 10000 + random.randrange(30000)
+            cflags = 0
+            if sys.platform == 'win32':
+                cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+
             self.proc = subprocess.Popen([sys.executable,
                                           serverpy,
                                           self.cat.catfile,
                                           str(self.port)],
                                          executable=sys.executable,
-                         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+                                         creationflags=cflags)
             for i in range(10):
                 time.sleep(0.2)
                 if self.proc.poll() is not None:
