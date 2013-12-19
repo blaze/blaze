@@ -64,7 +64,7 @@ def get_array(array_name, indexers):
 
 def html_array(arr, base_url, array_name, indexers):
     array_url = add_indexers_to_url(base_url + array_name, indexers)
-    print array_url
+    print(array_url)
 
     nav_html = indexers_navigation_html(base_url, array_name, indexers)
     datashape_html = render_datashape(array_url, arr.dshape)

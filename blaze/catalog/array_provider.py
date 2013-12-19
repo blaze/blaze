@@ -88,7 +88,7 @@ class json_array_provider:
         print('Cache has keys %s' % self.array_cache.keys())
         print('Checking cache for %s' % array_name)
         if self.array_cache.has_key(array_name):
-            print 'Returning cached array %s' % array_name
+            print('Returning cached array %s' % array_name)
             return self.array_cache[array_name]
 
         if path.isfile(root + '.json'):
@@ -102,10 +102,10 @@ class json_array_provider:
                 print(f.read())
             raise RuntimeError('TODO: Deferred loading not implemented!')
         elif path.isfile(root + '.files'):
-            print ('Loading files from file list: %s' % (root + '.files'))
+            print('Loading files from file list: %s' % (root + '.files'))
             arr = load_json_file_list_array(root, array_name)
         else:
-            print 'Loading array %s from directory %s' % (array_name, root)
+            print('Loading array %s from directory %s' % (array_name, root))
             arr = load_json_directory_array(root, array_name)
 
         self.array_cache[array_name] = arr

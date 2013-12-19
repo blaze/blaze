@@ -60,7 +60,7 @@ class DeferredDescriptor(IDataDescriptor):
     @property
     def inputs(self):
         graph, ctx = self.expr
-        return [term for term in ctx.terms.itervalues()
+        return [term for term in ctx.terms.values()
                          if isinstance(term, blaze.Array)]
 
     @property
