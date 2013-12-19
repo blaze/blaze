@@ -35,3 +35,6 @@ class BTestCase(unittest.TestCase):
 
     def assertGreater(self, a, b, msg=None):
         self.assertTrue(a > b, msg or "%s is not greater than %s" % (a, b))
+
+    def assertLess(self, a, b, msg=None):
+        self.assertTrue(a < b, msg or "%s is not greater than %s" % (a, b))
