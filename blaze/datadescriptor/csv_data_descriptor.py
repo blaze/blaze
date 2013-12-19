@@ -6,7 +6,7 @@ import csv
 import itertools as it
 import os
 
-from .data_descriptor import IDataDescriptor
+from .data_descriptor import IDataDescriptor, Capabilities
 from .. import datashape
 from dynd import nd, ndt
 from .dynd_data_descriptor import DyNDDataDescriptor
@@ -100,29 +100,22 @@ class CSVDataDescriptor(IDataDescriptor):
             self.has_header = has_header
 
     @property
-    def persistent(self):
-        return True
-
-    @property
-    def is_concrete(self):
-        """Returns True, CSV arrays are concrete."""
-        return True
-
-    @property
     def dshape(self):
         return datashape.DataShape(datashape.Var(), self.schema)
 
     @property
-    def writable(self):
-        return False
-
-    @property
-    def appendable(self):
-        return True
-
-    @property
-    def immutable(self):
-        return False
+    def capabilities(self):
+        """The capabilities for the csv data descriptor."""
+        return Capabilities(
+            # csv datadescriptor cannot be updated
+            immutable = False,
+            # csv datadescriptors are concrete
+            deferred = False,
+            # csv datadescriptor is persistent
+            persistent = True,
+            # csv datadescriptor can be appended efficiently
+            appendable = True,
+            )
 
     def dynd_arr(self):
         # Positionate at the beginning of the file
