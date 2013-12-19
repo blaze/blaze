@@ -12,7 +12,7 @@ import os
 import shutil
 
 
-class TestCatalog(object):
+class CatalogHarness(object):
     def __init__(self):
         self.catdir = tempfile.mkdtemp()
         self.arrdir = os.path.join(self.catdir, 'arrays')
