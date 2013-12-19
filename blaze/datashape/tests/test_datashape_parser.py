@@ -1,7 +1,7 @@
 import unittest
 
 import blaze
-from blaze import error, datashape
+from blaze import error, datashape, py2help
 from blaze.tests import common
 from blaze.datashape.parser import parse
 from blaze.datashape.coretypes import Enum, Option, Function
@@ -207,7 +207,7 @@ class TestCategorical(common.BTestCase):
 
         assert isinstance(res, Enum)
 
-    @unittest.skip
+    @py2help.skip
     def test_categorical_module(self):
         source = """
         data Day = Monday | Tuesday | Wednesday | Thursday | Friday

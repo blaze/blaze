@@ -5,7 +5,7 @@ import unittest
 
 import blaze
 from blaze.compute.function import function, kernel
-from blaze import dshape, array
+from blaze import dshape, array, py2help
 from dynd import nd, _lowlevel
 import numpy as np
 
@@ -90,7 +90,7 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         self.assertEqual(a.dshape, blaze.dshape('2, int16'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [2, 2])
 
-    @unittest.skip
+    @py2help.skip
     def test_overload_coercion(self):
         myfunc = create_overloaded_add()
 
@@ -110,7 +110,7 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         self.assertEqual(a.dshape, blaze.dshape('2, int16'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [2, 2])
 
-    @unittest.skip
+    @py2help.skip
     def test_nesting(self):
         myfunc = create_overloaded_add()
 
@@ -120,7 +120,7 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         self.assertEqual(a.dshape, blaze.dshape('2, int32'))
         self.assertEqual(nd.as_py(a._data.dynd_arr()), [6, 16])
 
-    @unittest.skip
+    @py2help.skip
     def test_nesting_and_coercion(self):
         myfunc = create_overloaded_add()
 

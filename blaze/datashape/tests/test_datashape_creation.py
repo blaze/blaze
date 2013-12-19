@@ -1,6 +1,6 @@
 import blaze
 import ctypes
-from blaze import dshape, error, datashape
+from blaze import dshape, error, datashape, py2help
 import numpy as np
 import unittest
 
@@ -41,7 +41,7 @@ class TestDatashapeCreation(unittest.TestCase):
             self.assertEqual(blaze.dshape('uintptr'), dshape(datashape.uint64))
 
     # Skip will be factored into datashape package.
-    @unittest.skip
+    @py2help.skip
     def test_atom_shape_errors(self):
         self.assertRaises(TypeError, blaze.dshape, 'boot')
         self.assertRaises(TypeError, blaze.dshape, 'int33')
