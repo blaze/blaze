@@ -8,7 +8,7 @@ actual deferred expression graph.
 from __future__ import print_function, division, absolute_import
 
 import blaze
-from .data_descriptor import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 
 #------------------------------------------------------------------------
 # Decorators
@@ -48,8 +48,6 @@ class DeferredDescriptor(IDataDescriptor):
         The expression graph along with the expression context, see blaze.expr
     """
 
-    deferred = True
-
     def __init__(self, dshape, expr):
         self._dshape = dshape
         self.expr = expr
@@ -78,24 +76,17 @@ class DeferredDescriptor(IDataDescriptor):
         return self._dshape
 
     @property
-    def is_concrete(self):
-        """Returns False, blaze function arrays are not concrete."""
-        return False
-
-    @property
-    def writable(self):
-        # TODO: This seems wrong, the result is writable if evaluated.
-        # This would lead to other code having to check that...
-        return False
-
-    @property
-    def immutable(self):
-        # TODO: If all the args are immutable, the result
-        #       is also immutable
-        return False
+    def capabilities(self):
+        """The capabilities for the deferred data descriptor."""
+        return Capabilities(
+            immutable = True,
+            deferred = True,
+            # persistency is not supported yet
+            persistent = False,
+            appendable = False,
+            )
 
     __array__           = force_evaluation('__array__')
-
     __iter__            = force_evaluation('__iter__')
     __getitem__         = force_evaluation('__getitem__')
     __len__             = force_evaluation('__len__')

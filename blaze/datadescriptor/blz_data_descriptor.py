@@ -3,7 +3,7 @@ import operator
 import contextlib
 import ctypes
 
-from .data_descriptor import IDataDescriptor
+from . import IDataDescriptor, Capabilities
 from .. import datashape
 import numpy as np
 from dynd import nd, ndt
@@ -11,8 +11,8 @@ from ..io import blz
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing
-# operations.  This is why NumPyDataDescriptor is used for returning
-# the values here.  Ideally, BLZ should return pure buffers instead.
+# operations.  This is why DyNDDataDescriptor is used for returning
+# the values here.
 
 def blz_descriptor_iter(blzarr):
     for i in range(len(blzarr)):
@@ -34,33 +34,24 @@ class BLZDataDescriptor(IDataDescriptor):
         self.blzarr = obj
 
     @property
-    def persistent(self):
-        return self.blzarr.rootdir is not None
-
-    @property
-    def is_concrete(self):
-        """Returns False, BLZ arrays are not concrete."""
-        return False
-
-    @property
     def dshape(self):
         # This cannot be cached because the BLZ can change the dshape
         obj = self.blzarr
         return datashape.from_numpy(obj.shape, obj.dtype)
 
     @property
-    def writable(self):
-        # The BLZ supports this, but we don't want to expose that yet
-        return False
-
-    @property
-    def appendable(self):
-        # TODO: Not sure this is right
-        return self.blzarr.mode == 'a'
-
-    @property
-    def immutable(self):
-        return False
+    def capabilities(self):
+        """The capabilities for the BLZ arrays."""
+        return Capabilities(
+            # BLZ arrays can be updated
+            immutable = False,
+            # BLZ arrays are concrete
+            deferred = False,
+            # BLZ arrays can be either persistent of in-memory
+            persistent = self.blzarr.rootdir is not None,
+            # BLZ arrays can be appended efficiently
+            appendable = True,
+            )
 
     def __array__(self):
         return np.array(self.blzarr)
