@@ -38,6 +38,7 @@ Index
    overview
    quickstart
    catalog
+   data_sources
    datashape
    datashape-binary
    data_descriptor

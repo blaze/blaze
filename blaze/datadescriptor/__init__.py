@@ -9,5 +9,7 @@ from .membuf_data_descriptor import (data_descriptor_from_ctypes,
 from .dynd_data_descriptor import DyNDDataDescriptor
 from .blaze_func_descriptor import BlazeFuncDeprecatedDescriptor
 from .deferred_descriptor import DeferredDescriptor
+from .csv_data_descriptor import CSVDataDescriptor
+from .json_data_descriptor import JSONDataDescriptor
 
 from .as_py import dd_as_py
