@@ -31,8 +31,7 @@ class JSONDataDescriptor(IDataDescriptor):
     """
     def __init__(self, filename, **kwargs):
         if os.path.isfile(filename) is not True:
-            raise ValueError(
-                "You need to pass an existing filename for `filename`")
+            raise ValueError('JSON file "%s" does not exist' % filename)
         self.filename = filename
         schema = kwargs.get("schema", None)
         if type(schema) in (str, unicode):

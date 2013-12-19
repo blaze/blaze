@@ -66,8 +66,7 @@ class CSVDataDescriptor(IDataDescriptor):
 
     def __init__(self, filename, **kwargs):
         if os.path.isfile(filename) is not True:
-            raise ValueError(
-                "You need to pass an existing filename for `filename`")
+            raise ValueError('CSV file "%s" does not exist' % filename)
         self.filename = filename
         csvfile = file(filename)
         schema = kwargs.get("schema", None)

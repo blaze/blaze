@@ -23,9 +23,9 @@ csv_ldict =  [
 class TestOpenCSV(unittest.TestCase):
 
     def setUp(self):
-        _, self.fname = tempfile.mkstemp(suffix='.csv')
-        self.url = "csv:///" + self.fname
-        with file(self.fname, "wb") as f:
+        handle, self.fname = tempfile.mkstemp(suffix='.csv')
+        self.url = "csv://" + self.fname
+        with os.fdopen(handle, "w") as f:
             f.write(csv_buf)
 
     def tearDown(self):
@@ -62,9 +62,9 @@ json_schema = "var, int8"
 class TestOpenJSON(unittest.TestCase):
 
     def setUp(self):
-        _, self.fname = tempfile.mkstemp(suffix='.json')
-        self.url = "json:///" + self.fname
-        with file(self.fname, "wb") as f:
+        handle, self.fname = tempfile.mkstemp(suffix='.json')
+        self.url = "json://" + self.fname
+        with os.fdopen(handle, "w") as f:
             f.write(json_buf)
 
     def tearDown(self):
