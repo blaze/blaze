@@ -19,17 +19,20 @@ def open_file(filename, has_header, mode='r'):
         csvfile.readline()
     return csvfile
 
+
 def csv_descriptor_iter(filename, has_header, schema):
     with open_file(filename, has_header) as csvfile:
         for row in csv.reader(csvfile):
             yield DyNDDataDescriptor(nd.array(row, dtype=schema))
+
 
 def csv_descriptor_iterchunks(filename, has_header, schema,
                               blen, start=None, stop=None):
     rows = []
     with open_file(filename, has_header) as csvfile:
         for nrow, row in enumerate(csv.reader(csvfile)):
-            if start is not None and nrow < start: continue
+            if start is not None and nrow < start:
+                continue
             if stop is not None and nrow >= stop:
                 if rows != []:
                     # Build the descriptor for the data we have and return

@@ -38,7 +38,7 @@ class Capabilities:
         caps = [attr+': '+str(getattr(self, attr)) for attr in self._caps]
         return "capabilities:" + "\n".join(caps)
 
-        
+
 class IDataDescriptor:
     """
     The Blaze data descriptor is an interface which exposes
@@ -94,8 +94,8 @@ class IDataDescriptor:
         it should implement __len__, and provide the size
         as an integer.
         """
-        raise StreamingDimensionError('Cannot get the length of'
-                        ' a streaming dimension')
+        raise StreamingDimensionError(
+            'Cannot get the length of a streaming dimension')
 
     @abc.abstractmethod
     def __iter__(self):
@@ -132,10 +132,11 @@ class IDataDescriptor:
            as a dynd array, accessible via this method.
         """
         if self.is_concrete:
-            raise NotImplementedError(('Data descriptor of type %s' +
-                        ' claims to be concrete, but did not'
-                        ' override dynd_arr()') % type(self))
+            raise NotImplementedError((
+                'Data descriptor of type %s'
+                ' claims to be concrete, but did not'
+                ' override dynd_arr()') % type(self))
         else:
-            raise TypeError(('Data descriptor of type %s is not ' +
-                        'concrete') % type(self))
-
+            raise TypeError((
+                'Data descriptor of type %s is not '
+                'concrete') % type(self))
