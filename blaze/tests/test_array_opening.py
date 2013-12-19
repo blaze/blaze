@@ -2,7 +2,6 @@ from __future__ import print_function, absolute_import
 
 import blaze
 from blaze.datadescriptor import dd_as_py
-from blaze.eval import append
 import numpy as np
 import unittest
 import tempfile
@@ -53,7 +52,7 @@ class TestOpenCSV(unittest.TestCase):
     def test_append(self):
         store = blaze.Storage(self.url, mode='r+')
         a = blaze.open(store, schema=csv_schema)
-        append(a, ["k4", "v4", 4, True])
+        blaze.append(a, ["k4", "v4", 4, True])
         self.assertEqual(dd_as_py(a._data), csv_ldict + \
             [{u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
 
