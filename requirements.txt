@@ -1,6 +1,7 @@
 ply
 pycparser
 distribute
+flask
 nose
 numba
 numexpr
