@@ -77,6 +77,7 @@ class TestBlazeKernel(unittest.TestCase):
 class TestBlazeFunctionFromUFunc(unittest.TestCase):
 
 
+    @py2help.skip
     def test_overload(self):
         myfunc = create_overloaded_add()
 
