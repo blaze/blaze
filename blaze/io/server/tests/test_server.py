@@ -22,7 +22,7 @@ class TestServer(unittest.TestCase):
         for attempt in range(5):
             self.port = 10000 + random.randrange(30000)
             cflags = 0
-            if sys.platform == 'win32':
+            if sys.platform == 'win32' and sys.version_info[:2] > (2, 6):
                 cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
 
             self.proc = subprocess.Popen([sys.executable,
