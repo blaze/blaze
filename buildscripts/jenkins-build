@@ -35,7 +35,7 @@ fi
 # python version and containing the dependencies.
 # TODO: Re-add cffi to this list when it is in anaconda python 3.3
 export PYENV_PREFIX=${WORKSPACE}/build/pyenv
-~/anaconda/bin/conda create --yes --channel http://repo.continuum.io/pkgs/dev -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython=0.19 scipy llvmpy ply numba dynd-python nose flask pyparsing pyyaml || exit 1
+~/anaconda/bin/conda create --yes --channel http://repo.continuum.io/pkgs/dev -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython=0.19 scipy llvmpy ply numba dynd-python nose flask pyparsing pyyaml setuptools || exit 1
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
 if [ -f "${PYENV_PREFIX}/bin/python" ]; then
