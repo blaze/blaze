@@ -3,7 +3,7 @@ language: python
 python:
   # - "2.6" conda install dynd-python python=2.6 -> installs dynd for 2.7
   - "2.7"
-  #- "3.3"
+  - "3.3"
 
 branches:
   only:
@@ -22,9 +22,9 @@ install:
   - sudo conda init
   - conda create -p $HOME/py --yes nose llvmpy cython numba numpy dynd-python llvmmath ply pycparser pyparsing pyyaml flask "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
-  - conda install --yes -n $HOME/py pykit
   - conda install --yes -n $HOME/py pip
   - pip install git+http://github.com/ContinuumIO/datashape
+  - pip install git+http://github.com/pykit/pykit
   # Install Blaze
   - python setup.py install
 
