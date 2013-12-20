@@ -37,6 +37,13 @@ pushd pykit
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd
 
+REM Temporary hack to install datashape
+rd /q /s datashape
+git clone https://github.com/ContinuumIO/datashape.git
+pushd datashape
+%PYTHON_EXECUTABLE% setup.py install || exit /b 1
+popd
+
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install
 IF %ERRORLEVEL% NEQ 0 exit /b 1
