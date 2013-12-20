@@ -7,14 +7,14 @@ import itertools as it
 import os
 
 from .data_descriptor import IDataDescriptor, Capabilities
-from .. import datashape
+from .. import datashape, py2help
 from dynd import nd, ndt
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 
 def open_file(filename, has_header, mode='r'):
     """Return a file handler positionated at the first valid line."""
-    csvfile = file(filename, mode=mode)
+    csvfile = open(filename, mode=mode)
     if has_header:
         csvfile.readline()
     return csvfile
@@ -68,11 +68,11 @@ class CSVDataDescriptor(IDataDescriptor):
         if os.path.isfile(filename) is not True:
             raise ValueError('CSV file "%s" does not exist' % filename)
         self.filename = filename
-        csvfile = file(filename)
+        csvfile = open(filename)
         schema = kwargs.get("schema", None)
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
-        if type(schema) in (str, unicode):
+        if type(schema) in py2help._strtypes:
             schema = datashape.dshape(schema)
         if not isinstance(schema, datashape.Record):
             raise TypeError(
@@ -133,9 +133,9 @@ class CSVDataDescriptor(IDataDescriptor):
 
     def __getitem__(self, key):
         with open_file(self.filename, self.has_header) as csvfile:
-            if type(key) in (int, long):
+            if isinstance(key, py2help._inttypes):
                 start, stop, step = key, key + 1, 1
-            elif type(key) is slice:
+            elif isinstance(key, slice):
                 start, stop, step = key.start, key.stop, key.step
             else:
                 raise IndexError("key '%r' is not valid" % key)
@@ -152,12 +152,12 @@ class CSVDataDescriptor(IDataDescriptor):
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
+        values = nd.array(row, dtype=self.schema)  # validate row
         with open_file(self.filename, self.has_header, mode='a') as csvfile:
-            csvfile.seek(0, 2)  # go to the end of the file
-            values = nd.array(row, dtype=self.schema)  # validate row
+            csvfile.seek(0, os.SEEK_END)  # go to the end of the file
             delimiter = self.dialect.delimiter
             terminator = self.dialect.lineterminator
-            csvfile.write(delimiter.join(unicode(v) for v in row)+terminator)
+            csvfile.write(delimiter.join(py2help.unicode(v) for v in row)+terminator)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).

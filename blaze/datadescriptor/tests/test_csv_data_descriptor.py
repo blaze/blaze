@@ -22,8 +22,8 @@ csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
 class TestCSVDataDescriptor(unittest.TestCase):
 
     def setUp(self):
-        self.csv_file = tempfile.mktemp(".csv")
-        with file(self.csv_file, "w") as f:
+        handle, self.csv_file = tempfile.mkstemp(".csv")
+        with os.fdopen(handle, "w") as f:
             f.write(csv_buf)
 
     def tearDown(self):
@@ -91,8 +91,8 @@ class TestCSVDataDescriptor(unittest.TestCase):
 
     def test_append(self):
         # Get a private file so as to not mess the original one
-        csv_file = tempfile.mktemp(".csv")
-        with file(csv_file, "w") as f:
+        handle, csv_file = tempfile.mkstemp(".csv")
+        with os.fdopen(handle, "w") as f:
             f.write(csv_buf)
         dd = CSVDataDescriptor(csv_file, schema=csv_schema)
         dd.append(["k4", "v4", 4, True])

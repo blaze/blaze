@@ -5,6 +5,7 @@ import yaml
 import csv
 from dynd import nd, ndt
 import blaze
+from .. import py2help
 
 
 def compatible_array_dshape(arr, ds):
@@ -49,7 +50,7 @@ def load_blaze_array(conf, dir):
     ds = blaze.dshape(ds_str)
 
     if tp == 'csv':
-        with open(fsdir + '.csv', 'rb') as f:
+        with open(fsdir + '.csv', 'r') as f:
             rd = csv.reader(f)
             if imp.get('headers', False):
                 # Skip the header line
@@ -84,7 +85,12 @@ def load_blaze_array(conf, dir):
                'fspath': fsdir,  # Equivalent filesystem path
                'dshape': ds      # Datashape the result should have
                }
-        execfile(fsdir + '.py', gbl)
+        if py2help.PY2:
+            execfile(fsdir + '.py', gbl, gbl)
+        else:
+            with open(fsdir + '.py') as f:
+                code = compile(f.read(), fsdir + '.py', 'exec')
+                exec(code, gbl, gbl)
         arr = gbl.get('result', None)
         if arr is None:
             raise RuntimeError(('Script for blaze catalog path %r did not ' +

@@ -1,28 +1,34 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-import urllib, urllib2, json
+import urllib, json
+from ... import py2help
+
+if py2help.PY2:
+    from urllib2 import urlopen
+else:
+    from urllib.request import urlopen
 
 def get_remote_datashape(url):
     """Gets the datashape of a remote array URL."""
-    response = urllib2.urlopen(url + '?r=datashape')
-    return response.read()
+    response = urlopen(url + '?r=datashape')
+    return response.read().decode('utf8')
 
 def get_remote_json(url):
     """Gets the JSON data of a remote array URL."""
-    response = urllib2.urlopen(url + '?r=data.json')
+    response = urlopen(url + '?r=data.json')
     return response.read()
 
 def create_remote_session(base_url):
     """Creates a compute session rooted on the remote array URL."""
     params = [('r', 'create_session')]
-    response = urllib2.urlopen(base_url, urllib.urlencode(params))
+    response = urlopen(base_url, urllib.urlencode(params))
     return json.loads(response.read())
 
 def close_remote_session(session_url):
     """Closes the remote compute session."""
     params = [('r', 'close_session')]
-    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    response = urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())
 
 def add_computed_fields(session_url, url, fields, rm_fields, fnname):
@@ -38,7 +44,7 @@ def add_computed_fields(session_url, url, fields, rm_fields, fnname):
         reqdata['fnname'] = str(fnname)
     params = [('r', 'add_computed_fields'),
               ('json', json.dumps(reqdata))]
-    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    response = urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())
 
 def make_computed_fields(session_url, url, replace_undim, fields, fnname):
@@ -53,7 +59,7 @@ def make_computed_fields(session_url, url, replace_undim, fields, fnname):
         reqdata['fnname'] = str(fnname)
     params = [('r', 'make_computed_fields'),
               ('json', json.dumps(reqdata))]
-    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    response = urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())
 
 def sort(session_url, url, field):
@@ -64,7 +70,7 @@ def sort(session_url, url, field):
         }
     params = [('r', 'sort'),
               ('json', json.dumps(reqdata))]
-    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    response = urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())
 
 def groupby(session_url, url, fields):
@@ -74,5 +80,5 @@ def groupby(session_url, url, fields):
         }
     params = [('r', 'groupby'),
               ('json', json.dumps(reqdata))]
-    response = urllib2.urlopen(session_url, urllib.urlencode(params))
+    response = urlopen(session_url, urllib.urlencode(params))
     return json.loads(response.read())

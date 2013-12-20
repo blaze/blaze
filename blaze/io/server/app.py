@@ -123,7 +123,8 @@ def handle_array_query():
     arr = get_array(array_name, indexers)
     base_url = request.url_root[:-1]
     #no query params
-    if len(request.values) == 0:
+    # NOTE: len(request.values) was failing within werkzeug
+    if len(list(request.values)) == 0:
         return html_array(arr, base_url, array_name, indexers)
     q_req = request.values['r']
     if q_req == 'data.json':

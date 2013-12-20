@@ -7,7 +7,7 @@ import os
 import itertools as it
 
 from .data_descriptor import IDataDescriptor
-from .. import datashape
+from .. import datashape, py2help
 from dynd import nd, ndt
 from .dynd_data_descriptor import DyNDDataDescriptor, Capabilities
 
@@ -34,7 +34,7 @@ class JSONDataDescriptor(IDataDescriptor):
             raise ValueError('JSON file "%s" does not exist' % filename)
         self.filename = filename
         schema = kwargs.get("schema", None)
-        if type(schema) in (str, unicode):
+        if type(schema) in py2help._strtypes:
             schema = datashape.dshape(schema)
         self.schema = str(schema)
         # Initially the array is not loaded (is this necessary?)
@@ -62,7 +62,7 @@ class JSONDataDescriptor(IDataDescriptor):
     def _arr_cache(self):
         if self._cache_arr is not None:
             return self._cache_arr
-        with file(self.filename) as jsonfile:
+        with open(self.filename) as jsonfile:
             # This will read everything in-memory (but a memmap approach
             # is in the works)
             self._cache_arr = nd.parse_json(

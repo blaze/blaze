@@ -53,8 +53,8 @@ json_schema = "var, int8"
 class TestJSONDataDescriptor(unittest.TestCase):
 
     def setUp(self):
-        self.json_file = tempfile.mktemp(".json")
-        with file(self.json_file, "w") as f:
+        handle, self.json_file = tempfile.mkstemp(".json")
+        with os.fdopen(handle, "w") as f:
             f.write(json_buf)
 
     def tearDown(self):
