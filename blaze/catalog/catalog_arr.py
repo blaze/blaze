@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 from os import path
-import yaml
 import csv
+
+import yaml
 from dynd import nd, ndt
+import datashape
 
 import blaze
 from .. import py2help
@@ -15,7 +17,7 @@ def compatible_array_dshape(arr, ds):
        --------
 
        >>> compatible_array_dshape(blaze.array([1,2,3]),
-       ...                         blaze.dshape("M, int32"))
+       ...                         datashape.dshape("M, int32"))
        True
 
        >>>
@@ -47,7 +49,7 @@ def load_blaze_array(conf, dir):
     tp = arrmeta['type']
     imp = arrmeta['import']
     ds_str = arrmeta['datashape']
-    ds = blaze.dshape(ds_str)
+    ds = datashape.dshape(ds_str)
 
     if tp == 'csv':
         with open(fsdir + '.csv', 'r') as f:

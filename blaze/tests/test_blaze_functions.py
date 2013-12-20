@@ -5,7 +5,7 @@ import unittest
 from datashape import dshape
 import blaze
 from blaze.compute.function import function, kernel
-from blaze import array
+from blaze import array, py2help
 from dynd import nd, _lowlevel
 import numpy as np
 
