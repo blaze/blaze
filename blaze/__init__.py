@@ -13,10 +13,8 @@ numbalogger = logging.getLogger('numba.codegen.debug')
 numbalogger.setLevel(logging.WARNING)
 
 # build the blaze namespace with selected functions
-
-from . import datashape, catalog
+from . import catalog
 from . import compute, io
-from .datashape import dshape, dshapes, parser
 from .objects.array import Array
 from .objects.constructors import array, empty, ones, zeros
 from .compute.function import function, elementwise, BlazeFunc
@@ -30,6 +28,8 @@ from .io.storage import open, drop, Storage
 
 
 import ctypes
+
+import datashape
 
 # These are so that llvm_structs corresponding to dshapes get converted correctly
 #  when constructing ctypes functions

@@ -7,14 +7,17 @@ JIT evaluation of blaze AIR.
 from __future__ import print_function, division, absolute_import
 
 import operator
+
+from pykit.ir import visit, copy_function
+from dynd import nd, ndt
 import blaze
+from blaze.io import blz
+import datashape
+
 from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
 from ..pipeline import run_pipeline
 from ..passes import ckernel_impls, ckernel_lift, allocation
 
-from pykit.ir import visit, copy_function
-from dynd import nd, ndt
-from blaze.io import blz
 
 #------------------------------------------------------------------------
 # Interpreter
@@ -24,6 +27,7 @@ def compile(func, env):
     func, env = run_pipeline(func, env, compile_time_passes)
 
     return func, env
+
 
 def interpret(func, env, args, storage=None, **kwds):
     assert len(args) == len(func.args)
@@ -61,7 +65,7 @@ def interpret(func, env, args, storage=None, **kwds):
         visit(interp, func)
         return interp.result
     else:
-        res_shape, res_dt = blaze.datashape.to_numpy(func.type.restype)
+        res_shape, res_dt = datashape.to_numpy(func.type.restype)
         dim_size = operator.index(res_shape[0])
         row_size = ndt.type(str(func.type.restype.subarray(1))).data_size
         chunk_size = min(max(1, (1024*1024) // row_size), dim_size)
@@ -101,6 +105,7 @@ run_time_passes = [
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
+
 
 class CKernelInterp(object):
     """

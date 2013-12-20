@@ -1,26 +1,31 @@
+"""URI API
+
+This file contains the part of the blaze API dealing with URIs. The
+"URI API". In Blaze persistence is provided by the means of this URI
+API, that allows specifying a "location" for an array as an URI.
+
+The URI API allows:
+
+- saving existing arrays to an URI.
+
+- loading an array into memory from an URI.
+
+- opening an URI as an array.
+
+- dropping the contents of a given URI.
+
+"""
+
 from __future__ import absolute_import
 
-# This file contains the part of the blaze API dealing with URIs. The
-# "URI API". In Blaze persistence is provided by the means of this URI
-# API, that allows specifying a "location" for an array as an URI.
-#
-# The URI API allows:
-#
-# - saving existing arrays to an URI.
-#
-# - loading an array into memory from an URI.
-#
-# - opening an URI as an array.
-#
-# - dropping the contents of a given URI.
+from datashape import to_numpy, to_numpy_dtype
 
-from ..datashape import to_numpy, to_numpy_dtype
 from ..py2help import urlparse
 from . import blz
-from ..datadescriptor import (
-    BLZDataDescriptor, CSVDataDescriptor, JSONDataDescriptor,
-    dd_as_py)
+from ..datadescriptor import (BLZDataDescriptor, CSVDataDescriptor,
+                              JSONDataDescriptor)
 from ..objects.array import Array
+
 
 # ----------------------------------------------------------------------
 # Some helper functions to workaround quirks
@@ -112,7 +117,6 @@ def _persist_convert(persist):
 
 # ----------------------------------------------------------------------
 # The actual API specific for persistence
-
 def open(persist, **kwargs):
     """Open an existing persistent array.
 

@@ -23,6 +23,8 @@ install:
   - conda create -p $HOME/py --yes nose llvmpy cython numba numpy dynd-python llvmmath ply pycparser pyparsing pyyaml flask "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
   - conda install --yes -n $HOME/py pykit
+  - conda install --yes -n $HOME/py pip
+  - pip install git+http://github.com/ContinuumIO/datashape
   # Install Blaze
   - python setup.py install
 

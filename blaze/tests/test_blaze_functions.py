@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import unittest
 
+from datashape import dshape
 import blaze
 from blaze.compute.function import function, kernel
-from blaze import dshape, array, py2help
+from blaze import array, py2help
 from dynd import nd, _lowlevel
 import numpy as np
 
@@ -77,6 +77,7 @@ class TestBlazeKernel(unittest.TestCase):
 class TestBlazeFunctionFromUFunc(unittest.TestCase):
 
 
+    @py2help.skip
     def test_overload(self):
         myfunc = create_overloaded_add()
 

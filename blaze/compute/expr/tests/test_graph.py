@@ -1,9 +1,10 @@
 import unittest
 
-from blaze import dshape, array
+from datashape import dshape
+from dynd import nd, ndt
+from blaze import array
 from blaze.compute.ops.ufuncs import add, mul
 
-from dynd import nd, ndt
 
 class TestGraph(unittest.TestCase):
 

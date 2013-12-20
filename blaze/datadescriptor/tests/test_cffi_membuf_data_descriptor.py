@@ -1,17 +1,15 @@
 import unittest
 
-import sys
 from blaze.py2help import skipIf
 import blaze
-from blaze import datashape
-from blaze.datadescriptor import (data_descriptor_from_cffi, dd_as_py,
-                IDataDescriptor)
-import ctypes
+from blaze.datadescriptor import data_descriptor_from_cffi, dd_as_py
+
 try:
     import cffi
     ffi = cffi.FFI()
 except ImportError:
     cffi = None
+
 
 class TestCFFIMemBufDataDescriptor(unittest.TestCase):
     @skipIf(cffi is None, 'cffi is not installed')
@@ -70,6 +68,6 @@ class TestCFFIMemBufDataDescriptor(unittest.TestCase):
         self.assertEqual(dd.dshape, blaze.dshape('14, 12, 10, uint32'))
         self.assertEqual(dd_as_py(dd), vals)
 
+
 if __name__ == '__main__':
     unittest.main()
-

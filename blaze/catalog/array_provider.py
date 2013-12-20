@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 import os
+from os import path
 import glob
 import shutil
-from os import path
 import tempfile
 
 from dynd import nd, ndt
+
 from .. import array
 
 

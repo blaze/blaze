@@ -1,8 +1,8 @@
-from __future__ import absolute_import, print_function
-
 """Array printing function
 
 """
+from __future__ import absolute_import, print_function
+
 __all__ = ["array2string", "set_printoptions", "get_printoptions"]
 __docformat__ = 'restructuredtext'
 
@@ -15,22 +15,20 @@ from ...py2help import xrange
 # and by Perry Greenfield 2000-4-1 for numarray
 # and by Travis Oliphant  2005-8-22 for numpy
 # and by Oscar Villellas 2013-4-30 for blaze
+# and by Andy R. Terrel 2013-12-17 for blaze
 
 import sys
 # import numerictypes as _nt
 # from umath import maximum, minimum, absolute, not_equal, isnan, isinf
-import numpy.core.umath as _um
 import numpy as np
+import numpy.core.umath as _um
+import datashape
+from datashape import Fixed, Var
 
-from ... import datashape
-from ...datashape import (to_numpy as _internal_to_numpy,
-                         to_numpy_dtype, NotNumpyCompatible,
-                         Fixed, Var)
 from ...datadescriptor import IDataDescriptor, dd_as_py
 
 # These are undesired dependencies:
-from numpy import ravel, maximum, minimum, absolute, array
-import numpy.core.numerictypes as _nt
+from numpy import ravel, maximum, minimum, absolute
 
 import inspect
 

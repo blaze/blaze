@@ -1,9 +1,7 @@
-"""
-Graph expression context.
-"""
+"""Graph expression context."""
 
-import blaze
-from blaze.datashape import unify
+from datashape import unify
+
 
 class ExprContext(object):
     """Context for blaze graph expressions"""
@@ -18,6 +16,7 @@ class ExprContext(object):
         if term not in self.terms:
             self.params.append(term)
         self.terms[term] = data
+
 
 def merge(contexts):
     """

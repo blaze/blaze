@@ -1,18 +1,16 @@
 from __future__ import absolute_import
-import operator
-import contextlib
 
-from . import IDataDescriptor, Capabilities
-from .. import datashape
-from ..datashape import dshape
-from ..error import ArrayWriteError
+from datashape import dshape
+from dynd import nd
 
-from dynd import nd, ndt, _lowlevel
+from . import Capabilities
+from .data_descriptor import IDataDescriptor
 
 
 def dynd_descriptor_iter(dyndarr):
     for el in dyndarr:
         yield DyNDDataDescriptor(el)
+
 
 class DyNDDataDescriptor(IDataDescriptor):
     """

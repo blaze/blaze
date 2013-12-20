@@ -1,9 +1,9 @@
+import unittest
+
+import numpy as np
 import blaze
 from blaze.datadescriptor import dd_as_py
-from blaze.datashape import to_numpy, to_numpy_dtype
-import numpy as np
-import unittest
-from .common import MayBeUriTest
+from datashape import to_numpy_dtype
 
 
 class TestBasicTypes(unittest.TestCase):

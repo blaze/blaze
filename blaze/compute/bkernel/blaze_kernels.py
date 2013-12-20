@@ -1,41 +1,37 @@
+"""
+A Blaze Element Kernel is a wrapper around an LLVM Function with a
+   particular signature.
+   The kinds of argument types are simple, ptr, and array.
+   A kernel kind is a tuple of input kinds followed by the output kind
+
+   simple:  out_type @func(in1_type %a, in2_type %b)
+   ptrs:  void @func(in1_type * %a, in2_type * %b, out_type * %out)
+   array_0:  void @func(in1_array0 * %a, in2_array0 * %b, out_array0* %out)
+   array_1:  void @func(in1_array1 * %a, in2_array1 * %b, out_array1* %out)
+   array_2:  void @func(in1_array2 * %a, in2_array2 * %b, out_array2* %out)
+
+  where array_n is one of the array_kinds in llvm_array
+
+  Notice that while the examples have functions with all the
+  same kinds, the kind is a per-argument notion and thus
+  can be mixed and matched.
+"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 
-
-# A Blaze Element Kernel is a wrapper around an LLVM Function with a
-#    particular signature.
-#    The kinds of argument types are simple, ptr, and array.
-#    A kernel kind is a tuple of input kinds followed by the output kind
-#
-#    simple:  out_type @func(in1_type %a, in2_type %b)
-#    ptrs:  void @func(in1_type * %a, in2_type * %b, out_type * %out)
-#    array_0:  void @func(in1_array0 * %a, in2_array0 * %b, out_array0* %out)
-#    array_1:  void @func(in1_array1 * %a, in2_array1 * %b, out_array1* %out)
-#    array_2:  void @func(in1_array2 * %a, in2_array2 * %b, out_array2* %out)
-#
-#   where array_n is one of the array_kinds in llvm_array
-#
-#   Notice that while the examples have functions with all the
-#   same kinds, the kind is a per-argument notion and thus
-#   can be mixed and matched.
-
 import sys
-import operator
-import ctypes
 import llvm.core as lc
-from llvm.core import Type, Function, Module
+from llvm.core import Function, Module
 from llvm import LLVMException
+from blaze.py2help import _strtypes
+
 from .. import llvm_array as lla
-from ..llvm_array import (void_type, intp_type,
-                SCALAR, POINTER, array_kinds, check_array,
-                get_cpp_template, array_type, const_intp, LLArray, orderchar)
-from .kernelgen import loop_nest
-from blaze.py2help import izip, _strtypes, c_ssize_t, PY2
-from blaze.datashape import Fixed, TypeVar
-from blaze.datashape.util import to_ctypes, dshape as make_dshape
-from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
-                map_llvm_to_ctypes)
+from ..llvm_array import (void_type, SCALAR, POINTER, array_kinds, check_array,
+                          get_cpp_template, array_type)
+from .llutil import map_llvm_to_ctypes
 from .jit_ckernel import jit_compile_ckernel_deferred
+
 
 arg_kinds = (SCALAR, POINTER) + array_kinds
 
@@ -45,6 +41,7 @@ for this in array_kinds:
 del this, _g
 
 _invmap = {}
+
 
 class BlazeElementKernel(object):
     """
@@ -69,6 +66,7 @@ class BlazeElementKernel(object):
     _dshapes = None
     _lifted_cache = {}
     _shape_func = None
+
     def __init__(self, func, dshapes=None):
         if not isinstance(func, Function):
             raise ValueError("Function should be an LLVM Function."\
@@ -112,21 +110,21 @@ class BlazeElementKernel(object):
     def _init_dshapes(self, dshapes):
         if dshapes is None:
             # Create dshapes from llvm if none provided
-            from ...datashape.util import from_llvm
+            from datashape.util import from_llvm
             ds = [from_llvm(llvm, kind)
                    for llvm, kind in zip(self.argtypes, self.kinds)]
             if self.kinds[-1] == SCALAR:
                 ds.append(from_llvm(self.return_type))
             self._dshapes = tuple(ds)
-            self.ranks = [len(el)-1 if el else 0 for el in ds]
+            self.ranks = [len(el) - 1 if el else 0 for el in ds]
         else:
             for i, kind in enumerate(self.kinds):
-                 if isinstance(kind, tuple) and kind[0] in array_kinds and \
-                          len(dshapes[i]) == 1 and not kind[1]==0:
+                if isinstance(kind, tuple) and kind[0] in array_kinds and \
+                                len(dshapes[i]) == 1 and not kind[1] == 0:
                     raise ValueError("Non-scalar function argument "
                                      "but scalar rank in argument %d" % i)
             self._dshapes = tuple(dshapes)
-            self.ranks = [len(el)-1 for el in dshapes]
+            self.ranks = [len(el) - 1 for el in dshapes]
 
     @property
     def dshapes(self):
@@ -156,7 +154,7 @@ class BlazeElementKernel(object):
 
     @property
     def nin(self):
-        return len(self.kind)-1
+        return len(self.kind) - 1
 
     @property
     def shapefunc(self):
@@ -248,7 +246,6 @@ class BlazeElementKernel(object):
 
         Return None
         """
-
         if not isinstance(module, Module):
             raise TypeError("Must provide an LLVM module object to attach kernel")
         if module is self.module: # Already attached
@@ -269,18 +266,20 @@ class BlazeElementKernel(object):
         # Re-set the function object to the newly linked function
         self.replace_func(module.get_function_named(self.func.name))
 
+
 def get_eltype(argtype, kind):
     if kind == SCALAR:
         return argtype
     elif kind == POINTER:
         return argtype.pointee
-    else: # Array
+    else:  # Array
         return argtype.pointee.elements[0].pointee
+
 
 # Currently only works for scalar kernels
 def frompyfunc(pyfunc, signature, dshapes=None):
     import numba
-    from ...datashape.util import from_numba
+    from datashape.util import from_numba
     if isinstance(signature, _strtypes):
         jitter = numba.jit(signature)
     elif isinstance(signature, tuple):
@@ -296,6 +295,7 @@ def frompyfunc(pyfunc, signature, dshapes=None):
         dshapes.append(from_numba(numbafunc.signature.return_type))
     krnl = BlazeElementKernel(numbafunc.lfunc, dshapes)
     return krnl
+
 
 def fromcpp(source):
     import tempfile, os, subprocess
@@ -321,6 +321,7 @@ def fromcpp(source):
     #  could improve this with a parser of source
     return krnl
 
+
 def fromctypes(func, module=None):
     if func.argtypes is None:
         raise ValueError("ctypes function must have argtypes and restype set")
@@ -330,6 +331,7 @@ def fromctypes(func, module=None):
         name = "mod__{0}_{1}".format(func.__name__, '_'.join(names))
         module = Module.new(name)
     raise NotImplementedError
+
 
 def refresh_name(_llvmtype, module=None):
     if (_llvmtype.kind == lc.TYPE_POINTER and

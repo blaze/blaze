@@ -3,8 +3,6 @@ from __future__ import absolute_import
 __all__ = ['IDataDescriptor', 'Capabilities']
 
 import abc
-import ctypes
-import contextlib
 
 from blaze.error import StreamingDimensionError
 from blaze.compute.strategy import current_strategy
@@ -94,8 +92,9 @@ class IDataDescriptor:
         it should implement __len__, and provide the size
         as an integer.
         """
-        raise StreamingDimensionError(
-            'Cannot get the length of a streaming dimension')
+        raise StreamingDimensionError('Cannot get the length of'
+                                      ' a streaming dimension')
+
 
     @abc.abstractmethod
     def __iter__(self):

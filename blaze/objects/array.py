@@ -1,30 +1,31 @@
-from __future__ import absolute_import, print_function
-# This file defines the Concrete Array --- a leaf node in the expression graph
-#
-# A concrete array is constructed from a Data Descriptor Object which handles the
-#  indexing and basic interpretation of bytes
-#
+"""This file defines the Concrete Array --- a leaf node in the expression graph
 
-from ..datashape import dshape, coretypes as T
-from ..datadescriptor import (IDataDescriptor,
-                             data_descriptor_from_ctypes,
-                             DyNDDataDescriptor,
-                             DeferredDescriptor)
-from ..io import _printing
+A concrete array is constructed from a Data Descriptor Object which handles the
+ indexing and basic interpretation of bytes
+"""
+
+from __future__ import absolute_import, print_function
+
+from datashape import coretypes as T
 from blaze.compute.expr import dump
 from blaze.compute.ops import ufuncs
-from ..py2help import exec_
 
-# An Array contains:
-#   DataDescriptor
-#       Sequence of Bytes (where are the bytes)
-#       Index Object (how do I get to them)
-#       Data Shape Object (what are the bytes? how do I interpret them)
-#
-#   axis and dimension labels
-#   user-defined meta-data (whatever are needed --- provenance propagation)
+from ..datadescriptor import (IDataDescriptor,
+                              DyNDDataDescriptor,
+                              DeferredDescriptor)
+from ..io import _printing
+
+
 class Array(object):
+    """# An Array contains:
+    DataDescriptor
+        Sequence of Bytes (where are the bytes)
+        Index Object (how do I get to them)
+        Data Shape Object (what are the bytes? how do I interpret them)
 
+    axis and dimension labels
+    user-defined meta-data (whatever are needed --- provenance propagation)
+    """
     def __init__(self, data, axes=None, labels=None, user={}):
         if not isinstance(data, IDataDescriptor):
             raise TypeError(('Constructing a blaze array directly '
@@ -120,27 +121,32 @@ class Array(object):
     def __repr__(self):
         return _printing.array_repr(self)
 
+
 def _named_property(name):
     @property
     def getprop(self):
         return Array(DyNDDataDescriptor(getattr(self._data.dynd_arr(), name)))
     return getprop
 
+
 def binding(f):
     def binder(self, *args):
         return f(self, *args)
     return binder
+
 
 def __rufunc__(f):
     def __rop__(self, other):
         return f(other, self)
     return __rop__
 
+
 def inject_special(names):
     for name in names:
         ufunc = getattr(ufuncs, name)
         setattr(Array, '__%s__' % name, binding(ufunc))
         setattr(Array, '__r%s__' % name, binding(__rufunc__(ufunc)))
+
 
 inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
                 'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])

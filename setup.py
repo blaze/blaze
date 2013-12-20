@@ -13,7 +13,7 @@ from fnmatch import fnmatchcase
 
 from distutils.core import Command, setup
 from distutils.util import convert_path
-from distutils.command.build_ext import build_ext
+
 
 #------------------------------------------------------------------------
 # Top Level Packages
@@ -261,7 +261,7 @@ def make_build(build_command):
             # We add the build directory to the beginning of the python path
             # so it finds the right temporary files.
             subprocess.check_call([sys.executable, "-c",
-                        "import sys;sys.path.insert(0, r'%s');from blaze.datashape import parser"% self.build_lib])
+                        "import sys;sys.path.insert(0, r'%s');from datashape import parser"% self.build_lib])
             del os.environ['BLAZE_REBUILD_PARSER']
 
     return BuildParser

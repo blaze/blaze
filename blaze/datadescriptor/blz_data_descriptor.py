@@ -1,14 +1,13 @@
 from __future__ import absolute_import
-import operator
-import contextlib
-import ctypes
+
+import numpy as np
+from dynd import nd
+import datashape
 
 from . import IDataDescriptor, Capabilities
-from .. import datashape
-import numpy as np
-from dynd import nd, ndt
 from ..io import blz
 from .dynd_data_descriptor import DyNDDataDescriptor
+
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing
 # operations.  This is why DyNDDataDescriptor is used for returning
@@ -20,6 +19,7 @@ def blz_descriptor_iter(blzarr):
         # to a scalar, this is a way to avoid that
         el = np.array(blzarr[i], dtype=blzarr.dtype)
         yield DyNDDataDescriptor(nd.array(el))
+
 
 class BLZDataDescriptor(IDataDescriptor):
     """
@@ -154,6 +154,6 @@ class BLZDataDescriptor(IDataDescriptor):
         iterchunks
 
         """
-	# Return the iterable
-        return blz.whereblocks(self.blzarr, expression, blen,
-			       outfields, limit, skip)
+        # Return the iterable
+        return blz.whereblocks(self.blzarr, expression, blen, outfields,
+                               limit, skip)

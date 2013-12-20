@@ -1,13 +1,12 @@
 from __future__ import absolute_import
-import operator
-import contextlib
-import sys
-import ctypes
-from dynd import nd, ndt, _lowlevel
 
-from .. import datashape
-from ..datashape import dshape, DataShape
+import ctypes
+
+from dynd import ndt, _lowlevel
+import datashape
+
 from .dynd_data_descriptor import DyNDDataDescriptor
+
 
 def data_descriptor_from_ctypes(cdata, writable):
     """
@@ -25,6 +24,7 @@ def data_descriptor_from_ctypes(cdata, writable):
                     ctypes.addressof(cdata), cdata,
                     access)
     return DyNDDataDescriptor(dyndarr)
+
 
 def data_descriptor_from_cffi(ffi, cdata, writable):
     """
@@ -46,12 +46,11 @@ def data_descriptor_from_cffi(ffi, cdata, writable):
     ptr = int(ffi.cast('uintptr_t', ffi.cast('char *', cdata)))
     ds = datashape.from_cffi(ffi, ffi.typeof(cdata))
     if (isinstance(ds, datashape.DataShape) and
-                    isinstance(ds[0], datashape.TypeVar)):
+            isinstance(ds[0], datashape.TypeVar)):
         # If the outermost dimension is an array without fixed
         # size, get its size from the data
         ds = datashape.DataShape(*(datashape.Fixed(len(cdata)),) + ds[1:])
     access = "readwrite" if writable else "readonly"
-    dyndarr = _lowlevel.array_from_ptr(ndt.type(str(ds)),
-                    ptr, owner, access)
+    dyndarr = _lowlevel.array_from_ptr(ndt.type(str(ds)), ptr, owner, access)
     return DyNDDataDescriptor(dyndarr)
 

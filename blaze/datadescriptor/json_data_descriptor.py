@@ -1,14 +1,12 @@
 from __future__ import absolute_import
-import operator
-import contextlib
-import ctypes
-import json
+
 import os
-import itertools as it
+
+import datashape
 
 from .data_descriptor import IDataDescriptor
-from .. import datashape, py2help
-from dynd import nd, ndt
+from .. import py2help
+from dynd import nd
 from .dynd_data_descriptor import DyNDDataDescriptor, Capabilities
 
 

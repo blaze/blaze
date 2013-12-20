@@ -1,14 +1,13 @@
 from __future__ import absolute_import
-import operator
-import contextlib
-import ctypes
 import csv
 import itertools as it
 import os
 
+import datashape
+from dynd import nd
+
+from .. import py2help
 from .data_descriptor import IDataDescriptor, Capabilities
-from .. import datashape, py2help
-from dynd import nd, ndt
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 

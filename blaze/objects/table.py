@@ -8,6 +8,9 @@ The toplevel modules containing the core Blaze datastructures.
     * Array
 
 """
+from datashape import from_numpy, dshape as _dshape
+from datashape.record import dtype_from_dict
+
 import blaze.metadata as md
 
 from blaze.idx import Space
@@ -15,8 +18,7 @@ from blaze.eclass import eclass
 from blaze.desc.byteprovider import ByteProvider
 from blaze.printer import generic_str, generic_repr
 
-from blaze.datashape import from_numpy, dshape as _dshape
-from blaze.datashape.record import dtype_from_dict
+
 from blaze.expr.graph import ArrayNode, injest_iterable
 from blaze.carray import fromiter
 

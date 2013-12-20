@@ -1,16 +1,22 @@
 from __future__ import absolute_import, division, print_function
-import flask
 import sys
 import os
+
+import flask
 from flask import request, Response
+
+import blaze
+import datashape
+from dynd import nd, ndt
+from blaze.catalog.array_provider import json_array_provider
+from blaze.catalog.blaze_url import (split_array_base, add_indexers_to_url,
+                                     slice_as_string, index_tuple_as_string)
+from blaze.py2help import _inttypes, _strtypes
+
 from .datashape_html import render_datashape
 from .compute_session import compute_session
-from dynd import nd, ndt
-import blaze
-from blaze import datashape
-from blaze.catalog.blaze_url import split_array_base, add_indexers_to_url, \
-     slice_as_string, index_tuple_as_string
-from blaze.py2help import _inttypes, _strtypes
+from .crossdomain import crossdomain
+
 
 app = flask.Flask('blaze.server')
 app.sessions = {}
@@ -83,8 +89,6 @@ def html_array(arr, base_url, array_name, indexers):
 @app.route("/favicon.ico")
 def favicon():
     return 'no icon'
-
-from .crossdomain import crossdomain
 
 
 @app.route("/<path:path>", methods=['GET', 'POST', 'OPTIONS'])

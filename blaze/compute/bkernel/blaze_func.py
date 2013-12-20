@@ -2,14 +2,13 @@ from __future__ import absolute_import
 
 import types
 import re
-from blaze.datashape.typesets import TypeSet, matches_typeset
-
-from blaze.datashape import (DataShape, from_numba_str, to_numba, broadcastable)
-from ...datadescriptor.blaze_func_descriptor import BlazeFuncDeprecatedDescriptor
+from datashape.typesets import TypeSet, matches_typeset
+from datashape import (from_numba_str, to_numba, broadcastable)
 from blaze.py2help import _strtypes, PY2
+
 from .. import llvm_array as lla
 from .blaze_kernels import BlazeElementKernel, frompyfunc
-from .kernel_tree import Argument, KernelTree
+
 
 def process_signature(ranksignature):
     """
@@ -38,9 +37,11 @@ def process_signature(ranksignature):
     connections = [set(val) for val in varmap.values() if len(val) > 1]
     return ranklist, connections
 
+
 def get_signature(typetuple):
     sig = [','.join((str(x) for x in arg.shape)) for arg in typetuple]
     return process_signature(sig)
+
 
 def _convert_string(kind, source):
     try:
@@ -49,9 +50,12 @@ def _convert_string(kind, source):
         return ValueError("No conversion function for %s found." % kind)
     return func(source)
 
+
 # Parse numba-style calling string convention
 #  and construct dshapes
 regex = re.compile('([^(]*)[(]([^)]*)[)]')
+
+
 def to_dshapes(mystr, output=False):
     ma = regex.match(mystr)
     if ma is None:
@@ -63,6 +67,7 @@ def to_dshapes(mystr, output=False):
     if output:
         result += (from_numba_str(ret),)
     return result
+
 
 def convert_kernel(value, dshapes=None):
     template = None
@@ -96,6 +101,7 @@ def convert_kernel(value, dshapes=None):
         raise TypeError("Cannot convert value = %s and dshapes = %s" % (value, dshapes))
 
     return krnl, template
+
 
 def process_typetable(typetable):
     """
@@ -144,6 +150,7 @@ def process_typetable(typetable):
 
     return ranklist, connections, newtable, templates
 
+
 # Define the Blaze Function
 #   * A Blaze Function is a callable that takes Concrete Arrays and returns
 #        Deferred Concrete Arrays
@@ -155,7 +162,6 @@ def process_typetable(typetable):
 #       rank-signature but possibly multiple primitive type signatures.
 #   * Example BlazeFuncDeprecateds are sin, svd, eig, fft, sum, prod, inner1d, add, mul
 #       etc --- kernels all work on in-memory "elements"
-
 class BlazeFuncDeprecated(object):
     # DEPRECATION NOTE:
     #   This particular blaze func class is being deprecated in favour of
