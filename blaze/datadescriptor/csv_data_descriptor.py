@@ -156,8 +156,7 @@ class CSVDataDescriptor(IDataDescriptor):
         with open_file(self.filename, self.has_header, mode='a') as csvfile:
             csvfile.seek(0, os.SEEK_END)  # go to the end of the file
             delimiter = self.dialect.delimiter
-            terminator = self.dialect.lineterminator
-            csvfile.write(delimiter.join(py2help.unicode(v) for v in row)+terminator)
+            csvfile.write(delimiter.join(py2help.unicode(v) for v in row)+'\n')
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
