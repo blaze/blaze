@@ -13,9 +13,9 @@ from blaze.catalog.blaze_url import (split_array_base, add_indexers_to_url,
                                      slice_as_string, index_tuple_as_string)
 from blaze.py2help import _inttypes, _strtypes
 
-from datashape_html import render_datashape
-from compute_session import compute_session
-from crossdomain import crossdomain
+from .datashape_html import render_datashape
+from .compute_session import compute_session
+from .crossdomain import crossdomain
 
 
 app = flask.Flask('blaze.server')
