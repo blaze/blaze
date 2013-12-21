@@ -17,14 +17,14 @@ from ..io import _printing
 
 
 class Array(object):
-    """# An Array contains:
-    DataDescriptor
+    """An Array contains:
+
+        DataDescriptor
         Sequence of Bytes (where are the bytes)
         Index Object (how do I get to them)
         Data Shape Object (what are the bytes? how do I interpret them)
-
-    axis and dimension labels
-    user-defined meta-data (whatever are needed --- provenance propagation)
+        axis and dimension labels
+        user-defined meta-data (whatever are needed --- provenance propagation)
     """
     def __init__(self, data, axes=None, labels=None, user={}):
         if not isinstance(data, IDataDescriptor):
