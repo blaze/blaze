@@ -30,7 +30,7 @@ uint<N>            N/8 bytes, unsigned integer.
 float<N>           N/8 bytes, IEEE 754 binary<N> format. Note that
                    float128 means binary128, usually different from
                    the C compiler's long double type.
-cfloat<N>          Two consecutive float<N> values.
+complex[float<N>]  Two consecutive float<N> values.
 string             Two consecutive pointers, pointing at the beginning
                    of and one past the end of a UTF-8 buffer.
 bytes              Two consecutive pointers, pointing at the beginning
@@ -89,7 +89,7 @@ Option(int<N>)             NA is -2^(N-1).
 Option(float<N>)           NA is 0x7ea2 (float16), 0x7f8007a2 (float32),
                            0x7ff00000000007a2 (float64),
                            0x7fff00000000000000000000000007a2 (float128).
-Option(cfloat<N>)          The first (real) component of the complex number
+Option(complex[float<N>])  The first (real) component of the complex number
                            is the float<N> NA.
 Option(string)             NA is two NULL pointers.
 Option(bytes)              NA is two NULL pointers.

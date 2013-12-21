@@ -316,7 +316,7 @@ def _choose_format(formatdict, ds):
         format_function = formatdict['int']
     elif ds in [datashape.float32, datashape.float64]:
         format_function = formatdict['float']
-    elif ds in [datashape.cfloat32, datashape.cfloat64]:
+    elif ds in [datashape.complex_float32, datashape.complex_float64]:
         format_function = formatdict['complexfloat']
     elif isinstance(ds, datashape.String):
         format_function = formatdict['numpystr']

@@ -56,29 +56,29 @@ unboxed machine types. These inherit the notation from NumPy.
 
 .. cssclass:: table-striped
 
-==========  =========================================================
-Bit type    Description
-==========  =========================================================
-bool        Boolean (True or False) stored as a byte
-int8        Byte (-128 to 127)
-int16       Integer (-32768 to 32767)
-int32       Integer (-2147483648 to 2147483647)
-int64       Integer (-9223372036854775808 to 9223372036854775807)
-uint8       Unsigned integer (0 to 255)
-uint16      Unsigned integer (0 to 65535)
-uint32      Unsigned integer (0 to 4294967295)
-uint64      Unsigned integer (0 to 18446744073709551615)
-float16     Half precision float: sign bit, 5 bits exponent,
-            10 bits mantissa
-float32     Single precision float: sign bit, 8 bits exponent,
-            23 bits mantissa
-float64     Double precision float: sign bit, 11 bits exponent,
-            52 bits mantissa
-complex64   Complex number, represented by two 32-bit floats (real
-            and imaginary components)
-complex128  Complex number, represented by two 64-bit floats (real
-            and imaginary components)
-==========  =========================================================
+================ =========================================================
+Bit type         Description
+================ =========================================================
+bool             Boolean (True or False) stored as a byte
+int8             Byte (-128 to 127)
+int16            Integer (-32768 to 32767)
+int32            Integer (-2147483648 to 2147483647)
+int64            Integer (-9223372036854775808 to 9223372036854775807)
+uint8            Unsigned integer (0 to 255)
+uint16           Unsigned integer (0 to 65535)
+uint32           Unsigned integer (0 to 4294967295)
+uint64           Unsigned integer (0 to 18446744073709551615)
+float16          Half precision float: sign bit, 5 bits exponent,
+                 10 bits mantissa
+float32          Single precision float: sign bit, 8 bits exponent,
+                 23 bits mantissa
+float64          Double precision float: sign bit, 11 bits exponent,
+                 52 bits mantissa
+complex[float32] Complex number, represented by two 32-bit floats (real
+                 and imaginary components)
+complex[float64] Complex number, represented by two 64-bit floats (real
+                 and imaginary components)
+================ =========================================================
 
 
 Blaze also adds a variety of bit-like types which are implemented
@@ -105,7 +105,7 @@ Python type  Datashape
 int          int32
 bool         bool
 float        float64
-complex      cfloat64
+complex      complex[float64]
 str          string
 unicode      string
 bytes        bytes
