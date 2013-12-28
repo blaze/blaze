@@ -5,8 +5,7 @@ import types
 from collections import namedtuple, defaultdict
 from itertools import chain
 
-from blaze import error
-from datashape.error import UnificationError, CoercionError
+from datashape.error import UnificationError, CoercionError, OverloadError
 from datashape import (coretypes as T, unify, dshape, dummy_signature)
 
 from .util import flatargs, listify, alpha_equivalent
@@ -63,7 +62,7 @@ class Dispatcher(object):
         types = list(map(T.typeof, args))
         candidates = find_matches(self.overloads, types)
         if len(candidates) != 1:
-            raise error.OverloadError(
+            raise OverloadError(
                 "Cannot perform simple dispatch with %d input types")
 
         [dst_sig, sig, func] = candidates
@@ -135,7 +134,7 @@ def best_match(func, argtypes, constraints=None):
     matches = match_by_weight(func, argtypes, constraints=constraints)
 
     if not matches:
-        raise error.OverloadError(
+        raise OverloadError(
             "No overload for function %s matches for argtypes (%s)" % (
                                     func, ", ".join(map(str, argtypes))))
 
@@ -144,7 +143,7 @@ def best_match(func, argtypes, constraints=None):
 
     candidates = matches[min(matches)]
     if len(candidates) > 1:
-        raise error.OverloadError(
+        raise OverloadError(
             "Ambiguous overload for function %s with inputs (%s): \n%s" % (
                 func, ", ".join(map(str, argtypes)),
                 "\n".join("    %s" % (overload.resolved_sig,) for overload in candidates)))
