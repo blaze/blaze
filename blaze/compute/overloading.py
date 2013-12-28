@@ -6,6 +6,7 @@ from collections import namedtuple, defaultdict
 from itertools import chain
 
 from blaze import error
+from datashape.error import UnificationError, CoercionError
 from datashape import (coretypes as T, unify, dshape, dummy_signature)
 
 from .util import flatargs, listify, alpha_equivalent
@@ -186,7 +187,7 @@ def match_by_weight(func, argtypes, constraints=None):
         signature = match.sig
         try:
             weight = coercion_cost(in_signature, signature)
-        except error.CoercionError:
+        except CoercionError:
             pass
         else:
             matches[weight].append(match)
@@ -216,7 +217,7 @@ def find_matches(overloads, argtypes, constraints=()):
 
         try:
             result, remaining = unify(equations, broadcasting)
-        except error.UnificationError:
+        except UnificationError:
             continue
         else:
             dst_sig = result[0]

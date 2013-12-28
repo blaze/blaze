@@ -61,29 +61,6 @@ class CustomSyntaxError(BlazeException):
         return str(self)
 
 #------------------------------------------------------------------------
-# Typing errors
-#------------------------------------------------------------------------
-
-
-class BlazeTypeError(BlazeException):
-    "Some typing error"
-
-class DataShapeError(BlazeTypeError):
-    """Raised for malformed datashape types"""
-
-class UnificationError(BlazeTypeError):
-    """Raised when two blaze types cannot be unified"""
-
-class CoercionError(BlazeTypeError):
-    """Raised when we can't coerce a type to another type"""
-
-class OverloadError(BlazeTypeError):
-    """
-    Raised when we can't determine which overload to select for given input
-    types.
-    """
-
-#------------------------------------------------------------------------
 # Array-related errors
 #------------------------------------------------------------------------
 
