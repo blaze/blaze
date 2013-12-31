@@ -4,6 +4,8 @@ an opcode and operands. An operand is a Constant or another expression node.
 Each expression node carries a DataShape as type.
 """
 
+from __future__ import absolute_import, division, print_function
+
 from functools import partial
 
 #------------------------------------------------------------------------

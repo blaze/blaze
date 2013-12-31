@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 import json
 from blaze.catalog.blaze_url import split_array_base
 import dynd

@@ -17,8 +17,7 @@ A Blaze Element Kernel is a wrapper around an LLVM Function with a
   can be mixed and matched.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import sys
 import llvm.core as lc

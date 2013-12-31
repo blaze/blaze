@@ -1,4 +1,4 @@
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import blaze
 from blaze.datadescriptor import dd_as_py
@@ -77,6 +77,6 @@ class TestOpenJSON(unittest.TestCase):
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
 
 
-        
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

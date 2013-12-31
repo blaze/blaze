@@ -2,6 +2,8 @@
 Visualize expression graphs using graphviz.
 """
 
+from __future__ import absolute_import, division, print_function
+
 try:
     import networkx
     have_networkx = True

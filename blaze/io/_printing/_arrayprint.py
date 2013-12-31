@@ -1,7 +1,8 @@
 """Array printing function
 
 """
-from __future__ import absolute_import, print_function
+
+from __future__ import absolute_import, division, print_function
 
 __all__ = ["array2string", "set_printoptions", "get_printoptions"]
 __docformat__ = 'restructuredtext'

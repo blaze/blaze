@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
 
-from __future__ import absolute_import
 import urllib, json
 from ... import py2help
 

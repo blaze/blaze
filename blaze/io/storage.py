@@ -16,7 +16,7 @@ The URI API allows:
 
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 from datashape import to_numpy, to_numpy_dtype
 

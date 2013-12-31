@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
 Python evaluation of blaze AIR.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
+
 from pykit.ir import interp
 
 import blaze

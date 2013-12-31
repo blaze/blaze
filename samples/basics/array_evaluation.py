@@ -1,23 +1,23 @@
-'''Sample script showing the way to perform computations in blaze'''
+"""
+Sample script showing the way to perform computations in blaze
 
-from __future__ import print_function
-#
-# A very simple script showing evaluation
-#
-# This should be executable and result in an out of core execution to
-# generate the result of the expression
-#
-# This illustrates the idea of:
-#
-# - Using large in-disk arrays as operands
-#
-# - Building expressions to evaluate in blaze
-#
-# - Evaluate those expressions to produce a result
-#
-#   - Showing that we can configure how we evaluate expressions
-#
-#   - Showing how we can specify the kind of result we desire
+ This should be executable and result in an out of core execution to
+ generate the result of the expression
+
+ This illustrates the idea of:
+
+ - Using large in-disk arrays as operands
+
+ - Building expressions to evaluate in blaze
+
+ - Evaluate those expressions to produce a result
+
+   - Showing that we can configure how we evaluate expressions
+
+   - Showing how we can specify the kind of result we desire
+"""
+
+from __future__ import absolute_import, division, print_function
 
 import blaze
 
