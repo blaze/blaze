@@ -22,14 +22,19 @@ class TestServer(unittest.TestCase):
         for attempt in range(5):
             self.port = 10000 + random.randrange(30000)
             cflags = 0
-            if sys.platform == 'win32' and sys.version_info[:2] > (2, 6):
-                cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+            exe = sys.executable
+            if sys.platform == 'win32':
+                if sys.version_info[:2] > (2, 6):
+                    cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+                # Make sure Python.exe, not Pythonw.exe (to work around
+                # errors in numba in a GUI context)
+                exe = os.path.join(os.path.dirname(exe), 'Python.exe')
 
             self.proc = subprocess.Popen([sys.executable,
                                           serverpy,
                                           self.cat.catfile,
                                           str(self.port)],
-                                         executable=sys.executable,
+                                         executable=exe,
                                          creationflags=cflags)
             for i in range(10):
                 time.sleep(0.2)
