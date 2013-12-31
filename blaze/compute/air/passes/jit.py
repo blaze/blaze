@@ -2,7 +2,8 @@
 Use blaze.bkernel to assemble ckernels for evaluation.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
+
 import collections
 
 from pykit.ir import visit, transform, Op

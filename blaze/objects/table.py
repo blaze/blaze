@@ -8,6 +8,9 @@ The toplevel modules containing the core Blaze datastructures.
     * Array
 
 """
+
+from __future__ import absolute_import, division, print_function
+
 from datashape import from_numpy, dshape as _dshape
 from datashape.record import dtype_from_dict
 

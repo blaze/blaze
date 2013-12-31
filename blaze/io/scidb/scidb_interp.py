@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 SciDB query generation and execution from Blaze AIR.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from pykit.ir import interp
 

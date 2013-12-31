@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
 Create scidb kernel implementations.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
+
 from blaze.compute.function import function, kernel, elementwise
 
 AFL = 'AFL'

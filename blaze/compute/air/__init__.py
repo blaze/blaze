@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from .prepare import prepare
 from .ir import from_expr, ExecutionContext

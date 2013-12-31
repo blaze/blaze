@@ -1,5 +1,4 @@
-from __future__ import absolute_import
-
+from __future__ import absolute_import, division, print_function
 """
 Build a ply lexer, but without the implicit magic and global
 state, just load prebuilt ply parser and lexers at roughly the

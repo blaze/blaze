@@ -4,7 +4,7 @@ A concrete array is constructed from a Data Descriptor Object which handles the
  indexing and basic interpretation of bytes
 """
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 from datashape import coretypes as T
 from blaze.compute.expr import dump

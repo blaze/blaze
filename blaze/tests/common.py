@@ -1,4 +1,6 @@
-# Utilities for the high level Blaze test suite
+"""Utilities for the high level Blaze test suite"""
+
+from __future__ import absolute_import, division, print_function
 
 import unittest
 import tempfile

@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 Blaze AIR annotators that add some information to the IR.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 #------------------------------------------------------------------------
 # Annotators

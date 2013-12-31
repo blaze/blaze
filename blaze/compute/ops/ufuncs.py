@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 Blaze element-wise ufuncs.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 try:
     import __builtin__ as builtins
 except ImportError:

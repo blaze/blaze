@@ -16,7 +16,6 @@ and may include:
 Or a tuple for a combination of the above.
 """
 
-
 from __future__ import print_function, division, absolute_import
 
 from itertools import chain

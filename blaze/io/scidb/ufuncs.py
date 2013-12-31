@@ -1,6 +1,6 @@
 """SciDB implementations element-wise ufuncs."""
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from blaze.compute.ops import ufuncs
 from blaze.compute.ops.ufuncs import ne, lt, logical_not

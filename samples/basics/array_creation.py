@@ -1,5 +1,6 @@
 '''Sample module showing the creation of blaze arrays'''
-from __future__ import print_function
+
+from __future__ import absolute_import, division, print_function
 
 import blaze
 
@@ -30,7 +31,7 @@ print(b.dshape)
 
 # Arrays can be bi-dimensional
 print_section('going 2d', level=1)
-c = blaze.array([ [1, 2], [3, 4] ]) 
+c = blaze.array([ [1, 2], [3, 4] ])
 print(c)
 print(c.dshape)
 
@@ -53,7 +54,7 @@ print(blz)
 print_section('Explicit types in construction')
 # It is possible to force a type in a given array. This allows a
 # broader selection of types on construction.
-e =  blaze.array([ 1, 2, 3], dshape='3, float32') 
+e =  blaze.array([ 1, 2, 3], dshape='3, float32')
 print(e)
 
 # Note that the dimensions in the datashape when creating from a
