@@ -1,4 +1,6 @@
-from .llvm_array import (array_type, const_intp, auto_const_intp, 
+from __future__ import absolute_import, division, print_function
+
+from .llvm_array import (array_type, const_intp, auto_const_intp,
                          intp_type, int_type,
                          store_at, load_at, get_shape_ptr, get_data_ptr,
                          get_strides_ptr, sizeof, isinteger, isiterable,
@@ -19,7 +21,7 @@ def adjust_slice(key, N=None):
         start = 0
 
     if start < 0:
-        _check_N(N)        
+        _check_N(N)
         while start < 0:
             start += N
 
@@ -78,7 +80,7 @@ def from_S_ints(arr, key):
     for index in range(arr.nd-1,-1,-1):
         val = load_at(builder, oldshape, index)
         factor = builder.mul(factor, val)
-        if index < num: # 
+        if index < num: #
             keyval = auto_const_intp(key[index])
             # Multiply by strides
             tmp = builder.mul(keyval, factor)
@@ -149,7 +151,7 @@ def from_F_ints(arr, key):
     for index in range(arr.nd-1,-1,-1):
         val = load_at(builder, oldshape, index)
         factor = builder.mul(factor, val)
-        if index < num: # 
+        if index < num: #
             keyval = auto_const_intp(key[index])
             # Multiply by strides
             tmp = builder.mul(keyval, factor)
@@ -240,7 +242,7 @@ def from_C_ints(arr, key):
     for index in range(arr.nd-1,-1,-1):
         val = load_at(builder, oldshape, index)
         factor = builder.mul(factor, val)
-        if index < num: # 
+        if index < num: #
             keyval = auto_const_intp(key[index])
             # Multiply by strides
             tmp = builder.mul(keyval, factor)
@@ -279,7 +281,7 @@ def _convert(x):
         return x.__index__()
     else:
         return x
-    
+
 _keymsg = "Unsupported getitem value %s"
 # val is either Ellipsis or slice object.
 # check to see if start, stop, and/or step is given for slice

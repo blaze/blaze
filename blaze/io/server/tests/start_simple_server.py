@@ -3,6 +3,9 @@ Starts a Blaze server for tests.
 
 $ start_test_server.py /path/to/catalog_config.yaml <portnumber>
 """
+
+from __future__ import absolute_import, division, print_function
+
 import sys, os
 
 if os.name == 'nt':

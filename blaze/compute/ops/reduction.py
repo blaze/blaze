@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 Reduction functions.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from .ufuncs import logical_and, logical_or, abs
 from ..function import function, elementwise

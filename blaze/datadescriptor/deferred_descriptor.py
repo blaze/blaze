@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
 Deferred data descriptor for deferred expressions. This is backed up by an
 actual deferred expression graph.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import blaze
 from . import IDataDescriptor, Capabilities

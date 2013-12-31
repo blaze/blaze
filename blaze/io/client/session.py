@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
 
-from __future__ import absolute_import
 from .requests import create_remote_session, close_remote_session, \
         add_computed_fields, make_computed_fields, sort, groupby
 from .rarray import rarray

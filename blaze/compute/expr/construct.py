@@ -3,6 +3,8 @@ Blaze expression graph construction for deferred evaluation. `construct` is
 the entry point to graph construction.
 """
 
+from __future__ import absolute_import, division, print_function
+
 from collections import Iterable
 
 import blaze

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from .constructors import empty, zeros, ones, handle
 from .kernel import scidb_elementwise, scidb_function, scidb_kernel, AFL, AQL

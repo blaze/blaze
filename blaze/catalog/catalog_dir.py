@@ -1,4 +1,5 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
+
 import os
 from os import path
 from .catalog_arr import load_blaze_array

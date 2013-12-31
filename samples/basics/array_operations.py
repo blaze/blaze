@@ -1,5 +1,7 @@
 '''Sample script showing off array basic operations'''
 
+from __future__ import absolute_import, division, print_function
+
 import blaze
 
 
@@ -28,4 +30,4 @@ if __name__ == '__main__':
     test_operations('10, int32')
     test_operations('10, 10, float32')
     test_operations('1000, 30, 25, float64')
-    
+

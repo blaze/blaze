@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-
 """
 SciDB connection and naming interface.
 
 TODO: instantiate this stuff from the catalog?
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 #------------------------------------------------------------------------
 # Connect

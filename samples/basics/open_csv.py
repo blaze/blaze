@@ -1,5 +1,7 @@
 '''Sample module showing how to read CSV files into blaze arrays'''
 
+from __future__ import absolute_import, division, print_function
+
 import blaze
 from blaze.datadescriptor import dd_as_py
 #from dynd import nd

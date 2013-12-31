@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 SciDB data descriptor.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import blaze
 from blaze.datadescriptor import IDataDescriptor, Capabilities
@@ -49,7 +47,7 @@ class SciDBDataDescriptor(IDataDescriptor):
             # Not sure on whether scidb is appendable or not
             appendable = False,
             )
-    
+
     # TODO: below
 
     def __iter__(self):
