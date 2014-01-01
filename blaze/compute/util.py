@@ -97,6 +97,24 @@ def alpha_equivalent(spec1, spec2):
 
 # ______________________________________________________________________
 
+def lookup_previous(f, scopes=None):
+    """
+    Lookup a previous function definition in the current namespace, i.e.
+    for overloading purposes.
+    """
+    if scopes is None:
+        scopes = []
+
+    scopes.append(f.__globals__)
+
+    for scope in scopes:
+        if scope.get(f.__name__):
+            return scope[f.__name__]
+
+    return None
+
+# ______________________________________________________________________
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

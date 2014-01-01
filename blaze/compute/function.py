@@ -27,27 +27,11 @@ from datashape import coretypes as T, dshape
 from .overloading import overload, Dispatcher, match_by_weight, best_match
 from ..datadescriptor import DeferredDescriptor
 from .expr.context import merge
-
+from .util import lookup_previous
 
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
-def lookup_previous(f, scopes=None):
-    """
-    Lookup a previous function definition in the current namespace, i.e.
-    for overloading purposes.
-    """
-    if scopes is None:
-        scopes = []
-
-    scopes.append(f.__globals__)
-
-    for scope in scopes:
-        if scope.get(f.__name__):
-            return scope[f.__name__]
-
-    return None
-
 
 def optional_decorator(f, continuation, args, kwargs):
     def decorator(f):
