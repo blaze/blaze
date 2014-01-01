@@ -24,10 +24,10 @@ import blaze
 from blaze.py2help import dict_iteritems
 from datashape import coretypes as T, dshape
 
-from .overloading import overload, Dispatcher, match_by_weight, best_match
+from datashape.overloading import (overload, Dispatcher, match_by_weight,
+                                   best_match, lookup_previous)
 from ..datadescriptor import DeferredDescriptor
 from .expr.context import merge
-from .util import lookup_previous
 
 #------------------------------------------------------------------------
 # Utils
