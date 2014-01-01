@@ -9,8 +9,8 @@
 
 import sys
 import numpy as np
-import blaze.io.blz as blz
-from blaze.io.blz import utils, attrs, array2string
+from . import utils, attrs, array2string
+from .bparams import bparams as blz_bparams
 import os, os.path
 import struct
 import shutil
@@ -992,9 +992,9 @@ cdef class barray:
 
     # Check defaults for bparams
     if bparams is None:
-      bparams = blz.bparams()
+      bparams = blz_bparams()
 
-    if not isinstance(bparams, blz.bparams):
+    if not isinstance(bparams, blz_bparams):
       raise ValueError, "`bparams` param must be an instance of `bparams` class"
 
     # Convert input to an appropriate type
@@ -1245,7 +1245,7 @@ cdef class barray:
       data = json.loads(storagefh.read().decode('ascii'))
     dtype_ = np.dtype(data["dtype"])
     chunklen = data["chunklen"]
-    bparams = blz.bparams(
+    bparams = blz_bparams(
       clevel = data["bparams"]["clevel"],
       shuffle = data["bparams"]["shuffle"])
     expectedlen = data["expectedlen"]
