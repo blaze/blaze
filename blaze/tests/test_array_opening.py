@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+import os
+import tempfile
+import unittest
+import warnings
+
 import blaze
 from blaze.datadescriptor import dd_as_py
-import numpy as np
-import unittest
-import tempfile
-import os
 
 
 # A CSV toy example
@@ -24,7 +25,7 @@ class TestOpenCSV(unittest.TestCase):
 
     def setUp(self):
         handle, self.fname = tempfile.mkstemp(suffix='.csv')
-        self.url = "csv://" + self.fname
+        self.url = self.fname
         with os.fdopen(handle, "w") as f:
             f.write(csv_buf)
 
@@ -56,6 +57,18 @@ class TestOpenCSV(unittest.TestCase):
         self.assertEqual(dd_as_py(a._data), csv_ldict + \
             [{u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
 
+    def test_deprecated_open(self):
+        url = "csv://" + self.fname
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            store = blaze.Storage(url, mode='r')
+            assert len(w) == 1
+            assert issubclass(w[-1].category, DeprecationWarning)
+        a = blaze.open(store, schema=csv_schema)
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), csv_ldict)
+
+
 json_buf = u"[1, 2, 3, 4, 5]"
 json_schema = "var, int8"
 
@@ -63,7 +76,7 @@ class TestOpenJSON(unittest.TestCase):
 
     def setUp(self):
         handle, self.fname = tempfile.mkstemp(suffix='.json')
-        self.url = "json://" + self.fname
+        self.url = self.fname
         with os.fdopen(handle, "w") as f:
             f.write(json_buf)
 
@@ -76,7 +89,17 @@ class TestOpenJSON(unittest.TestCase):
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
 
+    def test_deprecated_open(self):
+        url = "json://" + self.fname
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            store = blaze.Storage(url, mode='r')
+            assert len(w) == 1
+            assert issubclass(w[-1].category, DeprecationWarning)
+        a = blaze.open(store, schema=json_schema)
+        self.assert_(isinstance(a, blaze.Array))
+        self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+   unittest.main(verbosity=2)
