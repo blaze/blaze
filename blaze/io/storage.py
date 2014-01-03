@@ -45,12 +45,12 @@ class Storage(object):
     """
     Storage(uri, mode='a', permanent=True)
 
-    Class to host parameters for persistency properties.
+    Class to host parameters for persistence properties.
 
     Parameters
     ----------
     uri : string
-        The URI where the dataset will be stored.
+        The URI where the data set will be stored.
     mode : string ('r'ead, 'a'ppend)
         The mode for creating/opening the storage.
     permanent : bool
@@ -58,7 +58,7 @@ class Storage(object):
 
     Examples
     --------
-    >>> store = Storage('blz://blz-store')
+    >>> store = Storage('blz-store.blz')
 
     """
 
@@ -66,7 +66,7 @@ class Storage(object):
 
     @property
     def uri(self):
-        """The URI for the dataset."""
+        """The URI for the data set."""
         return self._uri
 
     @property
@@ -93,6 +93,7 @@ class Storage(object):
         if not isinstance(uri, str):
             raise ValueError("`uri` must be a string.")
         self._uri = uri
+        self._format = self._path = ""
         self._set_format_and_path_from_uri(uri, format)
         self._mode = mode
         if not permanent:
@@ -101,15 +102,15 @@ class Storage(object):
         self._permanent = permanent
 
     def __repr__(self):
-        args = ["uri=%s"%self._uri, "mode=%s"%self._mode]
+        args = ["uri=%s" % self._uri, "mode=%s" % self._mode]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(args))
 
     def _set_format_and_path_from_uri(self, uri, format=None):
         """Parse the uri into the format and path"""
         up = urlparse.urlparse(self._uri)
         if up.scheme in self.SUPPORTED_FORMATS:
-            warnings.warn("Blaze no longer uses file type in network protocol field of the uri. Please use format kwarg.",
-                          DeprecationWarning)
+            warnings.warn("Blaze no longer uses file type in network protocol field of the uri. "
+                          "Please use format kwarg.", DeprecationWarning)
         self._path = up.netloc + up.path
         if not self._path:
             raise ValueError("Unable to extract path from uri: %s", uri)
@@ -121,7 +122,8 @@ class Storage(object):
         if up.scheme in self.SUPPORTED_FORMATS:
             format_from_up = up.scheme
         if format and format_from_up != format_from_up:
-            raise ValueError("URI scheme and file format do not match. Given uri: %s, format: %s" % (up.geturl(), format))
+            raise ValueError("URI scheme and file format do not match. Given uri: %s, format: %s" %
+                             (up.geturl(), format))
 
         # find actual format
         if format:
@@ -135,7 +137,6 @@ class Storage(object):
 
         if self._format not in self.SUPPORTED_FORMATS:
             raise ValueError("`format` '%s' is not supported." % self._format)
-
 
 
 def _persist_convert(persist):
@@ -159,7 +160,7 @@ def open(persist, **kwargs):
         The Storage instance specifies, among other things, URI of
         where the array is stored.
     kwargs : a dictionary
-        Put here different paramaters depending on the format.
+        Put here different parameters depending on the format.
 
     Returns
     -------
@@ -186,14 +187,14 @@ def drop(persist):
 
     persist = _persist_convert(persist)
 
-    if persist.format== 'blz':
+    if persist.format == 'blz':
         try:
             blz.open(rootdir=persist.path)
             from shutil import rmtree
             rmtree(persist.path)
         except RuntimeError:
             # Maybe BLZ should throw other exceptions for this!
-            raise Exception("No dataset at uri '%s'" % uri)
-    elif persist.format== 'csv':
+            raise Exception("No data set at uri '%s'" % persist.uri)
+    elif persist.format == 'csv':
         import os
         os.unlink(persist.path)
