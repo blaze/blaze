@@ -59,11 +59,7 @@ class TestOpenCSV(unittest.TestCase):
 
     def test_deprecated_open(self):
         url = "csv://" + self.fname
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            store = blaze.Storage(url, mode='r')
-            assert len(w) == 1
-            assert issubclass(w[-1].category, DeprecationWarning)
+        store = blaze.Storage(url, mode='r')
         a = blaze.open(store, schema=csv_schema)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
@@ -91,11 +87,7 @@ class TestOpenJSON(unittest.TestCase):
 
     def test_deprecated_open(self):
         url = "json://" + self.fname
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            store = blaze.Storage(url, mode='r')
-            assert len(w) == 1
-            assert issubclass(w[-1].category, DeprecationWarning)
+        store = blaze.Storage(url, mode='r')
         a = blaze.open(store, schema=json_schema)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
