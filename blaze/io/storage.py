@@ -18,6 +18,9 @@ The URI API allows:
 
 from __future__ import absolute_import, division, print_function
 
+import os
+import warnings
+
 from datashape import to_numpy, to_numpy_dtype
 
 from ..py2help import urlparse
@@ -42,12 +45,12 @@ class Storage(object):
     """
     Storage(uri, mode='a', permanent=True)
 
-    Class to host parameters for persistency properties.
+    Class to host parameters for persistence properties.
 
     Parameters
     ----------
     uri : string
-        The URI where the dataset will be stored.
+        The URI where the data set will be stored.
     mode : string ('r'ead, 'a'ppend)
         The mode for creating/opening the storage.
     permanent : bool
@@ -55,13 +58,15 @@ class Storage(object):
 
     Examples
     --------
-    >>> store = Storage('blz://blz-store')
+    >>> store = Storage('blz-store.blz')
 
     """
 
+    SUPPORTED_FORMATS = ('json', 'csv', 'blz')
+
     @property
     def uri(self):
-        """The URI for the dataset."""
+        """The URI for the data set."""
         return self._uri
 
     @property
@@ -84,16 +89,12 @@ class Storage(object):
         """ returns a blz path for a given uri """
         return self._path
 
-    def __init__(self, uri, mode='r', permanent=True):
+    def __init__(self, uri, mode='r', permanent=True, format=None):
         if not isinstance(uri, str):
             raise ValueError("`uri` must be a string.")
         self._uri = uri
-        # Parse the uri into the format (URI scheme) and path
-        up = urlparse.urlparse(self._uri)
-        self._format = format = up.scheme
-        if self._format not in ('json', 'csv', 'blz'):
-            raise ValueError("`format` '%s' is not supported." % self._format)
-        self._path = up.netloc + up.path
+        self._format = self._path = ""
+        self._set_format_and_path_from_uri(uri, format)
         self._mode = mode
         if not permanent:
             raise ValueError(
@@ -101,8 +102,41 @@ class Storage(object):
         self._permanent = permanent
 
     def __repr__(self):
-        args = ["uri=%s"%self._uri, "mode=%s"%self._mode]
+        args = ["uri=%s" % self._uri, "mode=%s" % self._mode]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(args))
+
+    def _set_format_and_path_from_uri(self, uri, format=None):
+        """Parse the uri into the format and path"""
+        up = urlparse.urlparse(self._uri)
+        if up.scheme in self.SUPPORTED_FORMATS:
+            warnings.warn("Blaze no longer uses file type in network protocol field of the uri. "
+                          "Please use format kwarg.", DeprecationWarning)
+        self._path = up.netloc + up.path
+        if not self._path:
+            raise ValueError("Unable to extract path from uri: %s", uri)
+        _, extension = os.path.splitext(self._path)
+        extension = extension.strip('.')
+
+        # Support for deprecated format in url network scheme
+        format_from_up = None
+        if up.scheme in self.SUPPORTED_FORMATS:
+            format_from_up = up.scheme
+        if format and format_from_up != format_from_up:
+            raise ValueError("URI scheme and file format do not match. Given uri: %s, format: %s" %
+                             (up.geturl(), format))
+
+        # find actual format
+        if format:
+            self._format = format
+        elif format_from_up:
+            self._format = format_from_up
+        elif extension:
+            self._format = extension
+        else:
+            raise ValueError("Cannot determine format from: %s" % uri)
+
+        if self._format not in self.SUPPORTED_FORMATS:
+            raise ValueError("`format` '%s' is not supported." % self._format)
 
 
 def _persist_convert(persist):
@@ -126,7 +160,7 @@ def open(persist, **kwargs):
         The Storage instance specifies, among other things, URI of
         where the array is stored.
     kwargs : a dictionary
-        Put here different paramaters depending on the format.
+        Put here different parameters depending on the format.
 
     Returns
     -------
@@ -153,14 +187,14 @@ def drop(persist):
 
     persist = _persist_convert(persist)
 
-    if persist.format== 'blz':
+    if persist.format == 'blz':
         try:
             blz.open(rootdir=persist.path)
             from shutil import rmtree
             rmtree(persist.path)
         except RuntimeError:
             # Maybe BLZ should throw other exceptions for this!
-            raise Exception("No dataset at uri '%s'" % uri)
-    elif persist.format== 'csv':
+            raise Exception("No data set at uri '%s'" % persist.uri)
+    elif persist.format == 'csv':
         import os
         os.unlink(persist.path)

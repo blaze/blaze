@@ -8,7 +8,7 @@ from itertools import product as it_product
 
 import blaze
 from blaze.datadescriptor import dd_as_py
-from blaze.py2help import exec_
+
 
 blaze.set_strategy('jit')
 
@@ -27,7 +27,7 @@ def _mk_dir():
     tmpdir = tempfile.mkdtemp(prefix='blztmp')
 
 def _store(name):
-    return blaze.io.Storage('blz://' + os.path.join(tmpdir, name + '.blz'))
+    return blaze.io.Storage(os.path.join(tmpdir, name + '.blz'))
 
 def _addition(a,b):
     return (a+b)

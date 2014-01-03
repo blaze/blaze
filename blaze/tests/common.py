@@ -15,7 +15,7 @@ class MayBeUriTest():
         if self.uri:
             prefix = 'barray-' + self.__class__.__name__
             self.rootdir = tempfile.mkdtemp(prefix=prefix)
-            self.rooturi = 'blz://' + self.rootdir
+            self.rooturi = 'file://' + self.rootdir
             os.rmdir(self.rootdir)  # tests needs this cleared
         else:
             self.rootdir = None
