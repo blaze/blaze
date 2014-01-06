@@ -112,6 +112,11 @@ class Storage(object):
             warnings.warn("Blaze no longer uses file type in network protocol field of the uri. "
                           "Please use format kwarg.", DeprecationWarning)
         self._path = up.netloc + up.path
+        if os.name == 'nt' and len(up.scheme) == 1:
+            # This is a workaround for raw windows paths like
+            # 'C:/x/y/z.csv', for which urlparse parses 'C' as
+            # the scheme and '/x/y/z.csv' as the path.
+            self._path = uri
         if not self._path:
             raise ValueError("Unable to extract path from uri: %s", uri)
         _, extension = os.path.splitext(self._path)
