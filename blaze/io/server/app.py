@@ -124,7 +124,7 @@ def handle_session_query():
 
 
 def handle_array_query():
-    array_name, indexers = split_array_base(request.path)
+    array_name, indexers = split_array_base(request.path.rstrip('/'))
     arr = get_array(array_name, indexers)
     base_url = request.url_root[:-1]
     #no query params
