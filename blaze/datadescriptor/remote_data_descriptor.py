@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import datashape
 from ..catalog.blaze_url import add_indexers_to_url
 from .data_descriptor import IDataDescriptor, Capabilities
-
+from dynd import nd, ndt
 
 class RemoteDataDescriptor(IDataDescriptor):
     """
@@ -57,3 +57,13 @@ class RemoteDataDescriptor(IDataDescriptor):
 
     def __getitem__(self, key):
         return RemoteDataDescriptor(add_indexers_to_url(self.url, (key,)))
+
+    def getattr(self, name):
+        ds = self.dshape
+        if isinstance(ds, datashape.DataShape):
+            ds = ds[-1]
+        if isinstance(ds, datashape.Record) and name in ds.names:
+            return RemoteDataDescriptor(self.url + '.' + name)
+        else:
+            raise AttributeError(('Blaze remote array does not ' +
+                                  'have attribute "%s"') % name)

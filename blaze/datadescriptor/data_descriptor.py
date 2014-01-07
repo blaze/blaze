@@ -126,6 +126,9 @@ class IDataDescriptor:
     def strategy(self):
         return current_strategy()
 
+    def getattr(self, name):
+        raise NotImplementedError('this data descriptor does not support attribute access')
+
     def dynd_arr(self):
         """Concrete data descriptors must provide their array data
            as a dynd array, accessible via this method.

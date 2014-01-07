@@ -60,3 +60,6 @@ class DyNDDataDescriptor(IDataDescriptor):
 
     def __iter__(self):
         return dynd_descriptor_iter(self._dyndarr)
+
+    def getattr(self, name):
+        return DyNDDataDescriptor(getattr(self._dyndarr, name))
