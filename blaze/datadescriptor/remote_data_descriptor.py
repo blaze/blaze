@@ -34,6 +34,7 @@ class RemoteDataDescriptor(IDataDescriptor):
             # persistent on the remote server
             persistent = True,
             appendable = False,
+            remote = True,
             )
 
     def __repr__(self):

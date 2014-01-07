@@ -51,6 +51,7 @@ class CatDataDescriptor(IDataDescriptor):
             # persistency is not supported yet
             persistent = False,
             appendable = False,
+            remote = False,
             )
 
     def __len__(self):

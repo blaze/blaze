@@ -82,6 +82,7 @@ class DeferredDescriptor(IDataDescriptor):
             # persistency is not supported yet
             persistent = False,
             appendable = False,
+            remote = False,
             )
 
     __array__           = force_evaluation('__array__')

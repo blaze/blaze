@@ -42,6 +42,7 @@ class DyNDDataDescriptor(IDataDescriptor):
             persistent = False,
             # dynd arrays can be appended efficiently
             appendable = False,
+            remote = False,
             )
 
     def __array__(self):

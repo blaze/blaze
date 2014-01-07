@@ -22,15 +22,18 @@ class Capabilities:
         True if the array persists on files between sessions.
     appendable : bool
         True if the array can be enlarged efficiently.
+    remote : bool
+        True if the array is remote or distributed.
 
     """
 
-    def __init__(self, immutable, deferred, persistent, appendable):
-        self._caps = ['immutable', 'deferred', 'persistent', 'appendable']
+    def __init__(self, immutable, deferred, persistent, appendable, remote):
+        self._caps = ['immutable', 'deferred', 'persistent', 'appendable', 'remote']
         self.immutable = immutable
         self.deferred = deferred
         self.persistent = persistent
         self.appendable = appendable
+        self.remote = remote
 
     def __str__(self):
         caps = [attr+': '+str(getattr(self, attr)) for attr in self._caps]

@@ -60,6 +60,7 @@ class BlazeFuncDeprecatedDescriptor(IDataDescriptor):
             # persistency is not supported yet
             persistent = False,
             appendable = False,
+            remote = False,
             )
 
     @property
