@@ -43,6 +43,12 @@ class TestArrayStr(unittest.TestCase):
         self.assertEqual(str(a),
             '[[        1         2         3]\n [        4         5]]')
 
+    def test_empty_array(self):
+        a = blaze.array([[], []])
+        self.assertEqual(str(a), '[[]\n []]')
+        a = blaze.array([[], [1, 2]])
+        self.assertEqual(str(a), '[[]\n [     1      2]]')
+
     def test_str_array(self):
         # Basically check that it doesn't raise an exception to
         # get the string

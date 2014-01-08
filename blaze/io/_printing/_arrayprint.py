@@ -484,14 +484,9 @@ def array2string(a, max_line_width=None, precision=None,
     shape, dtype = (a.dshape[:-1], a.dshape[-1])
     shape = tuple(int(x) if isinstance(x, Fixed) else x for x in shape)
 
-    if (all(not isinstance(x, Var) for x in shape) and
-            reduce(product, shape, 1) == 0):
-        # treat as a null array if any of shape elements == 0
-        lst = "[]"
-    else:
-        lst = _array2string(a, shape, dtype, max_line_width,
-                            precision, suppress_small,
-                            separator, prefix, formatter=formatter)
+    lst = _array2string(a, shape, dtype, max_line_width,
+                        precision, suppress_small,
+                        separator, prefix, formatter=formatter)
     return lst
 
 
@@ -539,8 +534,10 @@ def _formatArray(a, format_function, rank, max_line_len,
             s, line = _extendLine(s, line, word, max_line_len,
                                   next_line_prefix)
 
-        word = format_function(dd_as_py(a[-1]))
-        s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
+        if len(a) > 0:
+            word = format_function(dd_as_py(a[-1]))
+            s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
+
         s += line + "]\n"
         s = '[' + s[len(next_line_prefix):]
     else:
