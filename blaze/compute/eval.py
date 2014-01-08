@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 # Implements the blaze.eval function
 
 from .air import prepare, interps
+from .. import array
 
 #------------------------------------------------------------------------
 # Eval
@@ -34,12 +35,16 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
     """
     strategy = strategy or arr._data.strategy
 
-    if not arr._data.capabilities.deferred:
+    if arr._data.capabilities.deferred:
+        result = eval_deferred(arr, storage, caps, out, strategy)
+    elif arr._data.capabilities.remote:
+        # Retrieve the data to local memory
+        # TODO: Caching should play a role here.
+        result = array(arr._data.dynd_arr())
+    else:
         # TODO: This isn't right if the storage is different, requires
         #       a copy then.
         result = arr
-    else:
-        result = eval_deferred(arr, storage, caps, out, strategy)
 
     return result
 
