@@ -10,8 +10,7 @@ import blaze
 import unittest
 from blaze.catalog.tests.catalog_harness import CatalogHarness
 
-from blaze.datadescriptor import dd_as_py
-from blaze.io.client.rarray import RArray
+from blaze.datadescriptor import dd_as_py, RemoteDataDescriptor
 
 
 class TestServer(unittest.TestCase):
@@ -62,10 +61,10 @@ class TestServer(unittest.TestCase):
         self.cat.close()
 
     def test_get_arr(self):
-        ra = RArray('%s/csv_arr' % self.baseurl)
+        ra = blaze.array(RemoteDataDescriptor('%s/csv_arr' % self.baseurl))
         la = blaze.catalog.get('/csv_arr')
         self.assertEqual(la.dshape, ra.dshape)
-        self.assertEqual(dd_as_py(la._data), dd_as_py(ra.get_data()._data))
+        self.assertEqual(dd_as_py(la._data), dd_as_py(blaze.eval(ra)._data))
 
 if __name__ == '__main__':
     unittest.main()
