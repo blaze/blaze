@@ -18,7 +18,7 @@ class TestServer(unittest.TestCase):
         # Start the server
         serverpy = os.path.join(os.path.dirname(__file__),
                                 'start_simple_server.py')
-        for attempt in range(5):
+        for attempt in range(2):
             self.port = 10000 + random.randrange(30000)
             cflags = 0
             exe = sys.executable
@@ -35,7 +35,7 @@ class TestServer(unittest.TestCase):
                                           str(self.port)],
                                          executable=exe,
                                          creationflags=cflags)
-            for i in range(10):
+            for i in range(30):
                 time.sleep(0.2)
                 if self.proc.poll() is not None:
                     break
