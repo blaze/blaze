@@ -68,3 +68,6 @@ class RemoteDataDescriptor(IDataDescriptor):
         else:
             raise AttributeError(('Blaze remote array does not ' +
                                   'have attribute "%s"') % name)
+
+    def __iter__(self):
+        raise NotImplementedError('remote data descriptor iterator unimplemented')
