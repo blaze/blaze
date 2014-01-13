@@ -24,7 +24,7 @@ import warnings
 from datashape import to_numpy, to_numpy_dtype
 
 from ..py2help import urlparse
-from . import blz
+import blz
 from ..datadescriptor import (BLZDataDescriptor, CSVDataDescriptor,
                               JSONDataDescriptor)
 from ..objects.array import Array

@@ -88,26 +88,6 @@ def check_import(pkgname, pkgver):
     globals()[pkgname] = mod
 
 #------------------------------------------------------------------------
-# Cython Sanity Check
-#------------------------------------------------------------------------
-
-try:
-    from Cython.Distutils import Extension, build_ext
-    from Cython.Compiler.Main import Version
-except:
-    exit_with_error(
-        "You need %(pkgname)s %(pkgver)s or greater to compile Blaze!"
-        % {'pkgname': 'Cython', 'pkgver': min_cython_version} )
-
-if Version.version < min_cython_version:
-    exit_with_error(
-        "At least Cython %s is needed so as to generate extensions!"
-        % (min_cython_version) )
-else:
-    print( "* Found %(pkgname)s %(pkgver)s package installed."
-            % {'pkgname': 'Cython', 'pkgver': Version.version} )
-
-#------------------------------------------------------------------------
 # Numpy Sanity Check
 #------------------------------------------------------------------------
 
@@ -143,10 +123,6 @@ for arg in args:
         CFLAGS = arg.split('=')[1].split()
         sys.argv.remove(arg)
 
-# Add -msse2 flag for optimizing shuffle in include Blosc
-if os.name == 'posix':
-    CFLAGS.append("-msse2")
-
 # Add some macros here for debugging purposes, if needed
 def_macros = [('DEBUG', 0)]
 
@@ -157,48 +133,6 @@ def_macros = [('DEBUG', 0)]
 
 numpy_path = get_numpy_include_dirs()[0]
 
-blosc_path  = 'blaze/io/blz/include/blosc/'
-
-
-blz_source = [
-    "blaze/io/blz/blz_ext.pyx"
-]
-
-blz_depends = [
-]
-
-blosc_source = [
-    blosc_path + "blosc.c",
-    blosc_path + "blosclz.c",
-    blosc_path + "shuffle.c"
-]
-
-blosc_depends = [
-    blosc_path + "blosc.h",
-    blosc_path + "blosclz.h",
-    blosc_path + "shuffle.h"
-]
-
-
-extensions = [
-    Extension(
-        "blaze.io.blz.blz_ext",
-        include_dirs=[
-            blosc_path,
-            numpy_path,
-        ],
-
-        sources = list(blz_source + blosc_source),
-        depends = list(blz_depends + blosc_depends),
-
-        library_dirs=lib_dirs,
-        libraries=libs,
-        extra_link_args=LFLAGS,
-        extra_compile_args=CFLAGS,
-        define_macros=def_macros,
-   ),
-
-]
 
 #------------------------------------------------------------------------
 # Commands
@@ -274,7 +208,7 @@ longdesc = open('README.md').read()
 
 setup(
     name='blaze',
-    version='0.2dev',
+    version='0.4.dev',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',
@@ -295,9 +229,7 @@ setup(
         'Topic :: Utilities',
     ],
     packages=packages,
-    ext_modules=extensions,
     cmdclass = {
-        'build_ext' : make_build(build_ext),
         'clean'     : CleanCommand,
     }
 )
