@@ -34,7 +34,7 @@ from itertools import islice
 import io
 import csv
 from dynd import nd, ndt
-from blaze import blz
+import blz
 import os.path
 import numpy as np
 
