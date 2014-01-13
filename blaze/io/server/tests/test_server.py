@@ -7,6 +7,7 @@ import subprocess
 import socket
 import time
 import blaze
+import datashape
 import unittest
 from blaze.catalog.tests.catalog_harness import CatalogHarness
 
@@ -65,6 +66,13 @@ class TestServer(unittest.TestCase):
         la = blaze.catalog.get('/csv_arr')
         self.assertEqual(la.dshape, ra.dshape)
         self.assertEqual(dd_as_py(la._data), dd_as_py(blaze.eval(ra)._data))
+
+    def test_compute(self):
+        ra = blaze.array(RemoteDataDescriptor('%s/py_arr' % self.baseurl))
+        result = ra + 1
+        result = blaze.eval(result)
+        self.assertEqual(result.dshape, datashape.dshape('5, int32'))
+        self.assertEqual(dd_as_py(result._data), [2, 3, 4, 5, 6])
 
 if __name__ == '__main__':
     unittest.main()
