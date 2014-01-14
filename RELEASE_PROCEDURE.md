@@ -4,8 +4,10 @@
 This document describes the steps to follow to release
 a new version of Blaze.
 
-1. Update version numbers in /setup.py, in the
-   setup(...) call.
+1. Update version numbers in the following locations:
+
+ * /setup.py, in the setup(...) call.
+ * /README.md where it mentions the current release.
 
 1. Confirm the dependencies and their version numbers in
    /README.md. In particular, `blz`, `dynd-python`, etc
