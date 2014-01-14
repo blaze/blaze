@@ -71,9 +71,8 @@ to update.
 $ conda update blaze
 ```
 
-For the latest development version of Blaze, you
-can obtain the source from
-[Github](https://github.com/ContinuumIO/blaze).
+Source code for the latest development version of blaze can
+be obtained [from Github](https://github.com/ContinuumIO/blaze).
 
 Dependencies
 ------------
