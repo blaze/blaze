@@ -30,13 +30,13 @@ Now, let's have a look at the representation of the `a` array:
   array([2, 3, 4],
         dshape='3, int32')
 
-You are seeing here at a first difference with NumPy, and it is the
-`dshape` attribute, which is basically the fusion of `shape` and
-`dtype` concepts for NumPy.  Such unification of concepts will be
+You are seeing here our first difference with NumPy, and it is the
+`dshape` attribute. This is basically the fusion of `shape` and
+`dtype` from NumPy.  Such unification of concepts will be
 handy for performing advanced operations (like views) in a more
 powerful way.
 
-Note that when creating from a Python iterable, a datashape will boe
+Note that when creating from a Python iterable, a datashape will be
 inferred:
 
 .. doctest::
@@ -89,8 +89,8 @@ You can even build a compressed array in-memory:
   >>> print(blz)
   [1 2 3]
 
-It is possible to force a type in a given array. This allows a broader
-selection of types on construction:
+It is possible to force the type when creating the array. This
+allows a broader selection of types on construction:
 
 .. doctest::
 
@@ -116,7 +116,7 @@ by adding the storage keyword parameter to an array constructor:
 
 .. doctest::
 
-  >>> g = blaze.array([ 1, 2, 3], dshape='float32', storage=blaze.Storage('blz://myarray.blz'))
+  >>> g = blaze.array([ 1, 2, 3], dshape='float32', storage=blaze.Storage('myarray.blz'))
   >>> g
   array([ 1.,  2.,  3.],
         dshape='3, float32')
@@ -128,7 +128,7 @@ different python session by name, using the `open` function:
 
 .. doctest::
 
-  >>> f = blaze.open(blaze.Storage('blz://myarray.blz'))
+  >>> f = blaze.open(blaze.Storage('myarray.blz'))
   >>> f
   array([ 1.,  2.,  3.],
         dshape='3, float32')
@@ -154,7 +154,7 @@ its resources, you can just 'drop' it:
 
 .. doctest::
 
-  >>> f = blaze.drop(blaze.Storage('blz://myarray.blz'))
+  >>> blaze.drop(blaze.Storage('myarray.blz'))
 
 After dropping a persistent array this way, any 'open' version you may
 had of it will no longer be valid. You won't be able to reopen it
@@ -174,21 +174,21 @@ instead of holding the result, knows how to build that result:
 .. doctest::
 
   >>> a = blaze.array([ 1, 2, 3])
-  >>> a.deferred
+  >>> a.capabilities.deferred
   False
 
 
 .. doctest::
 
   >>> b = blaze.array([ 4, 5, 6])
-  >>> b.deferred
+  >>> b.capabilities.deferred
   False
 
 
 .. doctest::
 
   >>> r = a+b
-  >>> r.deferred
+  >>> r.capabilities.deferred
   True
 
 In order to obtain the results, just call the eval function with the
@@ -217,16 +217,16 @@ file-system. We can eval directly to a persistent array:
 
 .. doctest::
 
-  >>> result = blaze.eval(r, storage=blaze.Storage('blz://res.blz'))
+  >>> result = blaze.eval(r, storage=blaze.Storage('res.blz'))
 
 In this sample we have used two small in-memory arrays to illustrate
 execution. The same code can work for large arrays that are 'opened'
 instead of being created/read, allowing the easy evaluation of
 expression that is effectively out-of-core::
 
-  >>> ba1 = blaze.open(blaze.Storage('blz://big_array1.blz'))
-  >>> ba2 = blaze.open(blaze.Storage('blz://big_array2.blz'))
-  >>> res = blaze.eval(ba1+ba2, storage=blaze.Storage('blz://big_result.blz'))
+  >>> ba1 = blaze.open(blaze.Storage('big_array1.blz'))
+  >>> ba2 = blaze.open(blaze.Storage('big_array2.blz'))
+  >>> res = blaze.eval(ba1+ba2, storage=blaze.Storage('big_result.blz'))
 
 So it is possible to build complex array expressions that can be
 executed without building huge intermediate arrays. It is also
