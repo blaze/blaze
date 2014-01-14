@@ -23,10 +23,10 @@ Disk Backed Array
 
 .. doctest::
 
-    >>> from blaze import array, dshape, Storage
-    >>> p = Storage('blz://foo.blz')
-    >>> ds = dshape('2, 2, int32')
-    >>> a = array([[1,2],[3,4]], ds, storage=p)
+    >>> import blaze
+    >>> p = blaze.Storage('foo.blz')
+    >>> ds = blaze.dshape('2, 2, int32')
+    >>> a = blaze.array([[1,2],[3,4]], ds, storage=p)
 
 
 .. doctest::
@@ -39,12 +39,12 @@ Disk Backed Array
 
 .. doctest::
 
-    >>> from blaze import open, drop, Storage
-    >>> open(Storage('blz://foo.blz'))
+    >>> import blaze
+    >>> blaze.open(blaze.Storage('foo.blz'))
     array([[1, 2],
            [3, 4]],
           dshape='2, 2, int32')
-    >>> drop(Storage('blz://foo.blz'))
+    >>> blaze.drop(blaze.Storage('foo.blz'))
     
 
 Iterators
