@@ -7,11 +7,11 @@ import subprocess
 import socket
 import time
 import blaze
+import datashape
 import unittest
 from blaze.catalog.tests.catalog_harness import CatalogHarness
 
-from blaze.datadescriptor import dd_as_py
-from blaze.io.client.rarray import RArray
+from blaze.datadescriptor import dd_as_py, RemoteDataDescriptor
 
 
 class TestServer(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestServer(unittest.TestCase):
         # Start the server
         serverpy = os.path.join(os.path.dirname(__file__),
                                 'start_simple_server.py')
-        for attempt in range(5):
+        for attempt in range(2):
             self.port = 10000 + random.randrange(30000)
             cflags = 0
             exe = sys.executable
@@ -36,7 +36,7 @@ class TestServer(unittest.TestCase):
                                           str(self.port)],
                                          executable=exe,
                                          creationflags=cflags)
-            for i in range(10):
+            for i in range(30):
                 time.sleep(0.2)
                 if self.proc.poll() is not None:
                     break
@@ -62,10 +62,17 @@ class TestServer(unittest.TestCase):
         self.cat.close()
 
     def test_get_arr(self):
-        ra = RArray('%s/csv_arr' % self.baseurl)
+        ra = blaze.array(RemoteDataDescriptor('%s/csv_arr' % self.baseurl))
         la = blaze.catalog.get('/csv_arr')
         self.assertEqual(la.dshape, ra.dshape)
-        self.assertEqual(dd_as_py(la._data), dd_as_py(ra.get_data()._data))
+        self.assertEqual(dd_as_py(la._data), dd_as_py(blaze.eval(ra)._data))
+
+    def test_compute(self):
+        ra = blaze.array(RemoteDataDescriptor('%s/py_arr' % self.baseurl))
+        result = ra + 1
+        result = blaze.eval(result)
+        self.assertEqual(result.dshape, datashape.dshape('5, int32'))
+        self.assertEqual(dd_as_py(result._data), [2, 3, 4, 5, 6])
 
 if __name__ == '__main__':
     unittest.main()

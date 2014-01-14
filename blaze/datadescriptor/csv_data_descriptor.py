@@ -117,6 +117,7 @@ class CSVDataDescriptor(IDataDescriptor):
             persistent = True,
             # csv datadescriptor can be appended efficiently
             appendable = True,
+            remote = False,
             )
 
     def dynd_arr(self):

@@ -54,6 +54,7 @@ class JSONDataDescriptor(IDataDescriptor):
             persistent = True,
             # json datadescriptor can be appended efficiently
             appendable = True,
+            remote = False,
             )
 
     @property

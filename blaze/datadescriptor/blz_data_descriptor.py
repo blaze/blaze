@@ -51,6 +51,7 @@ class BLZDataDescriptor(IDataDescriptor):
             persistent = self.blzarr.rootdir is not None,
             # BLZ arrays can be appended efficiently
             appendable = True,
+            remote = False,
             )
 
     def __array__(self):
