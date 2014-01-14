@@ -117,7 +117,8 @@ check_import('numpy', min_numpy_version)
 # LLVM Sanity Check
 #------------------------------------------------------------------------
 
-check_import('llvmpy', min_llvmpy_version)
+# This is commented out because llvmpy does not have a `__version__` attr
+#check_import('llvmpy', min_llvmpy_version)
 
 #------------------------------------------------------------------------
 # C Compiler Environment
