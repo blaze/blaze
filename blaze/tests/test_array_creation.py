@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import blaze
+import datashape
 from blaze.datadescriptor import dd_as_py
 import numpy as np
 import unittest
@@ -43,10 +44,25 @@ class TestEphemeral(unittest.TestCase):
         # self.assertEqual(a[2], 3)
 
     def test_create_iter(self):
-        # A default array (backed by NumPy)
-        a = blaze.array((i for i in range(10)))
-        self.assert_(isinstance(a, blaze.Array))
+        # A simple 1D array
+        a = blaze.array(i for i in range(10))
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertEqual(a.dshape, datashape.dshape('10, int32'))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
+        # A nested iter
+        a = blaze.array((i for i in range(x)) for x in range(5))
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertEqual(a.dshape, datashape.dshape('5, var, int32'))
+        self.assertEqual(dd_as_py(a._data),
+                         [[i for i in range(x)] for x in range(5)])
+        # A list of iter
+        a = blaze.array([range(3), (1.5*x for x in range(4)), iter([-1, 1])])
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertEqual(a.dshape, datashape.dshape('3, var, float64'))
+        self.assertEqual(dd_as_py(a._data),
+                         [list(range(3)),
+                          [1.5*x for x in range(4)],
+                          [-1, 1]])
 
     def test_create_compress_iter(self):
         # A compressed array (backed by BLZ)
