@@ -30,6 +30,7 @@ from .io.storage import open, drop, Storage
 import ctypes
 
 import datashape
+from datashape import dshape
 
 # These are so that llvm_structs corresponding to dshapes get converted correctly
 #  when constructing ctypes functions
