@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Access Data from Different Sources &mdash; Blaze 0.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.4.0 documentation" href="index.html" />
+    <link rel="next" title="Datashape" href="datashape.html" />
+    <link rel="prev" title="Catalog" href="catalog.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+        
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+        
+        <li>
+            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+        
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+        </li>
+        
+        <li>
+            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
+        </li>
+        
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+        
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Access Data from Different Sources</a><ul>
+<li><a class="reference internal" href="#open-and-working-with-a-data-file">Open and working with a data file</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="access-data-from-different-sources">
+<h1>Access Data from Different Sources<a class="headerlink" href="#access-data-from-different-sources" title="Permalink to this headline">¶</a></h1>
+<p>Blaze can access data from a variety of sources, as long as the format has been implemented as a <em class="xref std std-ref">Data Descriptor</em>.  Currently there are data descriptors for CSV and JSON files, although the list is growing.  This section shows how to access these files in a general way.</p>
+<div class="section" id="open-and-working-with-a-data-file">
+<h2>Open and working with a data file<a class="headerlink" href="#open-and-working-with-a-data-file" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s suppose that we have a file named &#8216;/tmp/test.csv&#8217; that we want to operate with in Blaze.  Blaze normally access data through URLs, so first, let&#8217;s use the the Storage class so as to parse the URL and determine if we can process the file:</p>
+<div class="highlight-python"><pre>In []: store = blaze.Storage('csv:///tmp/test.csv')</pre>
+</div>
+<p>The first part of the URL, the network protocol, specifies the format of the data source, and the rest tells where the data is.  In this case we are parsing a CSV file, so this is why the network protocol is &#8216;csv&#8217;.  For JSON files it is just a matter of replacing this part by &#8216;json&#8217; instead of &#8216;csv&#8217;.</p>
+<p>Now, for actually accessing the data in the file we need to know the schema of the files, let&#8217;s use the <cite>open</cite> function on our <cite>store</cite> instance:</p>
+<div class="highlight-python"><pre>In []: csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
+In []: arr = blaze.open(store, schema=csv_schema)</pre>
+</div>
+<p>As we see, the <cite>open</cite> function needs you to inform about the schema of the underlying file; in this case, each line is formed by a couple of strings, an integer of 16 bits and a boolean.</p>
+<p>If we want to have a look at the contents, then just print the Blaze array:</p>
+<div class="highlight-python"><pre>In []: arr._data.dynd_arr()  # update this when struct types can be pri
+Out[]: nd.array([["k1", "v1", 1, false], ["k2", "v2", 2, true], ["k3", "v3", 3, false]], var_dim&lt;{f0 : string; f1 : string; f2 : int16; f3 : bool}&gt;)</pre>
+</div>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>
