@@ -174,21 +174,21 @@ instead of holding the result, knows how to build that result:
 .. doctest::
 
   >>> a = blaze.array([ 1, 2, 3])
-  >>> a.capabilities.deferred
+  >>> a.deferred
   False
 
 
 .. doctest::
 
   >>> b = blaze.array([ 4, 5, 6])
-  >>> b.capabilities.deferred
+  >>> b.deferred
   False
 
 
 .. doctest::
 
   >>> r = a+b
-  >>> r.capabilities.deferred
+  >>> r.deferred
   True
 
 In order to obtain the results, just call the eval function with the

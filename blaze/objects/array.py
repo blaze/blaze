@@ -61,8 +61,8 @@ class Array(object):
         return self._data.dshape
 
     @property
-    def capabilities(self):
-        return self._data.capabilities
+    def deferred(self):
+        return self._data.capabilities.deferred
 
     def view(self):
         if not self.capabilities.deferred:
