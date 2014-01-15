@@ -8,7 +8,8 @@ as follows.
 .. doctest::
 
     >>> import blaze
-    >>> from blaze import array, dshape
+    >>> from blaze import array
+    >>> from datashape import dshape
 
 Blaze Arrays
 ~~~~~~~~~~~~

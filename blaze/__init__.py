@@ -46,7 +46,7 @@ class complex64(ctypes.Structure):
                 ('imag', ctypes.c_float)]
     _blaze_type_ = datashape.complex64
 
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 
 # If IPython is already loaded, register the Blaze catalog magic
 import sys

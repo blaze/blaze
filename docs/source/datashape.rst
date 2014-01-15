@@ -432,7 +432,7 @@ FAQ
 
 .. doctest::
 
-    >>> from blaze.datashape import dshape, to_numpy
+    >>> from datashape import dshape, to_numpy
     >>> ds = dshape("5, 5, int32")
     >>> to_numpy(ds)
     ((5, 5), dtype('int32'))
@@ -441,7 +441,7 @@ FAQ
 
 .. doctest::
 
-    >>> from blaze.datashape import dshape, from_numpy
+    >>> from datashape import dshape, from_numpy
     >>> from numpy import dtype
     >>> from_numpy((5,5), dtype('int32'))
     dshape("5, 5, int32")

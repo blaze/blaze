@@ -33,7 +33,7 @@ To build project inside of Anaconda:
 To build documentation on a unix-based system:
 
 ::
-
+    $ cd docs
     $ make docs
 
 To run tests:
@@ -51,7 +51,10 @@ Dependencies
 * ply_
 * python-blosc_
 * pycparser_
-* dynd_ (master branch)
+* dynd_ >= 0.6.0
+* datashape_ >= 0.1.0
+* blz_ >= 0.6.0
+* pykit_ >= 0.1.0
 * nose_ (optional, for running tests)
 
 .. _numpy: http://www.numpy.org/
@@ -62,4 +65,7 @@ Dependencies
 .. _pycparser: https://bitbucket.org/eliben/pycparser
 .. _nose: https://pypi.python.org/pypi/nose/
 .. _dynd: https://github.com/ContinuumIO/dynd-python
+.. _datashape: https://github.com/ContinuumIO/datashape
+.. _blz: https://github.com/ContinuumIO/blz
+.. _pykit: https://github.com/pykit/pykit
 

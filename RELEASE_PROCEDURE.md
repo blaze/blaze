@@ -8,9 +8,14 @@ a new version of Blaze.
 
  * /setup.py, in the setup(...) call.
  * /README.md where it mentions the current release.
+ * /blaze/__init__.py
 
 1. Confirm the dependencies and their version numbers in
-   /README.md. In particular, `blz`, `dynd-python`, etc
+   /README.md. 
+   /docs/installing
+   /requirements.txt
+
+   In particular, `blz`, `dynd-python`, etc
    will typically be released concurrently with `blaze`,
    so they need to be updated to match.
 
