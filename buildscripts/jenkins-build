@@ -61,6 +61,13 @@ pushd datashape
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
+# Temporary hack to install blz
+rm -rf blz
+git clone https://github.com/ContinuumIO/blz.git
+pushd blz
+${PYTHON_EXECUTABLE} setup.py install || exit 1
+popd
+
 
 # Build/install Blaze
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
