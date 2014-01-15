@@ -24,9 +24,6 @@ a new version of Blaze.
 
 1. Tag the release version.
 
-1. Make a maintenance branch "rel#.#.x".
-   The oldest such branch is "rel0.3.x".
-
 1. Release email to blaze-dev@continuum.io.
 
 1. Update this release procedure document to reflect
