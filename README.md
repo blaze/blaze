@@ -46,7 +46,7 @@ distributed context.
 Status
 ------
 
-Blaze is a work in progress at the moment, currently at release 0.3.
+Blaze is a work in progress at the moment, currently at release 0.4.
 Take a look at the [release notes](docs/source/releases.rst).
 
 Documentation
@@ -96,10 +96,10 @@ The Blaze project itself is spread out over multiple projects,
 in addition to the main `blaze` repo. These dependencies
 are
 
-  * [blz][blz] (dev version)
-  * [datashape][datashape] (dev version)
-  * [dynd-python][dynd-python] (dev version)
-  * [pykit][pykit] (dev version)
+  * [blz][blz] >= 0.6.0
+  * [datashape][datashape] >= 0.1.0
+  * [dynd-python][dynd-python] >= 0.6.0
+  * [pykit][pykit] >= 0.1.0
 
 [blz]: https://github.com/ContinuumIO/blz
 [datashape]: https://github.com/ContinuumIO/datashape

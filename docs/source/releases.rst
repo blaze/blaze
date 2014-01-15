@@ -2,6 +2,16 @@
 Release Notes
 ======================
 
+Release 0.4
+-----------
+
+* Split the datashape and blz modules out.
+* Add catalog and server for blaze arrays.
+* Add remote arrays.
+* Add csv and json persistence formats.
+* Add python3 support
+* Add scidb interface
+
 Release 0.3
 -----------
 
