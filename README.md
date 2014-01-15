@@ -1,4 +1,4 @@
-<p align="center" style="padding: 20px">
+﻿<p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
 </p>
 
@@ -54,111 +54,81 @@ Documentation
 
 * [Dev Docs](http://blaze.pydata.org/docs/)
 
-Installing
-----------
+Trying out Blaze
+----------------
 
-If you are interested in the development version of Blaze you can
-obtain the source from Github.
+The easiest way to try out Blaze is through the Anaconda
+distribution. The latest release includes a version of Blaze.
+
+http://continuum.io/downloads
+
+To make sure you're running the latest released version
+of Blaze, use the
+[conda package manager](http://docs.continuum.io/conda/index.html)
+to update.
 
 ```bash
-$ git clone git@github.com:ContinuumIO/blaze.git
+$ conda update blaze
 ```
 
-Many of the dependencies ( i.e. llvmpy ) are non-trivial to install.
-It is **highly recommend** that you build Blaze using the Anaconda
-distribution, a free Python distribution that comes with a host of
-scientific and numeric packages bundled and precompiled into a userspace
-Python environment.
+Source code for the latest development version of blaze can
+be obtained [from Github](https://github.com/ContinuumIO/blaze).
 
-Anaconda can be downloaded for all platforms here: http://continuum.io/downloads.html.
-
-Introduction
+Dependencies
 ------------
 
-Pre-requisites:
-  * llvmpy >= 0.11.1
-  * cython >= 0.16
-  * numpy >= 1.6
-  * dynd-python >= 0.5.0
-  * numba >= 0.11
-  * pykit >= 0.1
+Blaze builds upon the work of many, requiring the following
+Python libraries to build/run.
 
-Install all pre-requisites and then run:
+  * [llvmpy][llvmpy] >= 0.12
+  * [cython][cython] >= 0.18
+  * [numpy][numpy] >= 1.6
+  * [numba][numba] >= 0.11
+  * [nose][nose] >= 1.1
 
-python setup.py install
+[llvmpy]: http://www.llvmpy.org/
+[cython]: http://cython.org/
+[numpy]: http://www.numpy.org/
+[numba]: http://numba.pydata.org/
+[nose]: https://nose.readthedocs.org/en/latest/
 
-Docs are generated using sphinx in the docs directory.
+The Blaze project itself is spread out over multiple projects,
+in addition to the main `blaze` repo. These dependencies
+are
 
+  * [blz][blz] (dev version)
+  * [datashape][datashape] (dev version)
+  * [dynd-python][dynd-python] (dev version)
+  * [pykit][pykit] (dev version)
 
-Alternative Installation
-------------------------
+[blz]: https://github.com/ContinuumIO/blz
+[datashape]: https://github.com/ContinuumIO/datashape
+[dynd-python]: https://github.com/ContinuumIO/dynd-python
+[pykit]: https://github.com/pykit/pykit
 
-If for some reason you wish to avoid using Anaconda
-it is possible to build Blaze using standard Python tools.
-This method is not recommended.
+Installing from Source
+----------------------
 
-1) After you have checked out the Blaze source, create a virtualenv
-under the root of the Blaze repo.
-
-```bash
-$ virtualenv venv --distribute --no-site-packages
-$ . venv/bin/activate
-```
-
-2) Pull the Conda package manager for use inside of your virtualenv.
-
-```bash
-$ git clone git@github.com:ContinuumIO/conda.git
-```
-
-3) Build and install conda.
+Install all the pre-requisites using conda or another mechanism,
+then run:
 
 ```bash
-$ cd conda
 $ python setup.py install
-$ cd ..
 ```
 
-4) Create a directory in your virtualenv to mimic the behavior of
-Anaconda and allow Continuum signed packages to be installed.
-
-```bash
-$ mkdir venv/pkgs
-```
-
-5) Add ``conda`` to your path.
-
-```bash
-$ PATH=venv/bin:$PATH
-```
-
-6) Use Anaconda to resolve Blaze dependencies. This method is
-experimental and not officially supported.
-
-```bash
-$ conda install ply
-$ conda install numpy
-$ conda install llvmpy
-$ conda install cython
-$ conda install pycparser
-```
-
-7) From inside the Blaze directory run the Makefile.
-
-```bash
-$ make build
-```
+Documentation is generated using sphinx from the docs directory.
 
 Contributing
 ------------
 
 Anyone wishing to discuss on Blaze should join the
 [blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev)
-mailing list at: blaze-dev@continuum.io
+mailing list. To get started contributing, read through the
+[Developer Workflow](docs/source/dev_workflow.md) documentation.
 
 License
 -------
 
 Blaze development is sponsored by Continuum Analytics.
 
-Released under BSD license. See LICENSE for details.
+Released under BSD license. See [LICENSE.txt](LICENSE.txt) for details.
