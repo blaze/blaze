@@ -5,7 +5,7 @@ from dynd import nd
 import datashape
 
 from . import IDataDescriptor, Capabilities
-from ..io import blz
+import blz
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 

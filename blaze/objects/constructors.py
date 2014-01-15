@@ -25,7 +25,7 @@ from ..datadescriptor import (IDataDescriptor,
                               BLZDataDescriptor)
 from ..io.storage import Storage
 from ..py2help import basestring
-from ..io import blz
+import blz
 
 
 def _normalize_dshape(ds):
