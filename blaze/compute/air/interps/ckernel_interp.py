@@ -9,7 +9,7 @@ import operator
 from pykit.ir import visit, copy_function
 from dynd import nd, ndt
 import blaze
-from blaze.io import blz
+import blz
 import datashape
 
 from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor

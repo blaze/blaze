@@ -46,17 +46,6 @@ Index
    deferred
    dev_workflow
 
-Original Index
-~~~~~~~~~~~~~~
-
-.. toctree::
-   :maxdepth: 2
-
-   vision
-   tutorials
-   persistence
-   memory
-   module
 
 API Reference
 ~~~~~~~~~~~~~
