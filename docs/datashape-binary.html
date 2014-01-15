@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datashape Binary Data Layout &mdash; Blaze 0.3.0 documentation</title>
+    <title>Datashape Binary Data Layout &mdash; Blaze 0.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.0',
+        VERSION:     '0.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.4.0 documentation" href="index.html" />
     <link rel="next" title="Data Descriptors" href="data_descriptor.html" />
     <link rel="prev" title="Datashape" href="datashape.html" />
 <meta charset='utf-8'>
@@ -116,59 +116,6 @@ libdynd as the basis for this.</p>
 <div class="section" id="measures">
 <h2>Measures<a class="headerlink" href="#measures" title="Permalink to this headline">¶</a></h2>
 <p>All types are in native byte order.</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="24%" />
-<col width="76%" />
-</colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Datashape</th>
-<th class="head">Binary Data Layout</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr class="row-even"><td>bool</td>
-<td>One byte, 0 = False, 1 = True</td>
-</tr>
-<tr class="row-odd"><td>int&lt;N&gt;</td>
-<td>N/8 bytes, stored in two&#8217;s complement.</td>
-</tr>
-<tr class="row-even"><td>uint&lt;N&gt;</td>
-<td>N/8 bytes, unsigned integer.</td>
-</tr>
-<tr class="row-odd"><td>float&lt;N&gt;</td>
-<td>N/8 bytes, IEEE 754 binary&lt;N&gt; format. Note that
-float128 means binary128, usually different from
-the C compiler&#8217;s long double type.</td>
-</tr>
-<tr class="row-even"><td>cfloat&lt;N&gt;</td>
-<td>Two consecutive float&lt;N&gt; values.</td>
-</tr>
-<tr class="row-odd"><td>string</td>
-<td>Two consecutive pointers, pointing at the beginning
-of and one past the end of a UTF-8 buffer.</td>
-</tr>
-<tr class="row-even"><td>bytes</td>
-<td>Two consecutive pointers, pointing at the beginning
-of and one past the end of a raw memory buffer.</td>
-</tr>
-<tr class="row-odd"><td>json</td>
-<td>Same as datashape &#8220;string&#8221;, but the contents should
-be validated JSON.</td>
-</tr>
-<tr class="row-even"><td>int</td>
-<td>RESERVED for a future abitrary-sized &#8220;big integer&#8221;
-type. Use the int&lt;N&gt; formats explicitly for fixed
-integer sizes.</td>
-</tr>
-<tr class="row-odd"><td>categorical(&lt;X&gt;)</td>
-<td>An unsigned integer, one of uint8, uint16, or
-uint32, with values limited to the range
-[0, len(X)). The integer chosen is the smallest
-which can store (len(X) + 1) values.</td>
-</tr>
-</tbody>
-</table>
 </div>
 <div class="section" id="dimensions">
 <h2>Dimensions<a class="headerlink" href="#dimensions" title="Permalink to this headline">¶</a></h2>
@@ -249,7 +196,7 @@ parameter, but one bitpattern has been sacrificed for NA.</p>
 0x7ff00000000007a2 (float64),
 0x7fff00000000000000000000000007a2 (float128).</td>
 </tr>
-<tr class="row-odd"><td>Option(cfloat&lt;N&gt;)</td>
+<tr class="row-odd"><td>Option(complex[float&lt;N&gt;])</td>
 <td>The first (real) component of the complex number
 is the float&lt;N&gt; NA.</td>
 </tr>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Deferred Execution &mdash; Blaze 0.3.0 documentation</title>
+    <title>Deferred Execution &mdash; Blaze 0.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.0',
+        VERSION:     '0.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,9 +31,9 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
-    <link rel="next" title="Vision" href="vision.html" />
-    <link rel="prev" title="Data Descriptors" href="data_descriptor.html" />
+    <link rel="top" title="Blaze 0.4.0 documentation" href="index.html" />
+    <link rel="next" title="Developer Workflow" href="dev_workflow.html" />
+    <link rel="prev" title="Blaze Functions" href="blaze_function.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -122,13 +122,13 @@ semantics for these objects depend on the <cite>kind</cite></li>
 <cite>ctypes</cite>, and so forth.</p>
 <p>To clarify pictorially:</p>
 <p class="graphviz">
-<img src="_images/graphviz-b33f1eefaf6df0c5c4c38ca0989dab55391f3c13.png" alt="digraph blazefunction {
+digraph blazefunction {
 &quot;blaze function&quot; -&gt; &quot;overload 1&quot;
 &quot;blaze function&quot; -&gt; &quot;overload 2&quot;
 &quot;overload 1&quot; -&gt; &quot;signature 1&quot;
 &quot;overload 2&quot; -&gt; &quot;signature 2&quot;
 &quot;overload 1&quot; -&gt; &quot;[('llvm', [llvm_func1, ...]), ('numba', [...])]&quot;
-}" />
+}
 </p>
 <p>Blaze functions are most often constructed through one of the decorators
 in <cite>blaze.function</cite>:</p>

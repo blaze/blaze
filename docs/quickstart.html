@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Quickstart &mdash; Blaze 0.3.0 documentation</title>
+    <title>Quickstart &mdash; Blaze 0.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.0',
+        VERSION:     '0.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,9 +31,9 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
-    <link rel="next" title="Overview" href="overview.html" />
-    <link rel="prev" title="Install" href="install.html" />
+    <link rel="top" title="Blaze 0.4.0 documentation" href="index.html" />
+    <link rel="next" title="Catalog" href="catalog.html" />
+    <link rel="prev" title="Overview" href="overview.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -85,9 +85,8 @@
 <ul>
 <li><a class="reference internal" href="#">Quickstart</a><ul>
 <li><a class="reference internal" href="#blaze-arrays">Blaze Arrays</a></li>
-<li><a class="reference internal" href="#disk-backed-array">Disk Backed Array</a></li>
 <li><a class="reference internal" href="#iterators">Iterators</a></li>
-<li><a class="reference internal" href="#custom-dshapes">Custom DShapes</a></li>
+<li><a class="reference internal" href="#disk-backed-array">Disk Backed Array</a></li>
 </ul>
 </li>
 </ul>
@@ -98,11 +97,94 @@
           
   <div class="section" id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
+<p>This quickstart is here to show some simple ways to get started created
+and manipulating Blaze arrays. To run these examples, import blaze
+as follows.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">blaze</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">array</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datashape</span> <span class="kn">import</span> <span class="n">dshape</span>
+</pre></div>
+</div>
 <div class="section" id="blaze-arrays">
 <h2>Blaze Arrays<a class="headerlink" href="#blaze-arrays" title="Permalink to this headline">¶</a></h2>
+<p>To create simple Blaze arrays, you can construct them from
+nested lists. Blaze will deduce the dimensionality and
+data type to use.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span>
+<span class="go">array(3.14,</span>
+<span class="go">      dshape=&#39;float64&#39;)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="go">array([[1, 2],</span>
+<span class="go">       [3, 4]],</span>
+<span class="go">      dshape=&#39;2, 2, int32&#39;)</span>
+</pre></div>
+</div>
+<p>You can override the data type by providing the <cite>dshape</cite>
+parameter.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
+<span class="go">array([[ 1.,  2.],</span>
+<span class="go">       [ 3.,  4.]],</span>
+<span class="go">      dshape=&#39;2, 2, float64&#39;)</span>
+</pre></div>
+</div>
+<p>Blaze has a slightly more general data model than NumPy,
+for example it supports variable-sized arrays.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]])</span>
+<span class="go">array([[     1],</span>
+<span class="go">       [     2,      3,      4],</span>
+<span class="go">       [     5,      6]],</span>
+<span class="go">      dshape=&#39;3, var, int32&#39;)</span>
+</pre></div>
+</div>
+<p>Its support for strings includes variable-sized strings
+as well.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span><span class="s">&#39;test&#39;</span><span class="p">,</span> <span class="s">&#39;one&#39;</span><span class="p">,</span> <span class="s">&#39;two&#39;</span><span class="p">,</span> <span class="s">&#39;three&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;braca&#39;</span><span class="p">,</span> <span class="s">&#39;dabra&#39;</span><span class="p">]])</span>
+<span class="go">array([[&#39;test&#39;, &#39;one&#39;, &#39;two&#39;, &#39;three&#39;],</span>
+<span class="go">       [&#39;a&#39;, &#39;braca&#39;, &#39;dabra&#39;]],</span>
+<span class="go">      dshape=&#39;2, var, string&#39;)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="iterators">
+<h2>Iterators<a class="headerlink" href="#iterators" title="Permalink to this headline">¶</a></h2>
+<p>Unlike in NumPy, Blaze can construct arrays directly from iterators,
+automatically deducing the dimensions and type just like it does
+for lists.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">dshape</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">dshape</span><span class="p">(</span><span class="s">&#39;2, 2, int32&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]],</span> <span class="n">ds</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">alst</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">(</span><span class="n">alst</span><span class="o">.</span><span class="n">__iter__</span><span class="p">())</span>
+<span class="go">array([1, 2, 3],</span>
+<span class="go">      dshape=&#39;3, int32&#39;)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([</span><span class="n">j</span><span class="o">-</span><span class="n">i</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="go">array([[ 0,  1,  2],</span>
+<span class="go">       [-1,  0,  1],</span>
+<span class="go">       [-2, -1,  0]],</span>
+<span class="go">      dshape=&#39;3, 3, int32&#39;)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randrange</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">((</span><span class="n">randrange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">randrange</span><span class="p">(</span><span class="mi">5</span><span class="p">)))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="go">array([[           7,            9],</span>
+<span class="go">       [           5,            2,            6,            4],</span>
+<span class="go">       [           9,            2,            2,            5],</span>
+<span class="go">       [           5]],</span>
+<span class="go">      dshape=&#39;4, var, int32&#39;)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="disk-backed-array">
+<h2>Disk Backed Array<a class="headerlink" href="#disk-backed-array" title="Permalink to this headline">¶</a></h2>
+<p>Blaze uses the BLZ format for storing compressed, chunked
+arrays on disk. These can be used through the Storage
+object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">blaze</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">dshape</span><span class="p">(</span><span class="s">&#39;2, 2, int32&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]],</span> <span class="n">ds</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
@@ -111,58 +193,12 @@
 <span class="go">      dshape=&#39;2, 2, int32&#39;)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="disk-backed-array">
-<h2>Disk Backed Array<a class="headerlink" href="#disk-backed-array" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">dshape</span><span class="p">,</span> <span class="n">Storage</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">dshape</span><span class="p">(</span><span class="s">&#39;2, 2, int32&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]],</span> <span class="n">ds</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">blaze</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">))</span>
 <span class="go">array([[1, 2],</span>
 <span class="go">       [3, 4]],</span>
-<span class="go">       dshape=&#39;2, 2, int32&#39;)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="nb">open</span><span class="p">,</span> <span class="n">drop</span><span class="p">,</span> <span class="n">Storage</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">open</span><span class="p">(</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">))</span>
-<span class="go">array([[1, 2],</span>
-<span class="go">       [3, 4]],</span>
-<span class="go">       dshape=&#39;2, 2, int32&#39;)</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">drop</span><span class="p">(</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="iterators">
-<h2>Iterators<a class="headerlink" href="#iterators" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">fromiter</span><span class="p">,</span> <span class="n">params</span>
-<span class="n">a</span> <span class="o">=</span> <span class="n">fromiter</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="s">&#39;x, float64&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="custom-dshapes">
-<h2>Custom DShapes<a class="headerlink" href="#custom-dshapes" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># FIXME: delete, or tweak?</span>
-<span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">Table</span><span class="p">,</span> <span class="n">RecordDecl</span><span class="p">,</span> <span class="n">derived</span>
-<span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">int32</span><span class="p">,</span> <span class="n">string</span>
-
-<span class="k">class</span> <span class="nc">CustomStock</span><span class="p">(</span><span class="n">RecordDecl</span><span class="p">):</span>
-    <span class="n">name</span>   <span class="o">=</span> <span class="n">string</span>
-    <span class="nb">max</span>    <span class="o">=</span> <span class="n">int32</span>
-    <span class="nb">min</span>    <span class="o">=</span> <span class="n">int32</span>
-
-    <span class="nd">@derived</span>
-    <span class="k">def</span> <span class="nf">mid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">CustomStock</span>
-<span class="go">{name:string, max: int32, min: int32, mid: int32}</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">Table</span><span class="p">([(</span><span class="s">&#39;GOOG&#39;</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">153</span><span class="p">)],</span> <span class="n">CustomStock</span><span class="p">)</span>
+<span class="go">      dshape=&#39;2, 2, int32&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>

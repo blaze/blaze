@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datashape &mdash; Blaze 0.3.0 documentation</title>
+    <title>Datashape &mdash; Blaze 0.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.0',
+        VERSION:     '0.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,9 +31,9 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.3.0 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.4.0 documentation" href="index.html" />
     <link rel="next" title="Datashape Binary Data Layout" href="datashape-binary.html" />
-    <link rel="prev" title="Overview" href="overview.html" />
+    <link rel="prev" title="Access Data from Different Sources" href="data_sources.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -96,10 +96,7 @@
 </li>
 <li><a class="reference internal" href="#fixed">Fixed</a></li>
 <li><a class="reference internal" href="#constructors">Constructors</a></li>
-<li><a class="reference internal" href="#records">Records</a><ul>
-<li><a class="reference internal" href="#enumeration">Enumeration</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#records">Records</a></li>
 <li><a class="reference internal" href="#type-variables">Type Variables</a><ul>
 <li><a class="reference internal" href="#sums">Sums</a></li>
 </ul>
@@ -179,8 +176,8 @@ constructors uniquely describe the space of possible values or
 unboxed machine types. These inherit the notation from NumPy.</p>
 <table border="1" class="table-striped docutils">
 <colgroup>
-<col width="15%" />
-<col width="85%" />
+<col width="22%" />
+<col width="78%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Bit type</th>
@@ -227,11 +224,11 @@ unboxed machine types. These inherit the notation from NumPy.</p>
 <td>Double precision float: sign bit, 11 bits exponent,
 52 bits mantissa</td>
 </tr>
-<tr class="row-even"><td>complex64</td>
+<tr class="row-even"><td>complex[float32]</td>
 <td>Complex number, represented by two 32-bit floats (real
 and imaginary components)</td>
 </tr>
-<tr class="row-odd"><td>complex128</td>
+<tr class="row-odd"><td>complex[float64]</td>
 <td>Complex number, represented by two 64-bit floats (real
 and imaginary components)</td>
 </tr>
@@ -274,7 +271,7 @@ a subset of specialized storage and computation backends.</p>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>int</td>
-<td>int</td>
+<td>int32</td>
 </tr>
 <tr class="row-odd"><td>bool</td>
 <td>bool</td>
@@ -283,7 +280,7 @@ a subset of specialized storage and computation backends.</p>
 <td>float64</td>
 </tr>
 <tr class="row-odd"><td>complex</td>
-<td>cfloat64</td>
+<td>complex[float64]</td>
 </tr>
 <tr class="row-even"><td>str</td>
 <td>string</td>
@@ -459,23 +456,6 @@ but cannot be self-referential:</p>
 <div class="highlight-ocaml"><div class="highlight"><pre><span class="k">type</span> <span class="nc">TableLike</span> <span class="o">=</span> <span class="o">{</span> <span class="n">x</span> <span class="o">:</span> <span class="kt">int</span><span class="o">;</span> <span class="n">y</span> <span class="o">:</span> <span class="kt">float</span> <span class="o">}</span>
 </pre></div>
 </div>
-<div class="section" id="enumeration">
-<h3>Enumeration<a class="headerlink" href="#enumeration" title="Permalink to this headline">¶</a></h3>
-<p>A enumeration specifies a number of fixed dimensions sequentially. Example:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="o">{</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">1</span><span class="o">},</span> <span class="n">int32</span>
-</pre></div>
-</div>
-<p>The above could describe a irregularly shaped Python structure of the form:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="o">[</span>
-    <span class="o">[</span><span class="mi">1</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">1</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">9</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">3</span><span class="o">,</span><span class="mi">2</span><span class="o">],</span>
-    <span class="o">[</span><span class="mi">3</span><span class="o">]</span>
-<span class="o">]</span>
-</pre></div>
-</div>
-</div>
 </div>
 <div class="section" id="type-variables">
 <h2>Type Variables<a class="headerlink" href="#type-variables" title="Permalink to this headline">¶</a></h2>
@@ -578,25 +558,27 @@ of this type.</p>
 <h2>Numpy Compatability<a class="headerlink" href="#numpy-compatability" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="faq">
 <h3>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h3>
-<ul>
-<li><p class="first">How do I convert from Blaze DataShape to NumPy shape and
-dtype?:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">from</span> <span class="n">blaze</span> <span class="n">import</span> <span class="n">dshape</span><span class="o">,</span> <span class="n">to_numpy</span>
+<ul class="simple">
+<li>How do I convert from Blaze DataShape to NumPy shape and
+dtype?:</li>
+</ul>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">from</span> <span class="n">datashape</span> <span class="n">import</span> <span class="n">dshape</span><span class="o">,</span> <span class="n">to_numpy</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">ds</span> <span class="o">=</span> <span class="n">dshape</span><span class="o">(</span><span class="s2">&quot;5, 5, int32&quot;</span><span class="o">)</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">to_numpy</span><span class="o">(</span><span class="n">ds</span><span class="o">)</span>
 <span class="o">((</span><span class="mi">5</span><span class="o">,</span> <span class="mi">5</span><span class="o">),</span> <span class="n">dtype</span><span class="o">(</span><span class="k">&#39;</span><span class="n">int32&#39;</span><span class="o">))</span>
 </pre></div>
 </div>
-</li>
-<li><p class="first">How do I convert from Numpy Dtype to Datashape?:</p>
-<div class="highlight-ocaml"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">from_numpy</span><span class="o">((</span><span class="mi">5</span><span class="o">,</span><span class="mi">5</span><span class="o">),</span> <span class="n">dtype</span><span class="o">(</span><span class="k">&#39;</span><span class="n">int32&#39;</span><span class="o">))</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">dshape</span><span class="o">(</span><span class="s2">&quot;5, 5, int32&quot;</span><span class="o">)</span>
+<ul class="simple">
+<li>How do I convert from Numpy Dtype to Datashape?:</li>
+</ul>
+<div class="highlight-ocaml"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">from</span> <span class="n">datashape</span> <span class="n">import</span> <span class="n">dshape</span><span class="o">,</span> <span class="n">from_numpy</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">from</span> <span class="n">numpy</span> <span class="n">import</span> <span class="n">dtype</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">from_numpy</span><span class="o">((</span><span class="mi">5</span><span class="o">,</span><span class="mi">5</span><span class="o">),</span> <span class="n">dtype</span><span class="o">(</span><span class="k">&#39;</span><span class="n">int32&#39;</span><span class="o">))</span>
 <span class="n">dshape</span><span class="o">(</span><span class="s2">&quot;5, 5, int32&quot;</span><span class="o">)</span>
 </pre></div>
 </div>
-</li>
-<li><p class="first">How do I convert from Blaze DataShape to CTypes?</p>
-</li>
+<ul class="simple">
+<li>How do I convert from Blaze DataShape to CTypes?</li>
 </ul>
 </div>
 </div>
