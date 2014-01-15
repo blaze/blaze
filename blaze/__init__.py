@@ -59,9 +59,11 @@ def print_versions():
     import sys, platform
     import numpy as np
     import dynd
+    import datashape
     import blz
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
+    print("Datashape version: %s" % datashape.__version__)
     print("NumPy version: %s" % np.__version__)
     print("DyND version: %s / LibDyND %s" %
                     (dynd.__version__, dynd.__libdynd_version__))
