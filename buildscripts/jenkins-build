@@ -49,14 +49,14 @@ fi
 
 # Temporary hack to install pykit
 rm -rf pykit
-git clone https://github.com/pykit/pykit.git
+git clone https://github.com/pykit/pykit.git || exit 1
 pushd pykit
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
 # Temporary hack to install datashape
 rm -rf datashape
-git clone https://github.com/ContinuumIO/datashape.git
+git clone https://github.com/ContinuumIO/datashape.git || exit 1
 pushd datashape
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
@@ -67,7 +67,7 @@ if [ "${PYTHON_VERSION}" == "2.6" ]; then
   pip install unittest2
 fi
 rm -rf blz
-git clone https://github.com/ContinuumIO/blz.git
+git clone https://github.com/ContinuumIO/blz.git || exit 1
 pushd blz
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd

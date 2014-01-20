@@ -32,14 +32,14 @@ set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
 
 REM Temporary hack to install pykit
 rd /q /s pykit
-git clone https://github.com/pykit/pykit.git
+git clone https://github.com/pykit/pykit.git || exit /b 1
 pushd pykit
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd
 
 REM Temporary hack to install datashape
 rd /q /s datashape
-git clone https://github.com/ContinuumIO/datashape.git
+git clone https://github.com/ContinuumIO/datashape.git || exit /b 1
 pushd datashape
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd
@@ -47,7 +47,7 @@ popd
 REM Temporary hack to install blz
 IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2
 rd /q /s blz
-git clone https://github.com/ContinuumIO/blz.git
+git clone https://github.com/ContinuumIO/blz.git || exit /b 1
 pushd blz
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd
