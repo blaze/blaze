@@ -62,6 +62,10 @@ ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
 # Temporary hack to install blz
+# BLZ needs unittest2 for Python 2.6
+if [ "${PYTHON_VERSION}" == "2.6" ]; then
+  pip install unittest2
+fi
 rm -rf blz
 git clone https://github.com/ContinuumIO/blz.git
 pushd blz

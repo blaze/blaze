@@ -45,6 +45,7 @@ pushd datashape
 popd
 
 REM Temporary hack to install blz
+IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2
 rd /q /s blz
 git clone https://github.com/ContinuumIO/blz.git
 pushd blz
