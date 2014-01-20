@@ -47,7 +47,7 @@ class BLZDataDescriptor(IDataDescriptor):
             immutable = False,
             # BLZ arrays are concrete
             deferred = False,
-            # BLZ arrays can be either persistent of in-memory
+            # BLZ arrays can be either persistent or in-memory
             persistent = self.blzarr.rootdir is not None,
             # BLZ arrays can be appended efficiently
             appendable = True,
@@ -74,9 +74,6 @@ class BLZDataDescriptor(IDataDescriptor):
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
 
-    # This is not part of the DataDescriptor interface itself, but can
-    # be handy for other situations not requering full compliance with
-    # it.
     def append(self, values):
         """Append a list of values."""
         shape, dtype = datashape.to_numpy(self.dshape)
@@ -108,7 +105,7 @@ class BLZDataDescriptor(IDataDescriptor):
         out : iterable
             This iterable returns buffers as NumPy arays of
             homogeneous or structured types, depending on whether
-            `self.original` is a barray or a btable object.
+            the underlying object is a barray or a btable object.
 
         See Also
         --------
