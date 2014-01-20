@@ -27,13 +27,7 @@ def interpret(func, env, args, **kwds):
 # Handlers
 #------------------------------------------------------------------------
 
-def op_kernel(interp, funcname, *args):
-    op = interp.op
-
-    kernel   = op.metadata['kernel']
-    overload = op.metadata['overload']
-
-    func = overload.func
+def op_pykernel(interp, func, args):
     return func(*args)
 
 def op_convert(interp, arg):
@@ -62,7 +56,7 @@ def op_ret(interp, arg):
     return arg
 
 handlers = {
-    'kernel':   op_kernel,
+    'pykernel':   op_pykernel,
     'convert':  op_convert,
     'ret':      op_ret,
 }
