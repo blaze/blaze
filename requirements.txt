@@ -9,3 +9,4 @@ dynd-python
 pykit
 datashape
 numpy
+blz
