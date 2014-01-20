@@ -1,18 +1,25 @@
+# -*- coding: utf-8 -*-
+
+"""
+Translate blaze expressoin graphs into blaze AIR.
+"""
+
 from __future__ import absolute_import, division, print_function
+
+import threading
 
 from pykit import types
 from pykit.ir import Function, Builder, Value, Op, Const
 
 #------------------------------------------------------------------------
-# Utils
-#------------------------------------------------------------------------
-
-def qualified_name(f):
-    return ".".join([f.__module__, f.__name__])
-
-#------------------------------------------------------------------------
 # AIR construction
 #------------------------------------------------------------------------
+
+def run(expr, env):
+    graph, expr_ctx = expr
+    air_func = from_expr(graph, expr_ctx, current_ctx())
+    return air_func, env
+
 
 def from_expr(graph, expr_context, ctx):
     """
@@ -48,14 +55,14 @@ def from_expr(graph, expr_context, ctx):
     # -------------------------------------------------
     # Generate function
 
-    values = dict((expr, f.get_arg("e%d" % i))
+    valuemap = dict((expr, f.get_arg("e%d" % i))
                       for i, expr in enumerate(inputs))
-    _from_expr(graph, f, builder, values)
+    _from_expr(graph, f, builder, valuemap)
 
-    retval = values[graph]
+    retval = valuemap[graph]
     builder.ret(retval)
 
-    return f, values
+    return f
 
 def _from_expr(expr, f, builder, values):
     if expr.opcode == 'array':
@@ -87,11 +94,12 @@ def _from_expr(expr, f, builder, values):
     values[expr] = result
     return result
 
-#------------------------------------------------------------------------
-# Execution context
-#------------------------------------------------------------------------
 
 class ExecutionContext(object):
+    """Simple counter for variable names"""
+
+    # TODO: Why can't we just reuse expression names?
+
     def __init__(self):
         self.count = 0
 
@@ -99,3 +107,21 @@ class ExecutionContext(object):
         count = self.count
         self.count += 1
         return count
+
+
+_tls = threading.local()
+
+def current_ctx():
+    """Return the current evaluation strategy"""
+    try:
+        return _tls.ctx
+    except AttributeError:
+        _tls.ctx = ExecutionContext()
+        return _tls.ctx
+
+#------------------------------------------------------------------------
+# Utils
+#------------------------------------------------------------------------
+
+def qualified_name(f):
+    return ".".join([f.__module__, f.__name__])

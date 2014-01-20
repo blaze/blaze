@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Use blaze.bkernel to assemble ckernels for evaluation.
 """
@@ -18,7 +20,11 @@ from ... import llvm_array
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
+
 def run(func, env):
+    if env['air.strategy'] != 'jit':
+        return
+
     jit_env = dict(root_jit_env)
     jitter(func, jit_env)
     treebuilder(func, jit_env)
@@ -29,6 +35,7 @@ def run(func, env):
 #------------------------------------------------------------------------
 # Environment
 #------------------------------------------------------------------------
+
 root_jit_env = {
     'jitted':       None, # Jitted kernels, { Op : BlazeElementKernel }
     'trees':        None, # (partial) kernel tree, { Op : KernelTree }
@@ -39,6 +46,7 @@ root_jit_env = {
 #------------------------------------------------------------------------
 # Pipeline
 #------------------------------------------------------------------------
+
 def jitter(func, jit_env):
     v = KernelJitter(func)
     visit(v, func)
@@ -68,6 +76,7 @@ def ckernel_transformer(func, jit_env):
 #------------------------------------------------------------------------
 # Jit kernels
 #------------------------------------------------------------------------
+
 class KernelJitter(object):
     """
     Jit kernels. Produces a dict `jitted` that maps Operations to jitted
@@ -148,6 +157,7 @@ def find_impl(function, impl_kind, argtypes, expected_signature):
 #------------------------------------------------------------------------
 # Fuse jitted kernels
 #------------------------------------------------------------------------
+
 def tree_arg(type):
     kind = llvm_array.SCALAR
     rank = 0
@@ -227,6 +237,7 @@ class JitFuser(object):
 #------------------------------------------------------------------------
 # Rewrite to CKernels
 #------------------------------------------------------------------------
+
 class CKernelTransformer(object):
 
     def __init__(self, func, jitted, trees, arguments):
@@ -282,6 +293,7 @@ class CKernelTransformer(object):
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
+
 def make_blazefunc(f):
     #return BlazeFuncDeprecated(f.__name__, template=f)
     return BlazeElementKernel(f.lfunc)

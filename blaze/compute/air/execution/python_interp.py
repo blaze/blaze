@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Python evaluation of blaze AIR.
 """
@@ -14,9 +16,6 @@ import numpy as np
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
-
-def compile(func, env):
-    return func, env
 
 def interpret(func, env, args, **kwds):
     args = [np.array(arg) for arg in args]

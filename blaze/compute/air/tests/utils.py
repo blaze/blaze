@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape
 import blaze
 from blaze.compute.ops.ufuncs import add, mul
-from blaze.compute.air import from_expr, ExecutionContext
+from blaze.compute.air.frontend.translate import from_expr, ExecutionContext
 
 #------------------------------------------------------------------------
 # Utils
@@ -19,6 +19,6 @@ def make_graph():
     graph, expr_ctx = result.expr
 
     ctx = ExecutionContext()
-    f, values = from_expr(graph, expr_ctx, ctx)
+    f = from_expr(graph, expr_ctx, ctx)
 
-    return f, values, graph
+    return f, graph

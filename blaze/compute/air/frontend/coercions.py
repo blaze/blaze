@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Some Blaze AIR transformations and simplifications.
 """
@@ -44,3 +46,6 @@ def explicit_coercions(func, env=None):
         # -------------------------------------------------
 
         op.replace_args(replacements)
+
+
+run = explicit_coercions

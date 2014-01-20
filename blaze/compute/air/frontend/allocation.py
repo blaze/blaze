@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Insert temporary allocations and deallocations into the IR.
 """

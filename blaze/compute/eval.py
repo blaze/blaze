@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 # Implements the blaze.eval function
 
-from .air import prepare, interps
+from .air import compile, run
 from .. import array
 
 #------------------------------------------------------------------------
@@ -52,19 +52,12 @@ def eval_deferred(arr, storage, caps, out, strategy):
     expr = arr._data.expr
     graph, ctx = expr
 
-    # Construct and transform AIR
-    func, env = prepare(expr, strategy)
-
-    # Find evaluator
-    interp = interps.lookup_interp(strategy)
-
-    # Interpreter-specific compilation/assembly
-    func, env = interp.compile(func, env)
-
-    # Run with collected 'params' from the expression
+    # collected 'params' from the expression
     args = [ctx.terms[param] for param in ctx.params]
-    result = interp.interpret(func, env, args=args, storage=storage,
-                              caps=caps, out=out, strategy=strategy)
+
+    func, env = compile(expr, strategy)
+    result = run(func, env, args,
+                 storage=storage, caps=caps, out=out, strategy=strategy)
 
     return result
 
