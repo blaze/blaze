@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import os
 from os import path
 from .catalog_arr import load_blaze_array
-
+import tables as tb
 
 def is_valid_bpath(d):
     """Returns true if it's a valid blaze path"""
@@ -93,7 +93,9 @@ class CatalogDir(object):
         if not is_abs_bpath(dir):
             raise ValueError('Require an absolute blaze path: %r' % dir)
         self._fsdir = path.join(conf.root, dir[1:])
-        if not path.exists(self._fsdir) or not path.isdir(self._fsdir):
+        if (not path.exists(self._fsdir) or
+            not path.isdir(self._fsdir) or
+            not tb.is_hdf5_file(self._fsdir)):
             raise RuntimeError('Blaze path not found: %r' % dir)
 
     def ls_arrs(self):
@@ -118,6 +120,8 @@ class CatalogDir(object):
         dir = '/'.join([self.dir, key])
         fsdir = path.join(self._fsdir, dir)
         if path.isdir(fsdir):
+            return CatalogDir(self.conf, dir)
+        elif tb.is_hdf5_file(fsdir):
             return CatalogDir(self.conf, dir)
         elif path.isfile(fsdir + '.array'):
             return load_blaze_array(self.conf, dir)

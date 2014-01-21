@@ -49,7 +49,7 @@ def load_blaze_array(conf, dir):
         arrmeta = yaml.load(f)
     tp = arrmeta['type']
     imp = arrmeta['import']
-    ds_str = arrmeta['datashape']
+    ds_str = arrmeta.get('datashape')  # optional. HDF5 does not need that.
     ds = datashape.dshape(ds_str)
 
     if tp == 'csv':
@@ -63,6 +63,16 @@ def load_blaze_array(conf, dir):
         return blaze.array(arr)
     elif tp == 'json':
         arr = nd.parse_json(ds_str, nd.memmap(fsdir + '.json'))
+        return blaze.array(arr)
+    elif tp == 'hdf5':
+        with tb.open_file(fsdir + '.h5', 'r') as f: # XXX .h5 assumed for HDF5
+            dp = arrmeta.get('datapath')  # optional. Specifies a path in HDF5.
+            try:
+                dparr = f.get_node(f.root, dp, 'Leaf')
+            except tb.NoSuchNodeError:
+                raise RuntimeError(
+                    'HDF5 file does not have a dataset in %r' % dp)
+        arr = nd.array(dparr[:])
         return blaze.array(arr)
     elif tp == 'npy':
         import numpy as np

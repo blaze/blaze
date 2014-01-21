@@ -4,6 +4,7 @@ import yaml
 import os
 from os import path
 from .catalog_dir import is_abs_bpath
+import tables as tb
 
 
 class CatalogConfig(object):
@@ -53,10 +54,24 @@ class CatalogConfig(object):
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
+    def ishdf5(self, dir):
+        """Check if a blaze catalog path points to an existing hdf5 file"""
+        if is_abs_bpath(dir):
+            return tb.is_hdf5_file(path.join(self.root, dir[1:]))
+        else:
+            raise ValueError('Expected absolute blaze catalog path: %r' % dir)
+
     def isdir(self, dir):
         """Check if a blaze catalog path points to an existing directory"""
         if is_abs_bpath(dir):
-            return path.isdir(path.join(self.root, dir[1:]))
+            fsdir = path.join(self.root, dir[1:])
+            if path.isdir(fsdir):
+                return True
+            elif path.isfile(fsdir) and tb.is_hdf5_file(fsdir):
+                # An HDF5 file should be considered a directory
+                return True
+            else:
+                return False
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
@@ -64,9 +79,16 @@ class CatalogConfig(object):
         """Return a list of all the arrays in the provided blaze catalog dir"""
         if is_abs_bpath(dir):
             fsdir = path.join(self.root, dir[1:])
-            listing = os.listdir(fsdir)
-            return sorted([path.splitext(x)[0] for x in listing
-                    if x.endswith('.array')])
+            if path.isdir(fsdir):
+                listing = os.listdir(fsdir)
+                return sorted([path.splitext(x)[0] for x in listing
+                               if x.endswith('.array')])
+            elif tb.is_hdf5_file(fsdir):
+                h5f = tb.open_file(fsdir)
+                # List the nodes hanging from root for now
+                return sorted(h5f.root._f_list_nodes())
+            else:
+                raise ValueError('Unrecognized directory entry: %r' % dir)
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
