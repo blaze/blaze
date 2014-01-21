@@ -188,6 +188,8 @@ feature of the system. Blaze needs to provide the
 same ufuncs, though with some different choices
 in the general interface.
 
+http://docs.scipy.org/doc/numpy/reference/ufuncs.html#available-ufuncs
+
 The most important difference Blaze has is that
 its ufuncs are always deferred. That means when
 `blaze.sin(x)` is called, it does not compute
@@ -208,3 +210,99 @@ Blaze ufuncs encompass both NumPy ufuncs and
 generalized ufuncs in one swoop, by allowing
 the arguments to be typed with multi-dimensional
 datashape types.
+
+### Reductions Derived From UFuncs
+
+NumPy automatically adds a few reduction methods
+to all ufuncs. This means we can call
+the nonsensical `np.sin.reduce([1,2,3])`, for
+example, which raises an exception. It would be
+better in Blaze to simply not add these reductions
+in such cases.
+
+Not all array programming systems agree on the
+definition for these reductions, for example
+NumPy uses an order of operations from left to
+right, while J and other APL dialects use right
+to left.
+
+```python
+>>> np.subtract.reduce([1, 2, 3])
+-4
+```
+
+NumPy calculated `(1 - 2) - 3`, whereas
+J calculates `1 - (2 - 3)`.
+
+```
+   -/ 1 2 3
+2
+```
+
+Some features we do want when deriving reductions
+from binary ufuncs are whether certain properties are
+satisfied by the operation. Even in cases where a
+property is only approximate (e.g. associativity
+in floating point addition, try 1e-16 + 1 + -1),
+we will usually want to indicate it is so that
+calculations may be reordered for efficiency.
+
+A previous incarnation of DyND included some
+development towards this, with per-kernel customization
+of the associativity flag, commutativity flag, and
+identity element.
+https://github.com/ContinuumIO/dynd-python/blob/master/doc/source/gfunc.rst#creating-elementwise-reduction-gfuncs
+
+Elementwise Reductions
+----------------------
+
+Some reductions can be computed by visiting each
+element exactly once, in sequence, using finite
+state. The most common NumPy reduction
+operations, `all`, `any`, `sum`, `product`,
+`max`, and `min` all fit this pattern. Some
+statistical functions like `mean`, `std`, and `var`
+also fit this pattern, with slightly more sophisticated
+choices for the accumulator state, as well as a finishing
+operation.
+
+NumPy has two keyword arguments that are worth
+keeping in this kind of operation for Blaze,
+`axis=` and `keepdims=`. The parameter to `axis`
+may be a single integer, or, when the operation
+is commutative and associative, a tuple of integers.
+The `keepdims` parameter keeps the reduced dimensions
+around as size 1 instead of removing them, so the
+result still broadcasts appropriately against
+the original.
+
+To see how `mean` fits into this pattern, consider
+a reduction with datashape '{sum: float64; count: int64}',
+identity `(0, 0)`, and function
+
+```python
+def reduce(out, value):
+    out.sum += value
+    out.count += 1
+
+# alternatively, chunked
+def reduce_chunk(out, chunk):
+	out.sum += blaze.sum(chunk)
+	out.count += len(chunk)
+```
+
+A final division maps this to `float64`. When
+defining this kind of kernel, it would also
+be advantageous to provide a function to combine
+two partial results, so as to allow Blaze to
+parallelize the operation
+
+```python
+def combine(out, out_temp1, out_temp2):
+    out.sum = out_temp1.sum + out_temp2.sum
+    out.count = out_temp1.sum + out_temp2.count
+
+def combine_destructive(out, out_temp):
+    out.sum += out_temp.sum
+    out.count += out_temp.count
+```
