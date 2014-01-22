@@ -3,15 +3,15 @@ from __future__ import absolute_import, division, print_function
 import unittest
 
 from datashape import dshape
-from blaze.compute.air import explicit_coercions
+from blaze.compute.air.frontend import coercions
 from blaze.compute.air.tests.utils import make_graph
 
 
 class TestCoercions(unittest.TestCase):
 
     def test_coercions(self):
-        f, values, graph = make_graph()
-        explicit_coercions(f)
+        f, graph = make_graph()
+        coercions.run(f)
         ops = [(op.opcode, op.type) for op in f.ops][:-1]
         expected = [('convert', dshape("10, float64")),
                     ('kernel', dshape("10, float64")),

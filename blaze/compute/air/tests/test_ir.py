@@ -9,7 +9,7 @@ from blaze.compute.air.tests.utils import make_graph
 class TestIR(unittest.TestCase):
 
     def test_ir(self):
-        f, values, graph = make_graph()
+        f, graph = make_graph()
 
         # Structure
         self.assertEqual(len(f.blocks), 1)

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Blaze AIR annotators that add some information to the IR.
 """

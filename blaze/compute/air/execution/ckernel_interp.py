@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
+
 """
-JIT evaluation of blaze AIR.
+CKernel evaluation of blaze AIR.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -14,18 +16,12 @@ import datashape
 
 from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
 from ..pipeline import run_pipeline
-from ..passes import ckernel_impls, ckernel_lift, allocation
+from ..frontend import ckernel_impls, ckernel_lift, allocation
 
 
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
-
-def compile(func, env):
-    func, env = run_pipeline(func, env, compile_time_passes)
-
-    return func, env
-
 
 def interpret(func, env, args, storage=None, **kwds):
     assert len(args) == len(func.args)
@@ -90,9 +86,6 @@ def interpret(func, env, args, storage=None, **kwds):
 #------------------------------------------------------------------------
 # Passes
 #------------------------------------------------------------------------
-
-compile_time_passes = [
-]
 
 run_time_passes = [
     ckernel_impls,
