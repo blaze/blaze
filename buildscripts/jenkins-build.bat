@@ -24,7 +24,7 @@ REM Use conda to create a conda environment of the required
 REM python version and containing the dependencies.
 SET PYENV_PREFIX=%WORKSPACE%\build\pyenv
 REM TODO: Add cffi to this list once it is added to anaconda windows.
-call C:\Anaconda\Scripts\conda create --yes --channel http://repo.continuum.io/pkgs/dev -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython=0.19 scipy llvmpy ply numba dynd-python nose flask pyparsing pyyaml setuptools
+call C:\Anaconda\Scripts\conda create --yes --channel http://repo.continuum.io/pkgs/dev -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython=0.19 scipy llvmpy ply numba dynd-python nose flask pyparsing pyyaml setuptools pip
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
@@ -32,21 +32,22 @@ set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
 
 REM Temporary hack to install pykit
 rd /q /s pykit
-git clone https://github.com/pykit/pykit.git
+git clone https://github.com/pykit/pykit.git || exit /b 1
 pushd pykit
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd
 
 REM Temporary hack to install datashape
 rd /q /s datashape
-git clone https://github.com/ContinuumIO/datashape.git
+git clone https://github.com/ContinuumIO/datashape.git || exit /b 1
 pushd datashape
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd
 
 REM Temporary hack to install blz
+IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2
 rd /q /s blz
-git clone https://github.com/ContinuumIO/blz.git
+git clone https://github.com/ContinuumIO/blz.git || exit /b 1
 pushd blz
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 popd

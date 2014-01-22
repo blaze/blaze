@@ -35,7 +35,7 @@ fi
 # python version and containing the dependencies.
 # TODO: Re-add cffi to this list when it is in anaconda python 3.3
 export PYENV_PREFIX=${WORKSPACE}/build/pyenv
-~/anaconda/bin/conda create --yes --channel http://repo.continuum.io/pkgs/dev -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython=0.19 scipy llvmpy ply numba dynd-python nose flask pyparsing pyyaml setuptools || exit 1
+~/anaconda/bin/conda create --yes --channel http://repo.continuum.io/pkgs/dev -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython=0.19 scipy llvmpy ply numba dynd-python nose flask pyparsing pyyaml setuptools pip || exit 1
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
 if [ -f "${PYENV_PREFIX}/bin/python" ]; then
@@ -49,21 +49,25 @@ fi
 
 # Temporary hack to install pykit
 rm -rf pykit
-git clone https://github.com/pykit/pykit.git
+git clone https://github.com/pykit/pykit.git || exit 1
 pushd pykit
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
 # Temporary hack to install datashape
 rm -rf datashape
-git clone https://github.com/ContinuumIO/datashape.git
+git clone https://github.com/ContinuumIO/datashape.git || exit 1
 pushd datashape
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
 
 # Temporary hack to install blz
+# BLZ needs unittest2 for Python 2.6
+if [ "${PYTHON_VERSION}" == "2.6" ]; then
+  pip install unittest2
+fi
 rm -rf blz
-git clone https://github.com/ContinuumIO/blz.git
+git clone https://github.com/ContinuumIO/blz.git || exit 1
 pushd blz
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 popd
