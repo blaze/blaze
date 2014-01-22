@@ -27,8 +27,8 @@ class HDF5DataDescriptor(IDataDescriptor):
     A Blaze data descriptor which exposes a HDF5 dataset.
     """
 
-    def _open(self):
-        self.f = tb.open_file(self.filename)
+    def _open(self, mode='r'):
+        self.f = tb.open_file(self.filename, mode=mode)
         return self.f.get_node(self.f.root, self.datapath)
 
     def _close(self):
@@ -100,7 +100,7 @@ class HDF5DataDescriptor(IDataDescriptor):
 
     def __setitem__(self, key, value):
         # HDF5 arrays can be updated
-        h5arr = self._open()
+        h5arr = self._open(mode='a')
         h5arr[key] = value
         self._close()
 
@@ -118,7 +118,7 @@ class HDF5DataDescriptor(IDataDescriptor):
         if len(shape_vals) != len(shape):
             raise ValueError("shape of values is not compatible")
         # Now, do the actual append
-        h5arr = self._open()
+        h5arr = self._open(mode='a')
         h5arr.append(values_arr.reshape(shape_vals))
         h5arr.flush()
         self._close()
