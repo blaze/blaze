@@ -17,11 +17,11 @@ from pykit.ir import Function, Builder, Value, Op, Const
 
 def run(expr, env):
     graph, expr_ctx = expr
-    air_func = from_expr(graph, expr_ctx, current_ctx())
+    air_func = from_expr(graph, expr_ctx)
     return air_func, env
 
 
-def from_expr(graph, expr_context, ctx):
+def from_expr(graph, expr_context):
     """
     Map a Blaze expression graph to blaze AIR
 
@@ -46,7 +46,7 @@ def from_expr(graph, expr_context, ctx):
     # -------------------------------------------------
     # Setup function
 
-    name = "expr%d" % ctx.incr()
+    name = "expr"
     argnames = ["e%d" % i for i in range(len(inputs))]
     f = Function(name, argnames, signature)
     builder = Builder(f)
@@ -95,29 +95,29 @@ def _from_expr(expr, f, builder, values):
     return result
 
 
-class ExecutionContext(object):
-    """Simple counter for variable names"""
-
-    # TODO: Why can't we just reuse expression names?
-
-    def __init__(self):
-        self.count = 0
-
-    def incr(self):
-        count = self.count
-        self.count += 1
-        return count
-
-
-_tls = threading.local()
-
-def current_ctx():
-    """Return the current evaluation strategy"""
-    try:
-        return _tls.ctx
-    except AttributeError:
-        _tls.ctx = ExecutionContext()
-        return _tls.ctx
+#class ExecutionContext(object):
+#    """Simple counter for variable names"""
+#
+#    # TODO: Why can't we just reuse expression names?
+#
+#    def __init__(self):
+#        self.count = 0
+#
+#    def incr(self):
+#        count = self.count
+#        self.count += 1
+#        return count
+#
+#
+#_tls = threading.local()
+#
+#def current_ctx():
+#    """Return the current evaluation strategy"""
+#    try:
+#        return _tls.ctx
+#    except AttributeError:
+#        _tls.ctx = ExecutionContext()
+#        return _tls.ctx
 
 #------------------------------------------------------------------------
 # Utils
