@@ -9,8 +9,14 @@ from dynd import nd
 import numpy as np
 from blaze.datadescriptor import (
     HDF5DataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
+from blaze.py2help import skipIf
 
-import tables as tb
+try:
+    import tables as tb
+    tables_is_not_here = False
+except ImportError:
+    tables_is_not_here = True
+
 
 class TestHDF5DataDescriptor(unittest.TestCase):
 
@@ -28,6 +34,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
     def tearDown(self):
         os.remove(self.hdf5_file)
 
+    @skipIf(tables_is_not_here, 'pytables is not installed')
     def test_basic_object_type(self):
         self.assertTrue(issubclass(HDF5DataDescriptor, IDataDescriptor))
         dd = HDF5DataDescriptor(self.hdf5_file, '/a1')
@@ -35,6 +42,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         self.assertTrue(isinstance(dd, IDataDescriptor))
         self.assertEqual(dd_as_py(dd), [[1, 2, 3], [4, 5, 6]])
 
+    @skipIf(tables_is_not_here, 'pytables is not installed')
     def test_descriptor_iter_types(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/a1')
 
@@ -47,6 +55,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
             vals.append(dd_as_py(el))
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 
+    @skipIf(tables_is_not_here, 'pytables is not installed')
     def test_descriptor_getitem_types(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/g/a2')
 
@@ -57,6 +66,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         self.assertTrue(isinstance(dd[1,2], DyNDDataDescriptor))
         self.assertEqual(dd_as_py(dd[1,2]), 1)
 
+    @skipIf(tables_is_not_here, 'pytables is not installed')
     def test_descriptor_setitem(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/g/a2')
 
@@ -66,6 +76,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         dd[1] = [10, 11, 12]
         self.assertEqual(dd_as_py(dd[1]), [10, 11, 12])
 
+    @skipIf(tables_is_not_here, 'pytables is not installed')
     def test_descriptor_append(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/t1')
 
