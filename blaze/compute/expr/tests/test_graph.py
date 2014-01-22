@@ -5,7 +5,7 @@ import unittest
 from datashape import dshape
 from dynd import nd, ndt
 from blaze import array
-from blaze.compute.ops.ufuncs import add, mul
+from blaze.compute.ops.ufuncs import add, multiply
 
 
 class TestGraph(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestGraph(unittest.TestCase):
     def test_graph(self):
         a = array(nd.range(10, dtype=ndt.int32))
         b = array(nd.range(10, dtype=ndt.float32))
-        expr = add(a, mul(a, b))
+        expr = add(a, multiply(a, b))
         graph, ctx = expr.expr
         self.assertEqual(len(ctx.params), 2)
         self.assertFalse(ctx.constraints)

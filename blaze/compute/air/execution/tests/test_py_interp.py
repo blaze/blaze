@@ -5,7 +5,7 @@ import unittest
 from datashape import dshape
 import blaze
 from blaze import array
-from blaze.compute.ops.ufuncs import add, mul
+from blaze.compute.ops.ufuncs import add, multiply
 
 import numpy as np
 
@@ -18,7 +18,7 @@ class TestPython(unittest.TestCase):
     def test_interp(self):
         a = array(range(10), dshape=dshape('10, int32'))
         b = array(range(10), dshape=dshape('10, float32'))
-        expr = add(a, mul(a, b))
+        expr = add(a, multiply(a, b))
         result = blaze.eval(expr, strategy='py')
         expected = blaze.array([ 0,  2,  6, 12, 20, 30, 42, 56, 72, 90])
         self.assertEqual(type(result), blaze.Array)

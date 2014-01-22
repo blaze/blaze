@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 from datashape import dshape
 
-from blaze import add, mul, eval, py2help
+from blaze import add, multiply, eval, py2help
 from blaze.io.scidb import zeros, ones
 from blaze.io.scidb.tests.mock import MockedConn
 
@@ -27,7 +27,7 @@ class TestSciDB(unittest.TestCase):
         a = zeros(ds, self.conn)
         b = ones(ds, self.conn)
 
-        expr = add(a, mul(a, b))
+        expr = add(a, multiply(a, b))
 
         graph, ctx = expr.expr
         self.assertEqual(graph.dshape, dshape('10, 10, float64'))

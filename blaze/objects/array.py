@@ -140,15 +140,27 @@ def __rufunc__(f):
     return __rop__
 
 
-def inject_special(names):
-    for name in names:
-        ufunc = getattr(ufuncs, name)
-        setattr(Array, '__%s__' % name, binding(ufunc))
-        setattr(Array, '__r%s__' % name, binding(__rufunc__(ufunc)))
+def _inject_special(names):
+    for ufunc_name, special_name in names:
+        ufunc = getattr(ufuncs, ufunc_name)
+        setattr(Array, '__%s__' % special_name, binding(ufunc))
+        setattr(Array, '__r%s__' % special_name, binding(__rufunc__(ufunc)))
 
 
-inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
-                'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])
+_inject_special([
+    ('add', 'add'),
+    ('subtract', 'sub'),
+    ('multiply', 'mul'),
+    ('true_divide', 'truediv'),
+    ('mod', 'mod'),
+    ('floor_divide', 'floordiv'),
+    ('equal', 'eq'),
+    ('not_equal', 'ne'),
+    ('greater', 'gt'),
+    ('greater_equal', 'ge'),
+    ('less_equal', 'le'),
+    ('less', 'lt'),
+    ('divide', 'div')])
 
 
 """

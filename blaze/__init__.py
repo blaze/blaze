@@ -20,10 +20,7 @@ from .objects.constructors import array, empty, ones, zeros
 from .compute.function import function, elementwise, BlazeFunc
 from .compute.strategy import strategy, current_strategy, set_strategy
 from .compute.eval import eval, append
-from .compute.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
-                              eq, ne, ge, gt, le, lt,
-                              logical_and, logical_or, logical_not, logical_xor,
-                              bitwise_and, bitwise_or, bitwise_xor)
+from .compute.ops.ufuncs import *
 from .io.storage import open, drop, Storage
 
 

@@ -3,6 +3,16 @@ Blaze element-wise ufuncs.
 """
 
 from __future__ import absolute_import, division, print_function
+
+__all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
+           'floor_divide', 'mod', 'negative',
+           'equal', 'not_equal', 'less', 'less_equal', 'greater',
+           'greater_equal',
+           'logical_or', 'logical_and', 'logical_xor', 'logical_not',
+           'bitwise_and', 'bitwise_or', 'bitwise_xor',
+           'left_shift', 'right_shift',
+           'abs']
+
 try:
     import __builtin__ as builtins
 except ImportError:
@@ -15,23 +25,23 @@ def add(a, b):
     return a + b
 
 @jit_elementwise('a -> a -> a')
-def mul(a, b):
+def multiply(a, b):
     return a * b
 
 @jit_elementwise('a -> a -> a')
-def sub(a, b):
+def subtract(a, b):
     return a - b
 
 @jit_elementwise('a -> a -> a')
-def div(a, b):
+def divide(a, b):
     return a / b
 
 @jit_elementwise('a -> a -> a')
-def truediv(a, b):
+def true_divide(a, b):
     return a / b
 
 @jit_elementwise('a -> a -> a')
-def floordiv(a, b):
+def floor_divide(a, b):
     return a // b
 
 @jit_elementwise('a -> a -> a')
@@ -39,7 +49,7 @@ def mod(a, b):
     return a % b
 
 @jit_elementwise('a -> a')
-def neg(a):
+def negative(a):
     return -a
 
 #------------------------------------------------------------------------
@@ -47,27 +57,27 @@ def neg(a):
 #------------------------------------------------------------------------
 
 @jit_elementwise('A..., T -> A..., T -> A..., bool')
-def eq(a, b):
+def equal(a, b):
     return a == b
 
 @jit_elementwise('A..., T -> A..., T -> A..., bool')
-def ne(a, b):
+def not_equal(a, b):
     return a != b
 
 @jit_elementwise('A..., T -> A..., T -> A..., bool')
-def lt(a, b):
+def less(a, b):
     return a < b
 
 @jit_elementwise('A..., T -> A..., T -> A..., bool')
-def le(a, b):
+def less_equal(a, b):
     return a <= b
 
 @jit_elementwise('A..., T -> A..., T -> A..., bool')
-def gt(a, b):
+def greater(a, b):
     return a > b
 
 @jit_elementwise('A..., T -> A..., T -> A..., bool')
-def ge(a, b):
+def greater_equal(a, b):
     return a >= b
 
 #------------------------------------------------------------------------
@@ -113,21 +123,6 @@ def left_shift(a, b):
 @jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def right_shift(a, b):
     return a >> b
-
-# ______________________________________________________________________
-
-# Aliases
-
-subtract        = sub
-multiply        = mul
-true_divide     = truediv
-floor_divide    = floordiv
-equal           = eq
-not_equal       = ne
-less            = lt
-less_equal      = le
-greater         = gt
-greater_equal   = ge
 
 #------------------------------------------------------------------------
 # Math
