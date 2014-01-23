@@ -9,7 +9,7 @@ __all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
-           'bitwise_and', 'bitwise_or', 'bitwise_xor',
+           'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
            'abs']
 
@@ -19,6 +19,8 @@ except ImportError:
     import builtins
 
 from ..function import jit_elementwise
+from .from_numpy import blazefunc_from_numpy_ufunc
+import numpy
 
 @jit_elementwise('a -> a -> a')
 def add(a, b):
@@ -104,17 +106,17 @@ def logical_not(a):
 # Bitwise
 #------------------------------------------------------------------------
 
-@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
-def bitwise_and(a, b):
-    return a & b
+bitwise_and = blazefunc_from_numpy_ufunc(numpy.bitwise_and,
+                                         'blaze', 'bitwise_and', False)
 
-@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
-def bitwise_or(a, b):
-    return a | b
+bitwise_or = blazefunc_from_numpy_ufunc(numpy.bitwise_or,
+                                         'blaze', 'bitwise_or', False)
 
-@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
-def bitwise_xor(a, b):
-    return a ^ b
+bitwise_xor = blazefunc_from_numpy_ufunc(numpy.bitwise_xor,
+                                         'blaze', 'bitwise_xor', False)
+
+bitwise_not = blazefunc_from_numpy_ufunc(numpy.bitwise_not,
+                                         'blaze', 'bitwise_not', False)
 
 @jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def left_shift(a, b):

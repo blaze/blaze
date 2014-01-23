@@ -140,14 +140,20 @@ def __rufunc__(f):
     return __rop__
 
 
-def _inject_special(names):
+def _inject_special_binary(names):
     for ufunc_name, special_name in names:
         ufunc = getattr(ufuncs, ufunc_name)
         setattr(Array, '__%s__' % special_name, binding(ufunc))
         setattr(Array, '__r%s__' % special_name, binding(__rufunc__(ufunc)))
 
 
-_inject_special([
+def _inject_special(names):
+    for ufunc_name, special_name in names:
+        ufunc = getattr(ufuncs, ufunc_name)
+        setattr(Array, '__%s__' % special_name, binding(ufunc))
+
+
+_inject_special_binary([
     ('add', 'add'),
     ('subtract', 'sub'),
     ('multiply', 'mul'),
@@ -160,7 +166,14 @@ _inject_special([
     ('greater_equal', 'ge'),
     ('less_equal', 'le'),
     ('less', 'lt'),
-    ('divide', 'div')])
+    ('divide', 'div'),
+    ('bitwise_and', 'and'),
+    ('bitwise_or', 'or'),
+    ('bitwise_xor', 'xor'),
+    ])
+_inject_special([
+    ('bitwise_not', 'invert'),
+    ])
 
 
 """
