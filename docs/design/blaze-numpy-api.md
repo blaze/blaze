@@ -306,3 +306,25 @@ def combine_destructive(out, out_temp):
     out.sum += out_temp.sum
     out.count += out_temp.count
 ```
+
+Additional Discussion
+---------------------
+
+Some additional points for discussion, raised by Peter:
+
+ * Do we move a lot of the top-level `numpy` functions into
+   methods, and try to stick to more of a "Only one way to do it"
+   API, so that chaining of methods is natural like this?
+ * What does everyone think about a mechanism for hinting?
+   This would be very useful for parallelism and distributed
+   cases, and can be built in either as kwargs for reduction,
+   filter, and join/merge funcs, or as an explicit method that
+   is called in the chain:
+
+```
+ary.ufunc1().ufunc2().reduce_or_filter(array2, shapehint=(N,...)).ufunc3()
+```
+
+ * Similarly, what about specifying chunksize as a hint, for
+   when we use these DAGs to process streams? So we could
+   change up the processing chunksizes at certain points?
