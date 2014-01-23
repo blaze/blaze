@@ -41,7 +41,7 @@ def from_expr(graph, expr_context):
     # Types
 
     argtypes = [operand.dshape for operand in inputs]
-    signature = types.Function(graph.dshape, argtypes)
+    signature = types.Function(graph.dshape, argtypes, varargs=False)
 
     # -------------------------------------------------
     # Setup function
