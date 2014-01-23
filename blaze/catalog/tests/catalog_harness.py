@@ -5,17 +5,12 @@ for tests to use.
 from __future__ import absolute_import, division, print_function
 
 import blaze
+from blaze.optional_packages import tables_is_here
 import numpy as np
 from dynd import nd, ndt
 import tempfile
 import os
 import shutil
-
-try:
-    import tables as tb
-    tables_is_here = True
-except ImportError:
-    tables_is_here = False
 
 
 class CatalogHarness(object):
