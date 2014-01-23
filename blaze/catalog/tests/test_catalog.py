@@ -20,10 +20,11 @@ class TestCatalog(unittest.TestCase):
         blaze.catalog.cd('/')
         self.assertEquals(blaze.catalog.cwd(), '/')
         self.assertEquals(blaze.catalog.ls(),
-                          ['csv_arr', 'json_arr', 'npy_arr', 'py_arr',
-                           'subdir'])
+                          ['csv_arr', 'hdf5_arr', 'json_arr',
+                           'npy_arr', 'py_arr', 'subdir'])
         self.assertEquals(blaze.catalog.ls_arrs(),
-                          ['csv_arr', 'json_arr', 'npy_arr', 'py_arr'])
+                          ['csv_arr', 'hdf5_arr', 'json_arr',
+                           'npy_arr', 'py_arr'])
         self.assertEquals(blaze.catalog.ls_dirs(),
                           ['subdir'])
         blaze.catalog.cd('subdir')
