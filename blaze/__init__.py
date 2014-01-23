@@ -23,7 +23,6 @@ from .compute.eval import eval, append
 from .compute.ops.ufuncs import *
 from .io.storage import open, drop, Storage
 
-
 import ctypes
 
 import datashape
@@ -42,6 +41,9 @@ class complex64(ctypes.Structure):
     _fields_ = [('real', ctypes.c_float),
                 ('imag', ctypes.c_float)]
     _blaze_type_ = datashape.complex64
+
+inf = float('inf')
+nan = float('nan')
 
 __version__ = '0.4.0'
 

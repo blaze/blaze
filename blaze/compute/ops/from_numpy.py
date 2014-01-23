@@ -14,11 +14,11 @@ def _filter_tplist(tplist):
     """Removes duplicates (arising from the long type usually), and
     eliminates the object dtype.
     """
-    obj_dt = np.dtype('O')
+    elim_kinds = ['O', 'M', 'm', 'S', 'U']
     seen = set()
     tplistnew = []
     for sig in tplist:
-        if sig not in seen and obj_dt not in sig:
+        if sig not in seen and not any(dt.kind in elim_kinds for dt in sig):
             tplistnew.append(sig)
             seen.add(sig)
     return tplistnew
@@ -26,7 +26,7 @@ def _filter_tplist(tplist):
 def _make_sig(tplist):
     """Converts a type tuples into datashape function signatures"""
     dslist = [datashape.dshape("A..., " + str(x)) for x in tplist]
-    return datashape.Function(*(dslist[:-1] + [dslist[-1]]))
+    return datashape.Function(*(dslist[1:] + [dslist[0]]))
 
 def _make_pyfunc(nargs, modname, name):
     if nargs == 1:

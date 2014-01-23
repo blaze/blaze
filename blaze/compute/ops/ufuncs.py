@@ -11,7 +11,7 @@ __all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'abs']
+           'isnan', 'abs', 'log', 'logaddexp']
 
 try:
     import __builtin__ as builtins
@@ -58,6 +58,8 @@ def negative(a):
 # Compare
 #------------------------------------------------------------------------
 
+#equal = blazefunc_from_numpy_ufunc(numpy.equal,
+#                                       'blaze', 'equal', False)
 @jit_elementwise('A..., T -> A..., T -> A..., bool')
 def equal(a, b):
     return a == b
@@ -133,3 +135,12 @@ def right_shift(a, b):
 @jit_elementwise('A -> A')
 def abs(x):
     return builtins.abs(x)
+
+isnan = blazefunc_from_numpy_ufunc(numpy.isnan,
+                                       'blaze', 'isnan', False)
+
+log = blazefunc_from_numpy_ufunc(numpy.log,
+                                       'blaze', 'log', False)
+
+logaddexp = blazefunc_from_numpy_ufunc(numpy.logaddexp,
+                                       'blaze', 'logaddexp', False)
