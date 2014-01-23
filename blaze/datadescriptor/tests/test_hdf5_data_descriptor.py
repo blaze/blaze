@@ -16,7 +16,6 @@ if tables_is_here:
     import tables as tb
 
 
-
 class TestHDF5DataDescriptor(unittest.TestCase):
 
     def setUp(self):

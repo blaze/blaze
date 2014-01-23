@@ -4,7 +4,9 @@ import datashape
 
 import blaze
 import unittest
-from blaze.catalog.tests.catalog_harness import CatalogHarness
+from blaze.catalog.tests.catalog_harness import (
+    CatalogHarness, tables_is_here)
+from blaze.py2help import skipIf
 
 
 class TestCatalog(unittest.TestCase):
@@ -19,11 +21,16 @@ class TestCatalog(unittest.TestCase):
     def test_dir_traversal(self):
         blaze.catalog.cd('/')
         self.assertEquals(blaze.catalog.cwd(), '/')
-        self.assertEquals(blaze.catalog.ls(),
-                          ['csv_arr', 'json_arr', 'npy_arr', 'py_arr',
-                           'subdir'])
-        self.assertEquals(blaze.catalog.ls_arrs(),
-                          ['csv_arr', 'json_arr', 'npy_arr', 'py_arr'])
+        entities = ['csv_arr', 'json_arr', 'npy_arr', 'py_arr', 'subdir']
+        if tables_is_here:
+            entities.append('hdf5_arr')
+            entities.sort()
+        self.assertEquals(blaze.catalog.ls(), entities)
+        arrays = ['csv_arr', 'json_arr', 'npy_arr', 'py_arr']
+        if tables_is_here:
+            arrays.append('hdf5_arr')
+            arrays.sort()
+        self.assertEquals(blaze.catalog.ls_arrs(), arrays)
         self.assertEquals(blaze.catalog.ls_dirs(),
                           ['subdir'])
         blaze.catalog.cd('subdir')
@@ -52,6 +59,16 @@ class TestCatalog(unittest.TestCase):
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 2, 3], [1, 2]])
+
+    @skipIf(not tables_is_here, 'pytables is not installed')
+    def test_load_hdf5(self):
+        # Confirms that a simple hdf5 array in a file can be loaded
+        blaze.catalog.cd('/')
+        a = blaze.catalog.get('hdf5_arr')
+        ds = datashape.dshape('2, 3, int32')
+        self.assertEqual(a.dshape, ds)
+        dat = blaze.datadescriptor.dd_as_py(a._data)
+        self.assertEqual(dat, [[1, 2, 3], [3, 2, 1]])
 
     def test_load_npy(self):
         # Confirms that a simple npy file can be loaded
