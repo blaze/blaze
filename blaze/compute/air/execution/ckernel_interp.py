@@ -139,6 +139,9 @@ class CKernelInterp(object):
         result = blaze.Array(DyNDDataDescriptor(result))
         self.values[op] = result
 
+    def op_pykernel(self, op):
+        raise RuntimeError("Shouldn't be seeing a pykernel here...")
+
     def op_ckernel(self, op):
         deferred_ckernel = op.args[0]
         args = [self.values[arg] for arg in op.args[1]]
