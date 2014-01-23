@@ -19,7 +19,7 @@ passes = [
     coercions,
     jit,
     # TODO: Make the below compile-time passes !
-    #ckernel_impls,
+    ckernel_impls,
     #allocation,
     #ckernel_lift,
 
