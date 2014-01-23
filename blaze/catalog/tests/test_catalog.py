@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function
 import datashape
 
 import blaze
+from blaze.optional_packages import tables_is_here
 import unittest
-from blaze.catalog.tests.catalog_harness import (
-    CatalogHarness, tables_is_here)
+from blaze.catalog.tests.catalog_harness import CatalogHarness
 from blaze.py2help import skipIf
 
 

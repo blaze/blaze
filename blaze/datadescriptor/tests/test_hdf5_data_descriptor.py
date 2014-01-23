@@ -7,6 +7,9 @@ import io
 import datashape
 from dynd import nd
 import numpy as np
+from blaze.optional_packages import tables_is_here
+if tables_is_here:
+    import tables as tb
 from blaze.datadescriptor import (
     HDF5DataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
 from blaze.py2help import skipIf
