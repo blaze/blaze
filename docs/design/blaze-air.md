@@ -188,4 +188,9 @@ To have some notion of kernel properties, such as commutativity or associativity
 we support per-op metadata. This can be represented directly on the operation
 or in a mapping in the expression-global environment.
 
-TODO: flesh out properties
+Such properties can be expressed in the blaze function, by passing in
+additional keyword arguments which become part of the sub-expression's metadata.
+
+We further allow kernel-specific metadata to be set for individual kernels.
+This may be specific to the backend in question that is supposed to handle
+the assemblage of kernels of that kind.
