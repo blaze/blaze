@@ -5,7 +5,9 @@ from dynd import nd
 import datashape
 
 from . import IDataDescriptor, Capabilities
-import tables as tb
+from ..optional_packages import tables_is_here
+if tables_is_here:
+    import tables as tb
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 
