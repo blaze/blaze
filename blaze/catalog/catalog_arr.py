@@ -65,15 +65,17 @@ def load_blaze_array(conf, dir):
         return blaze.array(arr)
     elif tp == 'hdf5':
         import tables as tb
-        with tb.open_file(fsdir + '.h5', 'r') as f: # XXX .h5 assumed for HDF5
+        from blaze.datadescriptor import HDF5DataDescriptor
+        fname = fsdir + '.h5'   # XXX .h5 assumed for HDF5
+        with tb.open_file(fname, 'r') as f:
             dp = imp.get('datapath')  # specifies a path in HDF5
             try:
                 dparr = f.get_node(f.root, dp, 'Leaf')
             except tb.NoSuchNodeError:
                 raise RuntimeError(
                     'HDF5 file does not have a dataset in %r' % dp)
-            arr = nd.array(dparr[:])
-        return blaze.array(arr)
+            dd = HDF5DataDescriptor(fname, dp)
+        return blaze.array(dd)
     elif tp == 'npy':
         import numpy as np
         use_memmap = imp.get('memmap', False)
