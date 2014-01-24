@@ -129,3 +129,68 @@ class TestLogAddExp(unittest.TestCase):
         self.assertTrue(blaze.isnan(blaze.logaddexp(blaze.nan, 0)))
         self.assertTrue(blaze.isnan(blaze.logaddexp(0, blaze.nan)))
         self.assertTrue(blaze.isnan(blaze.logaddexp(blaze.nan, blaze.nan)))
+
+class TestLog2(unittest.TestCase):
+    def test_log2_values(self) :
+        x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        for ds in ['float32', 'float64'] :
+            xf = blaze.array(x, dshape=ds)
+            yf = blaze.array(y, dshape=ds)
+            result = blaze.log2(xf)
+            assert_almost_equal(np.array(result), yf)
+
+
+class TestExp2(unittest.TestCase):
+    def test_exp2_values(self) :
+        x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        for ds in ['float32', 'float64'] :
+            xf = blaze.array(x, dshape=ds)
+            yf = blaze.array(y, dshape=ds)
+            result = blaze.exp2(yf)
+            assert_almost_equal(np.array(result), xf)
+
+
+class TestLogAddExp2(unittest.TestCase):
+    # Need test for intermediate precisions
+    def test_logaddexp2_values(self) :
+        x = [1, 2, 3, 4, 5]
+        y = [5, 4, 3, 2, 1]
+        z = [6, 6, 6, 6, 6]
+        for ds, dec in zip(['float32', 'float64'], [6, 15, 15]) :
+            xf = blaze.log2(blaze.array(x, dshape=ds))
+            yf = blaze.log2(blaze.array(y, dshape=ds))
+            zf = blaze.log2(blaze.array(z, dshape=ds))
+            result = blaze.logaddexp2(xf, yf)
+            assert_almost_equal(np.array(result), zf, decimal=dec)
+
+    def test_logaddexp2_range(self) :
+        x = [1000000, -1000000, 1000200, -1000200]
+        y = [1000200, -1000200, 1000000, -1000000]
+        z = [1000200, -1000000, 1000200, -1000000]
+        for ds in ['float32', 'float64'] :
+            logxf = blaze.array(x, dshape=ds)
+            logyf = blaze.array(y, dshape=ds)
+            logzf = blaze.array(z, dshape=ds)
+            result = blaze.logaddexp2(logxf, logyf)
+            assert_almost_equal(np.array(result), logzf)
+
+    def test_inf(self) :
+        inf = blaze.inf
+        x = [inf, -inf,  inf, -inf, inf, 1,  -inf,  1]
+        y = [inf,  inf, -inf, -inf, 1,   inf, 1,   -inf]
+        z = [inf,  inf,  inf, -inf, inf, inf, 1,    1]
+        for ds in ['float32', 'float64'] :
+            logxf = blaze.array(x, dshape=ds)
+            logyf = blaze.array(y, dshape=ds)
+            logzf = blaze.array(z, dshape=ds)
+            result = blaze.logaddexp2(logxf, logyf)
+            assert_equal(np.array(result), logzf)
+
+    def test_nan(self):
+        self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, blaze.inf)))
+        self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.inf, blaze.nan)))
+        self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, 0)))
+        self.assertTrue(blaze.isnan(blaze.logaddexp2(0, blaze.nan)))
+        self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, blaze.nan)))

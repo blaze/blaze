@@ -11,7 +11,9 @@ __all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan', 'abs', 'log', 'exp', 'logaddexp']
+           'isnan', 'abs',
+           'log', 'exp', 'logaddexp',
+           'log2', 'exp2', 'logaddexp2']
 
 try:
     import __builtin__ as builtins
@@ -138,6 +140,15 @@ def abs(x):
 
 isnan = blazefunc_from_numpy_ufunc(numpy.isnan,
                                        'blaze', 'isnan', False)
+
+log2 = blazefunc_from_numpy_ufunc(numpy.log2,
+                                       'blaze', 'log2', False)
+
+exp2 = blazefunc_from_numpy_ufunc(numpy.exp2,
+                                       'blaze', 'exp2', False)
+
+logaddexp2 = blazefunc_from_numpy_ufunc(numpy.logaddexp2,
+                                       'blaze', 'logaddexp2', False)
 
 log = blazefunc_from_numpy_ufunc(numpy.log,
                                        'blaze', 'log', False)
