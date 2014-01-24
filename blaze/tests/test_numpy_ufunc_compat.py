@@ -264,3 +264,12 @@ class TestLogAddExp2(unittest.TestCase):
         self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, 0)))
         self.assertTrue(blaze.isnan(blaze.logaddexp2(0, blaze.nan)))
         self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, blaze.nan)))
+
+class TestSign(unittest.TestCase):
+    def test_sign(self):
+        a = blaze.array([blaze.inf, -blaze.inf, blaze.nan, 0.0, 3.0, -3.0])
+        tgt = blaze.array([1., -1., blaze.nan, 0.0, 1.0, -1.0])
+
+        result = blaze.sign(a)
+        assert_equal(np.array(result), np.array(tgt))
+
