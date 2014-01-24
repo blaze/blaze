@@ -21,6 +21,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
 
     def setUp(self):
         handle, self.hdf5_file = tempfile.mkstemp(".h5")
+        os.close(handle)
         self.a1 = np.array([[1, 2, 3], [4, 5, 6]], dtype="int32")
         self.a2 = np.array([[1, 2, 3], [3, 2, 1]], dtype="int64")
         self.t1 = np.array([(1, 2, 3), (3, 2, 1)], dtype="i4,i8,f8")
