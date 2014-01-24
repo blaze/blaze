@@ -27,7 +27,7 @@ def interpret(func, env, args, storage=None, **kwds):
     assert len(args) == len(func.args)
 
     # Make a copy, since we're going to mutate our IR!
-    func = copy_function(func)
+    func, _ = copy_function(func)
 
     # If it's a BLZ output, we want an interpreter that streams
     # the processing through in chunks
