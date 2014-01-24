@@ -170,6 +170,7 @@ _inject_special_binary([
     ('bitwise_and', 'and'),
     ('bitwise_or', 'or'),
     ('bitwise_xor', 'xor'),
+    ('power', 'pow'),
     ])
 _inject_special([
     ('bitwise_not', 'invert'),

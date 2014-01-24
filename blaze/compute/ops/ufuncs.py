@@ -11,7 +11,7 @@ __all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan', 'abs',
+           'isnan', 'abs', 'power',
            'log', 'exp', 'logaddexp',
            'log2', 'exp2', 'logaddexp2']
 
@@ -140,6 +140,9 @@ def abs(x):
 
 isnan = blazefunc_from_numpy_ufunc(numpy.isnan,
                                        'blaze', 'isnan', False)
+
+power = blazefunc_from_numpy_ufunc(numpy.power,
+                                       'blaze', 'power', False)
 
 log2 = blazefunc_from_numpy_ufunc(numpy.log2,
                                        'blaze', 'log2', False)

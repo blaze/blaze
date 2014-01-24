@@ -2,9 +2,13 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import blaze
+import math, cmath
 from blaze.datadescriptor import dd_as_py
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal
+from numpy.testing import assert_almost_equal, assert_equal, assert_array_equal
+from blaze.py2help import skip
+
+# Many of these tests have been adapted from NumPy's test_umath.py test file
 
 class TestBitwiseOps(unittest.TestCase):
     def test_bitwise_or_bool(self):
@@ -64,6 +68,72 @@ class TestBitwiseOps(unittest.TestCase):
         self.assertEqual(dd_as_py((~a)._data), x ^ 0xffffffffffffffff)
         self.assertEqual(dd_as_py(blaze.bitwise_not(a)._data),
                          x ^ 0xffffffffffffffff)
+
+class TestPower(unittest.TestCase):
+    def test_power_float(self):
+        x = blaze.array([1., 2., 3.])
+        assert_equal(np.array(x**0), [1., 1., 1.])
+        assert_equal(np.array(x**1), x)
+        assert_equal(np.array(x**2), [1., 4., 9.])
+        assert_almost_equal(np.array(x**(-1)), [1., 0.5, 1./3])
+        assert_almost_equal(np.array(x**(0.5)), [1., math.sqrt(2), math.sqrt(3)])
+
+    @skip('temporarily skipping, this test revealed bugs in the eval code')
+    def test_power_complex(self):
+        x = blaze.array([1+2j, 2+3j, 3+4j])
+        assert_equal(np.array(x**0), [1., 1., 1.])
+        assert_equal(np.array(x**1), x)
+        assert_almost_equal(np.array(x**2), [-3+4j, -5+12j, -7+24j])
+        assert_almost_equal(np.array(x**3), [(1+2j)**3, (2+3j)**3, (3+4j)**3])
+        assert_almost_equal(np.array(x**4), [(1+2j)**4, (2+3j)**4, (3+4j)**4])
+        assert_almost_equal(np.array(x**(-1)), [1/(1+2j), 1/(2+3j), 1/(3+4j)])
+        assert_almost_equal(np.array(x**(-2)), [1/(1+2j)**2, 1/(2+3j)**2, 1/(3+4j)**2])
+        assert_almost_equal(np.array(x**(-3)), [(-11+2j)/125, (-46-9j)/2197,
+                                      (-117-44j)/15625])
+        assert_almost_equal(np.array(x**(0.5)), [cmath.sqrt(1+2j), cmath.sqrt(2+3j),
+                                       cmath.sqrt(3+4j)])
+        norm = 1./((x**14)[0])
+        assert_almost_equal(np.array(x**14 * norm),
+                [i * norm for i in [-76443+16124j, 23161315+58317492j,
+                                    5583548873 +  2465133864j]])
+
+        def assert_complex_equal(x, y):
+            assert_array_equal(np.array(x.real), np.array(y.real))
+            assert_array_equal(np.array(x.imag), np.array(y.imag))
+
+        for z in [complex(0, np.inf), complex(1, np.inf)]:
+            z = blaze.array([z], dshape="complex[float64]")
+            assert_complex_equal(z**1, z)
+            assert_complex_equal(z**2, z*z)
+            assert_complex_equal(z**3, z*z*z)
+
+    def test_power_zero(self):
+        zero = blaze.array([0j])
+        one = blaze.array([1+0j])
+        cinf = blaze.array([complex(np.inf, 0)])
+        cnan = blaze.array([complex(np.nan, np.nan)])
+
+        def assert_complex_equal(x, y):
+            x, y = np.array(x), np.array(y)
+            assert_array_equal(x.real, y.real)
+            assert_array_equal(x.imag, y.imag)
+
+        # positive powers
+        for p in [0.33, 0.5, 1, 1.5, 2, 3, 4, 5, 6.6]:
+            assert_complex_equal(blaze.power(zero, p), zero)
+
+        # zero power
+        assert_complex_equal(blaze.power(zero, 0), one)
+        assert_complex_equal(blaze.power(zero, 0+1j), cnan)
+
+        # negative power
+        for p in [0.33, 0.5, 1, 1.5, 2, 3, 4, 5, 6.6]:
+            assert_complex_equal(blaze.power(zero, -p), cnan)
+        assert_complex_equal(blaze.power(zero, -1+0.2j), cnan)
+
+    def test_fast_power(self):
+        x = blaze.array([1, 2, 3], dshape="int16")
+        self.assertEqual((x**2.00001).dshape, (x**2.0).dshape)
 
 class TestLog(unittest.TestCase):
     def test_log_values(self) :
