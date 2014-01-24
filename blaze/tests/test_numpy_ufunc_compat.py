@@ -274,6 +274,7 @@ class TestLogAddExp2(unittest.TestCase):
         self.assertTrue(blaze.isnan(blaze.logaddexp2(0, blaze.nan)))
         self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, blaze.nan)))
 
+
 class TestSign(unittest.TestCase):
     def test_sign(self):
         a = blaze.array([blaze.inf, -blaze.inf, blaze.nan, 0.0, 3.0, -3.0])
@@ -282,14 +283,46 @@ class TestSign(unittest.TestCase):
         result = blaze.sign(a)
         assert_equal(result, tgt)
 
-class TestDegrees(unittest.TestCase):
+
+class TestAngles(unittest.TestCase):
     def test_degrees(self):
         assert_almost_equal(blaze.degrees(blaze.pi), 180.0)
         assert_almost_equal(blaze.degrees(-0.5*blaze.pi), -90.0)
 
-
-class TestRadians(unittest.TestCase):
     def test_radians(self):
         assert_almost_equal(blaze.radians(180.0), blaze.pi)
         assert_almost_equal(blaze.radians(-90.0), -0.5*blaze.pi)
 
+
+class TestMod(unittest.TestCase):
+    def test_remainder_mod_int(self):
+        a = blaze.array([-3, -2, -1, 0, 1, 2, 3])
+        a_mod_2 = blaze.array([1,  0, 1,  0, 1,  0,  1])
+        a_mod_3 = blaze.array([0,  1, 2,  0, 1,  2,  0])
+        assert_equal(blaze.remainder(a, 2), a_mod_2)
+        assert_equal(blaze.mod(a, 2), a_mod_2)
+        assert_equal(blaze.remainder(a, 3), a_mod_3)
+        assert_equal(blaze.mod(a, 3), a_mod_3)
+
+    def test_remainder_mod_float(self):
+        a = blaze.array([-3, -2, -1, 0, 1, 2, 3], dshape='float32')
+        a_mod_2 = blaze.array([1,  0, 1,  0, 1,  0,  1], dshape='float32')
+        a_mod_3 = blaze.array([0,  1, 2,  0, 1,  2,  0], dshape='float32')
+        assert_equal(blaze.remainder(a, 2), a_mod_2)
+        assert_equal(blaze.mod(a, 2), a_mod_2)
+        assert_equal(blaze.remainder(a, 3), a_mod_3)
+        assert_equal(blaze.mod(a, 3), a_mod_3)
+
+    def test_fmod_int(self):
+        a = blaze.array([-3, -2, -1, 0, 1, 2, 3])
+        a_fmod_2 = blaze.array([-1,  0, -1,  0, 1,  0,  1])
+        a_fmod_3 = blaze.array([0,  -2, -1,  0, 1,  2,  0])
+        assert_equal(blaze.fmod(a, 2), a_fmod_2)
+        assert_equal(blaze.fmod(a, 3), a_fmod_3)
+
+    def test_fmod_float(self):
+        a = blaze.array([-3, -2, -1, 0, 1, 2, 3], dshape='float32')
+        a_fmod_2 = blaze.array([-1,  0, -1,  0, 1,  0,  1], dshape='float32')
+        a_fmod_3 = blaze.array([0,  -2, -1,  0, 1,  2,  0], dshape='float32')
+        assert_equal(blaze.fmod(a, 2), a_fmod_2)
+        assert_equal(blaze.fmod(a, 3), a_fmod_3)

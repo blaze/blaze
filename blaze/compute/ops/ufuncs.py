@@ -4,16 +4,20 @@ Blaze element-wise ufuncs.
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
-           'floor_divide', 'mod', 'negative',
+__all__ = ['add', 'subtract', 'multiply', 'divide',
+           'logaddexp', 'logaddexp2', 'true_divide',
+           'floor_divide', 'negative', 'power',
+           'remainder', 'mod', 'fmod',
+
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan', 'abs', 'power', 'sign', 'degrees', 'radians',
-           'log', 'exp', 'logaddexp',
-           'log2', 'exp2', 'logaddexp2']
+           'isnan', 'abs', 'sign',
+           'log', 'exp', 'mod',
+           'log2', 'exp2',
+           'degrees', 'radians']
 
 try:
     import __builtin__ as builtins
@@ -170,3 +174,12 @@ exp = blazefunc_from_numpy_ufunc(numpy.exp,
 
 logaddexp = blazefunc_from_numpy_ufunc(numpy.logaddexp,
                                        'blaze', 'logaddexp', False)
+
+remainder = blazefunc_from_numpy_ufunc(numpy.remainder,
+                                       'blaze', 'remainder', False)
+
+mod = blazefunc_from_numpy_ufunc(numpy.mod,
+                                       'blaze', 'mod', False)
+
+fmod = blazefunc_from_numpy_ufunc(numpy.fmod,
+                                       'blaze', 'fmod', False)
