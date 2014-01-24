@@ -82,7 +82,8 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         tshape = '2, { f0 : int32; f1 : int64; f2 : float64 }'
         self.assertEqual(dd.dshape, datashape.dshape(tshape))
         dd.append([(10, 11, 12)])
-        self.assertEqual(nd.as_numpy(dd[2]).tolist(), (10, 11, 12.0))
+        vals = list(dd_as_py(dd[2]).values())
+        self.assertEqual(vals, [10, 11, 12])
 
 
 if __name__ == '__main__':
