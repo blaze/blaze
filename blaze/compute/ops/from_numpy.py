@@ -15,10 +15,15 @@ def _filter_tplist(tplist):
     eliminates the object dtype.
     """
     elim_kinds = ['O', 'M', 'm', 'S', 'U']
+    if str(np.longdouble) != str(np.double):
+        ld = [np.longdouble, np.clongdouble]
+    else:
+        ld = []
     seen = set()
     tplistnew = []
     for sig in tplist:
-        if sig not in seen and not any(dt.kind in elim_kinds for dt in sig):
+        if sig not in seen and not any(dt.kind in elim_kinds or
+                                       dt in ld for dt in sig):
             tplistnew.append(sig)
             seen.add(sig)
     return tplistnew
