@@ -11,7 +11,7 @@ __all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan', 'abs', 'log', 'logaddexp']
+           'isnan', 'abs', 'log', 'exp', 'logaddexp']
 
 try:
     import __builtin__ as builtins
@@ -141,6 +141,9 @@ isnan = blazefunc_from_numpy_ufunc(numpy.isnan,
 
 log = blazefunc_from_numpy_ufunc(numpy.log,
                                        'blaze', 'log', False)
+
+exp = blazefunc_from_numpy_ufunc(numpy.exp,
+                                       'blaze', 'exp', False)
 
 logaddexp = blazefunc_from_numpy_ufunc(numpy.logaddexp,
                                        'blaze', 'logaddexp', False)

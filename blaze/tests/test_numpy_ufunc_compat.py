@@ -65,6 +65,29 @@ class TestBitwiseOps(unittest.TestCase):
         self.assertEqual(dd_as_py(blaze.bitwise_not(a)._data),
                          x ^ 0xffffffffffffffff)
 
+class TestLog(unittest.TestCase):
+    def test_log_values(self) :
+        x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        for ds in ['float32', 'float64'] :
+            log2_ = 0.69314718055994530943
+            xf = blaze.array(x, dshape=ds)
+            yf = blaze.array(y, dshape=ds)*log2_
+            result = blaze.log(xf)
+            assert_almost_equal(np.array(result), np.array(yf))
+
+
+class TestExp(unittest.TestCase):
+    def test_exp_values(self) :
+        x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        for ds in ['float32', 'float64'] :
+            log2_ = 0.69314718055994530943
+            xf = blaze.array(x, dshape=ds)
+            yf = blaze.array(y, dshape=ds)*log2_
+            result = blaze.exp(yf)
+            assert_almost_equal(np.array(result), np.array(xf))
+
 class TestLogAddExp(unittest.TestCase):
     def test_logaddexp_values(self) :
         x = [1, 2, 3, 4, 5]
