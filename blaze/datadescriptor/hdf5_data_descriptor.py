@@ -117,4 +117,3 @@ class HDF5DataDescriptor(IDataDescriptor):
         with tb.open_file(self.filename, mode='a') as f:
             h5arr = f.get_node(f.root, self.datapath)
             h5arr.append(values_arr.reshape(shape_vals))
-            h5arr.flush()
