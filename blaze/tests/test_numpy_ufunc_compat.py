@@ -5,8 +5,17 @@ import blaze
 import math, cmath
 from blaze.datadescriptor import dd_as_py
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_array_equal
 from blaze.py2help import skip
+from numpy import testing
+
+def assert_almost_equal(actual, desired, **kwargs):
+    return testing.assert_almost_equal(np.array(actual), np.array(desired), **kwargs)
+
+def assert_equal(actual, desired, **kwargs):
+    return testing.assert_equal(np.array(actual), np.array(desired), **kwargs)
+
+def assert_array_equal(actual, desired, **kwargs):
+    return testing.assert_array_equal(np.array(actual), np.array(desired), **kwargs)
 
 # Many of these tests have been adapted from NumPy's test_umath.py test file
 
@@ -72,34 +81,34 @@ class TestBitwiseOps(unittest.TestCase):
 class TestPower(unittest.TestCase):
     def test_power_float(self):
         x = blaze.array([1., 2., 3.])
-        assert_equal(np.array(x**0), [1., 1., 1.])
-        assert_equal(np.array(x**1), x)
-        assert_equal(np.array(x**2), [1., 4., 9.])
-        assert_almost_equal(np.array(x**(-1)), [1., 0.5, 1./3])
-        assert_almost_equal(np.array(x**(0.5)), [1., math.sqrt(2), math.sqrt(3)])
+        assert_equal(x**0, [1., 1., 1.])
+        assert_equal(x**1, x)
+        assert_equal(x**2, [1., 4., 9.])
+        assert_almost_equal(x**(-1), [1., 0.5, 1./3])
+        assert_almost_equal(x**(0.5), [1., math.sqrt(2), math.sqrt(3)])
 
     @skip('temporarily skipping, this test revealed bugs in the eval code')
     def test_power_complex(self):
         x = blaze.array([1+2j, 2+3j, 3+4j])
-        assert_equal(np.array(x**0), [1., 1., 1.])
-        assert_equal(np.array(x**1), x)
-        assert_almost_equal(np.array(x**2), [-3+4j, -5+12j, -7+24j])
-        assert_almost_equal(np.array(x**3), [(1+2j)**3, (2+3j)**3, (3+4j)**3])
-        assert_almost_equal(np.array(x**4), [(1+2j)**4, (2+3j)**4, (3+4j)**4])
-        assert_almost_equal(np.array(x**(-1)), [1/(1+2j), 1/(2+3j), 1/(3+4j)])
-        assert_almost_equal(np.array(x**(-2)), [1/(1+2j)**2, 1/(2+3j)**2, 1/(3+4j)**2])
-        assert_almost_equal(np.array(x**(-3)), [(-11+2j)/125, (-46-9j)/2197,
+        assert_equal(x**0, [1., 1., 1.])
+        assert_equal(x**1, x)
+        assert_almost_equal(x**2, [-3+4j, -5+12j, -7+24j])
+        assert_almost_equal(x**3, [(1+2j)**3, (2+3j)**3, (3+4j)**3])
+        assert_almost_equal(x**4, [(1+2j)**4, (2+3j)**4, (3+4j)**4])
+        assert_almost_equal(x**(-1), [1/(1+2j), 1/(2+3j), 1/(3+4j)])
+        assert_almost_equal(x**(-2), [1/(1+2j)**2, 1/(2+3j)**2, 1/(3+4j)**2])
+        assert_almost_equal(x**(-3), [(-11+2j)/125, (-46-9j)/2197,
                                       (-117-44j)/15625])
-        assert_almost_equal(np.array(x**(0.5)), [cmath.sqrt(1+2j), cmath.sqrt(2+3j),
+        assert_almost_equal(x**(0.5), [cmath.sqrt(1+2j), cmath.sqrt(2+3j),
                                        cmath.sqrt(3+4j)])
         norm = 1./((x**14)[0])
-        assert_almost_equal(np.array(x**14 * norm),
+        assert_almost_equal(x**14 * norm,
                 [i * norm for i in [-76443+16124j, 23161315+58317492j,
                                     5583548873 +  2465133864j]])
 
         def assert_complex_equal(x, y):
-            assert_array_equal(np.array(x.real), np.array(y.real))
-            assert_array_equal(np.array(x.imag), np.array(y.imag))
+            assert_array_equal(x.real, y.real)
+            assert_array_equal(x.imag, y.imag)
 
         for z in [complex(0, np.inf), complex(1, np.inf)]:
             z = blaze.array([z], dshape="complex[float64]")
@@ -144,7 +153,7 @@ class TestLog(unittest.TestCase):
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)*log2_
             result = blaze.log(xf)
-            assert_almost_equal(np.array(result), np.array(yf))
+            assert_almost_equal(result, yf)
 
 
 class TestExp(unittest.TestCase):
@@ -156,7 +165,7 @@ class TestExp(unittest.TestCase):
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)*log2_
             result = blaze.exp(yf)
-            assert_almost_equal(np.array(result), np.array(xf))
+            assert_almost_equal(result, xf)
 
 class TestLogAddExp(unittest.TestCase):
     def test_logaddexp_values(self) :
@@ -168,7 +177,7 @@ class TestLogAddExp(unittest.TestCase):
             yf = blaze.log(blaze.array(y, dshape=ds))
             zf = blaze.log(blaze.array(z, dshape=ds))
             result = blaze.eval(blaze.logaddexp(xf, yf))
-            assert_almost_equal(np.array(result), np.array(zf), decimal=dec)
+            assert_almost_equal(result, zf, decimal=dec)
 
     def test_logaddexp_range(self) :
         x = [1000000, -1000000, 1000200, -1000200]
@@ -179,7 +188,7 @@ class TestLogAddExp(unittest.TestCase):
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
             result = blaze.eval(blaze.logaddexp(logxf, logyf))
-            assert_almost_equal(np.array(result), np.array(logzf))
+            assert_almost_equal(result, logzf)
 
     def test_inf(self) :
         inf = blaze.inf
@@ -191,7 +200,7 @@ class TestLogAddExp(unittest.TestCase):
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
             result = blaze.eval(blaze.logaddexp(logxf, logyf))
-            assert_equal(np.array(result), np.array(logzf))
+            assert_equal(result, logzf)
 
     def test_nan(self):
         self.assertTrue(blaze.isnan(blaze.logaddexp(blaze.nan, blaze.inf)))
@@ -208,7 +217,7 @@ class TestLog2(unittest.TestCase):
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)
             result = blaze.log2(xf)
-            assert_almost_equal(np.array(result), yf)
+            assert_almost_equal(result, yf)
 
 
 class TestExp2(unittest.TestCase):
@@ -219,7 +228,7 @@ class TestExp2(unittest.TestCase):
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)
             result = blaze.exp2(yf)
-            assert_almost_equal(np.array(result), xf)
+            assert_almost_equal(result, xf)
 
 
 class TestLogAddExp2(unittest.TestCase):
@@ -233,7 +242,7 @@ class TestLogAddExp2(unittest.TestCase):
             yf = blaze.log2(blaze.array(y, dshape=ds))
             zf = blaze.log2(blaze.array(z, dshape=ds))
             result = blaze.logaddexp2(xf, yf)
-            assert_almost_equal(np.array(result), zf, decimal=dec)
+            assert_almost_equal(result, zf, decimal=dec)
 
     def test_logaddexp2_range(self) :
         x = [1000000, -1000000, 1000200, -1000200]
@@ -244,7 +253,7 @@ class TestLogAddExp2(unittest.TestCase):
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
             result = blaze.logaddexp2(logxf, logyf)
-            assert_almost_equal(np.array(result), logzf)
+            assert_almost_equal(result, logzf)
 
     def test_inf(self) :
         inf = blaze.inf
@@ -256,7 +265,7 @@ class TestLogAddExp2(unittest.TestCase):
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
             result = blaze.logaddexp2(logxf, logyf)
-            assert_equal(np.array(result), logzf)
+            assert_equal(result, logzf)
 
     def test_nan(self):
         self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, blaze.inf)))
@@ -271,5 +280,16 @@ class TestSign(unittest.TestCase):
         tgt = blaze.array([1., -1., blaze.nan, 0.0, 1.0, -1.0])
 
         result = blaze.sign(a)
-        assert_equal(np.array(result), np.array(tgt))
+        assert_equal(result, tgt)
+
+class TestDegrees(unittest.TestCase):
+    def test_degrees(self):
+        assert_almost_equal(blaze.degrees(blaze.pi), 180.0)
+        assert_almost_equal(blaze.degrees(-0.5*blaze.pi), -90.0)
+
+
+class TestRadians(unittest.TestCase):
+    def test_radians(self):
+        assert_almost_equal(blaze.radians(180.0), blaze.pi)
+        assert_almost_equal(blaze.radians(-90.0), -0.5*blaze.pi)
 

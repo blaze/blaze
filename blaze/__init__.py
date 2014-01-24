@@ -44,6 +44,7 @@ class complex64(ctypes.Structure):
 
 inf = float('inf')
 nan = float('nan')
+from math import pi
 
 __version__ = '0.4.0'
 

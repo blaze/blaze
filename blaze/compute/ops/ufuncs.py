@@ -11,7 +11,7 @@ __all__ = ['add', 'multiply', 'subtract', 'divide', 'true_divide',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan', 'abs', 'power', 'sign',
+           'isnan', 'abs', 'power', 'sign', 'degrees', 'radians',
            'log', 'exp', 'logaddexp',
            'log2', 'exp2', 'logaddexp2']
 
@@ -146,6 +146,12 @@ power = blazefunc_from_numpy_ufunc(numpy.power,
 
 sign = blazefunc_from_numpy_ufunc(numpy.sign,
                                        'blaze', 'sign', False)
+
+degrees = blazefunc_from_numpy_ufunc(numpy.degrees,
+                                       'blaze', 'degrees', False)
+
+radians = blazefunc_from_numpy_ufunc(numpy.radians,
+                                       'blaze', 'radians', False)
 
 log2 = blazefunc_from_numpy_ufunc(numpy.log2,
                                        'blaze', 'log2', False)
