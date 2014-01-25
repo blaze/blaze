@@ -4,11 +4,9 @@ import sys
 import os
 import io
 import blaze
-from blaze import datashape
+import datashape
 from blaze.datadescriptor import (
     CSVDataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
-from blaze.py2help import _inttypes, izip
-import ctypes
 
 from dynd import nd, ndt
 
