@@ -1,5 +1,5 @@
 """
-SciDB query generation and execution from Blaze AIR.
+SQL query generation from Blaze AIR.
 """
 
 from __future__ import absolute_import, division, print_function
