@@ -8,13 +8,15 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'logaddexp', 'logaddexp2', 'true_divide',
            'floor_divide', 'negative', 'power',
            'remainder', 'mod', 'fmod',
-
+           'absolute', 'abs',
+           'conj', #'real', 'imag',
+           'sqrt',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan', 'abs', 'sign',
+           'isnan', 'sign',
            'log', 'exp', 'mod',
            'log2', 'exp2',
            'degrees', 'radians']
@@ -138,9 +140,10 @@ def right_shift(a, b):
 # Math
 #------------------------------------------------------------------------
 
-@jit_elementwise('A -> A')
-def abs(x):
-    return builtins.abs(x)
+absolute = blazefunc_from_numpy_ufunc(numpy.absolute,
+                                       'blaze', 'absolute', False)
+
+abs = absolute
 
 isnan = blazefunc_from_numpy_ufunc(numpy.isnan,
                                        'blaze', 'isnan', False)
@@ -183,3 +186,9 @@ mod = blazefunc_from_numpy_ufunc(numpy.mod,
 
 fmod = blazefunc_from_numpy_ufunc(numpy.fmod,
                                        'blaze', 'fmod', False)
+
+conj = blazefunc_from_numpy_ufunc(numpy.conj,
+                                       'blaze', 'conj', False)
+
+sqrt = blazefunc_from_numpy_ufunc(numpy.sqrt,
+                                       'blaze', 'sqrt', False)

@@ -326,3 +326,58 @@ class TestMod(unittest.TestCase):
         a_fmod_3 = blaze.array([0,  -2, -1,  0, 1,  2,  0], dshape='float32')
         assert_equal(blaze.fmod(a, 2), a_fmod_2)
         assert_equal(blaze.fmod(a, 3), a_fmod_3)
+
+class TestAbs(unittest.TestCase):
+    def test_simple(self):
+        x = blaze.array([1+1j, 0+2j, 1+2j, blaze.inf, blaze.nan])
+        y_r = blaze.array([blaze.sqrt(2.), 2, blaze.sqrt(5), blaze.inf, blaze.nan])
+        y = blaze.abs(x)
+        for i in range(len(x)):
+            assert_almost_equal(y[i], y_r[i])
+
+    def test_fabs(self):
+        # Test that blaze.abs(x +- 0j) == blaze.abs(x) (as mandated by C99 for cabs)
+        x = blaze.array([1+0j], dshape="complex[float64]")
+        assert_array_equal(blaze.abs(x), blaze.real(x))
+
+        x = blaze.array([complex(1, -0.)], dshape="complex[float64]")
+        assert_array_equal(blaze.abs(x), blaze.real(x))
+
+        x = blaze.array([complex(blaze.inf, -0.)], dshape="complex[float64]")
+        assert_array_equal(blaze.abs(x), blaze.real(x))
+
+        x = blaze.array([complex(blaze.nan, -0.)], dshape="complex[float64]")
+        assert_array_equal(blaze.abs(x), blaze.real(x))
+
+    def test_cabs_inf_nan(self):
+        # cabs(+-nan + nani) returns nan
+        self.assertTrue(blaze.isnan(blaze.abs(complex(blaze.nan, blaze.nan))))
+        self.assertTrue(blaze.isnan(blaze.abs(complex(-blaze.nan, blaze.nan))))
+        self.assertTrue(blaze.isnan(blaze.abs(complex(blaze.nan, -blaze.nan))))
+        self.assertTrue(blaze.isnan(blaze.abs(complex(-blaze.nan, -blaze.nan))))
+
+        # According to C99 standard, if exactly one of the real/part is inf and
+        # the other nan, then cabs should return inf
+        assert_equal(blaze.abs(complex(blaze.inf, blaze.nan)), blaze.inf)
+        assert_equal(blaze.abs(complex(blaze.nan, blaze.inf)), blaze.inf)
+        assert_equal(blaze.abs(complex(-blaze.inf, blaze.nan)), blaze.inf)
+        assert_equal(blaze.abs(complex(blaze.nan, -blaze.inf)), blaze.inf)
+
+        values = [complex(blaze.nan, blaze.nan),
+                  complex(-blaze.nan, blaze.nan),
+                  complex(blaze.inf, blaze.nan),
+                  complex(-blaze.inf, blaze.nan)]
+
+        # cabs(conj(z)) == conj(cabs(z)) (= cabs(z))
+        def f(a):
+            return blaze.abs(blaze.conj(a))
+        def g(a, b):
+            return blaze.abs(complex(a, b))
+
+        for z in values:
+            abs_conj_z = blaze.abs(blaze.conj(z))
+            conj_abs_z = blaze.conj(blaze.abs(z))
+            abs_z = blaze.abs(z)
+            assert_equal(abs_conj_z, conj_abs_z)
+            assert_equal(abs_conj_z, abs_z)
+            assert_equal(conj_abs_z, abs_z)
