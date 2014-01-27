@@ -6,9 +6,10 @@ A concrete array is constructed from a Data Descriptor Object which handles the
 
 from __future__ import absolute_import, division, print_function
 
-from datashape import coretypes as T
-from blaze.compute.expr import dump
-from blaze.compute.ops import ufuncs
+import datashape
+from ..compute.expr import dump
+from ..compute.ops import ufuncs
+from .. import compute
 
 from ..datadescriptor import (IDataDescriptor,
                               DyNDDataDescriptor,
@@ -46,8 +47,8 @@ class Array(object):
         # Inject the record attributes.
         # This is a hack to help get the blaze-web server onto blaze arrays.
         ms = data.dshape
-        if isinstance(ms, T.DataShape): ms = ms[-1]
-        if isinstance(ms, T.Record):
+        if isinstance(ms, datashape.DataShape): ms = ms[-1]
+        if isinstance(ms, datashape.Record):
             props = {}
             for name in ms.names:
                 props[name] = _named_property(name)
@@ -55,6 +56,31 @@ class Array(object):
 
         # Need to inject attributes on the Array depending on dshape
         # attributes, in cases other than Record
+        if data.dshape in [datashape.dshape('int32'), datashape.dshape('int64')]:
+            props = {}
+            def __int__(self):
+                # Evaluate to memory
+                e = compute.eval.eval(self)
+                return int(e._data.dynd_arr())
+            props['__int__'] = __int__
+            self.__class__ = type('blaze.Array', (Array,), props)
+        elif data.dshape in [datashape.dshape('float32'), datashape.dshape('float64')]:
+            props = {}
+            def __float__(self):
+                # Evaluate to memory
+                e = compute.eval.eval(self)
+                return float(e._data.dynd_arr())
+            props['__float__'] = __float__
+            self.__class__ = type('blaze.Array', (Array,), props)
+        elif data.dshape in [datashape.dshape('complex[float32]'),
+                           datashape.dshape('complex[float64]')]:
+            props = {}
+            def __complex__(self):
+                # Evaluate to memory
+                e = compute.eval.eval(self)
+                return complex(e._data.dynd_arr())
+            props['__complex__'] = __complex__
+            self.__class__ = type('blaze.Array', (Array,), props)
 
     @property
     def dshape(self):
