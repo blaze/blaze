@@ -11,7 +11,7 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'absolute', 'abs', 'rint', 'sign',
            'conj', 'real', 'imag',
            'exp', 'exp2', 'log', 'log2', 'log10', 'expm1', 'log1p',
-           'sqrt', 'square',
+           'sqrt', 'square', 'reciprocal',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
@@ -215,5 +215,8 @@ sqrt = blazefunc_from_numpy_ufunc(numpy.sqrt,
 
 square = blazefunc_from_numpy_ufunc(numpy.square,
                                        'blaze', 'square', False)
+
+reciprocal = blazefunc_from_numpy_ufunc(numpy.reciprocal,
+                                       'blaze', 'reciprocal', False)
 
 

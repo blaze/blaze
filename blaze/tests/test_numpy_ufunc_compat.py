@@ -334,6 +334,15 @@ class TestSquare(unittest.TestCase):
         result = blaze.square(blaze.eval(-a))
         assert_almost_equal(result, b)
 
+
+class TestReciprocal(unittest.TestCase):
+    def test_reciprocal(self):
+        a = blaze.array([1, 2., 3.33])
+        b = blaze.array([1., 0.5, 0.3003003])
+        result = blaze.reciprocal(a)
+        assert_almost_equal(result, b)
+
+
 class TestAngles(unittest.TestCase):
     def test_degrees(self):
         assert_almost_equal(blaze.degrees(blaze.pi), 180.0)
