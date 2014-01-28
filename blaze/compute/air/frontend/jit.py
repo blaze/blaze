@@ -22,7 +22,7 @@ from ... import llvm_array
 #------------------------------------------------------------------------
 
 def run(func, env):
-    if env['air.strategy'] != 'jit':
+    if env['strategy'] != 'jit':
         return
 
     jit_env = dict(root_jit_env)

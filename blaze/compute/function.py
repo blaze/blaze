@@ -218,6 +218,10 @@ class BlazeFunc(object):
         """Default dispatcher that define blaze semantics (pure python)"""
         return self.dispatchers['python']
 
+    @property
+    def available_strategies(self):
+        return list(self.dispatchers)
+
     def get_dispatcher(self, impl_kind):
         """Get the overloaded dispatcher for the given implementation kind"""
         if impl_kind not in self.dispatchers:

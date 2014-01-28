@@ -23,8 +23,8 @@ def partition_sql(func, env):
     """
     Determine all operations that are supposed to be executed in SQL land.
     """
-    md = env['inputs.metadata']
-    sql_ops = set()
+    env['sql.ops'] = sql_ops = set()
+    runtime_args = env['runtime.args']
 
     for arg in func.args:
         if md[arg]['sql']:

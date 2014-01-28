@@ -5,7 +5,7 @@ Passes that massage expression graphs into execution kernels.
 """
 
 from __future__ import absolute_import, division, print_function
-from .frontend import (translate, coercions, jit, ckernel_impls,
+from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
                        ckernel_lift, allocation, assemblage)
 
 #------------------------------------------------------------------------
@@ -14,6 +14,8 @@ from .frontend import (translate, coercions, jit, ckernel_impls,
 
 passes = [
     translate,
+    partitioning.partition,
+    partitioning.annotate_roots,
     # erasure, # TODO: erase shape from ops
     # cache, # TODO:
     coercions,
