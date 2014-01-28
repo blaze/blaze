@@ -70,7 +70,7 @@ def use_ooc(op, strategies, env):
 
 def use_local(op, strategies, env):
     """
-    Determine whether `op` needs to be handled by an out-of-core backend.
+    Determine whether `op` can be handled by a 'local' backend.
     """
     if isinstance(op, ir.FuncArg):
         # Function argument, this is an OOC operation if he runtime input
@@ -87,17 +87,22 @@ def use_local(op, strategies, env):
 determine_strategy = {
     'sql':      use_sql,
     'ooc':      use_ooc,
-    'local':    use_local,
+    'jit':      use_local,
+    'ckernel':  use_local,
 }
 
 #------------------------------------------------------------------------
-# Partitioning
+# Annotation
 #------------------------------------------------------------------------
 
 def annotate_kernels(func, env):
     """
     Annotate all sub-expressions with all kernels that can potentially
     execute the operation.
+
+    Populate environment with 'kernel.impls':
+
+        { (Op, strategy) : Overload }
     """
     impls = env['kernel.impls'] = {} # { (Op, strategy) : Overload }
 
@@ -145,15 +150,16 @@ def overload_for_strategy(function, overload, strategy):
 
     return None, None
 
+
 #------------------------------------------------------------------------
 # Partitioning
 #------------------------------------------------------------------------
 
 def partition(func, env):
     """
-    Determine the execution environment strategy for each operation.
+    Determine the execution strategy for each operation.
     """
-    strategies = env['exc_strategies'] = {}
+    strategies = env['strategies'] = {}
     impls = env['kernel.impls']
 
     for arg in func.args:
@@ -165,19 +171,8 @@ def partition(func, env):
             strategies[op] = determine_preference(op, strategies, prefs)
 
 
-def partition_local(func, env):
-    """
-    Determine the local execution backend strategy for each operation.
-    """
-    exc_strategies = env['exc_strategies'] = {}
-    strategies = env.setdefault('strategies', {})
-
-    for op in func.ops:
-        if op.opcode == "kernel":
-            strategies[op] = determine_preference(op, strategies)
-
-
 def determine_preference(op, env, preferences):
+    """Return the first valid strategy according to a list of preferences"""
     for preference in preferences:
         valid_strategy = determine_strategy[preference]
         if valid_strategy(op, env):
@@ -186,9 +181,17 @@ def determine_preference(op, env, preferences):
     raise ValueError("No valid strategy could be determined for %s" % (op,))
 
 
+#------------------------------------------------------------------------
+# Backend boundaries / Fusion boundaries
+#------------------------------------------------------------------------
+
 def annotate_roots(func, env):
     """
-    Determine 'root' ops, those are ops along fusion boundaries.
+    Determine 'root' ops, those are ops along fusion boundaries. E.g.
+    a unary kernel that can only operate on in-memory data, with an sql
+    operand expression:
+
+        kernel(expr{sql}){jit}
     """
     strategies = env['strategies']
     roots = env['roots'] = set()

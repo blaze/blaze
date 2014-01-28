@@ -14,6 +14,7 @@ from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
 
 passes = [
     translate,
+    partitioning.annotate_kernels,
     partitioning.partition,
     partitioning.annotate_roots,
     # erasure, # TODO: erase shape from ops
