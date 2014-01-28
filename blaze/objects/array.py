@@ -200,6 +200,7 @@ _inject_special_binary([
     ])
 _inject_special([
     ('bitwise_not', 'invert'),
+    ('negative', 'neg'),
     ])
 
 

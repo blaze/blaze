@@ -10,8 +10,8 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'remainder', 'mod', 'fmod',
            'absolute', 'abs', 'rint', 'sign',
            'conj', 'real', 'imag',
-           'exp', 'exp2', 'log', 'log2', 'log10',
-           'sqrt',
+           'exp', 'exp2', 'log', 'log2', 'log10', 'expm1', 'log1p',
+           'sqrt', 'square',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
@@ -143,6 +143,12 @@ def right_shift(a, b):
 # Math
 #------------------------------------------------------------------------
 
+logaddexp = blazefunc_from_numpy_ufunc(numpy.logaddexp,
+                                       'blaze', 'logaddexp', False)
+
+logaddexp2 = blazefunc_from_numpy_ufunc(numpy.logaddexp2,
+                                       'blaze', 'logaddexp2', False)
+
 absolute = blazefunc_from_numpy_ufunc(numpy.absolute,
                                        'blaze', 'absolute', False)
 
@@ -181,12 +187,6 @@ log2 = blazefunc_from_numpy_ufunc(numpy.log2,
 log10 = blazefunc_from_numpy_ufunc(numpy.log10,
                                        'blaze', 'log10', False)
 
-logaddexp2 = blazefunc_from_numpy_ufunc(numpy.logaddexp2,
-                                       'blaze', 'logaddexp2', False)
-
-logaddexp = blazefunc_from_numpy_ufunc(numpy.logaddexp,
-                                       'blaze', 'logaddexp', False)
-
 remainder = blazefunc_from_numpy_ufunc(numpy.remainder,
                                        'blaze', 'remainder', False)
 
@@ -199,11 +199,21 @@ fmod = blazefunc_from_numpy_ufunc(numpy.fmod,
 conj = blazefunc_from_numpy_ufunc(numpy.conj,
                                        'blaze', 'conj', False)
 
-sqrt = blazefunc_from_numpy_ufunc(numpy.sqrt,
-                                       'blaze', 'sqrt', False)
-
 real = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
             'real', 'blaze', 'real')
 
 imag = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
             'imag', 'blaze', 'imag')
+expm1 = blazefunc_from_numpy_ufunc(numpy.expm1,
+                                       'blaze', 'expm1', False)
+
+log1p = blazefunc_from_numpy_ufunc(numpy.log1p,
+                                       'blaze', 'log1p', False)
+
+sqrt = blazefunc_from_numpy_ufunc(numpy.sqrt,
+                                       'blaze', 'sqrt', False)
+
+square = blazefunc_from_numpy_ufunc(numpy.square,
+                                       'blaze', 'square', False)
+
+

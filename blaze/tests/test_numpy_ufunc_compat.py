@@ -288,9 +288,10 @@ class TestLogAddExp2(unittest.TestCase):
 
 class TestRint(unittest.TestCase):
     def test_rint(self):
-        a = np.array([-1.7, -1.5, -0.2, 0.2, 1.5, 1.7, 2.0])
+        a = blaze.array([-1.7, -1.5, -0.2, 0.2, 1.5, 1.7, 2.0])
+        b = blaze.array([-2., -2., -0.,  0.,  2.,  2.,  2.])
         result = blaze.rint(a)
-        self.assertEqual(result, [-2., -2., -0.,  0.,  2.,  2.,  2.])
+        self.assertEqual(result, b)
 
 
 class TestSign(unittest.TestCase):
@@ -301,6 +302,37 @@ class TestSign(unittest.TestCase):
         result = blaze.sign(a)
         assert_equal(result, tgt)
 
+
+class TestExpm1(unittest.TestCase):
+    def test_expm1(self):
+        # TODO remove the blaze.eval workarounds
+        assert_almost_equal(blaze.expm1(0.2), blaze.eval(blaze.exp(0.2))-1)
+        assert_almost_equal(blaze.expm1(1e-6), blaze.eval(blaze.exp(1e-6))-1)
+
+
+class TestLog1p(unittest.TestCase):
+    def test_log1p(self):
+        assert_almost_equal(blaze.log1p(0.2), blaze.log(1.2))
+        assert_almost_equal(blaze.log1p(1e-6), blaze.log(1+1e-6))
+
+
+class TestSqrt(unittest.TestCase):
+    def test_sqrt(self):
+        a = blaze.array([0., 9., 64., 1e20, 12345])
+        b = blaze.array([0., 3., 8., 1e10, math.sqrt(12345)])
+        result = blaze.sqrt(a)
+        assert_almost_equal(result, b)
+
+
+class TestSquare(unittest.TestCase):
+    def test_square(self):
+        a = blaze.array([0., 3., 8., 1e10, math.sqrt(12345)])
+        b = blaze.array([0., 9., 64., 1e20, 12345])
+        result = blaze.square(a)
+        assert_almost_equal(result, b)
+        # TODO: Remove blaze.eval workaround
+        result = blaze.square(blaze.eval(-a))
+        assert_almost_equal(result, b)
 
 class TestAngles(unittest.TestCase):
     def test_degrees(self):
