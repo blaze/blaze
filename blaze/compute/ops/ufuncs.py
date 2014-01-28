@@ -9,7 +9,7 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'floor_divide', 'negative', 'power',
            'remainder', 'mod', 'fmod',
            'absolute', 'abs',
-           'conj', #'real', 'imag',
+           'conj', 'real', 'imag',
            'sqrt',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
@@ -28,7 +28,9 @@ except ImportError:
 
 from ..function import jit_elementwise
 from .from_numpy import blazefunc_from_numpy_ufunc
+from .from_dynd import blazefunc_from_dynd_property
 import numpy
+from dynd import nd, ndt
 
 @jit_elementwise('a -> a -> a')
 def add(a, b):
@@ -192,3 +194,9 @@ conj = blazefunc_from_numpy_ufunc(numpy.conj,
 
 sqrt = blazefunc_from_numpy_ufunc(numpy.sqrt,
                                        'blaze', 'sqrt', False)
+
+real = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
+            'real', 'blaze', 'real')
+
+imag = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
+            'imag', 'blaze', 'imag')
