@@ -18,7 +18,6 @@ def make_graph():
     result = mul(add(a, b), c)
     graph, expr_ctx = result.expr
 
-    #ctx = ExecutionContext()
     f = from_expr(graph, expr_ctx)
 
     return f, graph

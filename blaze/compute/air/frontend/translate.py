@@ -95,30 +95,6 @@ def _from_expr(expr, f, builder, values):
     return result
 
 
-#class ExecutionContext(object):
-#    """Simple counter for variable names"""
-#
-#    # TODO: Why can't we just reuse expression names?
-#
-#    def __init__(self):
-#        self.count = 0
-#
-#    def incr(self):
-#        count = self.count
-#        self.count += 1
-#        return count
-#
-#
-#_tls = threading.local()
-#
-#def current_ctx():
-#    """Return the current evaluation strategy"""
-#    try:
-#        return _tls.ctx
-#    except AttributeError:
-#        _tls.ctx = ExecutionContext()
-#        return _tls.ctx
-
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
