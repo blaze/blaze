@@ -348,10 +348,14 @@ class TestAngles(unittest.TestCase):
     def test_degrees(self):
         assert_almost_equal(blaze.degrees(blaze.pi), 180.0)
         assert_almost_equal(blaze.degrees(-0.5*blaze.pi), -90.0)
+        assert_almost_equal(blaze.rad2deg(blaze.pi), 180.0)
+        assert_almost_equal(blaze.rad2deg(-0.5*blaze.pi), -90.0)
 
     def test_radians(self):
         assert_almost_equal(blaze.radians(180.0), blaze.pi)
         assert_almost_equal(blaze.radians(-90.0), -0.5*blaze.pi)
+        assert_almost_equal(blaze.deg2rad(180.0), blaze.pi)
+        assert_almost_equal(blaze.deg2rad(-90.0), -0.5*blaze.pi)
 
 
 class TestMod(unittest.TestCase):
