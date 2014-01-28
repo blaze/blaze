@@ -4,23 +4,31 @@ Blaze element-wise ufuncs.
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['add', 'subtract', 'multiply', 'divide',
+ufuncs_from_numpy = [
            'logaddexp', 'logaddexp2', 'true_divide',
            'floor_divide', 'negative', 'power',
            'remainder', 'mod', 'fmod',
            'absolute', 'abs', 'rint', 'sign',
-           'conj', 'real', 'imag',
+           'conj',
            'exp', 'exp2', 'log', 'log2', 'log10', 'expm1', 'log1p',
            'sqrt', 'square', 'reciprocal',
+           'sin', 'cos', 'tan', 'arcsin',
+           'arccos', 'arctan', 'arctan2',
+           'hypot', 'sinh', 'cosh', 'tanh',
+           'arcsinh', 'arccosh', 'arctanh',
+           'deg2rad', 'rad2deg',
+           'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
+           'isnan',
+           'degrees', 'radians']
+
+__all__ = ufuncs_from_numpy + \
+          ['add', 'subtract', 'multiply', 'divide',
+           'real', 'imag',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
-           'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan',
-           'mod',
-
-           'degrees', 'radians']
+           'mod']
 
 try:
     import __builtin__ as builtins
@@ -119,18 +127,6 @@ def logical_not(a):
 # Bitwise
 #------------------------------------------------------------------------
 
-bitwise_and = blazefunc_from_numpy_ufunc(numpy.bitwise_and,
-                                         'blaze', 'bitwise_and', False)
-
-bitwise_or = blazefunc_from_numpy_ufunc(numpy.bitwise_or,
-                                         'blaze', 'bitwise_or', False)
-
-bitwise_xor = blazefunc_from_numpy_ufunc(numpy.bitwise_xor,
-                                         'blaze', 'bitwise_xor', False)
-
-bitwise_not = blazefunc_from_numpy_ufunc(numpy.bitwise_not,
-                                         'blaze', 'bitwise_not', False)
-
 @jit_elementwise('A..., T : integral -> A..., T -> A..., T')
 def left_shift(a, b):
     return a << b
@@ -140,83 +136,19 @@ def right_shift(a, b):
     return a >> b
 
 #------------------------------------------------------------------------
-# Math
+# UFuncs converted from NumPy
 #------------------------------------------------------------------------
 
-logaddexp = blazefunc_from_numpy_ufunc(numpy.logaddexp,
-                                       'blaze', 'logaddexp', False)
+for name in ufuncs_from_numpy:
+    globals()[name] = blazefunc_from_numpy_ufunc(getattr(numpy, name),
+                                                 'blaze', name, False)
 
-logaddexp2 = blazefunc_from_numpy_ufunc(numpy.logaddexp2,
-                                       'blaze', 'logaddexp2', False)
-
-absolute = blazefunc_from_numpy_ufunc(numpy.absolute,
-                                       'blaze', 'absolute', False)
-
-abs = absolute
-
-isnan = blazefunc_from_numpy_ufunc(numpy.isnan,
-                                       'blaze', 'isnan', False)
-
-power = blazefunc_from_numpy_ufunc(numpy.power,
-                                       'blaze', 'power', False)
-
-rint = blazefunc_from_numpy_ufunc(numpy.rint,
-                                       'blaze', 'rint', False)
-
-sign = blazefunc_from_numpy_ufunc(numpy.sign,
-                                       'blaze', 'sign', False)
-
-degrees = blazefunc_from_numpy_ufunc(numpy.degrees,
-                                       'blaze', 'degrees', False)
-
-radians = blazefunc_from_numpy_ufunc(numpy.radians,
-                                       'blaze', 'radians', False)
-
-exp = blazefunc_from_numpy_ufunc(numpy.exp,
-                                       'blaze', 'exp', False)
-
-exp2 = blazefunc_from_numpy_ufunc(numpy.exp2,
-                                       'blaze', 'exp2', False)
-
-log = blazefunc_from_numpy_ufunc(numpy.log,
-                                       'blaze', 'log', False)
-
-log2 = blazefunc_from_numpy_ufunc(numpy.log2,
-                                       'blaze', 'log2', False)
-
-log10 = blazefunc_from_numpy_ufunc(numpy.log10,
-                                       'blaze', 'log10', False)
-
-remainder = blazefunc_from_numpy_ufunc(numpy.remainder,
-                                       'blaze', 'remainder', False)
-
-mod = blazefunc_from_numpy_ufunc(numpy.mod,
-                                       'blaze', 'mod', False)
-
-fmod = blazefunc_from_numpy_ufunc(numpy.fmod,
-                                       'blaze', 'fmod', False)
-
-conj = blazefunc_from_numpy_ufunc(numpy.conj,
-                                       'blaze', 'conj', False)
+#------------------------------------------------------------------------
+# UFuncs from DyND
+#------------------------------------------------------------------------
 
 real = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
             'real', 'blaze', 'real')
 
 imag = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
             'imag', 'blaze', 'imag')
-expm1 = blazefunc_from_numpy_ufunc(numpy.expm1,
-                                       'blaze', 'expm1', False)
-
-log1p = blazefunc_from_numpy_ufunc(numpy.log1p,
-                                       'blaze', 'log1p', False)
-
-sqrt = blazefunc_from_numpy_ufunc(numpy.sqrt,
-                                       'blaze', 'sqrt', False)
-
-square = blazefunc_from_numpy_ufunc(numpy.square,
-                                       'blaze', 'square', False)
-
-reciprocal = blazefunc_from_numpy_ufunc(numpy.reciprocal,
-                                       'blaze', 'reciprocal', False)
-
-

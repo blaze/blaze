@@ -72,14 +72,16 @@ class Array(object):
                 return float(e._data.dynd_arr())
             props['__float__'] = __float__
             self.__class__ = type('blaze.Array', (Array,), props)
-        elif data.dshape in [datashape.dshape('complex[float32]'),
-                           datashape.dshape('complex[float64]')]:
+        elif ms in [datashape.complex_float32, datashape.complex_float64]:
             props = {}
-            def __complex__(self):
-                # Evaluate to memory
-                e = compute.eval.eval(self)
-                return complex(e._data.dynd_arr())
-            props['__complex__'] = __complex__
+            if len(data.dshape) == 1:
+                def __complex__(self):
+                    # Evaluate to memory
+                    e = compute.eval.eval(self)
+                    return complex(e._data.dynd_arr())
+                props['__complex__'] = __complex__
+            props['real'] = _ufunc_to_property(ufuncs.real)
+            props['imag'] = _ufunc_to_property(ufuncs.imag)
             self.__class__ = type('blaze.Array', (Array,), props)
 
     @property
@@ -151,6 +153,13 @@ def _named_property(name):
     @property
     def getprop(self):
         return Array(self._data.getattr(name))
+    return getprop
+
+
+def _ufunc_to_property(uf):
+    @property
+    def getprop(self):
+        return uf(self)
     return getprop
 
 

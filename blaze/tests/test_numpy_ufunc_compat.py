@@ -7,6 +7,7 @@ from blaze.datadescriptor import dd_as_py
 import numpy as np
 from blaze.py2help import skip
 from numpy import testing
+from numpy.testing import assert_
 
 def assert_almost_equal(actual, desired, **kwargs):
     return testing.assert_almost_equal(np.array(actual), np.array(desired), **kwargs)
@@ -440,3 +441,143 @@ class TestAbs(unittest.TestCase):
             assert_equal(abs_conj_z, conj_abs_z)
             assert_equal(abs_conj_z, abs_z)
             assert_equal(conj_abs_z, abs_z)
+
+def _check_branch_cut(f, x0, dx, re_sign=1, im_sign=-1, sig_zero_ok=False,
+                      dtype=np.complex):
+    """
+    Check for a branch cut in a function.
+
+    Assert that `x0` lies on a branch cut of function `f` and `f` is
+    continuous from the direction `dx`.
+
+    Parameters
+    ----------
+    f : func
+        Function to check
+    x0 : array-like
+        Point on branch cut
+    dx : array-like
+        Direction to check continuity in
+    re_sign, im_sign : {1, -1}
+        Change of sign of the real or imaginary part expected
+    sig_zero_ok : bool
+        Whether to check if the branch cut respects signed zero (if applicable)
+    dtype : dtype
+        Dtype to check (should be complex)
+
+    """
+    x0 = np.atleast_1d(x0).astype(dtype)
+    dx = np.atleast_1d(dx).astype(dtype)
+
+    scale = np.finfo(dtype).eps * 1e3
+    atol  = 1e-4
+
+    # TODO remove the np.array workaround
+    y0 = np.asarray(f(x0))
+    yp = np.asarray(f(x0 + dx*scale*np.absolute(x0)/np.absolute(dx)))
+    ym = np.asarray(f(x0 - dx*scale*np.absolute(x0)/np.absolute(dx)))
+
+    assert_(np.all(np.absolute(y0.real - yp.real) < atol), (y0, yp))
+    assert_(np.all(np.absolute(y0.imag - yp.imag) < atol), (y0, yp))
+    assert_(np.all(np.absolute(y0.real - ym.real*re_sign) < atol), (y0, ym))
+    assert_(np.all(np.absolute(y0.imag - ym.imag*im_sign) < atol), (y0, ym))
+
+    if sig_zero_ok:
+        # check that signed zeros also work as a displacement
+        jr = (x0.real == 0) & (dx.real != 0)
+        ji = (x0.imag == 0) & (dx.imag != 0)
+
+        x = -x0
+        x.real[jr] = 0.*dx.real
+        x.imag[ji] = 0.*dx.imag
+        x = -x
+        ym = f(x)
+        ym = ym[jr | ji]
+        y0 = y0[jr | ji]
+        assert_(np.all(np.absolute(y0.real - ym.real*re_sign) < atol), (y0, ym))
+        assert_(np.all(np.absolute(y0.imag - ym.imag*im_sign) < atol), (y0, ym))
+
+class TestComplexFunctions(unittest.TestCase):
+    funcs = [blaze.arcsin,  blaze.arccos,  blaze.arctan, blaze.arcsinh, blaze.arccosh,
+             blaze.arctanh, blaze.sin,     blaze.cos,    blaze.tan,     blaze.exp,
+             blaze.exp2,    blaze.log,     blaze.sqrt,   blaze.log10,   blaze.log2,
+             blaze.log1p]
+
+    def test_it(self):
+        for f in self.funcs:
+            if f is blaze.arccosh:
+                x = 1.5
+            else:
+                x = .5
+            fr = f(x)
+            fz = f(complex(x))
+            assert_almost_equal(fz.real, fr, err_msg='real part %s'%f)
+            assert_almost_equal(fz.imag, 0., err_msg='imag part %s'%f)
+
+    def test_precisions_consistent(self) :
+        z = 1 + 1j
+        for f in self.funcs :
+            fcf = f(blaze.array(z, dshape='complex[float32]'))
+            fcd  = f(blaze.array(z, dshape='complex[float64]'))
+            assert_almost_equal(fcf, fcd, decimal=6, err_msg='fch-fcd %s'%f)
+
+    def test_branch_cuts(self):
+        # check branch cuts and continuity on them
+        _check_branch_cut(blaze.log,   -0.5, 1j, 1, -1)
+        _check_branch_cut(blaze.log2,  -0.5, 1j, 1, -1)
+        _check_branch_cut(blaze.log10, -0.5, 1j, 1, -1)
+        _check_branch_cut(blaze.log1p, -1.5, 1j, 1, -1)
+        _check_branch_cut(blaze.sqrt,  -0.5, 1j, 1, -1)
+
+        _check_branch_cut(blaze.arcsin, [ -2, 2],   [1j, -1j], 1, -1)
+        _check_branch_cut(blaze.arccos, [ -2, 2],   [1j, -1j], 1, -1)
+        _check_branch_cut(blaze.arctan, [-2j, 2j],  [1,  -1 ], -1, 1)
+
+        _check_branch_cut(blaze.arcsinh, [-2j,  2j], [-1,   1], -1, 1)
+        _check_branch_cut(blaze.arccosh, [ -1, 0.5], [1j,  1j], 1, -1)
+        _check_branch_cut(blaze.arctanh, [ -2,   2], [1j, -1j], 1, -1)
+
+        # check against bogus branch cuts: assert continuity between quadrants
+        _check_branch_cut(blaze.arcsin, [-2j, 2j], [ 1,  1], 1, 1)
+        _check_branch_cut(blaze.arccos, [-2j, 2j], [ 1,  1], 1, 1)
+        _check_branch_cut(blaze.arctan, [ -2,  2], [1j, 1j], 1, 1)
+
+        _check_branch_cut(blaze.arcsinh, [ -2,  2, 0], [1j, 1j, 1 ], 1, 1)
+        _check_branch_cut(blaze.arccosh, [-2j, 2j, 2], [1,  1,  1j], 1, 1)
+        _check_branch_cut(blaze.arctanh, [-2j, 2j, 0], [1,  1,  1j], 1, 1)
+
+    @skip("These branch cuts are known to fail")
+    def test_branch_cuts_failing(self):
+        # XXX: signed zero not OK with ICC on 64-bit platform for log, see
+        # http://permalink.gmane.org/gmane.comp.python.numeric.general/25335
+        _check_branch_cut(blaze.log,   -0.5, 1j, 1, -1, True)
+        _check_branch_cut(blaze.log2,  -0.5, 1j, 1, -1, True)
+        _check_branch_cut(blaze.log10, -0.5, 1j, 1, -1, True)
+        _check_branch_cut(blaze.log1p, -1.5, 1j, 1, -1, True)
+        # XXX: signed zeros are not OK for sqrt or for the arc* functions
+        _check_branch_cut(blaze.sqrt,  -0.5, 1j, 1, -1, True)
+        _check_branch_cut(blaze.arcsin, [ -2, 2],   [1j, -1j], 1, -1, True)
+        _check_branch_cut(blaze.arccos, [ -2, 2],   [1j, -1j], 1, -1, True)
+        _check_branch_cut(blaze.arctan, [-2j, 2j],  [1,  -1 ], -1, 1, True)
+        _check_branch_cut(blaze.arcsinh, [-2j,  2j], [-1,   1], -1, 1, True)
+        _check_branch_cut(blaze.arccosh, [ -1, 0.5], [1j,  1j], 1, -1, True)
+        _check_branch_cut(blaze.arctanh, [ -2,   2], [1j, -1j], 1, -1, True)
+
+    def test_against_cmath(self):
+        import cmath, sys
+
+        points = [-1-1j, -1+1j, +1-1j, +1+1j]
+        name_map = {'arcsin': 'asin', 'arccos': 'acos', 'arctan': 'atan',
+                    'arcsinh': 'asinh', 'arccosh': 'acosh', 'arctanh': 'atanh'}
+        atol = 4*np.finfo(np.complex).eps
+        for func in self.funcs:
+            fname = func.__name__.split('.')[-1]
+            cname = name_map.get(fname, fname)
+            try:
+                cfunc = getattr(cmath, cname)
+            except AttributeError:
+                continue
+            for p in points:
+                a = complex(func(complex(p)))
+                b = cfunc(p)
+                self.assertTrue(abs(a - b) < atol, "%s %s: %s; cmath: %s"%(fname, p, a, b))
