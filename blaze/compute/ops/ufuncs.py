@@ -19,7 +19,8 @@ ufuncs_from_numpy = [
            'deg2rad', 'rad2deg',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'isnan',
-           'degrees', 'radians']
+           'degrees', 'radians',
+           'maximum', 'minimum', 'fmax', 'fmin']
 
 __all__ = ufuncs_from_numpy + \
           ['add', 'subtract', 'multiply', 'divide',

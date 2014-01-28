@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import blaze
+import datashape
 import math, cmath
 from blaze.datadescriptor import dd_as_py
 import numpy as np
@@ -585,3 +586,70 @@ class TestComplexFunctions(unittest.TestCase):
                 a = complex(func(complex(p)))
                 b = cfunc(p)
                 self.assertTrue(abs(a - b) < atol, "%s %s: %s; cmath: %s"%(fname, p, a, b))
+
+class TestMaximum(unittest.TestCase):
+    def test_float_nans(self):
+        nan = blaze.nan
+        arg1 = blaze.array([0,   nan, nan])
+        arg2 = blaze.array([nan, 0,   nan])
+        out  = blaze.array([nan, nan, nan])
+        assert_equal(blaze.maximum(arg1, arg2), out)
+
+    def test_complex_nans(self):
+        nan = blaze.nan
+        for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
+            arg1 = blaze.array([0, cnan, cnan])
+            arg2 = blaze.array([cnan, 0, cnan])
+            out  = blaze.array([nan, nan, nan], dshape=datashape.complex_float64)
+            assert_equal(blaze.maximum(arg1, arg2), out)
+
+
+class TestMinimum(unittest.TestCase):
+    def test_float_nans(self):
+        nan = blaze.nan
+        arg1 = blaze.array([0,   nan, nan])
+        arg2 = blaze.array([nan, 0,   nan])
+        out  = blaze.array([nan, nan, nan])
+        assert_equal(blaze.minimum(arg1, arg2), out)
+
+    def test_complex_nans(self):
+        nan = blaze.nan
+        for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
+            arg1 = blaze.array([0, cnan, cnan])
+            arg2 = blaze.array([cnan, 0, cnan])
+            out  = blaze.array([nan, nan, nan], dshape=datashape.complex_float64)
+            assert_equal(blaze.minimum(arg1, arg2), out)
+
+
+class TestFmax(unittest.TestCase):
+    def test_float_nans(self):
+        nan = blaze.nan
+        arg1 = blaze.array([0,   nan, nan])
+        arg2 = blaze.array([nan, 0,   nan])
+        out  = blaze.array([0,   0,   nan])
+        assert_equal(blaze.fmax(arg1, arg2), out)
+
+    def test_complex_nans(self):
+        nan = blaze.nan
+        for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
+            arg1 = blaze.array([0, cnan, cnan])
+            arg2 = blaze.array([cnan, 0, cnan])
+            out  = blaze.array([0,    0, nan], dshape=datashape.complex_float64)
+            assert_equal(blaze.fmax(arg1, arg2), out)
+
+
+class TestFmin(unittest.TestCase):
+    def test_float_nans(self):
+        nan = blaze.nan
+        arg1 = blaze.array([0,   nan, nan])
+        arg2 = blaze.array([nan, 0,   nan])
+        out  = blaze.array([0,   0,   nan])
+        assert_equal(blaze.fmin(arg1, arg2), out)
+
+    def test_complex_nans(self):
+        nan = blaze.nan
+        for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
+            arg1 = blaze.array([0, cnan, cnan])
+            arg2 = blaze.array([cnan, 0, cnan])
+            out  = blaze.array([0,    0, nan], dshape=datashape.complex_float64)
+            assert_equal(blaze.fmin(arg1, arg2), out)
