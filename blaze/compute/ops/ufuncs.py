@@ -18,9 +18,11 @@ ufuncs_from_numpy = [
            'arcsinh', 'arccosh', 'arctanh',
            'deg2rad', 'rad2deg',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
-           'isnan',
            'degrees', 'radians',
-           'maximum', 'minimum', 'fmax', 'fmin']
+           'maximum', 'minimum', 'fmax', 'fmin',
+           'isfinite', 'isinf', 'isnan',
+           'signbit', 'copysign', 'nextafter', 'ldexp',
+           'fmod', 'floor', 'ceil', 'trunc']
 
 __all__ = ufuncs_from_numpy + \
           ['add', 'subtract', 'multiply', 'divide',
