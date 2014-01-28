@@ -8,7 +8,7 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'logaddexp', 'logaddexp2', 'true_divide',
            'floor_divide', 'negative', 'power',
            'remainder', 'mod', 'fmod',
-           'absolute', 'abs',
+           'absolute', 'abs', 'rint', 'sign',
            'conj', 'real', 'imag',
            'sqrt',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
@@ -16,7 +16,7 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'logical_or', 'logical_and', 'logical_xor', 'logical_not',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
-           'isnan', 'sign',
+           'isnan',
            'log', 'exp', 'mod',
            'log2', 'exp2',
            'degrees', 'radians']
@@ -152,6 +152,9 @@ isnan = blazefunc_from_numpy_ufunc(numpy.isnan,
 
 power = blazefunc_from_numpy_ufunc(numpy.power,
                                        'blaze', 'power', False)
+
+rint = blazefunc_from_numpy_ufunc(numpy.rint,
+                                       'blaze', 'rint', False)
 
 sign = blazefunc_from_numpy_ufunc(numpy.sign,
                                        'blaze', 'sign', False)

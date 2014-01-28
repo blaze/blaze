@@ -275,6 +275,13 @@ class TestLogAddExp2(unittest.TestCase):
         self.assertTrue(blaze.isnan(blaze.logaddexp2(blaze.nan, blaze.nan)))
 
 
+class TestRint(unittest.TestCase):
+    def test_rint(self):
+        a = np.array([-1.7, -1.5, -0.2, 0.2, 1.5, 1.7, 2.0])
+        result = blaze.rint(a)
+        self.assertEqual(result, [-2., -2., -0.,  0.,  2.,  2.,  2.])
+
+
 class TestSign(unittest.TestCase):
     def test_sign(self):
         a = blaze.array([blaze.inf, -blaze.inf, blaze.nan, 0.0, 3.0, -3.0])
