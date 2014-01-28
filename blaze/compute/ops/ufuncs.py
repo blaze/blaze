@@ -10,6 +10,7 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'remainder', 'mod', 'fmod',
            'absolute', 'abs', 'rint', 'sign',
            'conj', 'real', 'imag',
+           'exp', 'exp2', 'log', 'log2', 'log10',
            'sqrt',
            'equal', 'not_equal', 'less', 'less_equal', 'greater',
            'greater_equal',
@@ -17,8 +18,8 @@ __all__ = ['add', 'subtract', 'multiply', 'divide',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
            'left_shift', 'right_shift',
            'isnan',
-           'log', 'exp', 'mod',
-           'log2', 'exp2',
+           'mod',
+
            'degrees', 'radians']
 
 try:
@@ -165,20 +166,23 @@ degrees = blazefunc_from_numpy_ufunc(numpy.degrees,
 radians = blazefunc_from_numpy_ufunc(numpy.radians,
                                        'blaze', 'radians', False)
 
-log2 = blazefunc_from_numpy_ufunc(numpy.log2,
-                                       'blaze', 'log2', False)
+exp = blazefunc_from_numpy_ufunc(numpy.exp,
+                                       'blaze', 'exp', False)
 
 exp2 = blazefunc_from_numpy_ufunc(numpy.exp2,
                                        'blaze', 'exp2', False)
 
-logaddexp2 = blazefunc_from_numpy_ufunc(numpy.logaddexp2,
-                                       'blaze', 'logaddexp2', False)
-
 log = blazefunc_from_numpy_ufunc(numpy.log,
                                        'blaze', 'log', False)
 
-exp = blazefunc_from_numpy_ufunc(numpy.exp,
-                                       'blaze', 'exp', False)
+log2 = blazefunc_from_numpy_ufunc(numpy.log2,
+                                       'blaze', 'log2', False)
+
+log10 = blazefunc_from_numpy_ufunc(numpy.log10,
+                                       'blaze', 'log10', False)
+
+logaddexp2 = blazefunc_from_numpy_ufunc(numpy.logaddexp2,
+                                       'blaze', 'logaddexp2', False)
 
 logaddexp = blazefunc_from_numpy_ufunc(numpy.logaddexp,
                                        'blaze', 'logaddexp', False)

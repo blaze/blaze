@@ -220,6 +220,17 @@ class TestLog2(unittest.TestCase):
             assert_almost_equal(result, yf)
 
 
+class TestLog10(unittest.TestCase):
+    def test_log10_values(self) :
+        x = [1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10]
+        y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        for ds in ['float32', 'float64'] :
+            xf = blaze.array(x, dshape=ds)
+            yf = blaze.array(y, dshape=ds)
+            result = blaze.log10(xf)
+            assert_almost_equal(result, yf)
+
+
 class TestExp2(unittest.TestCase):
     def test_exp2_values(self) :
         x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
