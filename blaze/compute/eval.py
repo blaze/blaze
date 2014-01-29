@@ -58,7 +58,6 @@ def eval_deferred(arr, storage, caps, out, strategy):
     func, env = compile(expr, strategy)
     result = run(func, env, args,
                  storage=storage, caps=caps, out=out, strategy=strategy)
-
     return result
 
 #------------------------------------------------------------------------

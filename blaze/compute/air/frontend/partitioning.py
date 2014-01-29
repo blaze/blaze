@@ -73,7 +73,6 @@ def use_ooc(op, strategies, env):
     ooc = all(strategies[arg] in ('local', 'ooc') for arg in op.args[1:])
     return ooc and not use_local(op,  strategies, env)
 
-local_strategies = (JIT, CKERNEL, PY)
 
 def use_local(op, strategies, env):
     """
@@ -91,6 +90,8 @@ def use_local(op, strategies, env):
     return all(strategies[arg] in local_strategies for arg in op.args[1:])
 
 
+local_strategies = (JIT, CKERNEL, PY)
+
 determine_strategy = {
     OOC:        use_ooc,
     JIT:        use_local,
@@ -102,16 +103,16 @@ determine_strategy = {
 # Annotation
 #------------------------------------------------------------------------
 
-def annotate_kernels(func, env):
+def annotate_all_kernels(func, env):
     """
     Annotate all sub-expressions with all kernels that can potentially
     execute the operation.
 
-    Populate environment with 'kernel.impls':
+    Populate environment with 'kernel.overloads':
 
         { (Op, strategy) : Overload }
     """
-    impls = env['kernel.impls'] = {} # { (Op, strategy) : Overload }
+    impls = env['kernel.overloads'] = {} # { (Op, strategy) : Overload }
 
     for op in func.ops:
         if op.opcode == "kernel":
@@ -158,6 +159,20 @@ def overload_for_strategy(function, overload, strategy):
     return None, None
 
 
+#def annotate_kernels(func, env):
+#    """
+#    Annotate each op with an implementation.
+#    """
+#    overloads = env['kernel.overloads']
+#    strategies = env['strategies']
+#    impls = env['kernel.impls'] = {}
+#
+#    for op in func.ops:
+#        if op.opcode == 'kernel':
+#            strategy = strategies[op]
+#            overload = overloads[op, strategy]
+#            impls[op] = overload
+
 #------------------------------------------------------------------------
 # Partitioning
 #------------------------------------------------------------------------
@@ -167,7 +182,7 @@ def partition(func, env):
     Determine the execution strategy for each operation.
     """
     strategies = env['strategies'] = {}
-    impls = env['kernel.impls']
+    impls = env['kernel.overloads']
 
     for arg in func.args:
         strategies[arg] = determine_preference(arg, env, preferences)
@@ -186,9 +201,7 @@ def determine_preference(op, env, preferences):
         if valid_strategy(op, strategies, env):
             return preference
 
-    import pdb; pdb.set_trace()
     raise ValueError("No valid strategy could be determined for %s" % (op,))
-
 
 #------------------------------------------------------------------------
 # Backend boundaries / Fusion boundaries

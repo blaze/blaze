@@ -25,10 +25,11 @@ def run(func, env):
     if env['strategy'] != 'jit':
         return
 
-    jit_env = dict(root_jit_env)
-    jitter(func, jit_env)
-    treebuilder(func, jit_env)
-    ckernel_transformer(func, jit_env)
+    env.update(root_jit_env)
+
+    jitter(func, env)
+    treebuilder(func, env)
+    ckernel_transformer(func, env)
     return func, env
 
 
@@ -37,9 +38,9 @@ def run(func, env):
 #------------------------------------------------------------------------
 
 root_jit_env = {
-    'jitted':       None, # Jitted kernels, { Op : BlazeElementKernel }
-    'trees':        None, # (partial) kernel tree, { Op : KernelTree }
-    'arguments':    None, # Accumulated arguments, { Op : [ Op ] }
+    'jit.jitted':       None, # Jitted kernels, { Op : BlazeElementKernel }
+    'jit.trees':        None, # (partial) kernel tree, { Op : KernelTree }
+    'jit.arguments':    None, # Accumulated arguments, { Op : [ Op ] }
 }
 
 
@@ -47,24 +48,26 @@ root_jit_env = {
 # Pipeline
 #------------------------------------------------------------------------
 
-def jitter(func, jit_env):
-    v = KernelJitter(func)
+def jitter(func, env):
+    v = KernelJitter(func, env)
     visit(v, func)
     v = ConvertJitter(func, v.jitted)
     visit(v, func)
-    jit_env['jitted'] = v.jitted
+    env['jit.jitted'] = v.jitted
 
 
 def treebuilder(func, jit_env):
-    fuser = JitFuser(func, jit_env['jitted'])
+    fuser = JitFuser(func, jit_env['jit.jitted'])
     visit(fuser, func)
-    jit_env['trees'] = fuser.trees
-    jit_env['arguments'] = fuser.arguments
+    jit_env['jit.trees'] = fuser.trees
+    jit_env['jit.arguments'] = fuser.arguments
 
 
 def ckernel_transformer(func, jit_env):
-    transformer = CKernelTransformer(func, jit_env['jitted'],
-                                     jit_env['trees'], jit_env['arguments'])
+    transformer = CKernelTransformer(func,
+                                     jit_env['jit.jitted'],
+                                     jit_env['jit.trees'],
+                                     jit_env['jit.arguments'])
     transform(transformer, func)
 
     # Delete dead ops in reverse dominating order, so as to only delete ops
@@ -83,16 +86,34 @@ class KernelJitter(object):
     BlazeElementKernels
     """
 
-    def __init__(self, func):
+    def __init__(self, func, env):
         self.func = func
+        self.env = env
+
+        self.strategies = self.env['strategies']
+        self.overloads = self.env['kernel.overloads']
+
         self.jitted = {}
 
     def op_kernel(self, op):
-        function = op.metadata['kernel']
-        overload = op.metadata['overload']
-        impl = construct_blaze_kernel(function, overload)
-        if impl is not None:
-            self.jitted[op] = impl
+        strategy = self.strategies[op]
+        overload = self.overloads.get((op, strategy))
+        if overload is not None:
+            py_func, signature = overload
+            blaze_element_kernel = construct_blaze_kernel(py_func, signature)
+            self.jitted[op] = blaze_element_kernel
+
+
+def construct_blaze_kernel(py_func, signature):
+    """
+    Parameters
+    ==========
+    function: blaze.function.BlazeFunc
+    overload: blaze.overloading.Overload
+    """
+    nb_argtypes = [to_numba(a.measure) for a in signature.argtypes]
+    nb_restype = to_numba(signature.restype.measure)
+    return frompyfunc(py_func, (nb_argtypes, nb_restype), signature.argtypes)
 
 
 class ConvertJitter(object):
@@ -112,47 +133,6 @@ class ConvertJitter(object):
             dtype = op.type.measure
             blaze_func = make_blazefunc(converter(dtype, op.args[0].type))
             self.jitted[op] = blaze_func
-
-
-def construct_blaze_kernel(function, overload):
-    """
-    Parameters
-    ==========
-    function: blaze.function.BlazeFunc
-    overload: blaze.overloading.Overload
-    """
-    monosig = overload.resolved_sig
-    argtypes = monosig.argtypes
-
-    # Try a numba implementation
-    py_func, signature = find_impl(function, 'numba', argtypes, monosig)
-    if py_func is not None:
-        nb_argtypes = [to_numba(a.measure) for a in signature.argtypes]
-        nb_restype = to_numba(signature.restype.measure)
-        return frompyfunc(py_func, (nb_argtypes, nb_restype), argtypes)
-
-    # Try an LLVM implementation
-    py_func, signature = find_impl(function, 'numba', argtypes, monosig)
-    if py_func is not None:
-        return BlazeElementKernel(py_func, signature.argtypes)
-
-
-# TODO: factor this out into a "resolve_kernels" or somesuch pass
-def find_impl(function, impl_kind, argtypes, expected_signature):
-    if function.matches(impl_kind, argtypes):
-        overload = function.best_match(impl_kind, argtypes)
-        got_signature = overload.resolved_sig
-
-        # Assert agreeable types for now
-        # TODO: insert conversions if implementation disagrees
-
-        assert got_signature == expected_signature, (got_signature,
-                                                     expected_signature)
-
-        return overload.func, got_signature
-
-    return None, None
-
 
 #------------------------------------------------------------------------
 # Fuse jitted kernels
@@ -305,9 +285,11 @@ def converter(blaze_dtype, blaze_argtype):
     """
     dtype = to_numba(blaze_dtype.measure)
     argtype = to_numba(blaze_argtype.measure)
+
     @jit(dtype(argtype))
     def convert(value):
         return dtype(value)
+
     return convert
 
 
