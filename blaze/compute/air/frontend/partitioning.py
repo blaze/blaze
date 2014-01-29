@@ -5,14 +5,16 @@ rules which backend to use for which operation.
 
 from __future__ import absolute_import, division, print_function
 from pykit import ir
+from blaze.compute.strategy import OOC, JIT, CKERNEL, PY
+
 
 # List of backends to use greedily listed in order of preference
 
 preferences = [
-    'sql',
-    'jit',
-    'ckernel',
-    'python',
+    OOC,
+    JIT,
+    CKERNEL,
+    PY,
 ]
 
 #------------------------------------------------------------------------
@@ -35,6 +37,8 @@ def use_sql(op, strategies, env):
     NOTE: This also populates env['sql.conns']. Mutating this way is somewhat
           undesirable, but this is a non-local decision anyway
     """
+    from blaze.io.sql import SQLDataDescriptor
+
     conns = env.setdefault('sql.conns', {})
 
     if isinstance(op, ir.FuncArg):
@@ -43,6 +47,8 @@ def use_sql(op, strategies, env):
         runtime_args = env['runtime.args']
         array = runtime_args[op]
         data_desc = array._data
+        if not isinstance(data_desc, SQLDataDescriptor):
+            return False
         conns[op] = data_desc.conn
         return True
     elif all(strategies[arg] == 'sql' for arg in op.args[1:]):
@@ -62,11 +68,12 @@ def use_ooc(op, strategies, env):
         runtime_args = env['runtime.args']
         array = runtime_args[op]
         data_desc = array._data
-        return data_desc.capabilities['persistent']
+        return data_desc.capabilities.persistent
 
     ooc = all(strategies[arg] in ('local', 'ooc') for arg in op.args[1:])
     return ooc and not use_local(op,  strategies, env)
 
+local_strategies = (JIT, CKERNEL, PY)
 
 def use_local(op, strategies, env):
     """
@@ -78,17 +85,17 @@ def use_local(op, strategies, env):
         runtime_args = env['runtime.args']
         array = runtime_args[op]
         data_desc = array._data
-        return not (data_desc.capabilities['persistent'] or
-                    data_desc.capabilities['remote'])
+        return not (data_desc.capabilities.persistent or
+                    data_desc.capabilities.remote)
 
-    return all(strategies[arg] in ('local', 'ooc') for arg in op.args[1:])
+    return all(strategies[arg] in local_strategies for arg in op.args[1:])
 
 
 determine_strategy = {
-    'sql':      use_sql,
-    'ooc':      use_ooc,
-    'jit':      use_local,
-    'ckernel':  use_local,
+    OOC:        use_ooc,
+    JIT:        use_local,
+    CKERNEL:    use_local,
+    PY:         use_local,
 }
 
 #------------------------------------------------------------------------
@@ -163,21 +170,23 @@ def partition(func, env):
     impls = env['kernel.impls']
 
     for arg in func.args:
-        strategies[arg] = determine_preference(arg, strategies, preferences)
+        strategies[arg] = determine_preference(arg, env, preferences)
 
     for op in func.ops:
         if op.opcode == "kernel":
             prefs = [p for p in preferences if (op, p) in impls]
-            strategies[op] = determine_preference(op, strategies, prefs)
+            strategies[op] = determine_preference(op, env, prefs)
 
 
 def determine_preference(op, env, preferences):
     """Return the first valid strategy according to a list of preferences"""
+    strategies = env['strategies']
     for preference in preferences:
         valid_strategy = determine_strategy[preference]
-        if valid_strategy(op, env):
+        if valid_strategy(op, strategies, env):
             return preference
 
+    import pdb; pdb.set_trace()
     raise ValueError("No valid strategy could be determined for %s" % (op,))
 
 
@@ -192,13 +201,30 @@ def annotate_roots(func, env):
     operand expression:
 
         kernel(expr{sql}){jit}
+
+    Roots become the place where some backend-specific (e.g. 'jit', or 'sql')
+    must return some blaze result to the execution engine, that describes the
+    data (e.g. via an out-of-core, remote or local data descriptor).
+
+    NOTE: The number and nature of uses of a root can govern where and if
+          to move the data. For instance, if we do two local computations on
+          one remote data source, we may want to move it just once first (
+          or in chunks)
     """
     strategies = env['strategies']
     roots = env['roots'] = set()
 
     for op in func.ops:
         if op.opcode == "kernel":
-            if func[op.uses] > 1:
+            uses = func.uses[op]
+            if len(uses) > 1:
+                # Multiple uses, boundary
                 roots.add(op)
             elif any(strategies[arg] != strategies[op] for arg in op.args[1:]):
+                # Different exeuction strategies, boundary
                 roots.add(op)
+            elif len(uses) == 1:
+                # Result for user, boundary
+                [use] = uses
+                if use.opcode == 'ret':
+                    roots.add(use)

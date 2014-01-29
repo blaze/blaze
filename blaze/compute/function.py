@@ -27,6 +27,7 @@ from datashape.overloading import (overload, Dispatcher, match_by_weight,
                                    best_match, lookup_previous)
 from ..datadescriptor import DeferredDescriptor
 from .expr.context import merge
+from .strategy import PY, JIT
 
 #------------------------------------------------------------------------
 # Utils
@@ -130,10 +131,10 @@ def jit_elementwise(*args, **kwds):
     Keyword argument `python` indicates whether this is also a valid
     pure-python function (default: True).
     """
-    if kwds.get('python', True):
-        impl = ('python', 'numba')
+    if kwds.get(PY, True):
+        impl = (PY, JIT)
     else:
-        impl = 'numba'
+        impl = JIT
     return elementwise(*args, impl=impl)
 
 
@@ -216,7 +217,7 @@ class BlazeFunc(object):
     @property
     def dispatcher(self):
         """Default dispatcher that define blaze semantics (pure python)"""
-        return self.dispatchers['python']
+        return self.dispatchers[PY]
 
     @property
     def available_strategies(self):
@@ -243,7 +244,7 @@ class BlazeFunc(object):
         return best_match(self.get_dispatcher(impl_kind), argtypes,
                           constraints=constraints)
 
-    def add_metadata(self, md, impl_kind='python'):
+    def add_metadata(self, md, impl_kind=PY):
         """
         Associate metadata with an overloaded implementation.
         """
@@ -259,7 +260,7 @@ class BlazeFunc(object):
         # Update
         metadata.update(md)
 
-    def get_metadata(self, key, impl_kind='python'):
+    def get_metadata(self, key, impl_kind=PY):
         return self.metadata[impl_kind].get(key)
 
     __call__ = apply_function
