@@ -13,7 +13,8 @@ air_env = {
     # blaze expression graph
     #'expr_graph':       None,
 
-    # execution strategy
+    # global execution strategy specified by the user
+    # TODO: Not sure this is useful?
     'strategy':         None,
 
     # strategy determined for each Op: { Op : strategy }
