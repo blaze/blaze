@@ -131,13 +131,10 @@ class Array(object):
         return 1 # 0d
 
     def __nonzero__(self):
-        shape = self.dshape.shape
-        if len(self) == 1 and len(shape) <= 1:
-            if len(shape) == 1:
-                item = self[0]
-            else:
-                item = self[()]
-            return bool(item)
+        if len(self.dshape.shape) == 0:
+            # Evaluate to memory
+            e = compute.eval.eval(self)
+            return bool(e._data.dynd_arr())
         else:
             raise ValueError("The truth value of an array with more than one "
                              "element is ambiguous. Use a.any() or a.all()")
