@@ -52,7 +52,7 @@ class Array(object):
             props = {}
             for name in ms.names:
                 props[name] = _named_property(name)
-            self.__class__ = type('blaze.Array', (Array,), props)
+            self.__class__ = type('Array', (Array,), props)
 
         # Need to inject attributes on the Array depending on dshape
         # attributes, in cases other than Record
@@ -63,7 +63,7 @@ class Array(object):
                 e = compute.eval.eval(self)
                 return int(e._data.dynd_arr())
             props['__int__'] = __int__
-            self.__class__ = type('blaze.Array', (Array,), props)
+            self.__class__ = type('Array', (Array,), props)
         elif data.dshape in [datashape.dshape('float32'), datashape.dshape('float64')]:
             props = {}
             def __float__(self):
@@ -71,7 +71,7 @@ class Array(object):
                 e = compute.eval.eval(self)
                 return float(e._data.dynd_arr())
             props['__float__'] = __float__
-            self.__class__ = type('blaze.Array', (Array,), props)
+            self.__class__ = type('Array', (Array,), props)
         elif ms in [datashape.complex_float32, datashape.complex_float64]:
             props = {}
             if len(data.dshape) == 1:
@@ -82,7 +82,7 @@ class Array(object):
                 props['__complex__'] = __complex__
             props['real'] = _ufunc_to_property(ufuncs.real)
             props['imag'] = _ufunc_to_property(ufuncs.imag)
-            self.__class__ = type('blaze.Array', (Array,), props)
+            self.__class__ = type('Array', (Array,), props)
 
     @property
     def dshape(self):
