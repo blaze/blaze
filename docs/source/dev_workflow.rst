@@ -77,10 +77,10 @@ should work together. When a release is made, particular versions of
 all the dependencies are fixed.
 
 In the case of `dynd-python`_, its Jenkins build additionally uploads
-a conda package to the development channel of `Anaconda`_. As the
-`binstar`_ infrastructure gets built out, we expect to transition this
-to a repository there which would have daily builds of all these
-dependencies and of blaze itself.
+a conda package to a `binstar`_ channel, which is installable into
+`Anaconda`_. As the
+binstar infrastructure gets built out, we expect to eventually have daily
+builds of all these dependencies and of blaze itself.
 
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _Anaconda: http://continuum.io/downloads
