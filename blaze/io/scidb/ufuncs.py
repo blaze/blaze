@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.ops import ufuncs
-from blaze.compute.ops.ufuncs import ne, lt, logical_not
+from blaze.compute.ops.ufuncs import not_equal, less, logical_not
 
 from .kernel import scidb_elementwise, scidb_kernel
 from .query import apply, iff, qformat
@@ -45,24 +45,24 @@ def _implement(f, signature):
 # Arithmetic
 #------------------------------------------------------------------------
 add = define_binop("a -> a -> a", "add", "+")
-mul = define_binop("a -> a -> a", "mul", "*")
-sub = define_binop("a : real -> a -> a", "sub", "-")
-div = define_binop("a : real -> a -> a", "div", "/")
+multiply = define_binop("a -> a -> a", "multiply", "*")
+subtract = define_binop("a : real -> a -> a", "subtract", "-")
+divide = define_binop("a : real -> a -> a", "divide", "/")
 # floordiv = define_binop("a : real -> a -> a", "floordiv", "//")
 # truediv = define_binop("a : real -> a -> a", "truediv", "/")
 mod = define_binop("a : real -> a -> a", "mod", "%")
 
-neg = define_unop("a -> a", "neg", "-")
+negative = define_unop("a -> a", "negative", "-")
 
 #------------------------------------------------------------------------
 # Compare
 #------------------------------------------------------------------------
-eq = define_binop("a..., T -> a..., T -> a..., bool", "add", "==")
-ne = define_binop("a..., T -> a..., T -> a..., bool", "add", "!=")
-lt = define_binop("a..., T -> a..., T -> a..., bool", "add", "<")
-le = define_binop("a..., T -> a..., T -> a..., bool", "add", "<=")
-gt = define_binop("a..., T -> a..., T -> a..., bool", "add", ">")
-ge = define_binop("a..., T -> a..., T -> a..., bool", "add", ">=")
+equal = define_binop("a..., T -> a..., T -> a..., bool", "add", "==")
+not_equal = define_binop("a..., T -> a..., T -> a..., bool", "add", "!=")
+less = define_binop("a..., T -> a..., T -> a..., bool", "add", "<")
+less_equal = define_binop("a..., T -> a..., T -> a..., bool", "add", "<=")
+greater = define_binop("a..., T -> a..., T -> a..., bool", "add", ">")
+greater_equal = define_binop("a..., T -> a..., T -> a..., bool", "add", ">=")
 
 #------------------------------------------------------------------------
 # Logical
@@ -119,14 +119,14 @@ def logical_not(a):
 @scidb_elementwise('A : numeric -> A')
 def abs(x):
     # Fixme: again exponential codegen
-    return iff(lt(x, 0), neg(x), x)
+    return iff(less(x, 0), negative(x), x)
 
 
 #------------------------------------------------------------------------
 # Helper functions
 #------------------------------------------------------------------------
 def ibool(x):
-    return ne(x, "0")
+    return not_equal(x, "0")
 
 
 def apply_expr(arr, expr):

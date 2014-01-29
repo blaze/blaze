@@ -214,6 +214,16 @@ class BlazeFunc(object):
         return self.dispatcher.f
 
     @property
+    def name(self):
+        """Return the name of the blazefunc."""
+        return self.dispatcher.f.__name__
+
+    @property
+    def __name__(self):
+        """Return the name of the blazefunc."""
+        return self.dispatcher.f.__name__
+
+    @property
     def dispatcher(self):
         """Default dispatcher that define blaze semantics (pure python)"""
         return self.dispatchers['python']

@@ -14,10 +14,10 @@ apt-get install -y cmake || exit 1
 # Source control
 apt-get install -y git || exit 1
 
-# Anaconda Python (miniconda3) with Python dependencies
-echo Downloading Miniconda3...
-curl -O http://repo.continuum.io/miniconda/Miniconda3-3.0.0-Linux-x86_64.sh || exit 1
-su -c 'bash Miniconda3-*.sh -b -p ~/anaconda' vagrant || exit 1
+# Anaconda Python (miniconda) with Python dependencies
+echo Downloading Miniconda...
+curl -O http://repo.continuum.io/miniconda/Miniconda-3.0.0-Linux-x86_64.sh || exit 1
+su -c 'bash Miniconda-*.sh -b -p ~/anaconda' vagrant || exit 1
 # Install dependencies
 su -c '~/anaconda/bin/conda install --yes ipython llvmpy cython numba numpy scipy llvmmath ply pycparser pyparsing pyyaml flask nose pytables' vagrant || exit 1
 # Add anaconda to the PATH

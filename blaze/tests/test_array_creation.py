@@ -10,6 +10,23 @@ from blaze import append
 from ..py2help import skip
 
 class TestEphemeral(unittest.TestCase):
+    def test_create_scalar(self):
+        a = blaze.array(True)
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertEqual(a.dshape, datashape.dshape('bool'))
+        self.assertEqual(bool(a), True)
+        a = blaze.array(-123456)
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertEqual(a.dshape, datashape.dshape('int32'))
+        self.assertEqual(int(a), -123456)
+        a = blaze.array(-1.25e-10)
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertEqual(a.dshape, datashape.dshape('float64'))
+        self.assertEqual(float(a), -1.25e-10)
+        a = blaze.array(-1.25e-10+2.5j)
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertEqual(a.dshape, datashape.dshape('complex[float64]'))
+        self.assertEqual(complex(a), -1.25e-10+2.5j)
 
     def test_create_from_numpy(self):
         a = blaze.array(np.arange(3))

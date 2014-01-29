@@ -1,5 +1,0 @@
-channels:
-  - http://repo.continuum.io/pkgs/dev
-  - http://repo.continuum.io/pkgs/free
-  - http://repo.continuum.io/pkgs/pro
-  - http://repo.continuum.io/pkgs/gpl

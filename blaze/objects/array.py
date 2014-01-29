@@ -6,9 +6,10 @@ A concrete array is constructed from a Data Descriptor Object which handles the
 
 from __future__ import absolute_import, division, print_function
 
-from datashape import coretypes as T
-from blaze.compute.expr import dump
-from blaze.compute.ops import ufuncs
+import datashape
+from ..compute.expr import dump
+from ..compute.ops import ufuncs
+from .. import compute
 
 from ..datadescriptor import (IDataDescriptor,
                               DyNDDataDescriptor,
@@ -46,8 +47,8 @@ class Array(object):
         # Inject the record attributes.
         # This is a hack to help get the blaze-web server onto blaze arrays.
         ms = data.dshape
-        if isinstance(ms, T.DataShape): ms = ms[-1]
-        if isinstance(ms, T.Record):
+        if isinstance(ms, datashape.DataShape): ms = ms[-1]
+        if isinstance(ms, datashape.Record):
             props = {}
             for name in ms.names:
                 props[name] = _named_property(name)
@@ -55,6 +56,33 @@ class Array(object):
 
         # Need to inject attributes on the Array depending on dshape
         # attributes, in cases other than Record
+        if data.dshape in [datashape.dshape('int32'), datashape.dshape('int64')]:
+            props = {}
+            def __int__(self):
+                # Evaluate to memory
+                e = compute.eval.eval(self)
+                return int(e._data.dynd_arr())
+            props['__int__'] = __int__
+            self.__class__ = type('blaze.Array', (Array,), props)
+        elif data.dshape in [datashape.dshape('float32'), datashape.dshape('float64')]:
+            props = {}
+            def __float__(self):
+                # Evaluate to memory
+                e = compute.eval.eval(self)
+                return float(e._data.dynd_arr())
+            props['__float__'] = __float__
+            self.__class__ = type('blaze.Array', (Array,), props)
+        elif ms in [datashape.complex_float32, datashape.complex_float64]:
+            props = {}
+            if len(data.dshape) == 1:
+                def __complex__(self):
+                    # Evaluate to memory
+                    e = compute.eval.eval(self)
+                    return complex(e._data.dynd_arr())
+                props['__complex__'] = __complex__
+            props['real'] = _ufunc_to_property(ufuncs.real)
+            props['imag'] = _ufunc_to_property(ufuncs.imag)
+            self.__class__ = type('blaze.Array', (Array,), props)
 
     @property
     def dshape(self):
@@ -103,13 +131,10 @@ class Array(object):
         return 1 # 0d
 
     def __nonzero__(self):
-        shape = self.dshape.shape
-        if len(self) == 1 and len(shape) <= 1:
-            if len(shape) == 1:
-                item = self[0]
-            else:
-                item = self[()]
-            return bool(item)
+        if len(self.dshape.shape) == 0:
+            # Evaluate to memory
+            e = compute.eval.eval(self)
+            return bool(e._data.dynd_arr())
         else:
             raise ValueError("The truth value of an array with more than one "
                              "element is ambiguous. Use a.any() or a.all()")
@@ -128,6 +153,13 @@ def _named_property(name):
     return getprop
 
 
+def _ufunc_to_property(uf):
+    @property
+    def getprop(self):
+        return uf(self)
+    return getprop
+
+
 def binding(f):
     def binder(self, *args):
         return f(self, *args)
@@ -140,15 +172,42 @@ def __rufunc__(f):
     return __rop__
 
 
-def inject_special(names):
-    for name in names:
-        ufunc = getattr(ufuncs, name)
-        setattr(Array, '__%s__' % name, binding(ufunc))
-        setattr(Array, '__r%s__' % name, binding(__rufunc__(ufunc)))
+def _inject_special_binary(names):
+    for ufunc_name, special_name in names:
+        ufunc = getattr(ufuncs, ufunc_name)
+        setattr(Array, '__%s__' % special_name, binding(ufunc))
+        setattr(Array, '__r%s__' % special_name, binding(__rufunc__(ufunc)))
 
 
-inject_special(['add', 'sub', 'mul', 'truediv', 'mod', 'floordiv',
-                'eq', 'ne', 'gt', 'ge', 'le', 'lt', 'div'])
+def _inject_special(names):
+    for ufunc_name, special_name in names:
+        ufunc = getattr(ufuncs, ufunc_name)
+        setattr(Array, '__%s__' % special_name, binding(ufunc))
+
+
+_inject_special_binary([
+    ('add', 'add'),
+    ('subtract', 'sub'),
+    ('multiply', 'mul'),
+    ('true_divide', 'truediv'),
+    ('mod', 'mod'),
+    ('floor_divide', 'floordiv'),
+    ('equal', 'eq'),
+    ('not_equal', 'ne'),
+    ('greater', 'gt'),
+    ('greater_equal', 'ge'),
+    ('less_equal', 'le'),
+    ('less', 'lt'),
+    ('divide', 'div'),
+    ('bitwise_and', 'and'),
+    ('bitwise_or', 'or'),
+    ('bitwise_xor', 'xor'),
+    ('power', 'pow'),
+    ])
+_inject_special([
+    ('bitwise_not', 'invert'),
+    ('negative', 'neg'),
+    ])
 
 
 """
