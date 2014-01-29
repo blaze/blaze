@@ -13,6 +13,9 @@ from numpy.testing import assert_
 def assert_almost_equal(actual, desired, **kwargs):
     return testing.assert_almost_equal(np.array(actual), np.array(desired), **kwargs)
 
+def assert_allclose(actual, desired, **kwargs):
+    return testing.assert_allclose(np.array(actual), np.array(desired), **kwargs)
+
 def assert_equal(actual, desired, **kwargs):
     return testing.assert_equal(np.array(actual), np.array(desired), **kwargs)
 
@@ -446,6 +449,19 @@ class TestAbs(unittest.TestCase):
             assert_equal(abs_conj_z, conj_abs_z)
             assert_equal(abs_conj_z, abs_z)
             assert_equal(conj_abs_z, abs_z)
+
+class TestTrig(unittest.TestCase):
+    def test_sin(self):
+        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        b = blaze.array([0, 0.5, 0.5*blaze.sqrt(3), 1, 0, -1, 0])
+        assert_allclose(blaze.sin(a), b, rtol=1e-15, atol=1e-15)
+        assert_allclose(blaze.sin(-a), -b, rtol=1e-15, atol=1e-15)
+
+    def test_cos(self):
+        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        b = blaze.array([1, 0.5*blaze.sqrt(3), 0.5, 0, -1, 0, 1])
+        assert_allclose(blaze.cos(a), b, rtol=1e-15, atol=1e-15)
+        assert_allclose(blaze.cos(-a), -b, rtol=1e-15, atol=1e-15)
 
 def _check_branch_cut(f, x0, dx, re_sign=1, im_sign=-1, sig_zero_ok=False,
                       dtype=np.complex):
