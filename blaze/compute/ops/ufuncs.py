@@ -5,6 +5,7 @@ Blaze element-wise ufuncs.
 from __future__ import absolute_import, division, print_function
 
 ufuncs_from_numpy = [
+           'add', 'subtract', 'multiply', 'divide',
            'logaddexp', 'logaddexp2', 'true_divide',
            'floor_divide', 'negative', 'power',
            'remainder', 'mod', 'fmod',
@@ -16,22 +17,18 @@ ufuncs_from_numpy = [
            'arccos', 'arctan', 'arctan2',
            'hypot', 'sinh', 'cosh', 'tanh',
            'arcsinh', 'arccosh', 'arctanh',
-           'deg2rad', 'rad2deg',
+           'deg2rad', 'rad2deg', 'degrees', 'radians',
            'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
-           'degrees', 'radians',
+           'invert', 'left_shift', 'right_shift',
+           'greater', 'greater_equal', 'less', 'less_equal',
+           'not_equal', 'equal',
+           'logical_and', 'logical_or', 'logical_xor', 'logical_not',
            'maximum', 'minimum', 'fmax', 'fmin',
            'isfinite', 'isinf', 'isnan',
            'signbit', 'copysign', 'nextafter', 'ldexp',
            'fmod', 'floor', 'ceil', 'trunc']
 
-__all__ = ufuncs_from_numpy + \
-          ['add', 'subtract', 'multiply', 'divide',
-           'real', 'imag',
-           'equal', 'not_equal', 'less', 'less_equal', 'greater',
-           'greater_equal',
-           'logical_or', 'logical_and', 'logical_xor', 'logical_not',
-           'left_shift', 'right_shift',
-           'mod']
+__all__ = ufuncs_from_numpy + ['real', 'imag']
 
 try:
     import __builtin__ as builtins
@@ -43,100 +40,6 @@ from .from_numpy import blazefunc_from_numpy_ufunc
 from .from_dynd import blazefunc_from_dynd_property
 import numpy
 from dynd import nd, ndt
-
-@jit_elementwise('a -> a -> a')
-def add(a, b):
-    return a + b
-
-@jit_elementwise('a -> a -> a')
-def multiply(a, b):
-    return a * b
-
-@jit_elementwise('a -> a -> a')
-def subtract(a, b):
-    return a - b
-
-@jit_elementwise('a -> a -> a')
-def divide(a, b):
-    return a / b
-
-@jit_elementwise('a -> a -> a')
-def true_divide(a, b):
-    return a / b
-
-@jit_elementwise('a -> a -> a')
-def floor_divide(a, b):
-    return a // b
-
-@jit_elementwise('a -> a -> a')
-def mod(a, b):
-    return a % b
-
-@jit_elementwise('a -> a')
-def negative(a):
-    return -a
-
-#------------------------------------------------------------------------
-# Compare
-#------------------------------------------------------------------------
-
-#equal = blazefunc_from_numpy_ufunc(numpy.equal,
-#                                       'blaze', 'equal', False)
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def equal(a, b):
-    return a == b
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def not_equal(a, b):
-    return a != b
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def less(a, b):
-    return a < b
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def less_equal(a, b):
-    return a <= b
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def greater(a, b):
-    return a > b
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def greater_equal(a, b):
-    return a >= b
-
-#------------------------------------------------------------------------
-# Logical
-#------------------------------------------------------------------------
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def logical_and(a, b):
-    return a and b
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def logical_or(a, b):
-    return a or b
-
-@jit_elementwise('A..., T -> A..., T -> A..., bool')
-def logical_xor(a, b):
-    return bool(a) ^ bool(b)
-
-@jit_elementwise('A..., T -> A..., bool')
-def logical_not(a):
-    return not a
-
-#------------------------------------------------------------------------
-# Bitwise
-#------------------------------------------------------------------------
-
-@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
-def left_shift(a, b):
-    return a << b
-
-@jit_elementwise('A..., T : integral -> A..., T -> A..., T')
-def right_shift(a, b):
-    return a >> b
 
 #------------------------------------------------------------------------
 # UFuncs converted from NumPy

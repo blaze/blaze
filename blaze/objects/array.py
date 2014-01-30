@@ -45,44 +45,41 @@ class Array(object):
             self.expr = data.expr # hurgh
 
         # Inject the record attributes.
+        injected_props = {}
         # This is a hack to help get the blaze-web server onto blaze arrays.
-        ms = data.dshape
-        if isinstance(ms, datashape.DataShape): ms = ms[-1]
+        ds = data.dshape
+        ms = ds[-1] if isinstance(ds, datashape.DataShape) else ds
         if isinstance(ms, datashape.Record):
-            props = {}
             for name in ms.names:
-                props[name] = _named_property(name)
-            self.__class__ = type('blaze.Array', (Array,), props)
+                injected_props[name] = _named_property(name)
 
         # Need to inject attributes on the Array depending on dshape
         # attributes, in cases other than Record
         if data.dshape in [datashape.dshape('int32'), datashape.dshape('int64')]:
-            props = {}
             def __int__(self):
                 # Evaluate to memory
                 e = compute.eval.eval(self)
                 return int(e._data.dynd_arr())
-            props['__int__'] = __int__
-            self.__class__ = type('blaze.Array', (Array,), props)
+            injected_props['__int__'] = __int__
         elif data.dshape in [datashape.dshape('float32'), datashape.dshape('float64')]:
-            props = {}
             def __float__(self):
                 # Evaluate to memory
                 e = compute.eval.eval(self)
                 return float(e._data.dynd_arr())
-            props['__float__'] = __float__
-            self.__class__ = type('blaze.Array', (Array,), props)
+            injected_props['__float__'] = __float__
         elif ms in [datashape.complex_float32, datashape.complex_float64]:
-            props = {}
             if len(data.dshape) == 1:
                 def __complex__(self):
                     # Evaluate to memory
                     e = compute.eval.eval(self)
                     return complex(e._data.dynd_arr())
-                props['__complex__'] = __complex__
-            props['real'] = _ufunc_to_property(ufuncs.real)
-            props['imag'] = _ufunc_to_property(ufuncs.imag)
-            self.__class__ = type('blaze.Array', (Array,), props)
+                injected_props['__complex__'] = __complex__
+            injected_props['real'] = _ufunc_to_property(ufuncs.real)
+            injected_props['imag'] = _ufunc_to_property(ufuncs.imag)
+
+        if injected_props:
+            self.__class__ = type('Array', (Array,), injected_props)
+
 
     @property
     def dshape(self):
@@ -128,9 +125,20 @@ class Array(object):
         shape = self.dshape.shape
         if shape:
             return shape[0]
-        return 1 # 0d
+        raise IndexError('Scalar blaze arrays have no length')
 
     def __nonzero__(self):
+        # For Python 2
+        if len(self.dshape.shape) == 0:
+            # Evaluate to memory
+            e = compute.eval.eval(self)
+            return bool(e._data.dynd_arr())
+        else:
+            raise ValueError("The truth value of an array with more than one "
+                             "element is ambiguous. Use a.any() or a.all()")
+
+    def __bool__(self):
+        # For Python 3
         if len(self.dshape.shape) == 0:
             # Evaluate to memory
             e = compute.eval.eval(self)

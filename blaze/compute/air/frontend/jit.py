@@ -16,7 +16,6 @@ from ...bkernel.blaze_kernels import frompyfunc, BlazeElementKernel
 from ...bkernel.kernel_tree import Argument, KernelTree
 from ... import llvm_array
 
-
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
@@ -25,46 +24,44 @@ def run(func, env):
     if env['air.strategy'] != 'jit':
         return
 
-    jit_env = dict(root_jit_env)
-    jitter(func, jit_env)
-    treebuilder(func, jit_env)
-    ckernel_transformer(func, jit_env)
+    # Identify the nodes to JIT
+    jitted = identify_jitnodes(func)
+    # Build up trees for all those nodes
+    trees, arguments = build_kerneltrees(func, jitted)
+    # JIT compile the nodes with maximal trees, deleting
+    # all their children
+    build_ckernels(func, jitted, trees, arguments)
     return func, env
-
-
-#------------------------------------------------------------------------
-# Environment
-#------------------------------------------------------------------------
-
-root_jit_env = {
-    'jitted':       None, # Jitted kernels, { Op : BlazeElementKernel }
-    'trees':        None, # (partial) kernel tree, { Op : KernelTree }
-    'arguments':    None, # Accumulated arguments, { Op : [ Op ] }
-}
-
 
 #------------------------------------------------------------------------
 # Pipeline
 #------------------------------------------------------------------------
 
-def jitter(func, jit_env):
-    v = KernelJitter(func)
+def identify_jitnodes(func):
+    """
+    Identifies which nodes (kernels and converters) should be jitted,
+    and creates a dictionary mapping them to corresponding
+    BlazeElementKernels.
+    """
+    v = IdentifyJitKernels(func)
     visit(v, func)
-    v = ConvertJitter(func, v.jitted)
+    v = IdentifyJitConvertors(func, v.jitted)
     visit(v, func)
-    jit_env['jitted'] = v.jitted
+    return v.jitted
 
 
-def treebuilder(func, jit_env):
-    fuser = JitFuser(func, jit_env['jitted'])
+def build_kerneltrees(func, jitted):
+    """
+    Builds the kernel trees for all the nodes that are to be jitted,
+    also populating lists of arguments.
+    """
+    fuser = BuildKernelTrees(func, jitted)
     visit(fuser, func)
-    jit_env['trees'] = fuser.trees
-    jit_env['arguments'] = fuser.arguments
+    return fuser.trees, fuser.arguments
 
 
-def ckernel_transformer(func, jit_env):
-    transformer = CKernelTransformer(func, jit_env['jitted'],
-                                     jit_env['trees'], jit_env['arguments'])
+def build_ckernels(func, jitted, trees, arguments):
+    transformer = BuildCKernels(func, jitted, trees, arguments)
     transform(transformer, func)
 
     # Delete dead ops in reverse dominating order, so as to only delete ops
@@ -77,10 +74,10 @@ def ckernel_transformer(func, jit_env):
 # Jit kernels
 #------------------------------------------------------------------------
 
-class KernelJitter(object):
+class IdentifyJitKernels(object):
     """
-    Jit kernels. Produces a dict `jitted` that maps Operations to jitted
-    BlazeElementKernels
+    Determine which kernels may be jitted. Produces a dict `self.jitted`
+    that maps Operations to BlazeElementKernels implementations.
     """
 
     def __init__(self, func):
@@ -90,15 +87,15 @@ class KernelJitter(object):
     def op_kernel(self, op):
         function = op.metadata['kernel']
         overload = op.metadata['overload']
-        impl = construct_blaze_kernel(function, overload)
+        impl = construct_blaze_element_kernel(function, overload)
         if impl is not None:
             self.jitted[op] = impl
 
 
-class ConvertJitter(object):
+class IdentifyJitConvertors(object):
     """
-    Jit convert ops. Produces a dict `jitted` that maps Operations to jitted
-    BlazeElementKernels
+    Determine which conversion operators should be jitted. Adds to the dict
+    `self.jitted` that maps Operations to BlazeElementKernels implementations
     """
 
     def __init__(self, func, jitted):
@@ -110,11 +107,11 @@ class ConvertJitter(object):
         # then also jit this op
         if all(use in self.jitted for use in self.func.uses[op]):
             dtype = op.type.measure
-            blaze_func = make_blazefunc(converter(dtype, op.args[0].type))
+            blaze_func = BlazeElementKernel(converter(dtype, op.args[0].type).lfunc)
             self.jitted[op] = blaze_func
 
 
-def construct_blaze_kernel(function, overload):
+def construct_blaze_element_kernel(function, overload):
     """
     Parameters
     ==========
@@ -158,7 +155,7 @@ def find_impl(function, impl_kind, argtypes, expected_signature):
 # Fuse jitted kernels
 #------------------------------------------------------------------------
 
-def tree_arg(type):
+def leaf_arg(type):
     kind = llvm_array.SCALAR
     rank = 0
     llvmtype = to_numba(type.measure).to_llvm()
@@ -166,20 +163,20 @@ def tree_arg(type):
     return tree
 
 
-class JitFuser(object):
+class BuildKernelTrees(object):
     """
-    Build KernelTrees from jitted BlazeElementKernels.
+    Build KernelTrees from the BlazeElementKernels in 'jitted'.
     """
 
     def __init__(self, func, jitted):
         self.func = func
         self.jitted = jitted
         self.trees = {}
-
-        # Accumulated arguments (registers) for a kerneltree
         self.arguments = collections.defaultdict(list)
+
+        # Start off with the function arguments as leaves for the trees
         for arg in func.args:
-            tree = tree_arg(arg.type)
+            tree = leaf_arg(arg.type)
             self.trees[arg] = tree
             self.arguments[arg] = [(arg, tree)]
 
@@ -192,53 +189,52 @@ class JitFuser(object):
             self.arguments[op] = list(self.arguments[arg])
 
     def op_kernel(self, op):
-        jitted = self.jitted.get(op)
-        if not jitted:
+        elementkernel = self.jitted.get(op)
+        if not elementkernel:
             return op
 
         consumers = self.func.uses[op]
         if len(consumers) > 1:
-            # We have multiple consumers
+            # This Op has multiple consumers
             pass
 
         # TODO: Check external references in metadata in order to determine
         #       whether this is a fusion boundary
 
-        def add_arg(arg, tree):
-            self.arguments[op].append((arg, tree))
-            self.trees[arg] = tree
-
         children = []
         for i, arg in enumerate(op.args[1:]):
             rank = len(arg.type.shape)
             if arg in self.trees:
+                # This argument already has a tree, include it
+                # as a subtree
                 tree = self.trees[arg]
                 self.arguments[op].extend(self.arguments[arg])
             elif arg in self.jitted:
-                kernel = self.jitted[arg]
-                tree = Argument(arg.type, kernel.kinds[i], rank, kernel.argtypes[i])
-                add_arg(arg, tree)
+                # TODO: the original code here doesn't work, shuffling things
+                #       around introduce unexpected LLVM bitcast exceptions
+                raise RuntimeError('internal error in blaze JIT code with arg %r', arg)
             else:
-                # Function argument, construct Argument and `kind` (see
-                # BlazeElementKernel.kinds)
+                # This argument is a non-jittable kernel, add it as a leaf node
                 if not all(c.metadata['elementwise']
                                for c in consumers if c.opcode == 'kernel'):
                     raise NotImplementedError(
                         "We have non-elementwise consumers that we don't know "
                         "how to deal with")
-                tree = tree_arg(arg.type)
-                add_arg(arg, tree)
+                tree = leaf_arg(arg.type)
+                self.trees[arg] = tree
+                self.arguments[arg] = [(arg, tree)]
+                self.arguments[op].append((arg, tree))
 
             children.append(tree)
 
-        self.trees[op] = KernelTree(jitted, children)
+        self.trees[op] = KernelTree(elementkernel, children)
 
 
 #------------------------------------------------------------------------
 # Rewrite to CKernels
 #------------------------------------------------------------------------
 
-class CKernelTransformer(object):
+class BuildCKernels(object):
 
     def __init__(self, func, jitted, trees, arguments):
         self.func = func
@@ -254,7 +250,7 @@ class CKernelTransformer(object):
                 self.delete_later.append(op)
 
     def op_kernel(self, op):
-        if op not in self.trees:
+        if op not in self.jitted:
             return op
 
         uses = self.func.uses[op]
@@ -294,11 +290,6 @@ class CKernelTransformer(object):
 # Utils
 #------------------------------------------------------------------------
 
-def make_blazefunc(f):
-    #return BlazeFuncDeprecated(f.__name__, template=f)
-    return BlazeElementKernel(f.lfunc)
-
-
 def converter(blaze_dtype, blaze_argtype):
     """
     Generate an element-wise conversion function that numba can jit-compile.
@@ -310,6 +301,3 @@ def converter(blaze_dtype, blaze_argtype):
         return dtype(value)
     return convert
 
-
-def make_ckernel(blaze_func):
-    raise NotImplementedError

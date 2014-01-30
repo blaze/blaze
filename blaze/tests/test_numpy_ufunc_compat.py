@@ -13,6 +13,9 @@ from numpy.testing import assert_
 def assert_almost_equal(actual, desired, **kwargs):
     return testing.assert_almost_equal(np.array(actual), np.array(desired), **kwargs)
 
+def assert_allclose(actual, desired, **kwargs):
+    return testing.assert_allclose(np.array(actual), np.array(desired), **kwargs)
+
 def assert_equal(actual, desired, **kwargs):
     return testing.assert_equal(np.array(actual), np.array(desired), **kwargs)
 
@@ -89,7 +92,6 @@ class TestPower(unittest.TestCase):
         assert_almost_equal(x**(-1), [1., 0.5, 1./3])
         assert_almost_equal(x**(0.5), [1., math.sqrt(2), math.sqrt(3)])
 
-    @skip('temporarily skipping, this test revealed bugs in the eval code')
     def test_power_complex(self):
         x = blaze.array([1+2j, 2+3j, 3+4j])
         assert_equal(x**0, [1., 1., 1.])
@@ -178,7 +180,7 @@ class TestLogAddExp(unittest.TestCase):
             xf = blaze.log(blaze.array(x, dshape=ds))
             yf = blaze.log(blaze.array(y, dshape=ds))
             zf = blaze.log(blaze.array(z, dshape=ds))
-            result = blaze.eval(blaze.logaddexp(xf, yf))
+            result = blaze.logaddexp(xf, yf)
             assert_almost_equal(result, zf, decimal=dec)
 
     def test_logaddexp_range(self) :
@@ -189,7 +191,7 @@ class TestLogAddExp(unittest.TestCase):
             logxf = blaze.array(x, dshape=ds)
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
-            result = blaze.eval(blaze.logaddexp(logxf, logyf))
+            result = blaze.logaddexp(logxf, logyf)
             assert_almost_equal(result, logzf)
 
     def test_inf(self) :
@@ -201,7 +203,7 @@ class TestLogAddExp(unittest.TestCase):
             logxf = blaze.array(x, dshape=ds)
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
-            result = blaze.eval(blaze.logaddexp(logxf, logyf))
+            result = blaze.logaddexp(logxf, logyf)
             assert_equal(result, logzf)
 
     def test_nan(self):
@@ -307,9 +309,8 @@ class TestSign(unittest.TestCase):
 
 class TestExpm1(unittest.TestCase):
     def test_expm1(self):
-        # TODO remove the blaze.eval workarounds
-        assert_almost_equal(blaze.expm1(0.2), blaze.eval(blaze.exp(0.2))-1)
-        assert_almost_equal(blaze.expm1(1e-6), blaze.eval(blaze.exp(1e-6))-1)
+        assert_almost_equal(blaze.expm1(0.2), blaze.exp(0.2)-1)
+        assert_almost_equal(blaze.expm1(1e-6), blaze.exp(1e-6)-1)
 
 
 class TestLog1p(unittest.TestCase):
@@ -332,8 +333,7 @@ class TestSquare(unittest.TestCase):
         b = blaze.array([0., 9., 64., 1e20, 12345])
         result = blaze.square(a)
         assert_almost_equal(result, b)
-        # TODO: Remove blaze.eval workaround
-        result = blaze.square(blaze.eval(-a))
+        result = blaze.square(-a)
         assert_almost_equal(result, b)
 
 
@@ -447,6 +447,19 @@ class TestAbs(unittest.TestCase):
             assert_equal(abs_conj_z, abs_z)
             assert_equal(conj_abs_z, abs_z)
 
+class TestTrig(unittest.TestCase):
+    def test_sin(self):
+        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        b = blaze.array([0, 0.5, 0.5*blaze.sqrt(3), 1, 0, -1, 0])
+        assert_allclose(blaze.sin(a), b, rtol=1e-15, atol=1e-15)
+        assert_allclose(blaze.sin(-a), -b, rtol=1e-15, atol=1e-15)
+
+    def test_cos(self):
+        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        b = blaze.array([1, 0.5*blaze.sqrt(3), 0.5, 0, -1, 0, 1])
+        assert_allclose(blaze.cos(a), b, rtol=1e-15, atol=1e-15)
+        assert_allclose(blaze.cos(-a), b, rtol=1e-15, atol=1e-15)
+
 def _check_branch_cut(f, x0, dx, re_sign=1, im_sign=-1, sig_zero_ok=False,
                       dtype=np.complex):
     """
@@ -477,10 +490,9 @@ def _check_branch_cut(f, x0, dx, re_sign=1, im_sign=-1, sig_zero_ok=False,
     scale = np.finfo(dtype).eps * 1e3
     atol  = 1e-4
 
-    # TODO remove the np.array workaround
-    y0 = np.asarray(f(x0))
-    yp = np.asarray(f(x0 + dx*scale*np.absolute(x0)/np.absolute(dx)))
-    ym = np.asarray(f(x0 - dx*scale*np.absolute(x0)/np.absolute(dx)))
+    y0 = f(x0)
+    yp = f(x0 + dx*scale*np.absolute(x0)/np.absolute(dx))
+    ym = f(x0 - dx*scale*np.absolute(x0)/np.absolute(dx))
 
     assert_(np.all(np.absolute(y0.real - yp.real) < atol), (y0, yp))
     assert_(np.all(np.absolute(y0.imag - yp.imag) < atol), (y0, yp))
