@@ -125,9 +125,20 @@ class Array(object):
         shape = self.dshape.shape
         if shape:
             return shape[0]
-        return 1 # 0d
+        raise IndexError('Scalar blaze arrays have no length')
 
     def __nonzero__(self):
+        # For Python 2
+        if len(self.dshape.shape) == 0:
+            # Evaluate to memory
+            e = compute.eval.eval(self)
+            return bool(e._data.dynd_arr())
+        else:
+            raise ValueError("The truth value of an array with more than one "
+                             "element is ambiguous. Use a.any() or a.all()")
+
+    def __bool__(self):
+        # For Python 3
         if len(self.dshape.shape) == 0:
             # Evaluate to memory
             e = compute.eval.eval(self)
