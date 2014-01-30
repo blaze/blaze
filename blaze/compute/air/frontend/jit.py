@@ -210,7 +210,8 @@ class BuildKernelTrees(object):
                 tree = self.trees[arg]
                 self.arguments[op].extend(self.arguments[arg])
             elif arg in self.jitted:
-                # This should not happen (self.trees case catches it)
+                # TODO: the original code here doesn't work, shuffling things
+                #       around introduce unexpected LLVM bitcast exceptions
                 raise RuntimeError('internal error in blaze JIT code with arg %r', arg)
             else:
                 # This argument is a non-jittable kernel, add it as a leaf node
