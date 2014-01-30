@@ -6,6 +6,7 @@ from datashape import dshape
 import blaze
 from blaze import array
 from blaze.compute.ops.ufuncs import add, multiply
+from blaze.py2help import skip
 
 import numpy as np
 
@@ -15,6 +16,7 @@ import numpy as np
 
 class TestPython(unittest.TestCase):
 
+    @skip("add and multiply don't have python implementations now")
     def test_interp(self):
         a = array(range(10), dshape=dshape('10, int32'))
         b = array(range(10), dshape=dshape('10, float32'))
