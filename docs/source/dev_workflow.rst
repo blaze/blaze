@@ -86,3 +86,20 @@ builds of all these dependencies and of blaze itself.
 .. _Anaconda: http://continuum.io/downloads
 .. _binstar: https://binstar.org/
 
+Internal Import
+~~~~~~~~~~~~~~~
+
+To avoid the side effects of top level imports, e.g. `import blaze`, all internal code should be imported relatively.  Thus::
+
+    #file: blaze/objects/table.py
+    from blaze import Array
+
+should be::
+
+     #file: blaze/objects/table.py
+     from .array import Array
+
+For cross submodule imports, import from the module api.  For example::
+
+    #file: blaze/objects/table.py
+    from ..io import printing
