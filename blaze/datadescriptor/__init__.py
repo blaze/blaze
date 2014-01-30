@@ -10,7 +10,6 @@ from .cat_data_descriptor import CatDataDescriptor
 from .membuf_data_descriptor import (data_descriptor_from_ctypes,
                 data_descriptor_from_cffi)
 from .dynd_data_descriptor import DyNDDataDescriptor
-from .blaze_func_descriptor import BlazeFuncDeprecatedDescriptor
 from .deferred_descriptor import DeferredDescriptor
 from .csv_data_descriptor import CSVDataDescriptor
 from .json_data_descriptor import JSONDataDescriptor

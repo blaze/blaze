@@ -295,7 +295,6 @@ class CKernelTransformer(object):
 #------------------------------------------------------------------------
 
 def make_blazefunc(f):
-    #return BlazeFuncDeprecated(f.__name__, template=f)
     return BlazeElementKernel(f.lfunc)
 
 
