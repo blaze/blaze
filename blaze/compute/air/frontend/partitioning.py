@@ -11,7 +11,7 @@ from blaze.compute.strategy import OOC, JIT, CKERNEL, PY
 # List of backends to use greedily listed in order of preference
 
 preferences = [
-    OOC,
+    #OOC,
     JIT,
     CKERNEL,
     PY,
@@ -37,7 +37,7 @@ def use_sql(op, strategies, env):
     NOTE: This also populates env['sql.conns']. Mutating this way is somewhat
           undesirable, but this is a non-local decision anyway
     """
-    from blaze.io.sql import SQLDataDescriptor
+    from ..io.sql import SQLDataDescriptor, SQL
 
     conns = env.setdefault('sql.conns', {})
 
@@ -51,7 +51,7 @@ def use_sql(op, strategies, env):
             return False
         conns[op] = data_desc.conn
         return True
-    elif all(strategies[arg] == 'sql' for arg in op.args[1:]):
+    elif all(strategies[arg] == SQL for arg in op.args[1:]):
         conn = conns[op.args[1]]
         return all(conn == conns[arg] for arg in op.args[1:])
     else:
@@ -70,8 +70,8 @@ def use_ooc(op, strategies, env):
         data_desc = array._data
         return data_desc.capabilities.persistent
 
-    ooc = all(strategies[arg] in ('local', 'ooc') for arg in op.args[1:])
-    return ooc and not use_local(op,  strategies, env)
+    ooc = all(strategies[arg] in (PY, CKERNEL, JIT, OOC) for arg in op.args[1:])
+    return ooc and not use_local(op, strategies, env)
 
 
 def use_local(op, strategies, env):
@@ -84,8 +84,9 @@ def use_local(op, strategies, env):
         runtime_args = env['runtime.args']
         array = runtime_args[op]
         data_desc = array._data
-        return not (data_desc.capabilities.persistent or
-                    data_desc.capabilities.remote)
+        return not data_desc.capabilities.remote
+        #return not (data_desc.capabilities.persistent or
+        #            data_desc.capabilities.remote)
 
     return all(strategies[arg] in local_strategies for arg in op.args[1:])
 
@@ -93,7 +94,7 @@ def use_local(op, strategies, env):
 local_strategies = (JIT, CKERNEL, PY)
 
 determine_strategy = {
-    OOC:        use_ooc,
+    #OOC:        use_ooc,
     JIT:        use_local,
     CKERNEL:    use_local,
     PY:         use_local,

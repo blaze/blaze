@@ -38,7 +38,7 @@ def _implement(f, signature):
 #------------------------------------------------------------------------
 
 add = define_binop("a -> a -> a", "add", "+")
-mul = define_binop("a -> a -> a", "mul", "*")
+multiply = define_binop("a -> a -> a", "multiply", "*")
 sub = define_binop("a : real -> a -> a", "sub", "-")
 div = define_binop("a : real -> a -> a", "div", "/")
 # floordiv = define_binop("a : real -> a -> a", "floordiv", "//")
