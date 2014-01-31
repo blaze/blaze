@@ -27,7 +27,7 @@ passes = [
     jit,
     assemblage.assemble_py_kernels,
     # TODO: Make the below compile-time passes !
-    #ckernel_impls,
+    ckernel_impls,
     #allocation,
     #ckernel_lift,
 

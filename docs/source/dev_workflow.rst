@@ -77,12 +77,29 @@ should work together. When a release is made, particular versions of
 all the dependencies are fixed.
 
 In the case of `dynd-python`_, its Jenkins build additionally uploads
-a conda package to the development channel of `Anaconda`_. As the
-`binstar`_ infrastructure gets built out, we expect to transition this
-to a repository there which would have daily builds of all these
-dependencies and of blaze itself.
+a conda package to a `binstar`_ channel, which is installable into
+`Anaconda`_. As the
+binstar infrastructure gets built out, we expect to eventually have daily
+builds of all these dependencies and of blaze itself.
 
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _Anaconda: http://continuum.io/downloads
 .. _binstar: https://binstar.org/
 
+Internal Import
+~~~~~~~~~~~~~~~
+
+To avoid the side effects of top level imports, e.g. `import blaze`, all internal code should be imported relatively.  Thus::
+
+    #file: blaze/objects/table.py
+    from blaze import Array
+
+should be::
+
+     #file: blaze/objects/table.py
+     from .array import Array
+
+For cross submodule imports, import from the module api.  For example::
+
+    #file: blaze/objects/table.py
+    from ..io import printing

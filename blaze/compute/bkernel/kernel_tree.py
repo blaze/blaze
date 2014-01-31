@@ -77,8 +77,6 @@ class KernelTree(object):
     _stream_of_unique_kernels = letters()
 
     _fused = None
-    _funcptr = None
-    _ctypes = None
     _mark = False
     _shape = None
 
@@ -143,20 +141,6 @@ class KernelTree(object):
     def _update_kernelptrs(self, eltree):
         self._fused = eltree
         kernel = eltree.kernel
-        self._funcptr = self._funcptr or kernel.func_ptr
-        self._ctypes = self._ctypes or kernel.ctypes_func
-
-    @property
-    def func_ptr(self):
-        if self._funcptr is None:
-            self.fuse()
-        return self._funcptr
-
-    @property
-    def ctypes_func(self):
-        if self._ctypes is None:
-            self.fuse()
-        return self._ctypes
 
     def make_ckernel_deferred(self, out_dshape):
         return self.fuse().kernel.make_ckernel_deferred(out_dshape)

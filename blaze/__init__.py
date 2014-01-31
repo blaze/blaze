@@ -20,12 +20,8 @@ from .objects.constructors import array, empty, ones, zeros
 from .compute.function import function, elementwise, BlazeFunc
 from .compute.strategy import strategy, current_strategy, set_strategy
 from .compute.eval import eval, append
-from .compute.ops.ufuncs import (add, mul, sub, div, truediv, floordiv, mod,
-                              eq, ne, ge, gt, le, lt,
-                              logical_and, logical_or, logical_not, logical_xor,
-                              bitwise_and, bitwise_or, bitwise_xor)
+from .compute.ops.ufuncs import *
 from .io.storage import open, drop, Storage
-
 
 import ctypes
 
@@ -45,6 +41,10 @@ class complex64(ctypes.Structure):
     _fields_ = [('real', ctypes.c_float),
                 ('imag', ctypes.c_float)]
     _blaze_type_ = datashape.complex64
+
+inf = float('inf')
+nan = float('nan')
+from math import pi
 
 __version__ = '0.4.0'
 

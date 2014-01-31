@@ -16,11 +16,10 @@ branches:
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 install:
   # Install conda
-  - cp .condarc $HOME
   - sudo pip install conda
   # Install dependencies
   - sudo conda init
-  - conda create -p $HOME/py --yes nose llvmpy cython numba numpy dynd-python llvmmath ply pycparser pyparsing pyyaml flask "python=$TRAVIS_PYTHON_VERSION"
+  - conda create -p $HOME/py -c https://conda.binstar.org/mwiebe --yes nose llvmpy cython numba numpy dynd-python llvmmath ply pycparser pyparsing pyyaml flask pytables "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
   - conda install --yes -n $HOME/py pip
   - pip install git+http://github.com/ContinuumIO/datashape

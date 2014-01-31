@@ -59,8 +59,6 @@ class BlazeElementKernel(object):
      otherwise the dshape will be inferred from llvm function (but this
      loses information like the sign).
     """
-    _func_ptr = None
-    _ctypes_func = None
     _ee = None
     _dshapes = None
     _lifted_cache = {}
@@ -194,41 +192,6 @@ class BlazeElementKernel(object):
     def fromcfunc(cfunc):
         raise NotImplementedError
 
-    @property
-    def func_ptr(self):
-        if self._func_ptr is None:
-            module = self.module.clone()
-            if self._ee is None:
-                from llvm.passes import build_pass_managers
-                import llvm.ee as le
-                tm = le.TargetMachine.new(opt=3, cm=le.CM_JITDEFAULT, features='')
-                pms = build_pass_managers(tm, opt=3, fpm=False,
-                                vectorize=True, loop_vectorize=True)
-                pms.pm.run(module)
-                if sys.version_info >= (3,):
-                    import builtins
-                else:
-                    import __builtin__ as builtins
-                builtins._temp = module.clone()
-                builtins._tempname = self.func.name
-                #self._ee = le.ExecutionEngine.new(module)
-                # FIXME: Temporarily disabling AVX, because of misdetection
-                #        in linux VMs. Some code is in llvmpy's workarounds
-                #        submodule related to this.
-                self._ee = le.EngineBuilder.new(module).mattrs("-avx").create()
-            func = module.get_function_named(self.func.name)
-            self._func_ptr = self._ee.get_pointer_to_function(func)
-        return self._func_ptr
-
-    @property
-    def ctypes_func(self):
-        if self._ctypes_func is None:
-            import ctypes
-            out_type, argtypes = self._get_ctypes()
-            FUNC_TYPE = ctypes.CFUNCTYPE(out_type, *argtypes)
-            self._ctypes_func = FUNC_TYPE(self.func_ptr)
-        return self._ctypes_func
-
     def make_ckernel_deferred(self, out_dshape):
         return jit_compile_ckernel_deferred(self, out_dshape)
 
@@ -236,8 +199,6 @@ class BlazeElementKernel(object):
     def replace_func(self, func):
         self.func = func
         self._ee = None
-        self._func_ptr = None
-        self._ctypes_func = None
         self.module = func.module
 
     def attach(self, module):

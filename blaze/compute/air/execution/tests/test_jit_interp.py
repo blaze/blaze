@@ -5,7 +5,7 @@ import unittest
 from datashape import dshape
 import blaze
 from blaze import array
-from blaze.compute.ops.ufuncs import add, mul
+from blaze.compute.ops.ufuncs import add, multiply
 
 import numpy as np
 
@@ -16,7 +16,7 @@ import numpy as np
 def make_expr(ds1, ds2):
     a = array(range(10), dshape=ds1)
     b = array(range(10), dshape=ds2)
-    expr = add(a, mul(a, b))
+    expr = add(a, multiply(a, b))
     return expr
 
 #------------------------------------------------------------------------
@@ -43,7 +43,7 @@ class TestJit(unittest.TestCase):
     def test_jit_scalar(self):
         a = blaze.array(range(10), dshape=dshape('10, int32'))
         b = 10
-        expr = add(a, mul(a, b))
+        expr = add(a, multiply(a, b))
         result = blaze.eval(expr)
         np_a = np.arange(10)
         expected = np_a + np_a * b
