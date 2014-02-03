@@ -4,8 +4,7 @@ SQL data descriptor using pyodbc.
 
 from __future__ import absolute_import, division, print_function
 
-import blaze
-from blaze.datadescriptor import IDataDescriptor, Capabilities
+from ...datadescriptor import IDataDescriptor, Capabilities
 from .query import execute
 
 class SQLDataDescriptor(IDataDescriptor):

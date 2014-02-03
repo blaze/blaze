@@ -3,9 +3,12 @@ SQL query execution.
 """
 
 from __future__ import absolute_import, division, print_function
+
+from . import db
+
 from datashape import DataShape
 from dynd import nd, ndt
-from . import db
+
 
 def execute(conn, dshape, query, params):
     """

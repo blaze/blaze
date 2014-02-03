@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.ops import ufuncs
+from ...compute.ops import ufuncs
 from .kernel import sql_kernel
 
 #------------------------------------------------------------------------
@@ -10,7 +10,7 @@ from .kernel import sql_kernel
 #------------------------------------------------------------------------
 
 def define_unop(signature, name, op):
-    """Define a unary scidb operator"""
+    """Define a unary sql operator"""
     def unop(x):
         return expr('%s %s' % (op, x))
     unop.__name__ = name
@@ -19,7 +19,7 @@ def define_unop(signature, name, op):
 
 
 def define_binop(signature, name, op):
-    """Define a binary scidb operator"""
+    """Define a binary sql operator"""
     def binop(a, b):
         return expr("%s %s %s" % (a, op, b))
     binop.__name__ = name

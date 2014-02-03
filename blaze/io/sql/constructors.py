@@ -4,7 +4,7 @@ SQL array constructors.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze import Array
+from ... import Array
 from .datadescriptor import SQLDataDescriptor
 
 def from_table(table, dshape, conn):

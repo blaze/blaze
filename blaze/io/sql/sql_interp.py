@@ -4,14 +4,13 @@ SQL query generation from Blaze AIR.
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import interp
+from . import SQL
 
-import blaze
-from blaze.io.sql import SQL
-
-from .error import sqlerror
+from .error import SQLError
 from .query import execute, dynd_chunk_iterator
 from .datadescriptor import SQLDataDescriptor
+
+from pykit.ir import interp
 
 #------------------------------------------------------------------------
 # Interpreter
