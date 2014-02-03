@@ -220,3 +220,34 @@ by knowing `A...`, `axis`, and `keepdims`, while
 the output dtype is determined by which kernel
 signature is matched by the type of `a`.
 
+Here are some examples of what the type signatures
+of various reductions look like for a `sum` example.
+
+```
+>>> a
+array([...],
+      dshape='3, var, 5, int32')
+>>> blaze.sum(a).sig
+'3, var, 5, int32 -> int32'
+
+>>> blaze.sum(a, keepdims=True).sig
+'3, var, 5, int32 -> 1, 1, 1, int32'
+
+>>> blaze.sum(a, axis=0).sig
+'3, var, 5, int32 -> var, 5, int32'
+
+>>> blaze.sum(a, axis=1).sig
+'3, var, 5, int32 -> 3, 5, int32'
+
+>>> blaze.sum(a, axis=[0,2], keepdims=True).sig
+'3, var, 5, int32 -> 1, var, 1, int32'
+
+>>> blaze.sum(a, axis=[0,2]).sig
+'3, var, 5, int32 -> var, int32'
+
+>>> blaze.sum(a, axis=[1,2], keepdims=True).sig
+'3, var, 5, int32 -> 3, 1, 1, int32'
+
+>>> blaze.sum(a, axis=[1,2]).sig
+'3, var, 5, int32 -> 3, int32'
+```
