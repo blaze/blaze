@@ -18,6 +18,6 @@ def make_graph():
     result = multiply(add(a, b), c)
     graph, expr_ctx = result.expr
 
-    f = from_expr(graph, expr_ctx)
+    f = from_expr(graph, expr_ctx, {})
 
     return f, graph

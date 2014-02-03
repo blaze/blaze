@@ -53,7 +53,7 @@ class Op(object):
     def add_use(self, use):
         self.uses.append(use)
 
-    def __str__(self):
+    def __repr__(self):
         opcode = self.opcode
         if opcode == kernel:
             opcode = self.metadata["kernel"]
