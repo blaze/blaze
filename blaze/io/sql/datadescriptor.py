@@ -39,13 +39,11 @@ class SQLDataDescriptor(IDataDescriptor):
 
     @property
     def capabilities(self):
-        """The capabilities for the scidb data descriptor."""
+        """The capabilities for the SQL data descriptor."""
         return Capabilities(
             immutable = True,
-            # scidb does not give us access to its temps right now
             deferred = False,
             persistent = True,
-            # Not sure on whether scidb is appendable or not
             appendable = False,
             )
 

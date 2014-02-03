@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 try:
-    import pyodbc as db
+    #import pyodbc as db
+    import sqlite3 as db
 except ImportError:
     db = None
 
