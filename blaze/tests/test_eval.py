@@ -10,7 +10,7 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 
 
-blaze.set_strategy('jit')
+#blaze.set_strategy('jit')
 
 import numpy as np
 from numpy.testing import assert_allclose

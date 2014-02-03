@@ -49,5 +49,6 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(dd_as_py(c._data),
                     [[1, 0, -1], [0, 1], [2, 4, 6]])
 
+
 if __name__ == '__main__':
     unittest.main()

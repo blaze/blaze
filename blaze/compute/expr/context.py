@@ -6,7 +6,18 @@ from datashape import unify
 
 
 class ExprContext(object):
-    """Context for blaze graph expressions"""
+    """
+    Context for blaze graph expressions.
+
+    This keeps track of a mapping between graph expression nodes and the
+    concrete data inputs (i.e. blaze Arrays).
+
+    Attributes:
+    ===========
+
+    terms: { ArrayOp: Array }
+        Mapping from ArrayOp nodes to inputs
+    """
 
     def __init__(self):
         # Coercion constraints between types with free variables
