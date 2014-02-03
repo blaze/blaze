@@ -26,7 +26,7 @@ from datashape import to_numpy, to_numpy_dtype
 from ..py2help import urlparse
 import blz
 from ..datadescriptor import (BLZDataDescriptor, CSVDataDescriptor,
-                              JSONDataDescriptor)
+                              JSONDataDescriptor, HDF5DataDescriptor)
 from ..objects.array import Array
 
 
@@ -62,7 +62,7 @@ class Storage(object):
 
     """
 
-    SUPPORTED_FORMATS = ('json', 'csv', 'blz')
+    SUPPORTED_FORMATS = ('json', 'csv', 'blz', 'hdf5')
 
     @property
     def uri(self):
@@ -173,7 +173,7 @@ def open(persist, **kwargs):
 
     Notes
     -----
-    Only BLZ, CSV and JSON formats are supported currently.
+    Only BLZ, HDF5, CSV and JSON formats are supported currently.
 
     """
     persist = _persist_convert(persist)
@@ -184,6 +184,8 @@ def open(persist, **kwargs):
         dd = CSVDataDescriptor(persist.path, **kwargs)
     elif persist.format == 'json':
         dd = JSONDataDescriptor(persist.path, **kwargs)
+    elif persist.format == 'hdf5':
+        dd = HDF5DataDescriptor(persist.path, **kwargs)
     return Array(dd)
 
 
@@ -200,6 +202,6 @@ def drop(persist):
         except RuntimeError:
             # Maybe BLZ should throw other exceptions for this!
             raise Exception("No data set at uri '%s'" % persist.uri)
-    elif persist.format == 'csv':
+    elif persist.format in ('csv', 'json', 'hdf5'):
         import os
         os.unlink(persist.path)
