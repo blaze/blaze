@@ -39,13 +39,13 @@ def _implement(f, signature):
 
 add = define_binop("a -> a -> a", "add", "+")
 multiply = define_binop("a -> a -> a", "multiply", "*")
-sub = define_binop("a : real -> a -> a", "sub", "-")
-div = define_binop("a : real -> a -> a", "div", "/")
+subtract = define_binop("a : real -> a -> a", "subtract", "-")
 # floordiv = define_binop("a : real -> a -> a", "floordiv", "//")
+divide = define_binop("a : real -> a -> a", "divide", "/")
 # truediv = define_binop("a : real -> a -> a", "truediv", "/")
 mod = define_binop("a : real -> a -> a", "mod", "%")
 
-neg = define_unop("a -> a", "neg", "-")
+negative = define_unop("a -> a", "negative", "-")
 
 #------------------------------------------------------------------------
 # Compare

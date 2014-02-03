@@ -7,7 +7,7 @@ data = [
     (16, "!",     8.4),
 ]
 
-def create_sqlite_test_table():
+def create_sqlite_table():
     import sqlite3 as db
 
     conn = db.connect(":memory:")
@@ -19,7 +19,7 @@ def create_sqlite_test_table():
     conn.commit()
     c.close()
 
-def create_sqlite_test_table():
+def create_sqlite_table():
     import pyodbc as db
 
     conn = db.connect("Data Source=:memory:;Version=3;New=True;")
