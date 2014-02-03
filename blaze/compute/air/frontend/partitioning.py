@@ -84,7 +84,7 @@ def use_local(op, strategies, env):
         runtime_args = env['runtime.args']
         array = runtime_args[op]
         data_desc = array._data
-        return not data_desc.capabilities.remote
+        return True # not data_desc.capabilities.remote
         #return not (data_desc.capabilities.persistent or
         #            data_desc.capabilities.remote)
 
@@ -152,8 +152,15 @@ def overload_for_strategy(function, overload, strategy):
         # Assert agreeable types for now
         # TODO: insert conversions if implementation disagrees
 
-        assert got_signature == expected_signature, (got_signature,
-                                                     expected_signature)
+        if got_signature != expected_signature and False:
+            ckdispatcher = function.get_dispatcher('ckernel')
+            raise TypeError(
+                "Signature of implementation (%s) does not align with "
+                "signature from blaze function (%s) from argtypes [%s] "
+                "for function %s with signature %s" %
+                    (got_signature, expected_signature,
+                     ", ".join(map(str, argtypes)),
+                     function, overload.sig))
 
         return overload.func, got_signature
 
@@ -202,7 +209,9 @@ def determine_preference(op, env, preferences):
         if valid_strategy(op, strategies, env):
             return preference
 
-    raise ValueError("No valid strategy could be determined for %s" % (op,))
+    #import pdb; pdb.set_trace()
+    raise ValueError(
+        "No valid strategy could be determined for %s from %s" % (op, preferences))
 
 #------------------------------------------------------------------------
 # Backend boundaries / Fusion boundaries
