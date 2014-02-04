@@ -2,6 +2,11 @@
 Release Notes
 ======================
 
+Release 0.4.1
+-------------
+
+* Fix bug with compatibility for numba 0.12
+
 Release 0.4
 -----------
 
