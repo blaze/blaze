@@ -36,16 +36,6 @@ from .strategy import PY, JIT
 # Utils
 #------------------------------------------------------------------------
 
-def optional_decorator(f, continuation, args, kwargs):
-    def decorator(f):
-        return continuation(f, *args, **kwargs)
-
-    if f is None:
-        return decorator
-    else:
-        return decorator(f)
-
-
 def blaze_args(args, kwargs):
     """Build blaze arrays from inputs to a blaze kernel"""
     args = [blaze.array(a) for a in args]
