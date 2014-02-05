@@ -14,10 +14,11 @@ air_env = {
     'air.strategy':         None,   # execution strategy
 }
 
-def fresh_env(expr, strategy):
+def fresh_env(expr, strategy, debug=False):
     """
     Allocate a new environment.
     """
     env = dict(air_env)
     env['air.strategy'] = strategy
+    env['air.debug'] = debug
     return env

@@ -4,9 +4,13 @@
 Passes that massage expression graphs into execution kernels.
 """
 
+
 from __future__ import absolute_import, division, print_function
+from functools import partial
+
 from .frontend import (translate, coercions, jit, ckernel_impls,
                        ckernel_lift, allocation, assemblage)
+from .prettyprint import verbose
 
 #------------------------------------------------------------------------
 # Passes
@@ -25,3 +29,5 @@ passes = [
 
     assemblage.assemble_py_kernels,
 ]
+
+debug_passes = [partial(verbose, p) for p in passes]
