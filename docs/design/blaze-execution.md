@@ -1,7 +1,13 @@
-[[_TOC_]]
-
-Blaze Execution
+﻿Blaze Execution
 ===============
+
+ * [Blaze Function Use Cases](blazefunc-usecases.md)
+ * [Blaze NumPy-like API](blaze-numpy-api.md)
+ * [Elementwise Reductions](elwise-reduction-ufuncs.md)
+ * [Blaze AIR](blaze-air.md)
+ * [Deferred CKernel Interface](deferred-ckernel-interface.md)
+ * [CKernel](ckernel-interface.md)
+
 
 The blaze execution system takes blaze expression, which are built up by
 applying those functions over blaze arrays. Blaze arrays can describe data
