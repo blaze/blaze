@@ -9,7 +9,7 @@ import sys
 try:
     import tables as tb
 except ImportError:
-    print("You need to install PyTables so as to run this example.")
+    print("This example requires PyTables to run.")
     sys.exit()
 
 
