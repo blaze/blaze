@@ -69,7 +69,7 @@ needed.
 
 In NumPy, the NDIter object has the ability to
 report whether a reduction operand is being
-visted for the first time. This exists for the purpose
+visited for the first time. This exists for the purpose
 of knowing when to call the initialization function.
 [See the NumPy Doc for this.](http://docs.scipy.org/doc/numpy/reference/c-api.iterator.html#NpyIter_IsFirstVisit)
 
