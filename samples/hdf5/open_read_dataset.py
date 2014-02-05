@@ -4,10 +4,13 @@ from __future__ import absolute_import, division, print_function
 
 import blaze
 import numpy as np
+import sys
+
 try:
     import tables as tb
 except ImportError:
-    print("You need to install PyTables to run this example.")
+    print("You need to install PyTables so as to run this example.")
+    sys.exit()
 
 
 def print_section(a_string, level=0):
