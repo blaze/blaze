@@ -18,9 +18,14 @@ function. This function contains:
         This has a type signature and may implement the operation or simply
         raise an exception
 
-            @blaze_func('a -> a -> a')
+            @blaze_func('a -> a -> a', elementwise=True)
             def add(a, b):
-                return a + b
+                return a + b # We add the scalar elements together
+
+        Here we classified the function as `elementwise`, which gets scalar
+        inputs. Generally, blaze functions can be regarded as generalized
+        ufuncs, and their inputs are the array dimensions they matched
+        according to their signature.
 
     * a set of overloaded implementations of certain implementation "kinds"
 
@@ -69,9 +74,17 @@ expression.
 """
 
 from __future__ import absolute_import, division, print_function
+from itertools import cycle
 
 import blaze
 from blaze.compute.function import blaze_func, function, kernel
+
+def bzip(a, b):
+    """broadcasting zip"""
+    assert len(a) == len(b) or len(a) == 1 or len(b) == 1
+    n = max(len(a), len(b))
+    for _, x, y in zip(range(n), cycle(a), cycle(b)):
+        yield x, y
 
 
 @function('axes..., axis, dtype -> axes..., axis, bool -> axes..., var, dtype')
@@ -96,10 +109,10 @@ def filter(array, conditions):
 def py_filter(array, conditions, dim):
     """Reference filter implementation in Python"""
     if dim == 1:
-        result = [item for item, cond in zip(array, conditions) if cond]
+        result = [item for item, cond in bzip(array, conditions) if cond]
     else:
         result = []
-        for item_subarr, conditions_subarr in zip(array, conditions):
+        for item_subarr, conditions_subarr in bzip(array, conditions):
             result.append(py_filter(item_subarr, conditions_subarr, dim - 1))
 
     return result
@@ -133,4 +146,3 @@ if __name__ == '__main__':
     print(result)
     print(">>> type(result)")
     print(type(result))
-
