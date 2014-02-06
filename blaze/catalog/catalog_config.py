@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import yaml
 import os
 from os import path
-from .catalog_dir import is_abs_bpath
+from .catalog_dir import is_abs_bpath, is_cdir
 
 
 class CatalogConfig(object):
@@ -60,9 +60,26 @@ class CatalogConfig(object):
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
+    def iscdir(self, dir):
+        """Check if a blaze catalog path points to an existing cdir"""
+        if is_abs_bpath(dir):
+            return path.isfile(path.join(self.root, dir[1:]) + '.dir')
+        else:
+            raise ValueError('Expected absolute blaze catalog path: %r' % dir)
+
     def ls_arrs(self, dir):
         """Return a list of all the arrays in the provided blaze catalog dir"""
         if is_abs_bpath(dir):
+            fsdir = path.join(self.root, dir[1:])
+            listing = os.listdir(fsdir)
+            return sorted([path.splitext(x)[0] for x in listing
+                    if x.endswith('.array')])
+        else:
+            raise ValueError('Expected absolute blaze catalog path: %r' % dir)
+
+    def cls_arrs(self, cdir):
+        """Return a list of all the arrays in the provided blaze catalog cdir"""
+        if is_abs_bpath(cdir):
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             return sorted([path.splitext(x)[0] for x in listing
