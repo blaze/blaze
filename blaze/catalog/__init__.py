@@ -83,6 +83,8 @@ def get(key):
     key = join_bpath(_cwd, key)
     if config.isdir(key):
         return CatalogDir(config, key)
+    elif config.iscdir(key):
+        return CatalogCDir(config, key)
     elif config.isarray(key):
         return load_blaze_array(config, key)
     else:

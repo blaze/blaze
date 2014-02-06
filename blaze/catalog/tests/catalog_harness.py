@@ -73,10 +73,17 @@ class CatalogHarness(object):
             f.create_array(f.root, "a1", nd.as_numpy(a1))
             mg = f.create_group(f.root, "mygroup")
             f.create_array(mg, "a2", nd.as_numpy(a2))
+        # Create a .array file for locating the dataset inside the file
         with open(os.path.join(self.arrdir, '%s.array' % name), 'w') as f:
             f.write('type: hdf5\n')
             f.write('import: {\n')
             f.write('    datapath: /mygroup/a2\n')
+            f.write('    }\n')
+        # Create a .dir file for listing datasets inside the file
+        with open(os.path.join(self.arrdir, '%s.dir' % name), 'w') as f:
+            f.write('type: hdf5\n')
+            f.write('import: {\n')
+            f.write('    filename: %s/\n' % fname)
             f.write('    }\n')
 
     def create_npy(self, name):
