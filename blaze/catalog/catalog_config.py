@@ -77,16 +77,6 @@ class CatalogConfig(object):
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
-    def cls_arrs(self, cdir):
-        """Return a list of all the arrays in the provided blaze catalog cdir"""
-        if is_abs_bpath(cdir):
-            fsdir = path.join(self.root, dir[1:])
-            listing = os.listdir(fsdir)
-            return sorted([path.splitext(x)[0] for x in listing
-                    if x.endswith('.array')])
-        else:
-            raise ValueError('Expected absolute blaze catalog path: %r' % dir)
-
     def ls_dirs(self, dir):
         """
         Return a list of all the directories in the provided
