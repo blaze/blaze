@@ -26,7 +26,7 @@ class CatalogHarness(object):
         # Create arrays with various formats at the top level
         self.create_csv('csv_arr')
         if tables_is_here:
-            self.create_hdf5('hdf5_arr')
+            self.create_hdf5('hdf5')
         self.create_npy('npy_arr')
         self.create_py('py_arr')
         self.create_json('json_arr')
@@ -69,19 +69,19 @@ class CatalogHarness(object):
         import tables as tb
         a1 = nd.array([[1, 2, 3], [4, 5, 6]], dtype="int32")
         a2 = nd.array([[1, 2, 3], [3, 2, 1]], dtype="int32")
-        fname = os.path.join(self.arrdir, '%s.h5' % name)
+        fname = os.path.join(self.arrdir, '%s_arr.h5' % name)
         with tb.open_file(fname, 'w') as f:
             f.create_array(f.root, "a1", nd.as_numpy(a1))
             mg = f.create_group(f.root, "mygroup")
             f.create_array(mg, "a2", nd.as_numpy(a2))
         # Create a .array file for locating the dataset inside the file
-        with open(os.path.join(self.arrdir, '%s.array' % name), 'w') as f:
+        with open(os.path.join(self.arrdir, '%s_arr.array' % name), 'w') as f:
             f.write('type: hdf5\n')
             f.write('import: {\n')
             f.write('    datapath: /mygroup/a2\n')
             f.write('    }\n')
         # Create a .dir file for listing datasets inside the file
-        with open(os.path.join(self.arrdir, '%s.dir' % name), 'w') as f:
+        with open(os.path.join(self.arrdir, '%s_dir.dir' % name), 'w') as f:
             f.write('type: hdf5\n')
             f.write('import: {\n')
             f.write('    filename: %s/\n' % fname)

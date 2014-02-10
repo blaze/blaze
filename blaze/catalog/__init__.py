@@ -2,7 +2,8 @@ from __future__ import absolute_import, division, print_function
 
 from . import blaze_url
 from . import catalog_config
-from .catalog_dir import CatalogDir, is_rel_bpath, is_abs_bpath, join_bpath
+from .catalog_dir import (
+    CatalogDir, CatalogCDir, is_rel_bpath, is_abs_bpath, join_bpath)
 from .catalog_arr import load_blaze_array
 
 # Load the default config
