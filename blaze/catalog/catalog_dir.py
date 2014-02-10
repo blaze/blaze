@@ -26,11 +26,6 @@ def is_rel_bpath(d):
     return is_valid_bpath(d) and not d.startswith('/')
 
 
-def is_cdir(d):
-    """Returns true if it's an absolute blaze cdir"""
-    return is_abs_bpath(d) and d.endswith('.dir')
-
-
 def _clean_bpath_components(components):
     res = []
     for c in components:
@@ -139,11 +134,9 @@ class CatalogCDir(CatalogDir):
     def __init__(self, conf, cdir):
         self.conf = conf
         self.cdir = cdir
-        print("cdir:", cdir)
         if not is_abs_bpath(cdir):
             raise ValueError('Require a path to cdir file: %r' % cdir)
         self._fsdir = path.join(conf.root, cdir[1:])
-        print("fsdir (cdir):", self._fsdir)
         if not path.exists(self._fsdir + '.dir'):
             raise RuntimeError('Blaze path not found: %r' % cdir)
         self.load_blaze_cdir()
@@ -161,16 +154,18 @@ class CatalogCDir(CatalogDir):
         if self.ctype == "hdf5":
             import tables as tb
             with tb.open_file(self.fname, 'r') as f:
-                leafs = f.list_nodes('/', classname='Leaf')
-            return leafs
+                leafs = [l._v_name for l in
+                         f.iter_nodes('/', classname='Leaf')]
+            return sorted(leafs)
 
     def ls_dirs(self):
         """Return a list of all the directories in this blaze cdir"""
         if self.ctype == "hdf5":
             import tables as tb
             with tb.open_file(self.fname, 'r') as f:
-                groups = f.list_nodes('/', classname='Group')
-            return groups
+                groups = [g._v_name for g in 
+                          f.iter_nodes('/', classname='Group')]
+            return sorted(groups)
 
     def ls(self):
         """
@@ -179,8 +174,9 @@ class CatalogCDir(CatalogDir):
         if self.ctype == "hdf5":
             import tables as tb
             with tb.open_file(self.fname, 'r') as f:
-                leafs = f.list_nodes('/')  # XXX generalize
-            return leafs
+                nodes = [n._v_name for n in
+                         f.iter_nodes('/')]  # XXX generalize
+            return sorted(nodes)
 
     def __getindex__(self, key):
         # XXX Adapt this to HDF5
