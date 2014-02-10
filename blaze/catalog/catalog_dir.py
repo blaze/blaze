@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import os
 from os import path
+import yaml
 from .catalog_arr import load_blaze_array
 
 
@@ -139,15 +140,17 @@ class CatalogCDir(CatalogDir):
     def __init__(self, conf, cdir):
         self.conf = conf
         self.cdir = cdir
-        if not is_cdir(cdir):
-            raise ValueError('Require a path to .dir file: %r' % cdir)
+        print("cdir:", cdir)
+        if not is_abs_bpath(cdir):
+            raise ValueError('Require a path to cdir file: %r' % cdir)
         self._fsdir = path.join(conf.root, cdir[1:])
-        if not path.exists(self._fsdir) or not path.isdir(self._fsdir):
+        print("fsdir (cdir):", self._fsdir)
+        if not path.exists(self._fsdir + '.dir'):
             raise RuntimeError('Blaze path not found: %r' % cdir)
-        self.load_blaze_cdir(dir)
+        self.load_blaze_cdir()
 
-    def load_blaze_cdir(cdir):
-        fsdir = conf.get_fsdir(cdir)
+    def load_blaze_cdir(self):
+        fsdir = self.conf.get_fsdir(self.cdir)
         with open(fsdir + '.dir') as f:
             cdirmeta = yaml.load(f)
         self.ctype = cdirmeta['type']
