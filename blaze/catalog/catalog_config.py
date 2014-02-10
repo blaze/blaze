@@ -70,6 +70,9 @@ class CatalogConfig(object):
     def ls_arrs(self, dir):
         """Return a list of all the arrays in the provided blaze catalog dir"""
         if is_abs_bpath(dir):
+            if self.iscdir(dir):
+                cdir = CatalogCDir(self, dir)
+                return sorted(cdir.ls_arrs())
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             return [path.splitext(x)[0] for x in listing
@@ -83,6 +86,9 @@ class CatalogConfig(object):
         blaze catalog dir
         """
         if is_abs_bpath(dir):
+            if self.iscdir(dir):
+                cdir = CatalogCDir(self, dir)
+                return sorted(cdir.ls_dirs())
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             return [x for x in listing
