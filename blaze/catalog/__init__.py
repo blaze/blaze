@@ -48,7 +48,7 @@ def cd(key):
     global _cwd
     _check_config()
     newcwd = join_bpath(_cwd, key)
-    if not config.isdir(newcwd):
+    if not (config.isdir(newcwd) or config.iscdir(newcwd)):
         print('No directory %r in the blaze catalog' % newcwd)
     else:
         _cwd = newcwd

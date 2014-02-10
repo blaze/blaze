@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import yaml
 import os
 from os import path
-from .catalog_dir import is_abs_bpath, is_cdir
+from .catalog_dir import is_abs_bpath, CatalogCDir
 
 
 class CatalogConfig(object):
@@ -72,8 +72,8 @@ class CatalogConfig(object):
         if is_abs_bpath(dir):
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
-            return sorted([path.splitext(x)[0] for x in listing
-                    if x.endswith('.array')])
+            return [path.splitext(x)[0] for x in listing
+                    if x.endswith('.array')]
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
@@ -85,8 +85,8 @@ class CatalogConfig(object):
         if is_abs_bpath(dir):
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
-            return sorted([x for x in listing
-                    if path.isdir(path.join(fsdir, x))])
+            return [x for x in listing
+                    if path.isdir(path.join(fsdir, x))]
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
@@ -95,13 +95,17 @@ class CatalogConfig(object):
            blaze catalog dir
            """
         if is_abs_bpath(dir):
-            fsdir = path.join(self.root, dir[1:])
-            listing = os.listdir(fsdir)
-            res = [path.splitext(x)[0] for x in listing
-                   if x.endswith('.array')]
-            res += [x for x in listing
-                    if path.isdir(path.join(fsdir, x))]
-            return sorted(res)
+            if self.iscdir(dir):
+                cdir = CatalogCDir(self, dir)
+                return sorted(cdir.ls())
+            else:
+                fsdir = path.join(self.root, dir[1:])
+                listing = os.listdir(fsdir)
+                res = [path.splitext(x)[0] for x in listing
+                       if x.endswith('.array')]
+                res += [x for x in listing
+                        if path.isdir(path.join(fsdir, x))]
+                return sorted(res)
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 

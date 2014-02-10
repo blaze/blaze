@@ -60,7 +60,7 @@ class TestCatalog(unittest.TestCase):
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 2, 3], [1, 2]])
 
-    @skipIf(not tables_is_here, 'pytables is not installed')
+    @skipIf(not tables_is_here, 'PyTables is not installed')
     def test_load_hdf5(self):
         # Confirms that a simple hdf5 array in a file can be loaded
         blaze.catalog.cd('/')
@@ -69,6 +69,14 @@ class TestCatalog(unittest.TestCase):
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 2, 3], [3, 2, 1]])
+
+    @skipIf(not tables_is_here, 'PyTables is not installed')
+    def test_hdf5_dir(self):
+        blaze.catalog.cd('/hdf5_dir')
+        self.assertEquals(blaze.catalog.cwd(), '/hdf5_dir')
+        entities = ['a1', 'mygroup']
+        entities.sort()
+        self.assertEquals(blaze.catalog.ls(), entities)
 
     def test_load_npy(self):
         # Confirms that a simple npy file can be loaded

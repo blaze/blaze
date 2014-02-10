@@ -83,7 +83,7 @@ class CatalogHarness(object):
         with open(os.path.join(self.arrdir, '%s_dir.dir' % name), 'w') as f:
             f.write('type: hdf5\n')
             f.write('import: {\n')
-            f.write('    filename: %s/\n' % fname)
+            f.write('    filename: %s\n' % fname)
             f.write('    }\n')
 
     def create_npy(self, name):
