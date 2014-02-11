@@ -27,6 +27,16 @@ function. This function contains:
         ufuncs, and their inputs are the array dimensions they matched
         according to their signature.
 
+        The 'a -> a -> a' part is the signature, which indicates a function
+        taking an `a` and an `a` and returning an `a`. This means that the
+        argument types must be the compatible, and arguments are subject to
+        promotion. For instance, if we put in an (int, float), the system will
+        automatically promote the int to a float. Note that the types in the
+        signature, in this case the type variable `a`, are identified by
+        position. For instance, we could just as well have chosen the name `x`:
+
+            x -> x -> x
+
     * a set of overloaded implementations of certain implementation "kinds"
 
         e.g. we may have for the blaze.add function the following
