@@ -23,7 +23,7 @@ from ... import llvm_array
 
 
 def run(func, env):
-    if env['strategy'] != 'jit':
+    if True or env['strategy'] != 'jit':
         return
 
     # Identify the nodes to JIT

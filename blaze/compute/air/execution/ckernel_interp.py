@@ -26,32 +26,6 @@ from ..frontend import ckernel_impls, ckernel_lift, allocation
 def interpret(func, env, args, storage=None, **kwds):
     assert len(args) == len(func.args)
 
-    # Make a copy, since we're going to mutate our IR!
-    func, _ = copy_function(func)
-
-    # If it's a BLZ output, we want an interpreter that streams
-    # the processing through in chunks
-    if storage is not None:
-        if len(func.type.restype.shape) == 0:
-            raise TypeError('Require an array, not a scalar, for outputting to BLZ')
-        env['stream-outer'] = True
-        result_ndim = env['result-ndim'] = len(func.type.restype.shape)
-    else:
-        # Convert any persistent inputs to memory
-        # TODO: should stream the computation in this case
-        for i, arg in enumerate(args):
-            if isinstance(arg._data, BLZDataDescriptor):
-                args[i] = arg[:]
-
-    # Update environment with dynd type information
-    dynd_types = dict((arg, get_dynd_type(array))
-                          for arg, array in zip(func.args, args)
-                              if isinstance(array._data, DyNDDataDescriptor))
-    env['dynd-types'] = dynd_types
-
-    # Lift ckernels
-    func, env = run_pipeline(func, env, run_time_passes)
-
     if storage is None:
         # Evaluate once
         values = dict(zip(func.args, args))
@@ -59,6 +33,8 @@ def interpret(func, env, args, storage=None, **kwds):
         visit(interp, func)
         return interp.result
     else:
+        result_ndim = env['result-ndim']
+
         res_shape, res_dt = datashape.to_numpy(func.type.restype)
         dim_size = operator.index(res_shape[0])
         row_size = ndt.type(str(func.type.restype.subarray(1))).data_size
@@ -81,17 +57,8 @@ def interpret(func, env, args, storage=None, **kwds):
             visit(interp, func)
             chunk = interp.result._data.dynd_arr()
             dst_dd.append(chunk)
+
         return blaze.Array(dst_dd)
-
-#------------------------------------------------------------------------
-# Passes
-#------------------------------------------------------------------------
-
-run_time_passes = [
-    ckernel_impls,
-    allocation,
-    ckernel_lift,
-]
 
 #------------------------------------------------------------------------
 # Interpreter
@@ -227,10 +194,3 @@ class CKernelChunkInterp(object):
     def op_ret(self, op):
         retvar = op.args[0]
         self.result = self.values[retvar]
-
-#------------------------------------------------------------------------
-# Utils
-#------------------------------------------------------------------------
-
-def get_dynd_type(array):
-    return nd.type_of(array._data.dynd_arr())
