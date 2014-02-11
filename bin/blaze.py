@@ -15,12 +15,13 @@ import warnings
 import functools
 import rlcompleter
 
+# pop directory from sys.path so that we can import blaze instead of
+# importing this module again
 sys.path.pop(0)
 
 import blaze
-from datashape import dshape, dshapes
 from blaze import array, eval
-from datashape import (unify_simple as unify,
+from datashape import (dshape, dshapes, unify_simple as unify,
                        normalize_ellipses as normalize,
                        promote, tmap, coercion_cost, typeof)
 
