@@ -37,7 +37,7 @@ def dynd_chunk_iterator(result, chunk_size=1024):
     """
     Turn a query Result into a bunch of DyND arrays
     """
-    cursor = result.curshor
+    cursor = result.cursor
 
     chunk_size = max(cursor.arraysize, chunk_size)
     dshape = DataShape(chunk_size, result.dshape.measure)
