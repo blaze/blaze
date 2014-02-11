@@ -27,14 +27,14 @@ class TestJit(unittest.TestCase):
 
     def test_jit(self):
         expr = make_expr(dshape('10, float32'), dshape('10, float32'))
-        result = blaze.eval(expr, strategy='jit')
+        result = blaze.eval(expr)
         expected = blaze.array([ 0,  2,  6, 12, 20, 30, 42, 56, 72, 90])
         self.assertEqual(type(result), blaze.Array)
         self.assertTrue(np.all(result == expected))
 
     def test_jit_promotion(self):
         expr = make_expr(dshape('10, int32'), dshape('10, float32'))
-        result = blaze.eval(expr, strategy='jit')
+        result = blaze.eval(expr)
         expected = blaze.array([ 0,  2,  6, 12, 20, 30, 42, 56, 72, 90],
                                dshape=dshape('10, float64'))
         self.assertEqual(type(result), blaze.Array)

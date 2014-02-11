@@ -14,8 +14,8 @@ def compile(expr, storage):
     env = environment.fresh_env(expr, storage)
     return pipeline.run_pipeline(expr, env, passes.passes)
 
-def run(air_func, env, args, **kwds):
+def run(air_func, env, **kwds):
     """
     Prepare a Deferred for interpretation
     """
-    return execution.interpret(air_func, env, args=args, **kwds)
+    return execution.interpret(air_func, env, **kwds)

@@ -14,9 +14,9 @@ def prepare_local_execution(func, env):
     """
     Prepare for local execution
     """
-    argdict = env['runtime.args']
     storage = env['storage']
 
+    argdict = env['runtime.args']
     args = [argdict[arg] for arg in func.args]
 
     # If it's a BLZ output, we want an interpreter that streams
@@ -40,6 +40,7 @@ def prepare_local_execution(func, env):
                           for arg, array in zip(func.args, args)
                               if isinstance(array._data, DyNDDataDescriptor))
     env['dynd-types'] = dynd_types
+    env['runtime.arglist'] = args
 
 
 def get_dynd_type(array):

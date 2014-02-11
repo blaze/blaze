@@ -23,8 +23,8 @@ from ..frontend import ckernel_impls, ckernel_lift, allocation
 # Interpreter
 #------------------------------------------------------------------------
 
-def interpret(func, env, args, storage=None, **kwds):
-    assert len(args) == len(func.args)
+def interpret(func, env, storage=None, **kwds):
+    args = env['runtime.arglist']
 
     if storage is None:
         # Evaluate once

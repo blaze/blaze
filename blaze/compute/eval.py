@@ -54,8 +54,7 @@ def eval_deferred(arr, storage, caps, out):
     args = [ctx.terms[param] for param in ctx.params]
 
     func, env = compile(expr, storage=storage)
-    result = run(func, env, args,
-                 storage=storage, caps=caps, out=out)
+    result = run(func, env, storage=storage, caps=caps, out=out)
     return result
 
 #------------------------------------------------------------------------
