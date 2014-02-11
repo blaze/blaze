@@ -60,16 +60,6 @@ class DeferredDescriptor(IDataDescriptor):
                          if isinstance(term, blaze.Array)]
 
     @property
-    def strategy(self):
-        strategies = set([input._data.strategy for input in self.inputs])
-        if len(strategies) > 1:
-            raise ValueError(
-                "Multiple execution strategies encounted: %s" % (strategies,))
-
-        [strategy] = strategies
-        return strategy
-
-    @property
     def dshape(self):
         return self._dshape
 

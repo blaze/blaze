@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 # Implements the blaze.eval function
 
+from .strategy import JIT, current_strategy
 from .air import compile, run
 from .. import array
 
@@ -33,7 +34,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
         Evaluation strategy.
         Currently supported: 'py', 'jit'
     """
-    strategy = strategy or arr._data.strategy
+    strategy = strategy or current_strategy()
 
     if arr._data.capabilities.deferred:
         result = eval_deferred(arr, storage, caps, out, strategy)
