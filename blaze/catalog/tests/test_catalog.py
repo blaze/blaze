@@ -24,13 +24,11 @@ class TestCatalog(unittest.TestCase):
         entities = ['csv_arr', 'json_arr', 'npy_arr', 'py_arr', 'subdir']
         if tables_is_here:
             entities.append('hdf5_arr')
-            entities.sort()
-        self.assertEquals(blaze.catalog.ls(), entities)
+        self.assertEquals(blaze.catalog.ls(), sorted(entities))
         arrays = ['csv_arr', 'json_arr', 'npy_arr', 'py_arr']
         if tables_is_here:
             arrays.append('hdf5_arr')
-            arrays.sort()
-        self.assertEquals(blaze.catalog.ls_arrs(), arrays)
+        self.assertEquals(blaze.catalog.ls_arrs(), sorted(arrays))
         self.assertEquals(blaze.catalog.ls_dirs(),
                           ['subdir'])
         blaze.catalog.cd('subdir')

@@ -75,8 +75,9 @@ class CatalogConfig(object):
                 return sorted(cdir.ls_arrs())
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
-            return [path.splitext(x)[0] for x in listing
+            res = [path.splitext(x)[0] for x in listing
                     if x.endswith('.array')]
+            return sorted(res)
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
@@ -91,8 +92,9 @@ class CatalogConfig(object):
                 return sorted(cdir.ls_dirs())
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
-            return [x for x in listing
+            res = [x for x in listing
                     if path.isdir(path.join(fsdir, x))]
+            return sorted(res)
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
