@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Blaze types interpreter.
+Blaze REPL.
 """
 
 import os
@@ -12,13 +12,18 @@ import atexit
 import logging
 import readline
 import warnings
+import functools
 import rlcompleter
 
+# pop directory from sys.path so that we can import blaze instead of
+# importing this module again
+sys.path.pop(0)
+
 import blaze
-from blaze import dshape, dshapes
-from blaze.datashape import (unify_simple as unify,
-                             normalize_ellipses as normalize,
-                             promote, tmap, coercion_cost, typeof)
+from blaze import array, eval
+from datashape import (dshape, dshapes, unify_simple as unify,
+                       normalize_ellipses as normalize,
+                       promote, tmap, coercion_cost, typeof)
 
 logging.getLogger('blaze').setLevel(logging.DEBUG)
 
@@ -54,7 +59,15 @@ The Blaze typing interpreter.
 
     tmap(f, t):
         map function `f` over type `t` and its sub-terms post-order
+
+    array(obj, dshape=None, storage=None)
+        Create a blaze array from the given object and data shape
+
+    eval(arr, storage=None)
+        Evaluate a blaze expression
 """
+
+eval = functools.partial(eval, debug=True)
 
 env = {
     'blaze':     blaze,
@@ -66,7 +79,10 @@ env = {
     'normalize_ellipses': normalize,
     'coercion_cost': coercion_cost,
     'tmap':      tmap,
+    'array':     array,
+    'eval':      eval,
 }
+
 
 def init_readline():
     readline.parse_and_bind('tab: menu-complete')
@@ -75,6 +91,7 @@ def init_readline():
     if not os.path.exists(histfile):
         open(histfile, 'w').close()
     readline.read_history_file(histfile)
+
 
 def main():
     init_readline()
@@ -86,6 +103,7 @@ def main():
         warnings.warn("fancycompleter not installed")
         interp = code.InteractiveConsole(env)
         interp.interact(banner)
+
 
 if __name__ == '__main__':
     main()

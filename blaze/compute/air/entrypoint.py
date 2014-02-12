@@ -7,12 +7,17 @@ Assemble an execution kernel from a given expression graph.
 from __future__ import absolute_import, division, print_function
 from . import pipeline, environment, passes, execution
 
-def compile(expr, storage):
+def compile(expr, storage, debug=False):
     """
     Prepare a Deferred for interpretation
     """
-    env = environment.fresh_env(expr, storage)
-    return pipeline.run_pipeline(expr, env, passes.passes)
+    env = environment.fresh_env(expr, storage, debug=debug)
+    if debug:
+        passes_ = passes.debug_passes
+    else:
+        passes_ = passes.passes
+    return pipeline.run_pipeline(expr, env, passes_)
+
 
 def run(air_func, env, **kwds):
     """

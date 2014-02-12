@@ -10,7 +10,7 @@ from .. import array
 # Eval
 #------------------------------------------------------------------------
 
-def eval(arr, storage=None, caps={'efficient-write': True}, out=None):
+def eval(arr, storage=None, caps={'efficient-write': True}, out=None, debug=False):
     """Evaluates a deferred blaze kernel tree
     data descriptor into a concrete array.
     If the array is already concrete, merely
@@ -34,7 +34,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None):
         Currently supported: 'py', 'jit'
     """
     if arr._data.capabilities.deferred:
-        result = eval_deferred(arr, storage=storage, caps=caps, out=out)
+        result = eval_deferred(arr, storage=storage, caps=caps, out=out, debug=debug)
     elif arr._data.capabilities.remote:
         # Retrieve the data to local memory
         # TODO: Caching should play a role here.
@@ -46,7 +46,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None):
 
     return result
 
-def eval_deferred(arr, storage, caps, out):
+def eval_deferred(arr, storage, caps, out, debug=False):
     expr = arr._data.expr
     graph, ctx = expr
 
@@ -54,7 +54,8 @@ def eval_deferred(arr, storage, caps, out):
     args = [ctx.terms[param] for param in ctx.params]
 
     func, env = compile(expr, storage=storage)
-    result = run(func, env, storage=storage, caps=caps, out=out)
+    result = run(func, env, storage=storage, caps=caps, out=out, debug=debug)
+
     return result
 
 #------------------------------------------------------------------------
