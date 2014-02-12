@@ -33,6 +33,7 @@ To build project inside of Anaconda:
 To build documentation on a unix-based system:
 
 ::
+
     $ cd docs
     $ make docs
 
