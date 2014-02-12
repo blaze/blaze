@@ -59,7 +59,6 @@ def eval_deferred(arr, storage, caps, out, strategy, debug=False):
     result = run(func, env, args,
                  storage=storage, caps=caps, out=out,
                  strategy=strategy, debug=debug)
-
     return result
 
 #------------------------------------------------------------------------

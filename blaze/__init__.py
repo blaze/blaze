@@ -6,12 +6,6 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
-# TODO: Don't mess with numba. But for now, numba seems
-#       to default to verbose debugging output.
-import numba.codegen.debug
-numbalogger = logging.getLogger('numba.codegen.debug')
-numbalogger.setLevel(logging.WARNING)
-
 # build the blaze namespace with selected functions
 from . import catalog
 from . import compute, io
@@ -46,7 +40,7 @@ inf = float('inf')
 nan = float('nan')
 from math import pi
 
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 # If IPython is already loaded, register the Blaze catalog magic
 import sys

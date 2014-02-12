@@ -51,5 +51,5 @@ class TestJit(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # TestJit('test_jit').debug()
+    #TestJit('test_jit').debug()
     unittest.main()

@@ -665,3 +665,7 @@ class TestFmin(unittest.TestCase):
             arg2 = blaze.array([cnan, 0, cnan])
             out  = blaze.array([0,    0, nan], dshape=datashape.complex_float64)
             assert_equal(blaze.fmin(arg1, arg2), out)
+
+
+if __name__ == '__main__':
+    unittest.main()

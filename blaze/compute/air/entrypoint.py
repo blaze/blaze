@@ -23,7 +23,7 @@ def run(air_func, env, args, **kwds):
     Prepare a Deferred for interpretation
     """
     # Find evaluator
-    strategy = env['air.strategy']
+    strategy = env['strategy']
     interp = execution.lookup_interp(strategy)
 
     return interp.interpret(air_func, env, args=args, **kwds)
