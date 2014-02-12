@@ -34,10 +34,11 @@ air_env = {
     #'kernel.impls':     None,
 }
 
-def fresh_env(expr, strategy):
+def fresh_env(expr, strategy, debug=False):
     """
     Allocate a new environment.
     """
     env = dict(air_env)
     env['strategy'] = strategy
+    env['debug'] = debug
     return env
