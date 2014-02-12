@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 # Implements the blaze.eval function
 
+from .strategy import JIT, current_strategy
 from .air import compile, run
 from .. import array
 
@@ -9,8 +10,7 @@ from .. import array
 # Eval
 #------------------------------------------------------------------------
 
-def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
-         strategy=None):
+def eval(arr, storage=None, caps={'efficient-write': True}, out=None):
     """Evaluates a deferred blaze kernel tree
     data descriptor into a concrete array.
     If the array is already concrete, merely
@@ -33,10 +33,8 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
         Evaluation strategy.
         Currently supported: 'py', 'jit'
     """
-    strategy = strategy or arr._data.strategy
-
     if arr._data.capabilities.deferred:
-        result = eval_deferred(arr, storage, caps, out, strategy)
+        result = eval_deferred(arr, storage=storage, caps=caps, out=out)
     elif arr._data.capabilities.remote:
         # Retrieve the data to local memory
         # TODO: Caching should play a role here.
@@ -48,16 +46,15 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None,
 
     return result
 
-def eval_deferred(arr, storage, caps, out, strategy):
+def eval_deferred(arr, storage, caps, out):
     expr = arr._data.expr
     graph, ctx = expr
 
     # collected 'params' from the expression
     args = [ctx.terms[param] for param in ctx.params]
 
-    func, env = compile(expr, strategy)
-    result = run(func, env, args,
-                 storage=storage, caps=caps, out=out, strategy=strategy)
+    func, env = compile(expr, storage=storage)
+    result = run(func, env, storage=storage, caps=caps, out=out)
     return result
 
 #------------------------------------------------------------------------

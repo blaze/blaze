@@ -13,10 +13,6 @@ air_env = {
     # blaze expression graph
     #'expr_graph':       None,
 
-    # global execution strategy specified by the user
-    # TODO: Not sure this is useful?
-    'strategy':         None,
-
     # strategy determined for each Op: { Op : strategy }
     # For instance different sub-expressions may be execution in different
     # environments
@@ -29,15 +25,18 @@ air_env = {
     # overload should be used. { (Op, strategy) : Overload }
     'kernel.overloads': None,
 
+    # storage passed in to blaze.eval(). This is where we store the result
+    'storage':          None,
+
     # Implementation for each op: { Op: Overload }
     # This is set by assemblage.py
     #'kernel.impls':     None,
 }
 
-def fresh_env(expr, strategy):
+def fresh_env(expr, storage):
     """
     Allocate a new environment.
     """
     env = dict(air_env)
-    env['strategy'] = strategy
+    env['storage'] = storage
     return env
