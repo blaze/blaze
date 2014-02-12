@@ -33,10 +33,11 @@ air_env = {
     #'kernel.impls':     None,
 }
 
-def fresh_env(expr, storage):
+def fresh_env(expr, storage, debug=False):
     """
     Allocate a new environment.
     """
     env = dict(air_env)
     env['storage'] = storage
+    env['debug'] = debug
     return env

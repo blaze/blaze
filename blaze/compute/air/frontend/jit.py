@@ -23,6 +23,12 @@ from ... import llvm_array
 
 
 def run(func, env):
+    # For now, disable the JIT path. This can be re-enabled when we update
+    # this to work with numba 0.12.
+    #
+    # Furthermore, we need to match the numba ABI, which may be subject to
+    # change. Generally, this is a bad idea. It may be better to generate a
+    # properly jitted kernel and call it from python.
     if True or env['strategy'] != 'jit':
         return
 
