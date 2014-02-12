@@ -120,7 +120,7 @@ class CKernelInterp(object):
         self.result = self.values[retvar]
 
 
-class CKernelChunkInterp(object):
+class CKernelChunkInterp(CKernelInterp):
     """
     Like CKernelInterp, but for processing one chunk.
     """
@@ -138,45 +138,3 @@ class CKernelChunkInterp(object):
         else:
             chunk = nd.empty(str(dshape))
         self.values[op] = blaze.array(chunk)
-
-    def op_dealloc(self, op):
-        alloc, = op.args
-        del self.values[alloc]
-
-    def op_convert(self, op):
-        input = self.values[op.args[0]]
-        input = input._data.dynd_arr()
-        result = nd.array(input, type=ndt.type(str(op.type)))
-        result = blaze.Array(DyNDDataDescriptor(result))
-        self.values[op] = result
-
-    def op_ckernel(self, op):
-        deferred_ckernel = op.args[0]
-        args = [self.values[arg] for arg in op.args[1]]
-
-        dst = args[0]
-        srcs = args[1:]
-
-        dst_descriptor  = dst._data
-        src_descriptors = [src._data for src in srcs]
-
-        out = dst_descriptor.dynd_arr()
-        inputs = [desc.dynd_arr() for desc in src_descriptors]
-
-        # TODO: Remove later, explicit casting necessary for now because
-        #       of BLZ/numpy interop effect.
-        for i, (inp, tp) in enumerate(zip(inputs, deferred_ckernel.types[1:])):
-            tp = ndt.type(tp)
-            if nd.type_of(inp) != tp:
-                inputs[i] = nd.array(inp, type=tp)
-
-        # Execute!
-        deferred_ckernel.__call__(out, *inputs)
-
-        # Operations are rewritten to already refer to 'dst'
-        # We are essentially a 'void' operation
-        self.values[op] = None
-
-    def op_ret(self, op):
-        retvar = op.args[0]
-        self.result = self.values[retvar]
