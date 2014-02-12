@@ -26,7 +26,8 @@ def assemble_kernels(func, env, pykernels, strategy):
     for op in func.ops:
         if op.opcode == 'kernel' and strategies[op] == strategy:
             pykernel = pykernels[op]
-            op.replace(Op('pykernel', pykernel, op.args[1:]))
+            op.replace(Op('pykernel', op.type, [pykernel, op.args[1:]],
+                          op.result))
 
 
 def assemble_py_kernels(func, env):

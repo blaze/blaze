@@ -6,7 +6,8 @@ Passes that massage expression graphs into execution kernels.
 
 from __future__ import absolute_import, division, print_function
 from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
-                       ckernel_lift, allocation, assemblage, ckernel_prepare)
+                       ckernel_lift, allocation, assemblage, ckernel_prepare,
+                       ckernel_rewrite)
 from .execution import jit_interp
 
 #------------------------------------------------------------------------
@@ -31,6 +32,7 @@ passes = [
     ckernel_impls,
     allocation,
     ckernel_lift,
+    ckernel_rewrite,
 
     #assemblage.assemble_py_kernels,
 ]

@@ -107,27 +107,13 @@ class CKernelInterp(object):
         self.values[op] = result
 
     def op_pykernel(self, op):
-        raise RuntimeError("Shouldn't be seeing a pykernel here...")
+        pykernel, opargs = op.args
+        args = [self.values[arg] for arg in opargs]
+        result = pykernel(*args)
+        self.values[op] = result
 
     def op_ckernel(self, op):
-        deferred_ckernel = op.args[0]
-        args = [self.values[arg] for arg in op.args[1]]
-
-        dst = args[0]
-        srcs = args[1:]
-
-        dst_descriptor  = dst._data
-        src_descriptors = [src._data for src in srcs]
-
-        out = dst_descriptor.dynd_arr()
-        inputs = [desc.dynd_arr() for desc in src_descriptors]
-
-        # Execute!
-        deferred_ckernel.__call__(out, *inputs)
-
-        # Operations are rewritten to already refer to 'dst'
-        # We are essentially a 'void' operation
-        self.values[op] = None
+        raise RuntimeError("Shouldn't be seeing a ckernel here...")
 
     def op_ret(self, op):
         retvar = op.args[0]
