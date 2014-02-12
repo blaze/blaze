@@ -25,7 +25,7 @@ class TestSQL(unittest.TestCase):
 
     @py2help.skipIf(db is None, 'pyodbc is not installed')
     def test_query(self):
-        expr = add(self.col_i, 2)
+        expr = add(self.col_i, self.col_i)
         result = eval(expr)
         self.assertEqual(list(result), [6, 10, 18])
 

@@ -14,7 +14,3 @@ from .datadescriptor import SQLDataDescriptor
 
 # --- Initialize ---
 from . import ufuncs
-
-# Register SQL AIR interpreter
-# from blaze.compute.air import execution
-# execution.register_interp(SQL, sql_interp)

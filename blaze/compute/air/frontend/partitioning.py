@@ -5,12 +5,14 @@ rules which backend to use for which operation.
 
 from __future__ import absolute_import, division, print_function
 from pykit import ir
-from blaze.compute.strategy import OOC, JIT, CKERNEL, PY
+from ...strategy import OOC, JIT, CKERNEL, PY
+from ....io.sql import SQL, SQLDataDescriptor
 
 
 # List of backends to use greedily listed in order of preference
 
 preferences = [
+    SQL, # TODO: Allow easier extension of new backends
     #OOC,
     JIT,
     CKERNEL,
@@ -37,8 +39,6 @@ def use_sql(op, strategies, env):
     NOTE: This also populates env['sql.conns']. Mutating this way is somewhat
           undesirable, but this is a non-local decision anyway
     """
-    from ..io.sql import SQLDataDescriptor, SQL
-
     conns = env.setdefault('sql.conns', {})
 
     if isinstance(op, ir.FuncArg):
@@ -94,6 +94,7 @@ def use_local(op, strategies, env):
 local_strategies = (JIT, CKERNEL, PY)
 
 determine_strategy = {
+    SQL:        use_sql,
     #OOC:        use_ooc,
     JIT:        use_local,
     CKERNEL:    use_local,

@@ -112,8 +112,11 @@ class CKernelInterp(object):
         result = pykernel(*args)
         self.values[op] = result
 
+    def op_kernel(self, op):
+        raise RuntimeError("Shouldn't be seeing a kernel here...", op)
+
     def op_ckernel(self, op):
-        raise RuntimeError("Shouldn't be seeing a ckernel here...")
+        raise RuntimeError("Shouldn't be seeing a ckernel here...", op)
 
     def op_ret(self, op):
         retvar = op.args[0]

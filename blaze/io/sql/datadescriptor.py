@@ -45,6 +45,7 @@ class SQLDataDescriptor(IDataDescriptor):
             deferred = False,
             persistent = True,
             appendable = False,
+            remote=True,
             )
 
     def __iter__(self):

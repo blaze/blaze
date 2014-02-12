@@ -14,7 +14,8 @@ from pykit.ir import transform, Op
 #------------------------------------------------------------------------
 
 def run(func, env):
-    transform(CKernelImplementations(), func)
+    strategies = env['strategies']
+    transform(CKernelImplementations(strategies), func)
 
 #------------------------------------------------------------------------
 # Extract CKernel Implementations
@@ -26,7 +27,14 @@ class CKernelImplementations(object):
     grabs the ckernel_deferred and turns it into a ckernel
     op.
     """
+
+    def __init__(self, strategies):
+        self.strategies = strategies
+
     def op_kernel(self, op):
+        if self.strategies[op] != 'ckernel':
+            return
+
         function = op.metadata['kernel']
         overload = op.metadata['overload']
 
