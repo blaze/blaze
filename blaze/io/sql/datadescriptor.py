@@ -14,17 +14,20 @@ class SQLDataDescriptor(IDataDescriptor):
 
     deferred = True
 
-    def __init__(self, dshape, table, conn):
+    def __init__(self, dshape, col, conn):
         """
         Parameters
         ----------
 
-        table: str
+        col: SQLColumn
             Holds an SQL table name from which we can select data. This may also
             be some other valid query on which we can do further selection etc.
         """
+        assert dshape
+        assert col
+        assert conn
         self._dshape = dshape
-        self.table = table
+        self.col = col
         self.conn = conn
 
         # TODO: Validate query as a suitable expression to select from

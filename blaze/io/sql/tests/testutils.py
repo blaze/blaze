@@ -19,6 +19,8 @@ def create_sqlite_table():
     conn.commit()
     c.close()
 
+    return conn
+
 #def create_sqlite_table():
 #    import pyodbc as db
 #    conn = db.connect("Driver=SQLite ODBC Driver "

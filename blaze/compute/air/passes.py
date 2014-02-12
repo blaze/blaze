@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
                        ckernel_lift, allocation, assemblage, ckernel_prepare,
                        ckernel_rewrite)
+from ...io.sql.air import rewrite_sql
 
 #------------------------------------------------------------------------
 # Passes
@@ -32,6 +33,7 @@ passes = [
     allocation,
     ckernel_lift,
     ckernel_rewrite,
+    rewrite_sql,
 
     #assemblage.assemble_py_kernels,
 ]

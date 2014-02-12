@@ -251,4 +251,4 @@ def annotate_roots(func, env):
                 # Result for user, boundary
                 [use] = uses
                 if use.opcode == 'ret':
-                    roots.add(use)
+                    roots.add(op)

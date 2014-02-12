@@ -1,0 +1,114 @@
+# -*- coding: utf-8 -*-
+
+"""
+Rewrite SQL operations in AIR. Generate SQL queries and execute them at roots.
+"""
+
+from __future__ import absolute_import, division, print_function
+
+from . import db, SQL
+
+from .error import SQLError
+from .query import execute, dynd_chunk_iterator
+from .datadescriptor import SQLDataDescriptor
+
+from pykit.ir import Op
+
+def rewrite_sql(func, env):
+    """
+    Generate SQL queries for each SQL op and assemble them into one big query
+    which we rewrite to python kernels.
+    """
+    strategies = env['strategies']      # op -> strategy (e.g. 'sql')
+    impls = env['kernel.overloads']     # (op, strategy) -> Overload
+    roots = env['roots']                # Backend boundaries: { Op }
+    args = env['runtime.args']          # FuncArg -> blaze.Array
+    conns = env['sql.conns']            # Op -> SQL Connection
+
+    rewrite = set()                     # ops to rewrite to sql kernels
+    delete  = set()                     # ops to delete
+    queries = {}                        # op -> query (str)
+
+    leafs = {}                          # op -> set of SQL leafs
+
+    # Extract table names and insert in queries
+    for arg in func.args:
+        if strategies[arg] == 'sql':
+            arr = args[arg]
+            sql_ddesc = arr._data
+            queries[arg] = sql_ddesc.col
+            leafs[arg] = [arg]
+
+    # Generate SQL queries for each op
+    for op in func.ops:
+        if op.opcode == "kernel" and strategies[op] == 'sql':
+            query_gen, signature = impls[op, 'sql']
+
+            args = op.args[1:]
+            inputs = [queries[arg] for arg in args]
+            query = query_gen(*inputs)
+            queries[op] = query
+            conns[op] = conns[args[0]]
+            leafs[op] = [leaf for arg in args
+                                  for leaf in leafs[arg]]
+
+            if op in roots:
+                rewrite.add(op)
+            else:
+                delete.add(op)
+
+    # Rewrite sql kernels to python kernels
+    for op in rewrite:
+        query = queries[op]
+        pykernel = sql_to_pykernel(query, op, env)
+        newop = Op('pykernel', op.type, [pykernel, leafs[op]], op.result)
+        op.replace(newop)
+
+    # Delete remaining unnecessary ops
+    for op in delete:
+        op.delete()
+
+
+def sql_to_pykernel(query, op, env):
+    """
+    Create an executable pykernel that executes the given query expression.
+    """
+    conns = env['sql.conns']
+    conn = conns[op]
+    dshape = op.type
+
+    def sql_pykernel(*inputs):
+        columns = [input._data.col for input in inputs]
+        tables = set(col.table for col in columns)
+        select_query = compose_sql_select_query(tables, [], query)
+
+        try:
+            result = execute(conn, dshape, select_query, [])
+        except db.OperationalError, e:
+            raise db.OperationalError("Error execution %s: %s" % (query, e))
+
+        return result
+
+    return sql_pykernel
+
+
+def compose_sql_select_query(tables, joins, expr):
+    """
+    Compose a select query from the given expression.
+
+        SELECT <expr>
+        FROM <tables>
+        WHERE <cond>
+    """
+    assert len(joins) >= len(tables) - 1
+
+    if not joins:
+        [table] = tables
+        return """SELECT %s
+                  FROM %s""" % (expr, table)
+
+    return """
+        SELECT %s
+        FROM %s
+        WHERE %s
+    """ % (expr, ", ".join(map(str, tables)), ", ".join(map(str, joins)))

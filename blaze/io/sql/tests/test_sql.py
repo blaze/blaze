@@ -13,13 +13,13 @@ class TestSQL(unittest.TestCase):
     def setUp(self):
         self.conn = create_sqlite_table()
 
-        self.col_i = from_table('select i from testtable',
+        self.col_i = from_table('testtable', 'i',
                                 dshape('a, int64'),
                                 self.conn)
-        self.col_msg = from_table('select msg from testtable',
+        self.col_msg = from_table('testtable', 'msg',
                                   dshape('a, string'),
                                   self.conn)
-        self.col_price = from_table('select price from testtable',
+        self.col_price = from_table('testtable', 'price',
                                     dshape('a, float64'),
                                     self.conn)
 
