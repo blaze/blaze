@@ -8,9 +8,10 @@ from __future__ import absolute_import, division, print_function
 
 from . import db, SQL
 
+from ... import Array
 from .error import SQLError
 from .query import execute, dynd_chunk_iterator
-from .datadescriptor import SQLDataDescriptor
+from .datadescriptor import SQLDataDescriptor, SQLResultDataDescriptor
 
 from pykit.ir import Op
 
@@ -87,7 +88,7 @@ def sql_to_pykernel(query, op, env):
         except db.OperationalError, e:
             raise db.OperationalError("Error execution %s: %s" % (query, e))
 
-        return result
+        return Array(SQLResultDataDescriptor(result))
 
     return sql_pykernel
 
