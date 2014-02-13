@@ -13,4 +13,4 @@ from . import sql_interp
 from .datadescriptor import SQLDataDescriptor
 
 # --- Initialize ---
-from . import ufuncs
+from . import ops

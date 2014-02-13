@@ -131,7 +131,7 @@ class SQLResultDataDescriptor(IDataDescriptor):
         return result
 
     def __repr__(self):
-        return "SQLResultDataDescriptor(%s)" % (self.col,)
+        return "SQLResultDataDescriptor()"
 
     def __str__(self):
         return str(Array(DyNDDataDescriptor(self.dynd_arr())))

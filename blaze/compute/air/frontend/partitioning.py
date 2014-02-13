@@ -47,13 +47,19 @@ def use_sql(op, strategies, env):
         runtime_args = env['runtime.args']
         array = runtime_args[op]
         data_desc = array._data
-        if not isinstance(data_desc, SQLDataDescriptor):
+        is_scalar = not data_desc.dshape.shape
+        if not isinstance(data_desc, SQLDataDescriptor) and not is_scalar:
             return False
-        conns[op] = data_desc.conn
+        if isinstance(data_desc, SQLDataDescriptor):
+            conns[op] = data_desc.conn
         return True
     elif all(strategies[arg] == SQL for arg in op.args[1:]):
-        conn = conns[op.args[1]]
-        return all(conn == conns[arg] for arg in op.args[1:])
+        connections = set(conns[arg] for arg in op.args[1:] if arg in conns)
+        if len(connections) == 1:
+            [conn] = connections
+            conns[op] = conn
+            return True
+        return False
     else:
         return False
 
@@ -210,7 +216,10 @@ def determine_preference(op, env, preferences):
         if valid_strategy(op, strategies, env):
             return preference
 
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
+    # print(op.parent.parent)
+    # valid_strategy = determine_strategy['sql']
+    # valid_strategy(op, strategies, env)
     raise ValueError(
         "No valid strategy could be determined for %s from %s" % (op, preferences))
 

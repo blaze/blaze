@@ -12,6 +12,7 @@ from ... import Array
 from .error import SQLError
 from .query import execute, dynd_chunk_iterator
 from .datadescriptor import SQLDataDescriptor, SQLResultDataDescriptor
+from ...datadescriptor import DyNDDataDescriptor
 
 from pykit.ir import Op
 
@@ -37,7 +38,15 @@ def rewrite_sql(func, env):
         if strategies[arg] == 'sql':
             arr = args[arg]
             sql_ddesc = arr._data
-            queries[arg] = sql_ddesc.col
+
+            if isinstance(sql_ddesc, DyNDDataDescriptor):
+                assert not sql_ddesc.dshape.shape
+                # Do something better here
+                query = str(sql_ddesc.dynd_arr())
+            else:
+                query = sql_ddesc.col
+
+            queries[arg] = query
             leafs[arg] = [arg]
 
     # Generate SQL queries for each op
@@ -79,14 +88,17 @@ def sql_to_pykernel(query, op, env):
     dshape = op.type
 
     def sql_pykernel(*inputs):
-        columns = [input._data.col for input in inputs]
+        columns = [input._data.col
+                       for input in inputs
+                           if isinstance(input._data, SQLDataDescriptor)]
         tables = set(col.table for col in columns)
         select_query = compose_sql_select_query(tables, [], query)
 
         try:
             result = execute(conn, dshape, select_query, [])
         except db.OperationalError, e:
-            raise db.OperationalError("Error execution %s: %s" % (query, e))
+            raise db.OperationalError(
+                "Error executing %s: %s" % (select_query, e))
 
         return Array(SQLResultDataDescriptor(result))
 

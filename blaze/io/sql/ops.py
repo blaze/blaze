@@ -2,8 +2,16 @@
 
 from __future__ import absolute_import, division, print_function
 
+from ...compute.function import function, kernel
 from ...compute.ops import ufuncs
-from .kernel import sql_kernel
+from .kernel import sql_kernel, SQL
+
+def sqlfunction(signature):
+    def decorator(f):
+        blaze_func = function(signature)(f)
+        kernel(blaze_func, SQL, f, signature)
+        return blaze_func
+    return decorator
 
 #------------------------------------------------------------------------
 # Implement functions
@@ -51,12 +59,12 @@ negative = define_unop("a -> a", "negative", "-")
 # Compare
 #------------------------------------------------------------------------
 
-eq = define_binop("a..., T -> a..., T -> a..., bool", "add", "==")
-ne = define_binop("a..., T -> a..., T -> a..., bool", "add", "!=")
-lt = define_binop("a..., T -> a..., T -> a..., bool", "add", "<")
-le = define_binop("a..., T -> a..., T -> a..., bool", "add", "<=")
-gt = define_binop("a..., T -> a..., T -> a..., bool", "add", ">")
-ge = define_binop("a..., T -> a..., T -> a..., bool", "add", ">=")
+eq = define_binop("a..., T -> a..., T -> a..., bool", "equal", "==")
+ne = define_binop("a..., T -> a..., T -> a..., bool", "not_equal", "!=")
+lt = define_binop("a..., T -> a..., T -> a..., bool", "less", "<")
+le = define_binop("a..., T -> a..., T -> a..., bool", "less_equal", "<=")
+gt = define_binop("a..., T -> a..., T -> a..., bool", "greater", ">")
+ge = define_binop("a..., T -> a..., T -> a..., bool", "greater_equal", ">=")
 
 #------------------------------------------------------------------------
 # Logical
@@ -76,6 +84,41 @@ logical_not = define_binop("a..., bool -> a..., bool -> a..., bool",
 #------------------------------------------------------------------------
 
 # TODO: AVG, MIN, MAX, SUM, ...
+
+def merge(left, right, how='left', on=None, left_on=None, right_on=None,
+          left_index=False, right_index=False, sort=True):
+    """
+    Join two tables.
+    """
+    raise NotImplementedError
+
+
+def index(col, index, order=None):
+    """
+    Index a table or column with a predicate.
+
+        view = merge(table1, table2)
+        result = view[table1.id == table2.id]
+
+    or
+
+        avg(table1.age[table1.state == 'TX'])
+    """
+    result = sqlindex(col, index)
+    if order:
+        result = sqlorder(result, order)
+    return result
+
+
+@sqlfunction('a -> b -> a')
+def sqlindex(col, where):
+    return """%s WHERE %s""" % (col, where)
+
+
+@sqlfunction('a -> b -> a')
+def sqlorder(col, by):
+    return """%s ORDER BY %s""" % (col, by)
+
 
 #------------------------------------------------------------------------
 # Helper functions
