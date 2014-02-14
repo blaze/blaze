@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 from ...compute.function import function, kernel
 from ...compute.ops import ufuncs
 from .kernel import sql_kernel, SQL
+from .syntax import Call, Expr, QOrderBy, QGroupBy, QWhere
 
 def sqlfunction(signature):
     def decorator(f):
@@ -20,7 +21,7 @@ def sqlfunction(signature):
 def define_unop(signature, name, op):
     """Define a unary sql operator"""
     def unop(x):
-        return expr('%s %s' % (op, x))
+        return Expr([op, x])
     unop.__name__ = name
     _implement(unop, signature)
     return unop
@@ -29,7 +30,7 @@ def define_unop(signature, name, op):
 def define_binop(signature, name, op):
     """Define a binary sql operator"""
     def binop(a, b):
-        return expr("%s %s %s" % (a, op, b))
+        return Expr([a, op, b])
     binop.__name__ = name
     _implement(binop, signature)
     return binop
@@ -112,17 +113,10 @@ def index(col, index, order=None):
 
 @sqlfunction('a -> b -> a')
 def sqlindex(col, where):
-    return """%s WHERE %s""" % (col, where)
-
+    return QWhere(col, where)
 
 @sqlfunction('a -> b -> a')
 def sqlorder(col, by):
-    return """%s ORDER BY %s""" % (col, by)
-
-
-#------------------------------------------------------------------------
-# Helper functions
-#------------------------------------------------------------------------
-
-def expr(e):
-    return "(%s)" % (e,)
+    if not isinstance(by, (tuple, list)):
+        by = [by]
+    return QOrderBy(col, by)

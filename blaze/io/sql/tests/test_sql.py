@@ -35,7 +35,7 @@ class TestSQL(unittest.TestCase):
     def test_query_scalar(self):
         expr = add(self.col_i, 2)
         result = eval(expr)
-        self.assertEqual([int(x) for x in result], [8, 16, 32])
+        self.assertEqual([int(x) for x in result], [6, 10, 18])
 
     @py2help.skipIf(db is None, 'pyodbc is not installed')
     def test_query_where(self):
@@ -45,5 +45,5 @@ class TestSQL(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestSQL('test_query_where').debug()
-    # unittest.main()
+    #TestSQL('test_query_where').debug()
+    unittest.main()

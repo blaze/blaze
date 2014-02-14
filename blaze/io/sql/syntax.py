@@ -44,6 +44,10 @@ def qmap(f, q):
         obj = cls(*attrs)
         return f(obj)
 
+    elif isinstance(q, (list, tuple)):
+        cls = type(q)
+        return cls(qmap(f, x) for x in q)
+
     return f(q)
 
 #------------------------------------------------------------------------

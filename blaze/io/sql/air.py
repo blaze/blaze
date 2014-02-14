@@ -11,6 +11,7 @@ from . import db, SQL
 from ... import Array
 from .error import SQLError
 from .query import execute, dynd_chunk_iterator
+from .syntax import reorder_select, emit, Table, Column
 from .datadescriptor import SQLDataDescriptor, SQLResultDataDescriptor
 from ...datadescriptor import DyNDDataDescriptor
 
@@ -40,11 +41,13 @@ def rewrite_sql(func, env):
             sql_ddesc = arr._data
 
             if isinstance(sql_ddesc, DyNDDataDescriptor):
+                # Extract scalar value from blaze array
                 assert not sql_ddesc.dshape.shape
                 # Do something better here
                 query = str(sql_ddesc.dynd_arr())
             else:
-                query = sql_ddesc.col
+                table = Table(sql_ddesc.col.table)
+                query = Column(table, sql_ddesc.col.colname)
 
             queries[arg] = query
             leafs[arg] = [arg]
@@ -79,7 +82,7 @@ def rewrite_sql(func, env):
         op.delete()
 
 
-def sql_to_pykernel(query, op, env):
+def sql_to_pykernel(expr, op, env):
     """
     Create an executable pykernel that executes the given query expression.
     """
@@ -87,13 +90,10 @@ def sql_to_pykernel(query, op, env):
     conn = conns[op]
     dshape = op.type
 
-    def sql_pykernel(*inputs):
-        columns = [input._data.col
-                       for input in inputs
-                           if isinstance(input._data, SQLDataDescriptor)]
-        tables = set(col.table for col in columns)
-        select_query = compose_sql_select_query(tables, [], query)
+    query = reorder_select(expr)
+    select_query = emit(query)
 
+    def sql_pykernel(*inputs):
         try:
             result = execute(conn, dshape, select_query, [])
         except db.OperationalError, e:
