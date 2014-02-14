@@ -14,7 +14,7 @@ from __future__ import absolute_import, division, print_function
 
 import sqlite3 as db
 
-from blaze.io.sql import connect, from_table
+from blaze.io.sql import connect, sql_column
 from blaze import dshape
 
 def create_sqlite_table():
@@ -39,9 +39,9 @@ conn = create_sqlite_table()
 # Describe the columns. Note: typically you would describe column
 # with variables for the column size, e.g. dshape('a, int32')
 
-id = from_table('MyTable', 'id', dshape('3, int32'), conn)
-name_col = from_table('MyTable', 'name', dshape('3, int32'), conn)
-age_col = from_table('MyTable', 'age', dshape('3, int32'), conn)
+id = sql_column('MyTable', 'id', dshape('3, int32'), conn)
+name_col = sql_column('MyTable', 'name', dshape('3, int32'), conn)
+age_col = sql_column('MyTable', 'age', dshape('3, int32'), conn)
 
 table = Table([id, name_col, age_col]) # TODO: Better interface
 

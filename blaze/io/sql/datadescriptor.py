@@ -25,7 +25,7 @@ class SQLDataDescriptor(IDataDescriptor):
         Parameters
         ----------
 
-        col: SQLColumn
+        col: TableSelection
             Holds an SQL table name from which we can select data. This may also
             be some other valid query on which we can do further selection etc.
         """

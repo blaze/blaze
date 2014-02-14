@@ -6,7 +6,7 @@ try:
 except ImportError:
     db = None
 
-from .constructors import from_table
+from .constructors import sql_table, sql_column
 from .kernel import SQL
 from . conn import connect
 from .datadescriptor import SQLDataDescriptor

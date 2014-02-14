@@ -57,5 +57,5 @@ def dynd_chunk_iterator(result, chunk_size=1024):
 
         dshape = DataShape(len(results), result.dshape.measure)
         chunk = nd.empty(str(dshape))
-        chunk[:] = iter_result(results, dshape)
+        chunk[:] = list(iter_result(results, dshape))
         yield chunk
