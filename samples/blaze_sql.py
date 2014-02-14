@@ -66,10 +66,9 @@ def groupby():
     FROM MyTable
     WHERE MyTable.age > 10 AND MyTable.age < 20
     GROUP BY MyTable.age
-    ORDER BY COUNT(*)
     """
     teenagers = index(table, table.age > 10 & table.age < 20)
-    print(groupby(teenagers, table.age, order=count(table)))
+    print(groupby(teenagers, teenagers.age))
 
 
 def aggregate():

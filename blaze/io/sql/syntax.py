@@ -7,37 +7,109 @@ SQL syntax building.
 from __future__ import absolute_import, division, print_function
 from collections import namedtuple
 
-Table   = namedtuple('Table',   ['tablename'])
-Column  = namedtuple('Column',  ['table', 'colname'])
-Select  = namedtuple('Select',  ['exprs', 'from_expr', 'where',
+#------------------------------------------------------------------------
+# Syntax (declarative)
+#------------------------------------------------------------------------
+
+def qtuple(name, attrs):
+    cls = namedtuple(name, attrs)
+    cls.__str__ = lambda self: "Query(%s)" % (emit(self),)
+    return cls
+
+Table   = qtuple('Table',   ['tablename'])
+Column  = qtuple('Column',  ['table', 'colname'])
+Select  = qtuple('Select',  ['exprs', 'from_expr', 'where',
                                  'groupby', 'order'])
-Where   = namedtuple('Where',   ['expr'])
-GroupBy = namedtuple('GroupBy', ['cols'])
+Where   = qtuple('Where',   ['expr'])
+GroupBy = qtuple('GroupBy', ['cols'])
+From    = qtuple('From',    ['exprs'])
+OrderBy = qtuple('OrderBy', ['exprs', 'ascending'])
+Call    = qtuple('Call',    ['name', 'args'])
+Expr    = qtuple('Expr',    ['args'])
+And     = lambda e1, e2: Expr([e1, 'AND', e2])
+Or      = lambda e1, e2: Expr([e1, 'OR', e2])
 
-class From(object):
-    def __init__(self, *exprs):
-        self.exprs = exprs
 
-class OrderBy(object):
-    def __init__(self, *exprs, **kwds):
-        self.exprs = exprs
-        self.ascending = kwds.pop('ascending', True)
+def qmap(f, q):
+    """
+    Apply `f` post-order to all sub-terms in query term `q`.
+    """
+    if hasattr(q, '_fields'):
+        attrs = []
+        for field in q._fields:
+            attr = getattr(q, field)
+            attrs.append(qmap(f, attr))
 
-class Call(object):
-    def __init__(self, name, *args):
-        self.name = name
-        self.args = args
+        cls = type(q)
+        obj = cls(*attrs)
+        return f(obj)
 
-class Expr(object):
-    def __init__(self, *args):
-        self.args = args
+    return f(q)
 
+#------------------------------------------------------------------------
+# Query expressions
+#------------------------------------------------------------------------
+
+# These may be nested in an expression-like fashion. These expressions may
+# then be reordered to obtain declarative syntax above
+
+QWhere      = namedtuple('QWhere', ['arr', 'expr'])
+QGroupBy    = namedtuple('QGroupBy', ['arr', 'keys'])
+QOrderBy    = namedtuple('QOrderBy', ['arr', 'exprs', 'ascending'])
 
 def reorder_select(query):
     """
     Reorder SQL query to prepare for codegen.
     """
+    ## Extract info ##
+    selects = []
+    wheres = []
+    orders = []
+    groupbys = []
+    tables = set()
 
+    def extract(expr):
+        if isinstance(expr, QWhere):
+            selects.append(expr.arr)
+            wheres.append(expr.expr)
+            return expr.arr
+
+        elif isinstance(expr, QGroupBy):
+            selects.append(expr.arr)
+            groupbys.extend(expr.keys)
+            return expr.arr
+
+        elif isinstance(expr, QOrderBy):
+            selects.append(expr.arr)
+            orders.append(expr)
+            return expr.arr
+
+        elif isinstance(expr, Table):
+            tables.add(expr)
+
+        return expr
+
+    expr = qmap(extract, query)
+
+    ## Build SQL syntax ##
+    if isinstance(expr, Table):
+        expr = '*'
+
+    if len(orders) > 1:
+        raise ValueError("Only a single ordering may be specified")
+    elif orders:
+        [order] = orders
+
+    return Select([expr],
+                  From(list(tables)),
+                  Where(reduce(And, wheres)) if wheres else None,
+                  GroupBy(groupbys) if groupbys else None,
+                  OrderBy(order.exprs, order.ascending) if orders else None,
+                  )
+
+#------------------------------------------------------------------------
+# Query generation
+#------------------------------------------------------------------------
 
 def emit(q):
     """Emit SQL query from query object"""
@@ -76,5 +148,6 @@ if __name__ == '__main__':
     col1 = Column(table, 'attr1')
     col2 = Column(table, 'attr2')
     expr = Expr(Expr(col1, '+', col1), '-', col2)
-    query = Select(expr, From(table), Where(Expr(col1, '=', col2)), None)
+    query = Select([expr], From(table), Where(Expr(col1, '=', col2)),
+                   None, None)
     print(emit(query))
