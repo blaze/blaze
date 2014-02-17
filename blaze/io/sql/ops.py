@@ -14,9 +14,6 @@ def sqlfunction(signature):
         return blaze_func
     return decorator
 
-#------------------------------------------------------------------------
-# Implement functions
-#------------------------------------------------------------------------
 
 def define_unop(signature, name, op):
     """Define a unary sql operator"""
@@ -42,9 +39,7 @@ def _implement(f, signature):
     #print("implement", f, signature, blaze_func)
     sql_kernel(blaze_func, f, signature)
 
-#------------------------------------------------------------------------
 # Arithmetic
-#------------------------------------------------------------------------
 
 add = define_binop("a -> a -> a", "add", "+")
 multiply = define_binop("a -> a -> a", "multiply", "*")
@@ -56,9 +51,7 @@ mod = define_binop("a -> a -> a", "mod", "%")
 
 negative = define_unop("a -> a", "negative", "-")
 
-#------------------------------------------------------------------------
 # Compare
-#------------------------------------------------------------------------
 
 eq = define_binop("a..., T -> a..., T -> a..., bool", "equal", "==")
 ne = define_binop("a..., T -> a..., T -> a..., bool", "not_equal", "!=")
@@ -67,9 +60,7 @@ le = define_binop("a..., T -> a..., T -> a..., bool", "less_equal", "<=")
 gt = define_binop("a..., T -> a..., T -> a..., bool", "greater", ">")
 ge = define_binop("a..., T -> a..., T -> a..., bool", "greater_equal", ">=")
 
-#------------------------------------------------------------------------
 # Logical
-#------------------------------------------------------------------------
 
 logical_and = define_binop("a..., bool -> a..., bool -> a..., bool",
                            "logical_and", "AND")
@@ -84,11 +75,25 @@ def logical_xor(a, b):
 kernel(ufuncs.logical_xor, SQL, logical_xor,
        "a..., bool -> a..., bool -> a..., bool")
 
-#------------------------------------------------------------------------
 # SQL Functions
-#------------------------------------------------------------------------
 
-# TODO: AVG, MIN, MAX, SUM, ...
+@sqlfunction('a, dtype -> dtype')
+def sum(col):
+    return Call('SUM', [col])
+
+@sqlfunction('a, dtype -> dtype')
+def avg(col):
+    return Call('AVG', [col])
+
+@sqlfunction('a, dtype -> dtype')
+def min(col):
+    return Call('MIN', [col])
+
+@sqlfunction('a, dtype -> dtype')
+def max(col):
+    return Call('MAX', [col])
+
+# SQL Join, Where, Group by, Order by
 
 def merge(left, right, how='left', on=None, left_on=None, right_on=None,
           left_index=False, right_index=False, sort=True):

@@ -65,10 +65,25 @@ def rewrite_sql(func, env):
             leafs[op] = [leaf for arg in args
                                   for leaf in leafs[arg]]
 
-            if op in roots:
-                rewrite.add(op)
+        elif op.opcode == 'convert':
+            uses = func.uses[op]
+            if all(strategies[use] == 'sql' for use in uses):
+                arg = op.args[0]
+                query = queries[arg]
+                queries[op] = query
+
+                conns[op] = conns[arg]
+                leafs[op] = list(leafs[arg])
             else:
-                delete.add(op)
+                continue
+
+        else:
+            continue
+
+        if op in roots:
+            rewrite.add(op)
+        else:
+            delete.add(op)
 
     # Rewrite sql kernels to python kernels
     for op in rewrite:
@@ -78,8 +93,7 @@ def rewrite_sql(func, env):
         op.replace(newop)
 
     # Delete remaining unnecessary ops
-    for op in delete:
-        op.delete()
+    func.delete_all(delete)
 
 
 def sql_to_pykernel(expr, op, env):
@@ -95,6 +109,7 @@ def sql_to_pykernel(expr, op, env):
 
     def sql_pykernel(*inputs):
         try:
+            # print("executing...", select_query)
             result = execute(conn, dshape, select_query, [])
         except db.OperationalError, e:
             raise db.OperationalError(
