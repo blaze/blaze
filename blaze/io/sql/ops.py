@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, print_function
 from ...compute.function import function, kernel
 from ...compute.ops import ufuncs
 from .kernel import sql_kernel, SQL
-from .syntax import Call, Expr, QOrderBy, QGroupBy, QWhere
+from .syntax import Call, Expr, QOrderBy, QGroupBy, QWhere, And, Or, Not
 
 def sqlfunction(signature):
     def decorator(f):
@@ -48,11 +48,11 @@ def _implement(f, signature):
 
 add = define_binop("a -> a -> a", "add", "+")
 multiply = define_binop("a -> a -> a", "multiply", "*")
-subtract = define_binop("a : real -> a -> a", "subtract", "-")
-# floordiv = define_binop("a : real -> a -> a", "floordiv", "//")
-divide = define_binop("a : real -> a -> a", "divide", "/")
-# truediv = define_binop("a : real -> a -> a", "truediv", "/")
-mod = define_binop("a : real -> a -> a", "mod", "%")
+subtract = define_binop("a -> a -> a", "subtract", "-")
+floordiv = define_binop("a -> a -> a", "floor_divide", "/")
+divide = define_binop("a -> a -> a", "divide", "/")
+truediv = define_binop("a -> a -> a", "true_divide", "/")
+mod = define_binop("a -> a -> a", "mod", "%")
 
 negative = define_unop("a -> a", "negative", "-")
 
@@ -75,10 +75,14 @@ logical_and = define_binop("a..., bool -> a..., bool -> a..., bool",
                            "logical_and", "AND")
 logical_or  = define_binop("a..., bool -> a..., bool -> a..., bool",
                            "logical_or", "OR")
-logical_xor = define_binop("a..., bool -> a..., bool -> a..., bool",
-                           "logical_xor", "XOR")
-logical_not = define_binop("a..., bool -> a..., bool -> a..., bool",
-                           "logical_not", "NOT")
+logical_not = define_unop("a..., bool -> a..., bool", "logical_not", "NOT")
+
+def logical_xor(a, b):
+    # Potential exponential code generation...
+    return And(Or(a, b), Not(And(a, b)))
+
+kernel(ufuncs.logical_xor, SQL, logical_xor,
+       "a..., bool -> a..., bool -> a..., bool")
 
 #------------------------------------------------------------------------
 # SQL Functions

@@ -1,8 +1,9 @@
 from __future__ import print_function, division, absolute_import
 
 import unittest
-from datashape import dshape
+from datashape import dshape, bool_
 
+import blaze
 from blaze import add, multiply, eval, py2help
 from blaze.io.sql import sql_table, sql_column, db
 from blaze.io.sql.ops import index
@@ -29,6 +30,121 @@ class TestSQL(unittest.TestCase):
         self.col_price = sql_column('testtable', 'price',
                                     dshape('3, float64'),
                                     self.conn)
+
+
+class TestSQLOps(TestSQL):
+
+    ## ufuncs
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_add_scalar(self):
+        expr = self.col_i + 2
+        result = eval(expr)
+        self.assertEqual([int(x) for x in result], [6, 10, 18])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_sub_scalar(self):
+        expr = self.col_i - 2
+        result = eval(expr)
+        self.assertEqual([int(x) for x in result], [2, 6, 14])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_mul_scalar(self):
+        expr = self.col_i * 2
+        result = eval(expr)
+        self.assertEqual([int(x) for x in result], [8, 16, 32])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_floordiv_scalar(self):
+        expr = self.col_i // 2
+        result = eval(expr)
+        self.assertEqual([int(x) for x in result], [2, 4, 8])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_truediv_scalar(self):
+        expr = self.col_i / 2
+        result = eval(expr)
+        self.assertEqual([float(x) for x in result], [2., 4., 8.])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_mod_scalar(self):
+        expr = self.col_i % 3
+        result = eval(expr)
+        self.assertEqual([int(x) for x in result], [1, 2, 1])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_neg_scalar(self):
+        expr = -self.col_i
+        result = eval(expr)
+        self.assertEqual([int(x) for x in result], [-4, -8, -16])
+
+    ## compare
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_eq_scalar(self):
+        expr = self.col_i == 8
+        result = eval(expr)
+        self.assertEqual(result.dshape.measure, bool_)
+        self.assertEqual([bool(x) for x in result], [False, True, False])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_ne_scalar(self):
+        expr = self.col_i != 8
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [True, False, True])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_lt_scalar(self):
+        expr = self.col_i < 5
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [True, False, False])
+
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_le_scalar(self):
+        expr = self.col_i <= 8
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [True, True, False])
+
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_gt_scalar(self):
+        expr = self.col_i > 9
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [False, False, True])
+
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_ge_scalar(self):
+        expr = self.col_i >= 8
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [False, True, True])
+
+    ## logical
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_and(self):
+        expr = blaze.logical_and(5 < self.col_i, self.col_i < 10)
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [False, True, False])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_or(self):
+        expr = blaze.logical_or(self.col_i < 5, self.col_i > 10)
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [True, False, True])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_xor(self):
+        expr = blaze.logical_xor(self.col_i < 9, self.col_i > 6)
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [True, False, True])
+
+    @py2help.skipIf(db is None, 'pyodbc is not installed')
+    def test_not(self):
+        expr = blaze.logical_not(self.col_i < 5)
+        result = eval(expr)
+        self.assertEqual([bool(x) for x in result], [False, True, True])
 
 
 class TestSQLColumns(TestSQL):

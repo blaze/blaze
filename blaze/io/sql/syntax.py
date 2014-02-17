@@ -28,6 +28,7 @@ Call    = qtuple('Call',    ['name', 'args'])
 Expr    = qtuple('Expr',    ['args'])
 And     = lambda e1, e2: Expr([e1, 'AND', e2])
 Or      = lambda e1, e2: Expr([e1, 'OR', e2])
+Not     = lambda e1: Expr(['NOT', e1])
 
 
 def qmap(f, q):
