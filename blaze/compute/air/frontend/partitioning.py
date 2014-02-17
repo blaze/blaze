@@ -4,6 +4,8 @@ rules which backend to use for which operation.
 """
 
 from __future__ import absolute_import, division, print_function
+from collections import defaultdict
+
 from pykit import ir
 from ...strategy import OOC, JIT, CKERNEL, PY
 from ....io.sql import SQL, SQLDataDescriptor
@@ -120,23 +122,29 @@ def annotate_all_kernels(func, env):
 
         { (Op, strategy) : Overload }
     """
-    impls = env['kernel.overloads'] = {} # { (Op, strategy) : Overload }
+    # { (Op, strategy) : Overload }
+    impls = env['kernel.overloads'] = {}
+
+    # { op: [strategy] }
+    unmatched = env['unmached_impls'] = defaultdict(list)
 
     for op in func.ops:
         if op.opcode == "kernel":
-            _find_impls(op, env, impls)
+            _find_impls(op, env, unmatched, impls)
 
 
-def _find_impls(op, env, impls):
+def _find_impls(op, env, unmatched, impls):
     function = op.metadata['kernel']
     overload = op.metadata['overload']
 
     found_impl = False
     for strategy in enumerate_strategies(function, env):
-        result = overload_for_strategy(function, overload, strategy)
-        if result:
-            impls[op, strategy] = result
+        py_func, signature = overload_for_strategy(function, overload, strategy)
+        if py_func is not None:
+            impls[op, strategy] = py_func, signature
             found_impl = True
+        else:
+            unmatched[op].append(strategy)
 
     if not found_impl:
         raise TypeError("No implementation found for %s" % (function,))
@@ -208,6 +216,12 @@ def partition(func, env):
             strategies[op] = determine_preference(op, env, prefs)
 
 
+def argsjoin(args):
+    if len(args) == 1:
+        return str(args[0])
+    args = [str(arg) for arg in args]
+    return ", ".join(args[:-1]) + " and " + args[-1]
+
 def determine_preference(op, env, preferences):
     """Return the first valid strategy according to a list of preferences"""
     strategies = env['strategies']
@@ -216,12 +230,18 @@ def determine_preference(op, env, preferences):
         if valid_strategy(op, strategies, env):
             return preference
 
-    # import pdb; pdb.set_trace()
-    # print(op.parent.parent)
-    # valid_strategy = determine_strategy['sql']
-    # valid_strategy(op, strategies, env)
-    raise ValueError(
-        "No valid strategy could be determined for %s from %s" % (op, preferences))
+    # Construct error message that gives some insight as to where the problem
+    # might be
+    msg = ("No valid strategy could be determined for '%s' from matched "
+           "implementations for strategies %s" % (
+                op.args[0].const, argsjoin(preferences)))
+
+    unmatched = env['unmached_impls']
+    if unmatched[op]:
+        msg += (" (implementations for strategies %s "
+                "did not match input types)" % argsjoin(unmatched[op]))
+
+    raise ValueError(msg)
 
 #------------------------------------------------------------------------
 # Backend boundaries / Fusion boundaries
