@@ -34,6 +34,13 @@ class TestSQL(unittest.TestCase):
                                     dshape('3, float64'),
                                     self.conn)
 
+        test_data = np.array(data, dtype=[('i', np.int32),
+                                          ('msg', '|S5'),
+                                          ('price', np.float64)])
+        self.np_i = test_data['i']
+        self.np_msg = test_data['msg']
+        self.np_price = test_data['price']
+
 
 class TestSQLOps(TestSQL):
 
@@ -159,16 +166,43 @@ class TestSQLUFuncExpressions(TestSQL):
                 ops.avg(self.col_i))
         result = eval(expr)
 
-        test_data = np.array(data, dtype=[('i', np.int32),
-                                          ('msg', '|S5'),
-                                          ('price', np.float64)])
-        i, price = test_data['i'], test_data['price']
-        np_result = ((np.max(price) / np.min(price)) *
-                     (i + 2) * 3.1 -
-                     np.average(i) / np.max(price))
+        np_result = ((np.max(self.np_price) / np.min(self.np_price)) *
+                     (self.np_i + 2) * 3.1 -
+                     np.average(self.np_i) / np.max(self.np_price))
 
         self.assertEqual([float(x) for x in result],
                          [float(x) for x in np_result])
+
+    @skipif
+    def test_select_where(self):
+        expr = ops.index(self.col_i + 2 * self.col_price,
+                         blaze.logical_and(self.col_price > 5, self.col_price < 7))
+        result = eval(expr)
+
+        np_result = (self.np_i + 2 * self.np_price)[
+            np.logical_and(self.np_price > 5, self.np_price < 7)]
+
+        self.assertEqual([float(x) for x in result],
+                         [float(x) for x in np_result])
+
+    @skipif
+    def test_select_where2(self):
+        expr = ops.index(self.col_i + 2 * self.col_price,
+                         blaze.logical_or(
+                             blaze.logical_and(self.col_price > 5,
+                                               self.col_price < 7),
+                             self.col_i > 6))
+        result = eval(expr)
+
+        np_result = (self.np_i + 2 * self.np_price)[
+            np.logical_or(
+                np.logical_and(self.np_price > 5,
+                               self.np_price < 7),
+                self.np_i > 6)]
+
+        self.assertEqual([float(x) for x in result],
+                         [float(x) for x in np_result])
+
 
 
 class TestSQLDataTypes(TestSQL):
@@ -216,5 +250,5 @@ class TestSQLTable(TestSQL):
 
 if __name__ == '__main__':
     # TestSQLTable('test_query').debug()
-    # TestSQLUFuncExpressions('test_select_expr').debug()
+    # TestSQLUFuncExpressions('test_select_where').debug()
     unittest.main()

@@ -52,6 +52,9 @@ def rewrite_sql(func, env):
             queries[arg] = query
             leafs[arg] = [arg]
 
+    # print(func)
+    # print(strategies)
+
     # Generate SQL queries for each op
     for op in func.ops:
         if op.opcode == "kernel" and strategies[op] == 'sql':
@@ -61,7 +64,8 @@ def rewrite_sql(func, env):
             inputs = [queries[arg] for arg in args]
             query = query_gen(*inputs)
             queries[op] = query
-            conns[op] = conns[args[0]]
+            if args[0] in conns:
+                conns[op] = conns[args[0]]
             leafs[op] = [leaf for arg in args
                                   for leaf in leafs[arg]]
 
@@ -72,7 +76,8 @@ def rewrite_sql(func, env):
                 query = queries[arg]
                 queries[op] = query
 
-                conns[op] = conns[arg]
+                if arg in conns:
+                    conns[op] = conns[arg]
                 leafs[op] = list(leafs[arg])
             else:
                 continue
