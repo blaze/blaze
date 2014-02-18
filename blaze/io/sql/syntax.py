@@ -6,6 +6,7 @@ SQL syntax building.
 
 from __future__ import absolute_import, division, print_function
 from collections import namedtuple
+from functools import reduce
 
 #------------------------------------------------------------------------
 # Syntax (declarative)

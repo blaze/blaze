@@ -171,3 +171,5 @@ class _ResultIterator(object):
         next_chunk = next(self.query_result)
         self.chunks.append(next_chunk)
         return next_chunk
+
+    __next__ = next
