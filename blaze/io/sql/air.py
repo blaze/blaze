@@ -116,7 +116,7 @@ def sql_to_pykernel(expr, op, env):
         try:
             # print("executing...", select_query)
             result = execute(conn, dshape, select_query, [])
-        except db.OperationalError, e:
+        except db.OperationalError as e:
             raise db.OperationalError(
                 "Error executing %s: %s" % (select_query, e))
 
