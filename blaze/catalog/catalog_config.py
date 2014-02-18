@@ -86,11 +86,35 @@ class CatalogConfig(object):
                 if p == dir:
                     # The cdir is the root, return it
                     return (p, '/')
-                # Check whether there is the specific subcdir in cdir
                 cdir = CatalogCDir(self, p)
                 subcdir = dir[len(p):]
-                if subcdir in cdir.ls_abs_dirs():
+                if subcdir in cdir.ls_abs('Group'):
                     return (p, subcdir)
+                else:
+                    return (None, None)
+        return (None, None)
+                    
+    def get_subcarray(self, dir):
+        """Check if an array path is inside a cdir.
+
+           If the path exists in catalog, a tuple to the `cdir` and
+           `subcarray` are returned.  If not, a (None, None) is
+           returned instead.
+        """
+        # Build all the possible paths in `dir`
+        paths = ['/']
+        for p in dir[1:].split('/'):
+            paths.append(path.join(paths[-1], p))
+        # Check if any of these paths contains a cdir
+        for p in paths[1:]:
+            dir2 = path.join(self.root, p)
+            if self.iscdir(p):
+                # Bingo!  Now, let's see if we can find the subcarray there
+                cdir = CatalogCDir(self, p)
+                subcarray = dir[len(p):]
+                print("subcarray:", subcarray, cdir.ls_abs('Leaf'))
+                if subcarray in cdir.ls_abs('Leaf'):
+                    return (p, subcarray)
                 else:
                     return (None, None)
         return (None, None)
