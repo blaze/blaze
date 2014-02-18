@@ -96,7 +96,9 @@ def use_local(op, strategies, env):
         #return not (data_desc.capabilities.persistent or
         #            data_desc.capabilities.remote)
 
-    return all(strategies[arg] in local_strategies for arg in op.args[1:])
+    return all(strategies[arg] in local_strategies
+                   for arg in op.args[1:]
+                        if not isinstance(arg, ir.FuncArg))
 
 
 local_strategies = (JIT, CKERNEL, PY)

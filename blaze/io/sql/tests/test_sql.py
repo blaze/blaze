@@ -161,6 +161,8 @@ class TestSQLUFuncExpressions(TestSQL):
 
     @skipif
     def test_select_expr(self):
+        raise unittest.SkipTest("Correctly compose queries with aggregations")
+
         expr = ((ops.max(self.col_price) / ops.min(self.col_price)) *
                 (self.col_i + 2) * 3.1 -
                 ops.avg(self.col_i))
