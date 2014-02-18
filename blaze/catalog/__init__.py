@@ -4,7 +4,7 @@ from . import blaze_url
 from . import catalog_config
 from .catalog_dir import (
     CatalogDir, CatalogCDir, is_rel_bpath, is_abs_bpath, join_bpath)
-from .catalog_arr import load_blaze_array
+from .catalog_arr import load_blaze_array, load_blaze_subcarray
 
 # Load the default config
 config = catalog_config.load_default_config()
@@ -88,10 +88,14 @@ def get(key):
     key = join_bpath(_cwd, key)
     if config.isdir(key):
         return CatalogDir(config, key)
-    elif config.iscdir(key):
-        return CatalogCDir(config, key)
-    elif config.isarray(key):
+    if config.isarray(key):
         return load_blaze_array(config, key)
+    (dir, subcdir) = config.get_subcdir(key)
+    if dir:
+        return CatalogCDir(config, dir, subcdir)
+    (dir, subcarray) = config.get_subcarray(key)
+    if dir:
+        return load_blaze_subcarray(config, dir, subcarray)
     else:
         raise RuntimeError('Blaze path not found: %r' % key)
 

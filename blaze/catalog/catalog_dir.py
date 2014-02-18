@@ -180,7 +180,7 @@ class CatalogCDir(CatalogDir):
                          f.iter_nodes(self.subcdir)]
             return sorted(nodes)
 
-    def ls_abs_dirs(self):
+    def ls_abs(self, cname=''):
         """
         Returns a list of all the directories in this blaze cdir
         """
@@ -188,7 +188,7 @@ class CatalogCDir(CatalogDir):
             import tables as tb
             with tb.open_file(self.fname, 'r') as f:
                 nodes = [n._v_pathname for n in
-                         f.iter_nodes(self.subcdir, classname='Group')]
+                         f.walk_nodes(self.subcdir, classname=cname)]
             return sorted(nodes)
 
     def __getindex__(self, key):

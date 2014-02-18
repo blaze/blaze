@@ -126,3 +126,20 @@ def load_blaze_array(conf, dir):
         raise ValueError(('Unsupported array type %r from ' +
                           'blaze catalog entry %r')
                          % (tp, dir))
+
+def load_blaze_subcarray(conf, cdir, subcarray):
+    #fsdir = conf.get_fsdir(cdir)
+    fsdir = path.join(conf.root, cdir[1:])
+    import tables as tb
+    from blaze.datadescriptor import HDF5DataDescriptor
+    fname = fsdir + '.h5'   # XXX .h5 assumed for HDF5
+    print("fname:", fname)
+    with tb.open_file(fname, 'r') as f:
+        try:
+            dparr = f.get_node(f.root, subcarray, 'Leaf')
+        except tb.NoSuchNodeError:
+            raise RuntimeError(
+                'HDF5 file does not have a dataset in %r' % dp)
+        dd = HDF5DataDescriptor(fname, subcarray)
+    return blaze.array(dd)
+    
