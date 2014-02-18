@@ -67,27 +67,32 @@ class CatalogConfig(object):
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
-    def issubcdir(self, dir):
+    def get_subcdir(self, dir):
         """Check if a blaze catalog path points to an existing cdir or subcdir.
 
            If the path exists in catalog, a tuple to the `cdir` and
            `subcdir` are returned.  If not, a (None, None) is returned
            instead.
         """
+        # Build all the possible paths in `dir`
         paths = ['/']
         for p in dir[1:].split('/'):
             paths.append(path.join(paths[-1], p))
+        # Check if any of these paths contains a cdir
         for p in paths[1:]:
             dir2 = path.join(self.root, p)
             if self.iscdir(p):
+                # Bingo!  Now, let's see if we can find the subcdir there
                 if p == dir:
-                    # A cdir was found, but not subcdir
+                    # The cdir is the root, return it
                     return (p, '/')
-                # Check whether there is a subcdir
+                # Check whether there is the specific subcdir in cdir
                 cdir = CatalogCDir(self, p)
-                h5dir = dir[len(p):]
-                if h5dir in cdir.ls_abs_dirs():
-                    return (p, h5dir)
+                subcdir = dir[len(p):]
+                if subcdir in cdir.ls_abs_dirs():
+                    return (p, subcdir)
+                else:
+                    return (None, None)
         return (None, None)
                     
     def ls_arrs(self, dir):
@@ -96,10 +101,10 @@ class CatalogConfig(object):
             if self.iscdir(dir):
                 cdir = CatalogCDir(self, dir)
                 return sorted(cdir.ls_arrs())
-            (cdir, subcdir) = self.issubcdir(dir)
+            (cdir, subcdir) = self.get_subcdir(dir)
             if cdir or subcdir:
                 cdir = CatalogCDir(self, cdir, subcdir)
-                return sorted(cdir.ls())
+                return sorted(cdir.ls_arrs())
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             res = [path.splitext(x)[0] for x in listing
@@ -117,7 +122,7 @@ class CatalogConfig(object):
             if self.iscdir(dir):
                 cdir = CatalogCDir(self, dir)
                 return sorted(cdir.ls_dirs())
-            (cdir, subcdir) = self.issubcdir(dir)
+            (cdir, subcdir) = self.get_subcdir(dir)
             if cdir or subcdir:
                 cdir = CatalogCDir(self, cdir, subcdir)
                 return sorted(cdir.ls_dirs())
@@ -137,7 +142,7 @@ class CatalogConfig(object):
             if self.iscdir(dir):
                 cdir = CatalogCDir(self, dir)
                 return sorted(cdir.ls())
-            (cdir, subcdir) = self.issubcdir(dir)
+            (cdir, subcdir) = self.get_subcdir(dir)
             if cdir or subcdir:
                 cdir = CatalogCDir(self, cdir, subcdir)
                 return sorted(cdir.ls())
