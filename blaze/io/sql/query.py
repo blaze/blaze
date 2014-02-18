@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function
 
 from . import db
 
-from datashape import DataShape
+from datashape import DataShape, Record
 from dynd import nd, ndt
 
 
@@ -29,8 +29,14 @@ class Result(object):
         self.cursor = cursor
         self.dshape = dshape
 
-    def __iter__(self):
-        return iter(self.cursor)
+    # def __iter__(self):
+    #     return iter_result(self.cursor, self.dshape)
+
+
+def iter_result(result, dshape):
+    if not isinstance(dshape.measure, Record):
+        return iter(row[0] for row in result)
+    return iter(result)
 
 
 def dynd_chunk_iterator(result, chunk_size=1024):
@@ -40,13 +46,16 @@ def dynd_chunk_iterator(result, chunk_size=1024):
     cursor = result.cursor
 
     chunk_size = max(cursor.arraysize, chunk_size)
-    dshape = DataShape(chunk_size, result.dshape.measure)
     while True:
-        chunk = nd.empty(str(dshape))
         try:
             results = cursor.fetchmany(chunk_size)
         except db.Error:
             break
 
-        chunk[:] = results
+        if not results:
+            break
+
+        dshape = DataShape(len(results), result.dshape.measure)
+        chunk = nd.empty(str(dshape))
+        chunk[:] = list(iter_result(results, dshape))
         yield chunk

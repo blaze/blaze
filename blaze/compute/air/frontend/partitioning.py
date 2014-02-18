@@ -4,13 +4,17 @@ rules which backend to use for which operation.
 """
 
 from __future__ import absolute_import, division, print_function
+from collections import defaultdict
+
 from pykit import ir
-from blaze.compute.strategy import OOC, JIT, CKERNEL, PY
+from ...strategy import OOC, JIT, CKERNEL, PY
+from ....io.sql import SQL, SQLDataDescriptor
 
 
 # List of backends to use greedily listed in order of preference
 
 preferences = [
+    SQL, # TODO: Allow easier extension of new backends
     #OOC,
     JIT,
     CKERNEL,
@@ -37,8 +41,6 @@ def use_sql(op, strategies, env):
     NOTE: This also populates env['sql.conns']. Mutating this way is somewhat
           undesirable, but this is a non-local decision anyway
     """
-    from ..io.sql import SQLDataDescriptor, SQL
-
     conns = env.setdefault('sql.conns', {})
 
     if isinstance(op, ir.FuncArg):
@@ -47,13 +49,19 @@ def use_sql(op, strategies, env):
         runtime_args = env['runtime.args']
         array = runtime_args[op]
         data_desc = array._data
-        if not isinstance(data_desc, SQLDataDescriptor):
+        is_scalar = not data_desc.dshape.shape
+        if not isinstance(data_desc, SQLDataDescriptor) and not is_scalar:
             return False
-        conns[op] = data_desc.conn
+        if isinstance(data_desc, SQLDataDescriptor):
+            conns[op] = data_desc.conn
         return True
     elif all(strategies[arg] == SQL for arg in op.args[1:]):
-        conn = conns[op.args[1]]
-        return all(conn == conns[arg] for arg in op.args[1:])
+        connections = set(conns[arg] for arg in op.args[1:] if arg in conns)
+        if len(connections) == 1:
+            [conn] = connections
+            conns[op] = conn
+            return True
+        return False
     else:
         return False
 
@@ -88,12 +96,15 @@ def use_local(op, strategies, env):
         #return not (data_desc.capabilities.persistent or
         #            data_desc.capabilities.remote)
 
-    return all(strategies[arg] in local_strategies for arg in op.args[1:])
+    return all(strategies[arg] in local_strategies
+                   for arg in op.args[1:]
+                        if not isinstance(arg, ir.FuncArg))
 
 
 local_strategies = (JIT, CKERNEL, PY)
 
 determine_strategy = {
+    SQL:        use_sql,
     #OOC:        use_ooc,
     JIT:        use_local,
     CKERNEL:    use_local,
@@ -113,23 +124,29 @@ def annotate_all_kernels(func, env):
 
         { (Op, strategy) : Overload }
     """
-    impls = env['kernel.overloads'] = {} # { (Op, strategy) : Overload }
+    # { (Op, strategy) : Overload }
+    impls = env['kernel.overloads'] = {}
+
+    # { op: [strategy] }
+    unmatched = env['unmached_impls'] = defaultdict(list)
 
     for op in func.ops:
         if op.opcode == "kernel":
-            _find_impls(op, env, impls)
+            _find_impls(op, env, unmatched, impls)
 
 
-def _find_impls(op, env, impls):
+def _find_impls(op, env, unmatched, impls):
     function = op.metadata['kernel']
     overload = op.metadata['overload']
 
     found_impl = False
     for strategy in enumerate_strategies(function, env):
-        result = overload_for_strategy(function, overload, strategy)
-        if result:
-            impls[op, strategy] = result
+        py_func, signature = overload_for_strategy(function, overload, strategy)
+        if py_func is not None:
+            impls[op, strategy] = py_func, signature
             found_impl = True
+        else:
+            unmatched[op].append(strategy)
 
     if not found_impl:
         raise TypeError("No implementation found for %s" % (function,))
@@ -201,6 +218,12 @@ def partition(func, env):
             strategies[op] = determine_preference(op, env, prefs)
 
 
+def argsjoin(args):
+    if len(args) == 1:
+        return str(args[0])
+    args = [str(arg) for arg in args]
+    return ", ".join(args[:-1]) + " and " + args[-1]
+
 def determine_preference(op, env, preferences):
     """Return the first valid strategy according to a list of preferences"""
     strategies = env['strategies']
@@ -209,9 +232,18 @@ def determine_preference(op, env, preferences):
         if valid_strategy(op, strategies, env):
             return preference
 
-    #import pdb; pdb.set_trace()
-    raise ValueError(
-        "No valid strategy could be determined for %s from %s" % (op, preferences))
+    # Construct error message that gives some insight as to where the problem
+    # might be
+    msg = ("No valid strategy could be determined for '%s' from matched "
+           "implementations for strategies %s" % (
+                op.args[0].const, argsjoin(preferences)))
+
+    unmatched = env['unmached_impls']
+    if unmatched[op]:
+        msg += (" (implementations for strategies %s "
+                "did not match input types)" % argsjoin(unmatched[op]))
+
+    raise ValueError(msg)
 
 #------------------------------------------------------------------------
 # Backend boundaries / Fusion boundaries
@@ -250,4 +282,4 @@ def annotate_roots(func, env):
                 # Result for user, boundary
                 [use] = uses
                 if use.opcode == 'ret':
-                    roots.add(use)
+                    roots.add(op)

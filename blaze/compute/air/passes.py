@@ -12,6 +12,7 @@ from .prettyprint import verbose
 from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
                        ckernel_lift, allocation, assemblage, ckernel_prepare,
                        ckernel_rewrite)
+from ...io.sql.air import rewrite_sql
 
 #------------------------------------------------------------------------
 # Passes
@@ -36,6 +37,7 @@ passes = [
     allocation,
     ckernel_lift,
     ckernel_rewrite,
+    rewrite_sql,
 ]
 
 debug_passes = [partial(verbose, p) for p in passes]
