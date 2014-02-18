@@ -10,8 +10,8 @@ from functools import partial
 
 from .prettyprint import verbose
 from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
-                       ckernel_lift, allocation, assemblage)
-from .execution import jit_interp
+                       ckernel_lift, allocation, assemblage, ckernel_prepare,
+                       ckernel_rewrite)
 
 #------------------------------------------------------------------------
 # Passes
@@ -31,9 +31,11 @@ passes = [
     jit,
     assemblage.assemble_py_kernels,
     # TODO: Make the below compile-time passes !
+    ckernel_prepare.prepare_local_execution,
     ckernel_impls,
-    #allocation,
-    #ckernel_lift,
+    allocation,
+    ckernel_lift,
+    ckernel_rewrite,
 ]
 
 debug_passes = [partial(verbose, p) for p in passes]

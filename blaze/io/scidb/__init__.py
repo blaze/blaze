@@ -9,5 +9,5 @@ from . import scidb_interp
 from . import ufuncs
 
 # Register scidb AIR interpreter
-from blaze.compute.air import execution
-execution.register_interp('scidb', scidb_interp)
+# from blaze.compute.air import execution
+# execution.register_interp('scidb', scidb_interp)
