@@ -68,11 +68,14 @@ class CatalogHarness(object):
         import tables as tb
         a1 = nd.array([[1, 2, 3], [4, 5, 6]], dtype="int32")
         a2 = nd.array([[1, 2, 3], [3, 2, 1]], dtype="int32")
+        a3 = nd.array([[1, 3, 2], [2, 1, 3]], dtype="int32")
         fname = os.path.join(self.arrdir, '%s_arr.h5' % name)
         with tb.open_file(fname, 'w') as f:
             f.create_array(f.root, "a1", nd.as_numpy(a1))
             mg = f.create_group(f.root, "mygroup")
             f.create_array(mg, "a2", nd.as_numpy(a2))
+            f.create_array(mg, "a3", nd.as_numpy(a2))
+            mg2 = f.create_group(mg, "mygroup2")
         # Create a .array file for locating the dataset inside the file
         with open(os.path.join(self.arrdir, '%s_arr.array' % name), 'w') as f:
             f.write('type: hdf5\n')

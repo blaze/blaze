@@ -80,9 +80,10 @@ class TestCatalog(unittest.TestCase):
     def test_hdf5_subdir(self):
         blaze.catalog.cd('/hdf5_dir/mygroup')
         self.assertEquals(blaze.catalog.cwd(), '/hdf5_dir/mygroup')
-        self.assertEquals(blaze.catalog.ls(), sorted(['a2']))
-        self.assertEquals(blaze.catalog.ls_dirs(), sorted([]))
-        self.assertEquals(blaze.catalog.ls_arrs(), sorted(['a2']))
+        self.assertEquals(blaze.catalog.ls(),
+                          sorted(['a2', 'a3', 'mygroup2']))
+        self.assertEquals(blaze.catalog.ls_dirs(), sorted(['mygroup2']))
+        self.assertEquals(blaze.catalog.ls_arrs(), sorted(['a2', 'a3']))
 
     def test_load_npy(self):
         # Confirms that a simple npy file can be loaded

@@ -50,10 +50,12 @@ def cd(key):
     newcwd = join_bpath(_cwd, key)
     if config.isdir(newcwd):
         _cwd = newcwd
-    elif config.issubcdir(newcwd):
+        return
+    (dir, subcdir) = config.get_subcdir(newcwd)
+    if dir:
         _cwd = newcwd
-    else:
-        print('No directory %r in the blaze catalog' % newcwd)
+        return
+    print('No directory %r in the blaze catalog' % newcwd)
 
 
 def cwd():
