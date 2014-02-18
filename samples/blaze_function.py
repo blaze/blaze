@@ -18,7 +18,7 @@ function. This function contains:
         This has a type signature and may implement the operation or simply
         raise an exception
 
-            @blaze_func('a -> a -> a', elementwise=True)
+            @blaze_func('A -> A -> A', elementwise=True)
             def add(a, b):
                 return a + b # We add the scalar elements together
 
@@ -27,15 +27,14 @@ function. This function contains:
         ufuncs, and their inputs are the array dimensions they matched
         according to their signature.
 
-        The 'a -> a -> a' part is the signature, which indicates a function
-        taking an `a` and an `a` and returning an `a`. This means that the
+        The 'A -> A -> A' part is the signature, which indicates a function
+        taking two arguments of a compatible type (`A` and `A`) and returning
+        another `A`. This means that the
         argument types must be the compatible, and arguments are subject to
         promotion. For instance, if we put in an (int, float), the system will
         automatically promote the int to a float. Note that the types in the
-        signature, in this case the type variable `a`, are identified by
-        position. For instance, we could just as well have chosen the name `x`:
-
-            x -> x -> x
+        signature, in this case the type variable `A`, are identified by
+        position.
 
     * a set of overloaded implementations of certain implementation "kinds"
 
@@ -89,7 +88,7 @@ from itertools import cycle
 import blaze
 from blaze.compute.function import blaze_func, function, kernel
 
-def bzip(a, b):
+def broadcast_zip(a, b):
     """broadcasting zip"""
     assert len(a) == len(b) or len(a) == 1 or len(b) == 1
     n = max(len(a), len(b))
