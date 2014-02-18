@@ -78,6 +78,14 @@ class TestCatalog(unittest.TestCase):
         self.assertEquals(blaze.catalog.ls_dirs(), sorted(['mygroup']))
         self.assertEquals(blaze.catalog.ls_arrs(), sorted(['a1']))
 
+    @skipIf(not tables_is_here, 'PyTables is not installed')
+    def test_hdf5_subdir(self):
+        blaze.catalog.cd('/hdf5_dir/mygroup')
+        self.assertEquals(blaze.catalog.cwd(), '/hdf5_dir/mygroup')
+        self.assertEquals(blaze.catalog.ls(), sorted(['a2']))
+        self.assertEquals(blaze.catalog.ls_dirs(), sorted([]))
+        self.assertEquals(blaze.catalog.ls_arrs(), sorted(['a2']))
+
     def test_load_npy(self):
         # Confirms that a simple npy file can be loaded
         blaze.catalog.cd('/')

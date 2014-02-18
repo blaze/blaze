@@ -132,9 +132,10 @@ class CatalogDir(object):
 
 class CatalogCDir(CatalogDir):
     """This object represents a directory path within a special catalog"""
-    def __init__(self, conf, cdir):
+    def __init__(self, conf, cdir, subcdir='/'):
         self.conf = conf
         self.cdir = cdir
+        self.subcdir = subcdir
         if not is_abs_bpath(cdir):
             raise ValueError('Require a path to cdir file: %r' % cdir)
         self._fsdir = path.join(conf.root, cdir[1:])
@@ -156,7 +157,7 @@ class CatalogCDir(CatalogDir):
             import tables as tb
             with tb.open_file(self.fname, 'r') as f:
                 leafs = [l._v_name for l in
-                         f.iter_nodes('/', classname='Leaf')]
+                         f.iter_nodes(self.subcdir, classname='Leaf')]
             return sorted(leafs)
 
     def ls_dirs(self):
@@ -165,7 +166,7 @@ class CatalogCDir(CatalogDir):
             import tables as tb
             with tb.open_file(self.fname, 'r') as f:
                 groups = [g._v_name for g in 
-                          f.iter_nodes('/', classname='Group')]
+                          f.iter_nodes(self.subcdir, classname='Group')]
             return sorted(groups)
 
     def ls(self):
@@ -176,7 +177,18 @@ class CatalogCDir(CatalogDir):
             import tables as tb
             with tb.open_file(self.fname, 'r') as f:
                 nodes = [n._v_name for n in
-                         f.iter_nodes('/')]  # XXX generalize
+                         f.iter_nodes(self.subcdir)]
+            return sorted(nodes)
+
+    def ls_abs_dirs(self):
+        """
+        Returns a list of all the directories in this blaze cdir
+        """
+        if self.ctype == "hdf5":
+            import tables as tb
+            with tb.open_file(self.fname, 'r') as f:
+                nodes = [n._v_pathname for n in
+                         f.iter_nodes(self.subcdir, classname='Group')]
             return sorted(nodes)
 
     def __getindex__(self, key):
