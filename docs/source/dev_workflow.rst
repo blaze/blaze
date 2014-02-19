@@ -12,6 +12,25 @@ to contribute to the project.
 For any questions about Blaze and how to get involved, please
 email blaze-dev@continuum.io.
 
+Test Driven Development
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Blaze is actively changing and evolving. In such an environment,
+aspects of the code such as documentation, webpages, docstring, and
+unspoken intentions are secondary to tests.  To add code to Blaze repo
+the preferred process is as follows:
+
+* Propose a feature via the email list or github issues
+* Add a design doc to docs/design
+* Add a test suite to the appropriate test directory
+* Implement feature
+
+This will allow developers know when a feature is broken based on the
+various testing proceedures below. Anything that is not tested is
+subject to change, thus all regressions should be reported with
+appropriate tests. Likewise, any added feature without a test is
+subject to breakage and/or removal.
+
 GitHub Flow
 ~~~~~~~~~~~
 
