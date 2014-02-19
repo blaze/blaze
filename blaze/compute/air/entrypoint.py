@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
 Assemble an execution kernel from a given expression graph.
 """
 
 from __future__ import absolute_import, division, print_function
+
 from . import pipeline, environment, passes, execution
 
 def compile(expr, storage, debug=False):

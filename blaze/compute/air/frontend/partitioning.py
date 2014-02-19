@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function
 from collections import defaultdict
 
 from pykit import ir
+
 from ...strategy import OOC, JIT, CKERNEL, PY
 from ....io.sql import SQL, SQLDataDescriptor
 

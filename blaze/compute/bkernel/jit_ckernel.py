@@ -8,15 +8,14 @@ from llvm.core import Type, Function, Module
 import llvm.ee as le
 from llvm.passes import build_pass_managers
 
+from dynd import ndt, _lowlevel
+from blaze.py2help import izip,c_ssize_t
+
 from .. import llvm_array as lla
-from blaze.py2help import izip, _strtypes, c_ssize_t, PY2
-from ..llvm_array import (void_type, intp_type,
-                array_kinds, check_array,
-                get_cpp_template, array_type, const_intp, LLArray, orderchar)
+from ..llvm_array import intp_type
 from .llutil import (int32_type, int8_p_type, single_ckernel_func_type,
-                strided_ckernel_func_type,  map_llvm_to_ctypes)
+                strided_ckernel_func_type)
 from ..ckernel import JITCKernelData, wrap_ckernel_func
-from dynd import nd, ndt, _lowlevel
 
 
 def args_to_kernel_data_struct(kinds, argtypes):
@@ -45,6 +44,7 @@ def args_to_kernel_data_struct(kinds, argtypes):
     class kernel_data_ctypestype(ctypes.Structure):
         _fields_ = kernel_data_ctypes_fields
     return (kernel_data_llvmtype, kernel_data_ctypestype)
+
 
 def build_llvm_arg_ptr(builder, raw_ptr_arg, dshape, kind, argtype):
     if kind == lla.SCALAR:
@@ -99,6 +99,7 @@ def build_llvm_arg_ptr(builder, raw_ptr_arg, dshape, kind, argtype):
                                 "support dimension type %r") % type(sz))
         return arr_var
 
+
 def build_llvm_src_ptrs(builder, src_ptr_arr_arg, dshapes, kinds, argtypes):
     args = []
     for i, (dshape, kind, argtype) in enumerate(izip(dshapes, kinds, argtypes)):
@@ -107,6 +108,7 @@ def build_llvm_src_ptrs(builder, src_ptr_arr_arg, dshapes, kinds, argtypes):
         arg = build_llvm_arg_ptr(builder, raw_ptr_arg, dshape, kind, argtype)
         args.append(arg)
     return args
+
 
 def jit_compile_ckernel_deferred(bek, out_dshape):
     """
@@ -170,6 +172,7 @@ def jit_compile_ckernel_deferred(bek, out_dshape):
     in_types = [in_dshape.measure for in_dshape in in_dshapes]
     return _lowlevel.ckernel_deferred_from_pyfunc(instantiate_ckernel,
                     [ndt.type(str(t)) for t in [out_type] + in_types])
+
 
 def create_ckernel_interface(bek, strided):
     """Create a function wrapper with a CKernel interface according to

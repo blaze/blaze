@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Use blaze.bkernel to assemble ckernels for evaluation.
 """

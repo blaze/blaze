@@ -1,19 +1,15 @@
-# -*- coding: utf-8 -*-
-
 """
 Pretty printing of AIR.
 """
 
 from __future__ import print_function, division, absolute_import
 
-import os
-import re
 import dis
 import types
 
-from . import pipeline
-
 import pykit.ir
+
+from . import pipeline
 
 
 def debug_print(func, env):
@@ -21,6 +17,7 @@ def debug_print(func, env):
     Returns whether to enable debug printing.
     """
     return isinstance(func, pykit.ir.Function)
+
 
 def verbose(p, func, env):
     if not debug_print(func, env):
@@ -48,7 +45,6 @@ def verbose(p, func, env):
 
     return func, env
 
-# ______________________________________________________________________
 
 def _passname(transform):
     return transform.__name__
@@ -57,11 +53,13 @@ def _passname(transform):
     #else:
     #    return ".".join([transform.__module__, transform.__name__])
 
+
 def _funcname(func):
     if isinstance(func, types.FunctionType):
         return func.__name__
     else:
         return func.name
+
 
 def _formatfunc(func):
     if isinstance(func, types.FunctionType):

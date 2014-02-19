@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-
 """
 Passes that massage expression graphs into execution kernels.
 """
-
 
 from __future__ import absolute_import, division, print_function
 from functools import partial
@@ -14,9 +11,6 @@ from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
                        ckernel_rewrite)
 from ...io.sql.air import rewrite_sql
 
-#------------------------------------------------------------------------
-# Passes
-#------------------------------------------------------------------------
 
 passes = [
     translate,

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Lift ckernels to their appropriate rank so they always consume the full array
 arguments.
@@ -8,7 +6,7 @@ arguments.
 from __future__ import absolute_import, division, print_function
 from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
 
-from dynd import nd, ndt
+from dynd import nd
 
 def prepare_local_execution(func, env):
     """
