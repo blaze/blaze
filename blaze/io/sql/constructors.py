@@ -28,7 +28,7 @@ def sql_table(table, colnames, measures, conn):
     Create a new blaze Array from an SQL table description. This returns
     a Record array.
     """
-    measure = Record(zip(colnames, measures))
+    measure = Record(list(zip(colnames, measures)))
     record_dshape = DataShape(dshape('a'), measure)
     table = TableSelection(table, '*')
     return Array(SQLDataDescriptor(record_dshape, table, conn))

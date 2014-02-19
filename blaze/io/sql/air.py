@@ -15,6 +15,8 @@ from .syntax import reorder_select, emit, Table, Column
 from .datadescriptor import SQLDataDescriptor, SQLResultDataDescriptor
 from ...datadescriptor import DyNDDataDescriptor
 
+import datashape as ds
+
 from pykit.ir import Op
 
 def rewrite_sql(func, env):
@@ -113,6 +115,10 @@ def sql_to_pykernel(expr, op, env):
     select_query = emit(query)
 
     def sql_pykernel(*inputs):
+        if isinstance(dshape.measure, ds.Record):
+            assert len(dshape.measure.parameters) == 1, dshape
+            assert dshape.measure.parameters[0], dshape
+
         try:
             # print("executing...", select_query)
             result = execute(conn, dshape, select_query, [])
@@ -123,25 +129,3 @@ def sql_to_pykernel(expr, op, env):
         return Array(SQLResultDataDescriptor(result))
 
     return sql_pykernel
-
-
-def compose_sql_select_query(tables, joins, expr):
-    """
-    Compose a select query from the given expression.
-
-        SELECT <expr>
-        FROM <tables>
-        WHERE <cond>
-    """
-    assert len(joins) >= len(tables) - 1
-
-    if not joins:
-        [table] = tables
-        return """SELECT %s
-                  FROM %s""" % (expr, table)
-
-    return """
-        SELECT %s
-        FROM %s
-        WHERE %s
-    """ % (expr, ", ".join(map(str, tables)), ", ".join(map(str, joins)))

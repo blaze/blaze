@@ -251,6 +251,6 @@ class TestSQLTable(TestSQL):
 
 
 if __name__ == '__main__':
-    # TestSQLTable('test_query').debug()
+    #TestSQLTable('test_query_where').debug()
     # TestSQLUFuncExpressions('test_select_where').debug()
     unittest.main()
