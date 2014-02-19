@@ -2,6 +2,14 @@
 Release Notes
 ======================
 
+Release 0.4.2
+-------------
+
+* Fix bug for compatibility with numba 0.12
+* Add sql formats
+* Add hdf5 formats
+* Add support for numpy ufunc operators
+
 Release 0.4.1
 -------------
 

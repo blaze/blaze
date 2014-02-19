@@ -1,12 +1,15 @@
-ply
-pycparser
-distribute
-flask
-nose
-numba
-numexpr
-dynd-python
-pykit
-datashape
-numpy
-blz
+llvmpy >= 0.12
+ply >= 3.4
+pyparsing >= 2.0.1
+flask >= 0.10.1
+nose >= 1.1
+numba >= 0.11
+dynd-python >= 0.6.1
+pykit >= 0.2.0
+datashape >= 0.1.1
+numpy >= 1.6
+blz >= 0.6.1
+
+# Optional dependencies
+pytables >= 3.0.0
+

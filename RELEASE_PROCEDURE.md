@@ -11,7 +11,6 @@ a new version of Blaze.
  * /blaze/__init__.py
 
 1. Confirm the dependencies and their version numbers in
-   /README.md. 
    /docs/installing
    /requirements.txt
 
