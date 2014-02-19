@@ -40,7 +40,7 @@ inf = float('inf')
 nan = float('nan')
 from math import pi
 
-__version__ = '0.4.1'
+__version__ = '0.4.1-dev'
 
 # If IPython is already loaded, register the Blaze catalog magic
 import sys

@@ -46,7 +46,7 @@ distributed context.
 Status
 ------
 
-Blaze is a work in progress at the moment, currently at release 0.4.1.
+Blaze is a work in progress at the moment, currently at release 0.4.1-dev.
 Take a look at the [release notes](docs/source/releases.rst).
 
 Documentation
