@@ -1,7 +1,6 @@
 from __future__ import print_function, division, absolute_import
 
 import unittest
-from datashape import dshape, bool_
 
 import blaze
 from blaze import add, multiply, eval, py2help
@@ -9,7 +8,9 @@ from blaze.io.sql import sql_table, sql_column, db
 from blaze.io.sql import ops
 from blaze.io.sql.tests.testutils import create_sqlite_table, data
 
+from datashape import dshape, bool_
 import numpy as np
+from nose.plugins.skip import SkipTest
 
 skipif = py2help.skipIf(db is None, 'pyodbc is not installed')
 
@@ -161,7 +162,7 @@ class TestSQLUFuncExpressions(TestSQL):
 
     @skipif
     def test_select_expr(self):
-        raise unittest.SkipTest("Correctly compose queries with aggregations")
+        raise SkipTest("Correctly compose queries with aggregations")
 
         expr = ((ops.max(self.col_price) / ops.min(self.col_price)) *
                 (self.col_i + 2) * 3.1 -
