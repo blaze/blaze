@@ -124,7 +124,7 @@ Contributing
 Anyone wishing to discuss on Blaze should join the
 [blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev)
 mailing list. To get started contributing, read through the
-[Developer Workflow](docs/source/dev_workflow.md) documentation.
+[Developer Workflow](docs/source/dev_workflow.rst) documentation.
 
 License
 -------
