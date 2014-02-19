@@ -4,13 +4,14 @@ for tests to use.
 """
 from __future__ import absolute_import, division, print_function
 
-import blaze
-from blaze.optional_packages import tables_is_here
-import numpy as np
-from dynd import nd, ndt
 import tempfile
 import os
 import shutil
+
+import numpy as np
+
+from dynd import nd
+from blaze.optional_packages import tables_is_here
 
 
 class CatalogHarness(object):

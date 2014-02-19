@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Lift ckernels to their appropriate rank so they always consume the full array
 arguments.

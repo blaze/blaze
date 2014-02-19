@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 Translate blaze expressoin graphs into blaze AIR.
 """
 
 from __future__ import absolute_import, division, print_function
-
-import threading
 
 from pykit import types
 from pykit.ir import Function, Builder, Value, Op, Const
@@ -14,6 +10,7 @@ from pykit.ir import Function, Builder, Value, Op, Const
 #------------------------------------------------------------------------
 # AIR construction
 #------------------------------------------------------------------------
+
 
 def run(expr, env):
     graph, expr_ctx = expr

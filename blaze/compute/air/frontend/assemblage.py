@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Assemble kernels into pykernels for execution.
 """

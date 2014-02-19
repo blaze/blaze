@@ -8,16 +8,13 @@ from __future__ import absolute_import, division, print_function
 
 import operator
 
-from pykit.ir import visit, copy_function
+from pykit.ir import visit
 from dynd import nd, ndt
 import blaze
 import blz
 import datashape
 
 from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
-from ..pipeline import run_pipeline
-from ..frontend import ckernel_impls, ckernel_lift, allocation
-
 
 #------------------------------------------------------------------------
 # Interpreter

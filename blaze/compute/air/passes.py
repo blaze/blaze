@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Passes that massage expression graphs into execution kernels.
 """
