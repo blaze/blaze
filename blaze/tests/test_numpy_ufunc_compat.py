@@ -359,16 +359,16 @@ class TestReciprocal(unittest.TestCase):
 
 class TestAngles(unittest.TestCase):
     def test_degrees(self):
-        assert_almost_equal(blaze.degrees(blaze.pi), 180.0)
-        assert_almost_equal(blaze.degrees(-0.5*blaze.pi), -90.0)
-        assert_almost_equal(blaze.rad2deg(blaze.pi), 180.0)
-        assert_almost_equal(blaze.rad2deg(-0.5*blaze.pi), -90.0)
+        assert_almost_equal(blaze.degrees(math.pi), 180.0)
+        assert_almost_equal(blaze.degrees(-0.5*math.pi), -90.0)
+        assert_almost_equal(blaze.rad2deg(math.pi), 180.0)
+        assert_almost_equal(blaze.rad2deg(-0.5*math.pi), -90.0)
 
     def test_radians(self):
-        assert_almost_equal(blaze.radians(180.0), blaze.pi)
-        assert_almost_equal(blaze.radians(-90.0), -0.5*blaze.pi)
-        assert_almost_equal(blaze.deg2rad(180.0), blaze.pi)
-        assert_almost_equal(blaze.deg2rad(-90.0), -0.5*blaze.pi)
+        assert_almost_equal(blaze.radians(180.0), math.pi)
+        assert_almost_equal(blaze.radians(-90.0), -0.5*math.pi)
+        assert_almost_equal(blaze.deg2rad(180.0), math.pi)
+        assert_almost_equal(blaze.deg2rad(-90.0), -0.5*math.pi)
 
 
 class TestMod(unittest.TestCase):
@@ -463,13 +463,13 @@ class TestAbs(unittest.TestCase):
 
 class TestTrig(unittest.TestCase):
     def test_sin(self):
-        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi, math.pi, 1.5*math.pi, 2*math.pi])
         b = blaze.array([0, 0.5, 0.5*blaze.sqrt(3), 1, 0, -1, 0])
         assert_allclose(blaze.sin(a), b, rtol=1e-15, atol=1e-15)
         assert_allclose(blaze.sin(-a), -b, rtol=1e-15, atol=1e-15)
 
     def test_cos(self):
-        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi, math.pi, 1.5*math.pi, 2*math.pi])
         b = blaze.array([1, 0.5*blaze.sqrt(3), 0.5, 0, -1, 0, 1])
         assert_allclose(blaze.cos(a), b, rtol=1e-15, atol=1e-15)
         assert_allclose(blaze.cos(-a), b, rtol=1e-15, atol=1e-15)
