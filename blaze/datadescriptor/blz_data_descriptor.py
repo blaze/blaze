@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import blz
 from dynd import nd
 import datashape
 
 from . import IDataDescriptor, Capabilities
-import blz
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 

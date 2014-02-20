@@ -1,13 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
-import blaze
-import datashape
-from blaze.datadescriptor import dd_as_py
-import numpy as np
 import unittest
+
+import numpy as np
+import datashape
+import blaze
+from blaze.datadescriptor import dd_as_py
 from blaze.tests.common import MayBeUriTest
 from blaze import append
+
 from ..py2help import skip
+
 
 class TestEphemeral(unittest.TestCase):
     def test_create_scalar(self):

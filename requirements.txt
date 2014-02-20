@@ -9,7 +9,10 @@ pykit >= 0.2.0
 datashape >= 0.1.1
 numpy >= 1.6
 blz >= 0.6.1
+jinja2
 
 # Optional dependencies
 pytables >= 3.0.0
-
+networkx
+IPython
+matplotlib

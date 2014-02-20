@@ -2,12 +2,13 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 
+import numpy as np
+
 from datashape import dshape
 import blaze
 from blaze.compute.function import function, kernel
 from blaze import array, py2help
 from dynd import nd, _lowlevel
-import numpy as np
 
 # f
 

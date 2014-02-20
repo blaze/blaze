@@ -1,7 +1,3 @@
-## Example of an implementation of an out-of-core groupby with Blaze.
-## F. Alted
-## 2013-10-10
-
 """
 This script performs an out of core groupby operation for different datasets.
 
@@ -33,16 +29,17 @@ import sys
 from itertools import islice
 import io
 import csv
+
+import numpy as np
 from dynd import nd, ndt
 import blz
-import os.path
-import numpy as np
 
 # Number of lines to read per each iteration
 LPC = 1000
 
 # Max number of chars to map for a bytes or string in NumPy
 MAXCHARS = 64
+
 
 def get_nptype(dtype, val):
     """Convert the `val` field in dtype into a numpy dtype."""
@@ -157,6 +154,7 @@ k4,v9,9,u9
 k1,v10,10,u9
 k5,v11,11,u11
 """
+
 
 def toy_stream():
     sreader = csv.reader(io.StringIO(csvbuf))

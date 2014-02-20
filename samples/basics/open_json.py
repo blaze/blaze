@@ -4,13 +4,12 @@ from __future__ import absolute_import, division, print_function
 
 import blaze
 from blaze.datadescriptor import dd_as_py
-#from dynd import nd
 
 json_buf = u"[1, 2, 3, 4, 5]"
 json_schema = "var, int8"
 
 # Create a temporary JSON file in URI and open the dataset
-dname = 'json:///tmp/test.json'
+dname = '/tmp/test.json'
 store = blaze.Storage(dname)
 print "store:", store
 with file(store.path, "wb") as f:

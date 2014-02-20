@@ -17,28 +17,8 @@ from .compute.eval import eval, append
 from .compute.ops.ufuncs import *
 from .io.storage import open, drop, Storage
 
-import ctypes
-
-import datashape
-from datashape import dshape
-
-# These are so that llvm_structs corresponding to dshapes get converted correctly
-#  when constructing ctypes functions
-# FIXME:  They should probably go into a different module.
-#   See blaze_kernels.py in _get_ctypes() method
-class complex128(ctypes.Structure):
-    _fields_ = [('real', ctypes.c_double),
-                ('imag', ctypes.c_double)]
-    _blaze_type_ = datashape.complex128
-
-class complex64(ctypes.Structure):
-    _fields_ = [('real', ctypes.c_float),
-                ('imag', ctypes.c_float)]
-    _blaze_type_ = datashape.complex64
-
 inf = float('inf')
 nan = float('nan')
-from math import pi
 
 __version__ = '0.4.2-dev'
 

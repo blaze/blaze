@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
+import unittest
+
 import blaze
 from blaze.datadescriptor import dd_as_py
-import unittest
 
 
 class TestBasic(unittest.TestCase):

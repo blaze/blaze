@@ -5,7 +5,6 @@ Reduction functions.
 from __future__ import absolute_import, division, print_function
 
 from .ufuncs import logical_and, logical_or, abs
-from ..function import function, elementwise
 
 #------------------------------------------------------------------------
 # Reduce Impl
@@ -25,6 +24,7 @@ def reduce(kernel, a, axis=None):
     for axis in axes:
         result = reduce_dim(kernel, result)
     return result
+
 
 # TODO: Deferred
 # @kernel('* -> X, Y..., Dtype -> Y..., Dtype')
@@ -46,8 +46,10 @@ def reduce_dim(kernel, a):
 def all(a):
     return reduce(logical_and, a)
 
+
 def any(a):
     return reduce(logical_or, a)
+
 
 def allclose(a, b, rtol=1e-05, atol=1e-08):
     """

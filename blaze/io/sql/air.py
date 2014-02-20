@@ -1,23 +1,20 @@
-# -*- coding: utf-8 -*-
-
 """
 Rewrite SQL operations in AIR. Generate SQL queries and execute them at roots.
 """
 
 from __future__ import absolute_import, division, print_function
 
-from . import db, SQL
+import datashape as ds
+from pykit.ir import Op
+
+from . import db
 
 from ... import Array
-from .error import SQLError
-from .query import execute, dynd_chunk_iterator
+from .query import execute
 from .syntax import reorder_select, emit, Table, Column
-from .datadescriptor import SQLDataDescriptor, SQLResultDataDescriptor
+from .datadescriptor import SQLResultDataDescriptor
 from ...datadescriptor import DyNDDataDescriptor
 
-import datashape as ds
-
-from pykit.ir import Op
 
 def rewrite_sql(func, env):
     """

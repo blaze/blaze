@@ -74,11 +74,13 @@ class StreamingDimensionError(BlazeException):
     """
     pass
 
+
 class BroadcastError(BlazeException):
     """
     An error for when arrays can't be broadcast together.
     """
     pass
+
 
 class ArrayWriteError(BlazeException):
     """

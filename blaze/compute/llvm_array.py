@@ -91,6 +91,7 @@ from __future__ import absolute_import, division, print_function
 import llvm.core as lc
 from llvm.core import Type, Constant
 import llvm_cbuilder.shortnames as C
+
 from ..py2help import reduce
 
 # Non-array parameter types

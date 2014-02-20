@@ -3,17 +3,17 @@ SQL data descriptor using pyodbc.
 """
 
 from __future__ import absolute_import, division, print_function
+
 from itertools import chain
 
-from ... import Array, array
+from datashape import DataShape
+from dynd import nd
+
+from ... import Array
 from ...datadescriptor import DyNDDataDescriptor
-from ..storage import Storage
 from ...datadescriptor import IDataDescriptor, Capabilities
 from .query import execute, dynd_chunk_iterator
 
-from datashape import DataShape
-
-from dynd import nd, ndt
 
 class SQLDataDescriptor(IDataDescriptor):
     """

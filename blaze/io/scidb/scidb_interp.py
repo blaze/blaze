@@ -9,7 +9,7 @@ from pykit.ir import interp
 import blaze
 from blaze.io.scidb import AFL
 
-from .error import SciDBError, InterfaceError
+from .error import InterfaceError
 from .query import execute_query, temp_name, Query
 from .datadescriptor import SciDBDataDescriptor
 

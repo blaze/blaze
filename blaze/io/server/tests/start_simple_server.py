@@ -6,7 +6,8 @@ $ start_test_server.py /path/to/catalog_config.yaml <portnumber>
 
 from __future__ import absolute_import, division, print_function
 
-import sys, os
+import sys
+import os
 
 if os.name == 'nt':
     old_excepthook = sys.excepthook

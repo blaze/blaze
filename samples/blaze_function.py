@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This guide will hopefully shed some light to how blaze functions can be
 defined and implemented.
@@ -86,7 +84,8 @@ from __future__ import absolute_import, division, print_function
 from itertools import cycle
 
 import blaze
-from blaze.compute.function import blaze_func, function, kernel
+from blaze.compute.function import function
+
 
 def broadcast_zip(a, b):
     """broadcasting zip"""
