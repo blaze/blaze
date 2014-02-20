@@ -7,8 +7,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 # build the blaze namespace with selected functions
+from . import compute
+from . import datadescriptor
+from . import objects
+from . import io
 from . import catalog
-from . import compute, io
 from .objects.array import Array
 from .objects.constructors import array, empty, ones, zeros
 from .compute.function import function, elementwise, BlazeFunc

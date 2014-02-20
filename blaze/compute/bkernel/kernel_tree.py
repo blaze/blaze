@@ -8,7 +8,7 @@ from llvm import LLVMException
 from .. import llvm_array as lla
 from .blaze_kernels import BlazeElementKernel, refresh_name
 from . import blaze_kernels
-from blaze.py2help import _strtypes
+from ... import py2help
 
 def letters(source=string.ascii_lowercase):
     k = 0
@@ -262,7 +262,7 @@ def fuse_kerneltree(tree, module_or_name):
 
     add(tmp0, tmp1, &res)
     """
-    if isinstance(module_or_name, _strtypes):
+    if isinstance(module_or_name, py2help._strtypes):
         module = Module.new(module_or_name)
     else:
         module = module_or_name

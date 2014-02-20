@@ -8,13 +8,8 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 
-from ..compute.expr import dump
-from ..compute.ops import ufuncs
 from .. import compute
-
-from ..datadescriptor import (IDataDescriptor,
-                              DeferredDescriptor)
-from ..io import _printing
+from .. import datadescriptor
 
 
 class Array(object):
@@ -28,7 +23,7 @@ class Array(object):
         user-defined meta-data (whatever are needed --- provenance propagation)
     """
     def __init__(self, data, axes=None, labels=None, user={}):
-        if not isinstance(data, IDataDescriptor):
+        if not isinstance(data, datadescriptor.IDataDescriptor):
             raise TypeError(('Constructing a blaze array directly '
                             'requires a data descriptor, not type '
                             '%r') % (type(data)))
@@ -38,7 +33,7 @@ class Array(object):
         self.user = user
         self.expr = None
 
-        if isinstance(data, DeferredDescriptor):
+        if isinstance(data, datadescriptor.DeferredDescriptor):
             # NOTE: we need 'expr' on the Array to perform dynamic programming:
             #       Two concrete arrays should have a single Op! We cannot
             #       store this in the data descriptor, since there are many
@@ -74,8 +69,8 @@ class Array(object):
                     e = compute.eval.eval(self)
                     return complex(e._data.dynd_arr())
                 injected_props['__complex__'] = __complex__
-            injected_props['real'] = _ufunc_to_property(ufuncs.real)
-            injected_props['imag'] = _ufunc_to_property(ufuncs.imag)
+            injected_props['real'] = _ufunc_to_property(compute.ufuncs.real)
+            injected_props['imag'] = _ufunc_to_property(compute.ufuncs.imag)
 
         if injected_props:
             self.__class__ = type('Array', (Array,), injected_props)
@@ -90,6 +85,7 @@ class Array(object):
         return self._data.capabilities.deferred
 
     def view(self):
+        # TODO triage this function
         if not self.capabilities.deferred:
             raise ValueError("Cannot call 'view' on a concrete array")
 
@@ -100,7 +96,7 @@ class Array(object):
         except NameError:
             pass
 
-        return dump(term, ipython=ipython)
+        return compute.dump(term, ipython=ipython)
 
     def __array__(self):
         import numpy as np
@@ -150,10 +146,12 @@ class Array(object):
     def __str__(self):
         if hasattr(self._data, '_printer'):
             return self._data._printer()
-        return _printing.array_str(self)
+        from .. import io
+        return io._printing.array_str(self)
 
     def __repr__(self):
-        return _printing.array_repr(self)
+        from .. import io
+        return io._printing.array_repr(self)
 
 
 def _named_property(name):
@@ -184,14 +182,14 @@ def __rufunc__(f):
 
 def _inject_special_binary(names):
     for ufunc_name, special_name in names:
-        ufunc = getattr(ufuncs, ufunc_name)
+        ufunc = getattr(compute.ufuncs, ufunc_name)
         setattr(Array, '__%s__' % special_name, binding(ufunc))
         setattr(Array, '__r%s__' % special_name, binding(__rufunc__(ufunc)))
 
 
 def _inject_special(names):
     for ufunc_name, special_name in names:
-        ufunc = getattr(ufuncs, ufunc_name)
+        ufunc = getattr(compute.ufuncs, ufunc_name)
         setattr(Array, '__%s__' % special_name, binding(ufunc))
 
 

@@ -27,7 +27,7 @@ import blz
 from ..py2help import urlparse
 from ..datadescriptor import (BLZDataDescriptor, CSVDataDescriptor,
                               JSONDataDescriptor, HDF5DataDescriptor)
-from ..objects.array import Array
+from ..objects import Array
 
 
 # ----------------------------------------------------------------------

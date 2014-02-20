@@ -8,12 +8,12 @@ from __future__ import absolute_import, division, print_function
 
 import operator
 
+import datashape
+import blz
 from pykit.ir import visit
 from dynd import nd, ndt
-import blaze
-import blz
-import datashape
 
+from ....objects import Array, array, empty
 from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
 
 #------------------------------------------------------------------------
@@ -55,7 +55,7 @@ def interpret(func, env, storage=None, **kwds):
             chunk = interp.result._data.dynd_arr()
             dst_dd.append(chunk)
 
-        return blaze.Array(dst_dd)
+        return Array(dst_dd)
 
 #------------------------------------------------------------------------
 # Interpreter
@@ -90,7 +90,7 @@ class CKernelInterp(object):
     def op_alloc(self, op):
         dshape = op.type
         storage = op.metadata.get('storage') # TODO: storage!
-        self.values[op] = blaze.empty(dshape, storage=storage)
+        self.values[op] = empty(dshape, storage=storage)
 
     def op_dealloc(self, op):
         alloc, = op.args
@@ -100,7 +100,7 @@ class CKernelInterp(object):
         input = self.values[op.args[0]]
         input = input._data.dynd_arr()
         result = nd.array(input, type=ndt.type(str(op.type)))
-        result = blaze.Array(DyNDDataDescriptor(result))
+        result = Array(DyNDDataDescriptor(result))
         self.values[op] = result
 
     def op_pykernel(self, op):
@@ -137,4 +137,4 @@ class CKernelChunkInterp(CKernelInterp):
             chunk = nd.empty(self.chunk_size, str(dshape.subarray(1)))
         else:
             chunk = nd.empty(str(dshape))
-        self.values[op] = blaze.array(chunk)
+        self.values[op] = array(chunk)
