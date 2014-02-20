@@ -11,7 +11,7 @@ class TestBlazeFunction(unittest.TestCase):
 
     def test_define_dynamic(self):
         # Define an element-wise blaze function
-        f = blaze_func("test_func", dshape("a -> a -> a"), elementwise=True)
+        f = blaze_func("test_func", dshape("A -> A -> A"), elementwise=True)
 
         # Define implementation of element-wise blaze function
         # use implementation category 'funky'
@@ -19,7 +19,7 @@ class TestBlazeFunction(unittest.TestCase):
         kernel1 = lambda a, b: a * b
         kernel(f, 'funky', kernel1, signature1)
 
-        signature2 = T.Function(*[dshape("axes..., float64")] * 3)
+        signature2 = T.Function(*[dshape("Axes..., float64")] * 3)
         kernel2 = lambda a, b: a * b
         kernel(f, 'funky', kernel2, signature2)
 

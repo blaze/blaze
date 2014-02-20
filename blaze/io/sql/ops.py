@@ -41,55 +41,55 @@ def _implement(f, signature):
 
 # Arithmetic
 
-add = define_binop("a -> a -> a", "add", "+")
-multiply = define_binop("a -> a -> a", "multiply", "*")
-subtract = define_binop("a -> a -> a", "subtract", "-")
-floordiv = define_binop("a -> a -> a", "floor_divide", "/")
-divide = define_binop("a -> a -> a", "divide", "/")
-truediv = define_binop("a -> a -> a", "true_divide", "/")
-mod = define_binop("a -> a -> a", "mod", "%")
+add = define_binop("A -> A -> A", "add", "+")
+multiply = define_binop("A -> A -> A", "multiply", "*")
+subtract = define_binop("A -> A -> A", "subtract", "-")
+floordiv = define_binop("A -> A -> A", "floor_divide", "/")
+divide = define_binop("A -> A -> A", "divide", "/")
+truediv = define_binop("A -> A -> A", "true_divide", "/")
+mod = define_binop("A -> A -> A", "mod", "%")
 
-negative = define_unop("a -> a", "negative", "-")
+negative = define_unop("A -> A", "negative", "-")
 
 # Compare
 
-eq = define_binop("a..., T -> a..., T -> a..., bool", "equal", "==")
-ne = define_binop("a..., T -> a..., T -> a..., bool", "not_equal", "!=")
-lt = define_binop("a..., T -> a..., T -> a..., bool", "less", "<")
-le = define_binop("a..., T -> a..., T -> a..., bool", "less_equal", "<=")
-gt = define_binop("a..., T -> a..., T -> a..., bool", "greater", ">")
-ge = define_binop("a..., T -> a..., T -> a..., bool", "greater_equal", ">=")
+eq = define_binop("A..., T -> A..., T -> A..., bool", "equal", "==")
+ne = define_binop("A..., T -> A..., T -> A..., bool", "not_equal", "!=")
+lt = define_binop("A..., T -> A..., T -> A..., bool", "less", "<")
+le = define_binop("A..., T -> A..., T -> A..., bool", "less_equal", "<=")
+gt = define_binop("A..., T -> A..., T -> A..., bool", "greater", ">")
+ge = define_binop("A..., T -> A..., T -> A..., bool", "greater_equal", ">=")
 
 # Logical
 
-logical_and = define_binop("a..., bool -> a..., bool -> a..., bool",
+logical_and = define_binop("A..., bool -> A..., bool -> A..., bool",
                            "logical_and", "AND")
-logical_or  = define_binop("a..., bool -> a..., bool -> a..., bool",
+logical_or  = define_binop("A..., bool -> A..., bool -> A..., bool",
                            "logical_or", "OR")
-logical_not = define_unop("a..., bool -> a..., bool", "logical_not", "NOT")
+logical_not = define_unop("A..., bool -> A..., bool", "logical_not", "NOT")
 
 def logical_xor(a, b):
     # Potential exponential code generation...
     return And(Or(a, b), Not(And(a, b)))
 
 kernel(ufuncs.logical_xor, SQL, logical_xor,
-       "a..., bool -> a..., bool -> a..., bool")
+       "A..., bool -> A..., bool -> A..., bool")
 
 # SQL Functions
 
-@sqlfunction('a, dtype -> dtype')
+@sqlfunction('A, DType -> DType')
 def sum(col):
     return Call('SUM', [col])
 
-@sqlfunction('a, dtype -> dtype')
+@sqlfunction('A, DType -> DType')
 def avg(col):
     return Call('AVG', [col])
 
-@sqlfunction('a, dtype -> dtype')
+@sqlfunction('A, DType -> DType')
 def min(col):
     return Call('MIN', [col])
 
-@sqlfunction('a, dtype -> dtype')
+@sqlfunction('A, DType -> DType')
 def max(col):
     return Call('MAX', [col])
 
@@ -120,11 +120,11 @@ def index(col, index, order=None):
     return result
 
 
-@sqlfunction('a -> b -> a')
+@sqlfunction('A -> B -> A')
 def sqlindex(col, where):
     return QWhere(col, where)
 
-@sqlfunction('a -> b -> a')
+@sqlfunction('A -> B -> A')
 def sqlorder(col, by):
     if not isinstance(by, (tuple, list)):
         by = [by]

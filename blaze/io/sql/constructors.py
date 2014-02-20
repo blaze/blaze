@@ -29,7 +29,7 @@ def sql_table(table, colnames, measures, conn):
     a Record array.
     """
     measure = Record(list(zip(colnames, measures)))
-    record_dshape = DataShape(dshape('a'), measure)
+    record_dshape = DataShape(dshape('A'), measure)
     table = TableSelection(table, '*')
     return Array(SQLDataDescriptor(record_dshape, table, conn))
 
