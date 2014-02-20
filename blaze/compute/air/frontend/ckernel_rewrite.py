@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Rewrite ckernels to executable pykernels.
 """
@@ -8,6 +6,7 @@ from __future__ import absolute_import, division, print_function
 
 from pykit.ir import Op
 from dynd import nd, ndt
+
 
 def run(func, env):
     storage = env['storage']

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Python evaluation of blaze AIR.
 """

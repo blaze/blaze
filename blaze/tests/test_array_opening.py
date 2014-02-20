@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function
 import os
 import tempfile
 import unittest
-import warnings
 
 import blaze
 from blaze.datadescriptor import dd_as_py
@@ -20,6 +19,7 @@ csv_ldict =  [
     {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
     {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}
     ]
+
 
 class TestOpenCSV(unittest.TestCase):
 
@@ -67,6 +67,7 @@ class TestOpenCSV(unittest.TestCase):
 
 json_buf = u"[1, 2, 3, 4, 5]"
 json_schema = "var, int8"
+
 
 class TestOpenJSON(unittest.TestCase):
 

@@ -12,7 +12,7 @@ from datashape import coretypes as T, dshape
 from blaze import BlazeFunc
 
 from .graph import ArrayOp, KernelOp
-from .context import ExprContext, unify
+from .context import ExprContext
 from .conf import conf
 
 #------------------------------------------------------------------------

@@ -1,12 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 import ctypes
-from .. import llvm_array as lla
 import llvm.core as lc
-from llvm.core import Type, Function, Module
-from ..llvm_array import (void_type, intp_type,
-                SCALAR, POINTER, array_kinds, check_array,
-                get_cpp_template, array_type, const_intp, LLArray, orderchar)
+from llvm.core import Type
+from ..llvm_array import (void_type, intp_type)
 from blaze.py2help import PY2
 
 int32_type = Type.int(32)

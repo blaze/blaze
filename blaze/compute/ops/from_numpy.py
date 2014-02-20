@@ -5,9 +5,10 @@ A helper function which turns a NumPy ufunc into a Blaze ufunc.
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from dynd import nd, ndt, _lowlevel
+from dynd import _lowlevel
 import datashape
 from .. import function
+
 
 def _filter_tplist(tplist):
     """Removes duplicates (arising from the long type usually), and
@@ -26,6 +27,7 @@ def _filter_tplist(tplist):
             tplistnew.append(sig)
             seen.add(sig)
     return tplistnew
+
 
 def _make_sig(tplist):
     """Converts a type tuples into datashape function signatures"""
@@ -50,6 +52,7 @@ def _make_pyfunc(nargs, modname, name):
     pyfunc.__module__ = modname
     pyfunc.__name__ = modname + '.' + name if modname else name
     return pyfunc
+
 
 def blazefunc_from_numpy_ufunc(uf, modname, name, acquires_gil):
     """Converts a NumPy ufunc into a Blaze ufunc.

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Assemble an execution kernel from a given expression graph.
 """

@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 from . import db
 
 from datashape import DataShape, Record
-from dynd import nd, ndt
+from dynd import nd
 
 
 def execute(conn, dshape, query, params):

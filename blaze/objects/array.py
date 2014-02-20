@@ -7,12 +7,12 @@ A concrete array is constructed from a Data Descriptor Object which handles the
 from __future__ import absolute_import, division, print_function
 
 import datashape
+
 from ..compute.expr import dump
 from ..compute.ops import ufuncs
 from .. import compute
 
 from ..datadescriptor import (IDataDescriptor,
-                              DyNDDataDescriptor,
                               DeferredDescriptor)
 from ..io import _printing
 

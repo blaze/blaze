@@ -19,10 +19,10 @@ A Blaze Element Kernel is a wrapper around an LLVM Function with a
 
 from __future__ import absolute_import, division, print_function
 
-import sys
 import llvm.core as lc
 from llvm.core import Function, Module
 from llvm import LLVMException
+
 from blaze.py2help import _strtypes
 
 from .. import llvm_array as lla

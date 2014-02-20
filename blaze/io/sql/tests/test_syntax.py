@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 import unittest
+
 from blaze.io.sql.syntax import (Table, Column, Select, Expr, Call, From, Where,
                                  GroupBy, OrderBy, qmap, emit,
                                  reorder_select, QWhere, QGroupBy, QOrderBy)

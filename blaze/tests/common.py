@@ -4,7 +4,10 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import tempfile
-import os, shutil, glob
+import os
+import shutil
+import glob
+
 
 # Useful superclass for disk-based tests
 class MayBeUriTest():
@@ -25,6 +28,7 @@ class MayBeUriTest():
             # Remove every directory starting with rootdir
             for dir_ in glob.glob(self.rootdir+'*'):
                 shutil.rmtree(dir_)
+
 
 class BTestCase(unittest.TestCase):
     """

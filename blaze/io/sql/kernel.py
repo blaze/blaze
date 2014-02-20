@@ -4,7 +4,7 @@ Create SQL kernel implementations.
 
 from __future__ import absolute_import, division, print_function
 
-from ...compute.function import function, kernel, elementwise
+from ...compute.function import function, kernel
 
 SQL = 'sql'
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 Blaze REPL.
@@ -13,7 +12,6 @@ import logging
 import readline
 import warnings
 import functools
-import rlcompleter
 
 # pop directory from sys.path so that we can import blaze instead of
 # importing this module again

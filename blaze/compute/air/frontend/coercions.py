@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-
 """
 Some Blaze AIR transformations and simplifications.
 """
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import Function, Builder, Value, Op
+from pykit.ir import Builder, Op
 
 #------------------------------------------------------------------------
 # Coercions -> Conversions

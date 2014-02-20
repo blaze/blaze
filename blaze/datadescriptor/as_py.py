@@ -1,8 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+from dynd import nd, ndt
+
 from .data_descriptor import IDataDescriptor
 from .blz_data_descriptor import BLZDataDescriptor
-from dynd import nd, ndt
+
 
 def dd_as_py(dd):
     """

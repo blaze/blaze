@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
 data = [
@@ -6,6 +5,7 @@ data = [
     (8,  "world", 4.2),
     (16, "!",     8.4),
 ]
+
 
 def create_sqlite_table():
     import sqlite3 as db

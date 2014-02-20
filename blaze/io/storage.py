@@ -22,9 +22,9 @@ import os
 import warnings
 
 from datashape import to_numpy, to_numpy_dtype
+import blz
 
 from ..py2help import urlparse
-import blz
 from ..datadescriptor import (BLZDataDescriptor, CSVDataDescriptor,
                               JSONDataDescriptor, HDF5DataDescriptor)
 from ..objects.array import Array

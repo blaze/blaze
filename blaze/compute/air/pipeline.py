@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Pipeline that determines phase ordering and execution.
 """
@@ -7,9 +5,6 @@ Pipeline that determines phase ordering and execution.
 from __future__ import absolute_import, division, print_function
 import types
 
-#------------------------------------------------------------------------
-# Pipeline
-#------------------------------------------------------------------------
 
 def run_pipeline(func, env, passes):
     """

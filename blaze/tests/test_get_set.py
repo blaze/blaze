@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+import unittest
+
+import numpy as np
+
 import blaze
 from blaze.datadescriptor import dd_as_py
-import numpy as np
-import unittest
 from blaze.py2help import skip
-from blaze.tests.common import MayBeUriTest
 
 
 class getitem(unittest.TestCase):

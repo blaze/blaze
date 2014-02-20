@@ -1,28 +1,36 @@
 from __future__ import absolute_import, division, print_function
 
+import math
+import cmath
 import unittest
-import blaze
-import datashape
-import math, cmath
-from blaze.datadescriptor import dd_as_py
+
 import numpy as np
-from blaze.py2help import skip
 from numpy import testing
 from numpy.testing import assert_
+
+import blaze
+import datashape
+from blaze.datadescriptor import dd_as_py
+from blaze.py2help import skip
+
 
 def assert_almost_equal(actual, desired, **kwargs):
     return testing.assert_almost_equal(np.array(actual), np.array(desired), **kwargs)
 
+
 def assert_allclose(actual, desired, **kwargs):
     return testing.assert_allclose(np.array(actual), np.array(desired), **kwargs)
 
+
 def assert_equal(actual, desired, **kwargs):
     return testing.assert_equal(np.array(actual), np.array(desired), **kwargs)
+
 
 def assert_array_equal(actual, desired, **kwargs):
     return testing.assert_array_equal(np.array(actual), np.array(desired), **kwargs)
 
 # Many of these tests have been adapted from NumPy's test_umath.py test file
+
 
 class TestBitwiseOps(unittest.TestCase):
     def test_bitwise_or_bool(self):
@@ -82,6 +90,7 @@ class TestBitwiseOps(unittest.TestCase):
         self.assertEqual(dd_as_py((~a)._data), x ^ 0xffffffffffffffff)
         self.assertEqual(dd_as_py(blaze.bitwise_not(a)._data),
                          x ^ 0xffffffffffffffff)
+
 
 class TestPower(unittest.TestCase):
     def test_power_float(self):
@@ -148,6 +157,7 @@ class TestPower(unittest.TestCase):
         x = blaze.array([1, 2, 3], dshape="int16")
         self.assertEqual((x**2.00001).dshape, (x**2.0).dshape)
 
+
 class TestLog(unittest.TestCase):
     def test_log_values(self) :
         x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
@@ -170,6 +180,7 @@ class TestExp(unittest.TestCase):
             yf = blaze.array(y, dshape=ds)*log2_
             result = blaze.exp(yf)
             assert_almost_equal(result, xf)
+
 
 class TestLogAddExp(unittest.TestCase):
     def test_logaddexp_values(self) :
@@ -212,6 +223,7 @@ class TestLogAddExp(unittest.TestCase):
         self.assertTrue(blaze.isnan(blaze.logaddexp(blaze.nan, 0)))
         self.assertTrue(blaze.isnan(blaze.logaddexp(0, blaze.nan)))
         self.assertTrue(blaze.isnan(blaze.logaddexp(blaze.nan, blaze.nan)))
+
 
 class TestLog2(unittest.TestCase):
     def test_log2_values(self) :
@@ -347,16 +359,16 @@ class TestReciprocal(unittest.TestCase):
 
 class TestAngles(unittest.TestCase):
     def test_degrees(self):
-        assert_almost_equal(blaze.degrees(blaze.pi), 180.0)
-        assert_almost_equal(blaze.degrees(-0.5*blaze.pi), -90.0)
-        assert_almost_equal(blaze.rad2deg(blaze.pi), 180.0)
-        assert_almost_equal(blaze.rad2deg(-0.5*blaze.pi), -90.0)
+        assert_almost_equal(blaze.degrees(math.pi), 180.0)
+        assert_almost_equal(blaze.degrees(-0.5*math.pi), -90.0)
+        assert_almost_equal(blaze.rad2deg(math.pi), 180.0)
+        assert_almost_equal(blaze.rad2deg(-0.5*math.pi), -90.0)
 
     def test_radians(self):
-        assert_almost_equal(blaze.radians(180.0), blaze.pi)
-        assert_almost_equal(blaze.radians(-90.0), -0.5*blaze.pi)
-        assert_almost_equal(blaze.deg2rad(180.0), blaze.pi)
-        assert_almost_equal(blaze.deg2rad(-90.0), -0.5*blaze.pi)
+        assert_almost_equal(blaze.radians(180.0), math.pi)
+        assert_almost_equal(blaze.radians(-90.0), -0.5*math.pi)
+        assert_almost_equal(blaze.deg2rad(180.0), math.pi)
+        assert_almost_equal(blaze.deg2rad(-90.0), -0.5*math.pi)
 
 
 class TestMod(unittest.TestCase):
@@ -391,6 +403,7 @@ class TestMod(unittest.TestCase):
         a_fmod_3 = blaze.array([0,  -2, -1,  0, 1,  2,  0], dshape='float32')
         assert_equal(blaze.fmod(a, 2), a_fmod_2)
         assert_equal(blaze.fmod(a, 3), a_fmod_3)
+
 
 class TestAbs(unittest.TestCase):
     def test_simple(self):
@@ -447,18 +460,20 @@ class TestAbs(unittest.TestCase):
             assert_equal(abs_conj_z, abs_z)
             assert_equal(conj_abs_z, abs_z)
 
+
 class TestTrig(unittest.TestCase):
     def test_sin(self):
-        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi, math.pi, 1.5*math.pi, 2*math.pi])
         b = blaze.array([0, 0.5, 0.5*blaze.sqrt(3), 1, 0, -1, 0])
         assert_allclose(blaze.sin(a), b, rtol=1e-15, atol=1e-15)
         assert_allclose(blaze.sin(-a), -b, rtol=1e-15, atol=1e-15)
 
     def test_cos(self):
-        a = blaze.array([0, blaze.pi/6, blaze.pi/3, 0.5*blaze.pi, blaze.pi, 1.5*blaze.pi, 2*blaze.pi])
+        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi, math.pi, 1.5*math.pi, 2*math.pi])
         b = blaze.array([1, 0.5*blaze.sqrt(3), 0.5, 0, -1, 0, 1])
         assert_allclose(blaze.cos(a), b, rtol=1e-15, atol=1e-15)
         assert_allclose(blaze.cos(-a), b, rtol=1e-15, atol=1e-15)
+
 
 def _check_branch_cut(f, x0, dx, re_sign=1, im_sign=-1, sig_zero_ok=False,
                       dtype=np.complex):
@@ -513,6 +528,7 @@ def _check_branch_cut(f, x0, dx, re_sign=1, im_sign=-1, sig_zero_ok=False,
         y0 = y0[jr | ji]
         assert_(np.all(np.absolute(y0.real - ym.real*re_sign) < atol), (y0, ym))
         assert_(np.all(np.absolute(y0.imag - ym.imag*im_sign) < atol), (y0, ym))
+
 
 class TestComplexFunctions(unittest.TestCase):
     funcs = [blaze.arcsin,  blaze.arccos,  blaze.arctan, blaze.arcsinh, blaze.arccosh,
@@ -598,6 +614,7 @@ class TestComplexFunctions(unittest.TestCase):
                 a = complex(func(complex(p)))
                 b = cfunc(p)
                 self.assertTrue(abs(a - b) < atol, "%s %s: %s; cmath: %s"%(fname, p, a, b))
+
 
 class TestMaximum(unittest.TestCase):
     def test_float_nans(self):

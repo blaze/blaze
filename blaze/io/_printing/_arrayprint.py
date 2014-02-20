@@ -4,10 +4,11 @@
 
 from __future__ import absolute_import, division, print_function
 
+from ...py2help import xrange
+
 __all__ = ["array2string", "set_printoptions", "get_printoptions"]
 __docformat__ = 'restructuredtext'
 
-from ...py2help import xrange
 
 #
 # Written by Konrad Hinsen <hinsenk@ere.umontreal.ca>

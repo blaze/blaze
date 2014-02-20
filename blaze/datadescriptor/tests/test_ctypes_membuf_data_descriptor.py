@@ -1,9 +1,10 @@
+from __future__ import absolute_import, division, print_function
+
 import unittest
 import ctypes
 
 from datashape import dshape
 
-import blaze
 from blaze.datadescriptor import data_descriptor_from_ctypes, dd_as_py
 
 
