@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import datashape
-from ..catalog.blaze_url import add_indexers_to_url
 from .data_descriptor import IDataDescriptor, Capabilities
 from dynd import nd, ndt
 
@@ -58,7 +57,8 @@ class RemoteDataDescriptor(IDataDescriptor):
         raise AttributeError('the datashape (%s) of this data descriptor has no length' % ds)
 
     def __getitem__(self, key):
-        return RemoteDataDescriptor(add_indexers_to_url(self.url, (key,)))
+        from ..catalog import blaze_url
+        return RemoteDataDescriptor(blaze_url.add_indexers_to_url(self.url, (key,)))
 
     def getattr(self, name):
         ds = self.dshape

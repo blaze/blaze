@@ -7,8 +7,8 @@ import yaml
 from dynd import nd, ndt
 import datashape
 
-import blaze
-from .. import py2help
+from .. import py2help, error
+from ..objects import Array, array
 
 
 def compatible_array_dshape(arr, ds):
@@ -31,7 +31,7 @@ def compatible_array_dshape(arr, ds):
         unify_res = datashape.unify([(arr.dshape, ds)],
                                       broadcasting=[False])
         [unified_ds], constraints = unify_res
-    except blaze.error.UnificationError:
+    except error.UnificationError:
         return False
 
     return unified_ds == arr.dshape
@@ -59,10 +59,10 @@ def load_blaze_array(conf, dir):
                 next(rd)
             dat = list(rd)
         arr = nd.array(dat, ndt.type(ds_str))[:]
-        return blaze.array(arr)
+        return array(arr)
     elif tp == 'json':
         arr = nd.parse_json(ds_str, nd.memmap(fsdir + '.json'))
-        return blaze.array(arr)
+        return array(arr)
     elif tp == 'hdf5':
         import tables as tb
         from blaze.datadescriptor import HDF5DataDescriptor
@@ -75,7 +75,7 @@ def load_blaze_array(conf, dir):
                 raise RuntimeError(
                     'HDF5 file does not have a dataset in %r' % dp)
             dd = HDF5DataDescriptor(fname, dp)
-        return blaze.array(dd)
+        return array(dd)
     elif tp == 'npy':
         import numpy as np
         use_memmap = imp.get('memmap', False)
@@ -84,7 +84,7 @@ def load_blaze_array(conf, dir):
         else:
             arr = np.load(fsdir + '.npy')
         arr = nd.array(arr)
-        arr = blaze.array(arr)
+        arr = array(arr)
         ds = datashape.dshape(ds_str)
         if not compatible_array_dshape(arr, ds):
             raise RuntimeError(('NPY file for blaze catalog path %r ' +
@@ -113,7 +113,7 @@ def load_blaze_array(conf, dir):
             raise RuntimeError(('Script for blaze catalog path %r did not ' +
                                 'return anything in "result" variable')
                                % (dir))
-        elif not isinstance(arr, blaze.Array):
+        elif not isinstance(arr, Array):
             raise RuntimeError(('Script for blaze catalog path %r returned ' +
                                 'wrong type of object (%r instead of ' +
                                 'blaze.Array)') % (type(arr)))
