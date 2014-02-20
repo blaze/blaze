@@ -4,13 +4,16 @@ Helper functions which constructs blaze functions from dynd kernels.
 
 from __future__ import absolute_import, division, print_function
 
-from dynd import nd, ndt, _lowlevel
+from dynd import _lowlevel
 import datashape
+
 from .. import function
+
 
 def _make_sig(kern):
     dslist = [datashape.dshape("A..., " + str(x)) for x in kern.types]
     return datashape.Function(*(dslist[1:] + [dslist[0]]))
+
 
 def _make_pyfunc(nargs, modname, name):
     if nargs == 1:
@@ -30,6 +33,7 @@ def _make_pyfunc(nargs, modname, name):
     pyfunc.__module__ = modname
     pyfunc.__name__ = modname + '.' + name if modname else name
     return pyfunc
+
 
 def blazefunc_from_dynd_property(tplist, propname, modname, name):
     """Converts a dynd property access into a Blaze ufunc.

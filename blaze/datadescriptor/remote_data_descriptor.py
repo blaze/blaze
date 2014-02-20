@@ -5,6 +5,7 @@ from ..catalog.blaze_url import add_indexers_to_url
 from .data_descriptor import IDataDescriptor, Capabilities
 from dynd import nd, ndt
 
+
 class RemoteDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes an array on another

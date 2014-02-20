@@ -18,6 +18,7 @@ from dynd import nd, ndt
 import numpy as np
 import datashape
 from datashape import to_numpy, to_numpy_dtype
+import blz
 
 from .array import Array
 from ..datadescriptor import (IDataDescriptor,
@@ -25,7 +26,6 @@ from ..datadescriptor import (IDataDescriptor,
                               BLZDataDescriptor)
 from ..io.storage import Storage
 from ..py2help import basestring
-import blz
 
 
 def _normalize_dshape(ds):

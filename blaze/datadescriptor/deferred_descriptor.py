@@ -6,6 +6,7 @@ actual deferred expression graph.
 from __future__ import absolute_import, division, print_function
 
 import blaze
+
 from . import IDataDescriptor, Capabilities
 
 #------------------------------------------------------------------------

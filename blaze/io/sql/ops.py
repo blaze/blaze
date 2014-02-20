@@ -5,7 +5,8 @@ from __future__ import absolute_import, division, print_function
 from ...compute.function import function, kernel
 from ...compute.ops import ufuncs
 from .kernel import sql_kernel, SQL
-from .syntax import Call, Expr, QOrderBy, QGroupBy, QWhere, And, Or, Not
+from .syntax import Call, Expr, QOrderBy, QWhere, And, Or, Not
+
 
 def sqlfunction(signature):
     def decorator(f):

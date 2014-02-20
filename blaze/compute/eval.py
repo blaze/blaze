@@ -1,8 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
-# Implements the blaze.eval function
+"""Implements the blaze.eval function"""
 
-from .strategy import JIT, current_strategy
 from .air import compile, run
 from .. import array
 
@@ -45,6 +44,7 @@ def eval(arr, storage=None, caps={'efficient-write': True}, out=None, debug=Fals
         result = arr
 
     return result
+
 
 def eval_deferred(arr, storage, caps, out, debug=False):
     expr = arr._data.expr

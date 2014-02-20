@@ -1,14 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
 import unittest
 import ctypes
-from ..py2help import skip
+
 import blaze
 from blaze.datadescriptor import data_descriptor_from_ctypes
 
-from dynd import nd, ndt
-from blaze.datadescriptor import DyNDDataDescriptor
 
 class TestArrayStr(unittest.TestCase):
     def test_scalar(self):

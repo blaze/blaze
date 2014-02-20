@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-import urllib, json
+import urllib
+import json
+
 from ... import py2help
 
 if py2help.PY2:

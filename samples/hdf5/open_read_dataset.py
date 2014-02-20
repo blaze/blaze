@@ -2,9 +2,10 @@
 
 from __future__ import absolute_import, division, print_function
 
-import blaze
-import numpy as np
 import sys
+
+import numpy as np
+import blaze
 
 try:
     import tables as tb

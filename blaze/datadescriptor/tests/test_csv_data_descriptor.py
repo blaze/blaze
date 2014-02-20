@@ -1,14 +1,13 @@
+from __future__ import absolute_import, division, print_function
+
 import unittest
 import tempfile
-import sys
 import os
-import io
-import blaze
+
 import datashape
+
 from blaze.datadescriptor import (
     CSVDataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
-
-from dynd import nd, ndt
 
 # A CSV toy example
 csv_buf = u"""k1,v1,1,False
@@ -16,6 +15,7 @@ k2,v2,2,True
 k3,v3,3,False
 """
 csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
+
 
 class TestCSVDataDescriptor(unittest.TestCase):
 

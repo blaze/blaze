@@ -35,11 +35,11 @@ try:
 except ImportError:
     import builtins
 
-from ..function import jit_elementwise
+import numpy
+from dynd import ndt
+
 from .from_numpy import blazefunc_from_numpy_ufunc
 from .from_dynd import blazefunc_from_dynd_property
-import numpy
-from dynd import nd, ndt
 
 #------------------------------------------------------------------------
 # UFuncs converted from NumPy

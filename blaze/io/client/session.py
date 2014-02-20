@@ -4,6 +4,7 @@ from .requests import create_remote_session, close_remote_session, \
         add_computed_fields, make_computed_fields, sort, groupby
 from .rarray import rarray
 
+
 class session:
     def __init__(self, root_url):
         """

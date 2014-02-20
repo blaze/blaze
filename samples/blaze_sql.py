@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This example shows some examples of how to access data in SQL databases using
 blaze. It walks through how blaze syntax corresponds to SQL queries.
@@ -14,8 +12,9 @@ from __future__ import absolute_import, division, print_function
 
 import sqlite3 as db
 
-from blaze.io.sql import connect, sql_column
+from blaze.io.sql import sql_column
 from blaze import dshape
+
 
 def create_sqlite_table():
     data = [

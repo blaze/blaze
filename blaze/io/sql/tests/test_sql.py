@@ -2,17 +2,19 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
+from nose.plugins.skip import SkipTest
+import numpy as np
+
 import blaze
+from datashape import dshape, bool_
+
 from blaze import add, multiply, eval, py2help
 from blaze.io.sql import sql_table, sql_column, db
 from blaze.io.sql import ops
 from blaze.io.sql.tests.testutils import create_sqlite_table, data
 
-from datashape import dshape, bool_
-import numpy as np
-from nose.plugins.skip import SkipTest
-
 skipif = py2help.skipIf(db is None, 'pyodbc is not installed')
+
 
 class TestSQL(unittest.TestCase):
 

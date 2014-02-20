@@ -6,11 +6,11 @@ import random
 import subprocess
 import socket
 import time
-import blaze
-import datashape
 import unittest
-from blaze.catalog.tests.catalog_harness import CatalogHarness
 
+import datashape
+import blaze
+from blaze.catalog.tests.catalog_harness import CatalogHarness
 from blaze.datadescriptor import dd_as_py, RemoteDataDescriptor
 
 

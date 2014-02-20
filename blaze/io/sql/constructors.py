@@ -9,6 +9,7 @@ from .datadescriptor import SQLDataDescriptor
 
 from datashape import dshape, Record, DataShape
 
+
 class TableSelection(object):
     """Table and column name"""
 

@@ -4,7 +4,6 @@ from __future__ import absolute_import, division, print_function
 
 import blaze
 from blaze.datadescriptor import dd_as_py
-#from dynd import nd
 
 # A CSV toy example
 csv_buf = u"""k1,v1,1,False
@@ -14,7 +13,7 @@ k3,v3,3,False
 csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
 
 # Create a temporary CSV file in URI and open the dataset
-dname = 'csv:///tmp/test.csv'
+dname = '/tmp/test.csv'
 store = blaze.Storage(dname)
 print "store:", store
 with file(store.path, "wb") as f:

@@ -1,11 +1,10 @@
+from __future__ import absolute_import, division, print_function
+
 import unittest
 import tempfile
-import sys
 import os
-import io
 
 import datashape
-from dynd import nd
 import numpy as np
 
 from blaze.datadescriptor import (

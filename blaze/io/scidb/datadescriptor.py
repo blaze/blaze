@@ -4,9 +4,8 @@ SciDB data descriptor.
 
 from __future__ import absolute_import, division, print_function
 
-import blaze
 from blaze.datadescriptor import IDataDescriptor, Capabilities
-from .datatypes import scidb_dshape
+
 
 class SciDBDataDescriptor(IDataDescriptor):
     """
