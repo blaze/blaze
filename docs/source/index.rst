@@ -56,7 +56,6 @@ API Reference
    toplevel
    types
    eclass
-   typeinference
    layout
    sources
    graph

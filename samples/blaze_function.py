@@ -53,7 +53,7 @@ function. This function contains:
                  overloaded sql implementation, this can be generic for
                  all numeric input types, e.g.:
 
-                 @impl(blaze.add, 'a : numeric -> a -> a')
+                 @impl(blaze.add, 'A : numeric -> A -> A')
                  def sql_add(a, b):
                     # using dumb string interpolation to generate an SQL
                     # query
