@@ -44,25 +44,25 @@ def _implement(f, signature):
 #------------------------------------------------------------------------
 # Arithmetic
 #------------------------------------------------------------------------
-add = define_binop("a -> a -> a", "add", "+")
-multiply = define_binop("a -> a -> a", "multiply", "*")
-subtract = define_binop("a : real -> a -> a", "subtract", "-")
-divide = define_binop("a : real -> a -> a", "divide", "/")
-# floordiv = define_binop("a : real -> a -> a", "floordiv", "//")
-# truediv = define_binop("a : real -> a -> a", "truediv", "/")
-mod = define_binop("a : real -> a -> a", "mod", "%")
+add = define_binop("A -> A -> A", "add", "+")
+multiply = define_binop("A -> A -> A", "multiply", "*")
+subtract = define_binop("A : real -> A -> A", "subtract", "-")
+divide = define_binop("A : real -> A -> A", "divide", "/")
+# floordiv = define_binop("A : real -> A -> A", "floordiv", "//")
+# truediv = define_binop("A : real -> A -> A", "truediv", "/")
+mod = define_binop("A : real -> A -> A", "mod", "%")
 
-negative = define_unop("a -> a", "negative", "-")
+negative = define_unop("A -> A", "negative", "-")
 
 #------------------------------------------------------------------------
 # Compare
 #------------------------------------------------------------------------
-equal = define_binop("a..., T -> a..., T -> a..., bool", "add", "==")
-not_equal = define_binop("a..., T -> a..., T -> a..., bool", "add", "!=")
-less = define_binop("a..., T -> a..., T -> a..., bool", "add", "<")
-less_equal = define_binop("a..., T -> a..., T -> a..., bool", "add", "<=")
-greater = define_binop("a..., T -> a..., T -> a..., bool", "add", ">")
-greater_equal = define_binop("a..., T -> a..., T -> a..., bool", "add", ">=")
+equal = define_binop("A..., T -> A..., T -> A..., bool", "add", "==")
+not_equal = define_binop("A..., T -> A..., T -> A..., bool", "add", "!=")
+less = define_binop("A..., T -> A..., T -> A..., bool", "add", "<")
+less_equal = define_binop("A..., T -> A..., T -> A..., bool", "add", "<=")
+greater = define_binop("A..., T -> A..., T -> A..., bool", "add", ">")
+greater_equal = define_binop("A..., T -> A..., T -> A..., bool", "add", ">=")
 
 #------------------------------------------------------------------------
 # Logical

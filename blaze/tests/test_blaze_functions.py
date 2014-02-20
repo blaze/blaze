@@ -38,7 +38,7 @@ def create_overloaded_add():
     # some ckernel implementations extracted from numpy,
     # and test some calls on it.
     #d = blaze.overloading.Dispatcher()
-    @function('a -> a -> a')
+    @function('A -> A -> A')
     def myfunc(x, y):
         raise NotImplementedError
 
