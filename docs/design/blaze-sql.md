@@ -97,3 +97,11 @@ The `SQLDataDescriptor` describes a remote SQL column or table, ready for
 retrieval or querying from the database. The `SQLResultDataDescriptor` is
 a datadescriptor to describe the result of an executed SQL query, that lazily
 pulls in the data when (and if) requested.
+
+Other Features
+--------------
+There are still many pieces missing:
+
+    * Load type information from existing SQL table or column
+        - connect to catalog
+    * Support groupby, orderby, etc
