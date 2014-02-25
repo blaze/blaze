@@ -136,19 +136,7 @@ class SQLResultDataDescriptor(IDataDescriptor):
         if isinstance(item, str):
             # Pull in data to determine length
             # TODO: this is bad
-            # NOTE: Somehow list calls len()
-            items = list(iter(self))
-
-            # Create dshape
-            colname = item
-            dshape = column_dshape(self.dshape, item)
-            n = len(items)
-            dshape = DataShape(n, dshape.measure)
-
-            # Initialize dynd array
-            dynd_arr = nd.empty(str(dshape))
-            dynd_arr[:] = [getattr(row, colname) for row in self]
-            return DyNDDataDescriptor(dynd_arr)
+            return DyNDDataDescriptor(getattr(self.dynd_arr(), item))
 
         raise NotImplementedError
 
