@@ -253,7 +253,13 @@ class TestSQLTable(TestSQL):
                          (16, "!", 8.4))
 
 
+    @skipif
+    def test_index_table(self):
+        expr = self.table['i']
+        self.assertEqual([int(i) for i in expr], [4, 8, 16])
+
+
 if __name__ == '__main__':
-    #TestSQLTable('test_query_where').debug()
+    # TestSQLTable('test_query_where').debug()
     # TestSQLUFuncExpressions('test_select_where').debug()
     unittest.main()
