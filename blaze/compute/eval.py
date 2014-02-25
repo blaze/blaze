@@ -66,9 +66,8 @@ def append(arr, values):
     """Append a list of values."""
     # XXX If not efficient appends supported, this should raise
     # a `PerformanceWarning`
-    if hasattr(arr._data, 'append'):
+    if arr._data.capabilities.appendable:
         arr._data.append(values)
     else:
-        raise NotImplementedError('append is not implemented for this '
-                                  'object')
+        raise ValueError('Data source cannot be appended to')
 

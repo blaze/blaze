@@ -9,7 +9,7 @@ from blaze.datadescriptor import dd_as_py
 from blaze.tests.common import MayBeUriTest
 from blaze import append
 
-from ..py2help import skip
+from blaze.py2help import skip
 
 
 class TestEphemeral(unittest.TestCase):
@@ -42,12 +42,11 @@ class TestEphemeral(unittest.TestCase):
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3])
 
-    @skip('A NotImplementedError should be raised')
     def test_create_append(self):
         # A default array (backed by NumPy, append not supported yet)
         a = blaze.array([])
         self.assertTrue(isinstance(a, blaze.Array))
-        self.assertRaises(NotImplementedError, append, a, [1,2,3])
+        self.assertRaises(ValueError, append, a, [1,2,3])
         # XXX The tests below still do not work
         # self.assertEqual(a[0], 1)
         # self.assertEqual(a[1], 2)
