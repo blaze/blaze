@@ -265,8 +265,17 @@ class TestSQLTable(TestSQL):
         self.assertEqual([int(i_col[0]), int(i_col[1])], [8, 16])
 
 
+class TestSQLStr(TestSQL):
+
+    @skipif
+    def test_str(self):
+        repr(self.table)
+
+
+
 if __name__ == '__main__':
     # TestSQLTable('test_query_where').debug()
     # TestSQLUFuncExpressions('test_select_where').debug()
     # TestSQLTable('test_index_sql_result_table').debug()
+    # TestSQLStr('test_str').debug()
     unittest.main()
