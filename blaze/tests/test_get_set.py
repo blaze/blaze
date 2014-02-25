@@ -6,7 +6,6 @@ import numpy as np
 
 import blaze
 from blaze.datadescriptor import dd_as_py
-from blaze.py2help import skip
 
 
 class getitem(unittest.TestCase):
@@ -16,10 +15,9 @@ class getitem(unittest.TestCase):
         a = blaze.array(np.arange(3), caps=self.caps)
         self.assertEqual(dd_as_py(a[0]._data), 0)
 
-    @skip('slices should implemented')
     def test_1d(self):
         a = blaze.array(np.arange(3), caps=self.caps)
-        print("a:", a, self.caps)
+        # print("a:", a, self.caps)
         self.assertEqual(dd_as_py(a[0:2]._data), [0,1])
 
     def test_2d(self):
@@ -37,7 +35,6 @@ class setitem(unittest.TestCase):
         a[0] = 1
         self.assertEqual(dd_as_py(a[0]._data), 1)
 
-    @skip('slices should be implemented')
     def test_1d(self):
         a = blaze.array(np.arange(3), caps=self.caps)
         a[0:2] = 2
