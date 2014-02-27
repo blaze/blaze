@@ -42,15 +42,15 @@ def _implement(f, signature):
 
 # Arithmetic
 
-add = define_binop("(A, A) -> A", "add", "+")
-multiply = define_binop("(A, A) -> A", "multiply", "*")
-subtract = define_binop("(A, A) -> A", "subtract", "-")
-floordiv = define_binop("(A, A) -> A", "floor_divide", "/")
-divide = define_binop("(A, A) -> A", "divide", "/")
-truediv = define_binop("(A, A) -> A", "true_divide", "/")
-mod = define_binop("(A, A) -> A", "mod", "%")
+add = define_binop("(A... * T, A... * T) -> A... * T", "add", "+")
+multiply = define_binop("(A... * T, A... * T) -> A... * T", "multiply", "*")
+subtract = define_binop("(A... * T, A... * T) -> A... * T", "subtract", "-")
+floordiv = define_binop("(A... * T, A... * T) -> A... * T", "floor_divide", "/")
+divide = define_binop("(A... * T, A... * T) -> A... * T", "divide", "/")
+truediv = define_binop("(A... * T, A... * T) -> A... * T", "true_divide", "/")
+mod = define_binop("(A... * T, A... * T) -> A... * T", "mod", "%")
 
-negative = define_unop("(A) -> A", "negative", "-")
+negative = define_unop("(A... * T) -> A... * T", "negative", "-")
 
 # Compare
 
