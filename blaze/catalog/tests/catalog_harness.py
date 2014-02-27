@@ -75,7 +75,7 @@ class CatalogHarness(object):
             f.create_array(f.root, "a1", nd.as_numpy(a1))
             mg = f.create_group(f.root, "mygroup")
             f.create_array(mg, "a2", nd.as_numpy(a2))
-            f.create_array(mg, "a3", nd.as_numpy(a2))
+            f.create_array(mg, "a3", nd.as_numpy(a3))
             mg2 = f.create_group(mg, "mygroup2")
         # Create a .array file for locating the dataset inside the file
         with open(os.path.join(self.arrdir, '%s_arr.array' % name), 'w') as f:

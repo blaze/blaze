@@ -112,7 +112,6 @@ class CatalogConfig(object):
                 # Bingo!  Now, let's see if we can find the subcarray there
                 cdir = CatalogCDir(self, p)
                 subcarray = dir[len(p):]
-                print("subcarray:", subcarray, cdir.ls_abs('Leaf'))
                 if subcarray in cdir.ls_abs('Leaf'):
                     return (p, subcarray)
                 else:

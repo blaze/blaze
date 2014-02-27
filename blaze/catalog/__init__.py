@@ -95,7 +95,8 @@ def get(key):
         return CatalogCDir(config, dir, subcdir)
     (dir, subcarray) = config.get_subcarray(key)
     if dir:
-        return load_blaze_subcarray(config, dir, subcarray)
+        cdir = CatalogCDir(config, dir)
+        return load_blaze_subcarray(config, cdir, subcarray)
     else:
         raise RuntimeError('Blaze path not found: %r' % key)
 
