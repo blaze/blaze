@@ -21,9 +21,9 @@ def render_datashape_recursive(base_url, ds, indent):
     if isinstance(ds, DataShape):
         for dim in ds[:-1]:
             if isinstance(dim, Fixed):
-                result += ('%d, ' % dim)
+                result += ('%d * ' % dim)
             elif isinstance(dim, Var):
-                result += 'var, '
+                result += 'var * '
             else:
                 raise TypeError('Cannot render datashape with dimension %r' % dim)
         result += render_datashape_recursive(base_url, ds[-1], indent)
@@ -35,7 +35,7 @@ def render_datashape_recursive(base_url, ds, indent):
                             ftype, indent + '  ')
             result += (indent + '  ' +
                 '<a href="' + child_url + '">' + str(fname) + '</a>'
-                ': ' + child_result + ';')
+                ': ' + child_result + ',')
             if isinstance(ftype, Record):
                 result += '\n'
             else:

@@ -18,7 +18,7 @@ def compatible_array_dshape(arr, ds):
        --------
 
        >>> compatible_array_dshape(blaze.array([1,2,3]),
-       ...                         datashape.dshape("M, int32"))
+       ...                         datashape.dshape("M * int32"))
        True
 
        >>>

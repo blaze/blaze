@@ -51,9 +51,9 @@ class CatalogHarness(object):
             f.write('    headers: True\n')
             f.write('}\n')
             f.write('datashape: |\n')
-            f.write('    var, {\n')
-            f.write('        Letter: string;\n')
-            f.write('        Number: int32;\n')
+            f.write('    var * {\n')
+            f.write('        Letter: string,\n')
+            f.write('        Number: int32,\n')
             f.write('    }\n')
 
     def create_json(self, name):
@@ -63,7 +63,7 @@ class CatalogHarness(object):
         with open(os.path.join(self.arrdir, '%s.array' % name), 'w') as f:
             f.write('type: json\n')
             f.write('import: {}\n')
-            f.write('datashape: "var, var, int32"\n')
+            f.write('datashape: "var * var * int32"\n')
 
     def create_hdf5(self, name):
         import tables as tb
@@ -89,9 +89,9 @@ class CatalogHarness(object):
             f.write('type: npy\n')
             f.write('import: {}\n')
             f.write('datashape: |\n')
-            f.write('    M, {\n')
-            f.write('        idx: int32;\n')
-            f.write('        val: string;\n')
+            f.write('    M * {\n')
+            f.write('        idx: int32,\n')
+            f.write('        val: string,\n')
             f.write('    }\n')
 
     def create_py(self, name):
@@ -101,4 +101,4 @@ class CatalogHarness(object):
         with open(os.path.join(self.arrdir, '%s.array' % name), 'w') as f:
             f.write('type: py\n')
             f.write('import: {}\n')
-            f.write('datashape: "5, int32"\n')
+            f.write('datashape: "5 * int32"\n')

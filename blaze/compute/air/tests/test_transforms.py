@@ -13,10 +13,10 @@ class TestCoercions(unittest.TestCase):
         f, graph = make_graph()
         coercions.run(f)
         ops = [(op.opcode, op.type) for op in f.ops][:-1]
-        expected = [('convert', dshape("10, float64")),
-                    ('kernel', dshape("10, float64")),
-                    ('convert', dshape("10, complex[float64]")),
-                    ('kernel', dshape("10, complex[float64]"))]
+        expected = [('convert', dshape("10 * float64")),
+                    ('kernel', dshape("10 * float64")),
+                    ('convert', dshape("10 * complex[float64]")),
+                    ('kernel', dshape("10 * complex[float64]"))]
         self.assertEqual(ops, expected)
 
         # function 10, complex[float64] expr0(10, float64 %e0, 10, int32 %e1, 10, complex[float64] %e2) {

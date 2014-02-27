@@ -13,7 +13,7 @@ csv_buf = u"""k1,v1,1,False
 k2,v2,2,True
 k3,v3,3,False
 """
-csv_schema = "{ f0: string; f1: string; f2: int16; f3: bool }"
+csv_schema = "{ f0: string, f1: string, f2: int16, f3: bool }"
 csv_ldict =  [
     {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
     {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
@@ -66,7 +66,7 @@ class TestOpenCSV(unittest.TestCase):
 
 
 json_buf = u"[1, 2, 3, 4, 5]"
-json_schema = "var, int8"
+json_schema = "var * int8"
 
 
 class TestOpenJSON(unittest.TestCase):

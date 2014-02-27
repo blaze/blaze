@@ -83,7 +83,7 @@ def function(signature, impl='python', **metadata):
 
     or
 
-        @function('A -> A -> A') # All types are unified
+        @function('(A, A) -> A') # All types are unified
         def add(a, b):
             return a + b
     """
@@ -116,7 +116,7 @@ def function(signature, impl='python', **metadata):
         signature = None
         return decorator(f)
     else:
-        # @blaze_func('A -> A -> B')
+        # @blaze_func('(A, A) -> B')
         # def f(...): ...
         return decorator
 

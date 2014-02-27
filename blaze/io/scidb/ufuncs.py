@@ -44,25 +44,29 @@ def _implement(f, signature):
 #------------------------------------------------------------------------
 # Arithmetic
 #------------------------------------------------------------------------
-add = define_binop("A -> A -> A", "add", "+")
-multiply = define_binop("A -> A -> A", "multiply", "*")
-subtract = define_binop("A : real -> A -> A", "subtract", "-")
-divide = define_binop("A : real -> A -> A", "divide", "/")
-# floordiv = define_binop("A : real -> A -> A", "floordiv", "//")
-# truediv = define_binop("A : real -> A -> A", "truediv", "/")
-mod = define_binop("A : real -> A -> A", "mod", "%")
+add = define_binop("(A, A) -> A", "add", "+")
+multiply = define_binop("(A, A) -> A", "multiply", "*")
+#subtract = define_binop("(A : real, A) -> A", "subtract", "-")
+subtract = define_binop("(A, A) -> A", "subtract", "-")
+#divide = define_binop("(A : real, A) -> A", "divide", "/")
+divide = define_binop("(A, A) -> A", "divide", "/")
+#mod = define_binop("(A : real, A) -> A", "mod", "%")
+mod = define_binop("(A, A) -> A", "mod", "%")
 
-negative = define_unop("A -> A", "negative", "-")
+# floordiv = define_binop("(A : real, A) -> A", "floordiv", "//")
+# truediv = define_binop("(A : real, A) -> A", "truediv", "/")
+
+negative = define_unop("(A) -> A", "negative", "-")
 
 #------------------------------------------------------------------------
 # Compare
 #------------------------------------------------------------------------
-equal = define_binop("A..., T -> A..., T -> A..., bool", "add", "==")
-not_equal = define_binop("A..., T -> A..., T -> A..., bool", "add", "!=")
-less = define_binop("A..., T -> A..., T -> A..., bool", "add", "<")
-less_equal = define_binop("A..., T -> A..., T -> A..., bool", "add", "<=")
-greater = define_binop("A..., T -> A..., T -> A..., bool", "add", ">")
-greater_equal = define_binop("A..., T -> A..., T -> A..., bool", "add", ">=")
+equal = define_binop("(A... * T, A... * T) -> A... * bool", "add", "==")
+not_equal = define_binop("(A... * T, A... * T) -> A... * bool", "add", "!=")
+less = define_binop("(A... * T, A... * T) -> A... * bool", "add", "<")
+less_equal = define_binop("(A... * T, A... * T) -> A... * bool", "add", "<=")
+greater = define_binop("(A... * T, A... * T) -> A... * bool", "add", ">")
+greater_equal = define_binop("(A... * T, A... * T) -> A... * bool", "add", ">=")
 
 #------------------------------------------------------------------------
 # Logical
@@ -76,21 +80,23 @@ greater_equal = define_binop("A..., T -> A..., T -> A..., bool", "add", ">=")
 
 # --- and ---
 
-@scidb_elementwise('A..., T : numeric -> A..., T -> A..., bool')
+#@scidb_elementwise('(A... * T : numeric, A... * T) -> A... * bool')
+@scidb_elementwise('(A... * T, A... * T) -> A... * bool')
 def logical_and(a, b):
     return iff(ibool(a). ibool(b), false)
 
-@scidb_elementwise('A..., bool -> A..., bool -> A..., bool')
+@scidb_elementwise('(A... * bool, A... * bool) -> A... * bool')
 def logical_and(a, b):
     return iff(a, b, false)
 
 # --- or ---
 
-@scidb_elementwise('A..., T : numeric -> A..., T -> A..., bool')
+#@scidb_elementwise('(A... * T : numeric, A... * T) -> A... * bool')
+@scidb_elementwise('(A... * T, A... * T) -> A... * bool')
 def logical_or(a, b):
     return iff(ibool(a), true, ibool(b))
 
-@scidb_elementwise('A..., bool -> A..., bool -> A..., bool')
+@scidb_elementwise('(A... * bool, A... * bool) -> A... * bool')
 def logical_or(a, b):
     return iff(a, true, b)
 
@@ -98,17 +104,18 @@ def logical_or(a, b):
 
 # Fixme: repeat of subexpression leads to exponential code generation !
 
-@scidb_elementwise('A..., T : numeric -> A..., T -> A..., bool')
+#@scidb_elementwise('(A... * T : numeric, A... * T) -> A... * bool')
+@scidb_elementwise('(A... * T, A... * T) -> A... * bool')
 def logical_xor(a, b):
     return iff(ibool(a), logical_not(ibool(b)), ibool(b))
 
-@scidb_elementwise('A..., bool -> A..., bool -> A..., bool')
+@scidb_elementwise('(A... * bool, A... * bool) -> A... * bool')
 def logical_xor(a, b):
     return iff(a, logical_not(b), b)
 
 # --- not ---
 
-@scidb_elementwise('A..., T -> A..., bool')
+@scidb_elementwise('(A... * T) -> A... * bool')
 def logical_not(a):
     return apply("not", a)
 
@@ -116,7 +123,8 @@ def logical_not(a):
 #------------------------------------------------------------------------
 # Math
 #------------------------------------------------------------------------
-@scidb_elementwise('A : numeric -> A')
+#@scidb_elementwise('(A : numeric) -> A')
+@scidb_elementwise('(A) -> A')
 def abs(x):
     # Fixme: again exponential codegen
     return iff(less(x, 0), negative(x), x)

@@ -121,11 +121,11 @@ def index(col, index, order=None):
     return result
 
 
-@sqlfunction('(A, B) -> A')
+@sqlfunction('(A * S, A * B) -> var * S')
 def sqlindex(col, where):
     return QWhere(col, where)
 
-@sqlfunction('(A, B) -> A')
+@sqlfunction('(A * S, A * B) -> A * S')
 def sqlorder(col, by):
     if not isinstance(by, (tuple, list)):
         by = [by]

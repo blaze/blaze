@@ -17,7 +17,7 @@ class TestGraph(unittest.TestCase):
         graph, ctx = expr.expr
         self.assertEqual(len(ctx.params), 2)
         self.assertFalse(ctx.constraints)
-        self.assertEqual(graph.dshape, dshape('10, float64'))
+        self.assertEqual(graph.dshape, dshape('10 * float64'))
 
 
 if __name__ == '__main__':

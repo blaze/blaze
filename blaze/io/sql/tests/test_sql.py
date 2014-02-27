@@ -28,13 +28,13 @@ class TestSQL(unittest.TestCase):
             self.conn)
 
         self.col_i = sql_column('testtable', 'i',
-                                dshape('3, int32'),
+                                dshape('3 * int32'),
                                 self.conn)
         self.col_msg = sql_column('testtable', 'msg',
-                                  dshape('3, string'),
+                                  dshape('3 * string'),
                                   self.conn)
         self.col_price = sql_column('testtable', 'price',
-                                    dshape('3, float64'),
+                                    dshape('3 * float64'),
                                     self.conn)
 
         test_data = np.array(data, dtype=[('i', np.int32),

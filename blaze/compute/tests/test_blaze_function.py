@@ -11,7 +11,7 @@ class TestBlazeFunction(unittest.TestCase):
 
     def test_define_dynamic(self):
         # Define an element-wise blaze function
-        f = blaze_func("test_func", dshape("A -> A -> A"), elementwise=True)
+        f = blaze_func("test_func", dshape("(A... * T, A... * T) -> A... * T"), elementwise=True)
 
         # Define implementation of element-wise blaze function
         # use implementation category 'funky'
@@ -28,10 +28,10 @@ class TestBlazeFunction(unittest.TestCase):
         self.assertEqual(overload.resolved_sig, signature1)
         self.assertEqual(overload.func, kernel1)
 
-        overload = f.best_match('funky', [dshape("10, 10, float32"),
-                                          dshape("10, 10, float64")])
+        overload = f.best_match('funky', [dshape("10 * 10 * float32"),
+                                          dshape("10 * 10 * float64")])
         self.assertEqual(overload.resolved_sig,
-                         dshape("10, 10, float64 -> 10, 10, float64 -> 10, 10, float64"))
+                         dshape("(10 * 10 * float64, 10 * 10 * float64) -> 10 * 10 * float64"))
         self.assertEqual(overload.func, kernel2)
 
 
