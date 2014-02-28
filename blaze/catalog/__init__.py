@@ -86,13 +86,13 @@ def get(key):
     """Get an array or directory object from the blaze catalog"""
     _check_config()
     key = join_bpath(_cwd, key)
-    if config.isdir(key):
+    if config._isdir(key):
         return CatalogDir(config, key)
-    if config.isarray(key):
-        return load_blaze_array(config, key)
     (dir, subcdir) = config.get_subcdir(key)
     if dir:
         return CatalogCDir(config, dir, subcdir)
+    if config.isarray(key):
+        return load_blaze_array(config, key)
     (dir, subcarray) = config.get_subcarray(key)
     if dir:
         cdir = CatalogCDir(config, dir)
