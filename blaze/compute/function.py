@@ -30,8 +30,7 @@ from datashape import coretypes as T, dshape
 from datashape.overloading import (overload, Dispatcher, match_by_weight,
                                    best_match, lookup_previous)
 from ..datadescriptor import DeferredDescriptor
-from .expr.graph import construct
-from .expr.context import merge
+from .expr.graph import construct, merge
 from .strategy import PY, JIT
 
 #------------------------------------------------------------------------

@@ -8,10 +8,9 @@ from __future__ import absolute_import, division, print_function
 from collections import Iterable
 
 from functools import partial
-from datashape import coretypes as T, dshape
+from datashape import coretypes as T, dshape, unify
 import blaze
 from .conf import conf
-from .context import ExprContext
 
 
 #------------------------------------------------------------------------
@@ -24,6 +23,31 @@ kernel = 'kernel'  # kernel application, carrying the blaze kernel as a
 #------------------------------------------------------------------------
 # Graph
 #------------------------------------------------------------------------
+class ExprContext(object):
+    """
+    Context for blaze graph expressions.
+
+    This keeps track of a mapping between graph expression nodes and the
+    concrete data inputs (i.e. blaze Arrays).
+
+    Attributes:
+    ===========
+
+    terms: { ArrayOp: Array }
+        Mapping from ArrayOp nodes to inputs
+    """
+
+    def __init__(self):
+        # Coercion constraints between types with free variables
+        self.constraints = []
+        self.terms = {} # All terms in the graph, { Array : Op }
+        self.params = []
+
+    def add_input(self, term, data):
+        if term not in self.terms:
+            self.params.append(term)
+        self.terms[term] = data
+
 
 class Op(object):
     """
@@ -198,3 +222,19 @@ def injest_iterable(args, depth=0, force_homog=False, conf=conf):
             raise RuntimeError("""
             Too many dynamic arguments to build expression
             graph. Consider alternative construction.""")
+
+
+def merge(contexts):
+    """
+    Merge graph expression contexts into a new context, unifying their
+    typing contexts under the given blaze function signature.
+    """
+    result = ExprContext()
+
+    for ctx in contexts:
+        result.constraints.extend(ctx.constraints)
+        result.terms.update(ctx.terms)
+        result.params.extend(ctx.params)
+
+    result.constraints, _ = unify(result.constraints)
+    return result
