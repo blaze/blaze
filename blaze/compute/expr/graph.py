@@ -10,7 +10,6 @@ from collections import Iterable
 from functools import partial
 from datashape import coretypes as T, dshape, unify
 import blaze
-from .conf import conf
 
 
 #------------------------------------------------------------------------
@@ -23,6 +22,13 @@ kernel = 'kernel'  # kernel application, carrying the blaze kernel as a
 #------------------------------------------------------------------------
 # Graph
 #------------------------------------------------------------------------
+class Config(object):
+    max_argument_recursion = 25
+    max_argument_len       = 1000
+    argument_sample        = 100
+
+conf = Config()
+
 class ExprContext(object):
     """
     Context for blaze graph expressions.
