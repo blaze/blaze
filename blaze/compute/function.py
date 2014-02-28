@@ -30,6 +30,7 @@ from datashape import coretypes as T, dshape
 from datashape.overloading import (overload, Dispatcher, match_by_weight,
                                    best_match, lookup_previous)
 from ..datadescriptor import DeferredDescriptor
+from .expr.graph import construct
 from .expr.context import merge
 from .strategy import PY, JIT
 
@@ -148,8 +149,6 @@ def apply_function(blaze_func, *args, **kwargs):
 
     Returns: a Deferred node representation the delayed computation
     """
-    from .expr import construct
-
     # -------------------------------------------------
     # Merge input contexts
 
@@ -166,7 +165,7 @@ def apply_function(blaze_func, *args, **kwargs):
     # -------------------------------------------------
     # Construct graph
 
-    term = construct.construct(blaze_func, ctx, overload, args)
+    term = construct(blaze_func, ctx, overload, args)
     desc = DeferredDescriptor(term.dshape, (term, ctx))
 
     # TODO: preserve `user` metadata
