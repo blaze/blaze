@@ -24,15 +24,13 @@ class TestCatalog(unittest.TestCase):
         entities = ['csv_arr', 'json_arr', 'npy_arr', 'py_arr', 'subdir']
         if tables_is_here:
             entities.append('hdf5_arr')
-            entities.sort()
-        self.assertEquals(blaze.catalog.ls(), entities)
+        self.assertEquals(blaze.catalog.ls(), sorted(entities))
         arrays = ['csv_arr', 'json_arr', 'npy_arr', 'py_arr']
         if tables_is_here:
             arrays.append('hdf5_arr')
-            arrays.sort()
-        self.assertEquals(blaze.catalog.ls_arrs(), arrays)
+        self.assertEquals(blaze.catalog.ls_arrs(), sorted(arrays))
         self.assertEquals(blaze.catalog.ls_dirs(),
-                          ['subdir'])
+                          ['hdf5_dir', 'subdir'])
         blaze.catalog.cd('subdir')
         self.assertEquals(blaze.catalog.cwd(), '/subdir')
         self.assertEquals(blaze.catalog.ls(),
@@ -60,7 +58,7 @@ class TestCatalog(unittest.TestCase):
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 2, 3], [1, 2]])
 
-    @skipIf(not tables_is_here, 'pytables is not installed')
+    @skipIf(not tables_is_here, 'PyTables is not installed')
     def test_load_hdf5(self):
         # Confirms that a simple hdf5 array in a file can be loaded
         blaze.catalog.cd('/')
@@ -69,6 +67,55 @@ class TestCatalog(unittest.TestCase):
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 2, 3], [3, 2, 1]])
+
+    @skipIf(not tables_is_here, 'PyTables is not installed')
+    def test_hdf5_dir(self):
+        blaze.catalog.cd('/hdf5_dir')
+        self.assertEquals(blaze.catalog.cwd(), '/hdf5_dir')
+        self.assertEquals(blaze.catalog.ls(), sorted(['a1', 'mygroup']))
+        self.assertEquals(blaze.catalog.ls_dirs(), sorted(['mygroup']))
+        self.assertEquals(blaze.catalog.ls_arrs(), sorted(['a1']))
+
+    @skipIf(not tables_is_here, 'PyTables is not installed')
+    def test_hdf5_subdir(self):
+        blaze.catalog.cd('/hdf5_dir/mygroup')
+        self.assertEquals(blaze.catalog.cwd(), '/hdf5_dir/mygroup')
+        self.assertEquals(blaze.catalog.ls(),
+                          sorted(['a2', 'a3', 'mygroup2']))
+        self.assertEquals(blaze.catalog.ls_dirs(), sorted(['mygroup2']))
+        self.assertEquals(blaze.catalog.ls_arrs(), sorted(['a2', 'a3']))
+
+    @skipIf(not tables_is_here, 'PyTables is not installed')
+    def test_hdf5_subdir_get(self):
+        blaze.catalog.cd('/hdf5_dir/mygroup')
+        a = blaze.catalog.get('a3')
+        ds = datashape.dshape('2, 3, int32')
+        self.assertEqual(a.dshape, ds)
+        dat = blaze.datadescriptor.dd_as_py(a._data)
+        self.assertEqual(dat, [[1, 3, 2], [2, 1, 3]])
+
+    @skipIf(not tables_is_here, 'PyTables is not installed')
+    def test_hdf5_subdir_ls(self):
+        # Check top level
+        blaze.catalog.cd('/')
+        lall = blaze.catalog.ls_dirs()
+        self.assertEqual(lall, ['hdf5_dir', 'subdir'])
+        # Check HDF5 root level
+        blaze.catalog.cd('/hdf5_dir')
+        larrs = blaze.catalog.ls_arrs()
+        self.assertEqual(larrs, ['a1'])
+        ldirs = blaze.catalog.ls_dirs()
+        self.assertEqual(ldirs, ['mygroup'])
+        lall = blaze.catalog.ls()
+        self.assertEqual(lall, ['a1', 'mygroup'])
+        # Check HDF5 second level
+        blaze.catalog.cd('/hdf5_dir/mygroup')
+        larrs = blaze.catalog.ls_arrs()
+        self.assertEqual(larrs, ['a2', 'a3'])
+        ldirs = blaze.catalog.ls_dirs()
+        self.assertEqual(ldirs, ['mygroup2'])
+        lall = blaze.catalog.ls()
+        self.assertEqual(lall, ['a2', 'a3', 'mygroup2'])
 
     def test_load_npy(self):
         # Confirms that a simple npy file can be loaded
