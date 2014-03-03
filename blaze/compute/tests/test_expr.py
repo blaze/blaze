@@ -19,6 +19,15 @@ class TestGraph(unittest.TestCase):
         self.assertFalse(ctx.constraints)
         self.assertEqual(graph.dshape, dshape('10, float64'))
 
+    def test_constant_folding(self):
+        a = array(nd.range(10, dtype=ndt.int32))
+        b = a + 1 + 1 + 1
+        c = a + 3
+
+        depth = lambda node: 1 if len(node.args) == 0 \
+                               else 1 + depth(node.args[0])
+
+        self.assertEqual(depth(b.expr[0]), depth(c.expr[0]))
 
 if __name__ == '__main__':
     unittest.main()
