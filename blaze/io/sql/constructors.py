@@ -11,33 +11,73 @@ from datashape import dshape, Record, DataShape
 
 
 class TableSelection(object):
-    """Table and column name"""
+    """
+    Table and column name
 
-    def __init__(self, table, colname):
-        self.table = table
-        self.colname = colname
+    Attributes
+    ==========
+
+    table: str
+        table name
+
+    colname: str
+        column name
+    """
+
+    def __init__(self, table_name, colname):
+        self.table_name = table_name
+        self.col_name = colname
 
     def __repr__(self):
         return "TableSelection(%s)" % (self,)
 
     def __str__(self):
-        return "%s.%s" % (self.table, self.colname)
+        return "%s.%s" % (self.table_name, self.col_name)
 
 
-def sql_table(table, colnames, measures, conn):
+def sql_table(table_name, colnames, measures, conn):
     """
     Create a new blaze Array from an SQL table description. This returns
     a Record array.
+
+    Parameters
+    ==========
+
+    table_name: str
+        table name
+
+    colnames: [str]
+        column names
+
+    measures: [DataShape]
+        measure (element type) for each column
+
+    conn: pyodbc/whatever Connection
     """
     measure = Record(list(zip(colnames, measures)))
     record_dshape = DataShape(dshape('A'), measure)
-    table = TableSelection(table, '*')
+    table = TableSelection(table_name, '*')
     return Array(SQLDataDescriptor(record_dshape, table, conn))
 
 
-def sql_column(table, colname, dshape, conn):
+def sql_column(table_name, colname, dshape, conn):
     """
     Create a new blaze Array from a single column description.
+
+    Parameters
+    ==========
+
+    table_name: str
+        table name
+
+    colname: str
+        column
+
+    dshape: DataShape
+        type for the column. This should include the dimension, which may be
+        a TypeVar
+
+    conn: pyodbc/whatever Connection
     """
-    col = TableSelection(table, colname)
+    col = TableSelection(table_name, colname)
     return Array(SQLDataDescriptor(dshape, col, conn))

@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function
 
 from itertools import chain
 
-from datashape import DataShape
+from datashape import DataShape, Record
 from dynd import nd
 
 from ... import Array
@@ -55,14 +55,32 @@ class SQLDataDescriptor(IDataDescriptor):
 
     def describe_col(self):
         query_result = execute(self.conn, self.dshape,
-                               "select %s from %s", (self.col.colname,
-                                                     self.col.table))
+                               "select %s from %s" % (self.col.col_name,
+                                                      self.col.table_name), [])
         return SQLResultDataDescriptor(query_result)
 
     def __iter__(self):
         return iter(self.describe_col())
 
     def __getitem__(self, item):
+        """
+        Support my_sql_blaze_array['sql_column']
+        """
+        from .constructors import sql_table, sql_column
+
+        if isinstance(item, str):
+            table = self.col
+            colname = item
+
+            assert table.col_name == '*'
+            dshape = column_dshape(self.dshape, colname)
+
+            # Create blaze array for remote column
+            arr = sql_column(table.table_name, colname, dshape, self.conn)
+
+            # Array.__getitem__ will expect back a data descriptor!
+            return arr._data
+
         raise NotImplementedError
 
     def dynd_arr(self):
@@ -106,9 +124,20 @@ class SQLResultDataDescriptor(IDataDescriptor):
             )
 
     def __iter__(self):
-        return iter((x for chunk in self.query_result for x in chunk))
+        return (x for chunk in self.query_result for x in chunk)
 
     def __getitem__(self, item):
+        """
+        Support my_sql_blaze_array['sql_column']
+        """
+        # TODO: Lazy column description
+        # return self.dynd_arr()[item]
+
+        if isinstance(item, str):
+            # Pull in data to determine length
+            # TODO: this is bad
+            return DyNDDataDescriptor(getattr(self.dynd_arr(), item))
+
         raise NotImplementedError
 
     def dynd_arr(self):
@@ -173,3 +202,21 @@ class _ResultIterator(object):
         return next_chunk
 
     __next__ = next
+
+
+def column_dshape(dshape, colname):
+    """
+    Given a record dshape, project a column out
+    """
+    rec = dshape.measure
+
+    if not isinstance(rec, Record):
+        raise TypeError("Can only select fields from record type")
+    if colname not in rec.fields:
+        raise ValueError("No such field %r" % (colname,))
+
+    measure = rec.fields[colname]
+    params = list(dshape.shape) + [measure]
+    dshape = DataShape(*params)
+
+    return dshape

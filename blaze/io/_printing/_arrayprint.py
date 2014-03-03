@@ -25,7 +25,7 @@ import sys
 import numpy as np
 import numpy.core.umath as _um
 import datashape
-from datashape import Fixed, Var
+from datashape import Fixed, Var, TypeVar
 
 from ...datadescriptor import IDataDescriptor, dd_as_py
 
@@ -331,7 +331,7 @@ def _choose_format(formatdict, ds):
 def _array2string(a, shape, dtype, max_line_width, precision,
                   suppress_small, separator=' ', prefix="", formatter=None):
 
-    if any(isinstance(s, Var) for s in shape):
+    if any(isinstance(s, (Var, TypeVar)) for s in shape):
         dim_size = -1
     else:
         dim_size = reduce(product, shape, 1)
