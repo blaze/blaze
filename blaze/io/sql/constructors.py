@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 from ... import Array
 from .datadescriptor import SQLDataDescriptor
 
-from datashape import dshape, Record, DataShape
+from datashape import dshape, Record, DataShape, coretypes
 
 
 class TableSelection(object):
@@ -29,8 +29,8 @@ def sql_table(table, colnames, measures, conn):
     Create a new blaze Array from an SQL table description. This returns
     a Record array.
     """
-    measure = Record(list(zip(colnames, measures)))
-    record_dshape = DataShape(dshape('A'), measure)
+    dtype = Record(list(zip(colnames, measures)))
+    record_dshape = DataShape(coretypes.Var(), dtype)
     table = TableSelection(table, '*')
     return Array(SQLDataDescriptor(record_dshape, table, conn))
 

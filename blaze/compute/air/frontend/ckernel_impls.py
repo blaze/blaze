@@ -5,6 +5,7 @@ arguments.
 
 from __future__ import absolute_import, division, print_function
 
+import datashape
 from pykit.ir import transform, Op
 
 #------------------------------------------------------------------------
@@ -39,16 +40,18 @@ class CKernelImplementations(object):
         func = overload.func
         polysig = overload.sig
         monosig = overload.resolved_sig
-        argtypes = monosig.argtypes
+        argtypes = datashape.coretypes.Tuple(monosig.argtypes)
 
-        if function.matches('ckernel', argtypes):
+        try:
             overload = function.best_match('ckernel', argtypes)
-            impl = overload.func
-            assert monosig == overload.resolved_sig, (monosig,
-                                                      overload.resolved_sig)
+        except datashape.CoercionError:
+            return op
 
-            new_op = Op('ckernel', op.type, [impl, op.args[1:]], op.result)
-            new_op.add_metadata({'rank': 0,
-                                 'parallel': True})
-            return new_op
-        return op
+        impl = overload.func
+        assert monosig == overload.resolved_sig, (monosig,
+                                                  overload.resolved_sig)
+
+        new_op = Op('ckernel', op.type, [impl, op.args[1:]], op.result)
+        new_op.add_metadata({'rank': 0,
+                             'parallel': True})
+        return new_op

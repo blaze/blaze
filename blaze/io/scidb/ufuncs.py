@@ -44,19 +44,19 @@ def _implement(f, signature):
 #------------------------------------------------------------------------
 # Arithmetic
 #------------------------------------------------------------------------
-add = define_binop("(A, A) -> A", "add", "+")
-multiply = define_binop("(A, A) -> A", "multiply", "*")
+add = define_binop("(A... * T, A... * T) -> A... * T", "add", "+")
+multiply = define_binop("(A... * T, A... * T) -> A... * T", "multiply", "*")
 #subtract = define_binop("(A : real, A) -> A", "subtract", "-")
-subtract = define_binop("(A, A) -> A", "subtract", "-")
+subtract = define_binop("(A... * T, A... * T) -> A... * T", "subtract", "-")
 #divide = define_binop("(A : real, A) -> A", "divide", "/")
-divide = define_binop("(A, A) -> A", "divide", "/")
+divide = define_binop("(A... * T, A... * T) -> A... * T", "divide", "/")
 #mod = define_binop("(A : real, A) -> A", "mod", "%")
-mod = define_binop("(A, A) -> A", "mod", "%")
+mod = define_binop("(A... * T, A... * T) -> A... * T", "mod", "%")
 
 # floordiv = define_binop("(A : real, A) -> A", "floordiv", "//")
 # truediv = define_binop("(A : real, A) -> A", "truediv", "/")
 
-negative = define_unop("(A) -> A", "negative", "-")
+negative = define_unop("(A... * T) -> A... * T", "negative", "-")
 
 #------------------------------------------------------------------------
 # Compare
@@ -124,7 +124,7 @@ def logical_not(a):
 # Math
 #------------------------------------------------------------------------
 #@scidb_elementwise('(A : numeric) -> A')
-@scidb_elementwise('(A) -> A')
+@scidb_elementwise('(A... * T) -> A... * T')
 def abs(x):
     # Fixme: again exponential codegen
     return iff(less(x, 0), negative(x), x)

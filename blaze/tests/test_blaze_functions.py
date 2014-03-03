@@ -64,7 +64,7 @@ def create_overloaded_add():
 class TestBlazeKernel(unittest.TestCase):
 
     def test_kernel(self):
-        A = array([8, 9], dshape('2 * int32'))
+        A = array([[8, 9]], dshape('1 * 2 * int32'))
         res = f(A, A)
         self.assertEqual(str(res.dshape), '1 * 2 * float32')
         self.assertEqual(len(res.expr), 2)

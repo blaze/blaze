@@ -2,8 +2,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-from datashape import unify
-
 
 class ExprContext(object):
     """
@@ -43,5 +41,5 @@ def merge(contexts):
         result.terms.update(ctx.terms)
         result.params.extend(ctx.params)
 
-    result.constraints, _ = unify(result.constraints)
+    #result.constraints, _ = unify(result.constraints)
     return result
