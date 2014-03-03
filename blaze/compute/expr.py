@@ -145,7 +145,7 @@ def construct(bfunc, ctx, overload, args):
     args: list
         bfunc parameters
     """
-    from ..function import BlazeFunc
+    from .function import BlazeFunc
     assert isinstance(bfunc, BlazeFunc), bfunc
 
     params = [] # [(graph_term, ExprContext)]
