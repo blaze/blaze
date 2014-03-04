@@ -89,7 +89,7 @@ class TestCatalog(unittest.TestCase):
     def test_hdf5_subdir_get(self):
         blaze.catalog.cd('/hdf5_dir/mygroup')
         a = blaze.catalog.get('a3')
-        ds = datashape.dshape('2, 3, int32')
+        ds = datashape.dshape('2 * 3 * int32')
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 3, 2], [2, 1, 3]])
