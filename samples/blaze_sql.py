@@ -12,8 +12,8 @@ from __future__ import absolute_import, division, print_function
 
 import sqlite3 as db
 
-from blaze.io.sql import sql_column
-from blaze import dshape
+from datashape import dshape
+from blaze.io.sql import sql_table
 
 
 def create_sqlite_table():
@@ -27,7 +27,7 @@ def create_sqlite_table():
     c = conn.cursor()
     c.execute('''create table MyTable
     (id INTEGER, name TEXT, age INTEGER)''')
-    c.executemany("""insert into testtable
+    c.executemany("""insert into MyTable
                   values (?, ?, ?)""", data)
     conn.commit()
     c.close()
@@ -35,43 +35,10 @@ def create_sqlite_table():
     return conn
 
 conn = create_sqlite_table()
+
 # Describe the columns. Note: typically you would describe column
 # with variables for the column size, e.g. dshape('a, int32')
-
-id = sql_column('MyTable', 'id', dshape('3, int32'), conn)
-name_col = sql_column('MyTable', 'name', dshape('3, int32'), conn)
-age_col = sql_column('MyTable', 'age', dshape('3, int32'), conn)
-
-table = Table([id, name_col, age_col]) # TODO: Better interface
-
-
-def select():
-    """
-    SELECT * FROM MyTable WHERE MyTable.id > 5
-    """
-    print(table[table.id > 5])
-
-
-def select_ordered():
-    """
-    SELECT * FROM MyTable WHERE MyTable.id > 5 ORDER BY MyTable.age
-    """
-    print(index(table, table.id > 5, order=table.age))
-
-
-def groupby():
-    """
-    SELECT *
-    FROM MyTable
-    WHERE MyTable.age > 10 AND MyTable.age < 20
-    GROUP BY MyTable.age
-    """
-    teenagers = index(table, table.age > 10 & table.age < 20)
-    print(groupby(teenagers, teenagers.age))
-
-
-def aggregate():
-    """
-    SELECT AVG(age) FROM MyTable WHERE MyTable.id > 5
-    """
-    print(avg(age_col[id > 5]))
+table = sql_table('MyTable',
+                  ['id', 'name', 'age'],
+                  [dshape('int32'), dshape('string'), dshape('float64')],
+                  conn)
