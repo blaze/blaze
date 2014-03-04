@@ -71,7 +71,7 @@ class TestServer(unittest.TestCase):
         ra = blaze.array(RemoteDataDescriptor('%s/py_arr' % self.baseurl))
         result = ra + 1
         result = blaze.eval(result)
-        self.assertEqual(result.dshape, datashape.dshape('5, int32'))
+        self.assertEqual(result.dshape, datashape.dshape('5 * int32'))
         self.assertEqual(dd_as_py(result._data), [2, 3, 4, 5, 6])
 
 if __name__ == '__main__':

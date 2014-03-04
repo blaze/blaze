@@ -68,9 +68,9 @@ class TestWrappedCKernel(unittest.TestCase):
 
         # Also call it lifted
         ckd_lifted = _lowlevel.lift_ckernel_deferred(ckd,
-                        ['2, var, int32', '2, var, float64'])
-        out = nd.empty('2, var, int32')
-        in0 = nd.array([[1.0, 3.0, 2.5], [1.25, -1.5]], type='2, var, float64')
+                        ['2 * var * int32', '2 * var * float64'])
+        out = nd.empty('2 * var * int32')
+        in0 = nd.array([[1.0, 3.0, 2.5], [1.25, -1.5]], type='2 * var * float64')
         ckd_lifted.__call__(out, in0)
         self.assertEqual(nd.as_py(out), [[3, 10, 8], [4, -5]])
 

@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function
 from collections import defaultdict
 
 from pykit import ir
+import datashape
 
 from ...strategy import OOC, JIT, CKERNEL, PY
 from ....io.sql import SQL, SQLDataDescriptor
@@ -161,28 +162,28 @@ def enumerate_strategies(function, env):
 def overload_for_strategy(function, overload, strategy):
     """Find an implementation overload for the given strategy"""
     expected_signature = overload.resolved_sig
-    argtypes = expected_signature.argtypes
+    argtypes = datashape.coretypes.Tuple(expected_signature.argtypes)
 
-    if function.matches(strategy, argtypes):
+    try:
         overload = function.best_match(strategy, argtypes)
-        got_signature = overload.resolved_sig
+    except datashape.OverloadError:
+        return None, None
+    got_signature = overload.resolved_sig
 
-        # Assert agreeable types for now
-        # TODO: insert conversions if implementation disagrees
+    # Assert agreeable types for now
+    # TODO: insert conversions if implementation disagrees
 
-        if got_signature != expected_signature and False:
-            ckdispatcher = function.get_dispatcher('ckernel')
-            raise TypeError(
-                "Signature of implementation (%s) does not align with "
-                "signature from blaze function (%s) from argtypes [%s] "
-                "for function %s with signature %s" %
-                    (got_signature, expected_signature,
-                     ", ".join(map(str, argtypes)),
-                     function, overload.sig))
+    if got_signature != expected_signature and False:
+        ckdispatcher = function.get_dispatcher('ckernel')
+        raise TypeError(
+            "Signature of implementation (%s) does not align with "
+            "signature from blaze function (%s) from argtypes [%s] "
+            "for function %s with signature %s" %
+                (got_signature, expected_signature,
+                 ", ".join(map(str, argtypes)),
+                 function, overload.sig))
 
-        return overload.func, got_signature
-
-    return None, None
+    return overload.func, got_signature
 
 
 #def annotate_kernels(func, env):

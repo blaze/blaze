@@ -27,7 +27,7 @@ def reduce(kernel, a, axis=None):
 
 
 # TODO: Deferred
-# @kernel('* -> X, Y..., Dtype -> Y..., Dtype')
+# @kernel('(*, X * Y... * Dtype) -> Y... * Dtype')
 def reduce_dim(kernel, a):
     from blaze import eval
 

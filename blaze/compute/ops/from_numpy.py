@@ -16,14 +16,15 @@ def _filter_tplist(tplist):
     """
     elim_kinds = ['O', 'M', 'm', 'S', 'U']
     if str(np.longdouble) != str(np.double):
-        ld = [np.longdouble, np.clongdouble]
+        elim_types = [np.longdouble, np.clongdouble]
     else:
-        ld = []
+        elim_types = []
+    elim_types.append(np.float16)
     seen = set()
     tplistnew = []
     for sig in tplist:
         if sig not in seen and not any(dt.kind in elim_kinds or
-                                       dt in ld for dt in sig):
+                                       dt in elim_types for dt in sig):
             tplistnew.append(sig)
             seen.add(sig)
     return tplistnew
@@ -31,7 +32,7 @@ def _filter_tplist(tplist):
 
 def _make_sig(tplist):
     """Converts a type tuples into datashape function signatures"""
-    dslist = [datashape.dshape("A..., " + str(x)) for x in tplist]
+    dslist = [datashape.dshape("A... * " + str(x)) for x in tplist]
     return datashape.Function(*(dslist[1:] + [dslist[0]]))
 
 def _make_pyfunc(nargs, modname, name):

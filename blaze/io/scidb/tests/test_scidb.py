@@ -14,7 +14,7 @@ except ImportError:
     scidbpy = None
 
 
-ds = dshape('10, 10, float64')
+ds = dshape('10 * 10 * float64')
 
 
 class TestSciDB(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestSciDB(unittest.TestCase):
         expr = add(a, multiply(a, b))
 
         graph, ctx = expr.expr
-        self.assertEqual(graph.dshape, dshape('10, 10, float64'))
+        self.assertEqual(graph.dshape, dshape('10 * 10 * float64'))
 
         result = eval(expr)
 
@@ -55,7 +55,7 @@ class TestSciDB(unittest.TestCase):
         expr = a + b
 
         graph, ctx = expr.expr
-        self.assertEqual(graph.dshape, dshape('10, 10, float64'))
+        self.assertEqual(graph.dshape, dshape('10 * 10 * float64'))
 
         result = eval(expr)
         print(result)

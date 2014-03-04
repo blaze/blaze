@@ -27,10 +27,10 @@ import blaze
 from ..py2help import dict_iteritems, exec_
 from datashape import coretypes as T, dshape
 
-from datashape.overloading import (overload, Dispatcher, match_by_weight,
+from datashape.overloading import (overload, Dispatcher,
                                    best_match, lookup_previous)
 from ..datadescriptor import DeferredDescriptor
-from .expr import construct, merge
+from .expr import construct, merge_contexts
 from .strategy import PY, JIT
 
 #------------------------------------------------------------------------
@@ -83,7 +83,7 @@ def function(signature, impl='python', **metadata):
 
     or
 
-        @function('A -> A -> A') # All types are unified
+        @function('(A, A) -> A') # All types are unified
         def add(a, b):
             return a + b
     """
@@ -116,7 +116,7 @@ def function(signature, impl='python', **metadata):
         signature = None
         return decorator(f)
     else:
-        # @blaze_func('A -> A -> B')
+        # @blaze_func('(A, A) -> B')
         # def f(...): ...
         return decorator
 
@@ -153,13 +153,12 @@ def apply_function(blaze_func, *args, **kwargs):
 
     args, kwargs = blaze_args(args, kwargs)
     ctxs = collect_contexts(chain(args, kwargs.values()))
-    ctx = merge(ctxs)
+    ctx = merge_contexts(ctxs)
 
     # -------------------------------------------------
     # Find match to overloaded function
 
-    overload, args = blaze_func.dispatcher.lookup_dispatcher(args, kwargs,
-                                                             ctx.constraints)
+    overload, args = blaze_func.dispatcher.lookup_dispatcher(args, kwargs)
 
     # -------------------------------------------------
     # Construct graph
@@ -196,6 +195,8 @@ def blaze_func(name, signature, **metadata):
     is not necessarily a python implementation available, or if we are
     generating blaze functions dynamically.
     """
+    if isinstance(signature, T.DataShape) and len(signature) == 1:
+        signature = signature[0]
     nargs = len(signature.argtypes)
     argnames = (string.ascii_lowercase + string.ascii_uppercase)[:nargs]
     source = textwrap.dedent("""
@@ -278,20 +279,13 @@ class BlazeFunc(object):
             self.dispatchers[impl_kind] = Dispatcher()
         return self.dispatchers[impl_kind]
 
-    def matches(self, impl_kind, argtypes, constraints=None):
-        """
-        Find all matching overloads for a given implementation kind and
-        argument types.
-        """
-        return match_by_weight(self.get_dispatcher(impl_kind), argtypes,
-                               constraints=constraints)
-
-    def best_match(self, impl_kind, argtypes, constraints=None):
+    def best_match(self, impl_kind, argtypes):
         """
         Find the best implementation of `impl_kind` using `argtypes`.
         """
-        return best_match(self.get_dispatcher(impl_kind), argtypes,
-                          constraints=constraints)
+        dispatcher = self.get_dispatcher(impl_kind)
+        print('dispatcher overloads:', dispatcher.overloads)
+        return best_match(dispatcher, argtypes)
 
     def add_metadata(self, md, impl_kind=PY):
         """

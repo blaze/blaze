@@ -45,7 +45,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
     def test_descriptor_iter_types(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/a1')
 
-        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int32'))
+        self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int32'))
         # Iteration should produce DyNDDataDescriptor instances
         vals = []
         for el in dd:
@@ -58,7 +58,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
     def test_descriptor_getitem_types(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/g/a2')
 
-        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int64'))
+        self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         # Indexing should produce DyNDDataDescriptor instances
         self.assertTrue(isinstance(dd[0], DyNDDataDescriptor))
         self.assertEqual(dd_as_py(dd[0]), [1,2,3])
@@ -69,7 +69,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
     def test_descriptor_setitem(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/g/a2')
 
-        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int64'))
+        self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         dd[1,2] = 10
         self.assertEqual(dd_as_py(dd[1,2]), 10)
         dd[1] = [10, 11, 12]
@@ -79,8 +79,8 @@ class TestHDF5DataDescriptor(unittest.TestCase):
     def test_descriptor_append(self):
         dd = HDF5DataDescriptor(self.hdf5_file, '/t1')
 
-        tshape = '2, { f0 : int32; f1 : int64; f2 : float64 }'
-        self.assertEqual(dd.dshape, datashape.dshape(tshape))
+        tshape = datashape.dshape('2 * { f0 : int32, f1 : int64, f2 : float64 }')
+        self.assertEqual(dd.dshape, tshape)
         dd.append([(10, 11, 12)])
         dvals = {'f0': 10, 'f1': 11, 'f2': 12.}
         rvals = dd_as_py(dd[2])

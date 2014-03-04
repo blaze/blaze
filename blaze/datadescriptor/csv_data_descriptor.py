@@ -74,6 +74,8 @@ class CSVDataDescriptor(IDataDescriptor):
         has_header = kwargs.get("has_header", None)
         if type(schema) in py2help._strtypes:
             schema = datashape.dshape(schema)
+        if isinstance(schema, datashape.DataShape) and len(schema) == 1:
+            schema = schema[0]
         if not isinstance(schema, datashape.Record):
             raise TypeError(
                 'schema cannot be converted into a blaze record dshape')

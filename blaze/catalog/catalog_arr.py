@@ -6,35 +6,10 @@ import csv
 import yaml
 from dynd import nd, ndt
 import datashape
+from datashape.type_equation_solver import matches_datashape_pattern
 
 import blaze
 from .. import py2help
-
-
-def compatible_array_dshape(arr, ds):
-    """Checks if the array is compatible with the given dshape.
-
-       Examples
-       --------
-
-       >>> compatible_array_dshape(blaze.array([1,2,3]),
-       ...                         datashape.dshape("M, int32"))
-       True
-
-       >>>
-    """
-    # To do this check, we unify the array's dshape and the
-    # provided dshape. Because the array's dshape is concrete,
-    # the result of unification should be equal, otherwise the
-    # the unification promoted its type.
-    try:
-        unify_res = datashape.unify([(arr.dshape, ds)],
-                                      broadcasting=[False])
-        [unified_ds], constraints = unify_res
-    except blaze.error.UnificationError:
-        return False
-
-    return unified_ds == arr.dshape
 
 
 def load_blaze_array(conf, dir):
@@ -86,7 +61,7 @@ def load_blaze_array(conf, dir):
         arr = nd.array(arr)
         arr = blaze.array(arr)
         ds = datashape.dshape(ds_str)
-        if not compatible_array_dshape(arr, ds):
+        if not matches_datashape_pattern(arr.dshape, ds):
             raise RuntimeError(('NPY file for blaze catalog path %r ' +
                                 'has the wrong datashape (%r instead of ' +
                                 '%r)') % (arr.dshape, ds))
@@ -117,7 +92,7 @@ def load_blaze_array(conf, dir):
             raise RuntimeError(('Script for blaze catalog path %r returned ' +
                                 'wrong type of object (%r instead of ' +
                                 'blaze.Array)') % (type(arr)))
-        if not compatible_array_dshape(arr, ds):
+        if not matches_datashape_pattern(arr.dshape, ds):
             raise RuntimeError(('Script for blaze catalog path %r returned ' +
                                 'array with wrong datashape (%r instead of ' +
                                 '%r)') % (arr.dshape, ds))

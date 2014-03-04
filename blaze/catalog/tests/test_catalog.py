@@ -40,7 +40,7 @@ class TestCatalog(unittest.TestCase):
         # Confirms that a simple csv file can be loaded
         blaze.catalog.cd('/')
         a = blaze.catalog.get('csv_arr')
-        ds = datashape.dshape('5, {Letter: string; Number: int32}')
+        ds = datashape.dshape('5 * {Letter: string, Number: int32}')
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [{'Letter': 'alpha', 'Number': 0},
@@ -53,7 +53,7 @@ class TestCatalog(unittest.TestCase):
         # Confirms that a simple json file can be loaded
         blaze.catalog.cd('/')
         a = blaze.catalog.get('json_arr')
-        ds = datashape.dshape('2, var, int32')
+        ds = datashape.dshape('2 * var * int32')
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 2, 3], [1, 2]])
@@ -63,7 +63,7 @@ class TestCatalog(unittest.TestCase):
         # Confirms that a simple hdf5 array in a file can be loaded
         blaze.catalog.cd('/')
         a = blaze.catalog.get('hdf5_arr')
-        ds = datashape.dshape('2, 3, int32')
+        ds = datashape.dshape('2 * 3 * int32')
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 2, 3], [3, 2, 1]])
@@ -89,7 +89,7 @@ class TestCatalog(unittest.TestCase):
     def test_hdf5_subdir_get(self):
         blaze.catalog.cd('/hdf5_dir/mygroup')
         a = blaze.catalog.get('a3')
-        ds = datashape.dshape('2, 3, int32')
+        ds = datashape.dshape('2 * 3 * int32')
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [[1, 3, 2], [2, 1, 3]])
@@ -121,7 +121,7 @@ class TestCatalog(unittest.TestCase):
         # Confirms that a simple npy file can be loaded
         blaze.catalog.cd('/')
         a = blaze.catalog.get('npy_arr')
-        ds = datashape.dshape('20, {idx: int32; val: string}')
+        ds = datashape.dshape('20 * {idx: int32, val: string}')
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual([x['idx'] for x in dat],
@@ -133,7 +133,7 @@ class TestCatalog(unittest.TestCase):
         # Confirms that a simple py file can generate a blaze array
         blaze.catalog.cd('/')
         a = blaze.catalog.get('py_arr')
-        ds = datashape.dshape('5, int32')
+        ds = datashape.dshape('5 * int32')
         self.assertEqual(a.dshape, ds)
         dat = blaze.datadescriptor.dd_as_py(a._data)
         self.assertEqual(dat, [1, 2, 3, 4, 5])

@@ -11,7 +11,7 @@ from .. import function
 
 
 def _make_sig(kern):
-    dslist = [datashape.dshape("A..., " + str(x)) for x in kern.types]
+    dslist = [datashape.dshape("A... * " + str(x)) for x in kern.types]
     return datashape.Function(*(dslist[1:] + [dslist[0]]))
 
 

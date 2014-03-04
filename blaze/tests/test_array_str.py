@@ -57,7 +57,7 @@ class TestArrayStr(unittest.TestCase):
         # Basically check that it doesn't raise an exception to
         # get the string
         a = blaze.array([(1, 2), (3, 4), (5, 6)],
-                dshape='{x: int32; y: float64}')
+                dshape='{x: int32, y: float64}')
         self.assertTrue(str(a) != '')
         self.assertTrue(repr(a) != '')
 
