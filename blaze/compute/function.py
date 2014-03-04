@@ -30,7 +30,7 @@ from datashape import coretypes as T, dshape
 from datashape.overloading import (overload, Dispatcher,
                                    best_match, lookup_previous)
 from ..datadescriptor import DeferredDescriptor
-from .expr import construct, merge
+from .expr import construct, merge_contexts
 from .strategy import PY, JIT
 
 #------------------------------------------------------------------------
@@ -153,7 +153,7 @@ def apply_function(blaze_func, *args, **kwargs):
 
     args, kwargs = blaze_args(args, kwargs)
     ctxs = collect_contexts(chain(args, kwargs.values()))
-    ctx = merge(ctxs)
+    ctx = merge_contexts(ctxs)
 
     # -------------------------------------------------
     # Find match to overloaded function
