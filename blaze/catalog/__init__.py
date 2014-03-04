@@ -2,8 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 from . import blaze_url
 from . import catalog_config
-from .catalog_dir import CatalogDir, is_rel_bpath, is_abs_bpath, join_bpath
-from .catalog_arr import load_blaze_array
+from .catalog_dir import (
+    CatalogDir, CatalogCDir, is_rel_bpath, is_abs_bpath, join_bpath)
+from .catalog_arr import load_blaze_array, load_blaze_subcarray
 
 # Load the default config
 config = catalog_config.load_default_config()
@@ -47,10 +48,14 @@ def cd(key):
     global _cwd
     _check_config()
     newcwd = join_bpath(_cwd, key)
-    if not config.isdir(newcwd):
-        print('No directory %r in the blaze catalog' % newcwd)
-    else:
+    if config.isdir(newcwd):
         _cwd = newcwd
+        return
+    (dir, subcdir) = config.get_subcdir(newcwd)
+    if dir:
+        _cwd = newcwd
+        return
+    print('No directory %r in the blaze catalog' % newcwd)
 
 
 def cwd():
@@ -81,10 +86,17 @@ def get(key):
     """Get an array or directory object from the blaze catalog"""
     _check_config()
     key = join_bpath(_cwd, key)
-    if config.isdir(key):
+    if config._isdir(key):
         return CatalogDir(config, key)
-    elif config.isarray(key):
+    (dir, subcdir) = config.get_subcdir(key)
+    if dir:
+        return CatalogCDir(config, dir, subcdir)
+    if config.isarray(key):
         return load_blaze_array(config, key)
+    (dir, subcarray) = config.get_subcarray(key)
+    if dir:
+        cdir = CatalogCDir(config, dir)
+        return load_blaze_subcarray(config, cdir, subcarray)
     else:
         raise RuntimeError('Blaze path not found: %r' % key)
 
