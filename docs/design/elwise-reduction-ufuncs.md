@@ -41,7 +41,7 @@ This is the type of the elements that are being reduced.
 
 The accumulation type may be different from the
 input type in a reduction. For example, for `mean`,
-it may be a struct `{sum: float64; count: int64}`,
+it may be a struct `{sum: float64, count: int64}`,
 where the input type is `float64`.
 
 ### Initial State (Identity Element)
@@ -126,11 +126,11 @@ array(10,
 
 >>> blaze.sum([[1, 2], [3, 4]], axis=0)
 array([4, 6],
-      dshape='2, int32')
+      dshape='2 * int32')
 
 >>> blaze.sum([[1, 2], [3, 4]], axis=1)
 array([3, 7],
-      dshape='2, int32')
+      dshape='2 * int32')
 
 >>> blaze.sum([['this', 'is'], ['a', 'test']])
 BlazeError: blaze.sum output of 2D reduction is ambiguous
@@ -138,11 +138,11 @@ due to lack of commutativity
 
 >>> blaze.sum([['this', 'is'], ['a', 'test']], axis=0)
 array(['thisa', 'istest'],
-      dshape='2, string')
+      dshape='2 * string')
 
 >>> blaze.sum([['this', 'is'], ['a', 'test']], axis=1)
 array(['thisis', 'atest'],
-      dshape='2, string')
+      dshape='2 * string')
 
 >>> blaze.max([['this', 'is'], ['a', 'test']])
 array('this',
@@ -214,7 +214,7 @@ for blaze reductions, using Python 3 syntax, is
 as follows:
 
 ```
-@blazefunc('A..., input_dtype -> (A... transformed by axis), output_dtype')
+@blazefunc('(A... * InputDType) -> <A... transformed by axis> * OutputDType')
 def elwise_reduction(a, *, axis=None, keepdims=False):
 	pass
 ```
@@ -230,30 +230,30 @@ of various reductions look like for a `sum` example.
 ```
 >>> a
 array([...],
-      dshape='3, var, 5, int32')
+      dshape='3 * var, 5 * int32')
 >>> blaze.sum(a).sig
-'3, var, 5, int32 -> int32'
+'(3 * var * 5 * int32) -> int32'
 
 >>> blaze.sum(a, keepdims=True).sig
-'3, var, 5, int32 -> 1, 1, 1, int32'
+'(3 * var * 5 * int32) -> 1 * 1 * 1 * int32'
 
 >>> blaze.sum(a, axis=0).sig
-'3, var, 5, int32 -> var, 5, int32'
+'(3 * var * 5 * int32) -> var * 5 * int32'
 
 >>> blaze.sum(a, axis=1).sig
-'3, var, 5, int32 -> 3, 5, int32'
+'(3 * var * 5 * int32) -> 3 * 5 * int32'
 
 >>> blaze.sum(a, axis=[0,2], keepdims=True).sig
-'3, var, 5, int32 -> 1, var, 1, int32'
+'(3 * var * 5 * int32) -> 1 * var * 1 * int32'
 
 >>> blaze.sum(a, axis=[0,2]).sig
-'3, var, 5, int32 -> var, int32'
+'(3 * var * 5 * int32) -> var * int32'
 
 >>> blaze.sum(a, axis=[1,2], keepdims=True).sig
-'3, var, 5, int32 -> 3, 1, 1, int32'
+'(3 * var * 5 * int32) -> 3 * 1 * 1 * int32'
 
 >>> blaze.sum(a, axis=[1,2]).sig
-'3, var, 5, int32 -> 3, int32'
+'(3 * var * 5 * int32) -> 3 * int32'
 ```
 
 There are three basic approaches we might take to make
@@ -280,7 +280,7 @@ compiler transformation of the following type of code:
 ```
 >>> a
 array([...],
-      dshape='100000, 3, int32')
+      dshape='100000 * 3 * int32')
 
 >>> blaze.mean(a, axis=-1)
 # through some compiler passes, could become
@@ -320,7 +320,7 @@ def sum_return_type(a_type, *, axis=None, keepdims=None):
     ds = ...
     return ds
 
-@elementwise('A..., T -> dependent', dependent=sum_return_type)
+@elementwise('(A... * T) -> Dependent', dependent=sum_return_type)
 def sum(a, *, axis=None, keepdims=None):
     # Belonging here is a ckernel which gets specially
     # lifted as a reduction
