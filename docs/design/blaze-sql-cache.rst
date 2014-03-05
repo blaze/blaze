@@ -11,15 +11,15 @@ database from replying to repetitive queries or queries showing some
 overlap, allowing a much better response times for queries that have
 not been done before.
 
-Design
-======
+Background
+==========
 
 Blaze already has support for different I/O backends that can
 efficiently deal with large datasets, being the most interesting ones
 BLZ and HDF5.  BLZ can be interesting because it brings storage in
-either a row-wise (barray) or a column-wise (btable) fashion.
-However, the requirement of being able to query the cache from other
-languages like R, makes HDF5 the best option for this task.
+either a row-wise (barray) or a column-wise (btable) fashion.  An
+additional advantage of these is that they support efficient appends
+which will be very important for implementing a cache.
 
 Blaze also has provision for a SQL backend that could be used to query
 remote databases and use the HDF5 data descriptor to store the data
@@ -29,13 +29,16 @@ supports on-the-flight compression/decompression, so it can cache
 large amounts of SQL data with relatively low disk consumption (and
 requiring much less space than a traditional database for sure).
 
-Implementation
-==============
+Requirements
+============
 
 One should devise a way to express SQL queries to the relational
 database in terms of a customizable form so that the user can ask for
 more data but varying a fixed set of parameters (typically the limits
 for the query).
+
+Also, the requirement of being able to query the cache from other
+languages like R, makes HDF5 the best option for this task.
 
 The cache system will figure out the number of fields and its types so
 that it will create an HDF5 table on-disk for caching the results
