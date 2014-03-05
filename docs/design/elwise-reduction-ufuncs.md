@@ -230,7 +230,7 @@ of various reductions look like for a `sum` example.
 ```
 >>> a
 array([...],
-      dshape='3 * var, 5 * int32')
+      dshape='3 * var * 5 * int32')
 >>> blaze.sum(a).sig
 '(3 * var * 5 * int32) -> int32'
 
