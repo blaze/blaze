@@ -59,7 +59,7 @@ Implementation outline
 The details of where the cache should live, its size and other
 parameters would be implemented via the Blaze catalog::
 
-  cache = blaze.catalog.activate('my_cache')
+  cache_desc = blaze.catalog.activate('my_cache')
 
 where 'my_cache.cache' is a YAML file with the different properties
 for the cache.  An example of it could be::
@@ -75,76 +75,88 @@ for the cache.  An example of it could be::
 With that, one can add different queries for getting into the cache.
 For example::
 
-  query1 = "select * from table1 where date between %s and %s"
-  cache.add('query1', query1, db_connector1)
+  sql_arr1 = blaze.array("select * from table1", db_conn1)
+  sql_arr1.activate_cache(cache_desc)
 
-  query2 = "select * from table2 where temp between %s and %s"
-  cache.add('query2', query2, db_connector2)
-
-And caches for query forms can be explictly removed too::
-
-  cache.remove('query1')
-  cache.remove('query2')
-
-As well as stopping this specific catalog cache::
-
-  cache.deactivate()
+  sql_arr2 = blaze.array("select * from table2", db_conn2)
+  sql_arr2.activate_cache(cache_desc)
 
 Now, the cache subsystem in Blaze will fetch the metainformation for
 the different tables in the queries (table1, table2) by using the
-different connectors ('db_connector1', 'db_connector2'), and will
-create different data containers inside the cache catalog.
+different connectors (db_conn1, db_conn2), and will store the info
+about the data to be retrieved (the column names and types basically)
+inside the cache catalog.
 
-Once the cache containers are created, Blaze will setup a hook on the
-appropriate backend (SQL in the examples above) so that, whenever it
-does a new query with the same form than one of the cached ones
-('query1'. 'query2'), the result will get stored into the corresponding
-cache container.
+After this, Blaze will setup a hook in the appropriate backend (SQL in
+the examples above) so that, whenever it does a new query using the
+deferred arrays above, the result will get stored into the
+corresponding cache container.  For example::
 
-The next time that a query matches some query form, the new range will
+  a = sql_arr1.where("2010 < date < 2011")
+
+will use the initial query for `sql_arr1` and will build the next
+one::
+
+  select * from table1 where date between 2010 and 2011
+
+and the result will be stored in the underlying cache, as well as
+returned to the user.
+
+The next time that the deferred array is queried, the new range will
 be compared against the ranges that are stitting in the corresponding
-data containers ('query1', 'query2') in cache.  In case the range
-falls into the ranges in cache (either completely or partially, see
-"Use cases" sections), the data will be retrieved from cache instead
-of issuing the query against the original DB connectors and returned
-to the user.
+data containers in cache.  In case the range falls into the ranges in
+cache (either completely or partially, see "Use cases" sections), the
+data will be retrieved from cache instead of issuing the query against
+the original database connectors and returned to the user.
+ 
+Caches for deferred arrays can be explictly removed too::
+
+  sql_arr1.deactivate_cache()
+  sql_arr2.deactivate_cache()
+
+Stopping caching all the queries in a specific catalog cache can be
+done with::
+
+  cache_desc.deactivate()
+
 
 Use cases
 =========
 
 A very simple use case is when we do a query based on a date range::
 
-  # Setup the caching on a query form
-  cache = blaze.catalog.activate('my_cache')
-  query = "select * from mytable where date between %s and %s"
-  cache.add('query', query, db_connector1)
+  # Setup the caching on a deferred array
+  cache_desc = blaze.catalog.activate('my_cache')
+  sql_arr = blaze.array("select * from table1", db_conn)
+  sql_arr.activate_cache(cache_desc)
 
   # Do the query and cache the result
-  a = blaze.array_from_sql(query, ('2010', '2012'), db_connector)
+  a = sql_arr.where("2010 < date < 2012")
 
-  # Should hit catalog cache
-  b = blaze.array_from_sql(query, ('2010', '2011'), db_connector)
+  # This new query should hit catalog cache
+  b = sql_arr.where("2010 < date < 2011")
 
-  # We are done with caching with this specific query form
-  cache.remove('query')
+  # We are done with caching with this specific deferred arra
+  sql_arr.deactivate_cache()
 
   # We are done with 'my_cache' completely
-  cache.deactivate()
+  cache_desc.deactivate()
 
 Note how the cache can be activated and deactivated by user request,
-both in a query form or a specific cache catalog.  This is important
-because sometimes the user won't want to use the caching feature.
+both in a deferred array or on a specific cache catalog.  This is
+important because sometimes the user won't want to use the caching
+feature (there can be fundamental reasons for that).
 
 A somewhat more complex use case (range overlap)::
 
   # Do the query and cache the result
-  a = blaze.array_from_sql(query, ('Oct-2010', 'May-2011'), db_connector)
+  a = sql_arr.where("Oct-2010 < date < May-2011")
 
   # Do the query and cache the result
-  b = blaze.array_from_sql(query, ('Feb-2011', 'Nov-2012'), db_connector)
+  b = sql_arr.where("Feb-2011 < date < Nov-2012")
 
   # Should hit catalog cache for the whole range
-  c = blaze.array_from_sql(query, ('2010', '2012'), db_connector)
+  c = sql_arr.where("Nov-2010 < date < Sep-2012")
 
 In this case, the cache is made of overlapping queries (a and b) that
 are stored and then retrieved to form a bigger date range (c).
@@ -157,19 +169,19 @@ at all.
 Another example including 'holes' in ranges::
 
   # Do the query and cache the result
-  a = blaze.array_from_sql(query % ('Oct-2010', 'Feb-2011'), db_connector)
+  a = sql_arr.where("Oct-2010 < date < Feb-2011")
 
   # Do the query and cache the result
-  b = blaze.array_from_sql(query % ('May-2011', 'Nov-2012'), db_connector)
+  b = sql_arr.where("May-2011 < date < Nov-2012")
 
-  # Should hit catalog cache
-  c = blaze.array_from_sql(query % ('2010', '2012'), db_connector)
+  # Should hit catalog cache in some date ranges
+  c = sql_arr.where("Oct-2010 < date < Nov-2012")
 
 In this case, one could take a couple of approaches:
 
 1) Use the cache and fill the holes with actual queries
 2) Do not use the cache at all
 
-It seems like 1) should be more efficient, but sometimes not using the
-query and asking for the complete range to the database would be more
-efficient.  Maybe some heuristics would be nice for implementing 1).
+It seems like case 1 should be more efficient, but sometimes not using
+the query and asking for the complete range to the database would be
+faster.  Maybe some heuristics would be nice for implementing case 1.
