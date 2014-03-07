@@ -12,8 +12,7 @@
     <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
-    
-    <script type="text/javascript">
+   <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
         VERSION:     '0.4.1',
@@ -29,6 +28,26 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <style>
+      @media only screen and (max-width: 760px) {
+        .mobile-test { display: none; }
+      }
+    </style>
+    <script type="text/javascript">
+      $(document).ready(function() {   
+        var is_mobile = false;
+
+        if( $('.mobile-test').css('display')=='none' ) {
+            is_mobile = true;       
+        }
+
+        if(is_mobile){
+          $('ul#nav').attr('data-spy', '')  //if mobile, turn off sticky menu
+        }
+
+      });
+    </script>
+    
     <link rel="top" title="Blaze 0.4.1 documentation" href="#" />
     <link rel="next" title="Install" href="install.html" />
 <meta charset='utf-8'>
@@ -38,7 +57,7 @@
 
   </head>
   <body>
-
+    <div class="mobile-test"></div>
 <div class="container">
   <!-- This is copied from /web, find better solution -->
   <div class="masthead">
