@@ -56,7 +56,7 @@ def sql_table(table_name, colnames, measures, conn):
     """
     dtype = Record(list(zip(colnames, measures)))
     record_dshape = DataShape(coretypes.Var(), dtype)
-    table = TableSelection(table, '*')
+    table = TableSelection(table_name, '*')
     return Array(SQLDataDescriptor(record_dshape, table, conn))
 
 
