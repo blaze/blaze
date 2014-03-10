@@ -136,7 +136,7 @@ A very simple use case is when we do a query based on a date range::
   # This new query should hit catalog cache
   b = sql_arr.where("2010 < date < 2011")
 
-  # We are done with caching with this specific deferred arra
+  # We are done with caching with this specific deferred array
   sql_arr.deactivate_cache()
 
   # We are done with 'my_cache' completely
@@ -185,3 +185,45 @@ In this case, one could take a couple of approaches:
 It seems like case 1 should be more efficient, but sometimes not using
 the query and asking for the complete range to the database would be
 faster.  Maybe some heuristics would be nice for implementing case 1.
+
+Complete example
+================
+
+Here it is a complete example on how the cache should work::
+
+  import blaze
+  import pyodbc as db
+
+  # The data for the SQL table
+  data = [
+      (2010-10-10, "hello", 2.1),
+      (2011-11-11, "world", 4.2),
+      (2012-12-12, "!",     8.4),
+  ]
+
+  # Use ODBC to create a SQLite database in-memory
+  conn = db.connect("Driver=SQLite ODBC Driver;")
+  c = conn.cursor()
+  c.execute("create table my_table (tdate DATE, msg TEXT, price REAL)")
+  c.executemany("insert into testtable values (?, ?, ?)""", data)
+  conn.commit()
+  c.close()
+
+  # Setup the caching on a deferred array
+  cache_desc = blaze.catalog.activate('my_cache')
+  sql_arr = blaze.array("select * from my_table", conn)
+  sql_arr.activate_cache(cache_desc)
+
+  # Do the query and cache the result
+  a = sql_arr.where("2010-12-31 < tdate < 2012-01-01")
+  # The line below should print: 'array([2011-11-11, "world", 4.2]))'
+  print(a)
+
+  # This new query should hit catalog cache
+  b = sql_arr.where("2010-12-31 < tdate < 2012-01-01")
+  # The line below should print: 'array([2011-11-11, "world", 4.2]))'
+  print(b)
+
+  # We are done with 'my_cache' completely
+  cache_desc.deactivate()
+
