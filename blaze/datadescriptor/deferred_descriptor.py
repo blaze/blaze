@@ -6,6 +6,7 @@ actual deferred expression graph.
 from __future__ import absolute_import, division, print_function
 
 import blaze
+
 from . import IDataDescriptor, Capabilities
 
 #------------------------------------------------------------------------
@@ -58,16 +59,6 @@ class DeferredDescriptor(IDataDescriptor):
         graph, ctx = self.expr
         return [term for term in ctx.terms.values()
                          if isinstance(term, blaze.Array)]
-
-    @property
-    def strategy(self):
-        strategies = set([input._data.strategy for input in self.inputs])
-        if len(strategies) > 1:
-            raise ValueError(
-                "Multiple execution strategies encounted: %s" % (strategies,))
-
-        [strategy] = strategies
-        return strategy
 
     @property
     def dshape(self):

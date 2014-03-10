@@ -33,6 +33,7 @@ To build project inside of Anaconda:
 To build documentation on a unix-based system:
 
 ::
+
     $ cd docs
     $ make docs
 
@@ -45,27 +46,28 @@ To run tests:
 Dependencies
 ~~~~~~~~~~~~
 
-* numpy_ >= 1.5
-* cython_ >= 0.11.1
-* llvmpy_
-* ply_
-* python-blosc_
-* pycparser_
-* dynd_ >= 0.6.0
-* datashape_ >= 0.1.0
-* blz_ >= 0.6.0
-* pykit_ >= 0.1.0
+* numpy_ >= 1.6
+* llvmpy_>= 0.12
+* pyparsing_ >= 2.0.1
+* ply_ >= 3.4
+* flask_ >= 0.10.1
+* numba_ >= 0.11
+* dynd-python_ >= 0.6.1
+* datashape_ >= 0.1.1
+* blz_ >= 0.6.1
+* pykit_ >= 0.2.0
 * nose_ (optional, for running tests)
+* pytables_ >= 3.0.0 (optional, for hdf5 files)
 
 .. _numpy: http://www.numpy.org/
-.. _cython: http://www.cython.org/
 .. _llvmpy: http://www.llvmpy.org/
 .. _ply: http://www.dabeaz.com/ply/
-.. _python-blosc: http://blosc.pytables.org
-.. _pycparser: https://bitbucket.org/eliben/pycparser
 .. _nose: https://pypi.python.org/pypi/nose/
-.. _dynd: https://github.com/ContinuumIO/dynd-python
+.. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _datashape: https://github.com/ContinuumIO/datashape
 .. _blz: https://github.com/ContinuumIO/blz
 .. _pykit: https://github.com/pykit/pykit
-
+.. _pytables: http://www.pytables.org/moin
+.. _flask: http://flask.pocoo.org/
+.. _numba: http://numba.pydata.org/
+.. _pyparsing: http://pyparsing.wikispaces.com/

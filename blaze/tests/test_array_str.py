@@ -1,14 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
 import unittest
 import ctypes
-from ..py2help import skip
+
 import blaze
 from blaze.datadescriptor import data_descriptor_from_ctypes
 
-from dynd import nd, ndt
-from blaze.datadescriptor import DyNDDataDescriptor
 
 class TestArrayStr(unittest.TestCase):
     def test_scalar(self):
@@ -60,7 +57,7 @@ class TestArrayStr(unittest.TestCase):
         # Basically check that it doesn't raise an exception to
         # get the string
         a = blaze.array([(1, 2), (3, 4), (5, 6)],
-                dshape='{x: int32; y: float64}')
+                dshape='{x: int32, y: float64}')
         self.assertTrue(str(a) != '')
         self.assertTrue(repr(a) != '')
 

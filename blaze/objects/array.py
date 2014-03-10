@@ -7,12 +7,12 @@ A concrete array is constructed from a Data Descriptor Object which handles the
 from __future__ import absolute_import, division, print_function
 
 import datashape
+
 from ..compute.expr import dump
 from ..compute.ops import ufuncs
 from .. import compute
 
 from ..datadescriptor import (IDataDescriptor,
-                              DyNDDataDescriptor,
                               DeferredDescriptor)
 from ..io import _printing
 
@@ -110,7 +110,7 @@ class Array(object):
         if hasattr(self._data, "__array__"):
             return np.array(self._data)
 
-        raise NotImplementedError(self._data)
+        return np.array(self._data.dynd_arr())
 
     def __iter__(self):
         return self._data.__iter__()
@@ -148,6 +148,8 @@ class Array(object):
                              "element is ambiguous. Use a.any() or a.all()")
 
     def __str__(self):
+        if hasattr(self._data, '_printer'):
+            return self._data._printer()
         return _printing.array_str(self)
 
     def __repr__(self):

@@ -23,8 +23,8 @@ class JSONDataDescriptor(IDataDescriptor):
     ----------
     filename : string
         A path string for the JSON file.
-    schema : string or blaze.datashape
-        A blaze datashape (or its string representation) of the schema
+    schema : string or datashape
+        A datashape (or its string representation) of the schema
         in the JSON file.
     """
     def __init__(self, filename, **kwargs):

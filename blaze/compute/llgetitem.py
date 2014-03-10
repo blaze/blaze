@@ -1,13 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-from .llvm_array import (array_type, const_intp, auto_const_intp,
-                         intp_type, int_type,
-                         store_at, load_at, get_shape_ptr, get_data_ptr,
-                         get_strides_ptr, sizeof, isinteger, isiterable,
-                         F_CONTIGUOUS, C_CONTIGUOUS, STRIDED)
-from llvm.core import Constant, Type
-import llvm.core as lc
 import itertools
+
+from llvm.core import Constant
+
+from .llvm_array import (auto_const_intp,
+                         intp_type,
+                         store_at, load_at, get_shape_ptr, get_data_ptr,
+                         get_strides_ptr, isinteger, isiterable,
+                         STRIDED)
 
 
 def _check_N(N):

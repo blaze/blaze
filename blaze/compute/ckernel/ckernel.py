@@ -4,13 +4,10 @@ __all__ = ['JITCKernelData', 'wrap_ckernel_func']
 
 import sys
 import ctypes
-from dynd import nd, ndt, _lowlevel
+from dynd import _lowlevel
 
 from dynd._lowlevel import (CKernelPrefixStruct, CKernelPrefixStructPtr,
-        CKernelPrefixDestructor,
-        CKernelBuilder,
-        UnarySingleOperation, UnaryStridedOperation,
-        ExprSingleOperation, ExprStridedOperation, BinarySinglePredicate)
+        CKernelPrefixDestructor)
 
 if sys.version_info >= (2, 7):
     c_ssize_t = ctypes.c_ssize_t

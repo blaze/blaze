@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
-import os
 from os import path
+import yaml
 from .catalog_arr import load_blaze_array
 
 
@@ -127,3 +127,80 @@ class CatalogDir(object):
     def __repr__(self):
         return ("Blaze Catalog Directory\nconfig: %s\ndir: %s"
                 % (self.conf.configfile, self.dir))
+
+
+class CatalogCDir(CatalogDir):
+    """This object represents a directory path within a special catalog"""
+    def __init__(self, conf, dir, subdir='/'):
+        self.conf = conf
+        self.dir = dir
+        self.subdir = subdir
+        if not is_abs_bpath(dir):
+            raise ValueError('Require a path to dir file: %r' % dir)
+        self._fsdir = path.join(conf.root, dir[1:])
+        if not path.exists(self._fsdir + '.dir'):
+            raise RuntimeError('Blaze path not found: %r' % dir)
+        self.load_blaze_dir()
+
+    def load_blaze_dir(self):
+        fsdir = self.conf.get_fsdir(self.dir)
+        with open(fsdir + '.dir') as f:
+            dirmeta = yaml.load(f)
+        self.ctype = dirmeta['type']
+        imp = dirmeta['import']
+        self.fname = imp.get('filename')
+
+    def ls_arrs(self):
+        """Return a list of all the arrays in this blaze dir"""
+        if self.ctype == "hdf5":
+            import tables as tb
+            with tb.open_file(self.fname, 'r') as f:
+                leafs = [l._v_name for l in
+                         f.iter_nodes(self.subdir, classname='Leaf')]
+            return sorted(leafs)
+
+    def ls_dirs(self):
+        """Return a list of all the directories in this blaze dir"""
+        if self.ctype == "hdf5":
+            import tables as tb
+            with tb.open_file(self.fname, 'r') as f:
+                groups = [g._v_name for g in 
+                          f.iter_nodes(self.subdir, classname='Group')]
+            return sorted(groups)
+
+    def ls(self):
+        """
+        Returns a list of all the arrays and directories in this blaze dir
+        """
+        if self.ctype == "hdf5":
+            import tables as tb
+            with tb.open_file(self.fname, 'r') as f:
+                nodes = [n._v_name for n in
+                         f.iter_nodes(self.subdir)]
+            return sorted(nodes)
+
+    def ls_abs(self, cname=''):
+        """
+        Returns a list of all the directories in this blaze dir
+        """
+        if self.ctype == "hdf5":
+            import tables as tb
+            with tb.open_file(self.fname, 'r') as f:
+                nodes = [n._v_pathname for n in
+                         f.walk_nodes(self.subdir, classname=cname)]
+            return sorted(nodes)
+
+    def __getindex__(self, key):
+        # XXX Adapt this to HDF5
+        if isinstance(key, tuple):
+            key = '/'.join(key)
+        if not is_rel_bpath(key):
+            raise ValueError('Require a relative blaze path: %r' % key)
+        dir = '/'.join([self.dir, key])
+        fsdir = path.join(self._fsdir, dir)
+        if path.isfile(fsdir + '.dir'):
+            return CatalogCDir(self.conf, dir)
+        elif path.isfile(fsdir + '.array'):
+            return load_blaze_array(self.conf, dir)
+        else:
+            raise RuntimeError('Blaze path not found: %r' % dir)

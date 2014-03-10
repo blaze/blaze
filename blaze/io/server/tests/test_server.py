@@ -6,11 +6,11 @@ import random
 import subprocess
 import socket
 import time
-import blaze
-import datashape
 import unittest
-from blaze.catalog.tests.catalog_harness import CatalogHarness
 
+import datashape
+import blaze
+from blaze.catalog.tests.catalog_harness import CatalogHarness
 from blaze.datadescriptor import dd_as_py, RemoteDataDescriptor
 
 
@@ -71,7 +71,7 @@ class TestServer(unittest.TestCase):
         ra = blaze.array(RemoteDataDescriptor('%s/py_arr' % self.baseurl))
         result = ra + 1
         result = blaze.eval(result)
-        self.assertEqual(result.dshape, datashape.dshape('5, int32'))
+        self.assertEqual(result.dshape, datashape.dshape('5 * int32'))
         self.assertEqual(dd_as_py(result._data), [2, 3, 4, 5, 6])
 
 if __name__ == '__main__':

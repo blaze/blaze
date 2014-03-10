@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
-#------------------------------------------------------------------------
-
 from __future__ import absolute_import, division, print_function
 
 import os
 import sys
 import shutil
 import textwrap
-from os.path import join
 from fnmatch import fnmatchcase
 
 from distutils.core import Command, setup
@@ -46,9 +43,7 @@ packages = find_packages()
 # Minimum Versions
 #------------------------------------------------------------------------
 
-min_cython_version = '0.16'
 min_numpy_version  = '1.5'
-min_llvmpy_version = '0.12'
 
 #------------------------------------------------------------------------
 # Utilities
@@ -66,9 +61,6 @@ def _print_admonition(kind, head, body):
 def exit_with_error(head, body=''):
     _print_admonition('error', head, body)
     sys.exit(1)
-
-def print_warning(head, body=''):
-    _print_admonition('warning', head, body)
 
 def check_import(pkgname, pkgver):
     try:
@@ -94,48 +86,6 @@ def check_import(pkgname, pkgver):
 check_import('numpy', min_numpy_version)
 
 #------------------------------------------------------------------------
-# LLVM Sanity Check
-#------------------------------------------------------------------------
-
-# This is commented out because llvmpy does not have a `__version__` attr
-#check_import('llvmpy', min_llvmpy_version)
-
-#------------------------------------------------------------------------
-# C Compiler Environment
-#------------------------------------------------------------------------
-
-# Global variables
-CFLAGS = os.environ.get('CFLAGS', '').split()
-LFLAGS = os.environ.get('LFLAGS', '').split()
-
-lib_dirs = []
-libs = []
-# Include NumPy header dirs
-from numpy.distutils.misc_util import get_numpy_include_dirs
-optional_libs = []
-
-# Handle --lflags=[FLAGS] --cflags=[FLAGS]
-args = sys.argv[:]
-for arg in args:
-    if arg.find('--lflags=') == 0:
-        LFLAGS = arg.split('=')[1].split()
-        sys.argv.remove(arg)
-    elif arg.find('--cflags=') == 0:
-        CFLAGS = arg.split('=')[1].split()
-        sys.argv.remove(arg)
-
-# Add some macros here for debugging purposes, if needed
-def_macros = [('DEBUG', 0)]
-
-
-#------------------------------------------------------------------------
-# Extension
-#------------------------------------------------------------------------
-
-numpy_path = get_numpy_include_dirs()[0]
-
-
-#------------------------------------------------------------------------
 # Commands
 #------------------------------------------------------------------------
 
@@ -152,7 +102,7 @@ class CleanCommand(Command):
             for root, dirs, files in list(os.walk(toplevel)):
                 for f in files:
                     if os.path.splitext(f)[-1] in ('.pyc', '.so', '.o', '.pyd'):
-                        self._clean_me.append(join(root, f))
+                        self._clean_me.append(os.path.join(root, f))
 
         for d in ('build',):
             if os.path.exists(d):
@@ -175,31 +125,6 @@ class CleanCommand(Command):
             except Exception:
                 pass
 
-#------------------------------------------------------------------------
-# Parser
-#------------------------------------------------------------------------
-
-def make_build(build_command):
-    """Rebuild parse tables. Result must be a class..."""
-
-    class BuildParser(build_command):
-        """ Build the parse tables for datashape """
-
-        def run(self):
-            # run the default build command first
-            build_command.run(self)
-            print('Rebuilding the datashape parser...')
-            import subprocess
-            # This signals to the parser module to rebuild
-            os.environ['BLAZE_REBUILD_PARSER'] = '1'
-            # Call python to do the rebuild in a separate process
-            # We add the build directory to the beginning of the python path
-            # so it finds the right temporary files.
-            subprocess.check_call([sys.executable, "-c",
-                        "import sys;sys.path.insert(0, r'%s');from datashape import parser"% self.build_lib])
-            del os.environ['BLAZE_REBUILD_PARSER']
-
-    return BuildParser
 
 #------------------------------------------------------------------------
 # Setup
@@ -209,7 +134,7 @@ longdesc = open('README.md').read()
 
 setup(
     name='blaze',
-    version='0.4.0',
+    version='0.4.2-dev',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',

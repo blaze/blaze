@@ -5,9 +5,10 @@ A helper function which turns a NumPy ufunc into a Blaze ufunc.
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from dynd import nd, ndt, _lowlevel
+from dynd import _lowlevel
 import datashape
 from .. import function
+
 
 def _filter_tplist(tplist):
     """Removes duplicates (arising from the long type usually), and
@@ -15,21 +16,23 @@ def _filter_tplist(tplist):
     """
     elim_kinds = ['O', 'M', 'm', 'S', 'U']
     if str(np.longdouble) != str(np.double):
-        ld = [np.longdouble, np.clongdouble]
+        elim_types = [np.longdouble, np.clongdouble]
     else:
-        ld = []
+        elim_types = []
+    elim_types.append(np.float16)
     seen = set()
     tplistnew = []
     for sig in tplist:
         if sig not in seen and not any(dt.kind in elim_kinds or
-                                       dt in ld for dt in sig):
+                                       dt in elim_types for dt in sig):
             tplistnew.append(sig)
             seen.add(sig)
     return tplistnew
 
+
 def _make_sig(tplist):
     """Converts a type tuples into datashape function signatures"""
-    dslist = [datashape.dshape("A..., " + str(x)) for x in tplist]
+    dslist = [datashape.dshape("A... * " + str(x)) for x in tplist]
     return datashape.Function(*(dslist[1:] + [dslist[0]]))
 
 def _make_pyfunc(nargs, modname, name):
@@ -50,6 +53,7 @@ def _make_pyfunc(nargs, modname, name):
     pyfunc.__module__ = modname
     pyfunc.__name__ = modname + '.' + name if modname else name
     return pyfunc
+
 
 def blazefunc_from_numpy_ufunc(uf, modname, name, acquires_gil):
     """Converts a NumPy ufunc into a Blaze ufunc.

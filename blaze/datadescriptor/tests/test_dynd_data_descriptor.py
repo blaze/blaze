@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 import unittest
 
 import datashape
@@ -18,7 +20,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.array([[1, 2, 3], [4, 5, 6]])
         dd = DyNDDataDescriptor(a)
 
-        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int32'))
+        self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int32'))
         # Iteration should produce DyNDDataDescriptor instances
         vals = []
         for el in dd:
@@ -31,7 +33,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.array([[1, 2, 3], [4, 5, 6]])
         dd = DyNDDataDescriptor(a)
 
-        self.assertEqual(dd.dshape, datashape.dshape('2, 3, int32'))
+        self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int32'))
         # Indexing should produce DyNDDataDescriptor instances
         self.assertTrue(isinstance(dd[0], DyNDDataDescriptor))
         self.assertEqual(dd_as_py(dd[0]), [1,2,3])
@@ -42,7 +44,7 @@ class TestDyNDDataDescriptor(unittest.TestCase):
         a = nd.array([[1, 2, 3], [4, 5], [6]])
         dd = DyNDDataDescriptor(a)
 
-        self.assertEqual(dd.dshape, datashape.dshape('3, var, int32'))
+        self.assertEqual(dd.dshape, datashape.dshape('3 * var * int32'))
         self.assertEqual(dd_as_py(dd), [[1, 2, 3], [4, 5], [6]])
         self.assertEqual(dd_as_py(dd[0]), [1, 2, 3])
         self.assertEqual(dd_as_py(dd[1]), [4, 5])

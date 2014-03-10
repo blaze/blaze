@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Python evaluation of blaze AIR.
 """
@@ -56,7 +54,8 @@ def op_ret(interp, arg):
     return arg
 
 handlers = {
-    'pykernel':   op_pykernel,
-    'convert':  op_convert,
-    'ret':      op_ret,
+    'pykernel':     op_pykernel,
+    'kernel':       op_pykernel,
+    'convert':      op_convert,
+    'ret':          op_ret,
 }

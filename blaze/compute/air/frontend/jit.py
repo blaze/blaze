@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Use blaze.bkernel to assemble ckernels for evaluation.
 """
@@ -16,16 +14,24 @@ from ...bkernel.blaze_kernels import frompyfunc, BlazeElementKernel
 from ...bkernel.kernel_tree import Argument, KernelTree
 from ... import llvm_array
 
+
 #------------------------------------------------------------------------
 # Interpreter
 #------------------------------------------------------------------------
 
+
 def run(func, env):
-    if env['air.strategy'] != 'jit':
+    # For now, disable the JIT path. This can be re-enabled when we update
+    # this to work with numba 0.12.
+    #
+    # Furthermore, we need to match the numba ABI, which may be subject to
+    # change. Generally, this is a bad idea. It may be better to generate a
+    # properly jitted kernel and call it from python.
+    if True or env['strategy'] != 'jit':
         return
 
     # Identify the nodes to JIT
-    jitted = identify_jitnodes(func)
+    jitted = identify_jitnodes(func, env)
     # Build up trees for all those nodes
     trees, arguments = build_kerneltrees(func, jitted)
     # JIT compile the nodes with maximal trees, deleting
@@ -34,16 +40,27 @@ def run(func, env):
     return func, env
 
 #------------------------------------------------------------------------
+# Environment
+#------------------------------------------------------------------------
+
+root_jit_env = {
+    'jit.jitted':       None, # Jitted kernels, { Op : BlazeElementKernel }
+    'jit.trees':        None, # (partial) kernel tree, { Op : KernelTree }
+    'jit.arguments':    None, # Accumulated arguments, { Op : [ Op ] }
+}
+
+
+#------------------------------------------------------------------------
 # Pipeline
 #------------------------------------------------------------------------
 
-def identify_jitnodes(func):
+def identify_jitnodes(func, env):
     """
     Identifies which nodes (kernels and converters) should be jitted,
     and creates a dictionary mapping them to corresponding
     BlazeElementKernels.
     """
-    v = IdentifyJitKernels(func)
+    v = IdentifyJitKernels(func, env)
     visit(v, func)
     v = IdentifyJitConvertors(func, v.jitted)
     visit(v, func)
@@ -80,16 +97,37 @@ class IdentifyJitKernels(object):
     that maps Operations to BlazeElementKernels implementations.
     """
 
-    def __init__(self, func):
+    def __init__(self, func, env):
         self.func = func
+        self.env = env
+
+        self.strategies = self.env['strategies']
+        self.overloads = self.env['kernel.overloads']
+
         self.jitted = {}
 
     def op_kernel(self, op):
-        function = op.metadata['kernel']
-        overload = op.metadata['overload']
-        impl = construct_blaze_element_kernel(function, overload)
-        if impl is not None:
-            self.jitted[op] = impl
+        strategy = self.strategies[op]
+        if strategy != 'jit':
+            return
+
+        overload = self.overloads.get((op, strategy))
+        if overload is not None:
+            py_func, signature = overload
+            blaze_element_kernel = construct_blaze_kernel(py_func, signature)
+            self.jitted[op] = blaze_element_kernel
+
+
+def construct_blaze_kernel(py_func, signature):
+    """
+    Parameters
+    ==========
+    function: blaze.function.BlazeFunc
+    overload: blaze.overloading.Overload
+    """
+    nb_argtypes = [to_numba(a.measure) for a in signature.argtypes]
+    nb_restype = to_numba(signature.restype.measure)
+    return frompyfunc(py_func, (nb_argtypes, nb_restype), signature.argtypes)
 
 
 class IdentifyJitConvertors(object):
@@ -109,46 +147,6 @@ class IdentifyJitConvertors(object):
             dtype = op.type.measure
             blaze_func = BlazeElementKernel(converter(dtype, op.args[0].type).lfunc)
             self.jitted[op] = blaze_func
-
-
-def construct_blaze_element_kernel(function, overload):
-    """
-    Parameters
-    ==========
-    function: blaze.function.BlazeFunc
-    overload: blaze.overloading.Overload
-    """
-    monosig = overload.resolved_sig
-    argtypes = monosig.argtypes
-
-    # Try a numba implementation
-    py_func, signature = find_impl(function, 'numba', argtypes, monosig)
-    if py_func is not None:
-        nb_argtypes = [to_numba(a.measure) for a in signature.argtypes]
-        nb_restype = to_numba(signature.restype.measure)
-        return frompyfunc(py_func, (nb_argtypes, nb_restype), argtypes)
-
-    # Try an LLVM implementation
-    py_func, signature = find_impl(function, 'numba', argtypes, monosig)
-    if py_func is not None:
-        return BlazeElementKernel(py_func, signature.argtypes)
-
-
-# TODO: factor this out into a "resolve_kernels" or somesuch pass
-def find_impl(function, impl_kind, argtypes, expected_signature):
-    if function.matches(impl_kind, argtypes):
-        overload = function.best_match(impl_kind, argtypes)
-        got_signature = overload.resolved_sig
-
-        # Assert agreeable types for now
-        # TODO: insert conversions if implementation disagrees
-
-        assert got_signature == expected_signature, (got_signature,
-                                                     expected_signature)
-
-        return overload.func, got_signature
-
-    return None, None
 
 
 #------------------------------------------------------------------------
@@ -229,7 +227,6 @@ class BuildKernelTrees(object):
 
         self.trees[op] = KernelTree(elementkernel, children)
 
-
 #------------------------------------------------------------------------
 # Rewrite to CKernels
 #------------------------------------------------------------------------
@@ -290,14 +287,24 @@ class BuildCKernels(object):
 # Utils
 #------------------------------------------------------------------------
 
+def make_blazefunc(f):
+    #return BlazeFuncDeprecated(f.__name__, template=f)
+    return BlazeElementKernel(f.lfunc)
+
+
 def converter(blaze_dtype, blaze_argtype):
     """
     Generate an element-wise conversion function that numba can jit-compile.
     """
     dtype = to_numba(blaze_dtype.measure)
     argtype = to_numba(blaze_argtype.measure)
+
     @jit(dtype(argtype))
     def convert(value):
         return dtype(value)
+
     return convert
 
+
+def make_ckernel(blaze_func):
+    raise NotImplementedError

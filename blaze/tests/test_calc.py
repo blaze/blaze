@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
+import unittest
+
 import blaze
 from blaze.datadescriptor import dd_as_py
-import unittest
 
 
 class TestBasic(unittest.TestCase):
@@ -48,6 +49,7 @@ class TestBasic(unittest.TestCase):
         c = blaze.eval(2 * a - b)
         self.assertEqual(dd_as_py(c._data),
                     [[1, 0, -1], [0, 1], [2, 4, 6]])
+
 
 if __name__ == '__main__':
     unittest.main()

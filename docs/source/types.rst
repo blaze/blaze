@@ -5,6 +5,6 @@ Core Types
 API
 ~~~
 
-.. automodule:: blaze.datashape.coretypes
+.. automodule:: datashape.coretypes
    :members:
    :undoc-members:

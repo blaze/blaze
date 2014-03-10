@@ -17,7 +17,7 @@ class TestIR(unittest.TestCase):
 
         # Types
         got      = [op.type for op in f.ops][:-1]
-        expected = [dshape("10, float64"), dshape("10, complex[float64]")]
+        expected = [dshape("10 * float64"), dshape("10 * complex[float64]")]
         self.assertEqual(got, expected)
 
         # function 10, complex[float64] expr0(10, int32 %e0, 10, float64 %e1, 10, complex[float64] %e2) {

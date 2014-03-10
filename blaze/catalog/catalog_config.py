@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import yaml
 import os
 from os import path
-from .catalog_dir import is_abs_bpath
+from .catalog_dir import is_abs_bpath, CatalogCDir
 
 
 class CatalogConfig(object):
@@ -56,17 +56,84 @@ class CatalogConfig(object):
     def isdir(self, dir):
         """Check if a blaze catalog path points to an existing directory"""
         if is_abs_bpath(dir):
-            return path.isdir(path.join(self.root, dir[1:]))
+            return self._isdir(dir) or self._iscdir(dir)
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
+    def _isdir(self, dir):
+        """Check if a blaze catalog path points to an existing directory"""
+        return path.isdir(path.join(self.root, dir[1:]))
+
+    def _iscdir(self, dir):
+        """Check if a blaze catalog path points to an existing cdir"""
+        return path.isfile(path.join(self.root, dir[1:]) + '.dir')
+
+    def get_subcdir(self, dir):
+        """Check if a blaze catalog path points to an existing cdir or subcdir.
+
+           If the path exists in catalog, a tuple to the `cdir` and
+           `subcdir` are returned.  If not, a (None, None) is returned
+           instead.
+        """
+        # Build all the possible paths in `dir`
+        paths = ['/']
+        for p in dir[1:].split('/'):
+            paths.append(path.join(paths[-1], p))
+        # Check if any of these paths contains a cdir
+        for p in paths[1:]:
+            dir2 = path.join(self.root, p)
+            if self._iscdir(p):
+                # Bingo!  Now, let's see if we can find the subcdir there
+                if p == dir:
+                    # The cdir is the root, return it
+                    return (p, '/')
+                cdir = CatalogCDir(self, p)
+                subcdir = dir[len(p):]
+                if subcdir in cdir.ls_abs('Group'):
+                    return (p, subcdir)
+                else:
+                    return (None, None)
+        return (None, None)
+                    
+    def get_subcarray(self, dir):
+        """Check if an array path is inside a cdir.
+
+           If the path exists in catalog, a tuple to the `cdir` and
+           `subcarray` are returned.  If not, a (None, None) is
+           returned instead.
+        """
+        # Build all the possible paths in `dir`
+        paths = ['/']
+        for p in dir[1:].split('/'):
+            paths.append(path.join(paths[-1], p))
+        # Check if any of these paths contains a cdir
+        for p in paths[1:]:
+            dir2 = path.join(self.root, p)
+            if self._iscdir(p):
+                # Bingo!  Now, let's see if we can find the subcarray there
+                cdir = CatalogCDir(self, p)
+                subcarray = dir[len(p):]
+                if subcarray in cdir.ls_abs('Leaf'):
+                    return (p, subcarray)
+                else:
+                    return (None, None)
+        return (None, None)
+                    
     def ls_arrs(self, dir):
         """Return a list of all the arrays in the provided blaze catalog dir"""
         if is_abs_bpath(dir):
+            if self._iscdir(dir):
+                cdir = CatalogCDir(self, dir)
+                return sorted(cdir.ls_arrs())
+            (cdir, subcdir) = self.get_subcdir(dir)
+            if cdir or subcdir:
+                cdir = CatalogCDir(self, cdir, subcdir)
+                return sorted(cdir.ls_arrs())
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
-            return sorted([path.splitext(x)[0] for x in listing
-                    if x.endswith('.array')])
+            res = [path.splitext(x)[0] for x in listing
+                    if x.endswith('.array')]
+            return sorted(res)
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
@@ -76,10 +143,21 @@ class CatalogConfig(object):
         blaze catalog dir
         """
         if is_abs_bpath(dir):
+            cdirs = []
+            # First check if dir is a catalog directory (HDF5) itself
+            (cdir, subcdir) = self.get_subcdir(dir)
+            if cdir and subcdir:
+                cdir = CatalogCDir(self, cdir, subcdir)
+                return sorted(cdir.ls_dirs())
+            # Now, the regular filesystem directories
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
-            return sorted([x for x in listing
-                    if path.isdir(path.join(fsdir, x))])
+            res = [x for x in listing
+                   if path.isdir(path.join(fsdir, x))]
+            # Finally, check for .dir files, which act as catalog directories
+            res += [x[:-4] for x in listing
+                   if self.isdir(path.join(dir, x[:-4]))]
+            return sorted(cdirs + res)
         else:
             raise ValueError('Expected absolute blaze catalog path: %r' % dir)
 
@@ -88,6 +166,13 @@ class CatalogConfig(object):
            blaze catalog dir
            """
         if is_abs_bpath(dir):
+            if self._iscdir(dir):
+                cdir = CatalogCDir(self, dir)
+                return sorted(cdir.ls())
+            (cdir, subcdir) = self.get_subcdir(dir)
+            if cdir or subcdir:
+                cdir = CatalogCDir(self, cdir, subcdir)
+                return sorted(cdir.ls())
             fsdir = path.join(self.root, dir[1:])
             listing = os.listdir(fsdir)
             res = [path.splitext(x)[0] for x in listing

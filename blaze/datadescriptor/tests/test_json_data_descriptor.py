@@ -1,17 +1,13 @@
+from __future__ import absolute_import, division, print_function
+
 import unittest
-import sys
-import io
 import os
 import tempfile
-import blaze
-from blaze import datashape
+
 from blaze.datadescriptor import (
     JSONDataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
-from blaze.py2help import _inttypes, izip
-import ctypes
 
-from dynd import nd, ndt
-
+# TODO: This isn't actually being used!
 _json_buf = u"""{
     "type": "ImageCollection",
     "images": [
@@ -30,25 +26,26 @@ _json_buf = u"""{
 }
 """
 
+# TODO: This isn't actually being used!
 _json_schema = """{
-  type: string;
-  images: var,
-   Image: {
-        Width: int16;
-        Height: int16;
-        Title: string;
+  type: string,
+  images: var * {
+        Width: int16,
+        Height: int16,
+        Title: string,
         Thumbnail: {
-            Url: string;
-            Height: int16;
-            Width: int16;
-        }
-        IDs: var, int32;
+            Url: string,
+            Height: int16,
+            Width: int16,
+        },
+        IDs: var * int32,
     };
 }
 """
 
 json_buf = u"[1, 2, 3, 4, 5]"
-json_schema = "var, int8"
+json_schema = "var * int8"
+
 
 class TestJSONDataDescriptor(unittest.TestCase):
 

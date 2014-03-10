@@ -53,8 +53,8 @@ class CSVDataDescriptor(IDataDescriptor):
     ----------
     filename : string
         A path string for the CSV file.
-    schema : string or blaze.datashape
-        A blaze datashape (or its string representation) of the schema
+    schema : string or datashape
+        A datashape (or its string representation) of the schema
         in the CSV file.
     dialect : string or csv.Dialect instance
         The dialect as understood by the `csv` module in Python standard
@@ -74,6 +74,8 @@ class CSVDataDescriptor(IDataDescriptor):
         has_header = kwargs.get("has_header", None)
         if type(schema) in py2help._strtypes:
             schema = datashape.dshape(schema)
+        if isinstance(schema, datashape.DataShape) and len(schema) == 1:
+            schema = schema[0]
         if not isinstance(schema, datashape.Record):
             raise TypeError(
                 'schema cannot be converted into a blaze record dshape')

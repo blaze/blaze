@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 Translate blaze expressoin graphs into blaze AIR.
 """
 
 from __future__ import absolute_import, division, print_function
-
-import threading
 
 from pykit import types
 from pykit.ir import Function, Builder, Value, Op, Const
@@ -15,13 +11,14 @@ from pykit.ir import Function, Builder, Value, Op, Const
 # AIR construction
 #------------------------------------------------------------------------
 
+
 def run(expr, env):
     graph, expr_ctx = expr
-    air_func = from_expr(graph, expr_ctx)
+    air_func = from_expr(graph, expr_ctx, env)
     return air_func, env
 
 
-def from_expr(graph, expr_context):
+def from_expr(graph, expr_context, env):
     """
     Map a Blaze expression graph to blaze AIR
 
@@ -61,6 +58,10 @@ def from_expr(graph, expr_context):
 
     retval = valuemap[graph]
     builder.ret(retval)
+
+    # Update environment with runtime arguments
+    runtime_args = [expr_context.terms[input] for input in inputs]
+    env['runtime.args'] = dict(zip(f.args, runtime_args))
 
     return f
 

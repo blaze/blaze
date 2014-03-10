@@ -27,7 +27,8 @@ class TestBasicTypes(unittest.TestCase):
             self.assertEqual(dd_as_py(a._data), [0, 1, 2])
 
     def test_floats(self):
-        types = ['float16', 'float32', 'float64']
+        #types = ['float16', 'float32', 'float64']
+        types = ['float32', 'float64']
         for type_ in types:
             a = blaze.array(np.arange(3), dshape=type_)
             dtype = to_numpy_dtype(a.dshape)
