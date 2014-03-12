@@ -153,6 +153,8 @@ class Array(object):
         return _printing.array_str(self)
 
     def __repr__(self):
+        if hasattr(self._data, "_printer_repr"):
+            return self._data._printer_repr()
         return _printing.array_repr(self)
 
 

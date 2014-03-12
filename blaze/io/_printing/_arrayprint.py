@@ -20,12 +20,10 @@ __docformat__ = 'restructuredtext'
 # and by Andy R. Terrel 2013-12-17 for blaze
 
 import sys
-# import numerictypes as _nt
-# from umath import maximum, minimum, absolute, not_equal, isnan, isinf
 import numpy as np
 import numpy.core.umath as _um
 import datashape
-from datashape import Fixed, Var
+from datashape import Fixed, has_var_dim
 
 from ...datadescriptor import IDataDescriptor, dd_as_py
 
@@ -331,7 +329,7 @@ def _choose_format(formatdict, ds):
 def _array2string(a, shape, dtype, max_line_width, precision,
                   suppress_small, separator=' ', prefix="", formatter=None):
 
-    if any(isinstance(s, Var) for s in shape):
+    if has_var_dim(shape):
         dim_size = -1
     else:
         dim_size = reduce(product, shape, 1)

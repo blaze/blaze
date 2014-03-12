@@ -45,8 +45,8 @@ def rewrite_sql(func, env):
                 # Do something better here
                 query = str(sql_ddesc.dynd_arr())
             else:
-                table = Table(sql_ddesc.col.table)
-                query = Column(table, sql_ddesc.col.colname)
+                table = Table(sql_ddesc.col.table_name)
+                query = Column(table, sql_ddesc.col.col_name)
 
             queries[arg] = query
             leafs[arg] = [arg]
