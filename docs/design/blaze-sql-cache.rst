@@ -8,8 +8,8 @@ Goal
 Querying SQL databases can be costly if they receive many requests per
 second so they can be be overloaded.  Using a local cache can free the
 database from replying to repetitive queries or queries showing some
-overlap, allowing a much better response times for queries that have
-not been done before.
+overlap, allowing a much better response time for queries that have
+been performed before.
 
 Background
 ==========
@@ -50,36 +50,39 @@ instrumental for doing this.
 This cache subsystem should be part of Blaze in the same way than the
 catalog, and could be used as a general cache system for querying
 remote datasets and caching results.  One should devise a way to clean
-the cache when no more space is available, but a LRU system should
-suffice initially.
+the cache when no more space is available, but a LRU schema for
+evicting old entries should suffice initially.
 
 Implementation outline
 ======================
 
 The details of where the cache should live, its size and other
-parameters would be implemented via the Blaze catalog::
+parameters would be implemented via the Blaze catalog.  The cache
+properties can be expressed in a YAML file like::
 
-  cache_desc = blaze.catalog.activate('my_cache')
+  type: cache
+  import: {
+      # Absolute path
+      cachedir: /caches/my_cache.h5
+      # Relative path
+      #cachedir: my_cache.h5
+      storage_type: hdf5
+  }
+  maxsize: 1 GB  # max size for the cache
+  evict_policy: LRU  # could be None, for not updating anything 
 
-where 'my_cache.cache' is a YAML file with the different properties
-for the cache.  An example of it could be::
+Note: If the `cachedir` entry is a relative path, it will be prepended
+with the following paths::
 
-   type: cache
-   import: {
-       datapath: /caches/my_cache.h5
-       storage_type: hdf5
-   }
-   maxsize: 1 GB  # max size for the cache
-   evict_policy: LRU  # could be None, for not updating anything 
+  ~/.cache/ContinuumIO/Blaze           # Linux
+  ~/Library/Caches/ContinuumIO/Blaze   # Mac OSX
+  %APPDATA%\ContinuumIO\Blaze          # Win
 
-With that, one can add different queries for getting into the cache.
-For example::
+With cache configuration in place, one can add different queries for
+getting into the cache.  For example::
 
   sql_arr1 = blaze.array("select * from table1", db_conn1)
-  sql_arr1.activate_cache(cache_desc)
-
   sql_arr2 = blaze.array("select * from table2", db_conn2)
-  sql_arr2.activate_cache(cache_desc)
 
 Now, the cache subsystem in Blaze will fetch the metainformation for
 the different tables in the queries (table1, table2) by using the
@@ -94,31 +97,36 @@ corresponding cache container.  For example::
 
   a = sql_arr1.where("2010 < date < 2011")
 
-will use the initial query for `sql_arr1` and will build the next
-one::
+will use the initial query for `sql_arr1` and will build and execute
+the next one::
 
   select * from table1 where date between 2010 and 2011
 
-and the result will be stored in the underlying cache, as well as
+Then, the result will be stored in the underlying cache, as well as
 returned to the user.
 
 The next time that the deferred array is queried, the new range will
-be compared against the ranges that are stitting in the corresponding
-data containers in cache.  In case the range falls into the ranges in
-cache (either completely or partially, see "Use cases" sections), the
-data will be retrieved from cache instead of issuing the query against
-the original database connectors and returned to the user.
+be compared against the ranges that are sitting in the corresponding
+data containers in cache.  In case this range matches into data
+already stored in cache (either completely or partially, see "Use
+cases" sections), this data will be retrieved from cache instead of
+issuing the query against the original database connectors and
+returned to the user.
  
-Caches for deferred arrays can be explictly removed too::
+Caches for deferred arrays can be explictly disabled::
 
   sql_arr1.deactivate_cache()
   sql_arr2.deactivate_cache()
 
-Stopping caching all the queries in a specific catalog cache can be
-done with::
+and re-enabled::
 
-  cache_desc.deactivate()
+  sql_arr1.activate_cache()
+  sql_arr2.activate_cache()
 
+Also, cache contents can be removed too::
+
+  sql_arr1.clear_cache()
+  sql_arr2.clear_cache()
 
 Use cases
 =========
@@ -126,9 +134,7 @@ Use cases
 A very simple use case is when we do a query based on a date range::
 
   # Setup the caching on a deferred array
-  cache_desc = blaze.catalog.activate('my_cache')
   sql_arr = blaze.array("select * from table1", db_conn)
-  sql_arr.activate_cache(cache_desc)
 
   # Do the query and cache the result
   a = sql_arr.where("2010 < date < 2012")
@@ -138,9 +144,6 @@ A very simple use case is when we do a query based on a date range::
 
   # We are done with caching with this specific deferred array
   sql_arr.deactivate_cache()
-
-  # We are done with 'my_cache' completely
-  cache_desc.deactivate()
 
 Note how the cache can be activated and deactivated by user request,
 both in a deferred array or on a specific cache catalog.  This is
@@ -210,9 +213,7 @@ Here it is a complete example on how the cache should work::
   c.close()
 
   # Setup the caching on a deferred array
-  cache_desc = blaze.catalog.activate('my_cache')
   sql_arr = blaze.array("select * from my_table", conn)
-  sql_arr.activate_cache(cache_desc)
 
   # Do the query and cache the result
   a = sql_arr.where("2010-12-31 < tdate < 2012-01-01")
@@ -223,7 +224,4 @@ Here it is a complete example on how the cache should work::
   b = sql_arr.where("2010-12-31 < tdate < 2012-01-01")
   # The line below should print: 'array([2011-11-11, "world", 4.2]))'
   print(b)
-
-  # We are done with 'my_cache' completely
-  cache_desc.deactivate()
 
