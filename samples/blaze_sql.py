@@ -13,6 +13,7 @@ from __future__ import absolute_import, division, print_function
 import sqlite3 as db
 
 from datashape import dshape
+import blaze
 from blaze.io.sql import sql_table
 
 
@@ -42,3 +43,9 @@ table = sql_table('MyTable',
                   ['id', 'name', 'age'],
                   [dshape('int32'), dshape('string'), dshape('float64')],
                   conn)
+
+# Prints details about table
+print(table)
+
+# Eval to print values
+print(blaze.eval(table['id']))

@@ -90,9 +90,10 @@ class SQLDataDescriptor(IDataDescriptor):
         return "SQLDataDescriptor(%s)" % (self.col,)
 
     def __str__(self):
-        return str()
+        return "<sql col %s with shape %s>" % (self.col, self.dshape)
 
     _printer = __str__
+    _printer_repr = __repr__
 
 
 class SQLResultDataDescriptor(IDataDescriptor):
