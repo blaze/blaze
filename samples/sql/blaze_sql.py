@@ -26,10 +26,10 @@ def create_sqlite_table():
 
     conn = db.connect(":memory:")
     c = conn.cursor()
-    c.execute('''create table MyTable
-    (id INTEGER, name TEXT, age INTEGER)''')
+    c.execute("""create table MyTable
+                 (id INTEGER, name TEXT, age INTEGER)""")
     c.executemany("""insert into MyTable
-                  values (?, ?, ?)""", data)
+                     values (?, ?, ?)""", data)
     conn.commit()
     c.close()
 
@@ -38,7 +38,7 @@ def create_sqlite_table():
 conn = create_sqlite_table()
 
 # Describe the columns. Note: typically you would describe column
-# with variables for the column size, e.g. dshape('a, int32')
+# with variables for the column size, e.g. dshape('a * int32')
 table = sql_table('MyTable',
                   ['id', 'name', 'age'],
                   [dshape('int32'), dshape('string'), dshape('float64')],
