@@ -252,12 +252,13 @@ class TestSQLTable(TestSQL):
         self.assertEqual((int(row2[0]), str(row2[1]), float(row2[2])),
                          (16, "!", 8.4))
 
-    @skipif
+    @skipIf(db is None, 'pyodbc is not installed')
     def test_index_table(self):
         expr = self.table['i']
         self.assertEqual([int(i) for i in expr], [4, 8, 16])
 
-    @skipif
+    #@skipIf(db is None, 'pyodbc is not installed')
+    @skip("there's an inconsistency between the table and column datashapes")
     def test_index_sql_result_table(self):
         expr = ops.index(self.table, self.col_i > 5)
         result = eval(expr)
@@ -267,10 +268,9 @@ class TestSQLTable(TestSQL):
 
 class TestSQLStr(TestSQL):
 
-    @skipif
+    @skipIf(db is None, 'pyodbc is not installed')
     def test_str(self):
         repr(self.table)
-
 
 
 if __name__ == '__main__':
