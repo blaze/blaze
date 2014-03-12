@@ -68,9 +68,11 @@ class SQLDataDescriptor(IDataDescriptor):
         """
         from .constructors import sql_table, sql_column
 
-        if isinstance(item, str):
+        if isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], str):
+            if item[0] != slice(None):
+                raise NotImplementedError("Currently only allowing slicing of whole sql array.")
             table = self.col
-            colname = item
+            colname = item[1]
 
             assert table.col_name == '*'
             dshape = column_dshape(self.dshape, colname)

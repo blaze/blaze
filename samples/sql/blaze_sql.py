@@ -48,4 +48,4 @@ table = sql_table('MyTable',
 print(table)
 
 # Eval to print values
-print(blaze.eval(table['id']))
+print(blaze.eval(table[:, 'id']))

@@ -254,7 +254,7 @@ class TestSQLTable(TestSQL):
 
     @skipIf(db is None, 'pyodbc is not installed')
     def test_index_table(self):
-        expr = self.table['i']
+        expr = self.table[:, 'i']
         self.assertEqual([int(i) for i in expr], [4, 8, 16])
 
     #@skipIf(db is None, 'pyodbc is not installed')
@@ -262,7 +262,7 @@ class TestSQLTable(TestSQL):
     def test_index_sql_result_table(self):
         expr = ops.index(self.table, self.col_i > 5)
         result = eval(expr)
-        i_col = result['i']
+        i_col = result[:, 'i']
         self.assertEqual([int(i_col[0]), int(i_col[1])], [8, 16])
 
 
