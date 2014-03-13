@@ -27,7 +27,7 @@ import blaze
 from ..py2help import dict_iteritems, exec_
 from datashape import coretypes as T, dshape
 
-from datashape.overloading import overload, Dispatcher, best_match
+from datashape.overloading import overload, Dispatcher
 from ..datadescriptor import DeferredDescriptor
 from .expr import construct, merge_contexts
 from .strategy import PY, JIT
@@ -147,34 +147,6 @@ def jit_elementwise(*args, **kwds):
     return elementwise(*args, impl=impl)
 
 
-def apply_function(blaze_func, *args, **kwargs):
-    """
-    Apply blaze kernel `kernel` to the given arguments.
-
-    Returns: a Deferred node representation the delayed computation
-    """
-    # -------------------------------------------------
-    # Merge input contexts
-
-    args, kwargs = blaze_args(args, kwargs)
-    ctxs = collect_contexts(chain(args, kwargs.values()))
-    ctx = merge_contexts(ctxs)
-
-    # -------------------------------------------------
-    # Find match to overloaded function
-
-    overload, args = blaze_func.dispatcher.lookup_dispatcher(args, kwargs)
-
-    # -------------------------------------------------
-    # Construct graph
-
-    term = construct(blaze_func, ctx, overload, args)
-    desc = DeferredDescriptor(term.dshape, (term, ctx))
-
-    # TODO: preserve `user` metadata
-    return blaze.Array(desc)
-
-
 #------------------------------------------------------------------------
 # Implementations
 #------------------------------------------------------------------------
@@ -289,8 +261,7 @@ class BlazeFunc(object):
         Find the best implementation of `impl_kind` using `argtypes`.
         """
         dispatcher = self.get_dispatcher(impl_kind)
-        print('dispatcher overloads:', dispatcher.overloads)
-        return best_match(dispatcher, argtypes)
+        return dispatcher.best_match(argtypes)
 
     def add_metadata(self, md, impl_kind=PY):
         """
@@ -311,7 +282,32 @@ class BlazeFunc(object):
     def get_metadata(self, key, impl_kind=PY):
         return self.metadata[impl_kind].get(key)
 
-    __call__ = apply_function
+    def __call__(self, *args, **kwargs):
+        """
+        Apply blaze kernel `kernel` to the given arguments.
+
+        Returns: a Deferred node representation the delayed computation
+        """
+        # -------------------------------------------------
+        # Merge input contexts
+
+        args, kwargs = blaze_args(args, kwargs)
+        ctxs = collect_contexts(chain(args, kwargs.values()))
+        ctx = merge_contexts(ctxs)
+
+        # -------------------------------------------------
+        # Find match to overloaded function
+
+        overload, args = self.dispatcher.lookup_dispatcher(args, kwargs)
+
+        # -------------------------------------------------
+        # Construct graph
+
+        term = construct(self, ctx, overload, args)
+        desc = DeferredDescriptor(term.dshape, (term, ctx))
+
+        # TODO: preserve `user` metadata
+        return blaze.Array(desc)
 
     def __str__(self):
         arg = self.py_func

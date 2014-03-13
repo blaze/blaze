@@ -185,21 +185,6 @@ def overload_for_strategy(function, overload, strategy):
 
     return overload.func, got_signature
 
-
-#def annotate_kernels(func, env):
-#    """
-#    Annotate each op with an implementation.
-#    """
-#    overloads = env['kernel.overloads']
-#    strategies = env['strategies']
-#    impls = env['kernel.impls'] = {}
-#
-#    for op in func.ops:
-#        if op.opcode == 'kernel':
-#            strategy = strategies[op]
-#            overload = overloads[op, strategy]
-#            impls[op] = overload
-
 #------------------------------------------------------------------------
 # Partitioning
 #------------------------------------------------------------------------
