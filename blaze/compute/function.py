@@ -27,8 +27,7 @@ import blaze
 from ..py2help import dict_iteritems, exec_
 from datashape import coretypes as T, dshape
 
-from datashape.overloading import (overload, Dispatcher,
-                                   best_match, lookup_previous)
+from datashape.overloading import overload, Dispatcher, best_match
 from ..datadescriptor import DeferredDescriptor
 from .expr import construct, merge_contexts
 from .strategy import PY, JIT
@@ -60,6 +59,22 @@ def collect_contexts(args):
             t, ctx = term.expr
             yield ctx
 
+
+def lookup_previous(f, scopes=None):
+    """
+    Lookup a previous function definition in the current namespace, i.e.
+    for overloading purposes.
+    """
+    if scopes is None:
+        scopes = []
+
+    scopes.append(f.__globals__)
+
+    for scope in scopes:
+        if scope.get(f.__name__):
+            return scope[f.__name__]
+
+    return None
 
 #------------------------------------------------------------------------
 # Decorators
