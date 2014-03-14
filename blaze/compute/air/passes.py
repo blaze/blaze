@@ -17,7 +17,6 @@ passes = [
 
     partitioning.annotate_all_kernels,
     partitioning.partition,
-    #partitioning.annotate_kernels,
     partitioning.annotate_roots,
 
     # erasure, # TODO: erase shape from ops
