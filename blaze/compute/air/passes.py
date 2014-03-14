@@ -7,8 +7,8 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 
 from .prettyprint import verbose
-from .frontend import (translate, partitioning, coercions, jit, ckernel_impls,
-                       ckernel_lift, allocation, assemblage, ckernel_prepare,
+from .frontend import (translate, partitioning, coercions, ckernel_impls,
+                       ckernel_lift, allocation, ckernel_prepare,
                        ckernel_rewrite)
 from ...io.sql.air import rewrite_sql
 
