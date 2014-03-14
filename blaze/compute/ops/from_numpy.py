@@ -77,7 +77,7 @@ def blazefunc_from_numpy_ufunc(uf, modname, name, acquires_gil):
     kernlist = [_lowlevel.ckernel_deferred_from_ufunc(uf, tp, acquires_gil)
                 for tp in tplist]
     # Create the empty blaze function to start
-    blaze_func = function.BlazeFunc()
+    blaze_func = function.BlazeFunc(name)
     blaze_func.add_metadata({'elementwise': True})
     # Add default dummy dispatching for 'python' mode
     pydispatcher = blaze_func.get_dispatcher('python')

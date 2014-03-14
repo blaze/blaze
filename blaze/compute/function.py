@@ -28,6 +28,7 @@ from ..py2help import dict_iteritems, exec_
 from datashape import coretypes as T, dshape
 
 from datashape.overloading import overload, Dispatcher
+from datashape.overload_resolver import OverloadResolver
 from ..datadescriptor import DeferredDescriptor
 from .expr import construct, merge_contexts
 from .strategy import PY, JIT
@@ -35,13 +36,6 @@ from .strategy import PY, JIT
 #------------------------------------------------------------------------
 # Utils
 #------------------------------------------------------------------------
-
-def blaze_args(args, kwargs):
-    """Build blaze arrays from inputs to a blaze kernel"""
-    args = [blaze.array(a) for a in args]
-    kwargs = dict((v, blaze.array(k)) for k, v in dict_iteritems(kwargs))
-    return args, kwargs
-
 
 def collect_contexts(args):
     for term in args:
@@ -97,7 +91,7 @@ def function(signature, impl='python', **metadata):
         blaze_func = lookup_previous(f)
         if blaze_func is None:
             # No previous function, create new one
-            blaze_func = BlazeFunc()
+            blaze_func = BlazeFunc(f.__name__)
 
         for impl in impls:
             kernel(blaze_func, impl, f, signature, **metadata)
@@ -183,25 +177,10 @@ def blaze_func(name, signature, **metadata):
 
     d = {}
     exec_(source, d, d)
-    blaze_func = BlazeFunc()
+    blaze_func = BlazeFunc(name)
     py_func = d[name]
     kernel(blaze_func, 'python', py_func, signature, **metadata)
     return blaze_func
-
-
-def blaze_func_from_nargs(name, nargs, **metadata):
-    """
-    Create a blaze function with a given number of arguments.
-
-    All arguments will be unified into a simple array type, which is also
-    the return type, i.e. each argument is typed 'axes..., dtype', as well
-    as the return type.
-
-    This is to provide sensible typing for the dummy "reference" implementation.
-    """
-    argtype = dshape("axes..., dtype")
-    signature = T.Function([argtype] * (nargs + 1))
-    return blaze_func(name, signature, **metadata)
 
 
 class BlazeFunc(object):
@@ -214,41 +193,35 @@ class BlazeFunc(object):
 
     Attributes
     ----------
-    dispatcher: Dispatcher
+    ores: OverloadResolver
         Used to find the right overload
 
     metadata: { str : object }
         Additional metadata that may be interpreted by a Blaze AIR interpreter
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name):
         self.dispatchers = {}
+        self._name = name
         self.metadata = {}
-        self.argnames = None
-
-    @property
-    def py_func(self):
-        """Return the first python function that was subsequently overloaded"""
-        return self.dispatcher.f
 
     @property
     def name(self):
         """Return the name of the blazefunc."""
-        return self.dispatcher.f.__name__
+        return self._name
 
     @property
     def __name__(self):
         """Return the name of the blazefunc."""
-        return self.dispatcher.f.__name__
-
-    @property
-    def dispatcher(self):
-        """Default dispatcher that define blaze semantics (pure python)"""
-        return self.dispatchers[PY]
+        return self._name
 
     @property
     def available_strategies(self):
         return list(self.dispatchers)
+
+    @property
+    def dispatcher(self):
+        return self.dispatchers[PY]
 
     def get_dispatcher(self, impl_kind):
         """Get the overloaded dispatcher for the given implementation kind"""
@@ -291,7 +264,7 @@ class BlazeFunc(object):
         # -------------------------------------------------
         # Merge input contexts
 
-        args, kwargs = blaze_args(args, kwargs)
+        args = [blaze.array(a) for a in args]
         ctxs = collect_contexts(chain(args, kwargs.values()))
         ctx = merge_contexts(ctxs)
 
@@ -310,9 +283,8 @@ class BlazeFunc(object):
         return blaze.Array(desc)
 
     def __str__(self):
-        arg = self.py_func
-        if arg is None:
-            arg = "<empty>"
-        else:
-            arg = ".".join([arg.__module__, arg.__name__])
-        return "BlazeFunc(%s)" % (arg,)
+        return "BlazeFunc %s" % self.name
+
+    def __repr__(self):
+        # TODO proper repr
+        return str(self)

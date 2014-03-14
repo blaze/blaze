@@ -55,7 +55,7 @@ def blazefunc_from_dynd_property(tplist, propname, modname, name):
                 for tp in tplist]
     siglist = [_make_sig(kern) for kern in kernlist]
     # Create the empty blaze function to start
-    blaze_func = function.BlazeFunc()
+    blaze_func = function.BlazeFunc(name)
     blaze_func.add_metadata({'elementwise': True})
     # Add default dummy dispatching for 'python' mode
     pydispatcher = blaze_func.get_dispatcher('python')
