@@ -1,3 +1,4 @@
+# NOTE: This is all subject to change
 """
 This guide will hopefully shed some light to how blaze functions can be
 defined and implemented.
@@ -16,7 +17,7 @@ function. This function contains:
         This has a type signature and may implement the operation or simply
         raise an exception
 
-            @blaze_func('A -> A -> A', elementwise=True)
+            @function('A -> A -> A', elementwise=True)
             def add(a, b):
                 return a + b # We add the scalar elements together
 
@@ -95,7 +96,7 @@ def broadcast_zip(a, b):
         yield x, y
 
 
-@function('axes..., axis, dtype -> axes..., axis, bool -> axes..., var, dtype')
+@function('(Axes... * Axis * DType, Axes... * Axis * bool) -> Axes..., var, DType')
 def filter(array, conditions):
     """
     Filter elements from `array` according to `conditions`.

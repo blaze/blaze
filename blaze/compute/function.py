@@ -82,20 +82,20 @@ def function(signature, impl='python', **metadata):
     """
     def decorator(f):
         # Look up previous blaze function
-        blaze_func = lookup_previous(f)
-        if blaze_func is None:
+        bf = lookup_previous(f)
+        if bf is None:
             # No previous function, create new one
-            blaze_func = BlazeFunc(f.__name__)
+            bf = BlazeFunc(f.__name__)
 
         for impl in impls:
-            kernel(blaze_func, impl, f, signature, **metadata)
+            kernel(bf, impl, f, signature, **metadata)
 
         # Metadata
-        blaze_func.add_metadata(metadata)
-        if blaze_func.get_metadata('elementwise') is None:
-            blaze_func.add_metadata({'elementwise': False})
+        bf.add_metadata(metadata)
+        if bf.get_metadata('elementwise') is None:
+            bf.add_metadata({'elementwise': False})
 
-        return blaze_func
+        return bf
 
     signature = dshape(signature)
     if isinstance(signature, T.DataShape) and len(signature) == 1:
@@ -107,30 +107,9 @@ def function(signature, impl='python', **metadata):
     if not isinstance(signature, T.Function):
         raise TypeError('Blaze @function decorator requires a function signature')
     else:
-        # @blaze_func('(A, A) -> B')
+        # @function('(A, A) -> B')
         # def f(...): ...
         return decorator
-
-
-def elementwise(*args, **kwds):
-    """
-    Define a blaze element-wise kernel.
-    """
-    return function(*args, elementwise=True, **kwds)
-
-
-def jit_elementwise(*args, **kwds):
-    """
-    Define a blaze element-wise kernel that can be jitted with numba.
-
-    Keyword argument `python` indicates whether this is also a valid
-    pure-python function (default: True).
-    """
-    if kwds.get(PY, True):
-        impl = (PY, JIT)
-    else:
-        impl = JIT
-    return elementwise(*args, impl=impl)
 
 
 #------------------------------------------------------------------------
@@ -152,36 +131,12 @@ def kernel(blaze_func, impl_kind, kernel, signature, **metadata):
     blaze_func.add_metadata(metadata, impl_kind=impl_kind)
 
 
-def blaze_func(name, signature, **metadata):
-    """
-    Create a blaze function with the given signature. This is useful if there
-    is not necessarily a python implementation available, or if we are
-    generating blaze functions dynamically.
-    """
-    if isinstance(signature, T.DataShape) and len(signature) == 1:
-        signature = signature[0]
-    nargs = len(signature.argtypes)
-    argnames = (string.ascii_lowercase + string.ascii_uppercase)[:nargs]
-    source = textwrap.dedent("""
-        def %(name)s(%(args)s):
-            raise NotImplementedError("Python function for %(name)s")
-    """ % {'name': name, 'args': ", ".join(argnames)})
-
-    d = {}
-    exec_(source, d, d)
-    blaze_func = BlazeFunc(name)
-    py_func = d[name]
-    kernel(blaze_func, 'python', py_func, signature, **metadata)
-    return blaze_func
-
-
 class BlazeFunc(object):
     """
     Blaze function. This is like the numpy ufunc object, in that it
     holds all the overloaded implementations of a function, and provides
     dispatch when called as a function. Objects of this type can be
-    created directly, or using one of the decorators like @kernel
-    or @elementwise.
+    created directly, or using one of the decorators like @function .
 
     Attributes
     ----------
