@@ -54,14 +54,14 @@ print(blz)
 print_section('Explicit types in construction')
 # It is possible to force a type in a given array. This allows a
 # broader selection of types on construction.
-e =  blaze.array([ 1, 2, 3], dshape='3, float32')
+e =  blaze.array([1, 2, 3], dshape='3 * float32')
 print(e)
 
 # Note that the dimensions in the datashape when creating from a
 # collection can be omitted. If that's the case, the dimensions will
 # be inferred. The following is thus equivalent:
 
-f = blaze.array([ 1, 2, 3], dshape='float32')
+f = blaze.array([1, 2, 3], dshape='float32')
 print(f)
 
 # --------------------------------------------------------------------
@@ -69,11 +69,11 @@ print(f)
 print_section('Alternative  constructors')
 
 # Arrays can be created to be all zeros:
-g = blaze.zeros('10, 10, int32')
+g = blaze.zeros('10 * 10 * int32')
 print(g)
 
 # All ones
-h = blaze.ones('10, 10, float64')
+h = blaze.ones('10 * 10 * float64')
 print(h)
 
 # --------------------------------------------------------------------
@@ -82,7 +82,7 @@ print_section('Indexing')
 
 print_section('Indexing for read', level=1)
 print ('starting with a 4d array')
-array4d = blaze.ones('10,10,10,10, float32')
+array4d = blaze.ones('10 * 10 * 10 * 10 * float32')
 
 def describe_array(label, array):
     print(label)
@@ -130,7 +130,7 @@ def maybe_remove(persist):
 dname = 'blz://persisted.blz'
 store = blaze.Storage(dname)
 maybe_remove(store)
-p = blaze.zeros('0, float64', storage=store)
+p = blaze.zeros('0 * float64', storage=store)
 # Feed it with some data
 blaze.append(p, range(10))
 

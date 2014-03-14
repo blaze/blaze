@@ -26,8 +26,7 @@ def test_operations(datashape):
     print (a/b)
 
 if __name__ == '__main__':
-    test_operations('10, float32')
-    test_operations('10, int32')
-    test_operations('10, 10, float32')
-    test_operations('1000, 30, 25, float64')
-
+    test_operations('10 * float32')
+    test_operations('10 * int32')
+    test_operations('10 * 10 * float32')
+    test_operations('1000 * 30 * 25 * float64')
