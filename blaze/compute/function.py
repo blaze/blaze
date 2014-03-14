@@ -76,13 +76,7 @@ def function(signature, impl='python', **metadata):
     Usage
     -----
 
-        @function
-        def add(a, b):
-            return a + b
-
-    or
-
-        @function('(A, A) -> A') # All types are unified
+        @function('(A, A) -> A') # All types are promoted
         def add(a, b):
             return a + b
     """
@@ -104,16 +98,14 @@ def function(signature, impl='python', **metadata):
         return blaze_func
 
     signature = dshape(signature)
+    if isinstance(signature, T.DataShape) and len(signature) == 1:
+        signature = signature[0]
     impls = impl
     if not isinstance(impls, tuple):
         impls = (impls,)
 
-    if not isinstance(signature, T.Mono):
-        # @blaze_func
-        # def f(...): ...
-        f = signature
-        signature = None
-        return decorator(f)
+    if not isinstance(signature, T.Function):
+        raise TypeError('Blaze @function decorator requires a function signature')
     else:
         # @blaze_func('(A, A) -> B')
         # def f(...): ...
