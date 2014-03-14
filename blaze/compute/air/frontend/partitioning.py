@@ -65,22 +65,6 @@ def use_sql(op, strategies, env):
         return False
 
 
-def use_ooc(op, strategies, env):
-    """
-    Determine whether `op` needs to be handled by an out-of-core backend.
-    """
-    if isinstance(op, ir.FuncArg):
-        # Function argument, this is an OOC operation if he runtime input
-        # is persistent
-        runtime_args = env['runtime.args']
-        array = runtime_args[op]
-        data_desc = array._data
-        return data_desc.capabilities.persistent
-
-    ooc = all(strategies[arg] in (CKERNEL,) for arg in op.args[1:])
-    return ooc and not use_local(op, strategies, env)
-
-
 def use_local(op, strategies, env):
     """
     Determine whether `op` can be handled by a 'local' backend.
@@ -128,15 +112,15 @@ def annotate_all_kernels(func, env):
 
     for op in func.ops:
         if op.opcode == "kernel":
-            _find_impls(op, env, unmatched, impls)
+            _find_impls(op, unmatched, impls)
 
 
-def _find_impls(op, env, unmatched, impls):
+def _find_impls(op, unmatched, impls):
     function = op.metadata['kernel']
     overload = op.metadata['overload']
 
     found_impl = False
-    for strategy in enumerate_strategies(function, env):
+    for strategy in enumerate_strategies(function):
         py_func, signature = overload_for_strategy(function, overload, strategy)
         if py_func is not None:
             impls[op, strategy] = py_func, signature
@@ -148,7 +132,7 @@ def _find_impls(op, env, unmatched, impls):
         raise TypeError("No implementation found for %s" % (function,))
 
 
-def enumerate_strategies(function, env):
+def enumerate_strategies(function):
     """Return the available strategies for the blaze function for this op"""
     return function.available_strategies
 
