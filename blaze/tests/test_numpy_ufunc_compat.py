@@ -15,11 +15,13 @@ from blaze.py2help import skip
 
 
 def assert_almost_equal(actual, desired, **kwargs):
-    return testing.assert_almost_equal(np.array(actual), np.array(desired), **kwargs)
+    return testing.assert_almost_equal(np.array(actual),
+                                       np.array(desired), **kwargs)
 
 
 def assert_allclose(actual, desired, **kwargs):
-    return testing.assert_allclose(np.array(actual), np.array(desired), **kwargs)
+    return testing.assert_allclose(np.array(actual),
+                                   np.array(desired), **kwargs)
 
 
 def assert_equal(actual, desired, **kwargs):
@@ -27,7 +29,8 @@ def assert_equal(actual, desired, **kwargs):
 
 
 def assert_array_equal(actual, desired, **kwargs):
-    return testing.assert_array_equal(np.array(actual), np.array(desired), **kwargs)
+    return testing.assert_array_equal(np.array(actual),
+                                      np.array(desired), **kwargs)
 
 # Many of these tests have been adapted from NumPy's test_umath.py test file
 
@@ -132,7 +135,6 @@ class TestPower(unittest.TestCase):
     def test_power_zero(self):
         zero = blaze.array([0j])
         one = blaze.array([1+0j])
-        cinf = blaze.array([complex(np.inf, 0)])
         cnan = blaze.array([complex(np.nan, np.nan)])
 
         def assert_complex_equal(x, y):
@@ -159,10 +161,10 @@ class TestPower(unittest.TestCase):
 
 
 class TestLog(unittest.TestCase):
-    def test_log_values(self) :
+    def test_log_values(self):
         x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
         y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             log2_ = 0.69314718055994530943
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)*log2_
@@ -171,10 +173,10 @@ class TestLog(unittest.TestCase):
 
 
 class TestExp(unittest.TestCase):
-    def test_exp_values(self) :
+    def test_exp_values(self):
         x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
         y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             log2_ = 0.69314718055994530943
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)*log2_
@@ -183,34 +185,34 @@ class TestExp(unittest.TestCase):
 
 
 class TestLogAddExp(unittest.TestCase):
-    def test_logaddexp_values(self) :
+    def test_logaddexp_values(self):
         x = [1, 2, 3, 4, 5]
         y = [5, 4, 3, 2, 1]
         z = [6, 6, 6, 6, 6]
-        for ds, dec in zip(['float32', 'float64'], [6, 15]) :
+        for ds, dec in zip(['float32', 'float64'], [6, 15]):
             xf = blaze.log(blaze.array(x, dshape=ds))
             yf = blaze.log(blaze.array(y, dshape=ds))
             zf = blaze.log(blaze.array(z, dshape=ds))
             result = blaze.logaddexp(xf, yf)
             assert_almost_equal(result, zf, decimal=dec)
 
-    def test_logaddexp_range(self) :
+    def test_logaddexp_range(self):
         x = [1000000, -1000000, 1000200, -1000200]
         y = [1000200, -1000200, 1000000, -1000000]
         z = [1000200, -1000000, 1000200, -1000000]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             logxf = blaze.array(x, dshape=ds)
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
             result = blaze.logaddexp(logxf, logyf)
             assert_almost_equal(result, logzf)
 
-    def test_inf(self) :
+    def test_inf(self):
         inf = blaze.inf
         x = [inf, -inf,  inf, -inf, inf, 1,  -inf,  1]
         y = [inf,  inf, -inf, -inf, 1,   inf, 1,   -inf]
         z = [inf,  inf,  inf, -inf, inf, inf, 1,    1]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             logxf = blaze.array(x, dshape=ds)
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
@@ -226,10 +228,10 @@ class TestLogAddExp(unittest.TestCase):
 
 
 class TestLog2(unittest.TestCase):
-    def test_log2_values(self) :
+    def test_log2_values(self):
         x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
         y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)
             result = blaze.log2(xf)
@@ -237,10 +239,10 @@ class TestLog2(unittest.TestCase):
 
 
 class TestLog10(unittest.TestCase):
-    def test_log10_values(self) :
+    def test_log10_values(self):
         x = [1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10]
         y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)
             result = blaze.log10(xf)
@@ -248,10 +250,10 @@ class TestLog10(unittest.TestCase):
 
 
 class TestExp2(unittest.TestCase):
-    def test_exp2_values(self) :
+    def test_exp2_values(self):
         x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
         y = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             xf = blaze.array(x, dshape=ds)
             yf = blaze.array(y, dshape=ds)
             result = blaze.exp2(yf)
@@ -260,34 +262,34 @@ class TestExp2(unittest.TestCase):
 
 class TestLogAddExp2(unittest.TestCase):
     # Need test for intermediate precisions
-    def test_logaddexp2_values(self) :
+    def test_logaddexp2_values(self):
         x = [1, 2, 3, 4, 5]
         y = [5, 4, 3, 2, 1]
         z = [6, 6, 6, 6, 6]
-        for ds, dec in zip(['float32', 'float64'], [6, 15, 15]) :
+        for ds, dec in zip(['float32', 'float64'], [6, 15, 15]):
             xf = blaze.log2(blaze.array(x, dshape=ds))
             yf = blaze.log2(blaze.array(y, dshape=ds))
             zf = blaze.log2(blaze.array(z, dshape=ds))
             result = blaze.logaddexp2(xf, yf)
             assert_almost_equal(result, zf, decimal=dec)
 
-    def test_logaddexp2_range(self) :
+    def test_logaddexp2_range(self):
         x = [1000000, -1000000, 1000200, -1000200]
         y = [1000200, -1000200, 1000000, -1000000]
         z = [1000200, -1000000, 1000200, -1000000]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             logxf = blaze.array(x, dshape=ds)
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
             result = blaze.logaddexp2(logxf, logyf)
             assert_almost_equal(result, logzf)
 
-    def test_inf(self) :
+    def test_inf(self):
         inf = blaze.inf
         x = [inf, -inf,  inf, -inf, inf, 1,  -inf,  1]
         y = [inf,  inf, -inf, -inf, 1,   inf, 1,   -inf]
         z = [inf,  inf,  inf, -inf, inf, inf, 1,    1]
-        for ds in ['float32', 'float64'] :
+        for ds in ['float32', 'float64']:
             logxf = blaze.array(x, dshape=ds)
             logyf = blaze.array(y, dshape=ds)
             logzf = blaze.array(z, dshape=ds)
@@ -408,13 +410,15 @@ class TestMod(unittest.TestCase):
 class TestAbs(unittest.TestCase):
     def test_simple(self):
         x = blaze.array([1+1j, 0+2j, 1+2j, blaze.inf, blaze.nan])
-        y_r = blaze.array([blaze.sqrt(2.), 2, blaze.sqrt(5), blaze.inf, blaze.nan])
+        y_r = blaze.array([blaze.sqrt(2.), 2, blaze.sqrt(5),
+                           blaze.inf, blaze.nan])
         y = blaze.abs(x)
         for i in range(len(x)):
             assert_almost_equal(y[i], y_r[i])
 
     def test_fabs(self):
-        # Test that blaze.abs(x +- 0j) == blaze.abs(x) (as mandated by C99 for cabs)
+        # Test that blaze.abs(x +- 0j) == blaze.abs(x)
+        # (as mandated by C99 for cabs)
         x = blaze.array([1+0j], dshape="complex[float64]")
         assert_array_equal(blaze.abs(x), blaze.real(x))
 
@@ -446,12 +450,6 @@ class TestAbs(unittest.TestCase):
                   complex(blaze.inf, blaze.nan),
                   complex(-blaze.inf, blaze.nan)]
 
-        # cabs(conj(z)) == conj(cabs(z)) (= cabs(z))
-        def f(a):
-            return blaze.abs(blaze.conj(a))
-        def g(a, b):
-            return blaze.abs(complex(a, b))
-
         for z in values:
             abs_conj_z = blaze.abs(blaze.conj(z))
             conj_abs_z = blaze.conj(blaze.abs(z))
@@ -463,13 +461,15 @@ class TestAbs(unittest.TestCase):
 
 class TestTrig(unittest.TestCase):
     def test_sin(self):
-        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi, math.pi, 1.5*math.pi, 2*math.pi])
+        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi,
+                         math.pi, 1.5*math.pi, 2*math.pi])
         b = blaze.array([0, 0.5, 0.5*blaze.sqrt(3), 1, 0, -1, 0])
         assert_allclose(blaze.sin(a), b, rtol=1e-15, atol=1e-15)
         assert_allclose(blaze.sin(-a), -b, rtol=1e-15, atol=1e-15)
 
     def test_cos(self):
-        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi, math.pi, 1.5*math.pi, 2*math.pi])
+        a = blaze.array([0, math.pi/6, math.pi/3, 0.5*math.pi,
+                         math.pi, 1.5*math.pi, 2*math.pi])
         b = blaze.array([1, 0.5*blaze.sqrt(3), 0.5, 0, -1, 0, 1])
         assert_allclose(blaze.cos(a), b, rtol=1e-15, atol=1e-15)
         assert_allclose(blaze.cos(-a), b, rtol=1e-15, atol=1e-15)
@@ -531,10 +531,10 @@ def _check_branch_cut(f, x0, dx, re_sign=1, im_sign=-1, sig_zero_ok=False,
 
 
 class TestComplexFunctions(unittest.TestCase):
-    funcs = [blaze.arcsin,  blaze.arccos,  blaze.arctan, blaze.arcsinh, blaze.arccosh,
-             blaze.arctanh, blaze.sin,     blaze.cos,    blaze.tan,     blaze.exp,
-             blaze.exp2,    blaze.log,     blaze.sqrt,   blaze.log10,   blaze.log2,
-             blaze.log1p]
+    funcs = [blaze.arcsin, blaze.arccos,  blaze.arctan, blaze.arcsinh,
+             blaze.arccosh, blaze.arctanh, blaze.sin, blaze.cos, blaze.tan,
+             blaze.exp, blaze.exp2, blaze.log, blaze.sqrt, blaze.log10,
+             blaze.log2, blaze.log1p]
 
     def test_it(self):
         for f in self.funcs:
@@ -544,15 +544,15 @@ class TestComplexFunctions(unittest.TestCase):
                 x = .5
             fr = f(x)
             fz = f(complex(x))
-            assert_almost_equal(fz.real, fr, err_msg='real part %s'%f)
-            assert_almost_equal(fz.imag, 0., err_msg='imag part %s'%f)
+            assert_almost_equal(fz.real, fr, err_msg='real part %s' % f)
+            assert_almost_equal(fz.imag, 0., err_msg='imag part %s' % f)
 
-    def test_precisions_consistent(self) :
+    def test_precisions_consistent(self):
         z = 1 + 1j
-        for f in self.funcs :
+        for f in self.funcs:
             fcf = f(blaze.array(z, dshape='complex[float32]'))
-            fcd  = f(blaze.array(z, dshape='complex[float64]'))
-            assert_almost_equal(fcf, fcd, decimal=6, err_msg='fch-fcd %s'%f)
+            fcd = f(blaze.array(z, dshape='complex[float64]'))
+            assert_almost_equal(fcf, fcd, decimal=6, err_msg='fch-fcd %s' % f)
 
     def test_branch_cuts(self):
         # check branch cuts and continuity on them
@@ -562,20 +562,20 @@ class TestComplexFunctions(unittest.TestCase):
         _check_branch_cut(blaze.log1p, -1.5, 1j, 1, -1)
         _check_branch_cut(blaze.sqrt,  -0.5, 1j, 1, -1)
 
-        _check_branch_cut(blaze.arcsin, [ -2, 2],   [1j, -1j], 1, -1)
-        _check_branch_cut(blaze.arccos, [ -2, 2],   [1j, -1j], 1, -1)
-        _check_branch_cut(blaze.arctan, [-2j, 2j],  [1,  -1 ], -1, 1)
+        _check_branch_cut(blaze.arcsin, [-2, 2],   [1j, -1j], 1, -1)
+        _check_branch_cut(blaze.arccos, [-2, 2],   [1j, -1j], 1, -1)
+        _check_branch_cut(blaze.arctan, [-2j, 2j],  [1,  -1], -1, 1)
 
         _check_branch_cut(blaze.arcsinh, [-2j,  2j], [-1,   1], -1, 1)
-        _check_branch_cut(blaze.arccosh, [ -1, 0.5], [1j,  1j], 1, -1)
-        _check_branch_cut(blaze.arctanh, [ -2,   2], [1j, -1j], 1, -1)
+        _check_branch_cut(blaze.arccosh, [-1, 0.5], [1j,  1j], 1, -1)
+        _check_branch_cut(blaze.arctanh, [-2,   2], [1j, -1j], 1, -1)
 
         # check against bogus branch cuts: assert continuity between quadrants
-        _check_branch_cut(blaze.arcsin, [-2j, 2j], [ 1,  1], 1, 1)
-        _check_branch_cut(blaze.arccos, [-2j, 2j], [ 1,  1], 1, 1)
-        _check_branch_cut(blaze.arctan, [ -2,  2], [1j, 1j], 1, 1)
+        _check_branch_cut(blaze.arcsin, [-2j, 2j], [1,  1], 1, 1)
+        _check_branch_cut(blaze.arccos, [-2j, 2j], [1,  1], 1, 1)
+        _check_branch_cut(blaze.arctan, [-2,  2], [1j, 1j], 1, 1)
 
-        _check_branch_cut(blaze.arcsinh, [ -2,  2, 0], [1j, 1j, 1 ], 1, 1)
+        _check_branch_cut(blaze.arcsinh, [-2,  2, 0], [1j, 1j, 1], 1, 1)
         _check_branch_cut(blaze.arccosh, [-2j, 2j, 2], [1,  1,  1j], 1, 1)
         _check_branch_cut(blaze.arctanh, [-2j, 2j, 0], [1,  1,  1j], 1, 1)
 
@@ -589,15 +589,15 @@ class TestComplexFunctions(unittest.TestCase):
         _check_branch_cut(blaze.log1p, -1.5, 1j, 1, -1, True)
         # XXX: signed zeros are not OK for sqrt or for the arc* functions
         _check_branch_cut(blaze.sqrt,  -0.5, 1j, 1, -1, True)
-        _check_branch_cut(blaze.arcsin, [ -2, 2],   [1j, -1j], 1, -1, True)
-        _check_branch_cut(blaze.arccos, [ -2, 2],   [1j, -1j], 1, -1, True)
-        _check_branch_cut(blaze.arctan, [-2j, 2j],  [1,  -1 ], -1, 1, True)
+        _check_branch_cut(blaze.arcsin, [-2, 2],   [1j, -1j], 1, -1, True)
+        _check_branch_cut(blaze.arccos, [-2, 2],   [1j, -1j], 1, -1, True)
+        _check_branch_cut(blaze.arctan, [-2j, 2j],  [1,  -1], -1, 1, True)
         _check_branch_cut(blaze.arcsinh, [-2j,  2j], [-1,   1], -1, 1, True)
-        _check_branch_cut(blaze.arccosh, [ -1, 0.5], [1j,  1j], 1, -1, True)
-        _check_branch_cut(blaze.arctanh, [ -2,   2], [1j, -1j], 1, -1, True)
+        _check_branch_cut(blaze.arccosh, [-1, 0.5], [1j,  1j], 1, -1, True)
+        _check_branch_cut(blaze.arctanh, [-2,   2], [1j, -1j], 1, -1, True)
 
     def test_against_cmath(self):
-        import cmath, sys
+        import cmath
 
         points = [-1-1j, -1+1j, +1-1j, +1+1j]
         name_map = {'arcsin': 'asin', 'arccos': 'acos', 'arctan': 'atan',
@@ -613,15 +613,16 @@ class TestComplexFunctions(unittest.TestCase):
             for p in points:
                 a = complex(func(complex(p)))
                 b = cfunc(p)
-                self.assertTrue(abs(a - b) < atol, "%s %s: %s; cmath: %s"%(fname, p, a, b))
+                self.assertTrue(abs(a - b) < atol,
+                                "%s %s: %s; cmath: %s" % (fname, p, a, b))
 
 
 class TestMaximum(unittest.TestCase):
     def test_float_nans(self):
         nan = blaze.nan
-        arg1 = blaze.array([0,   nan, nan])
-        arg2 = blaze.array([nan, 0,   nan])
-        out  = blaze.array([nan, nan, nan])
+        arg1 = blaze.array([0, nan, nan])
+        arg2 = blaze.array([nan, 0, nan])
+        out = blaze.array([nan, nan, nan])
         assert_equal(blaze.maximum(arg1, arg2), out)
 
     def test_complex_nans(self):
@@ -629,7 +630,8 @@ class TestMaximum(unittest.TestCase):
         for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
             arg1 = blaze.array([0, cnan, cnan])
             arg2 = blaze.array([cnan, 0, cnan])
-            out  = blaze.array([nan, nan, nan], dshape=datashape.complex_float64)
+            out = blaze.array([nan, nan, nan],
+                              dshape=datashape.complex_float64)
             assert_equal(blaze.maximum(arg1, arg2), out)
 
 
@@ -638,7 +640,7 @@ class TestMinimum(unittest.TestCase):
         nan = blaze.nan
         arg1 = blaze.array([0,   nan, nan])
         arg2 = blaze.array([nan, 0,   nan])
-        out  = blaze.array([nan, nan, nan])
+        out = blaze.array([nan, nan, nan])
         assert_equal(blaze.minimum(arg1, arg2), out)
 
     def test_complex_nans(self):
@@ -646,16 +648,17 @@ class TestMinimum(unittest.TestCase):
         for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
             arg1 = blaze.array([0, cnan, cnan])
             arg2 = blaze.array([cnan, 0, cnan])
-            out  = blaze.array([nan, nan, nan], dshape=datashape.complex_float64)
+            out = blaze.array([nan, nan, nan],
+                              dshape=datashape.complex_float64)
             assert_equal(blaze.minimum(arg1, arg2), out)
 
 
 class TestFmax(unittest.TestCase):
     def test_float_nans(self):
         nan = blaze.nan
-        arg1 = blaze.array([0,   nan, nan])
-        arg2 = blaze.array([nan, 0,   nan])
-        out  = blaze.array([0,   0,   nan])
+        arg1 = blaze.array([0, nan, nan])
+        arg2 = blaze.array([nan, 0, nan])
+        out = blaze.array([0, 0, nan])
         assert_equal(blaze.fmax(arg1, arg2), out)
 
     def test_complex_nans(self):
@@ -663,16 +666,17 @@ class TestFmax(unittest.TestCase):
         for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
             arg1 = blaze.array([0, cnan, cnan])
             arg2 = blaze.array([cnan, 0, cnan])
-            out  = blaze.array([0,    0, nan], dshape=datashape.complex_float64)
+            out = blaze.array([0, 0, nan],
+                              dshape=datashape.complex_float64)
             assert_equal(blaze.fmax(arg1, arg2), out)
 
 
 class TestFmin(unittest.TestCase):
     def test_float_nans(self):
         nan = blaze.nan
-        arg1 = blaze.array([0,   nan, nan])
-        arg2 = blaze.array([nan, 0,   nan])
-        out  = blaze.array([0,   0,   nan])
+        arg1 = blaze.array([0, nan, nan])
+        arg2 = blaze.array([nan, 0, nan])
+        out = blaze.array([0, 0, nan])
         assert_equal(blaze.fmin(arg1, arg2), out)
 
     def test_complex_nans(self):
@@ -680,7 +684,7 @@ class TestFmin(unittest.TestCase):
         for cnan in [complex(nan, 0), complex(0, nan), complex(nan, nan)]:
             arg1 = blaze.array([0, cnan, cnan])
             arg2 = blaze.array([cnan, 0, cnan])
-            out  = blaze.array([0,    0, nan], dshape=datashape.complex_float64)
+            out = blaze.array([0, 0, nan], dshape=datashape.complex_float64)
             assert_equal(blaze.fmin(arg1, arg2), out)
 
 
