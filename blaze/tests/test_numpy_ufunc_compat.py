@@ -604,7 +604,7 @@ class TestComplexFunctions(unittest.TestCase):
                     'arcsinh': 'asinh', 'arccosh': 'acosh', 'arctanh': 'atanh'}
         atol = 4*np.finfo(np.complex).eps
         for func in self.funcs:
-            fname = func.__name__.split('.')[-1]
+            fname = func.name
             cname = name_map.get(fname, fname)
             try:
                 cfunc = getattr(cmath, cname)

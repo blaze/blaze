@@ -1,3 +1,4 @@
+
 """
 Blaze expression graph for deferred evaluation. Each expression node has
 an opcode and operands. An operand is a Constant or another expression node.

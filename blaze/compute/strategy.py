@@ -14,7 +14,6 @@ from contextlib import contextmanager
 OOC     = 'out-of-core'
 CKERNEL = 'ckernel'
 JIT     = 'jit'
-PY      = 'python'
 
 #------------------------------------------------------------------------
 # Execution Strategy
@@ -33,8 +32,7 @@ def strategy(strategy):
     strategy: str
         Evaluation strategy. Currently supported:
 
-            * 'py'      Evaluation using Python and possibly operations of
-                        underlying containers
+            * 'ckernel' Standard blaze strategy.
             * 'eval'    Try to assemble a more efficient evaluation kernel
                         that performs fusion as much as possible
             * 'jit'     JIT-compile the expression to machine code specialized

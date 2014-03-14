@@ -4,7 +4,7 @@ Assemble kernels into pykernels for execution.
 
 from __future__ import absolute_import, division, print_function
 from pykit.ir import Op
-from blaze.compute.strategy import PY
+from blaze.compute.strategy import CKERNEL
 
 def assemble_kernels(func, env, pykernels, strategy):
     """
@@ -27,11 +27,3 @@ def assemble_kernels(func, env, pykernels, strategy):
             op.replace(Op('pykernel', op.type, [pykernel, op.args[1:]],
                           op.result))
 
-
-def assemble_py_kernels(func, env):
-    """kernel('add', a, b) -> pykernel(add, a, b)"""
-    overloads = env['kernel.overloads']
-
-    pykernels = dict((op, overloads[op, PY])
-                         for op in func.ops if (op, PY) in overloads)
-    assemble_kernels(func, env, pykernels, PY)

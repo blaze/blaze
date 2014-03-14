@@ -35,25 +35,6 @@ def _make_sig(tplist):
     dslist = [datashape.dshape("A... * " + str(x)) for x in tplist]
     return datashape.Function(*(dslist[1:] + [dslist[0]]))
 
-def _make_pyfunc(nargs, modname, name):
-    if nargs == 1:
-        def pyfunc(arg1):
-            raise NotImplementedError('pyfunc for blaze func %s should not be called' % name)
-    elif nargs == 2:
-        def pyfunc(arg1, arg2):
-            raise NotImplementedError('pyfunc for blaze func %s should not be called' % name)
-    elif nargs == 3:
-        def pyfunc(arg1, arg2, arg3):
-            raise NotImplementedError('pyfunc for blaze func %s should not be called' % name)
-    elif nargs == 4:
-        def pyfunc(arg1, arg2, arg3, arg4):
-            raise NotImplementedError('pyfunc for blaze func %s should not be called' % name)
-    else:
-        raise ValueError('unsupported number of args %s' % nargs)
-    pyfunc.__module__ = modname
-    pyfunc.__name__ = modname + '.' + name if modname else name
-    return pyfunc
-
 
 def blazefunc_from_numpy_ufunc(uf, modname, name, acquires_gil):
     """Converts a NumPy ufunc into a Blaze ufunc.
@@ -77,17 +58,11 @@ def blazefunc_from_numpy_ufunc(uf, modname, name, acquires_gil):
     kernlist = [_lowlevel.ckernel_deferred_from_ufunc(uf, tp, acquires_gil)
                 for tp in tplist]
     # Create the empty blaze function to start
-    blaze_func = function.BlazeFunc(name)
+    blaze_func = function.BlazeFunc('blaze', name)
     blaze_func.add_metadata({'elementwise': True})
-    # Add default dummy dispatching for 'python' mode
-    pydispatcher = blaze_func.get_dispatcher('python')
     # Add dispatching to the kernel for each signature
     ckdispatcher = blaze_func.get_dispatcher('ckernel')
     for (tp, sig, kern) in zip(tplist, siglist, kernlist):
-        # The blaze function currently requires matching (do-nothing)
-        # python functions
-        pyfunc = _make_pyfunc(len(tp) - 1, modname, name)
-        datashape.overloading.overload(sig, dispatcher=pydispatcher)(pyfunc)
         datashape.overloading.overload(sig, dispatcher=ckdispatcher)(kern)
     return blaze_func
 

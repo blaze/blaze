@@ -8,8 +8,7 @@ operands. A blaze function carries *implementations* that ultimately perform
 the work. Implementations are indicated through the 'impl' keyword argument,
 and may include:
 
-    'py'    : Pure python implementation
-    'numba' : Compiled numba function or compilable numba function
+    'ckernel'    : Blaze ckernel-based function.
     'llvm'  : LLVM-compiled implementation
     'ctypes': A ctypes function pointer
 
@@ -31,7 +30,7 @@ from datashape.overloading import overload, Dispatcher
 from datashape.overload_resolver import OverloadResolver
 from ..datadescriptor import DeferredDescriptor
 from .expr import construct, merge_contexts
-from .strategy import PY, JIT
+from .strategy import CKERNEL
 
 #------------------------------------------------------------------------
 # Utils
@@ -63,7 +62,7 @@ def lookup_previous(f, scopes=None):
 #------------------------------------------------------------------------
 # Decorators
 #------------------------------------------------------------------------
-def function(signature, impl='python', **metadata):
+def function(signature, impl=CKERNEL, **metadata):
     """
     Define an overload for a blaze function. Implementations may be associated
     by indicating a 'kind' through the `impl` argument.
@@ -85,7 +84,7 @@ def function(signature, impl='python', **metadata):
         bf = lookup_previous(f)
         if bf is None:
             # No previous function, create new one
-            bf = BlazeFunc(f.__name__)
+            bf = BlazeFunc(f.__module__, f.__name__)
 
         for impl in impls:
             kernel(bf, impl, f, signature, **metadata)
@@ -147,10 +146,11 @@ class BlazeFunc(object):
         Additional metadata that may be interpreted by a Blaze AIR interpreter
     """
 
-    def __init__(self, name):
-        self.dispatchers = {}
+    def __init__(self, module, name):
+        self._module = module
         self._name = name
         self.metadata = {}
+        self.dispatchers = {CKERNEL: Dispatcher()}
 
     @property
     def name(self):
@@ -158,9 +158,12 @@ class BlazeFunc(object):
         return self._name
 
     @property
-    def __name__(self):
-        """Return the name of the blazefunc."""
-        return self._name
+    def module(self):
+        return self._module
+
+    @property
+    def fullname(self):
+        return self._module + '.' + self._name
 
     @property
     def available_strategies(self):
@@ -168,7 +171,7 @@ class BlazeFunc(object):
 
     @property
     def dispatcher(self):
-        return self.dispatchers[PY]
+        return self.dispatchers[CKERNEL]
 
     def get_dispatcher(self, impl_kind):
         """Get the overloaded dispatcher for the given implementation kind"""
@@ -183,7 +186,7 @@ class BlazeFunc(object):
         dispatcher = self.get_dispatcher(impl_kind)
         return dispatcher.best_match(argtypes)
 
-    def add_metadata(self, md, impl_kind=PY):
+    def add_metadata(self, md, impl_kind=CKERNEL):
         """
         Associate metadata with an overloaded implementation.
         """
@@ -199,7 +202,7 @@ class BlazeFunc(object):
         # Update
         metadata.update(md)
 
-    def get_metadata(self, key, impl_kind=PY):
+    def get_metadata(self, key, impl_kind=CKERNEL):
         return self.metadata[impl_kind].get(key)
 
     def __call__(self, *args, **kwargs):

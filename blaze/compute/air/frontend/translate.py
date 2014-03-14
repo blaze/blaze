@@ -73,7 +73,7 @@ def _from_expr(expr, f, builder, values):
         # Construct args
 
         # This is purely for IR readability
-        name = qualified_name(expr.metadata['overload'].func)
+        name = expr.metadata['kernel'].fullname
         args = [_from_expr(arg, f, builder, values) for arg in expr.args]
         args = [Const(name)] + args
 
@@ -94,11 +94,3 @@ def _from_expr(expr, f, builder, values):
 
     values[expr] = result
     return result
-
-
-#------------------------------------------------------------------------
-# Utils
-#------------------------------------------------------------------------
-
-def qualified_name(f):
-    return ".".join([f.__module__, f.__name__])
