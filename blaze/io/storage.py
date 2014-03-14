@@ -43,7 +43,7 @@ def _to_numpy(ds):
 
 class Storage(object):
     """
-    Storage(uri, mode='r', permanent=True)
+    Storage(uri, mode='a', permanent=True)
 
     Class to host parameters for persistence properties.
 
@@ -89,7 +89,7 @@ class Storage(object):
         """Returns a blz path for a given uri."""
         return self._path
 
-    def __init__(self, uri, mode='r', permanent=True, format=None):
+    def __init__(self, uri, mode='a', permanent=True, format=None):
         if not isinstance(uri, str):
             raise ValueError("`uri` must be a string.")
         self._uri = uri
