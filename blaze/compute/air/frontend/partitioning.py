@@ -9,16 +9,14 @@ from collections import defaultdict
 from pykit import ir
 import datashape
 
-from ...strategy import OOC, JIT, CKERNEL
+from ...strategy import CKERNEL
 from ....io.sql import SQL, SQLDataDescriptor
 
 
 # List of backends to use greedily listed in order of preference
 
 preferences = [
-    SQL, # TODO: Allow easier extension of new backends
-    #OOC,
-    JIT,
+    SQL,  # TODO: Allow easier extension of new backends
     CKERNEL,
 ]
 
@@ -79,7 +77,7 @@ def use_ooc(op, strategies, env):
         data_desc = array._data
         return data_desc.capabilities.persistent
 
-    ooc = all(strategies[arg] in (CKERNEL, JIT, OOC) for arg in op.args[1:])
+    ooc = all(strategies[arg] in (CKERNEL,) for arg in op.args[1:])
     return ooc and not use_local(op, strategies, env)
 
 
@@ -102,12 +100,10 @@ def use_local(op, strategies, env):
                         if not isinstance(arg, ir.FuncArg))
 
 
-local_strategies = (JIT, CKERNEL)
+local_strategies = (CKERNEL,)
 
 determine_strategy = {
     SQL:        use_sql,
-    #OOC:        use_ooc,
-    JIT:        use_local,
     CKERNEL:    use_local,
 }
 
