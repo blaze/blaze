@@ -23,7 +23,6 @@ passes = [
     # erasure, # TODO: erase shape from ops
     # cache, # TODO:
     coercions,
-    jit,
     # TODO: Make the below compile-time passes !
     ckernel_prepare.prepare_local_execution,
     ckernel_impls,
