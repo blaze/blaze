@@ -25,10 +25,6 @@ air_env = {
 
     # storage passed in to blaze.eval(). This is where we store the result
     'storage':          None,
-
-    # Implementation for each op: { Op: Overload }
-    # This is set by assemblage.py
-    #'kernel.impls':     None,
 }
 
 def fresh_env(expr, storage, debug=False):
