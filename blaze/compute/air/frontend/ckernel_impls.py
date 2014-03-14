@@ -37,15 +37,11 @@ class CKernelImplementations(object):
         function = op.metadata['kernel']
         overload = op.metadata['overload']
 
+        # Default overload is CKERNEL, so no need to look it up again
         func = overload.func
         polysig = overload.sig
         monosig = overload.resolved_sig
         argtypes = datashape.coretypes.Tuple(monosig.argtypes)
-
-        try:
-            overload = function.best_match('ckernel', argtypes)
-        except datashape.CoercionError:
-            return op
 
         impl = overload.func
         assert monosig == overload.resolved_sig, (monosig,
