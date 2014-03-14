@@ -9,18 +9,15 @@ from collections import defaultdict
 from pykit import ir
 import datashape
 
-from ...strategy import OOC, JIT, CKERNEL, PY
+from ...strategy import CKERNEL
 from ....io.sql import SQL, SQLDataDescriptor
 
 
 # List of backends to use greedily listed in order of preference
 
 preferences = [
-    SQL, # TODO: Allow easier extension of new backends
-    #OOC,
-    JIT,
+    SQL,  # TODO: Allow easier extension of new backends
     CKERNEL,
-    PY,
 ]
 
 #------------------------------------------------------------------------
@@ -68,22 +65,6 @@ def use_sql(op, strategies, env):
         return False
 
 
-def use_ooc(op, strategies, env):
-    """
-    Determine whether `op` needs to be handled by an out-of-core backend.
-    """
-    if isinstance(op, ir.FuncArg):
-        # Function argument, this is an OOC operation if he runtime input
-        # is persistent
-        runtime_args = env['runtime.args']
-        array = runtime_args[op]
-        data_desc = array._data
-        return data_desc.capabilities.persistent
-
-    ooc = all(strategies[arg] in (PY, CKERNEL, JIT, OOC) for arg in op.args[1:])
-    return ooc and not use_local(op, strategies, env)
-
-
 def use_local(op, strategies, env):
     """
     Determine whether `op` can be handled by a 'local' backend.
@@ -103,14 +84,11 @@ def use_local(op, strategies, env):
                         if not isinstance(arg, ir.FuncArg))
 
 
-local_strategies = (JIT, CKERNEL, PY)
+local_strategies = (CKERNEL,)
 
 determine_strategy = {
     SQL:        use_sql,
-    #OOC:        use_ooc,
-    JIT:        use_local,
     CKERNEL:    use_local,
-    PY:         use_local,
 }
 
 #------------------------------------------------------------------------
@@ -134,15 +112,15 @@ def annotate_all_kernels(func, env):
 
     for op in func.ops:
         if op.opcode == "kernel":
-            _find_impls(op, env, unmatched, impls)
+            _find_impls(op, unmatched, impls)
 
 
-def _find_impls(op, env, unmatched, impls):
+def _find_impls(op, unmatched, impls):
     function = op.metadata['kernel']
     overload = op.metadata['overload']
 
     found_impl = False
-    for strategy in enumerate_strategies(function, env):
+    for strategy in enumerate_strategies(function):
         py_func, signature = overload_for_strategy(function, overload, strategy)
         if py_func is not None:
             impls[op, strategy] = py_func, signature
@@ -154,7 +132,7 @@ def _find_impls(op, env, unmatched, impls):
         raise TypeError("No implementation found for %s" % (function,))
 
 
-def enumerate_strategies(function, env):
+def enumerate_strategies(function):
     """Return the available strategies for the blaze function for this op"""
     return function.available_strategies
 
@@ -184,21 +162,6 @@ def overload_for_strategy(function, overload, strategy):
                  function, overload.sig))
 
     return overload.func, got_signature
-
-
-#def annotate_kernels(func, env):
-#    """
-#    Annotate each op with an implementation.
-#    """
-#    overloads = env['kernel.overloads']
-#    strategies = env['strategies']
-#    impls = env['kernel.impls'] = {}
-#
-#    for op in func.ops:
-#        if op.opcode == 'kernel':
-#            strategy = strategies[op]
-#            overload = overloads[op, strategy]
-#            impls[op] = overload
 
 #------------------------------------------------------------------------
 # Partitioning

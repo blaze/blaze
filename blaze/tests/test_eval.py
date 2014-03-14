@@ -10,8 +10,6 @@ import blaze
 from blaze.datadescriptor import dd_as_py
 
 
-#blaze.set_strategy('jit')
-
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -168,39 +166,6 @@ class TestEval2D(unittest.TestCase):
 
     # add all tests for all permutations
     _add_tests()
-
-
-class TestStrategy(unittest.TestCase):
-
-    def test_strategy(self):
-        current = blaze.current_strategy()
-        with blaze.strategy('blah'):
-            self.assertEqual(blaze.current_strategy(), 'blah')
-        self.assertEqual(blaze.current_strategy(), current)
-
-def isolated():
-    npyA = np.arange(0.0, 100.0).reshape(20, 5)
-    npyB = np.arange(0.0, 100.0).reshape(20, 5)
-
-    memA = blaze.array(npyA)
-    memB = blaze.array(npyB)
-
-    _mk_dir()
-    dskA = blaze.array(npyA, storage=_store('dskA'))
-    dskB = blaze.array(npyB, storage=_store('dskB'))
-
-    expr = memA + memA
-    #expr = memA + dskA
-    #expr = dskA + dskA
-
-    print(memA.dshape, expr.dshape)
-    p = _store('dskRd')
-
-    result = blaze.eval(expr, storage=p)
-    #print(result)
-    result2 = blaze.eval(result == npyA + npyA)
-
-    assert np.all(result2)
 
 if __name__ == '__main__':
     #TestEval2D.setUpClass()

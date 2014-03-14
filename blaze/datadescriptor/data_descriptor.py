@@ -5,7 +5,7 @@ __all__ = ['IDataDescriptor', 'Capabilities']
 import abc
 
 from blaze.error import StreamingDimensionError
-from blaze.compute.strategy import current_strategy
+from blaze.compute.strategy import CKERNEL
 
 
 class Capabilities:
@@ -124,10 +124,6 @@ class IDataDescriptor:
         This allows appending values in the data descriptor.
         """
         return NotImplementedError
-
-    @property
-    def strategy(self):
-        return current_strategy()
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')

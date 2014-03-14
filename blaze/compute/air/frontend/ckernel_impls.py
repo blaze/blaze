@@ -1,24 +1,16 @@
 """
-Lift ckernels to their appropriate rank so they always consume the full array
-arguments.
+Convert 'kernel' Op to 'ckernel'.
 """
 
 from __future__ import absolute_import, division, print_function
 
-import datashape
 from pykit.ir import transform, Op
 
-#------------------------------------------------------------------------
-# Run
-#------------------------------------------------------------------------
 
 def run(func, env):
     strategies = env['strategies']
     transform(CKernelImplementations(strategies), func)
 
-#------------------------------------------------------------------------
-# Extract CKernel Implementations
-#------------------------------------------------------------------------
 
 class CKernelImplementations(object):
     """
@@ -34,22 +26,10 @@ class CKernelImplementations(object):
         if self.strategies[op] != 'ckernel':
             return
 
-        function = op.metadata['kernel']
+        # Default overload is CKERNEL, so no need to look it up again
         overload = op.metadata['overload']
 
-        func = overload.func
-        polysig = overload.sig
-        monosig = overload.resolved_sig
-        argtypes = datashape.coretypes.Tuple(monosig.argtypes)
-
-        try:
-            overload = function.best_match('ckernel', argtypes)
-        except datashape.CoercionError:
-            return op
-
         impl = overload.func
-        assert monosig == overload.resolved_sig, (monosig,
-                                                  overload.resolved_sig)
 
         new_op = Op('ckernel', op.type, [impl, op.args[1:]], op.result)
         new_op.add_metadata({'rank': 0,

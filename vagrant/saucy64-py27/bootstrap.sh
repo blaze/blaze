@@ -19,7 +19,7 @@ echo Downloading Miniconda...
 curl -O http://repo.continuum.io/miniconda/Miniconda-3.0.0-Linux-x86_64.sh || exit 1
 su -c 'bash Miniconda-*.sh -b -p ~/anaconda' vagrant || exit 1
 # Install dependencies
-su -c '~/anaconda/bin/conda install --yes ipython llvmpy cython numba numpy scipy llvmmath ply pycparser pyparsing pyyaml flask nose pytables' vagrant || exit 1
+su -c '~/anaconda/bin/conda install --yes ipython cython numpy scipy ply pycparser pyparsing pyyaml flask nose pytables' vagrant || exit 1
 # Add anaconda to the PATH
 printf '\nexport PATH=~/anaconda/bin:$PATH\n' >> .bashrc
 chown vagrant .bashrc
