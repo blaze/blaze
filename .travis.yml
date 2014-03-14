@@ -19,7 +19,7 @@ install:
   - sudo pip install conda
   # Install dependencies
   - sudo conda init
-  - conda create -p $HOME/py -c https://conda.binstar.org/mwiebe --yes nose cython numpy dynd-python pycparser pyparsing pyyaml flask pytables cffi "python=$TRAVIS_PYTHON_VERSION"
+  - conda create -p $HOME/py -c https://conda.binstar.org/mwiebe --yes nose cython numpy dynd-python pycparser pyparsing pyyaml flask pytables cffi pip "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
