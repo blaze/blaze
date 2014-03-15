@@ -138,7 +138,7 @@ print(repr(store))
 print('Before re-opening:', p)
 
 # Re-open the dataset in URI
-p2 = blaze.open(store)
+p2 = blaze.from_blz(store)
 
 print('After re-opening:', p2)
 

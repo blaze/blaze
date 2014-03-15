@@ -158,7 +158,7 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
         a = blaze.ones('0 * float64', storage=persist)
         append(a,range(10))
         # Re-open the dataset in URI
-        a2 = blaze.open(persist)
+        a2 = blaze.from_blz(persist)
         self.assertTrue(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
