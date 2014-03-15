@@ -29,7 +29,7 @@ data type to use.
     >>> array([[1, 2], [3, 4]])
     array([[1, 2],
            [3, 4]],
-          dshape='2, 2, int32')
+          dshape='2 * 2 * int32')
 
 You can override the data type by providing the `dshape`
 parameter.
@@ -39,7 +39,7 @@ parameter.
     >>> array([[1, 2], [3, 4]], dshape='float64')
     array([[ 1.,  2.],
            [ 3.,  4.]],
-          dshape='2, 2, float64')
+          dshape='2 * 2 * float64')
 
 Blaze has a slightly more general data model than NumPy,
 for example it supports variable-sized arrays.
@@ -60,7 +60,7 @@ as well.
     >>> array([['test', 'one', 'two', 'three'], ['a', 'braca', 'dabra']])
     array([['test', 'one', 'two', 'three'],
            ['a', 'braca', 'dabra']],
-          dshape='2, var, string')
+          dshape='2 * var * string')
 
 Iterators
 ~~~~~~~~~
@@ -72,10 +72,10 @@ for lists.
 .. doctest::
 
     >>> from blaze import array, dshape
-    >>> alst = [1,2,3]
+    >>> alst = [1, 2, 3]
     >>> array(alst.__iter__())
     array([1, 2, 3],
-          dshape='3, int32')
+          dshape='3 * int32')
 
 .. doctest::
 
@@ -83,8 +83,8 @@ for lists.
     array([[ 0,  1,  2],
            [-1,  0,  1],
            [-2, -1,  0]],
-          dshape='3, 3, int32')
-    
+          dshape='3 * 3 * int32')
+
 .. doctest::
 
     >>> from random import randrange
@@ -93,8 +93,8 @@ for lists.
            [           5,            2,            6,            4],
            [           9,            2,            2,            5],
            [           5]],
-          dshape='4, var, int32')
-    
+          dshape='4 * var * int32')
+
 
 Disk Backed Array
 ~~~~~~~~~~~~~~~~~
@@ -107,7 +107,7 @@ object.
 
     >>> import blaze
     >>> p = blaze.Storage('foo.blz')
-    >>> ds = blaze.dshape('2, 2, int32')
+    >>> ds = blaze.dshape('2 * 2 * int32')
     >>> a = blaze.array([[1,2],[3,4]], ds, storage=p)
 
 
@@ -116,18 +116,18 @@ object.
     >>> a
     array([[1, 2],
            [3, 4]],
-          dshape='2, 2, int32')
+          dshape='2 * 2 * int32')
 
 
 .. doctest::
 
     >>> import blaze
-    >>> blaze.open(blaze.Storage('foo.blz'))
+    >>> blaze.from_blz(blaze.Storage('foo.blz'))
     array([[1, 2],
            [3, 4]],
-          dshape='2, 2, int32')
+          dshape='2 * 2 * int32')
     >>> blaze.drop(blaze.Storage('foo.blz'))
-    
+
 
 
 
