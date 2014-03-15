@@ -159,7 +159,7 @@ k5,v11,11,u11
 def toy_stream():
     sreader = csv.reader(io.StringIO(csvbuf))
     # The dynd dtype for the CSV file above
-    dt = ndt.type('{key: string; val1: string; val2: int32; val3: bytes}')
+    dt = ndt.type('{key: string, val1: string, val2: int32, val3: bytes}')
     # The name of the persisted table where the groupby will be stored
     return sreader, dt
 
@@ -173,9 +173,9 @@ def statsmodel_stream(stream):
         # For a description of this dataset, see:
         # http://statsmodels.sourceforge.net/devel/datasets/generated/randhie.html
         f.readline()   # read out the headers line
-        dtypes = ('{mdvis: string; lncoins: float32; idp: int32;'
-                  ' lpi:float32; fmde: float32; physlm: float32;'
-                  ' disea: float32; hlthg: int32; hlthf: int32;'
+        dtypes = ('{mdvis: string, lncoins: float32, idp: int32,'
+                  ' lpi:float32, fmde: float32, physlm: float32,'
+                  ' disea: float32, hlthg: int32, hlthf: int32,'
                   ' hlthp: int32}')
     else:
         raise NotImplementedError(
@@ -206,8 +206,12 @@ def contributions_stream(stream_file):
 
 if __name__ == "__main__":
 
+    if len(sys.argv) == 1:
+        print("Specify a dataset from: [toy, randhie, contributions]")
+        sys.exit()
+
     # Which dataset do we want to group?
-    which = sys.argv[1] if len(sys.argv) > 1 else "toy"
+    which = sys.argv[1]
 
     if which == "toy":
         # Get the CSV iterator and dtype of fields
@@ -222,6 +226,10 @@ if __name__ == "__main__":
         ssby = groupby(sreader, 'mdvis', 'lncoins', dtype=dt, path=None)
     elif which == "contributions":
         # Get the CSV iterator and dtype of fields
+        if len(sys.argv) < 3:
+            print("Please specify a contributions file downloaded from: "
+                  "http://data.influenceexplorer.com/bulk/")
+            sys.exit()
         stream_file = sys.argv[2]
         sreader, dt = contributions_stream(stream_file)
         # Do the actual sortby
@@ -232,7 +240,7 @@ if __name__ == "__main__":
             "parsing for `%s` dataset not implemented" % which)
 
     # Retrieve the data in the BLZ structure
-    #ssby = blz.open(path)  # open from disk, if ssby would be persistent
+    #ssby = blz.from_blz(path)  # open from disk, if ssby is persistent
     for key in ssby.names:
         values = ssby[key]
         if which in ('toy', 'randhie'):

@@ -2,7 +2,10 @@
 Tutorials
 =========
 
-This chapter goes through a series of tutorials that exercises different aspects of Blaze on a friendly and step-by-step way.  These are great if you are learning Blaze, or you want better insight on how to do specific things with it.
+This chapter goes through a series of tutorials that exercises
+different aspects of Blaze on a friendly and step-by-step way.  These
+are great if you are learning Blaze, or you want better insight on how
+to do specific things with it.
 
 Creating arrays
 ===============
@@ -28,7 +31,7 @@ Now, let's have a look at the representation of the `a` array:
 
   >>> a
   array([2, 3, 4],
-        dshape='3, int32')
+        dshape='3 * int32')
 
 You are seeing here our first difference with NumPy, and it is the
 `dshape` attribute. This is basically the fusion of `shape` and
@@ -42,7 +45,7 @@ inferred:
 .. doctest::
 
   >>> print(a.dshape)
-  3, int32
+  3 * int32
 
 In this example, the shape part is '3' while the type part is 'int32'.
 
@@ -54,13 +57,13 @@ Let's create an array of floats:
   >>> print(b)
   [ 1.2  3.5  5.1]
   >>> print(b.dshape)
-  3, float64
+  3 * float64
 
 And a bidimensional array:
 
 .. doctest::
 
-  >>> c = blaze.array([ [1, 2], [3, 4] ]) 
+  >>> c = blaze.array([ [1, 2], [3, 4] ])
   >>> print(c)
   [[1 2]
    [3 4]]
@@ -94,10 +97,10 @@ allows a broader selection of types on construction:
 
 .. doctest::
 
-  >>> e = blaze.array([ 1, 2, 3], dshape='3, float32') 
+  >>> e = blaze.array([ 1, 2, 3], dshape='3, float32')
   >>> e
   array([ 1.,  2.,  3.],
-        dshape='3, float32')
+        dshape='3 * float32')
 
 Note that the dimensions in the datashape when creating from a
 collection can be omitted. If that's the case, the dimensions will be
@@ -109,7 +112,7 @@ inferred. The following is thus equivalent:
   >>> f = blaze.array([ 1, 2, 3], dshape='float32')
   >>> f
   array([ 1.,  2.,  3.],
-        dshape='3, float32')
+        dshape='3 * float32')
 
 Blaze also supports arrays to be made persistent. This can be achieved
 by adding the storage keyword parameter to an array constructor:
@@ -119,19 +122,19 @@ by adding the storage keyword parameter to an array constructor:
   >>> g = blaze.array([ 1, 2, 3], dshape='float32', storage=blaze.Storage('myarray.blz'))
   >>> g
   array([ 1.,  2.,  3.],
-        dshape='3, float32')
+        dshape='3 * float32')
 
 You can use the persistent array as if it was an in-memory
 array. However, it is persistent and it will survive your python
 session. Later you can gain a reference to the array, even from a
-different python session by name, using the `open` function:
+different python session by name, using the `from_*` functions:
 
 .. doctest::
 
-  >>> f = blaze.open(blaze.Storage('myarray.blz'))
+  >>> f = blaze.from_blz(blaze.Storage('myarray.blz'))
   >>> f
   array([ 1.,  2.,  3.],
-        dshape='3, float32')
+        dshape='3 * float32')
 
 A persistent array is backed on non-volatile storage (currently, only
 a filesystem is supported, but the list of supported storages may
@@ -144,7 +147,7 @@ function, e.g.
 
 .. doctest::
 
-  >>> blaze.append(g, [4,5,6])
+  >>> blaze.append(g, [4, 5, 6])
   >>> g
   array([ 1.,  2.,  3.,  4.,  5.,  6.],
         dshape='6, float32')
@@ -173,14 +176,14 @@ instead of holding the result, knows how to build that result:
 
 .. doctest::
 
-  >>> a = blaze.array([ 1, 2, 3])
+  >>> a = blaze.array([1, 2, 3])
   >>> a.deferred
   False
 
 
 .. doctest::
 
-  >>> b = blaze.array([ 4, 5, 6])
+  >>> b = blaze.array([4, 5, 6])
   >>> b.deferred
   False
 
@@ -199,7 +202,7 @@ In order to obtain the results, just call the eval function with the
   >>> result = blaze.eval(r)
   >>> result
   array([5, 7, 9],
-        dshape='3, int32')
+        dshape='3 * int32')
 
 So, why this extra step? why the need to evaluate instead of just
 generating the result directly from a+b? The answer is a bit
@@ -224,8 +227,8 @@ execution. The same code can work for large arrays that are 'opened'
 instead of being created/read, allowing the easy evaluation of
 expression that is effectively out-of-core::
 
-  >>> ba1 = blaze.open(blaze.Storage('big_array1.blz'))
-  >>> ba2 = blaze.open(blaze.Storage('big_array2.blz'))
+  >>> ba1 = blaze.from_blz(blaze.Storage('big_array1.blz'))
+  >>> ba2 = blaze.from_blz(blaze.Storage('big_array2.blz'))
   >>> res = blaze.eval(ba1+ba2, storage=blaze.Storage('big_result.blz'))
 
 So it is possible to build complex array expressions that can be
