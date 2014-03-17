@@ -13,6 +13,7 @@ from .objects.array import Array
 from .objects.constructors import array, empty, ones, zeros
 from .compute.function import function, BlazeFunc
 from .compute.eval import eval, append
+from .compute.elwise_eval import elwise_eval
 from .compute.ops.ufuncs import *
 from .io.storage import (
     from_blz, from_csv, from_json, from_hdf5, drop, Storage)
