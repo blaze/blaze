@@ -155,14 +155,16 @@ def _persist_convert(persist):
 
 
 # ----------------------------------------------------------------------
-# The actual API specific for persistence
-def open(persist, **kwargs):
-    """Open an existing persistent array.
+# The actual API specific for persistence.
+# Only BLZ, HDF5, CSV and JSON formats are supported currently.
+
+def from_blz(persist, **kwargs):
+    """Open an existing persistent BLZ array.
 
     Parameters
     ----------
     persist : a Storage instance
-        The Storage instance specifies, among other things, URI of
+        The Storage instance specifies, among other things, path of
         where the array is stored.
     kwargs : a dictionary
         Put here different parameters depending on the format.
@@ -171,23 +173,71 @@ def open(persist, **kwargs):
     -------
     out: a concrete blaze array.
 
-    Notes
-    -----
-    Only BLZ, HDF5, CSV and JSON formats are supported currently.
+    """
+    persist = _persist_convert(persist)
+    d = blz.barray(rootdir=persist.path, **kwargs)
+    dd = BLZDataDescriptor(d)
+    return Array(dd)
+
+def from_csv(persist, **kwargs):
+    """Open an existing persistent CSV array.
+
+    Parameters
+    ----------
+    persist : a Storage instance
+        The Storage instance specifies, among other things, path of
+        where the array is stored.
+    kwargs : a dictionary
+        Put here different parameters depending on the format.
+
+    Returns
+    -------
+    out: a concrete blaze array.
 
     """
     persist = _persist_convert(persist)
-    if persist.format == 'blz':
-        d = blz.barray(rootdir=persist.path, **kwargs)
-        dd = BLZDataDescriptor(d)
-    elif persist.format == 'csv':
-        dd = CSVDataDescriptor(persist.path, **kwargs)
-    elif persist.format == 'json':
-        dd = JSONDataDescriptor(persist.path, **kwargs)
-    elif persist.format == 'hdf5':
-        dd = HDF5DataDescriptor(persist.path, **kwargs)
+    dd = CSVDataDescriptor(persist.path, **kwargs)
     return Array(dd)
 
+def from_json(persist, **kwargs):
+    """Open an existing persistent JSON array.
+
+    Parameters
+    ----------
+    persist : a Storage instance
+        The Storage instance specifies, among other things, path of
+        where the array is stored.
+    kwargs : a dictionary
+        Put here different parameters depending on the format.
+
+    Returns
+    -------
+    out: a concrete blaze array.
+
+    """
+    persist = _persist_convert(persist)
+    dd = JSONDataDescriptor(persist.path, **kwargs)
+    return Array(dd)
+
+def from_hdf5(persist, **kwargs):
+    """Open an existing persistent HDF5 array.
+
+    Parameters
+    ----------
+    persist : a Storage instance
+        The Storage instance specifies, among other things, path of
+        where the array is stored.
+    kwargs : a dictionary
+        Put here different parameters depending on the format.
+
+    Returns
+    -------
+    out: a concrete blaze array.
+
+    """
+    persist = _persist_convert(persist)
+    dd = HDF5DataDescriptor(persist.path, **kwargs)
+    return Array(dd)
 
 def drop(persist):
     """Remove a persistent storage."""

@@ -38,7 +38,7 @@ with tb.open_file(fname, "w") as f:
 print_section('opening and handling datasets in hdf5 files')
 # Open an homogeneous dataset there
 store = blaze.Storage(fname, format='hdf5')
-a = blaze.open(store, datapath="/a1")
+a = blaze.from_hdf5(store, datapath="/a1")
 # Print it
 print("/a1 contents:", a)
 # Print the datashape
@@ -46,7 +46,7 @@ print("datashape for /a1:", a.dshape)
 
 # Open another homogeneous dataset there
 store = blaze.Storage(fname, format='hdf5')
-a = blaze.open(store, datapath="/g/a2")
+a = blaze.from_hdf5(store, datapath="/g/a2")
 # Print it
 print("/g/a2 contents:", a)
 # Print the datashape
@@ -54,7 +54,7 @@ print("datashape for /g/a2:", a.dshape)
 
 # Now, get an heterogeneous dataset
 store = blaze.Storage(fname, format='hdf5')
-t = blaze.open(store, datapath="/t1")
+t = blaze.from_hdf5(store, datapath="/t1")
 # Print it
 print("/t1 contents:", t)
 # Print the datashape
