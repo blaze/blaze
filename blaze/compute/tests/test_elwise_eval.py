@@ -29,14 +29,19 @@ class evalTest(unittest.TestCase):
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
     def test02(self):
+        """Testing eval() with only numpy arrays"""
+        a, b = np.arange(self.N), np.arange(1, self.N+1)
+        cr = blaze._elwise_eval("a * b")
+        nr = a * b
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test03(self):
         """Testing eval() with only dynd arrays"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
         c = nd.array(a)
         d = nd.array(b)
-        cr = blaze._elwise_eval("a * b")
+        cr = blaze._elwise_eval("c * d")
         nr = a * b
-        #print("blaze.elwise_eval ->", cr)
-        #print("numpy   ->", nr)
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
 
