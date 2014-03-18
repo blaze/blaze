@@ -96,11 +96,12 @@ There are two forms of overloading at play:
     - function overloading
     - kernel overloading
 
-The former overloads a logical blaze function, for instance for typing
-purposes. The second form allows kernel (implementation) overloading,
-where kernels are associated logically with blaze functions for a
-certain implementation kind. Implementation kinds include flypy, SQL,
-ckernel, and so forth.
+The former overloads a logical blaze function, for
+instance for typing purposes. The second form allows
+kernel (implementation) overloading, where kernels
+are associated logically with blaze functions for a
+certain implementation kind. Implementation kinds
+include ckernel, SQL, and so forth.
 
 
 Blaze Expression Lowering to Blaze AIR
