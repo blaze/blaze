@@ -62,6 +62,10 @@ class evalTest(unittest.TestCase):
         nr = a * b + d + 2
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
+# Check for arrays that fit in memory, but are larger than a chunk
+class evalLargeTest(evalTest):
+    N = 10000
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,7 +9,8 @@ soon as the canonical approach can do these sort of things efficiently.
 
 import sys, math
 from dynd import nd, ndt
-from .. import array
+from .. import array, empty
+import datashape
 
 if sys.version_info >= (3, 0):
     xrange = range
@@ -242,6 +243,9 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
                 vars_[name] = nd.empty(bsize, var.dshape.measure.name)
 
     for i in xrange(0, vlen, bsize):
+        # Correction for the block size
+        if i+bsize > vlen:
+            bsize = vlen - i
         # Get buffers for vars
         for name in dict_viewkeys(vars):
             var = vars[name]
@@ -271,11 +275,15 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
                 dim_reduction = True
                 result = res_block
                 continue
-            result = array(res_block, **kwargs)
+            out_shape = list(res_block.shape)
+            out_shape[0] = vlen
+            dshape = datashape.from_numpy(out_shape, res_block.dtype)
+            result = empty(dshape, **kwargs)
+            result[:bsize] = res_block
         else:
             if scalar or dim_reduction:
                 result += res_block
-            result.append(res_block)
+            result[i:i+bsize] = res_block
 
     if scalar:
         return result[()]
