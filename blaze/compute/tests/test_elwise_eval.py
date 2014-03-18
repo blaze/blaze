@@ -20,7 +20,7 @@ class evalTest(unittest.TestCase):
         self.assert_(cr == 6, "eval does not work correctly")
 
     def test01(self):
-        """Testing eval() with only blaze arrays"""
+        """Testing with only blaze arrays"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
         c = blaze.array(a)
         d = blaze.array(b)
@@ -29,19 +29,37 @@ class evalTest(unittest.TestCase):
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
     def test02(self):
-        """Testing eval() with only numpy arrays"""
+        """Testing with only numpy arrays"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
         cr = blaze._elwise_eval("a * b")
         nr = a * b
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
     def test03(self):
-        """Testing eval() with only dynd arrays"""
+        """Testing with only dynd arrays"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
         c = nd.array(a)
         d = nd.array(b)
         cr = blaze._elwise_eval("c * d")
         nr = a * b
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test04(self):
+        """Testing with a mix of blaze, numpy and dynd arrays"""
+        a, b = np.arange(self.N), np.arange(1, self.N+1)
+        b = blaze.array(b)
+        d = nd.array(a)
+        cr = blaze._elwise_eval("a * b + d")
+        nr = a * b + d
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test05(self):
+        """Testing with a mix of scalars and blaze, numpy and dynd arrays"""
+        a, b = np.arange(self.N), np.arange(1, self.N+1)
+        b = blaze.array(b)
+        d = nd.array(a)
+        cr = blaze._elwise_eval("a * b + d + 2")
+        nr = a * b + d + 2
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
 
