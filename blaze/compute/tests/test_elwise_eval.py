@@ -16,7 +16,7 @@ class evalTest(unittest.TestCase):
     def test00(self):
         """Testing elwise_eval() with only scalars and constants"""
         a = 3
-        cr = blaze.elwise_eval("2 * a")
+        cr = blaze._elwise_eval("2 * a")
         self.assert_(cr == 6, "eval does not work correctly")
 
     def test01(self):
@@ -24,7 +24,7 @@ class evalTest(unittest.TestCase):
         a, b = np.arange(self.N), np.arange(1, self.N+1)
         c = blaze.array(a)
         d = blaze.array(b)
-        cr = blaze.elwise_eval("c * d")
+        cr = blaze._elwise_eval("c * d")
         nr = a * b
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
@@ -33,7 +33,7 @@ class evalTest(unittest.TestCase):
         a, b = np.arange(self.N), np.arange(1, self.N+1)
         c = nd.array(a)
         d = nd.array(b)
-        cr = blaze.elwise_eval("a * b")
+        cr = blaze._elwise_eval("a * b")
         nr = a * b
         #print("blaze.elwise_eval ->", cr)
         #print("numpy   ->", nr)

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-"""Implements blaze.elwise_eval function.
+"""Implements blaze._elwise_eval function.
 
 This function is meant to do OOC operations following a different
 strategy than the canonical Blaze approach, and should be phased out as
@@ -81,7 +81,7 @@ not, then the default is 'python'.
 
 """
 
-def elwise_eval(expression, vm=None, user_dict={}, **kwargs):
+def _elwise_eval(expression, vm=None, user_dict={}, **kwargs):
     """
     eval(expression, vm=None, user_dict=None, **kwargs)
 
