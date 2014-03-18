@@ -8,7 +8,7 @@ soon as the canonical approach can do these sort of things efficiently.
 """
 
 import sys, math
-import numpy as np
+from dynd import nd, ndt
 from .. import array
 
 if sys.version_info >= (3, 0):
@@ -128,8 +128,12 @@ def _elwise_eval(expression, vm=None, user_dict={}, **kwargs):
         # Scalars
         if not hasattr(var, "__len__"):
             continue
-        if hasattr(var, "__len__") and not hasattr(var, "dshape"):
-            raise ValueError("only blaze.array sequences supported")
+        if not hasattr(var, "dshape"):
+            try:
+                var = array(var)
+            except:
+                raise ValueError(
+                    "sequence cannot be converted into a blaze array")
         # From now on, we only have Blaze arrays
         typesize += var.dshape.measure.itemsize
         # Check for length
@@ -228,6 +232,9 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
     for name in dict_viewkeys(vars):
         var = vars[name]
         if hasattr(var, "__len__"):
+            if not hasattr(var, "dshape"):
+                # Convert sequences into regular Blaze arrays
+                var = array(var)
             ndims = len(var.dshape.shape)
             if ndims > maxndims:
                 maxndims = ndims
