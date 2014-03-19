@@ -8,7 +8,6 @@ soon as the canonical approach can do these sort of things efficiently.
 """
 
 import sys, math
-import numpy as np  # only necessary because of bug #183
 from dynd import nd, ndt
 from .. import array, empty
 from .eval import eval as blaze_eval, append
@@ -268,9 +267,11 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
         # Perform the evaluation for this block
         if vm == "python":
             res_block = eval(expression, vars_)
+            dynd_block = blaze_eval(res_block)._data.dynd_arr()
         else:
             res_block = numexpr.evaluate(expression, local_dict=vars_)
-            # numexpr returns a numpy array, and we need a blaze one
+            # numexpr returns a numpy array, and we need dynd/blaze ones
+            dynd_block = nd.array(res_block)
             res_block = array(res_block)
 
         if 'storage' in kwargs and kwargs['storage'] is not None:
@@ -297,23 +298,23 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
                 out_shape[0] = 0
                 dshape = datashape.from_numpy(out_shape, block_dtype)
                 result = empty(dshape, **kwargs)
-                append(result, blaze_eval(res_block)._data.dynd_arr())
+                append(result, dynd_block)
             else:
                 out_shape[0] = vlen
                 dshape = datashape.from_numpy(out_shape, block_dtype)
                 result = empty(dshape, **kwargs)
                 # The next is a workaround for bug #183
                 #result[:bsize] = res_block
-                result[:bsize] = np.array(res_block)
+                result[:bsize] = dynd_block
         else:
             if scalar or dim_reduction:
                 result += res_block
             if res_disk:
-                append(result, blaze_eval(res_block)._data.dynd_arr())
+                append(result, dynd_block)
             else:
                 # The next is a workaround for bug #183
                 #result[i:i+bsize] = res_block
-                result[i:i+bsize] = np.array(res_block)
+                result[i:i+bsize] = dynd_block
 
     if scalar:
         return result[()]
