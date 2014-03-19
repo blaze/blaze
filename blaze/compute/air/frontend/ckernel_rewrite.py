@@ -4,8 +4,9 @@ Rewrite ckernels to executable pykernels.
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import Op
 from dynd import nd, ndt
+
+from ..ir import Op
 
 
 def run(func, env):

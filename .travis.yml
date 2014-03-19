@@ -24,7 +24,6 @@ install:
   - export PATH=$HOME/py/bin:$PATH
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
-  - pip install git+http://github.com/pykit/pykit
   # Install Blaze
   - python setup.py install
 

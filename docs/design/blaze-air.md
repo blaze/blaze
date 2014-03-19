@@ -69,18 +69,17 @@ such as broadcasting, which complicates our story.
 
 We first describe our IR in more detail.
 
-pykit
------
-We use pykit to encode our intermediate representation. All operations are
-instances of `pykit.ir.Operation`. This is a class that tracks:
+Operations
+----------
+All operations are instances of `blaze.compute.air.ir.Operation`. This is a class
+that tracks:
 
     * a result register (`result`)
     * a type for the result (`type`)
     * an arbitrary string opcode (`opcode`)
     * a (nested) list of arguments (`args`)
 
-Types may be anything, in blaze we use datashape types. The only part of pykit
-that is likely to be of interest for the purposes of AIR is `pykit.ir`.
+Types may be anything, in blaze we use datashape types.
 
 All these operations are sequenced into basic blocks. We only ever use a single
 basic block, since we do not support control flow at this level. These basic

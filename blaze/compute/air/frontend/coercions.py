@@ -4,7 +4,8 @@ Some Blaze AIR transformations and simplifications.
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import Builder, Op
+from ..ir import Op
+from ..builder import Builder
 
 #------------------------------------------------------------------------
 # Coercions -> Conversions
