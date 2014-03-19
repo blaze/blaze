@@ -7,11 +7,11 @@ from __future__ import absolute_import, division, print_function
 from dynd import _lowlevel
 import datashape
 
-from .. import function
+from ..function import ElementwiseBlazeFunc
 
 
 def _make_sig(kern):
-    dslist = [datashape.dshape("A... * " + str(x)) for x in kern.types]
+    dslist = [datashape.dshape(str(x)) for x in kern.types]
     return datashape.Function(*(dslist[1:] + [dslist[0]]))
 
 
@@ -35,10 +35,9 @@ def blazefunc_from_dynd_property(tplist, propname, modname, name):
                 for tp in tplist]
     siglist = [_make_sig(kern) for kern in kernlist]
     # Create the empty blaze function to start
-    blaze_func = function.BlazeFunc('blaze', name)
-    blaze_func.add_metadata({'elementwise': True})
-    # Add dispatching to the kernel for each signature
-    ckdispatcher = blaze_func.get_dispatcher('ckernel')
+    bf = ElementwiseBlazeFunc('blaze', name)
+    # TODO: specify elementwise
+    #bf.add_metadata({'elementwise': True})
     for (sig, kern) in zip(siglist, kernlist):
-        datashape.overloading.overload(sig, dispatcher=ckdispatcher)(kern)
-    return blaze_func
+        bf.add_overload(sig, kern)
+    return bf
