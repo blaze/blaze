@@ -42,8 +42,12 @@ class BlazeFunc(object):
         For each plugin that has registered with this blaze function,
         there is an overloader and corresponding data object describing
         execution using that plugin.
+    name : string
+        The name of the function (e.g. "sin").
+    module : string
+        The name of the module the function is in (e.g. "blaze")
     fullname : string
-        The fully qualified name of the function.
+        The fully qualified name of the function (e.g. "blaze.sin").
 
     """
 
