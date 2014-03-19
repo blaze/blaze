@@ -53,7 +53,6 @@ Dependencies
 * dynd-python_ >= 0.6.1
 * datashape_ >= 0.1.1
 * blz_ >= 0.6.1
-* pykit_ >= 0.2.0
 * nose_ (optional, for running tests)
 * pytables_ >= 3.0.0 (optional, for hdf5 files)
 

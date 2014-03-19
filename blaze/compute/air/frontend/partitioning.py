@@ -6,9 +6,9 @@ rules which backend to use for which operation.
 from __future__ import absolute_import, division, print_function
 from collections import defaultdict
 
-from pykit import ir
 import datashape
 
+from ..ir import FuncArg
 from ...strategy import CKERNEL
 from ....io.sql import SQL, SQLDataDescriptor
 
@@ -42,7 +42,7 @@ def use_sql(op, strategies, env):
     """
     conns = env.setdefault('sql.conns', {})
 
-    if isinstance(op, ir.FuncArg):
+    if isinstance(op, FuncArg):
         # Function argument, this is a valid SQL query if the runtime input
         # described an SQL data source
         runtime_args = env['runtime.args']
@@ -69,7 +69,7 @@ def use_local(op, strategies, env):
     """
     Determine whether `op` can be handled by a 'local' backend.
     """
-    if isinstance(op, ir.FuncArg):
+    if isinstance(op, FuncArg):
         # Function argument, this is an OOC operation if he runtime input
         # is persistent
         runtime_args = env['runtime.args']
@@ -81,7 +81,7 @@ def use_local(op, strategies, env):
 
     return all(strategies[arg] in local_strategies
                    for arg in op.args[1:]
-                        if not isinstance(arg, ir.FuncArg))
+                        if not isinstance(arg, FuncArg))
 
 
 local_strategies = (CKERNEL,)

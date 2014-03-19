@@ -5,7 +5,7 @@ Rewrite SQL operations in AIR. Generate SQL queries and execute them at roots.
 from __future__ import absolute_import, division, print_function
 
 import datashape as ds
-from pykit.ir import Op
+from blaze.compute.air.ir import Op
 
 from . import db
 

@@ -4,14 +4,15 @@ SciDB query generation and execution from Blaze AIR.
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import interp
 
 import blaze
 from blaze.io.scidb import AFL
+from blaze.compute.air import interp
 
 from .error import InterfaceError
 from .query import execute_query, temp_name, Query
 from .datadescriptor import SciDBDataDescriptor
+
 
 #------------------------------------------------------------------------
 # Interpreter

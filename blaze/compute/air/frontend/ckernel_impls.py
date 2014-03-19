@@ -4,8 +4,8 @@ Convert 'kernel' Op to 'ckernel'.
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import transform, Op
-
+from ..ir import Op
+from ..traversal import transform
 
 def run(func, env):
     strategies = env['strategies']
