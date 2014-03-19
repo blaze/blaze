@@ -42,28 +42,29 @@ class Defaults(object):
         self.choices = {}
 
         # Choices setup
-        self.choices['eval_vm'] = ("numexpr", "python")
+        self.choices['vm'] = ("numexpr", "python")
 
     def check_choices(self, name, value):
         if value not in self.choices[name]:
-            raiseValue, "value must be either 'numexpr' or 'python'"
+            raise ValueError(
+                "value must be in: %s" % (self.choices[name],))
 
     #
     # Properties start here...
     #
 
     @property
-    def eval_vm(self):
-        return self.__eval_vm
+    def vm(self):
+        return self.__vm
 
-    @eval_vm.setter
-    def eval_vm(self, value):
-        self.check_choices('eval_vm', value)
+    @vm.setter
+    def vm(self, value):
+        self.check_choices('vm', value)
         if value == "numexpr" and not numexpr_here:
             raise ValueError(
                    "cannot use `numexpr` virtual machine "
                    "(minimum required version is probably not installed)")
-        self.__eval_vm = value
+        self.__vm = value
 
 
 defaults = Defaults()
@@ -72,9 +73,9 @@ defaults = Defaults()
 # Default values start here...
 
 if numexpr_here:
-    defaults.eval_vm = "numexpr"
+    defaults.vm = "numexpr"
 else:
-    defaults.eval_vm = "python"
+    defaults.vm = "python"
 """
 The virtual machine to be used in computations (via `eval`).  It can
 be 'numexpr' or 'python'.  Default is 'numexpr', if installed.  If
@@ -114,9 +115,9 @@ def _elwise_eval(expression, vm=None, user_dict={}, **kwargs):
     """
 
     if vm is None:
-        vm = defaults.eval_vm
-    if vm not in ("numexpr", "python"):
-        raiseValue, "`vm` must be either 'numexpr' or 'python'"
+        vm = defaults.vm
+    else:
+        defaults.vm = vm
 
     # Get variables and column names participating in expression
     depth = kwargs.pop('depth', 2)
@@ -228,19 +229,24 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
         bsize = 1
 
     vars_ = {}
-    # Get temporaries for vars
+    # Convert operands into Blaze arrays and get temporaries for vars
     maxndims = 0
     for name in dict_viewkeys(vars):
         var = vars[name]
+        if not hasattr(var, "dshape"):
+            # Convert sequences into regular Blaze arrays
+            vars[name] = var = array(var)
         if hasattr(var, "__len__"):
-            if not hasattr(var, "dshape"):
-                # Convert sequences into regular Blaze arrays
-                var = array(var)
             ndims = len(var.dshape.shape)
             if ndims > maxndims:
                 maxndims = ndims
             if len(var) > bsize:
-                vars_[name] = nd.empty(bsize, var.dshape.measure.name)
+                # Variable is too large; get a container for a chunk
+                res_shape, res_dtype = datashape.to_numpy(var.dshape)
+                res_shape = list(res_shape)
+                res_shape[0] = bsize
+                dshape = datashape.from_numpy(res_shape, res_dtype)
+                vars_[name] = empty(dshape, **kwargs)
 
     for i in xrange(0, vlen, bsize):
         # Correction for the block size
@@ -262,28 +268,37 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
             res_block = eval(expression, vars_)
         else:
             res_block = numexpr.evaluate(expression, local_dict=vars_)
+            # numexpr returns a numpy array, and we need a blaze one
+            res_block = array(res_block)
 
         if i == 0:
-            # Detection of reduction operations
             scalar = False
             dim_reduction = False
-            if len(res_block.shape) == 0:
+            # Detection of reduction operations
+            if (not hasattr(res_block, "__len__") or
+                len(res_block) == 0):
                 scalar = True
                 result = res_block
                 continue
-            elif len(res_block.shape) < maxndims:
+            elif len(res_block.dshape.shape) < maxndims:
                 dim_reduction = True
                 result = res_block
                 continue
-            out_shape = list(res_block.shape)
+            block_shape, block_dtype = datashape.to_numpy(res_block.dshape)
+            out_shape = list(block_shape)
             out_shape[0] = vlen
-            dshape = datashape.from_numpy(out_shape, res_block.dtype)
+            dshape = datashape.from_numpy(out_shape, block_dtype)
             result = empty(dshape, **kwargs)
-            result[:bsize] = res_block
+            # The next is a workaround for bug #183
+            #result[:bsize] = res_block
+            import numpy as np
+            result[:bsize] = np.array(res_block)
         else:
             if scalar or dim_reduction:
                 result += res_block
-            result[i:i+bsize] = res_block
+            # The next is a workaround for bug #183
+            #result[i:i+bsize] = res_block
+            result[i:i+bsize] = np.array(res_block)
 
     if scalar:
         return result[()]
