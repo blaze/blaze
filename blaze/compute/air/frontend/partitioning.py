@@ -1,6 +1,6 @@
 """
-Backend annotation and partitioning. This determines according to a set of
-rules which backend to use for which operation.
+Plugin annotation and partitioning. This determines according to a set of
+rules which plugin to use for which operation.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -17,7 +17,6 @@ from ....io.sql import SQL, SQLDataDescriptor
 
 preferences = [
     SQL,  # TODO: Allow easier extension of new backends
-    CKERNEL,
 ]
 
 #------------------------------------------------------------------------
@@ -65,30 +64,8 @@ def use_sql(op, strategies, env):
         return False
 
 
-def use_local(op, strategies, env):
-    """
-    Determine whether `op` can be handled by a 'local' backend.
-    """
-    if isinstance(op, FuncArg):
-        # Function argument, this is an OOC operation if he runtime input
-        # is persistent
-        runtime_args = env['runtime.args']
-        array = runtime_args[op]
-        data_desc = array._data
-        return True # not data_desc.capabilities.remote
-        #return not (data_desc.capabilities.persistent or
-        #            data_desc.capabilities.remote)
-
-    return all(strategies[arg] in local_strategies
-                   for arg in op.args[1:]
-                        if not isinstance(arg, FuncArg))
-
-
-local_strategies = (CKERNEL,)
-
-determine_strategy = {
+determine_plugin = {
     SQL:        use_sql,
-    CKERNEL:    use_local,
 }
 
 #------------------------------------------------------------------------
@@ -102,12 +79,12 @@ def annotate_all_kernels(func, env):
 
     Populate environment with 'kernel.overloads':
 
-        { (Op, strategy) : Overload }
+        { (Op, pluginname) : Overload }
     """
-    # { (Op, strategy) : Overload }
+    # { (Op, pluginname) : Overload }
     impls = env['kernel.overloads'] = {}
 
-    # { op: [strategy] }
+    # { op: [plugin] }
     unmatched = env['unmached_impls'] = defaultdict(list)
 
     for op in func.ops:
@@ -120,48 +97,37 @@ def _find_impls(op, unmatched, impls):
     overload = op.metadata['overload']
 
     found_impl = False
-    for strategy in enumerate_strategies(function):
-        py_func, signature = overload_for_strategy(function, overload, strategy)
+    for pluginname in function.available_plugins:
+        py_func, signature = overload_for_plugin(function, overload, pluginname)
         if py_func is not None:
-            impls[op, strategy] = py_func, signature
+            impls[op, pluginname] = py_func, signature
             found_impl = True
         else:
-            unmatched[op].append(strategy)
-
-    if not found_impl:
-        raise TypeError("No implementation found for %s" % (function,))
+            unmatched[op].append(pluginname)
 
 
-def enumerate_strategies(function):
-    """Return the available strategies for the blaze function for this op"""
-    return function.available_strategies
-
-
-def overload_for_strategy(function, overload, strategy):
-    """Find an implementation overload for the given strategy"""
+def overload_for_plugin(function, overload, pluginname):
+    """Find an implementation overload for the given plugin"""
     expected_signature = overload.resolved_sig
-    argtypes = datashape.coretypes.Tuple(expected_signature.argtypes)
+    argstype = datashape.coretypes.Tuple(expected_signature.argtypes)
 
     try:
-        overload = function.best_match(strategy, argtypes)
+        overloader, datalist = function.plugins[pluginname]
+        idx, match = overloader.resolve_overload(argstype)
     except datashape.OverloadError:
         return None, None
-    got_signature = overload.resolved_sig
 
-    # Assert agreeable types for now
-    # TODO: insert conversions if implementation disagrees
-
-    if got_signature != expected_signature and False:
+    if match != expected_signature and False:
         ckdispatcher = function.get_dispatcher('ckernel')
         raise TypeError(
             "Signature of implementation (%s) does not align with "
             "signature from blaze function (%s) from argtypes [%s] "
             "for function %s with signature %s" %
-                (got_signature, expected_signature,
-                 ", ".join(map(str, argtypes)),
+                (match, expected_signature,
+                 ", ".join(map(str, expected_signature.argtypes)),
                  function, overload.sig))
 
-    return overload.func, got_signature
+    return datalist[idx], match
 
 #------------------------------------------------------------------------
 # Partitioning
@@ -169,7 +135,7 @@ def overload_for_strategy(function, overload, strategy):
 
 def partition(func, env):
     """
-    Determine the execution strategy for each operation.
+    Determine the execution plugin for each operation.
     """
     strategies = env['strategies'] = {}
     impls = env['kernel.overloads']
@@ -183,32 +149,16 @@ def partition(func, env):
             strategies[op] = determine_preference(op, env, prefs)
 
 
-def argsjoin(args):
-    if len(args) == 1:
-        return str(args[0])
-    args = [str(arg) for arg in args]
-    return ", ".join(args[:-1]) + " and " + args[-1]
-
 def determine_preference(op, env, preferences):
-    """Return the first valid strategy according to a list of preferences"""
+    """Return the first valid plugin according to a list of preferences"""
     strategies = env['strategies']
     for preference in preferences:
-        valid_strategy = determine_strategy[preference]
-        if valid_strategy(op, strategies, env):
+        valid_plugin = determine_plugin[preference]
+        if valid_plugin(op, strategies, env):
             return preference
 
-    # Construct error message that gives some insight as to where the problem
-    # might be
-    msg = ("No valid strategy could be determined for '%s' from matched "
-           "implementations for strategies %s" % (
-                op.args[0].const, argsjoin(preferences)))
-
-    unmatched = env['unmached_impls']
-    if unmatched[op]:
-        msg += (" (implementations for strategies %s "
-                "did not match input types)" % argsjoin(unmatched[op]))
-
-    raise ValueError(msg)
+    # If no alternative plugin was found, use the default ckernel
+    return CKERNEL
 
 #------------------------------------------------------------------------
 # Backend boundaries / Fusion boundaries

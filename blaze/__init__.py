@@ -11,7 +11,7 @@ from . import catalog
 from . import compute, io
 from .objects.array import Array
 from .objects.constructors import array, empty, ones, zeros
-from .compute.function import function, BlazeFunc
+from .compute.function import  BlazeFunc
 from .compute.eval import eval, append
 from .compute.ops.ufuncs import *
 from .io.storage import (
