@@ -19,11 +19,28 @@ install:
   - sudo pip install conda
   # Install dependencies
   - sudo conda init
-  - conda create -p $HOME/py -c https://conda.binstar.org/mwiebe --yes nose cython numpy dynd-python pycparser pyparsing pyyaml flask pytables cffi pip "python=$TRAVIS_PYTHON_VERSION"
+  - conda create -p $HOME/py --yes nose cython numpy pycparser pyparsing pyyaml flask pytables cffi pip "python=$TRAVIS_PYTHON_VERSION"
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install -p $HOME/py --yes unittest2; fi
   - export PATH=$HOME/py/bin:$PATH
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
+  # Install dynd
+  - git clone https://github.com/ContinuumIO/libdynd.git
+  - mkdir libdynd/build
+  - pushd libdynd/build
+  - cmake -DDYND_BUILD_TESTS=False ..
+  - make
+  - chmod +x libdynd-config
+  - export PATH=$PATH:$PWD
+  - popd
+  - git clone https://github.com/ContinuumIO/dynd-python.git
+  - mkdir dynd-python/build
+  - pushd dynd-python/build
+  - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SEPARATE_LIBDYND=ON -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} .
+  - make
+  - make install
+  - export PYTHONPATH=$PYTHONPATH:$PWD
+  - popd
   # Install Blaze
   - python setup.py install
 
