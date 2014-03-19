@@ -6,6 +6,5 @@
 *.swo
 *.pyd
 build
-blaze/io/blz/blz_ext.c
-blaze/datashape/dyacc.py
-blaze/datashape/dlex.py
+
+
