@@ -236,18 +236,18 @@ Starting with two tables:
 **STOCKS.TBL**
 
 ===================  ===================  ======  ======
-max_date             min_date	          sec_id  ticker
+max_date             min_date             sec_id  ticker
 -------------------  -------------------  ------  ------
 2013-08-09 00:00:00  1999-11-19 00:00:00  0       A
-2013-08-09 00:00:00	 1998-01-05 00:00:00  1       AA
-2013-08-09 00:00:00	 1998-01-05 00:00:00  2       AAPL
+2013-08-09 00:00:00  1998-01-05 00:00:00  1       AA
+2013-08-09 00:00:00  1998-01-05 00:00:00  2       AAPL
 ...                  ...                  .       .
 ===================  ===================  ======  ======
 
 **STOCKS_HIST.TBL**
 
 =================== ======= ======= ======= ======= ============ =======
-date	            o	    h	    l	    c	    v	         sec_id
+date                o       h       l       c       v            sec_id
 ------------------- ------- ------- ------- ------- ------------ -------
 1999-11-19 00:00:00 39.8329 39.8885 36.9293 37.6251 11390201.186 0
 1999-11-22 00:00:00 38.3208 40.0091 37.1613 39.9442 4654716.475  0
@@ -278,6 +278,10 @@ Blaze should caching should store the expression graph of the query and the data
                    stock_hist.date.between_('2001-01-01','2004-01-01')
                    )
                )
+    print(sql_sub_arr)
+    data = nd.as_numpy(sql_sub_arr, allow_copy=True)
+    #or more commonly
+    df = pandas.DataFrame.from_record(data)
 
 The caching/fetching mechanism should be smart enough to fetch only the diff on the following queries::
 
@@ -285,6 +289,9 @@ The caching/fetching mechanism should be smart enough to fetch only the diff on 
                    stock_hist.date.between_('2002-01-01','2005-01-01')
                    )
                )
+    data = nd.as_numpy(sql_sub_arr, allow_copy=True)
+    #or more commonly
+    df = pandas.DataFrame.from_record(data)
 
 Notice the **where** clause now contains entities: A,B,E,F and the date range has changed to extend beyond
 dates which are in the current cache.  Blaze should should fetch data between 2002-01-01 and 2005-01-01 for
