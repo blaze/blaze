@@ -8,8 +8,10 @@ soon as the canonical approach can do these sort of things efficiently.
 """
 
 import sys, math
+import numpy as np  # only necessary because of bug #183
 from dynd import nd, ndt
 from .. import array, empty
+from .eval import eval as blaze_eval, append
 import datashape
 
 if sys.version_info >= (3, 0):
@@ -246,7 +248,7 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
                 res_shape = list(res_shape)
                 res_shape[0] = bsize
                 dshape = datashape.from_numpy(res_shape, res_dtype)
-                vars_[name] = empty(dshape, **kwargs)
+                vars_[name] = empty(dshape)
 
     for i in xrange(0, vlen, bsize):
         # Correction for the block size
@@ -271,6 +273,11 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
             # numexpr returns a numpy array, and we need a blaze one
             res_block = array(res_block)
 
+        if 'storage' in kwargs and kwargs['storage'] is not None:
+            res_disk = True
+        else:
+            res_disk = False
+
         if i == 0:
             scalar = False
             dim_reduction = False
@@ -286,19 +293,27 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
                 continue
             block_shape, block_dtype = datashape.to_numpy(res_block.dshape)
             out_shape = list(block_shape)
-            out_shape[0] = vlen
-            dshape = datashape.from_numpy(out_shape, block_dtype)
-            result = empty(dshape, **kwargs)
-            # The next is a workaround for bug #183
-            #result[:bsize] = res_block
-            import numpy as np
-            result[:bsize] = np.array(res_block)
+            if res_disk:
+                out_shape[0] = 0
+                dshape = datashape.from_numpy(out_shape, block_dtype)
+                result = empty(dshape, **kwargs)
+                append(result, blaze_eval(res_block)._data.dynd_arr())
+            else:
+                out_shape[0] = vlen
+                dshape = datashape.from_numpy(out_shape, block_dtype)
+                result = empty(dshape, **kwargs)
+                # The next is a workaround for bug #183
+                #result[:bsize] = res_block
+                result[:bsize] = np.array(res_block)
         else:
             if scalar or dim_reduction:
                 result += res_block
-            # The next is a workaround for bug #183
-            #result[i:i+bsize] = res_block
-            result[i:i+bsize] = np.array(res_block)
+            if res_disk:
+                append(result, blaze_eval(res_block)._data.dynd_arr())
+            else:
+                # The next is a workaround for bug #183
+                #result[i:i+bsize] = res_block
+                result[i:i+bsize] = np.array(res_block)
 
     if scalar:
         return result[()]

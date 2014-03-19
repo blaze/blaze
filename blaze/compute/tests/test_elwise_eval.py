@@ -7,6 +7,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 
 from dynd import nd, ndt
 import blaze
+from common import MayBeDiskTest
 
 
 class evalTest(unittest.TestCase):
@@ -73,6 +74,28 @@ class evalPythonTest(evalTest):
 
 # Check for arrays that fit in memory, but are larger than a chunk
 class evalPythonLargeTest(evalTest):
+    N = 10000
+    vm = "python"
+
+
+# Check for arrays that are stored on-disk
+class storageTest(MayBeDiskTest):
+    N = 1000
+    vm = "python"
+    disk = True
+
+    def test00(self):
+        """Testing elwise_eval() with only scalars and constants"""
+        a, b = np.arange(self.N), np.arange(1, self.N+1)
+        c = blaze.array(a, storage=self.store1)
+        d = blaze.array(b, storage=self.store2)
+        cr = blaze._elwise_eval("c * d", vm=self.vm, storage=self.store3)
+        nr = a * b
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+
+# Check for arrays stored on-disk but are larger than a chunk
+class storageLargeTest(storageTest):
     N = 10000
     vm = "python"
 
