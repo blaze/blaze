@@ -2,79 +2,76 @@
 
 from __future__ import absolute_import, division, print_function
 
-from ...compute.function import function, kernel
+from ...compute.function import BlazeFunc
 from ...compute.ops import ufuncs
-from .kernel import sql_kernel, SQL
+from .kernel import SQL
 from .syntax import Call, Expr, QOrderBy, QWhere, And, Or, Not
 
 
 def sqlfunction(signature):
     def decorator(f):
-        blaze_func = function(signature)(f)
-        kernel(blaze_func, SQL, f, signature)
-        return blaze_func
+        bf = BlazeFunc('blaze', f.__name__)
+        # FIXME: Adding a dummy CKERNEL overload to make things work for now
+        bf.add_overload(signature, None)
+        bf.add_plugin_overload(signature, f, SQL)
+        return bf
     return decorator
 
 
-def define_unop(signature, name, op):
-    """Define a unary sql operator"""
+def overload_unop_ufunc(signature, name, op):
+    """Add a unary sql overload to a blaze ufunc"""
     def unop(x):
         return Expr([op, x])
     unop.__name__ = name
-    _implement(unop, signature)
-    return unop
+    bf = getattr(ufuncs, name)
+    bf.add_plugin_overload(signature, unop, SQL)
 
 
-def define_binop(signature, name, op):
-    """Define a binary sql operator"""
+def overload_binop_ufunc(signature, name, op):
+    """Add a binary sql overload to a blaze ufunc"""
     def binop(a, b):
         return Expr([a, op, b])
     binop.__name__ = name
-    _implement(binop, signature)
-    return binop
+    bf = getattr(ufuncs, name)
+    bf.add_plugin_overload(signature, binop, SQL)
 
-
-def _implement(f, signature):
-    name = f.__name__
-    blaze_func = getattr(ufuncs, name)
-    #print("implement", f, signature, blaze_func)
-    sql_kernel(blaze_func, f, signature)
 
 # Arithmetic
 
-add = define_binop("(A... * T, A... * T) -> A... * T", "add", "+")
-multiply = define_binop("(A... * T, A... * T) -> A... * T", "multiply", "*")
-subtract = define_binop("(A... * T, A... * T) -> A... * T", "subtract", "-")
-floordiv = define_binop("(A... * T, A... * T) -> A... * T", "floor_divide", "/")
-divide = define_binop("(A... * T, A... * T) -> A... * T", "divide", "/")
-truediv = define_binop("(A... * T, A... * T) -> A... * T", "true_divide", "/")
-mod = define_binop("(A... * T, A... * T) -> A... * T", "mod", "%")
+overload_binop_ufunc("(T, T) -> T", "add", "+")
+overload_binop_ufunc("(T, T) -> T", "multiply", "*")
+overload_binop_ufunc("(T, T) -> T", "subtract", "-")
+overload_binop_ufunc("(T, T) -> T", "floor_divide", "/")
+overload_binop_ufunc("(T, T) -> T", "divide", "/")
+overload_binop_ufunc("(T, T) -> T", "true_divide", "/")
+overload_binop_ufunc("(T, T) -> T", "mod", "%")
 
-negative = define_unop("(A... * T) -> A... * T", "negative", "-")
+overload_unop_ufunc("(T) -> T", "negative", "-")
 
 # Compare
 
-eq = define_binop("(A... * T, A... * T) -> A... * bool", "equal", "==")
-ne = define_binop("(A... * T, A... * T) -> A... * bool", "not_equal", "!=")
-lt = define_binop("(A... * T, A... * T) -> A... * bool", "less", "<")
-le = define_binop("(A... * T, A... * T) -> A... * bool", "less_equal", "<=")
-gt = define_binop("(A... * T, A... * T) -> A... * bool", "greater", ">")
-ge = define_binop("(A... * T, A... * T) -> A... * bool", "greater_equal", ">=")
+overload_binop_ufunc("(T, T) -> bool", "equal", "==")
+overload_binop_ufunc("(T, T) -> bool", "not_equal", "!=")
+overload_binop_ufunc("(T, T) -> bool", "less", "<")
+overload_binop_ufunc("(T, T) -> bool", "less_equal", "<=")
+overload_binop_ufunc("(T, T) -> bool", "greater", ">")
+overload_binop_ufunc("(T, T) -> bool", "greater_equal", ">=")
 
 # Logical
 
-logical_and = define_binop("(A... * bool, A... * bool) -> A... * bool",
-                           "logical_and", "AND")
-logical_or  = define_binop("(A... * bool, A... * bool) -> A... * bool",
-                           "logical_or", "OR")
-logical_not = define_unop("(A... * bool) -> A... * bool", "logical_not", "NOT")
+overload_binop_ufunc("(bool, bool) -> bool",
+                     "logical_and", "AND")
+overload_binop_ufunc("(bool, bool) -> bool",
+                     "logical_or", "OR")
+overload_unop_ufunc("(bool) -> bool", "logical_not", "NOT")
+
 
 def logical_xor(a, b):
     # Potential exponential code generation...
     return And(Or(a, b), Not(And(a, b)))
 
-kernel(ufuncs.logical_xor, SQL, logical_xor,
-       "(A... * bool, A... * bool) -> A... * bool")
+ufuncs.logical_xor.add_plugin_overload("(bool, bool) -> bool",
+                                       logical_xor, SQL)
 
 # SQL Functions
 
