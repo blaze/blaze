@@ -125,6 +125,7 @@ class TestEphemeral(unittest.TestCase):
         aflt = a.flt
         self.assertEqual(dd_as_py(aflt._data), [3.5, 2.25])
 
+
 class TestPersistent(MayBeUriTest, unittest.TestCase):
 
     uri = True
@@ -155,12 +156,21 @@ class TestPersistent(MayBeUriTest, unittest.TestCase):
 
     def test_open(self):
         persist = blaze.Storage(self.rooturi, format="blz")
+        self.assertTrue(persist.mode == 'a')
         a = blaze.ones('0 * float64', storage=persist)
         append(a,range(10))
         # Re-open the dataset in URI
+        persist = blaze.Storage(self.rooturi, format="blz", mode='r')
+        self.assertTrue(persist.mode == 'r')
         a2 = blaze.open(persist)
         self.assertTrue(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
+
+    def test_wrong_open_mode(self):
+        persist = blaze.Storage(self.rooturi, format="blz", mode='r')
+        self.assertRaises(IOError, blaze.ones,
+                          '10 * float64', storage=persist)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
