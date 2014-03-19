@@ -401,7 +401,7 @@ def run(func, env=None, exc_model=None, _state=None, args=(),
         oldpc = interp.pc
         try:
             result = fn(*args)
-        except UncaughtException, e:
+        except UncaughtException as e:
             tracer.push(tracing.Exc(e))
             raise
         valuemap[op.result] = result
