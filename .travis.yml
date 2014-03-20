@@ -8,20 +8,19 @@ python:
 branches:
   only:
     - master
-    - devel
-    - release
-    - py3
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
-install:
-  # Install conda
-  - sudo pip install conda
-  # Install dependencies
-  - sudo conda init
-  - conda create -p $HOME/py --yes nose cython numpy pycparser pyparsing pyyaml flask pytables cffi pip "python=$TRAVIS_PYTHON_VERSION"
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install -p $HOME/py --yes unittest2; fi
-  - export PATH=$HOME/py/bin:$PATH
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get -qq install python-numpy python-flask python-yaml python-pyparsing
+  - sudo apt-get -qq install libhdf5-serial-dev hdf5-tools
+    # Install dependencies
+  - pip install cython
+  - pip install cffi
+  - pip install numexpr
+  - pip install tables
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
   # Install dynd
@@ -44,10 +43,11 @@ install:
   - make install
   - export PYTHONPATH=$PYTHONPATH:$PWD
   - popd
+install:
   # Install Blaze
   - python setup.py install
 
-script: cd $HOME; $HOME/py/bin/python -c 'import blaze; blaze.test(exit=True)'
+script: python -c 'import blaze; blaze.test(exit=True)'
 
 notifications:
   email: false
