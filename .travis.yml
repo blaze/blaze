@@ -34,6 +34,7 @@ install:
   - cp libdynd* ../lib
   - chmod +x libdynd-config
   - export PATH=$PATH:$PWD
+  - export LD_LIBRARY_PATH:$PWD
   - popd
   - git clone https://github.com/ContinuumIO/dynd-python.git
   - mkdir dynd-python/build
