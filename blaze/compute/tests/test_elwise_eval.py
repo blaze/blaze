@@ -7,7 +7,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 
 from dynd import nd, ndt
 import blaze
-from common import MayBeDiskTest
+from .common import MayBeDiskTest
 
 
 # Check for arrays that fit in the chunk size
@@ -140,22 +140,60 @@ class storageLargeTest(storageTest):
     N = 10000
     vm = "python"
 
+
 # Multidimensional tests start now
 
-# Check for arrays that fit in memory
+# Check for arrays that fit in a chunk
 class evalMDTest(unittest.TestCase):
-    N = 1000
+    N = 10
+    M = 100
     vm = "numexpr"
 
     def test00(self):
         """Testing elwise_eval() with only blaze arrays"""
-        a = np.arange(self.N).reshape(2, N/2)
-        b = np.arange(1, self.N+1).reshape(2, N/2)
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
         c = blaze.array(a)
         d = blaze.array(b)
         cr = blaze._elwise_eval("c * d", vm=self.vm)
         nr = a * b
         assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test01(self):
+        """Testing elwise_eval() with blaze arrays and scalars"""
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
+        c = blaze.array(a)
+        d = blaze.array(b)
+        cr = blaze._elwise_eval("c * d + 2", vm=self.vm)
+        nr = a * b + 2
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test02(self):
+        """Testing elwise_eval() with pure dynd arrays and scalars"""
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
+        c = nd.array(a)
+        d = nd.array(b)
+        cr = blaze._elwise_eval("c * d + 2", vm=self.vm)
+        nr = a * b + 2
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test03(self):
+        """Testing elwise_eval() with blaze and dynd arrays and scalars"""
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
+        c = blaze.array(a)
+        d = nd.array(b)
+        cr = blaze._elwise_eval("c * d + 2", vm=self.vm)
+        nr = a * b + 2
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+# Check for arrays that fit in a chunk, but using python VM
+class evalPythonMDTest(evalMDTest):
+    N = 10
+    M = 100
+    vm = "python"
 
 
 if __name__ == '__main__':
