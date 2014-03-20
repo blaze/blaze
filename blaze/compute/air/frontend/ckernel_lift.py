@@ -5,8 +5,9 @@ arguments.
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import visit
 from dynd import ndt, _lowlevel
+
+from ..traversal import visit
 
 
 class CKernelLifter(object):

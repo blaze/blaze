@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from dynd import _lowlevel
 import datashape
-from .. import function
+from ..function import ElementwiseBlazeFunc
 
 
 def _filter_tplist(tplist):
@@ -32,7 +32,7 @@ def _filter_tplist(tplist):
 
 def _make_sig(tplist):
     """Converts a type tuples into datashape function signatures"""
-    dslist = [datashape.dshape("A... * " + str(x)) for x in tplist]
+    dslist = [datashape.dshape(str(x)) for x in tplist]
     return datashape.Function(*(dslist[1:] + [dslist[0]]))
 
 
@@ -58,11 +58,11 @@ def blazefunc_from_numpy_ufunc(uf, modname, name, acquires_gil):
     kernlist = [_lowlevel.ckernel_deferred_from_ufunc(uf, tp, acquires_gil)
                 for tp in tplist]
     # Create the empty blaze function to start
-    blaze_func = function.BlazeFunc('blaze', name)
-    blaze_func.add_metadata({'elementwise': True})
-    # Add dispatching to the kernel for each signature
-    ckdispatcher = blaze_func.get_dispatcher('ckernel')
+    bf = ElementwiseBlazeFunc('blaze', name)
+    # TODO: specify elementwise
+    #bf.add_metadata({'elementwise': True})
+    # Add an overload to the function for each signature
     for (tp, sig, kern) in zip(tplist, siglist, kernlist):
-        datashape.overloading.overload(sig, dispatcher=ckdispatcher)(kern)
-    return blaze_func
+        bf.add_overload(sig, kern)
+    return bf
 

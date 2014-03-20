@@ -1,24 +1,17 @@
-# -*- coding: utf-8 -*-
-
-"""
-CKernel evaluation of blaze AIR.
-"""
+"""CKernel evaluation of blaze AIR."""
 
 from __future__ import absolute_import, division, print_function
 
 import operator
 
-from pykit.ir import visit
 from dynd import nd, ndt
 import blaze
 import blz
 import datashape
 
+from ..traversal import visit
 from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
 
-#------------------------------------------------------------------------
-# Interpreter
-#------------------------------------------------------------------------
 
 def interpret(func, env, storage=None, **kwds):
     args = env['runtime.arglist']
@@ -56,10 +49,6 @@ def interpret(func, env, storage=None, **kwds):
             dst_dd.append(chunk)
 
         return blaze.Array(dst_dd)
-
-#------------------------------------------------------------------------
-# Interpreter
-#------------------------------------------------------------------------
 
 
 class CKernelInterp(object):

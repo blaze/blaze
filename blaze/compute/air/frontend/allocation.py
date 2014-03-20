@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
-
 """
 Insert temporary allocations and deallocations into the IR.
 """
 
 from __future__ import absolute_import, division, print_function
 
-from pykit.ir import interp, visit, transform, Op, Builder, ops
-from pykit import types
+from ..ir import Op
+from ..builder import Builder
+from .. import types
+
 
 def insert_allocations(func, env):
     b = Builder(func)

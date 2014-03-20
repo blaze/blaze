@@ -4,8 +4,9 @@ Translate blaze expressoin graphs into blaze AIR.
 
 from __future__ import absolute_import, division, print_function
 
-from pykit import types
-from pykit.ir import Function, Builder, Value, Op, Const
+from .. import types
+from ..ir import Function, Op, Const
+from ..builder import Builder
 
 #------------------------------------------------------------------------
 # AIR construction
