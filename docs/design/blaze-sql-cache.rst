@@ -189,7 +189,7 @@ It seems like case 1 should be more efficient, but sometimes not using
 the query and asking for the complete range to the database would be
 faster.  Maybe some heuristics would be nice for implementing case 1.
 
-Complete example
+Simple example
 ================
 
 Here it is a complete example on how the cache should work::
@@ -224,4 +224,76 @@ Here it is a complete example on how the cache should work::
   b = sql_arr.where("2010-12-31 < tdate < 2012-01-01")
   # The line below should print: 'array([2011-11-11, "world", 4.2]))'
   print(b)
+
+
+Advanced Example
+================
+
+The following is an example of caching for Databases that contain a colletion of tables (RDBMSs)::
+
+Starting with two tables:
+
+**STOCKS.TBL**
+
+===================  ===================  ======  ======
+max_date             min_date             sec_id  ticker
+-------------------  -------------------  ------  ------
+2013-08-09 00:00:00  1999-11-19 00:00:00  0       A
+2013-08-09 00:00:00  1998-01-05 00:00:00  1       AA
+2013-08-09 00:00:00  1998-01-05 00:00:00  2       AAPL
+...                  ...                  .       .
+===================  ===================  ======  ======
+
+**STOCKS_HIST.TBL**
+
+=================== ======= ======= ======= ======= ============ =======
+date                o       h       l       c       v            sec_id
+------------------- ------- ------- ------- ------- ------------ -------
+1999-11-19 00:00:00 39.8329 39.8885 36.9293 37.6251 11390201.186 0
+1999-11-22 00:00:00 38.3208 40.0091 37.1613 39.9442 4654716.475  0
+1999-11-23 00:00:00 39.4247 40.4729 37.3375 37.5138 4268902.729  0
+...                 ...     ...     ...     ...     ...          ...
+=================== ======= ======= ======= ======= ============ =======
+
+
+These tables (and those like it) often require a **join** to extract data we are interested in.
+For example, we could subselect the data and ask for a list of entities, list of
+measurements, and between date-ranges::
+
+    select stocks.ticker, stock_hist.c, stock_hist.o, stock_hist.date
+    from stocks inner join stock_hist on
+    stocks.sec_id = stock_hist.sec_id where stocks.ticker in [...]
+    and stock_hist.date <= 'XXX-XX-XX' and stock_hist.date > 'XXXX-XX-XX'
+
+
+Blaze should caching should store the expression graph of the query and the data::
+
+    sql = '''select stocks.ticker, stock_hist.c, stock_hist.o, stock_hist.date
+    from stocks inner join stock_hist on
+    stocks.sec_id = stock_hist.sec_id
+    '''
+
+    sql_arr = blaze.array(sql, db_conn)
+    sql_arr.where(and_(stocks.ticker.in_(['A',B','C']),
+                   stock_hist.date.between_('2001-01-01','2004-01-01')
+                   )
+               )
+    print(sql_sub_arr)
+    data = nd.as_numpy(sql_sub_arr, allow_copy=True)
+    #or more commonly
+    df = pandas.DataFrame.from_record(data)
+
+The caching/fetching mechanism should be smart enough to fetch only the diff on the following queries::
+
+    sql_arr.where(and_(stocks.ticker.in_(['A',B','E','F]),
+                   stock_hist.date.between_('2002-01-01','2005-01-01')
+                   )
+               )
+    data = nd.as_numpy(sql_sub_arr, allow_copy=True)
+    #or more commonly
+    df = pandas.DataFrame.from_record(data)
+
+Notice the **where** clause now contains entities: A,B,E,F and the date range has changed to extend beyond
+dates which are in the current cache.  Blaze should should fetch data between 2002-01-01 and 2005-01-01 for
+entities E, and F, and for entities A' and B, fetch data between 2004-01-01 and 2005-01-01.
 
