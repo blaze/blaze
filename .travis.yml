@@ -13,10 +13,10 @@ branches:
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get -qq install python-numpy cython python-flask python-yaml python-pyparsing
+  - sudo apt-get -qq install python-numpy python-flask python-yaml python-pyparsing
   - sudo apt-get -qq install libhdf5-serial-dev hdf5-tools
-install:
-  # Install dependencies
+    # Install dependencies
+  - pip install cython
   - pip install cffi
   - pip install numexpr
   - pip install tables
@@ -43,6 +43,7 @@ install:
   - make install
   - export PYTHONPATH=$PYTHONPATH:$PWD
   - popd
+install:
   # Install Blaze
   - python setup.py install
 
