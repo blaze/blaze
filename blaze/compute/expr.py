@@ -44,31 +44,6 @@ class Config(object):
 
 conf = Config()
 
-class ExprContext(object):
-    """
-    Context for blaze graph expressions.
-
-    This keeps track of a mapping between graph expression nodes and the
-    concrete data inputs (i.e. blaze Arrays).
-
-    Attributes:
-    ===========
-
-    terms: { ArrayOp: Array }
-        Mapping from ArrayOp nodes to inputs
-    """
-
-    def __init__(self):
-        # Coercion constraints between types with free variables
-        self.constraints = []
-        self.terms = {} # All terms in the graph, { Array : Op }
-        self.params = []
-
-    def add_input(self, term, data):
-        if term not in self.terms:
-            self.params.append(term)
-        self.terms[term] = data
-
 
 class Op(object):
     """
@@ -172,10 +147,9 @@ def construct(bfunc, ctx, overload, args):
         params.append(term)
 
     assert isinstance(overload.resolved_sig, T.Function)
-    restype = dshape(overload.resolved_sig.parameters[-1])
+    restype = dshape(overload.resolved_sig.restype)
 
-    return KernelOp(restype, *params, kernel=bfunc, overload=overload,
-                    **bfunc.metadata)
+    return KernelOp(restype, *params, kernel=bfunc, overload=overload)
 
 
 def from_value(value):
@@ -305,29 +279,18 @@ class ExprContext(object):
         Mapping from ArrayOp nodes to inputs
     """
 
-    def __init__(self):
+    def __init__(self, contexts=[]):
         # Coercion constraints between types with free variables
         self.constraints = []
         self.terms = {} # All terms in the graph, { Array : Op }
         self.params = []
 
+        for ctx in contexts:
+            self.constraints.extend(ctx.constraints)
+            self.terms.update(ctx.terms)
+            self.params.extend(ctx.params)
+
     def add_input(self, term, data):
         if term not in self.terms:
             self.params.append(term)
         self.terms[term] = data
-
-
-def merge_contexts(contexts):
-    """
-    Merge graph expression contexts into a new context, unifying their
-    typing contexts under the given blaze function signature.
-    """
-    result = ExprContext()
-
-    for ctx in contexts:
-        result.constraints.extend(ctx.constraints)
-        result.terms.update(ctx.terms)
-        result.params.extend(ctx.params)
-
-    #result.constraints, _ = unify(result.constraints)
-    return result

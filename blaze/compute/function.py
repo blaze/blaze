@@ -4,130 +4,23 @@ carries a polymorphic signature which allows it to verify well-typedness over
 the input arguments, and to infer the result of the operation.
 
 Blaze function also create a deferred expression graph when executed over
-operands. A blaze function carries *implementations* that ultimately perform
-the work. Implementations are indicated through the 'impl' keyword argument,
-and may include:
-
-    'ckernel'    : Blaze ckernel-based function.
-    'llvm'  : LLVM-compiled implementation
-    'ctypes': A ctypes function pointer
-
-Or a tuple for a combination of the above.
+operands. A blaze function carries default ckernel implementations as well
+as plugin implementations.
 """
 
 from __future__ import print_function, division, absolute_import
 
-import string
-import textwrap
-from itertools import chain
+from collections import namedtuple
 
 # TODO: Remove circular dependency between blaze.objects.Array and blaze.compute
 import blaze
-from ..py2help import dict_iteritems, exec_
-from datashape import coretypes as T, dshape
+import datashape
+from datashape import coretypes
 
-from datashape.overloading import overload, Dispatcher
-from datashape.overload_resolver import OverloadResolver
 from ..datadescriptor import DeferredDescriptor
-from .expr import construct, merge_contexts
-from .strategy import CKERNEL
+from .expr import construct, ExprContext
 
-#------------------------------------------------------------------------
-# Utils
-#------------------------------------------------------------------------
-
-def collect_contexts(args):
-    for term in args:
-        if isinstance(term, blaze.Array) and term.expr:
-            t, ctx = term.expr
-            yield ctx
-
-
-def lookup_previous(f, scopes=None):
-    """
-    Lookup a previous function definition in the current namespace, i.e.
-    for overloading purposes.
-    """
-    if scopes is None:
-        scopes = []
-
-    scopes.append(f.__globals__)
-
-    for scope in scopes:
-        if scope.get(f.__name__):
-            return scope[f.__name__]
-
-    return None
-
-#------------------------------------------------------------------------
-# Decorators
-#------------------------------------------------------------------------
-def function(signature, impl=CKERNEL, **metadata):
-    """
-    Define an overload for a blaze function. Implementations may be associated
-    by indicating a 'kind' through the `impl` argument.
-
-    Parameters
-    ----------
-    signature: string or Type
-        Optional function signature
-
-    Usage
-    -----
-
-        @function('(A, A) -> A') # All types are promoted
-        def add(a, b):
-            return a + b
-    """
-    def decorator(f):
-        # Look up previous blaze function
-        bf = lookup_previous(f)
-        if bf is None:
-            # No previous function, create new one
-            bf = BlazeFunc(f.__module__, f.__name__)
-
-        for impl in impls:
-            kernel(bf, impl, f, signature, **metadata)
-
-        # Metadata
-        bf.add_metadata(metadata)
-        if bf.get_metadata('elementwise') is None:
-            bf.add_metadata({'elementwise': False})
-
-        return bf
-
-    signature = dshape(signature)
-    if isinstance(signature, T.DataShape) and len(signature) == 1:
-        signature = signature[0]
-    impls = impl
-    if not isinstance(impls, tuple):
-        impls = (impls,)
-
-    if not isinstance(signature, T.Function):
-        raise TypeError('Blaze @function decorator requires a function signature')
-    else:
-        # @function('(A, A) -> B')
-        # def f(...): ...
-        return decorator
-
-
-#------------------------------------------------------------------------
-# Implementations
-#------------------------------------------------------------------------
-def kernel(blaze_func, impl_kind, kernel, signature, **metadata):
-    """
-    Define a new kernel implementation.
-    """
-    # Get dispatcher for implementation
-    if isinstance(blaze_func, BlazeFunc):
-        dispatcher = blaze_func.get_dispatcher(impl_kind)
-    else:
-        raise TypeError(
-            "%s in current scope is not overloadable" % (blaze_func,))
-
-    # Overload the right dispatcher
-    overload(signature, dispatcher=dispatcher)(kernel)
-    blaze_func.add_metadata(metadata, impl_kind=impl_kind)
+Overload = namedtuple('Overload', 'resolved_sig, sig, func')
 
 
 class BlazeFunc(object):
@@ -139,18 +32,34 @@ class BlazeFunc(object):
 
     Attributes
     ----------
-    ores: OverloadResolver
-        Used to find the right overload
+    overloader : datashape.OverloadResolver
+        This is the multiple dispatch overload resolver which is used
+        to determine the overload upon calling the function.
+    ckernels : list of ckernels
+        This is the list of ckernels corresponding to the signatures
+        in overloader.
+    plugins : dict of {pluginname : (overloader, datalist)}
+        For each plugin that has registered with this blaze function,
+        there is an overloader and corresponding data object describing
+        execution using that plugin.
+    name : string
+        The name of the function (e.g. "sin").
+    module : string
+        The name of the module the function is in (e.g. "blaze")
+    fullname : string
+        The fully qualified name of the function (e.g. "blaze.sin").
 
-    metadata: { str : object }
-        Additional metadata that may be interpreted by a Blaze AIR interpreter
     """
 
     def __init__(self, module, name):
         self._module = module
         self._name = name
-        self.metadata = {}
-        self.dispatchers = {CKERNEL: Dispatcher()}
+        # The ckernels list corresponds to the
+        # signature indices in the overloader
+        self.overloader = datashape.OverloadResolver(self.fullname)
+        self.ckernels = []
+        # Each plugin has its own overloader and data (a two-tuple)
+        self.plugins = {}
 
     @property
     def name(self):
@@ -166,70 +75,54 @@ class BlazeFunc(object):
         return self._module + '.' + self._name
 
     @property
-    def available_strategies(self):
-        return list(self.dispatchers)
+    def available_plugins(self):
+        return list(self.plugins.keys())
 
-    @property
-    def dispatcher(self):
-        return self.dispatchers[CKERNEL]
-
-    def get_dispatcher(self, impl_kind):
-        """Get the overloaded dispatcher for the given implementation kind"""
-        if impl_kind not in self.dispatchers:
-            self.dispatchers[impl_kind] = Dispatcher()
-        return self.dispatchers[impl_kind]
-
-    def best_match(self, impl_kind, argtypes):
+    def add_overload(self, sig, ck):
         """
-        Find the best implementation of `impl_kind` using `argtypes`.
+        Adds a single signature and its ckernel to the overload resolver.
         """
-        dispatcher = self.get_dispatcher(impl_kind)
-        return dispatcher.best_match(argtypes)
+        self.overloader.extend_overloads([sig])
+        self.ckernels.append(ck)
 
-    def add_metadata(self, md, impl_kind=CKERNEL):
+    def add_plugin_overload(self, sig, data, pluginname):
         """
-        Associate metadata with an overloaded implementation.
+        Adds a single signature and corresponding data for a plugin
+        implementation of the function.
         """
-        if impl_kind not in self.metadata:
-            self.metadata[impl_kind] = {}
+        # Get the overloader and data list for the plugin
+        overloader, datalist = self.plugins.get(pluginname, (None, None))
+        if overloader is None:
+            overloader = datashape.OverloadResolver(self.fullname)
+            datalist = []
+            self.plugins[pluginname] = (overloader, datalist)
+        # Add the overload
+        overloader.extend_overloads([sig])
+        datalist.append(data)
 
-        metadata = self.metadata[impl_kind]
-
-        # Verify compatibility
-        for k in md:
-            if k in metadata:
-                assert metadata[k] == md[k], (metadata[k], md[k])
-        # Update
-        metadata.update(md)
-
-    def get_metadata(self, key, impl_kind=CKERNEL):
-        return self.metadata[impl_kind].get(key)
-
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args):
         """
         Apply blaze kernel `kernel` to the given arguments.
 
         Returns: a Deferred node representation the delayed computation
         """
-        # -------------------------------------------------
-        # Merge input contexts
-
+        # Convert the arguments into blaze.Array
         args = [blaze.array(a) for a in args]
-        ctxs = collect_contexts(chain(args, kwargs.values()))
-        ctx = merge_contexts(ctxs)
 
-        # -------------------------------------------------
+        # Merge input contexts
+        ctxs = [term.expr[1] for term in args
+                if isinstance(term, blaze.Array) and term.expr]
+        ctx = ExprContext(ctxs)
+
         # Find match to overloaded function
+        argstype = coretypes.Tuple([a.dshape for a in args])
+        idx, match = self.overloader.resolve_overload(argstype)
+        overload = Overload(match, self.overloader[idx], self.ckernels[idx])
 
-        overload, args = self.dispatcher.lookup_dispatcher(args, kwargs)
-
-        # -------------------------------------------------
         # Construct graph
-
         term = construct(self, ctx, overload, args)
         desc = DeferredDescriptor(term.dshape, (term, ctx))
 
-        # TODO: preserve `user` metadata
         return blaze.Array(desc)
 
     def __str__(self):
@@ -238,3 +131,44 @@ class BlazeFunc(object):
     def __repr__(self):
         # TODO proper repr
         return str(self)
+
+
+def _add_elementwise_dims_to_ds(ds, typevar):
+    if isinstance(ds, coretypes.DataShape):
+        tlist = ds.parameters
+    else:
+        tlist = (ds,)
+    return coretypes.DataShape(typevar, *tlist)
+
+def _add_elementwise_dims_to_sig(sig, typevarname):
+    # Process the signature to add 'Dims... *' broadcasting
+    sig = datashape.dshape(sig)
+    if len(sig) == 1:
+        sig = sig[0]
+    if not isinstance(sig, coretypes.Function):
+        raise TypeError(('Only function signatures allowed as' +
+                         'overloads, not %s') % sig)
+    if datashape.has_ellipsis(sig):
+        raise TypeError(('Signature provided to ElementwiseBlazeFunc' +
+                         'already includes ellipsis: %s') % sig)
+    dims = coretypes.Ellipsis(coretypes.TypeVar(typevarname))
+    params = [_add_elementwise_dims_to_ds(param, dims)
+              for param in sig.parameters]
+    return coretypes.Function(*params)
+
+
+class ElementwiseBlazeFunc(BlazeFunc):
+    """
+    This is a kind of BlazeFunc that is always processed element-wise.
+    When overloads are added to it, they have 'Dims... *' prepend
+    the the datashape of every argument and the return type.
+    """
+    def add_overload(self, sig, ck):
+        # Prepend 'Dims... *' to args and return type
+        sig = _add_elementwise_dims_to_sig(sig, 'Dims')
+        BlazeFunc.add_overload(self, sig, ck)
+
+    def add_plugin_overload(self, sig, data, pluginname):
+        # Prepend 'Dims... *' to args and return type
+        sig = _add_elementwise_dims_to_sig(sig, 'Dims')
+        BlazeFunc.add_plugin_overload(self, sig, data, pluginname)
