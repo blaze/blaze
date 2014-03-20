@@ -11,9 +11,12 @@ branches:
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get -qq install python-numpy
+  - sudo apt-get -qq install libhdf5-serial-dev hdf5-tools
 install:
   # Install dependencies
-  - pip install numpy
   - pip install cython cffi
   - pip install numexpr
   - pip install pyparsing pyyaml flask 
