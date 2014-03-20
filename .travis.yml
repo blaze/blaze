@@ -13,7 +13,11 @@ branches:
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 install:
   # Install dependencies
-  - pip install nose cython numpy numexpr pyparsing pyyaml flask tables cffi
+  - pip install numpy
+  - pip install cython cffi
+  - pip install numexpr
+  - pip install pyparsing pyyaml flask 
+  - pip install tables
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install -p $HOME/py --yes unittest2; fi
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
