@@ -104,10 +104,13 @@ def array(obj, dshape=None, caps={'efficient-write': True},
         if inspect.isgenerator(obj):
             # TODO: Generator logic can go inside barray
             dd = BLZDataDescriptor(blz.barray(obj, dtype=dt, count=-1,
-                                              rootdir=storage.path))
+                                              rootdir=storage.path,
+                                              mode=storage.mode))
         else:
             dd = BLZDataDescriptor(
-                blz.barray(obj, dtype=dt, rootdir=storage.path))
+                blz.barray(obj, dtype=dt,
+                           rootdir=storage.path,
+                           mode=storage.mode))
     elif 'efficient-write' in caps and caps['efficient-write'] is True:
         # In-Memory array
         if dshape is None:
@@ -175,7 +178,8 @@ def empty(dshape, caps={'efficient-write': True}, storage=None):
     if storage is not None:
         shape, dt = to_numpy(dshape)
         dd = BLZDataDescriptor(blz.zeros(shape, dt,
-                                         rootdir=storage.path))
+                                         rootdir=storage.path,
+                                         mode=storage.mode))
     elif 'efficient-write' in caps:
         dd = DyNDDataDescriptor(nd.empty(str(dshape)))
     elif 'compress' in caps:
@@ -208,7 +212,8 @@ def zeros(dshape, caps={'efficient-write': True}, storage=None):
     if storage is not None:
         shape, dt = to_numpy(dshape)
         dd = BLZDataDescriptor(blz.zeros(shape, dt,
-                                         rootdir=storage.path))
+                                         rootdir=storage.path,
+                                         mode=storage.mode))
     elif 'efficient-write' in caps:
         # TODO: Handle var dimension properly (raise exception?)
         dyndarr = nd.empty(str(dshape))
@@ -245,7 +250,8 @@ def ones(dshape, caps={'efficient-write': True}, storage=None):
     if storage is not None:
         shape, dt = to_numpy(dshape)
         dd = BLZDataDescriptor(blz.ones(shape, dt,
-                                        rootdir=storage.path))
+                                        rootdir=storage.path,
+                                        mode=storage.mode))
     elif 'efficient-write' in caps:
         # TODO: Handle var dimension properly (raise exception?)
         dyndarr = nd.empty(str(dshape))
