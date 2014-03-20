@@ -30,6 +30,8 @@ install:
   - pushd libdynd/build
   - cmake -DDYND_BUILD_TESTS=False ..
   - make
+  - mkdir ../lib
+  - cp libdynd* ../lib
   - chmod +x libdynd-config
   - export PATH=$PATH:$PWD
   - popd
