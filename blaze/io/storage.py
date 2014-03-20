@@ -86,10 +86,10 @@ class Storage(object):
 
     @property
     def path(self):
-        """ returns a blz path for a given uri """
+        """Returns a blz path for a given uri."""
         return self._path
 
-    def __init__(self, uri, mode='r', permanent=True, format=None):
+    def __init__(self, uri, mode='a', permanent=True, format=None):
         if not isinstance(uri, str):
             raise ValueError("`uri` must be a string.")
         self._uri = uri
@@ -245,13 +245,8 @@ def drop(persist):
     persist = _persist_convert(persist)
 
     if persist.format == 'blz':
-        try:
-            blz.open(rootdir=persist.path)
-            from shutil import rmtree
-            rmtree(persist.path)
-        except RuntimeError:
-            # Maybe BLZ should throw other exceptions for this!
-            raise Exception("No data set at uri '%s'" % persist.uri)
+        from shutil import rmtree
+        rmtree(persist.path)
     elif persist.format in ('csv', 'json', 'hdf5'):
         import os
         os.unlink(persist.path)
