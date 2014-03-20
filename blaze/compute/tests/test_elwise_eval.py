@@ -140,6 +140,23 @@ class storageLargeTest(storageTest):
     N = 10000
     vm = "python"
 
+# Multidimensional tests start now
+
+# Check for arrays that fit in memory
+class evalMDTest(unittest.TestCase):
+    N = 1000
+    vm = "numexpr"
+
+    def test00(self):
+        """Testing elwise_eval() with only blaze arrays"""
+        a = np.arange(self.N).reshape(2, N/2)
+        b = np.arange(1, self.N+1).reshape(2, N/2)
+        c = blaze.array(a)
+        d = blaze.array(b)
+        cr = blaze._elwise_eval("c * d", vm=self.vm)
+        nr = a * b
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
 
 if __name__ == '__main__':
     unittest.main()

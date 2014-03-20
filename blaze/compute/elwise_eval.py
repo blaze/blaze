@@ -68,11 +68,8 @@ class Defaults(object):
         self.__vm = value
 
 
-defaults = Defaults()
-
-
 # Default values start here...
-
+defaults = Defaults()
 if numexpr_here:
     defaults.vm = "numexpr"
 else:
