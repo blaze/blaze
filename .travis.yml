@@ -47,7 +47,7 @@ install:
   # Install Blaze
   - python setup.py install
 
-script: cd $HOME; $HOME/py/bin/python -c 'import blaze; blaze.test(exit=True)'
+script: python -c 'import blaze; blaze.test(exit=True)'
 
 notifications:
   email: false
