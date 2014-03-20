@@ -81,6 +81,13 @@ not, then the default is 'python'.
 
 """
 
+# Compute the product of a sequence
+def prod(seq):
+    ret = 1
+    for i in seq:
+        ret *= int(i)
+    return ret
+
 def _elwise_eval(expression, vm=None, user_dict={}, **kwargs):
     """
     eval(expression, vm=None, user_dict=None, **kwargs)
@@ -122,7 +129,7 @@ def _elwise_eval(expression, vm=None, user_dict={}, **kwargs):
     vars = _getvars(expression, user_dict, depth, vm=vm)
 
     # Gather info about sizes and lengths
-    typesize, vlen = 0, 1
+    rowsize, vlen = 0, 1
     for name in dict_viewkeys(vars):
         var = vars[name]
         # Scalars
@@ -135,20 +142,20 @@ def _elwise_eval(expression, vm=None, user_dict={}, **kwargs):
                 raise ValueError(
                     "sequence cannot be converted into a blaze array")
         # From now on, we only have Blaze arrays
-        typesize += var.dshape.measure.itemsize
+        rowsize += var.dshape.measure.itemsize * prod(var.dshape.shape[1:])
         # Check for length
         if vlen > 1 and vlen != len(var):
             raise ValueError("arrays must have the same length")
         vlen = len(var)
 
-    if typesize == 0 or vlen == 0:
+    if rowsize == 0 or vlen == 0:
         # All scalars or zero-length objects
         if vm == "python":
             return eval(expression, vars)
         else:
             return numexpr.evaluate(expression, local_dict=vars)
 
-    return _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs)
+    return _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs)
 
 def _getvars(expression, user_dict, depth, vm):
     """Get the variables in `expression`.
@@ -202,7 +209,7 @@ def _getvars(expression, user_dict, depth, vm):
             reqvars[var] = val
     return reqvars
 
-def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
+def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
     """Perform the evaluation in blocks."""
 
     # Compute the optimal block size (in elements)
@@ -213,7 +220,7 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
     else:
         # If python, make sure that operands fit in L2 chache
         bsize = 2**17  # 256 KB is common for L2
-    bsize //= typesize
+    bsize //= rowsize
     # Evaluation seems more efficient if block size is a power of 2
     bsize = 2 ** (int(math.log(bsize, 2)))
     if vlen < 100*1000:
@@ -222,7 +229,7 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
         bsize //= 4
     elif vlen < 10*1000*1000:
         bsize //= 2
-    # Protection against too large atomsizes
+    # Protection against too large rowsizes
     if bsize == 0:
         bsize = 1
 
@@ -262,6 +269,7 @@ def _eval_blocks(expression, vars, vlen, typesize, vm, **kwargs):
                     vars_[name] = var
 
         # Perform the evaluation for this block
+        # We need array evals
         if vm == "python":
             res_block = eval(expression, vars_)
             dynd_block = blaze_eval(res_block)._data.dynd_arr()
