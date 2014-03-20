@@ -133,26 +133,32 @@ class BlazeFunc(object):
         return str(self)
 
 
-def _add_elementwise_dims_to_ds(ds, typevar):
-    if isinstance(ds, coretypes.DataShape):
-        tlist = ds.parameters
-    else:
-        tlist = (ds,)
-    return coretypes.DataShape(typevar, *tlist)
-
-def _add_elementwise_dims_to_sig(sig, typevarname):
-    # Process the signature to add 'Dims... *' broadcasting
+def _normalized_sig(sig):
     sig = datashape.dshape(sig)
     if len(sig) == 1:
         sig = sig[0]
     if not isinstance(sig, coretypes.Function):
         raise TypeError(('Only function signatures allowed as' +
                          'overloads, not %s') % sig)
+    return sig
+
+
+def _prepend_to_ds(ds, typevar):
+    if isinstance(ds, coretypes.DataShape):
+        tlist = ds.parameters
+    else:
+        tlist = (ds,)
+    return coretypes.DataShape(typevar, *tlist)
+
+
+def _add_elementwise_dims_to_sig(sig, typevarname):
+    sig = _normalized_sig(sig)
+    # Process the signature to add 'Dims... *' broadcasting
     if datashape.has_ellipsis(sig):
         raise TypeError(('Signature provided to ElementwiseBlazeFunc' +
                          'already includes ellipsis: %s') % sig)
     dims = coretypes.Ellipsis(coretypes.TypeVar(typevarname))
-    params = [_add_elementwise_dims_to_ds(param, dims)
+    params = [_prepend_to_ds(param, dims)
               for param in sig.parameters]
     return coretypes.Function(*params)
 
@@ -172,3 +178,108 @@ class ElementwiseBlazeFunc(BlazeFunc):
         # Prepend 'Dims... *' to args and return type
         sig = _add_elementwise_dims_to_sig(sig, 'Dims')
         BlazeFunc.add_plugin_overload(self, sig, data, pluginname)
+
+
+class _ReductionResolver(object):
+    """
+    This is a helper class which resolves the output dimensions
+    of a ReductionBlazeFunc call based on the 'axis=' and 'keepdims='
+    arguments.
+    """
+    def __init__(self, axis, keepdims):
+        self.axis = axis
+        self.keepdims = keepdims
+        self.dimsin = coretypes.Ellipsis(coretypes.TypeVar('DimsIn'))
+        self.dimsout = coretypes.Ellipsis(coretypes.TypeVar('DimsOut'))
+
+    def __call__(self, sym, tvdict):
+        if sym == self.dimsout:
+            dims = tvdict[self.dimsin]
+            # Create an array of flags indicating which dims are reduced
+            if self.axis is None:
+                dimflags = [True] * len(dims)
+            else:
+                dimflags = [False] * len(dims)
+                try:
+                    for ax in self.axis:
+                        dimflags[ax] = True
+                except IndexError:
+                    raise IndexError(('axis %s is out of bounds for the' +
+                                      'input type') % self.axis)
+            # Remove or convert the reduced dims to fixed size-one
+            if self.keepdims:
+                reddim = coretypes.Fixed(1)
+                return [reddim if dimflags[i] else dim
+                        for i, dim in enumerate(dims)]
+            else:
+                return [dim for i, dim in enumerate(dims) if not dimflags[i]]
+
+
+class ReductionBlazeFunc(BlazeFunc):
+    """
+    This is a kind of BlazeFunc with a calling convention for
+    elementwise reductions which support 'axis=' and 'keepdims='
+    keyword arguments.
+    """
+    def add_overload(self, sig, ck, associative, commutative, identity=None):
+        sig = _normalized_sig(sig)
+        if datashape.has_ellipsis(sig):
+            raise TypeError(('Signature provided to ReductionBlazeFunc' +
+                             'already includes ellipsis: %s') % sig)
+        if len(sig.argtypes) != 1:
+            raise TypeError(('Signature provided to ReductionBlazeFunc' +
+                             'must have only one argument: %s') % sig)
+        # Prepend 'DimsIn... *' to the args, and 'DimsOut... *' to
+        # the return type
+        sig = coretypes.Function(_prepend_to_ds(sig.argtypes[0],
+                                                coretypes.Ellipsis(coretypes.TypeVar('DimsIn'))),
+                                 _prepend_to_ds(sig.restype,
+                                                coretypes.Ellipsis(coretypes.TypeVar('DimsOut'))))
+        # TODO: This probably should be an object instead of a dict
+        info = {'tag': 'reduction',
+                'ckernel': ck,
+                'assoc': associative,
+                'comm': commutative,
+                'ident': identity}
+        BlazeFunc.add_overload(self, sig, info)
+
+    def add_plugin_overload(self, sig, data, pluginname):
+        raise NotImplementedError('TODO: implement add_plugin_overload')
+
+    def __call__(self, *args, **kwargs):
+        """
+        Apply blaze kernel `kernel` to the given arguments.
+
+        Returns: a Deferred node representation the delayed computation
+        """
+        # Validate the 'axis=' and 'keepdims=' keyword-only arguments
+        axis = kwargs.pop('axis', None)
+        if axis is not None and not isinstance(axis, tuple):
+            axis = (axis,)
+        keepdims = kwargs.pop('keepdims', False)
+        if kwargs:
+            msg = "%s got an unexpected keyword argument '%s'"
+            raise TypeError(msg % (self.fullname, kwargs.keys()[0]))
+
+        # Convert the arguments into blaze.Array
+        args = [blaze.array(a) for a in args]
+
+        # Merge input contexts
+        ctxs = [term.expr[1] for term in args
+                if isinstance(term, blaze.Array) and term.expr]
+        ctx = ExprContext(ctxs)
+
+        # Find match to overloaded function
+        redresolver = _ReductionResolver(axis, keepdims)
+        argstype = coretypes.Tuple([a.dshape for a in args])
+        idx, match = self.overloader.resolve_overload(argstype, redresolver)
+        info = dict(self.ckernels[idx])
+        info['axis'] = axis
+        info['keepdims'] = keepdims
+        overload = Overload(match, self.overloader[idx], info)
+
+        # Construct graph
+        term = construct(self, ctx, overload, args)
+        desc = DeferredDescriptor(term.dshape, (term, ctx))
+
+        return blaze.Array(desc)
