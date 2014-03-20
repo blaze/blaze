@@ -25,7 +25,7 @@ install:
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
   # Install dynd
-  - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
+  - git clone --depth=50 https://github.com/ContinuumIO/libdynd.git
   - mkdir libdynd/build
   - pushd libdynd/build
   - cmake -DDYND_BUILD_TESTS=False ..
@@ -33,10 +33,10 @@ install:
   - chmod +x libdynd-config
   - export PATH=$PATH:$PWD
   - popd
-  - git clone --depth=1 https://github.com/ContinuumIO/dynd-python.git
+  - git clone --depth=50 https://github.com/ContinuumIO/dynd-python.git
   - mkdir dynd-python/build
   - pushd dynd-python/build
-  - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SEPARATE_LIBDYND=ON -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} .
+  - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SEPARATE_LIBDYND=ON -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} ..
   - make
   - make install
   - export PYTHONPATH=$PYTHONPATH:$PWD
