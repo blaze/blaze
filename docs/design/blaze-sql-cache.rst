@@ -235,7 +235,7 @@ Here it is a complete example on how the cache should work::
 Advanced Example
 ================
 
-The following is an example of caching for Databases that contain a collection of tables (RDBMSs)::
+The following is an example of caching for databases that contain a collection of tables (RDBMSs)::
 
 Starting with two tables:
 
@@ -262,27 +262,27 @@ date                o       h       l       c       v            sec_id
 =================== ======= ======= ======= ======= ============ =======
 
 
-Blaze should caching should store the expression graph of the query and the data::
+Blaze caching should store the expression graph of the query and the data::
 
-    sql = '''select stocks.ticker, stock_hist.c, stock_hist.o, stock_hist.date
-    from stocks inner join stock_hist on
-    stocks.sec_id = stock_hist.sec_id
-    '''
+  sql = '''select stocks.ticker, stock_hist.c, stock_hist.o, stock_hist.date
+  from stocks inner join stock_hist on
+  stocks.sec_id = stock_hist.sec_id
+  '''
 
-    sql_arr = blaze.array(sql, db_conn)
-    sql_arr.where(and_(stocks.ticker.in_(['A',B','C']),
-                   stock_hist.date.between_('2001-01-01','2004-01-01')
-                   )
-               )
-    print(sql_sub_arr)
+  sql_arr = blaze.array(sql, db_conn)
+  sql_arr.where(and_(stocks.ticker.in_(['A',B','C']),
+                 stock_hist.date.between_('2001-01-01','2004-01-01')
+                 )
+             )
+  print(sql_sub_arr)
 
 The caching/fetching mechanism should be smart enough to fetch only the diff on the following query::
 
-    sql_arr.where(and_(stocks.ticker.in_(['A',B','E','F]),
-                   stock_hist.date.between_('2002-01-01','2005-01-01')
-                   )
-               )
-    ]
+  sql_arr.where(and_(stocks.ticker.in_(['A',B','E','F]),
+                 stock_hist.date.between_('2002-01-01','2005-01-01')
+                 )
+             )
+
 Notice the **where** clause now contains entities: A,B,E,F and the date range has changed to extend beyond
 dates which are in the current cache.  Blaze should should fetch data between 2002-01-01 and 2005-01-01 for
-entities E, and F, and for entities A' and B, fetch data between 2004-01-01 and 2005-01-01.
+entities E and F, and for entities A and B, fetch data between 2004-01-01 and 2005-01-01.
