@@ -261,6 +261,11 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
                 dshape = datashape.from_numpy(res_shape, res_dtype)
                 vars_[name] = empty(dshape)
 
+    if 'storage' in kwargs and kwargs['storage'] is not None:
+        res_disk = True
+    else:
+        res_disk = False
+
     for i in xrange(0, vlen, bsize):
         # Correction for the block size
         if i+bsize > vlen:
@@ -286,11 +291,6 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
             # numexpr returns a numpy array, and we need dynd/blaze ones
             dynd_block = nd.array(res_block)
             res_block = array(res_block)
-
-        if 'storage' in kwargs and kwargs['storage'] is not None:
-            res_disk = True
-        else:
-            res_disk = False
 
         if i == 0:
             scalar = False
