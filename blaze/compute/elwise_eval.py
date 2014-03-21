@@ -12,6 +12,7 @@ from dynd import nd, ndt
 from .. import array, empty
 from .eval import eval as blaze_eval, append
 import datashape
+import re
 
 if sys.version_info >= (3, 0):
     xrange = range
@@ -127,6 +128,13 @@ def _elwise_eval(expression, vm=None, user_dict={}, **kwargs):
     # Get variables and column names participating in expression
     depth = kwargs.pop('depth', 2)
     vars = _getvars(expression, user_dict, depth, vm=vm)
+
+    # The next is a hack to try to prevent people of using axis=dim,
+    # where dim is > 0.
+    if ("axis" in expression and
+        re.findall("axis\s*=\s*[1-9]", expression)):
+        raise NotImplementedError(
+            "reductions in axis different than 0 are not supported yet")
 
     # Gather info about sizes and lengths
     rowsize, vlen = 0, 1
@@ -288,14 +296,13 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
             scalar = False
             dim_reduction = False
             # Detection of reduction operations
-            if (not hasattr(res_block, "__len__") or
-                len(res_block) == 0):
+            if res_block.dshape.shape == ():
                 scalar = True
-                result = res_block
+                result = dynd_block
                 continue
             elif len(res_block.dshape.shape) < maxndims:
                 dim_reduction = True
-                result = res_block
+                result = dynd_block
                 continue
             block_shape, block_dtype = datashape.to_numpy(res_block.dshape)
             out_shape = list(block_shape)
@@ -312,15 +319,20 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
                 #result[:bsize] = res_block
                 result[:bsize] = dynd_block
         else:
-            if scalar or dim_reduction:
-                result += res_block
-            if res_disk:
+            if scalar:
+                result += dynd_block
+                result = result.eval()
+            elif dim_reduction:
+                if len(res_block) < len(result):
+                    result[:bsize] += dynd_block
+                else:
+                    result += dynd_block
+                result = result.eval()
+            elif res_disk:
                 append(result, dynd_block)
             else:
                 # The next is a workaround for bug #183
                 #result[i:i+bsize] = res_block
                 result[i:i+bsize] = dynd_block
 
-    if scalar:
-        return result[()]
     return result

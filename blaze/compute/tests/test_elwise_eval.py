@@ -108,6 +108,17 @@ class evalTest(unittest.TestCase):
         nr = a * b + d + 2
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
+    def test06(self):
+        """Testing reductions on blaze arrays"""
+        if self.vm == "python":
+            # The reductions does not work well using Blaze expressions yet
+            return
+        a, b = np.arange(self.N), np.arange(1, self.N+1)
+        b = blaze.array(b)
+        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm)
+        nr = np.sum(b + 2)
+        self.assert_(cr == nr, "eval does not work correctly")
+
 
 # Check for arrays that fit in the chunk size
 # Using the Python VM (i.e. Blaze machinery) here
@@ -168,6 +179,17 @@ class storageTest(MayBeDiskTest):
         nr = a * c + d
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
+    def test05(self):
+        """Testing reductions on blaze arrays"""
+        if self.vm == "python":
+            # The reductions does not work well using Blaze expressions yet
+            return
+        a, b = np.arange(self.N), np.arange(1, self.N+1)
+        b = blaze.array(b, storage=self.store1)
+        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm, storage=self.store3)
+        nr = np.sum(b + 2)
+        self.assert_(cr == nr, "eval does not work correctly")
+
 
 # Check for arrays stored on-disk, but fit in a chunk
 # Using the Python VM (i.e. Blaze machinery) here
@@ -185,7 +207,9 @@ class storagePythonLargeTest(storageTest):
     vm = "python"
 
 
+####################################
 # Multidimensional tests start now
+####################################
 
 # Check for arrays that fit in a chunk
 class evalMDTest(unittest.TestCase):
@@ -232,6 +256,39 @@ class evalMDTest(unittest.TestCase):
         cr = blaze._elwise_eval("c * d + 2", vm=self.vm)
         nr = a * b + 2
         assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test04(self):
+        """Testing reductions on blaze arrays"""
+        if self.vm == "python":
+            # The reductions does not work well using Blaze expressions yet
+            return
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
+        b = blaze.array(b)
+        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm)
+        nr = np.sum(b + 2)
+        self.assert_(cr == nr, "eval does not work correctly")
+
+    def test05(self):
+        """Testing reductions on blaze arrays and axis=0"""
+        if self.vm == "python":
+            # The reductions does not work well using Blaze expressions yet
+            return
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
+        b = blaze.array(b)
+        cr = blaze._elwise_eval("sum(b + 2, axis=0)", vm=self.vm)
+        nr = np.sum(b + 2, axis=0)
+        assert_array_equal(cr[:], nr, "eval does not work correctly")
+
+    def test06(self):
+        """Testing reductions on blaze arrays and axis=1"""
+        if self.vm == "python":
+            # The reductions does not work well using Blaze expressions yet
+            return
+        self.assertRaises(NotImplementedError,
+                          blaze._elwise_eval, "sum([[1,2],[3,4]], axis=1)")
+
 
 # Check for arrays that fit in a chunk
 # Using the Python VM (i.e. Blaze machinery) here
@@ -298,6 +355,31 @@ class storageMDTest(MayBeDiskTest):
         nr = a * c + d
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
+    def test05(self):
+        """Testing reductions on blaze arrays"""
+        if self.vm == "python":
+            # The reductions does not work well using Blaze expressions yet
+            return
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
+        b = blaze.array(b, storage=self.store1)
+        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm, storage=self.store3)
+        nr = np.sum(b + 2)
+        self.assert_(nd.as_numpy(cr) == nr, "eval does not work correctly")
+
+    def test06(self):
+        """Testing reductions on blaze arrays and axis=0"""
+        if self.vm == "python":
+            # The reductions does not work well using Blaze expressions yet
+            return
+        a = np.arange(self.N*self.M).reshape(self.N, self.M)
+        b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
+        b = blaze.array(b, storage=self.store1)
+        cr = blaze._elwise_eval("sum(b, axis=0)",
+                                vm=self.vm, storage=self.store3)
+        nr = np.sum(b, axis=0)
+        assert_array_equal(nd.as_numpy(cr), nr, "eval does not work correctly")
+
 
 # Check for arrays stored on-disk, but fit in a chunk
 # Using the Python VM (i.e. Blaze machinery) here
@@ -306,12 +388,12 @@ class storagePythonMDTest(storageMDTest):
 
 # Check for arrays stored on-disk, but are larger than a chunk
 class storageLargeMDTest(storageMDTest):
-    N = 100
+    N = 500
 
 # Check for arrays stored on-disk, but are larger than a chunk
 # Using the Python VM (i.e. Blaze machinery) here
 class storagePythonLargeMDTest(storageMDTest):
-    N = 100
+    N = 500
     vm = "python"
 
 
