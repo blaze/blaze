@@ -47,6 +47,11 @@ typically used to filter the results.  Blaze should be improved in
 order to read only the data that is necessary and indexes will be
 instrumental for doing this.
 
+Additionally, caching on continuous parameters such as datetime should
+be handled properly.  That is, if one query is between 2001 and 2008
+and a second query is between 2005 and 2012, blaze should only pull
+the missing data.
+
 This cache subsystem should be part of Blaze in the same way than the
 catalog, and could be used as a general cache system for querying
 remote datasets and caching results.  One should devise a way to clean
@@ -225,3 +230,59 @@ Here it is a complete example on how the cache should work::
   # The line below should print: 'array([2011-11-11, "world", 4.2]))'
   print(b)
 
+
+
+Advanced Example
+================
+
+The following is an example of caching for databases that contain a collection of tables (RDBMSs)::
+
+Starting with two tables:
+
+**STOCKS.TBL**
+
+===================  ===================  ======  ======
+max_date             min_date             sec_id  ticker
+-------------------  -------------------  ------  ------
+2013-08-09 00:00:00  1999-11-19 00:00:00  0       A
+2013-08-09 00:00:00  1998-01-05 00:00:00  1       AA
+2013-08-09 00:00:00  1998-01-05 00:00:00  2       AAPL
+...                  ...                  .       .
+===================  ===================  ======  ======
+
+**STOCKS_HIST.TBL**
+
+=================== ======= ======= ======= ======= ============ =======
+date                o       h       l       c       v            sec_id
+------------------- ------- ------- ------- ------- ------------ -------
+1999-11-19 00:00:00 39.8329 39.8885 36.9293 37.6251 11390201.186 0
+1999-11-22 00:00:00 38.3208 40.0091 37.1613 39.9442 4654716.475  0
+1999-11-23 00:00:00 39.4247 40.4729 37.3375 37.5138 4268902.729  0
+...                 ...     ...     ...     ...     ...          ...
+=================== ======= ======= ======= ======= ============ =======
+
+
+Blaze caching should store the expression graph of the query and the data::
+
+  sql = '''select stocks.ticker, stock_hist.c, stock_hist.o, stock_hist.date
+  from stocks inner join stock_hist on
+  stocks.sec_id = stock_hist.sec_id
+  '''
+
+  sql_arr = blaze.array(sql, db_conn)
+  sql_arr.where(and_(stocks.ticker.in_(['A',B','C']),
+                 stock_hist.date.between_('2001-01-01','2004-01-01')
+                 )
+             )
+  print(sql_sub_arr)
+
+The caching/fetching mechanism should be smart enough to fetch only the diff on the following query::
+
+  sql_arr.where(and_(stocks.ticker.in_(['A',B','E','F]),
+                 stock_hist.date.between_('2002-01-01','2005-01-01')
+                 )
+             )
+
+Notice the **where** clause now contains entities: A,B,E,F and the date range has changed to extend beyond
+dates which are in the current cache.  Blaze should should fetch data between 2002-01-01 and 2005-01-01 for
+entities E and F, and for entities A and B, fetch data between 2004-01-01 and 2005-01-01.
