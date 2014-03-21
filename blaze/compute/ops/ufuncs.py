@@ -30,7 +30,7 @@ ufuncs_from_numpy = [
 
 ufuncs_from_dynd = ['real', 'imag']
 
-reduction_ufuncs = ['any', 'all', 'sum', 'product']
+reduction_ufuncs = ['any', 'all', 'sum', 'product', 'min', 'max']
 
 __all__ = ufuncs_from_numpy + ufuncs_from_dynd + reduction_ufuncs
 
@@ -93,6 +93,28 @@ for dt in [np.int32, np.int64, np.float32, np.float64,
     dt = np.dtype(dt)
     product.add_overload('(%s) -> %s' % ((str(dt),)*2),
                      _lowlevel.ckernel_deferred_from_ufunc(np.multiply,
+                                                           (dt,) * 3,
+                                                           False),
+                     associative=True, commutative=True)
+
+min = ReductionBlazeFunc('blaze', 'min')
+for dt in [np.bool, np.int8, np.int16, np.int32, np.int64,
+           np.uint8, np.uint16, np.uint32, np.uint64,
+           np.float32, np.float64, np.complex64, np.complex128]:
+    dt = np.dtype(dt)
+    min.add_overload('(%s) -> %s' % ((str(dt),)*2),
+                     _lowlevel.ckernel_deferred_from_ufunc(np.minimum,
+                                                           (dt,) * 3,
+                                                           False),
+                     associative=True, commutative=True)
+
+max = ReductionBlazeFunc('blaze', 'max')
+for dt in [np.bool, np.int8, np.int16, np.int32, np.int64,
+           np.uint8, np.uint16, np.uint32, np.uint64,
+           np.float32, np.float64, np.complex64, np.complex128]:
+    dt = np.dtype(dt)
+    max.add_overload('(%s) -> %s' % ((str(dt),)*2),
+                     _lowlevel.ckernel_deferred_from_ufunc(np.maximum,
                                                            (dt,) * 3,
                                                            False),
                      associative=True, commutative=True)
