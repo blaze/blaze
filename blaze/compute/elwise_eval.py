@@ -335,4 +335,12 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
                 #result[i:i+bsize] = res_block
                 result[i:i+bsize] = dynd_block
 
+    # Scalars and dim reductions generate dynd array for workaround
+    # different issues in Blaze array operations (see #197)
+    if isinstance(result, nd.array):
+        if scalar:
+            return array(result)
+        else:
+            # If not an scalar pass the arguments (persistency, etc.)
+            return array(result, **kwargs)
     return result

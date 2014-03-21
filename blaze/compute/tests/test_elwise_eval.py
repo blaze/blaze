@@ -365,7 +365,7 @@ class storageMDTest(MayBeDiskTest):
         b = blaze.array(b, storage=self.store1)
         cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm, storage=self.store3)
         nr = np.sum(b + 2)
-        self.assert_(nd.as_numpy(cr) == nr, "eval does not work correctly")
+        self.assert_(cr == nr, "eval does not work correctly")
 
     def test06(self):
         """Testing reductions on blaze arrays and axis=0"""
@@ -378,7 +378,7 @@ class storageMDTest(MayBeDiskTest):
         cr = blaze._elwise_eval("sum(b, axis=0)",
                                 vm=self.vm, storage=self.store3)
         nr = np.sum(b, axis=0)
-        assert_array_equal(nd.as_numpy(cr), nr, "eval does not work correctly")
+        assert_array_equal(cr, nr, "eval does not work correctly")
 
 
 # Check for arrays stored on-disk, but fit in a chunk
