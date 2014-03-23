@@ -51,5 +51,93 @@ class TestBasic(unittest.TestCase):
                     [[1, 0, -1], [0, 1], [2, 4, 6]])
 
 
+class TestReduction(unittest.TestCase):
+    def test_min_zerosize(self):
+        # Empty min operations should raise, because it has no
+        # reduction identity
+        self.assertRaises(ValueError, blaze.eval, blaze.min([]))
+        self.assertRaises(ValueError, blaze.eval, blaze.min([], keepdims=True))
+        self.assertRaises(ValueError, blaze.eval, blaze.min([[], []]))
+        self.assertRaises(ValueError, blaze.eval, blaze.min([[], []],
+                                                            keepdims=True))
+        self.assertRaises(ValueError, blaze.eval, blaze.min([[], []], axis=-1))
+        self.assertRaises(ValueError, blaze.eval, blaze.min([[], []],
+                                                            axis=-1,
+                                                            keepdims=True))
+        # However, if we're only reducing on a non-empty dimension, it's ok
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[], []],
+                                                       axis=0))._data),
+                         [])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[], []],
+                                                       axis=0,
+                                                       keepdims=True))._data),
+                         [[]])
+
+    def test_min(self):
+        # Min element of scalar case is the element itself
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min(10))._data), 10)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min(-5.0))._data), -5.0)
+        # One-dimensional size one
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([10]))._data), 10)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([-5.0]))._data), -5.0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([-5.0],
+                                                       axis=0))._data), -5.0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([10],
+                                                       keepdims=True))._data),
+                         [10])
+        # One dimensional
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([1, 2]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([2, 1]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([0, 1, 0]))._data), 0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([0, 1, 0]))._data), 0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([1, 0, 2]))._data), 0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([2, 1, 0]))._data), 0)
+        # Two dimensional, test with minimum at all possible positions
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 2, 3],
+                                                        [4, 5, 6]]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[2, 1, 3],
+                                                        [4, 5, 6]]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[3, 2, 1],
+                                                        [4, 5, 6]]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[3, 2, 5],
+                                                        [4, 1, 6]]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[3, 2, 5],
+                                                        [4, 6, 1]]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[3, 2, 5],
+                                                        [1, 6, 4]]))._data), 1)
+        # Two dimensional, with axis= argument both positive and negative
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 5, 3],
+                                                        [4, 2, 6]],
+                                                       axis=0))._data),
+                         [1, 2, 3])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 5, 3],
+                                                        [4, 2, 6]],
+                                                       axis=-2))._data),
+                         [1, 2, 3])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 2, 3],
+                                                        [4, 5, 6]],
+                                                       axis=1))._data),
+                         [1, 4])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 2, 3],
+                                                        [4, 5, 6]],
+                                                       axis=-1))._data),
+                         [1, 4])
+        # Two dimensional, with keepdims=True
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 2, 3],
+                                                        [4, 5, 6]],
+                                                       keepdims=True))._data),
+                         [[1]])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 2, 3],
+                                                        [5, 4, 6]],
+                                                       axis=0,
+                                                       keepdims=True))._data),
+                         [[1, 2, 3]])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.min([[1, 5, 3],
+                                                        [4, 2, 6]],
+                                                       axis=1,
+                                                       keepdims=True))._data),
+                         [[1], [2]])
+
+
 if __name__ == '__main__':
     unittest.main()
