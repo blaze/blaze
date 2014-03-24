@@ -216,5 +216,45 @@ class TestReduction(unittest.TestCase):
                                                        keepdims=True))._data),
                          [[9], [12]])
 
+    def test_all(self):
+        # Sanity check of reduction op
+        self.assertEqual(dd_as_py(blaze.eval(blaze.all(True))._data), True)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.all(False))._data), False)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.all(blaze.array([], dshape='0 * bool')))._data), True)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.all([False, True]))._data),
+                         False)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.all([True, True]))._data),
+                         True)
+
+    def test_any(self):
+        # Sanity check of reduction op
+        self.assertEqual(dd_as_py(blaze.eval(blaze.any(True))._data), True)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.any(False))._data), False)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.any(blaze.array([], dshape='0 * bool')))._data), False)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.any([False, True]))._data),
+                         True)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.any([False, False]))._data),
+                         False)
+
+    def test_max(self):
+        # Sanity check of reduction op
+        self.assertEqual(dd_as_py(blaze.eval(blaze.max(5))._data), 5)
+        self.assertRaises(ValueError, blaze.eval, blaze.max([]))
+        self.assertEqual(dd_as_py(blaze.eval(blaze.max([3, -2]))._data),
+                         3)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.max([1.5, 2.0]))._data),
+                         2.0)
+
+    def test_product(self):
+        # Sanity check of reduction op
+        self.assertEqual(dd_as_py(blaze.eval(blaze.product(5))._data), 5)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.product([]))._data), 1)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.product([3, -2]))._data),
+                         -6)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.product([1.5, 2.0]))._data),
+                         3.0)
+
+
+
 if __name__ == '__main__':
     unittest.main()

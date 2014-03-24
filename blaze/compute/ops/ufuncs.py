@@ -68,14 +68,16 @@ any.add_overload('(bool) -> bool',
                  _lowlevel.ckernel_deferred_from_ufunc(np.logical_or,
                                                        (np.bool,) * 3,
                                                        False),
-                 associative=True, commutative=True)
+                 associative=True, commutative=True,
+                 identity=False)
 
 all = ReductionBlazeFunc('blaze', 'all')
 all.add_overload('(bool) -> bool',
                  _lowlevel.ckernel_deferred_from_ufunc(np.logical_and,
                                                        (np.bool,) * 3,
                                                        False),
-                 associative=True, commutative=True)
+                 associative=True, commutative=True,
+                 identity=True)
 
 sum = ReductionBlazeFunc('blaze', 'sum')
 for dt in [np.int32, np.int64, np.float32, np.float64,
@@ -96,7 +98,8 @@ for dt in [np.int32, np.int64, np.float32, np.float64,
                      _lowlevel.ckernel_deferred_from_ufunc(np.multiply,
                                                            (dt,) * 3,
                                                            False),
-                     associative=True, commutative=True)
+                     associative=True, commutative=True,
+                     identity=1)
 
 min = ReductionBlazeFunc('blaze', 'min')
 for dt in [np.bool, np.int8, np.int16, np.int32, np.int64,
