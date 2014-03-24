@@ -50,7 +50,7 @@ for example it supports variable-sized arrays.
     array([[     1],
            [     2,      3,      4],
            [     5,      6]],
-          dshape='3, var, int32')
+          dshape='3 * var * int32')
 
 Its support for strings includes variable-sized strings
 as well.
@@ -61,6 +61,20 @@ as well.
     array([['test', 'one', 'two', 'three'],
            ['a', 'braca', 'dabra']],
           dshape='2 * var * string')
+
+Simple Calculations
+~~~~~~~~~~~~~~~~~~~
+
+Blaze supports ufuncs and arithmetic similarly to NumPy.
+
+.. doctests::
+    >>> a = array([1, 2, 3])
+    >>> blaze.sin(a) + 1
+    array([ 1.84147098,  1.90929743,  1.14112001],
+          dshape='3 * float64')
+    >>> blaze.sum(3 * a)
+    array(18,
+          dshape='int32')
 
 Iterators
 ~~~~~~~~~
