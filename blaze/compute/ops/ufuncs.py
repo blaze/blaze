@@ -85,7 +85,8 @@ for dt in [np.int32, np.int64, np.float32, np.float64,
                      _lowlevel.ckernel_deferred_from_ufunc(np.add,
                                                            (dt,) * 3,
                                                            False),
-                     associative=True, commutative=True)
+                     associative=True, commutative=True,
+                     identity=0)
 
 product = ReductionBlazeFunc('blaze', 'product')
 for dt in [np.int32, np.int64, np.float32, np.float64,

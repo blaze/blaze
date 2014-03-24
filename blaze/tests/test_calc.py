@@ -138,6 +138,83 @@ class TestReduction(unittest.TestCase):
                                                        keepdims=True))._data),
                          [[1], [2]])
 
+    def test_sum_zerosize(self):
+        # Empty sum operations should produce 0, the reduction identity
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([]))._data), 0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([],
+                                                       keepdims=True))._data),
+                         [0])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[], []]))._data), 0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[], []],
+                                                       keepdims=True))._data),
+                         [[0]])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[], []],
+                                                       axis=-1))._data),
+                         [0, 0])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[], []],
+                                                            axis=-1,
+                                                            keepdims=True))._data),
+                         [[0], [0]])
+        # If we're only reducing on a non-empty dimension, we might still
+        # end up with zero-sized outputs
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[], []],
+                                                       axis=0))._data),
+                         [])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[], []],
+                                                       axis=0,
+                                                       keepdims=True))._data),
+                         [[]])
+
+    def test_sum(self):
+        # Sum of scalar case is the element itself
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum(10))._data), 10)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum(-5.0))._data), -5.0)
+        # One-dimensional size one
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([10]))._data), 10)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([-5.0]))._data), -5.0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([-5.0],
+                                                       axis=0))._data), -5.0)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([10],
+                                                       keepdims=True))._data),
+                         [10])
+        # One dimensional
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([1, 2]))._data), 3)
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([0, 1, 2]))._data), 3)
+        # Two dimensional
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 2, 3],
+                                                        [4, 5, 6]]))._data), 21)
+        # Two dimensional, with axis= argument both positive and negative
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 5, 3],
+                                                        [4, 2, 6]],
+                                                       axis=0))._data),
+                         [5, 7, 9])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 5, 3],
+                                                        [4, 2, 6]],
+                                                       axis=-2))._data),
+                         [5, 7, 9])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 2, 3],
+                                                        [4, 5, 6]],
+                                                       axis=1))._data),
+                         [6, 15])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 2, 3],
+                                                        [4, 5, 6]],
+                                                       axis=-1))._data),
+                         [6, 15])
+        # Two dimensional, with keepdims=True
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 2, 3],
+                                                        [4, 5, 6]],
+                                                       keepdims=True))._data),
+                         [[21]])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 2, 3],
+                                                        [5, 4, 6]],
+                                                       axis=0,
+                                                       keepdims=True))._data),
+                         [[6, 6, 9]])
+        self.assertEqual(dd_as_py(blaze.eval(blaze.sum([[1, 5, 3],
+                                                        [4, 2, 6]],
+                                                       axis=1,
+                                                       keepdims=True))._data),
+                         [[9], [12]])
 
 if __name__ == '__main__':
     unittest.main()

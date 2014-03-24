@@ -5,7 +5,7 @@ arguments.
 
 from __future__ import absolute_import, division, print_function
 
-from dynd import ndt, _lowlevel
+from dynd import nd, ndt, _lowlevel
 
 from ..traversal import visit
 
@@ -43,6 +43,7 @@ class CKernelLifter(object):
                 assoc = ckernel['assoc']
                 comm = ckernel['comm']
                 ident = ckernel['ident']
+                ident = None if ident is None else nd.asarray(ident)
                 axis = ckernel['axis']
                 keepdims = ckernel['keepdims']
                 op.args[0] = _lowlevel.lift_reduction_ckernel_deferred(
