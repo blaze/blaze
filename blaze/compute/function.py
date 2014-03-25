@@ -16,7 +16,6 @@ from collections import namedtuple
 import blaze
 import datashape
 from datashape import coretypes, dshape
-from datashape import coretypes as T
 
 from ..datadescriptor import DeferredDescriptor
 from .expr import ArrayOp, ExprContext, KernelOp
@@ -60,12 +59,12 @@ def construct(bfunc, ctx, overload, args):
             empty = ExprContext()
             arg.expr = (term, empty)
         elif not isinstance(arg, blaze.Array):
-            term = ArrayOp(T.typeof(arg))
+            term = ArrayOp(coretypes.typeof(arg))
 
         ctx.terms[term] = arg
         params.append(term)
 
-    assert isinstance(overload.resolved_sig, T.Function)
+    assert isinstance(overload.resolved_sig, coretypes.Function)
     restype = dshape(overload.resolved_sig.restype)
 
     return KernelOp(restype, *params, kernel=bfunc, overload=overload)
