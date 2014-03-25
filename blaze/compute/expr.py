@@ -5,24 +5,12 @@ Each expression node carries a DataShape as type.
 """
 
 from __future__ import absolute_import, division, print_function
-
-from collections import Iterable
 from functools import partial
-
-from datashape import coretypes
 
 
 array = 'array'    # array input
 kernel = 'kernel'  # kernel application, carrying the blaze kernel as a
                    # first argument (Constant)
-
-
-class Config(object):
-    max_argument_recursion = 25
-    max_argument_len       = 1000
-    argument_sample        = 100
-
-conf = Config()
 
 
 class ExprContext(object):
