@@ -8,7 +8,6 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 
-from ..compute.expr import dump
 from ..compute.ops import ufuncs
 from .. import compute
 
@@ -89,18 +88,6 @@ class Array(object):
     def deferred(self):
         return self._data.capabilities.deferred
 
-    def view(self):
-        if not self.capabilities.deferred:
-            raise ValueError("Cannot call 'view' on a concrete array")
-
-        term, context = self.expr
-        ipython = False
-        try:
-            ipython = __IPYTHON__
-        except NameError:
-            pass
-
-        return dump(term, ipython=ipython)
 
     def __array__(self):
         import numpy as np

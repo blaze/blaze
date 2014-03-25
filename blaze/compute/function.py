@@ -15,12 +15,60 @@ from collections import namedtuple
 # TODO: Remove circular dependency between blaze.objects.Array and blaze.compute
 import blaze
 import datashape
-from datashape import coretypes
+from datashape import coretypes, dshape
+from datashape import coretypes as T
 
 from ..datadescriptor import DeferredDescriptor
-from .expr import construct, ExprContext
+from .expr import ArrayOp, ExprContext, KernelOp
 
 Overload = namedtuple('Overload', 'resolved_sig, sig, func')
+
+def construct(bfunc, ctx, overload, args):
+    """
+    Blaze expression graph construction for deferred evaluation.
+
+    Parameters
+    ----------
+    bfunc : Blaze Function
+        (Overloaded) blaze function representing the operation
+
+    ctx: ExprContext
+        Context of the expression
+
+    overload: blaze.overload.Overload
+        Instance representing the overloaded function
+
+    args: list
+        bfunc parameters
+    """
+    assert isinstance(bfunc, BlazeFunc), bfunc
+
+    params = [] # [(graph_term, ExprContext)]
+
+    # -------------------------------------------------
+    # Build type unification parameters
+
+    for i, arg in enumerate(args):
+        if isinstance(arg, blaze.Array) and arg.expr:
+            # Compose new expression using previously constructed expression
+            term, context = arg.expr
+            if not arg.deferred:
+                ctx.add_input(term, arg)
+        elif isinstance(arg, blaze.Array):
+            term = ArrayOp(arg.dshape)
+            ctx.add_input(term, arg)
+            empty = ExprContext()
+            arg.expr = (term, empty)
+        elif not isinstance(arg, blaze.Array):
+            term = ArrayOp(T.typeof(arg))
+
+        ctx.terms[term] = arg
+        params.append(term)
+
+    assert isinstance(overload.resolved_sig, T.Function)
+    restype = dshape(overload.resolved_sig.restype)
+
+    return KernelOp(restype, *params, kernel=bfunc, overload=overload)
 
 
 class BlazeFunc(object):
