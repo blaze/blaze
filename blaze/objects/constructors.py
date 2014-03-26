@@ -19,11 +19,13 @@ import numpy as np
 import datashape
 from datashape import to_numpy, to_numpy_dtype
 import blz
+import tables
 
 from .array import Array
 from ..datadescriptor import (IDataDescriptor,
                               DyNDDataDescriptor,
-                              BLZDataDescriptor)
+                              BLZDataDescriptor,
+                              HDF5DataDescriptor)
 from ..io.storage import Storage
 from ..py2help import basestring
 
@@ -88,29 +90,25 @@ def array(obj, dshape=None, caps={'efficient-write': True},
     elif isinstance(obj, IDataDescriptor):
         # TODO: Validate the 'caps', convert to another kind
         #       of data descriptor if necessary
-        # Note by Francesc: but if it is already an IDataDescriptor I wonder
-        # if `caps` should be ignored.  Hmm, probably not...
-        #
-        # Note by Oscar: Maybe we shouldn't accept a datadescriptor at
-        #   all at this level. If you've got a DataDescriptor you are
-        #   playing with internal datastructures anyways, go to the
-        #   Array constructor directly. If you want to transform to
-        #   another datadescriptor... convert it yourself (you are
-        #   playing with internal datastructures, remember? you should
-        #   be able to do it in your own.
         dd = obj
     elif storage is not None:
-        dt = None if dshape is None else to_numpy_dtype(dshape)
-        if inspect.isgenerator(obj):
-            # TODO: Generator logic can go inside barray
-            dd = BLZDataDescriptor(blz.barray(obj, dtype=dt, count=-1,
-                                              rootdir=storage.path,
-                                              mode=storage.mode))
-        else:
-            dd = BLZDataDescriptor(
-                blz.barray(obj, dtype=dt,
-                           rootdir=storage.path,
-                           mode=storage.mode))
+        if storage.format == 'blz':
+            dt = None if dshape is None else to_numpy_dtype(dshape)
+            if inspect.isgenerator(obj):
+                # TODO: Generator logic can go inside barray
+                arr = blz.fromiter(obj, dtype=dt, count=-1,
+                                   rootdir=storage.path,
+                                   mode=storage.mode)
+            else:
+                arr = blz.barray(obj, dtype=dt,
+                                 rootdir=storage.path,
+                                 mode=storage.mode)
+            dd = BLZDataDescriptor(arr)
+        elif storage.format == 'hdf5':
+            h5file = tables.open_file(storage.path, mode=storage.mode)
+            arr = h5file.create_earray(h5file.root, 'earray', obj=obj)
+            h5file.close()
+            dd = HDF5DataDescriptor(storage.path, '/earray')
     elif 'efficient-write' in caps and caps['efficient-write'] is True:
         # In-Memory array
         if dshape is None:
@@ -176,10 +174,17 @@ def empty(dshape, caps={'efficient-write': True}, storage=None):
     storage = _storage_convert(storage)
 
     if storage is not None:
-        shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.zeros(shape, dt,
-                                         rootdir=storage.path,
-                                         mode=storage.mode))
+        if storage.format == 'blz':
+            shape, dt = to_numpy(dshape)
+            dd = BLZDataDescriptor(blz.zeros(shape, dt,
+                                             rootdir=storage.path,
+                                             mode=storage.mode))
+        elif storage.format == 'hdf5':
+            obj = nd.as_numpy(nd.empty(str(dshape)))
+            h5file = tables.open_file(storage.path, mode=storage.mode)
+            arr = h5file.create_earray(h5file.root, 'earray', obj=obj)
+            h5file.close()
+            dd = HDF5DataDescriptor(storage.path, '/earray')
     elif 'efficient-write' in caps:
         dd = DyNDDataDescriptor(nd.empty(str(dshape)))
     elif 'compress' in caps:
@@ -210,10 +215,17 @@ def zeros(dshape, caps={'efficient-write': True}, storage=None):
     storage = _storage_convert(storage)
 
     if storage is not None:
-        shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.zeros(shape, dt,
-                                         rootdir=storage.path,
-                                         mode=storage.mode))
+        if storage.format == 'blz':
+            shape, dt = to_numpy(dshape)
+            dd = BLZDataDescriptor(blz.zeros(shape, dt,
+                                             rootdir=storage.path,
+                                             mode=storage.mode))
+        elif storage.format == 'hdf5':
+            obj = nd.as_numpy(nd.zeros(str(dshape)))
+            h5file = tables.open_file(storage.path, mode=storage.mode)
+            arr = h5file.create_earray(h5file.root, 'earray', obj=obj)
+            h5file.close()
+            dd = HDF5DataDescriptor(storage.path, '/earray')
     elif 'efficient-write' in caps:
         # TODO: Handle var dimension properly (raise exception?)
         dyndarr = nd.empty(str(dshape))
@@ -248,10 +260,17 @@ def ones(dshape, caps={'efficient-write': True}, storage=None):
     storage = _storage_convert(storage)
 
     if storage is not None:
-        shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.ones(shape, dt,
-                                        rootdir=storage.path,
-                                        mode=storage.mode))
+        if storage.format == 'blz':
+            shape, dt = to_numpy(dshape)
+            dd = BLZDataDescriptor(blz.ones(shape, dt,
+                                            rootdir=storage.path,
+                                            mode=storage.mode))
+        elif storage.format == 'hdf5':
+            obj = nd.as_numpy(nd.zeros(str(dshape)))
+            h5file = tables.open_file(storage.path, mode=storage.mode)
+            arr = h5file.create_earray(h5file.root, 'earray', obj=obj)
+            h5file.close()
+            dd = HDF5DataDescriptor(storage.path, '/earray')
     elif 'efficient-write' in caps:
         # TODO: Handle var dimension properly (raise exception?)
         dyndarr = nd.empty(str(dshape))
