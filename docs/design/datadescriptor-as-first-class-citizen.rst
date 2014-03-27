@@ -54,13 +54,18 @@ where most of the `**kwargs` in the 'openers' will be passed to the `DataDescrip
 
 The DataDescriptor constructors (new in the public API)::
 
-  DyNDDataDescriptor(dyndarr=None, new=True, **kwargs)
-  BLZDataDescriptor(dirpath, new=True, **kwargs)
-  CSVDataDescriptor(filepath, new=True, **kwargs)
-  JSONDataDescriptor(filepath, new=True, **kwargs)
-  HDF5DataDescriptor(filepath, datapath, new=True, **kwargs)
+  DyNDDataDescriptor(dyndarr=None, **kwargs)
+  BLZDataDescriptor(dirpath, **kwargs)
+  CSVDataDescriptor(filepath, **kwargs)
+  JSONDataDescriptor(filepath, **kwargs)
+  HDF5DataDescriptor(filepath, datapath, **kwargs)
 
 where `**kwargs` is where the user can set different parameters specific for the format (mode, appendable, compressed, CSV separator...).
+
+Also, as the `DataDescriptor` will be public, exposing it from the
+`Array` object will be possible::
+
+  Array.dd -> the DataDescriptor associated with the Blaze `Array`
 
 Pros and cons of this proposal
 ------------------------------
@@ -80,17 +85,11 @@ Cons:
 Other issues and considerations
 -------------------------------
 
-Right now, the `DataDescriptor` can only 'open' existing storage.  That means that we should add a new way to store the info for the data container before it could be created by the constructors (`array` and family) and fed by data.  
+Right now, the `DataDescriptor` can only 'open' existing storage. That
+means that we should add a new way to store the info for the data
+container before it could be created by the constructors (`array` and
+family) and fed by data.
 
-For this, a boolean `new` flag should be enough (if True, info for the new container should just be stored internally, if False, the persistent storage will be 'open'ed).  Then the constructors will need to check that the `new` attribute in DataDescriptor is set to True before trying to create the container.
+Also, in case the `dd` in constructors is set to 'None' then a
+`DyNDDataDescriptor` will be used.
 
-In case the `dd` in constructors is set to 'None' then a `DyNDDataDescriptor` will be used.
-
-Pending questions
------------------
-
-* The parameter name for the DataDescriptor instance in constructors should be `dd`, `data` or `datadescriptor`?  Probably the later.
-
-* Provided that `DataDescriptors` will become first-class citizens, would not it be better to make the `Array._data` as public (i.e. `Array.data`)?  If so, should we change his name to match the one chosen in the question above?
-
-* The `new` parameter in `DataDescriptor` is explicit enough?  And, it should have a 'True' value by default?  I think the answer for both questions should be 'yes'.
