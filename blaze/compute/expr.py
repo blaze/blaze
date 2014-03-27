@@ -8,6 +8,77 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 
 
+class BlazeExprNode(object):
+    """Abstract base class for blaze expressions"""
+
+    def __new__(cls, *args, **kwargs):
+        """Use new to automatically return canonicalized classes"""
+        return
+
+    def __init__(self, *args, **kwargs):
+        self._args = args
+        self._kwargs = kwargs
+        super(BlazeExprNode, self).__init__()
+
+
+class OpNode(BlazeExprNode):
+    """Abstract node representing the node is an operator"""
+    pass
+
+
+class ParallelOpNode(BlazeExprNode):
+    """Abstract node representing the node is a parallel operator"""
+    pass
+
+
+class ArithmeticNode(BlazeExprNode):
+    """Node for simple arithmetic operators"""
+    pass
+
+
+class MutatorNode(BlazeExprNode):
+    """Abstract node representing shape changing qualities of a node"""
+    pass
+
+
+class AppendNode(MutatorNode):
+    """Node for appending datasets together"""
+    pass
+
+
+class MapNode(ParallelOpNode):
+    """Node for a mapper operation"""
+    pass
+
+
+class ReduceNode(ParallelOpNode):
+    """Node for a reducer operation"""
+    pass
+
+
+class SelectorNode(BlaseExprNode):
+    """Abstract node representing the node is an selection"""
+    pass
+
+
+class GroupByNode(BlazeExprNode):
+    """Node for groupby selection"""
+    pass
+
+
+class SliceNode(SelectorNode):
+    """Node for slicing operations"""
+    pass
+
+
+class IndexNode(SelectorNode):
+    """Node for indexing into calculation"""
+    pass
+
+
+##############################################################################
+## Deprecated
+##############################################################################
 array = 'array'    # array input
 kernel = 'kernel'  # kernel application, carrying the blaze kernel as a
                    # first argument (Constant)
