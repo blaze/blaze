@@ -58,7 +58,7 @@ def construct(bfunc, ctx, overload, args):
             ctx.add_input(term, arg)
             empty = ExprContext()
             arg.expr = (term, empty)
-        elif not isinstance(arg, blaze.Array):
+        else:
             term = ArrayOp(coretypes.typeof(arg))
 
         ctx.terms[term] = arg
