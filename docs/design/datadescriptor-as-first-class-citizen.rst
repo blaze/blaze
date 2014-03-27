@@ -6,11 +6,22 @@ DataDescriptor as a 'Storage Descriptor' too
 Rational
 --------
 
-The current situation of having all the storage properties centralized in the `Storage` class is getting the code unnecessarily complicated (see https://github.com/ContinuumIO/blaze/pull/205).  Some kind of specialization at the API level is highly desirable so that the specific flags for each storage can be dealt separately.
+The current situation of having all the storage properties centralized
+in the `Storage` class is getting the code unnecessarily complicated
+(see https://github.com/ContinuumIO/blaze/pull/205).  Some kind of
+specialization at the API level is highly desirable so that the
+specific flags for each storage can be dealt separately.
 
-This proposal advocates for improving the different `DataDescriptor` classes for every supported format (currently DyND, BLZ, HDF5, CSV and JSON) so that they can deal with the storage capabilities internally.  This will actually render the `Storage` class useless and will effectively change the API of several important functions (array constructors and 'openers' mainly).
+This proposal advocates for improving the different `DataDescriptor`
+classes for every supported format (currently DyND, BLZ, HDF5, CSV and
+JSON) so that they can deal with the storage capabilities internally.
+This will actually render the `Storage` class useless and will
+effectively change the API of several important functions (array
+constructors and 'openers' mainly).
 
-Also, besides of deprecating the `Storage` class, the different `DataDescriptors` will become first class citizens that the users will have to know about.
+Also, besides of deprecating the `Storage` class, the different
+`DataDescriptors` will become first class citizens that the users will
+have to know about.
 
 This document explains with detail the implications of the change.
 
@@ -50,7 +61,8 @@ And the openers::
   from_json(filepath, **kwargs)
   from_hdf5(filepath, datapath, **kwargs)
 
-where most of the `**kwargs` in the 'openers' will be passed to the `DataDescriptor` constructors (see below).
+where most of the `**kwargs` in the 'openers' will be passed to the
+`DataDescriptor` constructors (see below).
 
 The DataDescriptor constructors (new in the public API)::
 
@@ -60,7 +72,9 @@ The DataDescriptor constructors (new in the public API)::
   JSONDataDescriptor(filepath, **kwargs)
   HDF5DataDescriptor(filepath, datapath, **kwargs)
 
-where `**kwargs` is where the user can set different parameters specific for the format (mode, appendable, compressed, CSV separator...).
+where `**kwargs` is where the user can set different parameters
+specific for the format (mode, appendable, compressed, CSV
+separator...).
 
 Also, as the `DataDescriptor` will be public, exposing it from the
 `Array` object will be possible::
@@ -72,13 +86,16 @@ Pros and cons of this proposal
 
 Pros:
 
-* There is a specialized DataDescriptor per each storage format. This provides a better way to deal with the specifics for each format.
+* There is a specialized DataDescriptor per each storage format. This
+  provides a better way to deal with the specifics for each format.
 
-* The `caps` parameter is not there anymore, so the constructors API is simplified.
+* The `caps` parameter is not there anymore, so the constructors API
+  is simplified.
 
 Cons:
 
-* The user will need to know about the kind of the format he will need, and Blaze will not decide for her anymore.
+* The user will need to know about the kind of the format he will
+  need, and Blaze will not decide for her anymore.
 
 * That's a hard change in public API.
 
@@ -92,4 +109,3 @@ family) and fed by data.
 
 Also, in case the `dd` in constructors is set to 'None' then a
 `DyNDDataDescriptor` will be used.
-
