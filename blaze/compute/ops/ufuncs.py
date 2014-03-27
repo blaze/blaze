@@ -55,9 +55,15 @@ for name in ufuncs_from_numpy:
 
 real = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
                                     'real', 'blaze', 'real')
-
 imag = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
                                     'imag', 'blaze', 'imag')
+
+year = blazefunc_from_dynd_property([ndt.date],
+                                    'year', 'blaze', 'year')
+month = blazefunc_from_dynd_property([ndt.date],
+                                    'month', 'blaze', 'month')
+day = blazefunc_from_dynd_property([ndt.date],
+                                    'day', 'blaze', 'day')
 
 #------------------------------------------------------------------------
 # Reduction UFuncs from NumPy

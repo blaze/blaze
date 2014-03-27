@@ -40,7 +40,7 @@ class Array(object):
             # NOTE: we need 'expr' on the Array to perform dynamic programming:
             #       Two concrete arrays should have a single Op! We cannot
             #       store this in the data descriptor, since there are many
-            self.expr = data.expr # hurgh
+            self.expr = data.expr  # hurgh
 
         # Inject the record attributes.
         injected_props = {}
@@ -53,13 +53,15 @@ class Array(object):
 
         # Need to inject attributes on the Array depending on dshape
         # attributes, in cases other than Record
-        if data.dshape in [datashape.dshape('int32'), datashape.dshape('int64')]:
+        if data.dshape in [datashape.dshape('int32'),
+                           datashape.dshape('int64')]:
             def __int__(self):
                 # Evaluate to memory
                 e = compute.eval.eval(self)
                 return int(e.ddesc.dynd_arr())
             injected_props['__int__'] = __int__
-        elif data.dshape in [datashape.dshape('float32'), datashape.dshape('float64')]:
+        elif data.dshape in [datashape.dshape('float32'),
+                             datashape.dshape('float64')]:
             def __float__(self):
                 # Evaluate to memory
                 e = compute.eval.eval(self)
@@ -74,6 +76,10 @@ class Array(object):
                 injected_props['__complex__'] = __complex__
             injected_props['real'] = _ufunc_to_property(ufuncs.real)
             injected_props['imag'] = _ufunc_to_property(ufuncs.imag)
+        elif ms == datashape.date_:
+            injected_props['year'] = _ufunc_to_property(ufuncs.year)
+            injected_props['month'] = _ufunc_to_property(ufuncs.month)
+            injected_props['day'] = _ufunc_to_property(ufuncs.day)
 
         if injected_props:
             self.__class__ = type('Array', (Array,), injected_props)
