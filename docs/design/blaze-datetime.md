@@ -73,8 +73,12 @@ is 6.
 
 ## No Unit Parameter
 
-* Always store datetime as 64-bit microseconds offset
-  from midnight of January 1, 1970.
+* Always store datetime as a 64-bit ticks
+  (100*nanoseconds) offset from midnight of
+  January 1, 0001. This is the "universal time
+  scale" defined in the ICU library.
+
+http://userguide.icu-project.org/datetime/universaltimescale
 
 NumPy parameterizes its datetime64 type with a unit,
 ranging from attoseconds up through hours. This
@@ -91,8 +95,9 @@ Pandas chooses nanoseconds as its unit, which means
 that it can represent dates from 1678 to 2262. This
 seems like a rather limiting choice of default if
 the library is to be used for historical dates, it
-can't even represent 1492! Microseconds seems more
-reasonable, as it gives a range of about 600000 years.
+can't even represent 1492! Microseconds (range of
+600000 years) or Ticks (100*nanoseconds, range of
+60000 years) seem more reasonable.
 
 ```
 >>> import pandas as pd
