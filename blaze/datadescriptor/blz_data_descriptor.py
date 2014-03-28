@@ -25,9 +25,15 @@ class BLZDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a BLZ array.
     """
-    def __init__(self, obj):
-        # This is a low level interface, so strictly
-        # require a BLZ barray here
+    def __init__(self, obj=None, rootdir=None, bparams=None, mode='r'):
+        if obj is None:
+            # We are just storing attributes for later creating the object
+            self.bparams = bparams
+            self.path = rootdir
+            self.mode = mode
+            self.blzarr = None
+            return
+
         if not isinstance(obj, blz.barray):
             raise TypeError(('object is not a blz array, '
                              'it has type %r') % type(obj))

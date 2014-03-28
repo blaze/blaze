@@ -7,9 +7,12 @@ import datashape
 import blaze
 from blaze.datadescriptor import dd_as_py
 from blaze.tests.common import MayBeUriTest
-from blaze import append
+from blaze import (append,
+    DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor)
+
 
 from blaze.py2help import skip
+import blz
 
 
 class TestEphemeral(unittest.TestCase):
@@ -54,13 +57,10 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress(self):
         # A compressed array (backed by BLZ)
-        a = blaze.array(np.arange(1,4), caps={'compress': True})
+        dd = BLZDataDescriptor(bparams=blz.bparams(clevel=5))
+        a = blaze.array(np.arange(1,4), dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3])
-        # XXX The tests below still do not work
-        # self.assertEqual(a[0], 1)
-        # self.assertEqual(a[1], 2)
-        # self.assertEqual(a[2], 3)
 
     def test_create_iter(self):
         # A simple 1D array
@@ -85,7 +85,8 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress_iter(self):
         # A compressed array (backed by BLZ)
-        a = blaze.array((i for i in range(10)), caps={'compress': True})
+        dd = BLZDataDescriptor(bparams=blz.bparams(clevel=5))
+        a = blaze.array((i for i in range(10)), dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
 
@@ -97,7 +98,8 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress_zeros(self):
         # A compressed array (backed by BLZ)
-        a = blaze.zeros('10 * int64', caps={'compress': True})
+        dd = BLZDataDescriptor(bparams=blz.bparams(clevel=5))
+        a = blaze.zeros('10 * int64', dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [0]*10)
 
@@ -109,7 +111,8 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress_ones(self):
         # A compressed array (backed by BLZ)
-        a = blaze.ones('10 * int64', caps={'compress': True})
+        dd = BLZDataDescriptor(bparams=blz.bparams(clevel=5))
+        a = blaze.ones('10 * int64', dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1]*10)
 
