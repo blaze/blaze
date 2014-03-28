@@ -3,7 +3,7 @@ import: {
     headers: True
 }
 datashape: |
-    var, {
-        data: date;
+    var * {
+        data: date,
         values: int32
     }

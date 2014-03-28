@@ -4,4 +4,4 @@ import: {
     end: 100
 }
 datashape: |
-    M, int32
+    M * int32
