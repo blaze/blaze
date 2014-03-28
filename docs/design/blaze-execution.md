@@ -1,6 +1,7 @@
 ﻿Blaze Execution
 ===============
 
+ * [Blaze Expressions](blaze-expr.md)
  * [Blaze Function Use Cases](blazefunc-usecases.md)
  * [Blaze NumPy-like API](blaze-numpy-api.md)
  * [Elementwise Reductions](elwise-reduction-ufuncs.md)
