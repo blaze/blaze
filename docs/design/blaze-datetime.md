@@ -108,6 +108,13 @@ ValueError: Out of bounds nanosecond timestamp: 1492-01-01 00:00:00
 
 ## Time Zone
 
+* Will use the Olson tz database, by importing the part which
+  knows how to read a compiled database, tzcode, into
+  DyND, then having a configuration to point at a build
+  version of the database. Where there is an OS version,
+  we can point at that, otherwise can point at the version
+  inside the ``pytz`` library.
+
 ### Resources
 
 * http://www.boost.org/doc/libs/1_55_0/doc/html/date_time/local_time.html
@@ -143,8 +150,6 @@ reasons:
   above for one library's approach to this.
 * For POSIX time zone specification, it looks like
   there is usage of GMT and UTC with opposite meanings.
-
-
 
 The time zone could be attached to the data, similar
 to how Python datetime objects work, or it could be
@@ -184,6 +189,10 @@ or Olson time zone names.
 http://blogs.msdn.com/b/bclteam/archive/2007/06/07/exploring-windows-time-zones-with-system-timezoneinfo-josh-free.aspx
 
 ### Time Zone Attached To Data
+
+* We're going to postpone considering this
+  until the case with time zone attached to the dtype
+  is functional.
 
 Let's say we want to allow something where we parse
 input strings and grab both the datetime value and
@@ -226,6 +235,8 @@ Systems that behave this way include:
 
 ### Time Zone Attached To Type
 
+* This is what we will do first.
+
 If we know all the datetimes are in the same time zone,
 as is commonly the case in time series, we can attach
 the time zone to the type instead of to the data.
@@ -235,3 +246,136 @@ Systems that behave this way include:
 * Pandas
 * Many systems where the time zone is implicit, and must
   be tracked separately by the programmer.
+
+## Code Examples
+
+The following code should work once the system is
+completed.
+
+```
+>>> from datetime import date, time, datetime, timedelta
+>>> import pytz
+>>> import blaze, datashape
+>>> from blaze import array
+>>> from datashape import dshape
+```
+
+DataShape creation:
+
+```
+>>> dshape('date')
+dshape("date")
+
+>>> dshape('time')
+dshape("time")
+>>> dshape('time[tz="UTC"]')
+dshape("time[tz='UTC']")
+>>> dshape('time[tz="America/Vancouver"]')
+dshape("time[tz='America/Vancouver']")
+
+>>> dshape('datetime')
+dshape("datetime")
+>>> dshape('datetime[tz="UTC"]')
+dshape("datetime[tz='UTC']")
+>>> dshape('datetime[tz="America/Vancouver"]')
+dshape("datetime[tz='America/Vancouver']")
+
+>>> dshape('units["second"]')
+dshape("units['second']")
+>>> dshape('units["100*nanosecond", int64]')
+dshape('units["100*nanosecond", int64]')
+```
+
+Array creation:
+
+```
+>>> array(date(2000, 1, 1))
+array('2000-01-01',
+      dshape='date')
+>>> array(datetime(2000, 1, 1, 0, 0), dshape='date')
+array('2000-01-01',
+      dshape='date')
+>>> array(datetime(2000, 1, 1, 5, 0), dshape='date')
+ValueError: datetime cannot be converted to a date
+
+>>> array(time(3, 45))
+array('03:45',
+      dshape='time')
+>>> array(time(3, 45, 12, 345))
+array('03:45:12.000345',
+      dshape='time')
+>>> array(time(3, 45, tzinfo=pytz.timezone('America/Vancouver'))
+array('03:45',
+      dshape='time[tz="America/Vancouver"]')
+>>> array('03:45', dshape='time')
+array('03:45',
+      dshape='time')
+>>> array('03:45:30', dshape='time[tz="America/Vancouver"]')
+array('03:45:30',
+      dshape='time[tz="America/Vancouver"]')
+
+>>> array(datetime(2000, 1, 1))
+array('2000-01-01T00:00',
+      dshape='datetime')
+>>> array(datetime(2000, 1, 1, 3, 45, 30))
+array('2000-01-01T03:45:30',
+      dshape='datetime')
+>>> array(datetime(2000, 1, 1, 3, 45, tzinfo=pytz=timezone('America/Vancouver')))
+array('2000-01-01T03:45',
+      dshape='datetime[tz="America/Vancouver"]')
+>>> array('2000-01-01T03:45', dshape='datetime')
+array('2000-01-01T03:45',
+      dshape='datetime')
+>>> array('2000-01-01T03:45Z', dshape='datetime')
+ValueError: Input for 'datetime' cannot specify a time zone
+>>> array('2000-01-01T03:45Z', dshape='datetime[tz="America/Vancouver"]')
+array('1999-12-31T19:45',
+      dshape='datetime[tz="America/Vancouver"]')
+
+>>> array(timedelta(seconds=3))
+array(3000000,
+      dshape='units["microsecond", int64]')
+>>> 3 * blaze.units.second
+array(3,
+      dshape='units["second"]')
+```
+
+DateTime Arithmetic:
+
+```
+# NOTE: Python's datetime.time does not support this arithmetic
+>>> a = array('2000-01-01', dshape='date')
+>>> b = array('03:45', dshape='time')
+>>> a + b
+array('2000-01-01T03:45',
+      dshape='datetime')
+
+>>> a = array('2000-01-05', dshape='date')
+>>> b = array('2000-01-01', dshape='date')
+>>> a - b
+array(4,
+      dshape='units["day", int32]')
+
+# NOTE: Python's datetime.time does not support this arithmetic
+>>> a = array('03:45', dshape='time')
+>>> b = array('02:00', dshape='time')
+>>> a - b
+array(63000000000,
+      dshape='units['100*nanosecond', int64]')
+
+>>> a = array('2000-01-01T03:45', dshape='datetime')
+>>> b = array('2000-01-01T02:00', dshape='datetime')
+>>> a - b
+array(63000000000,
+      dshape='units['100*nanosecond', int64]')
+
+>>> a = array('2000-01-01', dshape='date')
+>>> a + 100 * blaze.units.day
+array('2000-04-10',
+      dshape='date')
+
+>>> a = array('2000-01-01T03:45', dshape='datetime')
+>>> a + 12345 * blaze.units.millisecond
+array('2000-01-01T03:45:12.345',
+      dshape='datetime')
+```
