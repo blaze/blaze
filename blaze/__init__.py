@@ -16,7 +16,8 @@ from .compute.eval import eval, append
 from .compute.elwise_eval import _elwise_eval
 from .compute.ops.ufuncs import *
 from .datadescriptor import (
-    DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor)
+    DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor,
+    CSVDataDescriptor, JSONDataDescriptor)
 from .io.storage import (
     from_blz, from_csv, from_json, from_hdf5, drop, Storage)
 

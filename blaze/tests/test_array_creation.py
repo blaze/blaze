@@ -6,7 +6,7 @@ import numpy as np
 import datashape
 import blaze
 from blaze.datadescriptor import dd_as_py
-from blaze.tests.common import MayBeUriTest
+from blaze.tests.common import MayBePersistentTest
 from blaze import (append,
     DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor)
 
@@ -129,50 +129,37 @@ class TestEphemeral(unittest.TestCase):
         self.assertEqual(dd_as_py(aflt._data), [3.5, 2.25])
 
 
-class TestPersistent(MayBeUriTest, unittest.TestCase):
+class TestPersistent(MayBePersistentTest, unittest.TestCase):
 
-    uri = True
+    disk = True
 
     def test_create(self):
-        persist = blaze.Storage(self.rooturi, format="blz")
-        a = blaze.array([], 'float64', storage=persist)
+        dd = BLZDataDescriptor(path=self.rootdir)
+        a = blaze.array([], 'float64', dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
-        print("->", a.dshape.shape)
         self.assertTrue(a.dshape.shape == (0,))
         self.assertEqual(dd_as_py(a._data), [])
 
     def test_append(self):
-        persist = blaze.Storage(self.rooturi, format="blz")
-        a = blaze.zeros('0 * float64', storage=persist)
+        dd = BLZDataDescriptor(path=self.rootdir, mode='a')
+        a = blaze.zeros('0 * float64', dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
-        append(a,list(range(10)))
+        append(a, list(range(10)))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
 
     # Using a 1-dim as the internal dimension
     def test_append2(self):
-        persist = blaze.Storage(self.rooturi, format="blz")
-        a = blaze.empty('0 * 2 * float64', storage=persist)
+        dd = BLZDataDescriptor(path=self.rootdir, mode='a')
+        a = blaze.empty('0 * 2 * float64', dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
         lvals = [[i,i*2] for i in range(10)]
-        append(a,lvals)
+        append(a, lvals)
         self.assertEqual(dd_as_py(a._data), lvals)
 
-    def test_open(self):
-        persist = blaze.Storage(self.rooturi, format="blz")
-        self.assertTrue(persist.mode == 'a')
-        a = blaze.ones('0 * float64', storage=persist)
-        append(a,range(10))
-        # Re-open the dataset in URI
-        persist = blaze.Storage(self.rooturi, format="blz", mode='r')
-        self.assertTrue(persist.mode == 'r')
-        a2 = blaze.from_blz(persist)
-        self.assertTrue(isinstance(a2, blaze.Array))
-        self.assertEqual(dd_as_py(a2._data), list(range(10)))
-
     def test_wrong_open_mode(self):
-        persist = blaze.Storage(self.rooturi, format="blz", mode='r')
-        self.assertRaises(IOError, blaze.ones,
-                          '10 * float64', storage=persist)
+        dd = BLZDataDescriptor(path=self.rootdir, mode='r')
+        a = blaze.ones('10 * float64', dd=dd)
+        self.assertRaises(IOError, append, a, [1])
 
 
 if __name__ == '__main__':

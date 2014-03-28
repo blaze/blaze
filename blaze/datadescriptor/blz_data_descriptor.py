@@ -25,11 +25,11 @@ class BLZDataDescriptor(IDataDescriptor):
     """
     A Blaze data descriptor which exposes a BLZ array.
     """
-    def __init__(self, obj=None, rootdir=None, bparams=None, mode='r'):
+    def __init__(self, obj=None, path=None, bparams=None, mode='r'):
         if obj is None:
             # We are just storing attributes for later creating the object
             self.bparams = bparams
-            self.path = rootdir
+            self.path = path
             self.mode = mode
             self.blzarr = None
             return

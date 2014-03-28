@@ -6,6 +6,10 @@ import unittest
 
 import blaze
 from blaze.datadescriptor import dd_as_py
+from blaze.tests.common import MayBePersistentTest
+from blaze import (append,
+    DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor,
+    CSVDataDescriptor, JSONDataDescriptor)
 
 
 # A CSV toy example
@@ -92,6 +96,23 @@ class TestOpenJSON(unittest.TestCase):
         a = blaze.from_json(store, schema=json_schema)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
+
+
+class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
+
+    disk = True
+
+    def test_open(self):
+        dd = BLZDataDescriptor(path=self.rootdir, mode='a')
+        self.assertTrue(dd.mode == 'a')
+        a = blaze.ones('0 * float64', dd=dd)
+        append(a,range(10))
+        # Re-open the dataset in URI
+        dd = BLZDataDescriptor(path=self.rootdir, mode='r')
+        self.assertTrue(dd.mode == 'r')
+        a2 = blaze.from_blz(dd=dd)
+        self.assertTrue(isinstance(a2, blaze.Array))
+        self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
 
 if __name__ == '__main__':

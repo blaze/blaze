@@ -10,21 +10,20 @@ import glob
 
 
 # Useful superclass for disk-based tests
-class MayBeUriTest():
+class MayBePersistentTest():
 
-    uri = False
+    disk = False
 
     def setUp(self):
-        if self.uri:
+        if self.disk:
             prefix = 'barray-' + self.__class__.__name__
             self.rootdir = tempfile.mkdtemp(prefix=prefix)
-            self.rooturi = 'file://' + self.rootdir
             os.rmdir(self.rootdir)  # tests needs this cleared
         else:
             self.rootdir = None
 
     def tearDown(self):
-        if self.uri:
+        if self.disk:
             # Remove every directory starting with rootdir
             for dir_ in glob.glob(self.rootdir+'*'):
                 shutil.rmtree(dir_)
