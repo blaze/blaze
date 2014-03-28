@@ -12,9 +12,9 @@ from .data_descriptor import IDataDescriptor, Capabilities
 from .dynd_data_descriptor import DyNDDataDescriptor
 
 
-def open_file(filename, has_header, mode='r'):
+def open_file(path, mode, has_header):
     """Return a file handler positionated at the first valid line."""
-    csvfile = open(filename, mode=mode)
+    csvfile = open(path, mode=mode)
     if has_header:
         csvfile.readline()
     return csvfile
@@ -51,7 +51,7 @@ class CSVDataDescriptor(IDataDescriptor):
 
     Parameters
     ----------
-    filename : string
+    path : string
         A path string for the CSV file.
     schema : string or datashape
         A datashape (or its string representation) of the schema
@@ -64,12 +64,16 @@ class CSVDataDescriptor(IDataDescriptor):
         is guessed.
     """
 
-    def __init__(self, filename, **kwargs):
-        if os.path.isfile(filename) is not True:
-            raise ValueError('CSV file "%s" does not exist' % filename)
-        self.filename = filename
-        csvfile = open(filename)
+    def __init__(self, path, mode='r', **kwargs):
+        if os.path.isfile(path) is not True:
+            raise ValueError('CSV file "%s" does not exist' % path)
+        self.path = path
+        self.mode = mode
+        csvfile = open(path, mode=self.mode)
         schema = kwargs.get("schema", None)
+        if schema is None:
+            # This is just a container for persistent values
+            return
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
         if type(schema) in py2help._strtypes:
@@ -124,7 +128,7 @@ class CSVDataDescriptor(IDataDescriptor):
 
     def dynd_arr(self):
         # Positionate at the beginning of the file
-        with open_file(self.filename, self.has_header) as csvfile:
+        with open_file(self.path, self.mode, self.has_header) as csvfile:
             return nd.array(csv.reader(csvfile), dtype=self.schema)
 
     def __array__(self):
@@ -135,7 +139,7 @@ class CSVDataDescriptor(IDataDescriptor):
         return None
 
     def __getitem__(self, key):
-        with open_file(self.filename, self.has_header) as csvfile:
+        with open_file(self.path, self.mode, self.has_header) as csvfile:
             if isinstance(key, py2help._inttypes):
                 start, stop, step = key, key + 1, 1
             elif isinstance(key, slice):
@@ -151,12 +155,12 @@ class CSVDataDescriptor(IDataDescriptor):
         raise NotImplementedError
 
     def __iter__(self):
-        return csv_descriptor_iter(self.filename, self.has_header, self.schema)
+        return csv_descriptor_iter(self.path, self.has_header, self.schema)
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
         values = nd.array(row, dtype=self.schema)  # validate row
-        with open_file(self.filename, self.has_header, mode='a') as csvfile:
+        with open_file(self.path, self.mode, self.has_header) as csvfile:
             csvfile.seek(0, os.SEEK_END)  # go to the end of the file
             delimiter = self.dialect.delimiter
             csvfile.write(delimiter.join(py2help.unicode(v) for v in row)+'\n')
@@ -181,5 +185,5 @@ class CSVDataDescriptor(IDataDescriptor):
 
         """
         # Return the iterable
-        return csv_descriptor_iterchunks(self.filename, self.has_header,
+        return csv_descriptor_iterchunks(self.path, self.has_header,
                                          self.schema, blen, start, stop)

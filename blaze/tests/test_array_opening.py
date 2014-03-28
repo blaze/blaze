@@ -29,7 +29,6 @@ class TestOpenCSV(unittest.TestCase):
 
     def setUp(self):
         handle, self.fname = tempfile.mkstemp(suffix='.csv')
-        self.url = self.fname
         with os.fdopen(handle, "w") as f:
             f.write(csv_buf)
 
@@ -37,36 +36,29 @@ class TestOpenCSV(unittest.TestCase):
         os.unlink(self.fname)
 
     def test_open(self):
-        store = blaze.Storage(self.url, mode='r')
-        a = blaze.from_csv(store, schema=csv_schema)
+        dd = CSVDataDescriptor(self.fname, mode='r')
+        a = blaze.from_csv(dd, schema=csv_schema)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_from_dialect(self):
-        store = blaze.Storage(self.url, mode='r')
-        a = blaze.from_csv(store, schema=csv_schema, dialect='excel')
+        dd = CSVDataDescriptor(self.fname, mode='r')
+        a = blaze.from_csv(dd, schema=csv_schema, dialect='excel')
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_from_has_header(self):
-        store = blaze.Storage(self.url, mode='r')
-        a = blaze.from_csv(store, schema=csv_schema, has_header=False)
+        dd = CSVDataDescriptor(self.fname, mode='r')
+        a = blaze.from_csv(dd, schema=csv_schema, has_header=False)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_append(self):
-        store = blaze.Storage(self.url, mode='r+')
-        a = blaze.from_csv(store, schema=csv_schema)
+        dd = CSVDataDescriptor(self.fname, mode='r+')
+        a = blaze.from_csv(dd, schema=csv_schema)
         blaze.append(a, ["k4", "v4", 4, True])
         self.assertEqual(dd_as_py(a._data), csv_ldict + \
             [{u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
-
-    def test_deprecated_open(self):
-        url = "csv://" + self.fname
-        store = blaze.Storage(url, mode='r')
-        a = blaze.from_csv(store, schema=csv_schema)
-        self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), csv_ldict)
 
 
 json_buf = u"[1, 2, 3, 4, 5]"
@@ -77,7 +69,6 @@ class TestOpenJSON(unittest.TestCase):
 
     def setUp(self):
         handle, self.fname = tempfile.mkstemp(suffix='.json')
-        self.url = self.fname
         with os.fdopen(handle, "w") as f:
             f.write(json_buf)
 
@@ -85,15 +76,8 @@ class TestOpenJSON(unittest.TestCase):
         os.unlink(self.fname)
 
     def test_open(self):
-        store = blaze.Storage(self.url, mode='r')
-        a = blaze.from_json(store, schema=json_schema)
-        self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
-
-    def test_deprecated_open(self):
-        url = "json://" + self.fname
-        store = blaze.Storage(url, mode='r')
-        a = blaze.from_json(store, schema=json_schema)
+        dd = JSONDataDescriptor(path=self.fname, mode='r')
+        a = blaze.from_json(dd, schema=json_schema)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
 

@@ -158,14 +158,13 @@ def _persist_convert(persist):
 # The actual API specific for persistence.
 # Only BLZ, HDF5, CSV and JSON formats are supported currently.
 
-def from_blz(persist, **kwargs):
+def from_blz(dd, **kwargs):
     """Open an existing persistent BLZ array.
 
     Parameters
     ----------
-    persist : a Storage instance
-        The Storage instance specifies, among other things, path of
-        where the array is stored.
+    dd : data descriptor instance
+        This comes with the necessary info for opening the data stored.
     kwargs : a dictionary
         Put here different parameters depending on the format.
 
@@ -174,19 +173,19 @@ def from_blz(persist, **kwargs):
     out: a concrete blaze array.
 
     """
-    persist = _persist_convert(persist)
-    d = blz.barray(rootdir=persist.path, **kwargs)
+    if not isinstance(dd, BLZDataDescriptor):
+        raise ValueError("please pass a BLZDataDescriptor instance")
+    d = blz.barray(rootdir=dd.path, **kwargs)
     dd = BLZDataDescriptor(d)
     return Array(dd)
 
-def from_csv(persist, **kwargs):
+def from_csv(dd, **kwargs):
     """Open an existing persistent CSV array.
 
     Parameters
     ----------
-    persist : a Storage instance
-        The Storage instance specifies, among other things, path of
-        where the array is stored.
+    dd : data descriptor instance
+        This comes with the necessary info for opening the data stored.
     kwargs : a dictionary
         Put here different parameters depending on the format.
 
@@ -195,18 +194,18 @@ def from_csv(persist, **kwargs):
     out: a concrete blaze array.
 
     """
-    persist = _persist_convert(persist)
-    dd = CSVDataDescriptor(persist.path, **kwargs)
+    if not isinstance(dd, CSVDataDescriptor):
+        raise ValueError("please pass a CSVDataDescriptor instance")
+    dd = CSVDataDescriptor(dd.path, dd.mode, **kwargs)
     return Array(dd)
 
-def from_json(persist, **kwargs):
+def from_json(dd, **kwargs):
     """Open an existing persistent JSON array.
 
     Parameters
     ----------
-    persist : a Storage instance
-        The Storage instance specifies, among other things, path of
-        where the array is stored.
+    dd : data descriptor instance
+        This comes with the necessary info for opening the data stored.
     kwargs : a dictionary
         Put here different parameters depending on the format.
 
@@ -215,18 +214,18 @@ def from_json(persist, **kwargs):
     out: a concrete blaze array.
 
     """
-    persist = _persist_convert(persist)
-    dd = JSONDataDescriptor(persist.path, **kwargs)
+    if not isinstance(dd, JSONDataDescriptor):
+        raise ValueError("please pass a JSONDataDescriptor instance")
+    dd = JSONDataDescriptor(dd.path, dd.mode, **kwargs)
     return Array(dd)
 
-def from_hdf5(persist, **kwargs):
+def from_hdf5(dd, **kwargs):
     """Open an existing persistent HDF5 array.
 
     Parameters
     ----------
-    persist : a Storage instance
-        The Storage instance specifies, among other things, path of
-        where the array is stored.
+    dd : data descriptor instance
+        This comes with the necessary info for opening the data stored.
     kwargs : a dictionary
         Put here different parameters depending on the format.
 
@@ -235,18 +234,24 @@ def from_hdf5(persist, **kwargs):
     out: a concrete blaze array.
 
     """
-    persist = _persist_convert(persist)
-    dd = HDF5DataDescriptor(persist.path, **kwargs)
+    if not isinstance(dd, HDF5DataDescriptor):
+        raise ValueError("please pass a HDF5DataDescriptor instance")
+    dd = HDF5DataDescriptor(dd.path, dd.mode, **kwargs)
     return Array(dd)
 
-def drop(persist):
-    """Remove a persistent storage."""
+def drop(dd):
+    """Remove a persistent storage.
 
-    persist = _persist_convert(persist)
+    Parameters
+    ----------
+    dd : data descriptor instance
+        This comes with the necessary info for opening the data stored.
 
-    if persist.format == 'blz':
+    """
+
+    if isinstance(dd, BLZDataDescriptor):
         from shutil import rmtree
-        rmtree(persist.path)
-    elif persist.format in ('csv', 'json', 'hdf5'):
+        rmtree(dd.path)
+    else:
         import os
-        os.unlink(persist.path)
+        os.unlink(dd.path)
