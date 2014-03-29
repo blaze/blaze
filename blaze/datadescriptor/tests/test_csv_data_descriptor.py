@@ -92,7 +92,7 @@ class TestCSVDataDescriptor(unittest.TestCase):
         handle, csv_file = tempfile.mkstemp(".csv")
         with os.fdopen(handle, "w") as f:
             f.write(csv_buf)
-        dd = CSVDataDescriptor(csv_file, schema=csv_schema)
+        dd = CSVDataDescriptor(csv_file, schema=csv_schema, mode='r+')
         dd.append(["k4", "v4", 4, True])
         vals = [dd_as_py(v) for v in dd.iterchunks(blen=1, start=3)]
         self.assertEqual(vals, [[

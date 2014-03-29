@@ -20,16 +20,16 @@ def open_file(path, mode, has_header):
     return csvfile
 
 
-def csv_descriptor_iter(filename, has_header, schema):
-    with open_file(filename, has_header) as csvfile:
+def csv_descriptor_iter(filename, mode, has_header, schema):
+    with open_file(filename, mode, has_header) as csvfile:
         for row in csv.reader(csvfile):
             yield DyNDDataDescriptor(nd.array(row, dtype=schema))
 
 
-def csv_descriptor_iterchunks(filename, has_header, schema,
+def csv_descriptor_iterchunks(filename, mode, has_header, schema,
                               blen, start=None, stop=None):
     rows = []
-    with open_file(filename, has_header) as csvfile:
+    with open_file(filename, mode, has_header) as csvfile:
         for nrow, row in enumerate(csv.reader(csvfile)):
             if start is not None and nrow < start:
                 continue
@@ -72,7 +72,7 @@ class CSVDataDescriptor(IDataDescriptor):
         csvfile = open(path, mode=self.mode)
         schema = kwargs.get("schema", None)
         if schema is None:
-            # This is just a container for persistent values
+            # This this is meant to act just a container for persistent values
             return
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
@@ -155,7 +155,8 @@ class CSVDataDescriptor(IDataDescriptor):
         raise NotImplementedError
 
     def __iter__(self):
-        return csv_descriptor_iter(self.path, self.has_header, self.schema)
+        return csv_descriptor_iter(
+            self.path, self.mode, self.has_header, self.schema)
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
@@ -185,5 +186,6 @@ class CSVDataDescriptor(IDataDescriptor):
 
         """
         # Return the iterable
-        return csv_descriptor_iterchunks(self.path, self.has_header,
-                                         self.schema, blen, start, stop)
+        return csv_descriptor_iterchunks(
+            self.path, self.mode, self.has_header,
+            self.schema, blen, start, stop)
