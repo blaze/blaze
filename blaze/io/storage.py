@@ -175,8 +175,6 @@ def from_blz(dd, **kwargs):
     """
     if not isinstance(dd, BLZDataDescriptor):
         raise ValueError("please pass a BLZDataDescriptor instance")
-    d = blz.barray(rootdir=dd.path, **kwargs)
-    dd = BLZDataDescriptor(d)
     return Array(dd)
 
 def from_csv(dd, **kwargs):
@@ -196,7 +194,6 @@ def from_csv(dd, **kwargs):
     """
     if not isinstance(dd, CSVDataDescriptor):
         raise ValueError("please pass a CSVDataDescriptor instance")
-    dd = CSVDataDescriptor(dd.path, dd.mode, **kwargs)
     return Array(dd)
 
 def from_json(dd, **kwargs):
@@ -216,7 +213,6 @@ def from_json(dd, **kwargs):
     """
     if not isinstance(dd, JSONDataDescriptor):
         raise ValueError("please pass a JSONDataDescriptor instance")
-    dd = JSONDataDescriptor(dd.path, dd.mode, **kwargs)
     return Array(dd)
 
 def from_hdf5(dd, **kwargs):
@@ -236,7 +232,6 @@ def from_hdf5(dd, **kwargs):
     """
     if not isinstance(dd, HDF5DataDescriptor):
         raise ValueError("please pass a HDF5DataDescriptor instance")
-    dd = HDF5DataDescriptor(dd.path, dd.datapath, dd.mode, **kwargs)
     return Array(dd)
 
 def drop(dd):

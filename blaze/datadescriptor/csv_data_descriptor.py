@@ -71,9 +71,6 @@ class CSVDataDescriptor(IDataDescriptor):
         self.mode = mode
         csvfile = open(path, mode=self.mode)
         schema = kwargs.get("schema", None)
-        if schema is None:
-            # This this is meant to act just a container for persistent values
-            return
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
         if type(schema) in py2help._strtypes:

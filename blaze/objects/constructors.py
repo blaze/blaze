@@ -31,6 +31,14 @@ from ..io.storage import Storage
 from ..py2help import basestring
 
 
+def split_path(dp):
+    """Split a path in rootdir path and end part for HDF5 purposes"""
+    idx = dp.rfind('/')
+    where = dp[:idx] if idx > 0 else '/'
+    name = dp[idx+1:]
+    return where, name
+
+
 def _normalize_dshape(ds):
     """
     In the API, when a datashape is provided we want to support
@@ -44,14 +52,6 @@ def _normalize_dshape(ds):
         return datashape.dshape(ds)
     else:
         return ds
-
-
-def split_path(dp):
-    """Split a path in rootdir path and end part """
-    idx = dp.rfind('/')
-    where = dp[:idx] if idx > 0 else '/'
-    name = dp[idx+1:]
-    return where, name
 
 
 def array(obj, dshape=None, dd=None):
@@ -117,17 +117,14 @@ def array(obj, dshape=None, dd=None):
     if isinstance(dd, BLZDataDescriptor):
         if inspect.isgenerator(obj):
             # TODO: Generator logic could go inside barray
-            blzarr = blz.fromiter(obj, dtype=dt, count=-1,
-                                  bparams=dd.bparams,
-                                  rootdir=dd.path,
-                                  mode='w')
+            dd.blzarr = blz.fromiter(obj, dtype=dt, count=-1,
+                                    rootdir=dd.path, mode=dd.mode,
+                                    **dd.kwargs)
         else:
-            blzarr = blz.barray(obj, dtype=dt, bparams=dd.bparams,
-                                rootdir=dd.path, mode='w')
-        blzarr.mode = dd.mode
-        dd.blzarr = blzarr
+            dd.blzarr = blz.barray(
+                obj, dtype=dt, rootdir=dd.path, mode=dd.mode, **dd.kwargs)
     elif isinstance(dd, HDF5DataDescriptor):
-        with tb.open_file(dd.path, mode='w') as f:
+        with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
             f.create_earray(where, name, filters=dd.filters, obj=obj)
 
@@ -161,13 +158,11 @@ def empty(dshape, dd=None):
         return Array(dd)
     if isinstance(dd, BLZDataDescriptor):
         shape, dt = to_numpy(dshape)
-        blzarr = blz.zeros(shape, dt, bparams=dd.bparams,
-                           rootdir=dd.path, mode='w')
-        blzarr.mode = dd.mode
-        dd.blzarr = blzarr
+        dd.blzarr = blz.zeros(shape, dt, rootdir=dd.path,
+                              mode=dd.mode, **dd.kwargs)
     elif isinstance(dd, HDF5DataDescriptor):
         obj = nd.as_numpy(nd.empty(str(dshape)))
-        with tb.open_file(dd.path, mode='w') as f:
+        with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
             f.create_earray(where, name, filters=dd.filters, obj=obj)
     return Array(dd)
@@ -197,13 +192,11 @@ def zeros(dshape, dd=None):
         return Array(dd)
     if isinstance(dd, BLZDataDescriptor):
         shape, dt = to_numpy(dshape)
-        blzarr = blz.zeros(shape, dt, bparams=dd.bparams,
-                           rootdir=dd.path, mode='w')
-        blzarr.mode = dd.mode
-        dd.blzarr = blzarr
+        dd.blzarr = blz.zeros(shape, dt, rootdir=dd.path, mode=dd.mode,
+                              **dd.kwargs)
     elif isinstance(dd, HDF5DataDescriptor):
         obj = nd.as_numpy(nd.zeros(str(dshape)))
-        with tb.open_file(dd.path, mode='w') as f:
+        with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
             f.create_earray(where, name, filters=dd.filters, obj=obj)
     return Array(dd)
@@ -233,14 +226,11 @@ def ones(dshape, dd=None):
         return Array(dd)
     if isinstance(dd, BLZDataDescriptor):
         shape, dt = to_numpy(dshape)
-        blzarr = blz.ones(shape, dt, bparams=dd.bparams,
-                          rootdir=dd.path,
-                          mode='w')
-        blzarr.mode = dd.mode
-        dd.blzarr = blzarr
+        dd.blzarr = blz.ones(shape, dt, rootdir=dd.path, mode=dd.mode,
+                             **dd.kwargs)
     elif isinstance(dd, HDF5DataDescriptor):
         obj = nd.as_numpy(nd.empty(str(dshape)))
-        with tb.open_file(dd.path, mode='w') as f:
+        with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
             f.create_earray(where, name, filters=dd.filters, obj=obj)
     return Array(dd)
