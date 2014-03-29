@@ -11,8 +11,12 @@ from blaze import (append,
     DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor)
 
 
-from blaze.py2help import skip
+from blaze.py2help import skip, skipIf
 import blz
+
+from blaze.optional_packages import tables_is_here
+if tables_is_here:
+    import tables as tb
 
 
 class TestEphemeral(unittest.TestCase):
@@ -129,9 +133,10 @@ class TestEphemeral(unittest.TestCase):
         self.assertEqual(dd_as_py(aflt._data), [3.5, 2.25])
 
 
-class TestPersistent(MayBePersistentTest, unittest.TestCase):
+class TestBLZPersistent(MayBePersistentTest, unittest.TestCase):
 
     disk = True
+    dir_ = True
 
     def test_create(self):
         dd = BLZDataDescriptor(path=self.rootdir)
@@ -160,6 +165,43 @@ class TestPersistent(MayBePersistentTest, unittest.TestCase):
         dd = BLZDataDescriptor(path=self.rootdir, mode='r')
         a = blaze.ones('10 * float64', dd=dd)
         self.assertRaises(IOError, append, a, [1])
+
+
+class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
+
+    disk = True
+
+    @skipIf(not tables_is_here, 'pytables is not installed')
+    def test_create(self):
+        dd = HDF5DataDescriptor(path=self.file, datapath='/earray')
+        a = blaze.array([2], 'float64', dd=dd)
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertTrue(a.dshape.shape == (1,))
+        self.assertEqual(dd_as_py(a._data), [2])
+
+    @skipIf(not tables_is_here, 'pytables is not installed')
+    def test_append(self):
+        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='a')
+        a = blaze.zeros('0 * float64', dd=dd)
+        self.assertTrue(isinstance(a, blaze.Array))
+        append(a, list(range(10)))
+        self.assertEqual(dd_as_py(a._data), list(range(10)))
+
+    # Using a 1-dim as the internal dimension
+    @skipIf(not tables_is_here, 'pytables is not installed')
+    def test_append2(self):
+        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='a')
+        a = blaze.empty('0 * 2 * float64', dd=dd)
+        self.assertTrue(isinstance(a, blaze.Array))
+        lvals = [[i,i*2] for i in range(10)]
+        append(a, lvals)
+        self.assertEqual(dd_as_py(a._data), lvals)
+
+    @skipIf(not tables_is_here, 'pytables is not installed')
+    def test_wrong_open_mode(self):
+        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='r')
+        a = blaze.ones('10 * float64', dd=dd)
+        self.assertRaises(tb.FileModeError, append, a, [1])
 
 
 if __name__ == '__main__':

@@ -236,7 +236,7 @@ def from_hdf5(dd, **kwargs):
     """
     if not isinstance(dd, HDF5DataDescriptor):
         raise ValueError("please pass a HDF5DataDescriptor instance")
-    dd = HDF5DataDescriptor(dd.path, dd.mode, **kwargs)
+    dd = HDF5DataDescriptor(dd.path, dd.datapath, dd.mode, **kwargs)
     return Array(dd)
 
 def drop(dd):

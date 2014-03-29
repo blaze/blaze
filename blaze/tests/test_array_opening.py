@@ -5,11 +5,16 @@ import tempfile
 import unittest
 
 import blaze
+from blaze.py2help import skip, skipIf
 from blaze.datadescriptor import dd_as_py
 from blaze.tests.common import MayBePersistentTest
 from blaze import (append,
     DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor,
     CSVDataDescriptor, JSONDataDescriptor)
+
+from blaze.optional_packages import tables_is_here
+if tables_is_here:
+    import tables as tb
 
 
 # A CSV toy example
@@ -85,6 +90,7 @@ class TestOpenJSON(unittest.TestCase):
 class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
 
     disk = True
+    dir_ = True
 
     def test_open(self):
         dd = BLZDataDescriptor(path=self.rootdir, mode='a')
@@ -95,6 +101,24 @@ class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
         dd = BLZDataDescriptor(path=self.rootdir, mode='r')
         self.assertTrue(dd.mode == 'r')
         a2 = blaze.from_blz(dd=dd)
+        self.assertTrue(isinstance(a2, blaze.Array))
+        self.assertEqual(dd_as_py(a2._data), list(range(10)))
+
+
+class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
+
+    disk = True
+
+    @skipIf(not tables_is_here, 'pytables is not installed')
+    def test_open(self):
+        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='a')
+        self.assertTrue(dd.mode == 'a')
+        a = blaze.ones('0 * float64', dd=dd)
+        append(a,range(10))
+        # Re-open the dataset in URI
+        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='r')
+        self.assertTrue(dd.mode == 'r')
+        a2 = blaze.from_hdf5(dd=dd)
         self.assertTrue(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
 

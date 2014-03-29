@@ -20,10 +20,13 @@ import datashape
 from datashape import to_numpy, to_numpy_dtype
 import blz
 
+from ..optional_packages import tables_is_here
+if tables_is_here:
+    import tables as tb
+
 from .array import Array
-from ..datadescriptor import (IDataDescriptor,
-                              DyNDDataDescriptor,
-                              BLZDataDescriptor)
+from ..datadescriptor import (
+    IDataDescriptor, DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor)
 from ..io.storage import Storage
 from ..py2help import basestring
 
@@ -41,6 +44,14 @@ def _normalize_dshape(ds):
         return datashape.dshape(ds)
     else:
         return ds
+
+
+def split_path(dp):
+    """Split a path in rootdir path and end part """
+    idx = dp.rfind('/')
+    where = dp[:idx] if idx > 0 else '/'
+    name = dp[idx+1:]
+    return where, name
 
 
 def array(obj, dshape=None, dd=None):
@@ -100,10 +111,12 @@ def array(obj, dshape=None, dd=None):
             raise ValueError(('failed to construct a dynd array from '
                               'object %r') % obj)
         dd = DyNDDataDescriptor(array)
-    else:
-        dt = None if dshape is None else to_numpy_dtype(dshape)
+        return Array(dd)
+
+    dt = None if dshape is None else to_numpy_dtype(dshape)
+    if isinstance(dd, BLZDataDescriptor):
         if inspect.isgenerator(obj):
-            # TODO: Generator logic can go inside barray
+            # TODO: Generator logic could go inside barray
             blzarr = blz.fromiter(obj, dtype=dt, count=-1,
                                   bparams=dd.bparams,
                                   rootdir=dd.path,
@@ -113,6 +126,11 @@ def array(obj, dshape=None, dd=None):
                                 rootdir=dd.path, mode='w')
         blzarr.mode = dd.mode
         dd.blzarr = blzarr
+    elif isinstance(dd, HDF5DataDescriptor):
+        with tb.open_file(dd.path, mode='w') as f:
+            where, name = split_path(dd.datapath)
+            f.create_earray(where, name, filters=dd.filters, obj=obj)
+
     return Array(dd)
 
 
@@ -140,12 +158,18 @@ def empty(dshape, dd=None):
 
     if dd is None:
         dd = DyNDDataDescriptor(nd.empty(str(dshape)))
-    else:
+        return Array(dd)
+    if isinstance(dd, BLZDataDescriptor):
         shape, dt = to_numpy(dshape)
         blzarr = blz.zeros(shape, dt, bparams=dd.bparams,
                            rootdir=dd.path, mode='w')
         blzarr.mode = dd.mode
         dd.blzarr = blzarr
+    elif isinstance(dd, HDF5DataDescriptor):
+        obj = nd.as_numpy(nd.empty(str(dshape)))
+        with tb.open_file(dd.path, mode='w') as f:
+            where, name = split_path(dd.datapath)
+            f.create_earray(where, name, filters=dd.filters, obj=obj)
     return Array(dd)
 
 
@@ -170,12 +194,18 @@ def zeros(dshape, dd=None):
 
     if dd is None:
         dd = DyNDDataDescriptor(nd.zeros(str(dshape)))
-    else:
+        return Array(dd)
+    if isinstance(dd, BLZDataDescriptor):
         shape, dt = to_numpy(dshape)
         blzarr = blz.zeros(shape, dt, bparams=dd.bparams,
                            rootdir=dd.path, mode='w')
         blzarr.mode = dd.mode
         dd.blzarr = blzarr
+    elif isinstance(dd, HDF5DataDescriptor):
+        obj = nd.as_numpy(nd.zeros(str(dshape)))
+        with tb.open_file(dd.path, mode='w') as f:
+            where, name = split_path(dd.datapath)
+            f.create_earray(where, name, filters=dd.filters, obj=obj)
     return Array(dd)
 
 
@@ -200,11 +230,17 @@ def ones(dshape, dd=None):
 
     if dd is None:
         dd = DyNDDataDescriptor(nd.ones(str(dshape)))
-    else:
+        return Array(dd)
+    if isinstance(dd, BLZDataDescriptor):
         shape, dt = to_numpy(dshape)
         blzarr = blz.ones(shape, dt, bparams=dd.bparams,
                           rootdir=dd.path,
                           mode='w')
         blzarr.mode = dd.mode
         dd.blzarr = blzarr
+    elif isinstance(dd, HDF5DataDescriptor):
+        obj = nd.as_numpy(nd.empty(str(dshape)))
+        with tb.open_file(dd.path, mode='w') as f:
+            where, name = split_path(dd.datapath)
+            f.create_earray(where, name, filters=dd.filters, obj=obj)
     return Array(dd)

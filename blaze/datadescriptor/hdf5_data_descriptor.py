@@ -28,19 +28,11 @@ class HDF5DataDescriptor(IDataDescriptor):
     A Blaze data descriptor which exposes a HDF5 dataset.
     """
 
-    def __init__(self, path, datapath, mode='r', filters=None, _create=False):
+    def __init__(self, path, datapath, mode='r', filters=None):
         self.path = path
         self.datapath = datapath
         self.mode = mode
         self.filters = filters
-        if not _create:
-            with tb.open_file(self.path, mode='r') as f:
-                obj = f.get_node(f.root, self.datapath)
-                # We are going to support both homogeneous and heterogeneous
-                # datasets, but not VL types (VLArray) for the time being.
-                if not isinstance(obj, (tb.Array, tb.Table)):
-                    raise TypeError(('object is not a supported HDF5 dataset, '
-                                    'it has type %r') % type(obj))
 
     @property
     def dshape(self):
@@ -98,7 +90,7 @@ class HDF5DataDescriptor(IDataDescriptor):
 
     def __setitem__(self, key, value):
         # HDF5 arrays can be updated
-        with tb.open_file(self.path, mode='a') as f:
+        with tb.open_file(self.path, mode=self.mode) as f:
             h5arr = f.get_node(f.root, self.datapath)
             h5arr[key] = value
 
@@ -117,6 +109,6 @@ class HDF5DataDescriptor(IDataDescriptor):
         if len(shape_vals) != len(shape):
             raise ValueError("shape of values is not compatible")
         # Now, do the actual append
-        with tb.open_file(self.path, mode='a') as f:
+        with tb.open_file(self.path, mode=self.mode) as f:
             h5arr = f.get_node(f.root, self.datapath)
             h5arr.append(values_arr.reshape(shape_vals))
