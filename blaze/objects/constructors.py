@@ -76,14 +76,24 @@ def array(obj, dshape=None, dd=None):
     -------
     out : a concrete blaze array.
 
-    Bugs
-    ----
-    Right now the explicit dshape is ignored. This needs to be
-    corrected. When the data cannot be coerced to an explicit dshape
-    an exception should be raised.
-
     """
     dshape = _normalize_dshape(dshape)
+
+    if ((obj is not None) and
+        (not inspect.isgenerator(obj)) and
+        (dshape is not None)):
+        dt = ndt.type(str(dshape))
+        try:
+            if dt.ndim > 0:
+                obj = nd.array(obj, type=dt, access='rw')
+            else:
+                obj = nd.array(obj, dtype=dt, access='rw')
+        except:
+             raise ValueError(('failed to construct a dynd array from '
+                               'object %r') % obj)
+
+    if obj is None and dd is None:
+        raise ValueError('you need to specify at least `obj` or `dd`')
 
     if isinstance(obj, Array):
         return obj
@@ -98,33 +108,34 @@ def array(obj, dshape=None, dd=None):
     if dd is None:
         # Use a dynd dd by default
         try:
-            if dshape is None:
-                array = nd.asarray(obj, access='rw')
-            else:
-                # Use the uniform/full dtype specification in dynd depending
-                # on whether the datashape has a uniform dim
-                dt = ndt.type(str(dshape))
-                if dt.ndim > 0:
-                    array = nd.array(obj, type=dt, access='rw')
-                else:
-                    array = nd.array(obj, dtype=dt, access='rw')
+            array = nd.asarray(obj, access='rw')
         except:
             raise ValueError(('failed to construct a dynd array from '
                               'object %r') % obj)
         dd = DyNDDataDescriptor(array)
         return Array(dd)
 
-    dt = None if dshape is None else to_numpy_dtype(dshape)
-    if isinstance(dd, BLZDataDescriptor):
+    # The DataDescriptor has been specifyied
+    if isinstance(dd, DyNDDataDescriptor):
+        if obj is not None:
+            raise ValueError(('you cannot specify simultaneously '
+                              '`obj` and a DyND `dd`'))
+        return Array(dd)
+    elif isinstance(dd, BLZDataDescriptor):
         if inspect.isgenerator(obj):
+            dt = None if dshape is None else to_numpy_dtype(dshape)
             # TODO: Generator logic could go inside barray
             dd.blzarr = blz.fromiter(obj, dtype=dt, count=-1,
-                                    rootdir=dd.path, mode=dd.mode,
-                                    **dd.kwargs)
+                                     rootdir=dd.path, mode=dd.mode,
+                                     **dd.kwargs)
         else:
+            if isinstance(obj, nd.array):
+                obj = nd.as_numpy(obj)
             dd.blzarr = blz.barray(
-                obj, dtype=dt, rootdir=dd.path, mode=dd.mode, **dd.kwargs)
+                obj, rootdir=dd.path, mode=dd.mode, **dd.kwargs)
     elif isinstance(dd, HDF5DataDescriptor):
+        if isinstance(obj, nd.array):
+            obj = nd.as_numpy(obj)
         with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
             f.create_earray(where, name, filters=dd.filters, obj=obj)

@@ -44,13 +44,21 @@ class TestEphemeral(unittest.TestCase):
         self.assertEqual(dd_as_py(a._data), [0, 1, 2])
 
     def test_create(self):
-        # A default array (backed by NumPy)
+        # A default array (backed by DyND)
         a = blaze.array([1,2,3])
         self.assertTrue(isinstance(a, blaze.Array))
+        self.assertTrue(str(a.dshape) == "3 * int32")
+        self.assertEqual(dd_as_py(a._data), [1, 2, 3])
+
+    def test_create_dshape(self):
+        # A default array (backed by DyND)
+        a = blaze.array([1,2,3], 'float64')
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertTrue(str(a.dshape) == "3 * float64")
         self.assertEqual(dd_as_py(a._data), [1, 2, 3])
 
     def test_create_append(self):
-        # A default array (backed by NumPy, append not supported yet)
+        # A default array (backed by DyND, append not supported yet)
         a = blaze.array([])
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertRaises(ValueError, append, a, [1,2,3])
@@ -136,10 +144,10 @@ class TestBLZPersistent(MayBePersistentTest, unittest.TestCase):
 
     def test_create(self):
         dd = BLZDataDescriptor(path=self.rootdir, mode='w')
-        a = blaze.array([], 'float64', dd=dd)
+        a = blaze.array([2], 'float64', dd=dd)
         self.assertTrue(isinstance(a, blaze.Array))
-        self.assertTrue(a.dshape.shape == (0,))
-        self.assertEqual(dd_as_py(a._data), [])
+        self.assertTrue(a.dshape.shape == (1,))
+        self.assertEqual(dd_as_py(a._data), [2])
 
     def test_append(self):
         dd = BLZDataDescriptor(path=self.rootdir, mode='w')
