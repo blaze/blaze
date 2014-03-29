@@ -90,6 +90,7 @@ def array(obj, dshape=None, dd=None):
     elif isinstance(obj, IDataDescriptor):
         if dd is None:
             dd = obj
+            return Array(dd)
         else:
             raise ValueError(('you cannot specify `dd` when `obj` '
                               'is already a DataDescriptor'))
@@ -234,3 +235,21 @@ def ones(dshape, dd=None):
             where, name = split_path(dd.datapath)
             f.create_earray(where, name, filters=dd.filters, obj=obj)
     return Array(dd)
+
+
+def drop(dd):
+    """Remove a persistent storage.
+
+    Parameters
+    ----------
+    dd : data descriptor instance
+        This comes with the necessary info for opening the data stored.
+
+    """
+
+    if isinstance(dd, BLZDataDescriptor):
+        from shutil import rmtree
+        rmtree(dd.path)
+    else:
+        import os
+        os.unlink(dd.path)

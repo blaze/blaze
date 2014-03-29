@@ -42,27 +42,27 @@ class TestOpenCSV(unittest.TestCase):
 
     def test_open(self):
         dd = CSVDataDescriptor(self.fname, mode='r', schema=csv_schema)
-        a = blaze.from_csv(dd)
+        a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_from_dialect(self):
         dd = CSVDataDescriptor(self.fname, mode='r',
                                schema=csv_schema, dialect='excel')
-        a = blaze.from_csv(dd)
+        a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_from_has_header(self):
         dd = CSVDataDescriptor(
             self.fname, mode='r', schema=csv_schema, has_header=False)
-        a = blaze.from_csv(dd)
+        a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_append(self):
         dd = CSVDataDescriptor(self.fname, mode='r+', schema=csv_schema)
-        a = blaze.from_csv(dd)
+        a = blaze.array(dd)
         blaze.append(a, ["k4", "v4", 4, True])
         self.assertEqual(dd_as_py(a._data), csv_ldict + \
             [{u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
@@ -84,7 +84,7 @@ class TestOpenJSON(unittest.TestCase):
 
     def test_open(self):
         dd = JSONDataDescriptor(self.fname, mode='r', schema=json_schema)
-        a = blaze.from_json(dd)
+        a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
 
@@ -102,7 +102,7 @@ class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
         # Re-open the dataset
         dd = BLZDataDescriptor(path=self.rootdir, mode='r')
         self.assertTrue(dd.mode == 'r')
-        a2 = blaze.from_blz(dd=dd)
+        a2 = blaze.array(dd)
         self.assertTrue(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
@@ -112,7 +112,7 @@ class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
         # Re-open the dataset
         dd = BLZDataDescriptor(path=self.rootdir, mode='r')
         self.assertTrue(dd.mode == 'r')
-        a2 = blaze.from_blz(dd=dd)
+        a2 = blaze.array(dd)
         self.assertRaises(IOError, append, a2, [1])
 
 
@@ -129,7 +129,7 @@ class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
         # Re-open the dataset in URI
         dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='r')
         self.assertTrue(dd.mode == 'r')
-        a2 = blaze.from_hdf5(dd=dd)
+        a2 = blaze.array(dd)
         self.assertTrue(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
@@ -140,7 +140,7 @@ class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
         # Re-open the dataset
         dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='r')
         self.assertTrue(dd.mode == 'r')
-        a2 = blaze.from_hdf5(dd=dd)
+        a2 = blaze.array(dd)
         self.assertRaises(tb.FileModeError, append, a2, [1])
 
 
