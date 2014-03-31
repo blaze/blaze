@@ -165,7 +165,7 @@ def empty(dshape, ddesc=None):
     dshape = _normalize_dshape(dshape)
 
     if ddesc is None:
-        ddesc = DyND_DDesc(nd.empty(str(dshape)))
+        ddesc = DyND_DDesc(nd.empty(str(dshape), access='rw'))
         return Array(ddesc)
     if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
@@ -199,7 +199,7 @@ def zeros(dshape, ddesc=None):
     dshape = _normalize_dshape(dshape)
 
     if ddesc is None:
-        ddesc = DyND_DDesc(nd.zeros(str(dshape)))
+        ddesc = DyND_DDesc(nd.zeros(str(dshape), access='rw'))
         return Array(ddesc)
     if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
@@ -233,7 +233,7 @@ def ones(dshape, ddesc=None):
     dshape = _normalize_dshape(dshape)
 
     if ddesc is None:
-        ddesc = DyND_DDesc(nd.ones(str(dshape)))
+        ddesc = DyND_DDesc(nd.ones(str(dshape), access='rw'))
         return Array(ddesc)
     if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
