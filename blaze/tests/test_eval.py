@@ -24,8 +24,9 @@ def _mk_dir():
     global tmpdir
     tmpdir = tempfile.mkdtemp(prefix='blztmp')
 
-def _store(name):
-    return blaze.io.Storage(os.path.join(tmpdir, name + '.blz'))
+def _ddesc(name):
+    path = os.path.join(tmpdir, name + '.blz')
+    return blaze.BLZ_DDesc(path, mode='w')
 
 def _addition(a,b):
     return (a+b)
@@ -54,9 +55,9 @@ def _build_tst(kernel, storage1, storage2, storage3, R):
         Rd = kernel(A, B)
         self.assert_(isinstance(Rd, blaze.Array))
         self.assert_(Rd.ddesc.capabilities.deferred)
-        p = _store(storage3 + 'Rd') if storage3 == 'dsk' else None
+        p = _ddesc(storage3 + 'Rd') if storage3 == 'dsk' else None
         try:
-            Rc = blaze.eval(Rd, storage=p)
+            Rc = blaze.eval(Rd, ddesc=p)
             self.assert_(isinstance(Rc, blaze.Array))
             npy_data = getattr(self, 'npy' + R)
             assert_allclose(np.array(ddesc_as_py(Rc.ddesc)), npy_data)
@@ -91,8 +92,8 @@ class TestEvalScalar(unittest.TestCase):
         cls.memB = blaze.array(cls.npyB)
 
         _mk_dir()
-        cls.dskA = blaze.array(cls.npyA, storage=_store('dskA'))
-        cls.dskB = blaze.array(cls.npyB, storage=_store('dskB'))
+        cls.dskA = blaze.array(cls.npyA, ddesc=_ddesc('dskA'))
+        cls.dskB = blaze.array(cls.npyB, ddesc=_ddesc('dskB'))
 
     @classmethod
     def tearDownClass(cls):
@@ -121,8 +122,8 @@ class TestEval1D(unittest.TestCase):
         cls.memB = blaze.array(cls.npyB)
 
         _mk_dir()
-        cls.dskA = blaze.array(cls.npyA, storage=_store('dskA'))
-        cls.dskB = blaze.array(cls.npyB, storage=_store('dskB'))
+        cls.dskA = blaze.array(cls.npyA, ddesc=_ddesc('dskA'))
+        cls.dskB = blaze.array(cls.npyB, ddesc=_ddesc('dskB'))
 
     @classmethod
     def tearDownClass(cls):
@@ -150,8 +151,8 @@ class TestEval2D(unittest.TestCase):
         cls.memB = blaze.array(cls.npyB)
 
         _mk_dir()
-        cls.dskA = blaze.array(cls.npyA, storage=_store('dskA'))
-        cls.dskB = blaze.array(cls.npyB, storage=_store('dskB'))
+        cls.dskA = blaze.array(cls.npyA, ddesc=_ddesc('dskA'))
+        cls.dskB = blaze.array(cls.npyB, ddesc=_ddesc('dskB'))
 
     @classmethod
     def tearDownClass(cls):

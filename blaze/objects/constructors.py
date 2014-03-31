@@ -31,7 +31,7 @@ from ..py2help import basestring
 
 
 def split_path(dp):
-    """Split a path in rootdir path and end part for HDF5 purposes"""
+    """Split a path in basedir path and end part for HDF5 purposes"""
     idx = dp.rfind('/')
     where = dp[:idx] if idx > 0 else '/'
     name = dp[idx+1:]

@@ -13,10 +13,10 @@ from ..traversal import visit
 from ....datadescriptor import DyND_DDesc, BLZ_DDesc
 
 
-def interpret(func, env, storage=None, **kwds):
+def interpret(func, env, ddesc=None, **kwds):
     args = env['runtime.arglist']
 
-    if storage is None:
+    if ddesc is None:
         # Evaluate once
         values = dict(zip(func.args, args))
         interp = CKernelInterp(values)
@@ -31,8 +31,8 @@ def interpret(func, env, storage=None, **kwds):
         chunk_size = min(max(1, (1024*1024) // row_size), dim_size)
         # Evaluate by streaming the outermost dimension,
         # and using the BLZ data descriptor's append
-        dst_dd = BLZ_DDesc(blz.zeros((0,)+res_shape[1:], res_dt,
-                           rootdir=storage.path))
+        ddesc.blzarr = blz.zeros((0,)+res_shape[1:], res_dt,
+                           rootdir=ddesc.path)
         # Loop through all the chunks
         for chunk_start in range(0, dim_size, chunk_size):
             # Tell the interpreter which chunk size to use (last
@@ -46,9 +46,9 @@ def interpret(func, env, storage=None, **kwds):
             interp = CKernelChunkInterp(values, chunk_size, result_ndim)
             visit(interp, func)
             chunk = interp.result.ddesc.dynd_arr()
-            dst_dd.append(chunk)
+            ddesc.append(chunk)
 
-        return blaze.Array(dst_dd)
+        return blaze.Array(ddesc)
 
 
 class CKernelInterp(object):
@@ -78,8 +78,8 @@ class CKernelInterp(object):
 
     def op_alloc(self, op):
         dshape = op.type
-        storage = op.metadata.get('storage') # TODO: storage!
-        self.values[op] = blaze.empty(dshape, storage=storage)
+        ddesc = op.metadata.get('ddesc') # TODO: ddesc!
+        self.values[op] = blaze.empty(dshape, ddesc=ddesc)
 
     def op_dealloc(self, op):
         alloc, = op.args
