@@ -261,10 +261,10 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
                 dshape = datashape.from_numpy(res_shape, res_dtype)
                 vars_[name] = empty(dshape)
 
-    if 'storage' in kwargs and kwargs['storage'] is not None:
-        res_disk = True
+    if 'ddesc' in kwargs and kwargs['ddesc'] is not None:
+        res_ddesc = True
     else:
-        res_disk = False
+        res_ddesc = False
 
     for i in xrange(0, vlen, bsize):
         # Correction for the block size
@@ -306,7 +306,7 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
                 continue
             block_shape, block_dtype = datashape.to_numpy(res_block.dshape)
             out_shape = list(block_shape)
-            if res_disk:
+            if res_ddesc:
                 out_shape[0] = 0
                 dshape = datashape.from_numpy(out_shape, block_dtype)
                 result = empty(dshape, **kwargs)
@@ -328,7 +328,7 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
                 else:
                     result += dynd_block
                 result = result.eval()
-            elif res_disk:
+            elif res_ddesc:
                 append(result, dynd_block)
             else:
                 # The next is a workaround for bug #183

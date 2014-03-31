@@ -22,8 +22,7 @@ def remove_tree(rootdir):
         shutil.rmtree(dir_)
 
 # Useful superclass for disk-based tests
-class MayBeDiskTest(unittest.TestCase):
-
+class MayBePersistentTest(unittest.TestCase):
     disk = False
 
     def setUp(self):
@@ -32,20 +31,20 @@ class MayBeDiskTest(unittest.TestCase):
             suffix = '.blz'
             self.rootdir1 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
             os.rmdir(self.rootdir1)
-            self.store1 = blaze.Storage(self.rootdir1)
+            self.ddesc1 = blaze.BLZ_DDesc(self.rootdir1, mode='w')
             self.rootdir2 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
             os.rmdir(self.rootdir2)
-            self.store2 = blaze.Storage(self.rootdir2)
+            self.ddesc2 = blaze.BLZ_DDesc(self.rootdir2, mode='w')
             self.rootdir3 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
             os.rmdir(self.rootdir3)
-            self.store3 = blaze.Storage(self.rootdir3)
+            self.ddesc3 = blaze.BLZ_DDesc(self.rootdir3, mode='w')
         else:
             self.rootdir1 = None
-            self.store1 = None
+            self.ddesc1 = None
             self.rootdir2 = None
-            self.store2 = None
+            self.ddesc2 = None
             self.rootdir3 = None
-            self.store3 = None
+            self.ddesc3 = None
 
     def tearDown(self):
         if self.disk:
@@ -138,7 +137,7 @@ class evalPythonLargeTest(evalTest):
 
 # Check for arrays stored on-disk, but fit in a chunk
 # Check for arrays that fit in memory
-class storageTest(MayBeDiskTest):
+class storageTest(MayBePersistentTest):
     N = 1000
     vm = "numexpr"
     disk = True
@@ -146,36 +145,36 @@ class storageTest(MayBeDiskTest):
     def test00(self):
         """Testing elwise_eval() with only blaze arrays"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
-        c = blaze.array(a, storage=self.store1)
-        d = blaze.array(b, storage=self.store2)
-        cr = blaze._elwise_eval("c * d", vm=self.vm, storage=self.store3)
+        c = blaze.array(a, ddesc=self.ddesc1)
+        d = blaze.array(b, ddesc=self.ddesc2)
+        cr = blaze._elwise_eval("c * d", vm=self.vm, ddesc=self.ddesc3)
         nr = a * b
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
     def test01(self):
         """Testing elwise_eval() with blaze arrays and constants"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
-        c = blaze.array(a, storage=self.store1)
-        d = blaze.array(b, storage=self.store2)
-        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, storage=self.store3)
+        c = blaze.array(a, ddesc=self.ddesc1)
+        d = blaze.array(b, ddesc=self.ddesc2)
+        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, ddesc=self.ddesc3)
         nr = a * b + 1
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
     def test03(self):
         """Testing elwise_eval() with blaze and dynd arrays"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
-        c = blaze.array(a, storage=self.store1)
+        c = blaze.array(a, ddesc=self.ddesc1)
         d = nd.array(b)
-        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, storage=self.store3)
+        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, ddesc=self.ddesc3)
         nr = a * b + 1
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
     def test04(self):
         """Testing elwise_eval() with blaze, dynd and numpy arrays"""
         a, b = np.arange(self.N), np.arange(1, self.N+1)
-        c = blaze.array(a, storage=self.store1)
+        c = blaze.array(a, ddesc=self.ddesc1)
         d = nd.array(b)
-        cr = blaze._elwise_eval("a * c + d", vm=self.vm, storage=self.store3)
+        cr = blaze._elwise_eval("a * c + d", vm=self.vm, ddesc=self.ddesc3)
         nr = a * c + d
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
@@ -185,8 +184,8 @@ class storageTest(MayBeDiskTest):
             # The reductions does not work well using Blaze expressions yet
             return
         a, b = np.arange(self.N), np.arange(1, self.N+1)
-        b = blaze.array(b, storage=self.store1)
-        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm, storage=self.store3)
+        b = blaze.array(b, ddesc=self.ddesc1)
+        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm, ddesc=self.ddesc3)
         nr = np.sum(b + 2)
         self.assert_(cr == nr, "eval does not work correctly")
 
@@ -309,7 +308,7 @@ class evalPythonLargeMDTest(evalMDTest):
 
 # Check for arrays stored on-disk, but fit in a chunk
 # Check for arrays that fit in memory
-class storageMDTest(MayBeDiskTest):
+class storageMDTest(MayBePersistentTest):
     N = 10
     M = 100
     vm = "numexpr"
@@ -319,9 +318,9 @@ class storageMDTest(MayBeDiskTest):
         """Testing elwise_eval() with only blaze arrays"""
         a = np.arange(self.N*self.M).reshape(self.N, self.M)
         b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
-        c = blaze.array(a, storage=self.store1)
-        d = blaze.array(b, storage=self.store2)
-        cr = blaze._elwise_eval("c * d", vm=self.vm, storage=self.store3)
+        c = blaze.array(a, ddesc=self.ddesc1)
+        d = blaze.array(b, ddesc=self.ddesc2)
+        cr = blaze._elwise_eval("c * d", vm=self.vm, ddesc=self.ddesc3)
         nr = a * b
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
@@ -329,9 +328,9 @@ class storageMDTest(MayBeDiskTest):
         """Testing elwise_eval() with blaze arrays and constants"""
         a = np.arange(self.N*self.M).reshape(self.N, self.M)
         b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
-        c = blaze.array(a, storage=self.store1)
-        d = blaze.array(b, storage=self.store2)
-        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, storage=self.store3)
+        c = blaze.array(a, ddesc=self.ddesc1)
+        d = blaze.array(b, ddesc=self.ddesc2)
+        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, ddesc=self.ddesc3)
         nr = a * b + 1
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
@@ -339,9 +338,9 @@ class storageMDTest(MayBeDiskTest):
         """Testing elwise_eval() with blaze and dynd arrays"""
         a = np.arange(self.N*self.M).reshape(self.N, self.M)
         b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
-        c = blaze.array(a, storage=self.store1)
+        c = blaze.array(a, ddesc=self.ddesc1)
         d = nd.array(b)
-        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, storage=self.store3)
+        cr = blaze._elwise_eval("c * d + 1", vm=self.vm, ddesc=self.ddesc3)
         nr = a * b + 1
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
@@ -349,9 +348,9 @@ class storageMDTest(MayBeDiskTest):
         """Testing elwise_eval() with blaze, dynd and numpy arrays"""
         a = np.arange(self.N*self.M).reshape(self.N, self.M)
         b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
-        c = blaze.array(a, storage=self.store1)
+        c = blaze.array(a, ddesc=self.ddesc1)
         d = nd.array(b)
-        cr = blaze._elwise_eval("a * c + d", vm=self.vm, storage=self.store3)
+        cr = blaze._elwise_eval("a * c + d", vm=self.vm, ddesc=self.ddesc3)
         nr = a * c + d
         assert_array_equal(cr[:], nr, "eval does not work correctly")
 
@@ -362,8 +361,8 @@ class storageMDTest(MayBeDiskTest):
             return
         a = np.arange(self.N*self.M).reshape(self.N, self.M)
         b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
-        b = blaze.array(b, storage=self.store1)
-        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm, storage=self.store3)
+        b = blaze.array(b, ddesc=self.ddesc1)
+        cr = blaze._elwise_eval("sum(b + 2)", vm=self.vm, ddesc=self.ddesc3)
         nr = np.sum(b + 2)
         self.assert_(cr == nr, "eval does not work correctly")
 
@@ -374,9 +373,9 @@ class storageMDTest(MayBeDiskTest):
             return
         a = np.arange(self.N*self.M).reshape(self.N, self.M)
         b = np.arange(1, self.N*self.M+1).reshape(self.N, self.M)
-        b = blaze.array(b, storage=self.store1)
+        b = blaze.array(b, ddesc=self.ddesc1)
         cr = blaze._elwise_eval("sum(b, axis=0)",
-                                vm=self.vm, storage=self.store3)
+                                vm=self.vm, ddesc=self.ddesc3)
         nr = np.sum(b, axis=0)
         assert_array_equal(cr, nr, "eval does not work correctly")
 
