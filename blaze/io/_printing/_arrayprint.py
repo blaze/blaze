@@ -727,9 +727,9 @@ def _test():
     arr = blaze.array([2, 3, 4.0])
     print(arr.dshape)
 
-    print(array2string(arr._data))
+    print(array2string(arr.ddesc))
 
     arr = blaze.zeros('30, 30, 30, float32')
     print(arr.dshape)
 
-    print(array2string(arr._data))
+    print(array2string(arr.ddesc))

@@ -39,59 +39,59 @@ class TestBitwiseOps(unittest.TestCase):
     def test_bitwise_or_bool(self):
         t = blaze.array(True)
         f = blaze.array(False)
-        self.assertEqual(ddesc_as_py((t | t)._data), True)
-        self.assertEqual(ddesc_as_py((t | f)._data), True)
-        self.assertEqual(ddesc_as_py((f | t)._data), True)
-        self.assertEqual(ddesc_as_py((f | f)._data), False)
+        self.assertEqual(ddesc_as_py((t | t).ddesc), True)
+        self.assertEqual(ddesc_as_py((t | f).ddesc), True)
+        self.assertEqual(ddesc_as_py((f | t).ddesc), True)
+        self.assertEqual(ddesc_as_py((f | f).ddesc), False)
 
     def test_bitwise_or_uint64(self):
         x, y = 0x3192573469a2b3a1, 0x9274a2e219c27638
         a = blaze.array(x, 'uint64')
         b = blaze.array(y, 'uint64')
-        self.assertEqual(ddesc_as_py((a | b)._data), x | y)
-        self.assertEqual(ddesc_as_py(blaze.bitwise_or(a, b)._data), x | y)
+        self.assertEqual(ddesc_as_py((a | b).ddesc), x | y)
+        self.assertEqual(ddesc_as_py(blaze.bitwise_or(a, b).ddesc), x | y)
 
     def test_bitwise_and_bool(self):
         t = blaze.array(True)
         f = blaze.array(False)
-        self.assertEqual(ddesc_as_py((t & t)._data), True)
-        self.assertEqual(ddesc_as_py((t & f)._data), False)
-        self.assertEqual(ddesc_as_py((f & t)._data), False)
-        self.assertEqual(ddesc_as_py((f & f)._data), False)
+        self.assertEqual(ddesc_as_py((t & t).ddesc), True)
+        self.assertEqual(ddesc_as_py((t & f).ddesc), False)
+        self.assertEqual(ddesc_as_py((f & t).ddesc), False)
+        self.assertEqual(ddesc_as_py((f & f).ddesc), False)
 
     def test_bitwise_and_uint64(self):
         x, y = 0x3192573469a2b3a1, 0x9274a2e219c27638
         a = blaze.array(x, 'uint64')
         b = blaze.array(y, 'uint64')
-        self.assertEqual(ddesc_as_py((a & b)._data), x & y)
-        self.assertEqual(ddesc_as_py(blaze.bitwise_and(a, b)._data), x & y)
+        self.assertEqual(ddesc_as_py((a & b).ddesc), x & y)
+        self.assertEqual(ddesc_as_py(blaze.bitwise_and(a, b).ddesc), x & y)
 
     def test_bitwise_xor_bool(self):
         t = blaze.array(True)
         f = blaze.array(False)
-        self.assertEqual(ddesc_as_py((t ^ t)._data), False)
-        self.assertEqual(ddesc_as_py((t ^ f)._data), True)
-        self.assertEqual(ddesc_as_py((f ^ t)._data), True)
-        self.assertEqual(ddesc_as_py((f ^ f)._data), False)
+        self.assertEqual(ddesc_as_py((t ^ t).ddesc), False)
+        self.assertEqual(ddesc_as_py((t ^ f).ddesc), True)
+        self.assertEqual(ddesc_as_py((f ^ t).ddesc), True)
+        self.assertEqual(ddesc_as_py((f ^ f).ddesc), False)
 
     def test_bitwise_xor_uint64(self):
         x, y = 0x3192573469a2b3a1, 0x9274a2e219c27638
         a = blaze.array(x, 'uint64')
         b = blaze.array(y, 'uint64')
-        self.assertEqual(ddesc_as_py((a ^ b)._data), x ^ y)
-        self.assertEqual(ddesc_as_py(blaze.bitwise_xor(a, b)._data), x ^ y)
+        self.assertEqual(ddesc_as_py((a ^ b).ddesc), x ^ y)
+        self.assertEqual(ddesc_as_py(blaze.bitwise_xor(a, b).ddesc), x ^ y)
 
     def test_bitwise_not_bool(self):
         t = blaze.array(True)
         f = blaze.array(False)
-        self.assertEqual(ddesc_as_py((~t)._data), False)
-        self.assertEqual(ddesc_as_py((~f)._data), True)
+        self.assertEqual(ddesc_as_py((~t).ddesc), False)
+        self.assertEqual(ddesc_as_py((~f).ddesc), True)
 
     def test_bitwise_not_uint64(self):
         x = 0x3192573469a2b3a1
         a = blaze.array(x, 'uint64')
-        self.assertEqual(ddesc_as_py((~a)._data), x ^ 0xffffffffffffffff)
-        self.assertEqual(ddesc_as_py(blaze.bitwise_not(a)._data),
+        self.assertEqual(ddesc_as_py((~a).ddesc), x ^ 0xffffffffffffffff)
+        self.assertEqual(ddesc_as_py(blaze.bitwise_not(a).ddesc),
                          x ^ 0xffffffffffffffff)
 
 

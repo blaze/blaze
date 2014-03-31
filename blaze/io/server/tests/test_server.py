@@ -62,14 +62,14 @@ class TestServer(unittest.TestCase):
         ra = blaze.array(RemoteDataDescriptor('%s/csv_arr' % self.baseurl))
         la = blaze.catalog.get('/csv_arr')
         self.assertEqual(la.dshape, ra.dshape)
-        self.assertEqual(ddesc_as_py(la._data), ddesc_as_py(blaze.eval(ra)._data))
+        self.assertEqual(ddesc_as_py(la.ddesc), ddesc_as_py(blaze.eval(ra).ddesc))
 
     def test_compute(self):
         ra = blaze.array(RemoteDataDescriptor('%s/py_arr' % self.baseurl))
         result = ra + 1
         result = blaze.eval(result)
         self.assertEqual(result.dshape, datashape.dshape('5 * int32'))
-        self.assertEqual(ddesc_as_py(result._data), [2, 3, 4, 5, 6])
+        self.assertEqual(ddesc_as_py(result.ddesc), [2, 3, 4, 5, 6])
 
 if __name__ == '__main__':
     unittest.main()

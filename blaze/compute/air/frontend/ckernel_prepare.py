@@ -30,16 +30,16 @@ def prepare_local_execution(func, env):
         # Convert any persistent inputs to memory
         # TODO: should stream the computation in this case
         for i, arg in enumerate(args):
-            if isinstance(arg._data, BLZ_DDesc):
+            if isinstance(arg.ddesc, BLZ_DDesc):
                 args[i] = arg[:]
 
     # Update environment with dynd type information
     dynd_types = dict((arg, get_dynd_type(array))
                           for arg, array in zip(func.args, args)
-                              if isinstance(array._data, DyND_DDesc))
+                              if isinstance(array.ddesc, DyND_DDesc))
     env['dynd-types'] = dynd_types
     env['runtime.arglist'] = args
 
 
 def get_dynd_type(array):
-    return nd.type_of(array._data.dynd_arr())
+    return nd.type_of(array.ddesc.dynd_arr())

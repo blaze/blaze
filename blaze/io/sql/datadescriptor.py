@@ -81,7 +81,7 @@ class SQL_DDesc(I_DDesc):
             arr = sql_column(table.table_name, colname, dshape, self.conn)
 
             # Array.__getitem__ will expect back a data descriptor!
-            return arr._data
+            return arr.ddesc
 
         raise NotImplementedError
 

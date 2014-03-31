@@ -53,18 +53,18 @@ def _build_tst(kernel, storage1, storage2, storage3, R):
 
         Rd = kernel(A, B)
         self.assert_(isinstance(Rd, blaze.Array))
-        self.assert_(Rd._data.capabilities.deferred)
+        self.assert_(Rd.ddesc.capabilities.deferred)
         p = _store(storage3 + 'Rd') if storage3 == 'dsk' else None
         try:
             Rc = blaze.eval(Rd, storage=p)
             self.assert_(isinstance(Rc, blaze.Array))
             npy_data = getattr(self, 'npy' + R)
-            assert_allclose(np.array(ddesc_as_py(Rc._data)), npy_data)
+            assert_allclose(np.array(ddesc_as_py(Rc.ddesc)), npy_data)
 
             if storage3 == 'dsk':
-                self.assert_(Rc._data.capabilities.persistent)
+                self.assert_(Rc.ddesc.capabilities.persistent)
             else:
-                self.assert_(not Rc._data.capabilities.persistent)
+                self.assert_(not Rc.ddesc.capabilities.persistent)
 
         finally:
             try:

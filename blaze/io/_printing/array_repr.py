@@ -10,10 +10,10 @@ def array_repr(a):
 
     # TODO: create a mechanism for data descriptor to override
     #       printing.
-    if isinstance(a._data, Remote_DDesc):
-        body = 'Remote_DDesc(%r)' % a._data.url
+    if isinstance(a.ddesc, Remote_DDesc):
+        body = 'Remote_DDesc(%r)' % a.ddesc.url
     else:
-        body = _arrayprint.array2string(a._data,
+        body = _arrayprint.array2string(a.ddesc,
                           separator=', ',
                           prefix=' '*len(pre))
 

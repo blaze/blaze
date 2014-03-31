@@ -30,9 +30,9 @@ class Array(object):
             raise TypeError(('Constructing a blaze array directly '
                             'requires a data descriptor, not type '
                             '%r') % (type(data)))
-        self._data = data
-        self.axes = axes or [''] * (len(self._data.dshape) - 1)
-        self.labels = labels or [None] * (len(self._data.dshape) - 1)
+        self.ddesc = data
+        self.axes = axes or [''] * (len(self.ddesc.dshape) - 1)
+        self.labels = labels or [None] * (len(self.ddesc.dshape) - 1)
         self.user = user
         self.expr = None
 
@@ -57,20 +57,20 @@ class Array(object):
             def __int__(self):
                 # Evaluate to memory
                 e = compute.eval.eval(self)
-                return int(e._data.dynd_arr())
+                return int(e.ddesc.dynd_arr())
             injected_props['__int__'] = __int__
         elif data.dshape in [datashape.dshape('float32'), datashape.dshape('float64')]:
             def __float__(self):
                 # Evaluate to memory
                 e = compute.eval.eval(self)
-                return float(e._data.dynd_arr())
+                return float(e.ddesc.dynd_arr())
             injected_props['__float__'] = __float__
         elif ms in [datashape.complex_float32, datashape.complex_float64]:
             if len(data.dshape) == 1:
                 def __complex__(self):
                     # Evaluate to memory
                     e = compute.eval.eval(self)
-                    return complex(e._data.dynd_arr())
+                    return complex(e.ddesc.dynd_arr())
                 injected_props['__complex__'] = __complex__
             injected_props['real'] = _ufunc_to_property(ufuncs.real)
             injected_props['imag'] = _ufunc_to_property(ufuncs.imag)
@@ -81,11 +81,11 @@ class Array(object):
 
     @property
     def dshape(self):
-        return self._data.dshape
+        return self.ddesc.dshape
 
     @property
     def deferred(self):
-        return self._data.capabilities.deferred
+        return self.ddesc.capabilities.deferred
 
 
     def __array__(self):
@@ -93,19 +93,19 @@ class Array(object):
 
         # TODO: Expose PEP-3118 buffer interface
 
-        if hasattr(self._data, "__array__"):
-            return np.array(self._data)
+        if hasattr(self.ddesc, "__array__"):
+            return np.array(self.ddesc)
 
-        return np.array(self._data.dynd_arr())
+        return np.array(self.ddesc.dynd_arr())
 
     def __iter__(self):
-        return self._data.__iter__()
+        return self.ddesc.__iter__()
 
     def __getitem__(self, key):
-        return Array(self._data.__getitem__(key))
+        return Array(self.ddesc.__getitem__(key))
 
     def __setitem__(self, key, val):
-        self._data.__setitem__(key, val)
+        self.ddesc.__setitem__(key, val)
 
     def __len__(self):
         shape = self.dshape.shape
@@ -118,7 +118,7 @@ class Array(object):
         if len(self.dshape.shape) == 0:
             # Evaluate to memory
             e = compute.eval.eval(self)
-            return bool(e._data.dynd_arr())
+            return bool(e.ddesc.dynd_arr())
         else:
             raise ValueError("The truth value of an array with more than one "
                              "element is ambiguous. Use a.any() or a.all()")
@@ -128,26 +128,26 @@ class Array(object):
         if len(self.dshape.shape) == 0:
             # Evaluate to memory
             e = compute.eval.eval(self)
-            return bool(e._data.dynd_arr())
+            return bool(e.ddesc.dynd_arr())
         else:
             raise ValueError("The truth value of an array with more than one "
                              "element is ambiguous. Use a.any() or a.all()")
 
     def __str__(self):
-        if hasattr(self._data, '_printer'):
-            return self._data._printer()
+        if hasattr(self.ddesc, '_printer'):
+            return self.ddesc._printer()
         return _printing.array_str(self)
 
     def __repr__(self):
-        if hasattr(self._data, "_printer_repr"):
-            return self._data._printer_repr()
+        if hasattr(self.ddesc, "_printer_repr"):
+            return self.ddesc._printer_repr()
         return _printing.array_repr(self)
 
 
 def _named_property(name):
     @property
     def getprop(self):
-        return Array(self._data.getattr(name))
+        return Array(self.ddesc.getattr(name))
     return getprop
 
 

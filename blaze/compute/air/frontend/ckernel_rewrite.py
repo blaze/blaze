@@ -35,8 +35,8 @@ def op_ckernel(op):
         dst = args[0]
         srcs = args[1:]
 
-        dst_descriptor  = dst._data
-        src_descriptors = [src._data for src in srcs]
+        dst_descriptor  = dst.ddesc
+        src_descriptors = [src.ddesc for src in srcs]
 
         out = dst_descriptor.dynd_arr()
         inputs = [desc.dynd_arr() for desc in src_descriptors]
@@ -58,8 +58,8 @@ def op_ckernel_chunked(op):
         dst = args[0]
         srcs = args[1:]
 
-        dst_descriptor  = dst._data
-        src_descriptors = [src._data for src in srcs]
+        dst_descriptor  = dst.ddesc
+        src_descriptors = [src.ddesc for src in srcs]
 
         out = dst_descriptor.dynd_arr()
         inputs = [desc.dynd_arr() for desc in src_descriptors]

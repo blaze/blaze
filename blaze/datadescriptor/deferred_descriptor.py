@@ -21,7 +21,7 @@ def force_evaluation(methname):
     def method(self, *args, **kwargs):
         result = blaze.eval(blaze.Array(self))
         self._result = result
-        method = getattr(result._data, methname)
+        method = getattr(result.ddesc, methname)
         return method(*args, **kwargs)
 
     return method

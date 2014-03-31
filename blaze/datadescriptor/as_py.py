@@ -22,5 +22,5 @@ def ddesc_as_py(ddesc):
 
     if ddesc.capabilities.deferred:
         from blaze import Array, eval
-        ddesc = eval(Array(ddesc))._data
+        ddesc = eval(Array(ddesc)).ddesc
     return nd.as_py(ddesc.dynd_arr())

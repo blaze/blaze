@@ -46,7 +46,7 @@ def use_sql(op, strategies, env):
         # described an SQL data source
         runtime_args = env['runtime.args']
         array = runtime_args[op]
-        data_desc = array._data
+        data_desc = array.ddesc
         is_scalar = not data_desc.dshape.shape
         if not isinstance(data_desc, SQL_DDesc) and not is_scalar:
             return False

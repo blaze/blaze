@@ -37,7 +37,7 @@ def rewrite_sql(func, env):
     for arg in func.args:
         if strategies[arg] == 'sql':
             arr = args[arg]
-            sql_ddesc = arr._data
+            sql_ddesc = arr.ddesc
 
             if isinstance(sql_ddesc, DyND_DDesc):
                 # Extract scalar value from blaze array

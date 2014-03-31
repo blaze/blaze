@@ -27,7 +27,7 @@ def interpret(func, env, args, persist=False, **kwds):
     # TODO: allow mixing scidb and non-scidb data...
 
     dshape = func.type.restype
-    descs = [arg._data for arg in args]
+    descs = [arg.ddesc for arg in args]
     inputs = [desc.query for desc in descs]
     conns = [desc.conn for desc in descs]
 

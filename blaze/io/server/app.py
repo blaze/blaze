@@ -133,7 +133,7 @@ def handle_array_query():
         return html_array(arr, base_url, array_name, indexers)
     q_req = request.values['r']
     if q_req == 'data.json':
-        dat = arr._data.dynd_arr()
+        dat = arr.ddesc.dynd_arr()
         return Response(nd.as_py(nd.format_json(dat).view_scalars(ndt.bytes)),
                         mimetype='application/json')
     elif q_req == 'datashape':

@@ -285,7 +285,7 @@ def _eval_blocks(expression, vars, vlen, rowsize, vm, **kwargs):
         # We need array evals
         if vm == "python":
             res_block = eval(expression, vars_)
-            dynd_block = blaze_eval(res_block)._data.dynd_arr()
+            dynd_block = blaze_eval(res_block).ddesc.dynd_arr()
         else:
             res_block = numexpr.evaluate(expression, local_dict=vars_)
             # numexpr returns a numpy array, and we need dynd/blaze ones

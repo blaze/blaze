@@ -45,7 +45,7 @@ def interpret(func, env, storage=None, **kwds):
             values = dict(zip(func.args, args_chunk))
             interp = CKernelChunkInterp(values, chunk_size, result_ndim)
             visit(interp, func)
-            chunk = interp.result._data.dynd_arr()
+            chunk = interp.result.ddesc.dynd_arr()
             dst_dd.append(chunk)
 
         return blaze.Array(dst_dd)
@@ -87,7 +87,7 @@ class CKernelInterp(object):
 
     def op_convert(self, op):
         input = self.values[op.args[0]]
-        input = input._data.dynd_arr()
+        input = input.ddesc.dynd_arr()
         result = nd.array(input, type=ndt.type(str(op.type)))
         result = blaze.Array(DyND_DDesc(result))
         self.values[op] = result
