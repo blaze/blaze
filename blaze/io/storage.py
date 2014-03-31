@@ -219,7 +219,7 @@ def from_json(persist, **kwargs):
     dd = JSONDataDescriptor(persist.path, **kwargs)
     return Array(dd)
 
-def from_hdf5(persist, **kwargs):
+def from_hdf5(persist, datapath, **kwargs):
     """Open an existing persistent HDF5 array.
 
     Parameters
@@ -236,7 +236,7 @@ def from_hdf5(persist, **kwargs):
 
     """
     persist = _persist_convert(persist)
-    dd = HDF5DataDescriptor(persist.path, **kwargs)
+    dd = HDF5DataDescriptor(persist.path, datapath, **kwargs)
     return Array(dd)
 
 def drop(persist):
