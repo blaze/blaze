@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['IDataDescriptor', 'Capabilities']
+__all__ = ['I_DDesc', 'Capabilities']
 
 import abc
 

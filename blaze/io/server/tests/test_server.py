@@ -11,7 +11,7 @@ import unittest
 import datashape
 import blaze
 from blaze.catalog.tests.catalog_harness import CatalogHarness
-from blaze.datadescriptor import ddesc_as_py, RemoteDataDescriptor
+from blaze.datadescriptor import ddesc_as_py, Remote_DDesc
 
 
 class TestServer(unittest.TestCase):
@@ -59,13 +59,13 @@ class TestServer(unittest.TestCase):
         self.cat.close()
 
     def test_get_arr(self):
-        ra = blaze.array(RemoteDataDescriptor('%s/csv_arr' % self.baseurl))
+        ra = blaze.array(Remote_DDesc('%s/csv_arr' % self.baseurl))
         la = blaze.catalog.get('/csv_arr')
         self.assertEqual(la.dshape, ra.dshape)
         self.assertEqual(ddesc_as_py(la.ddesc), ddesc_as_py(blaze.eval(ra).ddesc))
 
     def test_compute(self):
-        ra = blaze.array(RemoteDataDescriptor('%s/py_arr' % self.baseurl))
+        ra = blaze.array(Remote_DDesc('%s/py_arr' % self.baseurl))
         result = ra + 1
         result = blaze.eval(result)
         self.assertEqual(result.dshape, datashape.dshape('5 * int32'))

@@ -14,7 +14,7 @@ except ImportError:
     cffi = None
 
 
-class TestCFFIMemBufDataDescriptor(unittest.TestCase):
+class TestCFFIMemBuf_DDesc(unittest.TestCase):
     @skipIf(cffi is None, 'cffi is not installed')
     def test_scalar(self):
         a = ffi.new('int *', 3)

@@ -11,7 +11,7 @@ from blaze.compute.air import interp
 
 from .error import InterfaceError
 from .query import execute_query, temp_name, Query
-from .datadescriptor import SciDBDataDescriptor
+from .datadescriptor import SciDB_DDesc
 
 
 #------------------------------------------------------------------------
@@ -46,7 +46,7 @@ def interpret(func, env, args, persist=False, **kwds):
     expr = query.result()
 
     result = _execute(conn, code, cleanup, expr, persist)
-    return blaze.array(SciDBDataDescriptor(dshape, result, conn))
+    return blaze.array(SciDB_DDesc(dshape, result, conn))
 
 
 def _execute(conn, code, cleanup, expr, persist):

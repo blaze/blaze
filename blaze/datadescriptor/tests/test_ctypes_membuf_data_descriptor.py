@@ -8,7 +8,7 @@ from datashape import dshape
 from blaze.datadescriptor import data_descriptor_from_ctypes, ddesc_as_py
 
 
-class TestCTypesMemBufDataDescriptor(unittest.TestCase):
+class TestCTypesMemBuf_DDesc(unittest.TestCase):
     def test_scalar(self):
         a = ctypes.c_int(3)
         dd = data_descriptor_from_ctypes(a, writable=True)
