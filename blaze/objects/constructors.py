@@ -53,7 +53,7 @@ def _normalize_dshape(ds):
         return ds
 
 
-def array(obj, dshape=None, dd=None):
+def array(obj, dshape=None, ddesc=None):
     """Create a Blaze array.
 
     Parameters
@@ -67,7 +67,7 @@ def array(obj, dshape=None, dd=None):
         provided, the input data will be coerced into the provided
         dshape.
 
-    dd : data descriptor instance
+    ddesc : data descriptor instance
         This comes with the necessary info for storing the data.  If
         None, a DyND_DDesc will be used.
 
@@ -91,61 +91,61 @@ def array(obj, dshape=None, dd=None):
              raise ValueError(('failed to construct a dynd array from '
                                'object %r') % obj)
 
-    if obj is None and dd is None:
-        raise ValueError('you need to specify at least `obj` or `dd`')
+    if obj is None and ddesc is None:
+        raise ValueError('you need to specify at least `obj` or `ddesc`')
 
     if isinstance(obj, Array):
         return obj
     elif isinstance(obj, I_DDesc):
-        if dd is None:
-            dd = obj
-            return Array(dd)
+        if ddesc is None:
+            ddesc = obj
+            return Array(ddesc)
         else:
-            raise ValueError(('you cannot specify `dd` when `obj` '
+            raise ValueError(('you cannot specify `ddesc` when `obj` '
                               'is already a DDesc instance'))
 
-    if dd is None:
-        # Use a dynd dd by default
+    if ddesc is None:
+        # Use a dynd ddesc by default
         try:
             array = nd.asarray(obj, access='rw')
         except:
             raise ValueError(('failed to construct a dynd array from '
                               'object %r') % obj)
-        dd = DyND_DDesc(array)
-        return Array(dd)
+        ddesc = DyND_DDesc(array)
+        return Array(ddesc)
 
-    # The _DDesc has been specifyied
-    if isinstance(dd, DyND_DDesc):
+    # The DDesc has been specifyied
+    if isinstance(ddesc, DyND_DDesc):
         if obj is not None:
             raise ValueError(('you cannot specify simultaneously '
-                              '`obj` and a DyND `dd`'))
-        return Array(dd)
-    elif isinstance(dd, BLZ_DDesc):
+                              '`obj` and a DyND `ddesc`'))
+        return Array(ddesc)
+    elif isinstance(ddesc, BLZ_DDesc):
         if inspect.isgenerator(obj):
             dt = None if dshape is None else to_numpy_dtype(dshape)
             # TODO: Generator logic could go inside barray
-            dd.blzarr = blz.fromiter(obj, dtype=dt, count=-1,
-                                     rootdir=dd.path, mode=dd.mode,
-                                     **dd.kwargs)
+            ddesc.blzarr = blz.fromiter(obj, dtype=dt, count=-1,
+                                        rootdir=ddesc.path, mode=ddesc.mode,
+                                        **ddesc.kwargs)
         else:
             if isinstance(obj, nd.array):
                 obj = nd.as_numpy(obj)
-            dd.blzarr = blz.barray(
-                obj, rootdir=dd.path, mode=dd.mode, **dd.kwargs)
-    elif isinstance(dd, HDF5_DDesc):
+            ddesc.blzarr = blz.barray(
+                obj, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
         if isinstance(obj, nd.array):
             obj = nd.as_numpy(obj)
-        with tb.open_file(dd.path, mode=dd.mode) as f:
-            where, name = split_path(dd.datapath)
-            f.create_earray(where, name, filters=dd.filters, obj=obj)
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
 
-    return Array(dd)
+    return Array(ddesc)
 
 
 # TODO: Make overloaded constructors, taking dshape, **kwds. Overload
 # on keywords
 
-def empty(dshape, dd=None):
+def empty(dshape, ddesc=None):
     """Create an array with uninitialized data.
 
     Parameters
@@ -153,7 +153,7 @@ def empty(dshape, dd=None):
     dshape : datashape
         The datashape for the resulting array.
 
-    dd : data descriptor instance
+    ddesc : data descriptor instance
         This comes with the necessary info for storing the data.  If
         None, a DyND_DDesc will be used.
 
@@ -164,22 +164,22 @@ def empty(dshape, dd=None):
     """
     dshape = _normalize_dshape(dshape)
 
-    if dd is None:
-        dd = DyND_DDesc(nd.empty(str(dshape)))
-        return Array(dd)
-    if isinstance(dd, BLZ_DDesc):
+    if ddesc is None:
+        ddesc = DyND_DDesc(nd.empty(str(dshape)))
+        return Array(ddesc)
+    if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
-        dd.blzarr = blz.zeros(shape, dt, rootdir=dd.path,
-                              mode=dd.mode, **dd.kwargs)
-    elif isinstance(dd, HDF5_DDesc):
+        ddesc.blzarr = blz.zeros(shape, dt, rootdir=ddesc.path,
+                                 mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
         obj = nd.as_numpy(nd.empty(str(dshape)))
-        with tb.open_file(dd.path, mode=dd.mode) as f:
-            where, name = split_path(dd.datapath)
-            f.create_earray(where, name, filters=dd.filters, obj=obj)
-    return Array(dd)
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+    return Array(ddesc)
 
 
-def zeros(dshape, dd=None):
+def zeros(dshape, ddesc=None):
     """Create an array and fill it with zeros.
 
     Parameters
@@ -187,7 +187,7 @@ def zeros(dshape, dd=None):
     dshape : datashape
         The datashape for the resulting array.
 
-    dd : data descriptor instance
+    ddesc : data descriptor instance
         This comes with the necessary info for storing the data.  If
         None, a DyND_DDesc will be used.
 
@@ -198,22 +198,22 @@ def zeros(dshape, dd=None):
     """
     dshape = _normalize_dshape(dshape)
 
-    if dd is None:
-        dd = DyND_DDesc(nd.zeros(str(dshape)))
-        return Array(dd)
-    if isinstance(dd, BLZ_DDesc):
+    if ddesc is None:
+        ddesc = DyND_DDesc(nd.zeros(str(dshape)))
+        return Array(ddesc)
+    if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
-        dd.blzarr = blz.zeros(shape, dt, rootdir=dd.path, mode=dd.mode,
-                              **dd.kwargs)
-    elif isinstance(dd, HDF5_DDesc):
+        ddesc.blzarr = blz.zeros(
+            shape, dt, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
         obj = nd.as_numpy(nd.zeros(str(dshape)))
-        with tb.open_file(dd.path, mode=dd.mode) as f:
-            where, name = split_path(dd.datapath)
-            f.create_earray(where, name, filters=dd.filters, obj=obj)
-    return Array(dd)
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+    return Array(ddesc)
 
 
-def ones(dshape, dd=None):
+def ones(dshape, ddesc=None):
     """Create an array and fill it with ones.
 
     Parameters
@@ -221,7 +221,7 @@ def ones(dshape, dd=None):
     dshape : datashape
         The datashape for the resulting array.
 
-    dd : data descriptor instance
+    ddesc : data descriptor instance
         This comes with the necessary info for storing the data.  If
         None, a DyND_DDesc will be used.
 
@@ -232,34 +232,34 @@ def ones(dshape, dd=None):
     """
     dshape = _normalize_dshape(dshape)
 
-    if dd is None:
-        dd = DyND_DDesc(nd.ones(str(dshape)))
-        return Array(dd)
-    if isinstance(dd, BLZ_DDesc):
+    if ddesc is None:
+        ddesc = DyND_DDesc(nd.ones(str(dshape)))
+        return Array(ddesc)
+    if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
-        dd.blzarr = blz.ones(shape, dt, rootdir=dd.path, mode=dd.mode,
-                             **dd.kwargs)
-    elif isinstance(dd, HDF5_DDesc):
+        ddesc.blzarr = blz.ones(
+            shape, dt, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
         obj = nd.as_numpy(nd.empty(str(dshape)))
-        with tb.open_file(dd.path, mode=dd.mode) as f:
-            where, name = split_path(dd.datapath)
-            f.create_earray(where, name, filters=dd.filters, obj=obj)
-    return Array(dd)
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+    return Array(ddesc)
 
 
-def drop(dd):
+def drop(ddesc):
     """Remove a persistent storage based on datadescriptor.
 
     Parameters
     ----------
-    dd : data descriptor instance
+    ddesc : data descriptor instance
         This comes with the necessary info for opening the data stored.
 
     """
 
-    if isinstance(dd, BLZ_DDesc):
+    if isinstance(ddesc, BLZ_DDesc):
         from shutil import rmtree
-        rmtree(dd.path)
+        rmtree(ddesc.path)
     else:
         import os
-        os.unlink(dd.path)
+        os.unlink(ddesc.path)

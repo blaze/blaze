@@ -65,8 +65,8 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress(self):
         # A compressed array (backed by BLZ)
-        dd = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
-        a = blaze.array(np.arange(1,4), dd=dd)
+        ddesc = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
+        a = blaze.array(np.arange(1,4), ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3])
 
@@ -93,8 +93,8 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress_iter(self):
         # A compressed array (backed by BLZ)
-        dd = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
-        a = blaze.array((i for i in range(10)), dd=dd)
+        ddesc = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
+        a = blaze.array((i for i in range(10)), ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
 
@@ -106,8 +106,8 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress_zeros(self):
         # A compressed array (backed by BLZ)
-        dd = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
-        a = blaze.zeros('10 * int64', dd=dd)
+        ddesc = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
+        a = blaze.zeros('10 * int64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [0]*10)
 
@@ -119,8 +119,8 @@ class TestEphemeral(unittest.TestCase):
 
     def test_create_compress_ones(self):
         # A compressed array (backed by BLZ)
-        dd = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
-        a = blaze.ones('10 * int64', dd=dd)
+        ddesc = BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
+        a = blaze.ones('10 * int64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1]*10)
 
@@ -143,23 +143,23 @@ class TestBLZPersistent(MayBePersistentTest, unittest.TestCase):
     dir_ = True
 
     def test_create(self):
-        dd = BLZ_DDesc(path=self.rootdir, mode='w')
-        a = blaze.array([2], 'float64', dd=dd)
+        ddesc = BLZ_DDesc(path=self.rootdir, mode='w')
+        a = blaze.array([2], 'float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertTrue(a.dshape.shape == (1,))
         self.assertEqual(dd_as_py(a._data), [2])
 
     def test_append(self):
-        dd = BLZ_DDesc(path=self.rootdir, mode='w')
-        a = blaze.zeros('0 * float64', dd=dd)
+        ddesc = BLZ_DDesc(path=self.rootdir, mode='w')
+        a = blaze.zeros('0 * float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         append(a, list(range(10)))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
 
     # Using a 1-dim as the internal dimension
     def test_append2(self):
-        dd = BLZ_DDesc(path=self.rootdir, mode='w')
-        a = blaze.empty('0 * 2 * float64', dd=dd)
+        ddesc = BLZ_DDesc(path=self.rootdir, mode='w')
+        a = blaze.empty('0 * 2 * float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         lvals = [[i,i*2] for i in range(10)]
         append(a, lvals)
@@ -172,16 +172,16 @@ class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_create(self):
-        dd = HDF5_DDesc(path=self.file, datapath='/earray', mode='w')
-        a = blaze.array([2], 'float64', dd=dd)
+        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='w')
+        a = blaze.array([2], 'float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertTrue(a.dshape.shape == (1,))
         self.assertEqual(dd_as_py(a._data), [2])
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_append(self):
-        dd = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
-        a = blaze.zeros('0 * float64', dd=dd)
+        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
+        a = blaze.zeros('0 * float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         append(a, list(range(10)))
         self.assertEqual(dd_as_py(a._data), list(range(10)))
@@ -189,8 +189,8 @@ class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
     # Using a 1-dim as the internal dimension
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_append2(self):
-        dd = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
-        a = blaze.empty('0 * 2 * float64', dd=dd)
+        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
+        a = blaze.empty('0 * 2 * float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         lvals = [[i,i*2] for i in range(10)]
         append(a, lvals)
