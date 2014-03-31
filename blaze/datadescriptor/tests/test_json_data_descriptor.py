@@ -5,7 +5,7 @@ import os
 import tempfile
 
 from blaze.datadescriptor import (
-    JSONDataDescriptor, DyNDDataDescriptor, IDataDescriptor, ddesc_as_py)
+    JSON_DDesc, DyND_DDesc, I_DDesc, ddesc_as_py)
 
 # TODO: This isn't actually being used!
 _json_buf = u"""{
@@ -47,7 +47,7 @@ json_buf = u"[1, 2, 3, 4, 5]"
 json_schema = "var * int8"
 
 
-class TestJSONDataDescriptor(unittest.TestCase):
+class TestJSON_DDesc(unittest.TestCase):
 
     def setUp(self):
         handle, self.json_file = tempfile.mkstemp(".json")
@@ -58,29 +58,29 @@ class TestJSONDataDescriptor(unittest.TestCase):
         os.remove(self.json_file)
 
     def test_basic_object_type(self):
-        self.assertTrue(issubclass(JSONDataDescriptor, IDataDescriptor))
-        dd = JSONDataDescriptor(self.json_file, schema=json_schema)
-        self.assertTrue(isinstance(dd, IDataDescriptor))
+        self.assertTrue(issubclass(JSON_DDesc, I_DDesc))
+        dd = JSON_DDesc(self.json_file, schema=json_schema)
+        self.assertTrue(isinstance(dd, I_DDesc))
         self.assertEqual(ddesc_as_py(dd), [1, 2, 3, 4, 5])
 
     def test_iter(self):
-        dd = JSONDataDescriptor(self.json_file, schema=json_schema)
+        dd = JSON_DDesc(self.json_file, schema=json_schema)
         # This equality does not work yet
         # self.assertEqual(dd.dshape, datashape.dshape(
         #     'Var, %s' % json_schema))
 
-        # Iteration should produce DyNDDataDescriptor instances
+        # Iteration should produce DyND_DDesc instances
         vals = []
         for el in dd:
-            self.assertTrue(isinstance(el, DyNDDataDescriptor))
-            self.assertTrue(isinstance(el, IDataDescriptor))
+            self.assertTrue(isinstance(el, DyND_DDesc))
+            self.assertTrue(isinstance(el, I_DDesc))
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [1, 2, 3, 4, 5])
 
     def test_getitem(self):
-        dd = JSONDataDescriptor(self.json_file, schema=json_schema)
+        dd = JSON_DDesc(self.json_file, schema=json_schema)
         el = dd[1:3]
-        self.assertTrue(isinstance(el, DyNDDataDescriptor))
+        self.assertTrue(isinstance(el, DyND_DDesc))
         vals = ddesc_as_py(el)
         self.assertEqual(vals, [2,3])
 
