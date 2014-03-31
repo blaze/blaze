@@ -46,8 +46,10 @@ print(d.dshape)
 print_section ('building compressed in-memory arrays')
 
 # A compressed array (backed by BLZ):
-blz = blaze.array([1,2,3], caps={'compress': True})
-print(blz)
+import blz
+datadesc = blaze.BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
+arr = blaze.array([1,2,3])
+print(arr)
 
 # --------------------------------------------------------------------
 
@@ -120,26 +122,20 @@ del describe_array
 
 print_section('Persisted arrays')
 
-def maybe_remove(persist):
-    import os.path
-    if os.path.exists(persist.path):
-        # Remove every directory starting with rootdir
-        blaze.drop(persist)
-
 # Create an empty array on-disk
 dname = 'persisted.blz'
-store = blaze.Storage(dname, mode='a')
-maybe_remove(store)
-p = blaze.zeros('0 * float64', storage=store)
+datadesc = blaze.BLZ_DDesc(dname, mode='w')
+p = blaze.zeros('0 * float64', ddesc=datadesc)
 # Feed it with some data
 blaze.append(p, range(10))
 
-print(repr(store))
+print(repr(datadesc))
 print('Before re-opening:', p)
 
-# Re-open the dataset in URI
-p2 = blaze.from_blz(store)
+# Re-open the dataset in 'r'ead-only mode
+datadesc = blaze.BLZ_DDesc(dname, mode='r')
+p2 = blaze.array(datadesc)
 
 print('After re-opening:', p2)
 
-blaze.drop(dname)
+blaze.drop(datadesc)

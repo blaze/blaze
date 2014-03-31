@@ -165,7 +165,7 @@ def empty(dshape, ddesc=None):
     dshape = _normalize_dshape(dshape)
 
     if ddesc is None:
-        ddesc = DyND_DDesc(nd.empty(str(dshape), access='rw'))
+        ddesc = DyND_DDesc(nd.empty(str(dshape)))
         return Array(ddesc)
     if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
