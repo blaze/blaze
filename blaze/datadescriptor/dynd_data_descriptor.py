@@ -4,15 +4,15 @@ from datashape import dshape
 from dynd import nd
 
 from . import Capabilities
-from .data_descriptor import IDataDescriptor
+from .data_descriptor import I_DDesc
 
 
 def dynd_descriptor_iter(dyndarr):
     for el in dyndarr:
-        yield DyNDDataDescriptor(el)
+        yield DyND_DDesc(el)
 
 
-class DyNDDataDescriptor(IDataDescriptor):
+class DyND_DDesc(I_DDesc):
     """
     A Blaze data descriptor which exposes a DyND array.
     """
@@ -52,7 +52,7 @@ class DyNDDataDescriptor(IDataDescriptor):
         return len(self._dyndarr)
 
     def __getitem__(self, key):
-        return DyNDDataDescriptor(self._dyndarr[key])
+        return DyND_DDesc(self._dyndarr[key])
 
     def __setitem__(self, key, value):
         # TODO: This is a horrible hack, we need to specify item setting
@@ -63,4 +63,4 @@ class DyNDDataDescriptor(IDataDescriptor):
         return dynd_descriptor_iter(self._dyndarr)
 
     def getattr(self, name):
-        return DyNDDataDescriptor(getattr(self._dyndarr, name))
+        return DyND_DDesc(getattr(self._dyndarr, name))

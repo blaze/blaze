@@ -11,15 +11,14 @@ import datashape
 from ..compute.ops import ufuncs
 from .. import compute
 
-from ..datadescriptor import (IDataDescriptor,
-                              DeferredDescriptor)
+from ..datadescriptor import (I_DDesc, DeferredDescriptor)
 from ..io import _printing
 
 
 class Array(object):
     """An Array contains:
 
-        DataDescriptor
+        DDesc
         Sequence of Bytes (where are the bytes)
         Index Object (how do I get to them)
         Data Shape Object (what are the bytes? how do I interpret them)
@@ -27,7 +26,7 @@ class Array(object):
         user-defined meta-data (whatever are needed --- provenance propagation)
     """
     def __init__(self, data, axes=None, labels=None, user={}):
-        if not isinstance(data, IDataDescriptor):
+        if not isinstance(data, I_DDesc):
             raise TypeError(('Constructing a blaze array directly '
                             'requires a data descriptor, not type '
                             '%r') % (type(data)))

@@ -25,7 +25,7 @@ import numpy.core.umath as _um
 import datashape
 from datashape import Fixed, has_var_dim
 
-from ...datadescriptor import IDataDescriptor, dd_as_py
+from ...datadescriptor import I_DDesc, dd_as_py
 
 # These are undesired dependencies:
 from numpy import ravel, maximum, minimum, absolute
@@ -36,7 +36,7 @@ import inspect
 def _dump_data_info(x, ident=None):
     ident = (ident if ident is not None
              else inspect.currentframe().f_back.f_lineno)
-    if isinstance(x, IDataDescriptor):
+    if isinstance(x, I_DDesc):
         subclass = 'DATA DESCRIPTOR'
     elif isinstance(x, np.ndarray):
         subclass = 'NUMPY ARRAY'
@@ -52,21 +52,21 @@ def product(x, y):
 
 def isnan(x):
     # hacks to remove when isnan/isinf are available for data descriptors
-    if isinstance(x, IDataDescriptor):
+    if isinstance(x, I_DDesc):
         return _um.isnan(dd_as_py(x))
     else:
         return _um.isnan(x)
 
 
 def isinf(x):
-    if isinstance(x, IDataDescriptor):
+    if isinstance(x, I_DDesc):
         return _um.isinf(dd_as_py(x))
     else:
         return _um.isinf(x)
 
 
 def not_equal(x, val):
-    if isinstance(x, IDataDescriptor):
+    if isinstance(x, I_DDesc):
         return _um.not_equal(dd_as_py(x))
     else:
         return _um.not_equal(x, val)

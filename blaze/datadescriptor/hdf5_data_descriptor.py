@@ -4,25 +4,25 @@ import numpy as np
 from dynd import nd
 import datashape
 
-from . import IDataDescriptor, Capabilities
+from . import I_DDesc, Capabilities
 from ..optional_packages import tables_is_here
 if tables_is_here:
     import tables as tb
-from .dynd_data_descriptor import DyNDDataDescriptor
+from .dynd_data_descriptor import DyND_DDesc
 
 # WARNING!  PyTables always returns NumPy arrays when doing indexing
-# operations.  This is why DyNDDataDescriptor is used for returning
+# operations.  This is why DyND_DDesc is used for returning
 # the values here.
 def hdf5_descriptor_iter(h5arr):
     for i in range(len(h5arr)):
         # PyTables doesn't have a convenient way to avoid collapsing
         # to a scalar, this is a way to avoid that
         el = np.array(h5arr[i], dtype=h5arr.dtype)
-        yield DyNDDataDescriptor(nd.array(el))
+        yield DyND_DDesc(nd.array(el))
     h5arr._v_file.close()
 
 
-class HDF5DataDescriptor(IDataDescriptor):
+class HDF5_DDesc(I_DDesc):
     """
     A Blaze data descriptor which exposes a HDF5 dataset.
     """
@@ -85,7 +85,7 @@ class HDF5DataDescriptor(IDataDescriptor):
             # The returned arrays are temporary buffers,
             # so must be flagged as readonly.
             dyndarr = nd.asarray(h5arr[key], access='readonly')
-        return DyNDDataDescriptor(dyndarr)
+        return DyND_DDesc(dyndarr)
 
     def __setitem__(self, key, value):
         # HDF5 arrays can be updated

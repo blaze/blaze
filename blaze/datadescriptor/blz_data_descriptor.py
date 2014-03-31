@@ -5,12 +5,12 @@ import blz
 from dynd import nd
 import datashape
 
-from . import IDataDescriptor, Capabilities
-from .dynd_data_descriptor import DyNDDataDescriptor
+from . import I_DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
 
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing
-# operations.  This is why DyNDDataDescriptor is used for returning
+# operations.  This is why DyND_DDesc is used for returning
 # the values here.
 
 def blz_descriptor_iter(blzarr):
@@ -18,10 +18,10 @@ def blz_descriptor_iter(blzarr):
         # BLZ doesn't have a convenient way to avoid collapsing
         # to a scalar, this is a way to avoid that
         el = np.array(blzarr[i], dtype=blzarr.dtype)
-        yield DyNDDataDescriptor(nd.array(el))
+        yield DyND_DDesc(nd.array(el))
 
 
-class BLZDataDescriptor(IDataDescriptor):
+class BLZ_DDesc(I_DDesc):
     """
     A Blaze data descriptor which exposes a BLZ array.
     """
@@ -68,7 +68,7 @@ class BLZDataDescriptor(IDataDescriptor):
         blzarr = self.blzarr
         # The returned arrays are temporary buffers,
         # so must be flagged as readonly.
-        return DyNDDataDescriptor(nd.asarray(blzarr[key], access='readonly'))
+        return DyND_DDesc(nd.asarray(blzarr[key], access='readonly'))
 
     def __setitem__(self, key, value):
         # We decided that BLZ should be read and append only
@@ -77,7 +77,7 @@ class BLZDataDescriptor(IDataDescriptor):
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
 
-    # This is not part of the DataDescriptor interface itself, but can
+    # This is not part of the I_DDesc interface itself, but can
     # be handy for other situations not requering full compliance with
     # it.
     def append(self, values):

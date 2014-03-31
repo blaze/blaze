@@ -17,8 +17,7 @@ from .compute.eval import eval, append
 from .compute.elwise_eval import _elwise_eval
 from .compute.ops.ufuncs import *
 from .datadescriptor import (
-    DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor,
-    CSVDataDescriptor, JSONDataDescriptor)
+    DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc)
 
 inf = float('inf')
 nan = float('nan')

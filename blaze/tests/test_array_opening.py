@@ -9,8 +9,8 @@ from blaze.py2help import skip, skipIf
 from blaze.datadescriptor import dd_as_py
 from blaze.tests.common import MayBePersistentTest
 from blaze import (append,
-    DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor,
-    CSVDataDescriptor, JSONDataDescriptor)
+    DyND_DDesc, BLZ_DDesc, HDF5_DDesc,
+    CSV_DDesc, JSON_DDesc)
 
 from blaze.optional_packages import tables_is_here
 if tables_is_here:
@@ -41,27 +41,27 @@ class TestOpenCSV(unittest.TestCase):
         os.unlink(self.fname)
 
     def test_open(self):
-        dd = CSVDataDescriptor(self.fname, mode='r', schema=csv_schema)
+        dd = CSV_DDesc(self.fname, mode='r', schema=csv_schema)
         a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_from_dialect(self):
-        dd = CSVDataDescriptor(self.fname, mode='r',
+        dd = CSV_DDesc(self.fname, mode='r',
                                schema=csv_schema, dialect='excel')
         a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_from_has_header(self):
-        dd = CSVDataDescriptor(
+        dd = CSV_DDesc(
             self.fname, mode='r', schema=csv_schema, has_header=False)
         a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), csv_ldict)
 
     def test_append(self):
-        dd = CSVDataDescriptor(self.fname, mode='r+', schema=csv_schema)
+        dd = CSV_DDesc(self.fname, mode='r+', schema=csv_schema)
         a = blaze.array(dd)
         blaze.append(a, ["k4", "v4", 4, True])
         self.assertEqual(dd_as_py(a._data), csv_ldict + \
@@ -83,7 +83,7 @@ class TestOpenJSON(unittest.TestCase):
         os.unlink(self.fname)
 
     def test_open(self):
-        dd = JSONDataDescriptor(self.fname, mode='r', schema=json_schema)
+        dd = JSON_DDesc(self.fname, mode='r', schema=json_schema)
         a = blaze.array(dd)
         self.assert_(isinstance(a, blaze.Array))
         self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
@@ -95,22 +95,22 @@ class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
     dir_ = True
 
     def test_open(self):
-        dd = BLZDataDescriptor(path=self.rootdir, mode='w')
+        dd = BLZ_DDesc(path=self.rootdir, mode='w')
         self.assertTrue(dd.mode == 'w')
         a = blaze.ones('0 * float64', dd=dd)
         append(a,range(10))
         # Re-open the dataset
-        dd = BLZDataDescriptor(path=self.rootdir, mode='r')
+        dd = BLZ_DDesc(path=self.rootdir, mode='r')
         self.assertTrue(dd.mode == 'r')
         a2 = blaze.array(dd)
         self.assertTrue(isinstance(a2, blaze.Array))
         self.assertEqual(dd_as_py(a2._data), list(range(10)))
 
     def test_wrong_open_mode(self):
-        dd = BLZDataDescriptor(path=self.rootdir, mode='w')
+        dd = BLZ_DDesc(path=self.rootdir, mode='w')
         a = blaze.ones('10 * float64', dd=dd)
         # Re-open the dataset
-        dd = BLZDataDescriptor(path=self.rootdir, mode='r')
+        dd = BLZ_DDesc(path=self.rootdir, mode='r')
         self.assertTrue(dd.mode == 'r')
         a2 = blaze.array(dd)
         self.assertRaises(IOError, append, a2, [1])
@@ -122,12 +122,12 @@ class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_open(self):
-        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='a')
+        dd = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
         self.assertTrue(dd.mode == 'a')
         a = blaze.ones('0 * float64', dd=dd)
         append(a,range(10))
         # Re-open the dataset in URI
-        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='r')
+        dd = HDF5_DDesc(path=self.file, datapath='/earray', mode='r')
         self.assertTrue(dd.mode == 'r')
         a2 = blaze.array(dd)
         self.assertTrue(isinstance(a2, blaze.Array))
@@ -135,10 +135,10 @@ class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_wrong_open_mode(self):
-        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='w')
+        dd = HDF5_DDesc(path=self.file, datapath='/earray', mode='w')
         a = blaze.ones('10 * float64', dd=dd)
         # Re-open the dataset
-        dd = HDF5DataDescriptor(path=self.file, datapath='/earray', mode='r')
+        dd = HDF5_DDesc(path=self.file, datapath='/earray', mode='r')
         self.assertTrue(dd.mode == 'r')
         a2 = blaze.array(dd)
         self.assertRaises(tb.FileModeError, append, a2, [1])

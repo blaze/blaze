@@ -4,7 +4,7 @@ arguments.
 """
 
 from __future__ import absolute_import, division, print_function
-from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
+from ....datadescriptor import DyND_DDesc, BLZ_DDesc
 
 from dynd import nd
 
@@ -30,13 +30,13 @@ def prepare_local_execution(func, env):
         # Convert any persistent inputs to memory
         # TODO: should stream the computation in this case
         for i, arg in enumerate(args):
-            if isinstance(arg._data, BLZDataDescriptor):
+            if isinstance(arg._data, BLZ_DDesc):
                 args[i] = arg[:]
 
     # Update environment with dynd type information
     dynd_types = dict((arg, get_dynd_type(array))
                           for arg, array in zip(func.args, args)
-                              if isinstance(array._data, DyNDDataDescriptor))
+                              if isinstance(array._data, DyND_DDesc))
     env['dynd-types'] = dynd_types
     env['runtime.arglist'] = args
 

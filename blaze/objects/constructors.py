@@ -26,7 +26,7 @@ if tables_is_here:
 
 from .array import Array
 from ..datadescriptor import (
-    IDataDescriptor, DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor)
+    I_DDesc, DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
 from ..py2help import basestring
 
 
@@ -69,7 +69,7 @@ def array(obj, dshape=None, dd=None):
 
     dd : data descriptor instance
         This comes with the necessary info for storing the data.  If
-        None, a DyNDDataDescriptor will be used.
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
@@ -96,13 +96,13 @@ def array(obj, dshape=None, dd=None):
 
     if isinstance(obj, Array):
         return obj
-    elif isinstance(obj, IDataDescriptor):
+    elif isinstance(obj, I_DDesc):
         if dd is None:
             dd = obj
             return Array(dd)
         else:
             raise ValueError(('you cannot specify `dd` when `obj` '
-                              'is already a DataDescriptor'))
+                              'is already a DDesc instance'))
 
     if dd is None:
         # Use a dynd dd by default
@@ -111,16 +111,16 @@ def array(obj, dshape=None, dd=None):
         except:
             raise ValueError(('failed to construct a dynd array from '
                               'object %r') % obj)
-        dd = DyNDDataDescriptor(array)
+        dd = DyND_DDesc(array)
         return Array(dd)
 
-    # The DataDescriptor has been specifyied
-    if isinstance(dd, DyNDDataDescriptor):
+    # The _DDesc has been specifyied
+    if isinstance(dd, DyND_DDesc):
         if obj is not None:
             raise ValueError(('you cannot specify simultaneously '
                               '`obj` and a DyND `dd`'))
         return Array(dd)
-    elif isinstance(dd, BLZDataDescriptor):
+    elif isinstance(dd, BLZ_DDesc):
         if inspect.isgenerator(obj):
             dt = None if dshape is None else to_numpy_dtype(dshape)
             # TODO: Generator logic could go inside barray
@@ -132,7 +132,7 @@ def array(obj, dshape=None, dd=None):
                 obj = nd.as_numpy(obj)
             dd.blzarr = blz.barray(
                 obj, rootdir=dd.path, mode=dd.mode, **dd.kwargs)
-    elif isinstance(dd, HDF5DataDescriptor):
+    elif isinstance(dd, HDF5_DDesc):
         if isinstance(obj, nd.array):
             obj = nd.as_numpy(obj)
         with tb.open_file(dd.path, mode=dd.mode) as f:
@@ -155,7 +155,7 @@ def empty(dshape, dd=None):
 
     dd : data descriptor instance
         This comes with the necessary info for storing the data.  If
-        None, a DyNDDataDescriptor will be used.
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
@@ -165,13 +165,13 @@ def empty(dshape, dd=None):
     dshape = _normalize_dshape(dshape)
 
     if dd is None:
-        dd = DyNDDataDescriptor(nd.empty(str(dshape)))
+        dd = DyND_DDesc(nd.empty(str(dshape)))
         return Array(dd)
-    if isinstance(dd, BLZDataDescriptor):
+    if isinstance(dd, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
         dd.blzarr = blz.zeros(shape, dt, rootdir=dd.path,
                               mode=dd.mode, **dd.kwargs)
-    elif isinstance(dd, HDF5DataDescriptor):
+    elif isinstance(dd, HDF5_DDesc):
         obj = nd.as_numpy(nd.empty(str(dshape)))
         with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
@@ -189,7 +189,7 @@ def zeros(dshape, dd=None):
 
     dd : data descriptor instance
         This comes with the necessary info for storing the data.  If
-        None, a DyNDDataDescriptor will be used.
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
@@ -199,13 +199,13 @@ def zeros(dshape, dd=None):
     dshape = _normalize_dshape(dshape)
 
     if dd is None:
-        dd = DyNDDataDescriptor(nd.zeros(str(dshape)))
+        dd = DyND_DDesc(nd.zeros(str(dshape)))
         return Array(dd)
-    if isinstance(dd, BLZDataDescriptor):
+    if isinstance(dd, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
         dd.blzarr = blz.zeros(shape, dt, rootdir=dd.path, mode=dd.mode,
                               **dd.kwargs)
-    elif isinstance(dd, HDF5DataDescriptor):
+    elif isinstance(dd, HDF5_DDesc):
         obj = nd.as_numpy(nd.zeros(str(dshape)))
         with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
@@ -223,7 +223,7 @@ def ones(dshape, dd=None):
 
     dd : data descriptor instance
         This comes with the necessary info for storing the data.  If
-        None, a DyNDDataDescriptor will be used.
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
@@ -233,13 +233,13 @@ def ones(dshape, dd=None):
     dshape = _normalize_dshape(dshape)
 
     if dd is None:
-        dd = DyNDDataDescriptor(nd.ones(str(dshape)))
+        dd = DyND_DDesc(nd.ones(str(dshape)))
         return Array(dd)
-    if isinstance(dd, BLZDataDescriptor):
+    if isinstance(dd, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
         dd.blzarr = blz.ones(shape, dt, rootdir=dd.path, mode=dd.mode,
                              **dd.kwargs)
-    elif isinstance(dd, HDF5DataDescriptor):
+    elif isinstance(dd, HDF5_DDesc):
         obj = nd.as_numpy(nd.empty(str(dshape)))
         with tb.open_file(dd.path, mode=dd.mode) as f:
             where, name = split_path(dd.datapath)
@@ -257,7 +257,7 @@ def drop(dd):
 
     """
 
-    if isinstance(dd, BLZDataDescriptor):
+    if isinstance(dd, BLZ_DDesc):
         from shutil import rmtree
         rmtree(dd.path)
     else:

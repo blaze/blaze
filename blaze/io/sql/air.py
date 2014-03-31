@@ -12,8 +12,8 @@ from . import db
 from ... import Array
 from .query import execute
 from .syntax import reorder_select, emit, Table, Column
-from .datadescriptor import SQLResultDataDescriptor
-from ...datadescriptor import DyNDDataDescriptor
+from .datadescriptor import SQLResult_DDesc
+from ...datadescriptor import DyND_DDesc
 
 
 def rewrite_sql(func, env):
@@ -39,7 +39,7 @@ def rewrite_sql(func, env):
             arr = args[arg]
             sql_ddesc = arr._data
 
-            if isinstance(sql_ddesc, DyNDDataDescriptor):
+            if isinstance(sql_ddesc, DyND_DDesc):
                 # Extract scalar value from blaze array
                 assert not sql_ddesc.dshape.shape
                 # Do something better here
@@ -123,6 +123,6 @@ def sql_to_pykernel(expr, op, env):
             raise db.OperationalError(
                 "Error executing %s: %s" % (select_query, e))
 
-        return Array(SQLResultDataDescriptor(result))
+        return Array(SQLResult_DDesc(result))
 
     return sql_pykernel

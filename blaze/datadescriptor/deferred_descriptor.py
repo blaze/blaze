@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 
 import blaze
 
-from . import IDataDescriptor, Capabilities
+from . import I_DDesc, Capabilities
 
 #------------------------------------------------------------------------
 # Decorators
@@ -33,7 +33,7 @@ def force_evaluation(methname):
 # TODO: Re-purpose this to work for general deferred computations, not just
 #       those backed up by the expression graph of Blaze kernels
 
-class DeferredDescriptor(IDataDescriptor):
+class DeferredDescriptor(I_DDesc):
     """
     Data descriptor for arrays backed up by a deferred expression graph.
 

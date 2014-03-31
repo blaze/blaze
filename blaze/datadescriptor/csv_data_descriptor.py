@@ -8,8 +8,8 @@ import datashape
 from dynd import nd
 
 from .. import py2help
-from .data_descriptor import IDataDescriptor, Capabilities
-from .dynd_data_descriptor import DyNDDataDescriptor
+from .data_descriptor import I_DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
 
 
 def open_file(path, mode, has_header):
@@ -23,7 +23,7 @@ def open_file(path, mode, has_header):
 def csv_descriptor_iter(filename, mode, has_header, schema):
     with open_file(filename, mode, has_header) as csvfile:
         for row in csv.reader(csvfile):
-            yield DyNDDataDescriptor(nd.array(row, dtype=schema))
+            yield DyND_DDesc(nd.array(row, dtype=schema))
 
 
 def csv_descriptor_iterchunks(filename, mode, has_header, schema,
@@ -36,16 +36,16 @@ def csv_descriptor_iterchunks(filename, mode, has_header, schema,
             if stop is not None and nrow >= stop:
                 if rows != []:
                     # Build the descriptor for the data we have and return
-                    yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+                    yield DyND_DDesc(nd.array(rows, dtype=schema))
                 return
             rows.append(row)
             if nrow % blen == 0:
                 print("rows:", rows, schema)
-                yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+                yield DyND_DDesc(nd.array(rows, dtype=schema))
                 rows = []
 
 
-class CSVDataDescriptor(IDataDescriptor):
+class CSV_DDesc(I_DDesc):
     """
     A Blaze data descriptor which exposes a CSV file.
 
@@ -145,7 +145,7 @@ class CSVDataDescriptor(IDataDescriptor):
                 raise IndexError("key '%r' is not valid" % key)
             read_iter = it.islice(csv.reader(csvfile), start, stop, step)
             res = nd.array(read_iter, dtype=self.schema)
-        return DyNDDataDescriptor(res)
+        return DyND_DDesc(res)
 
     def __setitem__(self, key, value):
         # CSV files cannot be updated (at least, not efficiently)

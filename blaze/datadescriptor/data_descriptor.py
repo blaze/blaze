@@ -40,7 +40,7 @@ class Capabilities:
         return "capabilities:" + "\n".join(caps)
 
 
-class IDataDescriptor:
+class I_DDesc:
     """
     The Blaze data descriptor is an interface which exposes
     data to Blaze. The data descriptor doesn't implement math

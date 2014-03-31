@@ -10,12 +10,12 @@ from datashape import DataShape, Record
 from dynd import nd
 
 from ... import Array
-from ...datadescriptor import DyNDDataDescriptor
-from ...datadescriptor import IDataDescriptor, Capabilities
+from ...datadescriptor import DyND_DDesc
+from ...datadescriptor import I_DDesc, Capabilities
 from .query import execute, dynd_chunk_iterator
 
 
-class SQLDataDescriptor(IDataDescriptor):
+class SQL_DDesc(I_DDesc):
     """
     SQL data descriptor. This describes a column of some SQL table.
     """
@@ -57,7 +57,7 @@ class SQLDataDescriptor(IDataDescriptor):
         query_result = execute(self.conn, self.dshape,
                                "select %s from %s" % (self.col.col_name,
                                                       self.col.table_name), [])
-        return SQLResultDataDescriptor(query_result)
+        return SQLResult_DDesc(query_result)
 
     def __iter__(self):
         return iter(self.describe_col())
@@ -89,7 +89,7 @@ class SQLDataDescriptor(IDataDescriptor):
         return self.describe_col().dynd_arr()
 
     def __repr__(self):
-        return "SQLDataDescriptor(%s)" % (self.col,)
+        return "SQL_DDesc(%s)" % (self.col,)
 
     def __str__(self):
         return "<sql col %s with shape %s>" % (self.col, self.dshape)
@@ -98,7 +98,7 @@ class SQLDataDescriptor(IDataDescriptor):
     _printer_repr = __repr__
 
 
-class SQLResultDataDescriptor(IDataDescriptor):
+class SQLResult_DDesc(I_DDesc):
     """
     SQL result data descriptor. This describes an query result and pulls it
     in lazily.
@@ -139,7 +139,7 @@ class SQLResultDataDescriptor(IDataDescriptor):
         if isinstance(item, str):
             # Pull in data to determine length
             # TODO: this is bad
-            return DyNDDataDescriptor(getattr(self.dynd_arr(), item))
+            return DyND_DDesc(getattr(self.dynd_arr(), item))
 
         raise NotImplementedError
 
@@ -163,10 +163,10 @@ class SQLResultDataDescriptor(IDataDescriptor):
         return result
 
     def __repr__(self):
-        return "SQLResultDataDescriptor()"
+        return "SQLResult_DDesc()"
 
     def __str__(self):
-        return str(Array(DyNDDataDescriptor(self.dynd_arr())))
+        return str(Array(DyND_DDesc(self.dynd_arr())))
 
     _printer = __str__
 

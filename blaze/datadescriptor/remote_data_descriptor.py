@@ -2,11 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 from ..catalog.blaze_url import add_indexers_to_url
-from .data_descriptor import IDataDescriptor, Capabilities
+from .data_descriptor import I_DDesc, Capabilities
 from dynd import nd, ndt
 
 
-class RemoteDataDescriptor(IDataDescriptor):
+class Remote_DDesc(I_DDesc):
     """
     A Blaze data descriptor which exposes an array on another
     server.
@@ -39,7 +39,7 @@ class RemoteDataDescriptor(IDataDescriptor):
             )
 
     def __repr__(self):
-        return 'RemoteDataDescriptor(%r, dshape=%r)' % (self.url, self.dshape)
+        return 'Remote_DDesc(%r, dshape=%r)' % (self.url, self.dshape)
 
     def dynd_arr(self):
         from ..io.client import requests
@@ -58,14 +58,14 @@ class RemoteDataDescriptor(IDataDescriptor):
         raise AttributeError('the datashape (%s) of this data descriptor has no length' % ds)
 
     def __getitem__(self, key):
-        return RemoteDataDescriptor(add_indexers_to_url(self.url, (key,)))
+        return Remote_DDesc(add_indexers_to_url(self.url, (key,)))
 
     def getattr(self, name):
         ds = self.dshape
         if isinstance(ds, datashape.DataShape):
             ds = ds[-1]
         if isinstance(ds, datashape.Record) and name in ds.names:
-            return RemoteDataDescriptor(self.url + '.' + name)
+            return Remote_DDesc(self.url + '.' + name)
         else:
             raise AttributeError(('Blaze remote array does not ' +
                                   'have attribute "%s"') % name)

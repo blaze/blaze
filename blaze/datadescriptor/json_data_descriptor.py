@@ -4,18 +4,18 @@ import os
 
 import datashape
 
-from .data_descriptor import IDataDescriptor
+from .data_descriptor import I_DDesc
 from .. import py2help
 from dynd import nd
-from .dynd_data_descriptor import DyNDDataDescriptor, Capabilities
+from .dynd_data_descriptor import DyND_DDesc, Capabilities
 
 
 def json_descriptor_iter(array):
     for row in array:
-        yield DyNDDataDescriptor(row)
+        yield DyND_DDesc(row)
 
 
-class JSONDataDescriptor(IDataDescriptor):
+class JSON_DDesc(I_DDesc):
     """
     A Blaze data descriptor which exposes a JSON file.
 
@@ -80,7 +80,7 @@ class JSONDataDescriptor(IDataDescriptor):
         return None
 
     def __getitem__(self, key):
-        return DyNDDataDescriptor(self._arr_cache[key])
+        return DyND_DDesc(self._arr_cache[key])
 
     def __setitem__(self, key, value):
         # JSON files cannot be updated (at least, not efficiently)

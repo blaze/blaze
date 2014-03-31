@@ -2,8 +2,8 @@ from __future__ import absolute_import, division, print_function
 
 from dynd import nd, ndt
 
-from .data_descriptor import IDataDescriptor
-from .blz_data_descriptor import BLZDataDescriptor
+from .data_descriptor import I_DDesc
+from .blz_data_descriptor import BLZ_DDesc
 
 
 def dd_as_py(dd):
@@ -14,10 +14,10 @@ def dd_as_py(dd):
     is to assist with writing unit tests.
     """
     # TODO: This function should probably be removed.
-    if not isinstance(dd, IDataDescriptor):
-        raise TypeError('expected DataDescriptor, got %r' % type(dd))
+    if not isinstance(dd, I_DDesc):
+        raise TypeError('expected I_DDesc instance, got %r' % type(dd))
 
-    if isinstance(dd, BLZDataDescriptor):
+    if isinstance(dd, BLZ_DDesc):
         return [dd_as_py(child_dd) for child_dd in dd]
 
     if dd.capabilities.deferred:
