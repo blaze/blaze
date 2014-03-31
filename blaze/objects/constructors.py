@@ -27,7 +27,6 @@ if tables_is_here:
 from .array import Array
 from ..datadescriptor import (
     IDataDescriptor, DyNDDataDescriptor, BLZDataDescriptor, HDF5DataDescriptor)
-from ..io.storage import Storage
 from ..py2help import basestring
 
 
@@ -249,7 +248,7 @@ def ones(dshape, dd=None):
 
 
 def drop(dd):
-    """Remove a persistent storage.
+    """Remove a persistent storage based on datadescriptor.
 
     Parameters
     ----------
