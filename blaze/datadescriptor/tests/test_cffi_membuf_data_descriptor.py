@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 
 from blaze.py2help import skipIf
-from blaze.datadescriptor import data_descriptor_from_cffi, dd_as_py
+from blaze.datadescriptor import data_descriptor_from_cffi, ddesc_as_py
 
 from datashape import dshape
 
@@ -20,14 +20,14 @@ class TestCFFIMemBufDataDescriptor(unittest.TestCase):
         a = ffi.new('int *', 3)
         dd = data_descriptor_from_cffi(ffi, a, writable=True)
         self.assertEqual(dd.dshape, dshape('int32'))
-        self.assertEqual(dd_as_py(dd), 3)
-        self.assertTrue(isinstance(dd_as_py(dd), int))
+        self.assertEqual(ddesc_as_py(dd), 3)
+        self.assertTrue(isinstance(ddesc_as_py(dd), int))
 
         a = ffi.new('float *', 3.25)
         dd = data_descriptor_from_cffi(ffi, a, writable=True)
         self.assertEqual(dd.dshape, dshape('float32'))
-        self.assertEqual(dd_as_py(dd), 3.25)
-        self.assertTrue(isinstance(dd_as_py(dd), float))
+        self.assertEqual(ddesc_as_py(dd), 3.25)
+        self.assertTrue(isinstance(ddesc_as_py(dd), float))
 
     @skipIf(cffi is None, 'cffi is not installed')
     def test_1d_array(self):
@@ -35,13 +35,13 @@ class TestCFFIMemBufDataDescriptor(unittest.TestCase):
         a = ffi.new('short[32]', [2*i for i in range(32)])
         dd = data_descriptor_from_cffi(ffi, a, writable=True)
         self.assertEqual(dd.dshape, dshape('32 * int16'))
-        self.assertEqual(dd_as_py(dd), [2*i for i in range(32)])
+        self.assertEqual(ddesc_as_py(dd), [2*i for i in range(32)])
 
         # An array where the size is not in the type
         a = ffi.new('double[]', [1.5*i for i in range(32)])
         dd = data_descriptor_from_cffi(ffi, a, writable=True)
         self.assertEqual(dd.dshape, dshape('32 * float64'))
-        self.assertEqual(dd_as_py(dd), [1.5*i for i in range(32)])
+        self.assertEqual(ddesc_as_py(dd), [1.5*i for i in range(32)])
 
     @skipIf(cffi is None, 'cffi is not installed')
     def test_2d_array(self):
@@ -50,14 +50,14 @@ class TestCFFIMemBufDataDescriptor(unittest.TestCase):
         a = ffi.new('long long[32][35]', vals)
         dd = data_descriptor_from_cffi(ffi, a, writable=True)
         self.assertEqual(dd.dshape, dshape('32 * 35 * int64'))
-        self.assertEqual(dd_as_py(dd), vals)
+        self.assertEqual(ddesc_as_py(dd), vals)
 
         # An array where the leading array size is not in the type
         vals = [[a + b*2 for a in range(35)] for b in range(32)]
         a = ffi.new('unsigned char[][35]', vals)
         dd = data_descriptor_from_cffi(ffi, a, writable=True)
         self.assertEqual(dd.dshape, dshape('32 * 35 * uint8'))
-        self.assertEqual(dd_as_py(dd), vals)
+        self.assertEqual(ddesc_as_py(dd), vals)
 
     @skipIf(cffi is None, 'cffi is not installed')
     def test_3d_array(self):
@@ -69,7 +69,7 @@ class TestCFFIMemBufDataDescriptor(unittest.TestCase):
         a = ffi.new('unsigned int[14][12][10]', vals)
         dd = data_descriptor_from_cffi(ffi, a, writable=True)
         self.assertEqual(dd.dshape, dshape('14 * 12 * 10 * uint32'))
-        self.assertEqual(dd_as_py(dd), vals)
+        self.assertEqual(ddesc_as_py(dd), vals)
 
 
 if __name__ == '__main__':

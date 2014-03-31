@@ -6,11 +6,10 @@ import unittest
 
 import blaze
 from blaze.py2help import skip, skipIf
-from blaze.datadescriptor import dd_as_py
+from blaze.datadescriptor import ddesc_as_py
 from blaze.tests.common import MayBePersistentTest
 from blaze import (append,
-    DyND_DDesc, BLZ_DDesc, HDF5_DDesc,
-    CSV_DDesc, JSON_DDesc)
+    DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc)
 
 from blaze.optional_packages import tables_is_here
 if tables_is_here:
@@ -44,27 +43,27 @@ class TestOpenCSV(unittest.TestCase):
         ddesc = CSV_DDesc(self.fname, mode='r', schema=csv_schema)
         a = blaze.array(ddesc)
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), csv_ldict)
+        self.assertEqual(ddesc_as_py(a._data), csv_ldict)
 
     def test_from_dialect(self):
         ddesc = CSV_DDesc(self.fname, mode='r',
                           schema=csv_schema, dialect='excel')
         a = blaze.array(ddesc)
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), csv_ldict)
+        self.assertEqual(ddesc_as_py(a._data), csv_ldict)
 
     def test_from_has_header(self):
         ddesc = CSV_DDesc(
             self.fname, mode='r', schema=csv_schema, has_header=False)
         a = blaze.array(ddesc)
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), csv_ldict)
+        self.assertEqual(ddesc_as_py(a._data), csv_ldict)
 
     def test_append(self):
         ddesc = CSV_DDesc(self.fname, mode='r+', schema=csv_schema)
         a = blaze.array(ddesc)
         blaze.append(a, ["k4", "v4", 4, True])
-        self.assertEqual(dd_as_py(a._data), csv_ldict + \
+        self.assertEqual(ddesc_as_py(a._data), csv_ldict + \
             [{u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}])
 
 
@@ -86,7 +85,7 @@ class TestOpenJSON(unittest.TestCase):
         ddesc = JSON_DDesc(self.fname, mode='r', schema=json_schema)
         a = blaze.array(ddesc)
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(dd_as_py(a._data), [1, 2, 3, 4, 5])
+        self.assertEqual(ddesc_as_py(a._data), [1, 2, 3, 4, 5])
 
 
 class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
@@ -104,7 +103,7 @@ class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
         self.assertTrue(ddesc.mode == 'r')
         a2 = blaze.array(ddesc)
         self.assertTrue(isinstance(a2, blaze.Array))
-        self.assertEqual(dd_as_py(a2._data), list(range(10)))
+        self.assertEqual(ddesc_as_py(a2._data), list(range(10)))
 
     def test_wrong_open_mode(self):
         ddesc = BLZ_DDesc(path=self.rootdir, mode='w')
@@ -131,7 +130,7 @@ class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
         self.assertTrue(ddesc.mode == 'r')
         a2 = blaze.array(ddesc)
         self.assertTrue(isinstance(a2, blaze.Array))
-        self.assertEqual(dd_as_py(a2._data), list(range(10)))
+        self.assertEqual(ddesc_as_py(a2._data), list(range(10)))
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_wrong_open_mode(self):

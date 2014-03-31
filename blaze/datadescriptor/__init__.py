@@ -15,4 +15,4 @@ from .csv_data_descriptor import CSV_DDesc
 from .json_data_descriptor import JSON_DDesc
 from .remote_data_descriptor import Remote_DDesc
 
-from .as_py import dd_as_py
+from .as_py import ddesc_as_py

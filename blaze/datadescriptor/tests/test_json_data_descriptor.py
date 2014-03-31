@@ -5,7 +5,7 @@ import os
 import tempfile
 
 from blaze.datadescriptor import (
-    JSONDataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
+    JSONDataDescriptor, DyNDDataDescriptor, IDataDescriptor, ddesc_as_py)
 
 # TODO: This isn't actually being used!
 _json_buf = u"""{
@@ -61,7 +61,7 @@ class TestJSONDataDescriptor(unittest.TestCase):
         self.assertTrue(issubclass(JSONDataDescriptor, IDataDescriptor))
         dd = JSONDataDescriptor(self.json_file, schema=json_schema)
         self.assertTrue(isinstance(dd, IDataDescriptor))
-        self.assertEqual(dd_as_py(dd), [1, 2, 3, 4, 5])
+        self.assertEqual(ddesc_as_py(dd), [1, 2, 3, 4, 5])
 
     def test_iter(self):
         dd = JSONDataDescriptor(self.json_file, schema=json_schema)
@@ -74,14 +74,14 @@ class TestJSONDataDescriptor(unittest.TestCase):
         for el in dd:
             self.assertTrue(isinstance(el, DyNDDataDescriptor))
             self.assertTrue(isinstance(el, IDataDescriptor))
-            vals.append(dd_as_py(el))
+            vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [1, 2, 3, 4, 5])
 
     def test_getitem(self):
         dd = JSONDataDescriptor(self.json_file, schema=json_schema)
         el = dd[1:3]
         self.assertTrue(isinstance(el, DyNDDataDescriptor))
-        vals = dd_as_py(el)
+        vals = ddesc_as_py(el)
         self.assertEqual(vals, [2,3])
 
 

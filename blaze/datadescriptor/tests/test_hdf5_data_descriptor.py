@@ -8,7 +8,7 @@ import datashape
 import numpy as np
 
 from blaze.datadescriptor import (
-    HDF5DataDescriptor, DyNDDataDescriptor, IDataDescriptor, dd_as_py)
+    HDF5DataDescriptor, DyNDDataDescriptor, IDataDescriptor, ddesc_as_py)
 from blaze.py2help import skipIf
 
 from blaze.optional_packages import tables_is_here
@@ -39,7 +39,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         dd = HDF5DataDescriptor(self.hdf5_file, '/a1')
         # Make sure the right type is returned
         self.assertTrue(isinstance(dd, IDataDescriptor))
-        self.assertEqual(dd_as_py(dd), [[1, 2, 3], [4, 5, 6]])
+        self.assertEqual(ddesc_as_py(dd), [[1, 2, 3], [4, 5, 6]])
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_iter_types(self):
@@ -51,7 +51,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         for el in dd:
             self.assertTrue(isinstance(el, DyNDDataDescriptor))
             self.assertTrue(isinstance(el, IDataDescriptor))
-            vals.append(dd_as_py(el))
+            vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 
     @skipIf(not tables_is_here, 'pytables is not installed')
@@ -61,9 +61,9 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         # Indexing should produce DyNDDataDescriptor instances
         self.assertTrue(isinstance(dd[0], DyNDDataDescriptor))
-        self.assertEqual(dd_as_py(dd[0]), [1,2,3])
+        self.assertEqual(ddesc_as_py(dd[0]), [1,2,3])
         self.assertTrue(isinstance(dd[1,2], DyNDDataDescriptor))
-        self.assertEqual(dd_as_py(dd[1,2]), 1)
+        self.assertEqual(ddesc_as_py(dd[1,2]), 1)
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_setitem(self):
@@ -71,9 +71,9 @@ class TestHDF5DataDescriptor(unittest.TestCase):
 
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         dd[1,2] = 10
-        self.assertEqual(dd_as_py(dd[1,2]), 10)
+        self.assertEqual(ddesc_as_py(dd[1,2]), 10)
         dd[1] = [10, 11, 12]
-        self.assertEqual(dd_as_py(dd[1]), [10, 11, 12])
+        self.assertEqual(ddesc_as_py(dd[1]), [10, 11, 12])
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_append(self):
@@ -83,7 +83,7 @@ class TestHDF5DataDescriptor(unittest.TestCase):
         self.assertEqual(dd.dshape, tshape)
         dd.append([(10, 11, 12)])
         dvals = {'f0': 10, 'f1': 11, 'f2': 12.}
-        rvals = dd_as_py(dd[2])
+        rvals = ddesc_as_py(dd[2])
         is_equal = [(rvals[k] == dvals[k]) for k in dvals]
         self.assertEqual(is_equal, [True]*3)
 
