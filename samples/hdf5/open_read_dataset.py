@@ -37,28 +37,28 @@ with tb.open_file(fname, "w") as f:
 
 print_section('opening and handling datasets in hdf5 files')
 # Open an homogeneous dataset there
-store = blaze.Storage(fname, format='hdf5')
-a = blaze.from_hdf5(store, datapath="/a1")
+ddesc = blaze.HDF5_DDesc(fname, datapath="/a1", mode="r")
+a = blaze.array(ddesc)
 # Print it
 print("/a1 contents:", a)
 # Print the datashape
 print("datashape for /a1:", a.dshape)
 
 # Open another homogeneous dataset there
-store = blaze.Storage(fname, format='hdf5')
-a = blaze.from_hdf5(store, datapath="/g/a2")
+ddesc = blaze.HDF5_DDesc(fname, datapath="/g/a2", mode="r")
+a = blaze.array(ddesc)
 # Print it
 print("/g/a2 contents:", a)
 # Print the datashape
 print("datashape for /g/a2:", a.dshape)
 
 # Now, get an heterogeneous dataset
-store = blaze.Storage(fname, format='hdf5')
-t = blaze.from_hdf5(store, datapath="/t1")
+ddesc = blaze.HDF5_DDesc(fname, datapath="/t1", mode="r")
+t = blaze.array(ddesc)
 # Print it
 print("/t1 contents:", t)
 # Print the datashape
 print("datashape for /t1:", t.dshape)
 
 # Finally, get rid of the sample file
-blaze.drop(store)
+blaze.drop(ddesc)
