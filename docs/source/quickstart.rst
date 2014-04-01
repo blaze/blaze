@@ -113,37 +113,41 @@ for lists.
 Disk Backed Array
 ~~~~~~~~~~~~~~~~~
 
-Blaze uses the BLZ format for storing compressed, chunked
-arrays on disk. These can be used through the Storage
-object.
+Blaze can currently use the BLZ and HDF5 format for storing
+compressed, chunked arrays on disk. These can be used through the
+data descriptors:
 
 .. doctest::
 
     >>> import blaze
-    >>> p = blaze.Storage('foo.blz')
-    >>> ds = blaze.dshape('2 * 2 * int32')
-    >>> a = blaze.array([[1,2],[3,4]], ds, storage=p)
-
-
-.. doctest::
-
+    >>> dd = blaze.BLZ_DDesc('foo.blz', mode='w')
+    >>> a = blaze.array([[1,2],[3,4]], '2 * 2 * int32', ddesc=dd)
     >>> a
     array([[1, 2],
            [3, 4]],
           dshape='2 * 2 * int32')
 
+So, the dataset is now on disk, stored persistently.  Then we can come
+later and, in another python session, gain access to it again:
 
 .. doctest::
 
     >>> import blaze
-    >>> blaze.from_blz(blaze.Storage('foo.blz'))
+    >>> dd = blaze.BLZ_DDesc('foo.blz', mode='r')
+    >>> b = blaze.array(dd)
+    >>> b
     array([[1, 2],
            [3, 4]],
           dshape='2 * 2 * int32')
-    >>> blaze.drop(blaze.Storage('foo.blz'))
 
+So, we see that we completely recovered the contents of the original
+array.  Finally, we can get rid of the array completely by passing the
+array, or the data descriptor to `blaze.drop()`.
 
+    >>> blaze.drop(dd)
 
+This will remove the dataset from disk, so it could not be restored in
+the future, so if you love your data, be careful with this one.
 
 .. XXX: Added a dedicated toplevel page
 
