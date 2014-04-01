@@ -4,7 +4,7 @@ import os
 
 import datashape
 
-from .data_descriptor import I_DDesc
+from .data_descriptor import DDesc
 from .. import py2help
 from dynd import nd
 from .dynd_data_descriptor import DyND_DDesc, Capabilities
@@ -15,7 +15,7 @@ def json_descriptor_iter(array):
         yield DyND_DDesc(row)
 
 
-class JSON_DDesc(I_DDesc):
+class JSON_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a JSON file.
 

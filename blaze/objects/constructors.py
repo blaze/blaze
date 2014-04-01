@@ -26,7 +26,7 @@ if tables_is_here:
 
 from .array import Array
 from ..datadescriptor import (
-    I_DDesc, DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
+    DDesc, DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
 from ..py2help import basestring
 
 
@@ -92,7 +92,7 @@ def array(obj, dshape=None, ddesc=None):
 
     if isinstance(obj, Array):
         return obj
-    elif isinstance(obj, I_DDesc):
+    elif isinstance(obj, DDesc):
         if ddesc is None:
             ddesc = obj
             return Array(ddesc)

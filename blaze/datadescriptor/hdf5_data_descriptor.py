@@ -4,7 +4,7 @@ import numpy as np
 from dynd import nd
 import datashape
 
-from . import I_DDesc, Capabilities
+from . import DDesc, Capabilities
 from ..optional_packages import tables_is_here
 if tables_is_here:
     import tables as tb
@@ -22,7 +22,7 @@ def hdf5_descriptor_iter(h5arr):
     h5arr._v_file.close()
 
 
-class HDF5_DDesc(I_DDesc):
+class HDF5_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a HDF5 dataset.
     """

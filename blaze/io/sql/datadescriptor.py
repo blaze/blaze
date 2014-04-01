@@ -11,11 +11,11 @@ from dynd import nd
 
 from ... import Array
 from ...datadescriptor import DyND_DDesc
-from ...datadescriptor import I_DDesc, Capabilities
+from ...datadescriptor import DDesc, Capabilities
 from .query import execute, dynd_chunk_iterator
 
 
-class SQL_DDesc(I_DDesc):
+class SQL_DDesc(DDesc):
     """
     SQL data descriptor. This describes a column of some SQL table.
     """
@@ -98,7 +98,7 @@ class SQL_DDesc(I_DDesc):
     _printer_repr = __repr__
 
 
-class SQLResult_DDesc(I_DDesc):
+class SQLResult_DDesc(DDesc):
     """
     SQL result data descriptor. This describes an query result and pulls it
     in lazily.

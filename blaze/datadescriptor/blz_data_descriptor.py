@@ -5,7 +5,7 @@ import blz
 from dynd import nd
 import datashape
 
-from . import I_DDesc, Capabilities
+from . import DDesc, Capabilities
 from .dynd_data_descriptor import DyND_DDesc
 
 
@@ -21,7 +21,7 @@ def blz_descriptor_iter(blzarr):
         yield DyND_DDesc(nd.array(el))
 
 
-class BLZ_DDesc(I_DDesc):
+class BLZ_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a BLZ array.
     """
@@ -77,7 +77,7 @@ class BLZ_DDesc(I_DDesc):
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
 
-    # This is not part of the I_DDesc interface itself, but can
+    # This is not part of the DDesc interface itself, but can
     # be handy for other situations not requering full compliance with
     # it.
     def append(self, values):

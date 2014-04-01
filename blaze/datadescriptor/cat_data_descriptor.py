@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import operator
 import bisect
 
-from . import I_DDesc, Capabilities
+from . import DDesc, Capabilities
 
 
 def cat_descriptor_iter(ddlist):
@@ -12,7 +12,7 @@ def cat_descriptor_iter(ddlist):
             yield el
 
 
-class Cat_DDesc(I_DDesc):
+class Cat_DDesc(DDesc):
     """
     A Blaze data descriptor which concatenates a list
     of data descriptors, all of which have the same
@@ -25,7 +25,7 @@ class Cat_DDesc(I_DDesc):
         if len(ddlist) <= 1:
             raise ValueError('Need at least 2 data descriptors to concatenate')
         for dd in ddlist:
-            if not isinstance(dd, I_DDesc):
+            if not isinstance(dd, DDesc):
                 raise ValueError('Provided ddlist has an element '
                                 'which is not a data descriptor')
         self._ddlist = ddlist

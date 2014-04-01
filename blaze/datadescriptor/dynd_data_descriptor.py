@@ -4,7 +4,7 @@ from datashape import dshape
 from dynd import nd
 
 from . import Capabilities
-from .data_descriptor import I_DDesc
+from .data_descriptor import DDesc
 
 
 def dynd_descriptor_iter(dyndarr):
@@ -12,7 +12,7 @@ def dynd_descriptor_iter(dyndarr):
         yield DyND_DDesc(el)
 
 
-class DyND_DDesc(I_DDesc):
+class DyND_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a DyND array.
     """

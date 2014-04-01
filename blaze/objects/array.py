@@ -11,7 +11,7 @@ import datashape
 from ..compute.ops import ufuncs
 from .. import compute
 
-from ..datadescriptor import (I_DDesc, DeferredDescriptor)
+from ..datadescriptor import (DDesc, DeferredDescriptor)
 from ..io import _printing
 
 
@@ -26,7 +26,7 @@ class Array(object):
         user-defined meta-data (whatever are needed --- provenance propagation)
     """
     def __init__(self, data, axes=None, labels=None, user={}):
-        if not isinstance(data, I_DDesc):
+        if not isinstance(data, DDesc):
             raise TypeError(('Constructing a blaze array directly '
                             'requires a data descriptor, not type '
                             '%r') % (type(data)))
