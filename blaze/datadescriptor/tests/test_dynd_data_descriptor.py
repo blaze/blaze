@@ -4,16 +4,16 @@ import unittest
 
 import datashape
 from dynd import nd
-from blaze.datadescriptor import DyND_DDesc, I_DDesc, ddesc_as_py
+from blaze.datadescriptor import DyND_DDesc, DDesc, ddesc_as_py
 
 
 class TestDyND_DDesc(unittest.TestCase):
     def test_basic_object_type(self):
-        self.assertTrue(issubclass(DyND_DDesc, I_DDesc))
+        self.assertTrue(issubclass(DyND_DDesc, DDesc))
         a = nd.array([[1, 2, 3], [4, 5, 6]])
         dd = DyND_DDesc(a)
         # Make sure the right type is returned
-        self.assertTrue(isinstance(dd, I_DDesc))
+        self.assertTrue(isinstance(dd, DDesc))
         self.assertEqual(ddesc_as_py(dd), [[1, 2, 3], [4, 5, 6]])
 
     def test_descriptor_iter_types(self):
@@ -25,7 +25,7 @@ class TestDyND_DDesc(unittest.TestCase):
         vals = []
         for el in dd:
             self.assertTrue(isinstance(el, DyND_DDesc))
-            self.assertTrue(isinstance(el, I_DDesc))
+            self.assertTrue(isinstance(el, DDesc))
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 

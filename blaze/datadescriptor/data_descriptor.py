@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['I_DDesc', 'Capabilities']
+__all__ = ['DDesc', 'Capabilities']
 
 import abc
 
@@ -40,7 +40,7 @@ class Capabilities:
         return "capabilities:" + "\n".join(caps)
 
 
-class I_DDesc:
+class DDesc:
     """
     The Blaze data descriptor is an interface which exposes
     data to Blaze. The data descriptor doesn't implement math

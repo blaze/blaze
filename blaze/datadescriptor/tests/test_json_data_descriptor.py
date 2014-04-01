@@ -5,7 +5,7 @@ import os
 import tempfile
 
 from blaze.datadescriptor import (
-    JSON_DDesc, DyND_DDesc, I_DDesc, ddesc_as_py)
+    JSON_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 
 # TODO: This isn't actually being used!
 _json_buf = u"""{
@@ -58,9 +58,9 @@ class TestJSON_DDesc(unittest.TestCase):
         os.remove(self.json_file)
 
     def test_basic_object_type(self):
-        self.assertTrue(issubclass(JSON_DDesc, I_DDesc))
+        self.assertTrue(issubclass(JSON_DDesc, DDesc))
         dd = JSON_DDesc(self.json_file, schema=json_schema)
-        self.assertTrue(isinstance(dd, I_DDesc))
+        self.assertTrue(isinstance(dd, DDesc))
         self.assertEqual(ddesc_as_py(dd), [1, 2, 3, 4, 5])
 
     def test_iter(self):
@@ -73,7 +73,7 @@ class TestJSON_DDesc(unittest.TestCase):
         vals = []
         for el in dd:
             self.assertTrue(isinstance(el, DyND_DDesc))
-            self.assertTrue(isinstance(el, I_DDesc))
+            self.assertTrue(isinstance(el, DDesc))
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [1, 2, 3, 4, 5])
 

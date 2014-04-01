@@ -7,7 +7,7 @@ import os
 import datashape
 
 from blaze.datadescriptor import (
-    CSV_DDesc, DyND_DDesc, I_DDesc, ddesc_as_py)
+    CSV_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 
 # A CSV toy example
 csv_buf = u"""k1,v1,1,False
@@ -28,9 +28,9 @@ class TestCSV_DDesc(unittest.TestCase):
         os.remove(self.csv_file)
 
     def test_basic_object_type(self):
-        self.assertTrue(issubclass(CSV_DDesc, I_DDesc))
+        self.assertTrue(issubclass(CSV_DDesc, DDesc))
         dd = CSV_DDesc(self.csv_file, schema=csv_schema)
-        self.assertTrue(isinstance(dd, I_DDesc))
+        self.assertTrue(isinstance(dd, DDesc))
         self.assertTrue(isinstance(dd.dshape.shape[0], datashape.Var))
         self.assertEqual(ddesc_as_py(dd), [
             {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
@@ -44,7 +44,7 @@ class TestCSV_DDesc(unittest.TestCase):
         vals = []
         for el in dd:
             self.assertTrue(isinstance(el, DyND_DDesc))
-            self.assertTrue(isinstance(el, I_DDesc))
+            self.assertTrue(isinstance(el, DDesc))
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [
             {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
@@ -58,7 +58,7 @@ class TestCSV_DDesc(unittest.TestCase):
         vals = []
         for el in dd.iterchunks(blen=2):
             self.assertTrue(isinstance(el, DyND_DDesc))
-            self.assertTrue(isinstance(el, I_DDesc))
+            self.assertTrue(isinstance(el, DDesc))
             vals.extend(ddesc_as_py(el))
         self.assertEqual(vals, [
             {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},

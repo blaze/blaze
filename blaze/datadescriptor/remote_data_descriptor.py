@@ -2,11 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 from ..catalog.blaze_url import add_indexers_to_url
-from .data_descriptor import I_DDesc, Capabilities
+from .data_descriptor import DDesc, Capabilities
 from dynd import nd, ndt
 
 
-class Remote_DDesc(I_DDesc):
+class Remote_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes an array on another
     server.

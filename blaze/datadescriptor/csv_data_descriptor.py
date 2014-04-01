@@ -8,7 +8,7 @@ import datashape
 from dynd import nd
 
 from .. import py2help
-from .data_descriptor import I_DDesc, Capabilities
+from .data_descriptor import DDesc, Capabilities
 from .dynd_data_descriptor import DyND_DDesc
 
 
@@ -45,7 +45,7 @@ def csv_descriptor_iterchunks(filename, mode, has_header, schema,
                 rows = []
 
 
-class CSV_DDesc(I_DDesc):
+class CSV_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a CSV file.
 

@@ -8,7 +8,7 @@ import datashape
 import numpy as np
 
 from blaze.datadescriptor import (
-    HDF5_DDesc, DyND_DDesc, I_DDesc, ddesc_as_py)
+    HDF5_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 from blaze.py2help import skipIf
 
 from blaze.optional_packages import tables_is_here
@@ -35,10 +35,10 @@ class TestHDF5DDesc(unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_basic_object_type(self):
-        self.assertTrue(issubclass(HDF5_DDesc, I_DDesc))
+        self.assertTrue(issubclass(HDF5_DDesc, DDesc))
         dd = HDF5_DDesc(self.hdf5_file, '/a1')
         # Make sure the right type is returned
-        self.assertTrue(isinstance(dd, I_DDesc))
+        self.assertTrue(isinstance(dd, DDesc))
         self.assertEqual(ddesc_as_py(dd), [[1, 2, 3], [4, 5, 6]])
 
     @skipIf(not tables_is_here, 'pytables is not installed')
@@ -50,7 +50,7 @@ class TestHDF5DDesc(unittest.TestCase):
         vals = []
         for el in dd:
             self.assertTrue(isinstance(el, DyND_DDesc))
-            self.assertTrue(isinstance(el, I_DDesc))
+            self.assertTrue(isinstance(el, DDesc))
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 

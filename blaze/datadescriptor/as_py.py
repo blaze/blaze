@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from dynd import nd, ndt
 
-from .data_descriptor import I_DDesc
+from .data_descriptor import DDesc
 from .blz_data_descriptor import BLZ_DDesc
 
 
@@ -14,8 +14,8 @@ def ddesc_as_py(ddesc):
     is to assist with writing unit tests.
     """
     # TODO: This function should probably be removed.
-    if not isinstance(ddesc, I_DDesc):
-        raise TypeError('expected I_DDesc instance, got %r' % type(ddesc))
+    if not isinstance(ddesc, DDesc):
+        raise TypeError('expected DDesc instance, got %r' % type(ddesc))
 
     if isinstance(ddesc, BLZ_DDesc):
         return [ddesc_as_py(child_ddesc) for child_ddesc in ddesc]

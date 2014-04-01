@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from .data_descriptor import I_DDesc, Capabilities
+from .data_descriptor import DDesc, Capabilities
 
 from .blz_data_descriptor import BLZ_DDesc
 from ..optional_packages import tables_is_here

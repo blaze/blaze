@@ -26,7 +26,7 @@ if tables_is_here:
 
 from .array import Array
 from ..datadescriptor import (
-    I_DDesc, DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
+    DDesc, DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
 from ..py2help import basestring
 
 
@@ -82,21 +82,17 @@ def array(obj, dshape=None, ddesc=None):
         (not inspect.isgenerator(obj)) and
         (dshape is not None)):
         dt = ndt.type(str(dshape))
-        try:
-            if dt.ndim > 0:
-                obj = nd.array(obj, type=dt, access='rw')
-            else:
-                obj = nd.array(obj, dtype=dt, access='rw')
-        except:
-             raise ValueError(('failed to construct a dynd array from '
-                               'object %r') % obj)
+        if dt.ndim > 0:
+            obj = nd.array(obj, type=dt, access='rw')
+        else:
+            obj = nd.array(obj, dtype=dt, access='rw')
 
     if obj is None and ddesc is None:
         raise ValueError('you need to specify at least `obj` or `ddesc`')
 
     if isinstance(obj, Array):
         return obj
-    elif isinstance(obj, I_DDesc):
+    elif isinstance(obj, DDesc):
         if ddesc is None:
             ddesc = obj
             return Array(ddesc)
