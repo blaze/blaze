@@ -88,8 +88,10 @@ You can even build a compressed array in-memory:
 
 .. doctest::
 
-  >>> blz = blaze.array([1,2,3], caps={'compress': True})
-  >>> print(blz)
+  >>> import blz
+  >>> ddesc = blaze.BLZ_DDesc(mode='w', bparams=blz.bparams(clevel=5))
+  >>> arr = blaze.array([1, 2, 3], ddesc=ddesc)
+  >>> print(arr)
   [1 2 3]
 
 It is possible to force the type when creating the array. This
@@ -108,47 +110,50 @@ inferred. The following is thus equivalent:
 
 .. doctest::
 
-
   >>> f = blaze.array([ 1, 2, 3], dshape='float32')
   >>> f
   array([ 1.,  2.,  3.],
         dshape='3 * float32')
 
 Blaze also supports arrays to be made persistent. This can be achieved
-by adding the storage keyword parameter to an array constructor:
+by adding the data descriptor to the `array` constructor:
 
 .. doctest::
 
-  >>> g = blaze.array([ 1, 2, 3], dshape='float32', storage=blaze.Storage('myarray.blz'))
+  >>> dd = blaze.BLZ_DDesc('myarray.blz', mode='w')
+  >>> g = blaze.array([ 1, 2, 3], dshape='float32', ddesc=dd)
   >>> g
   array([ 1.,  2.,  3.],
         dshape='3 * float32')
 
 You can use the persistent array as if it was an in-memory
 array. However, it is persistent and it will survive your python
-session. Later you can gain a reference to the array, even from a
-different python session by name, using the `from_*` functions:
+session.
+
+Later on you can gain a reference to the array, even from a
+different python session by name, by simply passing the data
+descritor to the array constructor:
 
 .. doctest::
 
-  >>> f = blaze.from_blz(blaze.Storage('myarray.blz'))
-  >>> f
+  >>> dd = blaze.BLZ_DDesc('myarray.blz', mode='a')
+  >>> h = blaze.array(dd)
+  >>> h
   array([ 1.,  2.,  3.],
         dshape='3 * float32')
 
-A persistent array is backed on non-volatile storage (currently, only
-a filesystem is supported, but the list of supported storages may
-increase in the future). That means that there are system resources
-allocated to store that array, even when you exit your python
-session.
+Please note that, as we want to retrieve the existing data, we are
+specifying the dataset in 'a'ppend mode, so as not to overwrite it.
 
-A persistent array can be enlarged anytime by using the `blaze.append()`
-function, e.g.
+A persistent array that has the 'appendable' capability set to True
+can be enlarged anytime by using the `blaze.append()` function, e.g.
 
 .. doctest::
 
-  >>> blaze.append(g, [4, 5, 6])
-  >>> g
+  >>> h.ddesc.capabilities.appendable
+  True
+  >>> blaze.append(h, [4, 5, 6])
+  >>> h
   array([ 1.,  2.,  3.,  4.,  5.,  6.],
         dshape='6, float32')
 
@@ -157,11 +162,10 @@ its resources, you can just 'drop' it:
 
 .. doctest::
 
-  >>> blaze.drop(blaze.Storage('myarray.blz'))
+  >>> blaze.drop(h)
 
-After dropping a persistent array this way, any 'open' version you may
-had of it will no longer be valid. You won't be able to reopen it
-either. It is effectively deleted.
+This will remove the dataset from disk, so it could not be restored in
+the future, so if you love your data, be careful with this one.
 
 
 Evaluation
@@ -220,21 +224,21 @@ file-system. We can eval directly to a persistent array:
 
 .. doctest::
 
-  >>> result = blaze.eval(r, storage=blaze.Storage('res.blz'))
+  >>> dd = blaze.BLZ_DDesc('res.blz', mode='w')
+  >>> result = blaze.eval(r, ddesc=dd)
 
 In this sample we have used two small in-memory arrays to illustrate
 execution. The same code can work for large arrays that are 'opened'
 instead of being created/read, allowing the easy evaluation of
 expression that is effectively out-of-core::
 
-  >>> ba1 = blaze.from_blz(blaze.Storage('big_array1.blz'))
-  >>> ba2 = blaze.from_blz(blaze.Storage('big_array2.blz'))
-  >>> res = blaze.eval(ba1+ba2, storage=blaze.Storage('big_result.blz'))
+  >>> ba1 = blaze.array(blaze.BLZ_DDesc('big_array1.blz'))
+  >>> ba2 = blaze.array(blaze.BLZ_DDesc('big_array2.blz'))
+  >>> dd_res = blaze.BLZ_DDesc('big_result.blz'), mode='w')
+  >>> res = blaze.eval(ba1+ba2, ddesc=dd_res)
 
 So it is possible to build complex array expressions that can be
 executed without building huge intermediate arrays. It is also
 possible to use persistent arrays or in-memory arrays as your operands
 (or a mix of both, as they are all Blaze arrays). You are also able to
 specify what kind of array you want for your result.
-
-
