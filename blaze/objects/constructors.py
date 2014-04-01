@@ -110,7 +110,7 @@ def array(obj, dshape=None, ddesc=None):
         ddesc = DyND_DDesc(array)
         return Array(ddesc)
 
-    # The DDesc has been specifyied
+    # The DDesc has been specified
     if isinstance(ddesc, DyND_DDesc):
         if obj is not None:
             raise ValueError(('you cannot specify simultaneously '
@@ -243,15 +243,22 @@ def ones(dshape, ddesc=None):
     return Array(ddesc)
 
 
-def drop(ddesc):
-    """Remove a persistent storage based on datadescriptor.
+def drop(obj):
+    """Remove a persistent storage based on datadescriptor info.
 
     Parameters
     ----------
-    ddesc : data descriptor instance
-        This comes with the necessary info for opening the data stored.
+    obj : Array or data descriptor instance
+        The Array or data descriptor to be removed.
 
     """
+
+    if isinstance(obj, Array):
+        ddesc = obj.ddesc
+    elif isinstance(obj, DDesc):
+        ddesc = obj
+    else:
+        raise ValueError("`obj` must be an Array or DDesc instance")
 
     if isinstance(ddesc, BLZ_DDesc):
         from shutil import rmtree
