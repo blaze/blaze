@@ -82,14 +82,10 @@ def array(obj, dshape=None, ddesc=None):
         (not inspect.isgenerator(obj)) and
         (dshape is not None)):
         dt = ndt.type(str(dshape))
-        try:
-            if dt.ndim > 0:
-                obj = nd.array(obj, type=dt, access='rw')
-            else:
-                obj = nd.array(obj, dtype=dt, access='rw')
-        except:
-             raise ValueError(('failed to construct a dynd array from '
-                               'object %r') % obj)
+        if dt.ndim > 0:
+            obj = nd.array(obj, type=dt, access='rw')
+        else:
+            obj = nd.array(obj, dtype=dt, access='rw')
 
     if obj is None and ddesc is None:
         raise ValueError('you need to specify at least `obj` or `ddesc`')
