@@ -134,6 +134,7 @@ def array(obj, dshape=None, ddesc=None):
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
             f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
 
     return Array(ddesc)
 
@@ -172,6 +173,7 @@ def empty(dshape, ddesc=None):
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
             f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
     return Array(ddesc)
 
 
@@ -206,6 +208,7 @@ def zeros(dshape, ddesc=None):
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
             f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
     return Array(ddesc)
 
 
@@ -240,4 +243,5 @@ def ones(dshape, ddesc=None):
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
             f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
     return Array(ddesc)
