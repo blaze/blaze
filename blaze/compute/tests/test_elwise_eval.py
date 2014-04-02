@@ -16,11 +16,6 @@ import shutil
 import blaze
 
 
-def remove_tree(rootdir):
-    # Remove every directory starting with rootdir
-    for dir_ in glob.glob(rootdir+'*'):
-        shutil.rmtree(dir_)
-
 # Useful superclass for disk-based tests
 class MayBePersistentTest(unittest.TestCase):
     disk = False
@@ -48,9 +43,9 @@ class MayBePersistentTest(unittest.TestCase):
 
     def tearDown(self):
         if self.disk:
-            remove_tree(self.rootdir1)
-            remove_tree(self.rootdir2)
-            remove_tree(self.rootdir3)
+            self.ddesc1.remove()
+            self.ddesc2.remove()
+            self.ddesc3.remove()
 
 
 # Check for arrays that fit in the chunk size

@@ -35,6 +35,7 @@ class BLZ_DDesc(DDesc):
         elif mode != 'w':
             self.blzarr = blz.barray(rootdir=path, mode=mode, **kwargs)
         else:
+            # This will be set in the constructor later on
             self.blzarr = None
 
     @property
@@ -46,13 +47,17 @@ class BLZ_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the BLZ arrays."""
+        if self.blzarr is None:
+            persistent = False
+        else:
+            persistent = self.blzarr.rootdir is not None,
         return Capabilities(
             # BLZ arrays can be updated
             immutable = False,
             # BLZ arrays are concrete
             deferred = False,
             # BLZ arrays can be either persistent of in-memory
-            persistent = self.blzarr.rootdir is not None,
+            persistent = persistent,
             # BLZ arrays can be appended efficiently
             appendable = True,
             remote = False,
