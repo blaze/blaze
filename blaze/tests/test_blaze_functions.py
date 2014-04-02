@@ -38,12 +38,12 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         # Test int32 overload -> add
         a = blaze.eval(myfunc(blaze.array([3, 4]), blaze.array([1, 2])))
         self.assertEqual(a.dshape, dshape('2 * int32'))
-        self.assertEqual(nd.as_py(a._data.dynd_arr()), [4, 6])
+        self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [4, 6])
         # Test int16 overload -> subtract
         a = blaze.eval(myfunc(blaze.array([3, 4], dshape='int16'),
                        blaze.array([1, 2], dshape='int16')))
         self.assertEqual(a.dshape, dshape('2 * int16'))
-        self.assertEqual(nd.as_py(a._data.dynd_arr()), [2, 2])
+        self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [2, 2])
 
     def test_overload_coercion(self):
         myfunc = create_overloaded_add()
@@ -52,17 +52,17 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         a = blaze.eval(myfunc(blaze.array([3, 4], dshape='int16'),
                        blaze.array([1, 2])))
         self.assertEqual(a.dshape, dshape('2 * int32'))
-        self.assertEqual(nd.as_py(a._data.dynd_arr()), [4, 6])
+        self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [4, 6])
         a = blaze.eval(myfunc(blaze.array([3, 4]),
                        blaze.array([1, 2], dshape='int16')))
         self.assertEqual(a.dshape, dshape('2 * int32'))
-        self.assertEqual(nd.as_py(a._data.dynd_arr()), [4, 6])
+        self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [4, 6])
 
         # Test type promotion to int16
         a = blaze.eval(myfunc(blaze.array([3, 4], dshape='int8'),
                        blaze.array([1, 2], dshape='int8')))
         self.assertEqual(a.dshape, dshape('2 * int16'))
-        self.assertEqual(nd.as_py(a._data.dynd_arr()), [2, 2])
+        self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [2, 2])
 
     def test_nesting(self):
         myfunc = create_overloaded_add()
@@ -71,7 +71,7 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         a = blaze.eval(myfunc(myfunc(blaze.array([3, 4]), blaze.array([1, 2])),
                               blaze.array([2, 10])))
         self.assertEqual(a.dshape, dshape('2 * int32'))
-        self.assertEqual(nd.as_py(a._data.dynd_arr()), [6, 16])
+        self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [6, 16])
 
     def test_nesting_and_coercion(self):
         myfunc = create_overloaded_add()
@@ -82,7 +82,7 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
                        myfunc(blaze.array([1, 5], dshape='int16'),
                               blaze.array(3, dshape='int16'))))
         self.assertEqual(a.dshape, dshape('2 * int32'))
-        self.assertEqual(nd.as_py(a._data.dynd_arr()), [-3, 14])
+        self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [-3, 14])
 
     def test_overload_different_argcount(self):
         myfunc = BlazeFunc('test', 'ovld')

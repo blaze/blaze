@@ -9,7 +9,7 @@ except ImportError:
 from .constructors import sql_table, sql_column
 from .kernel import SQL
 from . conn import connect
-from .datadescriptor import SQLDataDescriptor
+from .datadescriptor import SQL_DDesc
 
 # --- Initialize ---
 from . import ops

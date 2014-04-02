@@ -20,12 +20,22 @@ import datashape
 from datashape import to_numpy, to_numpy_dtype
 import blz
 
+from ..optional_packages import tables_is_here
+if tables_is_here:
+    import tables as tb
+
 from .array import Array
-from ..datadescriptor import (IDataDescriptor,
-                              DyNDDataDescriptor,
-                              BLZDataDescriptor)
-from ..io.storage import Storage
+from ..datadescriptor import (
+    DDesc, DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
 from ..py2help import basestring
+
+
+def split_path(dp):
+    """Split a path in basedir path and end part for HDF5 purposes"""
+    idx = dp.rfind('/')
+    where = dp[:idx] if idx > 0 else '/'
+    name = dp[idx+1:]
+    return where, name
 
 
 def _normalize_dshape(ds):
@@ -43,12 +53,7 @@ def _normalize_dshape(ds):
         return ds
 
 
-# note that this is rather naive. In fact, a proper way to implement
-# the array from a numpy is creating a ByteProvider based on "obj"
-# and infer the indexer from the apropriate information in the numpy
-# array.
-def array(obj, dshape=None, caps={'efficient-write': True},
-          storage=None):
+def array(obj, dshape=None, ddesc=None):
     """Create a Blaze array.
 
     Parameters
@@ -62,98 +67,82 @@ def array(obj, dshape=None, caps={'efficient-write': True},
         provided, the input data will be coerced into the provided
         dshape.
 
-    caps : capabilities dictionary
-        A dictionary containing the desired capabilities of the array.
-
-    storage : Storage instance
-        A Storage object with the necessary info for storing the data.
+    ddesc : data descriptor instance
+        This comes with the necessary info for storing the data.  If
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
     out : a concrete blaze array.
 
-    Bugs
-    ----
-    Right now the explicit dshape is ignored. This needs to be
-    corrected. When the data cannot be coerced to an explicit dshape
-    an exception should be raised.
-
     """
     dshape = _normalize_dshape(dshape)
 
-    storage = _storage_convert(storage)
+    if ((obj is not None) and
+        (not inspect.isgenerator(obj)) and
+        (dshape is not None)):
+        dt = ndt.type(str(dshape))
+        if dt.ndim > 0:
+            obj = nd.array(obj, type=dt, access='rw')
+        else:
+            obj = nd.array(obj, dtype=dt, access='rw')
+
+    if obj is None and ddesc is None:
+        raise ValueError('you need to specify at least `obj` or `ddesc`')
 
     if isinstance(obj, Array):
         return obj
-    elif isinstance(obj, IDataDescriptor):
-        # TODO: Validate the 'caps', convert to another kind
-        #       of data descriptor if necessary
-        # Note by Francesc: but if it is already an IDataDescriptor I wonder
-        # if `caps` should be ignored.  Hmm, probably not...
-        #
-        # Note by Oscar: Maybe we shouldn't accept a datadescriptor at
-        #   all at this level. If you've got a DataDescriptor you are
-        #   playing with internal datastructures anyways, go to the
-        #   Array constructor directly. If you want to transform to
-        #   another datadescriptor... convert it yourself (you are
-        #   playing with internal datastructures, remember? you should
-        #   be able to do it in your own.
-        dd = obj
-    elif storage is not None:
-        dt = None if dshape is None else to_numpy_dtype(dshape)
+    elif isinstance(obj, DDesc):
+        if ddesc is None:
+            ddesc = obj
+            return Array(ddesc)
+        else:
+            raise ValueError(('you cannot specify `ddesc` when `obj` '
+                              'is already a DDesc instance'))
+
+    if ddesc is None:
+        # Use a dynd ddesc by default
+        try:
+            array = nd.asarray(obj, access='rw')
+        except:
+            raise ValueError(('failed to construct a dynd array from '
+                              'object %r') % obj)
+        ddesc = DyND_DDesc(array)
+        return Array(ddesc)
+
+    # The DDesc has been specified
+    if isinstance(ddesc, DyND_DDesc):
+        if obj is not None:
+            raise ValueError(('you cannot specify simultaneously '
+                              '`obj` and a DyND `ddesc`'))
+        return Array(ddesc)
+    elif isinstance(ddesc, BLZ_DDesc):
         if inspect.isgenerator(obj):
-            # TODO: Generator logic can go inside barray
-            dd = BLZDataDescriptor(blz.barray(obj, dtype=dt, count=-1,
-                                              rootdir=storage.path,
-                                              mode=storage.mode))
+            dt = None if dshape is None else to_numpy_dtype(dshape)
+            # TODO: Generator logic could go inside barray
+            ddesc.blzarr = blz.fromiter(obj, dtype=dt, count=-1,
+                                        rootdir=ddesc.path, mode=ddesc.mode,
+                                        **ddesc.kwargs)
         else:
-            dd = BLZDataDescriptor(
-                blz.barray(obj, dtype=dt,
-                           rootdir=storage.path,
-                           mode=storage.mode))
-    elif 'efficient-write' in caps and caps['efficient-write'] is True:
-        # In-Memory array
-        if dshape is None:
-            dd = DyNDDataDescriptor(nd.asarray(obj, access='rw'))
-        else:
-            # Use the uniform/full dtype specification in dynd depending
-            # on whether the datashape has a uniform dim
-            dt = ndt.type(str(dshape))
-            if dt.ndim > 0:
-                dd = DyNDDataDescriptor(nd.array(obj, type=dt, access='rw'))
-            else:
-                dd = DyNDDataDescriptor(nd.array(obj, dtype=dt, access='rw'))
-    elif 'compress' in caps and caps['compress'] is True:
-        dt = None if dshape is None else to_numpy_dtype(dshape)
-        # BLZ provides compression
-        if inspect.isgenerator(obj):
-            # TODO: Generator logic can go inside barray
-            dd = BLZDataDescriptor(blz.fromiter(obj, dtype=dt, count=-1))
-        else:
-            dd = BLZDataDescriptor(blz.barray(obj, dtype=dt))
+            if isinstance(obj, nd.array):
+                obj = nd.as_numpy(obj)
+            ddesc.blzarr = blz.barray(
+                obj, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
+        if isinstance(obj, nd.array):
+            obj = nd.as_numpy(obj)
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
 
-    elif isinstance(obj, np.ndarray):
-        dd = DyNDDataDescriptor(nd.view(obj))
-    elif isinstance(obj, nd.array):
-        dd = DyNDDataDescriptor(obj)
-    elif isinstance(obj, blz.barray):
-        dd = BLZDataDescriptor(obj)
-    else:
-        raise TypeError(('Failed to construct blaze array from '
-                        'object of type %r') % type(obj))
-    return Array(dd)
+    return Array(ddesc)
 
-
-def _storage_convert(storage):
-    if storage is not None and isinstance(storage, str):
-        storage = Storage(storage)
-    return storage
 
 # TODO: Make overloaded constructors, taking dshape, **kwds. Overload
 # on keywords
 
-
-def empty(dshape, caps={'efficient-write': True}, storage=None):
+def empty(dshape, ddesc=None):
     """Create an array with uninitialized data.
 
     Parameters
@@ -161,11 +150,9 @@ def empty(dshape, caps={'efficient-write': True}, storage=None):
     dshape : datashape
         The datashape for the resulting array.
 
-    caps : capabilities dictionary
-        A dictionary containing the desired capabilities of the array.
-
-    storage : Storage instance
-        A Storage object with the necessary info for data storage.
+    ddesc : data descriptor instance
+        This comes with the necessary info for storing the data.  If
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
@@ -173,21 +160,24 @@ def empty(dshape, caps={'efficient-write': True}, storage=None):
 
     """
     dshape = _normalize_dshape(dshape)
-    storage = _storage_convert(storage)
 
-    if storage is not None:
+    if ddesc is None:
+        ddesc = DyND_DDesc(nd.empty(str(dshape)))
+        return Array(ddesc)
+    if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.zeros(shape, dt,
-                                         rootdir=storage.path,
-                                         mode=storage.mode))
-    elif 'efficient-write' in caps:
-        dd = DyNDDataDescriptor(nd.empty(str(dshape)))
-    elif 'compress' in caps:
-        dd = BLZDataDescriptor(blz.zeros(shape, dt))
-    return Array(dd)
+        ddesc.blzarr = blz.zeros(shape, dt, rootdir=ddesc.path,
+                                 mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
+        obj = nd.as_numpy(nd.empty(str(dshape)))
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
+    return Array(ddesc)
 
 
-def zeros(dshape, caps={'efficient-write': True}, storage=None):
+def zeros(dshape, ddesc=None):
     """Create an array and fill it with zeros.
 
     Parameters
@@ -195,11 +185,9 @@ def zeros(dshape, caps={'efficient-write': True}, storage=None):
     dshape : datashape
         The datashape for the resulting array.
 
-    caps : capabilities dictionary
-        A dictionary containing the desired capabilities of the array.
-
-    storage : Storage instance
-        A Storage object with the necessary info for data storage.
+    ddesc : data descriptor instance
+        This comes with the necessary info for storing the data.  If
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
@@ -207,25 +195,24 @@ def zeros(dshape, caps={'efficient-write': True}, storage=None):
 
     """
     dshape = _normalize_dshape(dshape)
-    storage = _storage_convert(storage)
 
-    if storage is not None:
+    if ddesc is None:
+        ddesc = DyND_DDesc(nd.zeros(str(dshape), access='rw'))
+        return Array(ddesc)
+    if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.zeros(shape, dt,
-                                         rootdir=storage.path,
-                                         mode=storage.mode))
-    elif 'efficient-write' in caps:
-        # TODO: Handle var dimension properly (raise exception?)
-        dyndarr = nd.empty(str(dshape))
-        dyndarr[...] = False
-        dd = DyNDDataDescriptor(dyndarr)
-    elif 'compress' in caps:
-        shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.zeros(shape, dt))
-    return Array(dd)
+        ddesc.blzarr = blz.zeros(
+            shape, dt, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
+        obj = nd.as_numpy(nd.zeros(str(dshape)))
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
+    return Array(ddesc)
 
 
-def ones(dshape, caps={'efficient-write': True}, storage=None):
+def ones(dshape, ddesc=None):
     """Create an array and fill it with ones.
 
     Parameters
@@ -233,11 +220,9 @@ def ones(dshape, caps={'efficient-write': True}, storage=None):
     dshape : datashape
         The datashape for the resulting array.
 
-    caps : capabilities dictionary
-        A dictionary containing the desired capabilities of the array.
-
-    storage : Storage instance
-        A Storage object with the necessary info for data storage.
+    ddesc : data descriptor instance
+        This comes with the necessary info for storing the data.  If
+        None, a DyND_DDesc will be used.
 
     Returns
     -------
@@ -245,19 +230,18 @@ def ones(dshape, caps={'efficient-write': True}, storage=None):
 
     """
     dshape = _normalize_dshape(dshape)
-    storage = _storage_convert(storage)
 
-    if storage is not None:
+    if ddesc is None:
+        ddesc = DyND_DDesc(nd.ones(str(dshape), access='rw'))
+        return Array(ddesc)
+    if isinstance(ddesc, BLZ_DDesc):
         shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.ones(shape, dt,
-                                        rootdir=storage.path,
-                                        mode=storage.mode))
-    elif 'efficient-write' in caps:
-        # TODO: Handle var dimension properly (raise exception?)
-        dyndarr = nd.empty(str(dshape))
-        dyndarr[...] = True
-        dd = DyNDDataDescriptor(dyndarr)
-    elif 'compress' in caps:
-        shape, dt = to_numpy(dshape)
-        dd = BLZDataDescriptor(blz.ones(shape, dt))
-    return Array(dd)
+        ddesc.blzarr = blz.ones(
+            shape, dt, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+    elif isinstance(ddesc, HDF5_DDesc):
+        obj = nd.as_numpy(nd.empty(str(dshape)))
+        with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
+            where, name = split_path(ddesc.datapath)
+            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+        ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
+    return Array(ddesc)

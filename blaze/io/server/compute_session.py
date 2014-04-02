@@ -94,7 +94,7 @@ class compute_session:
         array_name = array_url[len(self.base_url):]
         fields = cmd['fields']
 
-        arr = self.get_session_array(array_name)[...]._data.dynd_arr()
+        arr = self.get_session_array(array_name)[...].ddesc.dynd_arr()
 
         # Do the groupby, get its groups, then
         # evaluate it because deferred operations
@@ -150,7 +150,7 @@ class compute_session:
         rm_fields = cmd.get('rm_fields', [])
         fnname = cmd.get('fnname', None)
 
-        arr = self.get_session_array(array_name)._data.dynd_arr()
+        arr = self.get_session_array(array_name).ddesc.dynd_arr()
 
         res = nd.add_computed_fields(arr, fields, rm_fields, fnname)
         defarr = self.array_provider.create_deferred_array_filename(
@@ -185,7 +185,7 @@ class compute_session:
         replace_undim = cmd.get('replace_undim', 0)
         fnname = cmd.get('fnname', None)
 
-        arr = self.get_session_array(array_name)._data.dynd_arr()
+        arr = self.get_session_array(array_name).ddesc.dynd_arr()
 
         res = nd.make_computed_fields(arr, replace_undim, fields, fnname)
         defarr = self.array_provider.create_deferred_array_filename(

@@ -9,7 +9,7 @@ from datashape import from_numpy
 
 from .query import Query, build
 from .datatypes import scidb_dshape
-from .datadescriptor import SciDBDataDescriptor
+from .datadescriptor import SciDB_DDesc
 
 
 #------------------------------------------------------------------------
@@ -18,7 +18,7 @@ from .datadescriptor import SciDBDataDescriptor
 def _create(dshape, n, conn, chunk_size=1024, overlap=0):
     sdshape = scidb_dshape(dshape, chunk_size, overlap)
     query = build(sdshape, n)
-    return blaze.Array(SciDBDataDescriptor(dshape, query, conn))
+    return blaze.Array(SciDB_DDesc(dshape, query, conn))
 
 
 #------------------------------------------------------------------------
@@ -43,4 +43,4 @@ def handle(conn, arrname):
     """Obtain an array handle to an existing SciDB array"""
     scidbpy_arr = conn.wrap_array(arrname)
     dshape = from_numpy(scidbpy_arr.shape, scidbpy_arr.dtype)
-    return SciDBDataDescriptor(dshape, Query(arrname, ()), conn)
+    return SciDB_DDesc(dshape, Query(arrname, ()), conn)

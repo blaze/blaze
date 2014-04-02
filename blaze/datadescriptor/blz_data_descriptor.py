@@ -5,12 +5,13 @@ import blz
 from dynd import nd
 import datashape
 
-from . import IDataDescriptor, Capabilities
-from .dynd_data_descriptor import DyNDDataDescriptor
+from . import DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
+from shutil import rmtree
 
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing
-# operations.  This is why DyNDDataDescriptor is used for returning
+# operations.  This is why DyND_DDesc is used for returning
 # the values here.
 
 def blz_descriptor_iter(blzarr):
@@ -18,20 +19,24 @@ def blz_descriptor_iter(blzarr):
         # BLZ doesn't have a convenient way to avoid collapsing
         # to a scalar, this is a way to avoid that
         el = np.array(blzarr[i], dtype=blzarr.dtype)
-        yield DyNDDataDescriptor(nd.array(el))
+        yield DyND_DDesc(nd.array(el))
 
 
-class BLZDataDescriptor(IDataDescriptor):
+class BLZ_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a BLZ array.
     """
-    def __init__(self, obj):
-        # This is a low level interface, so strictly
-        # require a BLZ barray here
-        if not isinstance(obj, blz.barray):
-            raise TypeError(('object is not a blz array, '
-                             'it has type %r') % type(obj))
-        self.blzarr = obj
+    def __init__(self, path=None, mode='r', **kwargs):
+        self.path = path
+        self.mode = mode
+        self.kwargs = kwargs
+        if isinstance(path, blz.barray):
+            self.blzarr = path
+        elif mode != 'w':
+            self.blzarr = blz.barray(rootdir=path, mode=mode, **kwargs)
+        else:
+            # This will be set in the constructor later on
+            self.blzarr = None
 
     @property
     def dshape(self):
@@ -42,13 +47,17 @@ class BLZDataDescriptor(IDataDescriptor):
     @property
     def capabilities(self):
         """The capabilities for the BLZ arrays."""
+        if self.blzarr is None:
+            persistent = False
+        else:
+            persistent = self.blzarr.rootdir is not None,
         return Capabilities(
             # BLZ arrays can be updated
             immutable = False,
             # BLZ arrays are concrete
             deferred = False,
             # BLZ arrays can be either persistent of in-memory
-            persistent = self.blzarr.rootdir is not None,
+            persistent = persistent,
             # BLZ arrays can be appended efficiently
             appendable = True,
             remote = False,
@@ -65,7 +74,7 @@ class BLZDataDescriptor(IDataDescriptor):
         blzarr = self.blzarr
         # The returned arrays are temporary buffers,
         # so must be flagged as readonly.
-        return DyNDDataDescriptor(nd.asarray(blzarr[key], access='readonly'))
+        return DyND_DDesc(nd.asarray(blzarr[key], access='readonly'))
 
     def __setitem__(self, key, value):
         # We decided that BLZ should be read and append only
@@ -74,7 +83,7 @@ class BLZDataDescriptor(IDataDescriptor):
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
 
-    # This is not part of the DataDescriptor interface itself, but can
+    # This is not part of the DDesc interface itself, but can
     # be handy for other situations not requering full compliance with
     # it.
     def append(self, values):
@@ -158,3 +167,9 @@ class BLZDataDescriptor(IDataDescriptor):
         # Return the iterable
         return blz.whereblocks(self.blzarr, expression, blen, outfields,
                                limit, skip)
+
+
+    def remove(self):
+        """Remove the persistent storage."""
+        if self.capabilities.persistent:
+            rmtree(self.path)

@@ -6,11 +6,11 @@ from __future__ import absolute_import, division, print_function
 
 from . import pipeline, environment, passes, execution
 
-def compile(expr, storage, debug=False):
+def compile(expr, ddesc, debug=False):
     """
     Prepare a Deferred for interpretation
     """
-    env = environment.fresh_env(expr, storage, debug=debug)
+    env = environment.fresh_env(expr, ddesc, debug=debug)
     if debug:
         passes_ = passes.debug_passes
     else:

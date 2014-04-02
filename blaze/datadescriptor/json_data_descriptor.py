@@ -4,33 +4,34 @@ import os
 
 import datashape
 
-from .data_descriptor import IDataDescriptor
+from .data_descriptor import DDesc
 from .. import py2help
 from dynd import nd
-from .dynd_data_descriptor import DyNDDataDescriptor, Capabilities
+from .dynd_data_descriptor import DyND_DDesc, Capabilities
 
 
 def json_descriptor_iter(array):
     for row in array:
-        yield DyNDDataDescriptor(row)
+        yield DyND_DDesc(row)
 
 
-class JSONDataDescriptor(IDataDescriptor):
+class JSON_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a JSON file.
 
     Parameters
     ----------
-    filename : string
+    path : string
         A path string for the JSON file.
     schema : string or datashape
         A datashape (or its string representation) of the schema
         in the JSON file.
     """
-    def __init__(self, filename, **kwargs):
-        if os.path.isfile(filename) is not True:
-            raise ValueError('JSON file "%s" does not exist' % filename)
-        self.filename = filename
+    def __init__(self, path, mode='r', **kwargs):
+        if os.path.isfile(path) is not True:
+            raise ValueError('JSON file "%s" does not exist' % path)
+        self.path = path
+        self.mode = mode
         schema = kwargs.get("schema", None)
         if type(schema) in py2help._strtypes:
             schema = datashape.dshape(schema)
@@ -61,7 +62,7 @@ class JSONDataDescriptor(IDataDescriptor):
     def _arr_cache(self):
         if self._cache_arr is not None:
             return self._cache_arr
-        with open(self.filename) as jsonfile:
+        with open(self.path, mode=self.mode) as jsonfile:
             # This will read everything in-memory (but a memmap approach
             # is in the works)
             self._cache_arr = nd.parse_json(
@@ -79,7 +80,7 @@ class JSONDataDescriptor(IDataDescriptor):
         return None
 
     def __getitem__(self, key):
-        return DyNDDataDescriptor(self._arr_cache[key])
+        return DyND_DDesc(self._arr_cache[key])
 
     def __setitem__(self, key, value):
         # JSON files cannot be updated (at least, not efficiently)
@@ -87,3 +88,7 @@ class JSONDataDescriptor(IDataDescriptor):
 
     def __iter__(self):
         return json_descriptor_iter(self._arr_cache)
+
+    def remove(self):
+        """Remove the persistent storage."""
+        os.unlink(self.path)

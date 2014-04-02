@@ -8,50 +8,50 @@ import datashape
 from dynd import nd
 
 from .. import py2help
-from .data_descriptor import IDataDescriptor, Capabilities
-from .dynd_data_descriptor import DyNDDataDescriptor
+from .data_descriptor import DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
 
 
-def open_file(filename, has_header, mode='r'):
+def open_file(path, mode, has_header):
     """Return a file handler positionated at the first valid line."""
-    csvfile = open(filename, mode=mode)
+    csvfile = open(path, mode=mode)
     if has_header:
         csvfile.readline()
     return csvfile
 
 
-def csv_descriptor_iter(filename, has_header, schema):
-    with open_file(filename, has_header) as csvfile:
+def csv_descriptor_iter(filename, mode, has_header, schema):
+    with open_file(filename, mode, has_header) as csvfile:
         for row in csv.reader(csvfile):
-            yield DyNDDataDescriptor(nd.array(row, dtype=schema))
+            yield DyND_DDesc(nd.array(row, dtype=schema))
 
 
-def csv_descriptor_iterchunks(filename, has_header, schema,
+def csv_descriptor_iterchunks(filename, mode, has_header, schema,
                               blen, start=None, stop=None):
     rows = []
-    with open_file(filename, has_header) as csvfile:
+    with open_file(filename, mode, has_header) as csvfile:
         for nrow, row in enumerate(csv.reader(csvfile)):
             if start is not None and nrow < start:
                 continue
             if stop is not None and nrow >= stop:
                 if rows != []:
                     # Build the descriptor for the data we have and return
-                    yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+                    yield DyND_DDesc(nd.array(rows, dtype=schema))
                 return
             rows.append(row)
             if nrow % blen == 0:
                 print("rows:", rows, schema)
-                yield DyNDDataDescriptor(nd.array(rows, dtype=schema))
+                yield DyND_DDesc(nd.array(rows, dtype=schema))
                 rows = []
 
 
-class CSVDataDescriptor(IDataDescriptor):
+class CSV_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a CSV file.
 
     Parameters
     ----------
-    filename : string
+    path : string
         A path string for the CSV file.
     schema : string or datashape
         A datashape (or its string representation) of the schema
@@ -64,11 +64,12 @@ class CSVDataDescriptor(IDataDescriptor):
         is guessed.
     """
 
-    def __init__(self, filename, **kwargs):
-        if os.path.isfile(filename) is not True:
-            raise ValueError('CSV file "%s" does not exist' % filename)
-        self.filename = filename
-        csvfile = open(filename)
+    def __init__(self, path, mode='r', **kwargs):
+        if os.path.isfile(path) is not True:
+            raise ValueError('CSV file "%s" does not exist' % path)
+        self.path = path
+        self.mode = mode
+        csvfile = open(path, mode=self.mode)
         schema = kwargs.get("schema", None)
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
@@ -124,7 +125,7 @@ class CSVDataDescriptor(IDataDescriptor):
 
     def dynd_arr(self):
         # Positionate at the beginning of the file
-        with open_file(self.filename, self.has_header) as csvfile:
+        with open_file(self.path, self.mode, self.has_header) as csvfile:
             return nd.array(csv.reader(csvfile), dtype=self.schema)
 
     def __array__(self):
@@ -135,7 +136,7 @@ class CSVDataDescriptor(IDataDescriptor):
         return None
 
     def __getitem__(self, key):
-        with open_file(self.filename, self.has_header) as csvfile:
+        with open_file(self.path, self.mode, self.has_header) as csvfile:
             if isinstance(key, py2help._inttypes):
                 start, stop, step = key, key + 1, 1
             elif isinstance(key, slice):
@@ -144,19 +145,20 @@ class CSVDataDescriptor(IDataDescriptor):
                 raise IndexError("key '%r' is not valid" % key)
             read_iter = it.islice(csv.reader(csvfile), start, stop, step)
             res = nd.array(read_iter, dtype=self.schema)
-        return DyNDDataDescriptor(res)
+        return DyND_DDesc(res)
 
     def __setitem__(self, key, value):
         # CSV files cannot be updated (at least, not efficiently)
         raise NotImplementedError
 
     def __iter__(self):
-        return csv_descriptor_iter(self.filename, self.has_header, self.schema)
+        return csv_descriptor_iter(
+            self.path, self.mode, self.has_header, self.schema)
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
         values = nd.array(row, dtype=self.schema)  # validate row
-        with open_file(self.filename, self.has_header, mode='a') as csvfile:
+        with open_file(self.path, self.mode, self.has_header) as csvfile:
             csvfile.seek(0, os.SEEK_END)  # go to the end of the file
             delimiter = self.dialect.delimiter
             csvfile.write(delimiter.join(py2help.unicode(v) for v in row)+'\n')
@@ -181,5 +183,10 @@ class CSVDataDescriptor(IDataDescriptor):
 
         """
         # Return the iterable
-        return csv_descriptor_iterchunks(self.filename, self.has_header,
-                                         self.schema, blen, start, stop)
+        return csv_descriptor_iterchunks(
+            self.path, self.mode, self.has_header,
+            self.schema, blen, start, stop)
+
+    def remove(self):
+        """Remove the persistent storage."""
+        os.unlink(self.path)

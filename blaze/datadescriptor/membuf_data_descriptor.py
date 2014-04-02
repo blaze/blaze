@@ -5,7 +5,7 @@ import ctypes
 from dynd import ndt, _lowlevel
 import datashape
 
-from .dynd_data_descriptor import DyNDDataDescriptor
+from .dynd_data_descriptor import DyND_DDesc
 
 
 def data_descriptor_from_ctypes(cdata, writable):
@@ -23,7 +23,7 @@ def data_descriptor_from_ctypes(cdata, writable):
     dyndarr = _lowlevel.array_from_ptr(ndt.type(str(ds)),
                     ctypes.addressof(cdata), cdata,
                     access)
-    return DyNDDataDescriptor(dyndarr)
+    return DyND_DDesc(dyndarr)
 
 
 def data_descriptor_from_cffi(ffi, cdata, writable):
@@ -52,5 +52,5 @@ def data_descriptor_from_cffi(ffi, cdata, writable):
         ds = datashape.DataShape(*(datashape.Fixed(len(cdata)),) + ds[1:])
     access = "readwrite" if writable else "readonly"
     dyndarr = _lowlevel.array_from_ptr(ndt.type(str(ds)), ptr, owner, access)
-    return DyNDDataDescriptor(dyndarr)
+    return DyND_DDesc(dyndarr)
 

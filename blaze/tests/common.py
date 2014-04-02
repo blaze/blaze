@@ -10,24 +10,31 @@ import glob
 
 
 # Useful superclass for disk-based tests
-class MayBeUriTest():
+class MayBePersistentTest():
 
-    uri = False
+    disk = False
+    dir_ = False
 
     def setUp(self):
-        if self.uri:
-            prefix = 'barray-' + self.__class__.__name__
-            self.rootdir = tempfile.mkdtemp(prefix=prefix)
-            self.rooturi = 'file://' + self.rootdir
-            os.rmdir(self.rootdir)  # tests needs this cleared
+        if self.disk:
+            if self.dir_:
+                prefix = 'barray-' + self.__class__.__name__
+                self.rootdir = tempfile.mkdtemp(prefix=prefix)
+                os.rmdir(self.rootdir)  # tests needs this cleared
+            else:
+                handle, self.file = tempfile.mkstemp()
+                os.close(handle)  # close the non needed file handle
         else:
             self.rootdir = None
 
     def tearDown(self):
-        if self.uri:
-            # Remove every directory starting with rootdir
-            for dir_ in glob.glob(self.rootdir+'*'):
-                shutil.rmtree(dir_)
+        if self.disk:
+            if self.dir_:
+                # Remove every directory starting with rootdir
+                for dir_ in glob.glob(self.rootdir+'*'):
+                    shutil.rmtree(dir_)
+            else:
+                os.unlink(self.file)
 
 
 class BTestCase(unittest.TestCase):

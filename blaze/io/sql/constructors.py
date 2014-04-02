@@ -5,7 +5,7 @@ SQL array constructors.
 from __future__ import absolute_import, division, print_function
 
 from ... import Array
-from .datadescriptor import SQLDataDescriptor
+from .datadescriptor import SQL_DDesc
 
 from datashape import dshape, Record, DataShape, coretypes
 
@@ -57,7 +57,7 @@ def sql_table(table_name, colnames, measures, conn):
     dtype = Record(list(zip(colnames, measures)))
     record_dshape = DataShape(coretypes.Var(), dtype)
     table = TableSelection(table_name, '*')
-    return Array(SQLDataDescriptor(record_dshape, table, conn))
+    return Array(SQL_DDesc(record_dshape, table, conn))
 
 
 def sql_column(table_name, colname, dshape, conn):
@@ -80,4 +80,4 @@ def sql_column(table_name, colname, dshape, conn):
     conn: pyodbc/whatever Connection
     """
     col = TableSelection(table_name, colname)
-    return Array(SQLDataDescriptor(dshape, col, conn))
+    return Array(SQL_DDesc(dshape, col, conn))

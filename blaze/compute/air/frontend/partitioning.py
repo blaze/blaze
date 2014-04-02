@@ -10,7 +10,7 @@ import datashape
 
 from ..ir import FuncArg
 from ...strategy import CKERNEL
-from ....io.sql import SQL, SQLDataDescriptor
+from ....io.sql import SQL, SQL_DDesc
 
 
 # List of backends to use greedily listed in order of preference
@@ -46,11 +46,11 @@ def use_sql(op, strategies, env):
         # described an SQL data source
         runtime_args = env['runtime.args']
         array = runtime_args[op]
-        data_desc = array._data
+        data_desc = array.ddesc
         is_scalar = not data_desc.dshape.shape
-        if not isinstance(data_desc, SQLDataDescriptor) and not is_scalar:
+        if not isinstance(data_desc, SQL_DDesc) and not is_scalar:
             return False
-        if isinstance(data_desc, SQLDataDescriptor):
+        if isinstance(data_desc, SQL_DDesc):
             conns[op] = data_desc.conn
         return True
     elif all(strategies[arg] == SQL for arg in op.args[1:]):

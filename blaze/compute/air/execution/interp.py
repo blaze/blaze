@@ -10,13 +10,13 @@ import blz
 import datashape
 
 from ..traversal import visit
-from ....datadescriptor import DyNDDataDescriptor, BLZDataDescriptor
+from ....datadescriptor import DyND_DDesc, BLZ_DDesc
 
 
-def interpret(func, env, storage=None, **kwds):
+def interpret(func, env, ddesc=None, **kwds):
     args = env['runtime.arglist']
 
-    if storage is None:
+    if ddesc is None:
         # Evaluate once
         values = dict(zip(func.args, args))
         interp = CKernelInterp(values)
@@ -31,8 +31,8 @@ def interpret(func, env, storage=None, **kwds):
         chunk_size = min(max(1, (1024*1024) // row_size), dim_size)
         # Evaluate by streaming the outermost dimension,
         # and using the BLZ data descriptor's append
-        dst_dd = BLZDataDescriptor(blz.zeros((0,)+res_shape[1:], res_dt,
-                                             rootdir=storage.path))
+        ddesc.blzarr = blz.zeros((0,)+res_shape[1:], res_dt,
+                                 rootdir=ddesc.path, mode=ddesc.mode)
         # Loop through all the chunks
         for chunk_start in range(0, dim_size, chunk_size):
             # Tell the interpreter which chunk size to use (last
@@ -45,10 +45,10 @@ def interpret(func, env, storage=None, **kwds):
             values = dict(zip(func.args, args_chunk))
             interp = CKernelChunkInterp(values, chunk_size, result_ndim)
             visit(interp, func)
-            chunk = interp.result._data.dynd_arr()
-            dst_dd.append(chunk)
+            chunk = interp.result.ddesc.dynd_arr()
+            ddesc.append(chunk)
 
-        return blaze.Array(dst_dd)
+        return blaze.Array(ddesc)
 
 
 class CKernelInterp(object):
@@ -78,8 +78,8 @@ class CKernelInterp(object):
 
     def op_alloc(self, op):
         dshape = op.type
-        storage = op.metadata.get('storage') # TODO: storage!
-        self.values[op] = blaze.empty(dshape, storage=storage)
+        ddesc = op.metadata.get('ddesc') # TODO: ddesc!
+        self.values[op] = blaze.empty(dshape, ddesc=ddesc)
 
     def op_dealloc(self, op):
         alloc, = op.args
@@ -87,9 +87,9 @@ class CKernelInterp(object):
 
     def op_convert(self, op):
         input = self.values[op.args[0]]
-        input = input._data.dynd_arr()
+        input = input.ddesc.dynd_arr()
         result = nd.array(input, type=ndt.type(str(op.type)))
-        result = blaze.Array(DyNDDataDescriptor(result))
+        result = blaze.Array(DyND_DDesc(result))
         self.values[op] = result
 
     def op_pykernel(self, op):

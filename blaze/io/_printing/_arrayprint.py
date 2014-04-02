@@ -25,7 +25,7 @@ import numpy.core.umath as _um
 import datashape
 from datashape import Fixed, has_var_dim
 
-from ...datadescriptor import IDataDescriptor, dd_as_py
+from ...datadescriptor import DDesc, ddesc_as_py
 
 # These are undesired dependencies:
 from numpy import ravel, maximum, minimum, absolute
@@ -36,7 +36,7 @@ import inspect
 def _dump_data_info(x, ident=None):
     ident = (ident if ident is not None
              else inspect.currentframe().f_back.f_lineno)
-    if isinstance(x, IDataDescriptor):
+    if isinstance(x, DDesc):
         subclass = 'DATA DESCRIPTOR'
     elif isinstance(x, np.ndarray):
         subclass = 'NUMPY ARRAY'
@@ -52,22 +52,22 @@ def product(x, y):
 
 def isnan(x):
     # hacks to remove when isnan/isinf are available for data descriptors
-    if isinstance(x, IDataDescriptor):
-        return _um.isnan(dd_as_py(x))
+    if isinstance(x, DDesc):
+        return _um.isnan(ddesc_as_py(x))
     else:
         return _um.isnan(x)
 
 
 def isinf(x):
-    if isinstance(x, IDataDescriptor):
-        return _um.isinf(dd_as_py(x))
+    if isinstance(x, DDesc):
+        return _um.isinf(ddesc_as_py(x))
     else:
         return _um.isinf(x)
 
 
 def not_equal(x, val):
-    if isinstance(x, IDataDescriptor):
-        return _um.not_equal(dd_as_py(x))
+    if isinstance(x, DDesc):
+        return _um.not_equal(ddesc_as_py(x))
     else:
         return _um.not_equal(x, val)
 
@@ -255,10 +255,10 @@ def _leading_trailing(a):
     import numpy.core.numeric as _nc
     if len(a.dshape.shape) == 1:
         if len(a) > 2*_summaryEdgeItems:
-            b = [dd_as_py(a[i]) for i in range(_summaryEdgeItems)]
-            b.extend([dd_as_py(a[i]) for i in range(-_summaryEdgeItems, 0)])
+            b = [ddesc_as_py(a[i]) for i in range(_summaryEdgeItems)]
+            b.extend([ddesc_as_py(a[i]) for i in range(-_summaryEdgeItems, 0)])
         else:
-            b = dd_as_py(a)
+            b = ddesc_as_py(a)
     else:
         if len(a) > 2*_summaryEdgeItems:
             b = [_leading_trailing(a[i])
@@ -351,7 +351,7 @@ def _array2string(a, shape, dtype, max_line_width, precision,
         data = ravel(np.array(_leading_trailing(a)))
     else:
         summary_insert = ""
-        data = ravel(np.array(dd_as_py(a)))
+        data = ravel(np.array(ddesc_as_py(a)))
 
     formatdict = {'bool': _boolFormatter,
                   'int': IntegerFormat(data),
@@ -507,7 +507,7 @@ def _formatArray(a, format_function, rank, max_line_len,
 
     """
     if rank == 0:
-        return format_function(dd_as_py(a)).strip()
+        return format_function(ddesc_as_py(a)).strip()
 
     if summary_insert and 2*edge_items < len(a):
         leading_items = edge_items
@@ -520,7 +520,7 @@ def _formatArray(a, format_function, rank, max_line_len,
         s = ""
         line = next_line_prefix
         for i in xrange(leading_items):
-            word = format_function(dd_as_py(a[i])) + separator
+            word = format_function(ddesc_as_py(a[i])) + separator
             s, line = _extendLine(s, line, word, max_line_len,
                                   next_line_prefix)
 
@@ -529,12 +529,12 @@ def _formatArray(a, format_function, rank, max_line_len,
                                   max_line_len, next_line_prefix)
 
         for i in xrange(trailing_items, 1, -1):
-            word = format_function(dd_as_py(a[-i])) + separator
+            word = format_function(ddesc_as_py(a[-i])) + separator
             s, line = _extendLine(s, line, word, max_line_len,
                                   next_line_prefix)
 
         if len(a) > 0:
-            word = format_function(dd_as_py(a[-1]))
+            word = format_function(ddesc_as_py(a[-1]))
             s, line = _extendLine(s, line, word, max_line_len, next_line_prefix)
 
         s += line + "]\n"
@@ -727,9 +727,9 @@ def _test():
     arr = blaze.array([2, 3, 4.0])
     print(arr.dshape)
 
-    print(array2string(arr._data))
+    print(array2string(arr.ddesc))
 
     arr = blaze.zeros('30, 30, 30, float32')
     print(arr.dshape)
 
-    print(array2string(arr._data))
+    print(array2string(arr.ddesc))

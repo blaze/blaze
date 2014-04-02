@@ -4,10 +4,10 @@ SciDB data descriptor.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.datadescriptor import IDataDescriptor, Capabilities
+from blaze.datadescriptor import DDesc, Capabilities
 
 
-class SciDBDataDescriptor(IDataDescriptor):
+class SciDB_DDesc(DDesc):
     """
     SciDB data descriptor.
     """

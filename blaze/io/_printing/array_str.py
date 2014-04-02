@@ -4,4 +4,4 @@ from . import _arrayprint
 
 
 def array_str(a):
-    return _arrayprint.array2string(a._data)
+    return _arrayprint.array2string(a.ddesc)
