@@ -234,7 +234,7 @@ expression that is effectively out-of-core::
 
   >>> ba1 = blaze.array(blaze.BLZ_DDesc('big_array1.blz'))
   >>> ba2 = blaze.array(blaze.BLZ_DDesc('big_array2.blz'))
-  >>> dd_res = blaze.BLZ_DDesc('big_result.blz'), mode='w')
+  >>> dd_res = blaze.BLZ_DDesc('big_result.blz', mode='w')
   >>> res = blaze.eval(ba1+ba2, ddesc=dd_res)
 
 So it is possible to build complex array expressions that can be
