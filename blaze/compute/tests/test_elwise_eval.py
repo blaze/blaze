@@ -18,27 +18,37 @@ import blaze
 
 # Useful superclass for disk-based tests
 class MayBePersistentTest(unittest.TestCase):
-    disk = False
+    disk = None
 
     def setUp(self):
-        if self.disk:
+        if self.disk == 'BLZ':
             prefix = 'blaze-' + self.__class__.__name__
             suffix = '.blz'
-            self.rootdir1 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
-            os.rmdir(self.rootdir1)
-            self.ddesc1 = blaze.BLZ_DDesc(self.rootdir1, mode='w')
-            self.rootdir2 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
-            os.rmdir(self.rootdir2)
-            self.ddesc2 = blaze.BLZ_DDesc(self.rootdir2, mode='w')
-            self.rootdir3 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
-            os.rmdir(self.rootdir3)
-            self.ddesc3 = blaze.BLZ_DDesc(self.rootdir3, mode='w')
+            path1 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
+            os.rmdir(path1)
+            self.ddesc1 = blaze.BLZ_DDesc(path1, mode='w')
+            path2 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
+            os.rmdir(path2)
+            self.ddesc2 = blaze.BLZ_DDesc(path2, mode='w')
+            path3 = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
+            os.rmdir(path3)
+            self.ddesc3 = blaze.BLZ_DDesc(path3, mode='w')
+        elif self.disk == 'HDF5':
+            prefix = 'hdf5-' + self.__class__.__name__
+            suffix = '.hdf5'
+            dpath = "/earray"
+            h, path1 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+            os.close(h)  # close the non needed file handle
+            self.ddesc1 = blaze.HDF5_DDesc(path1, dpath, mode='w')
+            h, path2 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+            os.close(h)
+            self.ddesc2 = blaze.HDF5_DDesc(path2, dpath, mode='w')
+            h, path3 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+            os.close(h)
+            self.ddesc3 = blaze.HDF5_DDesc(path3, dpath, mode='w')
         else:
-            self.rootdir1 = None
             self.ddesc1 = None
-            self.rootdir2 = None
             self.ddesc2 = None
-            self.rootdir3 = None
             self.ddesc3 = None
 
     def tearDown(self):
@@ -135,7 +145,7 @@ class evalPythonLargeTest(evalTest):
 class storageTest(MayBePersistentTest):
     N = 1000
     vm = "numexpr"
-    disk = True
+    disk = "BLZ"
 
     def test00(self):
         """Testing elwise_eval() with only blaze arrays"""
@@ -200,6 +210,14 @@ class storagePythonLargeTest(storageTest):
     N = 10000
     vm = "python"
 
+# Check for arrays stored on-disk, but fit in a chunk
+class storageHDF5Test(storageTest):
+    disk = "HDF5"
+
+# Check for arrays stored on-disk, but are larger than a chunk
+class storageLargeHDF5Test(storageTest):
+    N = 10000
+    disk = "HDF5"
 
 ####################################
 # Multidimensional tests start now
@@ -300,6 +318,16 @@ class evalPythonLargeMDTest(evalMDTest):
     M = 100
     vm = "python"
 
+# Check for arrays that fit in a chunk (HDF5)
+class evalMDHDF5Test(evalMDTest):
+    disk = "HDF5"
+
+# Check for arrays that does not fit in a chunk (HDF5)
+class evalLargeMDHDF5Test(evalMDTest):
+    N = 100
+    M = 100
+    disk = "HDF5"
+
 
 # Check for arrays stored on-disk, but fit in a chunk
 # Check for arrays that fit in memory
@@ -307,7 +335,7 @@ class storageMDTest(MayBePersistentTest):
     N = 10
     M = 100
     vm = "numexpr"
-    disk = True
+    disk = "BLZ"
 
     def test00(self):
         """Testing elwise_eval() with only blaze arrays"""
@@ -389,6 +417,15 @@ class storageLargeMDTest(storageMDTest):
 class storagePythonLargeMDTest(storageMDTest):
     N = 500
     vm = "python"
+
+# Check for arrays stored on-disk, but fit in a chunk
+class storageMDHDF5Test(storageMDTest):
+    disk = "HDF5"
+
+# Check for arrays stored on-disk, but are larger than a chunk
+class storageLargeMDHDF5Test(storageMDTest):
+    N = 500
+    disk = "HDF5"
 
 
 if __name__ == '__main__':
