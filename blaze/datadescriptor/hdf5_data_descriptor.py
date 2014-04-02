@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import os
 import numpy as np
 from dynd import nd
 import datashape
@@ -111,3 +112,7 @@ class HDF5_DDesc(DDesc):
         with tb.open_file(self.path, mode=self.mode) as f:
             h5arr = f.get_node(self.datapath)
             h5arr.append(values_arr.reshape(shape_vals))
+
+    def remove(self):
+        """Remove the persistent storage."""
+        os.unlink(self.path)

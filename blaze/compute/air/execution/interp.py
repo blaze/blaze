@@ -32,7 +32,7 @@ def interpret(func, env, ddesc=None, **kwds):
         # Evaluate by streaming the outermost dimension,
         # and using the BLZ data descriptor's append
         ddesc.blzarr = blz.zeros((0,)+res_shape[1:], res_dt,
-                           rootdir=ddesc.path)
+                                 rootdir=ddesc.path, mode=ddesc.mode)
         # Loop through all the chunks
         for chunk_start in range(0, dim_size, chunk_size):
             # Tell the interpreter which chunk size to use (last

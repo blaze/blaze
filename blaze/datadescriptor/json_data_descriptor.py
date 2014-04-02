@@ -88,3 +88,7 @@ class JSON_DDesc(DDesc):
 
     def __iter__(self):
         return json_descriptor_iter(self._arr_cache)
+
+    def remove(self):
+        """Remove the persistent storage."""
+        os.unlink(self.path)

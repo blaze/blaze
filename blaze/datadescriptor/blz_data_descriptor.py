@@ -7,6 +7,7 @@ import datashape
 
 from . import DDesc, Capabilities
 from .dynd_data_descriptor import DyND_DDesc
+from shutil import rmtree
 
 
 # WARNING!  BLZ always return NumPy arrays when doing indexing
@@ -161,3 +162,9 @@ class BLZ_DDesc(DDesc):
         # Return the iterable
         return blz.whereblocks(self.blzarr, expression, blen, outfields,
                                limit, skip)
+
+
+    def remove(self):
+        """Remove the persistent storage."""
+        if self.capabilities.persistent:
+            rmtree(self.path)

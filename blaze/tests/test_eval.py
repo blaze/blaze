@@ -70,7 +70,7 @@ def _build_tst(kernel, storage1, storage2, storage3, R):
         finally:
             try:
                 if p is not None:
-                    blaze.drop(p)
+                    p.remove()
             except:
                 pass # show the real error...
 

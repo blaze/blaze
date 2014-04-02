@@ -101,14 +101,15 @@ function, e.g.
   array([ 1.,  2.,  3.,  4.,  5.,  6.],
         dshape='6 * float32')
 
-If you are done with the persistent array and want to free
-its resources, you can just 'drop' the associated data descriptor:
+If you are done with the persistent array and want to physically
+remove its contents, you can just call the `remove()` method in the
+associated data descriptor:
 
 .. doctest::
 
-  >>> blaze.drop(g.ddesc)
+  >>> g.ddesc.remove()
 
-After dropping a persistent array this way, any 'open' version you may
+After removing a persistent array this way, any 'open' version you may
 had of it will no longer be valid. You won't be able to reopen it
 either. It is effectively deleted.
 

@@ -241,28 +241,3 @@ def ones(dshape, ddesc=None):
             where, name = split_path(ddesc.datapath)
             f.create_earray(where, name, filters=ddesc.filters, obj=obj)
     return Array(ddesc)
-
-
-def drop(obj):
-    """Remove a persistent storage based on datadescriptor info.
-
-    Parameters
-    ----------
-    obj : Array or data descriptor instance
-        The Array or data descriptor to be removed.
-
-    """
-
-    if isinstance(obj, Array):
-        ddesc = obj.ddesc
-    elif isinstance(obj, DDesc):
-        ddesc = obj
-    else:
-        raise ValueError("`obj` must be an Array or DDesc instance")
-
-    if isinstance(ddesc, BLZ_DDesc):
-        from shutil import rmtree
-        rmtree(ddesc.path)
-    else:
-        import os
-        os.unlink(ddesc.path)

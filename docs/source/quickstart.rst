@@ -141,10 +141,9 @@ later and, in another python session, gain access to it again:
           dshape='2 * 2 * int32')
 
 So, we see that we completely recovered the contents of the original
-array.  Finally, we can get rid of the array completely by passing the
-array, or the data descriptor to `blaze.drop()`.
+array.  Finally, we can get rid of the array completely:
 
-    >>> blaze.drop(dd)
+    >>> dd.remove()
 
 This will remove the dataset from disk, so it could not be restored in
 the future, so if you love your data, be careful with this one.

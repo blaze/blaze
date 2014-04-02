@@ -186,3 +186,7 @@ class CSV_DDesc(DDesc):
         return csv_descriptor_iterchunks(
             self.path, self.mode, self.has_header,
             self.schema, blen, start, stop)
+
+    def remove(self):
+        """Remove the persistent storage."""
+        os.unlink(self.path)

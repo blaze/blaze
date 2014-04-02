@@ -61,4 +61,4 @@ print("/t1 contents:", t)
 print("datashape for /t1:", t.dshape)
 
 # Finally, get rid of the sample file
-blaze.drop(ddesc)
+ddesc.remove()

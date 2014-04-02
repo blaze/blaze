@@ -138,4 +138,5 @@ p2 = blaze.array(datadesc)
 
 print('After re-opening:', p2)
 
-blaze.drop(datadesc)
+# Remove the dataset on-disk completely
+datadesc.remove()

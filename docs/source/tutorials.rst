@@ -158,11 +158,11 @@ can be enlarged anytime by using the `blaze.append()` function, e.g.
         dshape='6, float32')
 
 If you are done with the persistent array and want to free
-its resources, you can just 'drop' it:
+its resources, you can just 'remove' it:
 
 .. doctest::
 
-  >>> blaze.drop(h)
+  >>> h.ddesc.remove()
 
 This will remove the dataset from disk, so it could not be restored in
 the future, so if you love your data, be careful with this one.
