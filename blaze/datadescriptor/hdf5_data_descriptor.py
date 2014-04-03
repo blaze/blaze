@@ -47,7 +47,8 @@ class HDF5_DDesc(DDesc):
         """The capabilities for the HDF5 arrays."""
         with tb.open_file(self.path, mode='r') as f:
             h5arr = f.get_node(self.datapath)
-            appendable = isinstance(h5arr, (tb.EArray, tb.Table)),
+            appendable = isinstance(h5arr, (tb.EArray, tb.Table))
+            queryable = isinstance(h5arr, (tb.Table,))
         caps = Capabilities(
             # HDF5 arrays can be updated
             immutable = False,
@@ -57,6 +58,8 @@ class HDF5_DDesc(DDesc):
             persistent = True,
             # HDF5 arrays can be appended efficiently (EArrays and Tables)
             appendable = appendable,
+            # PyTables Tables can be queried efficiently
+            queryable = queryable,
             remote = False,
             )
         return caps
@@ -112,6 +115,12 @@ class HDF5_DDesc(DDesc):
         with tb.open_file(self.path, mode=self.mode) as f:
             h5arr = f.get_node(self.datapath)
             h5arr.append(values_arr.reshape(shape_vals))
+
+    def where(self, condition):
+        """Iterate over values fulfilling a condition."""
+        with tb.open_file(self.path, mode=self.mode) as f:
+            h5tbl = f.get_node(self.datapath)
+            return h5tbl.where(condition)
 
     def remove(self):
         """Remove the persistent storage."""

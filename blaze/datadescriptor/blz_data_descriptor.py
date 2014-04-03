@@ -50,7 +50,11 @@ class BLZ_DDesc(DDesc):
         if self.blzarr is None:
             persistent = False
         else:
-            persistent = self.blzarr.rootdir is not None,
+            persistent = self.blzarr.rootdir is not None
+        if isinstance(self.blzarr, blz.btable):
+            queryable = True
+        else:
+            queryable = False
         return Capabilities(
             # BLZ arrays can be updated
             immutable = False,
@@ -60,6 +64,8 @@ class BLZ_DDesc(DDesc):
             persistent = persistent,
             # BLZ arrays can be appended efficiently
             appendable = True,
+            # BLZ btables can be queried efficiently
+            queryable = queryable,
             remote = False,
             )
 
@@ -98,6 +104,10 @@ class BLZ_DDesc(DDesc):
         # Now, do the actual append
         self.blzarr.append(values_arr.reshape(shape_vals))
         self.blzarr.flush()
+
+    def where(self, condition):
+        """Iterate over values fulfilling a condition."""
+        return self.blzarr.where(condition)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
