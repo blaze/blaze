@@ -78,7 +78,7 @@ def append(arr, values):
 #------------------------------------------------------------------------
 
 
-def _where(arr, condition, **kwargs):
+def _where(arr, condition):
     """Iterate over values fulfilling a condition."""
     if arr.ddesc.capabilities.queryable:
         return arr.ddesc.where(condition)

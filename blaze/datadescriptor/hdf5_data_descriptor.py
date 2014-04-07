@@ -22,6 +22,13 @@ def hdf5_descriptor_iter(h5arr):
         yield DyND_DDesc(nd.array(el))
     h5arr._v_file.close()
 
+# This is another iterator that is meant to deliver dynd elements
+# directly to the user
+def iter2(iterarr, dtype):
+    for i in iterarr:
+        el = nd.array(i, dtype=dtype)
+        yield el
+
 
 class HDF5_DDesc(DDesc):
     """
@@ -120,11 +127,11 @@ class HDF5_DDesc(DDesc):
         """Iterate over values fulfilling a condition."""
         with tb.open_file(self.path, mode=self.mode) as f:
             h5tbl = f.get_node(self.datapath)
-            #return h5tbl.where(condition)
+            #return iter2(h5tbl.where(condition), h5tbl.dtype)
             # See bug in: https://github.com/PyTables/PyTables/issues/347
-            # Temporary workaround
-            arr = h5tbl.read_where(condition)
-            return iter(arr)
+            # Temporary workaround:
+            res = h5tbl.read_where(condition)
+            return iter2(iter(res), h5tbl.dtype)
 
     def remove(self):
         """Remove the persistent storage."""

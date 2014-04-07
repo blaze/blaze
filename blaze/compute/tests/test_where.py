@@ -58,25 +58,32 @@ class createTables(unittest.TestCase):
     def tearDown(self):
         self.ddesc.remove()
 
-# Check for tables in-memory
+# Check for tables in-memory (BLZ)
 class whereTest(createTables):
     N = 1000
 
     def test01(self):
-        """Testing with only blaze arrays"""
+        """Testing with a filter in only one field"""
         t = blaze.array(self.ddesc)
-        cr = np.fromiter(blaze._where(t, "f0 < 10"), self.dtype)
-        nr = self.npt[self.npt['f0'] < 10]
-        assert_array_equal(cr, nr, "where does not work correctly")
+        cr = [nd.as_numpy(i)[()] for i in blaze._where(t, "f0 < 10")]
+        nr = [i for i in self.npt[self.npt['f0'] < 10]]
+        self.assert_(cr == nr, "where does not work correctly")
+
+    def test02(self):
+        """Testing with two fields"""
+        t = blaze.array(self.ddesc)
+        cr = [nd.as_numpy(i)[()] for i in blaze._where(
+            t, "(f0 < 10) & (f1 > 4)")]
+        nr = [i for i in self.npt[
+            (self.npt['f0'] < 10) & (self.npt['f1'] > 4)]]
+        self.assert_(cr == nr, "where does not work correctly")
 
 # Check for tables on-disk (BLZ)
 class whereBLZDiskTest(whereTest):
-    N = 1000
     disk = "BLZ"
 
 # Check for tables on-disk (HDF5)
 class whereHDF5DiskTest(whereTest):
-    N = 1000
     disk = "HDF5"
 
 
