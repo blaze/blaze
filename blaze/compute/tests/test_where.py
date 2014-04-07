@@ -15,6 +15,10 @@ import glob
 import blaze
 import blz
 
+from blaze.optional_packages import tables_is_here
+if tables_is_here:
+    import tables
+
 
 # Useful superclass for disk-based tests
 class createTables(unittest.TestCase):
@@ -33,15 +37,18 @@ class createTables(unittest.TestCase):
                 ((i, i*2.) for i in xrange(self.N)), dtype=self.dtype,
                 count=self.N, rootdir=path)
             self.ddesc = blaze.BLZ_DDesc(table, mode='r')
-        elif self.disk == 'HDF5':
+        elif self.disk == 'HDF5' and tables_is_here:
             prefix = 'hdf5-' + self.__class__.__name__
             suffix = '.hdf5'
-            dpath = "/earray"
-            h, path1 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
-            os.close(h)  # close the non needed file handle
-            self.ddesc1 = blaze.HDF5_DDesc(path1, dpath, mode='w')
-            h, path2 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
-            os.close(h)
+            dpath = "/table"
+            h, path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
+            os.close(h)  # close the not needed file handle
+            with tables.open_file(path, "w") as h5f:
+                ra = np.fromiter(
+                    ((i, i*2.) for i in xrange(self.N)), dtype=self.dtype,
+                    count=self.N)
+                h5f.create_table('/', dpath[1:], ra)
+            self.ddesc = blaze.HDF5_DDesc(path, dpath, mode='r')
         else:
             table = blz.fromiter(
                 ((i, i*2.) for i in xrange(self.N)), dtype=self.dtype,
@@ -59,7 +66,6 @@ class whereTest(createTables):
         """Testing with only blaze arrays"""
         t = blaze.array(self.ddesc)
         cr = np.fromiter(blaze._where(t, "f0 < 10"), self.dtype)
-        #print("cr:", cr)
         nr = self.npt[self.npt['f0'] < 10]
         assert_array_equal(cr, nr, "where does not work correctly")
 
@@ -67,6 +73,11 @@ class whereTest(createTables):
 class whereBLZDiskTest(whereTest):
     N = 1000
     disk = "BLZ"
+
+# Check for tables on-disk (HDF5)
+class whereHDF5DiskTest(whereTest):
+    N = 1000
+    disk = "HDF5"
 
 
 
