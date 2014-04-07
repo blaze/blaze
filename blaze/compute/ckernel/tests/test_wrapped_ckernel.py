@@ -39,7 +39,8 @@ class TestWrappedCKernel(unittest.TestCase):
     @skipIf(win64_py26, 'py26 win64 ctypes is buggy')
     def test_ctypes_callback_deferred(self):
         # Create a deferred ckernel via a closure
-        def instantiate_ckernel(out_ckb, ckb_offset, types, meta, kerntype):
+        def instantiate_ckernel(out_ckb, ckb_offset, types, meta,
+                                kerntype, ectx):
             out_ckb = _lowlevel.CKernelBuilder(out_ckb)
             def my_kernel_func_single(dst_ptr, src_ptr, kdp):
                 dst = ctypes.c_int32.from_address(dst_ptr)
