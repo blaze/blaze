@@ -28,11 +28,11 @@ class createTables(unittest.TestCase):
             prefix = 'blaze-' + self.__class__.__name__
             suffix = '.blz'
             path = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
-            os.rmdir(self.path)
-            self.table = blz.fromiter(
+            os.rmdir(path)
+            table = blz.fromiter(
                 ((i, i*2.) for i in xrange(self.N)), dtype=self.dtype,
-                count=self.N, rootdir=self.path)
-            self.ddesc = blaze.BLZ_DDesc(path, mode='r')
+                count=self.N, rootdir=path)
+            self.ddesc = blaze.BLZ_DDesc(table, mode='r')
         elif self.disk == 'HDF5':
             prefix = 'hdf5-' + self.__class__.__name__
             suffix = '.hdf5'
@@ -62,6 +62,12 @@ class whereTest(createTables):
         #print("cr:", cr)
         nr = self.npt[self.npt['f0'] < 10]
         assert_array_equal(cr, nr, "where does not work correctly")
+
+# Check for tables on-disk (BLZ)
+class whereBLZDiskTest(whereTest):
+    N = 1000
+    disk = "BLZ"
+
 
 
 if __name__ == '__main__':

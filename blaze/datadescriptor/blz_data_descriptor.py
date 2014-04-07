@@ -32,6 +32,7 @@ class BLZ_DDesc(DDesc):
         self.kwargs = kwargs
         if isinstance(path, (blz.barray, blz.btable)):
             self.blzarr = path
+            self.path = path.rootdir
         elif mode != 'w':
             self.blzarr = blz.barray(rootdir=path, mode=mode, **kwargs)
         else:
