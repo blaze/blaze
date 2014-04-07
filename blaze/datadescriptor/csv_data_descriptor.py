@@ -73,7 +73,7 @@ class CSV_DDesc(DDesc):
         schema = kwargs.get("schema", None)
         dialect = kwargs.get("dialect", None)
         has_header = kwargs.get("has_header", None)
-        if type(schema) in py2help._strtypes:
+        if isinstance(schema, py2help._strtypes):
             schema = datashape.dshape(schema)
         if isinstance(schema, datashape.DataShape) and len(schema) == 1:
             schema = schema[0]
@@ -103,6 +103,8 @@ class CSV_DDesc(DDesc):
             csvfile.seek(0)
         else:
             self.has_header = has_header
+
+        csvfile.close()
 
     @property
     def dshape(self):
