@@ -11,7 +11,7 @@ import datashape
 from ..compute.ops import ufuncs
 from .. import compute
 
-from ..datadescriptor import (DDesc, DeferredDescriptor)
+from ..datadescriptor import (DDesc, DeferredDescriptor, ddesc_as_py)
 from ..io import _printing
 
 
@@ -99,7 +99,9 @@ class Array(object):
         return np.array(self.ddesc.dynd_arr())
 
     def __iter__(self):
-        return self.ddesc.__iter__()
+        if len(self.dshape.shape) == 1:
+            return iter(ddesc_as_py(self.ddesc))
+        return (Array(dd) for dd in self.ddesc.__iter__())
 
     def __getitem__(self, key):
         return Array(self.ddesc.__getitem__(key))
