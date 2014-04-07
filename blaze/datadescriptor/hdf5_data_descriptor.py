@@ -120,7 +120,11 @@ class HDF5_DDesc(DDesc):
         """Iterate over values fulfilling a condition."""
         with tb.open_file(self.path, mode=self.mode) as f:
             h5tbl = f.get_node(self.datapath)
-            return h5tbl.where(condition)
+            #return h5tbl.where(condition)
+            # See bug in: https://github.com/PyTables/PyTables/issues/347
+            # Temporary workaround
+            arr = h5tbl.read_where(condition)
+            return iter(arr)
 
     def remove(self):
         """Remove the persistent storage."""
