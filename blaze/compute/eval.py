@@ -77,10 +77,11 @@ def append(arr, values):
 # Where
 #------------------------------------------------------------------------
 
-def where(arr, condition):
+
+def _where(arr, condition, **kwargs):
     """Iterate over values fulfilling a condition."""
     if arr.ddesc.capabilities.queryable:
-        arr.ddesc.where(condition)
+        return arr.ddesc.where(condition)
     else:
         raise ValueError('Data source do not support efficient queries')
 

@@ -30,7 +30,7 @@ class BLZ_DDesc(DDesc):
         self.path = path
         self.mode = mode
         self.kwargs = kwargs
-        if isinstance(path, blz.barray):
+        if isinstance(path, (blz.barray, blz.btable)):
             self.blzarr = path
         elif mode != 'w':
             self.blzarr = blz.barray(rootdir=path, mode=mode, **kwargs)
@@ -105,7 +105,7 @@ class BLZ_DDesc(DDesc):
         self.blzarr.append(values_arr.reshape(shape_vals))
         self.blzarr.flush()
 
-    def where(self, condition):
+    def where(self, condition, user_dict=None):
         """Iterate over values fulfilling a condition."""
         return self.blzarr.where(condition)
 
