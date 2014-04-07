@@ -21,6 +21,13 @@ def blz_descriptor_iter(blzarr):
         el = np.array(blzarr[i], dtype=blzarr.dtype)
         yield DyND_DDesc(nd.array(el))
 
+# This is another iterator that is meant to deliver dynd elements
+# directly to the user
+def iter2(iterarr, dtype):
+    for i in iterarr:
+        el = nd.array(i, dtype=dtype)
+        yield el
+
 
 class BLZ_DDesc(DDesc):
     """
@@ -108,7 +115,7 @@ class BLZ_DDesc(DDesc):
 
     def where(self, condition, user_dict=None):
         """Iterate over values fulfilling a condition."""
-        return self.blzarr.where(condition)
+        return iter2(self.blzarr.where(condition), self.blzarr.dtype)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).

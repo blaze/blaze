@@ -16,7 +16,6 @@ from .compute.function import  BlazeFunc
 from .compute.eval import (
     eval, append, _where)
 from .compute.elwise_eval import _elwise_eval
-from .compute.filters import _where
 from .compute.ops.ufuncs import *
 from .datadescriptor import (
     DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc)
