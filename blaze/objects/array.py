@@ -104,7 +104,13 @@ class Array(object):
         return (Array(dd) for dd in self.ddesc.__iter__())
 
     def __getitem__(self, key):
-        return Array(self.ddesc.__getitem__(key))
+        dd = self.ddesc.__getitem__(key)
+
+        # Single element?
+        if not self.deferred and not dd.dshape.shape:
+            return ddesc_as_py(dd)
+        else:
+            return Array(dd)
 
     def __setitem__(self, key, val):
         self.ddesc.__setitem__(key, val)
