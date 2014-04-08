@@ -145,8 +145,8 @@ class CSV_DDesc(DDesc):
                 start, stop, step = key.start, key.stop, key.step
             else:
                 raise IndexError("key '%r' is not valid" % key)
-            read_iter = it.islice(csv.reader(csvfile, **self.dialect),
-                                  start, stop, step)
+            read_iter = csv.reader(it.islice(csvfile, start, stop, step),
+                                   **self.dialect)
             res = nd.array(read_iter, dtype=self.schema)
         return DyND_DDesc(res)
 
