@@ -95,7 +95,7 @@ class CSV_DDesc(DDesc):
         else:
             dialect = csv.get_dialect(dialect)
         self.dialect = dict((key, getattr(dialect, key))
-                            for key in dir(dialect) if '_' not in key)
+                            for key in dir(dialect) if not key.startswith('_'))
 
         # Update dialect with any keyword arguments passed in
         # E.g. allow user to override with delimiter=','
