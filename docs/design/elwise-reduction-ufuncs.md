@@ -17,6 +17,10 @@ The particular functions we're most interested in are:
    to "nonexistent", i.e. the array [1, NaN, 3] is
    considered to have length 2 instead of 3 like normal.
 
+See also
+
+* [Rolling Reduction UFuncs](rolling-reduction-ufuncs.md)
+
 Keyword Arguments of Elementwise Reductions
 -------------------------------------------
 
@@ -207,22 +211,33 @@ that can be separate from the reduction lifting.
 Reduction BlazeFunc signatures
 ------------------------------
 
-How reduction function signatures should be spelled
-within datashape, and what the resulting IR should
-be, needs a bit of work. A sketch of the signature
-for blaze reductions, using Python 3 syntax, is
-as follows:
+Reduction function signatures operate via a dependent
+type mechanism. The way this works is a reduction
+function has a type signature like
 
 ```
-@blazefunc('(A... * InputDType) -> <A... transformed by axis> * OutputDType')
-def elwise_reduction(a, *, axis=None, keepdims=False):
-	pass
+(DimsIn... * InputDType) -> DimsOut... * OutputDType
 ```
 
-Where the transformation of dimensions is well-defined
-by knowing `A...`, `axis`, and `keepdims`, while
-the output dtype is determined by which kernel
-signature is matched by the type of `a`.
+and a Python function has an opportunity to fill
+in the type variable values in the return type. The
+ReductionBlazeFunc accepts ``axis=`` and ``keepdims=``
+keyword arguments, which are used to control how
+the dependent return type is computed. Here's
+some example code:
+
+```
+>>> a = nd.array(..., dshape='3 * 5 * var * int32')
+>>> b = sum(a, axis=1, keepdims=False)
+>>> b.dshape
+dshape('3 * 1 * var * int32')
+```
+
+In this example, the ``DimsIn...`` type variable matched
+with ``3 * 5 * var *``, and ``InputDType`` matched with
+``int32``. For ``sum``, the input and output dtypes are
+the same, and the parameters ``axis=1, keepdims=False``
+give the value ``3 * 1 * var *`` to ``DimsOut...``.
 
 Here are some examples of what the type signatures
 of various reductions look like for a `sum` example.
@@ -256,78 +271,8 @@ array([...],
 '(3 * var * 5 * int32) -> 3 * int32'
 ```
 
-There are three basic approaches we might take to make
-this work.
-
-### Output an opaque blob
-
-In this approach, the output type of a reduction is
-simply "object", and precludes further analysis until
-it is evaluated. This is not a good idea, because
-even the simple `mean` case being used as an example
-can't be properly fused into a loop this way.
-
-In particular, consider the final step of `mean`, which
-is after the reduction step, to divide the `sum` by
-the `count` field in the accumulator struct. Without
-the type of the reduction available while constructing
-the jit or ckernel execution, the entire intermediate must
-be executed before finishing it off.
-
-Another drawback is the inability to do a simple
-compiler transformation of the following type of code:
-
-```
->>> a
-array([...],
-      dshape='100000 * 3 * int32')
-
->>> blaze.mean(a, axis=-1)
-# through some compiler passes, could become
->>> blaze.sum(a, axis=-1) / 3
-# or, for a small size like this,
->>> (a[:, 0] + a[:, 1] + a[:, 2]) / 3
-```
-
-### Dependent Return Type Fully Within Datashape
-
-In such a scheme, the `axis` and `keepdims` parameters,
-whose types are `N, int32` and `bool`, feed into
-the datashape system as their values, which computes
-the result type.
-
-This doesn't seem like a good idea, because of needing
-a language to express the dependency. We're creating
-an array programming library, not a new array programming
-language whose type system is datashape, so it
-would be better to stick with Python as the language
-to handle this.
-
-### Dependent Return Type Using Python Code
-
-This this scheme, the function's return type is
-defined in terms of both the argument's types and
-their values. To limit the scope of this, we might
-choose to only provide this function with only the
-types of the positional arguments, and the values of
-the keyword arguments.
-
-One possible spelling follows this approach:
-
-```
-def sum_return_type(a_type, *, axis=None, keepdims=None):
-    # Calculate the return datashape
-    ds = ...
-    return ds
-
-@elementwise('(A... * T) -> Dependent', dependent=sum_return_type)
-def sum(a, *, axis=None, keepdims=None):
-    # Belonging here is a ckernel which gets specially
-    # lifted as a reduction
-    ...
-```
-
-Furthermore, in the case of `mean`, `std`, and `var`,
-there needs to be a way to tack on the final divide
-or expression that computes the final value after the
-reduction accumulators are finished.
+Something not fully addressed yet is in the case of
+`mean`, `std`, and `var`, where there needs to be a way
+to tack on the final divide or expression that computes
+the final value after the reduction accumulators
+are finished.
