@@ -73,15 +73,3 @@ def append(arr, values):
     else:
         raise ValueError('Data source cannot be appended to')
 
-#------------------------------------------------------------------------
-# Where
-#------------------------------------------------------------------------
-
-
-def _where(arr, condition):
-    """Iterate over values fulfilling a condition."""
-    if arr.ddesc.capabilities.queryable:
-        return arr.ddesc.where(condition)
-    else:
-        raise ValueError('Data source do not support efficient queries')
-

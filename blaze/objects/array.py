@@ -172,6 +172,14 @@ class Array(object):
             return self.ddesc._printer_repr()
         return _printing.array_repr(self)
 
+    def where(self, condition):
+        """Iterate over values fulfilling a condition."""
+        if self.ddesc.capabilities.queryable:
+            return self.ddesc.where(condition)
+        else:
+            raise ValueError(
+                'Data descriptor do not support efficient queries')
+
 
 def _named_property(name):
     @property
