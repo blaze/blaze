@@ -68,12 +68,12 @@ ints = np.int8, np.int16, np.int32, np.int64,
 floats = np.float32, np.float64
 complexes = np.complex64, np.complex128,
 
-reductions = {('any', np.logical_or,    False, bools),
+reductions = [('any', np.logical_or,    False, bools),
               ('all', np.logical_and,  True, bools),
               ('sum', np.add,          0, ints + floats + complexes),
               ('product', np.multiply, 1, ints + floats + complexes),
               ('min', np.minimum,      None, bools + ints + floats + complexes),
-              ('max', np.maximum,      None, bools + ints + floats + complexes)}
+              ('max', np.maximum,      None, bools + ints + floats + complexes)]
 
 for name, np_op, ident, types in reductions:
     x = ReductionBlazeFunc('blaze', name)
