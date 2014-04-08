@@ -58,12 +58,24 @@ real = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
 imag = blazefunc_from_dynd_property([ndt.complex_float32, ndt.complex_float64],
                                     'imag', 'blaze', 'imag')
 
-year = blazefunc_from_dynd_property([ndt.date],
+year = blazefunc_from_dynd_property([ndt.date, ndt.datetime],
                                     'year', 'blaze', 'year')
-month = blazefunc_from_dynd_property([ndt.date],
+month = blazefunc_from_dynd_property([ndt.date, ndt.datetime],
                                     'month', 'blaze', 'month')
-day = blazefunc_from_dynd_property([ndt.date],
+day = blazefunc_from_dynd_property([ndt.date, ndt.datetime],
                                     'day', 'blaze', 'day')
+hour = blazefunc_from_dynd_property([ndt.time, ndt.datetime],
+                                     'hour', 'blaze', 'hour')
+minute = blazefunc_from_dynd_property([ndt.time, ndt.datetime],
+                                       'minute', 'blaze', 'minute')
+second = blazefunc_from_dynd_property([ndt.time, ndt.datetime],
+                                       'second', 'blaze', 'second')
+microsecond = blazefunc_from_dynd_property([ndt.time, ndt.datetime],
+                                           'microsecond', 'blaze', 'microsecond')
+date = blazefunc_from_dynd_property([ndt.datetime],
+                                    'date', 'blaze', 'date')
+time = blazefunc_from_dynd_property([ndt.datetime],
+                                    'time', 'blaze', 'time')
 
 #------------------------------------------------------------------------
 # Reduction UFuncs from NumPy

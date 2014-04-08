@@ -80,6 +80,21 @@ class Array(object):
             injected_props['year'] = _ufunc_to_property(ufuncs.year)
             injected_props['month'] = _ufunc_to_property(ufuncs.month)
             injected_props['day'] = _ufunc_to_property(ufuncs.day)
+        elif ms == datashape.time_:
+            injected_props['hour'] = _ufunc_to_property(ufuncs.hour)
+            injected_props['minute'] = _ufunc_to_property(ufuncs.minute)
+            injected_props['second'] = _ufunc_to_property(ufuncs.second)
+            injected_props['microsecond'] = _ufunc_to_property(ufuncs.microsecond)
+        elif ms == datashape.datetime_:
+            injected_props['date'] = _ufunc_to_property(ufuncs.date)
+            injected_props['time'] = _ufunc_to_property(ufuncs.time)
+            injected_props['year'] = _ufunc_to_property(ufuncs.year)
+            injected_props['month'] = _ufunc_to_property(ufuncs.month)
+            injected_props['day'] = _ufunc_to_property(ufuncs.day)
+            injected_props['hour'] = _ufunc_to_property(ufuncs.hour)
+            injected_props['minute'] = _ufunc_to_property(ufuncs.minute)
+            injected_props['second'] = _ufunc_to_property(ufuncs.second)
+            injected_props['microsecond'] = _ufunc_to_property(ufuncs.microsecond)
 
         if injected_props:
             self.__class__ = type('Array', (Array,), injected_props)
