@@ -136,6 +136,19 @@ class TestEphemeral(unittest.TestCase):
         aflt = a.flt
         self.assertEqual(ddesc_as_py(aflt.ddesc), [3.5, 2.25])
 
+    def test_create_record_compress(self):
+        # A simple record array (backed by BLZ)
+        ddesc = BLZ_DDesc(mode='w')
+        a = blaze.array([(10, 3.5), (15, 2.25)],
+                        dshape="var * {val: int32, flt: float32}", ddesc=ddesc)
+        self.assertEqual(ddesc_as_py(a.ddesc), [{'val': 10, 'flt': 3.5},
+                        {'val': 15, 'flt': 2.25}])
+        # Test field access via attributes
+        aval = a.val
+        self.assertEqual(ddesc_as_py(aval.ddesc), [10, 15])
+        aflt = a.flt
+        self.assertEqual(ddesc_as_py(aflt.ddesc), [3.5, 2.25])
+
 
 class TestBLZPersistent(MayBePersistentTest, unittest.TestCase):
 
@@ -148,6 +161,13 @@ class TestBLZPersistent(MayBePersistentTest, unittest.TestCase):
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertTrue(a.dshape.shape == (1,))
         self.assertEqual(ddesc_as_py(a.ddesc), [2])
+
+    def test_create_record(self):
+        ddesc = BLZ_DDesc(path=self.rootdir, mode='w')
+        a = blaze.array([(1,2)], '{x: int, y: real}', ddesc=ddesc)
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertTrue(a.dshape.shape == (1,))
+        self.assertEqual(ddesc_as_py(a.ddesc), [{'x': 1, 'y': 2.0}])
 
     def test_append(self):
         ddesc = BLZ_DDesc(path=self.rootdir, mode='w')
@@ -177,6 +197,22 @@ class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertTrue(a.dshape.shape == (1,))
         self.assertEqual(ddesc_as_py(a.ddesc), [2])
+
+    @skipIf(not tables_is_here, 'pytables is not installed')
+    def test_create_record(self):
+        ddesc = HDF5_DDesc(path=self.file, datapath='/table', mode='w')
+        a = blaze.array([(10, 3.5), (15, 2.25)],
+                        dshape="var * {val: int32, flt: float32}", ddesc=ddesc)
+        self.assertTrue(isinstance(a, blaze.Array))
+        self.assertTrue(a.dshape.shape == (2,))
+        self.assertEqual(ddesc_as_py(a.ddesc),
+                        [{u'flt': 3.5, u'val': 10},
+                         {u'flt': 2.25, u'val': 15}] )
+        # Test field access via attributes
+        aval = a.val
+        self.assertEqual(ddesc_as_py(aval.ddesc), [10, 15])
+        aflt = a.flt
+        self.assertEqual(ddesc_as_py(aflt.ddesc), [3.5, 2.25])
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_append(self):
