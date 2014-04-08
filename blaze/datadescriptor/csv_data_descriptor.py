@@ -161,10 +161,10 @@ class CSV_DDesc(DDesc):
     def append(self, row):
         """Append a row of values (in sequence form)."""
         values = nd.array(row, dtype=self.schema)  # validate row
-        with open_file(self.path, self.mode, self.has_header) as csvfile:
-            csvfile.seek(0, os.SEEK_END)  # go to the end of the file
-            delimiter = self.dialect['delimiter']
-            csvfile.write(delimiter.join(py2help.unicode(v) for v in row)+'\n')
+        with open_file(self.path, self.mode, self.has_header) as f:
+            f.seek(0, os.SEEK_END)  # go to the end of the file
+            writer = csv.writer(f, **self.dialect)
+            writer.writerow(row)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
