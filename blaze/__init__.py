@@ -14,7 +14,7 @@ from .objects.constructors import (
     array, empty, ones, zeros)
 from .compute.function import  BlazeFunc
 from .compute.eval import (
-    eval, append, _where)
+    eval, append)
 from .compute.elwise_eval import _elwise_eval
 from .compute.ops.ufuncs import *
 from .datadescriptor import (
