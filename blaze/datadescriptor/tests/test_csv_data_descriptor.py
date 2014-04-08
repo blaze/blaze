@@ -47,6 +47,39 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
         assert 'Alice' in s and 'Bob' in s
 
 
+class TestCSV_New_File(unittest.TestCase):
+
+    data = [('Alice', 100),
+            ('Bob', 200),
+            ('Alice', 50)]
+
+    schema = "{ f0: string, f1: int }"
+
+    def setUp(self):
+        handle, self.filename = tempfile.mkstemp(".csv")
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+    def test_creation(self):
+        dd = CSV_DDesc(self.filename, 'w', schema=self.schema, delimiter=' ')
+
+    def test_append(self):
+        dd = CSV_DDesc(self.filename, 'w', schema=self.schema, delimiter=' ')
+        dd.append(self.data[0])
+        with open(self.filename) as f:
+            self.assertEqual(f.readlines()[0].strip(), 'Alice 100')
+
+    def test_extend(self):
+        dd = CSV_DDesc(self.filename, 'w', schema=self.schema, delimiter=' ')
+        dd.extend(self.data)
+        with open(self.filename) as f:
+            lines = f.readlines()
+            self.assertEqual(lines[0].strip(), 'Alice 100')
+            self.assertEqual(lines[1].strip(), 'Bob 200')
+            self.assertEqual(lines[2].strip(), 'Alice 50')
+
+
 class TestCSV_DDesc(unittest.TestCase):
 
     # A CSV toy example

@@ -56,7 +56,7 @@ class CSV_DDesc(DDesc):
 
     def __init__(self, path, mode='r', schema=None, dialect=None,
             has_header=None, **kwargs):
-        if os.path.isfile(path) is not True:
+        if mode == 'r' and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
@@ -73,16 +73,16 @@ class CSV_DDesc(DDesc):
         self.schema = str(schema)
 
         # Handle Dialect
-        if dialect is None:
+        if dialect is None and mode !='r':
             # Guess the dialect
             sniffer = csv.Sniffer()
             try:
                 dialect = sniffer.sniff(csvfile.read(1024))
             except:
-                # Cannot guess dialect.  Assume Excel.
-                dialect = csv.get_dialect('excel')
-            csvfile.seek(0)
-        else:
+                pass
+        if dialect is None:
+            dialect = csv.get_dialect('excel')
+        elif isinstance(dialect, (str, unicode)):
             dialect = csv.get_dialect(dialect)
         self.dialect = dict((key, getattr(dialect, key))
                             for key in dir(dialect) if not key.startswith('_'))
@@ -94,7 +94,7 @@ class CSV_DDesc(DDesc):
                 self.dialect[k] = v
 
         # Handle Header
-        if has_header is None:
+        if has_header is None and mode != 'w':
             # Guess whether the file has a header or not
             sniffer = csv.Sniffer()
             csvfile.seek(0)
@@ -165,6 +165,18 @@ class CSV_DDesc(DDesc):
             f.seek(0, os.SEEK_END)  # go to the end of the file
             writer = csv.writer(f, **self.dialect)
             writer.writerow(row)
+
+    def extend(self, rows):
+        """ Extend data with many rows
+
+        See Also:
+            append
+        """
+        values = nd.array(rows, dtype=self.schema)  # validate row
+        with open_file(self.path, self.mode, self.has_header) as f:
+            f.seek(0, os.SEEK_END)  # go to the end of the file
+            writer = csv.writer(f, **self.dialect)
+            writer.writerows(rows)
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
