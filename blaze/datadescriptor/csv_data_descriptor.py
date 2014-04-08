@@ -20,17 +20,17 @@ def open_file(path, mode, has_header):
     return csvfile
 
 
-def csv_descriptor_iter(filename, mode, has_header, schema):
+def csv_descriptor_iter(filename, mode, has_header, schema, dialect={}):
     with open_file(filename, mode, has_header) as csvfile:
-        for row in csv.reader(csvfile):
+        for row in csv.reader(csvfile, **dialect):
             yield DyND_DDesc(nd.array(row, dtype=schema))
 
 
 def csv_descriptor_iterchunks(filename, mode, has_header, schema,
-                              blen, start=None, stop=None):
+                              blen, dialect={}, start=None, stop=None):
     rows = []
     with open_file(filename, mode, has_header) as csvfile:
-        for nrow, row in enumerate(csv.reader(csvfile)):
+        for nrow, row in enumerate(csv.reader(csvfile, **dialect)):
             if start is not None and nrow < start:
                 continue
             if stop is not None and nrow >= stop:
@@ -95,7 +95,7 @@ class CSV_DDesc(DDesc):
         else:
             dialect = csv.get_dialect(dialect)
         self.dialect = dict((key, getattr(dialect, key))
-                            for key in dir(dialect) if '__' not in key)
+                            for key in dir(dialect) if '_' not in key)
 
         # Update dialect with any keyword arguments passed in
         # E.g. allow user to override with delimiter=','
@@ -137,7 +137,8 @@ class CSV_DDesc(DDesc):
     def dynd_arr(self):
         # Positionate at the beginning of the file
         with open_file(self.path, self.mode, self.has_header) as csvfile:
-            return nd.array(csv.reader(csvfile), dtype=self.schema)
+            return nd.array(csv.reader(csvfile, **self.dialect), dtype=self.schema)
+
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
@@ -154,7 +155,8 @@ class CSV_DDesc(DDesc):
                 start, stop, step = key.start, key.stop, key.step
             else:
                 raise IndexError("key '%r' is not valid" % key)
-            read_iter = it.islice(csv.reader(csvfile), start, stop, step)
+            read_iter = it.islice(csv.reader(csvfile, **self.dialect),
+                                  start, stop, step)
             res = nd.array(read_iter, dtype=self.schema)
         return DyND_DDesc(res)
 
@@ -164,7 +166,7 @@ class CSV_DDesc(DDesc):
 
     def __iter__(self):
         return csv_descriptor_iter(
-            self.path, self.mode, self.has_header, self.schema)
+            self.path, self.mode, self.has_header, self.schema, self.dialect)
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
@@ -196,7 +198,7 @@ class CSV_DDesc(DDesc):
         # Return the iterable
         return csv_descriptor_iterchunks(
             self.path, self.mode, self.has_header,
-            self.schema, blen, start, stop)
+            self.schema, blen, self.dialect, start, stop)
 
     def remove(self):
         """Remove the persistent storage."""

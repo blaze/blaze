@@ -39,6 +39,13 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
                 delimiter=' ')
         assert dd.dialect['delimiter'] == ' '
 
+    def test_content(self):
+        dd = CSV_DDesc(self.csv_file, dialect='excel', schema=self.schema,
+                delimiter=' ')
+        print(ddesc_as_py(dd))
+        s = str(ddesc_as_py(dd))
+        assert 'Alice' in s and 'Bob' in s
+
 
 class TestCSV_DDesc(unittest.TestCase):
 
