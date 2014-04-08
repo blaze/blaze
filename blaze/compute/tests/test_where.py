@@ -23,35 +23,48 @@ if tables_is_here:
 # Useful superclass for disk-based tests
 class createTables(unittest.TestCase):
     disk = None
+    open = False
 
     def setUp(self):
         self.dtype = 'i4,f8'
-        self.npt = np.fromiter(((i, i*2.) for i in xrange(self.N)),
+        self.npt = np.fromiter(((i, i*2.) for i in range(self.N)),
                                dtype=self.dtype, count=self.N)
         if self.disk == 'BLZ':
             prefix = 'blaze-' + self.__class__.__name__
             suffix = '.blz'
             path = tempfile.mkdtemp(suffix=suffix, prefix=prefix)
             os.rmdir(path)
-            table = blz.fromiter(
-                ((i, i*2.) for i in xrange(self.N)), dtype=self.dtype,
-                count=self.N, rootdir=path)
-            self.ddesc = blaze.BLZ_DDesc(table, mode='r')
+            if self.open:
+                table = blz.fromiter(
+                    ((i, i*2.) for i in range(self.N)), dtype=self.dtype,
+                    count=self.N, rootdir=path)
+                self.ddesc = blaze.BLZ_DDesc(table, mode='r')
+            else:
+                self.ddesc = blaze.BLZ_DDesc(path, mode='w')
+                a = blaze.array([(i, i*2.) for i in range(self.N)],
+                                'var * {f0: int32, f1: float64}',
+                                ddesc=self.ddesc)
         elif self.disk == 'HDF5' and tables_is_here:
             prefix = 'hdf5-' + self.__class__.__name__
             suffix = '.hdf5'
             dpath = "/table"
             h, path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
             os.close(h)  # close the not needed file handle
-            with tables.open_file(path, "w") as h5f:
-                ra = np.fromiter(
-                    ((i, i*2.) for i in xrange(self.N)), dtype=self.dtype,
-                    count=self.N)
-                h5f.create_table('/', dpath[1:], ra)
-            self.ddesc = blaze.HDF5_DDesc(path, dpath, mode='r')
+            if self.open:
+                with tables.open_file(path, "w") as h5f:
+                    ra = np.fromiter(
+                        ((i, i*2.) for i in range(self.N)), dtype=self.dtype,
+                        count=self.N)
+                    h5f.create_table('/', dpath[1:], ra)
+                self.ddesc = blaze.HDF5_DDesc(path, dpath, mode='r')
+            else:
+                self.ddesc = blaze.HDF5_DDesc(path, dpath, mode='w')
+                a = blaze.array([(i, i*2.) for i in range(self.N)],
+                                'var * {f0: int32, f1: float64}',
+                                ddesc=self.ddesc)
         else:
             table = blz.fromiter(
-                ((i, i*2.) for i in xrange(self.N)), dtype=self.dtype,
+                ((i, i*2.) for i in range(self.N)), dtype=self.dtype,
                 count=self.N)
             self.ddesc = blaze.BLZ_DDesc(table, mode='r')
 
@@ -84,6 +97,16 @@ class whereBLZDiskTest(whereTest):
 # Check for tables on-disk (HDF5)
 class whereHDF5DiskTest(whereTest):
     disk = "HDF5"
+
+# Check for tables on-disk, using existing BLZ files
+class whereBLZDiskOpenTest(whereTest):
+    disk = "BLZ"
+    open = True
+
+# Check for tables on-disk, using existng HDF5 files
+class whereHDF5DiskOpenTest(whereTest):
+    disk = "HDF5"
+    open = True
 
 
 
