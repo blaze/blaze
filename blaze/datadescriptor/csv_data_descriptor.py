@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import csv
 import itertools as it
+import toolz
 import os
 
 import datashape
@@ -28,20 +29,10 @@ def csv_descriptor_iter(filename, mode, has_header, schema, dialect={}):
 
 def csv_descriptor_iterchunks(filename, mode, has_header, schema,
                               blen, dialect={}, start=None, stop=None):
-    rows = []
-    with open_file(filename, mode, has_header) as csvfile:
-        for nrow, row in enumerate(csv.reader(csvfile, **dialect)):
-            if start is not None and nrow < start:
-                continue
-            if stop is not None and nrow >= stop:
-                if rows != []:
-                    # Build the descriptor for the data we have and return
-                    yield DyND_DDesc(nd.array(rows, dtype=schema))
-                return
-            rows.append(row)
-            if nrow % blen == 0:
-                yield DyND_DDesc(nd.array(rows, dtype=schema))
-                rows = []
+    with open_file(filename, mode, has_header) as f:
+        f = it.islice(csv.reader(f, **dialect), start, stop)
+        for rows in toolz.partition_all(blen, f):
+            yield DyND_DDesc(nd.array(rows, dtype=schema))
 
 
 class CSV_DDesc(DDesc):
