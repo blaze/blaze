@@ -138,6 +138,10 @@ def array(obj, dshape=None, ddesc=None):
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
             if dshape and isinstance(dshape.measure, datashape.Record):
+                # Convert the structured array to unaligned dtype
+                # We need that because PyTables only accepts unaligned types,
+                # which are the default in NumPy
+                obj = np.array(obj, datashape.to_numpy_dtype(dshape.measure))
                 f.create_table(where, name, filters=ddesc.filters, obj=obj)
             else:
                 f.create_earray(where, name, filters=ddesc.filters, obj=obj)
