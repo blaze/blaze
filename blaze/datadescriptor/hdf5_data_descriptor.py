@@ -109,6 +109,15 @@ class HDF5_DDesc(DDesc):
         h5arr = f.get_node(self.datapath)
         return hdf5_descriptor_iter(h5arr)
 
+    def getattr(self, name):
+        with tb.open_file(self.path, mode=self.mode) as f:
+            h5tbl = f.get_node(self.datapath)
+            if hasattr(h5tbl, 'cols'):
+                return DyND_DDesc(
+                    nd.asarray(getattr(h5tbl.cols, name)[:], access='readonly'))
+            else:
+                raise IndexError("not an HDF5 compound dataset")
+
     def append(self, values):
         """Append a list of values."""
         shape, dtype = datashape.to_numpy(self.dshape)

@@ -41,7 +41,7 @@ class BLZ_DDesc(DDesc):
             self.blzarr = path
             self.path = path.rootdir
         elif mode != 'w':
-            self.blzarr = blz.barray(rootdir=path, mode=mode, **kwargs)
+            self.blzarr = blz.open(rootdir=path, mode=mode, **kwargs)
         else:
             # This will be set in the constructor later on
             self.blzarr = None
@@ -96,6 +96,12 @@ class BLZ_DDesc(DDesc):
 
     def __iter__(self):
         return blz_descriptor_iter(self.blzarr)
+
+    def getattr(self, name):
+        if isinstance(self.blzarr, blz.btable):
+            return DyND_DDesc(nd.asarray(self.blzarr[name], access='readonly'))
+        else:
+            raise IndexError("not a btable BLZ dataset")
 
     # This is not part of the DDesc interface itself, but can
     # be handy for other situations not requering full compliance with
