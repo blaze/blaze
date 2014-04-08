@@ -14,7 +14,7 @@ class getitem(unittest.TestCase):
 
     def test_scalar(self):
         a = blaze.array(np.arange(3), ddesc=self.ddesc)
-        self.assertEqual(ddesc_as_py(a[0].ddesc), 0)
+        self.assertEqual(a[0], 0)
 
     def test_1d(self):
         a = blaze.array(np.arange(3), ddesc=self.ddesc)
@@ -34,7 +34,7 @@ class setitem(unittest.TestCase):
     def test_scalar(self):
         a = blaze.array(np.arange(3), ddesc=self.ddesc)
         a[0] = 1
-        self.assertEqual(ddesc_as_py(a[0].ddesc), 1)
+        self.assertEqual(a[0], 1)
 
     def test_1d(self):
         a = blaze.array(np.arange(3), ddesc=self.ddesc)
