@@ -40,7 +40,6 @@ def csv_descriptor_iterchunks(filename, mode, has_header, schema,
                 return
             rows.append(row)
             if nrow % blen == 0:
-                print("rows:", rows, schema)
                 yield DyND_DDesc(nd.array(rows, dtype=schema))
                 rows = []
 
