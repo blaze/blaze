@@ -20,17 +20,17 @@ def open_file(path, mode, has_header):
     return csvfile
 
 
-def csv_descriptor_iter(filename, mode, has_header, schema):
+def csv_descriptor_iter(filename, mode, has_header, schema, dialect={}):
     with open_file(filename, mode, has_header) as csvfile:
-        for row in csv.reader(csvfile):
+        for row in csv.reader(csvfile, **dialect):
             yield DyND_DDesc(nd.array(row, dtype=schema))
 
 
 def csv_descriptor_iterchunks(filename, mode, has_header, schema,
-                              blen, start=None, stop=None):
+                              blen, dialect={}, start=None, stop=None):
     rows = []
     with open_file(filename, mode, has_header) as csvfile:
-        for nrow, row in enumerate(csv.reader(csvfile)):
+        for nrow, row in enumerate(csv.reader(csvfile, **dialect)):
             if start is not None and nrow < start:
                 continue
             if stop is not None and nrow >= stop:
@@ -63,15 +63,15 @@ class CSV_DDesc(DDesc):
         is guessed.
     """
 
-    def __init__(self, path, mode='r', **kwargs):
+    def __init__(self, path, mode='r', schema=None, dialect=None,
+            has_header=None, **kwargs):
         if os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
         csvfile = open(path, mode=self.mode)
-        schema = kwargs.get("schema", None)
-        dialect = kwargs.get("dialect", None)
-        has_header = kwargs.get("has_header", None)
+
+        # Handle Schema
         if isinstance(schema, py2help._strtypes):
             schema = datashape.dshape(schema)
         if isinstance(schema, datashape.DataShape) and len(schema) == 1:
@@ -81,25 +81,34 @@ class CSV_DDesc(DDesc):
                 'schema cannot be converted into a blaze record dshape')
         self.schema = str(schema)
 
+        # Handle Dialect
         if dialect is None:
             # Guess the dialect
             sniffer = csv.Sniffer()
             try:
-                self.dialect = sniffer.sniff(csvfile.read(1024))
+                dialect = sniffer.sniff(csvfile.read(1024))
             except:
                 # Cannot guess dialect.  Assume Excel.
-                self.dialect = csv.get_dialect('excel')
+                dialect = csv.get_dialect('excel')
             csvfile.seek(0)
         else:
-            if isinstance(dialect, csv.Dialect):
-                self.dialect = dialect
-            else:
-                self.dialect = csv.get_dialect(dialect)
+            dialect = csv.get_dialect(dialect)
+        self.dialect = dict((key, getattr(dialect, key))
+                            for key in dir(dialect) if not key.startswith('_'))
+
+        # Update dialect with any keyword arguments passed in
+        # E.g. allow user to override with delimiter=','
+        for k, v in kwargs.items():
+            if k in self.dialect:
+                self.dialect[k] = v
+
+        # Handle Header
         if has_header is None:
             # Guess whether the file has a header or not
             sniffer = csv.Sniffer()
-            self.has_header = sniffer.has_header(csvfile.read(1024))
             csvfile.seek(0)
+            sample = csvfile.read(1024)
+            self.has_header = sniffer.has_header(sample)
         else:
             self.has_header = has_header
 
@@ -127,7 +136,8 @@ class CSV_DDesc(DDesc):
     def dynd_arr(self):
         # Positionate at the beginning of the file
         with open_file(self.path, self.mode, self.has_header) as csvfile:
-            return nd.array(csv.reader(csvfile), dtype=self.schema)
+            return nd.array(csv.reader(csvfile, **self.dialect), dtype=self.schema)
+
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
@@ -144,7 +154,8 @@ class CSV_DDesc(DDesc):
                 start, stop, step = key.start, key.stop, key.step
             else:
                 raise IndexError("key '%r' is not valid" % key)
-            read_iter = it.islice(csv.reader(csvfile), start, stop, step)
+            read_iter = it.islice(csv.reader(csvfile, **self.dialect),
+                                  start, stop, step)
             res = nd.array(read_iter, dtype=self.schema)
         return DyND_DDesc(res)
 
@@ -154,14 +165,14 @@ class CSV_DDesc(DDesc):
 
     def __iter__(self):
         return csv_descriptor_iter(
-            self.path, self.mode, self.has_header, self.schema)
+            self.path, self.mode, self.has_header, self.schema, self.dialect)
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
         values = nd.array(row, dtype=self.schema)  # validate row
         with open_file(self.path, self.mode, self.has_header) as csvfile:
             csvfile.seek(0, os.SEEK_END)  # go to the end of the file
-            delimiter = self.dialect.delimiter
+            delimiter = self.dialect['delimiter']
             csvfile.write(delimiter.join(py2help.unicode(v) for v in row)+'\n')
 
     def iterchunks(self, blen=None, start=None, stop=None):
@@ -186,7 +197,7 @@ class CSV_DDesc(DDesc):
         # Return the iterable
         return csv_descriptor_iterchunks(
             self.path, self.mode, self.has_header,
-            self.schema, blen, start, stop)
+            self.schema, blen, self.dialect, start, stop)
 
     def remove(self):
         """Remove the persistent storage."""

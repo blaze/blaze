@@ -117,10 +117,13 @@ ValueError: Out of bounds nanosecond timestamp: 1492-01-01 00:00:00
 
 ### Resources
 
+* http://nodatime.org/
+* http://www.joda.org/joda-time/
 * http://www.boost.org/doc/libs/1_55_0/doc/html/date_time/local_time.html
 * http://www.ibm.com/developerworks/aix/library/au-aix-posix/index.html
 * https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
 * https://www.iana.org/time-zones
+* http://www.cplusplus.com/reference/locale/time_get/get_date/
 * https://github.com/ajaxorg/cygwin-builds/blob/master/usr/share/doc/tzcode/Theory
 * http://www.timeanddate.com/library/abbreviations/timezones/
 * .NET DateTime http://msdn.microsoft.com/en-us/library/bb384267.aspx
