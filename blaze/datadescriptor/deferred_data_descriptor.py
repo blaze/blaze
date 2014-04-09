@@ -33,7 +33,7 @@ def force_evaluation(methname):
 # TODO: Re-purpose this to work for general deferred computations, not just
 #       those backed up by the expression graph of Blaze kernels
 
-class DeferredDescriptor(DDesc):
+class DeferredDDesc(DDesc):
     """
     Data descriptor for arrays backed up by a deferred expression graph.
 
