@@ -11,7 +11,7 @@ import datashape
 from ..compute.ops import ufuncs
 from .. import compute
 
-from ..datadescriptor import (DDesc, DeferredDDesc, Stream_DDesc)
+from ..datadescriptor import (DDesc, Deferred_DDesc, Stream_DDesc)
 from ..io import _printing
 
 
@@ -36,7 +36,7 @@ class Array(object):
         self.user = user
         self.expr = None
 
-        if isinstance(data, DeferredDDesc):
+        if isinstance(data, Deferred_DDesc):
             # NOTE: we need 'expr' on the Array to perform dynamic programming:
             #       Two concrete arrays should have a single Op! We cannot
             #       store this in the data descriptor, since there are many
