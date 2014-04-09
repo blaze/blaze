@@ -10,6 +10,7 @@ from dynd import nd
 
 from .. import py2help
 from .data_descriptor import DDesc, Capabilities
+from .as_py import ddesc_as_py
 from .dynd_data_descriptor import DyND_DDesc
 
 
@@ -152,8 +153,9 @@ class CSV_DDesc(DDesc):
         raise NotImplementedError
 
     def __iter__(self):
-        return csv_descriptor_iter(
-            self.path, self.mode, self.has_header, self.schema, self.dialect)
+        with open(self.path) as f:
+            for row in csv.reader(f, **self.dialect):
+                yield nd.as_py(nd.array(row, dtype=self.schema))
 
     def append(self, row):
         """Append a row of values (in sequence form)."""

@@ -43,7 +43,6 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
     def test_content(self):
         dd = CSV_DDesc(self.csv_file, dialect='excel', schema=self.schema,
                 delimiter=' ')
-        print(ddesc_as_py(dd))
         s = str(ddesc_as_py(dd))
         assert 'Alice' in s and 'Bob' in s
 
@@ -107,11 +106,16 @@ def test_re_dialect():
         dst = CSV_DDesc(dest_fn, mode='w', schema=schema, **dialect2)
 
         # Perform copy
-        dst.extend(ddesc_as_py(row) for row in src)
+        dst.extend(src)
 
         with open(dest_fn) as f:
             assert f.read() == '1;1\r\n2;2\r\n'
 
+
+def test_iter():
+    with filetext('1,1\n2,2\n') as fn:
+        dd = CSV_DDesc(fn, schema='2 * int32')
+        assert list(dd) == [[1, 1], [2, 2]]
 
 
 class TestCSV_DDesc(unittest.TestCase):
@@ -146,12 +150,7 @@ class TestCSV_DDesc(unittest.TestCase):
         dd = CSV_DDesc(self.csv_file, schema=self.schema)
 
         # Iteration should produce DyND_DDesc instances
-        vals = []
-        for el in dd:
-            self.assertTrue(isinstance(el, DyND_DDesc))
-            self.assertTrue(isinstance(el, DDesc))
-            vals.append(ddesc_as_py(el))
-        self.assertEqual(vals, [
+        self.assertEqual(list(dd), [
             {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
             {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
             {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
