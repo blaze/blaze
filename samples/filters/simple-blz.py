@@ -1,4 +1,4 @@
-'''Sample script showing off some simple filter operations'''
+'''Sample script showing off some simple filter operations (BLZ version)'''
 
 from __future__ import absolute_import, division, print_function
 
@@ -15,7 +15,7 @@ def make_array(path):
 
 if __name__ == '__main__':
     # Create a persitent array on disk
-    arr = make_array("test.blz")
+    arr = make_array("test-filtering.blz")
     # Do the query
     res = arr.where('(myint < 10) & (myflt > 8)')
     # Print out some results
