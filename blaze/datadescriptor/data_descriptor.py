@@ -137,12 +137,11 @@ class DDesc:
         """Concrete data descriptors must provide their array data
            as a dynd array, accessible via this method.
         """
-        if self.is_concrete:
+        if not self.capabilities.deferred:
             raise NotImplementedError((
-                'Data descriptor of type %s'
-                ' claims to be concrete, but did not'
-                ' override dynd_arr()') % type(self))
+                'Data descriptor of type %s claims '
+                'claims to not being deferred, but did not '
+                'override dynd_arr()') % type(self))
         else:
             raise TypeError((
-                'Data descriptor of type %s is not '
-                'concrete') % type(self))
+                'Data descriptor of type %s is deferred') % type(self))
