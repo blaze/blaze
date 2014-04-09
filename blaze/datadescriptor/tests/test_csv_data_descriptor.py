@@ -116,7 +116,6 @@ def test_iterchunks():
 
 def test_iter_structured():
     with filetext('1,2\n3,4\n') as fn:
-        schema =
         dd = CSV_DDesc(fn, schema='{x: int, y: int}')
         assert list(dd) == [{'x': 1, 'y': 2}, {'x': 3, 'y': 4}]
 
@@ -204,7 +203,7 @@ class TestCSV_DDesc(unittest.TestCase):
         vals = [ddesc_as_py(v) for v in dd.iterchunks(blen=1, start=3)]
         self.assertEqual(vals, [[
             {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}]])
-        self.assertRaises(ValueError, dd.append(3))
+        self.assertRaises(ValueError, lambda: dd.append(3.3))
         os.remove(csv_file)
 
     def test_getitem_start(self):
