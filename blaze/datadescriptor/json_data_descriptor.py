@@ -4,6 +4,7 @@ import os
 import json
 
 import datashape
+from toolz import partition_all
 
 from .data_descriptor import DDesc
 from .. import py2help
@@ -91,6 +92,15 @@ class JSON_DDesc(DDesc):
         with open(self.path) as f:
             for line in f:
                 yield json.loads(line)
+
+    def iterchunks(self, blen=100):
+        with open(self.path) as f:
+            for chunk in partition_all(blen, f):
+                text = '[' + ',\r\n'.join(chunk) + ']'
+                dshape = str(len(chunk)) + ' * ' + self.schema
+                arr = nd.parse_json(dshape, text)
+                yield DyND_DDesc(arr)
+
 
     def remove(self):
         """Remove the persistent storage."""

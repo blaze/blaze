@@ -99,5 +99,14 @@ def test_init():
         assert list(dd) == data
 
 
+def test_iterchunks():
+    with filetext(text) as fn:
+        dd = JSON_DDesc(fn, schema=schema)
+        chunks = list(dd.iterchunks(blen=2))
+        assert isinstance(chunks[0], DDesc)
+        assert len(chunks) == 3
+        assert ddesc_as_py(chunks[0]) == data[:2]
+
+
 if __name__ == '__main__':
     unittest.main()
