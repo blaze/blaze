@@ -65,7 +65,7 @@ class CSV_DDesc(DDesc):
 
     def __init__(self, path, mode='r', schema=None, dialect=None,
             has_header=None, **kwargs):
-        if mode == 'r' and os.path.isfile(path) is not True:
+        if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
@@ -79,7 +79,7 @@ class CSV_DDesc(DDesc):
         self.schema = str(schema)
 
         # Handle Dialect
-        if dialect is None and mode !='r':
+        if dialect is None and 'r' in mode:
             # Guess the dialect
             sniffer = csv.Sniffer()
             try:
@@ -105,7 +105,11 @@ class CSV_DDesc(DDesc):
             sniffer = csv.Sniffer()
             csvfile.seek(0)
             sample = csvfile.read(1024)
-            self.has_header = sniffer.has_header(sample)
+            try:
+                self.has_header = sniffer.has_header(sample)
+            except:
+                self.has_header = has_header
+
         else:
             self.has_header = has_header
 

@@ -73,6 +73,9 @@ class TestCSV_New_File(unittest.TestCase):
     def test_creation(self):
         dd = CSV_DDesc(self.filename, 'w', schema=self.schema, delimiter=' ')
 
+    def test_creation_rw(self):
+        dd = CSV_DDesc(self.filename, 'rw', schema=self.schema, delimiter=' ')
+
     def test_append(self):
         dd = CSV_DDesc(self.filename, 'w', schema=self.schema, delimiter=' ')
         dd.append(self.data[0])
