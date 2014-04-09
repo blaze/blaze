@@ -7,7 +7,7 @@ import json
 
 from blaze.datadescriptor import (
     JSON_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
-from blaze.datadescriptor.util import filetext
+from blaze.datadescriptor.util import filetext, raises
 
 # TODO: This isn't actually being used!
 _json_buf = u"""{
@@ -114,6 +114,9 @@ def test_append():
         dd.append(data[0])
         with open(fn) as f:
             assert json.loads(f.read().strip()) == data[0]
+
+        assert raises(ValueError, lambda : dd.append(5.5))
+        assert raises(ValueError, lambda : dd.append({'name': 5, 'amount': 1.3}))
 
 def test_extend():
     with filetext('') as fn:

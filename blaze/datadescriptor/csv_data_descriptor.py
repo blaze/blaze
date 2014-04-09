@@ -10,8 +10,8 @@ from dynd import nd
 
 from .. import py2help
 from .data_descriptor import DDesc, Capabilities
-from .as_py import ddesc_as_py
 from .dynd_data_descriptor import DyND_DDesc
+from .util import validate, coerce
 
 
 def open_file(path, mode, has_header):
@@ -153,11 +153,12 @@ class CSV_DDesc(DDesc):
             if self.has_header:
                 next(f)  # burn header
             for row in csv.reader(f, **self.dialect):
-                yield nd.as_py(nd.array(row, dtype=self.schema))
+                yield coerce(self.schema, row)
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
-        values = nd.array(row, dtype=self.schema)  # validate row
+        if not validate(self.schema, row):
+            raise ValueError('Data does not match datashape ' + self.schema)
         with open_file(self.path, self.mode, self.has_header) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             writer = csv.writer(f, **self.dialect)
@@ -173,7 +174,9 @@ class CSV_DDesc(DDesc):
         with open_file(self.path, self.mode, self.has_header) as f:
             # Validate first row
             row = next(rows)
-            nd.array(row, dtype=self.schema)
+            if not validate(self.schema, row):
+                raise ValueError('Data does not match datashape ' +
+                                 self.schema)
 
             # Write all rows to file
             f.seek(0, os.SEEK_END)  # go to the end of the file

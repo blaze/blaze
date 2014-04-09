@@ -10,6 +10,7 @@ from .data_descriptor import DDesc
 from .. import py2help
 from dynd import nd
 from .dynd_data_descriptor import DyND_DDesc, Capabilities
+from .util import validate, coerce
 
 
 def json_descriptor_iter(array):
@@ -91,7 +92,7 @@ class JSON_DDesc(DDesc):
     def __iter__(self):
         with open(self.path) as f:
             for line in f:
-                yield json.loads(line)
+                yield coerce(self.schema, json.loads(line))
 
     def iterchunks(self, blen=100):
         with open(self.path) as f:
@@ -103,7 +104,8 @@ class JSON_DDesc(DDesc):
 
     def append(self, row):
         """Append a row of values (in sequence form)."""
-        values = nd.array(row, dtype=self.schema)  # validate row
+        if not validate(self.schema, row):
+            raise ValueError('Invalid data for dshape %s' % self.schema)
         with open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             json.dump(row, f)

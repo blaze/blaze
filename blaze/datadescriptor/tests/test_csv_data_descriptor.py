@@ -80,6 +80,7 @@ class TestCSV_New_File(unittest.TestCase):
             self.assertEqual(lines[1].strip(), 'Bob 200')
             self.assertEqual(lines[2].strip(), 'Alice 50')
 
+
 def test_re_dialect():
     dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
     dialect2 = {'delimiter': ';', 'lineterminator': '\r\n'}
@@ -195,6 +196,7 @@ class TestCSV_DDesc(unittest.TestCase):
         vals = [ddesc_as_py(v) for v in dd.iterchunks(blen=1, start=3)]
         self.assertEqual(vals, [[
             {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}]])
+        self.assertRaises(ValueError, dd.append(3))
         os.remove(csv_file)
 
     def test_getitem_start(self):
