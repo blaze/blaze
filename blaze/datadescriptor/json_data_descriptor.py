@@ -30,7 +30,7 @@ class JSON_DDesc(DDesc):
         in the JSON file.
     """
     def __init__(self, path, mode='r', **kwargs):
-        if os.path.isfile(path) is not True:
+        if 'w' not in mode and os.path.isfile(path) is not True:
             raise ValueError('JSON file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
@@ -100,6 +100,13 @@ class JSON_DDesc(DDesc):
                 dshape = str(len(chunk)) + ' * ' + self.schema
                 arr = nd.parse_json(dshape, text)
                 yield DyND_DDesc(arr)
+
+    def append(self, row):
+        """Append a row of values (in sequence form)."""
+        values = nd.array(row, dtype=self.schema)  # validate row
+        with open(self.path, self.mode) as f:
+            f.seek(0, os.SEEK_END)  # go to the end of the file
+            json.dump(row, f)
 
 
     def remove(self):

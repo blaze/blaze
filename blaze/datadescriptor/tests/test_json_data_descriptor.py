@@ -108,5 +108,14 @@ def test_iterchunks():
         assert ddesc_as_py(chunks[0]) == data[:2]
 
 
+def test_append():
+    with filetext('') as fn:
+        dd = JSON_DDesc(fn, mode='w', schema=schema)
+        dd.append(data[0])
+        with open(fn) as f:
+            assert json.loads(f.read().strip()) == data[0]
+
+
+
 if __name__ == '__main__':
     unittest.main()
