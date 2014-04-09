@@ -6,6 +6,7 @@ actual deferred expression graph.
 from __future__ import absolute_import, division, print_function
 
 import blaze
+import datashape
 
 from . import DDesc, Capabilities
 
@@ -19,19 +20,19 @@ class Stream_DDesc(DDesc):
 
     Attributes:
     -----------
-    dshape: DataShape
-        Intermediate type resolved as far as it can be typed over the
-        sub-expressions
+    dshape: datashape.dshape
+        The datashape of the stream data descriptor.
 
-    expr: (Op, ExprContext) or string
-        The expression graph along with the expression context, or a
-        string defining the expression.
+    condition: string
+        The condtion over the original array, in string form.
     """
 
-    def __init__(self, iterator, dshape, expr):
+    def __init__(self, iterator, dshape, condition):
         self._iterator = iterator
-        self._dshape = dshape
-        self.expr = expr
+        # The length of the iterator is unknown, so we put 'var' here
+        self._dshape = datashape.dshape("var * " + str(dshape.measure))
+        #
+        self.condition = condition
 
     @property
     def dshape(self):
@@ -42,7 +43,8 @@ class Stream_DDesc(DDesc):
         """The capabilities for the deferred data descriptor."""
         return Capabilities(
             immutable = True,
-            deferred = True,
+            deferred = False,
+            stream = True,
             # persistency is not supported yet
             persistent = False,
             appendable = False,
@@ -56,3 +58,9 @@ class Stream_DDesc(DDesc):
 
     def __iter__(self):
         return self._iterator
+
+    def _printer(self):
+        return "<Array(iter('%s'), '%s')>" % (self.condition, self.dshape,)
+
+    def _printer_repr(self):
+        return self._printer()

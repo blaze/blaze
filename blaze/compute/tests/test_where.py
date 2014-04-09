@@ -81,7 +81,7 @@ class whereTest(createTables):
         st = t.where("f0 < 10")
         self.assert_(isinstance(st, blaze.Array))
         self.assert_(isinstance(st.ddesc, blaze.Stream_DDesc))
-        self.assert_(t.dshape == st.dshape)
+        self.assert_(t.dshape.measure == st.dshape.measure)
 
     def test01(self):
         """Testing with a filter in only one field"""

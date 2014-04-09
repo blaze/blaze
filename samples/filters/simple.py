@@ -17,8 +17,10 @@ if __name__ == '__main__':
     # Create a persitent array on disk
     arr = make_array("test.blz")
     # Do the query
-    res = [i for i in arr.where('(myint < 10) & (myflt > 8)')]
-    print("Results of the filter:", res)
+    res = arr.where('(myint < 10) & (myflt > 8)')
+    # Print out some results
+    print("Resulting array:", res)
+    # Materialize the iterator in array and print it
+    print("\nResults of the filter:\n", list(res))
     # Remove the persitent array
     arr.ddesc.remove()
-

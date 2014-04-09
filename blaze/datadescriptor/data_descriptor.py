@@ -18,6 +18,8 @@ class Capabilities:
         True if the array cannot be updated/enlarged.
     deferred : bool
         True if the array is an expression of other arrays.
+    stream : bool
+        True if the array is just a wrapper over an iterator.
     persistent : bool
         True if the array persists on files between sessions.
     appendable : bool
@@ -29,12 +31,14 @@ class Capabilities:
 
     """
 
-    def __init__(self, immutable=False, deferred=False, persistent=False,
-                 appendable=False, queryable=False, remote=False):
-        self._caps = ['immutable', 'deferred', 'persistent', 'appendable',
-                      'queryable', 'remote']
+    def __init__(self, immutable=False, deferred=False, stream=False,
+                 persistent=False, appendable=False, queryable=False,
+                 remote=False):
+        self._caps = ['immutable', 'deferred', 'stream', 'persistent',
+                      'appendable', 'queryable', 'remote']
         self.immutable = immutable
         self.deferred = deferred
+        self.stream = stream
         self.persistent = persistent
         self.appendable = appendable
         self.queryable = queryable
