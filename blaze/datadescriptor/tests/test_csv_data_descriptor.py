@@ -107,12 +107,10 @@ def test_re_dialect():
         dst = CSV_DDesc(dest_fn, mode='w', schema=schema, **dialect2)
 
         # Perform copy
-        for chunk in src.iterchunks(blen=2):
-            dst.extend(chunk)
+        dst.extend(ddesc_as_py(row) for row in src)
 
         with open(dest_fn) as f:
-            print('foo', f.read())
-            assert f.read() == r'1;1\r\n2;2\r\n'
+            assert f.read() == '1;1\r\n2;2\r\n'
 
 
 
