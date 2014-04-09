@@ -117,6 +117,13 @@ def test_iter():
         dd = CSV_DDesc(fn, schema='2 * int32')
         assert list(dd) == [[1, 1], [2, 2]]
 
+def test_iterchunks():
+    with filetext('1,1\n2,2\n3,3\n4,4\n') as fn:
+        dd = CSV_DDesc(fn, schema='2 * int32')
+        assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
+        assert len(list(dd.iterchunks(blen=2))) == 2
+        assert len(list(dd.iterchunks(blen=3))) == 2
+
 
 class TestCSV_DDesc(unittest.TestCase):
 

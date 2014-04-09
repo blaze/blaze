@@ -33,7 +33,9 @@ def csv_descriptor_iterchunks(filename, mode, has_header, schema,
     with open_file(filename, mode, has_header) as f:
         f = it.islice(csv.reader(f, **dialect), start, stop)
         for rows in toolz.partition_all(blen, f):
-            yield DyND_DDesc(nd.array(rows, dtype=schema))
+            # TODO: better way to define dshape?
+            dshape = str(len(rows)) + ' * ' + schema
+            yield DyND_DDesc(nd.array(rows, dtype=dshape))
 
 
 class CSV_DDesc(DDesc):
@@ -183,7 +185,7 @@ class CSV_DDesc(DDesc):
             writer.writerow(row)
             writer.writerows(rows)
 
-    def iterchunks(self, blen=None, start=None, stop=None):
+    def iterchunks(self, blen=100, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
 
         Parameters
