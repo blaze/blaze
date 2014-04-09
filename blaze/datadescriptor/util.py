@@ -6,7 +6,7 @@ import os
 from dynd import nd
 
 @contextmanager
-def filetext(text, extension='.csv'):
+def filetext(text, extension=''):
     # write text to hidden file
     handle, filename = tempfile.mkstemp(extension)
     with os.fdopen(handle, "w") as f:
