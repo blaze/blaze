@@ -25,3 +25,13 @@ def test_json_csv_structured():
         csv.extend(js)
 
         assert list(csv) == [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}]
+
+def test_csv_json_chunked():
+    with filetext('1,1\n2,2\n') as csv_fn, filetext('') as json_fn:
+        schema = '2 * int'
+        csv = CSV_DDesc(csv_fn, schema=schema)
+        json = JSON_DDesc(json_fn, mode='w', schema=schema)
+
+        json.extend_chunked(csv.iterchunks(blen=1))
+
+        assert list(json) == [[1, 1], [2, 2]]
