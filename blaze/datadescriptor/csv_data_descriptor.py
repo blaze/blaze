@@ -169,10 +169,16 @@ class CSV_DDesc(DDesc):
         See Also:
             append
         """
-        values = nd.array(rows, dtype=self.schema)  # validate row
+        rows = iter(rows)
         with open_file(self.path, self.mode, self.has_header) as f:
+            # Validate first row
+            row = next(rows)
+            nd.array(row, dtype=self.schema)
+
+            # Write all rows to file
             f.seek(0, os.SEEK_END)  # go to the end of the file
             writer = csv.writer(f, **self.dialect)
+            writer.writerow(row)
             writer.writerows(rows)
 
     def iterchunks(self, blen=None, start=None, stop=None):
