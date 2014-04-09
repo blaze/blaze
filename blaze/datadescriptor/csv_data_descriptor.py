@@ -67,9 +67,6 @@ class CSV_DDesc(DDesc):
             schema = datashape.dshape(schema)
         if isinstance(schema, datashape.DataShape) and len(schema) == 1:
             schema = schema[0]
-        if not isinstance(schema, datashape.Record):
-            raise TypeError(
-                'schema cannot be converted into a blaze record dshape')
         self.schema = str(schema)
 
         # Handle Dialect
