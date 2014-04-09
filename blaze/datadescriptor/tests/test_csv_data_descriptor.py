@@ -4,6 +4,7 @@ import unittest
 import tempfile
 import os
 import csv
+from contextlib import contextmanager
 
 import datashape
 
@@ -78,6 +79,41 @@ class TestCSV_New_File(unittest.TestCase):
             self.assertEqual(lines[0].strip(), 'Alice 100')
             self.assertEqual(lines[1].strip(), 'Bob 200')
             self.assertEqual(lines[2].strip(), 'Alice 50')
+
+@contextmanager
+def filetext(text, extension='.csv'):
+    # write text to hidden file
+    handle, filename = tempfile.mkstemp(extension)
+    with os.fdopen(handle, "w") as f:
+        f.write(text)
+
+    # Yield control to test
+    yield filename
+
+    # Clean up the written file
+    os.remove(filename)
+
+
+def test_re_dialect():
+    dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
+    dialect2 = {'delimiter': ';', 'lineterminator': '\r\n'}
+
+    text = '1,1\n2,2\n'
+
+    schema = '2 * int32'
+
+    with filetext(text) as source_fn, filetext('') as dest_fn:
+        src = CSV_DDesc(source_fn, schema=schema, **dialect1)
+        dst = CSV_DDesc(dest_fn, mode='w', schema=schema, **dialect2)
+
+        # Perform copy
+        for chunk in src.iterchunks(blen=2):
+            dst.extend(chunk)
+
+        with open(dest_fn) as f:
+            print('foo', f.read())
+            assert f.read() == r'1;1\r\n2;2\r\n'
+
 
 
 class TestCSV_DDesc(unittest.TestCase):
