@@ -4,12 +4,13 @@ import unittest
 import tempfile
 import os
 import csv
-from contextlib import contextmanager
 
 import datashape
 
 from blaze.datadescriptor import (
     CSV_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
+
+from blaze.datadescriptor.util import filetext
 
 
 def sanitize(lines):
@@ -78,20 +79,6 @@ class TestCSV_New_File(unittest.TestCase):
             self.assertEqual(lines[0].strip(), 'Alice 100')
             self.assertEqual(lines[1].strip(), 'Bob 200')
             self.assertEqual(lines[2].strip(), 'Alice 50')
-
-@contextmanager
-def filetext(text, extension='.csv'):
-    # write text to hidden file
-    handle, filename = tempfile.mkstemp(extension)
-    with os.fdopen(handle, "w") as f:
-        f.write(text)
-
-    # Yield control to test
-    yield filename
-
-    # Clean up the written file
-    os.remove(filename)
-
 
 def test_re_dialect():
     dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
