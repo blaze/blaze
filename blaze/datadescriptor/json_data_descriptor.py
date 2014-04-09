@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import json
 
 import datashape
 
@@ -87,7 +88,9 @@ class JSON_DDesc(DDesc):
         raise NotImplementedError
 
     def __iter__(self):
-        return json_descriptor_iter(self._arr_cache)
+        with open(self.path) as f:
+            for line in f:
+                yield json.loads(line)
 
     def remove(self):
         """Remove the persistent storage."""

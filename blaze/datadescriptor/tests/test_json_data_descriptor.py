@@ -3,9 +3,11 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import os
 import tempfile
+import json
 
 from blaze.datadescriptor import (
     JSON_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
+from blaze.datadescriptor.util import filetext
 
 # TODO: This isn't actually being used!
 _json_buf = u"""{
@@ -43,6 +45,7 @@ _json_schema = """{
 }
 """
 
+
 json_buf = u"[1, 2, 3, 4, 5]"
 json_schema = "var * int8"
 
@@ -70,12 +73,7 @@ class TestJSON_DDesc(unittest.TestCase):
         #     'Var, %s' % json_schema))
 
         # Iteration should produce DyND_DDesc instances
-        vals = []
-        for el in dd:
-            self.assertTrue(isinstance(el, DyND_DDesc))
-            self.assertTrue(isinstance(el, DDesc))
-            vals.append(ddesc_as_py(el))
-        self.assertEqual(vals, [1, 2, 3, 4, 5])
+        self.assertEqual(list(dd), [[1, 2, 3, 4, 5]])
 
     def test_getitem(self):
         dd = JSON_DDesc(self.json_file, schema=json_schema)
@@ -83,6 +81,22 @@ class TestJSON_DDesc(unittest.TestCase):
         self.assertTrue(isinstance(el, DyND_DDesc))
         vals = ddesc_as_py(el)
         self.assertEqual(vals, [2,3])
+
+
+data = [{'name': 'Alice', 'amount': 100},
+        {'name': 'Alice', 'amount': 50},
+        {'name': 'Bob', 'amount': 10},
+        {'name': 'Charlie', 'amount': 200},
+        {'name': 'Bob', 'amount': 100}]
+
+text = '\n'.join(map(json.dumps, data))
+
+schema = '{name: string, amount: int32}'
+
+def test_init():
+    with filetext(text) as fn:
+        dd = JSON_DDesc(fn, schema=schema)
+        assert list(dd) == data
 
 
 if __name__ == '__main__':
