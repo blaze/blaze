@@ -107,7 +107,22 @@ class JSON_DDesc(DDesc):
         with open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             json.dump(row, f)
+            f.write('\n')
 
+    def extend(self, rows):
+        """Append a row of values (in sequence form)."""
+
+        rows = iter(rows)
+        row = next(rows)
+        nd.array(row, dtype=self.schema)  # validate row
+
+        with open(self.path, self.mode) as f:
+            f.seek(0, os.SEEK_END)  # go to the end of the file
+            json.dump(row, f)
+            f.write('\n')
+            for row in rows:
+                json.dump(row, f)
+                f.write('\n')
 
     def remove(self):
         """Remove the persistent storage."""

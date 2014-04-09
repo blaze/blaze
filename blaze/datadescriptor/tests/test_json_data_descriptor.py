@@ -115,6 +115,12 @@ def test_append():
         with open(fn) as f:
             assert json.loads(f.read().strip()) == data[0]
 
+def test_extend():
+    with filetext('') as fn:
+        dd = JSON_DDesc(fn, mode='w', schema=schema)
+        dd.extend(data)
+
+        assert list(dd) == data
 
 
 if __name__ == '__main__':
