@@ -32,20 +32,28 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
         handle, self.csv_file = tempfile.mkstemp(".csv")
         with os.fdopen(handle, "w") as f:
             f.write(self.buf)
+        self.dd = CSV_DDesc(self.csv_file, dialect='excel', schema=self.schema,
+                            delimiter=' ', mode='rw+')
 
     def tearDown(self):
         os.remove(self.csv_file)
 
     def test_overwrite_delimiter(self):
-        dd = CSV_DDesc(self.csv_file, dialect='excel', schema=self.schema,
-                delimiter=' ')
-        assert dd.dialect['delimiter'] == ' '
+        assert self.dd.dialect['delimiter'] == ' '
 
     def test_content(self):
-        dd = CSV_DDesc(self.csv_file, dialect='excel', schema=self.schema,
-                delimiter=' ')
-        s = str(ddesc_as_py(dd))
+        s = str(ddesc_as_py(self.dd))
         assert 'Alice' in s and 'Bob' in s
+
+    def test_append(self):
+        self.dd.append(('Alice', 100))
+        with open(self.csv_file) as f:
+            self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
+
+    def test_append_dict(self):
+        self.dd.append({'f0': 'Alice', 'f1': 100})
+        with open(self.csv_file) as f:
+            self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
 
 
 class TestCSV_New_File(unittest.TestCase):

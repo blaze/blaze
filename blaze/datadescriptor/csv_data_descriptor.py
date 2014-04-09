@@ -171,6 +171,9 @@ class CSV_DDesc(DDesc):
         """Append a row of values (in sequence form)."""
         if not validate(self.schema, row):
             raise ValueError('Data does not match datashape ' + self.schema)
+        if isinstance(row, dict):
+            schema = datashape.dshape(self.schema)
+            row = coerce_record_to_row(schema, row)
         with open_file(self.path, self.mode, self.has_header) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             writer = csv.writer(f, **self.dialect)
@@ -189,6 +192,10 @@ class CSV_DDesc(DDesc):
             if not validate(self.schema, row):
                 raise ValueError('Data does not match datashape ' +
                                  self.schema)
+            if isinstance(row, dict):
+                schema = datashape.dshape(self.schema)
+                row = coerce_record_to_row(schema, row)
+                rows = (coerce_record_to_row(schema, row) for row in rows)
 
             # Write all rows to file
             f.seek(0, os.SEEK_END)  # go to the end of the file
