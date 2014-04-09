@@ -22,12 +22,6 @@ def open_file(path, mode, has_header):
     return csvfile
 
 
-def csv_descriptor_iter(filename, mode, has_header, schema, dialect={}):
-    with open_file(filename, mode, has_header) as csvfile:
-        for row in csv.reader(csvfile, **dialect):
-            yield DyND_DDesc(nd.array(row, dtype=schema))
-
-
 def csv_descriptor_iterchunks(filename, mode, has_header, schema,
                               blen, dialect={}, start=None, stop=None):
     with open_file(filename, mode, has_header) as f:
