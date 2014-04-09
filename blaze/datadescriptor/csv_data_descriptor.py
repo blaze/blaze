@@ -149,7 +149,9 @@ class CSV_DDesc(DDesc):
         raise NotImplementedError
 
     def __iter__(self):
-        with open(self.path) as f:
+        with open(self.path, self.mode) as f:
+            if self.has_header:
+                next(f)  # burn header
             for row in csv.reader(f, **self.dialect):
                 yield nd.as_py(nd.array(row, dtype=self.schema))
 
