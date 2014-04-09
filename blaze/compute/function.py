@@ -17,7 +17,7 @@ import blaze
 import datashape
 from datashape import coretypes, dshape
 
-from ..datadescriptor import DeferredDescriptor
+from ..datadescriptor import DeferredDDesc
 from .expr import ArrayOp, ExprContext, KernelOp
 
 Overload = namedtuple('Overload', 'resolved_sig, sig, func')
@@ -168,7 +168,7 @@ class BlazeFunc(object):
 
         # Construct graph
         term = construct(self, ctx, overload, args)
-        desc = DeferredDescriptor(term.dshape, (term, ctx))
+        desc = DeferredDDesc(term.dshape, (term, ctx))
 
         return blaze.Array(desc)
 
@@ -327,6 +327,6 @@ class ReductionBlazeFunc(BlazeFunc):
 
         # Construct graph
         term = construct(self, ctx, overload, args)
-        desc = DeferredDescriptor(term.dshape, (term, ctx))
+        desc = DeferredDDesc(term.dshape, (term, ctx))
 
         return blaze.Array(desc)
