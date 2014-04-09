@@ -11,7 +11,7 @@ import datashape
 from ..compute.ops import ufuncs
 from .. import compute
 
-from ..datadescriptor import (DDesc, DeferredDDesc, ddesc_as_py)
+from ..datadescriptor import (DDesc, DeferredDDesc, Stream_DDesc, ddesc_as_py)
 from ..io import _printing
 
 
@@ -175,7 +175,9 @@ class Array(object):
     def where(self, condition):
         """Iterate over values fulfilling a condition."""
         if self.ddesc.capabilities.queryable:
-            return self.ddesc.where(condition)
+            iterator = self.ddesc.where(condition)
+            ddesc = Stream_DDesc(iterator, self.dshape, condition)
+            return Array(ddesc)
         else:
             raise ValueError(
                 'Data descriptor do not support efficient queries')
