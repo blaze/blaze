@@ -32,6 +32,18 @@ def csv_descriptor_iterchunks(filename, mode, has_header, schema,
             yield DyND_DDesc(nd.array(rows, dtype=dshape))
 
 
+def coerce_record_to_row(schema, rec):
+    """
+
+    >>> from datashape import dshape
+
+    >>> schema = dshape('{x: int, y: int}')
+    >>> coerce_record_to_row(schema, {'x': 1, 'y': 2})
+    [1, 2]
+    """
+    return [rec[name] for name in schema[0].names]
+
+
 class CSV_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a CSV file.
