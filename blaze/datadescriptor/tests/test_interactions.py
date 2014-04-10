@@ -64,3 +64,15 @@ def test_hdf5_csv():
         csv.extend_chunks(hdf5.iterchunks(blen=2))
 
         assert list(csv) == [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+
+"""
+def dont_test_csv_hdf5():
+    import h5py
+    with openfile('hdf5') as hdf5_fn, filetext('1,1\n2,2\n') as csv_fn:
+        csv = CSV_DDesc(csv_fn, schema='2 * int')
+        hdf5 = HDF5_DDesc(hdf5_fn, '/data', mode='a')
+
+        hdf5.extend_chunks(csv.iterchunks(blen=1))
+
+        assert nd.as_py(hdf5.dynd_arr()) == [[1, 1], [2, 2]]
+"""
