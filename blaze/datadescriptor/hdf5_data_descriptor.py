@@ -58,6 +58,13 @@ class HDF5_DDesc(DDesc):
 
     def dynd_arr(self):
         # Positionate at the beginning of the file
+        with h5py.File(self.path, mode='r') as f:
+            arr = f[self.datapath]
+            arr = np.array(arr, dtype=arr.dtype)
+            dshape = ' * '.join(map(str, arr.shape)) + ' * ' + str(arr.dtype)
+            arr = nd.array(arr, dtype=dshape)
+        return arr
+
         with tb.open_file(self.path, mode='r') as f:
             dset = f.get_node(self.datapath)
             dset = nd.array(dset[:], dtype=dset.dtype)
@@ -126,7 +133,7 @@ class HDF5_DDesc(DDesc):
             arr = f[self.datapath]
             for i in range(0, arr.shape[0], blen):
                 yield DyND_DDesc(nd.asarray(np.array(arr[i:i+blen]),
-                                 access='readonly'))
+                                            access='readonly'))
 
     def append(self, values):
         """Append a list of values."""
@@ -141,6 +148,17 @@ class HDF5_DDesc(DDesc):
         with tb.open_file(self.path, mode=self.mode) as f:
             dset = f.get_node(self.datapath)
             dset.append(values_arr.reshape(shape_vals))
+
+    def extend_chunks(self, chunks):
+        shape, dtype = datashape.to_numpy(self.dshape)
+        with h5py.File(self.path, mode=self.mode) as f:
+            dset = f[self.datapath]
+            for chunk in chunks:
+                arr = np.array(chunk.dynd_arr(), dtype=dtype)
+                shape = list(dset.shape)
+                shape[0] += len(arr)
+                dset.resize(shape)
+                dset[-len(arr):] = arr
 
     def remove(self):
         """Remove the persistent storage."""

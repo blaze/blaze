@@ -6,6 +6,7 @@ import os
 
 import datashape
 import numpy as np
+from dynd import nd
 
 from blaze.datadescriptor import (
     HDF5_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
@@ -56,6 +57,11 @@ class TestHDF5DDesc(unittest.TestCase):
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 
+    def test_iterchunks(self):
+        dd = HDF5_DDesc(self.hdf5_file, '/a1')
+        self.assertEqual(len(list(dd.iterchunks(blen=1))), 2)
+        assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
+
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_getitem_types(self):
         dd = HDF5_DDesc(self.hdf5_file, '/g/a2')
@@ -91,6 +97,29 @@ class TestHDF5DDesc(unittest.TestCase):
         self.assertEqual(is_equal, [True]*3)
 
 
+def test_extend_chunks():
+    with openfile() as path:
+        with h5py.File(path, 'w') as f:
+            d = f.create_dataset('data', (3, 3), dtype='i4',
+                                 chunks=True, maxshape=(None, 3))
+            d[:] = 1
+
+        dd = HDF5_DDesc(path, '/data', mode='a')
+
+        chunks = [DyND_DDesc(nd.array([[1, 2, 3]], dtype='1 * 3 * int32')),
+                  DyND_DDesc(nd.array([[4, 5, 6]], dtype='1 * 3 * int32'))]
+
+        dd.extend_chunks(chunks)
+
+        result = dd.dynd_arr()[-2:, :]
+        expected = nd.array([[1, 2, 3],
+                             [4, 5, 6]], dtype='strided * strided * int32')
+
+        print(repr(result))
+        print(repr(expected))
+
+        assert nd.as_py(result) == nd.as_py(expected)
+
 def test_iterchunks():
     with openfile() as path:
         with h5py.File(path, 'w') as f:
@@ -98,6 +127,7 @@ def test_iterchunks():
             d[:] = 1
         dd = HDF5_DDesc(path, '/data')
         assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
+
 
 if __name__ == '__main__':
     unittest.main()
