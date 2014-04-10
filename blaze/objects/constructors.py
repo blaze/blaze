@@ -126,14 +126,25 @@ def array(obj, dshape=None, ddesc=None):
         else:
             if isinstance(obj, nd.array):
                 obj = nd.as_numpy(obj)
-            ddesc.blzarr = blz.barray(
-                obj, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+            if dshape and isinstance(dshape.measure, datashape.Record):
+                ddesc.blzarr = blz.btable(
+                    obj, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
+            else:
+                ddesc.blzarr = blz.barray(
+                    obj, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
     elif isinstance(ddesc, HDF5_DDesc):
         if isinstance(obj, nd.array):
             obj = nd.as_numpy(obj)
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
-            f.create_earray(where, name, filters=ddesc.filters, obj=obj)
+            if dshape and isinstance(dshape.measure, datashape.Record):
+                # Convert the structured array to unaligned dtype
+                # We need that because PyTables only accepts unaligned types,
+                # which are the default in NumPy
+                obj = np.array(obj, datashape.to_numpy_dtype(dshape.measure))
+                f.create_table(where, name, filters=ddesc.filters, obj=obj)
+            else:
+                f.create_earray(where, name, filters=ddesc.filters, obj=obj)
         ddesc.mode = 'a'  # change into 'a'ppend mode for further operations
 
     return Array(ddesc)

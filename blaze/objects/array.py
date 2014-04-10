@@ -11,7 +11,7 @@ import datashape
 from ..compute.ops import ufuncs
 from .. import compute
 
-from ..datadescriptor import (DDesc, DeferredDescriptor, ddesc_as_py)
+from ..datadescriptor import (DDesc, Deferred_DDesc, Stream_DDesc, ddesc_as_py)
 from ..io import _printing
 
 
@@ -36,7 +36,7 @@ class Array(object):
         self.user = user
         self.expr = None
 
-        if isinstance(data, DeferredDescriptor):
+        if isinstance(data, Deferred_DDesc):
             # NOTE: we need 'expr' on the Array to perform dynamic programming:
             #       Two concrete arrays should have a single Op! We cannot
             #       store this in the data descriptor, since there are many
@@ -121,8 +121,8 @@ class Array(object):
 
     def __iter__(self):
         if len(self.dshape.shape) == 1:
-            return iter(ddesc_as_py(self.ddesc))
-        return (Array(dd) for dd in self.ddesc.__iter__())
+            return (ddesc_as_py(dd) for dd in self.ddesc)
+        return (Array(dd) for dd in self.ddesc)
 
     def __getitem__(self, key):
         dd = self.ddesc.__getitem__(key)
@@ -171,6 +171,16 @@ class Array(object):
         if hasattr(self.ddesc, "_printer_repr"):
             return self.ddesc._printer_repr()
         return _printing.array_repr(self)
+
+    def where(self, condition):
+        """Iterate over values fulfilling a condition."""
+        if self.ddesc.capabilities.queryable:
+            iterator = self.ddesc.where(condition)
+            ddesc = Stream_DDesc(iterator, self.dshape, condition)
+            return Array(ddesc)
+        else:
+            raise ValueError(
+                'Data descriptor do not support efficient queries')
 
 
 def _named_property(name):

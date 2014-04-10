@@ -12,7 +12,6 @@ import unittest
 import tempfile
 import os, os.path
 import glob
-import shutil
 import blaze
 
 

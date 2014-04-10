@@ -127,7 +127,7 @@ class SQLResult_DDesc(DDesc):
             )
 
     def __iter__(self):
-        return (x for chunk in self.query_result for x in chunk)
+        return (DyND_DDesc(x) for chunk in self.query_result for x in chunk)
 
     def __getitem__(self, item):
         """

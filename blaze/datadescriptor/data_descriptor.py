@@ -18,21 +18,30 @@ class Capabilities:
         True if the array cannot be updated/enlarged.
     deferred : bool
         True if the array is an expression of other arrays.
+    stream : bool
+        True if the array is just a wrapper over an iterator.
     persistent : bool
         True if the array persists on files between sessions.
     appendable : bool
         True if the array can be enlarged efficiently.
+    queryable : bool
+        True if the array can be queried efficiently.
     remote : bool
         True if the array is remote or distributed.
 
     """
 
-    def __init__(self, immutable, deferred, persistent, appendable, remote):
-        self._caps = ['immutable', 'deferred', 'persistent', 'appendable', 'remote']
+    def __init__(self, immutable=False, deferred=False, stream=False,
+                 persistent=False, appendable=False, queryable=False,
+                 remote=False):
+        self._caps = ['immutable', 'deferred', 'stream', 'persistent',
+                      'appendable', 'queryable', 'remote']
         self.immutable = immutable
         self.deferred = deferred
+        self.stream = stream
         self.persistent = persistent
         self.appendable = appendable
+        self.queryable = queryable
         self.remote = remote
 
     def __str__(self):
@@ -132,12 +141,11 @@ class DDesc:
         """Concrete data descriptors must provide their array data
            as a dynd array, accessible via this method.
         """
-        if self.is_concrete:
+        if not self.capabilities.deferred:
             raise NotImplementedError((
-                'Data descriptor of type %s'
-                ' claims to be concrete, but did not'
-                ' override dynd_arr()') % type(self))
+                'Data descriptor of type %s claims '
+                'claims to not being deferred, but did not '
+                'override dynd_arr()') % type(self))
         else:
             raise TypeError((
-                'Data descriptor of type %s is not '
-                'concrete') % type(self))
+                'Data descriptor of type %s is deferred') % type(self))

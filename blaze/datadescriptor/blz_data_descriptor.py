@@ -7,19 +7,8 @@ import datashape
 
 from . import DDesc, Capabilities
 from .dynd_data_descriptor import DyND_DDesc
+from .stream_data_descriptor import Stream_DDesc
 from shutil import rmtree
-
-
-# WARNING!  BLZ always return NumPy arrays when doing indexing
-# operations.  This is why DyND_DDesc is used for returning
-# the values here.
-
-def blz_descriptor_iter(blzarr):
-    for i in range(len(blzarr)):
-        # BLZ doesn't have a convenient way to avoid collapsing
-        # to a scalar, this is a way to avoid that
-        el = np.array(blzarr[i], dtype=blzarr.dtype)
-        yield DyND_DDesc(nd.array(el))
 
 
 class BLZ_DDesc(DDesc):
@@ -30,10 +19,11 @@ class BLZ_DDesc(DDesc):
         self.path = path
         self.mode = mode
         self.kwargs = kwargs
-        if isinstance(path, blz.barray):
+        if isinstance(path, (blz.barray, blz.btable)):
             self.blzarr = path
+            self.path = path.rootdir
         elif mode != 'w':
-            self.blzarr = blz.barray(rootdir=path, mode=mode, **kwargs)
+            self.blzarr = blz.open(rootdir=path, mode=mode, **kwargs)
         else:
             # This will be set in the constructor later on
             self.blzarr = None
@@ -50,7 +40,11 @@ class BLZ_DDesc(DDesc):
         if self.blzarr is None:
             persistent = False
         else:
-            persistent = self.blzarr.rootdir is not None,
+            persistent = self.blzarr.rootdir is not None
+        if isinstance(self.blzarr, blz.btable):
+            queryable = True
+        else:
+            queryable = False
         return Capabilities(
             # BLZ arrays can be updated
             immutable = False,
@@ -60,6 +54,8 @@ class BLZ_DDesc(DDesc):
             persistent = persistent,
             # BLZ arrays can be appended efficiently
             appendable = True,
+            # BLZ btables can be queried efficiently
+            queryable = queryable,
             remote = False,
             )
 
@@ -81,23 +77,19 @@ class BLZ_DDesc(DDesc):
         raise NotImplementedError
 
     def __iter__(self):
-        return blz_descriptor_iter(self.blzarr)
+        dset = self.blzarr
+        # Get rid of the leading dimension on which we iterate
+        dshape = datashape.from_numpy(dset.shape[1:], dset.dtype)
+        for el in self.blzarr:
+            yield DyND_DDesc(nd.array(el, type=str(dshape)))
 
-    # This is not part of the DDesc interface itself, but can
-    # be handy for other situations not requering full compliance with
-    # it.
-    def append(self, values):
-        """Append a list of values."""
-        shape, dtype = datashape.to_numpy(self.dshape)
-        values_arr = np.array(values, dtype=dtype)
-        shape_vals = values_arr.shape
-        if len(shape_vals) < len(shape):
-            shape_vals = (1,) + shape_vals
-        if len(shape_vals) != len(shape):
-            raise ValueError("shape of values is not compatible")
-        # Now, do the actual append
-        self.blzarr.append(values_arr.reshape(shape_vals))
-        self.blzarr.flush()
+    def where(self, condition, user_dict=None):
+        """Iterate over values fulfilling a condition."""
+        dset = self.blzarr
+        # Get rid of the leading dimension on which we iterate
+        dshape = datashape.from_numpy(dset.shape[1:], dset.dtype)
+        for el in dset.where(condition):
+            yield DyND_DDesc(nd.array(el, type=str(dshape)))
 
     def iterchunks(self, blen=None, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
@@ -168,6 +160,28 @@ class BLZ_DDesc(DDesc):
         return blz.whereblocks(self.blzarr, expression, blen, outfields,
                                limit, skip)
 
+
+    def getattr(self, name):
+        if isinstance(self.blzarr, blz.btable):
+            return DyND_DDesc(nd.asarray(self.blzarr[name], access='readonly'))
+        else:
+            raise IndexError("not a btable BLZ dataset")
+
+    # This is not part of the DDesc interface itself, but can
+    # be handy for other situations not requering full compliance with
+    # it.
+    def append(self, values):
+        """Append a list of values."""
+        shape, dtype = datashape.to_numpy(self.dshape)
+        values_arr = np.array(values, dtype=dtype)
+        shape_vals = values_arr.shape
+        if len(shape_vals) < len(shape):
+            shape_vals = (1,) + shape_vals
+        if len(shape_vals) != len(shape):
+            raise ValueError("shape of values is not compatible")
+        # Now, do the actual append
+        self.blzarr.append(values_arr.reshape(shape_vals))
+        self.blzarr.flush()
 
     def remove(self):
         """Remove the persistent storage."""
