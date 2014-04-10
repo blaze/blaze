@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function
 import unittest
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
 
 from dynd import nd, ndt
 import blaze
@@ -79,9 +78,9 @@ class whereTest(createTables):
         """Testing the dshape attribute of a streamed array"""
         t = blaze.array(self.ddesc)
         st = t.where("f0 < 10")
-        self.assert_(isinstance(st, blaze.Array))
-        self.assert_(isinstance(st.ddesc, blaze.Stream_DDesc))
-        self.assert_(t.dshape.measure == st.dshape.measure)
+        self.assertTrue(isinstance(st, blaze.Array))
+        self.assertTrue(isinstance(st.ddesc, blaze.Stream_DDesc))
+        self.assertEqual(t.dshape.measure, st.dshape.measure)
 
     def test01(self):
         """Testing with a filter in only one field"""
@@ -89,9 +88,7 @@ class whereTest(createTables):
         st = t.where("f0 < 10")
         cr = [tuple(i.values()) for i in st]
         nr = [tuple(i) for i in self.npt[self.npt['f0'] < 10]]
-        #print("cr:", cr)
-        #print("nr:", nr)
-        self.assert_(cr == nr, "where does not work correctly")
+        self.assertEqual(cr, nr, "where does not work correctly")
 
     def test02(self):
         """Testing with two fields"""
@@ -100,7 +97,7 @@ class whereTest(createTables):
         cr = [tuple(i.values()) for i in st]
         nr = [tuple(i) for i in self.npt[
             (self.npt['f0'] < 10) & (self.npt['f1'] > 4)]]
-        self.assert_(cr == nr, "where does not work correctly")
+        self.assertEqual(cr, nr, "where does not work correctly")
 
 # Check for tables on-disk (BLZ)
 class whereBLZDiskTest(whereTest):
