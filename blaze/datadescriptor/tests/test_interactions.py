@@ -1,5 +1,5 @@
-from blaze.datadescriptor import CSV_DDesc, JSON_DDesc
-from blaze.datadescriptor.util import filetext
+from blaze.datadescriptor import CSV_DDesc, JSON_DDesc, HDF5_DDesc
+from blaze.datadescriptor.util import filetext, openfile
 import json
 
 def test_csv_json():
@@ -50,3 +50,17 @@ def test_json_csv_chunked():
         csv.extend_chunks(js.iterchunks(blen=1))
 
         assert list(csv) == data
+
+def test_hdf5_csv():
+    import h5py
+    with openfile('hdf5') as hdf5_fn, filetext('') as csv_fn:
+        with h5py.File(hdf5_fn, 'w') as f:
+            d = f.create_dataset('data', (3, 3), dtype='i8')
+            d[:] = 1
+
+        csv = CSV_DDesc(csv_fn, mode='rw+', schema='3 * int')
+        hdf5 = HDF5_DDesc(hdf5_fn, '/data')
+
+        csv.extend_chunks(hdf5.iterchunks(blen=2))
+
+        assert list(csv) == [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
