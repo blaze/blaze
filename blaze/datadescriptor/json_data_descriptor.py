@@ -10,6 +10,7 @@ from .data_descriptor import DDesc
 from .. import py2help
 from dynd import nd
 from .dynd_data_descriptor import DyND_DDesc, Capabilities
+from .as_py import ddesc_as_py
 from .util import validate, coerce
 
 
@@ -125,6 +126,16 @@ class JSON_DDesc(DDesc):
             for row in rows:
                 json.dump(row, f)
                 f.write('\n')
+
+    def extend_chunks(self, chunks):
+        with open(self.path, self.mode) as f:
+            f.seek(0, os.SEEK_END)  # go to the end of the file
+            for chunk in chunks:
+                for line in ddesc_as_py(chunk):
+                    json.dump(line, f)
+                    f.write('\n')
+
+
 
     def remove(self):
         """Remove the persistent storage."""
