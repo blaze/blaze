@@ -151,6 +151,12 @@ reasons:
   for the central time zone. See the boost
   date_time time zone documentation linked
   above for one library's approach to this.
+* The short string codes like "CST" are ambiguous
+  in some cases. "CST" might mean "China Standard Time",
+  "Central Standard Time", or "Cuba Standard Time".
+* CST, for "Central Standard Time" might be for North or
+  Central America, with differing daylight savings time
+  conventions.
 * For POSIX time zone specification, it looks like
   there is usage of GMT and UTC with opposite meanings.
 
