@@ -7,21 +7,12 @@ import datashape
 import h5py
 
 from . import DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
+from .stream_data_descriptor import Stream_DDesc
 from ..optional_packages import tables_is_here
 if tables_is_here:
     import tables as tb
-from .dynd_data_descriptor import DyND_DDesc
 
-# WARNING!  PyTables always returns NumPy arrays when doing indexing
-# operations.  This is why DyND_DDesc is used for returning
-# the values here.
-def hdf5_descriptor_iter(h5arr):
-    for i in range(len(h5arr)):
-        # PyTables doesn't have a convenient way to avoid collapsing
-        # to a scalar, this is a way to avoid that
-        el = np.array(h5arr[i], dtype=h5arr.dtype)
-        yield DyND_DDesc(nd.array(el))
-    h5arr._v_file.close()
 
 
 class HDF5_DDesc(DDesc):
@@ -39,16 +30,17 @@ class HDF5_DDesc(DDesc):
     def dshape(self):
         # This cannot be cached because the Array can change the dshape
         with tb.open_file(self.path, mode='r') as f:
-            h5arr = f.get_node(self.datapath)
-            odshape = datashape.from_numpy(h5arr.shape, h5arr.dtype)
+            dset = f.get_node(self.datapath)
+            odshape = datashape.from_numpy(dset.shape, dset.dtype)
         return odshape
 
     @property
     def capabilities(self):
         """The capabilities for the HDF5 arrays."""
         with tb.open_file(self.path, mode='r') as f:
-            h5arr = f.get_node(self.datapath)
-            appendable = isinstance(h5arr, (tb.EArray, tb.Table)),
+            dset = f.get_node(self.datapath)
+            appendable = isinstance(dset, (tb.EArray, tb.Table))
+            queryable = isinstance(dset, (tb.Table,))
         caps = Capabilities(
             # HDF5 arrays can be updated
             immutable = False,
@@ -58,6 +50,8 @@ class HDF5_DDesc(DDesc):
             persistent = True,
             # HDF5 arrays can be appended efficiently (EArrays and Tables)
             appendable = appendable,
+            # PyTables Tables can be queried efficiently
+            queryable = queryable,
             remote = False,
             )
         return caps
@@ -65,40 +59,67 @@ class HDF5_DDesc(DDesc):
     def dynd_arr(self):
         # Positionate at the beginning of the file
         with tb.open_file(self.path, mode='r') as f:
-            h5arr = f.get_node(self.datapath)
-            h5arr = nd.array(h5arr[:], dtype=h5arr.dtype)
-        return h5arr
+            dset = f.get_node(self.datapath)
+            dset = nd.array(dset[:], dtype=dset.dtype)
+        return dset
 
     def __array__(self):
         with tb.open_file(self.path, mode='r') as f:
-            h5arr = f.get_node(self.datapath)
-            h5arr = h5arr[:]
-        return h5arr
+            dset = f.get_node(self.datapath)
+            dset = dset[:]
+        return dset
 
     def __len__(self):
         with tb.open_file(self.path, mode='r') as f:
-            h5arr = f.get_node(self.datapath)
-            arrlen = len(h5arr)
+            dset = f.get_node(self.datapath)
+            arrlen = len(dset)
         return arrlen
 
     def __getitem__(self, key):
         with tb.open_file(self.path, mode='r') as f:
-            h5arr = f.get_node(self.datapath)
+            dset = f.get_node(self.datapath)
             # The returned arrays are temporary buffers,
             # so must be flagged as readonly.
-            dyndarr = nd.asarray(h5arr[key], access='readonly')
+            dyndarr = nd.asarray(dset[key], access='readonly')
         return DyND_DDesc(dyndarr)
 
     def __setitem__(self, key, value):
         # HDF5 arrays can be updated
         with tb.open_file(self.path, mode=self.mode) as f:
-            h5arr = f.get_node(self.datapath)
-            h5arr[key] = value
+            dset = f.get_node(self.datapath)
+            dset[key] = value
 
     def __iter__(self):
         f = tb.open_file(self.path, mode='r')
-        h5arr = f.get_node(self.datapath)
-        return hdf5_descriptor_iter(h5arr)
+        dset = f.get_node(self.datapath)
+        # Get rid of the leading dimension on which we iterate
+        dshape = datashape.from_numpy(dset.shape[1:], dset.dtype)
+        for el in dset:
+            if hasattr(el, "nrow"):
+                yield DyND_DDesc(nd.array(el[:], type=str(dshape)))
+            else:
+                yield DyND_DDesc(nd.array(el, type=str(dshape)))
+        dset._v_file.close()
+
+    def where(self, condition):
+        """Iterate over values fulfilling a condition."""
+        f = tb.open_file(self.path, mode='r')
+        dset = f.get_node(self.datapath)
+        # Get rid of the leading dimension on which we iterate
+        dshape = datashape.from_numpy(dset.shape[1:], dset.dtype)
+        for el in dset.where(condition):
+            yield DyND_DDesc(nd.array(el[:], type=str(dshape)))
+        dset._v_file.close()
+
+    def getattr(self, name):
+        with tb.open_file(self.path, mode=self.mode) as f:
+            dset = f.get_node(self.datapath)
+            if hasattr(dset, 'cols'):
+                return DyND_DDesc(
+                    nd.asarray(getattr(dset.cols, name)[:],
+                               access='readonly'))
+            else:
+                raise IndexError("not an HDF5 compound dataset")
 
     def iterchunks(self, blen=100):
         with h5py.File(self.path, mode='r') as f:
@@ -118,8 +139,8 @@ class HDF5_DDesc(DDesc):
             raise ValueError("shape of values is not compatible")
         # Now, do the actual append
         with tb.open_file(self.path, mode=self.mode) as f:
-            h5arr = f.get_node(self.datapath)
-            h5arr.append(values_arr.reshape(shape_vals))
+            dset = f.get_node(self.datapath)
+            dset.append(values_arr.reshape(shape_vals))
 
     def remove(self):
         """Remove the persistent storage."""

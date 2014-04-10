@@ -81,62 +81,25 @@ time = blazefunc_from_dynd_property([ndt.datetime],
 # Reduction UFuncs from NumPy
 #------------------------------------------------------------------------
 
-any = ReductionBlazeFunc('blaze', 'any')
-any.add_overload('(bool) -> bool',
-                 _lowlevel.ckernel_deferred_from_ufunc(np.logical_or,
-                                                       (np.bool,) * 3,
+bools = np.bool,
+ints = np.int8, np.int16, np.int32, np.int64,
+floats = np.float32, np.float64
+complexes = np.complex64, np.complex128,
+
+reductions = [('any', np.logical_or,    False, bools),
+              ('all', np.logical_and,  True, bools),
+              ('sum', np.add,          0, ints + floats + complexes),
+              ('product', np.multiply, 1, ints + floats + complexes),
+              ('min', np.minimum,      None, bools + ints + floats + complexes),
+              ('max', np.maximum,      None, bools + ints + floats + complexes)]
+
+for name, np_op, ident, types in reductions:
+    x = ReductionBlazeFunc('blaze', name)
+    for typ in types:
+        x.add_overload('(%s) -> %s' % (typ.__name__, typ.__name__),
+                 _lowlevel.ckernel_deferred_from_ufunc(np_op,
+                                                       (typ,) * 3,
                                                        False),
                  associative=True, commutative=True,
-                 identity=False)
-
-all = ReductionBlazeFunc('blaze', 'all')
-all.add_overload('(bool) -> bool',
-                 _lowlevel.ckernel_deferred_from_ufunc(np.logical_and,
-                                                       (np.bool,) * 3,
-                                                       False),
-                 associative=True, commutative=True,
-                 identity=True)
-
-sum = ReductionBlazeFunc('blaze', 'sum')
-for dt in [np.int32, np.int64, np.float32, np.float64,
-           np.complex64, np.complex128]:
-    dt = np.dtype(dt)
-    sum.add_overload('(%s) -> %s' % ((str(dt),)*2),
-                     _lowlevel.ckernel_deferred_from_ufunc(np.add,
-                                                           (dt,) * 3,
-                                                           False),
-                     associative=True, commutative=True,
-                     identity=0)
-
-product = ReductionBlazeFunc('blaze', 'product')
-for dt in [np.int32, np.int64, np.float32, np.float64,
-           np.complex64, np.complex128]:
-    dt = np.dtype(dt)
-    product.add_overload('(%s) -> %s' % ((str(dt),)*2),
-                     _lowlevel.ckernel_deferred_from_ufunc(np.multiply,
-                                                           (dt,) * 3,
-                                                           False),
-                     associative=True, commutative=True,
-                     identity=1)
-
-min = ReductionBlazeFunc('blaze', 'min')
-for dt in [np.bool, np.int8, np.int16, np.int32, np.int64,
-           np.uint8, np.uint16, np.uint32, np.uint64,
-           np.float32, np.float64, np.complex64, np.complex128]:
-    dt = np.dtype(dt)
-    min.add_overload('(%s) -> %s' % ((str(dt),)*2),
-                     _lowlevel.ckernel_deferred_from_ufunc(np.minimum,
-                                                           (dt,) * 3,
-                                                           False),
-                     associative=True, commutative=True)
-
-max = ReductionBlazeFunc('blaze', 'max')
-for dt in [np.bool, np.int8, np.int16, np.int32, np.int64,
-           np.uint8, np.uint16, np.uint32, np.uint64,
-           np.float32, np.float64, np.complex64, np.complex128]:
-    dt = np.dtype(dt)
-    max.add_overload('(%s) -> %s' % ((str(dt),)*2),
-                     _lowlevel.ckernel_deferred_from_ufunc(np.maximum,
-                                                           (dt,) * 3,
-                                                           False),
-                     associative=True, commutative=True)
+                 identity=ident)
+        locals()[name] = x

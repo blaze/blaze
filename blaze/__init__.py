@@ -13,11 +13,12 @@ from .objects.array import Array
 from .objects.constructors import (
     array, empty, ones, zeros)
 from .compute.function import  BlazeFunc
-from .compute.eval import eval, append
+from .compute.eval import (
+    eval, append)
 from .compute.elwise_eval import _elwise_eval
 from .compute.ops.ufuncs import *
 from .datadescriptor import (
-    DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc)
+    DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc, Stream_DDesc)
 
 inf = float('inf')
 nan = float('nan')

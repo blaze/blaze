@@ -10,6 +10,13 @@ class Test_1D_Array(unittest.TestCase):
     def test_iter_1d(self):
         self.assertEqual(list(self.a), [1, 2, 3])
 
+    def test_get_element(self):
+        self.assertEqual(self.a[1], 2)
+
+    def test_get_element(self):
+        assert blaze.all(self.a[1:] == array([2, 3]))
+
+
 class Test_2D_Array(unittest.TestCase):
     def setUp(self):
         self.a = array([[1, 2, 3],
