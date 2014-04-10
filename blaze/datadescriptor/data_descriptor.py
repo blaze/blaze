@@ -118,12 +118,11 @@ class DDesc:
         """
         raise NotImplementedError
 
-    #@abc.abstractmethod   # XXX should be there
-    def append(self, values):
+    def append(self, value):
         """
         This allows appending values in the data descriptor.
         """
-        return NotImplementedError
+        self.extend([value])
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')

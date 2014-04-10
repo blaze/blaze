@@ -172,18 +172,6 @@ class CSV_DDesc(DDesc):
             for row in csv.reader(f, **self.dialect):
                 yield coerce(self.schema, row)
 
-    def append(self, row):
-        """Append a row of values (in sequence form)."""
-        if not validate(self.schema, row):
-            raise ValueError('Data does not match datashape ' + self.schema)
-        if isinstance(row, dict):
-            schema = datashape.dshape(self.schema)
-            row = coerce_record_to_row(schema, row)
-        with open_file(self.path, self.mode, self.has_header) as f:
-            f.seek(0, os.SEEK_END)  # go to the end of the file
-            writer = csv.writer(f, **self.dialect)
-            writer.writerow(row)
-
     def extend(self, rows):
         """ Extend data with many rows
 
