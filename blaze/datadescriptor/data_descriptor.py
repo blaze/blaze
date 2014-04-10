@@ -128,11 +128,20 @@ class DDesc:
         self.extend([value])
 
     def extend(self, rows):
+        """ Extend data with many rows
+
+        See Also:
+            append
+        """
         rows = iter(rows)
         row = next(rows)
         if not validate(self.schema, row):
             raise ValueError('Invalid data for dshape %s' % self.schema)
         self._extend(chain([row], rows))
+
+    def extend_chunks(self, chunks):
+        from .as_py import ddesc_as_py
+        return self.extend((row for chunk in chunks for row in ddesc_as_py(chunk)))
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')

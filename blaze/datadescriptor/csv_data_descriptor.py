@@ -173,11 +173,6 @@ class CSV_DDesc(DDesc):
                 yield coerce(self.schema, row)
 
     def _extend(self, rows):
-        """ Extend data with many rows
-
-        See Also:
-            append
-        """
         rows = iter(rows)
         with open_file(self.path, self.mode, self.has_header) as f:
             row = next(rows)
@@ -191,9 +186,6 @@ class CSV_DDesc(DDesc):
             writer = csv.writer(f, **self.dialect)
             writer.writerow(row)
             writer.writerows(rows)
-
-    def extend_chunks(self, chunks):
-        return self.extend((row for chunk in chunks for row in ddesc_as_py(chunk)))
 
     def iterchunks(self, blen=100, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).

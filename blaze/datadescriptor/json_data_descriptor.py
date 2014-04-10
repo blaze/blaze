@@ -104,22 +104,11 @@ class JSON_DDesc(DDesc):
                 yield DyND_DDesc(arr)
 
     def _extend(self, rows):
-        """Append a row of values (in sequence form)."""
         with open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             for row in rows:
                 json.dump(row, f)
                 f.write('\n')
-
-    def extend_chunks(self, chunks):
-        with open(self.path, self.mode) as f:
-            f.seek(0, os.SEEK_END)  # go to the end of the file
-            for chunk in chunks:
-                for line in ddesc_as_py(chunk):
-                    json.dump(line, f)
-                    f.write('\n')
-
-
 
     def remove(self):
         """Remove the persistent storage."""
