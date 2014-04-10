@@ -4,7 +4,7 @@ import os
 import json
 
 import datashape
-from toolz import partition_all
+from ..utils import partition_all
 
 from .data_descriptor import DDesc
 from .. import py2help

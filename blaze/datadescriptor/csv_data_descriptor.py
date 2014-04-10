@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import csv
 import itertools as it
-import toolz
 import os
 
 import datashape
@@ -13,6 +12,7 @@ from .data_descriptor import DDesc, Capabilities
 from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
 from .util import coerce
+from ..utils import partition_all
 
 
 def open_file(path, mode, has_header):
@@ -27,7 +27,7 @@ def csv_descriptor_iterchunks(filename, mode, has_header, schema,
                               blen, dialect={}, start=None, stop=None):
     with open_file(filename, mode, has_header) as f:
         f = it.islice(csv.reader(f, **dialect), start, stop)
-        for rows in toolz.partition_all(blen, f):
+        for rows in partition_all(blen, f):
             # TODO: better way to define dshape?
             dshape = str(len(rows)) + ' * ' + schema
             yield DyND_DDesc(nd.array(rows, dtype=dshape))
