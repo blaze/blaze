@@ -104,7 +104,8 @@ class HDF5_DDesc(DDesc):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             for i in range(0, arr.shape[0], blen):
-                yield DyND_DDesc(nd.asarray(arr[i:i+blen], access='readonly'))
+                yield DyND_DDesc(nd.asarray(np.array(arr[i:i+blen]),
+                                 access='readonly'))
 
     def append(self, values):
         """Append a list of values."""
