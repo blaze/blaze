@@ -86,17 +86,21 @@ class whereTest(createTables):
         """Testing with a filter in only one field"""
         t = blaze.array(self.ddesc)
         st = t.where("f0 < 10")
-        cr = [tuple(i.values()) for i in st]
-        nr = [tuple(i) for i in self.npt[self.npt['f0'] < 10]]
+        cr = list(st)
+        # Get a list of dictionaries so as to emulate blaze iter output
+        nr = [{x.dtype.names[i]: x[i] for i,y in enumerate(x)}
+              for x in self.npt[self.npt['f0'] < 10]]
         self.assertEqual(cr, nr, "where does not work correctly")
 
     def test02(self):
         """Testing with two fields"""
         t = blaze.array(self.ddesc)
         st = t.where("(f0 < 10) & (f1 > 4)")
-        cr = [tuple(i.values()) for i in st]
-        nr = [tuple(i) for i in self.npt[
-            (self.npt['f0'] < 10) & (self.npt['f1'] > 4)]]
+        cr = list(st)
+        # Get a list of dictionaries so as to emulate blaze iter output
+        nr = [{x.dtype.names[i]: x[i] for i,y in enumerate(x)}
+              for x in self.npt[
+                  (self.npt['f0'] < 10) & (self.npt['f1'] > 4)]]
         self.assertEqual(cr, nr, "where does not work correctly")
 
 # Check for tables on-disk (BLZ)
