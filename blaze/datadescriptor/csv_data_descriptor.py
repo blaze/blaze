@@ -11,6 +11,7 @@ from dynd import nd
 from .. import py2help
 from .data_descriptor import DDesc, Capabilities
 from .dynd_data_descriptor import DyND_DDesc
+from .as_py import ddesc_as_py
 from .util import validate, coerce
 
 
@@ -206,6 +207,9 @@ class CSV_DDesc(DDesc):
             writer = csv.writer(f, **self.dialect)
             writer.writerow(row)
             writer.writerows(rows)
+
+    def extend_chunks(self, chunks):
+        return self.extend((row for chunk in chunks for row in ddesc_as_py(chunk)))
 
     def iterchunks(self, blen=100, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
