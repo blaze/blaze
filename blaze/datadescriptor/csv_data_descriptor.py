@@ -12,7 +12,7 @@ from .. import py2help
 from .data_descriptor import DDesc, Capabilities
 from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
-from .util import validate, coerce
+from .util import coerce
 
 
 def open_file(path, mode, has_header):
@@ -172,7 +172,7 @@ class CSV_DDesc(DDesc):
             for row in csv.reader(f, **self.dialect):
                 yield coerce(self.schema, row)
 
-    def extend(self, rows):
+    def _extend(self, rows):
         """ Extend data with many rows
 
         See Also:
@@ -180,11 +180,7 @@ class CSV_DDesc(DDesc):
         """
         rows = iter(rows)
         with open_file(self.path, self.mode, self.has_header) as f:
-            # Validate first row
             row = next(rows)
-            if not validate(self.schema, row):
-                raise ValueError('Data does not match datashape ' +
-                                 self.schema)
             if isinstance(row, dict):
                 schema = datashape.dshape(self.schema)
                 row = coerce_record_to_row(schema, row)

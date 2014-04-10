@@ -11,7 +11,7 @@ from .. import py2help
 from dynd import nd
 from .dynd_data_descriptor import DyND_DDesc, Capabilities
 from .as_py import ddesc_as_py
-from .util import validate, coerce
+from .util import coerce
 
 
 def json_descriptor_iter(array):
@@ -103,18 +103,10 @@ class JSON_DDesc(DDesc):
                 arr = nd.parse_json(dshape, text)
                 yield DyND_DDesc(arr)
 
-    def extend(self, rows):
+    def _extend(self, rows):
         """Append a row of values (in sequence form)."""
-
-        rows = iter(rows)
-        row = next(rows)
-        if not validate(self.schema, row):
-            raise ValueError('Invalid data for dshape %s' % self.schema)
-
         with open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
-            json.dump(row, f)
-            f.write('\n')
             for row in rows:
                 json.dump(row, f)
                 f.write('\n')

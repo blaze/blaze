@@ -6,6 +6,9 @@ import abc
 
 from blaze.error import StreamingDimensionError
 from blaze.compute.strategy import CKERNEL
+from .util import validate
+
+from itertools import chain
 
 
 class Capabilities:
@@ -123,6 +126,13 @@ class DDesc:
         This allows appending values in the data descriptor.
         """
         self.extend([value])
+
+    def extend(self, rows):
+        rows = iter(rows)
+        row = next(rows)
+        if not validate(self.schema, row):
+            raise ValueError('Invalid data for dshape %s' % self.schema)
+        self._extend(chain([row], rows))
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')
