@@ -59,8 +59,7 @@ class Stream_DDesc(DDesc):
         raise NotImplementedError
 
     def __iter__(self):
-        return (DyND_DDesc(nd.array(el, type=str(self.dshape.measure)))
-                for el in self._iterator)
+        return self._iterator
 
     def _printer(self):
         return "<Array(iter('%s'), '%s')>" % (self.condition, self.dshape,)

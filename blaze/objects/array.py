@@ -175,7 +175,8 @@ class Array(object):
     def where(self, condition):
         """Iterate over values fulfilling a condition."""
         if self.ddesc.capabilities.queryable:
-            ddesc = self.ddesc.where(condition)
+            iterator = self.ddesc.where(condition)
+            ddesc = Stream_DDesc(iterator, self.dshape, condition)
             return Array(ddesc)
         else:
             raise ValueError(
