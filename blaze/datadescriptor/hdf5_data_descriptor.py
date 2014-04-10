@@ -94,7 +94,10 @@ class HDF5_DDesc(DDesc):
         # Get rid of the leading dimension on which we iterate
         dshape = datashape.from_numpy(dset.shape[1:], dset.dtype)
         for el in dset:
-            yield DyND_DDesc(nd.array(el[:], type=str(dshape)))
+            if hasattr(el, "nrow"):
+                yield DyND_DDesc(nd.array(el[:], type=str(dshape)))
+            else:
+                yield DyND_DDesc(nd.array(el, type=str(dshape)))
         dset._v_file.close()
 
     def where(self, condition):
