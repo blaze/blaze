@@ -6,10 +6,11 @@ from dynd import nd
 import datashape
 
 from . import DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
+from .stream_data_descriptor import Stream_DDesc
 from ..optional_packages import tables_is_here
 if tables_is_here:
     import tables as tb
-from .dynd_data_descriptor import DyND_DDesc
 
 # WARNING!  PyTables always returns NumPy arrays when doing indexing
 # operations.  This is why DyND_DDesc is used for returning
@@ -21,13 +22,6 @@ def hdf5_descriptor_iter(h5arr):
         el = np.array(h5arr[i], dtype=h5arr.dtype)
         yield DyND_DDesc(nd.array(el))
     h5arr._v_file.close()
-
-# This is another iterator that is meant to deliver dynd elements
-# directly to the user
-def iter2(iterarr, dtype):
-    for i in iterarr:
-        el = nd.array(i, dtype=dtype)
-        yield el
 
 
 class HDF5_DDesc(DDesc):
@@ -136,11 +130,11 @@ class HDF5_DDesc(DDesc):
         """Iterate over values fulfilling a condition."""
         with tb.open_file(self.path, mode=self.mode) as f:
             h5tbl = f.get_node(self.datapath)
-            #return iter2(h5tbl.where(condition), h5tbl.dtype)
-            # See bug in: https://github.com/PyTables/PyTables/issues/347
-            # Temporary workaround:
+            # We need to load everything in-memory before returning
+            # the DDesc
             res = h5tbl.read_where(condition)
-            return iter2(iter(res), h5tbl.dtype)
+            dshape = datashape.from_numpy(h5tbl.shape, h5tbl.dtype)
+            return Stream_DDesc(iter(res), dshape, condition)
 
     def remove(self):
         """Remove the persistent storage."""

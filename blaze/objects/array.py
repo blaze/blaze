@@ -121,8 +121,8 @@ class Array(object):
 
     def __iter__(self):
         if len(self.dshape.shape) == 1:
-            return iter(ddesc_as_py(self.ddesc))
-        return (Array(dd) for dd in self.ddesc.__iter__())
+            return (ddesc_as_py(dd) for dd in self.ddesc)
+        return (Array(dd) for dd in self.ddesc)
 
     def __getitem__(self, key):
         dd = self.ddesc.__getitem__(key)
@@ -175,8 +175,7 @@ class Array(object):
     def where(self, condition):
         """Iterate over values fulfilling a condition."""
         if self.ddesc.capabilities.queryable:
-            iterator = self.ddesc.where(condition)
-            ddesc = Stream_DDesc(iterator, self.dshape, condition)
+            ddesc = self.ddesc.where(condition)
             return Array(ddesc)
         else:
             raise ValueError(

@@ -9,6 +9,8 @@ import blaze
 import datashape
 
 from . import DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
+from dynd import nd
 
 #------------------------------------------------------------------------
 # Data Descriptor
@@ -57,7 +59,8 @@ class Stream_DDesc(DDesc):
         raise NotImplementedError
 
     def __iter__(self):
-        return self._iterator
+        return (DyND_DDesc(nd.array(el, type=str(self.dshape.measure)))
+                for el in self._iterator)
 
     def _printer(self):
         return "<Array(iter('%s'), '%s')>" % (self.condition, self.dshape,)
