@@ -88,8 +88,8 @@ class whereTest(createTables):
         st = t.where("f0 < 10")
         cr = list(st)
         # Get a list of dictionaries so as to emulate blaze iter output
-        nr = [{x.dtype.names[i]: x[i] for i,y in enumerate(x)}
-              for x in self.npt[self.npt['f0'] < 10]]
+        nr = [dict(zip(x.dtype.names, x)) for x in self.npt[
+                   self.npt['f0'] < 10]]
         self.assertEqual(cr, nr, "where does not work correctly")
 
     def test02(self):
@@ -98,8 +98,7 @@ class whereTest(createTables):
         st = t.where("(f0 < 10) & (f1 > 4)")
         cr = list(st)
         # Get a list of dictionaries so as to emulate blaze iter output
-        nr = [{x.dtype.names[i]: x[i] for i,y in enumerate(x)}
-              for x in self.npt[
+        nr = [dict(zip(x.dtype.names, x)) for x in self.npt[
                   (self.npt['f0'] < 10) & (self.npt['f1'] > 4)]]
         self.assertEqual(cr, nr, "where does not work correctly")
 
