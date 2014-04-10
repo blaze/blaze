@@ -4,6 +4,7 @@ import os
 import numpy as np
 from dynd import nd
 import datashape
+import h5py
 
 from . import DDesc, Capabilities
 from ..optional_packages import tables_is_here
@@ -98,6 +99,12 @@ class HDF5_DDesc(DDesc):
         f = tb.open_file(self.path, mode='r')
         h5arr = f.get_node(self.datapath)
         return hdf5_descriptor_iter(h5arr)
+
+    def iterchunks(self, blen=100):
+        with h5py.File(self.path, mode='r') as f:
+            arr = f[self.datapath]
+            for i in range(0, arr.shape[0], blen):
+                yield DyND_DDesc(nd.asarray(arr[i:i+blen], access='readonly'))
 
     def append(self, values):
         """Append a list of values."""

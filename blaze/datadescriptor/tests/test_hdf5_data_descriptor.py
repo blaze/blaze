@@ -10,6 +10,8 @@ import numpy as np
 from blaze.datadescriptor import (
     HDF5_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 from blaze.py2help import skipIf
+from blaze.datadescriptor.util import openfile
+import h5py
 
 from blaze.optional_packages import tables_is_here
 if tables_is_here:
@@ -88,6 +90,14 @@ class TestHDF5DDesc(unittest.TestCase):
         is_equal = [(rvals[k] == dvals[k]) for k in dvals]
         self.assertEqual(is_equal, [True]*3)
 
+
+def test_iterchunks():
+    with openfile() as path:
+        with h5py.File(path, 'w') as f:
+            d = f.create_dataset('data', (3, 3), dtype='i8')
+            d[:] = 1
+        dd = HDF5_DDesc(path, '/data')
+        assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
 
 if __name__ == '__main__':
     unittest.main()
