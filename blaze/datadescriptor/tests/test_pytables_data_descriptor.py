@@ -9,7 +9,7 @@ import numpy as np
 from dynd import nd
 
 from blaze.datadescriptor import (
-    HDF5_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
+    PyTables_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 from blaze.py2help import skipIf
 from blaze.datadescriptor.util import openfile
 import h5py
@@ -19,7 +19,7 @@ if tables_is_here:
     import tables as tb
 
 
-class TestHDF5DDesc(unittest.TestCase):
+class TestPyTablesDDesc(unittest.TestCase):
 
     def setUp(self):
         handle, self.hdf5_file = tempfile.mkstemp(".h5")
@@ -38,15 +38,15 @@ class TestHDF5DDesc(unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_basic_object_type(self):
-        self.assertTrue(issubclass(HDF5_DDesc, DDesc))
-        dd = HDF5_DDesc(self.hdf5_file, '/a1')
+        self.assertTrue(issubclass(PyTables_DDesc, DDesc))
+        dd = PyTables_DDesc(self.hdf5_file, '/a1')
         # Make sure the right type is returned
         self.assertTrue(isinstance(dd, DDesc))
         self.assertEqual(ddesc_as_py(dd), [[1, 2, 3], [4, 5, 6]])
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_iter_types(self):
-        dd = HDF5_DDesc(self.hdf5_file, '/a1')
+        dd = PyTables_DDesc(self.hdf5_file, '/a1')
 
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int32'))
         # Iteration should produce DyND_DDesc instances
@@ -58,13 +58,13 @@ class TestHDF5DDesc(unittest.TestCase):
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 
     def test_iterchunks(self):
-        dd = HDF5_DDesc(self.hdf5_file, '/a1')
+        dd = PyTables_DDesc(self.hdf5_file, '/a1')
         self.assertEqual(len(list(dd.iterchunks(blen=1))), 2)
         assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_getitem_types(self):
-        dd = HDF5_DDesc(self.hdf5_file, '/g/a2')
+        dd = PyTables_DDesc(self.hdf5_file, '/g/a2')
 
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         # Indexing should produce DyND_DDesc instances
@@ -75,7 +75,7 @@ class TestHDF5DDesc(unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_setitem(self):
-        dd = HDF5_DDesc(self.hdf5_file, '/g/a2', mode='a')
+        dd = PyTables_DDesc(self.hdf5_file, '/g/a2', mode='a')
 
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         dd[1,2] = 10
@@ -85,7 +85,7 @@ class TestHDF5DDesc(unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_append(self):
-        dd = HDF5_DDesc(self.hdf5_file, '/t1', mode='a')
+        dd = PyTables_DDesc(self.hdf5_file, '/t1', mode='a')
 
         tshape = datashape.dshape(
             '2 * { f0 : int32, f1 : int64, f2 : float64 }')
@@ -104,7 +104,7 @@ def test_extend_chunks():
                                  chunks=True, maxshape=(None, 3))
             d[:] = 1
 
-        dd = HDF5_DDesc(path, '/data', mode='a')
+        dd = PyTables_DDesc(path, '/data', mode='a')
 
         chunks = [DyND_DDesc(nd.array([[1, 2, 3]], dtype='1 * 3 * int32')),
                   DyND_DDesc(nd.array([[4, 5, 6]], dtype='1 * 3 * int32'))]
@@ -125,7 +125,7 @@ def test_iterchunks():
         with h5py.File(path, 'w') as f:
             d = f.create_dataset('data', (3, 3), dtype='i8')
             d[:] = 1
-        dd = HDF5_DDesc(path, '/data')
+        dd = PyTables_DDesc(path, '/data')
         assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
 
 

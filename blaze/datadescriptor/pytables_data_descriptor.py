@@ -15,7 +15,7 @@ if tables_is_here:
 
 
 
-class HDF5_DDesc(DDesc):
+class PyTables_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a HDF5 dataset.
     """

@@ -1,4 +1,4 @@
-from blaze.datadescriptor import CSV_DDesc, JSON_DDesc, HDF5_DDesc, copy
+from blaze.datadescriptor import CSV_DDesc, JSON_DDesc, PyTables_DDesc, copy
 from blaze.datadescriptor.util import filetext, openfile
 import json
 
@@ -59,7 +59,7 @@ def test_hdf5_csv():
             d[:] = 1
 
         csv = CSV_DDesc(csv_fn, mode='rw+', schema='3 * int')
-        hdf5 = HDF5_DDesc(hdf5_fn, '/data')
+        hdf5 = PyTables_DDesc(hdf5_fn, '/data')
 
         copy(hdf5, csv)
 
