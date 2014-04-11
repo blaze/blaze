@@ -121,8 +121,7 @@ class netCDF4_DDesc(DDesc):
         # Now, do the actual append
         with netCDF4.Dataset(self.path, mode=self.mode) as f:
             dset = f.variables[self.datapath]
-            # XXX Still need to figure out how to append values
-            dset.append(values_arr.reshape(shape_vals))
+            dset[len(dset):] = values_arr.reshape(shape_vals)
 
     def remove(self):
         """Remove the persistent storage."""
