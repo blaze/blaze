@@ -2,7 +2,8 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from .data_descriptor import DDesc, Capabilities
 import datashape
-from sqlalchemy import Column
+from sqlalchemy import Column, sql
+from ..utils import partition_all
 
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
@@ -77,6 +78,7 @@ class SQL_DDesc(DDesc):
                 raise ValueError('Must provide schema. Table %s does not exist'
                                  % tablename)
 
+        self.schema = schema
         self._dshape = schema
         metadata = alc.MetaData()
 
@@ -89,7 +91,10 @@ class SQL_DDesc(DDesc):
         pass
 
     def __iter__(self):
-        pass
+        with self.engine.connect() as conn:
+            result = conn.execute(sql.select([self.table]))
+            for item in result:
+                yield item
 
     @property
     def dshape(self):
@@ -98,3 +103,9 @@ class SQL_DDesc(DDesc):
     @property
     def capabilities(self):
         pass
+
+    def _extend(self, rows):
+        with self.engine.connect() as conn:
+            for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
+                conn.execute(self.table.insert(), chunk)
+
