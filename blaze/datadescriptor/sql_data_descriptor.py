@@ -1,6 +1,8 @@
 from datetime import date, datetime, time
 from decimal import Decimal
 from .data_descriptor import DDesc, Capabilities
+from dynd import nd
+from .dynd_data_descriptor import DyND_DDesc
 import datashape
 from sqlalchemy import Column, sql
 from ..utils import partition_all
@@ -109,3 +111,7 @@ class SQL_DDesc(DDesc):
             for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
                 conn.execute(self.table.insert(), chunk)
 
+    def iterchunks(self, blen=1000):
+        for chunk in partition_all(blen, iter(self)):
+            dshape = str(len(chunk)) + ' * ' + str(self.schema)
+            yield DyND_DDesc(nd.array(chunk, dtype=dshape))
