@@ -35,7 +35,9 @@ def test_extension():
     dd.extend(data_dict)
 
     with engine.connect() as conn:
-        conn.execute('select * from testtable2')
+        results = conn.execute('select * from testtable2')
+        assert list(results) == data_list
+
 
     assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
 
