@@ -145,7 +145,8 @@ class DDesc:
         rows = iter(rows)
         row = next(rows)
         if not validate(self.schema, row):
-            raise ValueError('Invalid data for dshape %s' % self.schema)
+            raise ValueError('Invalid data:\n\t %s \nfor dshape \n\t%s' %
+                    (str(row), self.schema))
         self._extend(chain([row], rows))
 
     def extend_chunks(self, chunks):
