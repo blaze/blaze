@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['DDesc', 'Capabilities']
+__all__ = ['DDesc', 'Capabilities', 'copy']
 
 import abc
 
@@ -168,3 +168,7 @@ class DDesc:
         else:
             raise TypeError((
                 'Data descriptor of type %s is deferred') % type(self))
+
+def copy(src, dest, **kwargs):
+    """ Copy content from one data descriptor to another """
+    dest.extend_chunks(src.iterchunks(**kwargs))
