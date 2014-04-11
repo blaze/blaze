@@ -24,12 +24,15 @@ def rolling_max(a, winsize):
         return reduce(max, win)
     return rolling_reduce(arrmax, a, winsize)
 
+>>> rolling_max([3, 2, -1, 0, 0, 5, 2, 2, 2], 3)
+[nan, nan, 3, 2, 0, 5, 5, 5, 2]
+
 >>> rolling_max([1, 3, 7, float('nan'), 6, 2, 7, float('inf')], 3)
 [nan, nan, 7, 7, 7, nan, 7, inf]
 ```
 
-Note that this is actually incorrect, because NaN is
-not orderable.
+Note that the handling of NaNs with this function is
+incorrect, because NaN is not orderable.
 
 ```
 >>> reduce(max, [float('nan'), 2, 1])
@@ -170,7 +173,7 @@ issue:
 ```
 
 This issue affects both rolling sum and rolling
-mean, however we deal with it should be done the same in both.
+mean, so we should handle it the same in both.
 
 ## Rolling Min/Max
 
@@ -185,6 +188,18 @@ a look at what these sets look like for the example data we
 used in the general discussion.
 
 ```
+Value    Set
+-----    ---
+3        {3}
+2        {3, 2}
+-1       {3, 2, -1}
+0        {2, 0}
+0        {0}
+5        {5}
+2        {5, 2}
+2        {5, 2}
+2        {2}
+
 Value    Set
 -----    ---
 1
@@ -211,24 +226,118 @@ value because the new source value is dominant.
 Let's work out the values seen in the buffer:
 
 ```
-Index Value    NaN?  Buffer
------ -----    ----  ------
-0     1              [(1, 0)]
-1     3              [(3, 1)]
-2     7              [(7, 2)]
-3     nan      3     []
-4     6        3     [(6, 4)]
-5     2        3     [(6, 4), (2, 5)]
-6     7              [(7, 6)]
-7     inf            [(inf, 7)]
-8     3              [(inf, 7), (3, 8)]
+Index Value    Buffer
+----- -----    ---
+0     3        [(3, 0)]
+1     2        [(3, 0), (2, 1)]
+2     -1       [(3, 0), (2, 1), (-1, 2)]
+3     0        [(2, 1), (0, 3)]
+4     0        [(0, 4)]
+5     5        [(5, 5)]
+6     2        [(5, 5), (2, 6)]
+7     2        [(5, 5), (2, 7)]
+8     2        [(2, 8)]
+
+Index Value    Buffer
+----- -----    ------
+0     1        [(1, 0)]
+1     3        [(3, 1)]
+2     7        [(7, 2)]
+3     nan      [(nan, 3)]
+4     6        [(nan, 3), (6, 4)]
+5     2        [(nan, 3), (6, 4), (2, 5)]
+6     7        [(7, 6)]
+7     inf      [(inf, 7)]
+8     3        [(inf, 7), (3, 8)]
 ```
 
-And some Python code:
+And some Python code which includes tracking the
+number of values present for `minp`:
 
 ```
 def rolling_max(a, winsize, minp):
-    pass # WIP
+    result = []
+    buffer = []
+    present = 0
+    nanindex = -1
+    for i, el in enumerate(a):
+        if el == el:
+            present += 1
+            # Remove any smaller values from the back of `buffer`
+            while buffer and el >= buffer[-1][0]:
+                del buffer[-1]
+            # Add this value and index to the back of `buffer`
+            buffer.append((el, i))
+
+        # Remove any expired indices from the front of `buffer`
+        while buffer and buffer[0][1] + winsize <= i:
+            del buffer[0]
+
+        # Append a value to the result
+        if i >= winsize - 1 and present >= minp:
+            result.append(buffer[0][0])
+        else:
+            result.append(float('nan'))
+
+        # For illustrative purposes
+        print(present, buffer)
+
+        if i >= winsize - 1:
+            # Keep track of # of non-NaN values
+            el = a[i - winsize + 1]
+            if el == el:
+                present -= 1
+    print()
+    return result
+
+>>> rolling_max([3, 2, -1, 0, 0, 5, 2, 2, 2], 3, 3)
+1 [(3, 0)]
+2 [(3, 0), (2, 1)]
+3 [(3, 0), (2, 1), (-1, 2)]
+3 [(2, 1), (0, 3)]
+3 [(0, 4)]
+3 [(5, 5)]
+3 [(5, 5), (2, 6)]
+3 [(5, 5), (2, 7)]
+3 [(2, 8)]
+
+[nan, nan, 3, 2, 0, 5, 5, 5, 2]
+
+<<< rolling_max([1, 3, 7, float('nan'), 6, 2, 7, float('inf')], 3, 3)
+1 [(1, 0)]
+2 [(3, 1)]
+3 [(7, 2)]
+2 [(7, 2)]
+2 [(7, 2), (6, 4)]
+2 [(6, 4), (2, 5)]
+3 [(7, 6)]
+3 [(inf, 7)]
+
+[nan, nan, 7, nan, nan, nan, 7, inf]
+
+>>> rolling_max([1, 3, 7, float('nan'), 6, 2, 7, float('inf')], 3, 2)
+1 [(1, 0)]
+2 [(3, 1)]
+3 [(7, 2)]
+2 [(7, 2)]
+2 [(7, 2), (6, 4)]
+2 [(6, 4), (2, 5)]
+3 [(7, 6)]
+3 [(inf, 7)]
+
+[nan, nan, 7, 7, 7, 6, 7, inf]
+
+>>> rolling_max([1, 0, float('nan'), float('nan'), float('nan'), 2, 3], 3, 2)
+1 [(1, 0)]
+2 [(1, 0), (0, 1)]
+2 [(1, 0), (0, 1)]
+1 [(0, 1)]
+0 []
+1 [(2, 5)]
+2 [(3, 6)]
+
+[nan, nan, 1, nan, nan, nan, 3]
+
 ```
 
 See also
