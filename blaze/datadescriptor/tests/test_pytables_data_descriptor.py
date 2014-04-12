@@ -12,7 +12,6 @@ from blaze.datadescriptor import (
     PyTables_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 from blaze.py2help import skipIf
 from blaze.datadescriptor.util import openfile
-import h5py
 
 from blaze.optional_packages import tables_is_here
 if tables_is_here:
@@ -95,38 +94,6 @@ class TestPyTablesDDesc(unittest.TestCase):
         rvals = ddesc_as_py(dd[2])
         is_equal = [(rvals[k] == dvals[k]) for k in dvals]
         self.assertEqual(is_equal, [True]*3)
-
-
-def test_extend_chunks():
-    with openfile() as path:
-        with h5py.File(path, 'w') as f:
-            d = f.create_dataset('data', (3, 3), dtype='i4',
-                                 chunks=True, maxshape=(None, 3))
-            d[:] = 1
-
-        dd = PyTables_DDesc(path, '/data', mode='a')
-
-        chunks = [DyND_DDesc(nd.array([[1, 2, 3]], dtype='1 * 3 * int32')),
-                  DyND_DDesc(nd.array([[4, 5, 6]], dtype='1 * 3 * int32'))]
-
-        dd.extend_chunks(chunks)
-
-        result = dd.dynd_arr()[-2:, :]
-        expected = nd.array([[1, 2, 3],
-                             [4, 5, 6]], dtype='strided * strided * int32')
-
-        print(repr(result))
-        print(repr(expected))
-
-        assert nd.as_py(result) == nd.as_py(expected)
-
-def test_iterchunks():
-    with openfile() as path:
-        with h5py.File(path, 'w') as f:
-            d = f.create_dataset('data', (3, 3), dtype='i8')
-            d[:] = 1
-        dd = PyTables_DDesc(path, '/data')
-        assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
 
 
 if __name__ == '__main__':
