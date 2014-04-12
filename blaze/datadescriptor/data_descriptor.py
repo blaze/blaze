@@ -57,20 +57,6 @@ class DDesc(object):
         """A container for the different capabilities."""
         raise NotImplementedError
 
-    def __len__(self):
-        """
-        The default implementation of __len__ is for the
-        behavior of a streaming dimension, where the size
-        of the dimension isn't known ahead of time.
-
-        If a data descriptor knows its dimension size,
-        it should implement __len__, and provide the size
-        as an integer.
-        """
-        raise StreamingDimensionError('Cannot get the length of'
-                                      ' a streaming dimension')
-
-
     @abc.abstractmethod
     def __iter__(self):
         """

@@ -66,13 +66,13 @@ class CSV_DDesc(DDesc):
         # Handle Schema
         if isinstance(schema, py2help._strtypes):
             schema = datashape.dshape(schema)
-        if isinstance(schema, datashape.DataShape) and len(schema) == 1:
-            schema = schema[0]
+        if not schema:
+            # TODO: schema detection from first row
+            raise ValueError('Need schema')
         self.schema = str(schema)
 
-        # Handle Dialect
+        # Guess Dialect if not an input
         if dialect is None and 'r' in mode:
-            # Guess the dialect
             sniffer = csv.Sniffer()
             try:
                 dialect = sniffer.sniff(csvfile.read(1024))
@@ -82,6 +82,7 @@ class CSV_DDesc(DDesc):
             dialect = csv.get_dialect('excel')
         elif isinstance(dialect, py2help.basestring):
             dialect = csv.get_dialect(dialect)
+        # Convert dialect to dictionary
         self.dialect = dict((key, getattr(dialect, key))
                             for key in dir(dialect) if not key.startswith('_'))
 
@@ -121,17 +122,12 @@ class CSV_DDesc(DDesc):
                 'remote': False}
 
     def dynd_arr(self):
-        # Positionate at the beginning of the file
         with open_file(self.path, self.mode, self.has_header) as csvfile:
-            return nd.array(csv.reader(csvfile, **self.dialect), dtype=self.schema)
-
+            seq = csv.reader(csvfile, **self.dialect)
+            return nd.array(seq, dtype=self.schema)
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
-
-    def __len__(self):
-        # We don't know how many rows we have
-        return None
 
     def __getitem__(self, key):
         with open_file(self.path, self.mode, self.has_header) as csvfile:
@@ -145,10 +141,6 @@ class CSV_DDesc(DDesc):
                                    **self.dialect)
             res = coerce(self.schema, read_iter)
         return (res)
-
-    def __setitem__(self, key, value):
-        # CSV files cannot be updated (at least, not efficiently)
-        raise NotImplementedError
 
     def __iter__(self):
         with open(self.path, self.mode) as f:
