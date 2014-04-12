@@ -12,7 +12,7 @@ from itertools import chain
 from dynd import nd
 
 
-class Capabilities:
+class Capabilities(object):
     """
     A container for storing the different capabilities of the data descriptor.
 
@@ -53,7 +53,7 @@ class Capabilities:
         return "capabilities:" + "\n".join(caps)
 
 
-class DDesc:
+class DDesc(object):
     """
     The Blaze data descriptor is an interface which exposes
     data to Blaze. The data descriptor doesn't implement math
