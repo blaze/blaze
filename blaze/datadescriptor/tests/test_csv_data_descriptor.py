@@ -41,7 +41,7 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
         os.remove(self.csv_file)
 
     def test_overwrite_delimiter(self):
-        assert self.dd.dialect['delimiter'] == ' '
+        self.assertEquals(self.dd.dialect['delimiter'], ' ')
 
     def test_content(self):
         s = str(ddesc_as_py(self.dd))
@@ -98,45 +98,46 @@ class TestCSV_New_File(unittest.TestCase):
         self.assertEqual(str(dd.dshape).replace(' ', ''),
                          str(expected_dshape).replace(' ', ''))
 
+class TestTransfer(unittest.TestCase):
 
-def test_re_dialect():
-    dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
-    dialect2 = {'delimiter': ';', 'lineterminator': '\r\n'}
+    def test_re_dialect(self):
+        dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
+        dialect2 = {'delimiter': ';', 'lineterminator': '\r\n'}
 
-    text = '1,1\n2,2\n'
+        text = '1,1\n2,2\n'
 
-    schema = '2 * int32'
+        schema = '2 * int32'
 
-    with filetext(text) as source_fn:
-        with filetext('') as dest_fn:
-            src = CSV_DDesc(source_fn, schema=schema, **dialect1)
-            dst = CSV_DDesc(dest_fn, mode='w', schema=schema, **dialect2)
+        with filetext(text) as source_fn:
+            with filetext('') as dest_fn:
+                src = CSV_DDesc(source_fn, schema=schema, **dialect1)
+                dst = CSV_DDesc(dest_fn, mode='w', schema=schema, **dialect2)
 
-            # Perform copy
-            dst.extend(src)
+                # Perform copy
+                dst.extend(src)
 
-            with open(dest_fn) as f:
-                assert f.read() == '1;1\r\n2;2\r\n'
-
-
-def test_iter():
-    with filetext('1,1\n2,2\n') as fn:
-        dd = CSV_DDesc(fn, schema='2 * int32')
-        assert list(dd) == [[1, 1], [2, 2]]
+                with open(dest_fn) as f:
+                    self.assertEquals(f.read(), '1;1\r\n2;2\r\n')
 
 
-def test_iterchunks():
-    with filetext('1,1\n2,2\n3,3\n4,4\n') as fn:
-        dd = CSV_DDesc(fn, schema='2 * int32')
-        assert all(isinstance(chunk, nd.array) for chunk in dd.iterchunks())
-        assert len(list(dd.iterchunks(blen=2))) == 2
-        assert len(list(dd.iterchunks(blen=3))) == 2
+    def test_iter(self):
+        with filetext('1,1\n2,2\n') as fn:
+            dd = CSV_DDesc(fn, schema='2 * int32')
+            self.assertEquals(list(dd), [[1, 1], [2, 2]])
 
 
-def test_iter_structured():
-    with filetext('1,2\n3,4\n') as fn:
-        dd = CSV_DDesc(fn, schema='{x: int, y: int}')
-        assert list(dd) == [{'x': 1, 'y': 2}, {'x': 3, 'y': 4}]
+    def test_iterchunks(self):
+        with filetext('1,1\n2,2\n3,3\n4,4\n') as fn:
+            dd = CSV_DDesc(fn, schema='2 * int32')
+            assert all(isinstance(chunk, nd.array) for chunk in dd.iterchunks())
+            self.assertEquals(len(list(dd.iterchunks(blen=2))), 2)
+            self.assertEquals(len(list(dd.iterchunks(blen=3))), 2)
+
+
+    def test_iter_structured(self):
+        with filetext('1,2\n3,4\n') as fn:
+            dd = CSV_DDesc(fn, schema='{x: int, y: int}')
+            self.assertEquals(list(dd), [{'x': 1, 'y': 2}, {'x': 3, 'y': 4}])
 
 
 class TestCSV_DDesc(unittest.TestCase):
