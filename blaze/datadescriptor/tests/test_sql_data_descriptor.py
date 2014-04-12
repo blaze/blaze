@@ -67,7 +67,6 @@ class SingleTestClass(unittest.TestCase):
 
         dd.extend_chunks([chunk])
 
-        self.assertEquals(list(iter(dd)) == data_list or list(iter(dd)),
-                          data_dict)
+        assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
 
         self.assertEquals(len(list(dd.iterchunks(blen=2))), 2)
