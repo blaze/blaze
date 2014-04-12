@@ -100,8 +100,7 @@ class JSON_DDesc(DDesc):
             for chunk in partition_all(blen, f):
                 text = '[' + ',\r\n'.join(chunk) + ']'
                 dshape = str(len(chunk)) + ' * ' + self.schema
-                arr = nd.parse_json(dshape, text)
-                yield DyND_DDesc(arr)
+                yield nd.parse_json(dshape, text)
 
     def _extend(self, rows):
         with open(self.path, self.mode) as f:

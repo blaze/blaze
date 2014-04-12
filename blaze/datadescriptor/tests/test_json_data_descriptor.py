@@ -4,6 +4,7 @@ import unittest
 import os
 import tempfile
 import json
+from dynd import nd
 
 from blaze.datadescriptor import (
     JSON_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
@@ -103,9 +104,9 @@ def test_iterchunks():
     with filetext(text) as fn:
         dd = JSON_DDesc(fn, schema=schema)
         chunks = list(dd.iterchunks(blen=2))
-        assert isinstance(chunks[0], DDesc)
+        assert isinstance(chunks[0], nd.array)
         assert len(chunks) == 3
-        assert ddesc_as_py(chunks[0]) == data[:2]
+        assert nd.as_py(chunks[0]) == data[:2]
 
 
 def test_append():

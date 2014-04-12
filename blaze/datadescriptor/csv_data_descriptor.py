@@ -31,7 +31,7 @@ def csv_descriptor_iterchunks(filename, mode, has_header, schema,
         for rows in partition_all(blen, f):
             # TODO: better way to define dshape?
             dshape = str(len(rows)) + ' * ' + schema
-            yield DyND_DDesc(nd.array(rows, dtype=dshape))
+            yield nd.array(rows, dtype=dshape)
 
 
 def coerce_record_to_row(schema, rec):
@@ -159,8 +159,8 @@ class CSV_DDesc(DDesc):
                 raise IndexError("key '%r' is not valid" % key)
             read_iter = csv.reader(it.islice(csvfile, start, stop, step),
                                    **self.dialect)
-            res = nd.array(read_iter, dtype=self.schema)
-        return DyND_DDesc(res)
+            res = coerce(self.schema, read_iter)
+        return (res)
 
     def __setitem__(self, key, value):
         # CSV files cannot be updated (at least, not efficiently)

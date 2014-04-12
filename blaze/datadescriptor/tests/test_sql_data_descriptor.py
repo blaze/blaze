@@ -58,7 +58,7 @@ class GiantTest(unittest.TestCase):
 
         data_list = [('Alice', 100), ('Bob', 50), ('Charlie', 200)]
         data_dict = [{'name': name, 'amount': amount} for name, amount in data_list]
-        chunk = DyND_DDesc(nd.array(data_list, dtype=dd.dshape))
+        chunk = nd.array(data_list, dtype=dd.dshape)
 
         dd.extend_chunks([chunk])
 

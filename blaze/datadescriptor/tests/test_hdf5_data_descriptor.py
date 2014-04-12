@@ -58,8 +58,8 @@ class GiantTest(unittest.TestCase):
 
         dd = HDF5_DDesc(self.filename, '/data', mode='a')
 
-        chunks = [DyND_DDesc(nd.array([[1, 2, 3]], dtype='1 * 3 * int32')),
-                  DyND_DDesc(nd.array([[4, 5, 6]], dtype='1 * 3 * int32'))]
+        chunks = [nd.array([[1, 2, 3]], dtype='1 * 3 * int32'),
+                  nd.array([[4, 5, 6]], dtype='1 * 3 * int32')]
 
         dd.extend_chunks(chunks)
 
@@ -76,4 +76,4 @@ class GiantTest(unittest.TestCase):
             d = f.create_dataset('data', (3, 3), dtype='i8')
             d[:] = 1
         dd = HDF5_DDesc(self.filename, '/data')
-        assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
+        assert all(isinstance(chunk, nd.array) for chunk in dd.iterchunks())

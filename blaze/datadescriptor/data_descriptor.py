@@ -9,6 +9,7 @@ from blaze.compute.strategy import CKERNEL
 from .util import validate
 
 from itertools import chain
+from dynd import nd
 
 
 class Capabilities:
@@ -151,7 +152,7 @@ class DDesc:
 
     def extend_chunks(self, chunks):
         from .as_py import ddesc_as_py
-        return self.extend((row for chunk in chunks for row in ddesc_as_py(chunk)))
+        return self.extend((row for chunk in chunks for row in nd.as_py(chunk)))
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')

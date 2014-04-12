@@ -113,4 +113,4 @@ class SQL_DDesc(DDesc):
     def iterchunks(self, blen=1000):
         for chunk in partition_all(blen, iter(self)):
             dshape = str(len(chunk)) + ' * ' + str(self.schema)
-            yield DyND_DDesc(nd.array(chunk, dtype=dshape))
+            yield nd.array(chunk, dtype=dshape)

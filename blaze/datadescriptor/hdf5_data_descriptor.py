@@ -86,8 +86,7 @@ class HDF5_DDesc(DDesc):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             for i in range(0, arr.shape[0], blen):
-                yield DyND_DDesc(nd.asarray(np.array(arr[i:i+blen]),
-                                            access='readonly'))
+                yield nd.asarray(np.array(arr[i:i+blen]), access='readonly')
 
     def __iter__(self):
         pass
@@ -103,13 +102,6 @@ class HDF5_DDesc(DDesc):
     def dynd_arr(self):
         return self[:]
 
-    def iterchunks(self, blen=100):
-        with h5py.File(self.path, mode='r') as f:
-            arr = f[self.datapath]
-            for i in range(0, arr.shape[0], blen):
-                yield DyND_DDesc(nd.asarray(np.array(arr[i:i+blen]),
-                                            access='readonly'))
-
     def extend_chunks(self, chunks):
         if 'w' not in self.mode and 'a' not in self.mode:
             raise ValueError('Read only')
@@ -119,7 +111,7 @@ class HDF5_DDesc(DDesc):
             dtype = dset.dtype
             shape = dset.shape
             for chunk in chunks:
-                arr = np.array(chunk.dynd_arr(), dtype=dtype)
+                arr = np.array(chunk, dtype=dtype)
                 shape = list(dset.shape)
                 shape[0] += len(arr)
                 dset.resize(shape)
