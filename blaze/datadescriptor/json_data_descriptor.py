@@ -14,14 +14,9 @@ from .as_py import ddesc_as_py
 from .util import coerce
 
 
-def json_descriptor_iter(array):
-    for row in array:
-        yield DyND_DDesc(row)
-
-
 class JSON_DDesc(DDesc):
     """
-    A Blaze data descriptor which exposes a JSON file.
+    A Blaze data descriptor to expose a JSON file.
 
     Parameters
     ----------
@@ -32,13 +27,17 @@ class JSON_DDesc(DDesc):
         in the JSON file.
     """
     def __init__(self, path, mode='r', **kwargs):
-        if 'w' not in mode and os.path.isfile(path) is not True:
+        if 'w' not in mode and not os.path.isfile(path):
             raise ValueError('JSON file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
         schema = kwargs.get("schema", None)
-        if type(schema) in py2help._strtypes:
+        if isinstance(schema, py2help._strtypes):
             schema = datashape.dshape(schema)
+        if not schema:
+            # TODO: schema detection from file
+            raise ValueError('No schema found')
+        # TODO: should store DataShape object
         self.schema = str(schema)
         # Initially the array is not loaded (is this necessary?)
         self._cache_arr = None
@@ -73,16 +72,8 @@ class JSON_DDesc(DDesc):
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
 
-    def __len__(self):
-        # Not clear to me what the length of a json object should be
-        return None
-
     def __getitem__(self, key):
         return DyND_DDesc(self._arr_cache[key])
-
-    def __setitem__(self, key, value):
-        # JSON files cannot be updated (at least, not efficiently)
-        raise NotImplementedError
 
     def __iter__(self):
         with open(self.path) as f:

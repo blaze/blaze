@@ -62,6 +62,10 @@ class TestJSON_DDesc(unittest.TestCase):
     def tearDown(self):
         os.remove(self.json_file)
 
+    def test_raise_error_on_non_existent_file(self):
+        self.assertRaises(ValueError,
+                    lambda: JSON_DDesc('does-not-exist23424.josn', 'r'))
+
     def test_basic_object_type(self):
         self.assertTrue(issubclass(JSON_DDesc, DDesc))
         dd = JSON_DDesc(self.json_file, schema=json_schema)
