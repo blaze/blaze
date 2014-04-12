@@ -106,7 +106,7 @@ class Array(object):
 
     @property
     def deferred(self):
-        return self.ddesc.capabilities.deferred
+        return self.ddesc.capabilities['deferred']
 
 
     def __array__(self):
@@ -174,7 +174,7 @@ class Array(object):
 
     def where(self, condition):
         """Iterate over values fulfilling a condition."""
-        if self.ddesc.capabilities.queryable:
+        if self.ddesc.capabilities['queryable']:
             iterator = self.ddesc.where(condition)
             ddesc = Stream_DDesc(iterator, self.dshape, condition)
             return Array(ddesc)

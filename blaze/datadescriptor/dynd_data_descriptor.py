@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape
 from dynd import nd
 
-from . import Capabilities
 from .data_descriptor import DDesc
 
 
@@ -33,17 +32,11 @@ class DyND_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the dynd data descriptor."""
-        return Capabilities(
-            # whether dynd arrays can be updated
-            immutable = self._dyndarr.access_flags == 'immutable',
-            # dynd arrays are concrete
-            deferred = False,
-            # dynd arrays can be either persistent of in-memory
-            persistent = False,
-            # dynd arrays can be appended efficiently
-            appendable = False,
-            remote = False,
-            )
+        return {'immutable': self._dyndarr.access_flags == 'immutable',
+                'deferred': False,
+                'persistent': False,
+                'appendable': False,
+                'remote': False}
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())

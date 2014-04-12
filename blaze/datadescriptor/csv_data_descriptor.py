@@ -8,7 +8,7 @@ import datashape
 from dynd import nd
 
 from .. import py2help
-from .data_descriptor import DDesc, Capabilities
+from .data_descriptor import DDesc
 from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
 from .util import coerce
@@ -114,17 +114,11 @@ class CSV_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the csv data descriptor."""
-        return Capabilities(
-            # csv datadescriptor cannot be updated
-            immutable = False,
-            # csv datadescriptors are concrete
-            deferred = False,
-            # csv datadescriptor is persistent
-            persistent = True,
-            # csv datadescriptor can be appended efficiently
-            appendable = True,
-            remote = False,
-            )
+        return {'immutable': False,
+                'deferred': False,
+                'persistent': True,
+                'appendable': True,
+                'remote': False}
 
     def dynd_arr(self):
         # Positionate at the beginning of the file

@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import datashape
 from ..catalog.blaze_url import add_indexers_to_url
-from .data_descriptor import DDesc, Capabilities
+from .data_descriptor import DDesc
 from dynd import nd, ndt
 
 
@@ -27,16 +27,11 @@ class Remote_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the remote data descriptor."""
-        return Capabilities(
-            # treat remote arrays as immutable (maybe not?)
-            immutable = True,
-            # TODO: not sure what to say here
-            deferred = False,
-            # persistent on the remote server
-            persistent = True,
-            appendable = False,
-            remote = True,
-            )
+        return {'immutable': True,
+                'deferred': False,
+                'persistent': True,
+                'appendable': False,
+                'remote': True}
 
     def __repr__(self):
         return 'Remote_DDesc(%r, dshape=%r)' % (self.url, self.dshape)

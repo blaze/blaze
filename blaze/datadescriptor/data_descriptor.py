@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['DDesc', 'Capabilities', 'copy']
+__all__ = ['DDesc', 'copy']
 
 import abc
 
@@ -10,47 +10,6 @@ from .util import validate
 
 from itertools import chain
 from dynd import nd
-
-
-class Capabilities(object):
-    """
-    A container for storing the different capabilities of the data descriptor.
-
-    Parameters
-    ----------
-    immutable : bool
-        True if the array cannot be updated/enlarged.
-    deferred : bool
-        True if the array is an expression of other arrays.
-    stream : bool
-        True if the array is just a wrapper over an iterator.
-    persistent : bool
-        True if the array persists on files between sessions.
-    appendable : bool
-        True if the array can be enlarged efficiently.
-    queryable : bool
-        True if the array can be queried efficiently.
-    remote : bool
-        True if the array is remote or distributed.
-
-    """
-
-    def __init__(self, immutable=False, deferred=False, stream=False,
-                 persistent=False, appendable=False, queryable=False,
-                 remote=False):
-        self._caps = ['immutable', 'deferred', 'stream', 'persistent',
-                      'appendable', 'queryable', 'remote']
-        self.immutable = immutable
-        self.deferred = deferred
-        self.stream = stream
-        self.persistent = persistent
-        self.appendable = appendable
-        self.queryable = queryable
-        self.remote = remote
-
-    def __str__(self):
-        caps = [attr+': '+str(getattr(self, attr)) for attr in self._caps]
-        return "capabilities:" + "\n".join(caps)
 
 
 class DDesc(object):
@@ -162,7 +121,6 @@ class DDesc(object):
         def dshape(chunk):
             n = len(chunk)
             s = str(self.dshape)
-            print(s)
             return str(n) + ' * ' + ' * '.join(s.split(' * ')[1:])
 
         chunks = self._iterchunks(**kwargs)
@@ -178,7 +136,7 @@ class DDesc(object):
         """Concrete data descriptors must provide their array data
            as a dynd array, accessible via this method.
         """
-        if not self.capabilities.deferred:
+        if not self.capabilities['deferred']:
             raise NotImplementedError((
                 'Data descriptor of type %s claims '
                 'claims to not being deferred, but did not '

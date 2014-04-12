@@ -20,7 +20,7 @@ def ddesc_as_py(ddesc):
     if isinstance(ddesc, BLZ_DDesc):
         return [ddesc_as_py(child_ddesc) for child_ddesc in ddesc]
 
-    if ddesc.capabilities.deferred:
+    if ddesc.capabilities['deferred']:
         from blaze import Array, eval
         ddesc = eval(Array(ddesc)).ddesc
     return nd.as_py(ddesc.dynd_arr())

@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 
 import blaze
 
-from . import DDesc, Capabilities
+from . import DDesc
 
 #------------------------------------------------------------------------
 # Decorators
@@ -67,14 +67,11 @@ class Deferred_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the deferred data descriptor."""
-        return Capabilities(
-            immutable = True,
-            deferred = True,
-            # persistency is not supported yet
-            persistent = False,
-            appendable = False,
-            remote = False,
-            )
+        return {'immutable': True,
+                'deferred': True,
+                'persistent': False,
+                'appendable': False,
+                'remote': False}
 
     __array__           = force_evaluation('__array__')
     __iter__            = force_evaluation('__iter__')

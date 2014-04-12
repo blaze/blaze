@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 import blaze
 import datashape
 
-from . import DDesc, Capabilities
+from . import DDesc
 from .dynd_data_descriptor import DyND_DDesc
 from dynd import nd
 
@@ -43,15 +43,12 @@ class Stream_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the deferred data descriptor."""
-        return Capabilities(
-            immutable = True,
-            deferred = False,
-            stream = True,
-            # persistency is not supported yet
-            persistent = False,
-            appendable = False,
-            remote = False,
-            )
+        return {'immutable': True,
+                'deferred': True,
+                'stream': True,
+                'persistent': False,
+                'appendable': False,
+                'remote': False}
 
     def __getitem__(self, key):
         """Streams do not support random seeks.

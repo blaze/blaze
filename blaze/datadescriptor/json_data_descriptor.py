@@ -9,7 +9,7 @@ from ..utils import partition_all
 from .data_descriptor import DDesc
 from .. import py2help
 from dynd import nd
-from .dynd_data_descriptor import DyND_DDesc, Capabilities
+from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
 from .util import coerce
 
@@ -50,17 +50,11 @@ class JSON_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the json data descriptor."""
-        return Capabilities(
-            # json datadescriptor cannot be updated
-            immutable = False,
-            # json datadescriptors are concrete
-            deferred = False,
-            # json datadescriptor is persistent
-            persistent = True,
-            # json datadescriptor can be appended efficiently
-            appendable = True,
-            remote = False,
-            )
+        return {'immutable': False,
+                'deferred': False,
+                'persistent': True,
+                'appendable': True,
+                'remote': False}
 
     @property
     def _arr_cache(self):

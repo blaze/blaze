@@ -97,7 +97,11 @@ class HDF5_DDesc(DDesc):
 
     @property
     def capabilities(self):
-        pass
+        return {'immutable': False,
+                'deferred': False,
+                'persistent': True,
+                'appendable': True,
+                'remote': False}
 
     def dynd_arr(self):
         return self[:]

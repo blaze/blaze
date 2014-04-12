@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import operator
 import bisect
 
-from . import DDesc, Capabilities
+from . import DDesc
 
 
 def cat_descriptor_iter(ddlist):
@@ -45,14 +45,11 @@ class Cat_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the cat data descriptor."""
-        return Capabilities(
-            immutable = True,
-            deferred = True,
-            # persistency is not supported yet
-            persistent = False,
-            appendable = False,
-            remote = False,
-            )
+        return {'immutable': True,
+                'deferred': True,
+                'persistent': False,
+                'appendable': False,
+                'remote': False}
 
     def __len__(self):
         return self._boundary_index[-1]

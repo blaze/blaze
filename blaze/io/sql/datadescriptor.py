@@ -11,7 +11,7 @@ from dynd import nd
 
 from ... import Array
 from ...datadescriptor import DyND_DDesc
-from ...datadescriptor import DDesc, Capabilities
+from ...datadescriptor import DDesc
 from .query import execute, dynd_chunk_iterator
 
 
@@ -45,13 +45,11 @@ class SQL_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the SQL data descriptor."""
-        return Capabilities(
-            immutable = True,
-            deferred = False,
-            persistent = True,
-            appendable = False,
-            remote=True,
-            )
+        return {'immutable': False,
+                'deferred': False,
+                'persistent': True,
+                'appendable': True,
+                'remote':True}
 
     def describe_col(self):
         query_result = execute(self.conn, self.dshape,
@@ -118,13 +116,11 @@ class SQLResult_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the SQL result data descriptor."""
-        return Capabilities(
-            immutable = True,
-            deferred = False,
-            persistent = True,
-            appendable = False,
-            remote=True,
-            )
+        return {'immutable': True,
+                'deferred': False,
+                'persistent': False,
+                'appendable': False,
+                'remote':True}
 
     def __iter__(self):
         return (DyND_DDesc(x) for chunk in self.query_result for x in chunk)

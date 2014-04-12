@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from .data_descriptor import DDesc, Capabilities
+from .data_descriptor import DDesc
 from dynd import nd
 from .dynd_data_descriptor import DyND_DDesc
 import datashape
@@ -103,7 +103,12 @@ class SQL_DDesc(DDesc):
 
     @property
     def capabilities(self):
-        pass
+        return {'immutable': False,
+                'deferred': False,
+                'remote': self.engine.dialect.name != 'sqlite',
+                'persistent': self.engine.url != 'sqlite:///:memory:',
+                'appendable': True}
+
 
     def _extend(self, rows):
         with self.engine.connect() as conn:
