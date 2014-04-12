@@ -9,8 +9,7 @@ import numpy as np
 from sys import stdout
 
 
-
-class GiantTest(unittest.TestCase):
+class SingleTestClass(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp('h5')
 
@@ -67,7 +66,7 @@ class GiantTest(unittest.TestCase):
         expected = nd.array([[1, 2, 3],
                              [4, 5, 6]], dtype='strided * strided * int32')
 
-        assert nd.as_py(result) == nd.as_py(expected)
+        self.assertEquals(nd.as_py(result), nd.as_py(expected))
 
     def test_iterchunks(self):
         print("iterchunks")
