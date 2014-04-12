@@ -11,7 +11,7 @@ from .. import py2help
 from .data_descriptor import DDesc
 from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
-from .util import coerce
+from .util import coerce, coerce_record_to_row
 from ..utils import partition_all
 from .. import py2help
 
@@ -22,18 +22,6 @@ def open_file(path, mode, has_header):
     if has_header:
         csvfile.readline()
     return csvfile
-
-
-def coerce_record_to_row(schema, rec):
-    """
-
-    >>> from datashape import dshape
-
-    >>> schema = dshape('{x: int, y: int}')
-    >>> coerce_record_to_row(schema, {'x': 1, 'y': 2})
-    [1, 2]
-    """
-    return [rec[name] for name in schema[0].names]
 
 
 class CSV_DDesc(DDesc):
