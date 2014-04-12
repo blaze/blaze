@@ -5,7 +5,7 @@ from dynd import nd
 import unittest
 
 
-class GiantTest(unittest.TestCase):
+class SingleTestClass(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine('sqlite:///:memory:', echo=True)
 
@@ -49,7 +49,7 @@ class GiantTest(unittest.TestCase):
 
         with self.engine.connect() as conn:
             results = conn.execute('select * from testtable2')
-            assert list(results) == data_list
+            self.assertEquals(list(results), data_list)
 
 
         assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
@@ -67,6 +67,7 @@ class GiantTest(unittest.TestCase):
 
         dd.extend_chunks([chunk])
 
-        assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
+        self.assertEquals(list(iter(dd)) == data_list or list(iter(dd)),
+                          data_dict)
 
-        assert len(list(dd.iterchunks(blen=2))) == 2
+        self.assertEquals(len(list(dd.iterchunks(blen=2))), 2)
