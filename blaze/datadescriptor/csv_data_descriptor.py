@@ -13,6 +13,7 @@ from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
 from .util import coerce
 from ..utils import partition_all
+import py2help
 
 
 def open_file(path, mode, has_header):
@@ -89,7 +90,7 @@ class CSV_DDesc(DDesc):
                 pass
         if dialect is None:
             dialect = csv.get_dialect('excel')
-        elif isinstance(dialect, (str, unicode)):
+        elif isinstance(dialect, py2help.basestring):
             dialect = csv.get_dialect(dialect)
         self.dialect = dict((key, getattr(dialect, key))
                             for key in dir(dialect) if not key.startswith('_'))
