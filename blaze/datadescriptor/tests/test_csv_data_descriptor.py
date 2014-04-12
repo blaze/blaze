@@ -102,7 +102,7 @@ class TestTransfer(unittest.TestCase):
 
     def test_re_dialect(self):
         dialect1 = {'delimiter': ',', 'lineterminator': '\n'}
-        dialect2 = {'delimiter': ';', 'lineterminator': '\r\n'}
+        dialect2 = {'delimiter': ';', 'lineterminator': '--'}
 
         text = '1,1\n2,2\n'
 
@@ -117,7 +117,7 @@ class TestTransfer(unittest.TestCase):
                 dst.extend(src)
 
                 with open(dest_fn) as f:
-                    self.assertEquals(f.read(), '1;1\r\n2;2\r\n')
+                    self.assertEquals(f.read(), '1;1--2;2--')
 
 
     def test_iter(self):
