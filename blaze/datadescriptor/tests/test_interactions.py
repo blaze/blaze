@@ -57,17 +57,18 @@ def test_json_csv_chunked():
 
 def test_hdf5_csv():
     import h5py
-    with openfile('hdf5') as hdf5_fn, filetext('') as csv_fn:
-        with h5py.File(hdf5_fn, 'w') as f:
-            d = f.create_dataset('data', (3, 3), dtype='i8')
-            d[:] = 1
+    with openfile('hdf5') as hdf5_fn:
+        with filetext('') as csv_fn:
+            with h5py.File(hdf5_fn, 'w') as f:
+                d = f.create_dataset('data', (3, 3), dtype='i8')
+                d[:] = 1
 
-        csv = CSV_DDesc(csv_fn, mode='rw+', schema='3 * int')
-        hdf5 = HDF5_DDesc(hdf5_fn, '/data')
+            csv = CSV_DDesc(csv_fn, mode='rw+', schema='3 * int')
+            hdf5 = HDF5_DDesc(hdf5_fn, '/data')
 
-        copy(hdf5, csv)
+            copy(hdf5, csv)
 
-        assert list(csv) == [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+            assert list(csv) == [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
 
 """
 def dont_test_csv_hdf5():
