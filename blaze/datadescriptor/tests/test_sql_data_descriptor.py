@@ -13,6 +13,11 @@ class GiantTest(unittest.TestCase):
         pass
         # How do I clean up an engine?
 
+    def test_setup_with_uri(self):
+        dd = SQL_DDesc('sqlite:///:memory:',
+                       'accounts',
+                       schema='{name: string, amount: int}')
+
     def test_can_connect(self):
         with self.engine.connect() as conn:
             assert not conn.closed

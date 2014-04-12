@@ -6,6 +6,8 @@ from .dynd_data_descriptor import DyND_DDesc
 import datashape
 from sqlalchemy import Column, sql
 from ..utils import partition_all
+from ..py2help import basestring
+from .util import coerce_row_to_dict
 
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
@@ -53,18 +55,39 @@ def dshape_to_alchemy(dshape):
 
 class SQL_DDesc(DDesc):
     """
-    A Blaze data descriptor which exposes a CSV file.
+    A Blaze data descriptor to expose a SQL database.
+
+    >>> dd = SQL_DDesc('sqlite:///:memory:', 'accounts',
+    ...                schema='{name: string, amount: int}')
+
+
+    Insert into database
+
+    >>> dd.extend([('Alice', 100), ('Bob', 200)])
+
+    Select all from table
+    >>> list(dd)
+    [(u'Alice', 100), (u'Bob', 200)]
+
+    Verify that we're actually touching the database
+    >>> with dd.engine.connect() as conn:
+    ...     print(list(conn.execute('SELECT * FROM accounts')))
+    [(u'Alice', 100), (u'Bob', 200)]
 
     Parameters
     ----------
-    engine : A SQLAlchemy engine
+    engine : string, A SQLAlchemy engine
+        url of database, or SQLAlchemy engine
 
     table : string
         The name of the table
-    schema : datashape, datashape string, list of Columns
+    schema : string, list of Columns
+        The datashape/schema of the database
     """
 
     def __init__(self, engine, tablename, primary_key='', schema=None):
+        if isinstance(engine, basestring):
+            engine = alc.create_engine(engine)
         self.engine = engine
         self.tablename = tablename
 
@@ -79,7 +102,7 @@ class SQL_DDesc(DDesc):
                 raise ValueError('Must provide schema. Table %s does not exist'
                                  % tablename)
 
-        self.schema = schema
+        self.schema = datashape.dshape(schema)
         self._dshape = schema
         metadata = alc.MetaData()
 
@@ -110,7 +133,10 @@ class SQL_DDesc(DDesc):
                 'appendable': True}
 
 
-    def _extend(self, rows):
+    def extend(self, rows):
+        rows = (coerce_row_to_dict(self.schema, row)
+                    if isinstance(row, (tuple, list)) else row
+                    for row in rows)
         with self.engine.connect() as conn:
             for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
                 conn.execute(self.table.insert(), chunk)
