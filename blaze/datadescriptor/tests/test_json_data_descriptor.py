@@ -5,6 +5,7 @@ import os
 import tempfile
 import json
 from dynd import nd
+import datashape
 
 from blaze.datadescriptor import (
     JSON_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
@@ -98,6 +99,10 @@ def test_init():
     with filetext(text) as fn:
         dd = JSON_DDesc(fn, schema=schema)
         assert list(dd) == data
+        print(str(dd.dshape))
+        assert dd.dshape in set((
+            datashape.dshape('var * {name: string, amount: int32}'),
+            datashape.dshape('5 * {name: string, amount: int32}')))
 
 
 def test_iterchunks():

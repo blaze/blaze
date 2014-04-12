@@ -45,7 +45,7 @@ class JSON_DDesc(DDesc):
 
     @property
     def dshape(self):
-        return datashape.dshape(self.schema)
+        return datashape.dshape('var * ' + str(self.schema))
 
     @property
     def capabilities(self):

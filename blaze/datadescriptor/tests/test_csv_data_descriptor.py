@@ -64,7 +64,7 @@ class TestCSV_New_File(unittest.TestCase):
             ('Bob', 200),
             ('Alice', 50)]
 
-    schema = "{ f0: string, f1: int }"
+    schema = "{ f0: string, f1: int32 }"
 
     def setUp(self):
         handle, self.filename = tempfile.mkstemp(".csv")
@@ -92,6 +92,11 @@ class TestCSV_New_File(unittest.TestCase):
             self.assertEqual(lines[0].strip(), 'Alice 100')
             self.assertEqual(lines[1].strip(), 'Bob 200')
             self.assertEqual(lines[2].strip(), 'Alice 50')
+
+        expected_dshape = datashape.DataShape(datashape.Var(), self.schema)
+        # TODO: datashape comparison is broken
+        self.assertEqual(str(dd.dshape).replace(' ', ''),
+                         str(expected_dshape).replace(' ', ''))
 
 
 def test_re_dialect():
