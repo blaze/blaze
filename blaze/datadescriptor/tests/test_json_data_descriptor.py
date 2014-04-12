@@ -88,52 +88,54 @@ class TestJSON_DDesc(unittest.TestCase):
         vals = ddesc_as_py(el)
         self.assertEqual(vals, [2,3])
 
+class TestTransfer(unittest.TestCase):
 
-data = [{'name': 'Alice', 'amount': 100},
-        {'name': 'Alice', 'amount': 50},
-        {'name': 'Bob', 'amount': 10},
-        {'name': 'Charlie', 'amount': 200},
-        {'name': 'Bob', 'amount': 100}]
+    data = [{'name': 'Alice', 'amount': 100},
+            {'name': 'Alice', 'amount': 50},
+            {'name': 'Bob', 'amount': 10},
+            {'name': 'Charlie', 'amount': 200},
+            {'name': 'Bob', 'amount': 100}]
 
-text = '\n'.join(map(json.dumps, data))
+    text = '\n'.join(map(json.dumps, data))
 
-schema = '{name: string, amount: int32}'
+    schema = '{name: string, amount: int32}'
 
-def test_init():
-    with filetext(text) as fn:
-        dd = JSON_DDesc(fn, schema=schema)
-        assert list(dd) == data
-        print(str(dd.dshape))
-        assert dd.dshape in set((
-            datashape.dshape('var * {name: string, amount: int32}'),
-            datashape.dshape('5 * {name: string, amount: int32}')))
-
-
-def test_iterchunks():
-    with filetext(text) as fn:
-        dd = JSON_DDesc(fn, schema=schema)
-        chunks = list(dd.iterchunks(blen=2))
-        assert isinstance(chunks[0], nd.array)
-        assert len(chunks) == 3
-        assert nd.as_py(chunks[0]) == data[:2]
+    def test_init(self):
+        with filetext(self.text) as fn:
+            dd = JSON_DDesc(fn, schema=self.schema)
+            self.assertEquals(list(dd), self.data)
+            print(str(dd.dshape))
+            assert dd.dshape in set((
+                datashape.dshape('var * {name: string, amount: int32}'),
+                datashape.dshape('5 * {name: string, amount: int32}')))
 
 
-def test_append():
-    with filetext('') as fn:
-        dd = JSON_DDesc(fn, mode='w', schema=schema)
-        dd.append(data[0])
-        with open(fn) as f:
-            assert json.loads(f.read().strip()) == data[0]
+    def test_iterchunks(self):
+        with filetext(self.text) as fn:
+            dd = JSON_DDesc(fn, schema=self.schema)
+            chunks = list(dd.iterchunks(blen=2))
+            assert isinstance(chunks[0], nd.array)
+            self.assertEquals(len(chunks), 3)
+            self.assertEquals(nd.as_py(chunks[0]), self.data[:2])
 
-        assert raises(ValueError, lambda : dd.append(5.5))
-        assert raises(ValueError, lambda : dd.append({'name': 5, 'amount': 1.3}))
 
-def test_extend():
-    with filetext('') as fn:
-        dd = JSON_DDesc(fn, mode='w', schema=schema)
-        dd.extend(data)
+    def test_append(self):
+        with filetext('') as fn:
+            dd = JSON_DDesc(fn, mode='w', schema=self.schema)
+            dd.append(self.data[0])
+            with open(fn) as f:
+                self.assertEquals(json.loads(f.read().strip()), self.data[0])
 
-        assert list(dd) == data
+            self.assertRaises(ValueError, lambda : dd.append(5.5))
+            self.assertRaises(ValueError,
+                              lambda : dd.append({'name': 5, 'amount': 1.3}))
+
+    def test_extend(self):
+        with filetext('') as fn:
+            dd = JSON_DDesc(fn, mode='w', schema=self.schema)
+            dd.extend(self.data)
+
+            self.assertEquals(list(dd), self.data)
 
 
 if __name__ == '__main__':
