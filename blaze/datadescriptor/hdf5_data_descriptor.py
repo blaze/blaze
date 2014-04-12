@@ -80,7 +80,7 @@ class HDF5_DDesc(DDesc):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             result = np.asarray(arr[key])
-        return nd.asarray(result)
+        return nd.asarray(result, access='readonly')
 
     def iterchunks(self, blen=100):
         with h5py.File(self.path, mode='r') as f:
@@ -102,12 +102,6 @@ class HDF5_DDesc(DDesc):
 
     def dynd_arr(self):
         return self[:]
-
-    def _extend(self, rows):
-        with self.engine.connect() as conn:
-            for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
-                conn.execute(self.table.insert(), chunk)
-
 
     def iterchunks(self, blen=100):
         with h5py.File(self.path, mode='r') as f:

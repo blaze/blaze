@@ -9,7 +9,7 @@ from blaze.py2help import skip, skipIf
 from blaze.datadescriptor import ddesc_as_py
 from blaze.tests.common import MayBePersistentTest
 from blaze import (append,
-    DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc)
+    DyND_DDesc, BLZ_DDesc, PyTables_DDesc, CSV_DDesc, JSON_DDesc)
 
 from blaze.optional_packages import tables_is_here
 if tables_is_here:
@@ -115,18 +115,18 @@ class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):
         self.assertRaises(IOError, append, a2, [1])
 
 
-class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
+class TestOpenPyTables(MayBePersistentTest, unittest.TestCase):
 
     disk = True
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_open(self):
-        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/earray', mode='a')
         self.assertTrue(ddesc.mode == 'a')
         a = blaze.ones('0 * float64', ddesc=ddesc)
         append(a,range(10))
         # Re-open the dataset in URI
-        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='r')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/earray', mode='r')
         self.assertTrue(ddesc.mode == 'r')
         a2 = blaze.array(ddesc)
         self.assertTrue(isinstance(a2, blaze.Array))
@@ -134,10 +134,10 @@ class TestOpenHDF5(MayBePersistentTest, unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_wrong_open_mode(self):
-        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='w')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/earray', mode='w')
         a = blaze.ones('10 * float64', ddesc=ddesc)
         # Re-open the dataset
-        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='r')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/earray', mode='r')
         self.assertTrue(ddesc.mode == 'r')
         a2 = blaze.array(ddesc)
         self.assertRaises(tb.FileModeError, append, a2, [1])

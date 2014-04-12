@@ -56,11 +56,6 @@ class TestPyTablesDDesc(unittest.TestCase):
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 
-    def test_iterchunks(self):
-        dd = PyTables_DDesc(self.hdf5_file, '/a1')
-        self.assertEqual(len(list(dd.iterchunks(blen=1))), 2)
-        assert all(isinstance(chunk, DDesc) for chunk in dd.iterchunks())
-
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_getitem_types(self):
         dd = PyTables_DDesc(self.hdf5_file, '/g/a2')

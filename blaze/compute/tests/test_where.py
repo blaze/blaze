@@ -55,9 +55,9 @@ class createTables(unittest.TestCase):
                         ((i, i*2.) for i in range(self.N)), dtype=self.dtype,
                         count=self.N)
                     h5f.create_table('/', dpath[1:], ra)
-                self.ddesc = blaze.HDF5_DDesc(path, dpath, mode='r')
+                self.ddesc = blaze.PyTables_DDesc(path, dpath, mode='r')
             else:
-                self.ddesc = blaze.HDF5_DDesc(path, dpath, mode='w')
+                self.ddesc = blaze.PyTables_DDesc(path, dpath, mode='w')
                 a = blaze.array([(i, i*2.) for i in range(self.N)],
                                 'var * {f0: int32, f1: float64}',
                                 ddesc=self.ddesc)
@@ -104,7 +104,7 @@ class whereBLZDiskTest(whereTest):
     disk = "BLZ"
 
 # Check for tables on-disk (HDF5)
-class whereHDF5DiskTest(whereTest):
+class wherePyTablesDiskTest(whereTest):
     disk = "HDF5"
 
 # Check for tables on-disk, using existing BLZ files
@@ -113,7 +113,7 @@ class whereBLZDiskOpenTest(whereTest):
     open = True
 
 # Check for tables on-disk, using existng HDF5 files
-class whereHDF5DiskOpenTest(whereTest):
+class wherePyTablesDiskOpenTest(whereTest):
     disk = "HDF5"
     open = True
 

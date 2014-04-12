@@ -38,13 +38,13 @@ class MayBePersistentTest(unittest.TestCase):
             dpath = "/earray"
             h, path1 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
             os.close(h)  # close the non needed file handle
-            self.ddesc1 = blaze.HDF5_DDesc(path1, dpath, mode='w')
+            self.ddesc1 = blaze.PyTables_DDesc(path1, dpath, mode='w')
             h, path2 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
             os.close(h)
-            self.ddesc2 = blaze.HDF5_DDesc(path2, dpath, mode='w')
+            self.ddesc2 = blaze.PyTables_DDesc(path2, dpath, mode='w')
             h, path3 = tempfile.mkstemp(suffix=suffix, prefix=prefix)
             os.close(h)
-            self.ddesc3 = blaze.HDF5_DDesc(path3, dpath, mode='w')
+            self.ddesc3 = blaze.PyTables_DDesc(path3, dpath, mode='w')
         else:
             self.ddesc1 = None
             self.ddesc2 = None
@@ -210,11 +210,11 @@ class storagePythonLargeTest(storageTest):
     vm = "python"
 
 # Check for arrays stored on-disk, but fit in a chunk
-class storageHDF5Test(storageTest):
+class storagePyTablesTest(storageTest):
     disk = "HDF5"
 
 # Check for arrays stored on-disk, but are larger than a chunk
-class storageLargeHDF5Test(storageTest):
+class storageLargePyTablesTest(storageTest):
     N = 10000
     disk = "HDF5"
 
@@ -318,11 +318,11 @@ class evalPythonLargeMDTest(evalMDTest):
     vm = "python"
 
 # Check for arrays that fit in a chunk (HDF5)
-class evalMDHDF5Test(evalMDTest):
+class evalMDPyTablesTest(evalMDTest):
     disk = "HDF5"
 
-# Check for arrays that does not fit in a chunk (HDF5)
-class evalLargeMDHDF5Test(evalMDTest):
+# Check for arrays that does not fit in a chunk (PyTables)
+class evalLargeMDPyTablesTest(evalMDTest):
     N = 100
     M = 100
     disk = "HDF5"
@@ -418,11 +418,11 @@ class storagePythonLargeMDTest(storageMDTest):
     vm = "python"
 
 # Check for arrays stored on-disk, but fit in a chunk
-class storageMDHDF5Test(storageMDTest):
+class storageMDPyTablesTest(storageMDTest):
     disk = "HDF5"
 
 # Check for arrays stored on-disk, but are larger than a chunk
-class storageLargeMDHDF5Test(storageMDTest):
+class storageLargeMDPyTablesTest(storageMDTest):
     N = 500
     disk = "HDF5"
 

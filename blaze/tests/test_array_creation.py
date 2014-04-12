@@ -7,7 +7,7 @@ import datashape
 import blaze
 from blaze.tests.common import MayBePersistentTest
 from blaze import (append,
-    DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
+    DyND_DDesc, BLZ_DDesc, PyTables_DDesc)
 
 
 from blaze.py2help import skip, skipIf
@@ -186,13 +186,13 @@ class TestBLZPersistent(MayBePersistentTest, unittest.TestCase):
         self.assertEqual([list(i) for i in a], lvals)
 
 
-class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
+class TestPyTablesPersistent(MayBePersistentTest, unittest.TestCase):
 
     disk = True
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_create(self):
-        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='w')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/earray', mode='w')
         a = blaze.array([2], 'float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         self.assertTrue(a.dshape.shape == (1,))
@@ -200,7 +200,7 @@ class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_create_record(self):
-        ddesc = HDF5_DDesc(path=self.file, datapath='/table', mode='w')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/table', mode='w')
         a = blaze.array([(10, 3.5), (15, 2.25)],
                         dshape="var * {val: int32, flt: float32}",
                         ddesc=ddesc)
@@ -217,7 +217,7 @@ class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
 
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_append(self):
-        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/earray', mode='a')
         a = blaze.zeros('0 * float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         append(a, list(range(10)))
@@ -226,7 +226,7 @@ class TestHDF5Persistent(MayBePersistentTest, unittest.TestCase):
     # Using a 1-dim as the internal dimension
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_append2(self):
-        ddesc = HDF5_DDesc(path=self.file, datapath='/earray', mode='a')
+        ddesc = PyTables_DDesc(path=self.file, datapath='/earray', mode='a')
         a = blaze.empty('0 * 2 * float64', ddesc=ddesc)
         self.assertTrue(isinstance(a, blaze.Array))
         lvals = [[i,i*2] for i in range(10)]
