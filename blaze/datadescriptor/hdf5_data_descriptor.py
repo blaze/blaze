@@ -102,7 +102,7 @@ class HDF5_DDesc(DDesc):
     def dynd_arr(self):
         return self[:]
 
-    def extend_chunks(self, chunks):
+    def _extend_chunks(self, chunks):
         if 'w' not in self.mode and 'a' not in self.mode:
             raise ValueError('Read only')
 

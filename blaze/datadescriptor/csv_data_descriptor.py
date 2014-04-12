@@ -24,16 +24,6 @@ def open_file(path, mode, has_header):
     return csvfile
 
 
-def csv_descriptor_iterchunks(filename, mode, has_header, schema,
-                              blen, dialect={}, start=None, stop=None):
-    with open_file(filename, mode, has_header) as f:
-        f = it.islice(csv.reader(f, **dialect), start, stop)
-        for rows in partition_all(blen, f):
-            # TODO: better way to define dshape?
-            dshape = str(len(rows)) + ' * ' + schema
-            yield nd.array(rows, dtype=dshape)
-
-
 def coerce_record_to_row(schema, rec):
     """
 
@@ -188,7 +178,7 @@ class CSV_DDesc(DDesc):
             writer.writerow(row)
             writer.writerows(rows)
 
-    def iterchunks(self, blen=100, start=None, stop=None):
+    def _iterchunks(self, blen=100, start=None, stop=None):
         """Return chunks of size `blen` (in leading dimension).
 
         Parameters
@@ -207,10 +197,10 @@ class CSV_DDesc(DDesc):
             This iterable returns buffers as DyND arrays,
 
         """
-        # Return the iterable
-        return csv_descriptor_iterchunks(
-            self.path, self.mode, self.has_header,
-            self.schema, blen, self.dialect, start, stop)
+        with open_file(self.path, self.mode, self.has_header) as f:
+            f = it.islice(csv.reader(f, **self.dialect), start, stop)
+            for rows in partition_all(blen, f):
+                yield rows
 
     def remove(self):
         """Remove the persistent storage."""

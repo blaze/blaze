@@ -95,7 +95,7 @@ class JSON_DDesc(DDesc):
             for line in f:
                 yield coerce(self.schema, json.loads(line))
 
-    def iterchunks(self, blen=100):
+    def _iterchunks(self, blen=100):
         with open(self.path) as f:
             for chunk in partition_all(blen, f):
                 text = '[' + ',\r\n'.join(chunk) + ']'

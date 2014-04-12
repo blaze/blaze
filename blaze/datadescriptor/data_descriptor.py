@@ -150,9 +150,26 @@ class DDesc:
                     (str(row), self.schema))
         self._extend(chain([row], rows))
 
+
     def extend_chunks(self, chunks):
+        self._extend_chunks((nd.array(chunk) for chunk in chunks))
+
+    def _extend_chunks(self, chunks):
         from .as_py import ddesc_as_py
         return self.extend((row for chunk in chunks for row in nd.as_py(chunk)))
+
+    def iterchunks(self, **kwargs):
+        def dshape(chunk):
+            n = len(chunk)
+            s = str(self.dshape)
+            print(s)
+            return str(n) + ' * ' + ' * '.join(s.split(' * ')[1:])
+
+        chunks = self._iterchunks(**kwargs)
+        return (nd.array(chunk, dtype=dshape(chunk)) for chunk in chunks)
+
+    def _iterchunks(self, blen=100):
+        raise NotImplementedError()
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')
