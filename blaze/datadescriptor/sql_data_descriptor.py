@@ -51,7 +51,6 @@ def dshape_to_alchemy(dshape):
         raise NotImplementedError("Datashape not supported for SQL Schema")
 
 
-
 class SQL_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a CSV file.

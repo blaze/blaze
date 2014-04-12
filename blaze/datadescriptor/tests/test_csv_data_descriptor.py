@@ -100,15 +100,16 @@ def test_re_dialect():
 
     schema = '2 * int32'
 
-    with filetext(text) as source_fn, filetext('') as dest_fn:
-        src = CSV_DDesc(source_fn, schema=schema, **dialect1)
-        dst = CSV_DDesc(dest_fn, mode='w', schema=schema, **dialect2)
+    with filetext(text) as source_fn:
+        with filetext('') as dest_fn:
+            src = CSV_DDesc(source_fn, schema=schema, **dialect1)
+            dst = CSV_DDesc(dest_fn, mode='w', schema=schema, **dialect2)
 
-        # Perform copy
-        dst.extend(src)
+            # Perform copy
+            dst.extend(src)
 
-        with open(dest_fn) as f:
-            assert f.read() == '1;1\r\n2;2\r\n'
+            with open(dest_fn) as f:
+                assert f.read() == '1;1\r\n2;2\r\n'
 
 
 def test_iter():
