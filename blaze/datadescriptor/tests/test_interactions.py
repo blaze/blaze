@@ -22,7 +22,7 @@ def test_json_csv_structured():
     with filetext(text) as json_fn:
         with filetext('') as csv_fn:
             js = JSON_DDesc(json_fn, schema=schema)
-            csv = CSV_DDesc(csv_fn, mode='rw+', schema=schema)
+            csv = CSV_DDesc(csv_fn, mode='r+', schema=schema)
 
             csv.extend(js)
 
@@ -49,7 +49,7 @@ def test_json_csv_chunked():
     with filetext(text) as json_fn:
         with filetext('') as csv_fn:
             js = JSON_DDesc(json_fn, schema=schema)
-            csv = CSV_DDesc(csv_fn, mode='rw+', schema=schema)
+            csv = CSV_DDesc(csv_fn, mode='r+', schema=schema)
 
             copy(js, csv)
 
@@ -63,7 +63,7 @@ def test_hdf5_csv():
                 d = f.create_dataset('data', (3, 3), dtype='i8')
                 d[:] = 1
 
-            csv = CSV_DDesc(csv_fn, mode='rw+', schema='3 * int')
+            csv = CSV_DDesc(csv_fn, mode='r+', schema='3 * int')
             hdf5 = HDF5_DDesc(hdf5_fn, '/data')
 
             copy(hdf5, csv)

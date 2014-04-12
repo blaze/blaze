@@ -35,7 +35,7 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
         with os.fdopen(handle, "w") as f:
             f.write(self.buf)
         self.dd = CSV_DDesc(self.csv_file, dialect='excel', schema=self.schema,
-                            delimiter=' ', mode='rw+')
+                            delimiter=' ', mode='r+')
 
     def tearDown(self):
         os.remove(self.csv_file)
@@ -76,7 +76,7 @@ class TestCSV_New_File(unittest.TestCase):
         dd = CSV_DDesc(self.filename, 'w', schema=self.schema, delimiter=' ')
 
     def test_creation_rw(self):
-        dd = CSV_DDesc(self.filename, 'rw', schema=self.schema, delimiter=' ')
+        dd = CSV_DDesc(self.filename, 'w+', schema=self.schema, delimiter=' ')
 
     def test_append(self):
         dd = CSV_DDesc(self.filename, 'w', schema=self.schema, delimiter=' ')
