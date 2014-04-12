@@ -13,7 +13,7 @@ from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
 from .util import coerce
 from ..utils import partition_all
-import py2help
+from .. import py2help
 
 
 def open_file(path, mode, has_header):
