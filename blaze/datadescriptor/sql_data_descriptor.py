@@ -60,7 +60,6 @@ class SQL_DDesc(DDesc):
     >>> dd = SQL_DDesc('sqlite:///:memory:', 'accounts',
     ...                schema='{name: string, amount: int}')
 
-
     Insert into database
 
     >>> dd.extend([('Alice', 100), ('Bob', 200)])
@@ -70,19 +69,22 @@ class SQL_DDesc(DDesc):
     [(u'Alice', 100), (u'Bob', 200)]
 
     Verify that we're actually touching the database
+
     >>> with dd.engine.connect() as conn:
     ...     print(list(conn.execute('SELECT * FROM accounts')))
     [(u'Alice', 100), (u'Bob', 200)]
 
+
     Parameters
     ----------
     engine : string, A SQLAlchemy engine
-        url of database, or SQLAlchemy engine
-
+        uri of database
+        or SQLAlchemy engine
     table : string
         The name of the table
     schema : string, list of Columns
         The datashape/schema of the database
+        Possibly a list of SQLAlchemy columns
     """
 
     def __init__(self, engine, tablename, primary_key='', schema=None):
