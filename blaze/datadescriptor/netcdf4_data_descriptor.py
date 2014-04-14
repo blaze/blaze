@@ -13,7 +13,6 @@ if netCDF4_is_here:
     import netCDF4
 
 
-
 class netCDF4_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a netCDF4 dataset.
@@ -97,7 +96,7 @@ class netCDF4_DDesc(DDesc):
                 yield DyND_DDesc(nd.array(el[:], type=str(dshape)))
             else:
                 yield DyND_DDesc(nd.array(el, type=str(dshape)))
-        dset._v_file.close()
+        f.close()
 
     def getattr(self, name):
         with netCDF4.Dataset(self.path, mode=self.mode) as f:
