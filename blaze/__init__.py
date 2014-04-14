@@ -18,7 +18,8 @@ from .compute.eval import (
 from .compute.elwise_eval import _elwise_eval
 from .compute.ops.ufuncs import *
 from .datadescriptor import (
-    DyND_DDesc, BLZ_DDesc, PyTables_DDesc, CSV_DDesc, JSON_DDesc, Stream_DDesc)
+    DyND_DDesc, BLZ_DDesc, PyTables_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc,
+    SQL_DDesc, Stream_DDesc)
 
 inf = float('inf')
 nan = float('nan')

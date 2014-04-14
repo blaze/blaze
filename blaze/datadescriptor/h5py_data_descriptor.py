@@ -9,7 +9,7 @@ import numpy as np
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
 
-class HDF5_DDesc(DDesc):
+class H5PY_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes an HDF5 file.
 

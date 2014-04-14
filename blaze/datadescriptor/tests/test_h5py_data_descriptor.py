@@ -1,4 +1,4 @@
-from blaze.datadescriptor import HDF5_DDesc, DyND_DDesc, DDesc
+from blaze.datadescriptor import H5PY_DDesc, DyND_DDesc, DDesc
 from blaze.datadescriptor.util import openfile
 import unittest
 import tempfile
@@ -19,13 +19,13 @@ class SingleTestClass(unittest.TestCase):
 
     """
     def test_creation(self):
-        dd = HDF5_DDesc(self.filename, 'data', 'w', dshape='2 * 2 * int32')
+        dd = H5PY_DDesc(self.filename, 'data', 'w', dshape='2 * 2 * int32')
 
         with h5py.File(self.filename, 'r') as f:
             d = f['data']
             self.assertEquals(d.dtype.name, 'int32')
 
-        self.assertRaises(ValueError, lambda: HDF5_DDesc('bar.hdf5', 'foo'))
+        self.assertRaises(ValueError, lambda: H5PY_DDesc('bar.hdf5', 'foo'))
         """
 
     def test_existing_array(self):
@@ -36,7 +36,7 @@ class SingleTestClass(unittest.TestCase):
                                  chunks=True, maxshape=(None, 3))
             d[:] = 1
 
-        dd = HDF5_DDesc(self.filename, '/data', mode='a')
+        dd = H5PY_DDesc(self.filename, '/data', mode='a')
 
         known = {'chunks': True,
                  'maxshape': (None, 3),
@@ -56,7 +56,7 @@ class SingleTestClass(unittest.TestCase):
                                  chunks=True, maxshape=(None, 3))
             d[:] = 1
 
-        dd = HDF5_DDesc(self.filename, '/data', mode='a')
+        dd = H5PY_DDesc(self.filename, '/data', mode='a')
 
         chunks = [nd.array([[1, 2, 3]], dtype='1 * 3 * int32'),
                   nd.array([[4, 5, 6]], dtype='1 * 3 * int32')]
@@ -75,12 +75,12 @@ class SingleTestClass(unittest.TestCase):
         with h5py.File(self.filename, 'w') as f:
             d = f.create_dataset('data', (3, 3), dtype='i8')
             d[:] = 1
-        dd = HDF5_DDesc(self.filename, '/data')
+        dd = H5PY_DDesc(self.filename, '/data')
         assert all(isinstance(chunk, nd.array) for chunk in dd.iterchunks())
 
     """
     def test_extend(self):
-        dd = HDF5_DDesc(self.filename, '/data', 'a', schema='2 * int32')
+        dd = H5PY_DDesc(self.filename, '/data', 'a', schema='2 * int32')
         dd.extend([(1, 1), (2, 2)])
 
         results = list(dd)
@@ -89,13 +89,13 @@ class SingleTestClass(unittest.TestCase):
         self.assertEquals(nd.as_py(results[1]), [2, 2])
 
     def test_schema(self):
-        dd = HDF5_DDesc(self.filename, '/data', 'a', schema='2 * int32')
+        dd = H5PY_DDesc(self.filename, '/data', 'a', schema='2 * int32')
 
         self.assertEquals(str(dd.schema), '2 * int32')
         self.assertEquals(str(dd.dshape), 'var * 2 * int32')
 
     def test_dshape(self):
-        dd = HDF5_DDesc(self.filename, '/data', 'a', dshape='var * 2 * int32')
+        dd = H5PY_DDesc(self.filename, '/data', 'a', dshape='var * 2 * int32')
 
         self.assertEquals(str(dd.schema), '2 * int32')
         self.assertEquals(str(dd.dshape), 'var * 2 * int32')
