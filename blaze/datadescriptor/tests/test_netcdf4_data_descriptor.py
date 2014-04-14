@@ -8,12 +8,13 @@ import datashape
 import numpy as np
 
 from blaze.datadescriptor import (
-    netCDF4_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
+    DyND_DDesc, DDesc, ddesc_as_py)
 from blaze.py2help import skipIf
 
 from blaze.optional_packages import netCDF4_is_here
 if netCDF4_is_here:
     import netCDF4
+    from blaze.datadescriptor import netCDF4_DDesc
 
 
 class TestNetCDF4DDesc(unittest.TestCase):
