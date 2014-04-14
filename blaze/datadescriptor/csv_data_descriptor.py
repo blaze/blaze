@@ -12,7 +12,7 @@ from .data_descriptor import DDesc
 from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
 from .util import coerce, coerce_record_to_row
-from ..utils import partition_all
+from ..utils import partition_all, nth
 from .. import py2help
 
 
@@ -120,15 +120,15 @@ class CSV_DDesc(DDesc):
     def __getitem__(self, key):
         with open_file(self.path, self.mode, self.has_header) as csvfile:
             if isinstance(key, py2help._inttypes):
-                start, stop, step = key, key + 1, 1
+                line = nth(key, csvfile)
+                result = next(csv.reader([line], **self.dialect))
             elif isinstance(key, slice):
                 start, stop, step = key.start, key.stop, key.step
+                result = list(csv.reader(it.islice(csvfile, start, stop, step),
+                                         **self.dialect))
             else:
                 raise IndexError("key '%r' is not valid" % key)
-            read_iter = csv.reader(it.islice(csvfile, start, stop, step),
-                                   **self.dialect)
-            res = coerce(self.schema, read_iter)
-        return (res)
+        return coerce(self.schema, result)
 
     def __iter__(self):
         with open(self.path, self.mode) as f:

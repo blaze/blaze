@@ -57,12 +57,12 @@ class H5PY_DDesc(DDesc):
                 else:
                     f.create_dataset(datapath, shape, dtype=dtype, **kwargs)
             else:
-                # TODO: test provided dshape against given dshape
                 dshape2 = datashape.from_numpy(dset.shape, dset.dtype)
-                if dshape and dshape != dshape2:
-                    raise ValueError('Inconsistent datashapes.'
-                            '\nGiven: %s\nFound: %s' % (dshape, dshape2))
                 dshape = dshape2
+                # TODO: test provided dshape against given dshape
+                # if dshape and dshape != dshape2:
+                #     raise ValueError('Inconsistent datashapes.'
+                #             '\nGiven: %s\nFound: %s' % (dshape, dshape2))
 
         attributes = self.attributes()
         if attributes['chunks']:

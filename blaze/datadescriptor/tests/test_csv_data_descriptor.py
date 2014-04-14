@@ -225,8 +225,8 @@ class TestCSV_DDesc(unittest.TestCase):
 
     def test_getitem_start(self):
         dd = CSV_DDesc(self.csv_file, schema=self.schema)
-        self.assertEqual(dd[0], [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False}])
+        self.assertEqual(dd[0],
+            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False})
 
     def test_getitem_stop(self):
         dd = CSV_DDesc(self.csv_file, schema=self.schema)
