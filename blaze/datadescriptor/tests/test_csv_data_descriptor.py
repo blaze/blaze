@@ -57,6 +57,16 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
         with open(self.csv_file) as f:
             self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
 
+    def test_extend_structured(self):
+        with filetext('1,1.0\n2,2.0\n') as fn:
+            csv = CSV_DDesc(fn, 'r+', schema='{x: int32, y: float32}',
+                            delimiter=',')
+            csv.append((3, 3))
+            assert (list(csv) == [[1, 1.0], [2, 2.0], [3, 3.0]]
+                 or list(csv) == [{'x': 1, 'y': 1.0},
+                                  {'x': 2, 'y': 2.0},
+                                  {'x': 3, 'y': 3.0}])
+
 
 class TestCSV_New_File(unittest.TestCase):
 
