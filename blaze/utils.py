@@ -18,3 +18,19 @@ def partition_all(n, seq):
             yield result
         else:
             raise StopIteration()
+
+
+def nth(n, seq):
+    """
+
+    >>> nth(1, 'Hello, world!')
+    'e'
+    >>> nth(4, 'Hello, world!')
+    'o'
+    """
+    seq = iter(seq)
+    i = 0
+    while i < n:
+        i += 1
+        next(seq)
+    return next(seq)
