@@ -80,7 +80,7 @@ class TestNetCDF4DDesc(unittest.TestCase):
         dd[1] = [10, 11, 12]
         self.assertEqual(ddesc_as_py(dd[1]), [10, 11, 12])
 
-    @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
+    #@skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     @skip("The append segfaults sometimes")
     def test_descriptor_append(self):
         dd = netCDF4_DDesc(self.nc4_file, '/t1', mode='a')
