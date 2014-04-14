@@ -30,7 +30,8 @@ class TestNetCDF4DDesc(unittest.TestCase):
             a1 = f.createVariable('a1', 'i4', ('lat','lon'))
             a1[:] = self.a1
             cmpd_t = f.createCompoundType('i4,i8,f8', 'cmpd_t')
-            t1 = f.createVariable('t1', cmpd_t, ('lat',))
+            time = f.createDimension('time', None)
+            t1 = f.createVariable('t1', cmpd_t, ('time',))
             t1[:] = self.t1
             g = f.createGroup('g')
             a2 = g.createVariable('a2', 'i8', ('lat','lon'))
@@ -42,7 +43,7 @@ class TestNetCDF4DDesc(unittest.TestCase):
     @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_basic_object_type(self):
         self.assertTrue(issubclass(netCDF4_DDesc, DDesc))
-        dd = netCDF4_DDesc(self.nc4_file, 'a1')
+        dd = netCDF4_DDesc(self.nc4_file, '/a1')
         # Make sure the right type is returned
         self.assertTrue(isinstance(dd, DDesc))
         self.assertEqual(ddesc_as_py(dd), [[1, 2, 3], [4, 5, 6]])
@@ -50,7 +51,6 @@ class TestNetCDF4DDesc(unittest.TestCase):
     @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_descriptor_iter_types(self):
         dd = netCDF4_DDesc(self.nc4_file, '/a1')
-
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int32'))
         # Iteration should produce DyND_DDesc instances
         vals = []
@@ -63,7 +63,6 @@ class TestNetCDF4DDesc(unittest.TestCase):
     @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_descriptor_getitem_types(self):
         dd = netCDF4_DDesc(self.nc4_file, '/g/a2')
-
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         # Indexing should produce DyND_DDesc instances
         self.assertTrue(isinstance(dd[0], DyND_DDesc))
@@ -74,7 +73,6 @@ class TestNetCDF4DDesc(unittest.TestCase):
     @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_descriptor_setitem(self):
         dd = netCDF4_DDesc(self.nc4_file, '/g/a2', mode='a')
-
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         dd[1,2] = 10
         self.assertEqual(ddesc_as_py(dd[1,2]), 10)
@@ -84,7 +82,6 @@ class TestNetCDF4DDesc(unittest.TestCase):
     @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_descriptor_append(self):
         dd = netCDF4_DDesc(self.nc4_file, '/t1', mode='a')
-
         tshape = datashape.dshape(
             '2 * { f0 : int32, f1 : int64, f2 : float64 }')
         self.assertEqual(dd.dshape, tshape)

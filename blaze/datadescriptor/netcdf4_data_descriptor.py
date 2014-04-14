@@ -13,6 +13,15 @@ if netCDF4_is_here:
     import netCDF4
 
 
+def get_node(f, dp):
+    """Get a node in `f` file/group with a `dp` datapath (can be nested)."""
+    if dp.startswith('/'): dp = dp[1:]
+    idx = dp.find('/')
+    if idx >= 0:
+        group = f.groups[dp[:idx]]
+        return get_node(group, dp[idx+1:])
+    return f.variables[dp]
+
 class netCDF4_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a netCDF4 dataset.
@@ -28,7 +37,7 @@ class netCDF4_DDesc(DDesc):
     def dshape(self):
         # This cannot be cached because the Array can change the dshape
         with netCDF4.Dataset(self.path, mode='r') as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             odshape = datashape.from_numpy(dset.shape, dset.dtype)
         return odshape
 
@@ -36,7 +45,7 @@ class netCDF4_DDesc(DDesc):
     def capabilities(self):
         """The capabilities for the netCDF4 arrays."""
         with netCDF4.Dataset(self.path, mode='r') as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             appendable = isinstance(dset, netCDF4.Variable)
         caps = Capabilities(
             # netCDF4 arrays can be updated
@@ -56,25 +65,25 @@ class netCDF4_DDesc(DDesc):
     def dynd_arr(self):
         # Positionate at the beginning of the file
         with netCDF4.Dataset(self.path, mode='r') as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             dset = nd.array(dset[:], dtype=dset.dtype)
         return dset
 
     def __array__(self):
         with netCDF4.Dataset(self.path, mode='r') as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             dset = dset[:]
         return dset
 
     def __len__(self):
         with netCDF4.Dataset(self.path, mode='r') as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             arrlen = len(dset)
         return arrlen
 
     def __getitem__(self, key):
         with netCDF4.Dataset(self.path, mode='r') as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             # The returned arrays are temporary buffers,
             # so must be flagged as readonly.
             dyndarr = nd.asarray(dset[key], access='readonly')
@@ -83,12 +92,12 @@ class netCDF4_DDesc(DDesc):
     def __setitem__(self, key, value):
         # netCDF4 arrays can be updated
         with netCDF4.Dataset(self.path, mode=self.mode) as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             dset[key] = value
 
     def __iter__(self):
         f = netCDF4.Dataset(self.path, mode='r')
-        dset = f.variables[self.datapath]
+        dset = get_node(f, self.datapath)
         # Get rid of the leading dimension on which we iterate
         dshape = datashape.from_numpy(dset.shape[1:], dset.dtype)
         for el in dset:
@@ -100,7 +109,7 @@ class netCDF4_DDesc(DDesc):
 
     def getattr(self, name):
         with netCDF4.Dataset(self.path, mode=self.mode) as f:
-            dset = f.variables[self.datapath]
+            dset = get_node(f, self.datapath)
             if hasattr(dset, 'cols'):
                 return DyND_DDesc(
                     nd.asarray(getattr(dset.cols, name)[:],
@@ -110,17 +119,9 @@ class netCDF4_DDesc(DDesc):
 
     def append(self, values):
         """Append a list of values."""
-        shape, dtype = datashape.to_numpy(self.dshape)
-        values_arr = np.array(values, dtype=dtype)
-        shape_vals = values_arr.shape
-        if len(shape_vals) < len(shape):
-            shape_vals = (1,) + shape_vals
-        if len(shape_vals) != len(shape):
-            raise ValueError("shape of values is not compatible")
-        # Now, do the actual append
         with netCDF4.Dataset(self.path, mode=self.mode) as f:
-            dset = f.variables[self.datapath]
-            dset[len(dset):] = values_arr.reshape(shape_vals)
+            dset = get_node(f, self.datapath)
+            dset[len(dset):] = values
 
     def remove(self):
         """Remove the persistent storage."""

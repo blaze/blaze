@@ -44,7 +44,6 @@ class TestHDF5DDesc(unittest.TestCase):
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_iter_types(self):
         dd = HDF5_DDesc(self.hdf5_file, '/a1')
-
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int32'))
         # Iteration should produce DyND_DDesc instances
         vals = []
@@ -57,7 +56,6 @@ class TestHDF5DDesc(unittest.TestCase):
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_getitem_types(self):
         dd = HDF5_DDesc(self.hdf5_file, '/g/a2')
-
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         # Indexing should produce DyND_DDesc instances
         self.assertTrue(isinstance(dd[0], DyND_DDesc))
@@ -68,7 +66,6 @@ class TestHDF5DDesc(unittest.TestCase):
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_setitem(self):
         dd = HDF5_DDesc(self.hdf5_file, '/g/a2', mode='a')
-
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         dd[1,2] = 10
         self.assertEqual(ddesc_as_py(dd[1,2]), 10)
@@ -78,7 +75,6 @@ class TestHDF5DDesc(unittest.TestCase):
     @skipIf(not tables_is_here, 'pytables is not installed')
     def test_descriptor_append(self):
         dd = HDF5_DDesc(self.hdf5_file, '/t1', mode='a')
-
         tshape = datashape.dshape(
             '2 * { f0 : int32, f1 : int64, f2 : float64 }')
         self.assertEqual(dd.dshape, tshape)
