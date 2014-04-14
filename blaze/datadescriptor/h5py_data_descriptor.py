@@ -52,7 +52,6 @@ class H5PY_DDesc(DDesc):
                 if dshape is None:
                     raise ValueError('No dataset or dshape provided')
                 else:
-                    print(datapath, shape, dtype)
                     f.create_dataset(datapath, shape, dtype=dtype, **kwargs)
             else:
                 # TODO: test provided dshape against given dshape

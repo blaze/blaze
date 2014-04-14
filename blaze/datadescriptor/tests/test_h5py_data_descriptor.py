@@ -29,7 +29,6 @@ class SingleTestClass(unittest.TestCase):
         """
 
     def test_existing_array(self):
-        print("existing array")
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:
             d = f.create_dataset('data', (3, 3), dtype='i4',
@@ -49,7 +48,6 @@ class SingleTestClass(unittest.TestCase):
         self.assertEquals(str(dd.dshape), 'var * 3 * int32')
 
     def test_extend_chunks(self):
-        print("extend chunks")
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:
             d = f.create_dataset('data', (3, 3), dtype='i4',
@@ -70,7 +68,6 @@ class SingleTestClass(unittest.TestCase):
         self.assertEquals(nd.as_py(result), nd.as_py(expected))
 
     def test_iterchunks(self):
-        print("iterchunks")
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:
             d = f.create_dataset('data', (3, 3), dtype='i8')
