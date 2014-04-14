@@ -126,3 +126,9 @@ class HDF5_DDesc(DDesc):
     @property
     def schema(self):
         return ' * '.join(str(self.dshape).split(' * ')[1:])
+
+    def _extend(self, seq):
+        self.extend_chunks(partition_all(100, seq))
+
+    def __iter__(self):
+        return chain.from_iterable(self.iterchunks())
