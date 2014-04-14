@@ -77,3 +77,26 @@ class SingleTestClass(unittest.TestCase):
             d[:] = 1
         dd = HDF5_DDesc(self.filename, '/data')
         assert all(isinstance(chunk, nd.array) for chunk in dd.iterchunks())
+
+    """
+    def test_extend(self):
+        dd = HDF5_DDesc(self.filename, '/data', 'a', schema='2 * int32')
+        dd.extend([(1, 1), (2, 2)])
+
+        results = list(dd)
+
+        self.assertEquals(nd.as_py(results[0]), [1, 1])
+        self.assertEquals(nd.as_py(results[1]), [2, 2])
+
+    def test_schema(self):
+        dd = HDF5_DDesc(self.filename, '/data', 'a', schema='2 * int32')
+
+        self.assertEquals(str(dd.schema), '2 * int32')
+        self.assertEquals(str(dd.dshape), 'var * 2 * int32')
+
+    def test_dshape(self):
+        dd = HDF5_DDesc(self.filename, '/data', 'a', dshape='var * 2 * int32')
+
+        self.assertEquals(str(dd.schema), '2 * int32')
+        self.assertEquals(str(dd.dshape), 'var * 2 * int32')
+    """
