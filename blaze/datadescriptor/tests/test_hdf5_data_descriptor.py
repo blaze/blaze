@@ -14,7 +14,8 @@ class SingleTestClass(unittest.TestCase):
         self.filename = tempfile.mktemp('h5')
 
     def tearDown(self):
-        os.remove(self.filename)
+        if os.path.exists(self.filename):
+            os.remove(self.filename)
 
     """
     def test_creation(self):

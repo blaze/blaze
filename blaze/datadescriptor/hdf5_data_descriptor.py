@@ -27,11 +27,13 @@ class HDF5_DDesc(DDesc):
         Options to send to h5py - see h5py.File.create_dataset for options
     """
 
-    def __init__(self, path, datapath, mode='r', dshape=None, **kwargs):
+    def __init__(self, path, datapath, mode='r', schema=None, dshape=None, **kwargs):
         self.path = path
         self.datapath = datapath
         self.mode = mode
 
+        if schema and not dshape:
+            dshape = 'var * ' + str(schema)
 
         # TODO: provide sane defaults for kwargs
         # Notably chunks and maxshape
@@ -120,3 +122,7 @@ class HDF5_DDesc(DDesc):
                 shape[0] += len(arr)
                 dset.resize(shape)
                 dset[-len(arr):] = arr
+
+    @property
+    def schema(self):
+        return ' * '.join(str(self.dshape).split(' * ')[1:])
