@@ -96,4 +96,11 @@ class SingleTestClass(unittest.TestCase):
 
         self.assertEquals(str(dd.schema), '2 * int32')
         self.assertEquals(str(dd.dshape), 'var * 2 * int32')
+
+    def test_setitem(self):
+        dd = H5PY_DDesc(self.filename, 'data', 'a', dshape='2 * 2 * 2 * int')
+        dd[:] = 1
+        dd[0, 0, :] = 2
+        self.assertEqual(nd.as_py(dd.dynd_arr()), [[[2, 2], [1, 1]],
+                                                   [[1, 1], [1, 1]]])
     """

@@ -5,6 +5,7 @@ import h5py
 import datashape
 from dynd import nd
 import numpy as np
+from itertools import chain
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
@@ -23,6 +24,8 @@ class H5PY_DDesc(DDesc):
         r, w, rw+
     dshape: string or Datashape
         a datashape describing the data
+    schema: string or DataShape
+        datashape describing one row of data
     **kwargs:
         Options to send to h5py - see h5py.File.create_dataset for options
     """
@@ -58,7 +61,7 @@ class H5PY_DDesc(DDesc):
                 dshape2 = datashape.from_numpy(dset.shape, dset.dtype)
                 if dshape and dshape != dshape2:
                     raise ValueError('Inconsistent datashapes.'
-                            'Given: %s\nFound: %s' % (dshape, dshape2))
+                            '\nGiven: %s\nFound: %s' % (dshape, dshape2))
                 dshape = dshape2
 
         attributes = self.attributes()
@@ -82,6 +85,12 @@ class H5PY_DDesc(DDesc):
             arr = f[self.datapath]
             result = np.asarray(arr[key])
         return nd.asarray(result, access='readonly')
+
+    def __setitem__(self, key, value):
+        with h5py.File(self.path, mode=self.mode) as f:
+            arr = f[self.datapath]
+            arr[key] = value
+        return self
 
     def iterchunks(self, blen=100):
         with h5py.File(self.path, mode='r') as f:
