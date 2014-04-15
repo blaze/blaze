@@ -15,6 +15,9 @@ from .as_py import ddesc_as_py
 from .util import coerce
 from ..py2help import _inttypes
 
+def isdimension(ds):
+    return isinstance(ds, (datashape.Var, datashape.Fixed))
+
 
 class JSON_DDesc(DDesc):
     """
@@ -33,7 +36,13 @@ class JSON_DDesc(DDesc):
             raise ValueError('JSON file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
-        schema = kwargs.get("schema", None)
+        schema = kwargs.get("schema")
+        dshape = kwargs.get('dshape')
+        if dshape:
+            dshape = datashape.dshape(dshape)
+        if dshape and not schema and isdimension(dshape[0]):
+            schema = dshape[1:]
+
         if isinstance(schema, py2help._strtypes):
             schema = datashape.dshape(schema)
         if not schema:
@@ -43,10 +52,11 @@ class JSON_DDesc(DDesc):
         self.schema = str(schema)
         # Initially the array is not loaded (is this necessary?)
         self._cache_arr = None
+        self._dshape = dshape
 
     @property
     def dshape(self):
-        return datashape.dshape('var * ' + str(self.schema))
+        return self._dshape or datashape.dshape('var * ' + str(self.schema))
 
     @property
     def capabilities(self):
@@ -71,8 +81,58 @@ class JSON_DDesc(DDesc):
     def dynd_arr(self):
         return self._arr_cache
 
+    def __getitem__(self, key):
+        return self._arr_cache[key]
+
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
+
+    def __iter__(self):
+        with open(self.path) as f:
+            for line in f:
+                yield coerce(self.schema, json.loads(line))
+
+    def _iterchunks(self, blen=100):
+        with open(self.path) as f:
+            for chunk in partition_all(blen, f):
+                text = '[' + ',\r\n'.join(chunk) + ']'
+                dshape = str(len(chunk)) + ' * ' + self.schema
+                yield nd.parse_json(dshape, text)
+
+    def _extend(self, rows):
+        with open(self.path, self.mode) as f:
+            f.seek(0, os.SEEK_END)  # go to the end of the file
+            for row in rows:
+                json.dump(row, f)
+                f.write('\n')
+
+    def remove(self):
+        """Remove the persistent storage."""
+        os.unlink(self.path)
+
+
+class JSON_Streaming_DDesc(JSON_DDesc):
+    """
+    A Blaze data descriptor to expose a Streaming JSON file.
+
+    Parameters
+    ----------
+    path : string
+        A path string for the JSON file.
+    schema : string or datashape
+        A datashape (or its string representation) of the schema
+        in the JSON file.
+    """
+    @property
+    def _arr_cache(self):
+        if self._cache_arr is not None:
+            return self._cache_arr
+        with open(self.path, mode=self.mode) as jsonfile:
+            # This will read everything in-memory (but a memmap approach
+            # is in the works)
+            text = '[' + ', '.join(map(json.loads, jsonfile)) + ']'
+            self._cache_arr = nd.parse_json(self.schema, text)
+        return self._cache_arr
 
     def __getitem__(self, key):
         with open(self.path) as f:
@@ -104,7 +164,3 @@ class JSON_DDesc(DDesc):
             for row in rows:
                 json.dump(row, f)
                 f.write('\n')
-
-    def remove(self):
-        """Remove the persistent storage."""
-        os.unlink(self.path)

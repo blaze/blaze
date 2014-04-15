@@ -8,11 +8,11 @@ from dynd import nd
 import datashape
 
 from blaze.datadescriptor import (
-    JSON_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
+    JSON_DDesc, JSON_Streaming_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 from blaze.datadescriptor.util import filetext, raises
 
 # TODO: This isn't actually being used!
-_json_buf = u"""{
+json_buf = u"""{
     "type": "ImageCollection",
     "images": [
         "Image": {
@@ -31,7 +31,7 @@ _json_buf = u"""{
 """
 
 # TODO: This isn't actually being used!
-_json_schema = """{
+json_schema = """{
   type: string,
   images: var * {
         Width: int16,
@@ -46,6 +46,10 @@ _json_schema = """{
     };
 }
 """
+
+def test_big():
+    with filetext(json_buf) as fn:
+        dd = JSON_DDesc(fn, 'a', dshape=json_schema)
 
 
 json_buf = u"[1, 2, 3, 4, 5]"
@@ -78,10 +82,9 @@ class TestJSON_DDesc(unittest.TestCase):
         # self.assertEqual(dd.dshape, datashape.dshape(
         #     'Var, %s' % json_schema))
 
-        # Iteration should produce DyND_DDesc instances
         self.assertEqual(list(dd), [[1, 2, 3, 4, 5]])
 
-class TestTransfer(unittest.TestCase):
+class Test_StreamingTransfer(unittest.TestCase):
 
     data = [{'name': 'Alice', 'amount': 100},
             {'name': 'Alice', 'amount': 50},
@@ -95,7 +98,7 @@ class TestTransfer(unittest.TestCase):
 
     def test_init(self):
         with filetext(self.text) as fn:
-            dd = JSON_DDesc(fn, schema=self.schema)
+            dd = JSON_Streaming_DDesc(fn, schema=self.schema)
             self.assertEquals(list(dd), self.data)
             print(str(dd.dshape))
             assert dd.dshape in set((
@@ -105,7 +108,7 @@ class TestTransfer(unittest.TestCase):
 
     def test_iterchunks(self):
         with filetext(self.text) as fn:
-            dd = JSON_DDesc(fn, schema=self.schema)
+            dd = JSON_Streaming_DDesc(fn, schema=self.schema)
             chunks = list(dd.iterchunks(blen=2))
             assert isinstance(chunks[0], nd.array)
             self.assertEquals(len(chunks), 3)
@@ -114,7 +117,7 @@ class TestTransfer(unittest.TestCase):
 
     def test_append(self):
         with filetext('') as fn:
-            dd = JSON_DDesc(fn, mode='w', schema=self.schema)
+            dd = JSON_Streaming_DDesc(fn, mode='w', schema=self.schema)
             dd.append(self.data[0])
             with open(fn) as f:
                 self.assertEquals(json.loads(f.read().strip()), self.data[0])
@@ -125,14 +128,14 @@ class TestTransfer(unittest.TestCase):
 
     def test_extend(self):
         with filetext('') as fn:
-            dd = JSON_DDesc(fn, mode='w', schema=self.schema)
+            dd = JSON_Streaming_DDesc(fn, mode='w', schema=self.schema)
             dd.extend(self.data)
 
             self.assertEquals(list(dd), self.data)
 
     def test_getitem(self):
         with filetext(self.text) as fn:
-            dd = JSON_DDesc(fn, mode='r', schema=self.schema)
+            dd = JSON_Streaming_DDesc(fn, mode='r', schema=self.schema)
             assert dd[0] == self.data[0]
             assert dd[2:4] == self.data[2:4]
 
