@@ -81,13 +81,6 @@ class TestJSON_DDesc(unittest.TestCase):
         # Iteration should produce DyND_DDesc instances
         self.assertEqual(list(dd), [[1, 2, 3, 4, 5]])
 
-    def test_getitem(self):
-        dd = JSON_DDesc(self.json_file, schema=json_schema)
-        el = dd[1:3]
-        self.assertTrue(isinstance(el, DyND_DDesc))
-        vals = ddesc_as_py(el)
-        self.assertEqual(vals, [2,3])
-
 class TestTransfer(unittest.TestCase):
 
     data = [{'name': 'Alice', 'amount': 100},
@@ -136,6 +129,12 @@ class TestTransfer(unittest.TestCase):
             dd.extend(self.data)
 
             self.assertEquals(list(dd), self.data)
+
+    def test_getitem(self):
+        with filetext(self.text) as fn:
+            dd = JSON_DDesc(fn, mode='r', schema=self.schema)
+            assert dd[0] == self.data[0]
+            assert dd[2:4] == self.data[2:4]
 
 
 if __name__ == '__main__':

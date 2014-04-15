@@ -3,8 +3,9 @@ from __future__ import absolute_import, division, print_function
 import os
 import json
 
+from itertools import islice
 import datashape
-from ..utils import partition_all
+from ..utils import partition_all, nth
 
 from .data_descriptor import DDesc
 from .. import py2help
@@ -12,6 +13,7 @@ from dynd import nd
 from .dynd_data_descriptor import DyND_DDesc
 from .as_py import ddesc_as_py
 from .util import coerce
+from ..py2help import _inttypes
 
 
 class JSON_DDesc(DDesc):
@@ -73,7 +75,16 @@ class JSON_DDesc(DDesc):
         return nd.as_numpy(self.dynd_arr())
 
     def __getitem__(self, key):
-        return DyND_DDesc(self._arr_cache[key])
+        with open(self.path) as f:
+            if isinstance(key, _inttypes):
+                result = json.loads(nth(key, f))
+            elif isinstance(key, slice):
+                result = list(map(json.loads,
+                                    islice(f, key.start, key.stop, key.step)))
+            else:
+                raise NotImplementedError('Fancy indexing not supported\n'
+                        'Create DyND array and use fancy indexing from there')
+        return coerce(self.schema, result)
 
     def __iter__(self):
         with open(self.path) as f:
