@@ -7,14 +7,14 @@ from dynd import nd
 
 @contextmanager
 def filetext(text, extension=''):
-    with openfile(extension=extension) as filename:
+    with tmpfile(extension=extension) as filename:
         with open(filename, "w") as f:
             f.write(text)
 
         yield filename
 
 @contextmanager
-def openfile(extension=''):
+def tmpfile(extension=''):
     filename = tempfile.mktemp()
 
     yield filename

@@ -1,5 +1,5 @@
 from blaze.datadescriptor import CSV_DDesc, JSON_DDesc, H5PY_DDesc, copy
-from blaze.datadescriptor.util import filetext, openfile
+from blaze.datadescriptor.util import filetext, tmpfile
 import json
 import unittest
 
@@ -60,7 +60,7 @@ class SingleTestClass(unittest.TestCase):
 
     def test_hdf5_csv(self):
         import h5py
-        with openfile('hdf5') as hdf5_fn:
+        with tmpfile('hdf5') as hdf5_fn:
             with filetext('') as csv_fn:
                 with h5py.File(hdf5_fn, 'w') as f:
                     d = f.create_dataset('data', (3, 3), dtype='i8')
@@ -76,7 +76,7 @@ class SingleTestClass(unittest.TestCase):
     """
     def dont_test_csv_hdf5(self):
         import h5py
-        with openfile('hdf5') as hdf5_fn:
+        with tmpfile('hdf5') as hdf5_fn:
             with filetext('1,1\n2,2\n') as csv_fn:
                 csv = CSV_DDesc(csv_fn, schema='2 * int')
                 hdf5 = H5PY_DDesc(hdf5_fn, '/data', mode='a')

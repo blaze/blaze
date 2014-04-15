@@ -1,5 +1,5 @@
 from blaze.datadescriptor import H5PY_DDesc, DyND_DDesc, DDesc
-from blaze.datadescriptor.util import openfile
+from blaze.datadescriptor.util import tmpfile
 import unittest
 import tempfile
 import os

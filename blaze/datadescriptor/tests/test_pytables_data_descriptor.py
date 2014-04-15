@@ -11,7 +11,7 @@ from dynd import nd
 from blaze.datadescriptor import (
     PyTables_DDesc, DyND_DDesc, DDesc, ddesc_as_py)
 from blaze.py2help import skipIf
-from blaze.datadescriptor.util import openfile
+from blaze.datadescriptor.util import tmpfile
 
 from blaze.optional_packages import tables_is_here
 if tables_is_here:
