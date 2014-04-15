@@ -130,8 +130,8 @@ class JSON_Streaming_DDesc(JSON_DDesc):
         with open(self.path, mode=self.mode) as jsonfile:
             # This will read everything in-memory (but a memmap approach
             # is in the works)
-            text = '[' + ', '.join(map(json.loads, jsonfile)) + ']'
-            self._cache_arr = nd.parse_json(self.schema, text)
+            text = '[' + ', '.join(jsonfile) + ']'
+            self._cache_arr = nd.parse_json(str(self.dshape), text)
         return self._cache_arr
 
     def __getitem__(self, key):

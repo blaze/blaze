@@ -139,6 +139,10 @@ class Test_StreamingTransfer(unittest.TestCase):
             assert dd[0] == self.data[0]
             assert dd[2:4] == self.data[2:4]
 
+    def test_dynd_arr(self):
+        with filetext(self.text) as fn:
+            dd = JSON_Streaming_DDesc(fn, mode='r', schema=self.schema)
+            assert nd.as_py(dd.dynd_arr()) == self.data
 
 if __name__ == '__main__':
     unittest.main()
