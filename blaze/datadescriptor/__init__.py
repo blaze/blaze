@@ -3,13 +3,15 @@ from __future__ import absolute_import, division, print_function
 from .data_descriptor import DDesc, copy
 
 from .blz_data_descriptor import BLZ_DDesc
-from ..optional_packages import tables_is_here
+from ..optional_packages import tables_is_here, netCDF4_is_here
 from .h5py_data_descriptor import H5PY_DDesc
 if tables_is_here:
     from .pytables_data_descriptor import PyTables_DDesc
     HDF5_DDesc = PyTables_DDesc
 else:
     HDF5_DDesc = H5PY_DDesc
+if netCDF4_is_here:
+    from .netcdf4_data_descriptor import netCDF4_DDesc
 from .cat_data_descriptor import Cat_DDesc
 from .membuf_data_descriptor import (data_descriptor_from_ctypes,
                 data_descriptor_from_cffi)
