@@ -7,8 +7,6 @@ from dynd import nd
 
 @contextmanager
 def filetext(text, extension=''):
-    # write text to hidden file
-    filename = tempfile.mktemp(extension)
     with openfile(extension=extension) as filename:
         with open(filename, "w") as f:
             f.write(text)
