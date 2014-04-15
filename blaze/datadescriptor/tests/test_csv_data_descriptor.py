@@ -31,8 +31,8 @@ class TestCSV_DDesc_dialect(unittest.TestCase):
     schema = "{ f0: string, f1: int }"
 
     def setUp(self):
-        handle, self.csv_file = tempfile.mkstemp(".csv")
-        with os.fdopen(handle, "w") as f:
+        self.csv_file = tempfile.mktemp(".csv")
+        with open(self.csv_file, "w") as f:
             f.write(self.buf)
         self.dd = CSV_DDesc(self.csv_file, dialect='excel', schema=self.schema,
                             delimiter=' ', mode='r+')
