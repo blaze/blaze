@@ -3,9 +3,11 @@ from __future__ import absolute_import, division, print_function
 from .data_descriptor import DDesc, Capabilities
 
 from .blz_data_descriptor import BLZ_DDesc
-from ..optional_packages import tables_is_here
+from ..optional_packages import tables_is_here, netCDF4_is_here
 if tables_is_here:
     from .hdf5_data_descriptor import HDF5_DDesc
+if netCDF4_is_here:
+    from .netcdf4_data_descriptor import netCDF4_DDesc
 from .cat_data_descriptor import Cat_DDesc
 from .membuf_data_descriptor import (data_descriptor_from_ctypes,
                 data_descriptor_from_cffi)
