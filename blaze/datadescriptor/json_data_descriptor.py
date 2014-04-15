@@ -31,17 +31,15 @@ class JSON_DDesc(DDesc):
         A datashape (or its string representation) of the schema
         in the JSON file.
     """
-    def __init__(self, path, mode='r', **kwargs):
+    def __init__(self, path, mode='r', schema=None, dshape=None):
         if 'w' not in mode and not os.path.isfile(path):
             raise ValueError('JSON file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
-        schema = kwargs.get("schema")
-        dshape = kwargs.get('dshape')
         if dshape:
             dshape = datashape.dshape(dshape)
         if dshape and not schema and isdimension(dshape[0]):
-            schema = dshape[1:]
+            schema = datashape.DataShape(*dshape[1:])
 
         if isinstance(schema, py2help._strtypes):
             schema = datashape.dshape(schema)
@@ -75,8 +73,19 @@ class JSON_DDesc(DDesc):
             # This will read everything in-memory (but a memmap approach
             # is in the works)
             self._cache_arr = nd.parse_json(
-                self.schema, jsonfile.read())
+                str(self.dshape), jsonfile.read())
         return self._cache_arr
+
+    def __iter__(self):
+        for row in self._arr_cache:
+            yield coerce(self.schema, row)
+
+    def _iterchunks(self, blen=100):
+        with open(self.path) as f:
+            for chunk in partition_all(blen, f):
+                text = '[' + ',\r\n'.join(chunk) + ']'
+                dshape = str(len(chunk)) + ' * ' + self.schema
+                yield nd.parse_json(dshape, text)
 
     def dynd_arr(self):
         return self._arr_cache
@@ -86,25 +95,6 @@ class JSON_DDesc(DDesc):
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
-
-    def __iter__(self):
-        with open(self.path) as f:
-            for line in f:
-                yield coerce(self.schema, json.loads(line))
-
-    def _iterchunks(self, blen=100):
-        with open(self.path) as f:
-            for chunk in partition_all(blen, f):
-                text = '[' + ',\r\n'.join(chunk) + ']'
-                dshape = str(len(chunk)) + ' * ' + self.schema
-                yield nd.parse_json(dshape, text)
-
-    def _extend(self, rows):
-        with open(self.path, self.mode) as f:
-            f.seek(0, os.SEEK_END)  # go to the end of the file
-            for row in rows:
-                json.dump(row, f)
-                f.write('\n')
 
     def remove(self):
         """Remove the persistent storage."""

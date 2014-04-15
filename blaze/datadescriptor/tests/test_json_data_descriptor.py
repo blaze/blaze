@@ -47,13 +47,9 @@ json_schema = """{
 }
 """
 
-def test_big():
-    with filetext(json_buf) as fn:
-        dd = JSON_DDesc(fn, 'a', dshape=json_schema)
-
 
 json_buf = u"[1, 2, 3, 4, 5]"
-json_schema = "var * int8"
+json_dshape = "var * int8"
 
 
 class TestJSON_DDesc(unittest.TestCase):
@@ -72,17 +68,17 @@ class TestJSON_DDesc(unittest.TestCase):
 
     def test_basic_object_type(self):
         self.assertTrue(issubclass(JSON_DDesc, DDesc))
-        dd = JSON_DDesc(self.json_file, schema=json_schema)
+        dd = JSON_DDesc(self.json_file, dshape=json_dshape)
         self.assertTrue(isinstance(dd, DDesc))
         self.assertEqual(ddesc_as_py(dd), [1, 2, 3, 4, 5])
 
     def test_iter(self):
-        dd = JSON_DDesc(self.json_file, schema=json_schema)
+        dd = JSON_DDesc(self.json_file, dshape=json_dshape)
         # This equality does not work yet
         # self.assertEqual(dd.dshape, datashape.dshape(
         #     'Var, %s' % json_schema))
 
-        self.assertEqual(list(dd), [[1, 2, 3, 4, 5]])
+        self.assertEqual(list(dd), [1, 2, 3, 4, 5])
 
 class Test_StreamingTransfer(unittest.TestCase):
 

@@ -1,4 +1,5 @@
-from blaze.datadescriptor import CSV_DDesc, JSON_DDesc, H5PY_DDesc, copy
+from blaze.datadescriptor import (CSV_DDesc, JSON_Streaming_DDesc,
+                                  H5PY_DDesc, copy)
 from blaze.datadescriptor.util import filetext, tmpfile
 import json
 import unittest
@@ -9,7 +10,7 @@ class SingleTestClass(unittest.TestCase):
             with filetext('') as json_fn:
                 schema = '2 * int'
                 csv = CSV_DDesc(csv_fn, schema=schema)
-                json = JSON_DDesc(json_fn, mode='w', schema=schema)
+                json = JSON_Streaming_DDesc(json_fn, mode='w', schema=schema)
 
                 json.extend(csv)
 
@@ -23,7 +24,7 @@ class SingleTestClass(unittest.TestCase):
 
         with filetext(text) as json_fn:
             with filetext('') as csv_fn:
-                js = JSON_DDesc(json_fn, schema=schema)
+                js = JSON_Streaming_DDesc(json_fn, schema=schema)
                 csv = CSV_DDesc(csv_fn, mode='r+', schema=schema)
 
                 csv.extend(js)
@@ -37,7 +38,7 @@ class SingleTestClass(unittest.TestCase):
             with filetext('') as json_fn:
                 schema = '2 * int'
                 csv = CSV_DDesc(csv_fn, schema=schema)
-                json = JSON_DDesc(json_fn, mode='w', schema=schema)
+                json = JSON_Streaming_DDesc(json_fn, mode='w', schema=schema)
 
                 copy(csv, json)
 
@@ -51,7 +52,7 @@ class SingleTestClass(unittest.TestCase):
 
         with filetext(text) as json_fn:
             with filetext('') as csv_fn:
-                js = JSON_DDesc(json_fn, schema=schema)
+                js = JSON_Streaming_DDesc(json_fn, schema=schema)
                 csv = CSV_DDesc(csv_fn, mode='r+', schema=schema)
 
                 copy(js, csv)
