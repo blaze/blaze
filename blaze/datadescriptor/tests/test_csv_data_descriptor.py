@@ -77,7 +77,7 @@ class TestCSV_New_File(unittest.TestCase):
     schema = "{ f0: string, f1: int32 }"
 
     def setUp(self):
-        handle, self.filename = tempfile.mkstemp(".csv")
+        self.filename = tempfile.mktemp(".csv")
 
     def tearDown(self):
         os.remove(self.filename)
@@ -161,8 +161,8 @@ class TestCSV_DDesc(unittest.TestCase):
     schema = "{ f0: string, f1: string, f2: int16, f3: bool }"
 
     def setUp(self):
-        handle, self.csv_file = tempfile.mkstemp(".csv")
-        with os.fdopen(handle, "w") as f:
+        self.csv_file = tempfile.mktemp(".csv")
+        with open(self.csv_file, "w") as f:
             f.write(self.buf)
 
     def tearDown(self):
@@ -222,8 +222,8 @@ class TestCSV_DDesc(unittest.TestCase):
 
     def test_append(self):
         # Get a private file so as to not mess the original one
-        handle, csv_file = tempfile.mkstemp(".csv")
-        with os.fdopen(handle, "w") as f:
+        csv_file = tempfile.mktemp(".csv")
+        with open(csv_file, "w") as f:
             f.write(self.buf)
         dd = CSV_DDesc(csv_file, schema=self.schema, mode='r+')
         dd.append(["k4", "v4", 4, True])
