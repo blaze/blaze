@@ -20,6 +20,7 @@ if netCDF4_is_here:
 class TestNetCDF4DDesc(unittest.TestCase):
 
     def setUp(self):
+        if not netCDF4_is_here: return
         handle, self.nc4_file = tempfile.mkstemp(".nc")
         os.close(handle)  # close the non needed file handle
         self.a1 = np.array([[1, 2, 3], [4, 5, 6]], dtype="int32")
@@ -39,18 +40,23 @@ class TestNetCDF4DDesc(unittest.TestCase):
             a2[:] = self.a2
 
     def tearDown(self):
+        if not netCDF4_is_here: return
         os.remove(self.nc4_file)
 
-    @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
+    #@skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_basic_object_type(self):
+        # For reasons that I ignore, the above decorator is not working for
+        # 2.6, so will disable the tests the hard way...
+        if not netCDF4_is_here: return
         self.assertTrue(issubclass(netCDF4_DDesc, DDesc))
         dd = netCDF4_DDesc(self.nc4_file, '/a1')
         # Make sure the right type is returned
         self.assertTrue(isinstance(dd, DDesc))
         self.assertEqual(ddesc_as_py(dd), [[1, 2, 3], [4, 5, 6]])
 
-    @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
+    #@skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_descriptor_iter_types(self):
+        if not netCDF4_is_here: return
         dd = netCDF4_DDesc(self.nc4_file, '/a1')
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int32'))
         # Iteration should produce DyND_DDesc instances
@@ -61,8 +67,9 @@ class TestNetCDF4DDesc(unittest.TestCase):
             vals.append(ddesc_as_py(el))
         self.assertEqual(vals, [[1, 2, 3], [4, 5, 6]])
 
-    @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
+    #@skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_descriptor_getitem_types(self):
+        if not netCDF4_is_here: return
         dd = netCDF4_DDesc(self.nc4_file, '/g/a2')
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         # Indexing should produce DyND_DDesc instances
@@ -71,8 +78,9 @@ class TestNetCDF4DDesc(unittest.TestCase):
         self.assertTrue(isinstance(dd[1,2], DyND_DDesc))
         self.assertEqual(ddesc_as_py(dd[1,2]), 1)
 
-    @skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
+    #@skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
     def test_descriptor_setitem(self):
+        if not netCDF4_is_here: return
         dd = netCDF4_DDesc(self.nc4_file, '/g/a2', mode='a')
         self.assertEqual(dd.dshape, datashape.dshape('2 * 3 * int64'))
         dd[1,2] = 10
@@ -81,8 +89,9 @@ class TestNetCDF4DDesc(unittest.TestCase):
         self.assertEqual(ddesc_as_py(dd[1]), [10, 11, 12])
 
     #@skipIf(not netCDF4_is_here, 'netcdf4-python is not installed')
-    @skip("The append segfaults sometimes")
+    #@skip("The append segfaults sometimes")
     def test_descriptor_append(self):
+        if True: return
         dd = netCDF4_DDesc(self.nc4_file, '/t1', mode='a')
         tshape = datashape.dshape(
             '2 * { f0 : int32, f1 : int64, f2 : float64 }')
