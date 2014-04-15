@@ -7,6 +7,7 @@ from dynd import nd
 import h5py
 import numpy as np
 from sys import stdout
+from blaze.py2help import skip
 
 
 class SingleTestClass(unittest.TestCase):
@@ -17,7 +18,7 @@ class SingleTestClass(unittest.TestCase):
         if os.path.exists(self.filename):
             os.remove(self.filename)
 
-    """
+    @skip("This runs fine in isolation, segfaults in full test")
     def test_creation(self):
         dd = H5PY_DDesc(self.filename, 'data', 'w', dshape='2 * 2 * int32')
 
@@ -26,7 +27,6 @@ class SingleTestClass(unittest.TestCase):
             self.assertEquals(d.dtype.name, 'int32')
 
         self.assertRaises(ValueError, lambda: H5PY_DDesc('bar.hdf5', 'foo'))
-        """
 
     def test_existing_array(self):
         stdout.flush()
@@ -75,7 +75,7 @@ class SingleTestClass(unittest.TestCase):
         dd = H5PY_DDesc(self.filename, '/data')
         assert all(isinstance(chunk, nd.array) for chunk in dd.iterchunks())
 
-    """
+    @skip("This runs fine in isolation, segfaults in full test")
     def test_extend(self):
         dd = H5PY_DDesc(self.filename, '/data', 'a', schema='2 * int32')
         dd.extend([(1, 1), (2, 2)])
@@ -85,22 +85,24 @@ class SingleTestClass(unittest.TestCase):
         self.assertEquals(nd.as_py(results[0]), [1, 1])
         self.assertEquals(nd.as_py(results[1]), [2, 2])
 
+    @skip("This runs fine in isolation, segfaults in full test")
     def test_schema(self):
         dd = H5PY_DDesc(self.filename, '/data', 'a', schema='2 * int32')
 
         self.assertEquals(str(dd.schema), '2 * int32')
         self.assertEquals(str(dd.dshape), 'var * 2 * int32')
 
+    @skip("This runs fine in isolation, segfaults in full test")
     def test_dshape(self):
         dd = H5PY_DDesc(self.filename, '/data', 'a', dshape='var * 2 * int32')
 
         self.assertEquals(str(dd.schema), '2 * int32')
         self.assertEquals(str(dd.dshape), 'var * 2 * int32')
 
+    @skip("This runs fine in isolation, segfaults in full test")
     def test_setitem(self):
         dd = H5PY_DDesc(self.filename, 'data', 'a', dshape='2 * 2 * 2 * int')
         dd[:] = 1
         dd[0, 0, :] = 2
         self.assertEqual(nd.as_py(dd.dynd_arr()), [[[2, 2], [1, 1]],
                                                    [[1, 1], [1, 1]]])
-    """
