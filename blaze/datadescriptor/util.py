@@ -8,7 +8,7 @@ from dynd import nd
 @contextmanager
 def filetext(text, extension=''):
     # write text to hidden file
-    handle, filename = tempfile.mkstemp(extension)
+    filename = tempfile.mktemp(extension)
     with openfile(extension=extension) as filename:
         with open(filename, "w") as f:
             f.write(text)
@@ -21,7 +21,8 @@ def openfile(extension=''):
 
     yield filename
 
-    os.remove(filename)
+    if os.path.exists(filename):
+        os.remove(filename)
 
 
 def validate(schema, item):
