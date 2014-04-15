@@ -82,10 +82,10 @@ class TestOpenJSON(unittest.TestCase):
         os.unlink(self.fname)
 
     def test_open(self):
-        ddesc = JSON_DDesc(self.fname, mode='r', schema=json_schema)
+        ddesc = JSON_DDesc(self.fname, mode='r', dshape=json_schema)
         a = blaze.array(ddesc)
         self.assert_(isinstance(a, blaze.Array))
-        self.assertEqual(ddesc_as_py(a.ddesc), [1, 2, 3, 4, 5])
+        self.assertEqual(list(a), [1, 2, 3, 4, 5])
 
 
 class TestOpenBLZ(MayBePersistentTest, unittest.TestCase):

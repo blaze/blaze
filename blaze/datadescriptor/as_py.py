@@ -15,7 +15,7 @@ def ddesc_as_py(ddesc):
     """
     # TODO: This function should probably be removed.
     if not isinstance(ddesc, DDesc):
-        raise TypeError('expected DDesc instance, got %r' % type(ddesc))
+        return ddesc
 
     if isinstance(ddesc, BLZ_DDesc):
         return [ddesc_as_py(child_ddesc) for child_ddesc in ddesc]
