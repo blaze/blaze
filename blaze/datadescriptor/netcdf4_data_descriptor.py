@@ -27,11 +27,10 @@ class netCDF4_DDesc(DDesc):
     A Blaze data descriptor which exposes a netCDF4 dataset.
     """
 
-    def __init__(self, path, datapath, mode='r', filters=None):
+    def __init__(self, path, datapath, mode='r'):
         self.path = path
         self.datapath = datapath
         self.mode = mode
-        self.filters = filters
 
     @property
     def dshape(self):
