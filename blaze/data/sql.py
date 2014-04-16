@@ -1,33 +1,34 @@
+from __future__ import absolute_import, division, print_function
+
 from datetime import date, datetime, time
 from decimal import Decimal
-from .core import DataDescriptor
 from dynd import nd
+import sqlalchemy as sql
 import datashape
-from sqlalchemy import Column, sql
+
 from ..utils import partition_all
 from ..py2help import basestring
+from .core import DataDescriptor
 from .utils import coerce_row_to_dict
-
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
 
-import sqlalchemy as alc
-types = {'int64': alc.types.BigInteger,
-         'int32': alc.types.Integer,
-         'int': alc.types.Integer,
-         'int16': alc.types.SmallInteger,
-         'float': alc.types.Float,
-         'string': alc.types.String,  # Probably just use only this
-#         'date': alc.types.Date,
-#         'time': alc.types.Time,
-#         'datetime': alc.types.DateTime,
-#         bool: alc.types.Boolean,
-#         ??: alc.types.LargeBinary,
-#         Decimal: alc.types.Numeric,
-#         ??: alc.types.PickleType,
-#         unicode: alc.types.Unicode,
-#         unicode: alc.types.UnicodeText,
-#         str: alc.types.Text,  # ??
+types = {'int64': sql.types.BigInteger,
+         'int32': sql.types.Integer,
+         'int': sql.types.Integer,
+         'int16': sql.types.SmallInteger,
+         'float': sql.types.Float,
+         'string': sql.types.String,  # Probably just use only this
+#         'date': sql.types.Date,
+#         'time': sql.types.Time,
+#         'datetime': sql.types.DateTime,
+#         bool: sql.types.Boolean,
+#         ??: sql.types.LargeBinary,
+#         Decimal: sql.types.Numeric,
+#         ??: sql.types.PickleType,
+#         unicode: sql.types.Unicode,
+#         unicode: sql.types.UnicodeText,
+#         str: sql.types.Text,  # ??
          }
 
 def dshape_to_alchemy(dshape):
@@ -46,7 +47,7 @@ def dshape_to_alchemy(dshape):
     if str(dshape) in types:
         return types[str(dshape)]
     try:
-        return [alc.Column(name, dshape_to_alchemy(typ))
+        return [sql.Column(name, dshape_to_alchemy(typ))
                 for name, typ in dshape.parameters[0].parameters[0]]
     except TypeError:
         raise NotImplementedError("Datashape not supported for SQL Schema")
@@ -100,7 +101,7 @@ class SQL(DataDescriptor):
 
     def __init__(self, engine, tablename, primary_key='', schema=None):
         if isinstance(engine, basestring):
-            engine = alc.create_engine(engine)
+            engine = sql.create_engine(engine)
         self.engine = engine
         self.tablename = tablename
 
@@ -116,16 +117,16 @@ class SQL(DataDescriptor):
                                  % tablename)
 
         self.schema = datashape.dshape(schema)
-        metadata = alc.MetaData()
+        metadata = sql.MetaData()
 
-        table = alc.Table(tablename, metadata, *columns)
+        table = sql.Table(tablename, metadata, *columns)
 
         self.table = table
         metadata.create_all(engine)
 
     def __iter__(self):
         with self.engine.connect() as conn:
-            result = conn.execute(sql.select([self.table]))
+            result = conn.execute(sql.sql.select([self.table]))
             for item in result:
                 yield item
 

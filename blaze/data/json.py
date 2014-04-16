@@ -5,13 +5,13 @@ import json
 
 from itertools import islice
 import datashape
-from ..utils import partition_all, nth
-
-from .core import DataDescriptor
-from .. import py2help
 from dynd import nd
-from .utils import coerce
+
+from ..utils import partition_all, nth
+from .. import py2help
 from ..py2help import _inttypes
+from .core import DataDescriptor
+from .utils import coerce
 
 def isdimension(ds):
     return isinstance(ds, (datashape.Var, datashape.Fixed))

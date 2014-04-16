@@ -1,10 +1,11 @@
-from .core import DataDescriptor
-from ..utils import partition_all
-import h5py
-import datashape
-from dynd import nd
 import numpy as np
 from itertools import chain
+import h5py
+from dynd import nd
+import datashape
+
+from .core import DataDescriptor
+from ..utils import partition_all
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']

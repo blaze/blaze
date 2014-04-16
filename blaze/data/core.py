@@ -1,15 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['DataDescriptor', 'copy']
-
-import abc
-
-from blaze.error import StreamingDimensionError
-from blaze.compute.strategy import CKERNEL
-from .utils import validate
-
 from itertools import chain
 from dynd import nd
+
+from .utils import validate
+
+__all__ = ['DataDescriptor', 'copy']
 
 
 class DataDescriptor(object):
