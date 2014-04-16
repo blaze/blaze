@@ -94,6 +94,13 @@ class DataDescriptor(object):
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
 
+    def __getitem__(self, key):
+        return self.dynd_arr()[key]
+
+    def __iter__(self):
+        for row in self._iter():
+            yield coerce(self.schema, row)
+
 
 def copy(src, dest, **kwargs):
     """ Copy content from one data descriptor to another """
