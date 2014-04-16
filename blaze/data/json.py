@@ -29,6 +29,12 @@ class JSON(DataDescriptor):
         A datashape (or its string representation) of the schema
         in the JSON file.
     """
+    immutable = False
+    deferred = False
+    persistent = True
+    appendable = True
+    remote = False
+
     def __init__(self, path, mode='r', schema=None, dshape=None):
         if 'w' not in mode and not os.path.isfile(path):
             raise ValueError('JSON file "%s" does not exist' % path)
@@ -44,24 +50,15 @@ class JSON(DataDescriptor):
         if not schema:
             # TODO: schema detection from file
             raise ValueError('No schema found')
-        # TODO: should store DataShape object
-        self.schema = schema
         # Initially the array is not loaded (is this necessary?)
         self._cache_arr = None
+
+        self._schema = schema
         self._dshape = dshape
 
     @property
     def dshape(self):
         return self._dshape or datashape.dshape('var * ' + str(self.schema))
-
-    @property
-    def capabilities(self):
-        """The capabilities for the json data descriptor."""
-        return {'immutable': False,
-                'deferred': False,
-                'persistent': True,
-                'appendable': True,
-                'remote': False}
 
     @property
     def _arr_cache(self):

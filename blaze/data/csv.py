@@ -8,7 +8,7 @@ import datashape
 from dynd import nd
 
 from .core import DataDescriptor
-from .utils import coerce, coerce_record_to_row
+from .utils import coerce_record_to_row
 from ..utils import partition_all, nth
 from .. import py2help
 
@@ -61,7 +61,7 @@ class CSV(DataDescriptor):
         if not schema:
             # TODO: schema detection from first row
             raise ValueError('Need schema')
-        self.schema = str(schema)
+        self._schema = schema
 
         # Guess Dialect if not an input
         if dialect is None and 'r' in mode:
@@ -100,16 +100,7 @@ class CSV(DataDescriptor):
 
         csvfile.close()
 
-    @property
-    def dshape(self):
-        return datashape.Var() * self.schema
-
-    def dynd_arr(self):
-        with open_file(self.path, self.mode, self.has_header) as csvfile:
-            seq = csv.reader(csvfile, **self.dialect)
-            return nd.array(seq, dtype=self.schema)
-
-    def __getitem__(self, key):
+    def _getitem(self, key):
         with open_file(self.path, self.mode, self.has_header) as csvfile:
             if isinstance(key, py2help._inttypes):
                 line = nth(key, csvfile)
@@ -120,14 +111,14 @@ class CSV(DataDescriptor):
                                          **self.dialect))
             else:
                 raise IndexError("key '%r' is not valid" % key)
-        return coerce(self.schema, result)
+        return result
 
-    def __iter__(self):
+    def _iter(self):
         with open(self.path, self.mode) as f:
             if self.has_header:
                 next(f)  # burn header
             for row in csv.reader(f, **self.dialect):
-                yield coerce(self.schema, row)
+                yield row
 
     def _extend(self, rows):
         rows = iter(rows)
@@ -143,30 +134,6 @@ class CSV(DataDescriptor):
             writer = csv.writer(f, **self.dialect)
             writer.writerow(row)
             writer.writerows(rows)
-
-    def _chunks(self, blen=100, start=None, stop=None):
-        """Return chunks of size `blen` (in leading dimension).
-
-        Parameters
-        ----------
-        blen : int
-            The length, in rows, of the buffers that are returned.
-        start : int
-            Where the iterator starts.  The default is to start at the
-            beginning.
-        stop : int
-            Where the iterator stops. The default is to stop at the end.
-
-        Returns
-        -------
-        out : iterable
-            This iterable returns buffers as DyND arrays,
-
-        """
-        with open_file(self.path, self.mode, self.has_header) as f:
-            f = it.islice(csv.reader(f, **self.dialect), start, stop)
-            for rows in partition_all(blen, f):
-                yield rows
 
     def remove(self):
         """Remove the persistent storage."""

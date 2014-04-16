@@ -2,8 +2,10 @@ from __future__ import absolute_import, division, print_function
 
 from itertools import chain
 from dynd import nd
+import datashape
 
-from .utils import validate
+from .utils import validate, coerce
+from ..utils import partition_all
 
 __all__ = ['DataDescriptor', 'copy']
 
@@ -69,34 +71,36 @@ class DataDescriptor(object):
         return (nd.array(chunk, dtype=dshape(chunk)) for chunk in chunks)
 
     def _chunks(self, blen=100):
-        raise NotImplementedError()
+        return partition_all(blen, iter(self))
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')
 
     def dynd_arr(self):
-        """Concrete data descriptors must provide their array data
-           as a dynd array, accessible via this method.
-        """
-        if not self.deferred:
-            raise NotImplementedError((
-                'Data descriptor of type %s claims '
-                'claims to not being deferred, but did not '
-                'override dynd_arr()') % type(self))
-        else:
-            raise TypeError((
-                'Data descriptor of type %s is deferred') % type(self))
+        return nd.array(self, dtype=str(self.dshape))
 
     def __array__(self):
         return nd.as_numpy(self.dynd_arr())
 
     def __getitem__(self, key):
-        return self.dynd_arr()[key]
+        if hasattr(self, '_getitem'):
+            return coerce(self.schema, self._getitem(key))
+        else:
+            return self.dynd_arr()[key]
 
     def __iter__(self):
         for row in self._iter():
             yield coerce(self.schema, row)
 
+    _dshape = None
+    @property
+    def dshape(self):
+        return self._dshape or datashape.Var() * self.schema
+
+    _schema = None
+    @property
+    def schema(self):
+        return self._schema or self.dshape.subarray(1)
 
 def copy(src, dest, **kwargs):
     """ Copy content from one data descriptor to another """

@@ -104,11 +104,7 @@ class HDF5(DataDescriptor):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             for i in range(0, arr.shape[0], blen):
-                yield nd.asarray(np.array(arr[i:i+blen]), access='readonly')
-
-    @property
-    def dshape(self):
-        return self._dshape or datashape.Var() * self.schema()
+                yield np.array(arr[i:i+blen])
 
     def dynd_arr(self):
         return self[:]

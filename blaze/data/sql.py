@@ -116,7 +116,7 @@ class SQL(DataDescriptor):
                 raise ValueError('Must provide schema. Table %s does not exist'
                                  % tablename)
 
-        self.schema = datashape.dshape(schema)
+        self._schema = datashape.dshape(schema)
         metadata = sql.MetaData()
 
         table = sql.Table(tablename, metadata, *columns)

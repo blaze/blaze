@@ -195,28 +195,6 @@ class TestCSV(unittest.TestCase):
             {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
             {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
 
-    def test_chunks_start(self):
-        dd = CSV(self.csv_file, schema=self.schema)
-        vals = []
-        for el in dd.chunks(blen=2, start=1):
-            vals.extend(nd.as_py(el))
-        self.assertEqual(vals, [
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
-
-    def test_chunks_stop(self):
-        dd = CSV(self.csv_file, schema=self.schema)
-        vals = [nd.as_py(v) for v in dd.chunks(blen=1, stop=2)]
-        self.assertEqual(vals, [
-            [{u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False}],
-            [{u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}]])
-
-    def test_chunks_start_stop(self):
-        dd = CSV(self.csv_file, schema=self.schema)
-        vals = [nd.as_py(v) for v in dd.chunks(blen=1, start=1, stop=2)]
-        self.assertEqual(vals, [[
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}]])
-
     def test_append(self):
         # Get a private file so as to not mess the original one
         csv_file = tempfile.mktemp(".csv")
@@ -224,9 +202,12 @@ class TestCSV(unittest.TestCase):
             f.write(self.buf)
         dd = CSV(csv_file, schema=self.schema, mode='r+')
         dd.append(["k4", "v4", 4, True])
-        vals = [nd.as_py(v) for v in dd.chunks(blen=1, start=3)]
-        self.assertEqual(vals, [[
-            {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}]])
+        vals = [nd.as_py(v) for v in dd.chunks(blen=2)]
+        self.assertEqual(vals, [
+            [{u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
+             {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}],
+            [{u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False},
+             {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}]])
         self.assertRaises(ValueError, lambda: dd.append(3.3))
         os.remove(csv_file)
 
