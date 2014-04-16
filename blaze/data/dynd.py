@@ -6,7 +6,6 @@ from .core import DataDescriptor
 
 
 class DyND(DataDescriptor):
-
     deferred = False
     persistent = False
     appendable = False

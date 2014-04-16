@@ -5,6 +5,12 @@ from dynd import nd
 from .core import DataDescriptor
 
 class Python(DataDescriptor):
+    immutable = False
+    deferred = False
+    appendable = True
+    remote = False
+    persistent = False
+
     def __init__(self, storage=None, schema=None, dshape=None):
         self.storage = storage if storage is not None else []
         self._schema = schema
