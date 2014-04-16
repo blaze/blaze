@@ -3,6 +3,7 @@ from blaze.utils import filetext, tmpfile
 import json
 import unittest
 from blaze.py2help import skip
+from sqlalchemy import create_engine
 
 
 class SingleTestClass(unittest.TestCase):
@@ -75,6 +76,26 @@ class SingleTestClass(unittest.TestCase):
 
                 self.assertEquals(list(csv), [[1, 1, 1], [1, 1, 1], [1, 1, 1]])
 
+    def test_csv_sql_json(self):
+        data = [('Alice', 100), ('Bob', 200)]
+        text = '\n'.join(','.join(map(str, row)) for row in data)
+        schema = '{name: string, amount: int}'
+        engine = create_engine('sqlite:///:memory:')
+        with filetext(text) as csv_fn:
+            with filetext('') as json_fn:
+
+                csv = CSV(csv_fn, mode='r', schema=schema)
+                sql = SQL(engine, 'testtable', schema=schema)
+                json = JSON_Streaming(json_fn, mode='r+', schema=schema)
+
+                copy(csv, sql)
+
+                self.assertEqual(list(sql), data)
+
+                copy(sql, json)
+
+                with open(json_fn) as f:
+                    assert 'Alice' in f.read()
 
     @skip("This runs fine in isolation, segfaults in full test")
     def test_csv_hdf5(self):
