@@ -12,30 +12,23 @@ __all__ = ['DataDescriptor', 'copy']
 
 class DataDescriptor(object):
     """
-    The Blaze data descriptor is an interface which exposes
-    data to Blaze. The data descriptor doesn't implement math
-    or any other kind of functions, its sole purpose is providing
-    single and multi-dimensional data to Blaze via a data shape,
-    and the indexing/iteration interfaces.
+    Standard interface to data storage
 
-    Indexing and python iteration must always return data descriptors,
-    this is the python interface to the data. A summary of the
-    data access patterns for a data descriptor dd, in the
-    0.3 version of blaze are:
+    Data descriptors provide read and write access to common data storage
+    systems like csv, json, HDF5, and SQL.
 
-     - descriptor integer indexing
-            child_dd = dd[i, j, k]
-     - slice indexing
-            child_dd = dd[i:j]
-     - descriptor outer/leading dimension iteration
-            for child_dd in dd: do_something(child_dd)
-     - memory access via dynd array (either using dynd library
-       to process, or directly depending on the ABI of the dynd
-       array object, which will be stabilized prior to dynd 1.0)
+    They provide Pythonic iteration over these resources as well as efficient
+    chunked access with DyND arrays.
 
-    The descriptor-based indexing methods operate only through the
-    Python interface, JIT-compiled access should be done through
-    processing the dynd type and corresponding array metadata.
+    Data Descriptors implement the following methods:
+
+    __iter__ - iterate over storage, getting results as Python objects
+    chunks - iterate over storage, getting results as DyND arrays
+    extend - insert new data into storage (if possible.)
+             Consumes a sequence of core Python objects
+    extend_chunks - insert new data into storage (if possible.)
+             Consumes a sequence of DyND arrays
+    dynd_arr - load entire dataset into memory as a DyND array
     """
     def append(self, value):
         """
