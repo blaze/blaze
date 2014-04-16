@@ -1,0 +1,91 @@
+from blaze.data import CSV, JSON_Streaming, HDF5, SQL, copy
+from blaze.utils import filetext, tmpfile
+import json
+import unittest
+from blaze.py2help import skip
+
+
+class SingleTestClass(unittest.TestCase):
+    def test_csv_json(self):
+        with filetext('1,1\n2,2\n') as csv_fn:
+            with filetext('') as json_fn:
+                schema = '2 * int'
+                csv = CSV(csv_fn, schema=schema)
+                json = JSON_Streaming(json_fn, mode='r+', schema=schema)
+
+                json.extend(csv)
+
+                self.assertEquals(list(json), [[1, 1], [2, 2]])
+
+
+    def test_json_csv_structured(self):
+        data = [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}]
+        text = '\n'.join(map(json.dumps, data))
+        schema = '{x: int, y: int}'
+
+        with filetext(text) as json_fn:
+            with filetext('') as csv_fn:
+                js = JSON_Streaming(json_fn, schema=schema)
+                csv = CSV(csv_fn, mode='r+', schema=schema)
+
+                csv.extend(js)
+
+                self.assertEquals(list(csv),
+                                  [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}])
+
+
+    def test_csv_json_chunked(self):
+        with filetext('1,1\n2,2\n') as csv_fn:
+            with filetext('') as json_fn:
+                schema = '2 * int'
+                csv = CSV(csv_fn, schema=schema)
+                json = JSON_Streaming(json_fn, mode='r+', schema=schema)
+
+                copy(csv, json)
+
+                self.assertEquals(list(json), [[1, 1], [2, 2]])
+
+
+    def test_json_csv_chunked(self):
+        data = [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}]
+        text = '\n'.join(map(json.dumps, data))
+        schema = '{x: int, y: int}'
+
+        with filetext(text) as json_fn:
+            with filetext('') as csv_fn:
+                js = JSON_Streaming(json_fn, schema=schema)
+                csv = CSV(csv_fn, mode='r+', schema=schema)
+
+                copy(js, csv)
+
+                self.assertEquals(list(csv), data)
+
+    def test_hdf5_csv(self):
+        import h5py
+        with tmpfile('hdf5') as hdf5_fn:
+            with filetext('') as csv_fn:
+                with h5py.File(hdf5_fn, 'w') as f:
+                    d = f.create_dataset('data', (3, 3), dtype='i8')
+                    d[:] = 1
+
+                csv = CSV(csv_fn, mode='r+', schema='3 * int')
+                hdf5 = HDF5(hdf5_fn, '/data')
+
+                copy(hdf5, csv)
+
+                self.assertEquals(list(csv), [[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+
+
+    @skip("This runs fine in isolation, segfaults in full test")
+    def test_csv_hdf5(self):
+        import h5py
+        from dynd import nd
+        with tmpfile('hdf5') as hdf5_fn:
+            with filetext('1,1\n2,2\n') as csv_fn:
+                csv = CSV(csv_fn, schema='2 * int')
+                hdf5 = HDF5(hdf5_fn, '/data', mode='a', schema='2 * int')
+
+                copy(csv, hdf5)
+
+                self.assertEquals(nd.as_py(hdf5.dynd_arr()),
+                                  [[1, 1], [2, 2]])

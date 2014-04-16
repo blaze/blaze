@@ -104,4 +104,4 @@ class DataDescriptor(object):
 
 def copy(src, dest, **kwargs):
     """ Copy content from one data descriptor to another """
-    dest.extend_chunks(src.iterchunks(**kwargs))
+    dest.extend_chunks(src.chunks(**kwargs))
