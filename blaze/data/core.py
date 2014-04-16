@@ -95,12 +95,12 @@ class DataDescriptor(object):
     _dshape = None
     @property
     def dshape(self):
-        return self._dshape or datashape.Var() * self.schema
+        return datashape.dshape(self._dshape or datashape.Var() * self.schema)
 
     _schema = None
     @property
     def schema(self):
-        return self._schema or self.dshape.subarray(1)
+        return datashape.dshape(self._schema or self.dshape.subarray(1))
 
 def copy(src, dest, **kwargs):
     """ Copy content from one data descriptor to another """
