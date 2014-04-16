@@ -75,8 +75,6 @@ def discover_dialect(sample, dialect=None, **kwargs):
         if k in dialect:
             dialect[k] = v
 
-    sniffer = csv.Sniffer()
-
     return dialect
 
 
