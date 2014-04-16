@@ -15,12 +15,69 @@ from .. import py2help
 __all__ = ['CSV']
 
 
-def open_file(path, mode, has_header):
+def open_file(path, mode, header):
     """Return a file handler positionated at the first valid line."""
     csvfile = open(path, mode=mode)
-    if has_header:
+    if header:
         csvfile.readline()
     return csvfile
+
+
+def has_header(sample):
+    """
+
+    >>> s = '''
+    ... x,y
+    ... 1,1
+    ... 2,2'''
+    >>> has_header(s)
+    True
+    """
+    sniffer = csv.Sniffer()
+    try:
+        return sniffer.has_header(sample)
+    except:
+        return None
+
+
+def discover_dialect(sample, dialect=None, **kwargs):
+    """
+
+    >>> s = '''
+    ... 1,1
+    ... 2,2'''
+    >>> discover_dialect(s) # doctest: +SKIP
+    {'escapechar': None,
+     'skipinitialspace': False,
+     'quoting': 0,
+     'delimiter': ',',
+     'lineterminator': '\r\n',
+     'quotechar': '"',
+     'doublequote': False}
+    """
+    if isinstance(dialect, py2help._strtypes):
+        dialect = csv.get_dialect(dialect)
+
+    sniffer = csv.Sniffer()
+    if not dialect:
+        try:
+            dialect = sniffer.sniff(sample)
+        except:
+            dialect = csv.get_dialect('excel')
+
+    # Convert dialect to dictionary
+    dialect = dict((key, getattr(dialect, key))
+                   for key in dir(dialect) if not key.startswith('_'))
+
+    # Update dialect with any keyword arguments passed in
+    # E.g. allow user to override with delimiter=','
+    for k, v in kwargs.items():
+        if k in dialect:
+            dialect[k] = v
+
+    sniffer = csv.Sniffer()
+
+    return dialect
 
 
 class CSV(DataDescriptor):
@@ -37,7 +94,7 @@ class CSV(DataDescriptor):
     dialect : string or csv.Dialect instance
         The dialect as understood by the `csv` module in Python standard
         library.  If not specified, a value is guessed.
-    has_header : boolean
+    header : boolean
         Whether the CSV file has a header or not.  If not specified a value
         is guessed.
     """
@@ -48,60 +105,28 @@ class CSV(DataDescriptor):
     remote = False
 
     def __init__(self, path, mode='r', schema=None, dialect=None,
-            has_header=None, **kwargs):
+            header=None, **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
-        csvfile = open(path, mode=self.mode)
-
-        # Handle Schema
-        if isinstance(schema, py2help._strtypes):
-            schema = datashape.dshape(schema)
-        if not schema:
-            # TODO: schema detection from first row
-            raise ValueError('Need schema')
         self._schema = schema
 
-        # Guess Dialect if not an input
-        if dialect is None and 'r' in mode:
-            sniffer = csv.Sniffer()
-            try:
-                dialect = sniffer.sniff(csvfile.read(1024))
-            except:
-                pass
-        if dialect is None:
-            dialect = csv.get_dialect('excel')
-        elif isinstance(dialect, py2help.basestring):
-            dialect = csv.get_dialect(dialect)
-        # Convert dialect to dictionary
-        self.dialect = dict((key, getattr(dialect, key))
-                            for key in dir(dialect) if not key.startswith('_'))
-
-        # Update dialect with any keyword arguments passed in
-        # E.g. allow user to override with delimiter=','
-        for k, v in kwargs.items():
-            if k in self.dialect:
-                self.dialect[k] = v
-
-        # Handle Header
-        if has_header is None and mode != 'w':
-            # Guess whether the file has a header or not
-            sniffer = csv.Sniffer()
-            csvfile.seek(0)
-            sample = csvfile.read(1024)
-            try:
-                self.has_header = sniffer.has_header(sample)
-            except:
-                self.has_header = has_header
-
+        if os.path.exists(path) and mode != 'w':
+            with open(path, 'r') as f:
+                sample = f.read(1024)
         else:
-            self.has_header = has_header
+            sample = ''
+        dialect = discover_dialect(sample, dialect, **kwargs)
+        assert dialect
+        if header is None:
+            header = has_header(sample)
 
-        csvfile.close()
+        self.header = header
+        self.dialect = dialect
 
     def _getitem(self, key):
-        with open_file(self.path, self.mode, self.has_header) as csvfile:
+        with open_file(self.path, self.mode, self.header) as csvfile:
             if isinstance(key, py2help._inttypes):
                 line = nth(key, csvfile)
                 result = next(csv.reader([line], **self.dialect))
@@ -115,14 +140,15 @@ class CSV(DataDescriptor):
 
     def _iter(self):
         with open(self.path, self.mode) as f:
-            if self.has_header:
+            print(self.header)
+            if self.header:
                 next(f)  # burn header
             for row in csv.reader(f, **self.dialect):
                 yield row
 
     def _extend(self, rows):
         rows = iter(rows)
-        with open_file(self.path, self.mode, self.has_header) as f:
+        with open_file(self.path, self.mode, self.header) as f:
             row = next(rows)
             if isinstance(row, dict):
                 schema = datashape.dshape(self.schema)

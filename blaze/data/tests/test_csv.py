@@ -9,6 +9,7 @@ import datashape
 
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
+from blaze.data.csv import has_header
 from blaze.utils import filetext
 from dynd import nd
 
@@ -37,6 +38,9 @@ class Test_Dialect(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.csv_file)
+
+    def test_has_header(self):
+        assert has_header(self.buf)
 
     def test_overwrite_delimiter(self):
         self.assertEquals(self.dd.dialect['delimiter'], ' ')
@@ -78,7 +82,8 @@ class TestCSV_New_File(unittest.TestCase):
         self.filename = tempfile.mktemp(".csv")
 
     def tearDown(self):
-        os.remove(self.filename)
+        if os.path.exists(self.filename):
+            os.remove(self.filename)
 
     def test_creation(self):
         dd = CSV(self.filename, 'w', schema=self.schema, delimiter=' ')
@@ -166,6 +171,9 @@ class TestCSV(unittest.TestCase):
     def tearDown(self):
         os.remove(self.csv_file)
 
+    def test_has_header(self):
+        assert not has_header(self.buf)
+
     def test_basic_object_type(self):
         dd = CSV(self.csv_file, schema=self.schema)
         self.assertTrue(isinstance(dd, DataDescriptor))
@@ -235,3 +243,4 @@ class TestCSV(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

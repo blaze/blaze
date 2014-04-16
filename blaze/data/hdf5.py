@@ -124,10 +124,6 @@ class HDF5(DataDescriptor):
                 dset.resize(shape)
                 dset[-len(arr):] = arr
 
-    @property
-    def schema(self):
-        return self._schema or self.dshape.subarray(1)
-
     def _extend(self, seq):
         self.extend_chunks(partition_all(100, seq))
 
