@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from glob import glob
 from itertools import chain
+from datashape import dshape, Var
 
 from .core import DataDescriptor
 from .. import py2help
@@ -16,15 +17,23 @@ class Files(DataDescriptor):
     remote = False
     persistent = True
 
-    def __init__(self, files, descriptor, schema=None):
+    def __init__(self, files, descriptor, subdshape=None, schema=None):
         if isinstance(files, py2help._strtypes):
             files = glob(files)
         self.filenames = files
 
         self.descriptor = descriptor
-        self._schema = schema
+        if schema and not subdshape:
+            subdshape = Var() * schema
+        self.subdshape = dshape(subdshape)
+
+    @property
+    def dshape(self):
+        if isinstance(self.subdshape[0], Var):
+            return self.subdshape
+        else:
+            return Var() * self.subdshape
 
     def _iter(self):
-        return chain.from_iterable(self.descriptor(fn, schema=self.schema)
-            for fn in self.filenames)
-        return iter(self.storage)
+        return chain.from_iterable(self.descriptor(fn, dshape=self.subdshape)
+                                    for fn in self.filenames)

@@ -10,6 +10,10 @@ from ..utils import partition_all
 __all__ = ['DataDescriptor', 'copy']
 
 
+def isdimension(ds):
+    return isinstance(ds, (datashape.Var, datashape.Fixed))
+
+
 class DataDescriptor(object):
     """
     Standard interface to data storage
@@ -86,8 +90,19 @@ class DataDescriptor(object):
             return self.dynd_arr()[key]
 
     def __iter__(self):
-        for row in self._iter():
-            yield coerce(self.schema, row)
+        try:
+            for row in self._iter():
+                yield coerce(self.schema, row)
+        except NotImplementedError:
+            py = nd.as_py(self.dynd_arr())
+            if isdimension(self.dshape[0]):
+                for row in py:
+                    yield row
+            else:
+                yield py
+
+    def _iter(self):
+        raise NotImplementedError()
 
     _dshape = None
     @property
@@ -97,7 +112,12 @@ class DataDescriptor(object):
     _schema = None
     @property
     def schema(self):
-        return datashape.dshape(self._schema or self.dshape.subarray(1))
+        if self._schema:
+            return datashape.dshape(self._schema)
+        if isdimension(self.dshape[0]):
+            return self.dshape.subarray(1)
+        raise TypeError('Datashape is not indexable to schema\n%s' %
+                        self.dshape)
 
 def copy(src, dest, **kwargs):
     """ Copy content from one data descriptor to another """

@@ -10,11 +10,8 @@ from dynd import nd
 from ..utils import partition_all, nth
 from .. import py2help
 from ..py2help import _inttypes
-from .core import DataDescriptor
+from .core import DataDescriptor, isdimension
 from .utils import coerce
-
-def isdimension(ds):
-    return isinstance(ds, (datashape.Var, datashape.Fixed))
 
 
 class JSON(DataDescriptor):
@@ -46,7 +43,7 @@ class JSON(DataDescriptor):
 
         if isinstance(schema, py2help._strtypes):
             schema = datashape.dshape(schema)
-        if not schema:
+        if not schema and not dshape:
             # TODO: schema detection from file
             raise ValueError('No schema found')
         # Initially the array is not loaded (is this necessary?)
@@ -54,10 +51,6 @@ class JSON(DataDescriptor):
 
         self._schema = schema
         self._dshape = dshape
-
-    @property
-    def dshape(self):
-        return self._dshape or datashape.dshape('var * ' + str(self.schema))
 
     @property
     def _arr_cache(self):
@@ -72,10 +65,6 @@ class JSON(DataDescriptor):
         except:
             pass
         return self._cache_arr
-
-    def __iter__(self):
-        for line in self._arr_cache:
-            yield nd.as_py(line)
 
     def dynd_arr(self):
         return self._arr_cache
@@ -130,6 +119,8 @@ class JSON_Streaming(JSON):
         with self.open(self.path) as f:
             for line in f:
                 yield json.loads(line)
+
+    __iter__ = DataDescriptor.__iter__
 
     def _iterchunks(self, blen=100):
         with self.open(self.path) as f:

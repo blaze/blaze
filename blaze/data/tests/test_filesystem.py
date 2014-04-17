@@ -15,12 +15,17 @@ data = {'a.csv': '1,1\n2,2',
 class Test_Files(TestCase):
     def test_filesystem(self):
         with filetexts(data) as filenames:
-            dd = Files(sorted(filenames), CSV, schema='2 * int32')
+            dd = Files(sorted(filenames), CSV, subdshape='var * 2 * int32')
 
             self.assertEquals(dd.filenames, ['a.csv', 'b.csv', 'c.csv'])
             self.assertEqual(str(dd.schema), '2 * int32')
 
             expected = [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]]
+
+            result = dd.dynd_arr()
+            expected2 = nd.array(expected, dtype='int32')
+            self.assertEqual(nd.as_py(result),
+                             nd.as_py(expected2))
 
             self.assertEqual(list(dd), expected)
             self.assertEqual(list(dd), expected)  # Not one use only
@@ -30,3 +35,4 @@ class Test_Files(TestCase):
                         nd.array([[4, 4], [5, 5], [6, 6]], dtype='int32')]
 
             assert all(nd.as_py(a) == nd.as_py(b) for a, b in zip(chunks, expected))
+

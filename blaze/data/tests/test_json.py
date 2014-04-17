@@ -12,40 +12,53 @@ from blaze.data import JSON, JSON_Streaming
 from blaze.utils import filetext, raises
 
 # TODO: This isn't actually being used!
-json_buf = u"""{
-    "type": "ImageCollection",
-    "images": [
-        "Image": {
-            "Width":  800,
-            "Height": 600,
-            "Title":  "View from 15th Floor",
-            "Thumbnail": {
-                "Url":    "http://www.example.com/image/481989943",
-                "Height": 125,
-                "Width":  "100"
-            },
-            "IDs": [116, 943, 234, 38793]
-        }
-    ]
-}
-"""
 
-# TODO: This isn't actually being used!
-json_schema = """{
-  type: string,
-  images: var * {
-        Width: int16,
-        Height: int16,
-        Title: string,
-        Thumbnail: {
-            Url: string,
-            Height: int16,
+class TestBigJSON(unittest.TestCase):
+    maxDiff = None
+    data = {
+        "type": "ImageCollection",
+        "images": [{
+               "Width":  800,
+                "Height": 600,
+                "Title":  "View from 15th Floor",
+                "Thumbnail": {
+                    "Url":    "http://www.example.com/image/481989943",
+                    "Height": 125,
+                    "Width":  "100"
+                },
+                "IDs": [116, 943, 234, 38793]
+            }]
+    }
+
+    dshape = """{
+      type: string,
+      images: var * {
             Width: int16,
-        },
-        IDs: var * int32,
-    };
-}
-"""
+            Height: int16,
+            Title: string,
+            Thumbnail: {
+                Url: string,
+                Height: int16,
+                Width: int16,
+            },
+            IDs: var * int32,
+        }
+    }
+    """
+
+    def setUp(self):
+        self.filename= tempfile.mktemp(".json")
+        with open(self.filename, "w") as f:
+            f.write(json.dumps(self.data))
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+    def test_basic(self):
+        dd = JSON(self.filename, 'r', dshape=self.dshape)
+        self.assertEqual(list(dd),
+                         [nd.as_py(nd.parse_json(self.dshape,
+                             json.dumps(self.data)))])
 
 
 json_buf = u"[1, 2, 3, 4, 5]"

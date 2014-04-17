@@ -94,17 +94,22 @@ class CSV(DataDescriptor):
     appendable = True
     remote = False
 
-    def __init__(self, path, mode='r', schema=None, dialect=None,
-            header=None, open=open, **kwargs):
+    def __init__(self, path, mode='r', schema=None, dshape=None,
+                 dialect=None, header=None, open=open, **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
         self.open = open
 
-        if not schema:
+        if not schema and not dshape:
             # TODO: Infer schema
             raise ValueError('No schema detected')
+        if not schema and dshape:
+            dshape = datashape.dshape(dshape)
+            if isinstance(dshape[0], datashape.Var):
+                schema = dshape.subarray(1)
+
         self._schema = schema
 
         if os.path.exists(path) and mode != 'w':
