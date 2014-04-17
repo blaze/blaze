@@ -32,7 +32,7 @@ class JSON(DataDescriptor):
     immutable = False
     deferred = False
     persistent = True
-    appendable = True
+    appendable = False
     remote = False
 
     def __init__(self, path, mode='r', schema=None, dshape=None):
@@ -101,6 +101,8 @@ class JSON_Streaming(JSON):
         A datashape (or its string representation) of the schema
         in the JSON file.
     """
+    appendable = True
+
     @property
     def _arr_cache(self):
         if self._cache_arr is not None:
