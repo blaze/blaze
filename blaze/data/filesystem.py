@@ -17,10 +17,13 @@ class Files(DataDescriptor):
     remote = False
     persistent = True
 
-    def __init__(self, files, descriptor, subdshape=None, schema=None):
+    def __init__(self, files, descriptor, subdshape=None, schema=None,
+            open=open):
         if isinstance(files, py2help._strtypes):
             files = glob(files)
         self.filenames = files
+
+        self.open = open
 
         self.descriptor = descriptor
         if schema and not subdshape:
@@ -35,5 +38,7 @@ class Files(DataDescriptor):
             return Var() * self.subdshape
 
     def _iter(self):
-        return chain.from_iterable(self.descriptor(fn, dshape=self.subdshape)
+        return chain.from_iterable(self.descriptor(fn,
+                                                   dshape=self.subdshape,
+                                                   open=self.open)
                                     for fn in self.filenames)
