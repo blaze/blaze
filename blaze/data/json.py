@@ -29,7 +29,7 @@ class JSON(DataDescriptor):
         A datashape (or its string representation) of the schema
         in the JSON file.
     """
-    immutable = False
+    immutable = True
     deferred = False
     persistent = True
     appendable = False
@@ -101,6 +101,7 @@ class JSON_Streaming(JSON):
         A datashape (or its string representation) of the schema
         in the JSON file.
     """
+    immutable = False
     appendable = True
 
     @property
