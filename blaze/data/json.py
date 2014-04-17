@@ -35,11 +35,12 @@ class JSON(DataDescriptor):
     appendable = False
     remote = False
 
-    def __init__(self, path, mode='r', schema=None, dshape=None):
+    def __init__(self, path, mode='r', schema=None, dshape=None, open=open):
         if 'w' not in mode and not os.path.isfile(path):
             raise ValueError('JSON file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
+        self.open = open
         if dshape:
             dshape = datashape.dshape(dshape)
         if dshape and not schema and isdimension(dshape[0]):
@@ -64,7 +65,7 @@ class JSON(DataDescriptor):
     def _arr_cache(self):
         if self._cache_arr is not None:
             return self._cache_arr
-        with open(self.path, mode=self.mode) as jsonfile:
+        with self.open(self.path, mode=self.mode) as jsonfile:
             # This will read everything in-memory (but a memmap approach
             # is in the works)
             self._cache_arr = nd.parse_json(str(self.dshape), jsonfile.read())
@@ -75,7 +76,7 @@ class JSON(DataDescriptor):
             yield nd.as_py(line)
 
     def _chunks(self, blen=100):
-        with open(self.path) as f:
+        with self.open(self.path) as f:
             for chunk in partition_all(blen, f):
                 text = '[' + ',\r\n'.join(chunk) + ']'
                 dshape = str(len(chunk) * self.schema)
@@ -108,7 +109,7 @@ class JSON_Streaming(JSON):
     def _arr_cache(self):
         if self._cache_arr is not None:
             return self._cache_arr
-        with open(self.path, mode=self.mode) as jsonfile:
+        with self.open(self.path, mode=self.mode) as jsonfile:
             # This will read everything in-memory (but a memmap approach
             # is in the works)
             text = '[' + ', '.join(jsonfile) + ']'
@@ -116,7 +117,7 @@ class JSON_Streaming(JSON):
         return self._cache_arr
 
     def __getitem__(self, key):
-        with open(self.path) as f:
+        with self.open(self.path) as f:
             if isinstance(key, _inttypes):
                 result = json.loads(nth(key, f))
             elif isinstance(key, slice):
@@ -128,19 +129,19 @@ class JSON_Streaming(JSON):
         return coerce(self.schema, result)
 
     def _iter(self):
-        with open(self.path) as f:
+        with self.open(self.path) as f:
             for line in f:
                 yield json.loads(line)
 
     def _iterchunks(self, blen=100):
-        with open(self.path) as f:
+        with self.open(self.path) as f:
             for chunk in partition_all(blen, f):
                 text = '[' + ',\r\n'.join(chunk) + ']'
                 dshape = str(len(chunk)) + ' * ' + self.schema
                 yield nd.parse_json(dshape, text)
 
     def _extend(self, rows):
-        with open(self.path, self.mode) as f:
+        with self.open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             for row in rows:
                 json.dump(row, f)
