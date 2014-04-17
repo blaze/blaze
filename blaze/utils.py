@@ -41,7 +41,7 @@ def nth(n, seq):
 
 
 @contextmanager
-def filetext(text, extension=''):
+def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:
         with open(filename, "w") as f:
             f.write(text)
@@ -50,7 +50,7 @@ def filetext(text, extension=''):
 
 
 @contextmanager
-def filetexts(d):
+def filetexts(d, open=open):
     """ Dumps a number of textfiles to disk
 
     d - dict
