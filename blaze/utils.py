@@ -69,7 +69,7 @@ def filetexts(d, open=open):
 
 @contextmanager
 def tmpfile(extension=''):
-    filename = tempfile.mktemp()
+    filename = tempfile.mktemp(extension)
 
     yield filename
 
