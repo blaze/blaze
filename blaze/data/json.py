@@ -36,8 +36,6 @@ class JSON(DataDescriptor):
     remote = False
 
     def __init__(self, path, mode='r', schema=None, dshape=None, open=open):
-        if 'w' not in mode and not os.path.isfile(path):
-            raise ValueError('JSON file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
         self.open = open
@@ -65,22 +63,19 @@ class JSON(DataDescriptor):
     def _arr_cache(self):
         if self._cache_arr is not None:
             return self._cache_arr
-        with self.open(self.path, mode=self.mode) as jsonfile:
-            # This will read everything in-memory (but a memmap approach
-            # is in the works)
-            self._cache_arr = nd.parse_json(str(self.dshape), jsonfile.read())
+        jsonfile = self.open(self.path)
+        # This will read everything in-memory (but a memmap approach
+        # is in the works)
+        self._cache_arr = nd.parse_json(str(self.dshape), jsonfile.read())
+        try:
+            jsonfile.close()
+        except:
+            pass
         return self._cache_arr
 
     def __iter__(self):
         for line in self._arr_cache:
             yield nd.as_py(line)
-
-    def _chunks(self, blen=100):
-        with self.open(self.path) as f:
-            for chunk in partition_all(blen, f):
-                text = '[' + ',\r\n'.join(chunk) + ']'
-                dshape = str(len(chunk) * self.schema)
-                yield nd.parse_json(dshape, text)
 
     def dynd_arr(self):
         return self._arr_cache
@@ -103,16 +98,19 @@ class JSON_Streaming(JSON):
         in the JSON file.
     """
     immutable = False
-    appendable = True
 
     @property
     def _arr_cache(self):
         if self._cache_arr is not None:
             return self._cache_arr
-        with self.open(self.path, mode=self.mode) as jsonfile:
-            # This will read everything in-memory (but a memmap approach
-            # is in the works)
-            text = '[' + ', '.join(jsonfile) + ']'
+        jsonfile = self.open(self.path)
+        # This will read everything in-memory (but a memmap approach
+        # is in the works)
+        text = '[' + ', '.join(jsonfile) + ']'
+        try:
+            jsonfile.close()
+        except:
+            pass
         self._cache_arr = nd.parse_json(str(self.dshape), text)
         return self._cache_arr
 
@@ -140,9 +138,22 @@ class JSON_Streaming(JSON):
                 dshape = str(len(chunk)) + ' * ' + self.schema
                 yield nd.parse_json(dshape, text)
 
+    @property
+    def appendable(self):
+        return any(c in self.mode for c in 'wa+')
+
     def _extend(self, rows):
+        if not self.appendable:
+            raise IOError("Read only access")
         with self.open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             for row in rows:
                 json.dump(row, f)
                 f.write('\n')
+
+    def _chunks(self, blen=100):
+        with self.open(self.path) as f:
+            for chunk in partition_all(blen, f):
+                text = '[' + ',\r\n'.join(chunk) + ']'
+                dshape = str(len(chunk) * self.schema)
+                yield nd.parse_json(dshape, text)
