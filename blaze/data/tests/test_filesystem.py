@@ -17,8 +17,9 @@ class Test_Files(TestCase):
         with filetexts(data) as filenames:
             dd = Files(sorted(filenames), CSV, subdshape='var * 2 * int32')
 
-            self.assertEquals(dd.filenames, ['a.csv', 'b.csv', 'c.csv'])
+            self.assertEqual(dd.filenames, ['a.csv', 'b.csv', 'c.csv'])
             self.assertEqual(str(dd.schema), '2 * int32')
+            self.assertEqual(str(dd.dshape), 'var * 2 * int32')
 
             expected = [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]]
 
