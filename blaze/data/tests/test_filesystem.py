@@ -4,18 +4,7 @@ from unittest import TestCase
 from dynd import nd
 
 from blaze.data import Files, CSV
-
-@contextmanager
-def filetexts(d):
-    for filename, text in d.items():
-        with open(filename, 'w') as f:
-            f.write(text)
-
-    yield list(d)
-
-    for filename in d:
-        if os.path.exists(filename):
-            os.remove(filename)
+from blaze.utils import filetexts
 
 
 data = {'a.csv': '1,1\n2,2',

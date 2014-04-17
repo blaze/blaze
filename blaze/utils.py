@@ -48,6 +48,25 @@ def filetext(text, extension=''):
 
         yield filename
 
+
+@contextmanager
+def filetexts(d):
+    """ Dumps a number of textfiles to disk
+
+    d - dict
+        a mapping from filename to text like {'a.csv': '1,1\n2,2'}
+    """
+    for filename, text in d.items():
+        with open(filename, 'w') as f:
+            f.write(text)
+
+    yield list(d)
+
+    for filename in d:
+        if os.path.exists(filename):
+            os.remove(filename)
+
+
 @contextmanager
 def tmpfile(extension=''):
     filename = tempfile.mktemp()
