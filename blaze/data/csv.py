@@ -108,6 +108,10 @@ class CSV(DataDescriptor):
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
+
+        if not schema:
+            # TODO: Infer schema
+            raise ValueError('No schema detected')
         self._schema = schema
 
         if os.path.exists(path) and mode != 'w':

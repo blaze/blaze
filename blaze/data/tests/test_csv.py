@@ -85,6 +85,9 @@ class TestCSV_New_File(unittest.TestCase):
         if os.path.exists(self.filename):
             os.remove(self.filename)
 
+    def test_errs_without_dshape(self):
+        self.assertRaises(ValueError, lambda: CSV(self.filename, 'w'))
+
     def test_creation(self):
         dd = CSV(self.filename, 'w', schema=self.schema, delimiter=' ')
 
