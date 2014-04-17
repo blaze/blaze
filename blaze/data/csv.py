@@ -15,14 +15,6 @@ from .. import py2help
 __all__ = ['CSV']
 
 
-def open_file(path, mode, header):
-    """Return a file handler positionated at the first valid line."""
-    csvfile = open(path, mode=mode)
-    if header:
-        csvfile.readline()
-    return csvfile
-
-
 def has_header(sample):
     """
 
@@ -103,11 +95,12 @@ class CSV(DataDescriptor):
     remote = False
 
     def __init__(self, path, mode='r', schema=None, dialect=None,
-            header=None, **kwargs):
+            header=None, open=open, **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
+        self.open = open
 
         if not schema:
             # TODO: Infer schema
@@ -115,7 +108,7 @@ class CSV(DataDescriptor):
         self._schema = schema
 
         if os.path.exists(path) and mode != 'w':
-            with open(path, 'r') as f:
+            with self.open(path, 'r') as f:
                 sample = f.read(1024)
         else:
             sample = ''
@@ -128,21 +121,22 @@ class CSV(DataDescriptor):
         self.dialect = dialect
 
     def _getitem(self, key):
-        with open_file(self.path, self.mode, self.header) as csvfile:
+        with self.open(self.path, self.mode) as f:
+            if self.header:
+                next(f)
             if isinstance(key, py2help._inttypes):
-                line = nth(key, csvfile)
+                line = nth(key, f)
                 result = next(csv.reader([line], **self.dialect))
             elif isinstance(key, slice):
                 start, stop, step = key.start, key.stop, key.step
-                result = list(csv.reader(it.islice(csvfile, start, stop, step),
+                result = list(csv.reader(it.islice(f, start, stop, step),
                                          **self.dialect))
             else:
                 raise IndexError("key '%r' is not valid" % key)
         return result
 
     def _iter(self):
-        with open(self.path, self.mode) as f:
-            print(self.header)
+        with self.open(self.path, self.mode) as f:
             if self.header:
                 next(f)  # burn header
             for row in csv.reader(f, **self.dialect):
@@ -150,7 +144,9 @@ class CSV(DataDescriptor):
 
     def _extend(self, rows):
         rows = iter(rows)
-        with open_file(self.path, self.mode, self.header) as f:
+        with self.open(self.path, self.mode) as f:
+            if self.header:
+                next(f)
             row = next(rows)
             if isinstance(row, dict):
                 schema = datashape.dshape(self.schema)
