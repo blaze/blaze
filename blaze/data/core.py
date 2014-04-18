@@ -7,7 +7,7 @@ import datashape
 from .utils import validate, coerce
 from ..utils import partition_all
 
-__all__ = ['DataDescriptor', 'copy']
+__all__ = ['DataDescriptor']
 
 
 def isdimension(ds):
@@ -118,7 +118,3 @@ class DataDescriptor(object):
             return self.dshape.subarray(1)
         raise TypeError('Datashape is not indexable to schema\n%s' %
                         self.dshape)
-
-def copy(src, dest, **kwargs):
-    """ Copy content from one data descriptor to another """
-    dest.extend_chunks(src.chunks(**kwargs))

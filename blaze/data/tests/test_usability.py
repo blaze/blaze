@@ -49,3 +49,12 @@ class TestResource(TestCase):
             assert isinstance(resource(filename + '::/path/to/data/',
                                         mode='w', schema='2 * int'),
                               HDF5)
+
+class TestCopy(TestCase):
+    def test_copy(self):
+        with filetext('1,1\n2,2', extension='.csv') as a:
+            with tmpfile(extension='.csv') as b:
+                A = resource(a, schema='2 * int')
+                B = resource(b, schema='2 * int', mode='a')
+                copy(A, B)
+                assert list(B) == [[1, 1], [2, 2]]

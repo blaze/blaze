@@ -141,7 +141,7 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self):
-        with self.open(self.path, self.mode) as f:
+        with self.open(self.path, 'r') as f:
             if self.header:
                 next(f)  # burn header
             for row in csv.reader(f, **self.dialect):
