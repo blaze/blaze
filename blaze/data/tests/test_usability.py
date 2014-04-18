@@ -38,3 +38,8 @@ class TestResource(TestCase):
         with filetexts(d) as filenames:
             dd = resource('*.csv', schema='2 * int')
             assert isinstance(dd, Files)
+
+    def test_sql(self):
+        assert isinstance(resource('sqlite:///:memory:::tablename',
+                                   schema='{x: int, y: int}'),
+                          SQL)
