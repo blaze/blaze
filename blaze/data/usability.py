@@ -8,7 +8,6 @@ from .filesystem import *
 from .sql import *
 from glob import glob
 import gzip
-import urllib2
 from ..compatibility import urlopen
 
 __all__ = ['resource']
