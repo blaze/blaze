@@ -8,6 +8,8 @@ import numpy as np
 
 from blaze import Array, array
 
+__all__ = ['validate', 'like']
+
 @dispatch(DataShape, Array)
 def validate(ds, arr):
     return issubschema(arr.dshape, ds)
@@ -17,57 +19,57 @@ def validate(ds, arr):
     return issubschema(nd.dshape_of(arr), ds)
 
 @dispatch((list, tuple, set), (list, tuple, set))
-def into(a, b):
+def like(a, b):
     return type(a)(b)
 
 @dispatch(dict, (list, tuple, set))
-def into(a, b):
+def like(a, b):
     return dict(b)
 
 @dispatch((list, tuple, set), dict)
-def into(a, b):
+def like(a, b):
     return type(a)(map(type(a), b.items()))
 
 @dispatch(nd.array, object)
-def into(a, b):
+def like(a, b):
     return nd.array(b)
 
 @dispatch(list, nd.array)
-def into(a, b):
+def like(a, b):
     return nd.as_py(b)
 
 @dispatch((list, tuple, set), Array)
-def into(a, b):
+def like(a, b):
     if len(b.dshape.shape) == 1:
         return type(a)(b)
     else:
-        return type(a)(into(a, item) for item in b)
+        return type(a)(like(a, item) for item in b)
 
 @dispatch(nd.array, Array)
-def into(a, b):
+def like(a, b):
     return b.ddesc.dynd_arr()
 
 @dispatch(Array, nd.array)
-def into(a, b):
+def like(a, b):
     from blaze import DyND_DDesc
     return Array(DyND_DDesc(b))
 
 @dispatch(Array, object)
-def into(a, b):
+def like(a, b):
     return array(b)
 
 @dispatch(np.ndarray, nd.array)
-def into(a, b):
+def like(a, b):
     return nd.array(b)
 
 @dispatch(np.ndarray, object)
-def into(a, b):
+def like(a, b):
     return np.array(b)
 
 @dispatch(nd.array, object)
-def into(a, b):
+def like(a, b):
     return nd.array(b)
 
 @dispatch(list, np.ndarray)
-def into(a, b):
+def like(a, b):
     return b.tolist()
