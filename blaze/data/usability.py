@@ -26,6 +26,27 @@ opens = {'http': urlopen,
 def resource(uri, **kwargs):
     """ Get data resource from universal resource indicator
 
+    Supports the following logic:
+
+    *   Infer data format based on the file extension (.csv, .json. .hdf5)
+    *   Use ``gzip.open`` if files end in ``.gz`` extension (csv, json only)
+    *   Use ``urlopen`` if web protocols detected (http, https)
+    *   Use SQL if text ``sql`` found in protocol string
+
+    URI may be in any of the following forms
+
+    >>> uri = '/path/to/data.csv'                     # csv, json, etc...
+    >>> uri = '/path/to/data.json.gz'                 # handles gzip
+    >>> uri = '/path/to/*/many*/data.*.json'          # glob string - many files
+    >>> uri = '/path/to/data.hdf5::/path/within/hdf5' # HDF5 path :: datapath
+    >>> uri = 'postgresql://sqlalchemy.uri::tablename'# SQLAlchemy :: tablename
+    >>> uri = 'http://api.domain.com/data.json'       # Web requests
+
+    Note that this follows standard ``protocol://path`` syntax.  In cases where
+    more information is needed, such as an HDF5 datapath or a SQL table name
+    the additional information follows two colons `::` as in the following
+
+        /path/to/data.hdf5::/datapath
     """
     descriptor = None
     args = []
