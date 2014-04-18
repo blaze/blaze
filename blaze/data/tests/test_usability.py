@@ -3,7 +3,7 @@ import os
 from tempfile import mktemp
 import gzip
 
-from blaze.utils import filetext, filetexts
+from blaze.utils import filetext, filetexts, tmpfile
 from blaze.data import *
 
 class TestResource(TestCase):
@@ -43,3 +43,9 @@ class TestResource(TestCase):
         assert isinstance(resource('sqlite:///:memory:::tablename',
                                    schema='{x: int, y: int}'),
                           SQL)
+
+    def test_hdf5(self):
+        with tmpfile('.hdf5') as filename:
+            assert isinstance(resource(filename + '::/path/to/data/',
+                                        mode='w', schema='2 * int'),
+                              HDF5)

@@ -31,20 +31,22 @@ def resource(uri, **kwargs):
     descriptor = None
     args = []
 
+    if '::' in uri:
+        uri, datapath = uri.rsplit('::')
+        args.insert(0, datapath)
+
     extensions = uri.split('.')
     if extensions[-1] == 'gz':
         kwargs['open'] = kwargs.get('open', gzip.open)
         extensions.pop()
     descriptor = filetypes.get(extensions[-1], None)
+
     if '://' in uri:
         protocol, _ = uri.split('://')
         if protocol in opens:
             kwargs['open'] = kwargs.get('open', opens[protocol])
         if 'sql' in protocol:
             descriptor = SQL
-    if '::' in uri:
-        uri, datapath = uri.rsplit('::')
-        args.insert(0, datapath)
 
     try:
         filenames = glob(uri)
@@ -57,4 +59,4 @@ def resource(uri, **kwargs):
     if descriptor:
         return descriptor(uri, *args, **kwargs)
 
-    raise ValueError('Unknown resource type\n\t%s' % extension)
+    raise ValueError('Unknown resource type\n\t%s' % uri)
