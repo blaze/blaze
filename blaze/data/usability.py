@@ -8,6 +8,7 @@ from .sql import *
 from glob import glob
 import gzip
 import urllib2
+from ..compatibility import urlopen
 
 __all__ = ['resource']
 
@@ -17,8 +18,8 @@ filetypes = {'csv': CSV,
              'h5': HDF5,
              'hdf5': HDF5}
 
-opens = {'http': urllib2.urlopen,
-         'https': urllib2.urlopen,
+opens = {'http': urlopen,
+         'https': urlopen,
         #'ssh': paramiko.open?
          }
 
@@ -28,7 +29,6 @@ def resource(uri, **kwargs):
     """
     extensions = uri.split('.')
     if extensions[-1] == 'gz':
-        open = gzip.open
         kwargs['open'] = kwargs.get('open', gzip.open)
         extension = extensions[-2]
     else:
@@ -38,5 +38,12 @@ def resource(uri, **kwargs):
         raise ValueError('Unknown resource type\n\t%s' % extension)
 
     descriptor = filetypes[extension]
+    try:
+        filenames = glob(uri)
+    except:
+        filenames = []
+
+    if len(filenames) > 1:
+        return Files(uri, descriptor, **kwargs)
 
     return descriptor(uri, **kwargs)

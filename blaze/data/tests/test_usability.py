@@ -3,7 +3,7 @@ import os
 from tempfile import mktemp
 import gzip
 
-from blaze.utils import filetext
+from blaze.utils import filetext, filetexts
 from blaze.data import *
 
 class TestResource(TestCase):
@@ -32,3 +32,9 @@ class TestResource(TestCase):
             assert isinstance(dd, CSV)
             self.assertEqual(dd.open, gzip.open)
             self.assertEqual(list(dd), [[1, 1], [2, 2]])
+
+    def test_filesystem(self):
+        d = {'a.csv': '1,1\n2,2', 'b.csv': '1,1\n2,2'}
+        with filetexts(d) as filenames:
+            dd = resource('*.csv', schema='2 * int')
+            assert isinstance(dd, Files)
