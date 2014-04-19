@@ -69,6 +69,11 @@ class JSON(DataDescriptor):
     def as_dynd(self):
         return self._arr_cache
 
+    def as_py(self):
+        with open(self.path) as f:
+            result = json.load(f)
+        return result
+
     def remove(self):
         """Remove the persistent storage."""
         os.unlink(self.path)
@@ -121,6 +126,9 @@ class JSON_Streaming(JSON):
                 yield json.loads(line)
 
     __iter__ = DataDescriptor.__iter__
+
+    def as_py(self):
+        return list(self)
 
     def _iterchunks(self, blen=100):
         with self.open(self.path) as f:

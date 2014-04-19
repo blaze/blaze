@@ -49,7 +49,7 @@ class TestBigJSON(unittest.TestCase):
     def setUp(self):
         self.filename= tempfile.mktemp(".json")
         with open(self.filename, "w") as f:
-            f.write(json.dumps(self.data))
+            json.dump(self.data, f)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -59,6 +59,10 @@ class TestBigJSON(unittest.TestCase):
         self.assertEqual(list(dd),
                          [nd.as_py(nd.parse_json(self.dshape,
                              json.dumps(self.data)))])
+
+    def test_as_py(self):
+        dd = JSON(self.filename, 'r', dshape=self.dshape)
+        self.assertEqual(dd.as_py(), self.data)
 
 
 json_buf = u"[1, 2, 3, 4, 5]"
