@@ -129,5 +129,5 @@ class HDF5(DataDescriptor):
     def _extend(self, seq):
         self.extend_chunks(partition_all(100, seq))
 
-    def __iter__(self):
+    def _iter(self):
         return chain.from_iterable(self.chunks())

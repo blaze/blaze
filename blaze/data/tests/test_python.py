@@ -10,7 +10,9 @@ def test_basic():
     assert str(dd.dshape) == 'var * 2 * int32'
     assert str(dd.schema) == '2 * int32'
 
-    assert list(dd) == [[1, 1], [2, 2]]
+    assert list(dd) == data
+    assert dd.as_py() == data
+
     chunks = list(dd.chunks())
 
     assert all(isinstance(chunk, nd.array) for chunk in chunks)

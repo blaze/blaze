@@ -23,6 +23,8 @@ class Test_Files(TestCase):
 
             expected = [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]]
 
+            self.assertEqual(dd.as_py(), expected)
+
             result = dd.as_dynd()
             expected2 = nd.array(expected, dtype='int32')
             self.assertEqual(nd.as_py(result),

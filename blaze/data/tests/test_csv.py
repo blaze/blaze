@@ -194,6 +194,14 @@ class TestCSV(unittest.TestCase):
             {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
             {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
 
+    def test_as_py(self):
+        dd = CSV(self.csv_file, schema=self.schema)
+
+        self.assertEqual(dd.as_py(), [
+            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
+            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
+            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
+
     def test_chunks(self):
         dd = CSV(self.csv_file, schema=self.schema)
 

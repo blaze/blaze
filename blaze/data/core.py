@@ -72,6 +72,12 @@ class DataDescriptor(object):
     def as_dynd(self):
         return nd.array(self, dtype=str(self.dshape))
 
+    def as_py(self):
+        if isdimension(self.dshape[0]):
+            return list(self)
+        else:
+            return self.as_dynd()
+
     def __array__(self):
         return nd.as_numpy(self.as_dynd())
 

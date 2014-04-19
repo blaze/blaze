@@ -47,6 +47,9 @@ class SingleTestClass(unittest.TestCase):
 
         self.assertEquals(str(dd.dshape), 'var * 3 * int32')
 
+        print(dd.as_py())
+        self.assertEqual(dd.as_py(), [[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+
     def test_extend_chunks(self):
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:
