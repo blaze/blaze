@@ -70,7 +70,7 @@ class DataDescriptor(object):
         raise NotImplementedError('this data descriptor does not support attribute access')
 
     def as_dynd(self):
-        return nd.array(self, dtype=str(self.dshape))
+        return nd.array(self.as_py(), dtype=str(self.dshape))
 
     def as_py(self):
         if isdimension(self.dshape[0]):
