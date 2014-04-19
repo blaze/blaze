@@ -108,5 +108,5 @@ class SingleTestClass(unittest.TestCase):
 
                 copy(csv, hdf5)
 
-                self.assertEquals(nd.as_py(hdf5.dynd_arr()),
+                self.assertEquals(nd.as_py(hdf5.as_dynd()),
                                   [[1, 1], [2, 2]])

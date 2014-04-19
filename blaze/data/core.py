@@ -32,7 +32,7 @@ class DataDescriptor(object):
              Consumes a sequence of core Python objects
     extend_chunks - insert new data into storage (if possible.)
              Consumes a sequence of DyND arrays
-    dynd_arr - load entire dataset into memory as a DyND array
+    as_dynd - load entire dataset into memory as a DyND array
     """
 
     def extend(self, rows):
@@ -69,24 +69,24 @@ class DataDescriptor(object):
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')
 
-    def dynd_arr(self):
+    def as_dynd(self):
         return nd.array(self, dtype=str(self.dshape))
 
     def __array__(self):
-        return nd.as_numpy(self.dynd_arr())
+        return nd.as_numpy(self.as_dynd())
 
     def __getitem__(self, key):
         if hasattr(self, '_getitem'):
             return coerce(self.schema, self._getitem(key))
         else:
-            return self.dynd_arr()[key]
+            return self.as_dynd()[key]
 
     def __iter__(self):
         try:
             for row in self._iter():
                 yield coerce(self.schema, row)
         except NotImplementedError:
-            py = nd.as_py(self.dynd_arr())
+            py = nd.as_py(self.as_dynd())
             if isdimension(self.dshape[0]):
                 for row in py:
                     yield row

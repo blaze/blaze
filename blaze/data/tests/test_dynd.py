@@ -20,6 +20,6 @@ class TestDyND(TestCase):
         assert all(isinstance(chunk, nd.array) for chunk in chunks)
         assert nd.as_py(chunks[0]) == data
 
-        assert isinstance(dd.dynd_arr(), nd.array)
+        assert isinstance(dd.as_dynd(), nd.array)
 
         self.assertRaises(TypeError, lambda: dd.extend([(3, 3)]))

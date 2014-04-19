@@ -34,5 +34,5 @@ class DyND(DataDescriptor):
             stop = min(i + blen, len(self.arr))
             yield self.arr[start:stop]
 
-    def dynd_arr(self):
+    def as_dynd(self):
         return self.arr

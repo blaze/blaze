@@ -61,7 +61,7 @@ class SingleTestClass(unittest.TestCase):
 
         dd.extend_chunks(chunks)
 
-        result = dd.dynd_arr()[-2:, :]
+        result = dd.as_dynd()[-2:, :]
         expected = nd.array([[1, 2, 3],
                              [4, 5, 6]], dtype='strided * strided * int32')
 
@@ -104,5 +104,5 @@ class SingleTestClass(unittest.TestCase):
         dd = HDF5(self.filename, 'data', 'a', dshape='2 * 2 * 2 * int')
         dd[:] = 1
         dd[0, 0, :] = 2
-        self.assertEqual(nd.as_py(dd.dynd_arr()), [[[2, 2], [1, 1]],
-                                                   [[1, 1], [1, 1]]])
+        self.assertEqual(nd.as_py(dd.as_dynd()), [[[2, 2], [1, 1]],
+                                                  [[1, 1], [1, 1]]])

@@ -108,7 +108,7 @@ class HDF5(DataDescriptor):
             for i in range(0, arr.shape[0], blen):
                 yield np.array(arr[i:i+blen])
 
-    def dynd_arr(self):
+    def as_dynd(self):
         return self[:]
 
     def _extend_chunks(self, chunks):

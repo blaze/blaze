@@ -66,7 +66,7 @@ class JSON(DataDescriptor):
             pass
         return self._cache_arr
 
-    def dynd_arr(self):
+    def as_dynd(self):
         return self._arr_cache
 
     def remove(self):
