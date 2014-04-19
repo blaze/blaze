@@ -34,17 +34,9 @@ class DataDescriptor(object):
              Consumes a sequence of DyND arrays
     dynd_arr - load entire dataset into memory as a DyND array
     """
-    def append(self, value):
-        """
-        This allows appending values in the data descriptor.
-        """
-        self.extend([value])
 
     def extend(self, rows):
         """ Extend data with many rows
-
-        See Also:
-            append
         """
         if not self.appendable or self.immutable:
             raise TypeError('Data Descriptor not appendable')

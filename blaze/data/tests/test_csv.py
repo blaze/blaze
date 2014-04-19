@@ -50,12 +50,12 @@ class Test_Dialect(unittest.TestCase):
         assert 'Alice' in s and 'Bob' in s
 
     def test_append(self):
-        self.dd.append(('Alice', 100))
+        self.dd.extend([('Alice', 100)])
         with open(self.csv_file) as f:
             self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
 
     def test_append_dict(self):
-        self.dd.append({'f0': 'Alice', 'f1': 100})
+        self.dd.extend([{'f0': 'Alice', 'f1': 100}])
         with open(self.csv_file) as f:
             self.assertEqual(f.readlines()[-1].strip(), 'Alice 100')
 
@@ -63,7 +63,7 @@ class Test_Dialect(unittest.TestCase):
         with filetext('1,1.0\n2,2.0\n') as fn:
             csv = CSV(fn, 'r+', schema='{x: int32, y: float32}',
                             delimiter=',')
-            csv.append((3, 3))
+            csv.extend([(3, 3)])
             assert (list(csv) == [[1, 1.0], [2, 2.0], [3, 3.0]]
                  or list(csv) == [{'x': 1, 'y': 1.0},
                                   {'x': 2, 'y': 2.0},
@@ -96,7 +96,7 @@ class TestCSV_New_File(unittest.TestCase):
 
     def test_append(self):
         dd = CSV(self.filename, 'w', schema=self.schema, delimiter=' ')
-        dd.append(self.data[0])
+        dd.extend([self.data[0]])
         with open(self.filename) as f:
             self.assertEqual(f.readlines()[0].strip(), 'Alice 100')
 
@@ -212,14 +212,14 @@ class TestCSV(unittest.TestCase):
         with open(csv_file, "w") as f:
             f.write(self.buf)
         dd = CSV(csv_file, schema=self.schema, mode='r+')
-        dd.append(["k4", "v4", 4, True])
+        dd.extend([["k4", "v4", 4, True]])
         vals = [nd.as_py(v) for v in dd.chunks(blen=2)]
         self.assertEqual(vals, [
             [{u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
              {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}],
             [{u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False},
              {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}]])
-        self.assertRaises(ValueError, lambda: dd.append(3.3))
+        self.assertRaises(ValueError, lambda: dd.extend([3.3]))
         os.remove(csv_file)
 
     def test_getitem_start(self):

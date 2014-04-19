@@ -124,13 +124,13 @@ class Test_StreamingTransfer(unittest.TestCase):
     def test_append(self):
         with filetext('') as fn:
             dd = JSON_Streaming(fn, mode='w', schema=self.schema)
-            dd.append(self.data[0])
+            dd.extend([self.data[0]])
             with open(fn) as f:
                 self.assertEquals(json.loads(f.read().strip()), self.data[0])
 
-            self.assertRaises(ValueError, lambda : dd.append(5.5))
+            self.assertRaises(ValueError, lambda : dd.extend([5.5]))
             self.assertRaises(ValueError,
-                              lambda : dd.append({'name': 5, 'amount': 1.3}))
+                              lambda : dd.extend([{'name': 5, 'amount': 1.3}]))
 
     def test_extend(self):
         with filetext('') as fn:
