@@ -12,3 +12,4 @@ pytables >= 3.0.0
 networkx
 IPython
 matplotlib
+multipledispatch
