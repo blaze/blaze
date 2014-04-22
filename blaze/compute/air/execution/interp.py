@@ -27,7 +27,7 @@ def interpret(func, env, ddesc=None, **kwds):
 
         res_shape, res_dt = datashape.to_numpy(func.type.restype)
         dim_size = operator.index(res_shape[0])
-        row_size = ndt.type(str(func.type.restype.subarray(1))).data_size
+        row_size = ndt.type(str(func.type.restype.subarray(1))).default_data_size
         chunk_size = min(max(1, (1024*1024) // row_size), dim_size)
         # Evaluate by streaming the outermost dimension,
         # and using the BLZ data descriptor's append
