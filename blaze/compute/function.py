@@ -219,7 +219,9 @@ class ElementwiseBlazeFunc(BlazeFunc):
     def add_overload(self, sig, ck):
         # Prepend 'Dims... *' to args and return type
         sig = _add_elementwise_dims_to_sig(sig, 'Dims')
-        BlazeFunc.add_overload(self, sig, ck)
+        info = {'tag': 'elwise',
+                'ckernel': ck}
+        BlazeFunc.add_overload(self, sig, info)
 
     def add_plugin_overload(self, sig, data, pluginname):
         # Prepend 'Dims... *' to args and return type
@@ -323,6 +325,60 @@ class ReductionBlazeFunc(BlazeFunc):
         info = dict(self.ckernels[idx])
         info['axis'] = axis
         info['keepdims'] = keepdims
+        overload = Overload(match, self.overloader[idx], info)
+
+        # Construct graph
+        term = construct(self, ctx, overload, args)
+        desc = Deferred_DDesc(term.dshape, (term, ctx))
+
+        return blaze.Array(desc)
+
+
+class RollingWindowBlazeFunc(BlazeFunc):
+    """
+    This is a kind of BlazeFunc with a calling convention for
+    rolling windows which support 'window=' and 'minp='
+    keyword arguments.
+    """
+    def add_overload(self, sig, ck):
+        sig = _normalized_sig(sig)
+        # TODO: This probably should be an object instead of a dict
+        info = {'tag': 'rolling',
+                'ckernel': ck}
+        BlazeFunc.add_overload(self, sig, info)
+
+    def add_plugin_overload(self, sig, data, pluginname):
+        raise NotImplementedError('TODO: implement add_plugin_overload')
+
+    def __call__(self, *args, **kwargs):
+        """
+        Apply blaze kernel `kernel` to the given arguments.
+
+        Returns: a Deferred node representation the delayed computation
+        """
+        # Validate the 'window=' and 'minp=' keyword-only arguments
+        window = kwargs.pop('window', None)
+        if window is None:
+            raise TypeError("%s() missing required keyword argument 'window'" % self.name)
+        minp = kwargs.pop('minp', 0)
+        if kwargs:
+            msg = "%s got an unexpected keyword argument '%s'"
+            raise TypeError(msg % (self.fullname, kwargs.keys()[0]))
+
+        # Convert the arguments into blaze.Array
+        args = [blaze.array(a) for a in args]
+
+        # Merge input contexts
+        ctxs = [term.expr[1] for term in args
+                if isinstance(term, blaze.Array) and term.expr]
+        ctx = ExprContext(ctxs)
+
+        # Find match to overloaded function
+        argstype = coretypes.Tuple([a.dshape for a in args])
+        idx, match = self.overloader.resolve_overload(argstype)
+        info = dict(self.ckernels[idx])
+        info['window'] = window
+        info['minp'] = minp
         overload = Overload(match, self.overloader[idx], info)
 
         # Construct graph

@@ -38,7 +38,21 @@ class CKernelLifter(object):
 
         if isinstance(ckernel, dict):
             tag = ckernel['tag']
-            if tag == 'reduction':
+            if tag == 'elwise':
+                ck = ckernel['ckernel']
+                if op.metadata['rank'] < op_ndim and \
+                        self.env.get('stream-outer', False) and result_ndim == op_ndim:
+                    # Replace the leading dimension type with 'strided' in each operand
+                    # if we're streaming it for processing BLZ
+                    # TODO: Add dynd tp.subarray(N) function like datashape has
+                    for i, tp in enumerate(in_types):
+                        if tp.ndim == result_ndim:
+                            in_types[i] = ndt.make_strided_dim(tp.element_type)
+                    out_type = ndt.make_strided_dim(out_type.element_type)
+
+                op.args[0] = _lowlevel.lift_ckernel_deferred(ck,
+                                                             [out_type] + in_types)
+            elif tag == 'reduction':
                 ck = ckernel['ckernel']
                 assoc = ckernel['assoc']
                 comm = ckernel['comm']
@@ -51,20 +65,19 @@ class CKernelLifter(object):
                                 axis=axis, keepdims=keepdims,
                                 associative=assoc, commutative=comm,
                                 reduction_identity=ident)
+            elif tag == 'rolling':
+                ck = ckernel['ckernel']
+                window = ckernel['window']
+                minp = ckernel['minp']
+                if minp != 0:
+                    raise ValueError('rolling window with minp != 0 not supported yet')
+                op.args[0] = _lowlevel.make_rolling_ckernel_deferred(out_type,
+                                                                     in_types[0],
+                                                                     ck, window)
             else:
                 raise RuntimeError('unnrecognized ckernel tag %s' % tag)
-        elif op.metadata['rank'] < op_ndim:
-            # Replace the leading dimension type with 'strided' in each operand
-            # if we're streaming it for processing BLZ
-            if self.env.get('stream-outer', False) and result_ndim == op_ndim:
-                # TODO: Add dynd tp.subarray(N) function like datashape has
-                for i, tp in enumerate(in_types):
-                    if tp.ndim == result_ndim:
-                        in_types[i] = ndt.make_strided_dim(tp.element_type)
-                out_type = ndt.make_strided_dim(out_type.element_type)
-
-            op.args[0] = _lowlevel.lift_ckernel_deferred(ckernel,
-                                                             [out_type] + in_types)
+        else:
+            op.args[0] = ckernel
 
 
 def run(func, env):

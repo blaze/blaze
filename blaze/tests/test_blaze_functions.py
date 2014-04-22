@@ -6,7 +6,7 @@ import numpy as np
 
 from datashape import dshape
 import blaze
-from blaze.compute.function import BlazeFunc
+from blaze.compute.function import ElementwiseBlazeFunc
 from dynd import nd, _lowlevel
 
 
@@ -14,19 +14,19 @@ def create_overloaded_add():
     # Create an overloaded blaze func, populate it with
     # some ckernel implementations extracted from numpy,
     # and test some calls on it.
-    myfunc = BlazeFunc('test', 'myfunc')
+    myfunc = ElementwiseBlazeFunc('test', 'myfunc')
 
     # overload int32 -> np.add
     ckd = _lowlevel.ckernel_deferred_from_ufunc(np.add,
                                                 (np.int32, np.int32, np.int32),
                                                 False)
-    myfunc.add_overload("(A... * int32, A... * int32) -> A... * int32", ckd)
+    myfunc.add_overload("(int32, int32) -> int32", ckd)
 
     # overload int16 -> np.subtract (so we can see the difference)
     ckd = _lowlevel.ckernel_deferred_from_ufunc(np.subtract,
                                                 (np.int16, np.int16, np.int16),
                                                 False)
-    myfunc.add_overload("(A... * int16, A... * int16) -> A... * int16", ckd)
+    myfunc.add_overload("(int16, int16) -> int16", ckd)
 
     return myfunc
 
@@ -85,17 +85,17 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
         self.assertEqual(nd.as_py(a.ddesc.dynd_arr()), [-3, 14])
 
     def test_overload_different_argcount(self):
-        myfunc = BlazeFunc('test', 'ovld')
+        myfunc = ElementwiseBlazeFunc('test', 'ovld')
         # Two parameter overload
         ckd = _lowlevel.ckernel_deferred_from_ufunc(np.add,
                                                     (np.int32,) * 3,
                                                     False)
-        myfunc.add_overload("(A... * int32, A... * int32) -> A... * int32", ckd)
+        myfunc.add_overload("(int32, int32) -> int32", ckd)
 
         # One parameter overload
         ckd = _lowlevel.ckernel_deferred_from_ufunc(np.negative,
                                                     (np.int32,) * 2, False)
-        myfunc.add_overload("(A... * int16, A... * int16) -> A... * int16", ckd)
+        myfunc.add_overload("(int16, int16) -> int16", ckd)
 
         return myfunc
 

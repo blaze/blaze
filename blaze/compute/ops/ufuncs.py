@@ -32,14 +32,18 @@ ufuncs_from_dynd = ['real', 'imag']
 
 reduction_ufuncs = ['any', 'all', 'sum', 'product', 'min', 'max']
 
-__all__ = ufuncs_from_numpy + ufuncs_from_dynd + reduction_ufuncs
+rolling_ufuncs = ['rolling_mean', 'diff']
+
+__all__ = ufuncs_from_numpy + ufuncs_from_dynd + reduction_ufuncs + \
+          rolling_ufuncs
 
 import numpy as np
 from dynd import ndt, _lowlevel
 
 from .from_numpy import blazefunc_from_numpy_ufunc
 from .from_dynd import blazefunc_from_dynd_property
-from ..function import ReductionBlazeFunc
+from ..function import ReductionBlazeFunc, RollingWindowBlazeFunc, \
+    BlazeFunc
 
 #------------------------------------------------------------------------
 # UFuncs converted from NumPy
@@ -86,7 +90,7 @@ ints = np.int8, np.int16, np.int32, np.int64,
 floats = np.float32, np.float64
 complexes = np.complex64, np.complex128,
 
-reductions = [('any', np.logical_or,    False, bools),
+reductions = [('any', np.logical_or,   False, bools),
               ('all', np.logical_and,  True, bools),
               ('sum', np.add,          0, ints + floats + complexes),
               ('product', np.multiply, 1, ints + floats + complexes),
@@ -103,3 +107,25 @@ for name, np_op, ident, types in reductions:
                  associative=True, commutative=True,
                  identity=ident)
         locals()[name] = x
+
+#------------------------------------------------------------------------
+# Rolling Window Funcs
+#------------------------------------------------------------------------
+
+rolling_mean = RollingWindowBlazeFunc('blaze', 'rolling_mean')
+mean1d = _lowlevel.make_builtin_mean1d_ckernel_deferred('float64', 0)
+rolling_mean.add_overload('(M * float64) -> M * float64', mean1d)
+
+diff = BlazeFunc('blaze', 'diff')
+subtract_doubles_ck = _lowlevel.ckernel_deferred_from_ufunc(np.subtract,
+                (np.float64, np.float64, np.float64),
+                False)
+diff_pair_ck = _lowlevel.lift_reduction_ckernel_deferred(subtract_doubles_ck,
+                                         'strided * float64',
+                                         axis=0,
+                                         commutative=False,
+                                         associative=False)
+diff_ck = _lowlevel.make_rolling_ckernel_deferred('strided * float64',
+                                                  'strided * float64',
+                                                  diff_pair_ck, 2)
+diff.add_overload('(M * float64) -> M * float64', diff_ck)
