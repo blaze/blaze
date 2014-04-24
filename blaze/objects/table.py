@@ -9,3 +9,6 @@ class Table(object):
     def dshape(self):
         return var * self.schema
 
+    @property
+    def columns(self):
+        return self.schema[0].names
