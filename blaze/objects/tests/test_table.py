@@ -16,8 +16,16 @@ def test_Projection():
     t = Table('{name: string, amount: int, id: int}')
     p = Projection(t, ['amount', 'name'])
     assert p.schema == dshape('{amount: int, name: string}')
+    assert t['amount'].dshape == dshape('var * {amount: int}')
 
 def test_indexing():
     t = Table('{name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == Projection(t, ['amount', 'id'])
     assert t['amount'] == Column(t, 'amount')
+
+def test_relational():
+    t = Table('{name: string, amount: int, id: int}')
+
+    r = Eq(t['name'], 'Alice')
+
+    assert r.dshape == dshape('var * bool')
