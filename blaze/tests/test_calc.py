@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import math
 
 import blaze
 from blaze.datadescriptor import ddesc_as_py
@@ -255,6 +256,16 @@ class TestReduction(unittest.TestCase):
                          3.0)
 
 
+class TestRolling(unittest.TestCase):
+    def test_rolling_mean(self):
+        a = blaze.eval(blaze.rolling_mean([1., 3, 4, 2, 5], window=4))
+        self.assertTrue(all(math.isnan(x) for x in a[:3]))
+        self.assertEqual(list(a[3:]), [10./4, 14./4])
+
+    def test_diff(self):
+        a = blaze.eval(blaze.diff([1., 2, 4, 4, 2, 0]))
+        self.assertTrue(math.isnan(a[0]))
+        self.assertEqual(list(a[1:]), [1, 2, 0, -2, -2])
 
 if __name__ == '__main__':
     unittest.main()
