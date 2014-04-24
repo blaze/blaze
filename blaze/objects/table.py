@@ -89,3 +89,14 @@ class GT(Relational):
 
 class LT(Relational):
     pass
+
+class Selection(Table):
+    __slots__ = 'table', 'predicate'
+    def __init__(self, table, predicate):
+        self.table = table
+        self.predicate = predicate
+
+    @property
+    def schema(self):
+        return self.table.schema
+
