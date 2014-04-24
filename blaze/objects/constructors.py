@@ -26,7 +26,7 @@ if tables_is_here:
 
 from .array import Array
 from ..datadescriptor import (
-    DDesc, DyND_DDesc, BLZ_DDesc, HDF5_DDesc)
+    DDesc, DyND_DDesc, BLZ_DDesc, PyTables_DDesc)
 from ..py2help import basestring
 
 
@@ -132,7 +132,7 @@ def array(obj, dshape=None, ddesc=None):
             else:
                 ddesc.blzarr = blz.barray(
                     obj, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
-    elif isinstance(ddesc, HDF5_DDesc):
+    elif isinstance(ddesc, PyTables_DDesc):
         if isinstance(obj, nd.array):
             obj = nd.as_numpy(obj)
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
@@ -179,7 +179,7 @@ def empty(dshape, ddesc=None):
         shape, dt = to_numpy(dshape)
         ddesc.blzarr = blz.zeros(shape, dt, rootdir=ddesc.path,
                                  mode=ddesc.mode, **ddesc.kwargs)
-    elif isinstance(ddesc, HDF5_DDesc):
+    elif isinstance(ddesc, PyTables_DDesc):
         obj = nd.as_numpy(nd.empty(str(dshape)))
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
@@ -214,7 +214,7 @@ def zeros(dshape, ddesc=None):
         shape, dt = to_numpy(dshape)
         ddesc.blzarr = blz.zeros(
             shape, dt, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
-    elif isinstance(ddesc, HDF5_DDesc):
+    elif isinstance(ddesc, PyTables_DDesc):
         obj = nd.as_numpy(nd.zeros(str(dshape)))
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
@@ -249,7 +249,7 @@ def ones(dshape, ddesc=None):
         shape, dt = to_numpy(dshape)
         ddesc.blzarr = blz.ones(
             shape, dt, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
-    elif isinstance(ddesc, HDF5_DDesc):
+    elif isinstance(ddesc, PyTables_DDesc):
         obj = nd.as_numpy(nd.empty(str(dshape)))
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)

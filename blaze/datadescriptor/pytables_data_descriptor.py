@@ -5,7 +5,7 @@ import numpy as np
 from dynd import nd
 import datashape
 
-from . import DDesc, Capabilities
+from . import DDesc
 from .dynd_data_descriptor import DyND_DDesc
 from .stream_data_descriptor import Stream_DDesc
 from ..optional_packages import tables_is_here
@@ -14,7 +14,7 @@ if tables_is_here:
 
 
 
-class HDF5_DDesc(DDesc):
+class PyTables_DDesc(DDesc):
     """
     A Blaze data descriptor which exposes a HDF5 dataset.
     """
@@ -40,20 +40,12 @@ class HDF5_DDesc(DDesc):
             dset = f.get_node(self.datapath)
             appendable = isinstance(dset, (tb.EArray, tb.Table))
             queryable = isinstance(dset, (tb.Table,))
-        caps = Capabilities(
-            # HDF5 arrays can be updated
-            immutable = False,
-            # HDF5 arrays are concrete
-            deferred = False,
-            # HDF5 arrays are persistent
-            persistent = True,
-            # HDF5 arrays can be appended efficiently (EArrays and Tables)
-            appendable = appendable,
-            # PyTables Tables can be queried efficiently
-            queryable = queryable,
-            remote = False,
-            )
-        return caps
+        return {'immutable': False,
+                'deferred': False,
+                'persistent': True,
+                'appendable': appendable,
+                'queryable': queryable,
+                'remote': False}
 
     def dynd_arr(self):
         # Positionate at the beginning of the file

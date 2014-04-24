@@ -1,55 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['DDesc', 'Capabilities']
+__all__ = ['DDesc', 'copy']
 
 import abc
 
 from blaze.error import StreamingDimensionError
 from blaze.compute.strategy import CKERNEL
+from .util import validate
+
+from itertools import chain
+from dynd import nd
 
 
-class Capabilities:
-    """
-    A container for storing the different capabilities of the data descriptor.
-
-    Parameters
-    ----------
-    immutable : bool
-        True if the array cannot be updated/enlarged.
-    deferred : bool
-        True if the array is an expression of other arrays.
-    stream : bool
-        True if the array is just a wrapper over an iterator.
-    persistent : bool
-        True if the array persists on files between sessions.
-    appendable : bool
-        True if the array can be enlarged efficiently.
-    queryable : bool
-        True if the array can be queried efficiently.
-    remote : bool
-        True if the array is remote or distributed.
-
-    """
-
-    def __init__(self, immutable=False, deferred=False, stream=False,
-                 persistent=False, appendable=False, queryable=False,
-                 remote=False):
-        self._caps = ['immutable', 'deferred', 'stream', 'persistent',
-                      'appendable', 'queryable', 'remote']
-        self.immutable = immutable
-        self.deferred = deferred
-        self.stream = stream
-        self.persistent = persistent
-        self.appendable = appendable
-        self.queryable = queryable
-        self.remote = remote
-
-    def __str__(self):
-        caps = [attr+': '+str(getattr(self, attr)) for attr in self._caps]
-        return "capabilities:" + "\n".join(caps)
-
-
-class DDesc:
+class DDesc(object):
     """
     The Blaze data descriptor is an interface which exposes
     data to Blaze. The data descriptor doesn't implement math
@@ -94,20 +57,6 @@ class DDesc:
         """A container for the different capabilities."""
         raise NotImplementedError
 
-    def __len__(self):
-        """
-        The default implementation of __len__ is for the
-        behavior of a streaming dimension, where the size
-        of the dimension isn't known ahead of time.
-
-        If a data descriptor knows its dimension size,
-        it should implement __len__, and provide the size
-        as an integer.
-        """
-        raise StreamingDimensionError('Cannot get the length of'
-                                      ' a streaming dimension')
-
-
     @abc.abstractmethod
     def __iter__(self):
         """
@@ -127,12 +76,44 @@ class DDesc:
         """
         raise NotImplementedError
 
-    #@abc.abstractmethod   # XXX should be there
-    def append(self, values):
+    def append(self, value):
         """
         This allows appending values in the data descriptor.
         """
-        return NotImplementedError
+        self.extend([value])
+
+    def extend(self, rows):
+        """ Extend data with many rows
+
+        See Also:
+            append
+        """
+        rows = iter(rows)
+        row = next(rows)
+        if not validate(self.schema, row):
+            raise ValueError('Invalid data:\n\t %s \nfor dshape \n\t%s' %
+                    (str(row), self.schema))
+        self._extend(chain([row], rows))
+
+
+    def extend_chunks(self, chunks):
+        self._extend_chunks((nd.array(chunk) for chunk in chunks))
+
+    def _extend_chunks(self, chunks):
+        from .as_py import ddesc_as_py
+        return self.extend((row for chunk in chunks for row in nd.as_py(chunk)))
+
+    def iterchunks(self, **kwargs):
+        def dshape(chunk):
+            n = len(chunk)
+            s = str(self.dshape)
+            return str(n) + ' * ' + ' * '.join(s.split(' * ')[1:])
+
+        chunks = self._iterchunks(**kwargs)
+        return (nd.array(chunk, dtype=dshape(chunk)) for chunk in chunks)
+
+    def _iterchunks(self, blen=100):
+        raise NotImplementedError()
 
     def getattr(self, name):
         raise NotImplementedError('this data descriptor does not support attribute access')
@@ -141,7 +122,7 @@ class DDesc:
         """Concrete data descriptors must provide their array data
            as a dynd array, accessible via this method.
         """
-        if not self.capabilities.deferred:
+        if not self.capabilities['deferred']:
             raise NotImplementedError((
                 'Data descriptor of type %s claims '
                 'claims to not being deferred, but did not '
@@ -149,3 +130,7 @@ class DDesc:
         else:
             raise TypeError((
                 'Data descriptor of type %s is deferred') % type(self))
+
+def copy(src, dest, **kwargs):
+    """ Copy content from one data descriptor to another """
+    dest.extend_chunks(src.iterchunks(**kwargs))

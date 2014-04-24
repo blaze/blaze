@@ -19,7 +19,7 @@ install:
   - sudo pip install conda
   # Install dependencies
   - sudo conda init
-  - conda create -p $HOME/py --yes nose cython numpy pycparser pyparsing pyyaml flask pytables netcdf4 cffi pip "python=$TRAVIS_PYTHON_VERSION"
+  - conda create -p $HOME/py --yes nose cython numpy pycparser pyparsing sqlalchemy pyyaml flask pytables h5py netcdf4 cffi pip "python=$TRAVIS_PYTHON_VERSION"
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install -p $HOME/py --yes unittest2; fi
   - export PATH=$HOME/py/bin:$PATH
   - pip install multipledispatch

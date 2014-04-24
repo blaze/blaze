@@ -1,11 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-from .data_descriptor import DDesc, Capabilities
+from .data_descriptor import DDesc, copy
 
 from .blz_data_descriptor import BLZ_DDesc
 from ..optional_packages import tables_is_here, netCDF4_is_here
+from .h5py_data_descriptor import H5PY_DDesc
 if tables_is_here:
-    from .hdf5_data_descriptor import HDF5_DDesc
+    from .pytables_data_descriptor import PyTables_DDesc
+    HDF5_DDesc = PyTables_DDesc
+else:
+    HDF5_DDesc = H5PY_DDesc
 if netCDF4_is_here:
     from .netcdf4_data_descriptor import netCDF4_DDesc
 from .cat_data_descriptor import Cat_DDesc
@@ -15,7 +19,8 @@ from .dynd_data_descriptor import DyND_DDesc
 from .deferred_data_descriptor import Deferred_DDesc
 from .stream_data_descriptor import Stream_DDesc
 from .csv_data_descriptor import CSV_DDesc
-from .json_data_descriptor import JSON_DDesc
+from .json_data_descriptor import JSON_DDesc, JSON_Streaming_DDesc
+from .sql_data_descriptor import SQL_DDesc
 from .remote_data_descriptor import Remote_DDesc
 
 from .as_py import ddesc_as_py

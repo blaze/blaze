@@ -33,10 +33,10 @@ def eval(arr, ddesc=None, caps={'efficient-write': True},
         Evaluation strategy.
         Currently supported: 'py', 'jit'
     """
-    if arr.ddesc.capabilities.deferred:
+    if arr.ddesc.capabilities['deferred']:
         result = eval_deferred(
             arr, ddesc=ddesc, caps=caps, out=out, debug=debug)
-    elif arr.ddesc.capabilities.remote:
+    elif arr.ddesc.capabilities['remote']:
         # Retrieve the data to local memory
         # TODO: Caching should play a role here.
         result = array(arr.ddesc.dynd_arr())
@@ -68,7 +68,7 @@ def append(arr, values):
     """Append a list of values."""
     # XXX If not efficient appends supported, this should raise
     # a `PerformanceWarning`
-    if arr.ddesc.capabilities.appendable:
+    if arr.ddesc.capabilities['appendable']:
         arr.ddesc.append(values)
     else:
         raise ValueError('Data source cannot be appended to')

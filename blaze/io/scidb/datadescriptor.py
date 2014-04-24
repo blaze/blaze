@@ -4,7 +4,7 @@ SciDB data descriptor.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.datadescriptor import DDesc, Capabilities
+from blaze.datadescriptor import DDesc
 
 
 class SciDB_DDesc(DDesc):
@@ -38,14 +38,10 @@ class SciDB_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the scidb data descriptor."""
-        return Capabilities(
-            immutable = True,
-            # scidb does not give us access to its temps right now
-            deferred = False,
-            persistent = True,
-            # Not sure on whether scidb is appendable or not
-            appendable = False,
-            )
+        return {'immutable': True,
+                'deferred': False,
+                'persistent': True,
+                'appendable': False}
 
     # TODO: below
 

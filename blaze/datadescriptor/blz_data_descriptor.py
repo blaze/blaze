@@ -5,7 +5,7 @@ import blz
 from dynd import nd
 import datashape
 
-from . import DDesc, Capabilities
+from . import DDesc
 from .dynd_data_descriptor import DyND_DDesc
 from .stream_data_descriptor import Stream_DDesc
 from shutil import rmtree
@@ -37,27 +37,12 @@ class BLZ_DDesc(DDesc):
     @property
     def capabilities(self):
         """The capabilities for the BLZ arrays."""
-        if self.blzarr is None:
-            persistent = False
-        else:
-            persistent = self.blzarr.rootdir is not None
-        if isinstance(self.blzarr, blz.btable):
-            queryable = True
-        else:
-            queryable = False
-        return Capabilities(
-            # BLZ arrays can be updated
-            immutable = False,
-            # BLZ arrays are concrete
-            deferred = False,
-            # BLZ arrays can be either persistent of in-memory
-            persistent = persistent,
-            # BLZ arrays can be appended efficiently
-            appendable = True,
-            # BLZ btables can be queried efficiently
-            queryable = queryable,
-            remote = False,
-            )
+        return {'persistent': self.blzarr and self.blzarr.rootdir,
+                'queryable': isinstance(self.blzarr, blz.btable),
+                'immutable': False,
+                'deferred': False,
+                'appendable': True,
+                'remote': False}
 
     def __array__(self):
         return np.array(self.blzarr)
@@ -185,5 +170,5 @@ class BLZ_DDesc(DDesc):
 
     def remove(self):
         """Remove the persistent storage."""
-        if self.capabilities.persistent:
+        if self.capabilities['persistent']:
             rmtree(self.path)

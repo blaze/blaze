@@ -5,7 +5,7 @@ import numpy as np
 from dynd import nd
 import datashape
 
-from . import DDesc, Capabilities
+from . import DDesc
 from .dynd_data_descriptor import DyND_DDesc
 from .stream_data_descriptor import Stream_DDesc
 from ..optional_packages import netCDF4_is_here
@@ -46,20 +46,13 @@ class netCDF4_DDesc(DDesc):
         with netCDF4.Dataset(self.path, mode='r') as f:
             dset = get_node(f, self.datapath)
             appendable = isinstance(dset, netCDF4.Variable)
-        caps = Capabilities(
-            # netCDF4 arrays can be updated
-            immutable = False,
-            # netCDF4 arrays are concrete
-            deferred = False,
-            # netCDF4 arrays are persistent
-            persistent = True,
-            # netCDF4 arrays can be appended efficiently
-            appendable = appendable,
-            # netCDF4 arrays cannot be queried efficiently
-            queryable = False,
-            remote = False,
-            )
-        return caps
+        return {'immutable': False,
+                'deferred': False,
+                'persistent': True,
+                'appendable': appendable,
+                'queryable': False,
+                'remote': False
+                }
 
     def dynd_arr(self):
         # Positionate at the beginning of the file
