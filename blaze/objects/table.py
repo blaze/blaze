@@ -58,3 +58,34 @@ class Column(Projection):
     def __init__(self, table, column):
         self.table = table
         self._columns = (column,)
+
+    def __eq__(self, other):
+        return Eq(self, other)
+
+    def __lt__(self, other):
+        return LT(self, other)
+
+    def __gt__(self, other):
+        return GT(self, other)
+
+
+class Relational(Table):
+    __slots__ = 'lhs', 'rhs'
+
+    def __init__(self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    @property
+    def schema(self):
+        return dshape('bool')
+
+
+class Eq(Relational):
+    pass
+
+class GT(Relational):
+    pass
+
+class LT(Relational):
+    pass
