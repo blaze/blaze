@@ -29,3 +29,11 @@ def test_relational():
     r = Eq(t['name'], 'Alice')
 
     assert r.dshape == dshape('var * bool')
+
+def test_selection():
+    t = Table('{name: string, amount: int, id: int}')
+
+    s = Selection(t, Eq(t['name'], 'Alice'))
+
+    assert s.dshape == t.dshape
+
