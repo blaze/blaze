@@ -37,3 +37,9 @@ def test_selection():
 
     assert s.dshape == t.dshape
 
+def test_selection_by_indexing():
+    t = Table('{name: string, amount: int, id: int}')
+
+    result = t[t['name'] == 'Alice']
+    expected = Selection(t, Eq(Column(t, 'name'), 'Alice'))
+    assert result == expected
