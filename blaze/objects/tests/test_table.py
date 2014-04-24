@@ -8,3 +8,9 @@ def test_column():
     t = Table('{name: string, amount: int}')
     assert t.columns == ['name', 'amount']
 
+def test_Projection():
+    t = Table('{name: string, amount: int, id: int}')
+    p = Projection(t, ['amount', 'name'])
+    assert p.schema == dshape('{amount: int, name: string}')
+
+
