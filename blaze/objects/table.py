@@ -86,14 +86,18 @@ class Relational(Table):
 class Eq(Relational):
     pass
 
+
 class GT(Relational):
     pass
+
 
 class LT(Relational):
     pass
 
+
 class Selection(Table):
     __slots__ = 'table', 'predicate'
+
     def __init__(self, table, predicate):
         self.table = table
         self.predicate = predicate
@@ -101,4 +105,3 @@ class Selection(Table):
     @property
     def schema(self):
         return self.table.schema
-
