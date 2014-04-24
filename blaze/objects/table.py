@@ -26,6 +26,8 @@ class Table(object):
         return self.schema[0].names
 
     def __getitem__(self, key):
+        if isinstance(key, Relational):
+            return Selection(self, key)
         if isinstance(key, (tuple, list)):
             key = tuple(key)
             if not all(col in self.columns for col in key):
