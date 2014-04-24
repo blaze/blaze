@@ -1,16 +1,20 @@
 from blaze.objects.table import *
 
+
 def test_dshape():
     t = Table('{name: string, amount: int}')
     assert t.dshape == dshape('var * {name: string, amount: int}')
+
 
 def test_eq():
     assert Table('{a: string, b: int}') == Table('{a: string, b: int}')
     assert Table('{b: string, a: int}') != Table('{a: string, b: int}')
 
+
 def test_column():
     t = Table('{name: string, amount: int}')
     assert t.columns == ['name', 'amount']
+
 
 def test_Projection():
     t = Table('{name: string, amount: int, id: int}')
@@ -18,10 +22,12 @@ def test_Projection():
     assert p.schema == dshape('{amount: int, name: string}')
     assert t['amount'].dshape == dshape('var * {amount: int}')
 
+
 def test_indexing():
     t = Table('{name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == Projection(t, ['amount', 'id'])
     assert t['amount'] == Column(t, 'amount')
+
 
 def test_relational():
     t = Table('{name: string, amount: int, id: int}')
@@ -30,12 +36,14 @@ def test_relational():
 
     assert r.dshape == dshape('var * bool')
 
+
 def test_selection():
     t = Table('{name: string, amount: int, id: int}')
 
     s = Selection(t, Eq(t['name'], 'Alice'))
 
     assert s.dshape == t.dshape
+
 
 def test_selection_by_indexing():
     t = Table('{name: string, amount: int, id: int}')
