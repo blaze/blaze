@@ -71,7 +71,7 @@ class Column(Projection):
         return GT(self, other)
 
 
-class Relational(Table):
+class Relational(Column):
     __slots__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
