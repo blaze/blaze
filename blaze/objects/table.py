@@ -25,13 +25,24 @@ class Table(object):
     def columns(self):
         return self.schema[0].names
 
+    def __getitem__(self, key):
+        if isinstance(key, (tuple, list)):
+            key = tuple(key)
+            if not all(col in self.columns for col in key):
+                raise ValueError("Mismatched Columns: %s" % str(key))
+            return Projection(self, tuple(key))
+        else:
+            if key not in self.columns:
+                raise ValueError("Mismatched Column: %s" % str(key))
+            return Column(self, key)
+
 
 class Projection(Table):
     __slots__ = 'table', '_columns'
 
     def __init__(self, table, columns):
         self.table = table
-        self._columns = columns
+        self._columns = tuple(columns)
 
     @property
     def columns(self):

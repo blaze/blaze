@@ -16,3 +16,8 @@ def test_Projection():
     t = Table('{name: string, amount: int, id: int}')
     p = Projection(t, ['amount', 'name'])
     assert p.schema == dshape('{amount: int, name: string}')
+
+def test_indexing():
+    t = Table('{name: string, amount: int, id: int}')
+    assert t[['amount', 'id']] == Projection(t, ['amount', 'id'])
+    assert t['amount'] == Column(t, 'amount')
