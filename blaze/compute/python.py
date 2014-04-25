@@ -1,7 +1,6 @@
 
 from blaze.objects.table import *
 from multipledispatch import dispatch
-from toolz.curried import *
 import itertools
 from collections import Iterator
 
@@ -12,13 +11,14 @@ seq = (tuple, list, Iterator)
 @dispatch(Projection, seq)
 def compute(t, l):
     indices = [t.table.columns.index(col) for col in t.columns]
-    return list(map(get(indices), l))
+    get = operator.itemgetter(*indices)
+    return (get(x) for x in l)
 
 
 @dispatch(Column, seq)
 def compute(t, l):
     index = t.table.columns.index(t.columns[0])
-    return [x[index] for x in l]
+    return (x[index] for x in l)
 
 
 @dispatch(base, object)
