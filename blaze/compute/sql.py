@@ -15,6 +15,7 @@ SELECT accounts.name
 FROM accounts
 WHERE accounts.amount < :amount_1
 """
+from __future__ import absolute_import, division, print_function
 
 from blaze.objects.table import *
 from multipledispatch import dispatch

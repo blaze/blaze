@@ -10,6 +10,7 @@
 >>> list(compute(deadbeats, data))
 ['Bob', 'Charlie']
 """
+from __future__ import absolute_import, division, print_function
 
 from blaze.objects.table import *
 from multipledispatch import dispatch

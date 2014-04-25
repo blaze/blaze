@@ -4,6 +4,7 @@
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 """
 
+from __future__ import absolute_import, division, print_function
 
 from datashape import dshape, var, DataShape, Record
 import operator
