@@ -1,3 +1,10 @@
+""" An abstract Table
+
+>>> accounts = Table('{name: string, amount: int}')
+>>> deadbeats = accounts['name'][accounts['amount'] < 0]
+"""
+
+
 from datashape import dshape, var, DataShape, Record
 import operator
 
@@ -41,6 +48,11 @@ class Table(object):
 
 
 class Projection(Table):
+    """
+
+    SELECT a, b, c
+    FROM table
+    """
     __slots__ = 'table', '_columns'
 
     def __init__(self, table, columns):
@@ -58,6 +70,11 @@ class Projection(Table):
 
 
 class Column(Projection):
+    """
+
+    SELECT a
+    FROM table
+    """
     def __init__(self, table, column):
         self.table = table
         self._columns = (column,)
@@ -72,7 +89,26 @@ class Column(Projection):
         return GT(self, other)
 
 
+class Selection(Table):
+    """
+    WHERE a op b
+    """
+    __slots__ = 'table', 'predicate'
+
+    def __init__(self, table, predicate):
+        self.table = table
+        self.predicate = predicate  # A Relational
+
+    @property
+    def schema(self):
+        return self.table.schema
+
+
 class Relational(Column):
+    """
+
+    a op b
+    """
     __slots__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
@@ -86,26 +122,11 @@ class Relational(Column):
 
 class Eq(Relational):
     op = operator.eq
-    pass
 
 
 class GT(Relational):
     op = operator.gt
-    pass
 
 
 class LT(Relational):
     op = operator.lt
-    pass
-
-
-class Selection(Table):
-    __slots__ = 'table', 'predicate'
-
-    def __init__(self, table, predicate):
-        self.table = table
-        self.predicate = predicate
-
-    @property
-    def schema(self):
-        return self.table.schema
