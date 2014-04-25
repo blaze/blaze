@@ -9,8 +9,8 @@ t = Table('{name: string, amount: int, id: int}')
 metadata = sa.MetaData()
 
 s = sa.Table('accounts', metadata,
-             sa.Column('name', sa.Integer),
-             sa.Column('amount', sa.String),
+             sa.Column('name', sa.String),
+             sa.Column('amount', sa.Integer),
              sa.Column('id', sa.Integer, primary_key=True),
              )
 
