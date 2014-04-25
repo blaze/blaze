@@ -1,4 +1,5 @@
 from datashape import dshape, var, DataShape, Record
+import operator
 
 
 class Table(object):
@@ -84,14 +85,17 @@ class Relational(Column):
 
 
 class Eq(Relational):
+    op = operator.eq
     pass
 
 
 class GT(Relational):
+    op = operator.gt
     pass
 
 
 class LT(Relational):
+    op = operator.lt
     pass
 
 
