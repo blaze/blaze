@@ -1,3 +1,20 @@
+"""
+
+>>> from blaze.objects.table import Table
+>>> from blaze.compute.python import compute
+
+>>> accounts = Table('{name: string, amount: int}')
+>>> deadbeats = accounts['name'][accounts['amount'] < 0]
+
+>>> from sqlalchemy import Table, Column, MetaData, Integer, String
+>>> t = Table('accounts', MetaData(),
+...           Column('name', String, primary_key = True),
+...           Column('amount', Integer))
+>>> print(compute(deadbeats, t))  # doctest: +SKIP
+SELECT accounts.name
+FROM accounts
+WHERE accounts.amount < :amount_1
+"""
 
 from blaze.objects.table import *
 from multipledispatch import dispatch
