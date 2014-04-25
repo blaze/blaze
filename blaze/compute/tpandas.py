@@ -14,6 +14,7 @@
 2    Charlie
 Name: name, dtype: object
 """
+from __future__ import absolute_import, division, print_function
 
 from blaze.objects.table import *
 import pandas
