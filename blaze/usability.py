@@ -28,7 +28,7 @@ def like(a, b):
 
 @dispatch((list, tuple, set), dict)
 def like(a, b):
-    return type(a)(map(type(a), b.items()))
+    return type(a)(map(type(a), sorted(b.items(), key=lambda x: x[0])))
 
 @dispatch(nd.array, object)
 def like(a, b):

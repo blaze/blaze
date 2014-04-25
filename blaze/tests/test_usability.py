@@ -26,6 +26,8 @@ class Test_Like(unittest.TestCase):
                                   {1: 2, 3: 4})
         self.assertEqual(like((), {1: 2, 3: 4}),
                                   ((1, 2), (3, 4)))
+        self.assertEqual(like((), {'cat': 2, 'dog': 4}),
+                                  (('cat', 2), ('dog', 4)))
 
     def test_dynd(self):
         self.assertEqual(nd.as_py(like(nd.array(), (1, 2, 3))),
