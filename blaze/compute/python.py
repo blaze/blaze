@@ -1,3 +1,15 @@
+"""
+
+>>> from blaze.objects.table import Table
+>>> from blaze.compute.python import compute
+
+>>> accounts = Table('{name: string, amount: int}')
+>>> deadbeats = accounts['name'][accounts['amount'] < 0]
+
+>>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
+>>> list(compute(deadbeats, data))
+['Bob', 'Charlie']
+"""
 
 from blaze.objects.table import *
 from multipledispatch import dispatch
