@@ -74,6 +74,10 @@ class CKernelLifter(object):
                 op.args[0] = _lowlevel.make_rolling_ckernel_deferred(out_type,
                                                                      in_types[0],
                                                                      ck, window)
+            elif tag == 'ckfactory':
+                ckfactory = ckernel['ckernel_factory']
+                ck = ckfactory(out_type, *in_types)
+                op.args[0] = ck
             else:
                 raise RuntimeError('unnrecognized ckernel tag %s' % tag)
         else:

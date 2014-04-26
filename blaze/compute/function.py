@@ -386,3 +386,44 @@ class RollingWindowBlazeFunc(BlazeFunc):
         desc = Deferred_DDesc(term.dshape, (term, ctx))
 
         return blaze.Array(desc)
+
+class CKFBlazeFunc(BlazeFunc):
+    """
+    This is a kind of BlazeFunc which generates a ckernel
+    using a factory function provided with the types.
+    """
+    def add_overload(self, sig, ckfactory):
+        sig = _normalized_sig(sig)
+        # TODO: This probably should be an object instead of a dict
+        info = {'tag': 'ckfactory',
+                'ckernel_factory': ckfactory}
+        BlazeFunc.add_overload(self, sig, info)
+
+    def add_plugin_overload(self, sig, data, pluginname):
+        raise NotImplementedError('TODO: implement add_plugin_overload')
+
+    def __call__(self, *args):
+        """
+        Apply blaze kernel `kernel` to the given arguments.
+
+        Returns: a Deferred node representation the delayed computation
+        """
+        # Convert the arguments into blaze.Array
+        args = [blaze.array(a) for a in args]
+
+        # Merge input contexts
+        ctxs = [term.expr[1] for term in args
+                if isinstance(term, blaze.Array) and term.expr]
+        ctx = ExprContext(ctxs)
+
+        # Find match to overloaded function
+        argstype = coretypes.Tuple([a.dshape for a in args])
+        idx, match = self.overloader.resolve_overload(argstype)
+        info = dict(self.ckernels[idx])
+        overload = Overload(match, self.overloader[idx], info)
+
+        # Construct graph
+        term = construct(self, ctx, overload, args)
+        desc = Deferred_DDesc(term.dshape, (term, ctx))
+
+        return blaze.Array(desc)

@@ -267,5 +267,29 @@ class TestRolling(unittest.TestCase):
         self.assertTrue(math.isnan(a[0]))
         self.assertEqual(list(a[1:]), [1, 2, 0, -2, -2])
 
+
+class TestTake(unittest.TestCase):
+    def test_masked_take(self):
+        a = blaze.take([1, 3, 5, 7], [True, False, True, False])
+        self.assertEqual(list(a), [1, 5])
+        x = blaze.array([(1, "test"), (2, "one"), (3, "two"), (4, "three")],
+                        dshape="{x: int, y: string}")
+        a = blaze.take(x, [True, True, True, True])
+        self.assertEqual(list(a), list(x))
+        a = blaze.take(x, [True, True, False, False])
+        self.assertEqual(list(a), [x[0], x[1]])
+        a = blaze.take(x, [False, False, True, True])
+        self.assertEqual(list(a), [x[2], x[3]])
+        a = blaze.take(x, [True, False, True, False])
+        self.assertEqual(list(a), [x[0], x[2]])
+
+    def test_indexed_take(self):
+        a = blaze.take([1, 3, 5, 7], [-1, -2, -3, -4, 0, 1, 2, 3])
+        self.assertEqual(list(a), [7, 5, 3, 1, 1, 3, 5, 7])
+        x = blaze.array([(1, "test"), (2, "one"), (3, "two"), (4, "three")],
+                        dshape="{x: int, y: string}")
+        a = blaze.take(x, [2, -3])
+        self.assertEqual(list(a), [x[2], x[-3]])
+
 if __name__ == '__main__':
     unittest.main()
