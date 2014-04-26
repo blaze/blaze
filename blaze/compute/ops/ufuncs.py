@@ -32,10 +32,10 @@ ufuncs_from_dynd = ['real', 'imag']
 
 reduction_ufuncs = ['any', 'all', 'sum', 'product', 'min', 'max']
 
-rolling_ufuncs = ['rolling_mean', 'diff']
+other_ufuncs = ['rolling_mean', 'diff', 'take']
 
 __all__ = ufuncs_from_numpy + ufuncs_from_dynd + reduction_ufuncs + \
-          rolling_ufuncs
+          other_ufuncs
 
 import numpy as np
 from dynd import ndt, _lowlevel
@@ -43,7 +43,7 @@ from dynd import ndt, _lowlevel
 from .from_numpy import blazefunc_from_numpy_ufunc
 from .from_dynd import blazefunc_from_dynd_property
 from ..function import ReductionBlazeFunc, RollingWindowBlazeFunc, \
-    BlazeFunc
+    CKFBlazeFunc, BlazeFunc
 
 #------------------------------------------------------------------------
 # UFuncs converted from NumPy
@@ -109,7 +109,7 @@ for name, np_op, ident, types in reductions:
         locals()[name] = x
 
 #------------------------------------------------------------------------
-# Rolling Window Funcs
+# Other Funcs
 #------------------------------------------------------------------------
 
 rolling_mean = RollingWindowBlazeFunc('blaze', 'rolling_mean')
@@ -129,3 +129,11 @@ diff_ck = _lowlevel.make_rolling_ckernel_deferred('strided * float64',
                                                   'strided * float64',
                                                   diff_pair_ck, 2)
 diff.add_overload('(M * float64) -> M * float64', diff_ck)
+
+take = CKFBlazeFunc('blaze', 'take')
+# Masked take
+take.add_overload('(M * T, M * bool) -> var * T',
+                  _lowlevel.make_take_ckernel_deferred)
+# Indexed take
+take.add_overload('(M * T, N * intptr) -> N * T',
+                  _lowlevel.make_take_ckernel_deferred)
