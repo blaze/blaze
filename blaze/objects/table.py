@@ -89,6 +89,42 @@ class Column(Projection):
     def __gt__(self, other):
         return GT(self, other)
 
+    def __add__(self, other):
+        return Add(self, other)
+
+    def __radd__(self, other):
+        return Add(other, self)
+
+    def __mul__(self, other):
+        return Mul(self, other)
+
+    def __rmul__(self, other):
+        return Mul(other, self)
+
+    def __div__(self, other):
+        return Div(self, other)
+
+    def __rdiv__(self, other):
+        return Div(other, self)
+
+    def __sub_(self, other):
+        return Sub(self, other)
+
+    def __rsub__(self, other):
+        return Sub(other, self)
+
+    def __pow__(self, other):
+        return Pow(self, other)
+
+    def __rpow__(self, other):
+        return Pow(other, self)
+
+    def __mod__(self, other):
+        return Mod(self, other)
+
+    def __rmod__(self, other):
+        return Mod(other, self)
+
 
 class Selection(Table):
     """
@@ -105,7 +141,7 @@ class Selection(Table):
         return self.table.schema
 
 
-class Relational(Column):
+class ColumnWise(Column):
     """
 
     a op b
@@ -116,6 +152,7 @@ class Relational(Column):
         self.lhs = lhs
         self.rhs = rhs
 
+class Relational(ColumnWise):
     @property
     def schema(self):
         return dshape('bool')
@@ -131,3 +168,27 @@ class GT(Relational):
 
 class LT(Relational):
     op = operator.lt
+
+class Arithmetic(ColumnWise):
+    @property
+    def schema(self):
+        # TODO: Infer schema based on input types
+        return dshape('real')
+
+class Add(Arithmetic):
+    op = operator.add
+
+class Mul(Arithmetic):
+    op = operator.mul
+
+class Sub(Arithmetic):
+    op = operator.sub
+
+class Div(Arithmetic):
+    op = operator.div
+
+class Pow(Arithmetic):
+    op = operator.pow
+
+class Mod(Arithmetic):
+    op = operator.mod
