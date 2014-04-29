@@ -53,3 +53,10 @@ def test_selection_by_indexing():
     result = t[t['name'] == 'Alice']
     expected = Selection(t, Eq(Column(t, 'name'), 'Alice'))
     assert result == expected
+
+
+def test_columnwise():
+    t = Table('{x: real, y: real, z: real}')
+    x, y, z = t['x'], t['y'], t['z']
+    expr = z % x * y + z ** 2
+    assert isinstance(expr, Column)
