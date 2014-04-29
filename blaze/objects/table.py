@@ -48,6 +48,12 @@ class Table(object):
             return Column(self, key)
 
 
+    def __str__(self):
+        return "%s(%s)" % (type(self).__name__, ', '.join(map(str, self.args)))
+
+    __repr__ = __str__
+
+
 class Projection(Table):
     """
 

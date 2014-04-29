@@ -60,3 +60,14 @@ def test_columnwise():
     x, y, z = t['x'], t['y'], t['z']
     expr = z % x * y + z ** 2
     assert isinstance(expr, Column)
+
+
+def test_str():
+    import re
+    t = Table('{name: string, amount: int, id: int}')
+    expr = t[['name', 'id']][t['amount'] < 0]
+    print(str(expr))
+    assert '<class' not in str(expr)
+    assert not re.search('0x[0-9a-f]+', str(expr))
+
+    # assert eval(str(expr)) == expr
