@@ -1,6 +1,6 @@
 """ An abstract Table
 
->>> accounts = Table('{name: string, amount: int}')
+>>> accounts = TableExpr('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 """
 
@@ -10,7 +10,7 @@ from datashape import dshape, var, DataShape, Record
 import operator
 
 
-class Table(object):
+class TableExpr(object):
     __slots__ = 'schema',
 
     def __init__(self, schema):
@@ -54,7 +54,7 @@ class Table(object):
     __repr__ = __str__
 
 
-class Projection(Table):
+class Projection(TableExpr):
     """
 
     SELECT a, b, c
@@ -132,7 +132,7 @@ class Column(Projection):
         return Mod(other, self)
 
 
-class Selection(Table):
+class Selection(TableExpr):
     """
     WHERE a op b
     """
