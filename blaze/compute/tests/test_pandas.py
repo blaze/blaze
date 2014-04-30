@@ -28,3 +28,12 @@ def test_eq():
 def test_selection():
     assert str(compute(t[t['amount'] == 0], df)) == str(df[df['amount'] == 0])
     assert str(compute(t[t['amount'] > 150], df)) == str(df[df['amount'] > 150])
+
+
+def test_arithmetic():
+    assert str(compute(t['amount'] + t['id'], df)) == \
+                str(df.amount + df.id)
+    assert str(compute(t['amount'] * t['id'], df)) == \
+                str(df.amount * df.id)
+    assert str(compute(t['amount'] % t['id'], df)) == \
+                str(df.amount % df.id)
