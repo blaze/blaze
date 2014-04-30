@@ -28,3 +28,11 @@ def test_selection():
                 [x for x in data if x[1] == 0]
     assert list(compute(t[t['amount'] > 150], data)) == \
                 [x for x in data if x[1] > 150]
+
+def test_arithmetic():
+    assert list(compute(t['amount'] + t['id'], data)) == \
+                [b + c for a, b, c, in data]
+    assert list(compute(t['amount'] * t['id'], data)) == \
+                [b * c for a, b, c, in data]
+    assert list(compute(t['amount'] % t['id'], data)) == \
+                [b % c for a, b, c, in data]
