@@ -8,8 +8,8 @@ import datashape
 from dynd import nd
 
 from ..utils import partition_all, nth
-from .. import py2help
-from ..py2help import _inttypes
+from .. import compatibility
+from ..compatibility import _inttypes
 from .core import DataDescriptor, isdimension
 from .utils import coerce
 
@@ -41,7 +41,7 @@ class JSON(DataDescriptor):
         if dshape and not schema and isdimension(dshape[0]):
             schema = dshape.subarray(1)
 
-        if isinstance(schema, py2help._strtypes):
+        if isinstance(schema, compatibility._strtypes):
             schema = datashape.dshape(schema)
         if not schema and not dshape:
             # TODO: schema detection from file

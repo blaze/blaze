@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 
 import sys
 PY3 = sys.version_info[0] > 2
@@ -7,7 +8,6 @@ if PY3:
 
 else:
     from urllib2 import urlopen
-from __future__ import absolute_import, division, print_function
 
 import sys
 import itertools

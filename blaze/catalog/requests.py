@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function
 import urllib
 import json
 
-from ... import py2help
+from ... import compatibility
 
-if py2help.PY2:
+if compatibility.PY2:
     from urllib2 import urlopen
 else:
     from urllib.request import urlopen

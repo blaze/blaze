@@ -23,7 +23,7 @@ class Test_Files(TestCase):
 
             expected = [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]]
 
-            self.assertEqual(dd.as_py(), expected)
+            self.assertEqual(list(dd), expected)
 
             result = dd.as_dynd()
             expected2 = nd.array(expected, dtype='int32')
@@ -38,4 +38,3 @@ class Test_Files(TestCase):
                         nd.array([[4, 4], [5, 5], [6, 6]], dtype='int32')]
 
             assert all(nd.as_py(a) == nd.as_py(b) for a, b in zip(chunks, expected))
-

@@ -6,7 +6,6 @@ import tempfile
 import json
 from dynd import nd
 import datashape
-from blaze.datadescriptor.as_py import ddesc_as_py
 
 from blaze.data import JSON, JSON_Streaming
 from blaze.utils import filetext, raises

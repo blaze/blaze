@@ -7,7 +7,7 @@ import sqlalchemy as sql
 import datashape
 
 from ..utils import partition_all
-from ..py2help import basestring
+from ..compatibility import basestring
 from .core import DataDescriptor
 from .utils import coerce_row_to_dict
 

@@ -8,8 +8,7 @@ from .filesystem import *
 from .sql import *
 from glob import glob
 import gzip
-from ..compatibility import urlopen
-from ..py2help import _strtypes
+from ..compatibility import urlopen, _strtypes
 
 __all__ = ['resource', 'copy']
 

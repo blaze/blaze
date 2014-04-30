@@ -8,17 +8,6 @@ logger.setLevel(logging.WARNING)
 
 # build the blaze namespace with selected functions
 from . import catalog
-from . import compute, io
-from .objects.array import Array
-from .objects.constructors import (
-    array, empty, ones, zeros)
-from .compute.function import  BlazeFunc
-from .compute.eval import (
-    eval, append)
-from .compute.elwise_eval import _elwise_eval
-from .compute.ops.ufuncs import *
-from .datadescriptor import (
-    DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc, Stream_DDesc)
 from .data import *
 
 inf = float('inf')

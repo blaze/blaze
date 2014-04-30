@@ -5,7 +5,7 @@ from dynd import nd
 import h5py
 import numpy as np
 from sys import stdout
-from blaze.py2help import skip
+from blaze.compatibility import skip
 
 from blaze.data import HDF5
 from blaze.utils import tmpfile
