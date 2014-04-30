@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from datashape import dshape
 
 
 def test_dshape():
@@ -71,3 +72,12 @@ def test_str():
     assert not re.search('0x[0-9a-f]+', str(expr))
 
     # assert eval(str(expr)) == expr
+
+def test_join():
+    t = TableExpr('{name: string, amount: int}')
+    s = TableExpr('{name: string, id: int}')
+    j = Join(t, s, 'name', 'name')
+
+    assert j.schema == dshape('{name: string, amount: int, id: int}')
+
+    assert Join(t, s, 'name') == Join(t, s, 'name')

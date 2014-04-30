@@ -198,3 +198,25 @@ class Pow(Arithmetic):
 
 class Mod(Arithmetic):
     op = operator.mod
+
+class Join(TableExpr):
+    __slots__ = 'lhs', 'rhs', 'on_left', 'on_right'
+
+    def __init__(self, lhs, rhs, on_left, on_right=None):
+        self.lhs = lhs
+        self.rhs = rhs
+        if not on_right:
+            on_right = on_left
+        self.on_left = on_left
+        self.on_right = on_right
+        if lhs.schema[0][on_left] != rhs.schema[0][on_right]:
+            raise TypeError("Schema's of joining columns do not match")
+
+    @property
+    def schema(self):
+        rec1 = self.lhs.schema[0]
+        rec2 = self.rhs.schema[0]
+
+        rec = rec1.parameters[0] + tuple((k, v) for k, v in rec2.parameters[0]
+                                                 if  k != self.on_right)
+        return dshape(Record(rec))
