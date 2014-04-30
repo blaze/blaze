@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.objects.table import *
+from blaze.expr.table import *
 
 
 def test_dshape():
