@@ -39,7 +39,7 @@ def compute(a, b):
     return a
 
 
-@dispatch(Relational, seq)
+@dispatch(ColumnWise, seq)
 def compute(t, l):
     lhs_istable = isinstance(t.lhs, Table)
     rhs_istable = isinstance(t.rhs, Table)
