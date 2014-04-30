@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.sql import *
+from blaze.compute.sql import compute, _compute
 from blaze.objects.table import *
 import sqlalchemy
 import sqlalchemy as sa
@@ -15,9 +15,18 @@ s = sa.Table('accounts', metadata,
              sa.Column('id', sa.Integer, primary_key=True),
              )
 
+def normalize(s):
+    return ' '.join(s.strip().split())
 
 def test_table():
-    assert compute(t, s) == s
+    result = str(compute(t, s))
+    expected = """
+    SELECT accounts.name, accounts.amount, accounts.id
+    FROM accounts
+    """.strip()
+
+    assert normalize(result) == normalize(expected)
+
 
 
 def test_projection():
@@ -26,7 +35,7 @@ def test_projection():
 
 
 def test_eq():
-    assert str(compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
+    assert str(_compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
 
 
 def test_selection():
@@ -34,3 +43,13 @@ def test_selection():
             str(sa.select([s]).where(s.c.amount == 0))
     assert str(compute(t[t['amount'] > 150], s)) == \
             str(sa.select([s]).where(s.c.amount > 150))
+
+
+def test_arithmetic():
+    assert str(compute(t['amount'] + t['id'], s)) == \
+            str(sa.select([s.c.amount + s.c.id]))
+    assert str(_compute(t['amount'] + t['id'], s)) == str(s.c.amount + s.c.id)
+    assert str(_compute(t['amount'] * t['id'], s)) == str(s.c.amount * s.c.id)
+
+    assert str(compute(t['amount'] + t['id'] * 2, s)) == \
+            str(sa.select([s.c.amount + s.c.id * 2]))
