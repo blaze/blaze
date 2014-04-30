@@ -5,7 +5,7 @@ import gzip
 
 from blaze.utils import filetext, filetexts, tmpfile
 from blaze.data import *
-from blaze.py2help import skip
+from blaze.compatibility import skip
 
 class TestResource(TestCase):
     def setUp(self):

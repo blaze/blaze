@@ -6,7 +6,7 @@ from itertools import chain
 from datashape import dshape, Var
 
 from .core import DataDescriptor
-from .. import py2help
+from .. import compatibility
 
 __all__ = 'Files',
 
@@ -19,7 +19,7 @@ class Files(DataDescriptor):
 
     def __init__(self, files, descriptor, subdshape=None, schema=None,
             open=open):
-        if isinstance(files, py2help._strtypes):
+        if isinstance(files, compatibility._strtypes):
             files = glob(files)
         self.filenames = files
 

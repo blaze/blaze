@@ -5,7 +5,7 @@ __all__ = ['split_array_base', 'add_indexers_to_url', 'slice_as_string',
 
 from pyparsing import (Word, Regex, Optional, ZeroOrMore,
                        StringStart, StringEnd, alphas, alphanums)
-from ..py2help import _strtypes, _inttypes
+from ..compatibility import _strtypes, _inttypes
 
 # Parser to match the Blaze URL syntax
 intNumber = Regex(r'[-+]?\b\d+\b')

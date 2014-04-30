@@ -2,7 +2,7 @@ from blaze.data import CSV, JSON_Streaming, HDF5, SQL, copy
 from blaze.utils import filetext, tmpfile
 import json
 import unittest
-from blaze.py2help import skip
+from blaze.compatibility import skip
 from sqlalchemy import create_engine
 
 

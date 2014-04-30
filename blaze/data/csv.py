@@ -10,7 +10,7 @@ from dynd import nd
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
 from ..utils import partition_all, nth
-from .. import py2help
+from .. import compatibility
 
 __all__ = ['CSV']
 
@@ -47,7 +47,7 @@ def discover_dialect(sample, dialect=None, **kwargs):
      'quotechar': '"',
      'doublequote': False}
     """
-    if isinstance(dialect, py2help._strtypes):
+    if isinstance(dialect, compatibility._strtypes):
         dialect = csv.get_dialect(dialect)
 
     sniffer = csv.Sniffer()
@@ -129,7 +129,7 @@ class CSV(DataDescriptor):
         with self.open(self.path, self.mode) as f:
             if self.header:
                 next(f)
-            if isinstance(key, py2help._inttypes):
+            if isinstance(key, compatibility._inttypes):
                 line = nth(key, f)
                 result = next(csv.reader([line], **self.dialect))
             elif isinstance(key, slice):
