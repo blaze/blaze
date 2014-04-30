@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.tpandas import *
-from blaze.objects.table import *
+from blaze.expr.table import *
 from pandas import DataFrame
 
-t = Table('{name: string, amount: int, id: int}')
+t = TableExpr('{name: string, amount: int, id: int}')
 
 
 df = DataFrame([['Alice', 100, 1],

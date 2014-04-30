@@ -1,9 +1,9 @@
 """
 
->>> from blaze.objects.table import Table
+>>> from blaze.expr.table import TableExpr
 >>> from blaze.compute.python import compute
 
->>> accounts = Table('{name: string, amount: int}')
+>>> accounts = TableExpr('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
@@ -17,7 +17,7 @@ WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.objects.table import *
+from blaze.expr.table import *
 from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
@@ -51,11 +51,11 @@ def _compute(t, s):
     return sa.select([_compute(t.table, s)]).where(_compute(t.predicate, s))
 
 
-@dispatch(Table, sqlalchemy.Table)
+@dispatch(TableExpr, sqlalchemy.Table)
 def _compute(t, s):
     return s
 
-@dispatch(Table, sqlalchemy.Table)
+@dispatch(TableExpr, sqlalchemy.Table)
 def compute(t, s):
     result = _compute(t, s)
     if not isinstance(result, sqlalchemy.sql.selectable.Select):

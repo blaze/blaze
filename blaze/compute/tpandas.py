@@ -1,9 +1,9 @@
 """
 
->>> from blaze.objects.table import Table
+>>> from blaze.expr.table import TableExpr
 >>> from blaze.compute.python import compute
 
->>> accounts = Table('{name: string, amount: int}')
+>>> accounts = TableExpr('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from pandas import DataFrame
@@ -16,7 +16,7 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.objects.table import *
+from blaze.expr.table import *
 import pandas
 from pandas import DataFrame
 from multipledispatch import dispatch
@@ -48,7 +48,7 @@ def compute(t, df):
     return compute(t.table, df)[compute(t.predicate, df)]
 
 
-@dispatch(Table, DataFrame)
+@dispatch(TableExpr, DataFrame)
 def compute(t, df):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype

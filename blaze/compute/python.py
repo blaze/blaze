@@ -1,9 +1,9 @@
 """
 
->>> from blaze.objects.table import Table
+>>> from blaze.expr.table import TableExpr
 >>> from blaze.compute.python import compute
 
->>> accounts = Table('{name: string, amount: int}')
+>>> accounts = TableExpr('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -12,7 +12,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.objects.table import *
+from blaze.expr.table import *
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
@@ -41,8 +41,8 @@ def compute(a, b):
 
 @dispatch(ColumnWise, seq)
 def compute(t, l):
-    lhs_istable = isinstance(t.lhs, Table)
-    rhs_istable = isinstance(t.rhs, Table)
+    lhs_istable = isinstance(t.lhs, TableExpr)
+    rhs_istable = isinstance(t.rhs, TableExpr)
 
     if lhs_istable and rhs_istable:
 
@@ -74,6 +74,6 @@ def compute(t, l):
               if tf)
 
 
-@dispatch(Table, seq)
+@dispatch(TableExpr, seq)
 def compute(t, l):
     return l

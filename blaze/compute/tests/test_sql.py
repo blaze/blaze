@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.sql import compute, _compute
-from blaze.objects.table import *
+from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
 
-t = Table('{name: string, amount: int, id: int}')
+t = TableExpr('{name: string, amount: int, id: int}')
 
 metadata = sa.MetaData()
 
