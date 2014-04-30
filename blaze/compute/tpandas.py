@@ -38,7 +38,7 @@ def compute(a, b):
     return a
 
 
-@dispatch(Relational, DataFrame)
+@dispatch(ColumnWise, DataFrame)
 def compute(t, df):
     return t.op(compute(t.lhs, df), compute(t.rhs, df))
 
