@@ -29,55 +29,5 @@ must be called to create a materialized, concrete, or
 reified Blaze Array which will apply a generated kernel 
 based on the expression.   The kernel is composed of the kernels
 selected from add, mul, and dot based on the data-shape of
-the input arguments.   These low-level kernels are built up 
-using LLVM and compiled to machine code 
-(using vector-instructions where possible).  
-This fused, low-level kernel is applied over the data. 
+the input arguments.
 
-
-Blaze Element Kernels
-=====================
-A Blaze Element Kernel is an object that contains an LLVM
-function with a particular signature.  This function should 
-perform the operation on a single element.  So, for example 
-an add Element Kernel would wrap around an LLVM function that 
-adds two typed values.   You don't need to worry about this 
-being slow, the BlazeFunction compiler will create
-an in-line version of the function.  The LLVM function
-signature consists of the inputs followed by one output. 
-(Multiple outputs can be returned from an element kernel by
-using a structure as the output data-type.) 
-
-Here is an example of an LLVM Function that can be used to build
-a BlazeElementKernel: 
-
-def add(a,b):
-    return a + b
-
-Using Numba or another Python to LLVM tool, this can be converted into the following LLVM function for the float64 data:
-
-define double @add(double %a, double %b) nounwind readnone alwaysinline {
-entry:
-  %0 = fadd double %a, %b
-  ret double %0
-}
-
-
-KernelTrees
-===========
-Evaluating BlazeFunctions create KernelTrees which are tree structures 
-of BlazeElementKernels.  These tree structures are used to manage the 
-stitching together and "lifting" of the Element kernels at run-time
-
-Lifting
-=======
-The concept of lifting is that a BlazeElementKernel is transformed, or 
-lifted, to become a kernel accepting array arguments with a 
-larger number of dimensions.
-
-
-Broadcasting
-============ 
-
-When multiple arguments are involved in a calculation, their shapes must 
-either be the same, or broadcastable to the same shape. 

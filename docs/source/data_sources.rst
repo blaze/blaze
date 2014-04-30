@@ -25,14 +25,14 @@ In-memory storage:
   [1 2 3]
 
 We can check that the array is backed by a the BLZ library by printing
-the associated data descritor::
+the associated data descritor
 
 .. doctest::
 
   >>> arr.ddesc
   <blaze.datadescriptor.blz_data_descriptor.BLZ_DDesc object at 0x10d90dfd0>
 
-an you can access the underlying BLZ object if you want too::
+an you can access the underlying BLZ object if you want too
 
 .. doctest::
 
