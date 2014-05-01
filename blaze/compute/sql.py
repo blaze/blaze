@@ -58,6 +58,11 @@ def computefull(t, s):
 
 @dispatch(Join, sqlalchemy.Table, sqlalchemy.Table)
 def compute(t, lhs, rhs):
+    """
+
+    TODO: SQL bunches all of the columns from both tables together.  We should
+    probably downselect
+    """
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 

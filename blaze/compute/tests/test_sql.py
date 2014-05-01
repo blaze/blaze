@@ -72,3 +72,5 @@ def test_join():
     result = compute(joined, {L: lhs, R: rhs})
 
     assert str(result) == str(expected)
+
+    assert str(sa.select([result])) == str(sa.select([expected]))
