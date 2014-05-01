@@ -53,3 +53,22 @@ def test_arithmetic():
 
     assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
+
+def test_join():
+    lhs = sa.Table('amounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    expected = lhs.join(rhs, lhs.c.name == rhs.c.name)
+
+    L = TableExpr('{name: string, amount: int}')
+    R = TableExpr('{name: string, id: int}')
+    joined = Join(L, R, 'name')
+
+    result = compute(joined, {L: lhs, R: rhs})
+
+    assert str(result) == str(expected)

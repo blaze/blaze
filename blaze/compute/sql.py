@@ -48,8 +48,20 @@ def compute(t, s):
 def compute(t, s):
     return s
 
+
 def computefull(t, s):
     result = compute(t, s)
     if not isinstance(result, sqlalchemy.sql.selectable.Select):
         result = sa.select([result])
     return result
+
+
+@dispatch(Join, sqlalchemy.Table, sqlalchemy.Table)
+def compute(t, lhs, rhs):
+    lhs = compute(t.lhs, lhs)
+    rhs = compute(t.rhs, rhs)
+
+    left_column = getattr(lhs.c, t.on_left)
+    right_column = getattr(rhs.c, t.on_right)
+
+    return lhs.join(rhs, left_column == right_column)
