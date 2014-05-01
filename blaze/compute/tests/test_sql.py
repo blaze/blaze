@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.sql import compute, _compute
+from blaze.compute.sql import compute, computefull
 from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
@@ -19,7 +19,7 @@ def normalize(s):
     return ' '.join(s.strip().split())
 
 def test_table():
-    result = str(compute(t, s))
+    result = str(computefull(t, s))
     expected = """
     SELECT accounts.name, accounts.amount, accounts.id
     FROM accounts
@@ -35,7 +35,7 @@ def test_projection():
 
 
 def test_eq():
-    assert str(_compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
+    assert str(compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
 
 
 def test_selection():
@@ -46,10 +46,31 @@ def test_selection():
 
 
 def test_arithmetic():
-    assert str(compute(t['amount'] + t['id'], s)) == \
+    assert str(computefull(t['amount'] + t['id'], s)) == \
             str(sa.select([s.c.amount + s.c.id]))
-    assert str(_compute(t['amount'] + t['id'], s)) == str(s.c.amount + s.c.id)
-    assert str(_compute(t['amount'] * t['id'], s)) == str(s.c.amount * s.c.id)
+    assert str(compute(t['amount'] + t['id'], s)) == str(s.c.amount + s.c.id)
+    assert str(compute(t['amount'] * t['id'], s)) == str(s.c.amount * s.c.id)
 
-    assert str(compute(t['amount'] + t['id'] * 2, s)) == \
+    assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
+
+def test_join():
+    lhs = sa.Table('amounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    expected = lhs.join(rhs, lhs.c.name == rhs.c.name)
+
+    L = TableExpr('{name: string, amount: int}')
+    R = TableExpr('{name: string, id: int}')
+    joined = Join(L, R, 'name')
+
+    result = compute(joined, {L: lhs, R: rhs})
+
+    assert str(result) == str(expected)
+
+    assert str(sa.select([result])) == str(sa.select([expected]))
