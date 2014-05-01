@@ -37,3 +37,22 @@ def test_arithmetic():
                 str(df.amount * df.id)
     assert str(compute(t['amount'] % t['id'], df)) == \
                 str(df.amount % df.id)
+
+def test_join():
+    left = DataFrame([['Alice', 100], ['Bob', 200]], columns=['name', 'amount'])
+    right = DataFrame([['Alice', 1], ['Bob', 2]], columns=['name', 'id'])
+
+    L = TableExpr('{name: string, amount: int}')
+    R = TableExpr('{name: string, id: int}')
+    joined = Join(L, R, 'name')
+
+    assert dshape(joined.schema) == \
+            dshape('{name: string, amount: int, id: int}')
+
+    result = compute(joined, {L: left, R: right})
+
+    expected = DataFrame([['Alice', 100, 1], ['Bob', 200, 2]],
+                         columns=['name', 'amount', 'id'])
+
+    assert str(result.reset_index()) == str(expected)
+
