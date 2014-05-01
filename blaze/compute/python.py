@@ -17,8 +17,6 @@ from multipledispatch import dispatch
 import itertools
 from collections import Iterator
 
-base = (int, float, str, bool)
-
 seq = (tuple, list, Iterator)
 
 @dispatch(Projection, seq)
@@ -32,11 +30,6 @@ def compute(t, l):
 def compute(t, l):
     index = t.table.columns.index(t.columns[0])
     return (x[index] for x in l)
-
-
-@dispatch(base, object)
-def compute(a, b):
-    return a
 
 
 @dispatch(ColumnWise, seq)
