@@ -81,3 +81,13 @@ def test_join():
     assert j.schema == dshape('{name: string, amount: int, id: int}')
 
     assert Join(t, s, 'name') == Join(t, s, 'name')
+
+
+def test_traverse():
+    t = TableExpr('{name: string, amount: int}')
+    assert t in list(t.traverse())
+
+    expr = t[t['amount'] < 0]['name']
+    trav = list(expr.traverse())
+    assert t['amount'] in trav
+    assert (t['amount'] < 0) in trav

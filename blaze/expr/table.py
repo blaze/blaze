@@ -53,6 +53,15 @@ class TableExpr(object):
 
     __repr__ = __str__
 
+    def traverse(self):
+        """ Traverse over tree, yielding all subtrees and leaves """
+        yield self
+        traversals = (arg.traverse() if isinstance(arg, TableExpr) else [arg]
+                        for arg in self.args)
+        for trav in traversals:
+            for item in trav:
+                yield item
+
 
 class Projection(TableExpr):
     """
