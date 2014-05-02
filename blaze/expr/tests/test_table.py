@@ -66,12 +66,14 @@ def test_columnwise():
 def test_str():
     import re
     t = TableSymbol('{name: string, amount: int, id: int}')
-    expr = t[['name', 'id']][t['amount'] < 0]
+    expr = t[t['amount'] < 0]['name'] * 2
     print(str(expr))
     assert '<class' not in str(expr)
     assert not re.search('0x[0-9a-f]+', str(expr))
 
     assert eval(str(expr)) == expr
+
+    assert '*' in repr(expr)
 
 def test_join():
     t = TableSymbol('{name: string, amount: int}')

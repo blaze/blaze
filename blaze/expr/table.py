@@ -46,7 +46,8 @@ class TableExpr(object):
     def __str__(self):
         return "%s(%s)" % (type(self).__name__, ', '.join(map(str, self.args)))
 
-    __repr__ = __str__
+    def __repr__(self):
+        return str(self)
 
     def traverse(self):
         """ Traverse over tree, yielding all subtrees and leaves """
