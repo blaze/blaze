@@ -56,3 +56,5 @@ def test_join():
 
     assert str(result.reset_index()) == str(expected)
 
+def test_UnaryOp():
+    assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()

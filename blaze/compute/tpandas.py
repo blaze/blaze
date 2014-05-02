@@ -18,8 +18,9 @@ from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
 import pandas
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from multipledispatch import dispatch
+import numpy as np
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
@@ -81,3 +82,9 @@ def compute(t, lhs, rhs):
     if old_left:
         result = result.set_index(old_left)
     return result
+
+
+@dispatch(UnaryOp, DataFrame)
+def compute(t, s):
+    op = getattr(np, t.symbol)
+    return op(compute(t.table, s))
