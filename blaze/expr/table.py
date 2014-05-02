@@ -161,13 +161,17 @@ class ColumnWise(Column):
 
     a op b
     """
-    __slots__ = 'lhs', 'rhs'
+    pass
 
+
+class BinOp(ColumnWise):
+    __slots__ = 'lhs', 'rhs'
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
 
-class Relational(ColumnWise):
+
+class Relational(BinOp):
     @property
     def schema(self):
         return dshape('bool')
@@ -184,7 +188,7 @@ class GT(Relational):
 class LT(Relational):
     op = operator.lt
 
-class Arithmetic(ColumnWise):
+class Arithmetic(BinOp):
     @property
     def schema(self):
         # TODO: Infer schema based on input types

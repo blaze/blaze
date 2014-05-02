@@ -32,7 +32,7 @@ def compute(t, l):
     return (x[index] for x in l)
 
 
-@dispatch(ColumnWise, seq)
+@dispatch(BinOp, seq)
 def compute(t, l):
     lhs_istable = isinstance(t.lhs, TableExpr)
     rhs_istable = isinstance(t.rhs, TableExpr)

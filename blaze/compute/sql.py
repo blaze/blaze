@@ -34,7 +34,7 @@ def compute(t, s):
     return s.c.get(t.columns[0])
 
 
-@dispatch(ColumnWise, sqlalchemy.Table)
+@dispatch(BinOp, sqlalchemy.Table)
 def compute(t, s):
     return t.op(compute(t.lhs, s), compute(t.rhs, s))
 

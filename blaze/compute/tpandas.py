@@ -31,7 +31,7 @@ def compute(t, df):
     return compute(t.table, df)[t.columns[0]]
 
 
-@dispatch(ColumnWise, DataFrame)
+@dispatch(BinOp, DataFrame)
 def compute(t, df):
     return t.op(compute(t.lhs, df), compute(t.rhs, df))
 
