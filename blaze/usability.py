@@ -60,7 +60,7 @@ def like(a, b):
 
 @dispatch(np.ndarray, nd.array)
 def like(a, b):
-    return nd.array(b)
+    return nd.as_numpy(b, allow_copy=True)
 
 @dispatch(np.ndarray, object)
 def like(a, b):
