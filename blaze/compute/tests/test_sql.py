@@ -74,3 +74,7 @@ def test_join():
     assert str(result) == str(expected)
 
     assert str(sa.select([result])) == str(sa.select([expected]))
+
+
+def test_unary_op():
+    assert str(compute(exp(t['amount']), s)) == str(sa.func.exp(s.c.amount))

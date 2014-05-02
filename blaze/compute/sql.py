@@ -70,3 +70,9 @@ def compute(t, lhs, rhs):
     right_column = getattr(rhs.c, t.on_right)
 
     return lhs.join(rhs, left_column == right_column)
+
+
+@dispatch(UnaryOp, sqlalchemy.Table)
+def compute(t, s):
+    op = getattr(sa.func, t.symbol)
+    return op(compute(t.table, s))
