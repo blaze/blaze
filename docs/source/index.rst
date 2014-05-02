@@ -40,10 +40,8 @@ Index
    catalog
    data_sources
    datashape
-   datashape-binary
    data_descriptor
    blaze_function
-   deferred
    dev_workflow
 
 
@@ -53,22 +51,8 @@ API Reference
 .. toctree::
    :maxdepth: 1
 
-   toplevel
-   types
-   eclass
-   layout
-   sources
-   graph
-   ops
-   table
    releases
    legal
-
-Developer Guide
-~~~~~~~~~~~~~~~
-
-.. toctree::
-   extending
 
 Index
 ~~~~~

@@ -33,7 +33,7 @@ The first thing to do, since we want to demonstrate our sample catalog,
 is to load that catalog's configuration.::
 
     In [2]: blaze.catalog.load_config(
-       ...:     r"~/blaze/samples/server/sample_arrays.yaml")
+                r"~/blaze/samples/server/sample_arrays.yaml")
 
 To see information about the catalog that is currently loaded,
 simply print out the repr of the catalog configuration object.::
