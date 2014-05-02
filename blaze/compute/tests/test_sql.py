@@ -5,7 +5,7 @@ from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
 
-t = TableExpr('{name: string, amount: int, id: int}')
+t = TableSymbol('{name: string, amount: int, id: int}')
 
 metadata = sa.MetaData()
 
@@ -65,8 +65,8 @@ def test_join():
 
     expected = lhs.join(rhs, lhs.c.name == rhs.c.name)
 
-    L = TableExpr('{name: string, amount: int}')
-    R = TableExpr('{name: string, id: int}')
+    L = TableSymbol('{name: string, amount: int}')
+    R = TableSymbol('{name: string, id: int}')
     joined = Join(L, R, 'name')
 
     result = compute(joined, {L: lhs, R: rhs})

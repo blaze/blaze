@@ -1,9 +1,9 @@
 """
 
->>> from blaze.expr.table import TableExpr
+>>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.python import compute
 
->>> accounts = TableExpr('{name: string, amount: int}')
+>>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from pandas import DataFrame
@@ -41,7 +41,7 @@ def compute(t, df):
     return compute(t.table, df)[compute(t.predicate, df)]
 
 
-@dispatch(TableExpr, DataFrame)
+@dispatch(TableSymbol, DataFrame)
 def compute(t, df):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype

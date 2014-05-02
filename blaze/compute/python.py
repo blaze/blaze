@@ -1,9 +1,9 @@
 """
 
->>> from blaze.expr.table import TableExpr
+>>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.python import compute
 
->>> accounts = TableExpr('{name: string, amount: int}')
+>>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -67,6 +67,6 @@ def compute(t, l):
               if tf)
 
 
-@dispatch(TableExpr, seq)
+@dispatch(TableSymbol, seq)
 def compute(t, l):
     return l

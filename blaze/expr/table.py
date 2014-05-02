@@ -9,12 +9,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record
 import operator
 
-
 class TableExpr(object):
-    __slots__ = 'schema',
-
-    def __init__(self, schema):
-        self.schema = dshape(schema)
 
     @property
     def args(self):
@@ -61,6 +56,16 @@ class TableExpr(object):
         for trav in traversals:
             for item in trav:
                 yield item
+
+
+class TableSymbol(TableExpr):
+    __slots__ = 'schema',
+
+    def __init__(self, schema):
+        self.schema = dshape(schema)
+
+    def __str__(self):
+        return type(self).__name__ + "('%s')" % self.schema
 
 
 class Projection(TableExpr):

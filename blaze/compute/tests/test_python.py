@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from blaze.compute.python import *
 from blaze.expr.table import *
 
-t = TableExpr('{name: string, amount: int, id: int}')
+t = TableSymbol('{name: string, amount: int, id: int}')
 
 
 data = [['Alice', 100, 1],
