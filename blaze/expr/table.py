@@ -260,3 +260,22 @@ class Join(TableExpr):
         rec = rec1.parameters[0] + tuple((k, v) for k, v in rec2.parameters[0]
                                                  if  k != self.on_right)
         return dshape(Record(rec))
+
+class UnaryOp(ColumnWise):
+    __slots__ = 'table',
+
+    def __init__(self, table):
+        self.table = table
+
+    def __str__(self):
+        return '%s(%s)' % (self.symbol, self.table)
+
+    @property
+    def symbol(self):
+        return type(self).__name__
+
+class sin(UnaryOp): pass
+class cos(UnaryOp): pass
+class tan(UnaryOp): pass
+class exp(UnaryOp): pass
+class log(UnaryOp): pass

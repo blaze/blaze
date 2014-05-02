@@ -91,3 +91,9 @@ def test_traverse():
     trav = list(expr.traverse())
     assert t['amount'] in trav
     assert (t['amount'] < 0) in trav
+
+
+def test_unary_ops():
+    t = TableSymbol('{name: string, amount: int}')
+    expr = cos(exp(t['amount']))
+    assert 'cos' in str(expr)
