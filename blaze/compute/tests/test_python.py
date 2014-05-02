@@ -2,8 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 from blaze.compute.python import *
 from blaze.expr.table import *
+import math
 
-t = TableExpr('{name: string, amount: int, id: int}')
+t = TableSymbol('{name: string, amount: int, id: int}')
 
 
 data = [['Alice', 100, 1],
@@ -36,3 +37,6 @@ def test_arithmetic():
                 [b * c for a, b, c, in data]
     assert list(compute(t['amount'] % t['id'], data)) == \
                 [b % c for a, b, c, in data]
+
+def test_unary_ops():
+    assert list(compute(exp(t['amount']), data)) == [math.exp(x[1]) for x in data]

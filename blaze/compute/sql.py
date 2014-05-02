@@ -1,9 +1,9 @@
 """
 
->>> from blaze.expr.table import TableExpr
+>>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.python import compute
 
->>> accounts = TableExpr('{name: string, amount: int}')
+>>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
@@ -34,7 +34,7 @@ def compute(t, s):
     return s.c.get(t.columns[0])
 
 
-@dispatch(ColumnWise, sqlalchemy.Table)
+@dispatch(BinOp, sqlalchemy.Table)
 def compute(t, s):
     return t.op(compute(t.lhs, s), compute(t.rhs, s))
 
@@ -44,7 +44,7 @@ def compute(t, s):
     return sa.select([compute(t.table, s)]).where(compute(t.predicate, s))
 
 
-@dispatch(TableExpr, sqlalchemy.Table)
+@dispatch(TableSymbol, sqlalchemy.Table)
 def compute(t, s):
     return s
 
@@ -70,3 +70,9 @@ def compute(t, lhs, rhs):
     right_column = getattr(rhs.c, t.on_right)
 
     return lhs.join(rhs, left_column == right_column)
+
+
+@dispatch(UnaryOp, sqlalchemy.Table)
+def compute(t, s):
+    op = getattr(sa.func, t.symbol)
+    return op(compute(t.table, s))

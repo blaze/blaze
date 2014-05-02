@@ -1,9 +1,9 @@
 """
 
->>> from blaze.expr.table import TableExpr
+>>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.python import compute
 
->>> accounts = TableExpr('{name: string, amount: int}')
+>>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from pandas import DataFrame
@@ -18,8 +18,9 @@ from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
 import pandas
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from multipledispatch import dispatch
+import numpy as np
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
@@ -31,7 +32,7 @@ def compute(t, df):
     return compute(t.table, df)[t.columns[0]]
 
 
-@dispatch(ColumnWise, DataFrame)
+@dispatch(BinOp, DataFrame)
 def compute(t, df):
     return t.op(compute(t.lhs, df), compute(t.rhs, df))
 
@@ -41,7 +42,7 @@ def compute(t, df):
     return compute(t.table, df)[compute(t.predicate, df)]
 
 
-@dispatch(TableExpr, DataFrame)
+@dispatch(TableSymbol, DataFrame)
 def compute(t, df):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype
@@ -81,3 +82,9 @@ def compute(t, lhs, rhs):
     if old_left:
         result = result.set_index(old_left)
     return result
+
+
+@dispatch(UnaryOp, DataFrame)
+def compute(t, s):
+    op = getattr(np, t.symbol)
+    return op(compute(t.table, s))

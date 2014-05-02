@@ -9,12 +9,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record
 import operator
 
-
 class TableExpr(object):
-    __slots__ = 'schema',
-
-    def __init__(self, schema):
-        self.schema = dshape(schema)
 
     @property
     def args(self):
@@ -51,7 +46,8 @@ class TableExpr(object):
     def __str__(self):
         return "%s(%s)" % (type(self).__name__, ', '.join(map(str, self.args)))
 
-    __repr__ = __str__
+    def __repr__(self):
+        return str(self)
 
     def traverse(self):
         """ Traverse over tree, yielding all subtrees and leaves """
@@ -61,6 +57,16 @@ class TableExpr(object):
         for trav in traversals:
             for item in trav:
                 yield item
+
+
+class TableSymbol(TableExpr):
+    __slots__ = 'schema',
+
+    def __init__(self, schema):
+        self.schema = dshape(schema)
+
+    def __str__(self):
+        return type(self).__name__ + "('%s')" % self.schema
 
 
 class Projection(TableExpr):
@@ -84,6 +90,10 @@ class Projection(TableExpr):
         d = self.table.schema[0].fields
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
+    def __str__(self):
+        return '%s[%s]' % (self.table,
+                           ', '.join(["'%s'" % col for col in self.columns]))
+
 
 class Column(Projection):
     """
@@ -94,6 +104,9 @@ class Column(Projection):
     def __init__(self, table, column):
         self.table = table
         self._columns = (column,)
+
+    def __str__(self):
+        return "%s['%s']" % (self.table, self.columns[0])
 
     def __eq__(self, other):
         return Eq(self, other)
@@ -151,6 +164,9 @@ class Selection(TableExpr):
         self.table = table
         self.predicate = predicate  # A Relational
 
+    def __str__(self):
+        return "%s[%s]" % (self.table, self.predicate)
+
     @property
     def schema(self):
         return self.table.schema
@@ -161,51 +177,67 @@ class ColumnWise(Column):
 
     a op b
     """
-    __slots__ = 'lhs', 'rhs'
+    pass
 
+
+class BinOp(ColumnWise):
+    __slots__ = 'lhs', 'rhs'
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
 
-class Relational(ColumnWise):
+    def __str__(self):
+        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
+
+
+class Relational(BinOp):
     @property
     def schema(self):
         return dshape('bool')
 
 
 class Eq(Relational):
+    symbol = '=='
     op = operator.eq
 
 
 class GT(Relational):
+    symbol = '>'
     op = operator.gt
 
 
 class LT(Relational):
+    symbol = '<'
     op = operator.lt
 
-class Arithmetic(ColumnWise):
+class Arithmetic(BinOp):
     @property
     def schema(self):
         # TODO: Infer schema based on input types
         return dshape('real')
 
 class Add(Arithmetic):
+    symbol = '+'
     op = operator.add
 
 class Mul(Arithmetic):
+    symbol = '*'
     op = operator.mul
 
 class Sub(Arithmetic):
+    symbol = '-'
     op = operator.sub
 
 class Div(Arithmetic):
+    symbol = '/'
     op = operator.div
 
 class Pow(Arithmetic):
+    symbol = '**'
     op = operator.pow
 
 class Mod(Arithmetic):
+    symbol = '%'
     op = operator.mod
 
 class Join(TableExpr):
@@ -229,3 +261,22 @@ class Join(TableExpr):
         rec = rec1.parameters[0] + tuple((k, v) for k, v in rec2.parameters[0]
                                                  if  k != self.on_right)
         return dshape(Record(rec))
+
+class UnaryOp(ColumnWise):
+    __slots__ = 'table',
+
+    def __init__(self, table):
+        self.table = table
+
+    def __str__(self):
+        return '%s(%s)' % (self.symbol, self.table)
+
+    @property
+    def symbol(self):
+        return type(self).__name__
+
+class sin(UnaryOp): pass
+class cos(UnaryOp): pass
+class tan(UnaryOp): pass
+class exp(UnaryOp): pass
+class log(UnaryOp): pass
