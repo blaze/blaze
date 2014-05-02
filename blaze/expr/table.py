@@ -84,6 +84,10 @@ class Projection(TableExpr):
         d = self.table.schema[0].fields
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
+    def __str__(self):
+        return '%s[%s]' % (self.table,
+                           ', '.join(["'%s'" % col for col in self.columns]))
+
 
 class Column(Projection):
     """
@@ -94,6 +98,9 @@ class Column(Projection):
     def __init__(self, table, column):
         self.table = table
         self._columns = (column,)
+
+    def __str__(self):
+        return "%s['%s']" % (self.table, self.columns[0])
 
     def __eq__(self, other):
         return Eq(self, other)
@@ -151,6 +158,9 @@ class Selection(TableExpr):
         self.table = table
         self.predicate = predicate  # A Relational
 
+    def __str__(self):
+        return "%s[%s]" % (self.table, self.predicate)
+
     @property
     def schema(self):
         return self.table.schema
@@ -170,6 +180,9 @@ class BinOp(ColumnWise):
         self.lhs = lhs
         self.rhs = rhs
 
+    def __str__(self):
+        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
+
 
 class Relational(BinOp):
     @property
@@ -178,14 +191,17 @@ class Relational(BinOp):
 
 
 class Eq(Relational):
+    symbol = '=='
     op = operator.eq
 
 
 class GT(Relational):
+    symbol = '>'
     op = operator.gt
 
 
 class LT(Relational):
+    symbol = '<'
     op = operator.lt
 
 class Arithmetic(BinOp):
@@ -195,21 +211,27 @@ class Arithmetic(BinOp):
         return dshape('real')
 
 class Add(Arithmetic):
+    symbol = '+'
     op = operator.add
 
 class Mul(Arithmetic):
+    symbol = '*'
     op = operator.mul
 
 class Sub(Arithmetic):
+    symbol = '-'
     op = operator.sub
 
 class Div(Arithmetic):
+    symbol = '/'
     op = operator.div
 
 class Pow(Arithmetic):
+    symbol = '**'
     op = operator.pow
 
 class Mod(Arithmetic):
+    symbol = '%'
     op = operator.mod
 
 class Join(TableExpr):
