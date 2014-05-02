@@ -16,6 +16,7 @@ from blaze.expr.table import *
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
+import math
 
 seq = (tuple, list, Iterator)
 
@@ -70,3 +71,9 @@ def compute(t, l):
 @dispatch(TableSymbol, seq)
 def compute(t, l):
     return l
+
+
+@dispatch(UnaryOp, seq)
+def compute(t, l):
+    op = getattr(math, t.symbol)
+    return (op(x) for x in compute(t.table, l))
