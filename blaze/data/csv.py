@@ -87,6 +87,10 @@ class CSV(DataDescriptor):
     header : boolean
         Whether the CSV file has a header or not.  If not specified a value
         is guessed.
+    open : callable
+        A function to open the file
+    isfile : callable
+        A function to tell if the file exists and is a file. Must return Bool
     """
     immutable = False
     deferred = False
@@ -95,12 +99,13 @@ class CSV(DataDescriptor):
     remote = False
 
     def __init__(self, path, mode='r', schema=None, dshape=None,
-                 dialect=None, header=None, open=open, **kwargs):
-        if 'r' in mode and os.path.isfile(path) is not True:
+                 dialect=None, header=None, open=open, isfile=os.path.isfile, **kwargs):
+        if 'r' in mode and isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         self.path = path
         self.mode = mode
         self.open = open
+        self.isfile = isfile
 
         if not schema and not dshape:
             # TODO: Infer schema
@@ -112,7 +117,7 @@ class CSV(DataDescriptor):
 
         self._schema = schema
 
-        if os.path.exists(path) and mode != 'w':
+        if self.isfile(path) and mode != 'w':
             with self.open(path, 'r') as f:
                 sample = f.read(1024)
         else:
