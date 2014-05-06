@@ -9,7 +9,7 @@ from dynd import nd
 
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
-from ..utils import partition_all, nth
+from ..utils import partition_all, nth, nth_list
 from .. import compatibility
 
 __all__ = ['CSV']
@@ -132,6 +132,9 @@ class CSV(DataDescriptor):
             if isinstance(key, compatibility._inttypes):
                 line = nth(key, f)
                 result = next(csv.reader([line], **self.dialect))
+            elif isinstance(key, list):
+                lines = nth_list(key, f)
+                result = csv.reader(lines, **self.dialect)
             elif isinstance(key, slice):
                 start, stop, step = key.start, key.stop, key.step
                 result = list(csv.reader(it.islice(f, start, stop, step),

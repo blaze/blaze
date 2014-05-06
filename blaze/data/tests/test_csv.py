@@ -18,6 +18,38 @@ def sanitize(lines):
     return '\n'.join(line.strip() for line in lines.split('\n'))
 
 
+class Test_Indexing(unittest.TestCase):
+
+    buf = sanitize(
+    u"""Name Amount
+        Alice 100
+        Bob 200
+        Alice 50
+    """)
+
+    schema = "{ name: string, amount: int }"
+
+    def setUp(self):
+        self.csv_file = tempfile.mktemp(".csv")
+        with open(self.csv_file, "w") as f:
+            f.write(self.buf)
+        self.dd = CSV(self.csv_file, dialect='excel', schema=self.schema,
+                            delimiter=' ', mode='r+')
+
+    def tearDown(self):
+        os.remove(self.csv_file)
+
+    def test_row(self):
+        self.assertEqual(self.dd[0], {'name': 'Alice', 'amount': 100})
+        self.assertEqual(self.dd[1], {'name': 'Bob', 'amount': 200})
+
+    def test_rows(self):
+        self.assertEqual(self.dd[[0, 1]], [{'name': 'Alice', 'amount': 100},
+                                           {'name': 'Bob', 'amount': 200}])
+
+
+
+
 class Test_Dialect(unittest.TestCase):
 
     buf = sanitize(
