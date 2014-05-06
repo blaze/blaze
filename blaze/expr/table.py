@@ -269,6 +269,10 @@ class Reduction(Scalar):
     def dshape(self):
         return dshape(self.table.dshape.subarray(1))
 
+    @property
+    def symbol(self):
+        return type(self).__name__
+
 
 class any(Reduction): pass
 class all(Reduction): pass

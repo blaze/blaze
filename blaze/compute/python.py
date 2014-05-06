@@ -13,6 +13,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from blaze.compatibility import builtins
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
@@ -77,3 +78,8 @@ def compute(t, l):
 def compute(t, l):
     op = getattr(math, t.symbol)
     return (op(x) for x in compute(t.table, l))
+
+@dispatch(Reduction, seq)
+def compute(t, l):
+    op = getattr(builtins, t.symbol)
+    return op(compute(t.table, l))
