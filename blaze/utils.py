@@ -40,6 +40,36 @@ def nth(n, seq):
     return next(seq)
 
 
+def nth_list(n, seq):
+    """
+
+    >>> nth_list([0, 1, 4], 'Hello')
+    ('H', 'e', 'o')
+    >>> nth_list([4, 1, 0], 'Hello')
+    ('o', 'e', 'H')
+    >>> nth_list([0, 0, 0], 'Hello')
+    ('H', 'H', 'H')
+    """
+    seq = iter(seq)
+    sn = sorted(n)
+
+    result = []
+    old = 0
+    item = next(seq)
+    for index in sorted(n):
+        for i in range(index - old):
+            item = next(seq)
+        result.append(item)
+        old = index
+
+    order = [x[1] for x in sorted(zip(n, range(len(n))))]
+    return tuple(result[i] for i in order)
+
+
+
+
+
+
 @contextmanager
 def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:
