@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import dshape, var, DataShape, Record
 import operator
-from .core import Expr
+from .core import Expr, Scalar
 
 class TableExpr(Expr):
     @property
@@ -259,14 +259,19 @@ class tan(UnaryOp): pass
 class exp(UnaryOp): pass
 class log(UnaryOp): pass
 
+class Reduction(Scalar):
+    __slots__ = 'table'
 
-class Reduction(ColumnWise):
-    __slots__ = 'table', 'reduction'
-
-    def __init__(self, table, reduction):
+    def __init__(self, table):
         self.table = table
-        self.reduction = reduction
 
     @property
     def dshape(self):
         return dshape(self.table.dshape.subarray(1))
+
+
+class any(Reduction): pass
+class all(Reduction): pass
+class sum(Reduction): pass
+class min(Reduction): pass
+class max(Reduction): pass

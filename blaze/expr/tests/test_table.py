@@ -105,7 +105,7 @@ def test_unary_ops():
 
 def test_reduction():
     t = TableSymbol('{name: string, amount: int32}')
-    r = Reduction(t['amount'], min)
+    r = sum(t['amount'])
     print(type(r.dshape))
     print(type(dshape('int32')))
     assert r.dshape == dshape('int32')
