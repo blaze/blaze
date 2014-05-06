@@ -108,6 +108,10 @@ class Column(Projection):
     def __str__(self):
         return "%s['%s']" % (self.table, self.columns[0])
 
+    @property
+    def schema(self):
+        return dshape(self.table.schema[0][self.columns[0]])
+
     def __eq__(self, other):
         return Eq(self, other)
 
@@ -280,3 +284,15 @@ class cos(UnaryOp): pass
 class tan(UnaryOp): pass
 class exp(UnaryOp): pass
 class log(UnaryOp): pass
+
+
+class Reduction(ColumnWise):
+    __slots__ = 'table', 'reduction'
+
+    def __init__(self, table, reduction):
+        self.table = table
+        self.reduction = reduction
+
+    @property
+    def dshape(self):
+        return dshape(self.table.dshape.subarray(1))
