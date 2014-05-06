@@ -8,19 +8,9 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import dshape, var, DataShape, Record
 import operator
+from .core import Expr
 
-class TableExpr(object):
-
-    @property
-    def args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__)
-
-    def __eq__(self, other):
-        return type(self) == type(other) and self.args == other.args
-
-    def __hash__(self):
-        return hash((type(self), self.args))
-
+class TableExpr(Expr):
     @property
     def dshape(self):
         return var * self.schema
@@ -41,22 +31,6 @@ class TableExpr(object):
             if key not in self.columns:
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
-
-
-    def __str__(self):
-        return "%s(%s)" % (type(self).__name__, ', '.join(map(str, self.args)))
-
-    def __repr__(self):
-        return str(self)
-
-    def traverse(self):
-        """ Traverse over tree, yielding all subtrees and leaves """
-        yield self
-        traversals = (arg.traverse() if isinstance(arg, TableExpr) else [arg]
-                        for arg in self.args)
-        for trav in traversals:
-            for item in trav:
-                yield item
 
 
 class TableSymbol(TableExpr):
