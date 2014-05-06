@@ -76,3 +76,10 @@ def compute(t, lhs, rhs):
 def compute(t, s):
     op = getattr(sa.func, t.symbol)
     return op(compute(t.table, s))
+
+
+@dispatch(Reduction, sqlalchemy.Table)
+def compute(t, s):
+    s = compute(t.table, s)
+    op = getattr(sqlalchemy.sql.functions, t.symbol)
+    return op(s)
