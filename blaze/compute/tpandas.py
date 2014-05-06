@@ -88,3 +88,11 @@ def compute(t, lhs, rhs):
 def compute(t, s):
     op = getattr(np, t.symbol)
     return op(compute(t.table, s))
+
+
+@dispatch(Reduction, DataFrame)
+def compute(t, s):
+    s = compute(t.table, s)
+    assert isinstance(s, Series)
+    op = getattr(Series, t.symbol)
+    return op(s)

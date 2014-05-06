@@ -58,3 +58,16 @@ def test_join():
 
 def test_UnaryOp():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()
+
+
+def test_columns_series():
+    assert isinstance(compute(t['amount'], df), Series)
+    assert isinstance(compute(t['amount'] > 150, df), Series)
+
+
+def test_Reductions():
+    assert compute(sum(t['amount']), df) == 100 + 200 + 50
+    assert compute(min(t['amount']), df) == 50
+    assert compute(max(t['amount']), df) == 200
+    assert compute(any(t['amount'] > 150), df) == True
+    assert compute(any(t['amount'] > 250), df) == False

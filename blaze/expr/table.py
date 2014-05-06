@@ -260,7 +260,7 @@ class exp(UnaryOp): pass
 class log(UnaryOp): pass
 
 class Reduction(Scalar):
-    __slots__ = 'table'
+    __slots__ = 'table',
 
     def __init__(self, table):
         self.table = table
