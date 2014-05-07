@@ -76,7 +76,7 @@ class DataDescriptor(object):
         if isdimension(self.dshape[0]):
             return tuple(self)
         else:
-            return nd.as_py(self.as_dynd())
+            return coerce_to_ordered(self.dshape, nd.as_py(self.as_dynd()))
 
     def __array__(self):
         return nd.as_numpy(self.as_dynd())
@@ -90,6 +90,9 @@ class DataDescriptor(object):
         return coerce_to_ordered(subshape, coerce(subshape, result))
 
     def __iter__(self):
+        if not isdimension(self.dshape[0]):
+            raise TypeError("Data Descriptor not iterable, has dshape %s" %
+                            self.dshape)
         schema = self.dshape.subshape[0]
         transform = lambda row: coerce_to_ordered(schema, coerce(schema, row))
         try:

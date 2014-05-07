@@ -11,7 +11,7 @@ from ..utils import partition_all, nth
 from .. import compatibility
 from ..compatibility import _inttypes
 from .core import DataDescriptor, isdimension
-from .utils import coerce
+from .utils import coerce, coerce_row_to_dict
 
 
 class JSON(DataDescriptor):
@@ -69,11 +69,6 @@ class JSON(DataDescriptor):
     def as_dynd(self):
         return self._arr_cache
 
-    def as_py(self):
-        with open(self.path) as f:
-            result = json.load(f)
-        return result
-
     def remove(self):
         """Remove the persistent storage."""
         os.unlink(self.path)
@@ -108,7 +103,7 @@ class JSON_Streaming(JSON):
         self._cache_arr = nd.parse_json(str(self.dshape), text)
         return self._cache_arr
 
-    def __getitem__(self, key):
+    def _getitem(self, key):
         with self.open(self.path) as f:
             if isinstance(key, _inttypes):
                 result = json.loads(nth(key, f))
@@ -118,7 +113,7 @@ class JSON_Streaming(JSON):
             else:
                 raise NotImplementedError('Fancy indexing not supported\n'
                         'Create DyND array and use fancy indexing from there')
-        return coerce(self.schema, result)
+        return result
 
     def _iter(self):
         with self.open(self.path) as f:
@@ -128,7 +123,7 @@ class JSON_Streaming(JSON):
     __iter__ = DataDescriptor.__iter__
 
     def as_py(self):
-        return list(self)
+        return tuple(self)
 
     def _iterchunks(self, blen=100):
         with self.open(self.path) as f:
@@ -147,7 +142,7 @@ class JSON_Streaming(JSON):
         with self.open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             for row in rows:
-                json.dump(row, f)
+                json.dump(coerce_row_to_dict(self.schema, row), f)
                 f.write('\n')
 
     def _chunks(self, blen=100):

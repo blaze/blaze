@@ -29,6 +29,11 @@ class TestBigJSON(unittest.TestCase):
             }]
     }
 
+    ordered = (u'ImageCollection',
+            ((800, 600, u'View from 15th Floor',
+                (u'http://www.example.com/image/481989943', 125, 100),
+                (116, 943, 234, 38793)),))
+
     dshape = """{
       type: string,
       images: var * {
@@ -55,13 +60,11 @@ class TestBigJSON(unittest.TestCase):
 
     def test_basic(self):
         dd = JSON(self.filename, 'r', dshape=self.dshape)
-        self.assertEqual(list(dd),
-                         [nd.as_py(nd.parse_json(self.dshape,
-                             json.dumps(self.data)))])
+        self.assertRaises(Exception, lambda: tuple(dd))
 
     def test_as_py(self):
         dd = JSON(self.filename, 'r', dshape=self.dshape)
-        self.assertEqual(dd.as_py(), self.data)
+        self.assertEqual(dd.as_py(), self.ordered)
 
 
 json_buf = u"[1, 2, 3, 4, 5]"
@@ -91,25 +94,30 @@ class TestJSON(unittest.TestCase):
         # This equality does not work yet
         # self.assertEqual(dd.dshape, datashape.dshape(
         #     'Var, %s' % json_schema))
-        print(list(dd))
         self.assertEqual(list(dd), [1, 2, 3, 4, 5])
 
 class Test_StreamingTransfer(unittest.TestCase):
 
-    data = [{'name': 'Alice', 'amount': 100},
+    dicts = [{'name': 'Alice', 'amount': 100},
             {'name': 'Alice', 'amount': 50},
             {'name': 'Bob', 'amount': 10},
             {'name': 'Charlie', 'amount': 200},
             {'name': 'Bob', 'amount': 100}]
 
-    text = '\n'.join(map(json.dumps, data))
+    tuples = (('Alice', 100),
+              ('Alice', 50),
+              ('Bob', 10),
+              ('Charlie', 200),
+              ('Bob', 100))
+
+    text = '\n'.join(map(json.dumps, dicts))
 
     schema = '{name: string, amount: int32}'
 
     def test_init(self):
         with filetext(self.text) as fn:
             dd = JSON_Streaming(fn, schema=self.schema)
-            self.assertEquals(list(dd), self.data)
+            self.assertEquals(tuple(dd), self.tuples)
             assert dd.dshape in set((
                 datashape.dshape('var * {name: string, amount: int32}'),
                 datashape.dshape('5 * {name: string, amount: int32}')))
@@ -121,42 +129,47 @@ class Test_StreamingTransfer(unittest.TestCase):
             chunks = list(dd.chunks(blen=2))
             assert isinstance(chunks[0], nd.array)
             self.assertEquals(len(chunks), 3)
-            self.assertEquals(nd.as_py(chunks[0]), self.data[:2])
+            self.assertEquals(nd.as_py(chunks[0]), self.dicts[:2])
 
 
     def test_append(self):
         with filetext('') as fn:
             dd = JSON_Streaming(fn, mode='w', schema=self.schema)
-            dd.extend([self.data[0]])
+            dd.extend([self.tuples[0]])
             with open(fn) as f:
-                self.assertEquals(json.loads(f.read().strip()), self.data[0])
+                self.assertEquals(json.loads(f.read().strip()), self.dicts[0])
 
             self.assertRaises(ValueError, lambda : dd.extend([5.5]))
             self.assertRaises(ValueError,
                               lambda : dd.extend([{'name': 5, 'amount': 1.3}]))
 
-    def test_extend(self):
+    def test_extend_dicts(self):
         with filetext('') as fn:
             dd = JSON_Streaming(fn, mode='r+', schema=self.schema)
-            dd.extend(self.data)
+            dd.extend(self.dicts)
+            self.assertEquals(tuple(dd), self.tuples)
 
-            self.assertEquals(list(dd), self.data)
+    def test_extend_tuples(self):
+        with filetext('') as fn:
+            dd = JSON_Streaming(fn, mode='r+', schema=self.schema)
+            dd.extend(self.tuples)
+            self.assertEquals(tuple(dd), self.tuples)
 
     def test_getitem(self):
         with filetext(self.text) as fn:
             dd = JSON_Streaming(fn, mode='r', schema=self.schema)
-            assert dd[0] == self.data[0]
-            assert dd[2:4] == self.data[2:4]
+            self.assertEqual(dd[0], self.tuples[0])
+            self.assertEqual(dd[2:4], self.tuples[2:4])
 
     def test_as_dynd(self):
         with filetext(self.text) as fn:
             dd = JSON_Streaming(fn, mode='r', schema=self.schema)
-            assert nd.as_py(dd.as_dynd()) == self.data
+            assert nd.as_py(dd.as_dynd()) == self.dicts
 
     def test_as_py(self):
         with filetext(self.text) as fn:
             dd = JSON_Streaming(fn, mode='r', schema=self.schema)
-            assert dd.as_py() == self.data
+            self.assertEqual(dd.as_py(), self.tuples)
 
 if __name__ == '__main__':
     unittest.main()
