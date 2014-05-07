@@ -53,8 +53,8 @@ class Test_Indexing(unittest.TestCase):
         self.assertEqual(self.dd[1, 1], 200)
 
     def test_nested(self):
-        self.assertEqual(list(self.dd[[0, 1], 0]), ['Alice', 'Bob'])
-        self.assertEqual(list(self.dd[[0, 1], 1]), [100, 200])
+        self.assertEqual(self.dd[[0, 1], 0], ('Alice', 'Bob'))
+        self.assertEqual(self.dd[[0, 1], 1], (100, 200))
         self.assertEqual(self.dd[0, [0, 1]], ('Alice', 100))
         self.assertEqual(self.dd[[1, 0], [0, 1]],
                         (('Bob', 200), ('Alice', 100)))

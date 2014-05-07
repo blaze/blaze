@@ -144,7 +144,7 @@ class CSV(DataDescriptor):
                 result = next(csv.reader([line], **self.dialect))
             elif isinstance(key, list):
                 lines = nth_list(key, f)
-                result = csv.reader(lines, **self.dialect)
+                result = list(csv.reader(lines, **self.dialect))
             elif isinstance(key, slice):
                 start, stop, step = key.start, key.stop, key.step
                 result = list(csv.reader(it.islice(f, start, stop, step),
