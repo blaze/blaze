@@ -10,7 +10,7 @@ from dynd import nd
 
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
-from ..utils import partition_all, nth, nth_list
+from ..utils import partition_all, nth, nth_list, get
 from .. import compatibility
 
 __all__ = ['CSV']
@@ -131,17 +131,10 @@ class CSV(DataDescriptor):
             assert len(key) == 2
             result = self._getitem(key[0])
 
-            if isinstance(key[1], int):
-                get = itemgetter(key[1])
-            elif isinstance(key[1], list):
-                get = itemgetter(*key[1])
-            else:
-                get = lambda row: row.__getitem__(key[1])
-
             if isinstance(key[0], (list, slice)):
-                return map(get, result)
+                return [get(key[1], x) for x in result]
             else:
-                return get(result)
+                return get(key[1], result)
 
         with self.open(self.path, self.mode) as f:
             if self.header:
