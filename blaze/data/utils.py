@@ -52,7 +52,13 @@ def coerce_record_to_row(schema, rec):
     >>> schema = dshape('{x: int, y: int}')
     >>> coerce_record_to_row(schema, {'x': 1, 'y': 2})
     [1, 2]
+
+    Idempotent
+    >>> coerce_record_to_row(schema, [1, 2])
+    [1, 2]
     """
+    if isinstance(rec, (tuple, list)):
+        return rec
     return [rec[name] for name in schema[0].names]
 
 
@@ -64,5 +70,11 @@ def coerce_row_to_dict(schema, row):
     >>> schema = dshape('{x: int, y: int}')
     >>> coerce_row_to_dict(schema, (1, 2)) # doctest: +SKIP
     {'x': 1, 'y': 2}
+
+    Idempotent
+    >>> coerce_row_to_dict(schema, {'x': 1, 'y': 2}) # doctest: +SKIP
+    {'x': 1, 'y': 2}
     """
+    if isinstance(row, dict):
+        return row
     return dict((name, item) for name, item in zip(schema[0].names, row))
