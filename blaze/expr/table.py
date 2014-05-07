@@ -7,13 +7,14 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape import dshape, var, DataShape, Record
+import datashape
 import operator
 from .core import Expr, Scalar
 
 class TableExpr(Expr):
     @property
     def dshape(self):
-        return var * self.schema
+        return datashape.var * self.schema
 
     @property
     def columns(self):
@@ -277,5 +278,8 @@ class Reduction(Scalar):
 class any(Reduction): pass
 class all(Reduction): pass
 class sum(Reduction): pass
-class min(Reduction): pass
 class max(Reduction): pass
+class min(Reduction): pass
+class mean(Reduction): pass
+class var(Reduction): pass
+class std(Reduction): pass

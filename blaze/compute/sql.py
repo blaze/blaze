@@ -78,8 +78,18 @@ def compute(t, s):
     return op(compute(t.parent, s))
 
 
+names = {mean: 'avg',
+         var: 'variance',
+         std: 'stdev'}
+
+
 @dispatch(Reduction, sqlalchemy.Table)
 def compute(t, s):
     s = compute(t.parent, s)
-    op = getattr(sqlalchemy.sql.functions, t.symbol)
+    try:
+        op = getattr(sqlalchemy.sql.functions, t.symbol)
+    except:
+        symbol = names.get(type(t), t.symbol)
+        op = getattr(sqlalchemy.sql.func, symbol)
     return op(s)
+

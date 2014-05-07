@@ -83,3 +83,35 @@ def compute(t, l):
 def compute(t, l):
     op = getattr(builtins, t.symbol)
     return op(compute(t.parent, l))
+
+def _mean(seq):
+    total = 0
+    count = 0
+    for item in seq:
+        total += item
+        count += 1
+    return float(total) / count
+
+def _var(seq):
+    total = 0
+    total_squared = 0
+    count = 0
+    for item in seq:
+        total += item
+        total_squared += item ** 2
+        count += 1
+    return 1.0*total_squared/count - (1.0*total/count) ** 2
+
+@dispatch(mean, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return _mean(parent)
+
+@dispatch(var, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return _var(parent)
+
+@dispatch(std, seq)
+def compute(t, l):
+    return math.sqrt(compute(var(t.parent), l))
