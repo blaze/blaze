@@ -66,10 +66,6 @@ def nth_list(n, seq):
     return tuple(result[i] for i in order)
 
 
-
-
-
-
 @contextmanager
 def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:

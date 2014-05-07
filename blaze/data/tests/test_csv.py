@@ -35,6 +35,7 @@ class Test_Indexing(unittest.TestCase):
             f.write(self.buf)
         self.dd = CSV(self.csv_file, dialect='excel', schema=self.schema,
                             delimiter=' ', mode='r+')
+        assert self.dd.header
 
     def tearDown(self):
         os.remove(self.csv_file)
@@ -47,7 +48,22 @@ class Test_Indexing(unittest.TestCase):
         self.assertEqual(self.dd[[0, 1]], [{'name': 'Alice', 'amount': 100},
                                            {'name': 'Bob', 'amount': 200}])
 
+    def test_point(self):
+        self.assertEqual(self.dd[0, 0], 'Alice')
+        self.assertEqual(self.dd[1, 1], 200)
 
+    def test_nested(self):
+        self.assertEqual(list(self.dd[[0, 1], 0]), ['Alice', 'Bob'])
+        self.assertEqual(list(self.dd[[0, 1], 1]), [100, 200])
+        self.assertEqual(self.dd[0, [0, 1]], {'name': 'Alice', 'amount': 100})
+        self.assertEqual(self.dd[[1, 0], [0, 1]],
+                        [{'name': 'Bob', 'amount': 200},
+                         {'name': 'Alice', 'amount': 100}])
+
+    def test_slices(self):
+        self.assertEqual(list(self.dd[:, 1]), [100, 200, 50])
+        self.assertEqual(list(self.dd[1:, 1]), [200, 50])
+        self.assertEqual(list(self.dd[0, :]), ['Alice', 100])
 
 
 class Test_Dialect(unittest.TestCase):

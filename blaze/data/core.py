@@ -83,7 +83,8 @@ class DataDescriptor(object):
 
     def __getitem__(self, key):
         if hasattr(self, '_getitem'):
-            return coerce(self.schema, self._getitem(key))
+            return coerce(self.dshape._subshape(key),
+                          self._getitem(key))
         else:
             return self.as_dynd()[key]
 

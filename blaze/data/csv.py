@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import csv
 import itertools as it
 import os
+from operator import itemgetter
 
 import datashape
 from dynd import nd
@@ -126,6 +127,22 @@ class CSV(DataDescriptor):
         self.dialect = dialect
 
     def _getitem(self, key):
+        if isinstance(key, tuple):
+            assert len(key) == 2
+            result = self._getitem(key[0])
+
+            if isinstance(key[1], int):
+                get = itemgetter(key[1])
+            elif isinstance(key[1], list):
+                get = itemgetter(*key[1])
+            else:
+                get = lambda row: row.__getitem__(key[1])
+
+            if isinstance(key[0], (list, slice)):
+                return map(get, result)
+            else:
+                return get(result)
+
         with self.open(self.path, self.mode) as f:
             if self.header:
                 next(f)

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from dynd import nd
+from collections import Iterator
 
 
 def validate(schema, item):
@@ -11,8 +12,10 @@ def validate(schema, item):
         return False
 
 
-def coerce(schema, item):
-    return nd.as_py(nd.array(item, dtype=str(schema)))
+def coerce(dshape, item):
+    if isinstance(item, Iterator):
+        item = list(item)
+    return nd.as_py(nd.array(item, dtype=str(dshape)))
 
 
 def coerce_record_to_row(schema, rec):
