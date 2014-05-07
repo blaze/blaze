@@ -49,10 +49,10 @@ class Projection(TableExpr):
     SELECT a, b, c
     FROM table
     """
-    __slots__ = 'table', '_columns'
+    __slots__ = 'parent', '_columns'
 
     def __init__(self, table, columns):
-        self.table = table
+        self.parent = table
         self._columns = tuple(columns)
 
     @property
@@ -61,11 +61,11 @@ class Projection(TableExpr):
 
     @property
     def schema(self):
-        d = self.table.schema[0].fields
+        d = self.parent.schema[0].fields
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
     def __str__(self):
-        return '%s[%s]' % (self.table,
+        return '%s[%s]' % (self.parent,
                            ', '.join(["'%s'" % col for col in self.columns]))
 
 
@@ -76,15 +76,15 @@ class Column(Projection):
     FROM table
     """
     def __init__(self, table, column):
-        self.table = table
+        self.parent = table
         self._columns = (column,)
 
     def __str__(self):
-        return "%s['%s']" % (self.table, self.columns[0])
+        return "%s['%s']" % (self.parent, self.columns[0])
 
     @property
     def schema(self):
-        return dshape(self.table.schema[0][self.columns[0]])
+        return dshape(self.parent.schema[0][self.columns[0]])
 
     def __eq__(self, other):
         return Eq(self, other)
@@ -136,18 +136,18 @@ class Selection(TableExpr):
     """
     WHERE a op b
     """
-    __slots__ = 'table', 'predicate'
+    __slots__ = 'parent', 'predicate'
 
     def __init__(self, table, predicate):
-        self.table = table
+        self.parent = table
         self.predicate = predicate  # A Relational
 
     def __str__(self):
-        return "%s[%s]" % (self.table, self.predicate)
+        return "%s[%s]" % (self.parent, self.predicate)
 
     @property
     def schema(self):
-        return self.table.schema
+        return self.parent.schema
 
 
 class ColumnWise(Column):
@@ -241,13 +241,13 @@ class Join(TableExpr):
         return dshape(Record(rec))
 
 class UnaryOp(ColumnWise):
-    __slots__ = 'table',
+    __slots__ = 'parent',
 
     def __init__(self, table):
-        self.table = table
+        self.parent = table
 
     def __str__(self):
-        return '%s(%s)' % (self.symbol, self.table)
+        return '%s(%s)' % (self.symbol, self.parent)
 
     @property
     def symbol(self):
@@ -260,14 +260,14 @@ class exp(UnaryOp): pass
 class log(UnaryOp): pass
 
 class Reduction(Scalar):
-    __slots__ = 'table',
+    __slots__ = 'parent',
 
     def __init__(self, table):
-        self.table = table
+        self.parent = table
 
     @property
     def dshape(self):
-        return dshape(self.table.dshape.subarray(1))
+        return dshape(self.parent.dshape.subarray(1))
 
     @property
     def symbol(self):

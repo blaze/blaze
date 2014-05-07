@@ -23,14 +23,14 @@ seq = (tuple, list, Iterator)
 
 @dispatch(Projection, seq)
 def compute(t, l):
-    indices = [t.table.columns.index(col) for col in t.columns]
+    indices = [t.parent.columns.index(col) for col in t.columns]
     get = operator.itemgetter(*indices)
     return (get(x) for x in l)
 
 
 @dispatch(Column, seq)
 def compute(t, l):
-    index = t.table.columns.index(t.columns[0])
+    index = t.parent.columns.index(t.columns[0])
     return (x[index] for x in l)
 
 
@@ -65,7 +65,7 @@ def compute(t, l):
 @dispatch(Selection, seq)
 def compute(t, l):
     l, l2 = itertools.tee(l)
-    return (x for x, tf in zip(compute(t.table, l), compute(t.predicate, l2))
+    return (x for x, tf in zip(compute(t.parent, l), compute(t.predicate, l2))
               if tf)
 
 
@@ -77,9 +77,9 @@ def compute(t, l):
 @dispatch(UnaryOp, seq)
 def compute(t, l):
     op = getattr(math, t.symbol)
-    return (op(x) for x in compute(t.table, l))
+    return (op(x) for x in compute(t.parent, l))
 
 @dispatch(Reduction, seq)
 def compute(t, l):
     op = getattr(builtins, t.symbol)
-    return op(compute(t.table, l))
+    return op(compute(t.parent, l))

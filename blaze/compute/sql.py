@@ -24,13 +24,13 @@ import sqlalchemy
 
 @dispatch(Projection, sqlalchemy.Table)
 def compute(t, s):
-    s = compute(t.table, s)
+    s = compute(t.parent, s)
     return sa.select([s.c.get(col) for col in t.columns])
 
 
 @dispatch(Column, sqlalchemy.Table)
 def compute(t, s):
-    s = compute(t.table, s)
+    s = compute(t.parent, s)
     return s.c.get(t.columns[0])
 
 
@@ -41,7 +41,7 @@ def compute(t, s):
 
 @dispatch(Selection, sqlalchemy.Table)
 def compute(t, s):
-    return sa.select([compute(t.table, s)]).where(compute(t.predicate, s))
+    return sa.select([compute(t.parent, s)]).where(compute(t.predicate, s))
 
 
 @dispatch(TableSymbol, sqlalchemy.Table)
@@ -75,11 +75,11 @@ def compute(t, lhs, rhs):
 @dispatch(UnaryOp, sqlalchemy.Table)
 def compute(t, s):
     op = getattr(sa.func, t.symbol)
-    return op(compute(t.table, s))
+    return op(compute(t.parent, s))
 
 
 @dispatch(Reduction, sqlalchemy.Table)
 def compute(t, s):
-    s = compute(t.table, s)
+    s = compute(t.parent, s)
     op = getattr(sqlalchemy.sql.functions, t.symbol)
     return op(s)
