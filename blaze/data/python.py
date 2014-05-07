@@ -26,4 +26,4 @@ class Python(DataDescriptor):
         return self.storage[key]
 
     def as_py(self):
-        return self.storage
+        return tuple(self.storage)

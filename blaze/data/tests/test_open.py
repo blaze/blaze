@@ -14,7 +14,7 @@ def test_gzopen_csv():
 
         dd = CSV(filename, schema='2 * int', open=gzip.open)
 
-        assert list(dd) == [[1, 1], [2, 2]]
+        assert list(dd) == [(1, 1), (2, 2)]
 
 
 def test_gzopen_json():
@@ -27,4 +27,4 @@ def test_gzopen_json():
 
         dd = JSON(filename, schema='2 * int', open=gzip.open)
 
-        assert list(dd) == [[1, 1], [2, 2]]
+        assert list(dd) == [(1, 1), (2, 2)]

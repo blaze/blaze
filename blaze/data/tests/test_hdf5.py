@@ -48,7 +48,7 @@ class SingleTestClass(unittest.TestCase):
         self.assertEquals(str(dd.dshape), 'var * 3 * int32')
 
         print(dd.as_py())
-        self.assertEqual(dd.as_py(), [[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+        self.assertEqual(dd.as_py(), ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
 
     def test_extend_chunks(self):
         stdout.flush()
@@ -85,8 +85,8 @@ class SingleTestClass(unittest.TestCase):
 
         results = list(dd)
 
-        self.assertEquals(nd.as_py(results[0]), [1, 1])
-        self.assertEquals(nd.as_py(results[1]), [2, 2])
+        self.assertEquals(nd.as_py(results[0]), (1, 1))
+        self.assertEquals(nd.as_py(results[1]), (2, 2))
 
     @skip("This runs fine in isolation, segfaults in full test")
     def test_schema(self):

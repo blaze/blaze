@@ -137,12 +137,16 @@ class JSON_Streaming(JSON):
         return any(c in self.mode for c in 'wa+')
 
     def _extend(self, rows):
+        if isinstance(self.schema[0], datashape.Record):
+            transform = lambda row: coerce_row_to_dict(self.schema, row)
+        else:
+            transform = lambda x: x
         if not self.appendable:
             raise IOError("Read only access")
         with self.open(self.path, self.mode) as f:
             f.seek(0, os.SEEK_END)  # go to the end of the file
             for row in rows:
-                json.dump(coerce_row_to_dict(self.schema, row), f)
+                json.dump(transform(row), f)
                 f.write('\n')
 
     def _chunks(self, blen=100):

@@ -14,7 +14,7 @@ class TestDyND(TestCase):
         assert str(dd.dshape) == '2 * 2 * int32'
         assert str(dd.schema) == '2 * int32'
 
-        assert list(dd) == [[1, 1], [2, 2]]
+        assert tuple(dd) == ((1, 1), (2, 2))
         chunks = list(dd.chunks())
 
         assert all(isinstance(chunk, nd.array) for chunk in chunks)

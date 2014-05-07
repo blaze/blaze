@@ -55,7 +55,8 @@ class SingleTestClass(unittest.TestCase):
 
 
         assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
-        assert dd.as_py() == data_list or dd.as_py() == data_dict
+        assert (dd.as_py() == tuple(map(tuple, data_list)) or
+                dd.as_py() == data_dict)
 
 
     def test_chunks(self):

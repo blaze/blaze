@@ -16,7 +16,7 @@ class SingleTestClass(unittest.TestCase):
 
                 json.extend(csv)
 
-                self.assertEquals(list(json), [[1, 1], [2, 2]])
+                self.assertEquals(list(json), [(1, 1), (2, 2)])
 
 
     def test_json_csv_structured(self):
@@ -32,7 +32,7 @@ class SingleTestClass(unittest.TestCase):
                 csv.extend(js)
 
                 self.assertEquals(list(csv),
-                                  [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}])
+                                  [(1, 1), (2, 2)])
 
 
     def test_csv_json_chunked(self):
@@ -44,11 +44,12 @@ class SingleTestClass(unittest.TestCase):
 
                 copy(csv, json)
 
-                self.assertEquals(list(json), [[1, 1], [2, 2]])
+                self.assertEquals(list(json), [(1, 1), (2, 2)])
 
 
     def test_json_csv_chunked(self):
         data = [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}]
+        tuples = ((1, 1), (2, 2))
         text = '\n'.join(map(json.dumps, data))
         schema = '{x: int, y: int}'
 
@@ -59,7 +60,7 @@ class SingleTestClass(unittest.TestCase):
 
                 copy(js, csv)
 
-                self.assertEquals(list(csv), data)
+                self.assertEquals(tuple(csv), tuples)
 
     def test_hdf5_csv(self):
         import h5py
@@ -74,7 +75,7 @@ class SingleTestClass(unittest.TestCase):
 
                 copy(hdf5, csv)
 
-                self.assertEquals(list(csv), [[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+                self.assertEquals(list(csv), [(1, 1, 1), (1, 1, 1), (1, 1, 1)])
 
     def test_csv_sql_json(self):
         data = [('Alice', 100), ('Bob', 200)]

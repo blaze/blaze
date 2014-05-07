@@ -21,17 +21,17 @@ class Test_Files(TestCase):
             self.assertEqual(str(dd.schema), '2 * int32')
             self.assertEqual(str(dd.dshape), 'var * 2 * int32')
 
-            expected = [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]]
+            expected = ((1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7))
 
-            self.assertEqual(list(dd), expected)
+            self.assertEqual(tuple(dd), expected)
 
             result = dd.as_dynd()
             expected2 = nd.array(expected, dtype='int32')
             self.assertEqual(nd.as_py(result),
                              nd.as_py(expected2))
 
-            self.assertEqual(list(dd), expected)
-            self.assertEqual(list(dd), expected)  # Not one use only
+            self.assertEqual(tuple(dd), expected)
+            self.assertEqual(tuple(dd), expected)  # Not one use only
 
             chunks = list(dd.chunks(blen=3))
             expected = [nd.array([[1, 1], [2, 2], [3, 3]], dtype='int32'),
