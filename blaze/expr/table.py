@@ -1,6 +1,6 @@
 """ An abstract Table
 
->>> accounts = TableExpr('{name: string, amount: int}')
+>>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 """
 
