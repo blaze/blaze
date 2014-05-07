@@ -4,7 +4,7 @@ from itertools import chain
 from dynd import nd
 import datashape
 
-from .utils import validate, coerce
+from .utils import validate, coerce, coerce_to_ordered
 from ..utils import partition_all
 
 __all__ = ['DataDescriptor']
@@ -74,7 +74,7 @@ class DataDescriptor(object):
 
     def as_py(self):
         if isdimension(self.dshape[0]):
-            return list(self)
+            return tuple(self)
         else:
             return nd.as_py(self.as_dynd())
 
@@ -82,23 +82,26 @@ class DataDescriptor(object):
         return nd.as_numpy(self.as_dynd())
 
     def __getitem__(self, key):
+        subshape = self.dshape._subshape(key)
         if hasattr(self, '_getitem'):
-            return coerce(self.dshape._subshape(key),
-                          self._getitem(key))
+            result = self._getitem(key)
         else:
-            return self.as_dynd()[key]
+            result = self.as_dynd()[key]
+        return coerce_to_ordered(subshape, coerce(subshape, result))
 
     def __iter__(self):
+        schema = self.dshape.subshape[0]
+        transform = lambda row: coerce_to_ordered(schema, coerce(schema, row))
         try:
             for row in self._iter():
-                yield coerce(self.schema, row)
+                yield transform(row)
         except NotImplementedError:
             py = nd.as_py(self.as_dynd())
             if isdimension(self.dshape[0]):
                 for row in py:
-                    yield row
+                    yield transform(row)
             else:
-                yield py
+                yield transform(py)
 
     def _iter(self):
         raise NotImplementedError()

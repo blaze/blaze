@@ -41,12 +41,12 @@ class Test_Indexing(unittest.TestCase):
         os.remove(self.csv_file)
 
     def test_row(self):
-        self.assertEqual(self.dd[0], {'name': 'Alice', 'amount': 100})
-        self.assertEqual(self.dd[1], {'name': 'Bob', 'amount': 200})
+        self.assertEqual(self.dd[0], ('Alice', 100))
+        self.assertEqual(self.dd[1], ('Bob', 200))
 
     def test_rows(self):
-        self.assertEqual(self.dd[[0, 1]], [{'name': 'Alice', 'amount': 100},
-                                           {'name': 'Bob', 'amount': 200}])
+        self.assertEqual(self.dd[[0, 1]], (('Alice', 100), ('Bob', 200)))
+
 
     def test_point(self):
         self.assertEqual(self.dd[0, 0], 'Alice')
@@ -55,10 +55,9 @@ class Test_Indexing(unittest.TestCase):
     def test_nested(self):
         self.assertEqual(list(self.dd[[0, 1], 0]), ['Alice', 'Bob'])
         self.assertEqual(list(self.dd[[0, 1], 1]), [100, 200])
-        self.assertEqual(self.dd[0, [0, 1]], {'name': 'Alice', 'amount': 100})
+        self.assertEqual(self.dd[0, [0, 1]], ('Alice', 100))
         self.assertEqual(self.dd[[1, 0], [0, 1]],
-                        [{'name': 'Bob', 'amount': 200},
-                         {'name': 'Alice', 'amount': 100}])
+                        (('Bob', 200), ('Alice', 100)))
 
     def test_slices(self):
         self.assertEqual(list(self.dd[:, 1]), [100, 200, 50])
@@ -113,16 +112,14 @@ class Test_Dialect(unittest.TestCase):
                             delimiter=',')
             csv.extend([(3, 3)])
             assert (list(csv) == [[1, 1.0], [2, 2.0], [3, 3.0]]
-                 or list(csv) == [{'x': 1, 'y': 1.0},
-                                  {'x': 2, 'y': 2.0},
-                                  {'x': 3, 'y': 3.0}])
+                 or list(csv) == [(1, 1.0),(2, 2.0), (3, 3.0)])
 
 
 class TestCSV_New_File(unittest.TestCase):
 
-    data = [('Alice', 100),
+    data = (('Alice', 100),
             ('Bob', 200),
-            ('Alice', 50)]
+            ('Alice', 50))
 
     schema = "{ f0: string, f1: int32 }"
 
@@ -187,7 +184,7 @@ class TestTransfer(unittest.TestCase):
     def test_iter(self):
         with filetext('1,1\n2,2\n') as fn:
             dd = CSV(fn, schema='2 * int32')
-            self.assertEquals(list(dd), [[1, 1], [2, 2]])
+            self.assertEquals(list(dd), [(1, 1), (2, 2)])
 
 
     def test_chunks(self):
@@ -201,7 +198,8 @@ class TestTransfer(unittest.TestCase):
     def test_iter_structured(self):
         with filetext('1,2\n3,4\n') as fn:
             dd = CSV(fn, schema='{x: int, y: int}')
-            self.assertEquals(list(dd), [{'x': 1, 'y': 2}, {'x': 3, 'y': 4}])
+            print(list(dd))
+            self.assertEquals(list(dd), [(1, 2), (3, 4)])
 
 
 class TestCSV(unittest.TestCase):
@@ -212,6 +210,11 @@ class TestCSV(unittest.TestCase):
         k2,v2,2,True
         k3,v3,3,False
     """)
+
+    data = (('k1', 'v1', 1, False),
+            ('k2', 'v2', 2, True),
+            ('k3', 'v3', 3, False))
+
     schema = "{ f0: string, f1: string, f2: int16, f3: bool }"
 
     def setUp(self):
@@ -229,77 +232,33 @@ class TestCSV(unittest.TestCase):
         dd = CSV(self.csv_file, schema=self.schema)
         self.assertTrue(isinstance(dd, DataDescriptor))
         self.assertTrue(isinstance(dd.dshape.shape[0], datashape.Var))
-        self.assertEqual(list(dd), [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
 
     def test_iter(self):
         dd = CSV(self.csv_file, schema=self.schema)
 
-        self.assertEqual(list(dd), [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
+        self.assertEqual(tuple(dd), self.data)
 
     def test_as_py(self):
         dd = CSV(self.csv_file, schema=self.schema)
 
-        self.assertEqual(dd.as_py(), [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
-
-    def test_chunks(self):
-        dd = CSV(self.csv_file, schema=self.schema)
-
-        vals = []
-        for el in dd.chunks(blen=2):
-            self.assertTrue(isinstance(el, nd.array))
-            vals.extend(nd.as_py(el))
-        self.assertEqual(vals, [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
-
-    def test_append(self):
-        # Get a private file so as to not mess the original one
-        csv_file = tempfile.mktemp(".csv")
-        with open(csv_file, "w") as f:
-            f.write(self.buf)
-        dd = CSV(csv_file, schema=self.schema, mode='r+')
-        dd.extend([["k4", "v4", 4, True]])
-        vals = [nd.as_py(v) for v in dd.chunks(blen=2)]
-        self.assertEqual(vals, [
-            [{u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-             {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}],
-            [{u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False},
-             {u'f0': u'k4', u'f1': u'v4', u'f2': 4, u'f3': True}]])
-        self.assertRaises(ValueError, lambda: dd.extend([3.3]))
-        os.remove(csv_file)
+        self.assertEqual(dd.as_py(), self.data)
 
     def test_getitem_start(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(dd[0],
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False})
+        self.assertEqual(dd[0], self.data[0])
 
     def test_getitem_stop(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(dd[:1], [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False}])
+        self.assertEqual(dd[:1], self.data[:1])
 
     def test_getitem_step(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(dd[::2], [
-            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
-            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
+        self.assertEqual(dd[::2], self.data[::2])
 
     def test_getitem_start_step(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(dd[1::2], [
-        {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}])
+        self.assertEqual(dd[1::2], self.data[1::2])
 
 
 if __name__ == '__main__':
     unittest.main()
-

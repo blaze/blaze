@@ -26,21 +26,21 @@ def coerce_to_ordered(ds, data):
     >>> from datashape import dshape
 
     >>> coerce_to_ordered('{x: int, y: int}', {'x': 1, 'y': 2})
-    [1, 2]
+    (1, 2)
 
     >>> coerce_to_ordered('var * {x: int, y: int}',
     ...                  [{'x': 1, 'y': 2}, {'x': 10, 'y': 20}])
-    [[1, 2], [10, 20]]
+    ((1, 2), (10, 20))
     """
     if isinstance(ds, str):
         ds = dshape(ds)
     if isinstance(ds[0], Record):
         rec = ds[0]
-        return [coerce_to_ordered(rec[name], data[name])
-                for name in rec.names]
+        return tuple(coerce_to_ordered(rec[name], data[name])
+                     for name in rec.names)
     if isdimension(ds[0]):
-        return [coerce_to_ordered(ds.subarray(1), row)
-                for row in data]
+        return tuple(coerce_to_ordered(ds.subarray(1), row)
+                     for row in data)
     return data
 
 
