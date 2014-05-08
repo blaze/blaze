@@ -58,9 +58,9 @@ class DataDescriptor(object):
 
     def chunks(self, **kwargs):
         def dshape(chunk):
-            return str(len(chunk) * self.dshape.subarray(1))
+            return str(len(chunk) * self.dshape.subshape[0])
 
-        chunks = self._chunks(**kwargs)
+        chunks = list(self._chunks(**kwargs))
         return (nd.array(chunk, dtype=dshape(chunk)) for chunk in chunks)
 
     def _chunks(self, blen=100):

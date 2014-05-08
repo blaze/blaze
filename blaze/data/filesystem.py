@@ -40,6 +40,5 @@ class Stack(DataDescriptor):
     def _iter(self):
         return (dd.as_py() for dd in self.descriptors)
 
-    def _chunks(self, **kwargs):
+    def chunks(self, **kwargs):
         return (dd.as_dynd() for dd in self.descriptors)
-
