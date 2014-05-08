@@ -1,11 +1,14 @@
+from __future__ import absolute_import, division, print_function
+
 import gzip
-import json
 from functools import partial
 from unittest import TestCase
 from datashape import var, dshape
 
 from blaze.data import *
 from blaze.utils import filetexts
+
+import json
 
 data = {'a.json': {u'name': u'Alice', u'amount': 100},
         'b.json': {u'name': u'Bob', u'amount': 200},
