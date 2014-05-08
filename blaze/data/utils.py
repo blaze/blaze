@@ -85,3 +85,32 @@ def coerce_row_to_dict(schema, row):
     if isinstance(row, dict):
         return row
     return dict((name, item) for name, item in zip(schema[0].names, row))
+
+
+def ordered_index(ind, ds):
+    """ Transform a named index into an ordered one
+
+    >>> ordered_index(1, '3 * int')
+    1
+    >>> ordered_index('name', '{name: string, amount: int}')
+    0
+    >>> ordered_index((0, 0), '3 * {x: int, y: int}')
+    (0, 0)
+    >>> ordered_index((0, 'x'), '3 * {x: int, y: int}')
+    (0, 0)
+    >>> ordered_index((0, ['x', 'y']), '3 * {x: int, y: int}')
+    (0, [0, 1])
+    """
+    if isinstance(ds, str):
+        ds = dshape(ds)
+    if isinstance(ind, int):
+        return ind
+    if isinstance(ind, str) and isinstance(ds[0], Record):
+        return ds[0].names.index(ind)
+    if isdimension(ds[0]):
+        return (ind[0],) + ordered_index(ind[1:], ds.subshape[ind[0]])
+    if isinstance(ind, tuple) and len(ind) == 1:
+        return (ordered_index(ind[0], ds),)
+    if isinstance(ind, list) and isinstance(ds[0], Record):
+        return list(map(ds[0].names.index, ind))
+    raise NotImplementedError()
