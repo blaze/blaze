@@ -9,7 +9,7 @@ import datashape
 
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
-from blaze.data.csv import has_header
+from blaze.data.csv import has_header, discover_dialect
 from blaze.utils import filetext
 from dynd import nd
 
@@ -113,6 +113,17 @@ class Test_Dialect(unittest.TestCase):
             csv.extend([(3, 3)])
             assert (list(csv) == [[1, 1.0], [2, 2.0], [3, 3.0]]
                  or list(csv) == [(1, 1.0),(2, 2.0), (3, 3.0)])
+
+    def test_discover_dialect(self):
+        s = '1,1\r\n2,2'
+        self.assertEqual(discover_dialect(s),
+                {'escapechar': None,
+                 'skipinitialspace': False,
+                 'quoting': 0,
+                 'delimiter': ',',
+                 'lineterminator': '\r\n',
+                 'quotechar': '"',
+                 'doublequote': False})
 
 
 class TestCSV_New_File(unittest.TestCase):

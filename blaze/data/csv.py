@@ -17,15 +17,7 @@ __all__ = ['CSV']
 
 
 def has_header(sample):
-    """
-
-    >>> s = '''
-    ... x,y
-    ... 1,1
-    ... 2,2'''
-    >>> has_header(s)
-    True
-    """
+    """ Sample text has a header """
     sniffer = csv.Sniffer()
     try:
         return sniffer.has_header(sample)
@@ -34,19 +26,9 @@ def has_header(sample):
 
 
 def discover_dialect(sample, dialect=None, **kwargs):
-    """
+    """ Discover CSV dialect from string sample
 
-    >>> s = '''
-    ... 1,1
-    ... 2,2'''
-    >>> discover_dialect(s) # doctest: +SKIP
-    {'escapechar': None,
-     'skipinitialspace': False,
-     'quoting': 0,
-     'delimiter': ',',
-     'lineterminator': '\r\n',
-     'quotechar': '"',
-     'doublequote': False}
+    Returns dict
     """
     if isinstance(dialect, compatibility._strtypes):
         dialect = csv.get_dialect(dialect)
