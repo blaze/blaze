@@ -96,13 +96,12 @@ class TestJSON(unittest.TestCase):
         #     'Var, %s' % json_schema))
         self.assertEqual(list(dd), [1, 2, 3, 4, 5])
 
-class Test_StreamingTransfer(unittest.TestCase):
-
+class AccountTestData(unittest.TestCase):
     dicts = [{'name': 'Alice', 'amount': 100},
-            {'name': 'Alice', 'amount': 50},
-            {'name': 'Bob', 'amount': 10},
-            {'name': 'Charlie', 'amount': 200},
-            {'name': 'Bob', 'amount': 100}]
+             {'name': 'Alice', 'amount': 50},
+             {'name': 'Bob', 'amount': 10},
+             {'name': 'Charlie', 'amount': 200},
+             {'name': 'Bob', 'amount': 100}]
 
     tuples = (('Alice', 100),
               ('Alice', 50),
@@ -114,6 +113,36 @@ class Test_StreamingTransfer(unittest.TestCase):
 
     schema = '{name: string, amount: int32}'
 
+class Test_Indexing(AccountTestData):
+    def setUp(self):
+        self.fn = tempfile.mktemp(".json")
+        with open(self.fn, 'w') as f:
+            for d in self.dicts:
+                f.write(json.dumps(d))
+                f.write('\n')
+        self.dd = JSON_Streaming(self.fn, schema=self.schema)
+
+    def tearDown(self):
+        if os.path.exists(self.fn):
+            os.remove(self.fn)
+
+    def test_indexing_basic(self):
+        assert self.dd[0] == self.tuples[0]
+        assert self.dd[0:3] == self.tuples[0:3]
+        assert self.dd[0::2] == self.tuples[0::2]
+        self.assertEqual(self.dd[[3, 1, 3]],
+                         tuple(self.tuples[i] for i in [3, 1, 3]))
+
+    def test_indexing_nested(self):
+        assert self.dd[0, 'name'] == self.tuples[0][0]
+        assert self.dd[0, 0] == self.tuples[0][0]
+        self.assertEqual(self.dd[[2, 0], 'name'], ('Bob', 'Alice'))
+        self.assertEqual(self.dd[[2, 0], 0], ('Bob', 'Alice'))
+        self.assertEqual(self.dd[[2, 0], [1, 0]], ((10, 'Bob'),
+                                                   (100, 'Alice')))
+
+
+class Test_StreamingTransfer(AccountTestData):
     def test_init(self):
         with filetext(self.text) as fn:
             dd = JSON_Streaming(fn, schema=self.schema)

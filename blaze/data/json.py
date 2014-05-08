@@ -7,11 +7,11 @@ from itertools import islice
 import datashape
 from dynd import nd
 
-from ..utils import partition_all, nth
+from ..utils import partition_all, nth, nth_list, ndget
 from .. import compatibility
 from ..compatibility import _inttypes
 from .core import DataDescriptor, isdimension
-from .utils import coerce, coerce_row_to_dict
+from .utils import coerce, coerce_row_to_dict, coerce_to_ordered, ordered_index
 
 
 class JSON(DataDescriptor):
@@ -104,12 +104,21 @@ class JSON_Streaming(JSON):
         return self._cache_arr
 
     def _get_py(self, key):
+        key = ordered_index(key, self.dshape)
+        if isinstance(key, tuple):
+            result = self[key[0]]
+            if isinstance(key[0], (list, slice)):
+                return tuple(ndget(key[1:], row) for row in result)
+            else:
+                return ndget(key[1:], result)
         with self.open(self.path) as f:
             if isinstance(key, _inttypes):
                 result = json.loads(nth(key, f))
             elif isinstance(key, slice):
                 result = list(map(json.loads,
                                     islice(f, key.start, key.stop, key.step)))
+            elif isinstance(key, list):
+                result = list(map(json.loads, nth_list(key, f)))
             else:
                 raise NotImplementedError('Fancy indexing not supported\n'
                         'Create DyND array and use fancy indexing from there')
