@@ -50,6 +50,7 @@ def resource(uri, **kwargs):
     """
     descriptor = None
     args = []
+    in_uri = uri
 
     if '::' in uri:
         uri, datapath = uri.rsplit('::')
@@ -73,8 +74,10 @@ def resource(uri, **kwargs):
     except:
         filenames = []
     if len(filenames) > 1:
-        args = [partial(descriptor, *args)]  # pack sub descriptor into args
-        descriptor = Files
+        print(filenames)
+        resources = [resource(in_uri.replace(uri, filename), **kwargs)
+                        for filename in filenames]
+        return Stack(resources)
 
     if descriptor:
         return descriptor(uri, *args, **kwargs)

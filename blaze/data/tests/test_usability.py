@@ -35,10 +35,12 @@ class TestResource(TestCase):
             self.assertEqual(list(dd), [(1, 1), (2, 2)])
 
     def test_filesystem(self):
-        d = {'a.csv': '1,1\n2,2', 'b.csv': '1,1\n2,2'}
+        prefix = 'test_filesystem'
+        d = {prefix + 'a.csv': '1,1\n2,2',
+             prefix + 'b.csv': '1,1\n2,2'}
         with filetexts(d) as filenames:
-            dd = resource('*.csv', schema='2 * int')
-            assert isinstance(dd, Files)
+            dd = resource(prefix + '*.csv', schema='2 * int')
+            self.assertEqual(tuple(dd), (((1, 1), (2, 2)), ((1, 1), (2, 2))))
 
     def test_sql(self):
         assert isinstance(resource('sqlite:///:memory:::tablename',
