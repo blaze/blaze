@@ -64,6 +64,9 @@ class Test_Indexing(unittest.TestCase):
         self.assertEqual(list(self.dd[1:, 1]), [200, 50])
         self.assertEqual(list(self.dd[0, :]), ['Alice', 100])
 
+    def test_names(self):
+        self.assertEqual(list(self.dd[:, 'name']), ['Alice', 'Bob', 'Alice'])
+
 
 class Test_Dialect(unittest.TestCase):
 

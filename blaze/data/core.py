@@ -4,7 +4,7 @@ from itertools import chain
 from dynd import nd
 import datashape
 
-from .utils import validate, coerce, coerce_to_ordered
+from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
 
 __all__ = ['DataDescriptor']
@@ -83,6 +83,7 @@ class DataDescriptor(object):
 
     def __getitem__(self, key):
         subshape = self.dshape._subshape(key)
+        key = ordered_index(key, self.dshape)
         if hasattr(self, '_get_py'):
             result = self._get_py(key)
         else:

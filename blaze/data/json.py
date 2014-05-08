@@ -11,7 +11,7 @@ from ..utils import partition_all, nth, nth_list, ndget
 from .. import compatibility
 from ..compatibility import _inttypes
 from .core import DataDescriptor, isdimension
-from .utils import coerce, coerce_row_to_dict, coerce_to_ordered, ordered_index
+from .utils import coerce, coerce_row_to_dict, coerce_to_ordered
 
 
 class JSON(DataDescriptor):
@@ -104,7 +104,6 @@ class JSON_Streaming(JSON):
         return self._cache_arr
 
     def _get_py(self, key):
-        key = ordered_index(key, self.dshape)
         if isinstance(key, tuple):
             result = self[key[0]]
             if isinstance(key[0], (list, slice)):
