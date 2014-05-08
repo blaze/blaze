@@ -1,9 +1,12 @@
+from __future__ import absolute_import, division, print_function
+
 import os
 from contextlib import contextmanager
 from unittest import TestCase
 from dynd import nd
+import json
 
-from blaze.data import Concat, CSV, Stack
+from blaze.data import Concat, CSV, Stack, JSON_Streaming
 from blaze.utils import filetexts
 
 
@@ -72,3 +75,27 @@ class Test_Stack(TestCase):
             self.assertEqual(dd[[0, 2], 0, 0], (1, 5))
             self.assertEqual(dd[0], ((1, 1), (2, 2)))
             self.assertEqual(dd[0, :, [1]], ((1,), (2,)))
+
+
+
+class Test_Stack_JSON(TestCase):
+    data = {'a.csv': [{'x':  1, 'y':  2}, {'x':  3, 'y':  4}],
+            'b.csv': [{'x':  5, 'y':  6}, {'x':  7, 'y':  8}],
+            'c.csv': [{'x':  9, 'y': 10}, {'x': 11, 'y': 12}]}
+
+    text = dict((fn, '\n'.join(map(json.dumps, dicts)))
+                    for fn, dicts in data.items())
+    def test_Stack(self):
+        with filetexts(self.text) as filenames:
+            descriptors = [JSON_Streaming(fn, schema='{x: int32, y: int32}')
+                            for fn in sorted(filenames)]
+            dd = Stack(descriptors)
+
+            expected = (((1,  2), ( 3,  4)),
+                        ((5,  6), ( 7,  8)),
+                        ((9, 10), (11, 12)))
+
+            self.assertEqual(dd.as_py(), expected)
+
+            self.assertEqual(dd[::2, 1, :], ((3, 4), (11, 12)))
+            self.assertEqual(dd[::2, 1, 'x'], (3, 11))
