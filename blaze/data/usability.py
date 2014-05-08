@@ -74,7 +74,6 @@ def resource(uri, **kwargs):
     except:
         filenames = []
     if len(filenames) > 1:
-        print(filenames)
         resources = [resource(in_uri.replace(uri, filename), **kwargs)
                         for filename in filenames]
         return Stack(resources)
