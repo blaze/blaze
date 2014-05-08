@@ -82,8 +82,8 @@ class DataDescriptor(object):
         return nd.as_numpy(self.as_dynd())
 
     def __getitem__(self, key):
-        subshape = self.dshape._subshape(key)
         key = ordered_index(key, self.dshape)
+        subshape = self.dshape._subshape(key)
         if hasattr(self, '_get_py'):
             result = self._get_py(key)
         else:
