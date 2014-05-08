@@ -31,10 +31,17 @@ def coerce_to_ordered(ds, data):
     >>> coerce_to_ordered('var * {x: int, y: int}',
     ...                  [{'x': 1, 'y': 2}, {'x': 10, 'y': 20}])
     ((1, 2), (10, 20))
+
+    Idempotent
+    >>> coerce_to_ordered('var * {x: int, y: int}',
+    ...                   ((1, 2), (10, 20)))
+    ((1, 2), (10, 20))
     """
     if isinstance(ds, str):
         ds = dshape(ds)
     if isinstance(ds[0], Record):
+        if isinstance(data, (list, tuple)):
+            return data
         rec = ds[0]
         return tuple(coerce_to_ordered(rec[name], data[name])
                      for name in rec.names)
