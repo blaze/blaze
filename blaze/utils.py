@@ -93,6 +93,34 @@ def get(ind, coll, lazy=False):
     return result
 
 
+def ndget(ind, data):
+    """
+    Get from N-Dimensional getable
+
+    Can index with elements, lists, or slices.  Mimic's numpy fancy indexing on
+    generic indexibles.
+
+    >>> data = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    >>> ndget(0, data)
+    [[1, 2], [3, 4]]
+    >>> ndget((0, 1), data)
+    [3, 4]
+    >>> ndget((0, 0, 0), data)
+    1
+    >>> ndget((slice(0, 2), [0, 1], 0), data)
+    ((1, 3), (5, 7))
+    """
+    if isinstance(ind, tuple) and len(ind) == 1:
+        ind = ind[0]
+    if not isinstance(ind, tuple):
+        return get(ind, data)
+    result = get(ind[0], data)
+    if isinstance(ind[0], (list, slice)):
+        return type(result)(ndget(ind[1:], row) for row in result)
+    else:
+        return ndget(ind[1:], result)
+
+
 @contextmanager
 def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:
