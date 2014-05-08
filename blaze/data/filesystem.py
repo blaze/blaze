@@ -3,42 +3,43 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from glob import glob
 from itertools import chain
-from datashape import dshape, Var
+from datashape import dshape, var
+from datashape.predicates import isdimension
 
 from .core import DataDescriptor
 from .. import compatibility
 
-__all__ = 'Files',
+__all__ = 'Concat', 'Stack'
 
-class Files(DataDescriptor):
-    immutable = True
-    deferred = False
-    appendable = False
-    remote = False
-    persistent = True
 
-    def __init__(self, files, descriptor, subdshape=None, schema=None,
-            open=open):
-        if isinstance(files, compatibility._strtypes):
-            files = glob(files)
-        self.filenames = files
-
-        self.open = open
-
-        self.descriptor = descriptor
-        if schema and not subdshape:
-            subdshape = Var() * schema
-        self.subdshape = dshape(subdshape)
+class Concat(DataDescriptor):
+    def __init__(self, descriptors):
+        assert all(isdimension(ddesc.dshape[0]) for ddesc in descriptors)
+        self.descriptors = descriptors
 
     @property
     def dshape(self):
-        if isinstance(self.subdshape[0], Var):
-            return self.subdshape
-        else:
-            return Var() * self.subdshape
+        return var * self.descriptors[0].dshape.subarray(1)
 
     def _iter(self):
-        return chain.from_iterable(self.descriptor(fn,
-                                                   dshape=self.subdshape,
-                                                   open=self.open)
-                                    for fn in self.filenames)
+        return chain.from_iterable(self.descriptors)
+
+    def _chunks(self, **kwargs):
+        return (chunk for dd in self.descriptors
+                      for chunk in dd.chunks(**kwargs))
+
+
+class Stack(DataDescriptor):
+    def __init__(self, descriptors):
+        self.descriptors = descriptors
+
+    @property
+    def dshape(self):
+        return len(self.descriptors) * self.descriptors[0].dshape
+
+    def _iter(self):
+        return (dd.as_py() for dd in self.descriptors)
+
+    def _chunks(self, **kwargs):
+        return (dd.as_dynd() for dd in self.descriptors)
+

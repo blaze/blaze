@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from unittest import TestCase
 from dynd import nd
 
-from blaze.data import Files, CSV
+from blaze.data import Concat, CSV
 from blaze.utils import filetexts
 
 
@@ -15,9 +15,10 @@ data = {'a.csv': '1,1\n2,2',
 class Test_Files(TestCase):
     def test_filesystem(self):
         with filetexts(data) as filenames:
-            dd = Files(sorted(filenames), CSV, subdshape='var * 2 * int32')
+            descriptors = [CSV(fn, schema='2 * int32')
+                            for fn in sorted(filenames)]
+            dd = Concat(descriptors)
 
-            self.assertEqual(dd.filenames, ['a.csv', 'b.csv', 'c.csv'])
             self.assertEqual(str(dd.schema), '2 * int32')
             self.assertEqual(str(dd.dshape), 'var * 2 * int32')
 
@@ -33,8 +34,5 @@ class Test_Files(TestCase):
             self.assertEqual(tuple(dd), expected)
             self.assertEqual(tuple(dd), expected)  # Not one use only
 
-            chunks = list(dd.chunks(blen=3))
-            expected = [nd.array([[1, 1], [2, 2], [3, 3]], dtype='int32'),
-                        nd.array([[4, 4], [5, 5], [6, 6]], dtype='int32')]
-
-            assert all(nd.as_py(a) == nd.as_py(b) for a, b in zip(chunks, expected))
+            chunks = list(dd.chunks())
+            assert all(isinstance(chunk, nd.array) for chunk in chunks)

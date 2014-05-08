@@ -126,10 +126,10 @@ class CSV(DataDescriptor):
         self.header = header
         self.dialect = dialect
 
-    def _getitem(self, key):
+    def _get_py(self, key):
         if isinstance(key, tuple):
             assert len(key) == 2
-            result = self._getitem(key[0])
+            result = self._get_py(key[0])
 
             if isinstance(key[0], (list, slice)):
                 return [get(key[1], x) for x in result]

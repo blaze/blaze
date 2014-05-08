@@ -103,7 +103,7 @@ class JSON_Streaming(JSON):
         self._cache_arr = nd.parse_json(str(self.dshape), text)
         return self._cache_arr
 
-    def _getitem(self, key):
+    def _get_py(self, key):
         with self.open(self.path) as f:
             if isinstance(key, _inttypes):
                 result = json.loads(nth(key, f))

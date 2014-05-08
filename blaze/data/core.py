@@ -83,8 +83,8 @@ class DataDescriptor(object):
 
     def __getitem__(self, key):
         subshape = self.dshape._subshape(key)
-        if hasattr(self, '_getitem'):
-            result = self._getitem(key)
+        if hasattr(self, '_get_py'):
+            result = self._get_py(key)
         else:
             result = self.as_dynd()[key]
         return coerce_to_ordered(subshape, coerce(subshape, result))
