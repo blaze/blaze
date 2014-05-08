@@ -96,21 +96,36 @@ def ordered_index(ind, ds):
     0
     >>> ordered_index((0, 0), '3 * {x: int, y: int}')
     (0, 0)
+    >>> ordered_index([0, 1], '3 * {x: int, y: int}')
+    [0, 1]
+    >>> ordered_index(([0, 1], 'x'), '3 * {x: int, y: int}')
+    ([0, 1], 0)
     >>> ordered_index((0, 'x'), '3 * {x: int, y: int}')
     (0, 0)
+    >>> ordered_index((0, [0, 1]), '3 * {x: int, y: int}')
+    (0, [0, 1])
     >>> ordered_index((0, ['x', 'y']), '3 * {x: int, y: int}')
     (0, [0, 1])
     """
     if isinstance(ds, str):
         ds = dshape(ds)
-    if isinstance(ind, int):
+    if isinstance(ind, (int, slice)):
         return ind
+    if isinstance(ind, list):
+        return [ordered_index(i, ds) for i in ind]
     if isinstance(ind, str) and isinstance(ds[0], Record):
         return ds[0].names.index(ind)
     if isdimension(ds[0]):
-        return (ind[0],) + ordered_index(ind[1:], ds.subshape[ind[0]])
-    if isinstance(ind, tuple) and len(ind) == 1:
-        return (ordered_index(ind[0], ds),)
-    if isinstance(ind, list) and isinstance(ds[0], Record):
-        return list(map(ds[0].names.index, ind))
+        return (ind[0],) + tupleit(ordered_index(ind[1:], ds.subshape[0]))
+    if isinstance(ind, tuple) and not ind:
+        return ()
+    if isinstance(ind, tuple):
+        return ((ordered_index(ind[0], ds),)
+                + tupleit(ordered_index(ind[1:], ds.subshape[0])))
     raise NotImplementedError()
+
+def tupleit(x):
+    if not isinstance(x, tuple):
+        return (x,)
+    else:
+        return x
