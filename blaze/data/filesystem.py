@@ -8,6 +8,7 @@ from datashape.predicates import isdimension
 
 from .core import DataDescriptor
 from .. import compatibility
+from ..utils import get, ndget
 
 __all__ = 'Concat', 'Stack'
 
@@ -28,6 +29,16 @@ class Concat(DataDescriptor):
         return (chunk for dd in self.descriptors
                       for chunk in dd.chunks(**kwargs))
 
+    def _get_py(self, key):
+        if not isinstance(key, tuple):
+            return get(key, iter(self))
+
+        result = get(key[0], iter(self))
+        if isinstance(key[0], (list, slice)):
+            return [ndget(key[1:], row) for row in result]
+        else:
+            return ndget(key[1:], result)
+
 
 class Stack(DataDescriptor):
     def __init__(self, descriptors):
@@ -42,3 +53,13 @@ class Stack(DataDescriptor):
 
     def chunks(self, **kwargs):
         return (dd.as_dynd() for dd in self.descriptors)
+
+    def _get_py(self, key):
+        if isinstance(key, tuple):
+            result = get(key[0], self.descriptors)
+            if isinstance(key[0], (list, slice)):
+                return [s._get_py(key[1:]) for s in result]
+            else:
+                return result._get_py(key[1:])
+        else:
+            return self.descriptors[key][:]

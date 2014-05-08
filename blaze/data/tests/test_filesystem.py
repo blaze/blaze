@@ -37,6 +37,10 @@ class Test_Files(TestCase):
             chunks = list(dd.chunks())
             assert all(isinstance(chunk, nd.array) for chunk in chunks)
 
+            self.assertEqual(dd[[0, 2], 0], (1, 3))
+            self.assertEqual(dd[2, [1, 0]], (3, 3))
+
+
 class Test_Stack(TestCase):
     data = {'a.csv': '1,1\n2,2',
             'b.csv': '3,3\n4,4',
@@ -64,3 +68,7 @@ class Test_Stack(TestCase):
 
             chunks = dd.chunks()
             assert all(isinstance(chunk, nd.array) for chunk in chunks)
+
+            self.assertEqual(dd[[0, 2], 0, 0], (1, 5))
+            self.assertEqual(dd[0], ((1, 1), (2, 2)))
+            self.assertEqual(dd[0, :, [1]], ((1,), (2,)))

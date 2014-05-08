@@ -87,7 +87,10 @@ def get(ind, coll, lazy=False):
     elif isinstance(ind, slice):
         result = islice(coll, ind.start, ind.stop, ind.step)
     else:
-        result = coll[ind]
+        if isinstance(coll, Iterator):
+            result = nth(ind, coll)
+        else:
+            result = coll[ind]
     if lazy==False and isinstance(result, Iterator):
         result = tuple(result)
     return result
