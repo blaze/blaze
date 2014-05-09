@@ -102,3 +102,7 @@ class SingleTestClass(unittest.TestCase):
         dd[0, 0, :] = 2
         self.assertEqual(nd.as_py(dd.as_dynd()), [[[2, 2], [1, 1]],
                                                   [[1, 1], [1, 1]]])
+
+    def test_record_types_chunks(self):
+        dd = HDF5(self.filename, 'data', 'a', dshape='var * {x: int, y: int}')
+        dd.extend_chunks([nd.array([(1, 1), (2, 2)], dtype='{x: int, y: int}')])

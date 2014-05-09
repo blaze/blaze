@@ -120,7 +120,7 @@ class HDF5(DataDescriptor):
             dtype = dset.dtype
             shape = dset.shape
             for chunk in chunks:
-                arr = np.array(chunk, dtype=dtype)
+                arr = nd.as_numpy(chunk, allow_copy=True)
                 shape = list(dset.shape)
                 shape[0] += len(arr)
                 dset.resize(shape)
