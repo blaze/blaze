@@ -49,7 +49,7 @@ install:
   # Install Blaze
   - python setup.py install
 
-script: cd $HOME; nosetests --with-doctest blaze/expr blaze/compute blaze/data
+script: nosetests --with-doctest blaze/expr blaze/compute blaze/data
 
 notifications:
   email: false
