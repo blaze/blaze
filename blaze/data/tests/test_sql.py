@@ -74,3 +74,19 @@ class SingleTestClass(unittest.TestCase):
         assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
 
         self.assertEquals(len(list(dd.chunks(blen=2))), 2)
+
+    def test_indexing(self):
+        dd = SQL(self.engine, 'testtable',
+                 schema='{name: string, amount: int, id: int}',
+                 primary_key='id')
+
+        data = [('Alice', 100, 1), ('Bob', 50, 2), ('Charlie', 200, 3)]
+        dd.extend(data)
+
+        self.assertEqual(set(dd[:, ['id', 'name']]),
+                        set(((1, 'Alice'), (2, 'Bob'), (3, 'Charlie'))))
+        self.assertEqual(set(dd[:, 'name']), set(('Alice', 'Bob', 'Charlie')))
+        self.assertEqual(len(dd[0, 'name']), 1)
+        self.assertEqual(len(dd[:2, 'name']), 2)
+        self.assertEqual(set(dd[:, :]), set(data))
+        self.assertEqual(set(dd[:, :2]), set(dd[:, ['name', 'amount']]))

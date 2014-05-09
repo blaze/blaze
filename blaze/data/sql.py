@@ -10,6 +10,7 @@ from ..utils import partition_all
 from ..compatibility import basestring
 from .core import DataDescriptor
 from .utils import coerce_row_to_dict
+from ..py2help import _inttypes, _strtypes
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
 
@@ -146,3 +147,31 @@ class SQL(DataDescriptor):
         for chunk in partition_all(blen, iter(self)):
             dshape = str(len(chunk)) + ' * ' + str(self.schema)
             yield nd.array(chunk, dtype=dshape)
+
+    def _get_py(self, key):
+        if ((len(key) != 2 and not isinstance(key[0], (_inttypes, slice, _strtypes)))
+            or (isinstance(key[0], _inttypes) and key[0] != 0)):
+            raise ValueError("Limited indexing supported for SQL")
+        rows, cols = key
+        transform = lambda x: x
+        if rows == 0:
+            rows = slice(0, 1)
+        if (rows.start not in (0, None) or rows.step not in (1, None)):
+            raise ValueError("Limited indexing supported for SQL")
+        if isinstance(cols, slice):
+            cols = self.schema[0].names[cols]
+        if isinstance(cols, _strtypes):
+            transform = lambda x: x[0]
+            query = [getattr(self.table.c, cols)]
+        if isinstance(cols, _inttypes):
+            transform = lambda x: x[0]
+            query = [getattr(self.table.c, self.schema[0].names[cols])]
+        else:
+            query = [getattr(self.table.c, x) if isinstance(x, _strtypes)
+                        else getattr(self.table.c, self.schema[0].names[x])
+                        for x in cols]
+
+        with self.engine.connect() as conn:
+            result = conn.execute(sql.sql.select(query).limit(rows.stop))
+            for item in result:
+                yield transform(item)
