@@ -49,11 +49,11 @@ def dshape_to_alchemy(dshape):
     dshape = datashape.dshape(dshape)
     if str(dshape) in types:
         return types[str(dshape)]
-    try:
+    if isinstance(dshape[0], datashape.Record):
         return [sql.Column(name, dshape_to_alchemy(typ))
                 for name, typ in dshape.parameters[0].parameters[0]]
-    except TypeError:
-        raise NotImplementedError("Datashape not supported for SQL Schema")
+    raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
+                              % dshape)
 
 
 class SQL(DataDescriptor):
