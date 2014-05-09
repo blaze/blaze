@@ -8,6 +8,7 @@ python:
 branches:
   only:
     - master
+    - reorg
     - devel
     - release
     - py3
