@@ -24,7 +24,7 @@ from .data import *
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.4.2-dev'
+__version__ = '0.5'
 
 # If IPython is already loaded, register the Blaze catalog magic
 import sys

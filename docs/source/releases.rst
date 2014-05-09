@@ -2,6 +2,16 @@
 Release Notes
 ======================
 
+Release 0.5
+-----------
+
+* HDF5 in catalog.
+* Reductions like any, all, sum, product, min, max.
+* Datetime design and some initial functionality.
+* Change how Storage and ddesc works.
+* Some preliminary rolling window code.
+* Python 3.4 now in the test harness.
+
 Release 0.4.2
 -------------
 

@@ -19,6 +19,7 @@ a new version of Blaze.
    so they need to be updated to match.
 
 1. Update the release notes /docs/source/releases.rst
+   You may use a github URL like https://github.com/ContinuumIO/blaze/compare/0.4.2...master for assistance.
 
 1. Build and update the documentation in gh-pages.
 
