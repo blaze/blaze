@@ -19,7 +19,7 @@ from .compute_session import compute_session
 from .crossdomain import crossdomain
 
 
-app = flask.Flask('blaze.server')
+app = flask.Flask('blaze.io.server')
 app.sessions = {}
 
 
