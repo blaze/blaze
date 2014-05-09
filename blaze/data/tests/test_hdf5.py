@@ -103,14 +103,26 @@ class SingleTestClass(unittest.TestCase):
         self.assertEqual(nd.as_py(dd.as_dynd()), [[[2, 2], [1, 1]],
                                                   [[1, 1], [1, 1]]])
 
+
+class TestRecordInputs(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp('h5')
+
+    def tearDown(self):
+        if os.path.exists(self.filename):
+            os.remove(self.filename)
+
     def test_record_types_chunks(self):
         dd = HDF5(self.filename, 'data', 'a', dshape='var * {x: int, y: int}')
         dd.extend_chunks([nd.array([(1, 1), (2, 2)], dtype='{x: int, y: int}')])
+        self.assertEqual(tuple(dd), ((1, 1), (2, 2)))
 
     def test_record_types_extend(self):
         dd = HDF5(self.filename, 'data', 'a', dshape='var * {x: int, y: int}')
         dd.extend([(1, 1), (2, 2)])
+        self.assertEqual(tuple(dd), ((1, 1), (2, 2)))
 
     def test_record_types_extend_with_dicts(self):
         dd = HDF5(self.filename, 'data', 'a', dshape='var * {x: int, y: int}')
         dd.extend([{'x': 1, 'y': 1}, {'x': 2, 'y': 2}])
+        self.assertEqual(tuple(dd), ((1, 1), (2, 2)))
