@@ -5,7 +5,6 @@ from dynd import nd
 import h5py
 import numpy as np
 from sys import stdout
-from blaze.compatibility import skip
 
 from blaze.data import HDF5
 from blaze.utils import tmpfile
@@ -18,7 +17,6 @@ class SingleTestClass(unittest.TestCase):
         if os.path.exists(self.filename):
             os.remove(self.filename)
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_creation(self):
         dd = HDF5(self.filename, 'data', 'w', dshape='2 * 2 * int32')
 
@@ -26,7 +24,7 @@ class SingleTestClass(unittest.TestCase):
             d = f['data']
             self.assertEquals(d.dtype.name, 'int32')
 
-        self.assertRaises(ValueError, lambda: HDF5('bar.hdf5', 'foo'))
+        self.assertRaises(Exception, lambda: HDF5('bar.hdf5', 'foo'))
 
     def test_existing_array(self):
         stdout.flush()
@@ -78,31 +76,26 @@ class SingleTestClass(unittest.TestCase):
         dd = HDF5(self.filename, '/data')
         assert all(isinstance(chunk, nd.array) for chunk in dd.chunks())
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_extend(self):
         dd = HDF5(self.filename, '/data', 'a', schema='2 * int32')
         dd.extend([(1, 1), (2, 2)])
 
         results = list(dd)
 
-        self.assertEquals(nd.as_py(results[0]), (1, 1))
-        self.assertEquals(nd.as_py(results[1]), (2, 2))
+        self.assertEquals(list(map(list, results)), [[1, 1], [2, 2]])
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_schema(self):
         dd = HDF5(self.filename, '/data', 'a', schema='2 * int32')
 
         self.assertEquals(str(dd.schema), '2 * int32')
         self.assertEquals(str(dd.dshape), 'var * 2 * int32')
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_dshape(self):
         dd = HDF5(self.filename, '/data', 'a', dshape='var * 2 * int32')
 
         self.assertEquals(str(dd.schema), '2 * int32')
         self.assertEquals(str(dd.dshape), 'var * 2 * int32')
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_setitem(self):
         dd = HDF5(self.filename, 'data', 'a', dshape='2 * 2 * 2 * int')
         dd[:] = 1
