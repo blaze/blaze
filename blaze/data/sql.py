@@ -148,13 +148,23 @@ class SQL(DataDescriptor):
             dshape = str(len(chunk)) + ' * ' + str(self.schema)
             yield nd.array(chunk, dtype=dshape)
 
+    def _query(self, query, transform=lambda x: x):
+        with self.engine.connect() as conn:
+            result = conn.execute(query)
+            for item in result:
+                yield transform(item)
+
     def _get_py(self, key):
+        if not isinstance(key, tuple):
+            key = (key, slice(0, None))
         if ((len(key) != 2 and not isinstance(key[0], (_inttypes, slice, _strtypes)))
             or (isinstance(key[0], _inttypes) and key[0] != 0)):
             raise ValueError("Limited indexing supported for SQL")
         rows, cols = key
         transform = lambda x: x
+        single_item = False
         if rows == 0:
+            single_item = True
             rows = slice(0, 1)
         if (rows.start not in (0, None) or rows.step not in (1, None)):
             raise ValueError("Limited indexing supported for SQL")
@@ -162,16 +172,19 @@ class SQL(DataDescriptor):
             cols = self.schema[0].names[cols]
         if isinstance(cols, _strtypes):
             transform = lambda x: x[0]
-            query = [getattr(self.table.c, cols)]
+            columns = [getattr(self.table.c, cols)]
         if isinstance(cols, _inttypes):
             transform = lambda x: x[0]
-            query = [getattr(self.table.c, self.schema[0].names[cols])]
+            columns= [getattr(self.table.c, self.schema[0].names[cols])]
         else:
-            query = [getattr(self.table.c, x) if isinstance(x, _strtypes)
+            columns = [getattr(self.table.c, x) if isinstance(x, _strtypes)
                         else getattr(self.table.c, self.schema[0].names[x])
                         for x in cols]
 
-        with self.engine.connect() as conn:
-            result = conn.execute(sql.sql.select(query).limit(rows.stop))
-            for item in result:
-                yield transform(item)
+        query = sql.sql.select(columns).limit(rows.stop)
+        result = self._query(query, transform)
+
+        if single_item:
+            return next(result)
+        else:
+            return result
