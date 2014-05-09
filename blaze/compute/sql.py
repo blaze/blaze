@@ -24,24 +24,28 @@ import sqlalchemy
 
 @dispatch(Projection, sqlalchemy.Table)
 def compute(t, s):
-    s = compute(t.parent, s)
-    return sa.select([s.c.get(col) for col in t.columns])
+    parent = compute(t.parent, s)
+    return sa.select([parent.c.get(col) for col in t.columns])
 
 
 @dispatch(Column, sqlalchemy.Table)
 def compute(t, s):
-    s = compute(t.parent, s)
-    return s.c.get(t.columns[0])
+    parent = compute(t.parent, s)
+    return parent.c.get(t.columns[0])
 
 
 @dispatch(BinOp, sqlalchemy.Table)
 def compute(t, s):
-    return t.op(compute(t.lhs, s), compute(t.rhs, s))
+    lhs = compute(t.lhs, s)
+    rhs = compute(t.rhs, s)
+    return t.op(lhs, rhs)
 
 
 @dispatch(Selection, sqlalchemy.Table)
 def compute(t, s):
-    return sa.select([compute(t.parent, s)]).where(compute(t.predicate, s))
+    parent = compute(t.parent, s)
+    predicate = compute(t.predicate, s)
+    return sa.select([parent]).where(predicate)
 
 
 @dispatch(TableSymbol, sqlalchemy.Table)
@@ -74,8 +78,9 @@ def compute(t, lhs, rhs):
 
 @dispatch(UnaryOp, sqlalchemy.Table)
 def compute(t, s):
+    parent = compute(t.parent, s)
     op = getattr(sa.func, t.symbol)
-    return op(compute(t.parent, s))
+    return op(parent)
 
 
 names = {mean: 'avg',
@@ -85,11 +90,10 @@ names = {mean: 'avg',
 
 @dispatch(Reduction, sqlalchemy.Table)
 def compute(t, s):
-    s = compute(t.parent, s)
+    parent = compute(t.parent, s)
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
     except:
         symbol = names.get(type(t), t.symbol)
         op = getattr(sqlalchemy.sql.func, symbol)
-    return op(s)
-
+    return op(parent)
