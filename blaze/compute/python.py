@@ -23,15 +23,17 @@ seq = (tuple, list, Iterator)
 
 @dispatch(Projection, seq)
 def compute(t, l):
+    parent = compute(t.parent, l)
     indices = [t.parent.columns.index(col) for col in t.columns]
     get = operator.itemgetter(*indices)
-    return (get(x) for x in l)
+    return (get(x) for x in parent)
 
 
 @dispatch(Column, seq)
 def compute(t, l):
+    parent = compute(t.parent, l)
     index = t.parent.columns.index(t.columns[0])
-    return (x[index] for x in l)
+    return (x[index] for x in parent)
 
 
 @dispatch(BinOp, seq)
@@ -64,8 +66,10 @@ def compute(t, l):
 
 @dispatch(Selection, seq)
 def compute(t, l):
-    l, l2 = itertools.tee(l)
-    return (x for x, tf in zip(compute(t.parent, l), compute(t.predicate, l2))
+    l1, l2 = itertools.tee(l)
+    parent = compute(t.parent, l1)
+    predicate = compute(t.predicate, l2)
+    return (x for x, tf in zip(parent, predicate)
               if tf)
 
 
@@ -76,13 +80,15 @@ def compute(t, l):
 
 @dispatch(UnaryOp, seq)
 def compute(t, l):
+    parent = compute(t.parent, l)
     op = getattr(math, t.symbol)
-    return (op(x) for x in compute(t.parent, l))
+    return (op(x) for x in parent)
 
 @dispatch(Reduction, seq)
 def compute(t, l):
+    parent = compute(t.parent, l)
     op = getattr(builtins, t.symbol)
-    return op(compute(t.parent, l))
+    return op(parent)
 
 def _mean(seq):
     total = 0
