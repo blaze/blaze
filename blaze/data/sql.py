@@ -10,7 +10,7 @@ from ..utils import partition_all
 from ..compatibility import basestring
 from .core import DataDescriptor
 from .utils import coerce_row_to_dict
-from ..py2help import _inttypes, _strtypes
+from ..compatibility import _inttypes, _strtypes
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
 
