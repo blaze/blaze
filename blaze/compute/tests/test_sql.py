@@ -4,7 +4,7 @@ from blaze.compute.sql import compute, computefull
 from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
-from blaze.py2help import skip
+from blaze.compatibility import skip
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 

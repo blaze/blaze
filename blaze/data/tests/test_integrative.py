@@ -7,6 +7,7 @@ from datashape import var, dshape
 
 from blaze.data import *
 from blaze.utils import filetexts
+import json
 
 import json
 
