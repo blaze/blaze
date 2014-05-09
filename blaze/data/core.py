@@ -51,7 +51,10 @@ class DataDescriptor(object):
     def extend_chunks(self, chunks):
         if not self.appendable or self.immutable:
             raise TypeError('Data Descriptor not appendable')
-        self._extend_chunks((nd.array(chunk) for chunk in chunks))
+        def dtype_of(chunk):
+            return str(len(chunk) * self.schema)
+        self._extend_chunks((nd.array(chunk, dtype=dtype_of(chunk))
+                             for chunk in chunks))
 
     def _extend_chunks(self, chunks):
         self.extend((row for chunk in chunks for row in nd.as_py(chunk)))
