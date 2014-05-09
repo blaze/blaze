@@ -47,7 +47,6 @@ class TestResource(TestCase):
                                    schema='{x: int, y: int}'),
                           SQL)
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_hdf5(self):
         with tmpfile('.hdf5') as filename:
             assert isinstance(resource(filename + '::/path/to/data/',

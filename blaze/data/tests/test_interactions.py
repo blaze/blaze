@@ -98,7 +98,6 @@ class SingleTestClass(unittest.TestCase):
                 with open(json_fn) as f:
                     assert 'Alice' in f.read()
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_csv_hdf5(self):
         import h5py
         from dynd import nd
