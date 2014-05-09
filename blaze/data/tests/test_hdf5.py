@@ -110,3 +110,7 @@ class SingleTestClass(unittest.TestCase):
     def test_record_types_extend(self):
         dd = HDF5(self.filename, 'data', 'a', dshape='var * {x: int, y: int}')
         dd.extend([(1, 1), (2, 2)])
+
+    def test_record_types_extend_with_dicts(self):
+        dd = HDF5(self.filename, 'data', 'a', dshape='var * {x: int, y: int}')
+        dd.extend([{'x': 1, 'y': 1}, {'x': 2, 'y': 2}])
