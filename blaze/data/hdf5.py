@@ -52,7 +52,7 @@ class HDF5(DataDescriptor):
         if dshape:
             dshape = datashape.dshape(dshape)
             shape = dshape.shape
-            dtype = datashape.to_numpy_dtype(dshape[-1])
+            dtype = dshape[-1].to_numpy_dtype()
             if shape[0] == datashape.Var():
                 kwargs['chunks'] = True
                 kwargs['maxshape'] = kwargs.get('maxshape', (None,) + shape[1:])
