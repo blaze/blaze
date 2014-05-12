@@ -4,7 +4,7 @@ from functools import partial
 from .csv import *
 from .json import *
 from .hdf5 import *
-from .filesystem import *
+from .meta import *
 from .sql import *
 from glob import glob
 import gzip

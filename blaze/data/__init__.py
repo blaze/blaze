@@ -5,5 +5,5 @@ from .csv import *
 from .sql import *
 from .json import *
 from .hdf5 import *
-from .filesystem import *
+from .meta import *
 from .usability import *
