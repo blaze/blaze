@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from datetime import date, datetime, time
 from decimal import Decimal
@@ -68,12 +68,12 @@ class SQL(DataDescriptor):
     >>> dd.extend([('Alice', 100), ('Bob', 200)])
 
     Select all from table
-    >>> list(dd)
+    >>> list(dd) # doctest: +SKIP
     [('Alice', 100), ('Bob', 200)]
 
     Verify that we're actually touching the database
 
-    >>> with dd.engine.connect() as conn:
+    >>> with dd.engine.connect() as conn: # doctest: +SKIP
     ...     print(list(conn.execute('SELECT * FROM accounts')))
     [('Alice', 100), ('Bob', 200)]
 
@@ -103,12 +103,12 @@ class SQL(DataDescriptor):
 
 
     def __init__(self, engine, tablename, primary_key='', schema=None):
-        if isinstance(engine, basestring):
+        if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
         self.engine = engine
         self.tablename = tablename
 
-        if isinstance(schema, (str, datashape.DataShape)):
+        if isinstance(schema, (_strtypes, datashape.DataShape)):
             columns = dshape_to_alchemy(schema)
             for column in columns:
                 if column.name == primary_key:
