@@ -90,23 +90,30 @@ class DataDescriptor(object):
     def py(self):
         return IndexCallable(self.get_py)
 
+    @property
+    def dynd(self):
+        return IndexCallable(self.get_dynd)
+
     def get_py(self, key):
         key = ordered_index(key, self.dshape)
         subshape = self.dshape._subshape(key)
         if hasattr(self, '_get_py'):
             result = self._get_py(key)
         else:
-            result = self.as_dynd()[key]
+            result = self.get_dynd(key)
         return coerce(subshape, result)
 
-    def __getitem__(self, key):
+    def get_dynd(self, key):
         key = ordered_index(key, self.dshape)
         subshape = self.dshape._subshape(key)
-        if hasattr(self, '_get_py'):
-            result = self._get_py(key)
+        if hasattr(self, '_get_dynd'):
+            result = self._get_dynd(key)
         else:
-            result = self.as_dynd()[key]
-        return coerce(subshape, result)
+            result = nd.array(self.get_py(key), dtype=str(subshape))
+        return nd.array(result, dtype=str(subshape))
+
+    def __getitem__(self, key):
+        return self.get_py(key)
 
     def __iter__(self):
         if not isdimension(self.dshape[0]):

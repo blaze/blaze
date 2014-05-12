@@ -47,6 +47,9 @@ class Test_Indexing(unittest.TestCase):
         self.assertEqual(tuplify(self.dd.py[0]), ('Alice', 100))
         self.assertEqual(tuplify(self.dd.py[1]), ('Bob', 200))
 
+    def test_dynd(self):
+        assert isinstance(self.dd.dynd[0], nd.array)
+
     def test_rows(self):
         self.assertEqual(tuplify(self.dd.py[[0, 1]]), (('Alice', 100), ('Bob', 200)))
 
@@ -71,6 +74,10 @@ class Test_Indexing(unittest.TestCase):
         self.assertEqual(list(self.dd.py[:, 'name']), ['Alice', 'Bob', 'Alice'])
         self.assertEqual(tuplify(self.dd.py[:, ['amount', 'name']]),
                     ((100, 'Alice'), (200, 'Bob'), (50, 'Alice')))
+
+    def test_dynd_complex(self):
+        self.assertEqual(self.dd.py[:, ['amount', 'name']],
+                nd.as_py(self.dd.dynd[:, ['amount', 'name']], tuple=True))
 
 
 class Test_Dialect(unittest.TestCase):
