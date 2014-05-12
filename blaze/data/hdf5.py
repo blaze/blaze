@@ -7,7 +7,7 @@ from dynd import nd
 import datashape
 
 from .core import DataDescriptor
-from ..utils import partition_all
+from ..utils import partition_all, get
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
@@ -90,10 +90,18 @@ class HDF5(DataDescriptor):
                             for attr in h5py_attributes)
         return result
 
-    def __getitem__(self, key):
+    def _get_dynd(self, key):
+        if (isinstance(key, tuple) and
+            len(key) > len(self.dshape.shape) and
+            isinstance(self.dshape[-1], datashape.Record)):
+            rec_key = get(key[-1], self.dshape[-1].names)
+            if isinstance(rec_key, tuple):
+                rec_key = list(rec_key)
+            key = (rec_key,) +  key[:-1]
+            print(key)
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
-            result = np.asarray(arr[key])
+            result = np.asarray(arr.__getitem__(key))
         return nd.asarray(result, access='readonly')
 
     def __setitem__(self, key, value):

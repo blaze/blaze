@@ -50,7 +50,6 @@ class SingleTestClass(MakeFile):
 
         self.assertEquals(str(dd.dshape), 'var * 3 * int32')
 
-        print(dd.as_py())
         self.assertEqual(tuple(map(tuple, dd.as_py())),
                          ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
 
@@ -108,6 +107,31 @@ class SingleTestClass(MakeFile):
         dd[0, 0, :] = 2
         self.assertEqual(nd.as_py(dd.as_dynd()), [[[2, 2], [1, 1]],
                                                   [[1, 1], [1, 1]]])
+
+class TestIndexing(MakeFile):
+    data = [(1, 100),
+            (2, 200),
+            (3, 300)]
+
+    def test_simple(self):
+        dd = HDF5(self.filename, 'data', 'a',
+                  dshape='var * {x: int, y: int}')
+        dd.extend(self.data)
+
+        self.assertEqual(dd.py[0, 0], 1)
+        self.assertEqual(dd.py[0, 'x'], 1)
+        self.assertEqual(tuple(dd.py[[0, 1], 'x']), (1, 2))
+        self.assertEqual(tuple(dd.py[[0, 1], 'y']), (100, 200))
+        self.assertEqual(tuple(dd.py[::2, 'y']), (100, 300))
+
+    @skip("when the world improves")
+    def test_out_of_order_rows(self):
+        assert tuple(dd.py[[1, 0], 'x']) == (2, 1)
+
+    @skip("when the world improves")
+    def test_multiple_fields(self):
+        self.assertEqual(tuple(dd.py[[0, 1], ['x', 'y']]), ((1, 100),
+                                                            (2, 200)))
 
 
 class TestRecordInputs(MakeFile):

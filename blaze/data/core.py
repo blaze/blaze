@@ -109,11 +109,11 @@ class DataDescriptor(object):
         if hasattr(self, '_get_dynd'):
             result = self._get_dynd(key)
         else:
-            result = nd.array(self.get_py(key), dtype=str(subshape))
-        return nd.array(result, dtype=str(subshape))
+            result = nd.array(self.get_py(key), type=str(subshape))
+        return nd.array(result, type=str(subshape))
 
     def __getitem__(self, key):
-        return self.get_py(key)
+        return self.get_dynd(key)
 
     def __iter__(self):
         if not isdimension(self.dshape[0]):
