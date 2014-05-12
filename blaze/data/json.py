@@ -110,23 +110,31 @@ class JSON_Streaming(JSON):
                 return tuple(ndget(key[1:], row) for row in result)
             else:
                 return ndget(key[1:], result)
-        with self.open(self.path) as f:
-            if isinstance(key, _inttypes):
-                result = json.loads(nth(key, f))
-            elif isinstance(key, slice):
-                result = list(map(json.loads,
-                                    islice(f, key.start, key.stop, key.step)))
-            elif isinstance(key, list):
-                result = list(map(json.loads, nth_list(key, f)))
-            else:
-                raise NotImplementedError('Fancy indexing not supported\n'
-                        'Create DyND array and use fancy indexing from there')
+        f = self.open(self.path)
+        if isinstance(key, _inttypes):
+            result = json.loads(nth(key, f))
+        elif isinstance(key, slice):
+            result = list(map(json.loads,
+                                islice(f, key.start, key.stop, key.step)))
+        elif isinstance(key, list):
+            result = list(map(json.loads, nth_list(key, f)))
+        else:
+            raise NotImplementedError('Fancy indexing not supported\n'
+                    'Create DyND array and use fancy indexing from there')
+        try:
+            f.close()
+        except AttributeError:
+            pass
         return result
 
     def _iter(self):
-        with self.open(self.path) as f:
-            for line in f:
-                yield json.loads(line)
+        f = self.open(self.path)
+        for line in f:
+            yield json.loads(line)
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     __iter__ = DataDescriptor.__iter__
 
@@ -134,11 +142,15 @@ class JSON_Streaming(JSON):
         return tuple(self)
 
     def _iterchunks(self, blen=100):
-        with self.open(self.path) as f:
-            for chunk in partition_all(blen, f):
-                text = '[' + ',\r\n'.join(chunk) + ']'
-                dshape = str(len(chunk)) + ' * ' + self.schema
-                yield nd.parse_json(dshape, text)
+        f = self.open(self.path)
+        for chunk in partition_all(blen, f):
+            text = '[' + ',\r\n'.join(chunk) + ']'
+            dshape = str(len(chunk)) + ' * ' + self.schema
+            yield nd.parse_json(dshape, text)
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     @property
     def appendable(self):
@@ -151,15 +163,23 @@ class JSON_Streaming(JSON):
             transform = lambda x: x
         if not self.appendable:
             raise IOError("Read only access")
-        with self.open(self.path, self.mode) as f:
-            f.seek(0, os.SEEK_END)  # go to the end of the file
-            for row in rows:
-                json.dump(transform(row), f)
-                f.write('\n')
+        f = self.open(self.path, self.mode)
+        f.seek(0, os.SEEK_END)  # go to the end of the file
+        for row in rows:
+            json.dump(transform(row), f)
+            f.write('\n')
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     def _chunks(self, blen=100):
-        with self.open(self.path) as f:
-            for chunk in partition_all(blen, f):
-                text = '[' + ',\r\n'.join(chunk) + ']'
-                dshape = str(len(chunk) * self.schema)
-                yield nd.parse_json(dshape, text)
+        f = self.open(self.path)
+        for chunk in partition_all(blen, f):
+            text = '[' + ',\r\n'.join(chunk) + ']'
+            dshape = str(len(chunk) * self.schema)
+            yield nd.parse_json(dshape, text)
+        try:
+            f.close()
+        except AttributeError:
+            pass

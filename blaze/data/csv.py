@@ -96,8 +96,12 @@ class CSV(DataDescriptor):
         self._schema = schema
 
         if os.path.exists(path) and mode != 'w':
-            with self.open(path, 'r') as f:
-                sample = f.read(1024)
+            f = self.open(path, 'r')
+            sample = f.read(1024)
+            try:
+                f.close()
+            except AttributeError:
+                pass
         else:
             sample = ''
         dialect = discover_dialect(sample, dialect, **kwargs)
@@ -118,46 +122,60 @@ class CSV(DataDescriptor):
             else:
                 return get(key[1], result)
 
-        with self.open(self.path, self.mode) as f:
-            if self.header:
-                next(f)
-            if isinstance(key, compatibility._inttypes):
-                line = nth(key, f)
-                result = next(csv.reader([line], **self.dialect))
-            elif isinstance(key, list):
-                lines = nth_list(key, f)
-                result = list(csv.reader(lines, **self.dialect))
-            elif isinstance(key, slice):
-                start, stop, step = key.start, key.stop, key.step
-                result = list(csv.reader(it.islice(f, start, stop, step),
-                                         **self.dialect))
-            else:
-                raise IndexError("key '%r' is not valid" % key)
+        f = self.open(self.path, self.mode)
+        if self.header:
+            next(f)
+        if isinstance(key, compatibility._inttypes):
+            line = nth(key, f)
+            result = next(csv.reader([line], **self.dialect))
+        elif isinstance(key, list):
+            lines = nth_list(key, f)
+            result = list(csv.reader(lines, **self.dialect))
+        elif isinstance(key, slice):
+            start, stop, step = key.start, key.stop, key.step
+            result = list(csv.reader(it.islice(f, start, stop, step),
+                                     **self.dialect))
+        else:
+            raise IndexError("key '%r' is not valid" % key)
+        try:
+            f.close()
+        except AttributeError:
+            pass
         return result
 
     def _iter(self):
-        with self.open(self.path, 'r') as f:
-            if self.header:
-                next(f)  # burn header
-            for row in csv.reader(f, **self.dialect):
-                yield row
+        f = self.open(self.path, 'r')
+        if self.header:
+            next(f)  # burn header
+        for row in csv.reader(f, **self.dialect):
+            yield row
+
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     def _extend(self, rows):
         rows = iter(rows)
-        with self.open(self.path, self.mode) as f:
-            if self.header:
-                next(f)
-            row = next(rows)
-            if isinstance(row, dict):
-                schema = datashape.dshape(self.schema)
-                row = coerce_record_to_row(schema, row)
-                rows = (coerce_record_to_row(schema, row) for row in rows)
+        f = self.open(self.path, self.mode)
+        if self.header:
+            next(f)
+        row = next(rows)
+        if isinstance(row, dict):
+            schema = datashape.dshape(self.schema)
+            row = coerce_record_to_row(schema, row)
+            rows = (coerce_record_to_row(schema, row) for row in rows)
 
-            # Write all rows to file
-            f.seek(0, os.SEEK_END)  # go to the end of the file
-            writer = csv.writer(f, **self.dialect)
-            writer.writerow(row)
-            writer.writerows(rows)
+        # Write all rows to file
+        f.seek(0, os.SEEK_END)  # go to the end of the file
+        writer = csv.writer(f, **self.dialect)
+        writer.writerow(row)
+        writer.writerows(rows)
+
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     def remove(self):
         """Remove the persistent storage."""
