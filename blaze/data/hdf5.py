@@ -117,7 +117,7 @@ class HDF5(DataDescriptor):
                 yield np.array(arr[i:i+blen])
 
     def as_dynd(self):
-        return self[:]
+        return self.dynd[:]
 
     def _extend_chunks(self, chunks):
         if 'w' not in self.mode and 'a' not in self.mode:

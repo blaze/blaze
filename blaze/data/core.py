@@ -112,9 +112,6 @@ class DataDescriptor(object):
             result = nd.array(self.get_py(key), type=str(subshape))
         return nd.array(result, type=str(subshape))
 
-    def __getitem__(self, key):
-        return self.get_dynd(key)
-
     def __iter__(self):
         if not isdimension(self.dshape[0]):
             raise TypeError("Data Descriptor not iterable, has dshape %s" %

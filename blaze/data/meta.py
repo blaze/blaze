@@ -62,4 +62,4 @@ class Stack(DataDescriptor):
             else:
                 return result._get_py(key[1:])
         else:
-            return self.descriptors[key][:]
+            return self.descriptors[key].py[:]

@@ -105,7 +105,7 @@ class JSON_Streaming(JSON):
 
     def _get_py(self, key):
         if isinstance(key, tuple):
-            result = self[key[0]]
+            result = self.py[key[0]]
             if isinstance(key[0], (list, slice)):
                 return tuple(ndget(key[1:], row) for row in result)
             else:
