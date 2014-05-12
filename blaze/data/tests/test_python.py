@@ -21,3 +21,7 @@ def test_basic():
     assert nd.as_py(chunks[0]) == list(map(list, data))
 
     assert isinstance(dd.as_dynd(), nd.array)
+
+    assert tuple(dd.py[0]) == data[0]
+    assert dd.py[0, 1] == data[0][1]
+    assert tuple(dd.py[[0, 1], 1]) == (1, 2)
