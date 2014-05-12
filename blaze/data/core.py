@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from itertools import chain
 from dynd import nd
 import datashape
+from datashape.internal_utils import IndexCallable
 
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
@@ -84,6 +85,19 @@ class DataDescriptor(object):
 
     def __array__(self):
         return nd.as_numpy(self.as_dynd())
+
+    @property
+    def py(self):
+        return IndexCallable(self.get_py)
+
+    def get_py(self, key):
+        key = ordered_index(key, self.dshape)
+        subshape = self.dshape._subshape(key)
+        if hasattr(self, '_get_py'):
+            result = self._get_py(key)
+        else:
+            result = self.as_dynd()[key]
+        return coerce(subshape, result)
 
     def __getitem__(self, key):
         key = ordered_index(key, self.dshape)

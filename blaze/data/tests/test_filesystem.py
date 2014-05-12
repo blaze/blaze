@@ -40,8 +40,8 @@ class Test_Files(TestCase):
             chunks = list(dd.chunks())
             assert all(isinstance(chunk, nd.array) for chunk in chunks)
 
-            self.assertEqual(tuple(dd[[0, 2], 0]), (1, 3))
-            self.assertEqual(tuple(dd[2, [1, 0]]), (3, 3))
+            self.assertEqual(tuple(dd.py[[0, 2], 0]), (1, 3))
+            self.assertEqual(tuple(dd.py[2, [1, 0]]), (3, 3))
 
 
 class Test_Stack(TestCase):
@@ -72,9 +72,9 @@ class Test_Stack(TestCase):
             chunks = dd.chunks()
             assert all(isinstance(chunk, nd.array) for chunk in chunks)
 
-            self.assertEqual(tuple(dd[[0, 2], 0, 0]), (1, 5))
-            self.assertEqual(tuplify(tuple(dd[0])), ((1, 1), (2, 2)))
-            self.assertEqual(tuplify(tuple(dd[0, :, [1]])), ((1,), (2,)))
+            self.assertEqual(tuple(dd.py[[0, 2], 0, 0]), (1, 5))
+            self.assertEqual(tuplify(tuple(dd.py[0])), ((1, 1), (2, 2)))
+            self.assertEqual(tuplify(tuple(dd.py[0, :, [1]])), ((1,), (2,)))
 
 
 
@@ -97,5 +97,5 @@ class Test_Stack_JSON(TestCase):
 
             self.assertEqual(tuplify(dd.as_py()), expected)
 
-            self.assertEqual(tuplify(dd[::2, 1, :]), ((3, 4), (11, 12)))
-            self.assertEqual(tuplify(dd[::2, 1, 'x']), (3, 11))
+            self.assertEqual(tuplify(dd.py[::2, 1, :]), ((3, 4), (11, 12)))
+            self.assertEqual(tuplify(dd.py[::2, 1, 'x']), (3, 11))
