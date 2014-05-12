@@ -7,23 +7,14 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape import dshape, var, DataShape, Record
+import datashape
 import operator
+from .core import Expr, Scalar
 
-class TableExpr(object):
-
-    @property
-    def args(self):
-        return tuple(getattr(self, slot) for slot in self.__slots__)
-
-    def __eq__(self, other):
-        return type(self) == type(other) and self.args == other.args
-
-    def __hash__(self):
-        return hash((type(self), self.args))
-
+class TableExpr(Expr):
     @property
     def dshape(self):
-        return var * self.schema
+        return datashape.var * self.schema
 
     @property
     def columns(self):
@@ -43,22 +34,6 @@ class TableExpr(object):
             return Column(self, key)
 
 
-    def __str__(self):
-        return "%s(%s)" % (type(self).__name__, ', '.join(map(str, self.args)))
-
-    def __repr__(self):
-        return str(self)
-
-    def traverse(self):
-        """ Traverse over tree, yielding all subtrees and leaves """
-        yield self
-        traversals = (arg.traverse() if isinstance(arg, TableExpr) else [arg]
-                        for arg in self.args)
-        for trav in traversals:
-            for item in trav:
-                yield item
-
-
 class TableSymbol(TableExpr):
     __slots__ = 'schema',
 
@@ -75,10 +50,10 @@ class Projection(TableExpr):
     SELECT a, b, c
     FROM table
     """
-    __slots__ = 'table', '_columns'
+    __slots__ = 'parent', '_columns'
 
     def __init__(self, table, columns):
-        self.table = table
+        self.parent = table
         self._columns = tuple(columns)
 
     @property
@@ -87,11 +62,11 @@ class Projection(TableExpr):
 
     @property
     def schema(self):
-        d = self.table.schema[0].fields
+        d = self.parent.schema[0].fields
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
     def __str__(self):
-        return '%s[%s]' % (self.table,
+        return '%s[%s]' % (self.parent,
                            ', '.join(["'%s'" % col for col in self.columns]))
 
 
@@ -102,11 +77,15 @@ class Column(Projection):
     FROM table
     """
     def __init__(self, table, column):
-        self.table = table
+        self.parent = table
         self._columns = (column,)
 
     def __str__(self):
-        return "%s['%s']" % (self.table, self.columns[0])
+        return "%s['%s']" % (self.parent, self.columns[0])
+
+    @property
+    def schema(self):
+        return dshape(self.parent.schema[0][self.columns[0]])
 
     def __eq__(self, other):
         return Eq(self, other)
@@ -158,18 +137,18 @@ class Selection(TableExpr):
     """
     WHERE a op b
     """
-    __slots__ = 'table', 'predicate'
+    __slots__ = 'parent', 'predicate'
 
     def __init__(self, table, predicate):
-        self.table = table
+        self.parent = table
         self.predicate = predicate  # A Relational
 
     def __str__(self):
-        return "%s[%s]" % (self.table, self.predicate)
+        return "%s[%s]" % (self.parent, self.predicate)
 
     @property
     def schema(self):
-        return self.table.schema
+        return self.parent.schema
 
 
 class ColumnWise(Column):
@@ -263,13 +242,13 @@ class Join(TableExpr):
         return dshape(Record(rec))
 
 class UnaryOp(ColumnWise):
-    __slots__ = 'table',
+    __slots__ = 'parent',
 
     def __init__(self, table):
-        self.table = table
+        self.parent = table
 
     def __str__(self):
-        return '%s(%s)' % (self.symbol, self.table)
+        return '%s(%s)' % (self.symbol, self.parent)
 
     @property
     def symbol(self):
@@ -280,3 +259,27 @@ class cos(UnaryOp): pass
 class tan(UnaryOp): pass
 class exp(UnaryOp): pass
 class log(UnaryOp): pass
+
+class Reduction(Scalar):
+    __slots__ = 'parent',
+
+    def __init__(self, table):
+        self.parent = table
+
+    @property
+    def dshape(self):
+        return dshape(self.parent.dshape.subarray(1))
+
+    @property
+    def symbol(self):
+        return type(self).__name__
+
+
+class any(Reduction): pass
+class all(Reduction): pass
+class sum(Reduction): pass
+class max(Reduction): pass
+class min(Reduction): pass
+class mean(Reduction): pass
+class var(Reduction): pass
+class std(Reduction): pass

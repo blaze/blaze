@@ -13,6 +13,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from blaze.compatibility import builtins
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
@@ -22,15 +23,17 @@ seq = (tuple, list, Iterator)
 
 @dispatch(Projection, seq)
 def compute(t, l):
-    indices = [t.table.columns.index(col) for col in t.columns]
+    parent = compute(t.parent, l)
+    indices = [t.parent.columns.index(col) for col in t.columns]
     get = operator.itemgetter(*indices)
-    return (get(x) for x in l)
+    return (get(x) for x in parent)
 
 
 @dispatch(Column, seq)
 def compute(t, l):
-    index = t.table.columns.index(t.columns[0])
-    return (x[index] for x in l)
+    parent = compute(t.parent, l)
+    index = t.parent.columns.index(t.columns[0])
+    return (x[index] for x in parent)
 
 
 @dispatch(BinOp, seq)
@@ -63,8 +66,10 @@ def compute(t, l):
 
 @dispatch(Selection, seq)
 def compute(t, l):
-    l, l2 = itertools.tee(l)
-    return (x for x, tf in zip(compute(t.table, l), compute(t.predicate, l2))
+    l1, l2 = itertools.tee(l)
+    parent = compute(t.parent, l1)
+    predicate = compute(t.predicate, l2)
+    return (x for x, tf in zip(parent, predicate)
               if tf)
 
 
@@ -75,5 +80,44 @@ def compute(t, l):
 
 @dispatch(UnaryOp, seq)
 def compute(t, l):
+    parent = compute(t.parent, l)
     op = getattr(math, t.symbol)
-    return (op(x) for x in compute(t.table, l))
+    return (op(x) for x in parent)
+
+@dispatch(Reduction, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    op = getattr(builtins, t.symbol)
+    return op(parent)
+
+def _mean(seq):
+    total = 0
+    count = 0
+    for item in seq:
+        total += item
+        count += 1
+    return float(total) / count
+
+def _var(seq):
+    total = 0
+    total_squared = 0
+    count = 0
+    for item in seq:
+        total += item
+        total_squared += item ** 2
+        count += 1
+    return 1.0*total_squared/count - (1.0*total/count) ** 2
+
+@dispatch(mean, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return _mean(parent)
+
+@dispatch(var, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return _var(parent)
+
+@dispatch(std, seq)
+def compute(t, l):
+    return math.sqrt(compute(var(t.parent), l))

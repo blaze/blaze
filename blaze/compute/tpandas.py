@@ -24,22 +24,28 @@ import numpy as np
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
-    return compute(t.table, df)[list(t.columns)]
+    parent = compute(t.parent, df)
+    return parent[list(t.columns)]
 
 
 @dispatch(Column, DataFrame)
 def compute(t, df):
-    return compute(t.table, df)[t.columns[0]]
+    parent = compute(t.parent, df)
+    return parent[t.columns[0]]
 
 
 @dispatch(BinOp, DataFrame)
 def compute(t, df):
-    return t.op(compute(t.lhs, df), compute(t.rhs, df))
+    lhs = compute(t.lhs, df)
+    rhs = compute(t.rhs, df)
+    return t.op(lhs, rhs)
 
 
 @dispatch(Selection, DataFrame)
 def compute(t, df):
-    return compute(t.table, df)[compute(t.predicate, df)]
+    parent = compute(t.parent, df)
+    predicate = compute(t.predicate, df)
+    return parent[predicate]
 
 
 @dispatch(TableSymbol, DataFrame)
@@ -86,5 +92,14 @@ def compute(t, lhs, rhs):
 
 @dispatch(UnaryOp, DataFrame)
 def compute(t, s):
+    parent = compute(t.parent, s)
     op = getattr(np, t.symbol)
-    return op(compute(t.table, s))
+    return op(parent)
+
+
+@dispatch(Reduction, DataFrame)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    assert isinstance(parent, Series)
+    op = getattr(Series, t.symbol)
+    return op(parent)

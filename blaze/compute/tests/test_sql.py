@@ -4,6 +4,7 @@ from blaze.compute.sql import compute, computefull
 from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
+from blaze.compatibility import skip
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 
@@ -78,3 +79,15 @@ def test_join():
 
 def test_unary_op():
     assert str(compute(exp(t['amount']), s)) == str(sa.func.exp(s.c.amount))
+
+
+def test_reductions():
+    assert str(compute(sum(t['amount']), s)) == \
+            str(sa.sql.functions.sum(s.c.amount))
+    assert str(compute(mean(t['amount']), s)) == \
+            str(sa.sql.func.avg(s.c.amount))
+
+@skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
+def test_binary_reductions():
+    assert str(compute(any(t['amount'] > 150), s)) == \
+            str(sa.sql.functions.any(s.c.amount > 150))

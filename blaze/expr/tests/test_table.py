@@ -20,10 +20,12 @@ def test_column():
 
 
 def test_Projection():
-    t = TableSymbol('{name: string, amount: int, id: int}')
+    t = TableSymbol('{name: string, amount: int, id: int32}')
     p = Projection(t, ['amount', 'name'])
-    assert p.schema == dshape('{amount: int, name: string}')
-    assert t['amount'].dshape == dshape('var * {amount: int}')
+    assert p.schema == dshape('{amount: int32, name: string}')
+    print(t['amount'].dshape)
+    print(dshape('var * int32'))
+    assert t['amount'].dshape == dshape('var * int32')
 
 
 def test_indexing():
@@ -99,3 +101,11 @@ def test_unary_ops():
     t = TableSymbol('{name: string, amount: int}')
     expr = cos(exp(t['amount']))
     assert 'cos' in str(expr)
+
+
+def test_reduction():
+    t = TableSymbol('{name: string, amount: int32}')
+    r = sum(t['amount'])
+    print(type(r.dshape))
+    print(type(dshape('int32')))
+    assert r.dshape == dshape('int32')
