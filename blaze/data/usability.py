@@ -4,7 +4,7 @@ from functools import partial
 from .csv import *
 from .json import *
 from .hdf5 import *
-from .filesystem import *
+from .meta import *
 from .sql import *
 from glob import glob
 import gzip
@@ -50,6 +50,7 @@ def resource(uri, **kwargs):
     """
     descriptor = None
     args = []
+    in_uri = uri
 
     if '::' in uri:
         uri, datapath = uri.rsplit('::')
@@ -73,8 +74,9 @@ def resource(uri, **kwargs):
     except:
         filenames = []
     if len(filenames) > 1:
-        args = [partial(descriptor, *args)]  # pack sub descriptor into args
-        descriptor = Files
+        resources = [resource(in_uri.replace(uri, filename), **kwargs)
+                        for filename in filenames]
+        return Stack(resources)
 
     if descriptor:
         return descriptor(uri, *args, **kwargs)

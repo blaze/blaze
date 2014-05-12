@@ -5,21 +5,28 @@ from dynd import nd
 from unittest import TestCase
 
 class TestDyND(TestCase):
-    def test_basic(self):
-        data = [[1, 1], [2, 2]]
-        arr = nd.array(data, dtype='2 * 2 * int32')
 
-        dd = DyND(arr)
+    data = [[1, 1], [2, 2]]
+    def setUp(self):
+        arr = nd.array(self.data, dtype='2 * 2 * int32')
+        self.dd = DyND(arr)
 
-        assert str(dd.dshape) == '2 * 2 * int32'
-        assert str(dd.schema) == '2 * int32'
+    def test_dshape(self):
+        assert str(self.dd.dshape) == '2 * 2 * int32'
+        assert str(self.dd.schema) == '2 * int32'
 
-        assert list(dd) == [[1, 1], [2, 2]]
-        chunks = list(dd.chunks())
+    def test_iteration(self):
+        assert tuple(map(tuple, self.dd)) == ((1, 1), (2, 2))
+
+    def test_chunks(self):
+        chunks = list(self.dd.chunks())
 
         assert all(isinstance(chunk, nd.array) for chunk in chunks)
-        assert nd.as_py(chunks[0]) == data
+        assert nd.as_py(chunks[0]) == self.data
 
-        assert isinstance(dd.as_dynd(), nd.array)
+    def test_as_dynd(self):
+        assert isinstance(self.dd.as_dynd(), nd.array)
 
-        self.assertRaises(TypeError, lambda: dd.extend([(3, 3)]))
+    def test_indexing(self):
+        assert self.dd.py[0, 0] == 1
+        assert tuple(self.dd.py[:, 0]) == (1, 2)

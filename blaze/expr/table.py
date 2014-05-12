@@ -1,6 +1,6 @@
 """ An abstract Table
 
->>> accounts = TableExpr('{name: string, amount: int}')
+>>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 """
 
@@ -230,7 +230,7 @@ class Sub(Arithmetic):
 
 class Div(Arithmetic):
     symbol = '/'
-    op = operator.div
+    op = operator.truediv
 
 class Pow(Arithmetic):
     symbol = '**'
