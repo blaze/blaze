@@ -127,7 +127,7 @@ def ndget(ind, data):
 @contextmanager
 def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:
-        f = open(filename, "w")
+        f = open(filename, "wt")
         f.write(text)
         try:
             f.close()
@@ -145,7 +145,7 @@ def filetexts(d, open=open):
         a mapping from filename to text like {'a.csv': '1,1\n2,2'}
     """
     for filename, text in d.items():
-        f = open(filename, 'w')
+        f = open(filename, 'wt')
         f.write(text)
         try:
             f.close()

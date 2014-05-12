@@ -77,7 +77,7 @@ class CSV(DataDescriptor):
     appendable = True
     remote = False
 
-    def __init__(self, path, mode='r', schema=None, dshape=None,
+    def __init__(self, path, mode='rt', schema=None, dshape=None,
                  dialect=None, header=None, open=open, **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
@@ -96,7 +96,7 @@ class CSV(DataDescriptor):
         self._schema = schema
 
         if os.path.exists(path) and mode != 'w':
-            f = self.open(path, 'r')
+            f = self.open(path, 'rt')
             sample = f.read(1024)
             try:
                 f.close()
@@ -144,7 +144,7 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self):
-        f = self.open(self.path, 'r')
+        f = self.open(self.path, 'rt')
         if self.header:
             next(f)  # burn header
         for row in csv.reader(f, **self.dialect):

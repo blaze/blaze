@@ -6,7 +6,7 @@ import gzip
 
 def test_gzopen_csv():
     with tmpfile('.csv.gz') as filename:
-        f = gzip.open(filename, 'w')
+        f = gzip.open(filename, 'wt')
         f.write('1,1\n2,2')
         f.close()
 
@@ -21,7 +21,7 @@ def test_gzopen_csv():
 
 def test_gzopen_json():
     with tmpfile('.json.gz') as filename:
-        f = gzip.open(filename, 'w')
+        f = gzip.open(filename, 'wt')
         f.write('[[1, 1], [2, 2]]')
         f.close()
 

@@ -69,13 +69,13 @@ class SQL(DataDescriptor):
 
     Select all from table
     >>> list(dd)
-    [(u'Alice', 100), (u'Bob', 200)]
+    [('Alice', 100), ('Bob', 200)]
 
     Verify that we're actually touching the database
 
     >>> with dd.engine.connect() as conn:
     ...     print(list(conn.execute('SELECT * FROM accounts')))
-    [(u'Alice', 100), (u'Bob', 200)]
+    [('Alice', 100), ('Bob', 200)]
 
 
     Parameters

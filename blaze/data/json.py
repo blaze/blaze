@@ -32,7 +32,7 @@ class JSON(DataDescriptor):
     appendable = False
     remote = False
 
-    def __init__(self, path, mode='r', schema=None, dshape=None, open=open):
+    def __init__(self, path, mode='rt', schema=None, dshape=None, open=open):
         self.path = path
         self.mode = mode
         self.open = open

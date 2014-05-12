@@ -230,7 +230,7 @@ class Sub(Arithmetic):
 
 class Div(Arithmetic):
     symbol = '/'
-    op = operator.div
+    op = operator.truediv
 
 class Pow(Arithmetic):
     symbol = '**'
