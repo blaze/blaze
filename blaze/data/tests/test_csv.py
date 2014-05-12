@@ -4,14 +4,17 @@ import unittest
 import tempfile
 import os
 import csv
+import sys
 
 import datashape
 
+from blaze.compatibility import skipIf
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
 from blaze.data.csv import has_header, discover_dialect
 from blaze.utils import filetext
 from dynd import nd
+
 
 
 def sanitize(lines):
@@ -91,6 +94,7 @@ class Test_Dialect(unittest.TestCase):
     def tearDown(self):
         os.remove(self.csv_file)
 
+    @skipIf(sys.version_info[:2] < (2, 7), 'CSV module unable to parse')
     def test_has_header(self):
         assert has_header(self.buf)
 

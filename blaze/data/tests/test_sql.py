@@ -86,11 +86,11 @@ class SingleTestClass(unittest.TestCase):
         self.assertEqual(set(dd[:, ['id', 'name']]),
                         set(((1, 'Alice'), (2, 'Bob'), (3, 'Charlie'))))
         self.assertEqual(set(dd[:, 'name']), set(('Alice', 'Bob', 'Charlie')))
-        self.assertIn(dd[0, 'name'], ('Alice', 'Bob', 'Charlie'))
+        assert dd[0, 'name'] in ('Alice', 'Bob', 'Charlie')
         self.assertEqual(set(dd[:, 0]), set(dd[:, 'name']))
         self.assertEqual(set(dd[:, [1, 0]]), set(dd[:, ['amount', 'name']]))
         self.assertEqual(len(dd[:2, 'name']), 2)
         self.assertEqual(set(dd[:, :]), set(data))
         self.assertEqual(set(dd[:, :2]), set(dd[:, ['name', 'amount']]))
         self.assertEqual(set(dd[:]), set(dd[:, :]))
-        self.assertIn(dd[0], data)
+        assert dd[0] in data
