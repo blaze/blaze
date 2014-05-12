@@ -51,7 +51,8 @@ class SingleTestClass(MakeFile):
         self.assertEquals(str(dd.dshape), 'var * 3 * int32')
 
         print(dd.as_py())
-        self.assertEqual(dd.as_py(), ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
+        self.assertEqual(tuple(map(tuple, dd.as_py())),
+                         ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
 
     def test_extend_chunks(self):
         stdout.flush()

@@ -8,7 +8,7 @@ import json
 
 from blaze.data import Concat, CSV, Stack, JSON_Streaming
 from blaze.utils import filetexts
-
+from blaze.data.utils import tuplify
 
 
 
@@ -27,21 +27,21 @@ class Test_Files(TestCase):
 
             expected = ((1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7))
 
-            self.assertEqual(tuple(dd), expected)
+            self.assertEqual(tuplify(tuple(dd)), expected)
 
             result = dd.as_dynd()
             expected2 = nd.array(expected, dtype='int32')
             self.assertEqual(nd.as_py(result),
                              nd.as_py(expected2))
 
-            self.assertEqual(tuple(dd), expected)
-            self.assertEqual(tuple(dd), expected)  # Not one use only
+            self.assertEqual(tuplify(tuple(dd)), expected)
+            self.assertEqual(tuplify(tuple(dd)), expected)  # Not one use only
 
             chunks = list(dd.chunks())
             assert all(isinstance(chunk, nd.array) for chunk in chunks)
 
-            self.assertEqual(dd[[0, 2], 0], (1, 3))
-            self.assertEqual(dd[2, [1, 0]], (3, 3))
+            self.assertEqual(tuple(dd[[0, 2], 0]), (1, 3))
+            self.assertEqual(tuple(dd[2, [1, 0]]), (3, 3))
 
 
 class Test_Stack(TestCase):
@@ -59,22 +59,22 @@ class Test_Stack(TestCase):
                         ((3, 3), (4, 4)),
                         ((5, 5), (6, 6)))
 
-            self.assertEqual(dd.as_py(), expected)
+            self.assertEqual(tuplify(tuple(dd.as_py())), expected)
 
             result = dd.as_dynd()
             expected2 = nd.array(expected, dtype='int32')
             self.assertEqual(nd.as_py(result),
                              nd.as_py(expected2))
 
-            self.assertEqual(tuple(dd), expected)
-            self.assertEqual(tuple(dd), expected)  # Not one use only
+            self.assertEqual(tuplify(tuple(dd)), expected)
+            self.assertEqual(tuplify(tuple(dd)), expected)  # Not one use only
 
             chunks = dd.chunks()
             assert all(isinstance(chunk, nd.array) for chunk in chunks)
 
-            self.assertEqual(dd[[0, 2], 0, 0], (1, 5))
-            self.assertEqual(dd[0], ((1, 1), (2, 2)))
-            self.assertEqual(dd[0, :, [1]], ((1,), (2,)))
+            self.assertEqual(tuple(dd[[0, 2], 0, 0]), (1, 5))
+            self.assertEqual(tuplify(tuple(dd[0])), ((1, 1), (2, 2)))
+            self.assertEqual(tuplify(tuple(dd[0, :, [1]])), ((1,), (2,)))
 
 
 
@@ -95,7 +95,7 @@ class Test_Stack_JSON(TestCase):
                         ((5,  6), ( 7,  8)),
                         ((9, 10), (11, 12)))
 
-            self.assertEqual(dd.as_py(), expected)
+            self.assertEqual(tuplify(dd.as_py()), expected)
 
-            self.assertEqual(dd[::2, 1, :], ((3, 4), (11, 12)))
-            self.assertEqual(dd[::2, 1, 'x'], (3, 11))
+            self.assertEqual(tuplify(dd[::2, 1, :]), ((3, 4), (11, 12)))
+            self.assertEqual(tuplify(dd[::2, 1, 'x']), (3, 11))

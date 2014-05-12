@@ -16,7 +16,7 @@ def validate(schema, item):
 
 def coerce(dshape, item):
     if isinstance(item, Iterator):
-        item = list(item)
+        item = tuple(item)
     return nd.as_py(nd.array(item, dtype=str(dshape)), tuple=True)
 
 
@@ -124,8 +124,16 @@ def ordered_index(ind, ds):
                 + tupleit(ordered_index(ind[1:], ds.subshape[0])))
     raise NotImplementedError()
 
+
 def tupleit(x):
     if not isinstance(x, tuple):
         return (x,)
+    else:
+        return x
+
+
+def tuplify(x):
+    if isinstance(x, (tuple, list)):
+        return tuple(map(tuplify, x))
     else:
         return x

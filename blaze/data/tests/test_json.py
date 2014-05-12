@@ -9,6 +9,7 @@ import datashape
 
 from blaze.data import JSON, JSON_Streaming
 from blaze.utils import filetext, raises
+from blaze.data.utils import tuplify
 
 # TODO: This isn't actually being used!
 
@@ -64,7 +65,7 @@ class TestBigJSON(unittest.TestCase):
 
     def test_as_py(self):
         dd = JSON(self.filename, 'r', dshape=self.dshape)
-        self.assertEqual(dd.as_py(), self.ordered)
+        self.assertEqual(tuplify(dd.as_py()), self.ordered)
 
 
 json_buf = u"[1, 2, 3, 4, 5]"
@@ -127,18 +128,18 @@ class Test_Indexing(AccountTestData):
             os.remove(self.fn)
 
     def test_indexing_basic(self):
-        assert self.dd[0] == self.tuples[0]
-        assert self.dd[0:3] == self.tuples[0:3]
-        assert self.dd[0::2] == self.tuples[0::2]
-        self.assertEqual(self.dd[[3, 1, 3]],
+        assert tuplify(self.dd[0]) == self.tuples[0]
+        assert tuplify(self.dd[0:3]) == self.tuples[0:3]
+        assert tuplify(self.dd[0::2]) == self.tuples[0::2]
+        self.assertEqual(tuplify(self.dd[[3, 1, 3]]),
                          tuple(self.tuples[i] for i in [3, 1, 3]))
 
     def test_indexing_nested(self):
-        assert self.dd[0, 'name'] == self.tuples[0][0]
-        assert self.dd[0, 0] == self.tuples[0][0]
-        self.assertEqual(self.dd[[2, 0], 'name'], ('Bob', 'Alice'))
-        self.assertEqual(self.dd[[2, 0], 0], ('Bob', 'Alice'))
-        self.assertEqual(self.dd[[2, 0], [1, 0]], ((10, 'Bob'),
+        assert tuplify(self.dd[0, 'name']) == self.tuples[0][0]
+        assert tuplify(self.dd[0, 0]) == self.tuples[0][0]
+        self.assertEqual(tuplify(self.dd[[2, 0], 'name']), ('Bob', 'Alice'))
+        self.assertEqual(tuplify(self.dd[[2, 0], 0]), ('Bob', 'Alice'))
+        self.assertEqual(tuplify(self.dd[[2, 0], [1, 0]]), ((10, 'Bob'),
                                                    (100, 'Alice')))
 
 
@@ -176,19 +177,19 @@ class Test_StreamingTransfer(AccountTestData):
         with filetext('') as fn:
             dd = JSON_Streaming(fn, mode='r+', schema=self.schema)
             dd.extend(self.dicts)
-            self.assertEquals(tuple(dd), self.tuples)
+            self.assertEquals(tuplify(tuple(dd)), self.tuples)
 
     def test_extend_tuples(self):
         with filetext('') as fn:
             dd = JSON_Streaming(fn, mode='r+', schema=self.schema)
             dd.extend(self.tuples)
-            self.assertEquals(tuple(dd), self.tuples)
+            self.assertEquals(tuplify(tuple(dd)), self.tuples)
 
     def test_getitem(self):
         with filetext(self.text) as fn:
             dd = JSON_Streaming(fn, mode='r', schema=self.schema)
-            self.assertEqual(dd[0], self.tuples[0])
-            self.assertEqual(dd[2:4], self.tuples[2:4])
+            self.assertEqual(tuplify(dd[0]), self.tuples[0])
+            self.assertEqual(tuplify(dd[2:4]), self.tuples[2:4])
 
     def test_as_dynd(self):
         with filetext(self.text) as fn:

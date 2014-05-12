@@ -57,7 +57,8 @@ class DataDescriptor(object):
                              for chunk in chunks))
 
     def _extend_chunks(self, chunks):
-        self.extend((row for chunk in chunks for row in nd.as_py(chunk)))
+        self.extend((row for chunk in chunks for row in nd.as_py(chunk,
+            tuple=True)))
 
     def chunks(self, **kwargs):
         def dshape(chunk):
@@ -79,7 +80,7 @@ class DataDescriptor(object):
         if isdimension(self.dshape[0]):
             return tuple(self)
         else:
-            return nd.as_py(self.as_dynd(), tuple=True)
+            return tuple(nd.as_py(self.as_dynd(), tuple=True))
 
     def __array__(self):
         return nd.as_numpy(self.as_dynd())
@@ -98,7 +99,6 @@ class DataDescriptor(object):
             raise TypeError("Data Descriptor not iterable, has dshape %s" %
                             self.dshape)
         schema = self.dshape.subshape[0]
-        transform = lambda row: coerce(schema, row)
         try:
             seq = self._iter()
         except NotImplementedError:

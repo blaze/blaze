@@ -1,4 +1,5 @@
 from blaze.data.python import *
+from blaze.data.utils import tuplify
 from dynd import nd
 
 def test_basic():
@@ -10,7 +11,7 @@ def test_basic():
     assert str(dd.dshape) == 'var * 2 * int32'
     assert str(dd.schema) == '2 * int32'
 
-    assert tuple(dd) == data
+    assert tuplify(tuple(dd)) == data
     print(dd.as_py())
     assert dd.as_py() == data
 
