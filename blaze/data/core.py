@@ -79,7 +79,7 @@ class DataDescriptor(object):
         if isdimension(self.dshape[0]):
             return tuple(self)
         else:
-            return coerce_to_ordered(self.dshape, nd.as_py(self.as_dynd()))
+            return nd.as_py(self.as_dynd(), tuple=True)
 
     def __array__(self):
         return nd.as_numpy(self.as_dynd())
@@ -91,24 +91,25 @@ class DataDescriptor(object):
             result = self._get_py(key)
         else:
             result = self.as_dynd()[key]
-        return coerce_to_ordered(subshape, coerce(subshape, result))
+        return coerce(subshape, result)
 
     def __iter__(self):
         if not isdimension(self.dshape[0]):
             raise TypeError("Data Descriptor not iterable, has dshape %s" %
                             self.dshape)
         schema = self.dshape.subshape[0]
-        transform = lambda row: coerce_to_ordered(schema, coerce(schema, row))
+        transform = lambda row: coerce(schema, row)
         try:
-            for row in self._iter():
-                yield transform(row)
+            seq = self._iter()
         except NotImplementedError:
-            py = nd.as_py(self.as_dynd())
-            if isdimension(self.dshape[0]):
-                for row in py:
-                    yield transform(row)
-            else:
-                yield transform(py)
+            seq = iter(nd.as_py(self.as_dynd(), tuple=True))
+        if not isdimension(self.dshape[0]):
+            yield coerce(self.dshape, nd.as_py(self.as_dynd(), tuple=True))
+        else:
+            for block in partition_all(100, seq):
+                x = coerce(len(block) * schema, block)
+                for row in x:
+                    yield row
 
     def _iter(self):
         raise NotImplementedError()

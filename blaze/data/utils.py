@@ -17,7 +17,7 @@ def validate(schema, item):
 def coerce(dshape, item):
     if isinstance(item, Iterator):
         item = list(item)
-    return nd.as_py(nd.array(item, dtype=str(dshape)))
+    return nd.as_py(nd.array(item, dtype=str(dshape)), tuple=True)
 
 
 def coerce_to_ordered(ds, data):
