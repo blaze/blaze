@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Data Descriptors &mdash; Blaze 0.4.1 documentation</title>
+    <title>Data Descriptors &mdash; Blaze 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,13 +26,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.4.1 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.5 documentation" href="index.html" />
     <link rel="next" title="Blaze Functions" href="blaze_function.html" />
-    <link rel="prev" title="Datashape Binary Data Layout" href="datashape-binary.html" />
+    <link rel="prev" title="Datashape" href="datashape.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -54,11 +55,11 @@
         </li>
         
         <li>
-            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -85,10 +86,7 @@
 <li><a class="reference internal" href="#">Data Descriptors</a><ul>
 <li><a class="reference internal" href="#python-style-iteration">Python-Style Iteration</a></li>
 <li><a class="reference internal" href="#python-style-getitem">Python-Style GetItem</a></li>
-<li><a class="reference internal" href="#element-readiteration">Element ReadIteration</a></li>
-<li><a class="reference internal" href="#get-element">Get Element</a></li>
-<li><a class="reference internal" href="#element-writeiteration">Element WriteIteration</a></li>
-<li><a class="reference internal" href="#set-element">Set Element</a></li>
+<li><a class="reference internal" href="#memory-access">Memory Access</a></li>
 </ul>
 </li>
 </ul>
@@ -139,50 +137,11 @@ must point into the same data.</p>
 actual data values. For this, you must use the element
 access mechanisms.</p>
 </div>
-<div class="section" id="element-readiteration">
-<h2>Element ReadIteration<a class="headerlink" href="#element-readiteration" title="Permalink to this headline">¶</a></h2>
-<p>A data descriptor must expose a method element_read_iter_interface(),
-returning a subclass of blaze.datadescriptor.IReadElementIter.
-This object must be a Python iterator, returning raw pointer
-values as Python ints.</p>
-<p>It may also expose methods c_read_iter and llvm_read_iter, which return
-C function pointers/data and LLVM inlinable code respectively
-to do the iteration.</p>
-<p>This iteration is for read access only, so if the data is on
-disk, compressed, or requires any other form of transformation
-the iterator should use a temporary intermediate buffer. Each
-iteration step is allowed to invalidate all previous pointers
-returned, in order to facilitate such buffering.</p>
-<p>The elements pointed to by the pointers returned must be in
-C order, contiguous, and follow C alignment of the
-platform/compiler Python was built with.</p>
-</div>
-<div class="section" id="get-element">
-<h2>Get Element<a class="headerlink" href="#get-element" title="Permalink to this headline">¶</a></h2>
-<p>A data descriptor must expose a method get_element_interface,
-which returns an object which can do a getitem for a fixed
-number of integer indices. Its get method must accept
-a tuple of nindex integers, and return a raw pointer to
-the data.</p>
-<p>The returned object may also implement c_getter and llvm_getter,
-which produce C function pointers/data and inlinable LLVM
-code to do the same get operation.</p>
-<p>Any get operation invalidates all previous pointers returned.
-This interface requirement is so that a buffer/element cache
-may be used by the implementation.</p>
-<p>The elements pointed to by the pointers returned must be in
-C order, contiguous, and follow C alignment of the
-platform/compiler Python was built with.</p>
-</div>
-<div class="section" id="element-writeiteration">
-<h2>Element WriteIteration<a class="headerlink" href="#element-writeiteration" title="Permalink to this headline">¶</a></h2>
-<p>This is the equivalent of ReadIteration for writing to
-a writable data descriptor. Details to be fleshed out.</p>
-</div>
-<div class="section" id="set-element">
-<h2>Set Element<a class="headerlink" href="#set-element" title="Permalink to this headline">¶</a></h2>
-<p>This is the equivalent of get element for writing to
-a writable data descriptor. Details to be fleshed out.</p>
+<div class="section" id="memory-access">
+<h2>Memory Access<a class="headerlink" href="#memory-access" title="Permalink to this headline">¶</a></h2>
+<p>To get data from the data descriptors in a raw memory form,
+there is a way to retrieve it as a DyND array via the
+<tt class="docutils literal"><span class="pre">ddesc.dynd_arr()</span></tt> method</p>
 </div>
 </div>
 

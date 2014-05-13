@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -5,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Quickstart &mdash; Blaze 0.4.1 documentation</title>
+    <title>Quickstart &mdash; Blaze 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,30 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <style>
-      @media only screen and (max-width: 760px) {
-        .mobile-test { display: none; }
-      }
-    </style>
-    <script type="text/javascript">
-      $(document).ready(function() {   
-        var is_mobile = false;
-
-        if( $('.mobile-test').css('display')=='none' ) {
-            is_mobile = true;       
-        }
-
-        if(is_mobile){
-          $('ul#nav').attr('data-spy', '')  //if mobile, turn off sticky menu
-        }
-
-      });
-    </script>
-    <link rel="top" title="Blaze 0.4.1 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.5 documentation" href="index.html" />
     <link rel="next" title="Catalog" href="catalog.html" />
     <link rel="prev" title="Overview" href="overview.html" />
 <meta charset='utf-8'>
@@ -58,7 +41,7 @@
 
   </head>
   <body>
-    <div class="mobile-test"></div>
+
 <div class="container">
   <!-- This is copied from /web, find better solution -->
   <div class="masthead">
@@ -67,16 +50,16 @@
             <a href="/index.html"><i class="icon-home"></i> Blaze</a>
         </li>
         
-        <li>
+        <li class="active">
             <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
         </li>
         
-        <li class="active">
-            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+        <li>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -102,6 +85,7 @@
 <ul>
 <li><a class="reference internal" href="#">Quickstart</a><ul>
 <li><a class="reference internal" href="#blaze-arrays">Blaze Arrays</a></li>
+<li><a class="reference internal" href="#simple-calculations">Simple Calculations</a></li>
 <li><a class="reference internal" href="#iterators">Iterators</a></li>
 <li><a class="reference internal" href="#disk-backed-array">Disk Backed Array</a></li>
 </ul>
@@ -135,7 +119,7 @@ data type to use.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
 <span class="go">array([[1, 2],</span>
 <span class="go">       [3, 4]],</span>
-<span class="go">      dshape=&#39;2, 2, int32&#39;)</span>
+<span class="go">      dshape=&#39;2 * 2 * int32&#39;)</span>
 </pre></div>
 </div>
 <p>You can override the data type by providing the <cite>dshape</cite>
@@ -143,7 +127,7 @@ parameter.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
 <span class="go">array([[ 1.,  2.],</span>
 <span class="go">       [ 3.,  4.]],</span>
-<span class="go">      dshape=&#39;2, 2, float64&#39;)</span>
+<span class="go">      dshape=&#39;2 * 2 * float64&#39;)</span>
 </pre></div>
 </div>
 <p>Blaze has a slightly more general data model than NumPy,
@@ -152,7 +136,7 @@ for example it supports variable-sized arrays.</p>
 <span class="go">array([[     1],</span>
 <span class="go">       [     2,      3,      4],</span>
 <span class="go">       [     5,      6]],</span>
-<span class="go">      dshape=&#39;3, var, int32&#39;)</span>
+<span class="go">      dshape=&#39;3 * var * int32&#39;)</span>
 </pre></div>
 </div>
 <p>Its support for strings includes variable-sized strings
@@ -160,7 +144,14 @@ as well.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span><span class="s">&#39;test&#39;</span><span class="p">,</span> <span class="s">&#39;one&#39;</span><span class="p">,</span> <span class="s">&#39;two&#39;</span><span class="p">,</span> <span class="s">&#39;three&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;braca&#39;</span><span class="p">,</span> <span class="s">&#39;dabra&#39;</span><span class="p">]])</span>
 <span class="go">array([[&#39;test&#39;, &#39;one&#39;, &#39;two&#39;, &#39;three&#39;],</span>
 <span class="go">       [&#39;a&#39;, &#39;braca&#39;, &#39;dabra&#39;]],</span>
-<span class="go">      dshape=&#39;2, var, string&#39;)</span>
+<span class="go">      dshape=&#39;2 * var * string&#39;)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="simple-calculations">
+<h2>Simple Calculations<a class="headerlink" href="#simple-calculations" title="Permalink to this headline">¶</a></h2>
+<p>Blaze supports ufuncs and arithmetic similarly to NumPy.</p>
+<div class="highlight-python"><div class="highlight"><pre>
 </pre></div>
 </div>
 </div>
@@ -170,17 +161,17 @@ as well.</p>
 automatically deducing the dimensions and type just like it does
 for lists.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">dshape</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">alst</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">alst</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">(</span><span class="n">alst</span><span class="o">.</span><span class="n">__iter__</span><span class="p">())</span>
 <span class="go">array([1, 2, 3],</span>
-<span class="go">      dshape=&#39;3, int32&#39;)</span>
+<span class="go">      dshape=&#39;3 * int32&#39;)</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([</span><span class="n">j</span><span class="o">-</span><span class="n">i</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
 <span class="go">array([[ 0,  1,  2],</span>
 <span class="go">       [-1,  0,  1],</span>
 <span class="go">       [-2, -1,  0]],</span>
-<span class="go">      dshape=&#39;3, 3, int32&#39;)</span>
+<span class="go">      dshape=&#39;3 * 3 * int32&#39;)</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randrange</span>
@@ -189,35 +180,42 @@ for lists.</p>
 <span class="go">       [           5,            2,            6,            4],</span>
 <span class="go">       [           9,            2,            2,            5],</span>
 <span class="go">       [           5]],</span>
-<span class="go">      dshape=&#39;4, var, int32&#39;)</span>
+<span class="go">      dshape=&#39;4 * var * int32&#39;)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="disk-backed-array">
 <h2>Disk Backed Array<a class="headerlink" href="#disk-backed-array" title="Permalink to this headline">¶</a></h2>
-<p>Blaze uses the BLZ format for storing compressed, chunked
-arrays on disk. These can be used through the Storage
-object.</p>
+<p>Blaze can currently use the BLZ and HDF5 format for storing
+compressed, chunked arrays on disk. These can be used through the
+data descriptors:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">blaze</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">dshape</span><span class="p">(</span><span class="s">&#39;2, 2, int32&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]],</span> <span class="n">ds</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]],</span> <span class="s">&#39;2 * 2 * int32&#39;</span><span class="p">,</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">dd</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
 <span class="go">array([[1, 2],</span>
 <span class="go">       [3, 4]],</span>
-<span class="go">      dshape=&#39;2, 2, int32&#39;)</span>
+<span class="go">      dshape=&#39;2 * 2 * int32&#39;)</span>
 </pre></div>
 </div>
+<p>So, the dataset is now on disk, stored persistently.  Then we can come
+later and, in another python session, gain access to it again:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">blaze</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dd</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span>
 <span class="go">array([[1, 2],</span>
 <span class="go">       [3, 4]],</span>
-<span class="go">      dshape=&#39;2, 2, int32&#39;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;foo.blz&#39;</span><span class="p">))</span>
+<span class="go">      dshape=&#39;2 * 2 * int32&#39;)</span>
 </pre></div>
 </div>
+<p>So, we see that we completely recovered the contents of the original
+array.  Finally, we can get rid of the array completely:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This will remove the dataset from disk, so it could not be restored in
+the future, so if you love your data, be careful with this one.</p>
 </div>
 </div>
 

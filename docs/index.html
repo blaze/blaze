@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -5,17 +6,18 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Blaze &mdash; Blaze 0.4.1 documentation</title>
+    <title>Blaze &mdash; Blaze 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
-   <script type="text/javascript">
+    
+    <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,31 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <style>
-      @media only screen and (max-width: 760px) {
-        .mobile-test { display: none; }
-      }
-    </style>
-    <script type="text/javascript">
-      $(document).ready(function() {   
-        var is_mobile = false;
-
-        if( $('.mobile-test').css('display')=='none' ) {
-            is_mobile = true;       
-        }
-
-        if(is_mobile){
-          $('ul#nav').attr('data-spy', '')  //if mobile, turn off sticky menu
-        }
-
-      });
-    </script>
-    
-    <link rel="top" title="Blaze 0.4.1 documentation" href="#" />
+    <link rel="top" title="Blaze 0.5 documentation" href="#" />
     <link rel="next" title="Install" href="install.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -57,7 +40,7 @@
 
   </head>
   <body>
-    <div class="mobile-test"></div>
+
 <div class="container">
   <!-- This is copied from /web, find better solution -->
   <div class="masthead">
@@ -75,7 +58,7 @@
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -106,9 +89,6 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
-</ul>
-</li>
-<li><a class="reference internal" href="#developer-guide">Developer Guide</a><ul>
 </ul>
 </li>
 <li><a class="reference internal" href="#id1">Index</a></li>
@@ -162,6 +142,7 @@ have not been properly brought into sync.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#blaze-arrays">Blaze Arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#simple-calculations">Simple Calculations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#iterators">Iterators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#disk-backed-array">Disk Backed Array</a></li>
 </ul>
@@ -171,62 +152,26 @@ have not been properly brought into sync.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_sources.html">Access Data from Different Sources</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data_sources.html#open-and-working-with-a-data-file">Open and working with a data file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_sources.html#working-with-blz-storage">Working with BLZ storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_sources.html#working-with-csv-and-json-data-files">Working with CSV and JSON data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_sources.html#working-with-hdf5-files">Working with HDF5 files</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="datashape.html">Datashape</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#bit-types">Bit Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#string-types">String Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#endianness">Endianness</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#fixed">Fixed</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#constructors">Constructors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#records">Records</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#type-variables">Type Variables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#variant">Variant</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#union">Union</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#option">Option</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#range">Range</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#stream">Stream</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape.html#numpy-compatability">Numpy Compatability</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="datashape-binary.html">Datashape Binary Data Layout</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#measures">Measures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#dimensions">Dimensions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#records">Records</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#missing-data">Missing Data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#memory-management-note">Memory Management Note</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datashape-binary.html#properties-of-datashape-objects">Properties of Datashape Objects</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="datashape.html">Datashape</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_descriptor.html">Data Descriptors</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#python-style-iteration">Python-Style Iteration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#python-style-getitem">Python-Style GetItem</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#element-readiteration">Element ReadIteration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#get-element">Get Element</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#element-writeiteration">Element WriteIteration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#set-element">Set Element</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#memory-access">Memory Access</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="blaze_function.html">Blaze Functions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="blaze_function.html#blaze-element-kernels">Blaze Element Kernels</a></li>
-<li class="toctree-l2"><a class="reference internal" href="blaze_function.html#kerneltrees">KernelTrees</a></li>
-<li class="toctree-l2"><a class="reference internal" href="blaze_function.html#lifting">Lifting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="blaze_function.html#broadcasting">Broadcasting</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="deferred.html">Deferred Execution</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="deferred.html#blaze-functions">Blaze Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deferred.html#expression-graph">Expression Graph</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deferred.html#compilation-air">Compilation &amp; AIR</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="blaze_function.html">Blaze Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dev_workflow.html">Developer Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#test-driven-development">Test Driven Development</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#github-flow">GitHub Flow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#unified-python-2-and-3-codebase">Unified Python 2 and 3 Codebase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#testing">Testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#internal-import">Internal Import</a></li>
 </ul>
 </li>
 </ul>
@@ -236,36 +181,8 @@ have not been properly brought into sync.</p>
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="toplevel.html">Toplevel</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">Core Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eclass.html">Evaluation Class</a></li>
-<li class="toctree-l1"><a class="reference internal" href="typeinference.html">Type Reconstruction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="layout.html">Layouts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sources.html">Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="graph.html">Graph</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="table.html">Tables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="releases.html">Release Notes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="legal.html">Legal</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="developer-guide">
-<h2>Developer Guide<a class="headerlink" href="#developer-guide" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-types">Custom Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-functions">Custom Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="extending.html#type-signatures">Type Signatures</a></li>
-<li class="toctree-l3"><a class="reference internal" href="extending.html#execution-backends">Execution Backends</a></li>
-<li class="toctree-l3"><a class="reference internal" href="extending.html#numba">Numba</a></li>
-<li class="toctree-l3"><a class="reference internal" href="extending.html#memory-allocation">Memory Allocation</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="extending.html#custom-backends">Custom Backends</a></li>
-</ul>
-</li>
 </ul>
 </div>
 </div>

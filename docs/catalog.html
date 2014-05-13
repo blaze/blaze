@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Catalog &mdash; Blaze 0.4.1 documentation</title>
+    <title>Catalog &mdash; Blaze 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,11 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.4.1 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.5 documentation" href="index.html" />
     <link rel="next" title="Access Data from Different Sources" href="data_sources.html" />
     <link rel="prev" title="Quickstart" href="quickstart.html" />
 <meta charset='utf-8'>
@@ -54,11 +55,11 @@
         </li>
         
         <li>
-            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -123,7 +124,7 @@ the features. To start, load an IPython prompt, and import Blaze.:</p>
 <p>The first thing to do, since we want to demonstrate our sample catalog,
 is to load that catalog&#8217;s configuration.:</p>
 <div class="highlight-python"><pre>In [2]: blaze.catalog.load_config(
-   ...:     r"~/blaze/samples/server/sample_arrays.yaml")</pre>
+            r&quot;~/blaze/samples/server/sample_arrays.yaml&quot;)</pre>
 </div>
 <p>To see information about the catalog that is currently loaded,
 simply print out the repr of the catalog configuration object.:</p>
@@ -146,7 +147,7 @@ are available. Note that you may have to say <tt class="docutils literal"><span 
 <tt class="docutils literal"><span class="pre">bpwd</span></tt> in some circumstances, but we will avoid the percent and
 rely on IPython&#8217;s magic.:</p>
 <div class="highlight-python"><pre>In [5]: bpwd
-Out[5]: '/'
+Out[5]: &#x27;/&#x27;
 
 In [6]: bls
 btc dates_vals kiva kiva_tiny</pre>
@@ -159,7 +160,7 @@ Let&#8217;s switch to the <tt class="docutils literal"><span class="pre">kiva_ti
 /kiva_tiny
 
 In [9]: bpwd
-Out[9]: u'/kiva_tiny'
+Out[9]: u&#x27;/kiva_tiny&#x27;
 
 In [10]: bls
 lenders loans</pre>
@@ -173,23 +174,23 @@ which can be used on the right side of an assignment statement.:</p>
 <div class="highlight-python"><pre>In [11]: x = %barr lenders
 
 In [12]: x.dshape
-Out[12]: dshape("52, { lender_id : json; name : json; image : { id : int64; template_id : int64 }; whereabouts : string; country_code : json; uid : string; member_since : string; personal_url : string; occupation : string; loan_because : string; occupational_info : string; loan_count : int64; invitee_count : int64; inviter_id : json }")
+Out[12]: dshape(&quot;52, { lender_id : json; name : json; image : { id : int64; template_id : int64 }; whereabouts : string; country_code : json; uid : string; member_since : string; personal_url : string; occupation : string; loan_because : string; occupational_info : string; loan_count : int64; invitee_count : int64; inviter_id : json }&quot;)
 
 In [15]: x.occupation
 Out[15]:
 array(
-[u'International Development Manager', u'retired dentist', u'', u'', u'',
- u'internet campaigner', u'Engineer', u'Nursery Manager', u'Web designer',
- u'Technical Assistant', u'', u'', u'', u'', u'Licenses Optician',
- u'physician', u'', u'Lic. Optician', u'', u'', u'', u'Master',
- u'Politician', u'guardian', u'', u'', u'Carpenter', u'', u'IT',
- u'Art Director', u'Nomad', u'Student', u'Teacher',
- u'IT Network consultant', u'Pastry Chef', u'Student', u'',
- u'Writer and Editor', u'Union Construction', u'veterinarian',
- u'Architect', u'Technical Trainer', u'pharmacist / farmaceutico',
- u'Marketing Manager', u'teacher', u'', u'', u'', u'', u'retired',
- u'Sales Director', u''],
-      dshape='52, string')</pre>
+[u&#x27;International Development Manager&#x27;, u&#x27;retired dentist&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;&#x27;,
+ u&#x27;internet campaigner&#x27;, u&#x27;Engineer&#x27;, u&#x27;Nursery Manager&#x27;, u&#x27;Web designer&#x27;,
+ u&#x27;Technical Assistant&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;Licenses Optician&#x27;,
+ u&#x27;physician&#x27;, u&#x27;&#x27;, u&#x27;Lic. Optician&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;Master&#x27;,
+ u&#x27;Politician&#x27;, u&#x27;guardian&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;Carpenter&#x27;, u&#x27;&#x27;, u&#x27;IT&#x27;,
+ u&#x27;Art Director&#x27;, u&#x27;Nomad&#x27;, u&#x27;Student&#x27;, u&#x27;Teacher&#x27;,
+ u&#x27;IT Network consultant&#x27;, u&#x27;Pastry Chef&#x27;, u&#x27;Student&#x27;, u&#x27;&#x27;,
+ u&#x27;Writer and Editor&#x27;, u&#x27;Union Construction&#x27;, u&#x27;veterinarian&#x27;,
+ u&#x27;Architect&#x27;, u&#x27;Technical Trainer&#x27;, u&#x27;pharmacist / farmaceutico&#x27;,
+ u&#x27;Marketing Manager&#x27;, u&#x27;teacher&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;&#x27;, u&#x27;retired&#x27;,
+ u&#x27;Sales Director&#x27;, u&#x27;&#x27;],
+      dshape=&#x27;52, string&#x27;)</pre>
 </div>
 </div>
 <div class="section" id="the-array-data-structure">
@@ -197,7 +198,7 @@ array(
 <p>Let&#8217;s now take a look at what the files on disk look like, backing
 the array we loaded. The <tt class="docutils literal"><span class="pre">lenders</span></tt> array is described by a file <tt class="docutils literal"><span class="pre">lenders.array</span></tt>,
 as follows.:</p>
-<div class="highlight-python"><pre>In [17]: print open(r"~/blaze/samples/server/arrays/kiva_tiny/lenders.array").read()
+<div class="highlight-python"><pre>In [17]: print open(r&quot;~/blaze/samples/server/arrays/kiva_tiny/lenders.array&quot;).read()
 type: json
 import: {}
 datashape: |
@@ -218,7 +219,7 @@ datashape: |
         occupational_info: string;
         loan_count: int64;
         invitee_count: int64;
-        inviter_id: json; # sometimes string, sometimes number 0. 0 is being used as the "missing value"
+        inviter_id: json; # sometimes string, sometimes number 0. 0 is being used as the &quot;missing value&quot;
     }</pre>
 </div>
 <p>This file is a YAML configuration file, which describes some data import
@@ -235,17 +236,17 @@ In [19]: x = %barr dates_vals
 In [19]: x[:10]
 Out[19]:
 array(
-[{u'values': 0, u'data': datetime.date(2013, 1, 1)},
- {u'values': 1, u'data': datetime.date(2013, 1, 2)},
- {u'values': 2, u'data': datetime.date(2013, 1, 3)},
- {u'values': 3, u'data': datetime.date(2013, 1, 4)},
- {u'values': 4, u'data': datetime.date(2013, 1, 5)},
- {u'values': 5, u'data': datetime.date(2013, 1, 6)},
- {u'values': 6, u'data': datetime.date(2013, 1, 7)},
- {u'values': 7, u'data': datetime.date(2013, 1, 8)},
- {u'values': 8, u'data': datetime.date(2013, 1, 9)},
- {u'values': 9, u'data': datetime.date(2013, 1, 10)}],
-      dshape='10, { data : date; values : int32 }')</pre>
+[{u&#x27;values&#x27;: 0, u&#x27;data&#x27;: datetime.date(2013, 1, 1)},
+ {u&#x27;values&#x27;: 1, u&#x27;data&#x27;: datetime.date(2013, 1, 2)},
+ {u&#x27;values&#x27;: 2, u&#x27;data&#x27;: datetime.date(2013, 1, 3)},
+ {u&#x27;values&#x27;: 3, u&#x27;data&#x27;: datetime.date(2013, 1, 4)},
+ {u&#x27;values&#x27;: 4, u&#x27;data&#x27;: datetime.date(2013, 1, 5)},
+ {u&#x27;values&#x27;: 5, u&#x27;data&#x27;: datetime.date(2013, 1, 6)},
+ {u&#x27;values&#x27;: 6, u&#x27;data&#x27;: datetime.date(2013, 1, 7)},
+ {u&#x27;values&#x27;: 7, u&#x27;data&#x27;: datetime.date(2013, 1, 8)},
+ {u&#x27;values&#x27;: 8, u&#x27;data&#x27;: datetime.date(2013, 1, 9)},
+ {u&#x27;values&#x27;: 9, u&#x27;data&#x27;: datetime.date(2013, 1, 10)}],
+      dshape=&#x27;10, { data : date; values : int32 }&#x27;)</pre>
 </div>
 </div>
 </div>

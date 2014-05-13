@@ -12,6 +12,25 @@ to contribute to the project.
 For any questions about Blaze and how to get involved, please
 email blaze-dev@continuum.io.
 
+Test Driven Development
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Blaze is actively changing and evolving. In such an environment,
+aspects of the code such as documentation, webpages, docstring, and
+unspoken intentions are secondary to tests.  To add code to Blaze repo
+the preferred process is as follows:
+
+* Propose a feature via the email list or github issues
+* Add a design doc to docs/design
+* Add a test suite to the appropriate test directory
+* Implement feature
+
+This will allow developers know when a feature is broken based on the
+various testing proceedures below. Anything that is not tested is
+subject to change, thus all regressions should be reported with
+appropriate tests. Likewise, any added feature without a test is
+subject to breakage and/or removal.
+
 GitHub Flow
 ~~~~~~~~~~~
 
@@ -29,7 +48,7 @@ The only cases where it's ok to push directly to master are
 really minor fixes, or to fix tests that are failing.
 
 Unified Python 2 and 3 Codebase
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Blaze is being developed with one codebase that simultaneously
 supports both Python 2 and Python 3. To make this manageable,
@@ -67,6 +86,8 @@ of Linux, OS X, and Windows. That these configurations are all working
 should be verified by someone at Continuum after each merge of a
 pull request.
 
+.. _Jenkins: http://jenkins-ci.org/
+
 Dependencies
 ~~~~~~~~~~~~
 
@@ -77,12 +98,29 @@ should work together. When a release is made, particular versions of
 all the dependencies are fixed.
 
 In the case of `dynd-python`_, its Jenkins build additionally uploads
-a conda package to the development channel of `Anaconda`_. As the
-`binstar`_ infrastructure gets built out, we expect to transition this
-to a repository there which would have daily builds of all these
-dependencies and of blaze itself.
+a conda package to a `binstar`_ channel, which is installable into
+`Anaconda`_. As the
+binstar infrastructure gets built out, we expect to eventually have daily
+builds of all these dependencies and of blaze itself.
 
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _Anaconda: http://continuum.io/downloads
 .. _binstar: https://binstar.org/
 
+Internal Import
+~~~~~~~~~~~~~~~
+
+To avoid the side effects of top level imports, e.g. `import blaze`, all internal code should be imported relatively.  Thus::
+
+    #file: blaze/objects/table.py
+    from blaze import Array
+
+should be::
+
+     #file: blaze/objects/table.py
+     from .array import Array
+
+For cross submodule imports, import from the module api.  For example::
+
+    #file: blaze/objects/table.py
+    from ..io import printing

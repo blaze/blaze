@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Blaze Functions &mdash; Blaze 0.4.1 documentation</title>
+    <title>Blaze Functions &mdash; Blaze 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,12 +26,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.4.1 documentation" href="index.html" />
-    <link rel="next" title="Deferred Execution" href="deferred.html" />
+    <link rel="top" title="Blaze 0.5 documentation" href="index.html" />
+    <link rel="next" title="Developer Workflow" href="dev_workflow.html" />
     <link rel="prev" title="Data Descriptors" href="data_descriptor.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -54,11 +55,11 @@
         </li>
         
         <li>
-            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -82,13 +83,7 @@
       <div class="span3">
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
-<li><a class="reference internal" href="#">Blaze Functions</a><ul>
-<li><a class="reference internal" href="#blaze-element-kernels">Blaze Element Kernels</a></li>
-<li><a class="reference internal" href="#kerneltrees">KernelTrees</a></li>
-<li><a class="reference internal" href="#lifting">Lifting</a></li>
-<li><a class="reference internal" href="#broadcasting">Broadcasting</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Blaze Functions</a></li>
 </ul>
 
          </ul>
@@ -123,53 +118,7 @@ must be called to create a materialized, concrete, or
 reified Blaze Array which will apply a generated kernel
 based on the expression.   The kernel is composed of the kernels
 selected from add, mul, and dot based on the data-shape of
-the input arguments.   These low-level kernels are built up
-using LLVM and compiled to machine code
-(using vector-instructions where possible).
-This fused, low-level kernel is applied over the data.</p>
-<div class="section" id="blaze-element-kernels">
-<h2>Blaze Element Kernels<a class="headerlink" href="#blaze-element-kernels" title="Permalink to this headline">¶</a></h2>
-<p>A Blaze Element Kernel is an object that contains an LLVM
-function with a particular signature.  This function should
-perform the operation on a single element.  So, for example
-an add Element Kernel would wrap around an LLVM function that
-adds two typed values.   You don&#8217;t need to worry about this
-being slow, the BlazeFunction compiler will create
-an in-line version of the function.  The LLVM function
-signature consists of the inputs followed by one output.
-(Multiple outputs can be returned from an element kernel by
-using a structure as the output data-type.)</p>
-<p>Here is an example of an LLVM Function that can be used to build
-a BlazeElementKernel:</p>
-<dl class="docutils">
-<dt>def add(a,b):</dt>
-<dd>return a + b</dd>
-</dl>
-<p>Using Numba or another Python to LLVM tool, this can be converted into the following LLVM function for the float64 data:</p>
-<p>define double &#64;add(double %a, double %b) nounwind readnone alwaysinline {
-entry:</p>
-<blockquote>
-<div>%0 = fadd double %a, %b
-ret double %0</div></blockquote>
-<p>}</p>
-</div>
-<div class="section" id="kerneltrees">
-<h2>KernelTrees<a class="headerlink" href="#kerneltrees" title="Permalink to this headline">¶</a></h2>
-<p>Evaluating BlazeFunctions create KernelTrees which are tree structures
-of BlazeElementKernels.  These tree structures are used to manage the
-stitching together and &#8220;lifting&#8221; of the Element kernels at run-time</p>
-</div>
-<div class="section" id="lifting">
-<h2>Lifting<a class="headerlink" href="#lifting" title="Permalink to this headline">¶</a></h2>
-<p>The concept of lifting is that a BlazeElementKernel is transformed, or
-lifted, to become a kernel accepting array arguments with a
-larger number of dimensions.</p>
-</div>
-<div class="section" id="broadcasting">
-<h2>Broadcasting<a class="headerlink" href="#broadcasting" title="Permalink to this headline">¶</a></h2>
-<p>When multiple arguments are involved in a calculation, their shapes must
-either be the same, or broadcastable to the same shape.</p>
-</div>
+the input arguments.</p>
 </div>
 
 

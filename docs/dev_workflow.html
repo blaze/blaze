@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Developer Workflow &mdash; Blaze 0.4.1 documentation</title>
+    <title>Developer Workflow &mdash; Blaze 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,13 +26,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.4.1 documentation" href="index.html" />
-    <link rel="next" title="Toplevel" href="toplevel.html" />
-    <link rel="prev" title="Deferred Execution" href="deferred.html" />
+    <link rel="top" title="Blaze 0.5 documentation" href="index.html" />
+    <link rel="next" title="Release Notes" href="releases.html" />
+    <link rel="prev" title="Blaze Functions" href="blaze_function.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -54,11 +55,11 @@
         </li>
         
         <li>
-            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -83,10 +84,12 @@
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
 <li><a class="reference internal" href="#">Developer Workflow</a><ul>
+<li><a class="reference internal" href="#test-driven-development">Test Driven Development</a></li>
 <li><a class="reference internal" href="#github-flow">GitHub Flow</a></li>
 <li><a class="reference internal" href="#unified-python-2-and-3-codebase">Unified Python 2 and 3 Codebase</a></li>
 <li><a class="reference internal" href="#testing">Testing</a></li>
 <li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#internal-import">Internal Import</a></li>
 </ul>
 </li>
 </ul>
@@ -103,6 +106,24 @@ that development follows, and may be used as a guide for how
 to contribute to the project.</p>
 <p>For any questions about Blaze and how to get involved, please
 email <a class="reference external" href="mailto:blaze-dev&#37;&#52;&#48;continuum&#46;io">blaze-dev<span>&#64;</span>continuum<span>&#46;</span>io</a>.</p>
+<div class="section" id="test-driven-development">
+<h2>Test Driven Development<a class="headerlink" href="#test-driven-development" title="Permalink to this headline">¶</a></h2>
+<p>Blaze is actively changing and evolving. In such an environment,
+aspects of the code such as documentation, webpages, docstring, and
+unspoken intentions are secondary to tests.  To add code to Blaze repo
+the preferred process is as follows:</p>
+<ul class="simple">
+<li>Propose a feature via the email list or github issues</li>
+<li>Add a design doc to docs/design</li>
+<li>Add a test suite to the appropriate test directory</li>
+<li>Implement feature</li>
+</ul>
+<p>This will allow developers know when a feature is broken based on the
+various testing proceedures below. Anything that is not tested is
+subject to change, thus all regressions should be reported with
+appropriate tests. Likewise, any added feature without a test is
+subject to breakage and/or removal.</p>
+</div>
 <div class="section" id="github-flow">
 <h2>GitHub Flow<a class="headerlink" href="#github-flow" title="Permalink to this headline">¶</a></h2>
 <p>Source code and issue management are hosted in <a class="reference external" href="https://github.com/ContinuumIO/blaze">this github page</a>,
@@ -138,7 +159,7 @@ there are two automated testing mechanisms being used. First is
 requests that are made. This provides a smoke test against both
 Python 2 and Python 3 before a merge.</p>
 <p>The Travis tests only run on Linux, but Blaze is supported on Linux,
-OS X, and Windows. Internal to Continuum, a <a href="#id2"><span class="problematic" id="id3">`Jenkins`_</span></a> server is
+OS X, and Windows. Internal to Continuum, a <a class="reference external" href="http://jenkins-ci.org/">Jenkins</a> server is
 running which builds and tests Blaze on 15 different configurations,
 versions 2.6, 2.7, and 3.3 for different 32-bit and 64-bit versions
 of Linux, OS X, and Windows. That these configurations are all working
@@ -153,10 +174,28 @@ it is generally expected that the current master branch of all of them
 should work together. When a release is made, particular versions of
 all the dependencies are fixed.</p>
 <p>In the case of <a class="reference external" href="https://github.com/ContinuumIO/dynd-python">dynd-python</a>, its Jenkins build additionally uploads
-a conda package to the development channel of <a class="reference external" href="http://continuum.io/downloads">Anaconda</a>. As the
-<a class="reference external" href="https://binstar.org/">binstar</a> infrastructure gets built out, we expect to transition this
-to a repository there which would have daily builds of all these
-dependencies and of blaze itself.</p>
+a conda package to a <a class="reference external" href="https://binstar.org/">binstar</a> channel, which is installable into
+<a class="reference external" href="http://continuum.io/downloads">Anaconda</a>. As the
+binstar infrastructure gets built out, we expect to eventually have daily
+builds of all these dependencies and of blaze itself.</p>
+</div>
+<div class="section" id="internal-import">
+<h2>Internal Import<a class="headerlink" href="#internal-import" title="Permalink to this headline">¶</a></h2>
+<p>To avoid the side effects of top level imports, e.g. <cite>import blaze</cite>, all internal code should be imported relatively.  Thus:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#file: blaze/objects/table.py</span>
+<span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">Array</span>
+</pre></div>
+</div>
+<p>should be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#file: blaze/objects/table.py</span>
+<span class="kn">from</span> <span class="nn">.array</span> <span class="kn">import</span> <span class="n">Array</span>
+</pre></div>
+</div>
+<p>For cross submodule imports, import from the module api.  For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#file: blaze/objects/table.py</span>
+<span class="kn">from</span> <span class="nn">..io</span> <span class="kn">import</span> <span class="n">printing</span>
+</pre></div>
+</div>
 </div>
 </div>
 

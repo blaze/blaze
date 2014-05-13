@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorials &mdash; Blaze 0.4.1 documentation</title>
+    <title>Tutorials &mdash; Blaze 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,11 +26,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.4.1 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.5 documentation" href="index.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -52,11 +53,11 @@
         </li>
         
         <li>
-            <a href="/examples.html"><i class="icon-ok"></i> Examples</a>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
         </li>
         
         <li>
-            <a href="http://github.com/ContinuumIO/blaze-core"><i class="icon-download"></i> Source</a>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
         
         <li>
@@ -99,7 +100,10 @@
           
   <div class="section" id="tutorials">
 <h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h1>
-<p>This chapter goes through a series of tutorials that exercises different aspects of Blaze on a friendly and step-by-step way.  These are great if you are learning Blaze, or you want better insight on how to do specific things with it.</p>
+<p>This chapter goes through a series of tutorials that exercises
+different aspects of Blaze on a friendly and step-by-step way.  These
+are great if you are learning Blaze, or you want better insight on how
+to do specific things with it.</p>
 <div class="section" id="creating-arrays">
 <h2>Creating arrays<a class="headerlink" href="#creating-arrays" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="building-basic-arrays">
@@ -116,7 +120,7 @@ that people will find it easy to start doing basic things.</p>
 <p>Now, let&#8217;s have a look at the representation of the <cite>a</cite> array:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
 <span class="go">array([2, 3, 4],</span>
-<span class="go">      dshape=&#39;3, int32&#39;)</span>
+<span class="go">      dshape=&#39;3 * int32&#39;)</span>
 </pre></div>
 </div>
 <p>You are seeing here our first difference with NumPy, and it is the
@@ -127,7 +131,7 @@ powerful way.</p>
 <p>Note that when creating from a Python iterable, a datashape will be
 inferred:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">dshape</span><span class="p">)</span>
-<span class="go">3, int32</span>
+<span class="go">3 * int32</span>
 </pre></div>
 </div>
 <p>In this example, the shape part is &#8216;3&#8217; while the type part is &#8216;int32&#8217;.</p>
@@ -136,7 +140,7 @@ inferred:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
 <span class="go">[ 1.2  3.5  5.1]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">dshape</span><span class="p">)</span>
-<span class="go">3, float64</span>
+<span class="go">3 * float64</span>
 </pre></div>
 </div>
 <p>And a bidimensional array:</p>
@@ -161,8 +165,10 @@ inferred:</p>
 </pre></div>
 </div>
 <p>You can even build a compressed array in-memory:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blz</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">caps</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;compress&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">blz</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">blz</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ddesc</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">,</span> <span class="n">bparams</span><span class="o">=</span><span class="n">blz</span><span class="o">.</span><span class="n">bparams</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">ddesc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
 <span class="go">[1 2 3]</span>
 </pre></div>
 </div>
@@ -171,7 +177,7 @@ allows a broader selection of types on construction:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">e</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;3, float32&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">e</span>
 <span class="go">array([ 1.,  2.,  3.],</span>
-<span class="go">      dshape=&#39;3, float32&#39;)</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
 </pre></div>
 </div>
 <p>Note that the dimensions in the datashape when creating from a
@@ -180,48 +186,50 @@ inferred. The following is thus equivalent:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;float32&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
 <span class="go">array([ 1.,  2.,  3.],</span>
-<span class="go">      dshape=&#39;3, float32&#39;)</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
 </pre></div>
 </div>
 <p>Blaze also supports arrays to be made persistent. This can be achieved
-by adding the storage keyword parameter to an array constructor:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;float32&#39;</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;myarray.blz&#39;</span><span class="p">))</span>
+by adding the data descriptor to the <cite>array</cite> constructor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;myarray.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;float32&#39;</span><span class="p">,</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">dd</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
 <span class="go">array([ 1.,  2.,  3.],</span>
-<span class="go">      dshape=&#39;3, float32&#39;)</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
 </pre></div>
 </div>
 <p>You can use the persistent array as if it was an in-memory
 array. However, it is persistent and it will survive your python
-session. Later you can gain a reference to the array, even from a
-different python session by name, using the <cite>open</cite> function:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;myarray.blz&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
+session.</p>
+<p>Later on you can gain a reference to the array, even from a
+different python session by name, by simply passing the data
+descritor to the array constructor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;myarray.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dd</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span>
 <span class="go">array([ 1.,  2.,  3.],</span>
-<span class="go">      dshape=&#39;3, float32&#39;)</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
 </pre></div>
 </div>
-<p>A persistent array is backed on non-volatile storage (currently, only
-a filesystem is supported, but the list of supported storages may
-increase in the future). That means that there are system resources
-allocated to store that array, even when you exit your python
-session.</p>
-<p>A persistent array can be enlarged anytime by using the <cite>blaze.append()</cite>
-function, e.g.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
+<p>Please note that, as we want to retrieve the existing data, we are
+specifying the dataset in &#8216;a&#8217;ppend mode, so as not to overwrite it.</p>
+<p>A persistent array that has the &#8216;appendable&#8217; capability set to True
+can be enlarged anytime by using the <cite>blaze.append()</cite> function, e.g.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">ddesc</span><span class="o">.</span><span class="n">capabilities</span><span class="o">.</span><span class="n">appendable</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span>
 <span class="go">array([ 1.,  2.,  3.,  4.,  5.,  6.],</span>
 <span class="go">      dshape=&#39;6, float32&#39;)</span>
 </pre></div>
 </div>
 <p>If you are done with the persistent array and want to free
-its resources, you can just &#8216;drop&#8217; it:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;myarray.blz&#39;</span><span class="p">))</span>
+its resources, you can just &#8216;remove&#8217; it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">ddesc</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>After dropping a persistent array this way, any &#8216;open&#8217; version you may
-had of it will no longer be valid. You won&#8217;t be able to reopen it
-either. It is effectively deleted.</p>
+<p>This will remove the dataset from disk, so it could not be restored in
+the future, so if you love your data, be careful with this one.</p>
 </div>
 </div>
 <div class="section" id="evaluation">
@@ -231,12 +239,12 @@ either. It is effectively deleted.</p>
 <p>Performing computations in blaze is a 2 step process. First, you just
 use expressions to build a <em>deferred</em> array. A <em>deferred</em> array,
 instead of holding the result, knows how to build that result:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">deferred</span>
 <span class="go">False</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">deferred</span>
 <span class="go">False</span>
 </pre></div>
@@ -251,7 +259,7 @@ instead of holding the result, knows how to build that result:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span>
 <span class="go">array([5, 7, 9],</span>
-<span class="go">      dshape=&#39;3, int32&#39;)</span>
+<span class="go">      dshape=&#39;3 * int32&#39;)</span>
 </pre></div>
 </div>
 <p>So, why this extra step? why the need to evaluate instead of just
@@ -266,16 +274,18 @@ specify a few parameters telling how the resulting array should be
 built. As can be seen in the array creation tutorial, an array can be
 made in-memory, compressed in-memory or it can even be backed on the
 file-system. We can eval directly to a persistent array:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;res.blz&#39;</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;res.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">dd</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>In this sample we have used two small in-memory arrays to illustrate
 execution. The same code can work for large arrays that are &#8216;opened&#8217;
 instead of being created/read, allowing the easy evaluation of
 expression that is effectively out-of-core:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ba1</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;big_array1.blz&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ba2</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;big_array2.blz&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">ba1</span><span class="o">+</span><span class="n">ba2</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="n">blaze</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="s">&#39;big_result.blz&#39;</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ba1</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;big_array1.blz&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ba2</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;big_array2.blz&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd_res</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="s">&#39;big_result.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">ba1</span><span class="o">+</span><span class="n">ba2</span><span class="p">,</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">dd_res</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>So it is possible to build complex array expressions that can be
