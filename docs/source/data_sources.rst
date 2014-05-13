@@ -3,7 +3,7 @@ Access Data from Different Sources
 ===================================
 
 Blaze can access data from a variety of sources, as long as the format
-has been implemented as a :ref:`Data Descriptor <data_descriptor>`.
+has been implemented as a Data Descriptor.
 Currently there are data descriptors for DyND, BLZ, HDF5, CSV and JSON
 files, although the list is growing.  This section shows how to access
 these files in a general way.

@@ -48,7 +48,7 @@ The only cases where it's ok to push directly to master are
 really minor fixes, or to fix tests that are failing.
 
 Unified Python 2 and 3 Codebase
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Blaze is being developed with one codebase that simultaneously
 supports both Python 2 and Python 3. To make this manageable,
@@ -85,6 +85,8 @@ versions 2.6, 2.7, and 3.3 for different 32-bit and 64-bit versions
 of Linux, OS X, and Windows. That these configurations are all working
 should be verified by someone at Continuum after each merge of a
 pull request.
+
+.. _Jenkins: http://jenkins-ci.org/
 
 Dependencies
 ~~~~~~~~~~~~
