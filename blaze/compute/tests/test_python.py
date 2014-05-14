@@ -78,3 +78,10 @@ def test_by_big():
                 ('Drew', 'M'): 300}
 
     assert result == expected
+
+
+def test_works_on_generators():
+    assert list(compute(t['amount'], iter(data))) == \
+            [x[1] for x in data]
+    assert list(compute(t['amount'], (i for i in data))) == \
+            [x[1] for x in data]
