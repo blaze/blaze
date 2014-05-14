@@ -109,6 +109,11 @@ def _var(seq):
         count += 1
     return 1.0*total_squared/count - (1.0*total/count) ** 2
 
+@dispatch(count, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return builtins.sum(1 for i in parent)
+
 @dispatch(mean, seq)
 def compute(t, l):
     parent = compute(t.parent, l)

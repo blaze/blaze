@@ -55,6 +55,7 @@ def test_reductions():
     assert compute(sum(t['amount']), data) == 100 + 200 + 50
     assert compute(min(t['amount']), data) == 50
     assert compute(max(t['amount']), data) == 200
+    assert compute(count(t['amount']), data) == 3
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
 

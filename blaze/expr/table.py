@@ -139,6 +139,9 @@ class Column(Projection):
     def __rmod__(self, other):
         return Mod(other, self)
 
+    def count(self):
+        return count(self)
+
     def sum(self):
         return sum(self)
 
@@ -352,6 +355,7 @@ class min(Reduction): pass
 class mean(Reduction): pass
 class var(Reduction): pass
 class std(Reduction): pass
+class count(Reduction): pass
 
 
 class By(TableExpr):

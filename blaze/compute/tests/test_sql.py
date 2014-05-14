@@ -86,6 +86,8 @@ def test_reductions():
             str(sa.sql.functions.sum(s.c.amount))
     assert str(compute(mean(t['amount']), s)) == \
             str(sa.sql.func.avg(s.c.amount))
+    assert str(compute(count(t['amount']), s)) == \
+            str(sa.sql.func.count(s.c.amount))
 
 @skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():

@@ -77,6 +77,7 @@ def test_columns_series():
 
 def test_Reductions():
     assert compute(mean(t['amount']), df) == 350./3
+    assert compute(count(t['amount']), df) == 3
     assert compute(sum(t['amount']), df) == 100 + 200 + 50
     assert compute(min(t['amount']), df) == 50
     assert compute(max(t['amount']), df) == 200
