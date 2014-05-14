@@ -12,6 +12,16 @@ df = DataFrame([['Alice', 100, 1],
                 ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
 
 
+tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+
+dfbig = DataFrame([['Alice', 'F', 100, 1],
+                   ['Alice', 'F', 100, 3],
+                   ['Drew', 'F', 100, 4],
+                   ['Drew', 'M', 100, 5],
+                   ['Drew', 'M', 200, 5]],
+                  columns=['name', 'sex', 'amount', 'id'])
+
+
 def test_table():
     assert str(compute(t, df)) == str(df)
 
@@ -77,5 +87,13 @@ def test_Reductions():
 def test_by():
     result = compute(By(t, t['name'], sum(t['amount'])), df)
     expected = df.groupby('name')['amount'].apply(lambda x: x.sum())
+
+    assert str(result) == str(expected)
+
+
+def test_by_big():
+    result = compute(By(tbig, tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
+
+    expected = dfbig.groupby(['name', 'sex'])['amount'].apply(lambda x: x.sum())
 
     assert str(result) == str(expected)
