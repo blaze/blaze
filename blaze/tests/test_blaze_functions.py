@@ -17,15 +17,13 @@ def create_overloaded_add():
     myfunc = ElementwiseBlazeFunc('test', 'myfunc')
 
     # overload int32 -> np.add
-    ckd = _lowlevel.ckernel_deferred_from_ufunc(np.add,
-                                                (np.int32, np.int32, np.int32),
-                                                False)
+    ckd = _lowlevel.arrfunc_from_ufunc(np.add, (np.int32, np.int32, np.int32),
+                                       False)
     myfunc.add_overload("(int32, int32) -> int32", ckd)
 
     # overload int16 -> np.subtract (so we can see the difference)
-    ckd = _lowlevel.ckernel_deferred_from_ufunc(np.subtract,
-                                                (np.int16, np.int16, np.int16),
-                                                False)
+    ckd = _lowlevel.arrfunc_from_ufunc(np.subtract,
+                                       (np.int16, np.int16, np.int16), False)
     myfunc.add_overload("(int16, int16) -> int16", ckd)
 
     return myfunc
@@ -87,14 +85,11 @@ class TestBlazeFunctionFromUFunc(unittest.TestCase):
     def test_overload_different_argcount(self):
         myfunc = ElementwiseBlazeFunc('test', 'ovld')
         # Two parameter overload
-        ckd = _lowlevel.ckernel_deferred_from_ufunc(np.add,
-                                                    (np.int32,) * 3,
-                                                    False)
+        ckd = _lowlevel.arrfunc_from_ufunc(np.add, (np.int32,) * 3, False)
         myfunc.add_overload("(int32, int32) -> int32", ckd)
 
         # One parameter overload
-        ckd = _lowlevel.ckernel_deferred_from_ufunc(np.negative,
-                                                    (np.int32,) * 2, False)
+        ckd = _lowlevel.arrfunc_from_ufunc(np.negative, (np.int32,) * 2, False)
         myfunc.add_overload("(int16, int16) -> int16", ckd)
 
         return myfunc

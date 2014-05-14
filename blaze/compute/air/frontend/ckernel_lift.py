@@ -50,8 +50,7 @@ class CKernelLifter(object):
                             in_types[i] = ndt.make_strided_dim(tp.element_type)
                     out_type = ndt.make_strided_dim(out_type.element_type)
 
-                op.args[0] = _lowlevel.lift_ckernel_deferred(ck,
-                                                             [out_type] + in_types)
+                op.args[0] = _lowlevel.lift_arrfunc(ck, [out_type] + in_types)
             elif tag == 'reduction':
                 ck = ckernel['ckernel']
                 assoc = ckernel['assoc']
@@ -60,7 +59,7 @@ class CKernelLifter(object):
                 ident = None if ident is None else nd.asarray(ident)
                 axis = ckernel['axis']
                 keepdims = ckernel['keepdims']
-                op.args[0] = _lowlevel.lift_reduction_ckernel_deferred(
+                op.args[0] = _lowlevel.lift_reduction_arrfunc(
                                 ck, in_types[0],
                                 axis=axis, keepdims=keepdims,
                                 associative=assoc, commutative=comm,
@@ -71,7 +70,7 @@ class CKernelLifter(object):
                 minp = ckernel['minp']
                 if minp != 0:
                     raise ValueError('rolling window with minp != 0 not supported yet')
-                op.args[0] = _lowlevel.make_rolling_ckernel_deferred(out_type,
+                op.args[0] = _lowlevel.make_rolling_arrfunc(out_type,
                                                                      in_types[0],
                                                                      ck, window)
             elif tag == 'ckfactory':

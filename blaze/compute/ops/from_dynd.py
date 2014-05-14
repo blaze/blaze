@@ -30,8 +30,8 @@ def blazefunc_from_dynd_property(tplist, propname, modname, name):
         The ufunc's name.
     """
     # Get the list of type signatures
-    kernlist = [_lowlevel.make_ckernel_deferred_from_property(tp, propname,
-                                                              'expr', 'default')
+    kernlist = [_lowlevel.make_arrfunc_from_property(tp, propname,
+                                                     'expr', 'default')
                 for tp in tplist]
     siglist = [_make_sig(kern) for kern in kernlist]
     # Create the empty blaze function to start

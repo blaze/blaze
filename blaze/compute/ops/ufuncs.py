@@ -101,9 +101,7 @@ for name, np_op, ident, types in reductions:
     x = ReductionBlazeFunc('blaze', name)
     for typ in types:
         x.add_overload('(%s) -> %s' % (typ.__name__, typ.__name__),
-                 _lowlevel.ckernel_deferred_from_ufunc(np_op,
-                                                       (typ,) * 3,
-                                                       False),
+                 _lowlevel.arrfunc_from_ufunc(np_op, (typ,) * 3, False),
                  associative=True, commutative=True,
                  identity=ident)
         locals()[name] = x
@@ -113,19 +111,19 @@ for name, np_op, ident, types in reductions:
 #------------------------------------------------------------------------
 
 rolling_mean = RollingWindowBlazeFunc('blaze', 'rolling_mean')
-mean1d = _lowlevel.make_builtin_mean1d_ckernel_deferred('float64', 0)
+mean1d = _lowlevel.make_builtin_mean1d_arrfunc('float64', 0)
 rolling_mean.add_overload('(M * float64) -> M * float64', mean1d)
 
 diff = BlazeFunc('blaze', 'diff')
-subtract_doubles_ck = _lowlevel.ckernel_deferred_from_ufunc(np.subtract,
+subtract_doubles_ck = _lowlevel.arrfunc_from_ufunc(np.subtract,
                 (np.float64, np.float64, np.float64),
                 False)
-diff_pair_ck = _lowlevel.lift_reduction_ckernel_deferred(subtract_doubles_ck,
+diff_pair_ck = _lowlevel.lift_reduction_arrfunc(subtract_doubles_ck,
                                          'strided * float64',
                                          axis=0,
                                          commutative=False,
                                          associative=False)
-diff_ck = _lowlevel.make_rolling_ckernel_deferred('strided * float64',
+diff_ck = _lowlevel.make_rolling_arrfunc('strided * float64',
                                                   'strided * float64',
                                                   diff_pair_ck, 2)
 diff.add_overload('(M * float64) -> M * float64', diff_ck)
@@ -133,7 +131,7 @@ diff.add_overload('(M * float64) -> M * float64', diff_ck)
 take = CKFBlazeFunc('blaze', 'take')
 # Masked take
 take.add_overload('(M * T, M * bool) -> var * T',
-                  _lowlevel.make_take_ckernel_deferred)
+                  _lowlevel.make_take_arrfunc)
 # Indexed take
 take.add_overload('(M * T, N * intptr) -> N * T',
-                  _lowlevel.make_take_ckernel_deferred)
+                  _lowlevel.make_take_arrfunc)

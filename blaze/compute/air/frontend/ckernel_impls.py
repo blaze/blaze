@@ -15,7 +15,7 @@ def run(func, env):
 class CKernelImplementations(object):
     """
     For kernels that are implemented via ckernels, this
-    grabs the ckernel_deferred and turns it into a ckernel
+    grabs the dynd arrfunc and turns it into a ckernel
     op.
     """
 
