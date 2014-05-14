@@ -297,7 +297,7 @@ class UnaryOp(ColumnWise):
     ...         ['Alice', 50, 3]]
 
     >>> from blaze.compute.python import compute
-    >>> list(compute(log(t['amount']), data))
+    >>> list(compute(log(t['amount']), data))  # doctest: +SKIP
     [4.605170185988092, 5.298317366548036, 3.912023005428146]
     """
     __slots__ = 'parent',
