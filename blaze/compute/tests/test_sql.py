@@ -112,10 +112,22 @@ def test_by():
     assert str(result) == str(expected)
 
 
-def test_by_big():
+def test_by_two():
     expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
     result = compute(expr, sbig)
     expected = (sa.select([sa.sql.functions.sum(sbig.c.amount)])
+                    .group_by(sbig.c.name, sbig.c.sex))
+
+    assert str(result) == str(expected)
+
+
+def test_by_three():
+    result = compute(By(tbig,
+                        tbig[['name', 'sex']],
+                        (tbig['id'] + tbig['amount']).sum()),
+                     sbig)
+
+    expected = (sa.select([sa.sql.functions.sum(sbig.c.id+ sbig.c.amount)])
                     .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)

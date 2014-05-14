@@ -64,18 +64,31 @@ def test_mean():
     assert 50 < compute(std(t['amount']), data) < 100
 
 
-def test_by():
+def test_by_one():
     assert compute(By(t, t['name'], t['amount'].sum()), data) == \
             {'Alice': 150, 'Bob': 200}
 
 
-def test_by_big():
+def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
                      databig)
 
     expected = {('Alice', 'F'): 200,
                 ('Drew', 'F'): 100,
                 ('Drew', 'M'): 300}
+
+    assert result == expected
+
+
+def test_by_three():
+    result = compute(By(tbig,
+                        tbig[['name', 'sex']],
+                        (tbig['id'] + tbig['amount']).sum()),
+                     databig)
+
+    expected = {('Alice', 'F'): 204,
+                ('Drew', 'F'): 104,
+                ('Drew', 'M'): 310}
 
     assert result == expected
 

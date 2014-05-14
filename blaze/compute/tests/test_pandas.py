@@ -85,16 +85,28 @@ def test_Reductions():
     assert compute(any(t['amount'] > 250), df) == False
 
 
-def test_by():
+def test_by_one():
     result = compute(By(t, t['name'], sum(t['amount'])), df)
     expected = df.groupby('name')['amount'].apply(lambda x: x.sum())
 
     assert str(result) == str(expected)
 
 
-def test_by_big():
+def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
 
     expected = dfbig.groupby(['name', 'sex'])['amount'].apply(lambda x: x.sum())
+
+    assert str(result) == str(expected)
+
+
+def test_by_three():
+    result = compute(By(tbig,
+                        tbig[['name', 'sex']],
+                        (tbig['id'] + tbig['amount']).sum()),
+                     dfbig)
+
+    expected = dfbig.groupby(['name', 'sex']).apply(
+            lambda df: (df['amount'] + df['id']).sum())
 
     assert str(result) == str(expected)
