@@ -136,10 +136,7 @@ def compute(t, l):
     if isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
         indices = [t.grouper.parent.columns.index(col)
                         for col in t.grouper.columns]
-        if isinstance(t.grouper, Column):
-            grouper = operator.itemgetter(indices[0])
-        else:
-            grouper = operator.itemgetter(*indices)
+        grouper = operator.itemgetter(*indices)
     else:
         raise NotImplementedError("Grouper attribute of By must be Projection "
                                   "of parent table, got %s" % str(t.grouper))
