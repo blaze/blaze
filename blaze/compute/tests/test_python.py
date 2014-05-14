@@ -64,12 +64,12 @@ def test_mean():
 
 
 def test_by():
-    assert compute(By(t, t['name'], sum(t['amount'])), data) == \
+    assert compute(By(t, t['name'], t['amount'].sum()), data) == \
             {'Alice': 150, 'Bob': 200}
 
 
 def test_by_big():
-    result = compute(By(tbig, tbig[['name', 'sex']], sum(tbig['amount'])),
+    result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
                      databig)
 
     expected = {('Alice', 'F'): 200,

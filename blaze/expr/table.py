@@ -132,6 +132,30 @@ class Column(Projection):
     def __rmod__(self, other):
         return Mod(other, self)
 
+    def sum(self):
+        return sum(self)
+
+    def min(self):
+        return min(self)
+
+    def max(self):
+        return max(self)
+
+    def any(self):
+        return any(self)
+
+    def all(self):
+        return all(self)
+
+    def mean(self):
+        return mean(self)
+
+    def var(self):
+        return var(self)
+
+    def std(self):
+        return std(self)
+
 
 class Selection(TableExpr):
     """
