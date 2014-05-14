@@ -93,3 +93,12 @@ def test_reductions():
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
             str(sa.sql.functions.any(s.c.amount > 150))
+
+
+def test_by():
+    t = TableSymbol('{name: string, amount: int, id: int}')
+    expr = By(t, t['name'], t['amount'].sum())
+    result = compute(expr, s)
+    expected = sa.select([sa.sql.functions.sum(s.c.amount)]).group_by(s.c.name)
+
+    assert str(result) == str(expected)
