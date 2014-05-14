@@ -142,4 +142,5 @@ def compute(t, l):
                                   "of parent table, got %s" % str(t.grouper))
 
     groups = groupby(grouper, parent)
-    return dict((k, compute(t.apply, v)) for k, v in groups.items())
+    d = dict((k, compute(t.apply, v)) for k, v in groups.items())
+    return d.items()

@@ -65,19 +65,21 @@ def test_mean():
 
 
 def test_by_one():
-    assert compute(By(t, t['name'], t['amount'].sum()), data) == \
-            {'Alice': 150, 'Bob': 200}
+    print(compute(By(t, t['name'], t['amount'].sum()), data))
+    assert set(compute(By(t, t['name'], t['amount'].sum()), data)) == \
+            set([('Alice', 150), ('Bob', 200)])
 
 
 def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
                      databig)
 
-    expected = {('Alice', 'F'): 200,
-                ('Drew', 'F'): 100,
-                ('Drew', 'M'): 300}
+    expected = [(('Alice', 'F'), 200),
+                (('Drew', 'F'), 100),
+                (('Drew', 'M'), 300)]
 
-    assert result == expected
+    print(result)
+    assert set(result) == set(expected)
 
 
 def test_by_three():
@@ -86,11 +88,12 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      databig)
 
-    expected = {('Alice', 'F'): 204,
-                ('Drew', 'F'): 104,
-                ('Drew', 'M'): 310}
+    expected = [(('Alice', 'F'), 204),
+                (('Drew', 'F'), 104),
+                (('Drew', 'M'), 310)]
 
-    assert result == expected
+    print(result)
+    assert set(result) == set(expected)
 
 
 def test_works_on_generators():
