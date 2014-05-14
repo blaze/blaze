@@ -12,6 +12,16 @@ data = [['Alice', 100, 1],
         ['Alice', 50, 3]]
 
 
+tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+
+
+databig = [['Alice', 'F', 100, 1],
+           ['Alice', 'F', 100, 3],
+           ['Drew', 'F', 100, 4],
+           ['Drew', 'M', 100, 5],
+           ['Drew', 'M', 200, 5]]
+
+
 def test_table():
     assert compute(t, data) == data
 
@@ -56,3 +66,14 @@ def test_mean():
 def test_by():
     assert compute(By(t, t['name'], sum(t['amount'])), data) == \
             {'Alice': 150, 'Bob': 200}
+
+
+def test_by_big():
+    result = compute(By(tbig, tbig[['name', 'sex']], sum(tbig['amount'])),
+                     databig)
+
+    expected = {('Alice', 'F'): 200,
+                ('Drew', 'F'): 100,
+                ('Drew', 'M'): 300}
+
+    assert result == expected
