@@ -103,3 +103,10 @@ def compute(t, s):
     assert isinstance(parent, Series)
     op = getattr(Series, t.symbol)
     return op(parent)
+
+
+@dispatch(By, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    grouper = compute(t.grouper, df)
+    return df.groupby(grouper).apply(lambda x: compute(t.apply, x))
