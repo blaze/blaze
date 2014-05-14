@@ -59,7 +59,7 @@ class TestWrappedCKernel(unittest.TestCase):
                 kfunc = _lowlevel.ExprStridedOperation(my_kernel_func_strided)
             return ckernel.wrap_ckernel_func(out_ckb, ckb_offset,
                             kfunc, kfunc)
-        ckd = _lowlevel.ckernel_deferred_from_pyfunc(instantiate_ckernel,
+        ckd = _lowlevel.arrfunc_from_pyfunc(instantiate_ckernel,
                         [ndt.int32, ndt.float64])
         # Test calling the ckd
         out = nd.empty(ndt.int32)
@@ -68,7 +68,7 @@ class TestWrappedCKernel(unittest.TestCase):
         self.assertEqual(nd.as_py(out), 14)
 
         # Also call it lifted
-        ckd_lifted = _lowlevel.lift_ckernel_deferred(ckd,
+        ckd_lifted = _lowlevel.lift_arrfunc(ckd,
                         ['2 * var * int32', '2 * var * float64'])
         out = nd.empty('2 * var * int32')
         in0 = nd.array([[1.0, 3.0, 2.5], [1.25, -1.5]], type='2 * var * float64')

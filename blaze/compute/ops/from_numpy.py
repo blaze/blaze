@@ -55,7 +55,7 @@ def blazefunc_from_numpy_ufunc(uf, modname, name, acquires_gil):
     tplist = _lowlevel.numpy_typetuples_from_ufunc(uf)
     tplist = _filter_tplist(tplist)
     siglist = [_make_sig(tp) for tp in tplist]
-    kernlist = [_lowlevel.ckernel_deferred_from_ufunc(uf, tp, acquires_gil)
+    kernlist = [_lowlevel.arrfunc_from_ufunc(uf, tp, acquires_gil)
                 for tp in tplist]
     # Create the empty blaze function to start
     bf = ElementwiseBlazeFunc('blaze', name)
