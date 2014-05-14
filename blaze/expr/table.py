@@ -283,3 +283,12 @@ class min(Reduction): pass
 class mean(Reduction): pass
 class var(Reduction): pass
 class std(Reduction): pass
+
+
+class By(TableExpr):
+    __slots__ = 'parent', 'grouper', 'apply'
+
+    def __init__(self, parent, grouper, apply):
+        self.parent = parent
+        self.grouper = grouper
+        self.apply = apply

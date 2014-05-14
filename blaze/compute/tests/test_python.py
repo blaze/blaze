@@ -51,3 +51,8 @@ def test_reductions():
 def test_mean():
     assert compute(mean(t['amount']), data) == float(100 + 200 + 50) / 3
     assert 50 < compute(std(t['amount']), data) < 100
+
+
+def test_by():
+    assert compute(By(t, t['name'], sum(t['amount'])), data) == \
+            {'Alice': 150, 'Bob': 200}

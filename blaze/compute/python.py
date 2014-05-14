@@ -14,6 +14,7 @@ from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
 from blaze.compatibility import builtins
+from blaze.utils import groupby
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
@@ -121,3 +122,22 @@ def compute(t, l):
 @dispatch(std, seq)
 def compute(t, l):
     return math.sqrt(compute(var(t.parent), l))
+
+
+@dispatch(By, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+
+    if isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
+        indices = [t.grouper.parent.columns.index(col)
+                        for col in t.grouper.columns]
+        if isinstance(t.grouper, Column):
+            grouper = operator.itemgetter(indices[0])
+        else:
+            grouper = operator.itemgetter(*indices)
+    else:
+        raise NotImplementedError("Grouper attribute of By must be Projection "
+                                  "of parent table, got %s" % str(t.grouper))
+
+    groups = groupby(grouper, parent)
+    return dict((k, compute(t.apply, v)) for k, v in groups.items())
