@@ -52,7 +52,8 @@ def compute(t, df):
 def compute(t, df):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype
-        raise ValueError("Schema mismatch")
+        raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
+                        % (t, df))
     return df
 
 
