@@ -175,3 +175,19 @@ def raises(err, lamda):
         return False
     except err:
         return True
+
+
+def groupby(f, coll):
+    """ Group collection by key function
+
+    >>> names = ['Alice', 'Bob', 'Charlie', 'Dan', 'Edith', 'Frank']
+    >>> groupby(len, names)
+    {3: ['Bob', 'Dan'], 5: ['Alice', 'Edith', 'Frank'], 7: ['Charlie']}
+    """
+    d = {}
+    for item in coll:
+        key = f(item)
+        if key not in d:
+            d[key] = []
+        d[key].append(item)
+    return d
