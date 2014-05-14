@@ -3,7 +3,12 @@
 ['_static/js/bootstrap-2.2.1.min.js', '_static/bootstrap-sphinx.js',
 '_static/js/bootstrap-scrollspy.js', '_static/js/bootstrap-affix.js']
 %}
-{% set css_files = ['_static/css/bootstrap-2.2.1.min.css', '_static/bootstrap-sphinx.css', '_static/css/bootstrap-responsive-2.2.1.min.css'] + css_files %}
+{% set css_files =
+['../css/bootstrap.css',
+ '_static/css/bootstrap-2.2.1.min.css',
+ '_static/bootstrap-sphinx.css',
+ '_static/css/bootstrap-responsive-2.2.1.min.css'] + css_files
+%}
 
 {%- block doctype -%}
 <!DOCTYPE html>
