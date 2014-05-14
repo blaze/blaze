@@ -16,6 +16,15 @@ s = sa.Table('accounts', metadata,
              sa.Column('id', sa.Integer, primary_key=True),
              )
 
+tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+
+sbig = sa.Table('accountsbig', metadata,
+             sa.Column('name', sa.String),
+             sa.Column('sex', sa.String),
+             sa.Column('amount', sa.Integer),
+             sa.Column('id', sa.Integer, primary_key=True),
+             )
+
 def normalize(s):
     return ' '.join(s.strip().split())
 
@@ -96,9 +105,17 @@ def test_binary_reductions():
 
 
 def test_by():
-    t = TableSymbol('{name: string, amount: int, id: int}')
     expr = By(t, t['name'], t['amount'].sum())
     result = compute(expr, s)
     expected = sa.select([sa.sql.functions.sum(s.c.amount)]).group_by(s.c.name)
+
+    assert str(result) == str(expected)
+
+
+def test_by_big():
+    expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
+    result = compute(expr, sbig)
+    expected = (sa.select([sa.sql.functions.sum(sbig.c.amount)])
+                    .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
