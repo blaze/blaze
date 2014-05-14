@@ -109,3 +109,8 @@ def test_reduction():
     print(type(r.dshape))
     print(type(dshape('int32')))
     assert r.dshape == dshape('int32')
+
+
+def test_reduce_by():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    r = By(t, t['name'], sum(t['amount']))

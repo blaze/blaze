@@ -12,6 +12,16 @@ data = [['Alice', 100, 1],
         ['Alice', 50, 3]]
 
 
+tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+
+
+databig = [['Alice', 'F', 100, 1],
+           ['Alice', 'F', 100, 3],
+           ['Drew', 'F', 100, 4],
+           ['Drew', 'M', 100, 5],
+           ['Drew', 'M', 200, 5]]
+
+
 def test_table():
     assert compute(t, data) == data
 
@@ -45,9 +55,46 @@ def test_reductions():
     assert compute(sum(t['amount']), data) == 100 + 200 + 50
     assert compute(min(t['amount']), data) == 50
     assert compute(max(t['amount']), data) == 200
+    assert compute(count(t['amount']), data) == 3
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
 
 def test_mean():
     assert compute(mean(t['amount']), data) == float(100 + 200 + 50) / 3
     assert 50 < compute(std(t['amount']), data) < 100
+
+
+def test_by_one():
+    assert compute(By(t, t['name'], t['amount'].sum()), data) == \
+            {'Alice': 150, 'Bob': 200}
+
+
+def test_by_two():
+    result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
+                     databig)
+
+    expected = {('Alice', 'F'): 200,
+                ('Drew', 'F'): 100,
+                ('Drew', 'M'): 300}
+
+    assert result == expected
+
+
+def test_by_three():
+    result = compute(By(tbig,
+                        tbig[['name', 'sex']],
+                        (tbig['id'] + tbig['amount']).sum()),
+                     databig)
+
+    expected = {('Alice', 'F'): 204,
+                ('Drew', 'F'): 104,
+                ('Drew', 'M'): 310}
+
+    assert result == expected
+
+
+def test_works_on_generators():
+    assert list(compute(t['amount'], iter(data))) == \
+            [x[1] for x in data]
+    assert list(compute(t['amount'], (i for i in data))) == \
+            [x[1] for x in data]

@@ -16,6 +16,15 @@ s = sa.Table('accounts', metadata,
              sa.Column('id', sa.Integer, primary_key=True),
              )
 
+tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+
+sbig = sa.Table('accountsbig', metadata,
+             sa.Column('name', sa.String),
+             sa.Column('sex', sa.String),
+             sa.Column('amount', sa.Integer),
+             sa.Column('id', sa.Integer, primary_key=True),
+             )
+
 def normalize(s):
     return ' '.join(s.strip().split())
 
@@ -86,8 +95,39 @@ def test_reductions():
             str(sa.sql.functions.sum(s.c.amount))
     assert str(compute(mean(t['amount']), s)) == \
             str(sa.sql.func.avg(s.c.amount))
+    assert str(compute(count(t['amount']), s)) == \
+            str(sa.sql.func.count(s.c.amount))
 
 @skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
             str(sa.sql.functions.any(s.c.amount > 150))
+
+
+def test_by():
+    expr = By(t, t['name'], t['amount'].sum())
+    result = compute(expr, s)
+    expected = sa.select([sa.sql.functions.sum(s.c.amount)]).group_by(s.c.name)
+
+    assert str(result) == str(expected)
+
+
+def test_by_two():
+    expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
+    result = compute(expr, sbig)
+    expected = (sa.select([sa.sql.functions.sum(sbig.c.amount)])
+                    .group_by(sbig.c.name, sbig.c.sex))
+
+    assert str(result) == str(expected)
+
+
+def test_by_three():
+    result = compute(By(tbig,
+                        tbig[['name', 'sex']],
+                        (tbig['id'] + tbig['amount']).sum()),
+                     sbig)
+
+    expected = (sa.select([sa.sql.functions.sum(sbig.c.id+ sbig.c.amount)])
+                    .group_by(sbig.c.name, sbig.c.sex))
+
+    assert str(result) == str(expected)

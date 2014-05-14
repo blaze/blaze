@@ -12,6 +12,7 @@ import operator
 from .core import Expr, Scalar
 
 class TableExpr(Expr):
+    """ Super class for all Table Expressions """
     @property
     def dshape(self):
         return datashape.var * self.schema
@@ -35,6 +36,12 @@ class TableExpr(Expr):
 
 
 class TableSymbol(TableExpr):
+    """ A Symbol for Tabular data
+
+    This is a leaf in the expression tree
+
+    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    """
     __slots__ = 'schema',
 
     def __init__(self, schema):
@@ -132,6 +139,33 @@ class Column(Projection):
     def __rmod__(self, other):
         return Mod(other, self)
 
+    def count(self):
+        return count(self)
+
+    def sum(self):
+        return sum(self)
+
+    def min(self):
+        return min(self)
+
+    def max(self):
+        return max(self)
+
+    def any(self):
+        return any(self)
+
+    def all(self):
+        return all(self)
+
+    def mean(self):
+        return mean(self)
+
+    def var(self):
+        return var(self)
+
+    def std(self):
+        return std(self)
+
 
 class Selection(TableExpr):
     """
@@ -160,6 +194,18 @@ class ColumnWise(Column):
 
 
 class BinOp(ColumnWise):
+    """ A column-wise Binary Operation
+
+    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+
+    >>> data = [['Alice', 100, 1],
+    ...         ['Bob', 200, 2],
+    ...         ['Alice', 50, 3]]
+
+    >>> from blaze.compute.python import compute
+    >>> list(compute(t['amount'] * 10, data))
+    [1000, 2000, 500]
+    """
     __slots__ = 'lhs', 'rhs'
     def __init__(self, lhs, rhs):
         self.lhs = lhs
@@ -242,6 +288,18 @@ class Join(TableExpr):
         return dshape(Record(rec))
 
 class UnaryOp(ColumnWise):
+    """ A column-wise Unary Operation
+
+    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+
+    >>> data = [['Alice', 100, 1],
+    ...         ['Bob', 200, 2],
+    ...         ['Alice', 50, 3]]
+
+    >>> from blaze.compute.python import compute
+    >>> list(compute(log(t['amount']), data))  # doctest: +SKIP
+    [4.605170185988092, 5.298317366548036, 3.912023005428146]
+    """
     __slots__ = 'parent',
 
     def __init__(self, table):
@@ -261,6 +319,20 @@ class exp(UnaryOp): pass
 class log(UnaryOp): pass
 
 class Reduction(Scalar):
+    """ A column-wise reduction
+
+    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> e = t['amount'].sum()
+
+    >>> data = [['Alice', 100, 1],
+    ...         ['Bob', 200, 2],
+    ...         ['Alice', 50, 3]]
+
+    >>> from blaze.compute.python import compute
+    >>> compute(e, data)
+    350
+    """
+
     __slots__ = 'parent',
 
     def __init__(self, table):
@@ -283,3 +355,27 @@ class min(Reduction): pass
 class mean(Reduction): pass
 class var(Reduction): pass
 class std(Reduction): pass
+class count(Reduction): pass
+
+
+class By(TableExpr):
+    """ Split-Apply-Combine Operator
+
+    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> e = By(t, t['name'], t['amount'].sum())
+
+    >>> data = [['Alice', 100, 1],
+    ...         ['Bob', 200, 2],
+    ...         ['Alice', 50, 3]]
+
+    >>> from blaze.compute.python import compute
+    >>> compute(e, data) #doctest: +SKIP
+    {'Alice': 150, 'Bob': 200}
+    """
+
+    __slots__ = 'parent', 'grouper', 'apply'
+
+    def __init__(self, parent, grouper, apply):
+        self.parent = parent
+        self.grouper = grouper
+        self.apply = apply

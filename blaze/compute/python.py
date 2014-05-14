@@ -14,6 +14,7 @@ from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
 from blaze.compatibility import builtins
+from blaze.utils import groupby
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
@@ -108,6 +109,11 @@ def _var(seq):
         count += 1
     return 1.0*total_squared/count - (1.0*total/count) ** 2
 
+@dispatch(count, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return builtins.sum(1 for i in parent)
+
 @dispatch(mean, seq)
 def compute(t, l):
     parent = compute(t.parent, l)
@@ -121,3 +127,19 @@ def compute(t, l):
 @dispatch(std, seq)
 def compute(t, l):
     return math.sqrt(compute(var(t.parent), l))
+
+
+@dispatch(By, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+
+    if isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
+        indices = [t.grouper.parent.columns.index(col)
+                        for col in t.grouper.columns]
+        grouper = operator.itemgetter(*indices)
+    else:
+        raise NotImplementedError("Grouper attribute of By must be Projection "
+                                  "of parent table, got %s" % str(t.grouper))
+
+    groups = groupby(grouper, parent)
+    return dict((k, compute(t.apply, v)) for k, v in groups.items())

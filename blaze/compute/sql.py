@@ -53,11 +53,22 @@ def compute(t, s):
     return s
 
 
+def select(s):
+    """ Permissive SQL select
+
+    Idempotent sqlalchemy.select
+
+    Wraps input in list if neccessary
+    """
+    if not isinstance(s, sqlalchemy.sql.selectable.Select):
+        if not isinstance(s, (tuple, list)):
+            s = [s]
+        s = sa.select(s)
+    return s
+
+
 def computefull(t, s):
-    result = compute(t, s)
-    if not isinstance(result, sqlalchemy.sql.selectable.Select):
-        result = sa.select([result])
-    return result
+    return select(compute(t, s))
 
 
 @dispatch(Join, sqlalchemy.Table, sqlalchemy.Table)
@@ -97,3 +108,14 @@ def compute(t, s):
         symbol = names.get(type(t), t.symbol)
         op = getattr(sqlalchemy.sql.func, symbol)
     return op(parent)
+
+
+@dispatch(By, sqlalchemy.Table)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    if isinstance(t.grouper, Projection):
+        grouper = [compute(t.grouper.parent[col], s) for col in t.grouper.columns]
+    else:
+        raise NotImplementedError("Grouper must be a projection, got %s"
+                                  % t.grouper)
+    return select(compute(t.apply, s)).group_by(*grouper)
