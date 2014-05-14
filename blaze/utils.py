@@ -191,3 +191,26 @@ def groupby(f, coll):
             d[key] = []
         d[key].append(item)
     return d
+
+
+def reduceby(seq, key, binop, initial=None):
+    """ Streaming split-apply-combine
+
+    >>> accounts = [('Alice', 100), ('Bob', 200), ('Alice', 50)]
+    >>> get_name = lambda x: x[0]
+    >>> add_amount = lambda total, (name, amount): total + amount
+
+    >>> reduceby(accounts, get_name, add_amount, 0)  # doctest: +SKIP
+    {'Alice': 150, 'Bob': 200}
+    """
+    d = {}
+    for item in seq:
+        k = key(item)
+        if k not in d:
+            if initial is None:
+                d[k] = item
+            else:
+                d[k] = binop(initial, item)
+        else:
+            d[k] = binop(d[k], item)
+    return d
