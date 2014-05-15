@@ -23,33 +23,33 @@ from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
 
-@dispatch(Projection, sqlalchemy.Table)
+@dispatch(Projection, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     return sa.select([parent.c.get(col) for col in t.columns])
 
 
-@dispatch(Column, sqlalchemy.Table)
+@dispatch(Column, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     return parent.c.get(t.columns[0])
 
 
-@dispatch(BinOp, sqlalchemy.Table)
+@dispatch(BinOp, sqlalchemy.sql.Selectable)
 def compute(t, s):
     lhs = compute(t.lhs, s)
     rhs = compute(t.rhs, s)
     return t.op(lhs, rhs)
 
 
-@dispatch(Selection, sqlalchemy.Table)
+@dispatch(Selection, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     predicate = compute(t.predicate, s)
     return sa.select([parent]).where(predicate)
 
 
-@dispatch(TableSymbol, sqlalchemy.Table)
+@dispatch(TableSymbol, sqlalchemy.sql.Selectable)
 def compute(t, s):
     return s
 
@@ -72,7 +72,7 @@ def computefull(t, s):
     return select(compute(t, s))
 
 
-@dispatch(Join, sqlalchemy.Table, sqlalchemy.Table)
+@dispatch(Join, sqlalchemy.sql.Selectable, sqlalchemy.sql.Selectable)
 def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
@@ -82,12 +82,14 @@ def compute(t, lhs, rhs):
 
     condition = left_column == right_column
 
-    columns = unique(lhs.join(rhs, condition).columns,
+    join = lhs.join(rhs, condition)
+
+    columns = unique(join.columns,
                      key=lambda c: c.name)
-    return select(list(columns))
+    return select(list(columns)).select_from(join)
 
 
-@dispatch(UnaryOp, sqlalchemy.Table)
+@dispatch(UnaryOp, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     op = getattr(sa.func, t.symbol)
@@ -99,7 +101,7 @@ names = {mean: 'avg',
          std: 'stdev'}
 
 
-@dispatch(Reduction, sqlalchemy.Table)
+@dispatch(Reduction, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     try:
@@ -110,7 +112,7 @@ def compute(t, s):
     return op(parent)
 
 
-@dispatch(By, sqlalchemy.Table)
+@dispatch(By, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     if isinstance(t.grouper, Projection):

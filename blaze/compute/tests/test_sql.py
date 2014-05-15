@@ -75,7 +75,8 @@ def test_join():
                    sa.Column('id', sa.Integer))
 
     expected = lhs.join(rhs, lhs.c.name == rhs.c.name)
-    expected = select(list(unique(expected.columns, key=lambda c: c.name)))
+    expected = select(list(unique(expected.columns, key=lambda c:
+        c.name))).select_from(expected)
 
     L = TableSymbol('{name: string, amount: int}')
     R = TableSymbol('{name: string, id: int}')
@@ -136,3 +137,24 @@ def test_by_three():
                     .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
+
+
+def test_join_projection():
+    metadata = sa.MetaData()
+    lhs = sa.Table('amounts', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('amount', sa.Integer))
+
+    rhs = sa.Table('ids', metadata,
+                   sa.Column('name', sa.String),
+                   sa.Column('id', sa.Integer))
+
+    L = TableSymbol('{name: string, amount: int}')
+    R = TableSymbol('{name: string, id: int}')
+    want = Join(L, R, 'name')[['amount', 'id']]
+
+    result = compute(want, {L: lhs, R: rhs})
+    print(result)
+    assert 'JOIN' in str(result)
+    assert result.c.keys() == ['amount', 'id']
+    assert 'amounts.name = ids.name' in str(result)

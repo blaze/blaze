@@ -33,3 +33,10 @@ def compute(t, d):
     rhs = compute(t.rhs, d)
 
     return compute(t, lhs, rhs)
+
+
+@dispatch(Projection, dict)
+def compute(t, d):
+    parent = compute(t.parent, d)
+    t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
+    return compute(t2, parent)
