@@ -24,6 +24,31 @@ class Expr(object):
             for item in trav:
                 yield item
 
+    def subs(self, d):
+        """ Substitute terms in the tree
+
+        >>> from blaze.expr.table import TableSymbol
+        >>> t = TableSymbol('{name: string, amount: int, id: int}')
+        >>> expr = t['amount'] + 3
+        >>> expr.subs({3: 4, 'amount': 'id'}) == t['id'] + 4
+        True
+        """
+        return subs(self, d)
+
+
+def subs(o, d):
+    if o in d:
+        other = d.pop(o)
+        return subs(other, d)
+    if isinstance(o, (tuple, list)):
+        return type(o)([subs(arg, d) for arg in o])
+
+    if hasattr(o, 'subs'):
+        newargs = [subs(arg, d) for arg in o]
+        return type(o)(*newargs)
+
+    return o
+
 
 class Scalar(Expr):
     pass
