@@ -81,8 +81,7 @@ def compute(t, lhs, rhs):
     lhs = lhs.set_index(t.on_left)
     rhs = rhs.set_index(t.on_right)
     result = lhs.join(rhs)
-    result = result.reset_index()
-    return result
+    return result.reset_index()[t.columns]
 
 
 @dispatch(UnaryOp, DataFrame)
