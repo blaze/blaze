@@ -110,3 +110,12 @@ def test_by_three():
             lambda df: (df['amount'] + df['id']).sum())
 
     assert str(result) == str(expected)
+
+def test_by_three():
+    t = tbig[['sex', 'amount']]
+    result = compute(By(t, t['sex'], t['amount'].max()), dfbig)
+
+    expected = dfbig[['sex', 'amount']].groupby('sex').apply(
+            lambda df: df['amount'].max())
+
+    assert str(result) == str(expected)

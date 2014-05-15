@@ -109,8 +109,8 @@ def compute(t, s):
 @dispatch(By, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    grouper = compute(t.grouper, df)
+    grouper = compute(t.grouper, parent)
     if type(t.grouper) == Projection and t.grouper.parent == t.parent:
         grouper = list(grouper.columns)
 
-    return df.groupby(grouper).apply(lambda x: compute(t.apply, x))
+    return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))

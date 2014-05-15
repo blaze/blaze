@@ -468,5 +468,6 @@ class By(TableExpr):
 
     def __init__(self, parent, grouper, apply):
         self.parent = parent
-        self.grouper = grouper
-        self.apply = apply
+        s = TableSymbol(parent.schema)
+        self.grouper = grouper.subs({parent: s})
+        self.apply = apply.subs({parent: s})
