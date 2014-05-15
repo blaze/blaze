@@ -123,3 +123,29 @@ def test_by_four():
             lambda df: df['amount'].max())
 
     assert str(result) == str(expected)
+
+
+def test_join_by_arcs():
+    df_idx = DataFrame([['A', 1],
+                        ['B', 2],
+                        ['C', 3]],
+                      columns=['name', 'node_id'])
+
+    df_arc = DataFrame([[1, 3],
+                        [2, 3],
+                        [3, 1]],
+                       columns=['node_out', 'node_id'])
+
+    t_idx = TableSymbol('{name: string, node_id: int32}')
+
+    t_arc = TableSymbol('{node_out: int32, node_id: int32}')
+
+    joined = Join(t_arc, t_idx, "node_id")
+
+    want = By(joined, joined['name'], joined['node_id'].count())
+
+    result = compute(want, {t_arc: df_arc, t_idx:df_idx})
+
+    result_pandas = pandas.merge(df_arc, df_idx, on='node_id')
+
+    assert str(result) == str(result_pandas.groupby('name')['node_id'].count())
