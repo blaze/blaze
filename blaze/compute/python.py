@@ -148,6 +148,17 @@ def compute(t, l):
 
 @dispatch(Join, seq, seq)
 def compute(t, lhs, rhs):
+    """ Join Operation for Python Streaming Backend
+
+    Note that a pure streaming Join is challenging/impossible because any row
+    in one seq might connect to any row in the other, requiring simultaneous
+    complete access.
+
+    As a result this approach compromises and fully realizes the LEFT sequence
+    while allowing the RIGHT sequence to stream.  As a result
+
+    Always put your bigger table on the RIGHT side of the Join.
+    """
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
