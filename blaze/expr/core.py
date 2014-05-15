@@ -1,3 +1,8 @@
+from __future__ import absolute_import, division, print_function
+
+__all__ = 'Expr', 'Scalar'
+
+
 class Expr(object):
     @property
     def args(self):
@@ -44,8 +49,7 @@ def subs(o, d):
         return subs(other, d)
     if isinstance(o, (tuple, list)):
         return type(o)([subs(arg, d) for arg in o])
-
-    if hasattr(o, 'subs'):
+    if hasattr(o, 'args'):
         newargs = [subs(arg, d) for arg in o.args]
         return type(o)(*newargs)
 
