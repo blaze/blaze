@@ -1,7 +1,7 @@
 """
 
 >>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.python import compute
+>>> from blaze.compute.sql import compute
 
 >>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
