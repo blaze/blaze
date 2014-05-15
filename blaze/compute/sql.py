@@ -18,6 +18,7 @@ WHERE accounts.amount < :amount_1
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from blaze.utils import unique
 from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
@@ -73,18 +74,17 @@ def computefull(t, s):
 
 @dispatch(Join, sqlalchemy.Table, sqlalchemy.Table)
 def compute(t, lhs, rhs):
-    """
-
-    TODO: SQL bunches all of the columns from both tables together.  We should
-    probably downselect
-    """
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
     left_column = getattr(lhs.c, t.on_left)
     right_column = getattr(rhs.c, t.on_right)
 
-    return lhs.join(rhs, left_column == right_column)
+    condition = left_column == right_column
+
+    columns = unique(lhs.join(rhs, condition).columns,
+                     key=lambda c: c.name)
+    return select(list(columns))
 
 
 @dispatch(UnaryOp, sqlalchemy.Table)

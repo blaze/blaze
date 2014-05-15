@@ -1,10 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.compute.sql import compute, computefull
+from blaze.compute.sql import compute, computefull, select
 from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
 from blaze.compatibility import skip
+from blaze.utils import unique
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 
@@ -74,6 +75,7 @@ def test_join():
                    sa.Column('id', sa.Integer))
 
     expected = lhs.join(rhs, lhs.c.name == rhs.c.name)
+    expected = select(list(unique(expected.columns, key=lambda c: c.name)))
 
     L = TableSymbol('{name: string, amount: int}')
     R = TableSymbol('{name: string, id: int}')
@@ -83,7 +85,10 @@ def test_join():
 
     assert str(result) == str(expected)
 
-    assert str(sa.select([result])) == str(sa.select([expected]))
+    assert str(select(result)) == str(select(expected))
+
+    # Schemas match
+    assert list(result.c.keys()) == list(joined.columns)
 
 
 def test_unary_op():
