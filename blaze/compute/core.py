@@ -40,3 +40,10 @@ def compute(t, d):
     parent = compute(t.parent, d)
     t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
     return compute(t2, parent)
+
+
+@dispatch(By, dict)
+def compute(t, d):
+    parent = compute(t.parent, d)
+    t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
+    return compute(t2, parent)
