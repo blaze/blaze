@@ -115,12 +115,11 @@ class JSON_Streaming(JSON):
             result = json.loads(nth(key, f))
         elif isinstance(key, slice):
             result = list(map(json.loads,
-                                islice(f, key.start, key.stop, key.step)))
+                              islice(f, key.start, key.stop, key.step)))
         elif isinstance(key, list):
             result = list(map(json.loads, nth_list(key, f)))
         else:
-            raise NotImplementedError('Fancy indexing not supported\n'
-                    'Create DyND array and use fancy indexing from there')
+            raise NotImplementedError('Fancy indexing not supported')
         try:
             f.close()
         except AttributeError:

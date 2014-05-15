@@ -11,7 +11,6 @@ from blaze.data import JSON, JSON_Streaming
 from blaze.utils import filetext, raises
 from blaze.data.utils import tuplify
 
-# TODO: This isn't actually being used!
 
 class TestBigJSON(unittest.TestCase):
     maxDiff = None

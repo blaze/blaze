@@ -45,21 +45,22 @@ class DataDescriptor(object):
         row = next(rows)
         if not validate(self.schema, row):
             raise ValueError('Invalid data:\n\t %s \nfor dshape \n\t%s' %
-                    (str(row), self.schema))
+                             (str(row), self.schema))
         self._extend(chain([row], rows))
-
 
     def extend_chunks(self, chunks):
         if not self.appendable or self.immutable:
             raise TypeError('Data Descriptor not appendable')
+
         def dtype_of(chunk):
             return str(len(chunk) * self.schema)
+
         self._extend_chunks((nd.array(chunk, dtype=dtype_of(chunk))
                              for chunk in chunks))
 
     def _extend_chunks(self, chunks):
-        self.extend((row for chunk in chunks for row in nd.as_py(chunk,
-            tuple=True)))
+        self.extend((row for chunk in chunks
+                         for row in nd.as_py(chunk, tuple=True)))
 
     def chunks(self, **kwargs):
         def dshape(chunk):
@@ -70,9 +71,6 @@ class DataDescriptor(object):
 
     def _chunks(self, blen=100):
         return partition_all(blen, iter(self))
-
-    def getattr(self, name):
-        raise NotImplementedError('this data descriptor does not support attribute access')
 
     def as_dynd(self):
         return nd.array(self.as_py(), dtype=str(self.dshape))
@@ -133,11 +131,13 @@ class DataDescriptor(object):
         raise NotImplementedError()
 
     _dshape = None
+
     @property
     def dshape(self):
         return datashape.dshape(self._dshape or datashape.Var() * self.schema)
 
     _schema = None
+
     @property
     def schema(self):
         if self._schema:

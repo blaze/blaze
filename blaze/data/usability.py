@@ -20,8 +20,9 @@ filetypes = {'csv': CSV,
 
 opens = {'http': urlopen,
          'https': urlopen,
-        #'ssh': paramiko.open?
+         #'ssh': paramiko.open?
          }
+
 
 def resource(uri, **kwargs):
     """ Get data resource from universal resource indicator
@@ -37,7 +38,7 @@ def resource(uri, **kwargs):
 
     >>> uri = '/path/to/data.csv'                     # csv, json, etc...
     >>> uri = '/path/to/data.json.gz'                 # handles gzip
-    >>> uri = '/path/to/*/many*/data.*.json'          # glob string - many files
+    >>> uri = '/path/to/*/many*/data.*.json'          # glob string - manyfiles
     >>> uri = '/path/to/data.hdf5::/path/within/hdf5' # HDF5 path :: datapath
     >>> uri = 'postgresql://sqlalchemy.uri::tablename'# SQLAlchemy :: tablename
     >>> uri = 'http://api.domain.com/data.json'       # Web requests
@@ -75,7 +76,7 @@ def resource(uri, **kwargs):
         filenames = []
     if len(filenames) > 1:
         resources = [resource(in_uri.replace(uri, filename), **kwargs)
-                        for filename in filenames]
+                     for filename in filenames]
         return Stack(resources)
 
     if descriptor:
