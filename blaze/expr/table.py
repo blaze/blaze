@@ -446,7 +446,7 @@ class Reduction(Scalar):
 
     @property
     def dshape(self):
-        return dshape(self.parent.dshape[-1].fields.values()[0])
+        return dshape(list(self.parent.dshape[-1].fields.values())[0])
 
     @property
     def symbol(self):
