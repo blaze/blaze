@@ -24,6 +24,11 @@ def compute(t, d):
     if len(d) == 1:
         return compute(t, d.values()[0])
 
+    if hasattr(t, 'parent'):
+        parent = compute(t.parent, d)
+        t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
+        return compute(t2, parent)
+
     raise NotImplementedError("No method found to compute on multiple Tables")
 
 
@@ -33,17 +38,3 @@ def compute(t, d):
     rhs = compute(t.rhs, d)
 
     return compute(t, lhs, rhs)
-
-
-@dispatch(Projection, dict)
-def compute(t, d):
-    parent = compute(t.parent, d)
-    t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
-    return compute(t2, parent)
-
-
-@dispatch(By, dict)
-def compute(t, d):
-    parent = compute(t.parent, d)
-    t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
-    return compute(t2, parent)
