@@ -3,8 +3,10 @@ class Expr(object):
     def args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)
 
-    def __eq__(self, other):
+    def isidentical(self, other):
         return type(self) == type(other) and self.args == other.args
+
+    __eq__ = isidentical
 
     def __hash__(self):
         return hash((type(self), self.args))
@@ -30,8 +32,8 @@ class Expr(object):
         >>> from blaze.expr.table import TableSymbol
         >>> t = TableSymbol('{name: string, amount: int, id: int}')
         >>> expr = t['amount'] + 3
-        >>> expr.subs({3: 4, 'amount': 'id'}) == t['id'] + 4
-        True
+        >>> expr.subs({3: 4, 'amount': 'id'})
+        TableSymbol('{ name : string, amount : int32, id : int32 }')['id'] + 4
         """
         return subs(self, d)
 
@@ -44,7 +46,7 @@ def subs(o, d):
         return type(o)([subs(arg, d) for arg in o])
 
     if hasattr(o, 'subs'):
-        newargs = [subs(arg, d) for arg in o]
+        newargs = [subs(arg, d) for arg in o.args]
         return type(o)(*newargs)
 
     return o
