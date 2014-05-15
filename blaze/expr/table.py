@@ -86,6 +86,8 @@ class Column(Projection):
     """
     __slots__ = 'parent', 'column'
 
+    __hash__ = Expr.__hash__
+
     def __init__(self, table, column):
         self.parent = table
         self.column = column
@@ -193,6 +195,8 @@ class ColumnWise(TableExpr):
 
     a op b
     """
+    __hash__ = Expr.__hash__
+
     def __eq__(self, other):
         return Eq(self, other)
 
