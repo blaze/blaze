@@ -45,6 +45,7 @@ class Expr(object):
 
 def subs(o, d):
     if o in d:
+        d = d.copy()
         other = d.pop(o)
         return subs(other, d)
     if isinstance(o, (tuple, list)):
