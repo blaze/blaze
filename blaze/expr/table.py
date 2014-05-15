@@ -266,6 +266,25 @@ class Mod(Arithmetic):
     op = operator.mod
 
 class Join(TableExpr):
+    """ Join two tables on common columns
+
+    Parameters
+    ----------
+    lhs : TableExpr
+    rhs : TableExpr
+    on_left : string
+    on_right : string
+
+    >>> names = TableSymbol('{name: string, id: int}')
+    >>> amounts = TableSymbol('{amount: int, id: int}')
+
+    Join tables based on shared column name
+    >>> joined = Join(names, amounts, 'id')
+
+    Join based on different column names
+    >>> amounts = TableSymbol('{amount: int, acctNumber: int}')
+    >>> joined = Join(names, amounts, 'id', 'acctNumber')
+    """
     __slots__ = 'lhs', 'rhs', 'on_left', 'on_right'
 
     def __init__(self, lhs, rhs, on_left, on_right=None):
