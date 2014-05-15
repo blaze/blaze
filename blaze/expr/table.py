@@ -83,16 +83,18 @@ class Column(Projection):
     SELECT a
     FROM table
     """
+    __slots__ = 'parent', 'column'
+
     def __init__(self, table, column):
         self.parent = table
-        self._columns = (column,)
+        self.column = column
+
+    @property
+    def columns(self):
+        return (self.column,)
 
     def __str__(self):
         return "%s['%s']" % (self.parent, self.columns[0])
-
-    @property
-    def schema(self):
-        return dshape(self.parent.schema[0][self.columns[0]])
 
     def __eq__(self, other):
         return Eq(self, other)
@@ -185,12 +187,82 @@ class Selection(TableExpr):
         return self.parent.schema
 
 
-class ColumnWise(Column):
+class ColumnWise(TableExpr):
     """
 
     a op b
     """
-    pass
+    def __eq__(self, other):
+        return Eq(self, other)
+
+    def __lt__(self, other):
+        return LT(self, other)
+
+    def __gt__(self, other):
+        return GT(self, other)
+
+    def __add__(self, other):
+        return Add(self, other)
+
+    def __radd__(self, other):
+        return Add(other, self)
+
+    def __mul__(self, other):
+        return Mul(self, other)
+
+    def __rmul__(self, other):
+        return Mul(other, self)
+
+    def __div__(self, other):
+        return Div(self, other)
+
+    def __rdiv__(self, other):
+        return Div(other, self)
+
+    def __sub_(self, other):
+        return Sub(self, other)
+
+    def __rsub__(self, other):
+        return Sub(other, self)
+
+    def __pow__(self, other):
+        return Pow(self, other)
+
+    def __rpow__(self, other):
+        return Pow(other, self)
+
+    def __mod__(self, other):
+        return Mod(self, other)
+
+    def __rmod__(self, other):
+        return Mod(other, self)
+
+    def count(self):
+        return count(self)
+
+    def sum(self):
+        return sum(self)
+
+    def min(self):
+        return min(self)
+
+    def max(self):
+        return max(self)
+
+    def any(self):
+        return any(self)
+
+    def all(self):
+        return all(self)
+
+    def mean(self):
+        return mean(self)
+
+    def var(self):
+        return var(self)
+
+    def std(self):
+        return std(self)
 
 
 class BinOp(ColumnWise):
@@ -359,7 +431,7 @@ class Reduction(Scalar):
 
     @property
     def dshape(self):
-        return dshape(self.parent.dshape.subarray(1))
+        return dshape(self.parent.dshape[-1].fields.values()[0])
 
     @property
     def symbol(self):
