@@ -64,7 +64,11 @@ def test_join():
     expected = DataFrame([['Alice', 100, 1], ['Bob', 200, 2]],
                          columns=['name', 'amount', 'id'])
 
-    assert str(result.reset_index()) == str(expected)
+    print(result)
+    print(expected)
+    assert str(result) == str(expected)
+
+    assert list(result.columns) == list(joined.columns)
 
 def test_UnaryOp():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()

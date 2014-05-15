@@ -75,19 +75,13 @@ def compute(t, lhs, rhs):
     if lhs.index.name:
         old_left = lhs.index.name
         rhs = lhs.reset_index()
-    else:
-        old_left = None
     if rhs.index.name:
-        old_right = rhs.index.name
         rhs = rhs.reset_index()
-    else:
-        old_right = None
 
     lhs = lhs.set_index(t.on_left)
     rhs = rhs.set_index(t.on_right)
     result = lhs.join(rhs)
-    if old_left:
-        result = result.set_index(old_left)
+    result = result.reset_index()
     return result
 
 
