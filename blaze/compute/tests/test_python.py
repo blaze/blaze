@@ -101,3 +101,21 @@ def test_works_on_generators():
             [x[1] for x in data]
     assert list(compute(t['amount'], (i for i in data))) == \
             [x[1] for x in data]
+
+
+def test_join():
+    left = [('Alice', 100), ('Bob', 200)]
+    right = [('Alice', 1), ('Bob', 2)]
+
+    L = TableSymbol('{name: string, amount: int}')
+    R = TableSymbol('{name: string, id: int}')
+    joined = Join(L, R, 'name')
+
+    assert dshape(joined.schema) == \
+            dshape('{name: string, amount: int, id: int}')
+
+    result = list(compute(joined, {L: left, R: right}))
+
+    expected = [('Alice', 100, 1), ('Bob', 200, 2)]
+
+    assert result == expected
