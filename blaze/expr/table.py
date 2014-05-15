@@ -11,6 +11,7 @@ import datashape
 import operator
 from .core import Expr, Scalar
 
+
 class TableExpr(Expr):
     """ Super class for all Table Expressions """
     @property
@@ -279,6 +280,7 @@ class BinOp(ColumnWise):
     [1000, 2000, 500]
     """
     __slots__ = 'lhs', 'rhs'
+
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
@@ -307,35 +309,43 @@ class LT(Relational):
     symbol = '<'
     op = operator.lt
 
+
 class Arithmetic(BinOp):
     @property
     def schema(self):
         # TODO: Infer schema based on input types
         return dshape('real')
 
+
 class Add(Arithmetic):
     symbol = '+'
     op = operator.add
+
 
 class Mul(Arithmetic):
     symbol = '*'
     op = operator.mul
 
+
 class Sub(Arithmetic):
     symbol = '-'
     op = operator.sub
+
 
 class Div(Arithmetic):
     symbol = '/'
     op = operator.truediv
 
+
 class Pow(Arithmetic):
     symbol = '**'
     op = operator.pow
 
+
 class Mod(Arithmetic):
     symbol = '%'
     op = operator.mod
+
 
 class Join(TableExpr):
     """ Join two tables on common columns
@@ -378,6 +388,7 @@ class Join(TableExpr):
                                                  if  k != self.on_right)
         return dshape(Record(rec))
 
+
 class UnaryOp(ColumnWise):
     """ A column-wise Unary Operation
 
@@ -409,6 +420,7 @@ class tan(UnaryOp): pass
 class exp(UnaryOp): pass
 class log(UnaryOp): pass
 
+
 class Reduction(Scalar):
     """ A column-wise reduction
 
@@ -423,7 +435,6 @@ class Reduction(Scalar):
     >>> compute(e, data)
     350
     """
-
     __slots__ = 'parent',
 
     def __init__(self, table):

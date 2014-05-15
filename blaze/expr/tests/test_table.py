@@ -10,8 +10,10 @@ def test_dshape():
 
 
 def test_eq():
-    assert TableSymbol('{a: string, b: int}') == TableSymbol('{a: string, b: int}')
-    assert TableSymbol('{b: string, a: int}') != TableSymbol('{a: string, b: int}')
+    assert TableSymbol('{a: string, b: int}') == \
+            TableSymbol('{a: string, b: int}')
+    assert TableSymbol('{b: string, a: int}') != \
+            TableSymbol('{a: string, b: int}')
 
 
 def test_column():
@@ -76,6 +78,7 @@ def test_str():
     assert eval(str(expr)) == expr
 
     assert '*' in repr(expr)
+
 
 def test_join():
     t = TableSymbol('{name: string, amount: int}')
