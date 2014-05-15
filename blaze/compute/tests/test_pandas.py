@@ -111,7 +111,7 @@ def test_by_three():
 
     assert str(result) == str(expected)
 
-def test_by_three():
+def test_by_four():
     t = tbig[['sex', 'amount']]
     result = compute(By(t, t['sex'], t['amount'].max()), dfbig)
 
