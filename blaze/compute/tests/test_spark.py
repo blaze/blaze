@@ -5,13 +5,13 @@ from blaze.expr.table import *
 
 from pyspark import SparkContext
 
-t = TableSymbol('{name: string, amount: int, id: int}')
+t = TableSymbol('{accounts: string, amount: int, id: int}')
 
 data = [['Alice', 100, 1],
         ['Bob', 200, 2],
         ['Alice', 50, 3]]
 
-t2 = TableSymbol('{name: string, city: string}')
+t2 = TableSymbol('{accounts: string, cities: string}')
 
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
@@ -27,24 +27,24 @@ def test_table():
 
 
 def test_projection():
-    assert compute(t['name'], rdd).collect() == rdd.map(lambda x:
+    assert compute(t['accounts'], rdd).collect() == rdd.map(lambda x:
                                                         x[0]).collect()
 
 
 def test_multicols_projection():
-    assert compute(t[['amount', 'name']], rdd).collect() == [[100, 'Alice'],
+    assert compute(t[['amount', 'accounts']], rdd).collect() == [[100, 'Alice'],
                                                              [200, 'Bob'],
                                                              [50, 'Alice']]
 
 
 def test_selection():
-    assert compute(t[t['name'] == 'Alice'], rdd).collect() ==\
+    assert compute(t[t['accounts'] == 'Alice'], rdd).collect() ==\
         rdd.filter(lambda x: x[0] == 'Alice').collect()
 
 
 def test_join():
 
-    joined = Join(t, t2, 'name')
+    joined = Join(t, t2, 'accounts')
     expected = [['Alice', 100, 1, 'Austin'],
                 ['Bob', 200, 2, 'Boston'],
                 ['Alice', 50, 3, 'Austin']]

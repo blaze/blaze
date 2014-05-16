@@ -10,9 +10,7 @@ import itertools
 @dispatch(Projection, pyspark.rdd.RDD)
 def compute(t, rdd):
     rdd = compute(t.table, rdd)
-    print("T SCHEMA IS " + str(t.table.schema))
     cols = [t.table.schema[0].names.index(col) for col in t.columns]
-    print("COLS: " + str(cols))
     return rdd.map(lambda x: [x[c] for c in cols])
 
 
@@ -52,6 +50,7 @@ def compute(t, lhs, rhs):
                    len(t.rhs.columns))]
     indices = lhs_indices + rhs_indices
     # Perform the spark join, then reassemple the table
-    out_rdd = lhs.join(rhs).map(lambda x: [i for i in itertools.compress(
+    joined_rdd = lhs.join(rhs)
+    out_rdd = joined_rdd.map(lambda x: [i for i in itertools.compress(
         itertools.chain.from_iterable(x[1]), indices)])
     return out_rdd
