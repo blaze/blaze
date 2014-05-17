@@ -14,7 +14,7 @@ from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
 from blaze.compatibility import builtins
-from blaze.utils import groupby
+from blaze.utils import groupby, get
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
@@ -144,3 +144,31 @@ def compute(t, l):
     groups = groupby(grouper, parent)
     d = dict((k, compute(t.apply, v)) for k, v in groups.items())
     return d.items()
+
+
+@dispatch(Join, seq, seq)
+def compute(t, lhs, rhs):
+    """ Join Operation for Python Streaming Backend
+
+    Note that a pure streaming Join is challenging/impossible because any row
+    in one seq might connect to any row in the other, requiring simultaneous
+    complete access.
+
+    As a result this approach compromises and fully realizes the LEFT sequence
+    while allowing the RIGHT sequence to stream.  As a result
+
+    Always put your bigger table on the RIGHT side of the Join.
+    """
+    lhs = compute(t.lhs, lhs)
+    rhs = compute(t.rhs, rhs)
+
+    left_index = t.lhs.columns.index(t.on_left)
+    right_index = t.rhs.columns.index(t.on_right)
+
+    right_columns = list(range(len(t.rhs.columns)))
+    right_columns.remove(right_index)
+    get_right = lambda x: get(right_columns, x)
+
+    lhs_dict = dict((row[left_index], row) for row in lhs)
+
+    return (lhs_dict[row[right_index]] + get_right(row) for row in rhs)
