@@ -10,8 +10,10 @@ def test_dshape():
 
 
 def test_eq():
-    assert TableSymbol('{a: string, b: int}') == TableSymbol('{a: string, b: int}')
-    assert TableSymbol('{b: string, a: int}') != TableSymbol('{a: string, b: int}')
+    assert TableSymbol('{a: string, b: int}') == \
+            TableSymbol('{a: string, b: int}')
+    assert TableSymbol('{b: string, a: int}') != \
+            TableSymbol('{a: string, b: int}')
 
 
 def test_column():
@@ -25,13 +27,13 @@ def test_Projection():
     assert p.schema == dshape('{amount: int32, name: string}')
     print(t['amount'].dshape)
     print(dshape('var * int32'))
-    assert t['amount'].dshape == dshape('var * int32')
+    assert t['amount'].dshape == dshape('var * {amount: int32}')
 
 
 def test_indexing():
     t = TableSymbol('{name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == Projection(t, ['amount', 'id'])
-    assert t['amount'] == Column(t, 'amount')
+    assert t['amount'].isidentical(Column(t, 'amount'))
 
 
 def test_relational():
@@ -55,14 +57,14 @@ def test_selection_by_indexing():
 
     result = t[t['name'] == 'Alice']
     expected = Selection(t, Eq(Column(t, 'name'), 'Alice'))
-    assert result == expected
+    assert str(result) == str(expected)
 
 
 def test_columnwise():
     t = TableSymbol('{x: real, y: real, z: real}')
     x, y, z = t['x'], t['y'], t['z']
     expr = z % x * y + z ** 2
-    assert isinstance(expr, Column)
+    assert isinstance(expr, ColumnWise)
 
 
 def test_str():
@@ -76,6 +78,7 @@ def test_str():
     assert eval(str(expr)) == expr
 
     assert '*' in repr(expr)
+
 
 def test_join():
     t = TableSymbol('{name: string, amount: int}')

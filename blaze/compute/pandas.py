@@ -1,7 +1,7 @@
 """
 
 >>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.python import compute
+>>> from blaze.compute.pandas import compute
 
 >>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
@@ -75,20 +75,13 @@ def compute(t, lhs, rhs):
     if lhs.index.name:
         old_left = lhs.index.name
         rhs = lhs.reset_index()
-    else:
-        old_left = None
     if rhs.index.name:
-        old_right = rhs.index.name
         rhs = rhs.reset_index()
-    else:
-        old_right = None
 
     lhs = lhs.set_index(t.on_left)
     rhs = rhs.set_index(t.on_right)
     result = lhs.join(rhs)
-    if old_left:
-        result = result.set_index(old_left)
-    return result
+    return result.reset_index()[t.columns]
 
 
 @dispatch(UnaryOp, DataFrame)
@@ -109,8 +102,8 @@ def compute(t, s):
 @dispatch(By, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    grouper = compute(t.grouper, df)
+    grouper = compute(t.grouper, parent)
     if type(t.grouper) == Projection and t.grouper.parent == t.parent:
         grouper = list(grouper.columns)
 
-    return df.groupby(grouper).apply(lambda x: compute(t.apply, x))
+    return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))

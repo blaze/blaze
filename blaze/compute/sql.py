@@ -1,7 +1,7 @@
 """
 
 >>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.python import compute
+>>> from blaze.compute.sql import compute
 
 >>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
@@ -18,37 +18,38 @@ WHERE accounts.amount < :amount_1
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from blaze.utils import unique
 from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
 
-@dispatch(Projection, sqlalchemy.Table)
+@dispatch(Projection, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     return sa.select([parent.c.get(col) for col in t.columns])
 
 
-@dispatch(Column, sqlalchemy.Table)
+@dispatch(Column, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     return parent.c.get(t.columns[0])
 
 
-@dispatch(BinOp, sqlalchemy.Table)
+@dispatch(BinOp, sqlalchemy.sql.Selectable)
 def compute(t, s):
     lhs = compute(t.lhs, s)
     rhs = compute(t.rhs, s)
     return t.op(lhs, rhs)
 
 
-@dispatch(Selection, sqlalchemy.Table)
+@dispatch(Selection, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     predicate = compute(t.predicate, s)
     return sa.select([parent]).where(predicate)
 
 
-@dispatch(TableSymbol, sqlalchemy.Table)
+@dispatch(TableSymbol, sqlalchemy.sql.Selectable)
 def compute(t, s):
     return s
 
@@ -71,23 +72,24 @@ def computefull(t, s):
     return select(compute(t, s))
 
 
-@dispatch(Join, sqlalchemy.Table, sqlalchemy.Table)
+@dispatch(Join, sqlalchemy.sql.Selectable, sqlalchemy.sql.Selectable)
 def compute(t, lhs, rhs):
-    """
-
-    TODO: SQL bunches all of the columns from both tables together.  We should
-    probably downselect
-    """
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
     left_column = getattr(lhs.c, t.on_left)
     right_column = getattr(rhs.c, t.on_right)
 
-    return lhs.join(rhs, left_column == right_column)
+    condition = left_column == right_column
+
+    join = lhs.join(rhs, condition)
+
+    columns = unique(join.columns,
+                     key=lambda c: c.name)
+    return select(list(columns)).select_from(join)
 
 
-@dispatch(UnaryOp, sqlalchemy.Table)
+@dispatch(UnaryOp, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     op = getattr(sa.func, t.symbol)
@@ -99,7 +101,7 @@ names = {mean: 'avg',
          std: 'stdev'}
 
 
-@dispatch(Reduction, sqlalchemy.Table)
+@dispatch(Reduction, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     try:
@@ -110,7 +112,7 @@ def compute(t, s):
     return op(parent)
 
 
-@dispatch(By, sqlalchemy.Table)
+@dispatch(By, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     if isinstance(t.grouper, Projection):

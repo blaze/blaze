@@ -14,6 +14,7 @@ h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
 
 __all__ = ['HDF5']
 
+
 class HDF5(DataDescriptor):
     """
     A Blaze data descriptor which exposes an HDF5 file.
@@ -39,7 +40,8 @@ class HDF5(DataDescriptor):
     appendable = True
     remote = False
 
-    def __init__(self, path, datapath, mode='r', schema=None, dshape=None, **kwargs):
+    def __init__(self, path, datapath, mode='r',
+                 schema=None, dshape=None, **kwargs):
         self.path = path
         self.datapath = datapath
         self.mode = mode
@@ -87,7 +89,7 @@ class HDF5(DataDescriptor):
         with h5py.File(self.path, 'r') as f:
             arr = f[self.datapath]
             result = dict((attr, getattr(arr, attr))
-                            for attr in h5py_attributes)
+                          for attr in h5py_attributes)
         return result
 
     def _get_dynd(self, key):
@@ -97,7 +99,7 @@ class HDF5(DataDescriptor):
             rec_key = get(key[-1], self.dshape[-1].names)
             if isinstance(rec_key, tuple):
                 rec_key = list(rec_key)
-            key = (rec_key,) +  key[:-1]
+            key = (rec_key,) + key[:-1]
             print(key)
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]

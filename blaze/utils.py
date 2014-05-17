@@ -214,3 +214,26 @@ def reduceby(seq, key, binop, initial=None):
         else:
             d[k] = binop(d[k], item)
     return d
+
+
+def identity(x):
+    return x
+
+
+def unique(seq, key=identity):
+    """ A sequence of unique elements from seq
+
+    >>> list(unique([1, 2, 2, 3]))
+    [1, 2, 3]
+
+    Use the key function to define uniqueness
+
+    >>> list(unique([1, 2, 3, 4], key=lambda x: x % 2))
+    [1, 2]
+    """
+    s = set()
+    for item in seq:
+        if key(item) not in s:
+            s.add(key(item))
+            yield item
+

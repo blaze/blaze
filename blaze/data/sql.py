@@ -1,4 +1,5 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 from datetime import date, datetime, time
 from decimal import Decimal
@@ -33,6 +34,7 @@ types = {'int64': sql.types.BigInteger,
 #         unicode: sql.types.UnicodeText,
 #         str: sql.types.Text,  # ??
          }
+
 
 def dshape_to_alchemy(dshape):
     """
@@ -101,7 +103,6 @@ class SQL(DataDescriptor):
     def persistent(self):
         return self.engine.url != 'sqlite:///:memory:'
 
-
     def __init__(self, engine, tablename, primary_key='', schema=None):
         if isinstance(engine, _strtypes):
             engine = sql.create_engine(engine)
@@ -139,8 +140,8 @@ class SQL(DataDescriptor):
 
     def extend(self, rows):
         rows = (coerce_row_to_dict(self.schema, row)
-                    if isinstance(row, (tuple, list)) else row
-                    for row in rows)
+                if isinstance(row, (tuple, list)) else row
+                for row in rows)
         with self.engine.connect() as conn:
             for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
                 conn.execute(self.table.insert(), chunk)
@@ -177,11 +178,11 @@ class SQL(DataDescriptor):
             columns = [getattr(self.table.c, cols)]
         if isinstance(cols, _inttypes):
             transform = lambda x: x[0]
-            columns= [getattr(self.table.c, self.schema[0].names[cols])]
+            columns = [getattr(self.table.c, self.schema[0].names[cols])]
         else:
             columns = [getattr(self.table.c, x) if isinstance(x, _strtypes)
-                        else getattr(self.table.c, self.schema[0].names[x])
-                        for x in cols]
+                       else getattr(self.table.c, self.schema[0].names[x])
+                       for x in cols]
 
         query = sql.sql.select(columns).limit(rows.stop)
         result = self._query(query, transform)
