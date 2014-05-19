@@ -6,6 +6,7 @@ import json
 from itertools import islice
 import datashape
 from dynd import nd
+from collections import Iterator
 
 from ..utils import partition_all, nth, nth_list, ndget
 from .. import compatibility
@@ -120,7 +121,8 @@ class JSON_Streaming(JSON):
         else:
             raise NotImplementedError('Fancy indexing not supported')
         try:
-            # f.close()
+            if not isinstance(result, Iterator):
+                f.close()
             pass
         except AttributeError:
             pass

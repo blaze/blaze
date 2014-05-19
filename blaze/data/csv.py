@@ -4,6 +4,7 @@ import csv
 import itertools as it
 import os
 from operator import itemgetter
+from collections import Iterator
 
 import datashape
 from dynd import nd
@@ -138,8 +139,8 @@ class CSV(DataDescriptor):
         else:
             raise IndexError("key '%r' is not valid" % key)
         try:
-            pass
-            # f.close()
+            if not isinstance(result, Iterator):
+                f.close()
         except AttributeError:
             pass
         return result
