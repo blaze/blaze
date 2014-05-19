@@ -111,12 +111,16 @@ def test_reduction():
     r = sum(t['amount'])
     print(type(r.dshape))
     print(type(dshape('int32')))
-    assert r.dshape == dshape('int32')
+    assert r.dshape in (dshape('int32'), dshape('{amount: int32}'))
 
 
-def test_reduce_by():
+def test_by():
     t = TableSymbol('{name: string, amount: int32, id: int32}')
     r = By(t, t['name'], sum(t['amount']))
+
+    print(r.schema)
+    assert isinstance(r.schema[0], Record)
+    assert str(r.schema[0]['name']) == 'string'
 
 
 def test_sort():
