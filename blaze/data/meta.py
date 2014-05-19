@@ -62,4 +62,8 @@ class Stack(DataDescriptor):
             else:
                 return result._get_py(key[1:])
         else:
-            return self.descriptors[key].py[:]
+            result = get(key, self.descriptors)
+            if isinstance(key, (list, slice)):
+                return (s.as_py() for s in result)
+            else:
+                return result.as_py()

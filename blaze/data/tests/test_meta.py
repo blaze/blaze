@@ -78,8 +78,10 @@ class Test_Stack(TestCase):
             self.assertEqual(tuple(dd.py[[0, 2], 0, 0]), (1, 5))
             self.assertEqual(tuplify(tuple(dd.py[0])), ((1, 1), (2, 2)))
             self.assertEqual(tuplify(tuple(dd.py[0, :, [1]])), ((1,), (2,)))
+            self.assertEqual(tuplify(tuple(dd.py[0])), expected[0])
 
             assert isinstance(dd.py[:, 0], Iterator)
+            assert isinstance(dd.py[:], Iterator)
 
 
 
