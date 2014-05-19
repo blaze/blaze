@@ -1,9 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
+from itertools import chain
 from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record
 from datashape.predicates import isunit, isdimension
+from ..utils import partition_all
 
 
 def validate(schema, item):
@@ -16,7 +18,8 @@ def validate(schema, item):
 
 def coerce(dshape, item):
     if isinstance(item, Iterator):
-        item = tuple(item)
+        blocks = partition_all(100, item)
+        return chain.from_iterable(coerce(dshape, block) for block in blocks)
     return nd.as_py(nd.array(item, dtype=str(dshape)), tuple=True)
 
 
@@ -133,7 +136,7 @@ def tupleit(x):
 
 
 def tuplify(x):
-    if isinstance(x, (tuple, list)):
+    if isinstance(x, (tuple, list, Iterator)):
         return tuple(map(tuplify, x))
     else:
         return x

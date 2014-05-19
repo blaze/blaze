@@ -89,7 +89,7 @@ class SingleTestClass(unittest.TestCase):
         assert dd.py[0, 'name'] in ('Alice', 'Bob', 'Charlie')
         self.assertEqual(set(dd.py[:, 0]), set(dd.py[:, 'name']))
         self.assertEqual(set(dd.py[:, [1, 0]]), set(dd.py[:, ['amount', 'name']]))
-        self.assertEqual(len(dd.py[:2, 'name']), 2)
+        self.assertEqual(len(list(dd.py[:2, 'name'])), 2)
         self.assertEqual(set(dd.py[:, :]), set(data))
         self.assertEqual(set(dd.py[:, :2]), set(dd.py[:, ['name', 'amount']]))
         self.assertEqual(set(dd.py[:]), set(dd.py[:, :]))
