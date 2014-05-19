@@ -121,3 +121,14 @@ def compute(t, s):
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
     return select(compute(t.apply, s)).group_by(*grouper)
+
+
+@dispatch(Sort, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    if isinstance(t.column, (tuple, list)):
+        raise NotImplementedError("Multi-column sort not yet implemented")
+    parent = compute(t.parent, s)
+    col = getattr(parent.c, t.column)
+    if not t.ascending:
+        col = sqlalchemy.desc(col)
+    return select(parent).order_by(col)
