@@ -123,10 +123,10 @@ def test_join():
 
 def test_sort():
     assert list(compute(t.sort('amount'), data)) == \
-            sorted(data, key=lambda x: x[1])
+            sorted(data, key=lambda x: x[1], reverse=False)
 
     assert list(compute(t.sort('amount', ascending=True), data)) == \
-            sorted(data, key=lambda x: x[1], reverse=True)
+            sorted(data, key=lambda x: x[1], reverse=False)
 
     assert list(compute(t.sort(['amount', 'id']), data)) == \
-            sorted(data, key=lambda x: (x[1], x[2]))
+            sorted(data, key=lambda x: (x[1], x[2]), reverse=False)

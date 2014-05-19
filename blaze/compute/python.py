@@ -186,4 +186,4 @@ def compute(t, l):
 
     return sorted(parent,
                   key=key,
-                  reverse=t.ascending)
+                  reverse=not t.ascending)

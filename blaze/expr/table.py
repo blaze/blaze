@@ -35,7 +35,7 @@ class TableExpr(Expr):
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
 
-    def sort(self, column, ascending=False):
+    def sort(self, column, ascending=True):
         return Sort(self, column, ascending)
 
 
@@ -494,7 +494,7 @@ class By(TableExpr):
 class Sort(TableExpr):
     __slots__ = 'parent', 'column', 'ascending'
 
-    def __init__(self, parent, column, ascending=False):
+    def __init__(self, parent, column, ascending=True):
         self.parent = parent
         self.column = column
         self.ascending = ascending
