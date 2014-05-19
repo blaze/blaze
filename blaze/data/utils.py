@@ -118,10 +118,10 @@ def ordered_index(ind, ds):
         return [ordered_index(i, ds) for i in ind]
     if isinstance(ind, str) and isinstance(ds[0], Record):
         return ds[0].names.index(ind)
-    if isdimension(ds[0]):
-        return (ind[0],) + tupleit(ordered_index(ind[1:], ds.subshape[0]))
     if isinstance(ind, tuple) and not ind:
         return ()
+    if isdimension(ds[0]):
+        return (ind[0],) + tupleit(ordered_index(ind[1:], ds.subshape[0]))
     if isinstance(ind, tuple):
         return ((ordered_index(ind[0], ds),)
                 + tupleit(ordered_index(ind[1:], ds.subshape[0])))
