@@ -6,7 +6,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from datashape import dshape, var, DataShape, Record
+from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
 from .core import Expr, Scalar
@@ -451,7 +451,11 @@ class Reduction(Scalar):
 
     @property
     def dshape(self):
-        return dshape(list(self.parent.dshape[-1].fields.values())[0])
+        dtype = self.parent.dshape[-1]
+        if isinstance(dtype, Record):
+            return dshape(list(dtype.fields.values())[0])
+        else:
+            return dshape(dtype)
 
     @property
     def symbol(self):
@@ -491,6 +495,8 @@ class By(TableExpr):
         s = TableSymbol(parent.schema)
         self.grouper = grouper.subs({parent: s})
         self.apply = apply.subs({parent: s})
+        if isdimension(self.apply.dshape[0]):
+            raise TypeError("Expected Reduction")
 
 
 class Sort(TableExpr):
