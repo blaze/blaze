@@ -113,3 +113,9 @@ def compute(t, df):
 def compute(t, df):
     parent = compute(t.parent, df)
     return parent.sort(t.column, ascending=t.ascending)
+
+
+@dispatch(Head, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return parent.head(t.n)

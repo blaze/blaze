@@ -161,3 +161,7 @@ def test_sort():
 
     assert str(compute(t.sort(['amount', 'id']), df)) == \
             str(df.sort(['amount', 'id']))
+
+
+def test_head():
+    assert str(compute(t.head(1), df)) == str(df.head(1))
