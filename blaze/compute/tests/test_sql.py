@@ -166,3 +166,7 @@ def test_sort():
 
     assert str(compute(t.sort('amount', ascending=False), s)) == \
             str(select(s).order_by(sqlalchemy.desc(s.c.amount)))
+
+
+def test_head():
+    assert str(compute(t.head(2), s)) == str(select(s).limit(2))

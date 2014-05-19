@@ -132,3 +132,9 @@ def compute(t, s):
     if not t.ascending:
         col = sqlalchemy.desc(col)
     return select(parent).order_by(col)
+
+
+@dispatch(Head, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    return select(parent).limit(t.n)
