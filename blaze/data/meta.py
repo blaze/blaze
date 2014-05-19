@@ -35,7 +35,7 @@ class Concat(DataDescriptor):
 
         result = get(key[0], iter(self))
         if isinstance(key[0], (list, slice)):
-            return [ndget(key[1:], row) for row in result]
+            return (ndget(key[1:], row) for row in result)
         else:
             return ndget(key[1:], result)
 
@@ -58,7 +58,7 @@ class Stack(DataDescriptor):
         if isinstance(key, tuple):
             result = get(key[0], self.descriptors)
             if isinstance(key[0], (list, slice)):
-                return [s._get_py(key[1:]) for s in result]
+                return (s._get_py(key[1:]) for s in result)
             else:
                 return result._get_py(key[1:])
         else:
