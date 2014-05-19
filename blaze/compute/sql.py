@@ -113,7 +113,7 @@ def compute(t, s):
 
     if isinstance(t.parent.schema[0], Record):
         name = t.parent.schema[0].fields.keys()[0]
-        result = sqlalchemy.alias(result, name=name)
+        result = result.label(name)
 
     return result
 

@@ -115,9 +115,8 @@ def test_binary_reductions():
 def test_by():
     expr = By(t, t['name'], t['amount'].sum())
     result = compute(expr, s)
-    expected = sa.select([sa.alias(sa.sql.functions.sum(s.c.amount),
-                                   name='amount')
-                          ]).group_by(s.c.name)
+    expected = sa.select([sa.sql.functions.sum(s.c.amount).label('amount')]
+                         ).group_by(s.c.name)
 
     assert str(result) == str(expected)
 
@@ -125,8 +124,7 @@ def test_by():
 def test_by_two():
     expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
     result = compute(expr, sbig)
-    expected = (sa.select([sa.alias(sa.sql.functions.sum(sbig.c.amount),
-                                    name='amount')])
+    expected = (sa.select([sa.sql.functions.sum(sbig.c.amount).label('amount')])
                         .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
