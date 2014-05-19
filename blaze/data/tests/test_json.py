@@ -6,6 +6,7 @@ import tempfile
 import json
 from dynd import nd
 import datashape
+from collections import Iterator
 
 from blaze.data import JSON, JSON_Streaming
 from blaze.utils import filetext, raises
@@ -141,6 +142,8 @@ class Test_Indexing(AccountTestData):
         self.assertEqual(tuplify(self.dd.py[[2, 0], [1, 0]]), ((10, 'Bob'),
                                                    (100, 'Alice')))
 
+    def test_laziness(self):
+        assert isinstance(self.dd.py[:, 'name'], Iterator)
 
 class Test_StreamingTransfer(AccountTestData):
     def test_init(self):
