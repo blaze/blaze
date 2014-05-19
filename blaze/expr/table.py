@@ -452,11 +452,7 @@ class Reduction(Scalar):
 
     @property
     def dshape(self):
-        dtype = self.parent.dshape[-1]
-        if isinstance(dtype, Record):
-            return dshape(list(dtype.fields.values())[0])
-        else:
-            return dshape(dtype)
+        return self.parent.dshape.subarray(1)
 
     @property
     def symbol(self):
