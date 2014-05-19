@@ -126,3 +126,11 @@ def test_sort():
     assert eval(str(s)).isidentical(s)
 
     assert s.schema == t.schema
+
+
+def test_head():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    s = t.head(10)
+    assert eval(str(s)).isidentical(s)
+
+    assert s.schema == t.schema

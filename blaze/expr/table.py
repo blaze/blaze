@@ -38,6 +38,8 @@ class TableExpr(Expr):
     def sort(self, column, ascending=True):
         return Sort(self, column, ascending)
 
+    def head(self, n=10):
+        return Head(self, n)
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -502,3 +504,19 @@ class Sort(TableExpr):
     @property
     def schema(self):
         return self.parent.schema
+
+
+class Head(TableExpr):
+    __slots__ = 'parent', 'n'
+
+    def __init__(self, parent, n=10):
+        self.parent = parent
+        self.n = n
+
+    @property
+    def schema(self):
+        return self.parent.schema
+
+    @property
+    def dshape(self):
+        return self.n * self.schema
