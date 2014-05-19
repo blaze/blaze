@@ -187,3 +187,9 @@ def compute(t, l):
     return sorted(parent,
                   key=key,
                   reverse=not t.ascending)
+
+
+@dispatch(Head, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return itertools.islice(parent, 0, t.n)

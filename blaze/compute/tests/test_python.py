@@ -130,3 +130,7 @@ def test_sort():
 
     assert list(compute(t.sort(['amount', 'id']), data)) == \
             sorted(data, key=lambda x: (x[1], x[2]), reverse=False)
+
+
+def test_head():
+    assert list(compute(t.head(1), data)) == [data[0]]
