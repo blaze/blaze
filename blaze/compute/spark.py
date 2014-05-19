@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, print_function
 
 
 from blaze.expr.table import *
+from blaze.expr.table import count as Count
+from blaze.compute.python import *
 from multipledispatch import dispatch
 import pyspark
 import itertools
@@ -9,15 +11,15 @@ import itertools
 
 @dispatch(Projection, pyspark.rdd.RDD)
 def compute(t, rdd):
-    rdd = compute(t.table, rdd)
-    cols = [t.table.schema[0].names.index(col) for col in t.columns]
+    rdd = compute(t.parent, rdd)
+    cols = [t.parent.schema[0].names.index(col) for col in t.columns]
     return rdd.map(lambda x: [x[c] for c in cols])
 
 
 @dispatch(Column, pyspark.rdd.RDD)
 def compute(t, rdd):
-    rdd = compute(t.table, rdd)
-    col_idx = t.table.schema[0].names.index(t.columns[0])
+    rdd = compute(t.parent, rdd)
+    col_idx = t.parent.schema[0].names.index(t.columns[0])
     return rdd.map(lambda x: x[col_idx])
 
 
@@ -28,8 +30,8 @@ def compute(t, s):
 
 @dispatch(Selection, pyspark.rdd.RDD)
 def compute(t, rdd):
-    rdd = compute(t.table, rdd)
-    col_idx = t.table.schema[0].names.index(t.columns[0])
+    rdd = compute(t.parent, rdd)
+    col_idx = t.parent.schema[0].names.index(t.columns[0])
     return rdd.filter(lambda x: t.predicate.op(x[col_idx], t.predicate.rhs))
 
 
@@ -50,7 +52,15 @@ def compute(t, lhs, rhs):
                    len(t.rhs.columns))]
     indices = lhs_indices + rhs_indices
     # Perform the spark join, then reassemple the table
-    joined_rdd = lhs.join(rhs)
-    out_rdd = joined_rdd.map(lambda x: [i for i in itertools.compress(
+    out_rdd = lhs.join(rhs).map(lambda x: [i for i in itertools.compress(
         itertools.chain.from_iterable(x[1]), indices)])
     return out_rdd
+
+@dispatch(By, pyspark.rdd.RDD)
+def compute(t, rdd):
+    parent = compute(t.parent, rdd)
+    key_by_idx = t.parent.schema[0].names.index(t.grouper.columns[0])
+    keyed_rdd = parent.keyBy(lambda x: x[key_by_idx])
+    grouped = keyed_rdd.groupByKey()
+    return grouped.map(lambda x: (x[0], compute(t.apply, x[1])))
+
