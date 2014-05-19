@@ -109,7 +109,13 @@ def compute(t, s):
     except:
         symbol = names.get(type(t), t.symbol)
         op = getattr(sqlalchemy.sql.func, symbol)
-    return op(parent)
+    result = op(parent)
+
+    if isinstance(t.parent.schema[0], Record):
+        name = t.parent.schema[0].fields.keys()[0]
+        result = sqlalchemy.alias(result, name=name)
+
+    return result
 
 
 @dispatch(By, sqlalchemy.sql.Selectable)
