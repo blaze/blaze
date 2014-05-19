@@ -32,7 +32,7 @@ install:
   - pip install git+http://github.com/ContinuumIO/blz
 
   # Install Spark
-  - http://www.eng.lsu.edu/mirrors/apache/incubator/spark/spark-0.9.1/spark-0.9.1-bin-cdh4.tgz
+  - wget http://www.eng.lsu.edu/mirrors/apache/incubator/spark/spark-0.9.1/spark-0.9.1-bin-cdh4.tgz
   - tar xvfz spark-0.9.1-bin-cdh4.tgz
   - mv spark-0.9.1-bin-cdh4 spark
   - export SPARK_HOME=$PWD/spark
