@@ -152,6 +152,9 @@ def compute(t, l):
         raise NotImplementedError("Grouper attribute of By must be Projection "
                                   "of parent table, got %s" % str(t.grouper))
 
+    # Match setting like
+    # By(t, t[column], t[column].reduction())
+    # TODO: Support more general streaming grouped reductions
     if (isinstance(t.apply, Reduction) and
         isinstance(t.apply.parent, Column) and
         t.apply.parent.parent.isidentical(t.grouper.parent) and
