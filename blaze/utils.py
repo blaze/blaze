@@ -193,14 +193,14 @@ def groupby(f, coll):
     return d
 
 
-def reduceby(seq, key, binop, initial=None):
+def reduceby(key, binop, seq, initial=None):
     """ Streaming split-apply-combine
 
     >>> accounts = [('Alice', 100), ('Bob', 200), ('Alice', 50)]
     >>> get_name = lambda x: x[0]
     >>> add_amount = lambda total, (name, amount): total + amount
 
-    >>> reduceby(accounts, get_name, add_amount, 0)  # doctest: +SKIP
+    >>> reduceby(get_name, add_amount, accounts, 0)  # doctest: +SKIP
     {'Alice': 150, 'Bob': 200}
     """
     d = {}
@@ -236,4 +236,3 @@ def unique(seq, key=identity):
         if key(item) not in s:
             s.add(key(item))
             yield item
-

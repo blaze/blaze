@@ -169,7 +169,7 @@ def compute(t, seq):
             x = getter(x)
             return binop(acc, x)
 
-        d = reduceby(parent, grouper, binop2, initial)
+        d = reduceby(grouper, binop2, parent, initial)
     else:
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
