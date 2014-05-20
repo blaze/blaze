@@ -11,10 +11,10 @@ from ..function import ElementwiseBlazeFunc
 
 
 def _make_sig(kern):
+    dsret = datashape.dshape(str(nd.as_py(kern.proto).return_type))
     dslist = [datashape.dshape(str(x))
               for x in nd.as_py(kern.proto).param_types]
-    return datashape.Function(*(dslist +
-                                [nd.as_py(kern.proto).return_type]))
+    return datashape.Function(*(dslist + [dsret]))
 
 
 def blazefunc_from_dynd_property(tplist, propname, modname, name):
