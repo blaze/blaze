@@ -19,6 +19,7 @@ from multipledispatch import dispatch
 import itertools
 from collections import Iterator
 import math
+from ..utils import reduceby
 
 seq = (tuple, list, Iterator)
 
@@ -128,6 +129,16 @@ def compute(t, l):
 def compute(t, l):
     return math.sqrt(compute(var(t.parent), l))
 
+lesser = lambda x, y: x if x < y else y
+greater = lambda x, y: x if x > y else y
+countit = lambda acc, _: acc + 1
+
+binops = {sum: (operator.add, 0),
+          min: (lesser, 1e250),
+          max: (greater, -1e250),
+          count: (countit, 0),
+          any: (operator.or_, False),
+          all: (operator.and_, True)}
 
 @dispatch(By, seq)
 def compute(t, l):
@@ -141,8 +152,24 @@ def compute(t, l):
         raise NotImplementedError("Grouper attribute of By must be Projection "
                                   "of parent table, got %s" % str(t.grouper))
 
-    groups = groupby(grouper, parent)
-    d = dict((k, compute(t.apply, v)) for k, v in groups.items())
+    if (isinstance(t.apply, Reduction) and
+        isinstance(t.apply.parent, Column) and
+        t.apply.parent.parent.isidentical(t.grouper.parent) and
+        t.apply.parent.parent.isidentical(t.parent) and
+        type(t.apply) in binops):
+
+        binop, initial = binops[type(t.apply)]
+
+        col = t.apply.parent.columns[0]
+        getter = operator.itemgetter(t.apply.parent.parent.columns.index(col))
+        def binop2(acc, x):
+            x = getter(x)
+            return binop(acc, x)
+
+        d = reduceby(parent, grouper, binop2, initial)
+    else:
+        groups = groupby(grouper, parent)
+        d = dict((k, compute(t.apply, v)) for k, v in groups.items())
     return d.items()
 
 
