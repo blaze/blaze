@@ -109,7 +109,13 @@ def compute(t, s):
     except:
         symbol = names.get(type(t), t.symbol)
         op = getattr(sqlalchemy.sql.func, symbol)
-    return op(parent)
+    result = op(parent)
+
+    if isinstance(t.parent.schema[0], Record):
+        name = list(t.parent.schema[0].fields.keys())[0]
+        result = result.label(name)
+
+    return result
 
 
 @dispatch(By, sqlalchemy.sql.Selectable)
@@ -120,7 +126,8 @@ def compute(t, s):
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-    return select(compute(t.apply, s)).group_by(*grouper)
+    reduction = compute(t.apply, s)
+    return select(grouper + [reduction]).group_by(*grouper)
 
 
 @dispatch(Sort, sqlalchemy.sql.Selectable)

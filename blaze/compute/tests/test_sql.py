@@ -104,6 +104,8 @@ def test_reductions():
     assert str(compute(count(t['amount']), s)) == \
             str(sa.sql.func.count(s.c.amount))
 
+    assert 'amount' == compute(sum(t['amount']), s).name
+
 @skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
@@ -113,7 +115,9 @@ def test_binary_reductions():
 def test_by():
     expr = By(t, t['name'], t['amount'].sum())
     result = compute(expr, s)
-    expected = sa.select([sa.sql.functions.sum(s.c.amount)]).group_by(s.c.name)
+    expected = sa.select([s.c.name,
+                          sa.sql.functions.sum(s.c.amount).label('amount')]
+                         ).group_by(s.c.name)
 
     assert str(result) == str(expected)
 
@@ -121,8 +125,10 @@ def test_by():
 def test_by_two():
     expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
     result = compute(expr, sbig)
-    expected = (sa.select([sa.sql.functions.sum(sbig.c.amount)])
-                    .group_by(sbig.c.name, sbig.c.sex))
+    expected = (sa.select([sbig.c.name,
+                           sbig.c.sex,
+                           sa.sql.functions.sum(sbig.c.amount).label('amount')])
+                        .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
 
@@ -133,7 +139,9 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      sbig)
 
-    expected = (sa.select([sa.sql.functions.sum(sbig.c.id+ sbig.c.amount)])
+    expected = (sa.select([sbig.c.name,
+                           sbig.c.sex,
+                           sa.sql.functions.sum(sbig.c.id+ sbig.c.amount)])
                     .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)

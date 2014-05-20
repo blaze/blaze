@@ -12,82 +12,83 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
-from blaze.compatibility import builtins
-from blaze.utils import groupby, get
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
 import math
 
-seq = (tuple, list, Iterator)
+from ..expr.table import *
+from ..compatibility import builtins
+from ..utils import groupby, get, reduceby
 
-@dispatch(Projection, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+Sequence = (tuple, list, Iterator)
+
+@dispatch(Projection, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     indices = [t.parent.columns.index(col) for col in t.columns]
     get = operator.itemgetter(*indices)
     return (get(x) for x in parent)
 
 
-@dispatch(Column, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(Column, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     index = t.parent.columns.index(t.columns[0])
     return (x[index] for x in parent)
 
 
-@dispatch(BinOp, seq)
-def compute(t, l):
+@dispatch(BinOp, Sequence)
+def compute(t, seq):
     lhs_istable = isinstance(t.lhs, TableExpr)
     rhs_istable = isinstance(t.rhs, TableExpr)
 
     if lhs_istable and rhs_istable:
 
-        l1, l2 = itertools.tee(l, 2)
-        lhs = compute(t.lhs, l1)
-        rhs = compute(t.rhs, l2)
+        seq1, seq2 = itertools.tee(seq, 2)
+        lhs = compute(t.lhs, seq1)
+        rhs = compute(t.rhs, seq2)
 
         return (t.op(left, right) for left, right in zip(lhs, rhs))
 
     elif lhs_istable:
 
-        lhs = compute(t.lhs, l)
+        lhs = compute(t.lhs, seq)
         right = compute(t.rhs, None)
 
         return (t.op(left, right) for left in lhs)
 
     elif rhs_istable:
 
-        rhs = compute(t.rhs, l)
+        rhs = compute(t.rhs, seq)
         left = compute(t.lhs, None)
 
         return (t.op(left, right) for right in rhs)
 
 
-@dispatch(Selection, seq)
-def compute(t, l):
-    l1, l2 = itertools.tee(l)
-    parent = compute(t.parent, l1)
-    predicate = compute(t.predicate, l2)
+@dispatch(Selection, Sequence)
+def compute(t, seq):
+    seq1, seq2 = itertools.tee(seq)
+    parent = compute(t.parent, seq1)
+    predicate = compute(t.predicate, seq2)
     return (x for x, tf in zip(parent, predicate)
               if tf)
 
 
-@dispatch(TableSymbol, seq)
-def compute(t, l):
-    return l
+@dispatch(TableSymbol, Sequence)
+def compute(t, seq):
+    return seq
 
 
-@dispatch(UnaryOp, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(UnaryOp, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     op = getattr(math, t.symbol)
     return (op(x) for x in parent)
 
-@dispatch(Reduction, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(Reduction, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     op = getattr(builtins, t.symbol)
     return op(parent)
 
@@ -109,29 +110,39 @@ def _var(seq):
         count += 1
     return 1.0*total_squared/count - (1.0*total/count) ** 2
 
-@dispatch(count, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(count, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     return builtins.sum(1 for i in parent)
 
-@dispatch(mean, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(mean, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     return _mean(parent)
 
-@dispatch(var, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(var, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     return _var(parent)
 
-@dispatch(std, seq)
-def compute(t, l):
-    return math.sqrt(compute(var(t.parent), l))
+@dispatch(std, Sequence)
+def compute(t, seq):
+    return math.sqrt(compute(var(t.parent), seq))
 
+lesser = lambda x, y: x if x < y else y
+greater = lambda x, y: x if x > y else y
+countit = lambda acc, _: acc + 1
 
-@dispatch(By, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+binops = {sum: (operator.add, 0),
+          min: (lesser, 1e250),
+          max: (greater, -1e250),
+          count: (countit, 0),
+          any: (operator.or_, False),
+          all: (operator.and_, True)}
+
+@dispatch(By, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
 
     if isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
         indices = [t.grouper.parent.columns.index(col)
@@ -141,12 +152,31 @@ def compute(t, l):
         raise NotImplementedError("Grouper attribute of By must be Projection "
                                   "of parent table, got %s" % str(t.grouper))
 
-    groups = groupby(grouper, parent)
-    d = dict((k, compute(t.apply, v)) for k, v in groups.items())
+    # Match setting like
+    # By(t, t[column], t[column].reduction())
+    # TODO: Support more general streaming grouped reductions
+    if (isinstance(t.apply, Reduction) and
+        isinstance(t.apply.parent, Column) and
+        t.apply.parent.parent.isidentical(t.grouper.parent) and
+        t.apply.parent.parent.isidentical(t.parent) and
+        type(t.apply) in binops):
+
+        binop, initial = binops[type(t.apply)]
+
+        col = t.apply.parent.columns[0]
+        getter = operator.itemgetter(t.apply.parent.parent.columns.index(col))
+        def binop2(acc, x):
+            x = getter(x)
+            return binop(acc, x)
+
+        d = reduceby(parent, grouper, binop2, initial)
+    else:
+        groups = groupby(grouper, parent)
+        d = dict((k, compute(t.apply, v)) for k, v in groups.items())
     return d.items()
 
 
-@dispatch(Join, seq, seq)
+@dispatch(Join, Sequence, Sequence)
 def compute(t, lhs, rhs):
     """ Join Operation for Python Streaming Backend
 
@@ -174,9 +204,9 @@ def compute(t, lhs, rhs):
     return (lhs_dict[row[right_index]] + get_right(row) for row in rhs)
 
 
-@dispatch(Sort, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(Sort, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     if isinstance(t.column, (tuple, list)):
         index = [t.parent.columns.index(col) for col in t.column]
         key = operator.itemgetter(*index)
@@ -189,7 +219,7 @@ def compute(t, l):
                   reverse=not t.ascending)
 
 
-@dispatch(Head, seq)
-def compute(t, l):
-    parent = compute(t.parent, l)
+@dispatch(Head, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
     return itertools.islice(parent, 0, t.n)
