@@ -6,12 +6,13 @@ import json
 from itertools import islice
 import datashape
 from dynd import nd
+from collections import Iterator
 
-from ..utils import partition_all, nth
+from ..utils import partition_all, nth, nth_list, ndget
 from .. import compatibility
-from ..compatibility import _inttypes
+from ..compatibility import _inttypes, map
 from .core import DataDescriptor, isdimension
-from .utils import coerce
+from .utils import coerce, coerce_row_to_dict, coerce_to_ordered
 
 
 class JSON(DataDescriptor):
@@ -32,7 +33,7 @@ class JSON(DataDescriptor):
     appendable = False
     remote = False
 
-    def __init__(self, path, mode='r', schema=None, dshape=None, open=open):
+    def __init__(self, path, mode='rt', schema=None, dshape=None, open=open):
         self.path = path
         self.mode = mode
         self.open = open
@@ -69,11 +70,6 @@ class JSON(DataDescriptor):
     def as_dynd(self):
         return self._arr_cache
 
-    def as_py(self):
-        with open(self.path) as f:
-            result = json.load(f)
-        return result
-
     def remove(self):
         """Remove the persistent storage."""
         os.unlink(self.path)
@@ -108,51 +104,83 @@ class JSON_Streaming(JSON):
         self._cache_arr = nd.parse_json(str(self.dshape), text)
         return self._cache_arr
 
-    def __getitem__(self, key):
-        with self.open(self.path) as f:
-            if isinstance(key, _inttypes):
-                result = json.loads(nth(key, f))
-            elif isinstance(key, slice):
-                result = list(map(json.loads,
-                                    islice(f, key.start, key.stop, key.step)))
+    def _get_py(self, key):
+        if isinstance(key, tuple):
+            result = self.py[key[0]]
+            if isinstance(key[0], (list, slice)):
+                return (ndget(key[1:], row) for row in result)
             else:
-                raise NotImplementedError('Fancy indexing not supported\n'
-                        'Create DyND array and use fancy indexing from there')
-        return coerce(self.schema, result)
+                return ndget(key[1:], result)
+        f = self.open(self.path)
+        if isinstance(key, _inttypes):
+            result = json.loads(nth(key, f))
+        elif isinstance(key, slice):
+            result = map(json.loads, islice(f, key.start, key.stop, key.step))
+        elif isinstance(key, list):
+            result = map(json.loads, nth_list(key, f))
+        else:
+            raise NotImplementedError('Fancy indexing not supported')
+        try:
+            if not isinstance(result, Iterator):
+                f.close()
+            pass
+        except AttributeError:
+            pass
+        return result
 
     def _iter(self):
-        with self.open(self.path) as f:
-            for line in f:
-                yield json.loads(line)
+        f = self.open(self.path)
+        for line in f:
+            yield json.loads(line)
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     __iter__ = DataDescriptor.__iter__
 
     def as_py(self):
-        return list(self)
+        return tuple(self)
 
     def _iterchunks(self, blen=100):
-        with self.open(self.path) as f:
-            for chunk in partition_all(blen, f):
-                text = '[' + ',\r\n'.join(chunk) + ']'
-                dshape = str(len(chunk)) + ' * ' + self.schema
-                yield nd.parse_json(dshape, text)
+        f = self.open(self.path)
+        for chunk in partition_all(blen, f):
+            text = '[' + ',\r\n'.join(chunk) + ']'
+            dshape = str(len(chunk)) + ' * ' + self.schema
+            yield nd.parse_json(dshape, text)
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     @property
     def appendable(self):
         return any(c in self.mode for c in 'wa+')
 
     def _extend(self, rows):
+        if isinstance(self.schema[0], datashape.Record):
+            transform = lambda row: coerce_row_to_dict(self.schema, row)
+        else:
+            transform = lambda x: x
         if not self.appendable:
             raise IOError("Read only access")
-        with self.open(self.path, self.mode) as f:
-            f.seek(0, os.SEEK_END)  # go to the end of the file
-            for row in rows:
-                json.dump(row, f)
-                f.write('\n')
+        f = self.open(self.path, self.mode)
+        f.seek(0, os.SEEK_END)  # go to the end of the file
+        for row in rows:
+            json.dump(transform(row), f)
+            f.write('\n')
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     def _chunks(self, blen=100):
-        with self.open(self.path) as f:
-            for chunk in partition_all(blen, f):
-                text = '[' + ',\r\n'.join(chunk) + ']'
-                dshape = str(len(chunk) * self.schema)
-                yield nd.parse_json(dshape, text)
+        f = self.open(self.path)
+        for chunk in partition_all(blen, f):
+            text = '[' + ',\r\n'.join(chunk) + ']'
+            dshape = str(len(chunk) * self.schema)
+            yield nd.parse_json(dshape, text)
+        try:
+            f.close()
+        except AttributeError:
+            pass

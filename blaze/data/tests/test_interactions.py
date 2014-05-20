@@ -1,10 +1,11 @@
-from blaze.data import CSV, JSON_Streaming, HDF5, SQL, copy
-from blaze.utils import filetext, tmpfile
 import json
 import unittest
-from blaze.compatibility import skip
 from sqlalchemy import create_engine
 
+from blaze.data import CSV, JSON_Streaming, HDF5, SQL, copy
+from blaze.utils import filetext, tmpfile
+from blaze.compatibility import skip
+from blaze.data.utils import tuplify
 
 class SingleTestClass(unittest.TestCase):
     def test_csv_json(self):
@@ -16,7 +17,7 @@ class SingleTestClass(unittest.TestCase):
 
                 json.extend(csv)
 
-                self.assertEquals(list(json), [[1, 1], [2, 2]])
+                self.assertEquals(tuple(map(tuple, json)), ((1, 1), (2, 2)))
 
 
     def test_json_csv_structured(self):
@@ -31,8 +32,8 @@ class SingleTestClass(unittest.TestCase):
 
                 csv.extend(js)
 
-                self.assertEquals(list(csv),
-                                  [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}])
+                self.assertEquals(tuple(map(tuple, (csv))),
+                                  ((1, 1), (2, 2)))
 
 
     def test_csv_json_chunked(self):
@@ -44,11 +45,12 @@ class SingleTestClass(unittest.TestCase):
 
                 copy(csv, json)
 
-                self.assertEquals(list(json), [[1, 1], [2, 2]])
+                self.assertEquals(tuplify(tuple(json)), ((1, 1), (2, 2)))
 
 
     def test_json_csv_chunked(self):
         data = [{'x': 1, 'y': 1}, {'x': 2, 'y': 2}]
+        tuples = ((1, 1), (2, 2))
         text = '\n'.join(map(json.dumps, data))
         schema = '{x: int, y: int}'
 
@@ -59,7 +61,7 @@ class SingleTestClass(unittest.TestCase):
 
                 copy(js, csv)
 
-                self.assertEquals(list(csv), data)
+                self.assertEquals(tuple(csv), tuples)
 
     def test_hdf5_csv(self):
         import h5py
@@ -74,7 +76,8 @@ class SingleTestClass(unittest.TestCase):
 
                 copy(hdf5, csv)
 
-                self.assertEquals(list(csv), [[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+                self.assertEquals(tuple(map(tuple, csv)),
+                                  ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
 
     def test_csv_sql_json(self):
         data = [('Alice', 100), ('Bob', 200)]
@@ -97,7 +100,6 @@ class SingleTestClass(unittest.TestCase):
                 with open(json_fn) as f:
                     assert 'Alice' in f.read()
 
-    @skip("This runs fine in isolation, segfaults in full test")
     def test_csv_hdf5(self):
         import h5py
         from dynd import nd

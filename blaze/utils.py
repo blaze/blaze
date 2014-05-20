@@ -2,6 +2,7 @@ from itertools import islice
 from contextlib import contextmanager
 import tempfile
 import os
+from collections import Iterator
 
 
 def partition_all(n, seq):
@@ -40,11 +41,98 @@ def nth(n, seq):
     return next(seq)
 
 
+def nth_list(n, seq):
+    """
+
+    >>> tuple(nth_list([0, 1, 4], 'Hello'))
+    ('H', 'e', 'o')
+    >>> tuple(nth_list([4, 1, 0], 'Hello'))
+    ('o', 'e', 'H')
+    >>> tuple(nth_list([0, 0, 0], 'Hello'))
+    ('H', 'H', 'H')
+    """
+    seq = iter(seq)
+    sn = sorted(n)
+
+    result = []
+    old = 0
+    item = next(seq)
+    for index in sorted(n):
+        for i in range(index - old):
+            item = next(seq)
+        result.append(item)
+        old = index
+
+    order = [x[1] for x in sorted(zip(n, range(len(n))))]
+    return (result[i] for i in order)
+
+
+def get(ind, coll, lazy=False):
+    """
+
+    >>> get(0, 'Hello')
+    'H'
+
+    >>> get([1, 0], 'Hello')
+    ('e', 'H')
+
+    >>> get(slice(1, 4), 'Hello')
+    ('e', 'l', 'l')
+
+    >>> get(slice(1, 4), 'Hello', lazy=True)  # doctest: +SKIP
+    <itertools.islice object at 0x25ac470>
+    """
+    if isinstance(ind, list):
+        result = nth_list(ind, coll)
+    elif isinstance(ind, slice):
+        result = islice(coll, ind.start, ind.stop, ind.step)
+    else:
+        if isinstance(coll, Iterator):
+            result = nth(ind, coll)
+        else:
+            result = coll[ind]
+    if lazy==False and isinstance(result, Iterator):
+        result = tuple(result)
+    return result
+
+
+def ndget(ind, data):
+    """
+    Get from N-Dimensional getable
+
+    Can index with elements, lists, or slices.  Mimic's numpy fancy indexing on
+    generic indexibles.
+
+    >>> data = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    >>> ndget(0, data)
+    [[1, 2], [3, 4]]
+    >>> ndget((0, 1), data)
+    [3, 4]
+    >>> ndget((0, 0, 0), data)
+    1
+    >>> ndget((slice(0, 2), [0, 1], 0), data)
+    ((1, 3), (5, 7))
+    """
+    if isinstance(ind, tuple) and len(ind) == 1:
+        ind = ind[0]
+    if not isinstance(ind, tuple):
+        return get(ind, data)
+    result = get(ind[0], data)
+    if isinstance(ind[0], (list, slice)):
+        return type(result)(ndget(ind[1:], row) for row in result)
+    else:
+        return ndget(ind[1:], result)
+
+
 @contextmanager
 def filetext(text, extension='', open=open):
     with tmpfile(extension=extension) as filename:
-        with open(filename, "w") as f:
-            f.write(text)
+        f = open(filename, "wt")
+        f.write(text)
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
         yield filename
 
@@ -57,8 +145,12 @@ def filetexts(d, open=open):
         a mapping from filename to text like {'a.csv': '1,1\n2,2'}
     """
     for filename, text in d.items():
-        with open(filename, 'w') as f:
-            f.write(text)
+        f = open(filename, 'wt')
+        f.write(text)
+        try:
+            f.close()
+        except AttributeError:
+            pass
 
     yield list(d)
 
@@ -83,3 +175,65 @@ def raises(err, lamda):
         return False
     except err:
         return True
+
+
+def groupby(f, coll):
+    """ Group collection by key function
+
+    >>> names = ['Alice', 'Bob', 'Charlie', 'Dan', 'Edith', 'Frank']
+    >>> groupby(len, names)
+    {3: ['Bob', 'Dan'], 5: ['Alice', 'Edith', 'Frank'], 7: ['Charlie']}
+    """
+    d = {}
+    for item in coll:
+        key = f(item)
+        if key not in d:
+            d[key] = []
+        d[key].append(item)
+    return d
+
+
+def reduceby(seq, key, binop, initial=None):
+    """ Streaming split-apply-combine
+
+    >>> accounts = [('Alice', 100), ('Bob', 200), ('Alice', 50)]
+    >>> get_name = lambda x: x[0]
+    >>> add_amount = lambda total, (name, amount): total + amount
+
+    >>> reduceby(accounts, get_name, add_amount, 0)  # doctest: +SKIP
+    {'Alice': 150, 'Bob': 200}
+    """
+    d = {}
+    for item in seq:
+        k = key(item)
+        if k not in d:
+            if initial is None:
+                d[k] = item
+            else:
+                d[k] = binop(initial, item)
+        else:
+            d[k] = binop(d[k], item)
+    return d
+
+
+def identity(x):
+    return x
+
+
+def unique(seq, key=identity):
+    """ A sequence of unique elements from seq
+
+    >>> list(unique([1, 2, 2, 3]))
+    [1, 2, 3]
+
+    Use the key function to define uniqueness
+
+    >>> list(unique([1, 2, 3, 4], key=lambda x: x % 2))
+    [1, 2]
+    """
+    s = set()
+    for item in seq:
+        if key(item) not in s:
+            s.add(key(item))
+            yield item
+

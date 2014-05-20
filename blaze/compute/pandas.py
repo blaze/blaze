@@ -1,7 +1,7 @@
 """
 
 >>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.python import compute
+>>> from blaze.compute.pandas import compute
 
 >>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
@@ -24,29 +24,36 @@ import numpy as np
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
-    return compute(t.table, df)[list(t.columns)]
+    parent = compute(t.parent, df)
+    return parent[list(t.columns)]
 
 
 @dispatch(Column, DataFrame)
 def compute(t, df):
-    return compute(t.table, df)[t.columns[0]]
+    parent = compute(t.parent, df)
+    return parent[t.columns[0]]
 
 
 @dispatch(BinOp, DataFrame)
 def compute(t, df):
-    return t.op(compute(t.lhs, df), compute(t.rhs, df))
+    lhs = compute(t.lhs, df)
+    rhs = compute(t.rhs, df)
+    return t.op(lhs, rhs)
 
 
 @dispatch(Selection, DataFrame)
 def compute(t, df):
-    return compute(t.table, df)[compute(t.predicate, df)]
+    parent = compute(t.parent, df)
+    predicate = compute(t.predicate, df)
+    return parent[predicate]
 
 
 @dispatch(TableSymbol, DataFrame)
 def compute(t, df):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype
-        raise ValueError("Schema mismatch")
+        raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
+                        % (t, df))
     return df
 
 
@@ -68,23 +75,47 @@ def compute(t, lhs, rhs):
     if lhs.index.name:
         old_left = lhs.index.name
         rhs = lhs.reset_index()
-    else:
-        old_left = None
     if rhs.index.name:
-        old_right = rhs.index.name
         rhs = rhs.reset_index()
-    else:
-        old_right = None
 
     lhs = lhs.set_index(t.on_left)
     rhs = rhs.set_index(t.on_right)
     result = lhs.join(rhs)
-    if old_left:
-        result = result.set_index(old_left)
-    return result
+    return result.reset_index()[t.columns]
 
 
 @dispatch(UnaryOp, DataFrame)
 def compute(t, s):
+    parent = compute(t.parent, s)
     op = getattr(np, t.symbol)
-    return op(compute(t.table, s))
+    return op(parent)
+
+
+@dispatch(Reduction, DataFrame)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    assert isinstance(parent, Series)
+    op = getattr(Series, t.symbol)
+    return op(parent)
+
+
+@dispatch(By, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    grouper = compute(t.grouper, parent)
+    if type(t.grouper) == Projection and t.grouper.parent == t.parent:
+        grouper = list(grouper.columns)
+
+    return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))
+
+
+@dispatch(Sort, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return parent.sort(t.column, ascending=t.ascending)
+
+
+@dispatch(Head, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return parent.head(t.n)

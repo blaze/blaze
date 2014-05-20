@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 # build the blaze namespace with selected functions
-from . import catalog
 from .data import *
 
 inf = float('inf')
@@ -16,10 +15,11 @@ nan = float('nan')
 __version__ = '0.4.2-dev'
 
 # If IPython is already loaded, register the Blaze catalog magic
-import sys
-if 'IPython' in sys.modules:
-    catalog.register_ipy_magic()
-del sys
+# from . import catalog
+# import sys
+# if 'IPython' in sys.modules:
+#     catalog.register_ipy_magic()
+# del sys
 
 def print_versions():
     """Print all the versions of software that Blaze relies on."""

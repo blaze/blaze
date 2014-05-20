@@ -7,12 +7,13 @@ from dynd import nd
 import datashape
 
 from .core import DataDescriptor
-from ..utils import partition_all
+from ..utils import partition_all, get
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
 
 __all__ = ['HDF5']
+
 
 class HDF5(DataDescriptor):
     """
@@ -39,7 +40,8 @@ class HDF5(DataDescriptor):
     appendable = True
     remote = False
 
-    def __init__(self, path, datapath, mode='r', schema=None, dshape=None, **kwargs):
+    def __init__(self, path, datapath, mode='r',
+                 schema=None, dshape=None, **kwargs):
         self.path = path
         self.datapath = datapath
         self.mode = mode
@@ -52,7 +54,7 @@ class HDF5(DataDescriptor):
         if dshape:
             dshape = datashape.dshape(dshape)
             shape = dshape.shape
-            dtype = datashape.to_numpy_dtype(dshape[-1])
+            dtype = dshape[-1].to_numpy_dtype()
             if shape[0] == datashape.Var():
                 kwargs['chunks'] = True
                 kwargs['maxshape'] = kwargs.get('maxshape', (None,) + shape[1:])
@@ -87,13 +89,21 @@ class HDF5(DataDescriptor):
         with h5py.File(self.path, 'r') as f:
             arr = f[self.datapath]
             result = dict((attr, getattr(arr, attr))
-                            for attr in h5py_attributes)
+                          for attr in h5py_attributes)
         return result
 
-    def __getitem__(self, key):
+    def _get_dynd(self, key):
+        if (isinstance(key, tuple) and
+            len(key) > len(self.dshape.shape) and
+            isinstance(self.dshape[-1], datashape.Record)):
+            rec_key = get(key[-1], self.dshape[-1].names)
+            if isinstance(rec_key, tuple):
+                rec_key = list(rec_key)
+            key = (rec_key,) + key[:-1]
+            print(key)
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
-            result = np.asarray(arr[key])
+            result = np.asarray(arr.__getitem__(key))
         return nd.asarray(result, access='readonly')
 
     def __setitem__(self, key, value):
@@ -109,7 +119,7 @@ class HDF5(DataDescriptor):
                 yield np.array(arr[i:i+blen])
 
     def as_dynd(self):
-        return self[:]
+        return self.dynd[:]
 
     def _extend_chunks(self, chunks):
         if 'w' not in self.mode and 'a' not in self.mode:
@@ -120,7 +130,7 @@ class HDF5(DataDescriptor):
             dtype = dset.dtype
             shape = dset.shape
             for chunk in chunks:
-                arr = np.array(chunk, dtype=dtype)
+                arr = nd.as_numpy(chunk, allow_copy=True)
                 shape = list(dset.shape)
                 shape[0] += len(arr)
                 dset.resize(shape)
