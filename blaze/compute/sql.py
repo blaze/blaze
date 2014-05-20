@@ -112,7 +112,7 @@ def compute(t, s):
     result = op(parent)
 
     if isinstance(t.parent.schema[0], Record):
-        name = t.parent.schema[0].fields.keys()[0]
+        name = list(t.parent.schema[0].fields.keys())[0]
         result = result.label(name)
 
     return result
