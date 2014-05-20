@@ -8,6 +8,15 @@ from multipledispatch import dispatch
 import pyspark
 from itertools import compress, chain
 
+# PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
+# remove it
+# See https://issues.apache.org/jira/browse/SPARK-1394
+try:
+    import signal
+    signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+except:
+    pass
+
 
 @dispatch(Projection, pyspark.rdd.RDD)
 def compute(t, rdd):
@@ -56,6 +65,20 @@ def compute(t, lhs, rhs):
     out_rdd = lhs.join(rhs).map(reassemble)
     return out_rdd
 
+
+def _close(fn, ap):
+    """ Build a closure around a compute fn and an apply
+
+    PySpark serialization, accompanied with some weirdness with Pandas and
+    NumExpr force a kludgy solution to avoid serialization issues.
+
+    See https://issues.apache.org/jira/browse/SPARK-1394
+    """
+    def _(x):
+        return x[0], fn(ap, x[1])
+    return _
+
+
 @dispatch(By, pyspark.rdd.RDD)
 def compute(t, rdd):
     parent = compute(t.parent, rdd)
@@ -63,5 +86,10 @@ def compute(t, rdd):
     keyed_rdd = parent.keyBy(lambda x: x[key_by_idx])
     grouped = keyed_rdd.groupByKey()
     compute_fn = compute.resolve((type(t.apply), list))
-    return grouped.map(lambda x: (x[0], compute_fn(t.apply, x[1])))
+    f = _close(compute_fn, t.apply)
+    return grouped.map(f)
 
+
+@dispatch(TableExpr, pyspark.rdd.ResultIterable)
+def compute(t, ri):
+    return compute(t, list(ri))

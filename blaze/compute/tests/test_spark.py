@@ -77,4 +77,3 @@ def test_groupby():
     in_degree = dict(a.collect())
     assert in_degree['C'] == 2
     assert in_degree['A'] == 1
-
