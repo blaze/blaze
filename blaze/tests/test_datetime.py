@@ -74,3 +74,8 @@ class TestDateTime(unittest.TestCase):
         self.assertEqual(list(a.minute), [30, 25])
         self.assertEqual(list(a.second), [0, 39])
         self.assertEqual(list(a.microsecond), [0, 123456])
+
+
+if __name__ == '__main__':
+    unittest.main()
+

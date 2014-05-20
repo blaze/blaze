@@ -29,7 +29,7 @@ def op_ckernel(op):
     """
     Create a pykernel for a ckernel for uniform interpretation.
     """
-    deferred_ckernel = op.args[0]
+    af = op.args[0]
 
     def pykernel(*args):
         dst = args[0]
@@ -42,7 +42,7 @@ def op_ckernel(op):
         inputs = [desc.dynd_arr() for desc in src_descriptors]
 
         # Execute!
-        deferred_ckernel.__call__(out, *inputs)
+        af.__call__(out, *inputs)
 
     return pykernel
 
@@ -63,13 +63,6 @@ def op_ckernel_chunked(op):
 
         out = dst_descriptor.dynd_arr()
         inputs = [desc.dynd_arr() for desc in src_descriptors]
-
-        # TODO: Remove later, explicit casting necessary for now because
-        #       of BLZ/numpy interop effect.
-        for i, (inp, tp) in enumerate(zip(inputs, deferred_ckernel.types[1:])):
-            tp = ndt.type(tp)
-            if nd.type_of(inp) != tp:
-                inputs[i] = nd.array(inp, type=tp)
 
         # Execute!
         deferred_ckernel.__call__(out, *inputs)
