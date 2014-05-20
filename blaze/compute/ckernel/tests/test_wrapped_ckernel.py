@@ -39,8 +39,8 @@ class TestWrappedCKernel(unittest.TestCase):
     @skipIf(win64_py26, 'py26 win64 ctypes is buggy')
     def test_ctypes_callback_deferred(self):
         # Create a deferred ckernel via a closure
-        def instantiate_ckernel(out_ckb, ckb_offset, types, meta,
-                                kerntype, ectx):
+        def instantiate_ckernel(out_ckb, ckb_offset, dst_tp, dst_arrmeta,
+                                   src_tp, src_arrmeta, kernreq, ectx):
             out_ckb = _lowlevel.CKernelBuilder(out_ckb)
             def my_kernel_func_single(dst_ptr, src_ptr, kdp):
                 dst = ctypes.c_int32.from_address(dst_ptr)
@@ -53,14 +53,14 @@ class TestWrappedCKernel(unittest.TestCase):
                     my_kernel_func_single(dst_ptr, [src_ptr0], kdp)
                     dst_ptr += dst_stride
                     src_ptr0 += src_stride0
-            if kerntype == 'single':
+            if kernreq == 'single':
                 kfunc = _lowlevel.ExprSingleOperation(my_kernel_func_single)
             else:
                 kfunc = _lowlevel.ExprStridedOperation(my_kernel_func_strided)
             return ckernel.wrap_ckernel_func(out_ckb, ckb_offset,
                             kfunc, kfunc)
-        ckd = _lowlevel.arrfunc_from_pyfunc(instantiate_ckernel,
-                        [ndt.int32, ndt.float64])
+        ckd = _lowlevel.arrfunc_from_instantiate_pyfunc(instantiate_ckernel,
+                        "(float64) -> int32")
         # Test calling the ckd
         out = nd.empty(ndt.int32)
         in0 = nd.array(4.0, type=ndt.float64)
@@ -68,8 +68,7 @@ class TestWrappedCKernel(unittest.TestCase):
         self.assertEqual(nd.as_py(out), 14)
 
         # Also call it lifted
-        ckd_lifted = _lowlevel.lift_arrfunc(ckd,
-                        ['2 * var * int32', '2 * var * float64'])
+        ckd_lifted = _lowlevel.lift_arrfunc(ckd)
         out = nd.empty('2 * var * int32')
         in0 = nd.array([[1.0, 3.0, 2.5], [1.25, -1.5]], type='2 * var * float64')
         ckd_lifted.__call__(out, in0)

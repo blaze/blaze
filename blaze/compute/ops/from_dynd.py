@@ -4,15 +4,17 @@ Helper functions which constructs blaze functions from dynd kernels.
 
 from __future__ import absolute_import, division, print_function
 
-from dynd import _lowlevel
+from dynd import nd, _lowlevel
 import datashape
 
 from ..function import ElementwiseBlazeFunc
 
 
 def _make_sig(kern):
-    dslist = [datashape.dshape(str(x)) for x in kern.types]
-    return datashape.Function(*(dslist[1:] + [dslist[0]]))
+    dslist = [datashape.dshape(str(x))
+              for x in nd.as_py(kern.proto).param_types]
+    return datashape.Function(*(dslist +
+                                [nd.as_py(kern.proto).return_type]))
 
 
 def blazefunc_from_dynd_property(tplist, propname, modname, name):

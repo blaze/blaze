@@ -50,7 +50,7 @@ class CKernelLifter(object):
                             in_types[i] = ndt.make_strided_dim(tp.element_type)
                     out_type = ndt.make_strided_dim(out_type.element_type)
 
-                op.args[0] = _lowlevel.lift_arrfunc(ck, [out_type] + in_types)
+                op.args[0] = _lowlevel.lift_arrfunc(ck)
             elif tag == 'reduction':
                 ck = ckernel['ckernel']
                 assoc = ckernel['assoc']
