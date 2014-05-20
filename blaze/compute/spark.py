@@ -6,7 +6,7 @@ from blaze.expr.table import count as Count
 from blaze.compute.python import *
 from multipledispatch import dispatch
 import pyspark
-import itertools
+from itertools import compress, chain
 
 
 @dispatch(Projection, pyspark.rdd.RDD)
@@ -52,8 +52,8 @@ def compute(t, lhs, rhs):
                    len(t.rhs.columns))]
     indices = lhs_indices + rhs_indices
     # Perform the spark join, then reassemple the table
-    out_rdd = lhs.join(rhs).map(lambda x: [i for i in itertools.compress(
-        itertools.chain.from_iterable(x[1]), indices)])
+    reassemble = lambda x: list(compress(chain.from_iterable(x[1]), indices))
+    out_rdd = lhs.join(rhs).map(reassemble)
     return out_rdd
 
 @dispatch(By, pyspark.rdd.RDD)
@@ -62,5 +62,6 @@ def compute(t, rdd):
     key_by_idx = t.parent.schema[0].names.index(t.grouper.columns[0])
     keyed_rdd = parent.keyBy(lambda x: x[key_by_idx])
     grouped = keyed_rdd.groupByKey()
-    return grouped.map(lambda x: (x[0], compute(t.apply, x[1])))
+    compute_fn = compute.resolve((type(t.apply), list))
+    return grouped.map(lambda x: (x[0], compute_fn(t.apply, x[1])))
 
