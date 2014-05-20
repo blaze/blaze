@@ -5,6 +5,7 @@ from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record
 from datashape.predicates import isunit, isdimension
+
 from ..utils import partition_all
 
 
