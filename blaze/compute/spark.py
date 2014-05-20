@@ -65,3 +65,7 @@ def compute(t, rdd):
     compute_fn = compute.resolve((type(t.apply), list))
     return grouped.map(lambda x: (x[0], compute_fn(t.apply, x[1])))
 
+
+@dispatch(TableExpr, pyspark.rdd.ResultIterable)
+def compute(t, ri):
+    return compute(t, list(ri))
