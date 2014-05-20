@@ -12,14 +12,14 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
-from blaze.compatibility import builtins
-from blaze.utils import groupby, get
 from multipledispatch import dispatch
 import itertools
 from collections import Iterator
 import math
-from ..utils import reduceby
+
+from ..expr.table import *
+from ..compatibility import builtins
+from ..utils import groupby, get, reduceby
 
 seq = (tuple, list, Iterator)
 
