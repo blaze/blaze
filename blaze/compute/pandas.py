@@ -107,3 +107,15 @@ def compute(t, df):
         grouper = list(grouper.columns)
 
     return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))
+
+
+@dispatch(Sort, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return parent.sort(t.column, ascending=t.ascending)
+
+
+@dispatch(Head, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return parent.head(t.n)

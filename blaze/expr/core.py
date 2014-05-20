@@ -3,6 +3,14 @@ from __future__ import absolute_import, division, print_function
 __all__ = 'Expr', 'Scalar'
 
 
+def _str(s):
+    """ Wrap single quotes around strings """
+    if isinstance(s, str):
+        return "'%s'" % s
+    else:
+        return str(s)
+
+
 class Expr(object):
     @property
     def args(self):
@@ -17,7 +25,7 @@ class Expr(object):
         return hash((type(self), self.args))
 
     def __str__(self):
-        return "%s(%s)" % (type(self).__name__, ', '.join(map(str, self.args)))
+        return "%s(%s)" % (type(self).__name__, ', '.join(map(_str, self.args)))
 
     def __repr__(self):
         return str(self)

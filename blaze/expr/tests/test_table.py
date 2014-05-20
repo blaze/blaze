@@ -117,3 +117,20 @@ def test_reduction():
 def test_reduce_by():
     t = TableSymbol('{name: string, amount: int32, id: int32}')
     r = By(t, t['name'], sum(t['amount']))
+
+
+def test_sort():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    s = t.sort('amount', ascending=True)
+    print(str(s))
+    assert eval(str(s)).isidentical(s)
+
+    assert s.schema == t.schema
+
+
+def test_head():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    s = t.head(10)
+    assert eval(str(s)).isidentical(s)
+
+    assert s.schema == t.schema

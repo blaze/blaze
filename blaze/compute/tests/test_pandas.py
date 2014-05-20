@@ -149,3 +149,19 @@ def test_join_by_arcs():
     result_pandas = pandas.merge(df_arc, df_idx, on='node_id')
 
     assert str(result) == str(result_pandas.groupby('name')['node_id'].count())
+
+
+def test_sort():
+    print(str(compute(t.sort('amount'), df)))
+    print(str(df.sort('amount')))
+    assert str(compute(t.sort('amount'), df)) == str(df.sort('amount'))
+
+    assert str(compute(t.sort('amount', ascending=True), df)) == \
+            str(df.sort('amount', ascending=True))
+
+    assert str(compute(t.sort(['amount', 'id']), df)) == \
+            str(df.sort(['amount', 'id']))
+
+
+def test_head():
+    assert str(compute(t.head(1), df)) == str(df.head(1))

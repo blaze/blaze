@@ -35,6 +35,11 @@ class TableExpr(Expr):
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
 
+    def sort(self, column, ascending=True):
+        return Sort(self, column, ascending)
+
+    def head(self, n=10):
+        return Head(self, n)
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -486,3 +491,32 @@ class By(TableExpr):
         s = TableSymbol(parent.schema)
         self.grouper = grouper.subs({parent: s})
         self.apply = apply.subs({parent: s})
+
+
+class Sort(TableExpr):
+    __slots__ = 'parent', 'column', 'ascending'
+
+    def __init__(self, parent, column, ascending=True):
+        self.parent = parent
+        self.column = column
+        self.ascending = ascending
+
+    @property
+    def schema(self):
+        return self.parent.schema
+
+
+class Head(TableExpr):
+    __slots__ = 'parent', 'n'
+
+    def __init__(self, parent, n=10):
+        self.parent = parent
+        self.n = n
+
+    @property
+    def schema(self):
+        return self.parent.schema
+
+    @property
+    def dshape(self):
+        return self.n * self.schema

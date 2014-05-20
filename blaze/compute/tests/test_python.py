@@ -119,3 +119,18 @@ def test_join():
     expected = [('Alice', 100, 1), ('Bob', 200, 2)]
 
     assert result == expected
+
+
+def test_sort():
+    assert list(compute(t.sort('amount'), data)) == \
+            sorted(data, key=lambda x: x[1], reverse=False)
+
+    assert list(compute(t.sort('amount', ascending=True), data)) == \
+            sorted(data, key=lambda x: x[1], reverse=False)
+
+    assert list(compute(t.sort(['amount', 'id']), data)) == \
+            sorted(data, key=lambda x: (x[1], x[2]), reverse=False)
+
+
+def test_head():
+    assert list(compute(t.head(1), data)) == [data[0]]

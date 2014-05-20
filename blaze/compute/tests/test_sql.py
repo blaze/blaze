@@ -158,3 +158,15 @@ def test_join_projection():
     assert 'JOIN' in str(result)
     assert result.c.keys() == ['amount', 'id']
     assert 'amounts.name = ids.name' in str(result)
+
+
+def test_sort():
+    assert str(compute(t.sort('amount'), s)) == \
+            str(select(s).order_by(s.c.amount))
+
+    assert str(compute(t.sort('amount', ascending=False), s)) == \
+            str(select(s).order_by(sqlalchemy.desc(s.c.amount)))
+
+
+def test_head():
+    assert str(compute(t.head(2), s)) == str(select(s).limit(2))

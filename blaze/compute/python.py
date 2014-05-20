@@ -172,3 +172,24 @@ def compute(t, lhs, rhs):
     lhs_dict = dict((row[left_index], row) for row in lhs)
 
     return (lhs_dict[row[right_index]] + get_right(row) for row in rhs)
+
+
+@dispatch(Sort, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    if isinstance(t.column, (tuple, list)):
+        index = [t.parent.columns.index(col) for col in t.column]
+        key = operator.itemgetter(*index)
+    else:
+        index = t.parent.columns.index(t.column)
+        key = operator.itemgetter(index)
+
+    return sorted(parent,
+                  key=key,
+                  reverse=not t.ascending)
+
+
+@dispatch(Head, seq)
+def compute(t, l):
+    parent = compute(t.parent, l)
+    return itertools.islice(parent, 0, t.n)
