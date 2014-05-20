@@ -4,6 +4,7 @@ import csv
 import itertools as it
 import os
 from operator import itemgetter
+from collections import Iterator
 
 import datashape
 from dynd import nd
@@ -118,7 +119,7 @@ class CSV(DataDescriptor):
             result = self._get_py(key[0])
 
             if isinstance(key[0], (list, slice)):
-                return [get(key[1], x) for x in result]
+                return (get(key[1], x) for x in result)
             else:
                 return get(key[1], result)
 
@@ -130,15 +131,16 @@ class CSV(DataDescriptor):
             result = next(csv.reader([line], **self.dialect))
         elif isinstance(key, list):
             lines = nth_list(key, f)
-            result = list(csv.reader(lines, **self.dialect))
+            result = csv.reader(lines, **self.dialect)
         elif isinstance(key, slice):
             start, stop, step = key.start, key.stop, key.step
-            result = list(csv.reader(it.islice(f, start, stop, step),
-                                     **self.dialect))
+            result = csv.reader(it.islice(f, start, stop, step),
+                                **self.dialect)
         else:
             raise IndexError("key '%r' is not valid" % key)
         try:
-            f.close()
+            if not isinstance(result, Iterator):
+                f.close()
         except AttributeError:
             pass
         return result

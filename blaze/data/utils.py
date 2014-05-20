@@ -1,9 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+from itertools import chain
 from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record
 from datashape.predicates import isunit, isdimension
+
+from ..utils import partition_all
 
 
 def validate(schema, item):
@@ -16,7 +19,8 @@ def validate(schema, item):
 
 def coerce(dshape, item):
     if isinstance(item, Iterator):
-        item = tuple(item)
+        blocks = partition_all(100, item)
+        return chain.from_iterable(coerce(dshape, block) for block in blocks)
     return nd.as_py(nd.array(item, dtype=str(dshape)), tuple=True)
 
 
@@ -115,10 +119,10 @@ def ordered_index(ind, ds):
         return [ordered_index(i, ds) for i in ind]
     if isinstance(ind, str) and isinstance(ds[0], Record):
         return ds[0].names.index(ind)
-    if isdimension(ds[0]):
-        return (ind[0],) + tupleit(ordered_index(ind[1:], ds.subshape[0]))
     if isinstance(ind, tuple) and not ind:
         return ()
+    if isdimension(ds[0]):
+        return (ind[0],) + tupleit(ordered_index(ind[1:], ds.subshape[0]))
     if isinstance(ind, tuple):
         return ((ordered_index(ind[0], ds),)
                 + tupleit(ordered_index(ind[1:], ds.subshape[0])))
@@ -133,7 +137,7 @@ def tupleit(x):
 
 
 def tuplify(x):
-    if isinstance(x, (tuple, list)):
+    if isinstance(x, (tuple, list, Iterator)):
         return tuple(map(tuplify, x))
     else:
         return x

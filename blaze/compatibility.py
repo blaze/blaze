@@ -52,7 +52,7 @@ if PY2:
     _strtypes = (str, unicode)
 
     _inttypes = (int, long)
-    imap = itertools.imap
+    map = itertools.imap
     import urlparse
     def exec_(_code_, _globs_=None, _locs_=None):
         """Execute code in a namespace."""
@@ -73,7 +73,7 @@ else:
     _inttypes = (int,)
     _strtypes = (str,)
     unicode = str
-    imap = map
+    map = map
     basestring = str
     import urllib.parse as urlparse
     from functools import reduce

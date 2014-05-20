@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+from collections import Iterator
 from contextlib import contextmanager
 from unittest import TestCase
 from dynd import nd
@@ -43,6 +44,8 @@ class Test_Files(TestCase):
             self.assertEqual(tuple(dd.py[[0, 2], 0]), (1, 3))
             self.assertEqual(tuple(dd.py[2, [1, 0]]), (3, 3))
 
+            assert isinstance(dd.py[:, 0], Iterator)
+
 
 class Test_Stack(TestCase):
     data = {'a.csv': '1,1\n2,2',
@@ -75,6 +78,10 @@ class Test_Stack(TestCase):
             self.assertEqual(tuple(dd.py[[0, 2], 0, 0]), (1, 5))
             self.assertEqual(tuplify(tuple(dd.py[0])), ((1, 1), (2, 2)))
             self.assertEqual(tuplify(tuple(dd.py[0, :, [1]])), ((1,), (2,)))
+            self.assertEqual(tuplify(tuple(dd.py[0])), expected[0])
+
+            assert isinstance(dd.py[:, 0], Iterator)
+            assert isinstance(dd.py[:], Iterator)
 
 
 

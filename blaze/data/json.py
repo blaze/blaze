@@ -6,10 +6,11 @@ import json
 from itertools import islice
 import datashape
 from dynd import nd
+from collections import Iterator
 
 from ..utils import partition_all, nth, nth_list, ndget
 from .. import compatibility
-from ..compatibility import _inttypes
+from ..compatibility import _inttypes, map
 from .core import DataDescriptor, isdimension
 from .utils import coerce, coerce_row_to_dict, coerce_to_ordered
 
@@ -107,21 +108,22 @@ class JSON_Streaming(JSON):
         if isinstance(key, tuple):
             result = self.py[key[0]]
             if isinstance(key[0], (list, slice)):
-                return tuple(ndget(key[1:], row) for row in result)
+                return (ndget(key[1:], row) for row in result)
             else:
                 return ndget(key[1:], result)
         f = self.open(self.path)
         if isinstance(key, _inttypes):
             result = json.loads(nth(key, f))
         elif isinstance(key, slice):
-            result = list(map(json.loads,
-                              islice(f, key.start, key.stop, key.step)))
+            result = map(json.loads, islice(f, key.start, key.stop, key.step))
         elif isinstance(key, list):
-            result = list(map(json.loads, nth_list(key, f)))
+            result = map(json.loads, nth_list(key, f))
         else:
             raise NotImplementedError('Fancy indexing not supported')
         try:
-            f.close()
+            if not isinstance(result, Iterator):
+                f.close()
+            pass
         except AttributeError:
             pass
         return result

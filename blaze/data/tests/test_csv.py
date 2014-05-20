@@ -5,6 +5,7 @@ import tempfile
 import os
 import csv
 import sys
+from collections import Iterator
 
 import datashape
 
@@ -76,8 +77,14 @@ class Test_Indexing(unittest.TestCase):
                     ((100, 'Alice'), (200, 'Bob'), (50, 'Alice')))
 
     def test_dynd_complex(self):
-        self.assertEqual(self.dd.py[:, ['amount', 'name']],
-                nd.as_py(self.dd.dynd[:, ['amount', 'name']], tuple=True))
+        self.assertEqual(tuplify(self.dd.py[:, ['amount', 'name']]),
+                         tuplify(nd.as_py(self.dd.dynd[:, ['amount', 'name']],
+                                          tuple=True)))
+
+    def test_laziness(self):
+        print(type(self.dd.py[:, 1]))
+        assert isinstance(self.dd.py[:, 1], Iterator)
+
 
 
 class Test_Dialect(unittest.TestCase):
