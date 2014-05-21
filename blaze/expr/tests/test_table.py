@@ -131,6 +131,8 @@ def test_sort():
 
     assert s.schema == t.schema
 
+    assert t['amount'].sort().column == 'amount'
+
 
 def test_head():
     t = TableSymbol('{name: string, amount: int32, id: int32}')

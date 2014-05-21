@@ -36,7 +36,9 @@ class TableExpr(Expr):
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
 
-    def sort(self, column, ascending=True):
+    def sort(self, column=None, ascending=True):
+        if column is None:
+            column = self.columns[0]
         return Sort(self, column, ascending)
 
     def head(self, n=10):
