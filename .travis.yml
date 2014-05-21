@@ -38,6 +38,7 @@ install:
   - cd spark
   - ./sbt/sbt assembly
   - cd ..
+  - pip install py4j
 
   # Install dynd
   - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
