@@ -112,7 +112,12 @@ def compute(t, df):
 @dispatch(Sort, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    return parent.sort(t.column, ascending=t.ascending)
+    if isinstance(parent, Series):
+        result = parent.copy()
+        result.sort(t.column, ascending=t.ascending)
+    else:
+        result = parent.sort(t.column, ascending=t.ascending)
+    return result
 
 
 @dispatch(Head, DataFrame)
