@@ -75,7 +75,7 @@ def _close(fn, ap):
     See https://issues.apache.org/jira/browse/SPARK-1394
     """
     def _(x):
-        return x[0], fn(ap, x[1])
+        return x[0], fn(ap, list(x[1]))
     return _
 
 
@@ -88,8 +88,3 @@ def compute(t, rdd):
     compute_fn = compute.resolve((type(t.apply), list))
     f = _close(compute_fn, t.apply)
     return grouped.map(f)
-
-
-@dispatch(TableExpr, pyspark.rdd.ResultIterable)
-def compute(t, ri):
-    return compute(t, list(ri))
