@@ -13,6 +13,7 @@ from .core import DataDescriptor
 from .utils import coerce_record_to_row
 from ..utils import partition_all, nth, nth_list, get
 from .. import compatibility
+from ..compatibility import map
 
 __all__ = ['CSV']
 
@@ -118,10 +119,15 @@ class CSV(DataDescriptor):
             assert len(key) == 2
             result = self._get_py(key[0])
 
-            if isinstance(key[0], (list, slice)):
-                return (get(key[1], x) for x in result)
+            if isinstance(key[1], list):
+                getter = itemgetter(*key[1])
             else:
-                return get(key[1], result)
+                getter = itemgetter(key[1])
+
+            if isinstance(key[0], (list, slice)):
+                return map(getter, result)
+            else:
+                return getter(result)
 
         f = self.open(self.path, self.mode)
         if self.header:

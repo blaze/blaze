@@ -19,7 +19,7 @@ def validate(schema, item):
 
 def coerce(dshape, item):
     if isinstance(item, Iterator):
-        blocks = partition_all(100, item)
+        blocks = partition_all(1000, item)
         return chain.from_iterable(coerce(dshape, block) for block in blocks)
     return nd.as_py(nd.array(item, dtype=str(dshape)), tuple=True)
 
