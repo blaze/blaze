@@ -155,6 +155,9 @@ class Column(Projection):
     def count(self):
         return count(self)
 
+    def nunique(self):
+        return nunique(self)
+
     def sum(self):
         return sum(self)
 
@@ -252,6 +255,9 @@ class ColumnWise(TableExpr):
 
     def count(self):
         return count(self)
+
+    def nunique(self):
+        return nunique(self)
 
     def sum(self):
         return sum(self)
@@ -470,6 +476,7 @@ class mean(Reduction): pass
 class var(Reduction): pass
 class std(Reduction): pass
 class count(Reduction): pass
+class nunique(Reduction): pass
 
 
 class By(TableExpr):

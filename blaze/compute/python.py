@@ -115,6 +115,11 @@ def compute(t, seq):
     parent = compute(t.parent, seq)
     return builtins.sum(1 for i in parent)
 
+@dispatch(nunique, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
+    return len(set(parent))
+
 @dispatch(mean, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
