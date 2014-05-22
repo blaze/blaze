@@ -44,6 +44,17 @@ def test_relational():
     assert r.dshape == dshape('var * bool')
 
 
+def test_boolean():
+    t = TableSymbol('{name: string, amount: int, id: int}')
+
+    r = (t['name'] == 'Alice') | (t['name'] == 'Bob')
+
+    print(str(r))
+    assert eval(str(r)).isidentical(r)
+
+    assert r.dshape == dshape('var * bool')
+
+
 def test_selection():
     t = TableSymbol('{name: string, amount: int, id: int}')
 
