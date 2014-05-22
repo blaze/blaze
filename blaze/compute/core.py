@@ -37,4 +37,7 @@ def compute(t, d):
     lhs = compute(t.lhs, d)
     rhs = compute(t.rhs, d)
 
-    return compute(t, lhs, rhs)
+
+    t2 = t.subs({t.lhs: TableSymbol(t.lhs.schema),
+                 t.rhs: TableSymbol(t.rhs.schema)})
+    return compute(t2, lhs, rhs)
