@@ -48,6 +48,17 @@ def test_arithmetic():
     assert str(compute(t['amount'] % t['id'], df)) == \
                 str(df.amount % df.id)
 
+
+def test_booleans():
+    assert str(compute(t[t['name'] == 'Alice'], df)) == \
+            str(df[df.name == 'Alice'])
+
+    assert str(compute(t[(t['name'] == 'Alice')
+                        | (t['name'] == 'Bob')] , df)) == \
+            str(df[(df['name'] == 'Alice')
+                 | (df['name'] == 'Bob')])
+
+
 def test_join():
     left = DataFrame([['Alice', 100], ['Bob', 200]], columns=['name', 'amount'])
     right = DataFrame([['Alice', 1], ['Bob', 2]], columns=['name', 'id'])
