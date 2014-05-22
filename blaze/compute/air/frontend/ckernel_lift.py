@@ -70,9 +70,7 @@ class CKernelLifter(object):
                 minp = ckernel['minp']
                 if minp != 0:
                     raise ValueError('rolling window with minp != 0 not supported yet')
-                op.args[0] = _lowlevel.make_rolling_arrfunc(out_type,
-                                                                     in_types[0],
-                                                                     ck, window)
+                op.args[0] = _lowlevel.make_rolling_arrfunc(ck, window)
             elif tag == 'ckfactory':
                 ckfactory = ckernel['ckernel_factory']
                 ck = ckfactory(out_type, *in_types)

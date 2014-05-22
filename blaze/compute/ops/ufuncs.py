@@ -123,9 +123,7 @@ diff_pair_ck = _lowlevel.lift_reduction_arrfunc(subtract_doubles_ck,
                                          axis=0,
                                          commutative=False,
                                          associative=False)
-diff_ck = _lowlevel.make_rolling_arrfunc('strided * float64',
-                                                  'strided * float64',
-                                                  diff_pair_ck, 2)
+diff_ck = _lowlevel.make_rolling_arrfunc(diff_pair_ck, 2)
 diff.add_overload('(M * float64) -> M * float64', diff_ck)
 
 take = CKFBlazeFunc('blaze', 'take')

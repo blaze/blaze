@@ -42,7 +42,7 @@ def op_ckernel(op):
         inputs = [desc.dynd_arr() for desc in src_descriptors]
 
         # Execute!
-        af.__call__(out, *inputs)
+        af.execute(out, *inputs)
 
     return pykernel
 
@@ -65,6 +65,6 @@ def op_ckernel_chunked(op):
         inputs = [desc.dynd_arr() for desc in src_descriptors]
 
         # Execute!
-        deferred_ckernel.__call__(out, *inputs)
+        deferred_ckernel.execute(out, *inputs)
 
     return pykernel

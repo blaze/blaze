@@ -64,14 +64,14 @@ class TestWrappedCKernel(unittest.TestCase):
         # Test calling the ckd
         out = nd.empty(ndt.int32)
         in0 = nd.array(4.0, type=ndt.float64)
-        ckd.__call__(out, in0)
+        ckd.execute(out, in0)
         self.assertEqual(nd.as_py(out), 14)
 
         # Also call it lifted
         ckd_lifted = _lowlevel.lift_arrfunc(ckd)
         out = nd.empty('2 * var * int32')
         in0 = nd.array([[1.0, 3.0, 2.5], [1.25, -1.5]], type='2 * var * float64')
-        ckd_lifted.__call__(out, in0)
+        ckd_lifted.execute(out, in0)
         self.assertEqual(nd.as_py(out), [[3, 10, 8], [4, -5]])
 
 if __name__ == '__main__':
