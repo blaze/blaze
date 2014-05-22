@@ -48,6 +48,15 @@ def test_arithmetic():
     assert list(compute(t['amount'] % t['id'], data)) == \
                 [b % c for a, b, c, in data]
 
+
+def test_booleans():
+    assert list(compute(t[t['name'] == 'Alice'], data)) == \
+                [['Alice', 100, 1], ['Alice', 50, 3]]
+    assert list(compute(t[(t['name'] == 'Alice')
+                        | (t['name'] == 'Bob')] , data)) == \
+                [['Alice', 100, 1], ['Bob', 200, 2], ['Alice', 50, 3]]
+
+
 def test_unary_ops():
     assert list(compute(exp(t['amount']), data)) == [math.exp(x[1]) for x in data]
 
