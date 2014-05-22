@@ -85,6 +85,8 @@ def test_Reductions():
     assert compute(sum(t['amount']), df) == 100 + 200 + 50
     assert compute(min(t['amount']), df) == 50
     assert compute(max(t['amount']), df) == 200
+    assert compute(nunique(t['amount']), df) == 3
+    assert compute(nunique(t['name']), df) == 2
     assert compute(any(t['amount'] > 150), df) == True
     assert compute(any(t['amount'] > 250), df) == False
 

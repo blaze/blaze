@@ -106,6 +106,16 @@ def test_reductions():
 
     assert 'amount' == compute(sum(t['amount']), s).name
 
+def test_nunique():
+    result = str(compute(nunique(t['amount']), s))
+
+    assert 'distinct' in result.lower()
+    assert 'count' in result.lower()
+    assert 'amount' in result.lower()
+
+    print(result)
+    assert result == str(sa.sql.func.count(sa.distinct(s.c.amount)))
+
 @skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
