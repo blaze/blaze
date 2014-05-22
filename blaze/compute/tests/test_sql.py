@@ -65,6 +65,14 @@ def test_arithmetic():
     assert str(computefull(t['amount'] + t['id'] * 2, s)) == \
             str(sa.select([s.c.amount + s.c.id * 2]))
 
+
+def test_booleans():
+    assert str(compute(t['name'] == 'Alice', s)) == str(s.c.name == 'Alice')
+
+    assert str(compute((t['name'] == 'Alice') | (t['name'] == 'Bob'), s)) == \
+                str((s.c.name == 'Alice') | (s.c.name == 'Bob'))
+
+
 def test_join():
     lhs = sa.Table('amounts', metadata,
                    sa.Column('name', sa.String),

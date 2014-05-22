@@ -9,8 +9,12 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from .core import Expr, Scalar
+from .core import Expr, Scalar, _str
 from ..utils import unique
+from ..compatibility import builtins
+
+
+operators = '+-/*=|&!~<>'
 
 
 class TableExpr(Expr):
@@ -24,7 +28,7 @@ class TableExpr(Expr):
         return self.schema[0].names
 
     def __getitem__(self, key):
-        if isinstance(key, Relational):
+        if isinstance(key, Boolean):
             return Selection(self, key)
         if isinstance(key, (tuple, list)):
             key = tuple(key)
@@ -43,6 +47,7 @@ class TableExpr(Expr):
 
     def head(self, n=10):
         return Head(self, n)
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -106,6 +111,12 @@ class Column(Projection):
 
     def __str__(self):
         return "%s['%s']" % (self.parent, self.columns[0])
+
+    def __and__(self, other):
+        return And(self, other)
+
+    def __or__(self, other):
+        return Or(self, other)
 
     def __eq__(self, other):
         return Eq(self, other)
@@ -208,6 +219,12 @@ class ColumnWise(TableExpr):
     """
     __hash__ = Expr.__hash__
 
+    def __and__(self, other):
+        return And(self, other)
+
+    def __or__(self, other):
+        return Or(self, other)
+
     def __eq__(self, other):
         return Eq(self, other)
 
@@ -304,13 +321,33 @@ class BinOp(ColumnWise):
         self.rhs = rhs
 
     def __str__(self):
-        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
+        left = _str(self.lhs)
+        right = _str(self.rhs)
+        if builtins.any(s in left for s in operators):
+            left = '(%s)' % left
+        if builtins.any(s in right for s in operators):
+            right = '(%s)' % right
+        return '%s %s %s' % (left, self.symbol, right)
 
 
-class Relational(BinOp):
+class Boolean(BinOp):  # TODO: support Not
     @property
     def schema(self):
         return dshape('bool')
+
+
+class And(Boolean):
+    symbol = '&'
+    op = operator.and_
+
+
+class Or(Boolean):
+    symbol = '|'
+    op = operator.or_
+
+
+class Relational(Boolean):
+    pass
 
 
 class Eq(Relational):
