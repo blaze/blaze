@@ -136,3 +136,43 @@ def test_sort():
 
 def test_head():
     assert list(compute(t.head(1), data)) == [data[0]]
+
+
+def test_graph_double_join():
+    idx = [['A', 1],
+           ['B', 2],
+           ['C', 3],
+           ['D', 4],
+           ['E', 5],
+           ['F', 6]]
+
+    arc = [[1, 3],
+           [2, 3],
+           [4, 3],
+           [5, 3],
+           [3, 1],
+           [2, 1],
+           [5, 1],
+           [1, 6],
+           [2, 6],
+           [4, 6]]
+
+    wanted = [['A'],
+              ['F']]
+
+    t_idx = TableSymbol('{name: string, b: int32}')
+    t_arc = TableSymbol('{a: int32, b: int32}')
+    t_wanted = TableSymbol('{name: string}')
+
+    j = Join(Join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'a', 'b']]
+
+    result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
+    result = set(map(tuple, result))
+    expected = set([('A', 3, 1),
+                    ('A', 2, 1),
+                    ('A', 5, 1),
+                    ('F', 1, 6),
+                    ('F', 2, 6),
+                    ('F', 4, 6)])
+
+    assert result == expected
