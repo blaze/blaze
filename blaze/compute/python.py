@@ -16,6 +16,8 @@ from multipledispatch import dispatch
 import itertools
 from collections import Iterator
 import math
+from operator import itemgetter
+from functools import partial
 
 from ..expr.table import *
 from ..compatibility import builtins
@@ -202,11 +204,18 @@ def compute(t, lhs, rhs):
 
     right_columns = list(range(len(t.rhs.columns)))
     right_columns.remove(right_index)
-    get_right = lambda x: get(right_columns, x)
+    get_right = lambda x: type(x)(get(right_columns, x))
 
-    lhs_dict = dict((row[left_index], row) for row in lhs)
+    lhs_dict = groupby(partial(get, left_index), lhs)
 
-    return (lhs_dict[row[right_index]] + get_right(row) for row in rhs)
+    for row in rhs:
+        try:
+            key = row[right_index]
+            matches = lhs_dict[key]
+            for match in matches:
+                yield match + get_right(row)
+        except KeyError:
+            pass
 
 
 @dispatch(Sort, Sequence)
