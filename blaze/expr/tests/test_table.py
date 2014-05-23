@@ -149,3 +149,14 @@ def test_label():
     assert eval(str(quantity)).isidentical(quantity)
 
     assert quantity.columns == ['quantity']
+
+
+def test_relabel():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+
+    rl = t.relabel({'name': 'NAME', 'id': 'ID'})
+
+    assert eval(str(rl)).isidentical(rl)
+
+    print(rl.columns)
+    assert rl.columns == ['NAME', 'amount', 'ID']

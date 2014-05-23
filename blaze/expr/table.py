@@ -44,6 +44,9 @@ class TableExpr(Expr):
     def head(self, n=10):
         return Head(self, n)
 
+    def relabel(self, labels):
+        return ReLabel(self, labels)
+
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
 
@@ -566,3 +569,21 @@ class Label(ColumnWise):
         else:
             dtype = list(self.parent.schema[0])
         return DataShape(Record([[self.label, dtype]]))
+
+
+class ReLabel(TableExpr):
+    __slots__ = 'parent', 'labels'
+
+    def __init__(self, parent, labels):
+        self.parent = parent
+        if isinstance(labels, dict):  # Turn dict into tuples
+            labels = tuple(sorted(labels.items()))
+        self.labels = labels
+
+    @property
+    def schema(self):
+        subs = dict(self.labels)
+        d = self.parent.schema[0].fields
+
+        return DataShape(Record([[subs.get(name, name), dtype]
+            for name, dtype in self.parent.schema[0].parameters[0]]))
