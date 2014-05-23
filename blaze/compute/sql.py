@@ -154,3 +154,9 @@ def compute(t, s):
 def compute(t, s):
     parent = compute(t.parent, s)
     return select(parent).limit(t.n)
+
+
+@dispatch(Label, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    return parent.label(t.label)
