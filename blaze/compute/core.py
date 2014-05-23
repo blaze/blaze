@@ -41,3 +41,8 @@ def compute(t, d):
     t2 = t.subs({t.lhs: TableSymbol(t.lhs.schema),
                  t.rhs: TableSymbol(t.rhs.schema)})
     return compute(t2, lhs, rhs)
+
+
+@dispatch(Join, object)
+def compute(t, o):
+    return compute(t, o, o)

@@ -181,3 +181,19 @@ def test_graph_double_join():
 def test_label():
     assert list(compute((t['amount'] * 1).label('foo'), data)) == \
             list(compute((t['amount'] * 1), data))
+
+
+def test_relabel_join():
+    names = TableSymbol('{first: string, last: string}')
+
+    siblings = Join(names.relabel({'first': 'left'}),
+                    names.relabel({'first': 'right'}),
+                    'last')[['left', 'right']]
+
+    data = [('Alice', 'Smith'),
+            ('Bob', 'Jones'),
+            ('Charlie', 'Smith')]
+
+    print(set(compute(siblings, {names: data})))
+    assert ('Alice', 'Charlie') in set(compute(siblings, {names: data}))
+    assert ('Alice', 'Bob') not in set(compute(siblings, {names: data}))
