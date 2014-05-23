@@ -22,7 +22,7 @@ def compute(t, d):
     # Common case: One relevant value in dict
     #              Switch to standard dispatching scheme
     if len(d) == 1:
-        return compute(t, d.values()[0])
+        return compute(t, list(d.values())[0])
 
     if hasattr(t, 'parent'):
         parent = compute(t.parent, d)
