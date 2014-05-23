@@ -140,3 +140,12 @@ def test_head():
     assert eval(str(s)).isidentical(s)
 
     assert s.schema == t.schema
+
+
+def test_label():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    quantity = (t['amount'] + 100).label('quantity')
+
+    assert eval(str(quantity)).isidentical(quantity)
+
+    assert quantity.columns == ['quantity']

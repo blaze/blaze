@@ -116,6 +116,9 @@ class Column(Projection):
     def __gt__(self, other):
         return GT(self, other)
 
+    def label(self, label):
+        return Label(self, label)
+
     def __add__(self, other):
         return Add(self, other)
 
@@ -216,6 +219,9 @@ class ColumnWise(TableExpr):
 
     def __gt__(self, other):
         return GT(self, other)
+
+    def label(self, label):
+        return Label(self, label)
 
     def __add__(self, other):
         return Add(self, other)
@@ -544,3 +550,19 @@ class Head(TableExpr):
     @property
     def dshape(self):
         return self.n * self.schema
+
+
+class Label(ColumnWise):
+    __slots__ = 'parent', 'label'
+
+    def __init__(self, parent, label):
+        self.parent = parent
+        self.label = label
+
+    @property
+    def schema(self):
+        if isinstance(self.parent.schema[0], Record):
+            dtype = list(self.parent.schema[0].fields.values()[0])
+        else:
+            dtype = list(self.parent.schema[0])
+        return DataShape(Record([[self.label, dtype]]))
