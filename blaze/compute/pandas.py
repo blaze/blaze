@@ -124,3 +124,13 @@ def compute(t, df):
 def compute(t, df):
     parent = compute(t.parent, df)
     return parent.head(t.n)
+
+
+@dispatch(Label, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    if isinstance(parent, Series):
+        parent.name = t.label
+    if isinstance(parent, DataFrame):
+        parent.columns = [t.label]
+    return parent
