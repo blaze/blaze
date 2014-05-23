@@ -176,3 +176,8 @@ def test_graph_double_join():
                     ('F', 4, 6)])
 
     assert result == expected
+
+
+def test_label():
+    assert list(compute((t['amount'] * 1).label('foo'), data)) == \
+            list(compute((t['amount'] * 1), data))

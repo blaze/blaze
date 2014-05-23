@@ -237,3 +237,8 @@ def compute(t, seq):
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return itertools.islice(parent, 0, t.n)
+
+
+@dispatch(Label, Sequence)
+def compute(t, seq):
+    return compute(t.parent, seq)
