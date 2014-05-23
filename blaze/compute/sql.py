@@ -160,3 +160,15 @@ def compute(t, s):
 def compute(t, s):
     parent = compute(t.parent, s)
     return parent.label(t.label)
+
+
+@dispatch(ReLabel, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+
+    columns = [getattr(s.c, col).label(new_col)
+               if col != new_col else
+               getattr(s.c, col)
+               for col, new_col in zip(t.parent.columns, t.columns)]
+
+    return select(columns)
