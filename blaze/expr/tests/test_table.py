@@ -160,3 +160,12 @@ def test_relabel():
 
     print(rl.columns)
     assert rl.columns == ['NAME', 'amount', 'ID']
+
+
+def test_relabel_join():
+    names = TableSymbol('{first: string, last: string}')
+
+    siblings = Join(names.relabel({'last': 'left'}),
+                    names.relabel({'last': 'right'}), 'first')
+
+    assert siblings.columns == ['first', 'left', 'right']
