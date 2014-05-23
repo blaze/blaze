@@ -182,3 +182,8 @@ def test_label():
     expected.name = 'foo'
     assert str(compute((t['amount'] * 10).label('foo'), df)) == \
             str(expected)
+
+
+def test_relabel():
+    result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), df)
+    assert list(result.columns) == ['NAME', 'amount', 'ID']
