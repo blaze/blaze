@@ -208,3 +208,10 @@ def test_map():
     inc = lambda x: x + 1
     assert list(compute(t.map(lambda _, amt, id: amt + id), data)) == \
             [x[1] + x[2] for x in data]
+
+
+def test_apply():
+    result = compute(t['amount'].apply(builtins.sum), data)
+    expected = compute(t['amount'].sum(), data)
+
+    assert result == expected

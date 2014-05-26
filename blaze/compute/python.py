@@ -251,3 +251,9 @@ def compute(t, seq):
         return map(t.func, parent)
     else:
         return itertools.starmap(t.func, parent)
+
+
+@dispatch(Apply, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
+    return t.func(parent)
