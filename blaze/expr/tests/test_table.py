@@ -182,6 +182,6 @@ def test_map():
 
 def test_apply():
     t = TableSymbol('{name: string, amount: int32, id: int32}')
-    s = t['amount'].apply(sum, dshape='real')
+    s = Apply(sum, t['amount'], dshape='real')
 
     assert s.dshape == dshape('real')

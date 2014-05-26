@@ -50,9 +50,6 @@ class TableExpr(Expr):
     def map(self, func, schema=None):
         return Map(self, func, schema)
 
-    def apply(self, func, dshape=None):
-        return Apply(func, self, dshape)
-
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
