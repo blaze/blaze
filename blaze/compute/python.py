@@ -242,3 +242,9 @@ def compute(t, seq):
 @dispatch((Label, ReLabel), Sequence)
 def compute(t, seq):
     return compute(t.parent, seq)
+
+
+@dispatch(Map, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
+    return itertools.starmap(t.func, parent)
