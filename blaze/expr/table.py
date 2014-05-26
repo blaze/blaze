@@ -47,6 +47,10 @@ class TableExpr(Expr):
     def relabel(self, labels):
         return ReLabel(self, labels)
 
+    def map(self, func, schema=None):
+        return Map(self, func, schema)
+
+
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
 
@@ -587,3 +591,75 @@ class ReLabel(TableExpr):
 
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self.parent.schema[0].parameters[0]]))
+
+
+class Map(TableExpr):
+    """ Map an arbitrary Python function across rows in a Table
+
+    >>> from datetime import datetime
+
+    >>> t = TableSymbol('{price: real, time: int64}')  # times as integers
+    >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
+
+    Optionally provide extra schema information
+
+    >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
+    ...                           schema='{time: datetime}')
+
+    See Also:
+        Apply
+    """
+    __slots__ = 'parent', 'func', '_schema'
+
+    def __init__(self, parent, func, schema=None):
+        self.parent = parent
+        self.func = func
+        self._schema = schema
+
+    @property
+    def schema(self):
+        if self._schema:
+            return dshape(self._schema)
+        else:
+            raise NotImplementedError()
+
+
+class Apply(TableExpr):
+    """ Apply an arbitrary Python function onto a Table
+
+    >>> t = TableSymbol('{name: string, amount: int}')
+    >>> h = Apply(hash, t)  # Hash value of resultant table
+
+    Optionally provide extra datashape information
+
+    >>> h = Apply(hash, t, dshape='real')
+
+    Apply brings a function within the expression tree.
+    The following transformation is often valid
+
+    Before ``compute(Apply(f, expr), ...)``
+    After  ``f(compute(expr, ...)``
+
+    See Also:
+        Map
+    """
+    __slots__ = 'parent', 'func', '_dshape'
+
+    def __init__(self, func, parent, dshape=None):
+        self.parent = parent
+        self.func = func
+        self._dshape = dshape
+
+    @property
+    def schema(self):
+        if isdimension(self.dshape[0]):
+            return self.dshape.subshape[0]
+        else:
+            return TypeError("Non-tabular datashape, %s" % self.dshape)
+
+    @property
+    def dshape(self):
+        if self._dshape:
+            return dshape(self._dshape)
+        else:
+            return NotImplementedError("Datashape of arbitrary Apply not defined")

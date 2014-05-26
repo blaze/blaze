@@ -169,3 +169,19 @@ def test_relabel_join():
                     names.relabel({'last': 'right'}), 'first')
 
     assert siblings.columns == ['first', 'left', 'right']
+
+
+def test_map():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    inc = lambda x: x + 1
+    s = t['amount'].map(inc)
+    s = t['amount'].map(inc, schema='{amount: int}')
+
+    assert s.dshape == dshape('var * {amount: int}')
+
+
+def test_apply():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    s = Apply(sum, t['amount'], dshape='real')
+
+    assert s.dshape == dshape('real')

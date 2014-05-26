@@ -16,11 +16,13 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
 import pandas
 from pandas import DataFrame, Series
 from multipledispatch import dispatch
 import numpy as np
+
+from blaze.expr.table import *
+
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
@@ -130,15 +132,27 @@ def compute(t, df):
 def compute(t, df):
     parent = compute(t.parent, df)
     if isinstance(parent, Series):
-        parent.name = t.label
+        return Series(parent, name=t.label)
     if isinstance(parent, DataFrame):
-        parent.columns = [t.label]
-    return parent
+        return DataFrame(parent, columns=[t.label])
 
 
 @dispatch(ReLabel, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    if isinstance(parent, DataFrame):
-        parent.columns = t.columns
-    return parent
+    return DataFrame(parent, columns=t.columns)
+
+
+@dispatch(Map, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    if isinstance(parent, Series):
+        return parent.map(t.func)
+    else:
+        return parent.apply(lambda tup: t.func(*tup), axis=1)
+
+
+@dispatch(Apply, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return t.func(parent)

@@ -197,3 +197,37 @@ def test_relabel_join():
     print(set(compute(siblings, {names: data})))
     assert ('Alice', 'Charlie') in set(compute(siblings, {names: data}))
     assert ('Alice', 'Bob') not in set(compute(siblings, {names: data}))
+
+
+def test_map_column():
+    inc = lambda x: x + 1
+    assert list(compute(t['amount'].map(inc), data)) == [x[1] + 1 for x in data]
+
+
+def test_map():
+    inc = lambda x: x + 1
+    assert list(compute(t.map(lambda _, amt, id: amt + id), data)) == \
+            [x[1] + x[2] for x in data]
+
+
+def test_apply_column():
+    result = compute(Apply(builtins.sum, t['amount']), data)
+    expected = compute(t['amount'].sum(), data)
+
+    assert result == expected
+
+
+def test_apply():
+    data2 = tuple(map(tuple, data))
+    assert compute(Apply(hash, t), data2) == hash(data2)
+
+
+def test_map_datetime():
+    from datetime import datetime
+    data = [['A', 0], ['B', 1]]
+    t = TableSymbol('{foo: string, datetime: int64}')
+
+    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp), data))
+    expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
+
+    assert result == expected
