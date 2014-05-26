@@ -220,3 +220,14 @@ def test_apply_column():
 def test_apply():
     data2 = tuple(map(tuple, data))
     assert compute(t.apply(hash), data2) == hash(data2)
+
+
+def test_map_datetime():
+    from datetime import datetime
+    data = [['A', 0], ['B', 1]]
+    t = TableSymbol('{foo: string, datetime: int64}')
+
+    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp), data))
+    expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
+
+    assert result == expected
