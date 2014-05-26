@@ -47,6 +47,10 @@ class TableExpr(Expr):
     def relabel(self, labels):
         return ReLabel(self, labels)
 
+    def map(self, func, schema=None):
+        return Map(self, func, schema)
+
+
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
 
@@ -587,3 +591,19 @@ class ReLabel(TableExpr):
 
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self.parent.schema[0].parameters[0]]))
+
+
+class Map(TableExpr):
+    __slots__ = 'parent', 'func', '_schema'
+
+    def __init__(self, parent, func, schema=None):
+        self.parent = parent
+        self.func = func
+        self._schema = schema
+
+    @property
+    def schema(self):
+        if self._schema:
+            return dshape(self._schema)
+        else:
+            raise NotImplementedError()

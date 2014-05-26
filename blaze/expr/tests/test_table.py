@@ -169,3 +169,9 @@ def test_relabel_join():
                     names.relabel({'last': 'right'}), 'first')
 
     assert siblings.columns == ['first', 'left', 'right']
+
+
+def test_map():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    inc = lambda x: x + 1
+    s = t['amount'].map(inc)
