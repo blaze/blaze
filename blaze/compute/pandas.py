@@ -134,18 +134,15 @@ def compute(t, df):
 def compute(t, df):
     parent = compute(t.parent, df)
     if isinstance(parent, Series):
-        parent.name = t.label
+        return Series(parent, name=t.label)
     if isinstance(parent, DataFrame):
-        parent.columns = [t.label]
-    return parent
+        return DataFrame(parent, columns=[t.label])
 
 
 @dispatch(ReLabel, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    if isinstance(parent, DataFrame):
-        parent.columns = t.columns
-    return parent
+    return DataFrame(parent, columns=t.columns)
 
 
 @dispatch(Map, DataFrame)
