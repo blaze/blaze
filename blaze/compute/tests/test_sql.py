@@ -188,3 +188,15 @@ def test_sort():
 
 def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
+
+
+def test_label():
+    assert str(compute((t['amount'] * 10).label('foo'), s)) == \
+            str((s.c.amount * 10).label('foo'))
+
+
+def test_relabel():
+    result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), s)
+    expected = select([s.c.name.label('NAME'), s.c.amount, s.c.id.label('ID')])
+
+    assert str(result) == str(expected)

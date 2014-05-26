@@ -175,3 +175,15 @@ def test_sort():
 
 def test_head():
     assert str(compute(t.head(1), df)) == str(df.head(1))
+
+
+def test_label():
+    expected = df['amount'] * 10
+    expected.name = 'foo'
+    assert str(compute((t['amount'] * 10).label('foo'), df)) == \
+            str(expected)
+
+
+def test_relabel():
+    result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), df)
+    assert list(result.columns) == ['NAME', 'amount', 'ID']

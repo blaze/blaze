@@ -44,6 +44,9 @@ class TableExpr(Expr):
     def head(self, n=10):
         return Head(self, n)
 
+    def relabel(self, labels):
+        return ReLabel(self, labels)
+
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
 
@@ -115,6 +118,9 @@ class Column(Projection):
 
     def __gt__(self, other):
         return GT(self, other)
+
+    def label(self, label):
+        return Label(self, label)
 
     def __add__(self, other):
         return Add(self, other)
@@ -216,6 +222,9 @@ class ColumnWise(TableExpr):
 
     def __gt__(self, other):
         return GT(self, other)
+
+    def label(self, label):
+        return Label(self, label)
 
     def __add__(self, other):
         return Add(self, other)
@@ -544,3 +553,37 @@ class Head(TableExpr):
     @property
     def dshape(self):
         return self.n * self.schema
+
+
+class Label(ColumnWise):
+    __slots__ = 'parent', 'label'
+
+    def __init__(self, parent, label):
+        self.parent = parent
+        self.label = label
+
+    @property
+    def schema(self):
+        if isinstance(self.parent.schema[0], Record):
+            dtype = list(self.parent.schema[0].fields.values()[0])
+        else:
+            dtype = list(self.parent.schema[0])
+        return DataShape(Record([[self.label, dtype]]))
+
+
+class ReLabel(TableExpr):
+    __slots__ = 'parent', 'labels'
+
+    def __init__(self, parent, labels):
+        self.parent = parent
+        if isinstance(labels, dict):  # Turn dict into tuples
+            labels = tuple(sorted(labels.items()))
+        self.labels = labels
+
+    @property
+    def schema(self):
+        subs = dict(self.labels)
+        d = self.parent.schema[0].fields
+
+        return DataShape(Record([[subs.get(name, name), dtype]
+            for name, dtype in self.parent.schema[0].parameters[0]]))

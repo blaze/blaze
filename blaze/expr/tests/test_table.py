@@ -140,3 +140,32 @@ def test_head():
     assert eval(str(s)).isidentical(s)
 
     assert s.schema == t.schema
+
+
+def test_label():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    quantity = (t['amount'] + 100).label('quantity')
+
+    assert eval(str(quantity)).isidentical(quantity)
+
+    assert quantity.columns == ['quantity']
+
+
+def test_relabel():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+
+    rl = t.relabel({'name': 'NAME', 'id': 'ID'})
+
+    assert eval(str(rl)).isidentical(rl)
+
+    print(rl.columns)
+    assert rl.columns == ['NAME', 'amount', 'ID']
+
+
+def test_relabel_join():
+    names = TableSymbol('{first: string, last: string}')
+
+    siblings = Join(names.relabel({'last': 'left'}),
+                    names.relabel({'last': 'right'}), 'first')
+
+    assert siblings.columns == ['first', 'left', 'right']
