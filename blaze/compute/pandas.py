@@ -16,11 +16,14 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
 import pandas
 from pandas import DataFrame, Series
 from multipledispatch import dispatch
+from functools import partial
 import numpy as np
+
+from blaze.expr.table import *
+
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
@@ -142,3 +145,12 @@ def compute(t, df):
     if isinstance(parent, DataFrame):
         parent.columns = t.columns
     return parent
+
+
+@dispatch(Map, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    if isinstance(parent, Series):
+        return parent.map(t.func)
+    else:
+        return parent.apply(partial(apply, t.func), axis=1)

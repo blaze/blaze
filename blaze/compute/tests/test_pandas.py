@@ -187,3 +187,17 @@ def test_label():
 def test_relabel():
     result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), df)
     assert list(result.columns) == ['NAME', 'amount', 'ID']
+
+
+def test_map_column():
+    inc = lambda x: x + 1
+    result = compute(t['amount'].map(inc), df)
+    expected = df['amount'] + 1
+    assert str(result) == str(expected)
+
+
+def test_map():
+    f = lambda _, amt, id: amt + id
+    result = compute(t.map(f), df)
+    expected = df['amount'] + df['id']
+    assert str(result) == str(expected)
