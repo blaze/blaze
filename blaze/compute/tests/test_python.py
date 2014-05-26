@@ -201,12 +201,10 @@ def test_relabel_join():
 
 def test_map_column():
     inc = lambda x: x + 1
-    assert compute(t['amount'].map(inc), data) == [x[1] + 1 for x in data]
+    assert list(compute(t['amount'].map(inc), data)) == [x[1] + 1 for x in data]
 
 
-
-
-def test_map_column():
+def test_map():
     inc = lambda x: x + 1
     assert list(compute(t.map(lambda _, amt, id: amt + id), data)) == \
             [x[1] + x[2] for x in data]

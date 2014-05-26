@@ -247,4 +247,7 @@ def compute(t, seq):
 @dispatch(Map, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return itertools.starmap(t.func, parent)
+    if len(t.parent.columns) == 1:
+        return map(t.func, parent)
+    else:
+        return itertools.starmap(t.func, parent)
