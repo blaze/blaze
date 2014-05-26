@@ -51,7 +51,7 @@ class TableExpr(Expr):
         return Map(self, func, schema)
 
     def apply(self, func, dshape=None):
-        return Apply(self, func, dshape)
+        return Apply(func, self, dshape)
 
 
 class TableSymbol(TableExpr):
@@ -597,6 +597,21 @@ class ReLabel(TableExpr):
 
 
 class Map(TableExpr):
+    """ Map an arbitrary Python function across rows in a Table
+
+    >>> from datetime import datetime
+
+    >>> t = TableSymbol('{price: real, time: int64}')  # times as integers
+    >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
+
+    Optionally provide extra schema information
+
+    >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
+    ...                           schema='{time: datetime}')
+
+    See Also:
+        Apply
+    """
     __slots__ = 'parent', 'func', '_schema'
 
     def __init__(self, parent, func, schema=None):
@@ -613,9 +628,27 @@ class Map(TableExpr):
 
 
 class Apply(TableExpr):
+    """ Apply an arbitrary Python function onto a Table
+
+    >>> t = TableSymbol('{name: string, amount: int}')
+    >>> h = Apply(hash, t)  # Hash value of resultant table
+
+    Optionally provide extra datashape information
+
+    >>> h = Apply(hash, t, dshape='real')
+
+    Apply brings a function within the expression tree.
+    The following transformation is often valid
+
+    Before ``compute(Apply(f, expr), ...)``
+    After  ``f(compute(expr, ...)``
+
+    See Also:
+        Map
+    """
     __slots__ = 'parent', 'func', '_dshape'
 
-    def __init__(self, parent, func, dshape=None):
+    def __init__(self, func, parent, dshape=None):
         self.parent = parent
         self.func = func
         self._dshape = dshape
