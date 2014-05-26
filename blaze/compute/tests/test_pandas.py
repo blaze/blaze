@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from blaze.compute.pandas import *
 from blaze.expr.table import *
 from pandas import DataFrame
+from blaze.compatibility import builtins
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 
@@ -201,3 +202,22 @@ def test_map():
     result = compute(t.map(f), df)
     expected = df['amount'] + df['id']
     assert str(result) == str(expected)
+
+
+def test_apply_column():
+    result = compute(t['amount'].apply(np.sum), df)
+    expected = np.sum(df['amount'])
+
+    assert str(result) == str(expected)
+
+    result = compute(t['amount'].apply(builtins.sum), df)
+    expected = builtins.sum(df['amount'])
+
+    assert str(result) == str(expected)
+
+
+def test_apply():
+    result = compute(t.apply(str), df)
+    expected = str(df)
+
+    assert result == expected

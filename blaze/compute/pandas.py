@@ -155,3 +155,9 @@ def compute(t, df):
         return parent.map(t.func)
     else:
         return parent.apply(partial(apply, t.func), axis=1)
+
+
+@dispatch(Apply, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return t.func(parent)
