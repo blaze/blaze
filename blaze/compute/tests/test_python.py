@@ -210,8 +210,13 @@ def test_map():
             [x[1] + x[2] for x in data]
 
 
-def test_apply():
+def test_apply_column():
     result = compute(t['amount'].apply(builtins.sum), data)
     expected = compute(t['amount'].sum(), data)
 
     assert result == expected
+
+
+def test_apply():
+    data2 = tuple(map(tuple, data))
+    assert compute(t.apply(hash), data2) == hash(data2)
