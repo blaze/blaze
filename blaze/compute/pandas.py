@@ -23,6 +23,7 @@ from functools import partial
 import numpy as np
 
 from blaze.expr.table import *
+from ..compatibility import apply
 
 
 @dispatch(Projection, DataFrame)
