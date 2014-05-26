@@ -50,6 +50,9 @@ class TableExpr(Expr):
     def map(self, func, schema=None):
         return Map(self, func, schema)
 
+    def apply(self, func, dshape=None):
+        return Apply(self, func, dshape)
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -607,3 +610,26 @@ class Map(TableExpr):
             return dshape(self._schema)
         else:
             raise NotImplementedError()
+
+
+class Apply(TableExpr):
+    __slots__ = 'parent', 'func', '_dshape'
+
+    def __init__(self, parent, func, dshape=None):
+        self.parent = parent
+        self.func = func
+        self._dshape = dshape
+
+    @property
+    def schema(self):
+        if isdimension(self.dshape[0]):
+            return self.dshape.subshape[0]
+        else:
+            return TypeError("Non-tabular datashape, %s" % self.dshape)
+
+    @property
+    def dshape(self):
+        if self._dshape:
+            return dshape(self._dshape)
+        else:
+            return NotImplementedError("Datashape of arbitrary Apply not defined")
