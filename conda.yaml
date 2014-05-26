@@ -1,0 +1,26 @@
+package:
+    name: blaze
+    version: "0.5.1"
+
+build:
+    number: {{environ.get('BINSTAR_BUILD', 1)}}
+    script: python setup.py install
+      - cd $RECIPE_DIR
+      - $PYTHON setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+    build:
+      - python
+
+    run:
+      - dynd-python
+      - numpy
+      - multipledispatch
+      - sqlalchemy
+      - pandas
+      - h5py 
+      - datashape
+
+about:
+    home: http://blaze.pydata.org
+    license: BSD
