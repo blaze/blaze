@@ -81,8 +81,9 @@ class CSV(DataDescriptor):
     appendable = True
     remote = False
 
-    def __init__(self, path, mode='rt', schema=None,
-                 dialect=None, header=None, open=open, columns=None, **kwargs):
+    def __init__(self, path, mode='rt',
+            schema=None, columns=None, types=None, hints=None,
+            dialect=None, header=None, open=open, **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         if not schema and 'w' in mode:
@@ -106,15 +107,19 @@ class CSV(DataDescriptor):
             header = has_header(sample)
 
         if not schema and 'w' not in mode:
-            with open(self.path, 'r') as f:
-                types = discover(list(it.islice(csv.reader(f, **dialect), 1, 5)))
-                types = types.subshape[0][0].dshapes
+            if not types:
+                with open(self.path, 'r') as f:
+                    types = discover(list(it.islice(csv.reader(f, **dialect), 1, 5)))
+                    types = types.subshape[0][0].dshapes
             if not columns:
                 if header:
                     with open(self.path, 'r') as f:
                         columns = next(csv.reader([next(f)], **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
+            if hints:
+                types = [hints.get(c, t) for c, t in zip(columns, types)]
+
             schema = dshape(Record(list(zip(columns, types))))
 
         self._schema = schema

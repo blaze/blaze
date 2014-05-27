@@ -17,10 +17,30 @@ from blaze.data.csv import has_header, discover_dialect
 from blaze.utils import filetext
 from blaze.data.utils import tuplify
 from dynd import nd
+from nose.tools import assert_equal
 
 
 def sanitize(lines):
     return '\n'.join(line.strip() for line in lines.split('\n'))
+
+
+class Test_Other(unittest.TestCase):
+    def test_schema_detection_modifiers(self):
+        text = "name amount date\nAlice 100 20120101\nBob 200 20120102"
+        with filetext(text) as fn:
+            self.assertEqual(CSV(fn).schema,
+                         dshape('{name: string, amount: int64, date: int64}'))
+
+            self.assertEqual(CSV(fn, columns=['NAME', 'AMOUNT', 'DATE']).schema,
+                         dshape('{NAME: string, AMOUNT: int64, DATE: int64}'))
+
+            self.assertEqual(
+                    str(CSV(fn, types=['string', 'int32', 'date']).schema),
+                    str(dshape('{name: string, amount: int32, date: date}')))
+
+            a = CSV(fn, hints={'date': 'date'}).schema
+            b = dshape('{name: string, amount: int64, date: date}')
+            self.assertEqual(str(a), str(b))
 
 
 class Test_Indexing(unittest.TestCase):
@@ -43,7 +63,8 @@ class Test_Indexing(unittest.TestCase):
         assert self.dd.header
 
     def tearDown(self):
-        os.remove(self.csv_file)
+        if os.path.exists(self.csv_file):
+            os.remove(self.csv_file)
 
     def test_row(self):
         self.assertEqual(tuplify(self.dd.py[0]), ('Alice', 100))
