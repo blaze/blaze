@@ -16,12 +16,12 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
-import pandas
+import pandas as pd
 from pandas import DataFrame, Series
 from multipledispatch import dispatch
 import numpy as np
 
-from blaze.expr.table import *
+from ..expr.table import *
 
 
 @dispatch(Projection, DataFrame)
@@ -57,7 +57,6 @@ def compute(t, df):
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
                         % (t, df))
     return df
-
 
 
 @dispatch(Join, DataFrame, DataFrame)
@@ -99,6 +98,12 @@ def compute(t, s):
     assert isinstance(parent, Series)
     op = getattr(Series, t.symbol)
     return op(parent)
+
+
+@dispatch(distinct, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return parent.drop_duplicates()
 
 
 @dispatch(By, DataFrame)

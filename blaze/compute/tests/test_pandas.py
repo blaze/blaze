@@ -23,6 +23,17 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                   columns=['name', 'sex', 'amount', 'id'])
 
 
+def df_all(a_df, b_df):
+    """Checks if two dataframes have the same columns
+
+    This method doesn't check the index which can be manipulated during operations.
+    """
+    assert all(a_df.columns == b_df.columns)
+    for col in a_df.columns:
+        assert np.all(a_df[col] == b_df[col])
+    return True
+
+
 def test_table():
     assert str(compute(t, df)) == str(df)
 
@@ -92,6 +103,24 @@ def test_Reductions():
     assert compute(any(t['amount'] > 250), df) == False
 
 
+def test_distinct():
+    dftoobig = DataFrame([['Alice', 'F', 100, 1],
+                          ['Alice', 'F', 100, 1],
+                          ['Alice', 'F', 100, 3],
+                          ['Drew', 'F', 100, 4],
+                          ['Drew', 'M', 100, 5],
+                          ['Drew', 'F', 100, 4],
+                          ['Drew', 'M', 100, 5],
+                          ['Drew', 'M', 200, 5],
+                          ['Drew', 'M', 200, 5]],
+                          columns=['name', 'sex', 'amount', 'id'])
+    d_t = distinct(tbig)
+    d_df = compute(d_t, dftoobig)
+    assert df_all(d_df, dfbig)
+    # Test idempotence
+    assert df_all(compute(d_t, d_df), d_df)
+
+
 def test_by_one():
     result = compute(By(t, t['name'], sum(t['amount'])), df)
     expected = df.groupby('name')['amount'].apply(lambda x: x.sum())
@@ -149,7 +178,7 @@ def test_join_by_arcs():
 
     result = compute(want, {t_arc: df_arc, t_idx:df_idx})
 
-    result_pandas = pandas.merge(df_arc, df_idx, on='node_id')
+    result_pandas = pd.merge(df_arc, df_idx, on='node_id')
 
     assert str(result) == str(result_pandas.groupby('name')['node_id'].count())
 
