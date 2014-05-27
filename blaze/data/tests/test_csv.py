@@ -8,6 +8,7 @@ import sys
 from collections import Iterator
 
 import datashape
+from datashape import dshape
 
 from blaze.compatibility import skipIf
 from blaze.data.core import DataDescriptor
@@ -107,6 +108,14 @@ class Test_Dialect(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.csv_file)
+
+
+    def test_schema_detection(self):
+        dd = CSV(self.csv_file)
+        assert dd.schema == dshape('{Name: string, Amount: int64}')
+
+        dd = CSV(self.csv_file, columns=['foo', 'bar'])
+        assert dd.schema == dshape('{foo: string, bar: int64}')
 
     @skipIf(sys.version_info[:2] < (2, 7), 'CSV module unable to parse')
     def test_has_header(self):
