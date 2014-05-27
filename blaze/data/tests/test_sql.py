@@ -5,7 +5,7 @@ import unittest
 
 from blaze.data.sql import SQL, discover
 from blaze.utils import raises
-from datashape import dshape
+from datashape import dshape, var
 import datashape
 
 
@@ -108,3 +108,25 @@ def test_discovery():
 
     assert discover(s) == \
             dshape('var * {name: string, amount: int32, timestamp: datetime}')
+
+
+def test_dicovery_engine():
+    dd = SQL('sqlite:///:memory:',
+             'accounts',
+             schema='{name: string, amount: int}')
+
+    dshape = discover(dd.engine, 'accounts')
+
+    assert dshape == dd.dshape
+
+
+def test_schema_detection():
+    dd = SQL('sqlite:///my.db',
+             'accounts',
+             schema='{name: string, amount: int32}')
+
+    dd.extend([['Alice', 100], ['Bob', 200]])
+
+    dd2 = SQL('sqlite:///my.db', 'accounts')
+
+    assert dd.schema == dd2.schema
