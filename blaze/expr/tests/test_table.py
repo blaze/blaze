@@ -114,6 +114,14 @@ def test_reduction():
     assert r.dshape in (dshape('int32'), dshape('{amount: int32}'))
 
 
+def test_distinct():
+    t = TableSymbol('{name: string, amount: int32}')
+    r = distinct(t['name'])
+    print(type(r.dshape))
+    print(type(dshape('string')))
+    assert r.dshape in (dshape('string'), dshape('{name: string}'))
+
+
 def test_by():
     t = TableSymbol('{name: string, amount: int32, id: int32}')
     r = By(t, t['name'], sum(t['amount']))
