@@ -6,6 +6,8 @@ from decimal import Decimal
 from dynd import nd
 import sqlalchemy as sql
 import datashape
+from datashape import dshape, var, Record
+from datashape.discovery import dispatch
 from itertools import chain
 
 from ..utils import partition_all
@@ -35,6 +37,22 @@ types = {'int64': sql.types.BigInteger,
 #         unicode: sql.types.UnicodeText,
 #         str: sql.types.Text,  # ??
          }
+
+
+revtypes = dict(map(reversed, types.items()))
+
+
+@dispatch(sql.sql.type_api.TypeEngine)
+def discover(typ):
+    if type(typ) in revtypes:
+        return dshape(revtypes[type(typ)])[0]
+    else:
+        raise NotImplementedError()
+
+
+@dispatch(sql.Table)
+def discover(t):
+    return var * Record([[c.name, discover(c.type)] for c in t.columns])
 
 
 def dshape_to_alchemy(dshape):

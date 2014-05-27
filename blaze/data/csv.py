@@ -109,7 +109,8 @@ class CSV(DataDescriptor):
         if not schema and 'w' not in mode:
             if not types:
                 with open(self.path, 'r') as f:
-                    types = discover(list(it.islice(csv.reader(f, **dialect), 1, 5)))
+                    data = list(it.islice(csv.reader(f, **dialect), 1, 5))
+                    types = discover(data)
                     types = types.subshape[0][0].dshapes
             if not columns:
                 if header:
