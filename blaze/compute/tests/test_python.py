@@ -122,6 +122,9 @@ def test_join():
 
     assert result == expected
 
+def test_Distinct():
+    assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
+
 
 def test_sort():
     assert list(compute(t.sort('amount'), data)) == \

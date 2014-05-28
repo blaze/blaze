@@ -4,42 +4,8 @@ import tempfile
 import os
 from collections import Iterator
 
-
-def partition_all(n, seq):
-    """ Split sequence into subsequences of size ``n``
-
-    >>> list(partition_all(3, [1, 2, 3, 4, 5, 6, 7, 8, 9]))
-    [(1, 2, 3), (4, 5, 6), (7, 8, 9)]
-
-    The last element of the list may have fewer than ``n`` elements
-
-    >>> list(partition_all(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
-    [(1, 2, 3), (4, 5, 6), (7, 8, 9), (10,)]
-    """
-    seq = iter(seq)
-    while True:
-        result = tuple(islice(seq, 0, n))
-        if result:
-            yield result
-        else:
-            raise StopIteration()
-
-
-def nth(n, seq):
-    """
-
-    >>> nth(1, 'Hello, world!')
-    'e'
-    >>> nth(4, 'Hello, world!')
-    'o'
-    """
-    seq = iter(seq)
-    i = 0
-    while i < n:
-        i += 1
-        next(seq)
-    return next(seq)
-
+# Imports that replace older utils.
+from cytoolz import count, unique, partition_all, nth, groupby, reduceby
 
 def nth_list(n, seq):
     """
@@ -175,64 +141,3 @@ def raises(err, lamda):
         return False
     except err:
         return True
-
-
-def groupby(f, coll):
-    """ Group collection by key function
-
-    >>> names = ['Alice', 'Bob', 'Charlie', 'Dan', 'Edith', 'Frank']
-    >>> groupby(len, names)
-    {3: ['Bob', 'Dan'], 5: ['Alice', 'Edith', 'Frank'], 7: ['Charlie']}
-    """
-    d = {}
-    for item in coll:
-        key = f(item)
-        if key not in d:
-            d[key] = []
-        d[key].append(item)
-    return d
-
-
-def reduceby(key, binop, seq, initial=None):
-    """ Streaming split-apply-combine
-
-    >>> accounts = [('Alice', 100), ('Bob', 200), ('Alice', 50)]
-    >>> get_name = lambda x: x[0]
-    >>> add_amount = lambda total, (name, amount): total + amount
-
-    >>> reduceby(get_name, add_amount, accounts, 0)  # doctest: +SKIP
-    {'Alice': 150, 'Bob': 200}
-    """
-    d = {}
-    for item in seq:
-        k = key(item)
-        if k not in d:
-            if initial is None:
-                d[k] = item
-            else:
-                d[k] = binop(initial, item)
-        else:
-            d[k] = binop(d[k], item)
-    return d
-
-
-def identity(x):
-    return x
-
-
-def unique(seq, key=identity):
-    """ A sequence of unique elements from seq
-
-    >>> list(unique([1, 2, 2, 3]))
-    [1, 2, 3]
-
-    Use the key function to define uniqueness
-
-    >>> list(unique([1, 2, 3, 4], key=lambda x: x % 2))
-    [1, 2]
-    """
-    s = set()
-    for item in seq:
-        if key(item) not in s:
-            s.add(key(item))
-            yield item

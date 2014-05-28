@@ -6,8 +6,6 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
-# build the blaze namespace with selected functions
-from .data import *
 
 inf = float('inf')
 nan = float('nan')

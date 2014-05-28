@@ -21,7 +21,9 @@ from functools import partial
 
 from ..expr.table import *
 from ..compatibility import builtins
-from ..utils import groupby, get, reduceby
+from .. import utils
+from ..utils import groupby, get, reduceby, unique
+
 
 Sequence = (tuple, list, Iterator)
 
@@ -117,10 +119,15 @@ def compute(t, seq):
     parent = compute(t.parent, seq)
     return builtins.sum(1 for i in parent)
 
+@dispatch(Distinct, Sequence)
+def compute(t, seq):
+    parent = compute(t.parent, seq)
+    return unique(parent)
+
 @dispatch(nunique, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return len(set(parent))
+    return utils.count((unique(parent)))
 
 @dispatch(mean, Sequence)
 def compute(t, seq):
