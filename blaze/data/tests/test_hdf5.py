@@ -177,3 +177,20 @@ class TestDiscovery(MakeFile):
             d = f.get(dd.datapath)
             self.assertEqual(discover(d),
                              dshape('3 * 2 * int32'))
+
+    def test_ddesc_discovery(self):
+        dd = HDF5(self.filename, 'data', 'a',
+                  schema='2 * int32')
+        dd.extend([(1, 2), (2, 3), (4, 5)])
+        dd2 = HDF5(self.filename, 'data', 'a')
+
+        self.assertEqual(dd.schema, dd2.schema)
+        self.assertEqual(dd.dshape, dd2.dshape)
+
+
+    def test_ddesc_conflicts(self):
+        dd = HDF5(self.filename, 'data', 'a',
+                  schema='2 * int32')
+        dd.extend([(1, 2), (2, 3), (4, 5)])
+        self.assertRaises(TypeError, lambda: HDF5(self.filename, 'data', 'a',
+                                                  schema='2 * float32'))
