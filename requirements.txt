@@ -13,3 +13,4 @@ networkx
 IPython
 matplotlib
 multipledispatch
+cytoolz

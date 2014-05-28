@@ -21,7 +21,8 @@ from functools import partial
 
 from ..expr.table import *
 from ..compatibility import builtins
-from ..utils import groupby, get, reduceby
+from ..utils import groupby, get, reduceby, unique, cy_count
+
 
 Sequence = (tuple, list, Iterator)
 
@@ -120,12 +121,12 @@ def compute(t, seq):
 @dispatch(distinct, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return set(parent)
+    return unique(parent)
 
 @dispatch(nunique, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return len(set(parent))
+    return cy_count((unique(parent)))
 
 @dispatch(mean, Sequence)
 def compute(t, seq):
