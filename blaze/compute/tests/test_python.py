@@ -55,7 +55,6 @@ def test_reductions():
     assert compute(sum(t['amount']), data) == 100 + 200 + 50
     assert compute(min(t['amount']), data) == 50
     assert compute(max(t['amount']), data) == 200
-    assert set(compute(distinct(t['name']), data)) == set(['Alice', 'Bob'])
     assert compute(nunique(t['amount']), data) == 3
     assert compute(nunique(t['name']), data) == 2
     assert compute(count(t['amount']), data) == 3
@@ -122,6 +121,9 @@ def test_join():
     expected = [('Alice', 100, 1), ('Bob', 200, 2)]
 
     assert result == expected
+
+def test_Distinct():
+    assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
 
 
 def test_sort():

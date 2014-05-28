@@ -119,7 +119,7 @@ def compute(t, seq):
     parent = compute(t.parent, seq)
     return builtins.sum(1 for i in parent)
 
-@dispatch(distinct, Sequence)
+@dispatch(Distinct, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return unique(parent)

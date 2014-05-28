@@ -125,7 +125,7 @@ def compute(t, s):
     return sqlalchemy.sql.functions.count(sqlalchemy.distinct(parent))
 
 
-@dispatch(distinct, sqlalchemy.sql.Selectable)
+@dispatch(Distinct, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     return sqlalchemy.distinct(parent)

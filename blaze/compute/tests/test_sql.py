@@ -107,7 +107,7 @@ def test_reductions():
     assert 'amount' == compute(sum(t['amount']), s).name
 
 def test_distinct():
-    result = str(compute(distinct(t['amount']), s))
+    result = str(compute(Distinct(t['amount']), s))
 
     assert 'distinct' in result.lower()
     assert 'amount' in result.lower()

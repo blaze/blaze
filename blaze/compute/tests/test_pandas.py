@@ -103,7 +103,7 @@ def test_Reductions():
     assert compute(any(t['amount'] > 250), df) == False
 
 
-def test_distinct():
+def test_Distinct():
     dftoobig = DataFrame([['Alice', 'F', 100, 1],
                           ['Alice', 'F', 100, 1],
                           ['Alice', 'F', 100, 3],
@@ -114,7 +114,7 @@ def test_distinct():
                           ['Drew', 'M', 200, 5],
                           ['Drew', 'M', 200, 5]],
                           columns=['name', 'sex', 'amount', 'id'])
-    d_t = distinct(tbig)
+    d_t = Distinct(tbig)
     d_df = compute(d_t, dftoobig)
     assert df_all(d_df, dfbig)
     # Test idempotence

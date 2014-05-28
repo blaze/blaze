@@ -166,7 +166,7 @@ class Column(Projection):
         return count(self)
 
     def distinct(self):
-        return distinct(self)
+        return Distinct(self)
 
     def nunique(self):
         return nunique(self)
@@ -273,7 +273,7 @@ class ColumnWise(TableExpr):
         return count(self)
 
     def distinct(self):
-        return distinct(self)
+        return Distinct(self)
 
     def nunique(self):
         return nunique(self)
@@ -495,7 +495,6 @@ class mean(Reduction): pass
 class var(Reduction): pass
 class std(Reduction): pass
 class count(Reduction): pass
-class distinct(Reduction): pass
 class nunique(Reduction): pass
 
 
@@ -548,6 +547,29 @@ class Sort(TableExpr):
     @property
     def schema(self):
         return self.parent.schema
+
+
+class Distinct(TableExpr):
+    """ Distinct elements filter
+
+    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> e = Distinct(t)
+
+    >>> data = [['Alice', 100, 1],
+    ...         ['Bob', 200, 2],
+    ...         ['Alice', 100, 1]]
+
+    >>> from blaze.compute.python import compute
+    >>> compute(e, data) #doctest: +SKIP
+    [['Alice', 100, 1], ['Bob', 200, 2]]
+    """
+
+    def __init__(self, table):
+        self.parent = table
+
+    @property
+    def dshape(self):
+        return datashape.var * self.parent.dshape.subarray(1)
 
 
 class Head(TableExpr):

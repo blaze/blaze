@@ -100,7 +100,7 @@ def compute(t, s):
     return op(parent)
 
 
-@dispatch(distinct, DataFrame)
+@dispatch(Distinct, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
     return parent.drop_duplicates()
