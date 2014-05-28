@@ -5,6 +5,7 @@ from itertools import chain
 import h5py
 from dynd import nd
 import datashape
+from datashape.discovery import dispatch
 
 from .core import DataDescriptor
 from ..utils import partition_all, get
@@ -12,7 +13,12 @@ from ..utils import partition_all, get
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
 
-__all__ = ['HDF5']
+__all__ = ['HDF5', 'discover']
+
+
+@dispatch(h5py.Dataset)
+def discover(d):
+    return datashape.from_numpy(d.shape, d.dtype)
 
 
 class HDF5(DataDescriptor):

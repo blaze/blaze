@@ -6,8 +6,9 @@ import h5py
 import numpy as np
 from sys import stdout
 from datetime import date, datetime
+from datashape import dshape
 
-from blaze.data import HDF5
+from blaze.data.hdf5 import HDF5, discover
 from blaze.utils import tmpfile
 from blaze.compatibility import skip
 
@@ -165,3 +166,14 @@ class TestTypes(MakeFile):
                   dshape='var * {x: int, y: datetime}')
         dd.extend([(1, datetime(2000, 1, 1, 12, 0, 0)),
                    (2, datetime(2000, 1, 2, 12, 30, 00))])
+
+
+class TestDiscovery(MakeFile):
+    def test_discovery(self):
+        dd = HDF5(self.filename, 'data', 'a',
+                  schema='2 * int32')
+        dd.extend([(1, 2), (2, 3), (4, 5)])
+        with h5py.File(dd.path) as f:
+            d = f.get(dd.datapath)
+            self.assertEqual(discover(d),
+                             dshape('3 * 2 * int32'))
