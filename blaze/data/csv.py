@@ -7,8 +7,8 @@ from operator import itemgetter
 from collections import Iterator
 
 import datashape
-from datashape.discovery import discover
-from datashape import dshape, Record
+from datashape.discovery import discover, null, string
+from datashape import dshape, Record, Option
 from dynd import nd
 
 from .core import DataDescriptor
@@ -83,7 +83,8 @@ class CSV(DataDescriptor):
 
     def __init__(self, path, mode='rt',
             schema=None, columns=None, types=None, hints=None,
-            dialect=None, header=None, open=open, **kwargs):
+            dialect=None, header=None, open=open, nrows_discovery=50,
+            **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
         if not schema and 'w' in mode:
@@ -109,9 +110,13 @@ class CSV(DataDescriptor):
         if not schema and 'w' not in mode:
             if not types:
                 with open(self.path, 'r') as f:
-                    data = list(it.islice(csv.reader(f, **dialect), 1, 5))
+                    data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
                     types = discover(data)
                     types = types.subshape[0][0].dshapes
+                    types = [t.ty if isinstance(t, Option) else t
+                                  for t in types]
+                    types = [string if t == null else t
+                                    for t in types]
             if not columns:
                 if header:
                     with open(self.path, 'r') as f:
