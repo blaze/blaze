@@ -126,10 +126,10 @@ diff_pair_ck = _lowlevel.lift_reduction_arrfunc(subtract_doubles_ck,
 diff_ck = _lowlevel.make_rolling_arrfunc(diff_pair_ck, 2)
 diff.add_overload('(M * float64) -> M * float64', diff_ck)
 
-take = CKFBlazeFunc('blaze', 'take')
+take = BlazeFunc('blaze', 'take')
 # Masked take
 take.add_overload('(M * T, M * bool) -> var * T',
-                  _lowlevel.make_take_arrfunc)
+                  _lowlevel.make_take_arrfunc())
 # Indexed take
 take.add_overload('(M * T, N * intptr) -> N * T',
-                  _lowlevel.make_take_arrfunc)
+                  _lowlevel.make_take_arrfunc())
