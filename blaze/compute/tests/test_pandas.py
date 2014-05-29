@@ -1,8 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
+import pandas as pd
+import numpy as np
+from pandas import DataFrame, Series
+
 from blaze.compute.pandas import *
 from blaze.expr.table import *
-from pandas import DataFrame
 from blaze.compatibility import builtins
 
 t = TableSymbol('{name: string, amount: int, id: int}')

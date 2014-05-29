@@ -24,6 +24,7 @@ from ..compatibility import builtins
 from .. import utils
 from ..utils import groupby, get, reduceby, unique
 
+__all__ = ['compute', 'Sequence']
 
 Sequence = (tuple, list, Iterator)
 
