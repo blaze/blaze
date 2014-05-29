@@ -16,12 +16,14 @@ FROM accounts
 WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
-
-from blaze.expr.table import *
-from blaze.utils import unique
 from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
+
+from blaze.expr.table import *
+from blaze.utils import unique
+
+__all__ = ['compute', 'computefull', 'select']
 
 @dispatch(Projection, sqlalchemy.sql.Selectable)
 def compute(t, s):

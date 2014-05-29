@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
+import math
 
 from blaze.compute.python import *
 from blaze.expr.table import *
-import math
+from blaze.compatibility import builtins
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 

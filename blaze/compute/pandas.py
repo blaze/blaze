@@ -23,6 +23,8 @@ import numpy as np
 
 from ..expr.table import *
 
+__all__ = ['compute']
+
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
