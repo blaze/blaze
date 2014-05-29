@@ -555,22 +555,21 @@ class Distinct(TableExpr):
     >>> t = TableSymbol('{name: string, amount: int, id: int}')
     >>> e = Distinct(t)
 
-    >>> data = [['Alice', 100, 1],
-    ...         ['Bob', 200, 2],
-    ...         ['Alice', 100, 1]]
+    >>> data = [('Alice', 100, 1),
+    ...         ('Bob', 200, 2),
+    ...         ('Alice', 100, 1)]
 
     >>> from blaze.compute.python import compute
-    >>> compute(e, data) #doctest: +SKIP
-    [['Alice', 100, 1], ['Bob', 200, 2]]
+    >>> sorted(compute(e, data))
+    [('Alice', 100, 1), ('Bob', 200, 2)]
     """
 
     def __init__(self, table):
         self.parent = table
 
     @property
-    def dshape(self):
-        return datashape.var * self.parent.dshape.subarray(1)
-
+    def schema(self):
+        return self.parent.schema
 
 class Head(TableExpr):
     __slots__ = 'parent', 'n'
