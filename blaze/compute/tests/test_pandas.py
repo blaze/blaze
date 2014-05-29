@@ -94,17 +94,17 @@ def test_Reductions():
 
 def test_by_one():
     result = compute(By(t, t['name'], sum(t['amount'])), df)
-    expected = df.groupby('name')['amount'].apply(lambda x: x.sum())
+    expected = df.groupby('name')['amount'].sum()
 
-    assert str(result) == str(expected)
+    assert str(result) == str(expected.reset_index())
 
 
 def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
 
-    expected = dfbig.groupby(['name', 'sex'])['amount'].apply(lambda x: x.sum())
+    expected = dfbig.groupby(['name', 'sex'])['amount'].sum()
 
-    assert str(result) == str(expected)
+    assert str(result) == str(expected.reset_index())
 
 
 def test_by_three():
@@ -113,8 +113,10 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      dfbig)
 
-    expected = dfbig.groupby(['name', 'sex']).apply(
-            lambda df: (df['amount'] + df['id']).sum())
+    groups = dfbig.groupby(['name', 'sex'])
+    expected = DataFrame([['Alice', 'F', 204],
+                          ['Drew', 'F', 104],
+                          ['Drew', 'M', 310]], columns=['name', 'sex', '0'])
 
     assert str(result) == str(expected)
 
@@ -122,10 +124,9 @@ def test_by_four():
     t = tbig[['sex', 'amount']]
     result = compute(By(t, t['sex'], t['amount'].max()), dfbig)
 
-    expected = dfbig[['sex', 'amount']].groupby('sex').apply(
-            lambda df: df['amount'].max())
+    expected = dfbig[['sex', 'amount']].groupby('sex')['amount'].max()
 
-    assert str(result) == str(expected)
+    assert str(result) == str(expected.reset_index())
 
 
 def test_join_by_arcs():
@@ -151,7 +152,9 @@ def test_join_by_arcs():
 
     result_pandas = pandas.merge(df_arc, df_idx, on='node_id')
 
-    assert str(result) == str(result_pandas.groupby('name')['node_id'].count())
+    expected = result_pandas.groupby('name')['node_id'].count().reset_index()
+    assert str(result.values) == str(expected.values)
+    assert list(result.columns) == ['name', 'node_id']
 
 
 def test_sort():

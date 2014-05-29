@@ -18,6 +18,7 @@ from __future__ import absolute_import, division, print_function
 
 import pandas
 from pandas import DataFrame, Series
+from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 from multipledispatch import dispatch
 import numpy as np
 
@@ -30,7 +31,7 @@ def compute(t, df):
     return parent[list(t.columns)]
 
 
-@dispatch(Column, DataFrame)
+@dispatch(Column, (DataFrame, DataFrameGroupBy))
 def compute(t, df):
     parent = compute(t.parent, df)
     return parent[t.columns[0]]
@@ -93,22 +94,44 @@ def compute(t, s):
     return op(parent)
 
 
-@dispatch(Reduction, DataFrame)
+@dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
+def compute(t, gb):
+    return gb
+
+
+@dispatch(Reduction, (DataFrame, DataFrameGroupBy, SeriesGroupBy))
 def compute(t, s):
     parent = compute(t.parent, s)
-    assert isinstance(parent, Series)
-    op = getattr(Series, t.symbol)
-    return op(parent)
+    return getattr(parent, t.symbol)()
 
 
 @dispatch(By, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    grouper = compute(t.grouper, parent)
-    if type(t.grouper) == Projection and t.grouper.parent == t.parent:
-        grouper = list(grouper.columns)
+    grouper = DataFrame(compute(t.grouper, parent))
+    assert isinstance(t.apply, Reduction)
+    pregrouped = DataFrame(compute(t.apply.parent, parent))
 
-    return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))
+    full = grouper.join(pregrouped)
+    groups = full.groupby(list(grouper.columns))[list(pregrouped.columns)]
+
+    reduction = t.apply.subs({t.apply.parent:
+                              TableSymbol(t.apply.parent.schema)})
+
+    return compute(reduction, groups)[list(pregrouped.columns)].reset_index()
+
+
+    if isinstance(t.grouper, Projection) and t.grouper.parent == t:
+        grouper = list(t.grouper.columns)
+    else:
+        grouper = compute(t.grouper, parent)
+
+
+    if isinstance(grouper, (list, str, Series)):
+        pregrouped = compute(t.apply.parent, parent)
+        return compute(reduction, pregrouped.groupby(grouper))
+    else:
+        return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))
 
 
 @dispatch(Sort, DataFrame)
