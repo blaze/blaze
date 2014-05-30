@@ -77,11 +77,11 @@ def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
                      databig)
 
-    expected = [(('Alice', 'F'), 200),
-                (('Drew', 'F'), 100),
-                (('Drew', 'M'), 300)]
+    expected = [('Alice', 'F', 200),
+                ('Drew', 'F', 100),
+                ('Drew', 'M', 300)]
 
-    print(result)
+    print(set(result))
     assert set(result) == set(expected)
 
 
@@ -91,9 +91,9 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      databig)
 
-    expected = [(('Alice', 'F'), 204),
-                (('Drew', 'F'), 104),
-                (('Drew', 'M'), 310)]
+    expected = [('Alice', 'F', 204),
+                ('Drew', 'F', 104),
+                ('Drew', 'M', 310)]
 
     print(result)
     assert set(result) == set(expected)
@@ -235,3 +235,12 @@ def test_map_datetime():
     expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
 
     assert result == expected
+
+
+def test_by_multi_column_grouper():
+    t = TableSymbol('{x: int, y: int, z: int}')
+    expr = By(t, t[['x', 'y']], t['z'].count())
+    data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
+
+    print(set(compute(expr, data)))
+    assert set(compute(expr, data)) == set([(1, 2, 2), (1, 1, 1)])
