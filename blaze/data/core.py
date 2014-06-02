@@ -152,3 +152,11 @@ class DataDescriptor(object):
             return self.dshape.subarray(1)
         raise TypeError('Datashape is not indexable to schema\n%s' %
                         self.dshape)
+
+
+from blaze.compute.python import dispatch
+from blaze.expr.table import Join, TableExpr
+from blaze.expr.core import Expr
+@dispatch((Join, Expr), DataDescriptor)
+def compute(t, ddesc):
+    return compute(t, iter(ddesc))  # use Python streaming by default
