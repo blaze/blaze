@@ -188,7 +188,12 @@ def compute(t, seq):
     else:
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
-    return d.items()
+
+    iscolumn = lambda x: isinstance(x, (Column, ColumnWise))
+    if iscolumn(t.grouper):
+        return d.items()
+    else:
+        return tuple(k + (v,) for k, v in d.items())
 
 
 @dispatch(Join, Sequence, Sequence)
