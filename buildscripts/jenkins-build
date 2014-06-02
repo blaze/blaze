@@ -71,8 +71,4 @@ popd
 # Build/install Blaze
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
-# Run the tests (in a different directory, so the import works properly)
-mkdir tmpdir
-pushd tmpdir
 nosetests --with-doctest --with-xunit --xunit-file=../test_results.xml blaze/expr blaze/compute blaze/data || exit 1
-popd
