@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.spark import *
+from blaze.compatibility import skip
 from blaze.expr.table import *
 
 from pyspark import SparkContext
@@ -34,27 +35,31 @@ t_idx = TableSymbol('{name: string, node_id: int32}')
 
 t_arc = TableSymbol('{node_out: int32, node_id: int32}')
 
-
+@skip("Spark not yet fully supported")
 def test_table():
     assert compute(t, rdd) == rdd
 
 
+@skip("Spark not yet fully supported")
 def test_projection():
     assert compute(t['name'], rdd).collect() == rdd.map(lambda x:
                                                         x[0]).collect()
 
 
+@skip("Spark not yet fully supported")
 def test_multicols_projection():
     assert compute(t[['amount', 'name']], rdd).collect() == [[100, 'Alice'],
                                                              [200, 'Bob'],
                                                              [50, 'Alice']]
 
 
+@skip("Spark not yet fully supported")
 def test_selection():
     assert compute(t[t['name'] == 'Alice'], rdd).collect() ==\
         rdd.filter(lambda x: x[0] == 'Alice').collect()
 
 
+@skip("Spark not yet fully supported")
 def test_join():
 
     joined = Join(t, t2, 'name')
@@ -64,6 +69,7 @@ def test_join():
     result = compute(joined, rdd, rdd2)
     assert all([i in expected for i in result.collect()])
 
+@skip("Spark not yet fully supported")
 def test_groupby():
 
     rddidx = sc.parallelize(data_idx)
