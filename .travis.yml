@@ -9,21 +9,23 @@ branches:
   only:
     - master
     - reorg
-    - devel
-    - release
-    - py3
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 install:
   # Install conda
-  - sudo pip install conda
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update conda
+
   # Install dependencies
-  - sudo conda init
-  - conda create -p $HOME/py --yes nose cython numpy pycparser pyparsing pyyaml flask pytables netcdf4 cffi multipledispatch sqlalchemy pandas h5py pip "python=$TRAVIS_PYTHON_VERSION"
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install -p $HOME/py --yes unittest2; fi
-  - export PATH=$HOME/py/bin:$PATH
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION nose cython numpy pycparser pyparsing pyyaml flask pytables netcdf4 cffi multipledispatch sqlalchemy pandas h5py pip
+  - source activate test-environment
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; fi
   - pip install multipledispatch
+  - pip install cytoolz
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
   # Install Spark
@@ -35,6 +37,7 @@ install:
   - cd spark
   - ./sbt/sbt assembly
   - cd ..
+
   # Install dynd
   - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
   - mkdir libdynd/build
@@ -55,6 +58,7 @@ install:
   - make install
   - export PYTHONPATH=$PYTHONPATH:$PWD
   - popd
+
   # Install Blaze
   - python setup.py install
 

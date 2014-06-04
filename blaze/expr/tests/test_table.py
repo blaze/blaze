@@ -111,12 +111,23 @@ def test_reduction():
     r = sum(t['amount'])
     print(type(r.dshape))
     print(type(dshape('int32')))
-    assert r.dshape == dshape('int32')
+    assert r.dshape in (dshape('int32'), dshape('{amount: int32}'))
 
 
-def test_reduce_by():
+def test_Distinct():
+    t = TableSymbol('{name: string, amount: int32}')
+    r = Distinct(t['name'])
+    print(r.dshape)
+    assert r.dshape  == dshape('var * {name: string}')
+
+
+def test_by():
     t = TableSymbol('{name: string, amount: int32, id: int32}')
     r = By(t, t['name'], sum(t['amount']))
+
+    print(r.schema)
+    assert isinstance(r.schema[0], Record)
+    assert str(r.schema[0]['name']) == 'string'
 
 
 def test_sort():
@@ -127,6 +138,8 @@ def test_sort():
 
     assert s.schema == t.schema
 
+    assert t['amount'].sort().column == 'amount'
+
 
 def test_head():
     t = TableSymbol('{name: string, amount: int32, id: int32}')
@@ -134,3 +147,48 @@ def test_head():
     assert eval(str(s)).isidentical(s)
 
     assert s.schema == t.schema
+
+
+def test_label():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    quantity = (t['amount'] + 100).label('quantity')
+
+    assert eval(str(quantity)).isidentical(quantity)
+
+    assert quantity.columns == ['quantity']
+
+
+def test_relabel():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+
+    rl = t.relabel({'name': 'NAME', 'id': 'ID'})
+
+    assert eval(str(rl)).isidentical(rl)
+
+    print(rl.columns)
+    assert rl.columns == ['NAME', 'amount', 'ID']
+
+
+def test_relabel_join():
+    names = TableSymbol('{first: string, last: string}')
+
+    siblings = Join(names.relabel({'last': 'left'}),
+                    names.relabel({'last': 'right'}), 'first')
+
+    assert siblings.columns == ['first', 'left', 'right']
+
+
+def test_map():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    inc = lambda x: x + 1
+    s = t['amount'].map(inc)
+    s = t['amount'].map(inc, schema='{amount: int}')
+
+    assert s.dshape == dshape('var * {amount: int}')
+
+
+def test_apply():
+    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    s = Apply(sum, t['amount'], dshape='real')
+
+    assert s.dshape == dshape('real')

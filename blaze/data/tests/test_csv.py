@@ -257,6 +257,14 @@ class TestCSV(unittest.TestCase):
     def tearDown(self):
         os.remove(self.csv_file)
 
+    def test_compute(self):
+        dd = CSV(self.csv_file, schema=self.schema)
+
+        from blaze.expr.table import TableSymbol
+        from blaze.compute.python import compute
+        t = TableSymbol(self.schema)
+        self.assertEqual(compute(t['f2'].sum(), dd), 1 + 2 + 3)
+
     def test_has_header(self):
         assert not has_header(self.buf)
 

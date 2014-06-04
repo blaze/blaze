@@ -3,13 +3,13 @@
 >>> accounts = TableSymbol('{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 """
-
 from __future__ import absolute_import, division, print_function
 
-from datashape import dshape, var, DataShape, Record
+from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
 from .core import Expr, Scalar
+from ..utils import unique
 
 
 class TableExpr(Expr):
@@ -35,11 +35,20 @@ class TableExpr(Expr):
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
 
-    def sort(self, column, ascending=True):
+    def sort(self, column=None, ascending=True):
+        if column is None:
+            column = self.columns[0]
         return Sort(self, column, ascending)
 
     def head(self, n=10):
         return Head(self, n)
+
+    def relabel(self, labels):
+        return ReLabel(self, labels)
+
+    def map(self, func, schema=None):
+        return Map(self, func, schema)
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -113,6 +122,9 @@ class Column(Projection):
     def __gt__(self, other):
         return GT(self, other)
 
+    def label(self, label):
+        return Label(self, label)
+
     def __add__(self, other):
         return Add(self, other)
 
@@ -151,6 +163,12 @@ class Column(Projection):
 
     def count(self):
         return count(self)
+
+    def distinct(self):
+        return Distinct(self)
+
+    def nunique(self):
+        return nunique(self)
 
     def sum(self):
         return sum(self)
@@ -211,6 +229,9 @@ class ColumnWise(TableExpr):
     def __gt__(self, other):
         return GT(self, other)
 
+    def label(self, label):
+        return Label(self, label)
+
     def __add__(self, other):
         return Add(self, other)
 
@@ -249,6 +270,12 @@ class ColumnWise(TableExpr):
 
     def count(self):
         return count(self)
+
+    def distinct(self):
+        return Distinct(self)
+
+    def nunique(self):
+        return nunique(self)
 
     def sum(self):
         return sum(self)
@@ -451,7 +478,7 @@ class Reduction(Scalar):
 
     @property
     def dshape(self):
-        return dshape(list(self.parent.dshape[-1].fields.values())[0])
+        return self.parent.dshape.subarray(1)
 
     @property
     def symbol(self):
@@ -467,6 +494,7 @@ class mean(Reduction): pass
 class var(Reduction): pass
 class std(Reduction): pass
 class count(Reduction): pass
+class nunique(Reduction): pass
 
 
 class By(TableExpr):
@@ -491,6 +519,20 @@ class By(TableExpr):
         s = TableSymbol(parent.schema)
         self.grouper = grouper.subs({parent: s})
         self.apply = apply.subs({parent: s})
+        if isdimension(self.apply.dshape[0]):
+            raise TypeError("Expected Reduction")
+
+    @property
+    def schema(self):
+        group = self.grouper.schema[0].parameters[0]
+        if isinstance(self.apply.dshape[0], Record):
+            apply = self.apply.dshape[0].parameters[0]
+        else:
+            apply = (('0', self.apply.dshape),)
+
+        params = unique(group + apply, key=lambda x: x[0])
+
+        return dshape(Record(list(params)))
 
 
 class Sort(TableExpr):
@@ -506,6 +548,28 @@ class Sort(TableExpr):
         return self.parent.schema
 
 
+class Distinct(TableExpr):
+    """ Distinct elements filter
+
+    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> e = Distinct(t)
+
+    >>> data = [('Alice', 100, 1),
+    ...         ('Bob', 200, 2),
+    ...         ('Alice', 100, 1)]
+
+    >>> from blaze.compute.python import compute
+    >>> sorted(compute(e, data))
+    [('Alice', 100, 1), ('Bob', 200, 2)]
+    """
+
+    def __init__(self, table):
+        self.parent = table
+
+    @property
+    def schema(self):
+        return self.parent.schema
+
 class Head(TableExpr):
     __slots__ = 'parent', 'n'
 
@@ -520,3 +584,109 @@ class Head(TableExpr):
     @property
     def dshape(self):
         return self.n * self.schema
+
+
+class Label(ColumnWise):
+    __slots__ = 'parent', 'label'
+
+    def __init__(self, parent, label):
+        self.parent = parent
+        self.label = label
+
+    @property
+    def schema(self):
+        if isinstance(self.parent.schema[0], Record):
+            dtype = list(self.parent.schema[0].fields.values()[0])
+        else:
+            dtype = list(self.parent.schema[0])
+        return DataShape(Record([[self.label, dtype]]))
+
+
+class ReLabel(TableExpr):
+    __slots__ = 'parent', 'labels'
+
+    def __init__(self, parent, labels):
+        self.parent = parent
+        if isinstance(labels, dict):  # Turn dict into tuples
+            labels = tuple(sorted(labels.items()))
+        self.labels = labels
+
+    @property
+    def schema(self):
+        subs = dict(self.labels)
+        d = self.parent.schema[0].fields
+
+        return DataShape(Record([[subs.get(name, name), dtype]
+            for name, dtype in self.parent.schema[0].parameters[0]]))
+
+
+class Map(TableExpr):
+    """ Map an arbitrary Python function across rows in a Table
+
+    >>> from datetime import datetime
+
+    >>> t = TableSymbol('{price: real, time: int64}')  # times as integers
+    >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
+
+    Optionally provide extra schema information
+
+    >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
+    ...                           schema='{time: datetime}')
+
+    See Also:
+        Apply
+    """
+    __slots__ = 'parent', 'func', '_schema'
+
+    def __init__(self, parent, func, schema=None):
+        self.parent = parent
+        self.func = func
+        self._schema = schema
+
+    @property
+    def schema(self):
+        if self._schema:
+            return dshape(self._schema)
+        else:
+            raise NotImplementedError()
+
+
+class Apply(TableExpr):
+    """ Apply an arbitrary Python function onto a Table
+
+    >>> t = TableSymbol('{name: string, amount: int}')
+    >>> h = Apply(hash, t)  # Hash value of resultant table
+
+    Optionally provide extra datashape information
+
+    >>> h = Apply(hash, t, dshape='real')
+
+    Apply brings a function within the expression tree.
+    The following transformation is often valid
+
+    Before ``compute(Apply(f, expr), ...)``
+    After  ``f(compute(expr, ...)``
+
+    See Also:
+        Map
+    """
+    __slots__ = 'parent', 'func', '_dshape'
+
+    def __init__(self, func, parent, dshape=None):
+        self.parent = parent
+        self.func = func
+        self._dshape = dshape
+
+    @property
+    def schema(self):
+        if isdimension(self.dshape[0]):
+            return self.dshape.subshape[0]
+        else:
+            return TypeError("Non-tabular datashape, %s" % self.dshape)
+
+    @property
+    def dshape(self):
+        if self._dshape:
+            return dshape(self._dshape)
+        else:
+            return NotImplementedError("Datashape of arbitrary Apply not defined")

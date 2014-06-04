@@ -73,7 +73,7 @@ class DataDescriptor(object):
         return partition_all(blen, iter(self))
 
     def as_dynd(self):
-        return nd.array(self.as_py(), dtype=str(self.dshape))
+        return self.dynd[:]
 
     def as_py(self):
         if isdimension(self.dshape[0]):
@@ -97,8 +97,11 @@ class DataDescriptor(object):
         subshape = self.dshape._subshape(key)
         if hasattr(self, '_get_py'):
             result = self._get_py(key)
+        elif hasattr(self, '_get_dynd'):
+            result = self._get_dynd(key)
         else:
-            result = self.get_dynd(key)
+            raise AttributeError("Data Descriptor defines neither "
+                                 "_get_py nor _get_dynd.  Can not index")
         return coerce(subshape, result)
 
     def get_dynd(self, key):
@@ -106,8 +109,11 @@ class DataDescriptor(object):
         subshape = self.dshape._subshape(key)
         if hasattr(self, '_get_dynd'):
             result = self._get_dynd(key)
+        elif hasattr(self, '_get_py'):
+            result = nd.array(self._get_py(key), type=str(subshape))
         else:
-            result = nd.array(self.get_py(key), type=str(subshape))
+            raise AttributeError("Data Descriptor defines neither "
+                                 "_get_py nor _get_dynd.  Can not index")
         return nd.array(result, type=str(subshape))
 
     def __iter__(self):
@@ -146,3 +152,11 @@ class DataDescriptor(object):
             return self.dshape.subarray(1)
         raise TypeError('Datashape is not indexable to schema\n%s' %
                         self.dshape)
+
+
+from blaze.compute.python import dispatch
+from blaze.expr.table import Join, TableExpr
+from blaze.expr.core import Expr
+@dispatch((Join, Expr), DataDescriptor)
+def compute(t, ddesc):
+    return compute(t, iter(ddesc))  # use Python streaming by default

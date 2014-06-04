@@ -1,8 +1,12 @@
-
+from __future__ import absolute_import, division, print_function
 from multipledispatch import dispatch
+
 from blaze.expr.table import *
 
+__all__ = ['compute']
+
 base = (int, float, str, bool)
+
 
 @dispatch(base, object)
 def compute(a, b):
@@ -22,7 +26,7 @@ def compute(t, d):
     # Common case: One relevant value in dict
     #              Switch to standard dispatching scheme
     if len(d) == 1:
-        return compute(t, d.values()[0])
+        return compute(t, list(d.values())[0])
 
     if hasattr(t, 'parent'):
         parent = compute(t.parent, d)
@@ -37,4 +41,12 @@ def compute(t, d):
     lhs = compute(t.lhs, d)
     rhs = compute(t.rhs, d)
 
-    return compute(t, lhs, rhs)
+
+    t2 = t.subs({t.lhs: TableSymbol(t.lhs.schema),
+                 t.rhs: TableSymbol(t.rhs.schema)})
+    return compute(t2, lhs, rhs)
+
+
+@dispatch(Join, object)
+def compute(t, o):
+    return compute(t, o, o)

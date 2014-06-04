@@ -6,6 +6,7 @@ from decimal import Decimal
 from dynd import nd
 import sqlalchemy as sql
 import datashape
+from itertools import chain
 
 from ..utils import partition_all
 from ..compatibility import basestring
@@ -139,9 +140,13 @@ class SQL(DataDescriptor):
         return datashape.Var() * self.schema
 
     def extend(self, rows):
-        rows = (coerce_row_to_dict(self.schema, row)
-                if isinstance(row, (tuple, list)) else row
-                for row in rows)
+        rows = iter(rows)
+        row = next(rows)
+        rows = chain([row], rows)
+        # Coerce rows to dicts
+        if isinstance(row, (tuple, list)):
+            names = self.schema[0].names
+            rows = (dict(zip(names, row)) for row in rows)
         with self.engine.connect() as conn:
             for chunk in partition_all(1000, rows):  # TODO: 1000 is hardcoded
                 conn.execute(self.table.insert(), chunk)
@@ -191,3 +196,14 @@ class SQL(DataDescriptor):
             return next(result)
         else:
             return result
+
+
+# from blaze.expr.core import Expr
+from blaze.expr.table import Join, Expr
+from multipledispatch import dispatch
+@dispatch((Join, Expr), SQL)
+def compute(t, ddesc):
+    query = compute(t, ddesc.table)             # Get the query out
+    with ddesc.engine.connect() as conn:
+        result = conn.execute(query).fetchall() # Use SQLAlchemy to actually perform the query
+    return result

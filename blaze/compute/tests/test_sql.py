@@ -104,6 +104,28 @@ def test_reductions():
     assert str(compute(count(t['amount']), s)) == \
             str(sa.sql.func.count(s.c.amount))
 
+    assert 'amount' == compute(sum(t['amount']), s).name
+
+def test_distinct():
+    result = str(compute(Distinct(t['amount']), s))
+
+    assert 'distinct' in result.lower()
+    assert 'amount' in result.lower()
+
+    print(result)
+    assert result == str(sa.distinct(s.c.amount))
+
+
+def test_nunique():
+    result = str(compute(nunique(t['amount']), s))
+
+    assert 'distinct' in result.lower()
+    assert 'count' in result.lower()
+    assert 'amount' in result.lower()
+
+    print(result)
+    assert result == str(sa.sql.func.count(sa.distinct(s.c.amount)))
+
 @skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
@@ -113,7 +135,9 @@ def test_binary_reductions():
 def test_by():
     expr = By(t, t['name'], t['amount'].sum())
     result = compute(expr, s)
-    expected = sa.select([sa.sql.functions.sum(s.c.amount)]).group_by(s.c.name)
+    expected = sa.select([s.c.name,
+                          sa.sql.functions.sum(s.c.amount).label('amount')]
+                         ).group_by(s.c.name)
 
     assert str(result) == str(expected)
 
@@ -121,8 +145,10 @@ def test_by():
 def test_by_two():
     expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
     result = compute(expr, sbig)
-    expected = (sa.select([sa.sql.functions.sum(sbig.c.amount)])
-                    .group_by(sbig.c.name, sbig.c.sex))
+    expected = (sa.select([sbig.c.name,
+                           sbig.c.sex,
+                           sa.sql.functions.sum(sbig.c.amount).label('amount')])
+                        .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
 
@@ -133,7 +159,9 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      sbig)
 
-    expected = (sa.select([sa.sql.functions.sum(sbig.c.id+ sbig.c.amount)])
+    expected = (sa.select([sbig.c.name,
+                           sbig.c.sex,
+                           sa.sql.functions.sum(sbig.c.id+ sbig.c.amount)])
                     .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
@@ -170,3 +198,15 @@ def test_sort():
 
 def test_head():
     assert str(compute(t.head(2), s)) == str(select(s).limit(2))
+
+
+def test_label():
+    assert str(compute((t['amount'] * 10).label('foo'), s)) == \
+            str((s.c.amount * 10).label('foo'))
+
+
+def test_relabel():
+    result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), s)
+    expected = select([s.c.name.label('NAME'), s.c.amount, s.c.id.label('ID')])
+
+    assert str(result) == str(expected)

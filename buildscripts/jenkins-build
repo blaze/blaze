@@ -35,7 +35,7 @@ fi
 # python version and containing the dependencies.
 # TODO: Re-add cffi to this list when it is in anaconda python 3.3
 export PYENV_PREFIX=${WORKSPACE}/build/pyenv
-~/anaconda/bin/conda create --yes --channel https://conda.binstar.org/mwiebe -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython=0.19 scipy ply dynd-python nose flask pyparsing pyyaml setuptools pip pytables sqlalchemy h5py multipledispatch || exit 1
+~/anaconda/bin/conda create --yes --channel https://conda.binstar.org/mwiebe -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py multipledispatch pandas || exit 1
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
 if [ -f "${PYENV_PREFIX}/bin/python" ]; then
@@ -46,6 +46,8 @@ else
  echo Conda environment creation failed.
  exit 1
 fi
+
+pip install cytoolz || exit 1
 
 # Temporary hack to install datashape
 rm -rf datashape
@@ -69,8 +71,4 @@ popd
 # Build/install Blaze
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
-# Run the tests (in a different directory, so the import works properly)
-mkdir tmpdir
-pushd tmpdir
-${PYTHON_EXECUTABLE} -c 'import blaze;blaze.test(xunitfile="../test_results.xml", verbosity=2, exit=1)' || exit 1
-popd
+nosetests --with-doctest --with-xunit --xunit-file=test_results.xml blaze/expr blaze/compute blaze/data || exit 1

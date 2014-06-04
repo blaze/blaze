@@ -16,12 +16,14 @@ FROM accounts
 WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
-
-from blaze.expr.table import *
-from blaze.utils import unique
 from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
+
+from blaze.expr.table import *
+from blaze.utils import unique
+
+__all__ = ['compute', 'computefull', 'select']
 
 @dispatch(Projection, sqlalchemy.sql.Selectable)
 def compute(t, s):
@@ -109,7 +111,26 @@ def compute(t, s):
     except:
         symbol = names.get(type(t), t.symbol)
         op = getattr(sqlalchemy.sql.func, symbol)
-    return op(parent)
+    result = op(parent)
+
+    if isinstance(t.parent.schema[0], Record):
+        name = list(t.parent.schema[0].fields.keys())[0]
+        result = result.label(name)
+
+    return result
+
+
+@dispatch(nunique, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+
+    return sqlalchemy.sql.functions.count(sqlalchemy.distinct(parent))
+
+
+@dispatch(Distinct, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    return sqlalchemy.distinct(parent)
 
 
 @dispatch(By, sqlalchemy.sql.Selectable)
@@ -120,7 +141,8 @@ def compute(t, s):
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-    return select(compute(t.apply, s)).group_by(*grouper)
+    reduction = compute(t.apply, s)
+    return select(grouper + [reduction]).group_by(*grouper)
 
 
 @dispatch(Sort, sqlalchemy.sql.Selectable)
@@ -138,3 +160,21 @@ def compute(t, s):
 def compute(t, s):
     parent = compute(t.parent, s)
     return select(parent).limit(t.n)
+
+
+@dispatch(Label, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    return parent.label(t.label)
+
+
+@dispatch(ReLabel, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+
+    columns = [getattr(s.c, col).label(new_col)
+               if col != new_col else
+               getattr(s.c, col)
+               for col, new_col in zip(t.parent.columns, t.columns)]
+
+    return select(columns)

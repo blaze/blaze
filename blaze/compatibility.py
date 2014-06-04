@@ -6,10 +6,13 @@ PY3 = sys.version_info[0] > 2
 if PY3:
     from urllib.request import urlopen
     import builtins as builtins
+    def apply(f, args):
+        return f(*args)
 
 else:
     from urllib2 import urlopen
     import __builtin__ as builtins
+    apply = apply
 
 import sys
 import itertools

@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
+import math
 
 from blaze.compute.python import *
 from blaze.expr.table import *
-import math
+from blaze.compatibility import builtins
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 
@@ -55,6 +56,8 @@ def test_reductions():
     assert compute(sum(t['amount']), data) == 100 + 200 + 50
     assert compute(min(t['amount']), data) == 50
     assert compute(max(t['amount']), data) == 200
+    assert compute(nunique(t['amount']), data) == 3
+    assert compute(nunique(t['name']), data) == 2
     assert compute(count(t['amount']), data) == 3
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
@@ -74,11 +77,11 @@ def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
                      databig)
 
-    expected = [(('Alice', 'F'), 200),
-                (('Drew', 'F'), 100),
-                (('Drew', 'M'), 300)]
+    expected = [('Alice', 'F', 200),
+                ('Drew', 'F', 100),
+                ('Drew', 'M', 300)]
 
-    print(result)
+    print(set(result))
     assert set(result) == set(expected)
 
 
@@ -88,9 +91,9 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      databig)
 
-    expected = [(('Alice', 'F'), 204),
-                (('Drew', 'F'), 104),
-                (('Drew', 'M'), 310)]
+    expected = [('Alice', 'F', 204),
+                ('Drew', 'F', 104),
+                ('Drew', 'M', 310)]
 
     print(result)
     assert set(result) == set(expected)
@@ -120,6 +123,9 @@ def test_join():
 
     assert result == expected
 
+def test_Distinct():
+    assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
+
 
 def test_sort():
     assert list(compute(t.sort('amount'), data)) == \
@@ -134,3 +140,107 @@ def test_sort():
 
 def test_head():
     assert list(compute(t.head(1), data)) == [data[0]]
+
+
+def test_graph_double_join():
+    idx = [['A', 1],
+           ['B', 2],
+           ['C', 3],
+           ['D', 4],
+           ['E', 5],
+           ['F', 6]]
+
+    arc = [[1, 3],
+           [2, 3],
+           [4, 3],
+           [5, 3],
+           [3, 1],
+           [2, 1],
+           [5, 1],
+           [1, 6],
+           [2, 6],
+           [4, 6]]
+
+    wanted = [['A'],
+              ['F']]
+
+    t_idx = TableSymbol('{name: string, b: int32}')
+    t_arc = TableSymbol('{a: int32, b: int32}')
+    t_wanted = TableSymbol('{name: string}')
+
+    j = Join(Join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'a', 'b']]
+
+    result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
+    result = set(map(tuple, result))
+    expected = set([('A', 3, 1),
+                    ('A', 2, 1),
+                    ('A', 5, 1),
+                    ('F', 1, 6),
+                    ('F', 2, 6),
+                    ('F', 4, 6)])
+
+    assert result == expected
+
+
+def test_label():
+    assert list(compute((t['amount'] * 1).label('foo'), data)) == \
+            list(compute((t['amount'] * 1), data))
+
+
+def test_relabel_join():
+    names = TableSymbol('{first: string, last: string}')
+
+    siblings = Join(names.relabel({'first': 'left'}),
+                    names.relabel({'first': 'right'}),
+                    'last')[['left', 'right']]
+
+    data = [('Alice', 'Smith'),
+            ('Bob', 'Jones'),
+            ('Charlie', 'Smith')]
+
+    print(set(compute(siblings, {names: data})))
+    assert ('Alice', 'Charlie') in set(compute(siblings, {names: data}))
+    assert ('Alice', 'Bob') not in set(compute(siblings, {names: data}))
+
+
+def test_map_column():
+    inc = lambda x: x + 1
+    assert list(compute(t['amount'].map(inc), data)) == [x[1] + 1 for x in data]
+
+
+def test_map():
+    inc = lambda x: x + 1
+    assert list(compute(t.map(lambda _, amt, id: amt + id), data)) == \
+            [x[1] + x[2] for x in data]
+
+
+def test_apply_column():
+    result = compute(Apply(builtins.sum, t['amount']), data)
+    expected = compute(t['amount'].sum(), data)
+
+    assert result == expected
+
+
+def test_apply():
+    data2 = tuple(map(tuple, data))
+    assert compute(Apply(hash, t), data2) == hash(data2)
+
+
+def test_map_datetime():
+    from datetime import datetime
+    data = [['A', 0], ['B', 1]]
+    t = TableSymbol('{foo: string, datetime: int64}')
+
+    result = list(compute(t['datetime'].map(datetime.utcfromtimestamp), data))
+    expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
+
+    assert result == expected
+
+
+def test_by_multi_column_grouper():
+    t = TableSymbol('{x: int, y: int, z: int}')
+    expr = By(t, t[['x', 'y']], t['z'].count())
+    data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
+
+    print(set(compute(expr, data)))
+    assert set(compute(expr, data)) == set([(1, 2, 2), (1, 1, 1)])

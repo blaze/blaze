@@ -16,11 +16,16 @@ Name: name, dtype: object
 """
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
-import pandas
+import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 from multipledispatch import dispatch
 import numpy as np
+
+from ..expr.table import *
+
+__all__ = ['compute']
+
 
 @dispatch(Projection, DataFrame)
 def compute(t, df):
@@ -28,7 +33,7 @@ def compute(t, df):
     return parent[list(t.columns)]
 
 
-@dispatch(Column, DataFrame)
+@dispatch(Column, (DataFrame, DataFrameGroupBy))
 def compute(t, df):
     parent = compute(t.parent, df)
     return parent[t.columns[0]]
@@ -55,7 +60,6 @@ def compute(t, df):
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
                         % (t, df))
     return df
-
 
 
 @dispatch(Join, DataFrame, DataFrame)
@@ -91,31 +95,94 @@ def compute(t, s):
     return op(parent)
 
 
-@dispatch(Reduction, DataFrame)
+@dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
+def compute(t, gb):
+    return gb
+
+
+@dispatch(Reduction, (DataFrame, DataFrameGroupBy, SeriesGroupBy))
 def compute(t, s):
     parent = compute(t.parent, s)
-    assert isinstance(parent, Series)
-    op = getattr(Series, t.symbol)
-    return op(parent)
+    return getattr(parent, t.symbol)()
+
+
+@dispatch(Distinct, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return parent.drop_duplicates()
 
 
 @dispatch(By, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    grouper = compute(t.grouper, parent)
-    if type(t.grouper) == Projection and t.grouper.parent == t.parent:
-        grouper = list(grouper.columns)
+    grouper = DataFrame(compute(t.grouper, parent))
+    assert isinstance(t.apply, Reduction)
+    pregrouped = DataFrame(compute(t.apply.parent, parent))
 
-    return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))
+    full = grouper.join(pregrouped)
+    groups = full.groupby(list(grouper.columns))[list(pregrouped.columns)]
+
+    reduction = t.apply.subs({t.apply.parent:
+                              TableSymbol(t.apply.parent.schema)})
+
+    return compute(reduction, groups)[list(pregrouped.columns)].reset_index()
+
+
+    if isinstance(t.grouper, Projection) and t.grouper.parent == t:
+        grouper = list(t.grouper.columns)
+    else:
+        grouper = compute(t.grouper, parent)
+
+
+    if isinstance(grouper, (list, str, Series)):
+        pregrouped = compute(t.apply.parent, parent)
+        return compute(reduction, pregrouped.groupby(grouper))
+    else:
+        return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))
 
 
 @dispatch(Sort, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
-    return parent.sort(t.column, ascending=t.ascending)
+    if isinstance(parent, Series):
+        result = parent.copy()
+        result.sort(t.column, ascending=t.ascending)
+    else:
+        result = parent.sort(t.column, ascending=t.ascending)
+    return result
 
 
 @dispatch(Head, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
     return parent.head(t.n)
+
+
+@dispatch(Label, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    if isinstance(parent, Series):
+        return Series(parent, name=t.label)
+    if isinstance(parent, DataFrame):
+        return DataFrame(parent, columns=[t.label])
+
+
+@dispatch(ReLabel, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return DataFrame(parent, columns=t.columns)
+
+
+@dispatch(Map, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    if isinstance(parent, Series):
+        return parent.map(t.func)
+    else:
+        return parent.apply(lambda tup: t.func(*tup), axis=1)
+
+
+@dispatch(Apply, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return t.func(parent)

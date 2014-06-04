@@ -1,8 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+import pandas as pd
+import numpy as np
+from pandas import DataFrame, Series
+
 from blaze.compute.pandas import *
 from blaze.expr.table import *
-from pandas import DataFrame
+from blaze.compatibility import builtins
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 
@@ -20,6 +24,17 @@ dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Drew', 'M', 100, 5],
                    ['Drew', 'M', 200, 5]],
                   columns=['name', 'sex', 'amount', 'id'])
+
+
+def df_all(a_df, b_df):
+    """Checks if two dataframes have the same columns
+
+    This method doesn't check the index which can be manipulated during operations.
+    """
+    assert all(a_df.columns == b_df.columns)
+    for col in a_df.columns:
+        assert np.all(a_df[col] == b_df[col])
+    return True
 
 
 def test_table():
@@ -85,23 +100,43 @@ def test_Reductions():
     assert compute(sum(t['amount']), df) == 100 + 200 + 50
     assert compute(min(t['amount']), df) == 50
     assert compute(max(t['amount']), df) == 200
+    assert compute(nunique(t['amount']), df) == 3
+    assert compute(nunique(t['name']), df) == 2
     assert compute(any(t['amount'] > 150), df) == True
     assert compute(any(t['amount'] > 250), df) == False
 
 
+def test_Distinct():
+    dftoobig = DataFrame([['Alice', 'F', 100, 1],
+                          ['Alice', 'F', 100, 1],
+                          ['Alice', 'F', 100, 3],
+                          ['Drew', 'F', 100, 4],
+                          ['Drew', 'M', 100, 5],
+                          ['Drew', 'F', 100, 4],
+                          ['Drew', 'M', 100, 5],
+                          ['Drew', 'M', 200, 5],
+                          ['Drew', 'M', 200, 5]],
+                          columns=['name', 'sex', 'amount', 'id'])
+    d_t = Distinct(tbig)
+    d_df = compute(d_t, dftoobig)
+    assert df_all(d_df, dfbig)
+    # Test idempotence
+    assert df_all(compute(d_t, d_df), d_df)
+
+
 def test_by_one():
     result = compute(By(t, t['name'], sum(t['amount'])), df)
-    expected = df.groupby('name')['amount'].apply(lambda x: x.sum())
+    expected = df.groupby('name')['amount'].sum()
 
-    assert str(result) == str(expected)
+    assert str(result) == str(expected.reset_index())
 
 
 def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
 
-    expected = dfbig.groupby(['name', 'sex'])['amount'].apply(lambda x: x.sum())
+    expected = dfbig.groupby(['name', 'sex'])['amount'].sum()
 
-    assert str(result) == str(expected)
+    assert str(result) == str(expected.reset_index())
 
 
 def test_by_three():
@@ -110,8 +145,10 @@ def test_by_three():
                         (tbig['id'] + tbig['amount']).sum()),
                      dfbig)
 
-    expected = dfbig.groupby(['name', 'sex']).apply(
-            lambda df: (df['amount'] + df['id']).sum())
+    groups = dfbig.groupby(['name', 'sex'])
+    expected = DataFrame([['Alice', 'F', 204],
+                          ['Drew', 'F', 104],
+                          ['Drew', 'M', 310]], columns=['name', 'sex', '0'])
 
     assert str(result) == str(expected)
 
@@ -119,10 +156,9 @@ def test_by_four():
     t = tbig[['sex', 'amount']]
     result = compute(By(t, t['sex'], t['amount'].max()), dfbig)
 
-    expected = dfbig[['sex', 'amount']].groupby('sex').apply(
-            lambda df: df['amount'].max())
+    expected = dfbig[['sex', 'amount']].groupby('sex')['amount'].max()
 
-    assert str(result) == str(expected)
+    assert str(result) == str(expected.reset_index())
 
 
 def test_join_by_arcs():
@@ -146,9 +182,11 @@ def test_join_by_arcs():
 
     result = compute(want, {t_arc: df_arc, t_idx:df_idx})
 
-    result_pandas = pandas.merge(df_arc, df_idx, on='node_id')
+    result_pandas = pd.merge(df_arc, df_idx, on='node_id')
 
-    assert str(result) == str(result_pandas.groupby('name')['node_id'].count())
+    expected = result_pandas.groupby('name')['node_id'].count().reset_index()
+    assert str(result.values) == str(expected.values)
+    assert list(result.columns) == ['name', 'node_id']
 
 
 def test_sort():
@@ -162,6 +200,59 @@ def test_sort():
     assert str(compute(t.sort(['amount', 'id']), df)) == \
             str(df.sort(['amount', 'id']))
 
+    expected = df['amount'].copy()
+    expected.sort()
+
+    assert str(compute(t['amount'].sort('amount'), df)) ==\
+            str(expected)
+    assert str(compute(t['amount'].sort(), df)) ==\
+            str(expected)
+
 
 def test_head():
     assert str(compute(t.head(1), df)) == str(df.head(1))
+
+
+def test_label():
+    expected = df['amount'] * 10
+    expected.name = 'foo'
+    assert str(compute((t['amount'] * 10).label('foo'), df)) == \
+            str(expected)
+
+
+def test_relabel():
+    result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), df)
+    assert list(result.columns) == ['NAME', 'amount', 'ID']
+
+
+def test_map_column():
+    inc = lambda x: x + 1
+    result = compute(t['amount'].map(inc), df)
+    expected = df['amount'] + 1
+    assert str(result) == str(expected)
+
+
+def test_map():
+    f = lambda _, amt, id: amt + id
+    result = compute(t.map(f), df)
+    expected = df['amount'] + df['id']
+    assert str(result) == str(expected)
+
+
+def test_apply_column():
+    result = compute(Apply(np.sum, t['amount']), df)
+    expected = np.sum(df['amount'])
+
+    assert str(result) == str(expected)
+
+    result = compute(Apply(builtins.sum, t['amount']), df)
+    expected = builtins.sum(df['amount'])
+
+    assert str(result) == str(expected)
+
+
+def test_apply():
+    result = compute(Apply(str, t), df)
+    expected = str(df)
+
+    assert result == expected

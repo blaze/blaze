@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
-__all__ = 'Expr', 'Scalar'
+__all__ = ['Expr', 'Scalar']
+
 
 
 def _str(s):
