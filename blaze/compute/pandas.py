@@ -23,6 +23,7 @@ from multipledispatch import dispatch
 import numpy as np
 
 from ..expr.table import *
+from . import core
 
 __all__ = ['compute']
 

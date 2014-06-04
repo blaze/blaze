@@ -23,6 +23,7 @@ from ..expr.table import *
 from ..compatibility import builtins
 from .. import utils
 from ..utils import groupby, get, reduceby, unique
+from . import core
 
 __all__ = ['compute', 'Sequence']
 
