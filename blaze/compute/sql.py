@@ -22,6 +22,7 @@ import sqlalchemy
 
 from blaze.expr.table import *
 from blaze.utils import unique
+from . import core
 
 __all__ = ['compute', 'computefull', 'select']
 
