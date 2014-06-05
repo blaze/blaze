@@ -5,8 +5,17 @@ from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from blaze.compute.python import *
 from multipledispatch import dispatch
-import pyspark
-from itertools import compress, chain
+import sys
+if sys.version_info[:2] == (2,7):
+    from itertools import compress, chain
+    import pyspark
+else:
+    #Create a dummy pyspark.rdd.RDD for py 2.6
+    class Dummy(object):
+        pass
+    pyspark = Dummy()
+    pyspark.rdd = Dummy()
+    pyspark.rdd.RDD = Dummy
 
 # PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
 # remove it
