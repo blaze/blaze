@@ -4,11 +4,14 @@ import unittest
 import tempfile
 import os
 import csv
+import sys
 
 import datashape
 
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
+from blaze.data import hdfs_open
+from blaze.data import hdfs_isfile
 from blaze.data.csv import has_header
 from blaze.utils import filetext
 from dynd import nd
@@ -250,6 +253,16 @@ class TestCSV(unittest.TestCase):
         dd = CSV(self.csv_file, schema=self.schema)
         self.assertEqual(dd[1::2], [
         {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True}])
+
+    @unittest.skipIf(sys.version_info >= (3, 0, 0), "Python 2.7 only")
+    def test_as_py_hdfs(self):
+        #Reference existing test file that is present in the local HDFS
+        hdfs_path = "hdfs://localhost:9000/user/local/testbuf.csv"
+        dd = CSV(hdfs_path, schema=self.schema, open=hdfs_open, isfile=hdfs_isfile)
+        self.assertEqual(dd.as_py(), [
+            {u'f0': u'k1', u'f1': u'v1', u'f2': 1, u'f3': False},
+            {u'f0': u'k2', u'f1': u'v2', u'f2': 2, u'f3': True},
+            {u'f0': u'k3', u'f1': u'v3', u'f2': 3, u'f3': False}])
 
 
 if __name__ == '__main__':

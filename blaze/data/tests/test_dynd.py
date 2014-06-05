@@ -1,4 +1,4 @@
-from blaze.data.dynd import *
+from blaze.data.dynd_dd import *
 
 from dynd import nd
 

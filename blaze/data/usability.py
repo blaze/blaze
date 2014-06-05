@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 from .csv import *
-from .json import *
+from .json_dd import *
 from .hdf5 import *
 from .filesystem import *
 from .sql import *
