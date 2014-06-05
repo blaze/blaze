@@ -29,6 +29,15 @@ install:
   - pip install git+http://github.com/ContinuumIO/datashape
   - pip install git+http://github.com/ContinuumIO/blz
 
+  # Install Spark
+  - git clone https://github.com/apache/spark.git
+  - export SPARK_HOME=$PWD/spark
+  - export PYTHONPATH=$PYTHONPATH:$SPARK_HOME/python
+  - cd spark
+  - ./sbt/sbt assembly
+  - cd ..
+  - pip install py4j
+
   # Install dynd
   - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
   - mkdir libdynd/build
