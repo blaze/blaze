@@ -6,10 +6,10 @@ from blaze.expr.table import count as Count
 from blaze.compute.python import *
 from multipledispatch import dispatch
 import sys
-if sys.version_info[:2] == (2,7):
+try:
     from itertools import compress, chain
     import pyspark
-else:
+except ImportError:
     #Create a dummy pyspark.rdd.RDD for py 2.6
     class Dummy(object):
         pass
