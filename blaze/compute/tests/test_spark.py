@@ -4,16 +4,18 @@ from blaze.compute.spark import *
 from blaze.compatibility import skip
 from blaze.expr.table import *
 
-if sys.version_info[:2] == (2,7):
+data = [['Alice', 100, 1],
+        ['Bob', 200, 2],
+        ['Alice', 50, 3]]
+data2 = [['Alice', 'Austin'],
+         ['Bob', 'Boston']]
+try:
     from pyspark import SparkContext
     sc = SparkContext("local", "Simple App")
-    data = [['Alice', 100, 1],
-            ['Bob', 200, 2],
-            ['Alice', 50, 3]]
-    data2 = [['Alice', 'Austin'],
-             ['Bob', 'Boston']]
     rdd = sc.parallelize(data)
     rdd2 = sc.parallelize(data2)
+except ImportError:
+    pass
 
 t = TableSymbol('{name: string, amount: int, id: int}')
 

@@ -6,11 +6,11 @@ from blaze.expr.table import count as Count
 from blaze.compute.python import *
 from multipledispatch import dispatch
 import sys
-if sys.version_info[:2] == (2, 7):
+try:
     from itertools import compress, chain
     import pyspark
-else:
-    # Create a dummy pyspark.rdd.RDD for py 2.6
+except ImportError:
+    #Create a dummy pyspark.rdd.RDD for py 2.6
     class Dummy(object):
         pass
     pyspark = Dummy()
@@ -48,6 +48,9 @@ def compute(t, s):
 
 @dispatch(Selection, pyspark.rdd.RDD)
 def compute(t, rdd):
+    #TODO Generalized Selection is not yet supported. This implementation 
+    #TODO supports BinOp(A,B) where A,B is either a column of T or some 
+    #TODO value that supports BinOp
     rdd = compute(t.parent, rdd)
     lhs_is_expr = isinstance(t.predicate.lhs, Expr)
     rhs_is_expr = isinstance(t.predicate.rhs, Expr)
