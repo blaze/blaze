@@ -5,24 +5,24 @@ from datashape import dshape
 
 
 def test_dshape():
-    t = TableSymbol('{name: string, amount: int}')
+    t = TableSymbol('t', '{name: string, amount: int}')
     assert t.dshape == dshape('var * {name: string, amount: int}')
 
 
 def test_eq():
-    assert TableSymbol('{a: string, b: int}') == \
-            TableSymbol('{a: string, b: int}')
-    assert TableSymbol('{b: string, a: int}') != \
-            TableSymbol('{a: string, b: int}')
+    assert TableSymbol('t', '{a: string, b: int}') == \
+            TableSymbol('t', '{a: string, b: int}')
+    assert TableSymbol('t', '{b: string, a: int}') != \
+            TableSymbol('t', '{a: string, b: int}')
 
 
 def test_column():
-    t = TableSymbol('{name: string, amount: int}')
+    t = TableSymbol('t', '{name: string, amount: int}')
     assert t.columns == ['name', 'amount']
 
 
 def test_Projection():
-    t = TableSymbol('{name: string, amount: int, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int, id: int32}')
     p = Projection(t, ['amount', 'name'])
     assert p.schema == dshape('{amount: int32, name: string}')
     print(t['amount'].dshape)
@@ -31,13 +31,13 @@ def test_Projection():
 
 
 def test_indexing():
-    t = TableSymbol('{name: string, amount: int, id: int}')
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
     assert t[['amount', 'id']] == Projection(t, ['amount', 'id'])
     assert t['amount'].isidentical(Column(t, 'amount'))
 
 
 def test_relational():
-    t = TableSymbol('{name: string, amount: int, id: int}')
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     r = (t['name'] == 'Alice')
 
@@ -45,7 +45,7 @@ def test_relational():
 
 
 def test_selection():
-    t = TableSymbol('{name: string, amount: int, id: int}')
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     s = Selection(t, Eq(t['name'], 'Alice'))
 
@@ -53,7 +53,7 @@ def test_selection():
 
 
 def test_selection_by_indexing():
-    t = TableSymbol('{name: string, amount: int, id: int}')
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     result = t[t['name'] == 'Alice']
 
@@ -62,7 +62,7 @@ def test_selection_by_indexing():
 
 
 def test_columnwise():
-    t = TableSymbol('{x: real, y: real, z: real}')
+    t = TableSymbol('t', '{x: real, y: real, z: real}')
     x, y, z = t['x'], t['y'], t['z']
     expr = z % x * y + z ** 2
     assert isinstance(expr, ColumnWise)
@@ -70,7 +70,7 @@ def test_columnwise():
 
 def test_str():
     import re
-    t = TableSymbol('{name: string, amount: int, id: int}')
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
     expr = t[t['amount'] < 0]['name'] * 2
     print(str(expr))
     assert '<class' not in str(expr)
@@ -82,8 +82,8 @@ def test_str():
 
 
 def test_join():
-    t = TableSymbol('{name: string, amount: int}')
-    s = TableSymbol('{name: string, id: int}')
+    t = TableSymbol('t', '{name: string, amount: int}')
+    s = TableSymbol('t', '{name: string, id: int}')
     j = Join(t, s, 'name', 'name')
 
     assert j.schema == dshape('{name: string, amount: int, id: int}')
@@ -92,7 +92,7 @@ def test_join():
 
 
 def test_traverse():
-    t = TableSymbol('{name: string, amount: int}')
+    t = TableSymbol('t', '{name: string, amount: int}')
     assert t in list(t.traverse())
 
     expr = t[t['amount'] < 0]['name']
@@ -102,13 +102,13 @@ def test_traverse():
 
 
 def test_unary_ops():
-    t = TableSymbol('{name: string, amount: int}')
+    t = TableSymbol('t', '{name: string, amount: int}')
     expr = cos(exp(t['amount']))
     assert 'cos' in str(expr)
 
 
 def test_reduction():
-    t = TableSymbol('{name: string, amount: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32}')
     r = sum(t['amount'])
     print(type(r.dshape))
     print(type(dshape('int32')))
@@ -116,14 +116,14 @@ def test_reduction():
 
 
 def test_Distinct():
-    t = TableSymbol('{name: string, amount: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32}')
     r = Distinct(t['name'])
     print(r.dshape)
     assert r.dshape  == dshape('var * {name: string}')
 
 
 def test_by():
-    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     r = By(t, t['name'], sum(t['amount']))
 
     print(r.schema)
@@ -132,7 +132,7 @@ def test_by():
 
 
 def test_sort():
-    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     s = t.sort('amount', ascending=True)
     print(str(s))
     assert eval(str(s)).isidentical(s)
@@ -143,7 +143,7 @@ def test_sort():
 
 
 def test_head():
-    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     s = t.head(10)
     assert eval(str(s)).isidentical(s)
 
@@ -151,7 +151,7 @@ def test_head():
 
 
 def test_label():
-    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     quantity = (t['amount'] + 100).label('quantity')
 
     assert eval(str(quantity)).isidentical(quantity)
@@ -160,7 +160,7 @@ def test_label():
 
 
 def test_relabel():
-    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
     rl = t.relabel({'name': 'NAME', 'id': 'ID'})
 
@@ -171,7 +171,7 @@ def test_relabel():
 
 
 def test_relabel_join():
-    names = TableSymbol('{first: string, last: string}')
+    names = TableSymbol('names', '{first: string, last: string}')
 
     siblings = Join(names.relabel({'last': 'left'}),
                     names.relabel({'last': 'right'}), 'first')
@@ -180,7 +180,7 @@ def test_relabel_join():
 
 
 def test_map():
-    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     inc = lambda x: x + 1
     s = t['amount'].map(inc)
     s = t['amount'].map(inc, schema='{amount: int}')
@@ -189,7 +189,7 @@ def test_map():
 
 
 def test_apply():
-    t = TableSymbol('{name: string, amount: int32, id: int32}')
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     s = Apply(sum, t['amount'], dshape='real')
 
     assert s.dshape == dshape('real')
@@ -205,7 +205,7 @@ def test_argsymbol():
 def test_columnwise():
     from blaze.expr.scalar import Add, Eq, Mul
     s = argsymbol
-    t = TableSymbol('{x: int, y: int, z: int}')
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
     x = t['x']
     y = t['y']
     z = t['z']

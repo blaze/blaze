@@ -292,7 +292,7 @@ class TestCSV(unittest.TestCase):
 
         from blaze.expr.table import TableSymbol
         from blaze.compute.python import compute
-        t = TableSymbol(self.schema)
+        t = TableSymbol('t', self.schema)
         self.assertEqual(compute(t['f2'].sum(), dd), 1 + 2 + 3)
 
     def test_has_header(self):

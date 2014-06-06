@@ -1,6 +1,6 @@
 """ An abstract Table
 
->>> accounts = TableSymbol('{name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 """
 from __future__ import absolute_import, division, print_function
@@ -59,15 +59,20 @@ class TableSymbol(TableExpr):
 
     This is a leaf in the expression tree
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     """
-    __slots__ = 'schema',
+    __slots__ = 'name', 'schema'
 
-    def __init__(self, schema):
+    def __init__(self, name, schema):
+        self.name = name
         self.schema = dshape(schema)
 
     def __str__(self):
+        return self.name
+
+    def full_str(self):
         return type(self).__name__ + "('%s')" % self.schema
+
 
 
 class Projection(TableExpr):
@@ -312,14 +317,14 @@ class Join(TableExpr):
     on_left : string
     on_right : string
 
-    >>> names = TableSymbol('{name: string, id: int}')
-    >>> amounts = TableSymbol('{amount: int, id: int}')
+    >>> names = TableSymbol('names', '{name: string, id: int}')
+    >>> amounts = TableSymbol('amounts', '{amount: int, id: int}')
 
     Join tables based on shared column name
     >>> joined = Join(names, amounts, 'id')
 
     Join based on different column names
-    >>> amounts = TableSymbol('{amount: int, acctNumber: int}')
+    >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = Join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', 'on_left', 'on_right'
@@ -344,32 +349,6 @@ class Join(TableExpr):
         return dshape(Record(rec))
 
 
-class UnaryOp(ColumnWise):
-    """ A column-wise Unary Operation
-
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
-
-    >>> data = [['Alice', 100, 1],
-    ...         ['Bob', 200, 2],
-    ...         ['Alice', 50, 3]]
-
-    >>> from blaze.compute.python import compute
-    >>> list(compute(log(t['amount']), data))  # doctest: +SKIP
-    [4.605170185988092, 5.298317366548036, 3.912023005428146]
-    """
-    __slots__ = 'parent',
-
-    def __init__(self, table):
-        self.parent = table
-
-    def __str__(self):
-        return '%s(%s)' % (self.symbol, self.parent)
-
-    @property
-    def symbol(self):
-        return type(self).__name__
-
-
 sin = columnwise(scalar.sin)
 cos = columnwise(scalar.cos)
 tan = columnwise(scalar.tan)
@@ -380,7 +359,7 @@ log = columnwise(scalar.log)
 class Reduction(Scalar):
     """ A column-wise reduction
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
     >>> data = [['Alice', 100, 1],
@@ -420,7 +399,7 @@ class nunique(Reduction): pass
 class By(TableExpr):
     """ Split-Apply-Combine Operator
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = By(t, t['name'], t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
@@ -436,7 +415,7 @@ class By(TableExpr):
 
     def __init__(self, parent, grouper, apply):
         self.parent = parent
-        s = TableSymbol(parent.schema)
+        s = TableSymbol('', parent.schema)
         self.grouper = grouper.subs({parent: s})
         self.apply = apply.subs({parent: s})
         if isdimension(self.apply.dshape[0]):
@@ -471,7 +450,7 @@ class Sort(TableExpr):
 class Distinct(TableExpr):
     """ Distinct elements filter
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = Distinct(t)
 
     >>> data = [('Alice', 100, 1),
@@ -545,7 +524,7 @@ class Map(TableExpr):
 
     >>> from datetime import datetime
 
-    >>> t = TableSymbol('{price: real, time: int64}')  # times as integers
+    >>> t = TableSymbol('t', '{price: real, time: int64}')  # times as integers
     >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
 
     Optionally provide extra schema information
@@ -574,7 +553,7 @@ class Map(TableExpr):
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
 
-    >>> t = TableSymbol('{name: string, amount: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int}')
     >>> h = Apply(hash, t)  # Hash value of resultant table
 
     Optionally provide extra datashape information
