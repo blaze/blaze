@@ -46,8 +46,8 @@ class Expr(object):
         >>> from blaze.expr.table import TableSymbol
         >>> t = TableSymbol('{name: string, amount: int, id: int}')
         >>> expr = t['amount'] + 3
-        >>> expr.subs({3: 4, 'amount': 'id'})
-        TableSymbol('{ name : string, amount : int32, id : int32 }')['id'] + 4
+        >>> expr.subs({3: 4, 'amount': 'id'}).isidentical(t['id'] + 4)
+        True
         """
         return subs(self, d)
 

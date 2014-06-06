@@ -10,6 +10,7 @@ import datashape
 import operator
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol, NumberSymbol
+from .scalar import *
 from ..utils import unique
 
 
@@ -24,7 +25,7 @@ class TableExpr(Expr):
         return self.schema[0].names
 
     def __getitem__(self, key):
-        if isinstance(key, Relational):
+        if isinstance(key, ColumnWise) and key.schema == dshape('bool'):
             return Selection(self, key)
         if isinstance(key, (tuple, list)):
             key = tuple(key)
@@ -93,74 +94,54 @@ class Projection(TableExpr):
                            ', '.join(["'%s'" % col for col in self.columns]))
 
 
-class Column(Projection):
-    """
-
-    SELECT a
-    FROM table
-    """
-    __slots__ = 'parent', 'column'
-
-    __hash__ = Expr.__hash__
-
-    def __init__(self, table, column):
-        self.parent = table
-        self.column = column
-
-    @property
-    def columns(self):
-        return (self.column,)
-
-    def __str__(self):
-        return "%s['%s']" % (self.parent, self.columns[0])
-
+class ColumnSyntaxMixin(object):
     def __eq__(self, other):
-        return Eq(self, other)
+        return columnwise(Eq, self, other)
 
     def __lt__(self, other):
-        return LT(self, other)
+        return columnwise(LT, self, other)
 
     def __gt__(self, other):
-        return GT(self, other)
+        return columnwise(GT, self, other)
+
+    def __add__(self, other):
+        return columnwise(Add, self, other)
+
+    def __radd__(self, other):
+        return columnwise(Add, other, self)
+
+    def __mul__(self, other):
+        return columnwise(Mul, self, other)
+
+    def __rmul__(self, other):
+        return columnwise(Mul, other, self)
+
+    def __div__(self, other):
+        return columnwise(Div, self, other)
+
+    def __rdiv__(self, other):
+        return columnwise(Div, other, self)
+
+    def __sub_(self, other):
+        return columnwise(Sub, self, other)
+
+    def __rsub__(self, other):
+        return columnwise(Sub, other, self)
+
+    def __pow__(self, other):
+        return columnwise(Pow, self, other)
+
+    def __rpow__(self, other):
+        return columnwise(Pow, other, self)
+
+    def __mod__(self, other):
+        return columnwise(Mod, self, other)
+
+    def __rmod__(self, other):
+        return columnwise(Mod, other, self)
 
     def label(self, label):
         return Label(self, label)
-
-    def __add__(self, other):
-        return Add(self, other)
-
-    def __radd__(self, other):
-        return Add(other, self)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(other, self)
-
-    def __div__(self, other):
-        return Div(self, other)
-
-    def __rdiv__(self, other):
-        return Div(other, self)
-
-    def __sub_(self, other):
-        return Sub(self, other)
-
-    def __rsub__(self, other):
-        return Sub(other, self)
-
-    def __pow__(self, other):
-        return Pow(self, other)
-
-    def __rpow__(self, other):
-        return Pow(other, self)
-
-    def __mod__(self, other):
-        return Mod(self, other)
-
-    def __rmod__(self, other):
-        return Mod(other, self)
 
     def count(self):
         return count(self)
@@ -196,6 +177,28 @@ class Column(Projection):
         return std(self)
 
 
+class Column(ColumnSyntaxMixin, Projection):
+    """
+
+    SELECT a
+    FROM table
+    """
+    __slots__ = 'parent', 'column'
+
+    __hash__ = Expr.__hash__
+
+    def __init__(self, table, column):
+        self.parent = table
+        self.column = column
+
+    @property
+    def columns(self):
+        return (self.column,)
+
+    def __str__(self):
+        return "%s['%s']" % (self.parent, self.columns[0])
+
+
 class Selection(TableExpr):
     """
     WHERE a op b
@@ -212,6 +215,21 @@ class Selection(TableExpr):
     @property
     def schema(self):
         return self.parent.schema
+
+
+def _index(t, element):
+    """ tuple.args fails when == is overloaded.  This is a hacky fix
+
+    Long term we shouldn't use == in Exprs.  We should use it only in the user
+    interface layer
+    """
+    for i, item in enumerate(t):
+        if isinstance(item, TableExpr) and isinstance(element, TableExpr):
+            eq = TableExpr.isidentical
+        else:
+            eq = lambda x, y: x is y
+        if eq(item, element):
+            return i
 
 
 def argsymbol(i, dtype=None):
@@ -234,201 +252,42 @@ def columnwise(op, lhs, rhs):
     left_args = lhs.arguments if isinstance(lhs, ColumnWise) else (lhs,)
     right_args = rhs.arguments if isinstance(rhs, ColumnWise) else (rhs,)
 
-    args = tuple(unique(left_args + right_args))
+    args = tuple(unique(left_args + right_args, key=str))
     if isinstance(lhs, ColumnWise):
-        lhs_expr = lhs.expr.subs({argsymbol(left_args.index(arg)):
-                                  argsymbol(args.index(arg))
+        lhs_expr = lhs.expr.subs({argsymbol(_index(left_args, arg)):
+                                  argsymbol(_index(args, arg))
                                   for arg in left_args})
     else:
-        lhs_expr = argsymbol(args.index(lhs))
+        lhs_expr = argsymbol(_index(args, lhs))
     if isinstance(rhs, ColumnWise):
-        rhs_expr = rhs.expr.subs({argsymbol(right_args.index(arg)):
-                                  argsymbol(args.index(arg))
+        rhs_expr = rhs.expr.subs({argsymbol(_index(right_args, arg)):
+                                  argsymbol(_index(args, arg))
                                   for arg in right_args})
     else:
-        rhs_expr = argsymbol(args.index(rhs))
+        rhs_expr = argsymbol(_index(args, rhs))
 
     expr = op(lhs_expr, rhs_expr)
 
-    return ColumnWise2(expr, args)
+    return ColumnWise(expr, args)
 
 
-class ColumnWise(TableExpr):
+
+
+class ColumnWise(TableExpr, ColumnSyntaxMixin):
     """
 
     a op b
     """
-
-    __hash__ = Expr.__hash__
-
-    def __eq__(self, other):
-        return Eq(self, other)
-
-    def __lt__(self, other):
-        return LT(self, other)
-
-    def __gt__(self, other):
-        return GT(self, other)
-
-    def label(self, label):
-        return Label(self, label)
-
-    def __add__(self, other):
-        return Add(self, other)
-
-    def __radd__(self, other):
-        return Add(other, self)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(other, self)
-
-    def __div__(self, other):
-        return Div(self, other)
-
-    def __rdiv__(self, other):
-        return Div(other, self)
-
-    def __sub_(self, other):
-        return Sub(self, other)
-
-    def __rsub__(self, other):
-        return Sub(other, self)
-
-    def __pow__(self, other):
-        return Pow(self, other)
-
-    def __rpow__(self, other):
-        return Pow(other, self)
-
-    def __mod__(self, other):
-        return Mod(self, other)
-
-    def __rmod__(self, other):
-        return Mod(other, self)
-
-    def count(self):
-        return count(self)
-
-    def distinct(self):
-        return Distinct(self)
-
-    def nunique(self):
-        return nunique(self)
-
-    def sum(self):
-        return sum(self)
-
-    def min(self):
-        return min(self)
-
-    def max(self):
-        return max(self)
-
-    def any(self):
-        return any(self)
-
-    def all(self):
-        return all(self)
-
-    def mean(self):
-        return mean(self)
-
-    def var(self):
-        return var(self)
-
-    def std(self):
-        return std(self)
-
-
-class ColumnWise2(ColumnWise):
     __slots__ = 'expr', 'arguments'
     def __init__(self, expr, arguments):
         self.expr = expr
         self.arguments = arguments
 
+    __hash__ = Expr.__hash__
 
-class BinOp(ColumnWise):
-    """ A column-wise Binary Operation
-
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
-
-    >>> data = [['Alice', 100, 1],
-    ...         ['Bob', 200, 2],
-    ...         ['Alice', 50, 3]]
-
-    >>> from blaze.compute.python import compute
-    >>> list(compute(t['amount'] * 10, data))
-    [1000, 2000, 500]
-    """
-    __slots__ = 'lhs', 'rhs'
-
-    def __init__(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-
-    def __str__(self):
-        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
-
-
-class Relational(BinOp):
     @property
     def schema(self):
-        return dshape('bool')
-
-
-class Eq(Relational):
-    symbol = '=='
-    op = operator.eq
-
-
-class GT(Relational):
-    symbol = '>'
-    op = operator.gt
-
-
-class LT(Relational):
-    symbol = '<'
-    op = operator.lt
-
-
-class Arithmetic(BinOp):
-    @property
-    def schema(self):
-        # TODO: Infer schema based on input types
-        return dshape('real')
-
-
-class Add(Arithmetic):
-    symbol = '+'
-    op = operator.add
-
-
-class Mul(Arithmetic):
-    symbol = '*'
-    op = operator.mul
-
-
-class Sub(Arithmetic):
-    symbol = '-'
-    op = operator.sub
-
-
-class Div(Arithmetic):
-    symbol = '/'
-    op = operator.truediv
-
-
-class Pow(Arithmetic):
-    symbol = '**'
-    op = operator.pow
-
-
-class Mod(Arithmetic):
-    symbol = '%'
-    op = operator.mod
+        return self.expr.dshape
 
 
 class Join(TableExpr):

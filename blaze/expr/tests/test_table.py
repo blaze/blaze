@@ -39,7 +39,7 @@ def test_indexing():
 def test_relational():
     t = TableSymbol('{name: string, amount: int, id: int}')
 
-    r = Eq(t['name'], 'Alice')
+    r = (t['name'] == 'Alice')
 
     assert r.dshape == dshape('var * bool')
 
@@ -56,8 +56,9 @@ def test_selection_by_indexing():
     t = TableSymbol('{name: string, amount: int, id: int}')
 
     result = t[t['name'] == 'Alice']
-    expected = Selection(t, Eq(Column(t, 'name'), 'Alice'))
-    assert str(result) == str(expected)
+
+    assert t.schema == result.schema
+    assert 'Alice' in str(result)
 
 
 def test_columnwise():
