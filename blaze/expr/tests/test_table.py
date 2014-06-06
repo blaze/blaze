@@ -220,3 +220,11 @@ def test_columnwise():
 
     assert columnwise(Add, x, 1).expr == argsymbol(0) + 1
     assert columnwise(Add, x, 1).arguments == (argsymbol(0),)
+
+
+def test_TableSymbol_printing_is_legible():
+    accounts = TableSymbol('accounts', '{name: string, balance: int, id: int}')
+
+    expr = (exp(accounts['balance'] * 10)) + accounts['id']
+    assert "exp(accounts['balance'] * 10)" in str(expr)
+    assert "+ accounts['id']" in str(expr)

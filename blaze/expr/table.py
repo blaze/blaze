@@ -70,10 +70,6 @@ class TableSymbol(TableExpr):
     def __str__(self):
         return self.name
 
-    def full_str(self):
-        return type(self).__name__ + "('%s')" % self.schema
-
-
 
 class Projection(TableExpr):
     """
@@ -306,6 +302,10 @@ class ColumnWise(TableExpr, ColumnSyntaxMixin):
     def schema(self):
         return self.expr.dshape
 
+    def __str__(self):
+        return eval_str(self.expr.subs(dict(zip(self.argsymbols,
+                                                map(str, self.arguments)))))
+
 
 class Join(TableExpr):
     """ Join two tables on common columns
@@ -485,7 +485,7 @@ class Head(TableExpr):
         return self.n * self.schema
 
 
-class Label(ColumnWise):
+class Label(TableExpr, ColumnSyntaxMixin):
     __slots__ = 'parent', 'label'
 
     def __init__(self, parent, label):
