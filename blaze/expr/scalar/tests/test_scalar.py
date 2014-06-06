@@ -15,6 +15,9 @@ def test_eval_str():
     expr = (x + y) * 3
     assert expr.eval_str() == '(x + y) * 3'
 
+    assert eval_str(1) == '1'
+    assert eval_str('Alice') == "'Alice'"
+
 
 def test_str():
     x = NumberSymbol('x', 'real')

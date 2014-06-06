@@ -1,4 +1,4 @@
-from blaze.expr.scalar.core import ScalarSymbol, eval_str
+from blaze.expr.scalar.core import ScalarSymbol
 from datashape import dshape
 
 
@@ -7,8 +7,3 @@ def test_basic():
     assert eval(str(x)) == x
 
     assert x.dshape == dshape('real')
-
-
-def test_eval_str():
-    assert eval_str(1) == '1'
-    assert eval_str('Alice') == "'Alice'"

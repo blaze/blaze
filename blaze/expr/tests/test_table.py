@@ -20,6 +20,9 @@ def test_column():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.columns == ['name', 'amount']
 
+    assert eval(str(t['name'])) == t['name']
+    assert str(t['name']) == "t['name']"
+
 
 def test_Projection():
     t = TableSymbol('t', '{name: string, amount: int, id: int32}')
@@ -76,7 +79,6 @@ def test_str():
     import re
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     expr = t[t['amount'] < 0]['name'] * 2
-    print(str(expr))
     assert '<class' not in str(expr)
     assert not re.search('0x[0-9a-f]+', str(expr))
 
