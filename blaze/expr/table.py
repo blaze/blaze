@@ -9,6 +9,7 @@ from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
 from .core import Expr, Scalar
+from .scalar import ScalarSymbol
 from ..utils import unique
 
 
@@ -211,6 +212,16 @@ class Selection(TableExpr):
     @property
     def schema(self):
         return self.parent.schema
+
+
+def argsymbol(i, dtype=None):
+    """ The symbol for the ith argument """
+    symbols = 'abcdefghijklmnopqrstuvwxyz'
+    if i < len(symbols):
+        token = symbols[i]
+    else:
+        token = "%s_%d" % (symbols[i % 26], i // 26 + 1)
+    return ScalarSymbol(token, dtype)
 
 
 class ColumnWise(TableExpr):

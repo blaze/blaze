@@ -192,3 +192,9 @@ def test_apply():
     s = Apply(sum, t['amount'], dshape='real')
 
     assert s.dshape == dshape('real')
+
+
+def test_argsymbol():
+    assert argsymbol(0, 'int') == ScalarSymbol('a', 'int')
+    assert argsymbol(2, 'real') == ScalarSymbol('c', 'real')
+    assert argsymbol(26, 'bool') == ScalarSymbol('a_2', 'bool')
