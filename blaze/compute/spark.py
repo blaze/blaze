@@ -1,11 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
+from multipledispatch import dispatch
+import sys
+from operator import itemgetter
 
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
-from blaze.compute.python import *
-from multipledispatch import dispatch
-import sys
+from . import core, python
+from .python import compute
+from ..compatibility import builtins
+from ..expr import table
+
 try:
     from itertools import compress, chain
     import pyspark
@@ -46,27 +51,39 @@ def compute(t, s):
     return s
 
 
+def func_from_columnwise(t):
+    columns = [t.parent.columns.index(arg.columns[0]) for arg in t.arguments]
+    _func = eval(core.columnwise_funcstr(t))
+
+    getter = itemgetter(*columns)
+    def func(x):
+        fields = getter(x)
+        return func(*fields)
+
+    return func
+
+
+@dispatch(ColumnWise, pyspark.rdd.RDD)
+def compute(t, rdd):
+    if not all(isinstance(arg, Column) for arg in t.arguments):
+        raise NotImplementedError("Expected arguments to be columns")
+    parents = [arg.parent for arg in t.arguments]
+    if not len(set(parents)) == 1:
+        raise NotImplementedError("Columnwise defined only for single parent")
+
+    rdd = compute(parents[0], rdd)
+
+    func = func_from_columnwise(t)
+    return rdd.map(func)
+
+
 @dispatch(Selection, pyspark.rdd.RDD)
 def compute(t, rdd):
-    #TODO Generalized Selection is not yet supported. This implementation 
-    #TODO supports BinOp(A,B) where A,B is either a column of T or some 
-    #TODO value that supports BinOp
     rdd = compute(t.parent, rdd)
-    lhs_is_expr = isinstance(t.predicate.lhs, Expr)
-    rhs_is_expr = isinstance(t.predicate.rhs, Expr)
-    # Need these for serializing the sel_fn function
-    lhs_col_idx = None
-    rhs_col_idx = None
-    if (lhs_is_expr):
-        lhs_col_idx = t.parent.schema[0].names.index(t.predicate.lhs.columns[0])
-    if (rhs_is_expr):
-        rhs_col_idx = t.parent.schema[0].names.index(t.predicate.rhs.columns[0])
-
-    def sel_fn(x):
-        lhs_arg = x[lhs_col_idx] if lhs_is_expr else t.predicate.lhs
-        rhs_arg = x[rhs_col_idx] if rhs_is_expr else t.predicate.rhs
-        return t.predicate.op(lhs_arg, rhs_arg)
-    return rdd.filter(sel_fn)
+    print(core.columnwise_funcstr(t.predicate))
+    _predicate = eval(core.columnwise_funcstr(t.predicate))
+    predicate = lambda x: _predicate(*x)
+    return rdd.filter(_predicate)
 
 
 @dispatch(Join, pyspark.rdd.RDD, pyspark.rdd.RDD)
@@ -91,35 +108,49 @@ def compute(t, lhs, rhs):
     return out_rdd
 
 
-def _close(fn, ap):
-    """ Build a closure around a compute fn and an apply
-
-    PySpark serialization, accompanied with some weirdness with Pandas and
-    NumExpr force a kludgy solution to avoid serialization issues.
-
-    See https://issues.apache.org/jira/browse/SPARK-1394
-    """
-    def _(x):
-        return x[0], fn(ap, list(x[1]))
-    return _
+reductions = {table.sum: builtins.sum,
+              table.count: builtins.len,
+              table.max: builtins.max,
+              table.min: builtins.min,
+              table.any: builtins.any,
+              table.all: builtins.all,
+              table.mean: python._mean,
+              table.var: python._var,
+              table.std: python._std,
+              table.nunique: lambda x: len(set(x))}
 
 
 @dispatch(By, pyspark.rdd.RDD)
 def compute(t, rdd):
-    parent = compute(t.parent, rdd)
-    keys_by_idx = tuple(t.parent.schema[0].names.index(i)
-                        for i in t.grouper.columns)
+    rdd = compute(t.parent, rdd)
 
-    def group_fn(x):
-        if (len(keys_by_idx) == 1):
-            return x[keys_by_idx[0]]
-        else:
-            return tuple(x[i] for i in keys_by_idx)
+    if not isinstance(t.grouper, Projection) and t.grouper.parent == t:
+        raise NotImplementedError("By grouper must be projection of table")
 
-    keyed_rdd = parent.keyBy(group_fn)
-    grouped = keyed_rdd.groupByKey()
-    compute_fn = compute.resolve((type(t.apply), list))
-    return grouped.map(lambda x: (x[0], compute_fn(t.apply, x[1])))
+    indices = [t.grouper.parent.columns.index(c) for c in t.grouper.columns]
+    group_fn = itemgetter(*indices)
+
+    try:
+        reduction = reductions[type(t.apply)]
+    except KeyError:
+        raise NotImplementedError("By only implemented for common reductions."
+                                  "\nGot %s" % type(t.apply))
+    if isinstance(t.apply.parent, ColumnWise):
+        pre_reduction = func_from_columnwise(t.apply.parent)
+    elif isinstance(t.apply.parent, Column):
+        pre_reduction = itemgetter(t.apply.parent.parent.columns.index(
+                                        t.apply.parent.columns[0]))
+    else:
+        raise NotImplementedError("By only implemented for reductions of"
+                                  " Columns or ColumnWises.\n"
+                                  "Got: %s" % t.apply.parent)
+
+    def pre_reduction_func(x):
+        return group_fn(x), pre_reduction(x)
+
+    return (rdd.map(pre_reduction_func)
+               .groupByKey()
+               .map(lambda x: (x[0], reduction(x[1]))))
 
 
 @dispatch((Label, ReLabel), pyspark.rdd.RDD)

@@ -17,9 +17,9 @@ try:
 except ImportError:
     pass
 
-t = TableSymbol('{name: string, amount: int, id: int}')
+t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
-t2 = TableSymbol('{name: string, city: string}')
+t2 = TableSymbol('t2', '{name: string, city: string}')
 
 #Web Commons Graph Example data
 data_idx = [['A', 1],
@@ -30,35 +30,30 @@ data_arc = [[1, 3],
             [2, 3],
             [3, 1]]
 
-t_idx = TableSymbol('{name: string, node_id: int32}')
+t_idx = TableSymbol('idx', '{name: string, node_id: int32}')
 
-t_arc = TableSymbol('{node_out: int32, node_id: int32}')
+t_arc = TableSymbol('arc', '{node_out: int32, node_id: int32}')
 
-@skip("Spark not yet fully supported")
 def test_table():
     assert compute(t, rdd) == rdd
 
 
-@skip("Spark not yet fully supported")
 def test_projection():
     assert compute(t['name'], rdd).collect() == rdd.map(lambda x:
                                                         x[0]).collect()
 
 
-@skip("Spark not yet fully supported")
 def test_multicols_projection():
     assert compute(t[['amount', 'name']], rdd).collect() == [[100, 'Alice'],
                                                              [200, 'Bob'],
                                                              [50, 'Alice']]
 
 
-@skip("Spark not yet fully supported")
 def test_selection():
     assert compute(t[t['name'] == 'Alice'], rdd).collect() ==\
         rdd.filter(lambda x: x[0] == 'Alice').collect()
 
 
-@skip("Spark not yet fully supported")
 def test_join():
 
     joined = Join(t, t2, 'name')
@@ -68,7 +63,6 @@ def test_join():
     result = compute(joined, rdd, rdd2)
     assert all([i in expected for i in result.collect()])
 
-@skip("Spark not yet fully supported")
 def test_groupby():
 
     rddidx = sc.parallelize(data_idx)
@@ -113,8 +107,3 @@ def test_jaccard():
     shared_neighbor_py = shared_neighbor_num.collect()
     assert shared_neighbor_py == [((3, 6), 3)]
     assert indeg_py == {1: 3, 3: 4, 6: 3}
-
-
-
-
-

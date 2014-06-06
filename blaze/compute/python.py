@@ -107,6 +107,9 @@ def _var(seq):
         count += 1
     return 1.0*total_squared/count - (1.0*total/count) ** 2
 
+def _std(seq):
+    return sqrt(_var(seq))
+
 @dispatch(count, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
@@ -134,7 +137,8 @@ def compute(t, seq):
 
 @dispatch(std, Sequence)
 def compute(t, seq):
-    return math.sqrt(compute(var(t.parent), seq))
+    parent = compute(t.parent, seq)
+    return _std(parent)
 
 lesser = lambda x, y: x if x < y else y
 greater = lambda x, y: x if x > y else y
