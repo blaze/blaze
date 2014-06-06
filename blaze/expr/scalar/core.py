@@ -6,6 +6,8 @@ from datashape import dshape
 def eval_str(expr):
     if hasattr(expr, 'eval_str'):
         return expr.eval_str()
+    elif isinstance(expr, str):
+        return "'%s'" % expr
     else:
         return str(expr)
 
