@@ -22,10 +22,14 @@ from toolz import map, isiterable
 
 from ..expr.table import *
 from ..expr.scalar.core import *
+from ..expr import scalar
 from ..compatibility import builtins
 from .. import utils
 from ..utils import groupby, get, reduceby, unique
 from . import core
+
+# Dump exp, log, sin, ... into namespace
+from math import *
 
 __all__ = ['compute', 'Sequence']
 

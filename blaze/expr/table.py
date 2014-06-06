@@ -8,7 +8,8 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat
+from toolz import concat, curry
+from . import scalar
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol, NumberSymbol
 from .scalar import *
@@ -245,6 +246,7 @@ def argsymbol(i, dtype=None):
     return NumberSymbol(token, dtype)
 
 
+@curry
 def columnwise(op, *inputs):
     """ Merge columns with op
 
@@ -368,11 +370,11 @@ class UnaryOp(ColumnWise):
         return type(self).__name__
 
 
-class sin(UnaryOp): pass
-class cos(UnaryOp): pass
-class tan(UnaryOp): pass
-class exp(UnaryOp): pass
-class log(UnaryOp): pass
+sin = columnwise(scalar.sin)
+cos = columnwise(scalar.cos)
+tan = columnwise(scalar.tan)
+exp = columnwise(scalar.exp)
+log = columnwise(scalar.log)
 
 
 class Reduction(Scalar):
