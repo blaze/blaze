@@ -27,7 +27,10 @@ install:
   - pip install multipledispatch
   - pip install toolz cytoolz
   - pip install git+http://github.com/ContinuumIO/datashape
-  - pip install git+http://github.com/ContinuumIO/blz
+
+  # Install BLZ
+  # - pip install git+http://github.com/ContinuumIO/blz
+
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
   # - tar xvfz spark-0.9.1.tgz
