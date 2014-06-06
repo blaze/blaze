@@ -52,12 +52,26 @@ def compute(t, o):
     return compute(t, o, o)
 
 
-def columnwise_funcstr(t):
+def columnwise_funcstr(t, variadic=True, full=False):
     """
-    >>> t = TableSymbol('t', '{x: real, y: real}')
-    >>> cw = t['x'] + t['y']
+    >>> t = TableSymbol('t', '{x: real, y: real, z: real}')
+    >>> cw = t['x'] + t['z']
     >>> columnwise_funcstr(cw)
-    'lambda a, b: a + b'
+    'lambda x, z: x + z'
+
+    >>> columnwise_funcstr(cw, variadic=False)
+    'lambda (x, z): x + z'
+
+    >>> columnwise_funcstr(cw, variadic=False, full=True)
+    'lambda (x, y, z): x + z'
     """
-    return 'lambda %s: %s' % (', '.join(map(eval_str, t.argsymbols)),
-                              eval_str(t.expr))
+    if full:
+        columns = t.parent.columns
+    else:
+        columns = t.active_columns()
+    if variadic:
+        prefix = 'lambda %s: '
+    else:
+        prefix = 'lambda (%s): '
+
+    return prefix % ', '.join(map(str, columns)) + eval_str(t.expr)
