@@ -267,9 +267,9 @@ def columnwise(op, *inputs):
     exprs = []
     for inp, iargs in zip(inputs, input_args):
         if isinstance(inp, ColumnWise):
-            expr = inp.expr.subs({argsymbol(_index(iargs, arg)):
-                                  argsymbol(_index(args, arg))
-                                  for arg in iargs})
+            expr = inp.expr.subs(dict((argsymbol(_index(iargs, arg)),
+                                       argsymbol(_index(args, arg)))
+                                      for arg in iargs))
         elif isinstance(inp, TableExpr):
             expr = argsymbol(_index(args, inp))
         else:
