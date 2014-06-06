@@ -252,19 +252,27 @@ def columnwise(op, lhs, rhs):
     left_args = lhs.arguments if isinstance(lhs, ColumnWise) else (lhs,)
     right_args = rhs.arguments if isinstance(rhs, ColumnWise) else (rhs,)
 
+    # Remove non-expr args like 1 or 'Alice'
+    left_args = [arg for arg in left_args if isinstance(arg, TableExpr)]
+    right_args = [arg for arg in right_args if isinstance(arg, TableExpr)]
+
     args = tuple(unique(left_args + right_args, key=str))
     if isinstance(lhs, ColumnWise):
         lhs_expr = lhs.expr.subs({argsymbol(_index(left_args, arg)):
                                   argsymbol(_index(args, arg))
                                   for arg in left_args})
-    else:
+    elif isinstance(lhs, TableExpr):
         lhs_expr = argsymbol(_index(args, lhs))
+    else:
+        lhs_expr = lhs
     if isinstance(rhs, ColumnWise):
         rhs_expr = rhs.expr.subs({argsymbol(_index(right_args, arg)):
                                   argsymbol(_index(args, arg))
                                   for arg in right_args})
-    else:
+    elif isinstance(rhs, TableExpr):
         rhs_expr = argsymbol(_index(args, rhs))
+    else:
+        rhs_expr = rhs
 
     expr = op(lhs_expr, rhs_expr)
 
@@ -282,6 +290,10 @@ class ColumnWise(TableExpr, ColumnSyntaxMixin):
     def __init__(self, expr, arguments):
         self.expr = expr
         self.arguments = arguments
+
+    @property
+    def argsymbols(self):
+        return tuple(argsymbol(i) for i, arg in enumerate(self.arguments))
 
     __hash__ = Expr.__hash__
 

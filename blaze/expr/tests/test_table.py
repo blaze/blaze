@@ -217,3 +217,6 @@ def test_columnwise():
 
     assert columnwise(Eq, c1, c2).expr == ((s(0) + s(1)) == (s(0), s(2)))
     assert columnwise(Eq, c1, c2).arguments == (x, y, z)
+
+    assert columnwise(Add, x, 1).expr == argsymbol(0) + 1
+    assert columnwise(Add, x, 1).arguments == (argsymbol(0),)
