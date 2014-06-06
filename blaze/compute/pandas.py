@@ -25,6 +25,8 @@ import numpy as np
 from ..expr.table import *
 from . import core
 
+from numpy import exp, log, sin, cos, tan
+
 __all__ = ['compute']
 
 
@@ -40,11 +42,13 @@ def compute(t, df):
     return parent[t.columns[0]]
 
 
-@dispatch(BinOp, DataFrame)
+@dispatch(ColumnWise, DataFrame)
 def compute(t, df):
-    lhs = compute(t.lhs, df)
-    rhs = compute(t.rhs, df)
-    return t.op(lhs, rhs)
+    arguments = [compute(arg, df) for arg in t.arguments]
+    funcstr = core.columnwise_funcstr(t)
+    func = eval(funcstr)
+    result = func(*arguments)
+    return result
 
 
 @dispatch(Selection, DataFrame)
@@ -87,13 +91,6 @@ def compute(t, lhs, rhs):
     rhs = rhs.set_index(t.on_right)
     result = lhs.join(rhs)
     return result.reset_index()[t.columns]
-
-
-@dispatch(UnaryOp, DataFrame)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    op = getattr(np, t.symbol)
-    return op(parent)
 
 
 @dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
