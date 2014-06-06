@@ -6,11 +6,11 @@ from blaze.expr.table import count as Count
 from blaze.compute.python import *
 from multipledispatch import dispatch
 import sys
-if sys.version_info[:2] == (2,7):
+if sys.version_info[:2] == (2, 7):
     from itertools import compress, chain
     import pyspark
 else:
-    #Create a dummy pyspark.rdd.RDD for py 2.6
+    # Create a dummy pyspark.rdd.RDD for py 2.6
     class Dummy(object):
         pass
     pyspark = Dummy()
@@ -49,8 +49,21 @@ def compute(t, s):
 @dispatch(Selection, pyspark.rdd.RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    col_idx = t.parent.schema[0].names.index(t.columns[0])
-    return rdd.filter(lambda x: t.predicate.op(x[col_idx], t.predicate.rhs))
+    lhs_is_expr = isinstance(t.predicate.lhs, Expr)
+    rhs_is_expr = isinstance(t.predicate.rhs, Expr)
+    # Need these for serializing the sel_fn function
+    lhs_col_idx = None
+    rhs_col_idx = None
+    if (lhs_is_expr):
+        lhs_col_idx = t.parent.schema[0].names.index(t.predicate.lhs.columns[0])
+    if (rhs_is_expr):
+        rhs_col_idx = t.parent.schema[0].names.index(t.predicate.rhs.columns[0])
+
+    def sel_fn(x):
+        lhs_arg = x[lhs_col_idx] if lhs_is_expr else t.predicate.lhs
+        rhs_arg = x[rhs_col_idx] if rhs_is_expr else t.predicate.rhs
+        return t.predicate.op(lhs_arg, rhs_arg)
+    return rdd.filter(sel_fn)
 
 
 @dispatch(Join, pyspark.rdd.RDD, pyspark.rdd.RDD)
@@ -91,9 +104,21 @@ def _close(fn, ap):
 @dispatch(By, pyspark.rdd.RDD)
 def compute(t, rdd):
     parent = compute(t.parent, rdd)
-    key_by_idx = t.parent.schema[0].names.index(t.grouper.columns[0])
-    keyed_rdd = parent.keyBy(lambda x: x[key_by_idx])
+    keys_by_idx = tuple(t.parent.schema[0].names.index(i)
+                        for i in t.grouper.columns)
+
+    def group_fn(x):
+        if (len(keys_by_idx) == 1):
+            return x[keys_by_idx[0]]
+        else:
+            return tuple(x[i] for i in keys_by_idx)
+
+    keyed_rdd = parent.keyBy(group_fn)
     grouped = keyed_rdd.groupByKey()
     compute_fn = compute.resolve((type(t.apply), list))
-    f = _close(compute_fn, t.apply)
-    return grouped.map(f)
+    return grouped.map(lambda x: (x[0], compute_fn(t.apply, x[1])))
+
+
+@dispatch((Label, ReLabel), pyspark.rdd.RDD)
+def compute(t, rdd):
+    return compute(t.parent, rdd)
