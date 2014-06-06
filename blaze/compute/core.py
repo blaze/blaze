@@ -30,7 +30,7 @@ def compute(t, d):
 
     if hasattr(t, 'parent'):
         parent = compute(t.parent, d)
-        t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
+        t2 = t.subs({t.parent: TableSymbol('', t.parent.schema)})
         return compute(t2, parent)
 
     raise NotImplementedError("No method found to compute on multiple Tables")
@@ -42,8 +42,8 @@ def compute(t, d):
     rhs = compute(t.rhs, d)
 
 
-    t2 = t.subs({t.lhs: TableSymbol(t.lhs.schema),
-                 t.rhs: TableSymbol(t.rhs.schema)})
+    t2 = t.subs({t.lhs: TableSymbol('_lhs', t.lhs.schema),
+                 t.rhs: TableSymbol('_rhs', t.rhs.schema)})
     return compute(t2, lhs, rhs)
 
 
@@ -54,7 +54,7 @@ def compute(t, o):
 
 def columnwise_funcstr(t):
     """
-    >>> t = TableSymbol('{x: real, y: real}')
+    >>> t = TableSymbol('t', '{x: real, y: real}')
     >>> cw = t['x'] + t['y']
     >>> columnwise_funcstr(cw)
     'lambda a, b: a + b'

@@ -3,7 +3,7 @@
 >>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.pandas import compute
 
->>> accounts = TableSymbol('{name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from pandas import DataFrame
@@ -132,7 +132,7 @@ def compute(t, df):
     groups = full.groupby(list(grouper.columns))[list(pregrouped.columns)]
 
     reduction = t.apply.subs({t.apply.parent:
-                              TableSymbol(t.apply.parent.schema)})
+                              TableSymbol('group', t.apply.parent.schema)})
 
     return compute(reduction, groups)[list(pregrouped.columns)].reset_index()
 

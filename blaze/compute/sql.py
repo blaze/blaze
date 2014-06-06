@@ -3,7 +3,7 @@
 >>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.sql import compute
 
->>> accounts = TableSymbol('{name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String

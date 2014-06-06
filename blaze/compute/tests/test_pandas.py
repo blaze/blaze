@@ -8,7 +8,7 @@ from blaze.compute.pandas import *
 from blaze.expr.table import *
 from blaze.compatibility import builtins
 
-t = TableSymbol('{name: string, amount: int, id: int}')
+t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
 
 df = DataFrame([['Alice', 100, 1],
@@ -16,7 +16,7 @@ df = DataFrame([['Alice', 100, 1],
                 ['Alice', 50, 3]], columns=['name', 'amount', 'id'])
 
 
-tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
 
 dfbig = DataFrame([['Alice', 'F', 100, 1],
                    ['Alice', 'F', 100, 3],
@@ -67,8 +67,8 @@ def test_join():
     left = DataFrame([['Alice', 100], ['Bob', 200]], columns=['name', 'amount'])
     right = DataFrame([['Alice', 1], ['Bob', 2]], columns=['name', 'id'])
 
-    L = TableSymbol('{name: string, amount: int}')
-    R = TableSymbol('{name: string, id: int}')
+    L = TableSymbol('L', '{name: string, amount: int}')
+    R = TableSymbol('R', '{name: string, id: int}')
     joined = Join(L, R, 'name')
 
     assert dshape(joined.schema) == \
@@ -172,9 +172,9 @@ def test_join_by_arcs():
                         [3, 1]],
                        columns=['node_out', 'node_id'])
 
-    t_idx = TableSymbol('{name: string, node_id: int32}')
+    t_idx = TableSymbol('t_idx', '{name: string, node_id: int32}')
 
-    t_arc = TableSymbol('{node_out: int32, node_id: int32}')
+    t_arc = TableSymbol('t_arc', '{node_out: int32, node_id: int32}')
 
     joined = Join(t_arc, t_idx, "node_id")
 
