@@ -20,3 +20,13 @@ def test_str():
     x = NumberSymbol('x', 'real')
 
     assert str(x + 10) == 'x + 10'
+
+def ishashable(x):
+    try:
+        hash(x)
+        return True
+    except:
+        return False
+
+def test_NumberSymbol_is_hashable():
+    assert ishashable(x)

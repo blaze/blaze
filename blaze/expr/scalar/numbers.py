@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import operator
 from datashape import dshape
 from .core import Scalar, ScalarSymbol, BinOp, UnaryOp
+from ..core import Expr
 from .boolean import Eq, LT, GT
 
 
@@ -52,11 +53,15 @@ class Number(Scalar):
     def __rmod__(self, other):
         return Mod(other, self)
 
+    __hash__ = Expr.__hash__
 
-class NumberSymbol(Number, ScalarSymbol):
-    def __init__(self, token, dtype=None):
-        dtype = None or 'real'
-        ScalarSymbol.__init__(self, token, dtype)
+
+class NumberSymbol(ScalarSymbol, Number):
+    __slots__ = 'name', 'dtype'
+
+    def __init__(self, name, dtype=None):
+        self.name = name
+        self.dtype = dtype or 'real'
 
 
 class Arithmetic(BinOp, Number):
