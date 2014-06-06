@@ -82,3 +82,39 @@ def test_groupby():
     in_degree = dict(a.collect())
     assert in_degree['C'] == 2
     assert in_degree['A'] == 1
+
+@skip("Spark not yet fully supported")
+def test_jaccard():
+    data_idx_j = sc.parallelize([['A', 1],['B', 2],['C', 3],['D', 4],['E', 5],['F', 6]])
+    data_arc_j = sc.parallelize([[1, 3],[2, 3],[4, 3],[5, 3],[3, 1],[2, 1],[5, 1],[1, 6],[2, 6],[4, 6]])
+
+    #The tables we need to work with
+    t_idx_j = TableSymbol('{name: string, node_id: int32}') #Index of sites
+    t_arc_j = TableSymbol('{node_out: int32, node_id: int32}') # Links between sites
+    t_sel_j = TableSymbol('{name: string}') # A Selection table for just site names
+
+    join_names = Join(t_arc_j, t_idx_j, "node_id")
+    user_selected = Join(join_names, t_sel_j, "name")
+    proj_of_nodes = user_selected[['node_out', 'node_id']]
+    node_selfjoin = Join(proj_of_nodes, proj_of_nodes.relabel(
+        {'node_id':'node_other'}), "node_out")
+    #Filter here to get (a,b) node pairs where a < b
+    flter = node_selfjoin[ node_selfjoin['node_id'] < node_selfjoin['node_other']]
+    gby = By(flter, flter[['node_id', 'node_other']], flter['node_out'].count())
+    indeg_joined = Join(t_arc, t_idx, 'node_id')
+    indeg_t = By(indeg_joined, indeg_joined['node_id'], indeg_joined['node_id'].count())
+
+    #### Now we actually do the computation on the graph:
+    # The subset we care about
+    data_sel_j = sc.parallelize([['C'],['F']])
+    shared_neighbor_num = compute(gby, {t_sel_j: data_sel_j, t_arc:data_arc_j, t_idx_j:data_idx_j})
+    indeg = compute(indeg_t, {t_arc_j: data_arc_j, t_idx_j:data_idx_j})
+    indeg_py = dict(indeg.collect())
+    shared_neighbor_py = shared_neighbor_num.collect()
+    assert shared_neighbor_py == [((3, 6), 3)]
+    assert indeg_py == {1: 3, 3: 4, 6: 3}
+
+
+
+
+
