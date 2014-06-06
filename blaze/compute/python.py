@@ -19,6 +19,7 @@ import math
 from operator import itemgetter
 from functools import partial
 from toolz import map, isiterable
+from toolz.compatibility import zip
 
 from ..expr.table import *
 from ..expr.scalar.core import *
@@ -50,12 +51,27 @@ def compute(t, seq):
     return (x[index] for x in parent)
 
 
-@dispatch(ColumnWise, Sequence)
-def compute(t, seq):
-    arguments = [compute(arg, seq) for arg in t.arguments]
+def func_of_columnwise(t):
+    """
+    >>> t = TableSymbol('{x: real, y: real}')
+    >>> cw = t['x'] + t['y']
+    >>> func = func_of_columnwise(cw)
+    >>> func(2, 2)
+    4
+    """
     func_str = 'lambda %s: %s' % (', '.join(map(eval_str, t.argsymbols)),
                                   eval_str(t.expr))
-    func = eval(func_str)
+    return eval(func_str)
+
+
+@dispatch(ColumnWise, Sequence)
+def compute(t, seq):
+    if len(t.arguments) > 1:
+        seqs = itertools.tee(seq, len(t.arguments))
+    else:
+        seqs = [seq]
+    arguments = [compute(arg, s) for arg, s in zip(t.arguments, seqs)]
+    func = func_of_columnwise(t)
     return map(func, *arguments)
 
 
@@ -141,33 +157,29 @@ binops = {sum: (operator.add, 0),
 def compute(t, seq):
     parent = compute(t.parent, seq)
 
-    if isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
-        indices = [t.grouper.parent.columns.index(col)
-                        for col in t.grouper.columns]
-        grouper = operator.itemgetter(*indices)
-    else:
+    if not isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
         raise NotImplementedError("Grouper attribute of By must be Projection "
                                   "of parent table, got %s" % str(t.grouper))
 
-    # Match setting like
-    # By(t, t[column], t[column].reduction())
-    # TODO: Support more general streaming grouped reductions
     if (isinstance(t.apply, Reduction) and
-        isinstance(t.apply.parent, Column) and
-        t.apply.parent.parent.isidentical(t.grouper.parent) and
-        t.apply.parent.parent.isidentical(t.parent) and
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
+        a, b = itertools.tee(seq)
+        applied = compute(t.apply.parent, a)
+        grouped = compute(t.grouper, b)
 
-        col = t.apply.parent.columns[0]
-        getter = operator.itemgetter(t.apply.parent.parent.columns.index(col))
+        zipped = zip(grouped, applied)
+
         def binop2(acc, x):
-            x = getter(x)
-            return binop(acc, x)
+            return binop(acc, x[1])
 
-        d = reduceby(grouper, binop2, parent, initial)
+        d = reduceby(operator.itemgetter(0), binop2, zipped, initial)
     else:
+        indices = [t.grouper.parent.columns.index(col)
+                        for col in t.grouper.columns]
+        grouper = operator.itemgetter(*indices)
+
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 

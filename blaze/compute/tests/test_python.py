@@ -72,6 +72,11 @@ def test_by_one():
     assert set(compute(By(t, t['name'], t['amount'].sum()), data)) == \
             set([('Alice', 150), ('Bob', 200)])
 
+def test_by_compound_apply():
+    print(compute(By(t, t['name'], (t['amount'] + 1).sum()), data))
+    assert set(compute(By(t, t['name'], (t['amount'] + 1).sum()), data)) == \
+            set([('Alice', 152), ('Bob', 201)])
+
 
 def test_by_two():
     result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
