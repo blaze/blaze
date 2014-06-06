@@ -1,4 +1,4 @@
-from blaze.expr.scalar.core import ScalarSymbol
+from blaze.expr.scalar.core import ScalarSymbol, eval_str
 from datashape import dshape
 
 
