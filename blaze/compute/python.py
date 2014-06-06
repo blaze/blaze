@@ -51,19 +51,6 @@ def compute(t, seq):
     return (x[index] for x in parent)
 
 
-def func_of_columnwise(t):
-    """
-    >>> t = TableSymbol('{x: real, y: real}')
-    >>> cw = t['x'] + t['y']
-    >>> func = func_of_columnwise(cw)
-    >>> func(2, 2)
-    4
-    """
-    func_str = 'lambda %s: %s' % (', '.join(map(eval_str, t.argsymbols)),
-                                  eval_str(t.expr))
-    return eval(func_str)
-
-
 @dispatch(ColumnWise, Sequence)
 def compute(t, seq):
     if len(t.arguments) > 1:
@@ -71,7 +58,7 @@ def compute(t, seq):
     else:
         seqs = [seq]
     arguments = [compute(arg, s) for arg, s in zip(t.arguments, seqs)]
-    func = func_of_columnwise(t)
+    func = eval(core.columnwise_funcstr(t))
     return map(func, *arguments)
 
 

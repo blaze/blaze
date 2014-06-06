@@ -50,3 +50,14 @@ def compute(t, d):
 @dispatch(Join, object)
 def compute(t, o):
     return compute(t, o, o)
+
+
+def columnwise_funcstr(t):
+    """
+    >>> t = TableSymbol('{x: real, y: real}')
+    >>> cw = t['x'] + t['y']
+    >>> columnwise_funcstr(cw)
+    'lambda a, b: a + b'
+    """
+    return 'lambda %s: %s' % (', '.join(map(eval_str, t.argsymbols)),
+                              eval_str(t.expr))
