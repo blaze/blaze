@@ -21,11 +21,12 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION nose cython numpy pycparser pyparsing pyyaml flask pytables netcdf4 cffi multipledispatch sqlalchemy pandas h5py pip
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION nose numpy sqlalchemy pandas h5py pip
   - source activate test-environment
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; fi
-  - pip install multipledispatch
-  - pip install toolz cytoolz
+  - pip install toolz cytoolz multipledispatch
+
+  # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 
   # Install BLZ
