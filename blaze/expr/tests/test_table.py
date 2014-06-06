@@ -202,9 +202,17 @@ def test_argsymbol():
 
 
 def test_columnwise():
-    t = TableSymbol('{x: int, y: int}')
+    from blaze.expr.scalar import Add, Eq, Mul
+    s = argsymbol
+    t = TableSymbol('{x: int, y: int, z: int}')
     x = t['x']
     y = t['y']
+    z = t['z']
     assert columnwise(Add, x, y).expr == argsymbol(0) + argsymbol(1)
+    assert columnwise(Add, x, y).arguments == (x, y)
 
-    assert columnwise(Add, x, y).args == (x, y)
+    c1 = columnwise(Add, x, y)
+    c2 = columnwise(Mul, x, z)
+
+    assert columnwise(Eq, c1, c2).expr == ((s(0) + s(1)) == (s(0), s(2)))
+    assert columnwise(Eq, c1, c2).arguments == (x, y, z)

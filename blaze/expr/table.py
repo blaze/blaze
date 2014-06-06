@@ -225,9 +225,15 @@ def argsymbol(i, dtype=None):
 
 
 def columnwise(op, lhs, rhs):
-    """ Merge columns with op """
-    left_args = lhs.args if isinstance(lhs, ColumnWise) else (lhs,)
-    right_args = rhs.args if isinstance(rhs, ColumnWise) else (rhs,)
+    """ Merge columns with op
+
+    *expr :: ScalarExpr
+    args :: (Column, base)
+
+    """
+    left_args = lhs.arguments if isinstance(lhs, ColumnWise) else (lhs,)
+    right_args = rhs.arguments if isinstance(rhs, ColumnWise) else (rhs,)
+
     args = tuple(unique(left_args + right_args))
     if isinstance(lhs, ColumnWise):
         lhs_expr = lhs.expr.subs({argsymbol(left_args.index(arg)):
