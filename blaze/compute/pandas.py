@@ -23,9 +23,8 @@ from multipledispatch import dispatch
 import numpy as np
 
 from ..expr.table import *
+from ..expr.scalar import UnaryOp, BinOp
 from . import core
-
-from numpy import exp, log, sin, cos, tan
 
 __all__ = ['compute']
 
@@ -44,11 +43,23 @@ def compute(t, df):
 
 @dispatch(ColumnWise, DataFrame)
 def compute(t, df):
-    arguments = [compute(arg, df) for arg in t.arguments]
-    funcstr = core.columnwise_funcstr(t)
-    func = eval(funcstr)
-    result = func(*arguments)
-    return result
+    expr = t.expr
+    expr = expr.subs(dict(zip(t.argsymbols, t.arguments)))
+    return compute(expr, df)
+
+
+@dispatch(BinOp, DataFrame)
+def compute(t, df):
+    lhs = compute(t.lhs, df)
+    rhs = compute(t.rhs, df)
+    return t.op(lhs, rhs)
+
+
+@dispatch(UnaryOp, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    op = getattr(np, t.symbol)
+    return op(parent)
 
 
 @dispatch(Selection, DataFrame)
