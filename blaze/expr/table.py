@@ -9,7 +9,7 @@ from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
 from .core import Expr, Scalar
-from .scalar import ScalarSymbol
+from .scalar import ScalarSymbol, NumberSymbol
 from ..utils import unique
 
 
@@ -221,7 +221,30 @@ def argsymbol(i, dtype=None):
         token = symbols[i]
     else:
         token = "%s_%d" % (symbols[i % 26], i // 26 + 1)
-    return ScalarSymbol(token, dtype)
+    return NumberSymbol(token, dtype)
+
+
+def columnwise(op, lhs, rhs):
+    """ Merge columns with op """
+    left_args = lhs.args if isinstance(lhs, ColumnWise) else (lhs,)
+    right_args = rhs.args if isinstance(rhs, ColumnWise) else (rhs,)
+    args = tuple(unique(left_args + right_args))
+    if isinstance(lhs, ColumnWise):
+        lhs_expr = lhs.expr.subs({argsymbol(left_args.index(arg)):
+                                  argsymbol(args.index(arg))
+                                  for arg in left_args})
+    else:
+        lhs_expr = argsymbol(args.index(lhs))
+    if isinstance(rhs, ColumnWise):
+        rhs_expr = rhs.expr.subs({argsymbol(right_args.index(arg)):
+                                  argsymbol(args.index(arg))
+                                  for arg in right_args})
+    else:
+        rhs_expr = argsymbol(args.index(rhs))
+
+    expr = op(lhs_expr, rhs_expr)
+
+    return ColumnWise2(expr, args)
 
 
 class ColumnWise(TableExpr):
@@ -229,6 +252,7 @@ class ColumnWise(TableExpr):
 
     a op b
     """
+
     __hash__ = Expr.__hash__
 
     def __eq__(self, other):
@@ -311,6 +335,13 @@ class ColumnWise(TableExpr):
 
     def std(self):
         return std(self)
+
+
+class ColumnWise2(ColumnWise):
+    __slots__ = 'expr', 'arguments'
+    def __init__(self, expr, arguments):
+        self.expr = expr
+        self.arguments = arguments
 
 
 class BinOp(ColumnWise):

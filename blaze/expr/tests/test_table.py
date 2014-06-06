@@ -198,3 +198,13 @@ def test_argsymbol():
     assert argsymbol(0, 'int') == ScalarSymbol('a', 'int')
     assert argsymbol(2, 'real') == ScalarSymbol('c', 'real')
     assert argsymbol(26, 'bool') == ScalarSymbol('a_2', 'bool')
+
+
+
+def test_columnwise():
+    t = TableSymbol('{x: int, y: int}')
+    x = t['x']
+    y = t['y']
+    assert columnwise(Add, x, y).expr == argsymbol(0) + argsymbol(1)
+
+    assert columnwise(Add, x, y).args == (x, y)
