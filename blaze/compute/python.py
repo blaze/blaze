@@ -18,8 +18,10 @@ from collections import Iterator
 import math
 from operator import itemgetter
 from functools import partial
+from toolz import map, isiterable
 
 from ..expr.table import *
+from ..expr.scalar.core import *
 from ..compatibility import builtins
 from .. import utils
 from ..utils import groupby, get, reduceby, unique
@@ -44,32 +46,13 @@ def compute(t, seq):
     return (x[index] for x in parent)
 
 
-@dispatch(BinOp, Sequence)
+@dispatch(ColumnWise, Sequence)
 def compute(t, seq):
-    lhs_istable = isinstance(t.lhs, TableExpr)
-    rhs_istable = isinstance(t.rhs, TableExpr)
-
-    if lhs_istable and rhs_istable:
-
-        seq1, seq2 = itertools.tee(seq, 2)
-        lhs = compute(t.lhs, seq1)
-        rhs = compute(t.rhs, seq2)
-
-        return (t.op(left, right) for left, right in zip(lhs, rhs))
-
-    elif lhs_istable:
-
-        lhs = compute(t.lhs, seq)
-        right = compute(t.rhs, None)
-
-        return (t.op(left, right) for left in lhs)
-
-    elif rhs_istable:
-
-        rhs = compute(t.rhs, seq)
-        left = compute(t.lhs, None)
-
-        return (t.op(left, right) for right in rhs)
+    arguments = [compute(arg, seq) for arg in t.arguments]
+    func_str = 'lambda %s: %s' % (', '.join(map(eval_str, t.argsymbols)),
+                                  eval_str(t.expr))
+    func = eval(func_str)
+    return map(func, *arguments)
 
 
 @dispatch(Selection, Sequence)
@@ -85,12 +68,6 @@ def compute(t, seq):
 def compute(t, seq):
     return seq
 
-
-@dispatch(UnaryOp, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    op = getattr(math, t.symbol)
-    return (op(x) for x in parent)
 
 @dispatch(Reduction, Sequence)
 def compute(t, seq):

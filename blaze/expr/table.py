@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
+from toolz import concat
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol, NumberSymbol
 from .scalar import *
@@ -231,6 +232,8 @@ def _index(t, element):
         if eq(item, element):
             return i
 
+    raise IndexError("Could not find %s in %s" % (element, t))
+
 
 def argsymbol(i, dtype=None):
     """ The symbol for the ith argument """
@@ -242,43 +245,38 @@ def argsymbol(i, dtype=None):
     return NumberSymbol(token, dtype)
 
 
-def columnwise(op, lhs, rhs):
+def columnwise(op, *inputs):
     """ Merge columns with op
 
     *expr :: ScalarExpr
     args :: (Column, base)
 
     """
-    left_args = lhs.arguments if isinstance(lhs, ColumnWise) else (lhs,)
-    right_args = rhs.arguments if isinstance(rhs, ColumnWise) else (rhs,)
+    input_args = [inp.arguments if isinstance(inp, ColumnWise) else (inp,)
+                    for inp in inputs]
 
-    # Remove non-expr args like 1 or 'Alice'
-    left_args = [arg for arg in left_args if isinstance(arg, TableExpr)]
-    right_args = [arg for arg in right_args if isinstance(arg, TableExpr)]
+    # Remove literals
+    input_args = [[arg for arg in args if isinstance(arg, TableExpr)]
+                    for args in input_args]
 
-    args = tuple(unique(left_args + right_args, key=str))
-    if isinstance(lhs, ColumnWise):
-        lhs_expr = lhs.expr.subs({argsymbol(_index(left_args, arg)):
+
+    args = tuple(unique(concat(input_args), key=str))
+    exprs = []
+    for inp, iargs in zip(inputs, input_args):
+        if isinstance(inp, ColumnWise):
+            expr = inp.expr.subs({argsymbol(_index(iargs, arg)):
                                   argsymbol(_index(args, arg))
-                                  for arg in left_args})
-    elif isinstance(lhs, TableExpr):
-        lhs_expr = argsymbol(_index(args, lhs))
-    else:
-        lhs_expr = lhs
-    if isinstance(rhs, ColumnWise):
-        rhs_expr = rhs.expr.subs({argsymbol(_index(right_args, arg)):
-                                  argsymbol(_index(args, arg))
-                                  for arg in right_args})
-    elif isinstance(rhs, TableExpr):
-        rhs_expr = argsymbol(_index(args, rhs))
-    else:
-        rhs_expr = rhs
+                                  for arg in iargs})
+        elif isinstance(inp, TableExpr):
+            expr = argsymbol(_index(args, inp))
+        else:
+            expr = inp
 
-    expr = op(lhs_expr, rhs_expr)
+        exprs.append(expr)
+
+    expr = op(*exprs)
 
     return ColumnWise(expr, args)
-
-
 
 
 class ColumnWise(TableExpr, ColumnSyntaxMixin):
@@ -368,6 +366,7 @@ class UnaryOp(ColumnWise):
     @property
     def symbol(self):
         return type(self).__name__
+
 
 class sin(UnaryOp): pass
 class cos(UnaryOp): pass
