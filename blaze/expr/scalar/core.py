@@ -53,15 +53,18 @@ class UnaryOp(Scalar):
 
 
 class ScalarSymbol(Scalar):
-    __slots__ = 'token', 'dtype'
+    __slots__ = 'name', 'dtype'
 
-    def __init__(self, token, dtype):
-        self.token = token
+    def __init__(self, name, dtype):
+        self.name = name
         self.dtype = dtype
 
     @property
     def dshape(self):
         return dshape(self.dtype)
 
+    def __str__(self):
+        return self.name
+
     def eval_str(self):
-        return str(self.token)
+        return str(self.name)

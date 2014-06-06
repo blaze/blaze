@@ -3,7 +3,7 @@ from datashape import dshape
 
 
 def test_basic():
-    s = ScalarSymbol('x', 'real')
-    assert eval(str(s)) == s
+    x = ScalarSymbol('x', 'real')
+    assert eval(str(x)) == x
 
-    assert s.dshape == dshape('real')
+    assert x.dshape == dshape('real')
