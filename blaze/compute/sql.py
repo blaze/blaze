@@ -20,8 +20,9 @@ from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
 
-from blaze.expr.table import *
-from blaze.utils import unique
+from ..expr.table import *
+from ..expr.scalar import BinOp, UnaryOp
+from ..utils import unique
 from . import core
 
 __all__ = ['compute', 'computefull', 'select']
@@ -38,11 +39,24 @@ def compute(t, s):
     return parent.c.get(t.columns[0])
 
 
+@dispatch(ColumnWise, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    expr = t.expr
+    expr = expr.subs(dict(zip(t.argsymbols, t.arguments)))
+    return compute(expr, s)
+
+
 @dispatch(BinOp, sqlalchemy.sql.Selectable)
 def compute(t, s):
     lhs = compute(t.lhs, s)
     rhs = compute(t.rhs, s)
     return t.op(lhs, rhs)
+
+@dispatch(UnaryOp, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    op = getattr(sa.func, t.symbol)
+    return op(parent)
 
 
 @dispatch(Selection, sqlalchemy.sql.Selectable)
@@ -91,12 +105,6 @@ def compute(t, lhs, rhs):
                      key=lambda c: c.name)
     return select(list(columns)).select_from(join)
 
-
-@dispatch(UnaryOp, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    op = getattr(sa.func, t.symbol)
-    return op(parent)
 
 
 names = {mean: 'avg',
