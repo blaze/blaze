@@ -39,25 +39,26 @@ install:
   # - cd ..
 
   # Install dynd
-  - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
-  - mkdir libdynd/build
-  - pushd libdynd/build
-  - cmake -DDYND_BUILD_TESTS=False ..
-  - make
-  - mkdir ../lib
-  - cp libdynd* ../lib
-  - chmod +x libdynd-config
-  - export PATH=$PATH:$PWD
-  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
-  - popd
-  - git clone --depth=1 https://github.com/ContinuumIO/dynd-python.git
-  - mkdir dynd-python/build
-  - pushd dynd-python/build
-  - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SEPARATE_LIBDYND=ON -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} ..
-  - make
-  - make install
-  - export PYTHONPATH=$PYTHONPATH:$PWD
-  - popd
+  - conda install -c mwiebe dynd-python
+  # - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
+  # - mkdir libdynd/build
+  # - pushd libdynd/build
+  # - cmake -DDYND_BUILD_TESTS=False ..
+  # - make
+  # - mkdir ../lib
+  # - cp libdynd* ../lib
+  # - chmod +x libdynd-config
+  # - export PATH=$PATH:$PWD
+  # - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+  # - popd
+  # - git clone --depth=1 https://github.com/ContinuumIO/dynd-python.git
+  # - mkdir dynd-python/build
+  # - pushd dynd-python/build
+  # - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SEPARATE_LIBDYND=ON -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} ..
+  # - make
+  # - make install
+  # - export PYTHONPATH=$PYTHONPATH:$PWD
+  # - popd
 
   # Install Blaze
   - python setup.py install
