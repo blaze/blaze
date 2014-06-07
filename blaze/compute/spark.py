@@ -7,7 +7,7 @@ from operator import itemgetter
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
-from .python import compute
+from .python import compute, rowfunc, RowWise
 from ..compatibility import builtins
 from ..expr import table
 
@@ -32,18 +32,10 @@ except:
     pass
 
 
-@dispatch(Projection, pyspark.rdd.RDD)
+@dispatch(RowWise, pyspark.rdd.RDD)
 def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
-    cols = [t.parent.schema[0].names.index(col) for col in t.columns]
-    return rdd.map(lambda x: [x[c] for c in cols])
-
-
-@dispatch(Column, pyspark.rdd.RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
-    col_idx = t.parent.schema[0].names.index(t.columns[0])
-    return rdd.map(lambda x: x[col_idx])
+    func = rowfunc(t, [])
+    return rdd.map(func)
 
 
 @dispatch(TableSymbol, pyspark.rdd.RDD)
@@ -51,39 +43,12 @@ def compute(t, s):
     return s
 
 
-def func_from_columnwise(t):
-    columns = [t.parent.columns.index(arg.columns[0]) for arg in t.arguments]
-    _func = eval(core.columnwise_funcstr(t))
-
-    getter = itemgetter(*columns)
-    def func(x):
-        fields = getter(x)
-        return func(*fields)
-
-    return func
-
-
-@dispatch(ColumnWise, pyspark.rdd.RDD)
-def compute(t, rdd):
-    if not all(isinstance(arg, Column) for arg in t.arguments):
-        raise NotImplementedError("Expected arguments to be columns")
-    parents = [arg.parent for arg in t.arguments]
-    if not len(set(parents)) == 1:
-        raise NotImplementedError("Columnwise defined only for single parent")
-
-    rdd = compute(parents[0], rdd)
-
-    func = func_from_columnwise(t)
-    return rdd.map(func)
-
 
 @dispatch(Selection, pyspark.rdd.RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    print(core.columnwise_funcstr(t.predicate))
-    _predicate = eval(core.columnwise_funcstr(t.predicate))
-    predicate = lambda x: _predicate(*x)
-    return rdd.filter(_predicate)
+    predicate = rowfunc(t.predicate, [])
+    return rdd.filter(predicate)
 
 
 @dispatch(Join, pyspark.rdd.RDD, pyspark.rdd.RDD)
@@ -123,32 +88,16 @@ reductions = {table.sum: builtins.sum,
 @dispatch(By, pyspark.rdd.RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-
-    if not isinstance(t.grouper, Projection) and t.grouper.parent == t:
-        raise NotImplementedError("By grouper must be projection of table")
-
-    indices = [t.grouper.parent.columns.index(c) for c in t.grouper.columns]
-    group_fn = itemgetter(*indices)
-
     try:
         reduction = reductions[type(t.apply)]
     except KeyError:
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
-    if isinstance(t.apply.parent, ColumnWise):
-        pre_reduction = func_from_columnwise(t.apply.parent)
-    elif isinstance(t.apply.parent, Column):
-        pre_reduction = itemgetter(t.apply.parent.parent.columns.index(
-                                        t.apply.parent.columns[0]))
-    else:
-        raise NotImplementedError("By only implemented for reductions of"
-                                  " Columns or ColumnWises.\n"
-                                  "Got: %s" % t.apply.parent)
 
-    def pre_reduction_func(x):
-        return group_fn(x), pre_reduction(x)
+    grouper = rowfunc(t.grouper, [])
+    pre = rowfunc(t.apply.parent, [])
 
-    return (rdd.map(pre_reduction_func)
+    return (rdd.map(lambda x: (grouper(x), pre(x)))
                .groupByKey()
                .map(lambda x: (x[0], reduction(x[1]))))
 
