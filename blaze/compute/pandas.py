@@ -44,7 +44,8 @@ def compute(t, df):
 @dispatch(ColumnWise, DataFrame)
 def compute(t, df):
     expr = t.expr
-    expr = expr.subs(dict(zip(t.argsymbols, t.arguments)))
+    expr = expr.subs(dict(zip([NumberSymbol(c) for c in t.parent.columns],
+                              [t.parent[c] for c in t.parent.columns])))
     return compute(expr, df)
 
 
