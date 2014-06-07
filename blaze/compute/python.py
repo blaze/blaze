@@ -53,13 +53,8 @@ def compute(t, seq):
 
 @dispatch(ColumnWise, Sequence)
 def compute(t, seq):
-    if len(t.arguments) > 1:
-        seqs = itertools.tee(seq, len(t.arguments))
-    else:
-        seqs = [seq]
-    arguments = [compute(arg, s) for arg, s in zip(t.arguments, seqs)]
-    func = eval(core.columnwise_funcstr(t))
-    return map(func, *arguments)
+    func = eval(core.columnwise_funcstr(t, variadic=False, full=True))
+    return map(func, seq)
 
 
 @dispatch(Selection, Sequence)

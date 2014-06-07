@@ -64,6 +64,10 @@ def test_selection_by_indexing():
 def test_columnwise():
     t = TableSymbol('t', '{x: real, y: real, z: real}')
     x, y, z = t['x'], t['y'], t['z']
+    assert (x + y).active_columns() == ['x', 'y']
+    assert (z + y).active_columns() == ['y', 'z']
+    assert ((z + y) * x).active_columns() == ['x', 'y', 'z']
+
     expr = z % x * y + z ** 2
     assert isinstance(expr, ColumnWise)
 
@@ -97,8 +101,8 @@ def test_traverse():
 
     expr = t[t['amount'] < 0]['name']
     trav = list(expr.traverse())
-    assert t['amount'] in trav
-    assert (t['amount'] < 0) in trav
+    assert any(t['amount'].isidentical(x) for x in trav)
+    assert any((t['amount'] < 0).isidentical(x) for x in trav)
 
 
 def test_unary_ops():
@@ -195,31 +199,22 @@ def test_apply():
     assert s.dshape == dshape('real')
 
 
-def test_argsymbol():
-    assert argsymbol(0, 'int') == ScalarSymbol('a', 'int')
-    assert argsymbol(2, 'real') == ScalarSymbol('c', 'real')
-    assert argsymbol(26, 'bool') == ScalarSymbol('a_2', 'bool')
-
-
-
 def test_columnwise():
     from blaze.expr.scalar import Add, Eq, Mul
-    s = argsymbol
     t = TableSymbol('t', '{x: int, y: int, z: int}')
     x = t['x']
     y = t['y']
     z = t['z']
-    assert columnwise(Add, x, y).expr == argsymbol(0) + argsymbol(1)
-    assert columnwise(Add, x, y).arguments == (x, y)
+    assert str(columnwise(Add, x, y).expr) == 'x + y'
+    assert columnwise(Add, x, y).parent.isidentical(t)
 
     c1 = columnwise(Add, x, y)
     c2 = columnwise(Mul, x, z)
 
-    assert columnwise(Eq, c1, c2).expr == ((s(0) + s(1)) == (s(0), s(2)))
-    assert columnwise(Eq, c1, c2).arguments == (x, y, z)
+    assert eval_str(columnwise(Eq, c1, c2).expr) == '(x + y) == (x * z)'
+    assert columnwise(Eq, c1, c2).parent.isidentical(t)
 
-    assert columnwise(Add, x, 1).expr == argsymbol(0) + 1
-    assert columnwise(Add, x, 1).arguments == (argsymbol(0),)
+    assert str(columnwise(Add, x, 1).expr) == 'x + 1'
 
 
 def test_TableSymbol_printing_is_legible():

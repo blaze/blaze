@@ -8,7 +8,8 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, curry
+from toolz import concat, partial, first, pipe
+from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol, NumberSymbol
@@ -237,49 +238,35 @@ def _index(t, element):
     raise IndexError("Could not find %s in %s" % (element, t))
 
 
-def argsymbol(i, dtype=None):
-    """ The symbol for the ith argument """
-    symbols = 'abcdefghijklmnopqrstuvwxyz'
-    if i < len(symbols):
-        token = symbols[i]
-    else:
-        token = "%s_%d" % (symbols[i % 26], i // 26 + 1)
-    return NumberSymbol(token, dtype)
 
-
-@curry
-def columnwise(op, *inputs):
+def columnwise(op, *column_inputs):
     """ Merge columns with op
 
     *expr :: ScalarExpr
     args :: (Column, base)
 
     """
-    input_args = [inp.arguments if isinstance(inp, ColumnWise) else (inp,)
-                    for inp in inputs]
-
-    # Remove literals
-    input_args = [[arg for arg in args if isinstance(arg, TableExpr)]
-                    for args in input_args]
-
-
-    args = tuple(unique(concat(input_args), key=str))
-    exprs = []
-    for inp, iargs in zip(inputs, input_args):
-        if isinstance(inp, ColumnWise):
-            expr = inp.expr.subs(dict((argsymbol(_index(iargs, arg)),
-                                       argsymbol(_index(args, arg)))
-                                      for arg in iargs))
-        elif isinstance(inp, TableExpr):
-            expr = argsymbol(_index(args, inp))
+    expr_inputs = []
+    parents = set()
+    for col in column_inputs:
+        if isinstance(col, ColumnWise):
+            expr_inputs.append(col.expr)
+            parents.add(col.parent)
+        elif isinstance(col, Column):
+            # TODO: specify dtype
+            expr_inputs.append(NumberSymbol(col.columns[0]))
+            parents.add(col.parent)
         else:
-            expr = inp
+            # maybe something like 5 or 'Alice'
+            expr_inputs.append(col)
 
-        exprs.append(expr)
+    if not len(parents) == 1:
+        raise ValueError("All inputs must be from same Table.\n"
+                         "Saw the following tables: %s"
+                         % ', '.join(map(str, parents)))
 
-    expr = op(*exprs)
-
-    return ColumnWise(expr, args)
+    expr = op(*expr_inputs)
+    return ColumnWise(first(parents), expr)
 
 
 class ColumnWise(TableExpr, ColumnSyntaxMixin):
@@ -287,14 +274,10 @@ class ColumnWise(TableExpr, ColumnSyntaxMixin):
 
     a op b
     """
-    __slots__ = 'expr', 'arguments'
-    def __init__(self, expr, arguments):
+    __slots__ = 'parent', 'expr'
+    def __init__(self, parent, expr):
+        self.parent = parent
         self.expr = expr
-        self.arguments = arguments
-
-    @property
-    def argsymbols(self):
-        return tuple(argsymbol(i) for i, arg in enumerate(self.arguments))
 
     __hash__ = Expr.__hash__
 
@@ -303,8 +286,14 @@ class ColumnWise(TableExpr, ColumnSyntaxMixin):
         return self.expr.dshape
 
     def __str__(self):
-        return eval_str(self.expr.subs(dict(zip(self.argsymbols,
-                                                map(str, self.arguments)))))
+        columns = self.active_columns()
+        newcol = lambda c: "%s['%s']" % (self.parent, c)
+        return eval_str(self.expr.subs(dict(zip(columns,
+                                                map(newcol, columns)))))
+
+    def active_columns(self):
+        return sorted(unique(x.name for x in self.traverse()
+                                    if isinstance(x, ScalarSymbol)))
 
 
 class Join(TableExpr):
@@ -349,11 +338,11 @@ class Join(TableExpr):
         return dshape(Record(rec))
 
 
-sin = columnwise(scalar.sin)
-cos = columnwise(scalar.cos)
-tan = columnwise(scalar.tan)
-exp = columnwise(scalar.exp)
-log = columnwise(scalar.log)
+sin = partial(columnwise, scalar.sin)
+cos = partial(columnwise, scalar.cos)
+tan = partial(columnwise, scalar.tan)
+exp = partial(columnwise, scalar.exp)
+log = partial(columnwise, scalar.log)
 
 
 class Reduction(Scalar):
