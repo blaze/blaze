@@ -36,25 +36,32 @@ __all__ = ['compute', 'Sequence']
 
 Sequence = (tuple, list, Iterator)
 
+
 @dispatch(Projection, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
+def rowfunc(t, seq):
     indices = [t.parent.columns.index(col) for col in t.columns]
-    get = operator.itemgetter(*indices)
-    return (get(x) for x in parent)
-
-
-@dispatch(Column, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    index = t.parent.columns.index(t.columns[0])
-    return (x[index] for x in parent)
+    return operator.itemgetter(*indices)
 
 
 @dispatch(ColumnWise, Sequence)
+def rowfunc(t, seq):
+    return eval(core.columnwise_funcstr(t, variadic=False, full=True))
+
+
+@dispatch(Map, Sequence)
+def rowfunc(t, seq):
+    if len(t.parent.columns) == 1:
+        return t.func
+    else:
+        return partial(apply, t.func)
+
+RowWise = (Projection, ColumnWise, Map)
+
+
+@dispatch(RowWise, Sequence)
 def compute(t, seq):
-    func = eval(core.columnwise_funcstr(t, variadic=False, full=True))
-    return map(func, seq)
+    parent = compute(t.parent, seq)
+    return map(rowfunc(t, seq), parent)
 
 
 @dispatch(Selection, Sequence)
@@ -231,15 +238,6 @@ def compute(t, seq):
 @dispatch((Label, ReLabel), Sequence)
 def compute(t, seq):
     return compute(t.parent, seq)
-
-
-@dispatch(Map, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    if len(t.parent.columns) == 1:
-        return map(t.func, parent)
-    else:
-        return itertools.starmap(t.func, parent)
 
 
 @dispatch(Apply, Sequence)
