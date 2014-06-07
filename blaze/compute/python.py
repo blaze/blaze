@@ -20,11 +20,12 @@ from operator import itemgetter
 from functools import partial
 from toolz import map, isiterable
 from toolz.compatibility import zip
+import sys
 
 from ..expr.table import *
 from ..expr.scalar.core import *
 from ..expr import scalar
-from ..compatibility import builtins
+from ..compatibility import builtins, apply
 from .. import utils
 from ..utils import groupby, get, reduceby, unique
 from . import core
@@ -45,7 +46,11 @@ def rowfunc(t, seq):
 
 @dispatch(ColumnWise, Sequence)
 def rowfunc(t, seq):
-    return eval(core.columnwise_funcstr(t, variadic=False, full=True))
+    if sys.version_info[0] == 3:
+        func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
+        return partial(apply, func)
+    elif sys.version_info[0] == 2:
+        return eval(core.columnwise_funcstr(t, variadic=False, full=True))
 
 
 @dispatch(Map, Sequence)
