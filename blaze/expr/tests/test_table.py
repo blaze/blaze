@@ -32,6 +32,8 @@ def test_Projection():
     print(dshape('var * int32'))
     assert t['amount'].dshape == dshape('var * {amount: int32}')
 
+    assert eval(str(p)).isidentical(p)
+
 
 def test_indexing():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')

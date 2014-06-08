@@ -30,7 +30,7 @@ class TableExpr(Expr):
     def __getitem__(self, key):
         if isinstance(key, ColumnWise) and key.schema == dshape('bool'):
             return Selection(self, key)
-        if isinstance(key, (tuple, list)):
+        if isinstance(key, list):
             key = tuple(key)
             if not all(col in self.columns for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
@@ -94,8 +94,8 @@ class Projection(TableExpr):
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
     def __str__(self):
-        return '%s[%s]' % (self.parent,
-                           ', '.join(["'%s'" % col for col in self.columns]))
+        return '%s[[%s]]' % (self.parent,
+                             ', '.join(["'%s'" % col for col in self.columns]))
 
 
 class ColumnSyntaxMixin(object):
