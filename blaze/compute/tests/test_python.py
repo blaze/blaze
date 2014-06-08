@@ -35,6 +35,14 @@ def test_eq():
     assert list(compute(t['amount'] == 100, data)) == [x[1] == 100 for x in data]
 
 
+def test_ne():
+    thex = list(compute(t['amount'] != 100, data))
+    they = [x[1] != 100 for x in data]
+    #import pdb
+    #pdb.set_trace()
+    assert list(compute(t['amount'] != 100, data)) == [x[1] != 100 for x in data]
+
+
 def test_selection():
     assert list(compute(t[t['amount'] == 0], data)) == \
                 [x for x in data if x[1] == 0]

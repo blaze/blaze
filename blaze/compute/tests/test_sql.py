@@ -49,6 +49,10 @@ def test_eq():
     assert str(compute(t['amount'] == 100, s)) == str(s.c.amount == 100)
 
 
+def test_ne():
+    assert str(compute(t['amount'] != 100, s)) == str(s.c.amount != 100)
+
+
 def test_selection():
     assert str(compute(t[t['amount'] == 0], s)) == \
             str(sa.select([s]).where(s.c.amount == 0))

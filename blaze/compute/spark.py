@@ -125,3 +125,15 @@ def compute(t, rdd):
 @dispatch((Label, ReLabel), pyspark.rdd.RDD)
 def compute(t, rdd):
     return compute(t.parent, rdd)
+
+
+@dispatch(Distinct, pyspark.rdd.RDD)
+def compute(t, rdd):
+    parent = compute(t.parent, rdd)
+    return parent.distinct()
+
+
+@dispatch(Map, pyspark.rdd.RDD)
+def compute(t, rdd):
+    parent = compute(t.parent, rdd)
+    return parent.map(t.func)

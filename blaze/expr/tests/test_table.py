@@ -40,16 +40,20 @@ def test_relational():
     t = TableSymbol('{name: string, amount: int, id: int}')
 
     r = Eq(t['name'], 'Alice')
+    nr = Ne(t['name'], 'Alice')
 
     assert r.dshape == dshape('var * bool')
+    assert nr.dshape == dshape('var * bool')
 
 
 def test_selection():
     t = TableSymbol('{name: string, amount: int, id: int}')
 
     s = Selection(t, Eq(t['name'], 'Alice'))
+    ns = Selection(t, Ne(t['name'], 'Alice'))
 
     assert s.dshape == t.dshape
+    assert ns.dshape == t.dshape
 
 
 def test_selection_by_indexing():

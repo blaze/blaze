@@ -116,6 +116,9 @@ class Column(Projection):
     def __eq__(self, other):
         return Eq(self, other)
 
+    def __ne__(self, other):
+        return Ne(self, other)
+
     def __lt__(self, other):
         return LT(self, other)
 
@@ -222,6 +225,9 @@ class ColumnWise(TableExpr):
 
     def __eq__(self, other):
         return Eq(self, other)
+
+    def __ne__(self, other):
+        return Ne(self, other)
 
     def __lt__(self, other):
         return LT(self, other)
@@ -334,6 +340,11 @@ class Relational(BinOp):
 class Eq(Relational):
     symbol = '=='
     op = operator.eq
+
+
+class Ne(Relational):
+    symbol = '!='
+    op = operator.ne
 
 
 class GT(Relational):
