@@ -72,7 +72,7 @@ class TestBigJSON(unittest.TestCase):
         dd = JSON(self.filename, 'r')
         s = str(dd.dshape)
         for word in ['Thumbnail', 'string', 'int', 'images', 'type']:
-            self.assertIn(word, s)
+            assert word in s
 
 
 json_buf = u"[1, 2, 3, 4, 5]"
