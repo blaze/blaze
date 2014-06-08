@@ -5,14 +5,22 @@ from itertools import chain
 import h5py
 from dynd import nd
 import datashape
+from datashape import var
+from datashape.discovery import dispatch
 
 from .core import DataDescriptor
 from ..utils import partition_all, get
+from ..compatibility import _strtypes
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
 
-__all__ = ['HDF5']
+__all__ = ['HDF5', 'discover']
+
+
+@dispatch(h5py.Dataset)
+def discover(d):
+    return datashape.from_numpy(d.shape, d.dtype)
 
 
 class HDF5(DataDescriptor):
@@ -46,8 +54,12 @@ class HDF5(DataDescriptor):
         self.datapath = datapath
         self.mode = mode
 
+        if isinstance(schema, _strtypes):
+            schema = datashape.dshape(schema)
+        if isinstance(dshape, _strtypes):
+            dshape = datashape.dshape(dshape)
         if schema and not dshape:
-            dshape = 'var * ' + str(schema)
+            dshape = var * datashape.dshape(schema)
 
         # TODO: provide sane defaults for kwargs
         # Notably chunks and maxshape
@@ -62,25 +74,20 @@ class HDF5(DataDescriptor):
 
         with h5py.File(path, mode) as f:
             dset = f.get(datapath)
-            if dset is None:
-                if dshape is None:
-                    raise ValueError('No dataset or dshape provided')
+            if dset:
+                file_dshape = discover(dset)
+                if dshape and file_dshape != dshape:
+                    raise TypeError("Inconsistent dshapes given:\n"
+                                    "\tGiven: %s\n"
+                                    "\tFound: %s\n" % (dshape, file_dshape))
                 else:
-                    f.create_dataset(datapath, shape, dtype=dtype, **kwargs)
-            else:
-                dshape2 = datashape.from_numpy(dset.shape, dset.dtype)
-                dshape = dshape2
-                # TODO: test provided dshape against given dshape
-                # if dshape and dshape != dshape2:
-                #     raise ValueError('Inconsistent datashapes.'
-                #             '\nGiven: %s\nFound: %s' % (dshape, dshape2))
+                    dshape = file_dshape
+            if not dset:
+                f.create_dataset(datapath, shape, dtype=dtype, **kwargs)
 
         attributes = self.attributes()
         if attributes['chunks']:
-            # is there a better way to do this?
-            words = str(dshape).split(' * ')
-            dshape = 'var * ' + ' * '.join(words[1:])
-            dshape = datashape.dshape(dshape)
+            dshape = var * dshape.subshape[0]
 
         self._dshape = dshape
         self._schema = schema

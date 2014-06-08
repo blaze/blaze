@@ -6,6 +6,8 @@ from decimal import Decimal
 from dynd import nd
 import sqlalchemy as sql
 import datashape
+from datashape import dshape, var, Record
+from datashape.discovery import dispatch
 from itertools import chain
 
 from ..utils import partition_all
@@ -35,6 +37,33 @@ types = {'int64': sql.types.BigInteger,
 #         unicode: sql.types.UnicodeText,
 #         str: sql.types.Text,  # ??
          }
+
+
+revtypes = dict(map(reversed, types.items()))
+
+revtypes.update({sql.types.VARCHAR: 'string',
+                 sql.types.INTEGER: 'int'})
+
+
+@dispatch(sql.sql.type_api.TypeEngine)
+def discover(typ):
+    if type(typ) in revtypes:
+        return dshape(revtypes[type(typ)])[0]
+    else:
+        raise NotImplementedError("No SQL-datashape match for type %s" % typ)
+
+
+@dispatch(sql.Table)
+def discover(t):
+    return var * Record([[c.name, discover(c.type)] for c in t.columns])
+
+
+@dispatch(sql.engine.base.Engine, str)
+def discover(engine, tablename):
+    metadata = sql.MetaData()
+    metadata.reflect(engine)
+    table = metadata.tables[tablename]
+    return discover(table)
 
 
 def dshape_to_alchemy(dshape):
@@ -109,23 +138,28 @@ class SQL(DataDescriptor):
             engine = sql.create_engine(engine)
         self.engine = engine
         self.tablename = tablename
+        metadata = sql.MetaData()
 
-        if isinstance(schema, (_strtypes, datashape.DataShape)):
+        if engine.has_table(tablename):
+            metadata.reflect(engine)
+            table = metadata.tables[tablename]
+            engine_schema = discover(table).subshape[0]
+            if schema and dshape(schema) != engine_schema:
+                raise ValueError("Mismatched schemas:\n"
+                                 "\tIn database: %s\n"
+                                 "\nGiven: %s" % (engine_schema, schema))
+            schema = engine_schema
+        elif isinstance(schema, (_strtypes, datashape.DataShape)):
             columns = dshape_to_alchemy(schema)
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
-
-        if schema is None:  # Table must exist
-            if not engine.has_table(tablename):
-                raise ValueError('Must provide schema. Table %s does not exist'
-                                 % tablename)
+            table = sql.Table(tablename, metadata, *columns)
+        else:
+            raise ValueError('Must provide schema or point to valid table. '
+                             'Table %s does not exist' % tablename)
 
         self._schema = datashape.dshape(schema)
-        metadata = sql.MetaData()
-
-        table = sql.Table(tablename, metadata, *columns)
-
         self.table = table
         metadata.create_all(engine)
 

@@ -7,6 +7,7 @@ import json
 from dynd import nd
 import datashape
 from collections import Iterator
+from datashape.discovery import discover
 
 from blaze.data import JSON, JSON_Streaming
 from blaze.utils import filetext, raises
@@ -67,6 +68,12 @@ class TestBigJSON(unittest.TestCase):
         dd = JSON(self.filename, 'r', dshape=self.dshape)
         self.assertEqual(tuplify(dd.as_py()), self.ordered)
 
+    def test_discovery(self):
+        dd = JSON(self.filename, 'r')
+        s = str(dd.dshape)
+        for word in ['Thumbnail', 'string', 'int', 'images', 'type']:
+            assert word in s
+
 
 json_buf = u"[1, 2, 3, 4, 5]"
 json_dshape = "var * int8"
@@ -98,6 +105,18 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(list(dd), [1, 2, 3, 4, 5])
 
 class AccountTestData(unittest.TestCase):
+    def setUp(self):
+        self.fn = tempfile.mktemp(".json")
+        with open(self.fn, 'w') as f:
+            for d in self.dicts:
+                f.write(json.dumps(d))
+                f.write('\n')
+        self.dd = JSON_Streaming(self.fn, schema=self.schema)
+
+    def tearDown(self):
+        if os.path.exists(self.fn):
+            os.remove(self.fn)
+
     dicts = [{'name': 'Alice', 'amount': 100},
              {'name': 'Alice', 'amount': 50},
              {'name': 'Bob', 'amount': 10},
@@ -114,19 +133,15 @@ class AccountTestData(unittest.TestCase):
 
     schema = '{name: string, amount: int32}'
 
+
+class TestDiscovery(AccountTestData):
+    def test_discovery(self):
+        dd = JSON_Streaming(self.fn)
+        assert set(dd.schema[0].names) == set(['name', 'amount'])
+        assert 'string' in str(dd.schema[0]['name'])
+
+
 class Test_Indexing(AccountTestData):
-    def setUp(self):
-        self.fn = tempfile.mktemp(".json")
-        with open(self.fn, 'w') as f:
-            for d in self.dicts:
-                f.write(json.dumps(d))
-                f.write('\n')
-        self.dd = JSON_Streaming(self.fn, schema=self.schema)
-
-    def tearDown(self):
-        if os.path.exists(self.fn):
-            os.remove(self.fn)
-
     def test_indexing_basic(self):
         assert tuplify(self.dd.py[0]) == self.tuples[0]
         assert tuplify(self.dd.py[0:3]) == self.tuples[0:3]

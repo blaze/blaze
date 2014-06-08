@@ -7,6 +7,8 @@ from operator import itemgetter
 from collections import Iterator
 
 import datashape
+from datashape.discovery import discover, null, string
+from datashape import dshape, Record, Option
 from dynd import nd
 
 from .core import DataDescriptor
@@ -79,23 +81,17 @@ class CSV(DataDescriptor):
     appendable = True
     remote = False
 
-    def __init__(self, path, mode='rt', schema=None, dshape=None,
-                 dialect=None, header=None, open=open, **kwargs):
+    def __init__(self, path, mode='rt',
+            schema=None, columns=None, types=None, hints=None,
+            dialect=None, header=None, open=open, nrows_discovery=50,
+            **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
             raise ValueError('CSV file "%s" does not exist' % path)
+        if not schema and 'w' in mode:
+            raise ValueError('Please specify schema for writable CSV file')
         self.path = path
         self.mode = mode
         self.open = open
-
-        if not schema and not dshape:
-            # TODO: Infer schema
-            raise ValueError('No schema detected')
-        if not schema and dshape:
-            dshape = datashape.dshape(dshape)
-            if isinstance(dshape[0], datashape.Var):
-                schema = dshape.subarray(1)
-
-        self._schema = schema
 
         if os.path.exists(path) and mode != 'w':
             f = self.open(path, 'rt')
@@ -110,6 +106,29 @@ class CSV(DataDescriptor):
         assert dialect
         if header is None:
             header = has_header(sample)
+
+        if not schema and 'w' not in mode:
+            if not types:
+                with open(self.path, 'r') as f:
+                    data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
+                    types = discover(data)
+                    types = types.subshape[0][0].dshapes
+                    types = [t.ty if isinstance(t, Option) else t
+                                  for t in types]
+                    types = [string if t == null else t
+                                    for t in types]
+            if not columns:
+                if header:
+                    with open(self.path, 'r') as f:
+                        columns = next(csv.reader([next(f)], **dialect))
+                else:
+                    columns = ['_%d' % i for i in range(len(types))]
+            if hints:
+                types = [hints.get(c, t) for c, t in zip(columns, types)]
+
+            schema = dshape(Record(list(zip(columns, types))))
+
+        self._schema = schema
 
         self.header = header
         self.dialect = dialect
@@ -170,7 +189,7 @@ class CSV(DataDescriptor):
             next(f)
         row = next(rows)
         if isinstance(row, dict):
-            schema = datashape.dshape(self.schema)
+            schema = dshape(self.schema)
             row = coerce_record_to_row(schema, row)
             rows = (coerce_record_to_row(schema, row) for row in rows)
 

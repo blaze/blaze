@@ -1,10 +1,12 @@
 from sqlalchemy import create_engine
+import sqlalchemy as sa
 from dynd import nd
 import unittest
 
-from blaze.data import SQL
+from blaze.data.sql import SQL, discover
 from blaze.utils import raises
-from datashape import dshape
+from datashape import dshape, var
+import datashape
 
 
 class SingleTestClass(unittest.TestCase):
@@ -94,3 +96,37 @@ class SingleTestClass(unittest.TestCase):
         self.assertEqual(set(dd.py[:, :2]), set(dd.py[:, ['name', 'amount']]))
         self.assertEqual(set(dd.py[:]), set(dd.py[:, :]))
         assert dd.py[0] in data
+
+
+def test_discovery():
+    assert discover(sa.String()) == datashape.string
+    metadata = sa.MetaData()
+    s = sa.Table('accounts', metadata,
+                 sa.Column('name', sa.String),
+                 sa.Column('amount', sa.Integer),
+                 sa.Column('timestamp', sa.DateTime, primary_key=True))
+
+    assert discover(s) == \
+            dshape('var * {name: string, amount: int32, timestamp: datetime}')
+
+
+def test_discovery_engine():
+    dd = SQL('sqlite:///:memory:',
+             'accounts',
+             schema='{name: string, amount: int}')
+
+    dshape = discover(dd.engine, 'accounts')
+
+    assert dshape == dd.dshape
+
+
+def test_schema_detection():
+    dd = SQL('sqlite:///my.db',
+             'accounts',
+             schema='{name: string, amount: int32}')
+
+    dd.extend([['Alice', 100], ['Bob', 200]])
+
+    dd2 = SQL('sqlite:///my.db', 'accounts')
+
+    assert dd.schema == dd2.schema

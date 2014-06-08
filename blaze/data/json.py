@@ -7,6 +7,8 @@ from itertools import islice
 import datashape
 from dynd import nd
 from collections import Iterator
+from datashape.discovery import discover
+from datashape import var
 
 from ..utils import partition_all, nth, nth_list, ndget
 from .. import compatibility
@@ -39,14 +41,18 @@ class JSON(DataDescriptor):
         self.open = open
         if dshape:
             dshape = datashape.dshape(dshape)
+        if schema:
+            schema = datashape.dshape(schema)
         if dshape and not schema and isdimension(dshape[0]):
             schema = dshape.subarray(1)
 
-        if isinstance(schema, compatibility._strtypes):
-            schema = datashape.dshape(schema)
         if not schema and not dshape:
-            # TODO: schema detection from file
-            raise ValueError('No schema found')
+            try:
+                f = open(self.path, 'r')
+            except:
+                raise ValueError('No schema detected')
+            dshape = discover(json.load(f))
+            f.close()
         # Initially the array is not loaded (is this necessary?)
         self._cache_arr = None
 
@@ -88,6 +94,36 @@ class JSON_Streaming(JSON):
         in the JSON file.
     """
     immutable = False
+
+    def __init__(self, path, mode='rt', schema=None, dshape=None, open=open,
+                 nrows_discovery=50):
+        self.path = path
+        self.mode = mode
+        self.open = open
+        if dshape:
+            dshape = datashape.dshape(dshape)
+        if schema:
+            schema = datashape.dshape(schema)
+        if dshape and not schema and isdimension(dshape[0]):
+            schema = dshape.subshape[0]
+        if schema and not dshape:
+            dshape = var * schema
+
+        if not schema and not dshape:
+            try:
+                f = open(self.path, 'r')
+            except:
+                raise ValueError('No schema detected')
+            data = list(map(json.loads,
+                            islice(f, 1, nrows_discovery)))
+            f.close()
+            dshape = discover(data)
+            schema = dshape.subshape[0]
+        # Initially the array is not loaded (is this necessary?)
+        self._cache_arr = None
+
+        self._schema = schema
+        self._dshape = dshape
 
     @property
     def _arr_cache(self):
