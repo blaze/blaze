@@ -82,6 +82,7 @@ def test_reductions():
                 assert result == expected
 
 exprs = [
+    t['amount'],
     t['amount'] == 100,
     t[t['name'] == 'Alice'],
     t[t['amount'] == 0],
@@ -91,10 +92,6 @@ exprs = [
     exp(t['amount']),
     By(t, t['name'], t['amount'].sum()),
     By(t, t['name'], (t['amount'] + 1).sum()),
-    t.sort('amount'),
-    t.sort('amount', ascending=True),
-    t.sort(['amount', 'id']),
-    t.head(1),
     (t['amount'] * 1).label('foo'),
     t.map(lambda _, amt, id: amt + id),
     t['amount'].map(inc)]
@@ -105,17 +102,36 @@ big_exprs = [
     By(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
 """
 
-"""
-def test_against_python():
+
+def test_basic():
+    check_exprs_against_python(exprs)
+
+
+def check_exprs_against_python(exprs):
+    any_bad = False
     for expr in exprs:
         result = compute(expr, rdd).collect()
         expected = list(compute(expr, data))
         if not result == expected:
-            print(result)
-            print(expected)
-            assert result == expected
-            """
+            any_bad = True
+            print("Expression:", expr)
+            print("Spark:", result)
+            print("Python:", expected)
 
+    assert not any_bad
+
+
+def test_head():
+    assert list(compute(t.head(1), rdd)) == list(compute(t.head(1), data))
+
+
+@skip("Not implemented")
+def test_sort():
+    check_exprs_against_python(
+                t.sort('amount'),
+                t.sort('amount', ascending=True),
+                t.sort(['amount', 'id']),
+                )
 
 
 def test_join():

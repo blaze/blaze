@@ -37,6 +37,7 @@ except:
 
 @dispatch(RowWise, RDD)
 def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
     func = rowfunc(t, [])
     return rdd.map(func)
 
@@ -80,6 +81,12 @@ def compute(t, rdd):
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
     return rdd.fold(True, operator.and_)
+
+
+@dispatch(Head, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return rdd.take(t.n)
 
 
 @dispatch(Join, RDD, RDD)

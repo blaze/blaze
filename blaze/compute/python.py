@@ -44,6 +44,11 @@ def rowfunc(t, seq):
     indices = [t.parent.columns.index(col) for col in t.columns]
     return get(indices)
 
+@dispatch(Column, Sequence)
+def rowfunc(t, seq):
+    index = t.parent.columns.index(t.column)
+    return lambda x: x[index]
+
 
 @dispatch(ColumnWise, Sequence)
 def rowfunc(t, seq):
