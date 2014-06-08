@@ -110,7 +110,7 @@ def test_discovery():
             dshape('var * {name: string, amount: int32, timestamp: datetime}')
 
 
-def test_dicovery_engine():
+def test_discovery_engine():
     dd = SQL('sqlite:///:memory:',
              'accounts',
              schema='{name: string, amount: int}')
