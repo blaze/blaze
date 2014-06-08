@@ -39,8 +39,7 @@ def test_table():
 
 
 def test_projection():
-    assert compute(t['name'], rdd).collect() == rdd.map(lambda x:
-                                                        x[0]).collect()
+    assert compute(t['name'], rdd).collect() == [row[0] for row in data]
 
 
 def test_multicols_projection():
@@ -53,9 +52,50 @@ def test_multicols_projection():
     assert result == expected
 
 
-def test_selection():
-    assert compute(t[t['name'] == 'Alice'], rdd).collect() ==\
-        rdd.filter(lambda x: x[0] == 'Alice').collect()
+inc = lambda x: x + 1
+
+exprs = [
+    t['amount'] == 100,
+    t[t['name'] == 'Alice'],
+    t[t['amount'] == 0],
+    t[t['amount'] > 150],
+    t['amount'] + t['id'],
+    t['amount'] % t['id'],
+    exp(t['amount']),
+    sum(t['amount']),
+    max(t['amount']),
+    nunique(t['amount']),
+    nunique(t['name']),
+    count(t['amount']),
+    any(t['amount'] > 150),
+    mean(t['amount']),
+    std(t['amount']),
+    By(t, t['name'], t['amount'].sum()),
+    By(t, t['name'], (t['amount'] + 1).sum()),
+    t.sort('amount'),
+    t.sort('amount', ascending=True),
+    t.sort(['amount', 'id']),
+    t.head(1),
+    (t['amount'] * 1).label('foo'),
+    t.map(lambda _, amt, id: amt + id),
+    t['amount'].map(inc)]
+
+
+"""
+big_exprs = [
+    By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
+    By(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
+"""
+
+def test_against_python():
+    for expr in exprs:
+        result = compute(expr, rdd).collect()
+        expected = list(compute(expr, data))
+        if not result == expected:
+            print(result)
+            print(expected)
+            assert result == expected
+
 
 
 def test_join():
@@ -64,11 +104,11 @@ def test_join():
     expected = [['Alice', 100, 1, 'Austin'],
                 ['Bob', 200, 2, 'Boston'],
                 ['Alice', 50, 3, 'Austin']]
-    result = compute(joined, rdd, rdd2)
-    assert all([i in expected for i in result.collect()])
+    result = compute(joined, rdd, rdd2).collect()
+    assert all(i in expected for i in result)
+
 
 def test_groupby():
-
     rddidx = sc.parallelize(data_idx)
     rddarc = sc.parallelize(data_arc)
 
@@ -78,8 +118,8 @@ def test_groupby():
     t = By(joined, joined['name'], joined['node_id'].count())
     a = compute(t, {t_arc: rddarc, t_idx:rddidx})
     in_degree = dict(a.collect())
-    assert in_degree['C'] == 2
-    assert in_degree['A'] == 1
+    assert in_degree == {'A': 1, 'C': 2}
+
 
 @skip("Spark not yet fully supported")
 def test_jaccard():
