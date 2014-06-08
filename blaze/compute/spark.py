@@ -89,6 +89,15 @@ def compute(t, rdd):
     return rdd.take(t.n)
 
 
+@dispatch(Sort, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    func = rowfunc(t[t.column], [])
+    return (rdd.keyBy(func)
+                .sortByKey(ascending=t.ascending)
+                .map(lambda x: x[1]))
+
+
 @dispatch(Join, RDD, RDD)
 def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)

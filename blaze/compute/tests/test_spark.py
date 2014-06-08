@@ -125,13 +125,11 @@ def test_head():
     assert list(compute(t.head(1), rdd)) == list(compute(t.head(1), data))
 
 
-@skip("Not implemented")
 def test_sort():
-    check_exprs_against_python(
+    check_exprs_against_python([
                 t.sort('amount'),
                 t.sort('amount', ascending=True),
-                t.sort(['amount', 'id']),
-                )
+                t.sort(['amount', 'id'])])
 
 
 def test_join():
