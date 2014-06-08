@@ -232,13 +232,10 @@ def compute(t, lhs, rhs):
 @dispatch(Sort, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    if isinstance(t.column, (tuple, list)):
-        index = [t.parent.columns.index(col) for col in t.column]
-        key = operator.itemgetter(*index)
+    if isinstance(t.column, (str, tuple, list)):
+        key = rowfunc(t.parent[t.column], [])
     else:
-        index = t.parent.columns.index(t.column)
-        key = operator.itemgetter(index)
-
+        key = rowfunc(t.column, [])
     return sorted(parent,
                   key=key,
                   reverse=not t.ascending)

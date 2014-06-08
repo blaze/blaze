@@ -40,10 +40,22 @@ class TableExpr(Expr):
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
 
-    def sort(self, column=None, ascending=True):
-        if column is None:
-            column = self.columns[0]
-        return Sort(self, column, ascending)
+    def sort(self, key=None, ascending=True):
+        """ Sort table
+
+        Parameters
+        ----------
+        key: string, list of strings, TableExpr
+            Defines by what you want to sort.  Either:
+                A single column string, ``t.sort('amount')``
+                A list of column strings, ``t.sort(['name', 'amount'])``
+                A Table Expression, ``t.sort(-t['amount'])``
+        ascending: bool
+            Determines order of the sort
+        """
+        if key is None:
+            key = self.columns[0]
+        return Sort(self, key, ascending)
 
     def head(self, n=10):
         return Head(self, n)

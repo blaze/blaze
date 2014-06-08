@@ -143,6 +143,17 @@ def test_sort():
             sorted(data, key=lambda x: (x[1], x[2]), reverse=False)
 
 
+def test_fancy_sort():
+    assert list(compute(t.sort(t['amount']), data)) ==\
+            list(compute(t.sort('amount'), data))
+
+    assert list(compute(t.sort(t[['amount', 'id']]), data)) ==\
+            list(compute(t.sort(['amount', 'id']), data))
+
+    assert list(compute(t.sort(0-t['amount']), data)) ==\
+            list(compute(t.sort('amount'), data))[::-1]
+
+
 def test_head():
     assert list(compute(t.head(1), data)) == [data[0]]
 
