@@ -43,7 +43,6 @@ def compute(t, s):
     return s
 
 
-
 @dispatch(Selection, pyspark.rdd.RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)

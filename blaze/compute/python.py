@@ -40,8 +40,9 @@ Sequence = (tuple, list, Iterator)
 
 @dispatch(Projection, Sequence)
 def rowfunc(t, seq):
+    from toolz.curried import get
     indices = [t.parent.columns.index(col) for col in t.columns]
-    return operator.itemgetter(*indices)
+    return get(indices)
 
 
 @dispatch(ColumnWise, Sequence)

@@ -44,9 +44,13 @@ def test_projection():
 
 
 def test_multicols_projection():
-    assert compute(t[['amount', 'name']], rdd).collect() == [[100, 'Alice'],
-                                                             [200, 'Bob'],
-                                                             [50, 'Alice']]
+    result = compute(t[['amount', 'name']], rdd).collect()
+    expected = [(100, 'Alice'), (200, 'Bob'), (50, 'Alice')]
+
+    print(result)
+    print(expected)
+
+    assert result == expected
 
 
 def test_selection():
