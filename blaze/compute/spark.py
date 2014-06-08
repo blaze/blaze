@@ -38,7 +38,7 @@ except:
 @dispatch(RowWise, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    func = rowfunc(t, [])
+    func = rowfunc(t)
     return rdd.map(func)
 
 
@@ -50,7 +50,7 @@ def compute(t, s):
 @dispatch(Selection, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    predicate = rowfunc(t.predicate, [])
+    predicate = rowfunc(t.predicate)
     return rdd.filter(predicate)
 
 
@@ -92,7 +92,7 @@ def compute(t, rdd):
 @dispatch(Sort, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    func = rowfunc(t[t.column], [])
+    func = rowfunc(t[t.column])
     return (rdd.keyBy(func)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
@@ -142,8 +142,8 @@ def compute(t, rdd):
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
 
-    grouper = rowfunc(t.grouper, [])
-    pre = rowfunc(t.apply.parent, [])
+    grouper = rowfunc(t.grouper)
+    pre = rowfunc(t.apply.parent)
 
     return (rdd.map(lambda x: (grouper(x), pre(x)))
                .groupByKey()

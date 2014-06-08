@@ -38,20 +38,20 @@ __all__ = ['compute', 'Sequence']
 Sequence = (tuple, list, Iterator)
 
 
-@dispatch(Projection, Sequence)
-def rowfunc(t, seq):
+@dispatch(Projection)
+def rowfunc(t):
     from toolz.curried import get
     indices = [t.parent.columns.index(col) for col in t.columns]
     return get(indices)
 
-@dispatch(Column, Sequence)
-def rowfunc(t, seq):
+@dispatch(Column)
+def rowfunc(t):
     index = t.parent.columns.index(t.column)
     return lambda x: x[index]
 
 
-@dispatch(ColumnWise, Sequence)
-def rowfunc(t, seq):
+@dispatch(ColumnWise)
+def rowfunc(t):
     if sys.version_info[0] == 3:
         func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
         return partial(apply, func)
@@ -59,8 +59,8 @@ def rowfunc(t, seq):
         return eval(core.columnwise_funcstr(t, variadic=False, full=True))
 
 
-@dispatch(Map, Sequence)
-def rowfunc(t, seq):
+@dispatch(Map)
+def rowfunc(t):
     if len(t.parent.columns) == 1:
         return t.func
     else:
@@ -72,7 +72,7 @@ RowWise = (Projection, ColumnWise, Map)
 @dispatch(RowWise, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return map(rowfunc(t, seq), parent)
+    return map(rowfunc(t), parent)
 
 
 @dispatch(Selection, Sequence)
@@ -233,9 +233,9 @@ def compute(t, lhs, rhs):
 def compute(t, seq):
     parent = compute(t.parent, seq)
     if isinstance(t.column, (str, tuple, list)):
-        key = rowfunc(t.parent[t.column], [])
+        key = rowfunc(t.parent[t.column])
     else:
-        key = rowfunc(t.column, [])
+        key = rowfunc(t.column)
     return sorted(parent,
                   key=key,
                   reverse=not t.ascending)
