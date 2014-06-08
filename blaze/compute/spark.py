@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 from multipledispatch import dispatch
 import sys
 from operator import itemgetter
+import operator
+from toolz import compose
 
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
@@ -51,6 +53,35 @@ def compute(t, rdd):
     return rdd.filter(predicate)
 
 
+rdd_reductions = {
+        table.sum: RDD.sum,
+        table.min: RDD.min,
+        table.max: RDD.max,
+        table.count: RDD.count,
+        table.mean: RDD.mean,
+        table.var: RDD.variance,
+        table.std: RDD.stdev,
+        table.nunique: compose(RDD.count, RDD.distinct)}
+
+
+@dispatch(tuple(rdd_reductions), RDD)
+def compute(t, rdd):
+    reduction = rdd_reductions[type(t)]
+    return reduction(compute(t.parent, rdd))
+
+
+@dispatch(table.any, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return rdd.fold(False, operator.or_)
+
+
+@dispatch(table.all, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return rdd.fold(True, operator.and_)
+
+
 @dispatch(Join, RDD, RDD)
 def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
@@ -73,7 +104,8 @@ def compute(t, lhs, rhs):
     return out_rdd
 
 
-reductions = {table.sum: builtins.sum,
+python_reductions = {
+              table.sum: builtins.sum,
               table.count: builtins.len,
               table.max: builtins.max,
               table.min: builtins.min,
@@ -89,7 +121,7 @@ reductions = {table.sum: builtins.sum,
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
     try:
-        reduction = reductions[type(t.apply)]
+        reduction = python_reductions[type(t.apply)]
     except KeyError:
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))

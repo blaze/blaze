@@ -54,6 +54,33 @@ def test_multicols_projection():
 
 inc = lambda x: x + 1
 
+
+reduction_exprs = [
+    t['amount'].sum(),
+    t['amount'].min(),
+    t['amount'].max(),
+    t['amount'].nunique(),
+    t['name'].nunique(),
+    t['amount'].count(),
+    (t['amount'] > 150).any(),
+    (t['amount'] > 150).all(),
+    t['amount'].mean(),
+    t['amount'].var(),
+    t['amount'].std()]
+
+
+def test_reductions():
+    for expr in reduction_exprs:
+        result = compute(expr, rdd)
+        expected = compute(expr, data)
+        if not result == expected:
+            print(result)
+            print(expected)
+            if isinstance(result, float):
+                assert abs(result - expected) < 0.001
+            else:
+                assert result == expected
+
 exprs = [
     t['amount'] == 100,
     t[t['name'] == 'Alice'],
@@ -62,14 +89,6 @@ exprs = [
     t['amount'] + t['id'],
     t['amount'] % t['id'],
     exp(t['amount']),
-    sum(t['amount']),
-    max(t['amount']),
-    nunique(t['amount']),
-    nunique(t['name']),
-    count(t['amount']),
-    any(t['amount'] > 150),
-    mean(t['amount']),
-    std(t['amount']),
     By(t, t['name'], t['amount'].sum()),
     By(t, t['name'], (t['amount'] + 1).sum()),
     t.sort('amount'),
@@ -80,13 +99,13 @@ exprs = [
     t.map(lambda _, amt, id: amt + id),
     t['amount'].map(inc)]
 
-
 """
 big_exprs = [
     By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
     By(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
 """
 
+"""
 def test_against_python():
     for expr in exprs:
         result = compute(expr, rdd).collect()
@@ -95,6 +114,7 @@ def test_against_python():
             print(result)
             print(expected)
             assert result == expected
+            """
 
 
 
