@@ -48,10 +48,11 @@ class JSON(DataDescriptor):
 
         if not schema and not dshape:
             try:
-                with open(self.path, 'r') as f:
-                    dshape = discover(json.load(f))
-            except FileNotFoundError:
+                f = open(self.path, 'r')
+            except:
                 raise ValueError('No schema detected')
+            dshape = discover(json.load(f))
+            f.close()
         # Initially the array is not loaded (is this necessary?)
         self._cache_arr = None
 
@@ -110,13 +111,14 @@ class JSON_Streaming(JSON):
 
         if not schema and not dshape:
             try:
-                with open(self.path, 'r') as f:
-                    data = list(map(json.loads,
-                                    islice(f, 1, nrows_discovery)))
-                    dshape = discover(data)
-                    schema = dshape.subshape[0]
-            except FileNotFoundError:
+                f = open(self.path, 'r')
+            except:
                 raise ValueError('No schema detected')
+            data = list(map(json.loads,
+                            islice(f, 1, nrows_discovery)))
+            f.close()
+            dshape = discover(data)
+            schema = dshape.subshape[0]
         # Initially the array is not loaded (is this necessary?)
         self._cache_arr = None
 
