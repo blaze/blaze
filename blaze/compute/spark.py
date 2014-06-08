@@ -14,13 +14,14 @@ from ..expr import table
 try:
     from itertools import compress, chain
     import pyspark
+    from pyspark.rdd import RDD
 except ImportError:
-    #Create a dummy pyspark.rdd.RDD for py 2.6
+    #Create a dummy RDD for py 2.6
     class Dummy(object):
         pass
     pyspark = Dummy()
     pyspark.rdd = Dummy()
-    pyspark.rdd.RDD = Dummy
+    RDD = Dummy
 
 # PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
 # remove it
@@ -32,25 +33,25 @@ except:
     pass
 
 
-@dispatch(RowWise, pyspark.rdd.RDD)
+@dispatch(RowWise, RDD)
 def compute(t, rdd):
     func = rowfunc(t, [])
     return rdd.map(func)
 
 
-@dispatch(TableSymbol, pyspark.rdd.RDD)
+@dispatch(TableSymbol, RDD)
 def compute(t, s):
     return s
 
 
-@dispatch(Selection, pyspark.rdd.RDD)
+@dispatch(Selection, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
     predicate = rowfunc(t.predicate, [])
     return rdd.filter(predicate)
 
 
-@dispatch(Join, pyspark.rdd.RDD, pyspark.rdd.RDD)
+@dispatch(Join, RDD, RDD)
 def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
@@ -84,7 +85,7 @@ reductions = {table.sum: builtins.sum,
               table.nunique: lambda x: len(set(x))}
 
 
-@dispatch(By, pyspark.rdd.RDD)
+@dispatch(By, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
     try:
@@ -101,6 +102,6 @@ def compute(t, rdd):
                .map(lambda x: (x[0], reduction(x[1]))))
 
 
-@dispatch((Label, ReLabel), pyspark.rdd.RDD)
+@dispatch((Label, ReLabel), RDD)
 def compute(t, rdd):
     return compute(t.parent, rdd)
