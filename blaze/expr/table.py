@@ -15,6 +15,7 @@ from .core import Expr, Scalar
 from .scalar import ScalarSymbol, NumberSymbol
 from .scalar import *
 from ..utils import unique
+from ..compatibility import _strtypes
 
 
 class TableExpr(Expr):
@@ -40,17 +41,18 @@ class TableExpr(Expr):
             return dshape(ds)
 
     def __getitem__(self, key):
-        if isinstance(key, ColumnWise) and key.schema == dshape('bool'):
-            return Selection(self, key)
-        if isinstance(key, list):
+        if isinstance(key, _strtypes):
+            if key not in self.columns:
+                raise ValueError("Mismatched Column: %s" % str(key))
+            return Column(self, key)
+        if isinstance(key, list) and all(isinstance(k, _strtypes) for k in key):
             key = tuple(key)
             if not all(col in self.columns for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
             return Projection(self, tuple(key))
-        else:
-            if key not in self.columns:
-                raise ValueError("Mismatched Column: %s" % str(key))
-            return Column(self, key)
+        if isinstance(key, TableExpr):
+            return Selection(self, key)
+        raise TypeError("Did not understand input: %s[%s]" % (self, key))
 
     def sort(self, key=None, ascending=True):
         """ Sort table
@@ -234,6 +236,9 @@ class Selection(TableExpr):
     __slots__ = 'parent', 'predicate'
 
     def __init__(self, table, predicate):
+        if predicate.dtype != dshape('bool'):
+            raise TypeError("Must select over a boolean predicate.  Got:\n"
+                            "%s[%s]" % (table, predicate))
         self.parent = table
         self.predicate = predicate  # A Relational
 

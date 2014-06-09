@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from blaze.utils import raises
 from datashape import dshape
 
 
@@ -52,9 +53,16 @@ def test_relational():
 def test_selection():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
-    s = Selection(t, Eq(t['name'], 'Alice'))
+    s = Selection(t, t['name'] == 'Alice')
 
     assert s.dshape == t.dshape
+
+
+def test_selection_typecheck():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+
+    assert raises(TypeError, lambda: t[t['amount'] + t['id']])
+    assert raises(TypeError, lambda: t[t['name']])
 
 
 def test_selection_by_indexing():
