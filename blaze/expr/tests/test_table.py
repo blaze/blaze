@@ -227,3 +227,12 @@ def test_TableSymbol_printing_is_legible():
     expr = (exp(accounts['balance'] * 10)) + accounts['id']
     assert "exp(accounts['balance'] * 10)" in str(expr)
     assert "+ accounts['id']" in str(expr)
+
+
+def test_dtype():
+    accounts = TableSymbol('accounts',
+                           '{name: string, balance: int32, id: int32}')
+
+    assert accounts['name'].dtype == dshape('string')
+    assert accounts['balance'].dtype == dshape('int32')
+    assert (accounts['balance'] > accounts['id']).dtype == dshape('bool')

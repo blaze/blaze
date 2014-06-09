@@ -27,6 +27,18 @@ class TableExpr(Expr):
     def columns(self):
         return self.schema[0].names
 
+    @property
+    def dtype(self):
+        ds = self.schema[-1]
+        if isinstance(ds, Record):
+            if len(ds.fields.values()) > 1:
+                raise TypeError("`.dtype` not defined for multicolumn object. "
+                                "Use `.schema` instead")
+            else:
+                return dshape(ds.fields.values()[0])
+        else:
+            return dshape(ds)
+
     def __getitem__(self, key):
         if isinstance(key, ColumnWise) and key.schema == dshape('bool'):
             return Selection(self, key)
