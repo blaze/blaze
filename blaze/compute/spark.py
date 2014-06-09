@@ -5,6 +5,7 @@ import sys
 from operator import itemgetter
 import operator
 from toolz import compose
+from toolz.curried import get
 
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
@@ -103,21 +104,21 @@ def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
-    col_idx_lhs = t.lhs.schema[0].names.index(t.on_left)
-    col_idx_rhs = t.rhs.schema[0].names.index(t.on_right)
+    col_idx_lhs = t.lhs.columns.index(t.on_left)
+    col_idx_rhs = t.rhs.columns.index(t.on_right)
 
     lhs = lhs.keyBy(lambda x: x[col_idx_lhs])
     rhs = rhs.keyBy(lambda x: x[col_idx_rhs])
 
     # Calculate the indices we want in the joined table
-    lhs_indices = [1]*len(t.lhs.columns)
-    rhs_indices = [1 if i != col_idx_rhs else 0 for i in range(0,
-                   len(t.rhs.columns))]
-    indices = lhs_indices + rhs_indices
-    # Perform the spark join, then reassemple the table
-    reassemble = lambda x: list(compress(chain.from_iterable(x[1]), indices))
-    out_rdd = lhs.join(rhs).map(reassemble)
-    return out_rdd
+    columns = t.lhs.columns + t.rhs.columns
+    repeated_index = len(columns) - columns[::-1].index(t.on_right) - 1
+    wanted = list(range(len(columns)))
+    wanted.pop(repeated_index)
+    getter = get(wanted)
+    reassemble = lambda x: getter(x[1][0] + x[1][1])
+
+    return lhs.join(rhs).map(reassemble)
 
 
 python_reductions = {
