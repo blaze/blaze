@@ -86,7 +86,13 @@ class TableSymbol(TableExpr):
 
     This is a leaf in the expression tree
 
-    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts['amount'] + 1
+    accounts['amount'] + 1
+
+    We define a TableSymbol with a name like ``accounts`` and the datashape of
+    a single row, called a schema.
     """
     __slots__ = 'name', 'schema'
 
