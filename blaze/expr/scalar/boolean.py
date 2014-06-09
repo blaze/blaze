@@ -27,6 +27,21 @@ class Eq(Relational):
     op = operator.eq
 
 
+class NE(Relational):
+    symbol = '!='
+    op = operator.ne
+
+
+class GE(Relational):
+    symbol = '>='
+    op = operator.ge
+
+
+class LE(Relational):
+    symbol = '<='
+    op = operator.le
+
+
 class GT(Relational):
     symbol = '>'
     op = operator.gt
