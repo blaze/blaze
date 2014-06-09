@@ -49,6 +49,9 @@ def test_eq():
     assert ((compute(t['amount'] == 100, df))
              == (df['amount'] == 100)).all()
 
+def test_ne():
+    assert ((compute(t['amount'] != 100, df))
+             == (df['amount'] != 100)).all()
 
 def test_selection():
     assert str(compute(t[t['amount'] == 0], df)) == str(df[df['amount'] == 0])

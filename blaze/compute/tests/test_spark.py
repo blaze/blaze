@@ -9,6 +9,14 @@ data = [['Alice', 100, 1],
         ['Alice', 50, 3]]
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
+
+data_rep = [['Alice', 100, 1],
+            ['Bob', 200, 2],
+            ['Bob', 200, 2],
+            ['Bob', 200, 2],
+            ['Alice', 50, 3],
+            ['Alice', 50, 3]]
+
 try:
     from pyspark import SparkContext
     sc = SparkContext("local", "Simple App")
@@ -67,6 +75,24 @@ def test_join():
                 ['Alice', 50, 3, 'Austin']]
     result = compute(joined, rdd, rdd2)
     assert all([i in expected for i in result.collect()])
+
+@skip("Spark not yet fully supported")
+def test_Distinct():
+    d_t = Distinct(t['name'])
+    rdd_data_rep = sc.parallelize(data_rep)
+    distinct_rdd = compute(d_t, rdd_data_rep)
+    other_rdd = compute(d_t, rdd)
+    assert distinct_rdd.collect() == other_rdd.collect()
+    #Test idempotence
+    assert compute(Distinct(t), distinct_rdd).collect() == \
+            distinct_rdd.collect()
+
+@skip("Spark not yet fully supported")
+def test_Map():
+    ans = compute(t['name'].map(lambda x: x.upper()), rdd).collect()
+    expected = ['ALICE','BOB','ALICE']
+    assert ans == expected
+
 
 @skip("Spark not yet fully supported")
 def test_groupby():
