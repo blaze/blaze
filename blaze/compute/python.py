@@ -53,6 +53,9 @@ def rowfunc(t):
 @dispatch(ColumnWise)
 def rowfunc(t):
     if sys.version_info[0] == 3:
+        # Python3 doesn't allow argument unpacking
+        # E.g. ``lambda (x, y, z): x + z`` is illegal
+        # Solution: Make ``lambda x, y, z: x + y``, then wrap with ``apply``
         func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
         return partial(apply, func)
     elif sys.version_info[0] == 2:
