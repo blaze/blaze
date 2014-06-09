@@ -96,18 +96,12 @@ exprs = [
     t.map(lambda _, amt, id: amt + id),
     t['amount'].map(inc)]
 
-"""
-big_exprs = [
-    By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
-    By(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
-"""
-
 
 def test_basic():
     check_exprs_against_python(exprs)
 
 
-def check_exprs_against_python(exprs):
+def check_exprs_against_python(exprs, data=data, rdd=rdd):
     any_bad = False
     for expr in exprs:
         result = compute(expr, rdd).collect()
@@ -119,6 +113,24 @@ def check_exprs_against_python(exprs):
             print("Python:", expected)
 
     assert not any_bad
+
+
+def test_big_by():
+    tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+
+    big_exprs = [
+        By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
+        By(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
+
+    databig = [['Alice', 'F', 100, 1],
+               ['Alice', 'F', 100, 3],
+               ['Drew', 'F', 100, 4],
+               ['Drew', 'M', 100, 5],
+               ['Drew', 'M', 200, 5]]
+
+    rddbig = sc.parallelize(databig)
+
+    check_exprs_against_python(big_exprs, databig, rddbig)
 
 
 def test_head():

@@ -146,9 +146,16 @@ def compute(t, rdd):
     grouper = rowfunc(t.grouper)
     pre = rowfunc(t.apply.parent)
 
-    return (rdd.map(lambda x: (grouper(x), pre(x)))
-               .groupByKey()
-               .map(lambda x: (x[0], reduction(x[1]))))
+
+    groups = (rdd.map(lambda x: (grouper(x), pre(x)))
+             .groupByKey())
+
+    if isinstance(t.grouper, (Column, ColumnWise)):
+        func = lambda x: (x[0], reduction(x[1]))
+    else:
+        func = lambda x: (tuple(x[0]) + (reduction(x[1]),))
+    return groups.map(func)
+
 
 
 @dispatch((Label, ReLabel), RDD)
