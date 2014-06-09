@@ -143,6 +143,11 @@ def test_sort():
                 t.sort('amount', ascending=True),
                 t.sort(['amount', 'id'])])
 
+def test_distinct():
+    assert set(compute(t['name'].distinct(), rdd).collect()) == \
+            set(['Alice', 'Bob'])
+
+
 
 def test_join():
 

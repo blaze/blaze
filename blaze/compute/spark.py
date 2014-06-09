@@ -99,6 +99,12 @@ def compute(t, rdd):
                 .map(lambda x: x[1]))
 
 
+@dispatch(Distinct, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return rdd.distinct()
+
+
 @dispatch(Join, RDD, RDD)
 def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
