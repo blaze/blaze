@@ -134,11 +134,20 @@ class ColumnSyntaxMixin(object):
     def __eq__(self, other):
         return columnwise(Eq, self, other)
 
+    def __ne__(self, other):
+        return columnwise(NE, self, other)
+
     def __lt__(self, other):
         return columnwise(LT, self, other)
 
+    def __le__(self, other):
+        return columnwise(LE, self, other)
+
     def __gt__(self, other):
         return columnwise(GT, self, other)
+
+    def __ge__(self, other):
+        return columnwise(GE, self, other)
 
     def __add__(self, other):
         return columnwise(Add, self, other)
