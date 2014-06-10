@@ -73,8 +73,10 @@ class Number(NumberInterface):
 
 
 class Arithmetic(BinOp, Number):
+    """ Super class for arithmetic operators like add or mul """
     @property
     def dshape(self):
+        # TODO: better inference.  e.g. int + int -> int
         return dshape('real')
 
 
@@ -116,10 +118,16 @@ class Neg(UnaryOp, Number):
 
     @property
     def dshape(self):
+        # TODO: better inference.  -uint -> int
         return self.parent.dshape
 
 
+
+# Here follows a large number of unary operators.  These were selected by
+# taking the intersection of the functions in ``math`` and ``numpy``
+
 class RealMath(Number, UnaryOp):
+    """ Mathematical unary operator with real valued dshape like sin, or exp """
     @property
     def dshape(self):
         return dshape('real')
@@ -152,6 +160,7 @@ class degrees(RealMath): pass
 
 
 class IntegerMath(Number, UnaryOp):
+    """ Mathematical unary operator with int valued dshape like ceil, floor """
     @property
     def dshape(self):
         return dshape('int')
@@ -163,6 +172,7 @@ class trunc(IntegerMath): pass
 
 
 class BooleanMath(Number, UnaryOp):
+    """ Mathematical unary operator with bool valued dshape like isnan """
     @property
     def dshape(self):
         return dshape('bool')

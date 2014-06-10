@@ -62,3 +62,10 @@ def test_numbers():
 def test_neg_dshape_unsigned():
     y = ScalarSymbol('x', 'uint32')
     assert (-y).dshape == dshape('int32')
+
+
+@skip("TODO")
+def test_arithmetic_dshape_inference():
+    x = ScalarSymbol('x', 'int')
+    y = ScalarSymbol('y', 'int')
+    assert (x + y).dshape == dshape('int')
