@@ -7,7 +7,7 @@ from ..core import Expr
 from .boolean import Eq, LT, GT
 
 
-class Number(Scalar):
+class NumberInterface(Scalar):
     def __eq__(self, other):
         return Eq(self, other)
 
@@ -16,6 +16,9 @@ class Number(Scalar):
 
     def __gt__(self, other):
         return GT(self, other)
+
+    def __neg__(self):
+        return Neg(self)
 
     def __add__(self, other):
         return Add(self, other)
@@ -53,15 +56,9 @@ class Number(Scalar):
     def __rmod__(self, other):
         return Mod(other, self)
 
+
+class Number(NumberInterface):
     __hash__ = Expr.__hash__
-
-
-class NumberSymbol(ScalarSymbol, Number):
-    __slots__ = 'name', 'dtype'
-
-    def __init__(self, name, dtype=None):
-        self.name = name
-        self.dtype = dtype or 'real'
 
 
 class Arithmetic(BinOp, Number):
@@ -98,6 +95,13 @@ class Pow(Arithmetic):
 class Mod(Arithmetic):
     symbol = '%'
     op = operator.mod
+
+
+class Neg(UnaryOp, Number):
+    op = operator.neg
+
+    def __str__(self):
+        return '-%s' % self.parent
 
 
 class UnaryMath(Number, UnaryOp):

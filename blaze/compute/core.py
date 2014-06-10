@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 from multipledispatch import dispatch
 
 from blaze.expr.table import *
+from blaze.expr.scalar import *
 
 __all__ = ['compute']
 

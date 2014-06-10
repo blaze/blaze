@@ -42,8 +42,8 @@ def compute(t, s):
 @dispatch(ColumnWise, sqlalchemy.sql.Selectable)
 def compute(t, s):
     expr = t.expr
-    expr = expr.subs(dict(zip([NumberSymbol(c) for c in t.parent.columns],
-                              [t.parent[c] for c in t.parent.columns])))
+    columns = [t.parent[c] for c in t.parent.columns]
+    expr = expr.subs(dict((col.scalar_symbol, col) for col in columns))
     return compute(expr, s)
 
 

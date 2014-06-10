@@ -44,8 +44,8 @@ def compute(t, df):
 @dispatch(ColumnWise, DataFrame)
 def compute(t, df):
     expr = t.expr
-    expr = expr.subs(dict(zip([NumberSymbol(c) for c in t.parent.columns],
-                              [t.parent[c] for c in t.parent.columns])))
+    columns = [t.parent[c] for c in t.parent.columns]
+    expr = expr.subs(dict((col.scalar_symbol, col) for col in columns))
     return compute(expr, df)
 
 

@@ -3,11 +3,7 @@ from datashape import dshape
 from .core import Scalar, BinOp, UnaryOp
 
 
-class Boolean(Scalar):
-    @property
-    def dshape(self):
-        return dshape('bool')
-
+class BooleanInterface(Scalar):
     def __not__(self):
         return Not(self)
 
@@ -16,6 +12,12 @@ class Boolean(Scalar):
 
     def __or__(self, other):
         return Or(self, other)
+
+
+class Boolean(BooleanInterface):
+    @property
+    def dshape(self):
+        return dshape('bool')
 
 
 class Relational(BinOp, Boolean):

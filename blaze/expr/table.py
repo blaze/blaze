@@ -12,7 +12,7 @@ from toolz import concat, partial, first, pipe
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
-from .scalar import ScalarSymbol, NumberSymbol
+from .scalar import ScalarSymbol
 from .scalar import *
 from ..utils import unique
 from ..compatibility import _strtypes
@@ -243,6 +243,10 @@ class Column(ColumnSyntaxMixin, Projection):
     def __str__(self):
         return "%s['%s']" % (self.parent, self.columns[0])
 
+    @property
+    def scalar_symbol(self):
+        return ScalarSymbol(self.column, dtype=self.dtype)
+
 
 class Selection(TableExpr):
     """
@@ -298,7 +302,7 @@ def columnwise(op, *column_inputs):
             parents.add(col.parent)
         elif isinstance(col, Column):
             # TODO: specify dtype
-            expr_inputs.append(NumberSymbol(col.columns[0]))
+            expr_inputs.append(col.scalar_symbol)
             parents.add(col.parent)
         else:
             # maybe something like 5 or 'Alice'

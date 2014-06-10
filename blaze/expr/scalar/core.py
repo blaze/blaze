@@ -4,6 +4,7 @@ from datashape import dshape
 
 
 def eval_str(expr):
+    """ String suitable for evaluation """
     if hasattr(expr, 'eval_str'):
         return expr.eval_str()
     elif isinstance(expr, str):
@@ -12,13 +13,21 @@ def eval_str(expr):
         return str(expr)
 
 def parenthesize(s):
+    """
+
+    >>> parenthesize('1')
+    '1'
+    >>> parenthesize('1 + 2')
+    '(1 + 2)'
+    """
     if ' ' in s:
         return '(%s)' % s
     else:
         return s
 
 class Scalar(Expr):
-    pass
+    def eval_str(self):
+        return str(self)
 
 
 class BinOp(Scalar):
@@ -29,12 +38,10 @@ class BinOp(Scalar):
         self.rhs = rhs
 
     def __str__(self):
-        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
-
-    def eval_str(self):
         lhs = parenthesize(eval_str(self.lhs))
         rhs = parenthesize(eval_str(self.rhs))
         return '%s %s %s' % (lhs, self.symbol, rhs)
+        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
 
 
 class UnaryOp(Scalar):
@@ -44,9 +51,6 @@ class UnaryOp(Scalar):
         self.parent = table
 
     def __str__(self):
-        return '%s(%s)' % (self.symbol, self.parent)
-
-    def eval_str(self):
         return '%s(%s)' % (self.symbol, eval_str(self.parent))
 
     @property
@@ -66,7 +70,4 @@ class ScalarSymbol(Scalar):
         return dshape(self.dtype)
 
     def __str__(self):
-        return self.name
-
-    def eval_str(self):
         return str(self.name)
