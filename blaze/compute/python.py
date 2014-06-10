@@ -26,8 +26,8 @@ from ..expr.table import *
 from ..expr.scalar.core import *
 from ..expr import scalar
 from ..compatibility import builtins, apply
-from .. import utils
-from ..utils import groupby, get, reduceby, unique
+from cytoolz import groupby, get, reduceby, unique, take
+import cytoolz
 from . import core
 
 # Dump exp, log, sin, ... into namespace
@@ -37,6 +37,19 @@ __all__ = ['compute', 'Sequence']
 
 Sequence = (tuple, list, Iterator)
 
+
+""" Rowfunc provides a function that can be mapped onto a sequence.
+
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> f = rowfunc(accounts['amount'])
+
+>>> row = ('Alice', 100)
+>>> f(row)
+100
+
+See Also:
+    compute<Rowwise, Sequence>
+"""
 
 @dispatch(Projection)
 def rowfunc(t):
@@ -69,6 +82,8 @@ def rowfunc(t):
     else:
         return partial(apply, t.func)
 
+
+# Classes that operate equally on each row of the table
 RowWise = (Projection, ColumnWise, Map)
 
 
@@ -98,6 +113,7 @@ def compute(t, seq):
     op = getattr(builtins, t.symbol)
     return op(parent)
 
+
 def _mean(seq):
     total = 0
     count = 0
@@ -105,6 +121,7 @@ def _mean(seq):
         total += item
         count += 1
     return float(total) / count
+
 
 def _var(seq):
     total = 0
@@ -116,42 +133,51 @@ def _var(seq):
         count += 1
     return 1.0*total_squared/count - (1.0*total/count) ** 2
 
+
 def _std(seq):
     return sqrt(_var(seq))
+
 
 @dispatch(count, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return builtins.sum(1 for i in parent)
+    return cytoolz.count(parent)
+
 
 @dispatch(Distinct, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return unique(parent)
 
+
 @dispatch(nunique, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return utils.count((unique(parent)))
+    return cytoolz.count(unique(parent))
+
 
 @dispatch(mean, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return _mean(parent)
 
+
 @dispatch(var, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return _var(parent)
+
 
 @dispatch(std, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return _std(parent)
 
+
 lesser = lambda x, y: x if x < y else y
 greater = lambda x, y: x if x > y else y
 countit = lambda acc, _: acc + 1
+
 
 binops = {sum: (operator.add, 0),
           min: (lesser, 1e250),
@@ -159,6 +185,7 @@ binops = {sum: (operator.add, 0),
           count: (countit, 0),
           any: (operator.or_, False),
           all: (operator.and_, True)}
+
 
 @dispatch(By, Sequence)
 def compute(t, seq):
@@ -247,7 +274,7 @@ def compute(t, seq):
 @dispatch(Head, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return itertools.islice(parent, 0, t.n)
+    return tuple(take(t.n, parent))
 
 
 @dispatch((Label, ReLabel), Sequence)
