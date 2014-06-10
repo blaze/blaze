@@ -101,7 +101,7 @@ def test_spark_basic():
     check_exprs_against_python(exprs, data, rdd)
 
 
-def check_exprs_against_python(exprs):
+def check_exprs_against_python(exprs, data, rdd):
     any_bad = False
     for expr in exprs:
         result = compute(expr, rdd).collect()
@@ -170,6 +170,13 @@ def test_spark_groupby():
     a = compute(t, {t_arc: rddarc, t_idx:rddidx})
     in_degree = dict(a.collect())
     assert in_degree == {'A': 1, 'C': 2}
+
+
+def test_multi_level_rowfunc_works():
+    expr = t['amount'].map(lambda x: x + 1)
+
+    assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
+
 
 
 @skip("Spark not yet fully supported")
