@@ -214,3 +214,16 @@ def test_relabel():
     expected = select([s.c.name.label('NAME'), s.c.amount, s.c.id.label('ID')])
 
     assert str(result) == str(expected)
+
+
+def test_collect():
+    col = (t['amount'] * 2).label('new')
+
+    expr = collect(t['name'], col)
+
+    result = str(compute(expr, s))
+
+    assert 'amount * ' in result
+    assert 'FROM accounts' in result
+    assert 'SELECT accounts.name' in result
+    assert 'new' in result
