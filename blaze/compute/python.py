@@ -18,7 +18,7 @@ from collections import Iterator
 import math
 from operator import itemgetter
 from functools import partial
-from toolz import map, isiterable
+from toolz import map, isiterable, compose, juxt, identity
 from toolz.compatibility import zip
 import sys
 
@@ -38,24 +38,50 @@ __all__ = ['compute', 'Sequence']
 Sequence = (tuple, list, Iterator)
 
 
-""" Rowfunc provides a function that can be mapped onto a sequence.
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> f = rowfunc(accounts['amount'])
+def recursive_rowfunc(t):
+    """ Compose rowfunc functions up a tree
 
->>> row = ('Alice', 100)
->>> f(row)
-100
+    Stops when we hit a non-RowWise operation
 
-See Also:
-    compute<Rowwise, Sequence>
-"""
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> f = recursive_rowfunc(accounts['amount'].map(lambda x: x + 1))
+
+    >>> row = ('Alice', 100)
+    >>> f(row)
+    101
+
+    """
+    funcs = []
+    while isinstance(t, RowWise):
+        funcs.append(rowfunc(t))
+        t = t.parent
+    if not funcs:
+        raise TypeError("Expected RowWise operation, got %s" % str(t))
+    elif len(funcs) == 1:
+        return funcs[0]
+    else:
+        return compose(*funcs)
+
 
 @dispatch(Projection)
 def rowfunc(t):
+    """ Rowfunc provides a function that can be mapped onto a sequence.
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> f = rowfunc(accounts['amount'])
+
+    >>> row = ('Alice', 100)
+    >>> f(row)
+    100
+
+    See Also:
+        compute<Rowwise, Sequence>
+    """
     from toolz.curried import get
     indices = [t.parent.columns.index(col) for col in t.columns]
     return get(indices)
+
 
 @dispatch(Column)
 def rowfunc(t):
@@ -81,6 +107,32 @@ def rowfunc(t):
         return t.func
     else:
         return partial(apply, t.func)
+
+
+@dispatch((Label, ReLabel))
+def rowfunc(t):
+    return identity
+
+
+def concat_maybe_tuples(vals):
+    """
+
+    >>> concat_maybe_tuples([1, (2, 3)])
+    (1, 2, 3)
+    """
+    result = []
+    for v in vals:
+        if isinstance(v, (tuple, list)):
+            result.extend(v)
+        else:
+            result.append(v)
+    return tuple(result)
+
+
+@dispatch(Collect)
+def rowfunc(t):
+    funcs = list(map(recursive_rowfunc, t.children))
+    return compose(concat_maybe_tuples, juxt(*funcs))
 
 
 @dispatch(RowWise, Sequence)

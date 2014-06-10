@@ -265,3 +265,11 @@ def test_by_multi_column_grouper():
 
     print(set(compute(expr, data)))
     assert set(compute(expr, data)) == set([(1, 2, 2), (1, 1, 1)])
+
+
+def test_collect():
+    col = (t['amount'] * 2).label('new')
+
+    expr = collect(t['name'], col)
+
+    assert list(compute(expr, data)) == [(row[0], row[1] * 2) for row in data]
