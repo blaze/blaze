@@ -47,7 +47,7 @@ class NumberInterface(Scalar):
     def __rdiv__(self, other):
         return Div(other, self)
 
-    def __sub_(self, other):
+    def __sub__(self, other):
         return Sub(self, other)
 
     def __rsub__(self, other):
