@@ -117,12 +117,53 @@ class Neg(UnaryOp, Number):
         return self.parent.dshape
 
 
-class UnaryMath(Number, UnaryOp):
-    pass
+class RealMath(Number, UnaryOp):
+    @property
+    def dshape(self):
+        return dshape('real')
 
 
-class sin(UnaryMath): pass
-class cos(UnaryMath): pass
-class tan(UnaryMath): pass
-class exp(UnaryMath): pass
-class log(UnaryMath): pass
+class sqrt(RealMath): pass
+
+class sin(RealMath): pass
+class sinh(RealMath): pass
+class cos(RealMath): pass
+class cosh(RealMath): pass
+class tan(RealMath): pass
+class tanh(RealMath): pass
+
+class exp(RealMath): pass
+class expm1(RealMath): pass
+class log(RealMath): pass
+class log10(RealMath): pass
+class log1p(RealMath): pass
+
+class acos(RealMath): pass
+class acosh(RealMath): pass
+class asin(RealMath): pass
+class asinh(RealMath): pass
+class atan(RealMath): pass
+class atanh(RealMath): pass
+
+class radians(RealMath): pass
+class degrees(RealMath): pass
+
+
+class IntegerMath(Number, UnaryOp):
+    @property
+    def dshape(self):
+        return dshape('int')
+
+
+class ceil(IntegerMath): pass
+class floor(IntegerMath): pass
+class trunc(IntegerMath): pass
+
+
+class BooleanMath(Number, UnaryOp):
+    @property
+    def dshape(self):
+        return dshape('bool')
+
+
+class isnan(BooleanMath): pass

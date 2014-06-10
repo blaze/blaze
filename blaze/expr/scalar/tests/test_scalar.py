@@ -51,7 +51,8 @@ def test_numbers():
     x = ScalarSymbol('x', 'real')
     y = ScalarSymbol('x', 'int')
     for expr in [x + 1, x - 1, x * 1, x + y, x - y, x / y, x * y + x + y,
-                 x**y, x**2, 2**x, x % 5, -x]:
+                 x**y, x**2, 2**x, x % 5, -x,
+                 sin(x), cos(x ** 2), exp(log(y))]:
         assert expr.dshape == dshape('real')
         assert eval(str(expr)) == expr
 
