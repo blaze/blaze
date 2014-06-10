@@ -1,4 +1,5 @@
 from blaze.expr.scalar import *
+from blaze.compatibility import skip
 import math
 
 x = ScalarSymbol('x')
@@ -50,6 +51,14 @@ def test_numbers():
     x = ScalarSymbol('x', 'real')
     y = ScalarSymbol('x', 'int')
     for expr in [x + 1, x - 1, x * 1, x + y, x - y, x / y, x * y + x + y,
-                 x**y, x**2, 2**x, x % 5]:
+                 x**y, x**2, 2**x, x % 5, -x]:
         assert expr.dshape == dshape('real')
         assert eval(str(expr)) == expr
+
+    assert (-y).dshape == dshape('int')
+
+
+@skip("TODO")
+def test_neg_dshape_unsigned():
+    y = ScalarSymbol('x', 'uint32')
+    assert (-y).dshape == dshape('int32')

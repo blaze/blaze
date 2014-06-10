@@ -112,6 +112,10 @@ class Neg(UnaryOp, Number):
     def __str__(self):
         return '-%s' % self.parent
 
+    @property
+    def dshape(self):
+        return self.parent.dshape
+
 
 class UnaryMath(Number, UnaryOp):
     pass
