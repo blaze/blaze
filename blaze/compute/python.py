@@ -199,16 +199,13 @@ def compute(t, seq):
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
-        a, b = itertools.tee(seq)
-        applied = compute(t.apply.parent, a)
-        grouped = compute(t.grouper, b)
-
-        zipped = zip(grouped, applied)
+        applier = rowfunc(t.apply.parent)
+        grouper = rowfunc(t.grouper)
 
         def binop2(acc, x):
-            return binop(acc, x[1])
+            return binop(acc, applier(x))
 
-        d = reduceby(operator.itemgetter(0), binop2, zipped, initial)
+        d = reduceby(grouper, binop2, parent, initial)
     else:
         indices = [t.grouper.parent.columns.index(col)
                         for col in t.grouper.columns]
