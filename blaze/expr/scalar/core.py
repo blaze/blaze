@@ -47,8 +47,8 @@ class BinOp(Scalar):
 class UnaryOp(Scalar):
     __slots__ = 'parent',
 
-    def __init__(self, table):
-        self.parent = table
+    def __init__(self, parent):
+        self.parent = parent
 
     def __str__(self):
         return '%s(%s)' % (self.symbol, eval_str(self.parent))
