@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from blaze.compatibility import skip
 from blaze.utils import unique
 
-t = TableSymbol('{name: string, amount: int, id: int}')
+t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
 metadata = sa.MetaData()
 
@@ -17,7 +17,7 @@ s = sa.Table('accounts', metadata,
              sa.Column('id', sa.Integer, primary_key=True),
              )
 
-tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
 
 sbig = sa.Table('accountsbig', metadata,
              sa.Column('name', sa.String),
@@ -78,8 +78,8 @@ def test_join():
     expected = select(list(unique(expected.columns, key=lambda c:
         c.name))).select_from(expected)
 
-    L = TableSymbol('{name: string, amount: int}')
-    R = TableSymbol('{name: string, id: int}')
+    L = TableSymbol('L', '{name: string, amount: int}')
+    R = TableSymbol('R', '{name: string, id: int}')
     joined = Join(L, R, 'name')
 
     result = compute(joined, {L: lhs, R: rhs})
@@ -94,6 +94,10 @@ def test_join():
 
 def test_unary_op():
     assert str(compute(exp(t['amount']), s)) == str(sa.func.exp(s.c.amount))
+
+
+def test_unary_op():
+    assert str(compute(-t['amount'], s)) == str(-s.c.amount)
 
 
 def test_reductions():
@@ -177,8 +181,8 @@ def test_join_projection():
                    sa.Column('name', sa.String),
                    sa.Column('id', sa.Integer))
 
-    L = TableSymbol('{name: string, amount: int}')
-    R = TableSymbol('{name: string, id: int}')
+    L = TableSymbol('L', '{name: string, amount: int}')
+    R = TableSymbol('R', '{name: string, id: int}')
     want = Join(L, R, 'name')[['amount', 'id']]
 
     result = compute(want, {L: lhs, R: rhs})

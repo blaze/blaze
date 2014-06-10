@@ -1,21 +1,30 @@
 from __future__ import absolute_import, division, print_function
 
+from multipledispatch import dispatch
+import sys
+from operator import itemgetter
+import operator
+from toolz import compose, identity
+from toolz.curried import get
 
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
-from blaze.compute.python import *
-from multipledispatch import dispatch
-import sys
+from . import core, python
+from .python import compute, rowfunc, RowWise
+from ..compatibility import builtins
+from ..expr import table
+
 try:
     from itertools import compress, chain
     import pyspark
+    from pyspark.rdd import RDD
 except ImportError:
-    #Create a dummy pyspark.rdd.RDD for py 2.6
+    #Create a dummy RDD for py 2.6
     class Dummy(object):
-        pass
+        sum = max = min = count = distinct = mean = variance = stdev = None
     pyspark = Dummy()
     pyspark.rdd = Dummy()
-    pyspark.rdd.RDD = Dummy
+    RDD = Dummy
 
 # PySpark adds a SIGCHLD signal handler, but that breaks other packages, so we
 # remove it
@@ -27,101 +36,137 @@ except:
     pass
 
 
-@dispatch(Projection, pyspark.rdd.RDD)
+@dispatch(RowWise, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    cols = [t.parent.schema[0].names.index(col) for col in t.columns]
-    return rdd.map(lambda x: [x[c] for c in cols])
+    func = rowfunc(t)
+    return rdd.map(func)
 
 
-@dispatch(Column, pyspark.rdd.RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
-    col_idx = t.parent.schema[0].names.index(t.columns[0])
-    return rdd.map(lambda x: x[col_idx])
-
-
-@dispatch(TableSymbol, pyspark.rdd.RDD)
+@dispatch(TableSymbol, RDD)
 def compute(t, s):
     return s
 
 
-@dispatch(Selection, pyspark.rdd.RDD)
+@dispatch(Selection, RDD)
 def compute(t, rdd):
-    #TODO Generalized Selection is not yet supported. This implementation 
-    #TODO supports BinOp(A,B) where A,B is either a column of T or some 
-    #TODO value that supports BinOp
     rdd = compute(t.parent, rdd)
-    lhs_is_expr = isinstance(t.predicate.lhs, Expr)
-    rhs_is_expr = isinstance(t.predicate.rhs, Expr)
-    # Need these for serializing the sel_fn function
-    lhs_col_idx = None
-    rhs_col_idx = None
-    if (lhs_is_expr):
-        lhs_col_idx = t.parent.schema[0].names.index(t.predicate.lhs.columns[0])
-    if (rhs_is_expr):
-        rhs_col_idx = t.parent.schema[0].names.index(t.predicate.rhs.columns[0])
-
-    def sel_fn(x):
-        lhs_arg = x[lhs_col_idx] if lhs_is_expr else t.predicate.lhs
-        rhs_arg = x[rhs_col_idx] if rhs_is_expr else t.predicate.rhs
-        return t.predicate.op(lhs_arg, rhs_arg)
-    return rdd.filter(sel_fn)
+    predicate = rowfunc(t.predicate)
+    return rdd.filter(predicate)
 
 
-@dispatch(Join, pyspark.rdd.RDD, pyspark.rdd.RDD)
+rdd_reductions = {
+        table.sum: RDD.sum,
+        table.min: RDD.min,
+        table.max: RDD.max,
+        table.count: RDD.count,
+        table.mean: RDD.mean,
+        table.var: RDD.variance,
+        table.std: RDD.stdev,
+        table.nunique: compose(RDD.count, RDD.distinct)}
+
+
+@dispatch(tuple(rdd_reductions), RDD)
+def compute(t, rdd):
+    reduction = rdd_reductions[type(t)]
+    return reduction(compute(t.parent, rdd))
+
+
+def istruthy(x):
+    return not not x
+
+
+@dispatch(table.any, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return istruthy(rdd.filter(identity).take(1))
+
+
+@dispatch(table.all, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return not rdd.filter(lambda x: not x).take(1)
+
+
+@dispatch(Head, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return rdd.take(t.n)
+
+
+@dispatch(Sort, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    func = rowfunc(t[t.column])
+    return (rdd.keyBy(func)
+                .sortByKey(ascending=t.ascending)
+                .map(lambda x: x[1]))
+
+
+@dispatch(Distinct, RDD)
+def compute(t, rdd):
+    rdd = compute(t.parent, rdd)
+    return rdd.distinct()
+
+
+@dispatch(Join, RDD, RDD)
 def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
-    col_idx_lhs = t.lhs.schema[0].names.index(t.on_left)
-    col_idx_rhs = t.rhs.schema[0].names.index(t.on_right)
+    col_idx_lhs = t.lhs.columns.index(t.on_left)
+    col_idx_rhs = t.rhs.columns.index(t.on_right)
 
     lhs = lhs.keyBy(lambda x: x[col_idx_lhs])
     rhs = rhs.keyBy(lambda x: x[col_idx_rhs])
 
     # Calculate the indices we want in the joined table
-    lhs_indices = [1]*len(t.lhs.columns)
-    rhs_indices = [1 if i != col_idx_rhs else 0 for i in range(0,
-                   len(t.rhs.columns))]
-    indices = lhs_indices + rhs_indices
-    # Perform the spark join, then reassemple the table
-    reassemble = lambda x: list(compress(chain.from_iterable(x[1]), indices))
-    out_rdd = lhs.join(rhs).map(reassemble)
-    return out_rdd
+    columns = t.lhs.columns + t.rhs.columns
+    repeated_index = len(columns) - columns[::-1].index(t.on_right) - 1
+    wanted = list(range(len(columns)))
+    wanted.pop(repeated_index)
+    getter = get(wanted)
+    reassemble = lambda x: getter(x[1][0] + x[1][1])
+
+    return lhs.join(rhs).map(reassemble)
 
 
-def _close(fn, ap):
-    """ Build a closure around a compute fn and an apply
+python_reductions = {
+              table.sum: builtins.sum,
+              table.count: builtins.len,
+              table.max: builtins.max,
+              table.min: builtins.min,
+              table.any: builtins.any,
+              table.all: builtins.all,
+              table.mean: python._mean,
+              table.var: python._var,
+              table.std: python._std,
+              table.nunique: lambda x: len(set(x))}
 
-    PySpark serialization, accompanied with some weirdness with Pandas and
-    NumExpr force a kludgy solution to avoid serialization issues.
 
-    See https://issues.apache.org/jira/browse/SPARK-1394
-    """
-    def _(x):
-        return x[0], fn(ap, list(x[1]))
-    return _
-
-
-@dispatch(By, pyspark.rdd.RDD)
+@dispatch(By, RDD)
 def compute(t, rdd):
-    parent = compute(t.parent, rdd)
-    keys_by_idx = tuple(t.parent.schema[0].names.index(i)
-                        for i in t.grouper.columns)
+    rdd = compute(t.parent, rdd)
+    try:
+        reduction = python_reductions[type(t.apply)]
+    except KeyError:
+        raise NotImplementedError("By only implemented for common reductions."
+                                  "\nGot %s" % type(t.apply))
 
-    def group_fn(x):
-        if (len(keys_by_idx) == 1):
-            return x[keys_by_idx[0]]
-        else:
-            return tuple(x[i] for i in keys_by_idx)
-
-    keyed_rdd = parent.keyBy(group_fn)
-    grouped = keyed_rdd.groupByKey()
-    compute_fn = compute.resolve((type(t.apply), list))
-    return grouped.map(lambda x: (x[0], compute_fn(t.apply, x[1])))
+    grouper = rowfunc(t.grouper)
+    pre = rowfunc(t.apply.parent)
 
 
-@dispatch((Label, ReLabel), pyspark.rdd.RDD)
+    groups = (rdd.map(lambda x: (grouper(x), pre(x)))
+             .groupByKey())
+
+    if isinstance(t.grouper, (Column, ColumnWise)):
+        func = lambda x: (x[0], reduction(x[1]))
+    else:
+        func = lambda x: (tuple(x[0]) + (reduction(x[1]),))
+    return groups.map(func)
+
+
+@dispatch((Label, ReLabel), RDD)
 def compute(t, rdd):
     return compute(t.parent, rdd)

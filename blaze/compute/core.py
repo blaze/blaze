@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 from multipledispatch import dispatch
 
 from blaze.expr.table import *
+from blaze.expr.scalar import *
 
 __all__ = ['compute']
 
@@ -30,7 +31,7 @@ def compute(t, d):
 
     if hasattr(t, 'parent'):
         parent = compute(t.parent, d)
-        t2 = t.subs({t.parent: TableSymbol(t.parent.schema)})
+        t2 = t.subs({t.parent: TableSymbol('', t.parent.schema)})
         return compute(t2, parent)
 
     raise NotImplementedError("No method found to compute on multiple Tables")
@@ -42,11 +43,36 @@ def compute(t, d):
     rhs = compute(t.rhs, d)
 
 
-    t2 = t.subs({t.lhs: TableSymbol(t.lhs.schema),
-                 t.rhs: TableSymbol(t.rhs.schema)})
+    t2 = t.subs({t.lhs: TableSymbol('_lhs', t.lhs.schema),
+                 t.rhs: TableSymbol('_rhs', t.rhs.schema)})
     return compute(t2, lhs, rhs)
 
 
 @dispatch(Join, object)
 def compute(t, o):
     return compute(t, o, o)
+
+
+def columnwise_funcstr(t, variadic=True, full=False):
+    """
+    >>> t = TableSymbol('t', '{x: real, y: real, z: real}')
+    >>> cw = t['x'] + t['z']
+    >>> columnwise_funcstr(cw)
+    'lambda x, z: x + z'
+
+    >>> columnwise_funcstr(cw, variadic=False)
+    'lambda (x, z): x + z'
+
+    >>> columnwise_funcstr(cw, variadic=False, full=True)
+    'lambda (x, y, z): x + z'
+    """
+    if full:
+        columns = t.parent.columns
+    else:
+        columns = t.active_columns()
+    if variadic:
+        prefix = 'lambda %s: '
+    else:
+        prefix = 'lambda (%s): '
+
+    return prefix % ', '.join(map(str, columns)) + eval_str(t.expr)

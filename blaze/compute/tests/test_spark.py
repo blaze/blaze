@@ -17,9 +17,9 @@ try:
 except ImportError:
     pass
 
-t = TableSymbol('{name: string, amount: int, id: int}')
+t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
-t2 = TableSymbol('{name: string, city: string}')
+t2 = TableSymbol('t2', '{name: string, city: string}')
 
 #Web Commons Graph Example data
 data_idx = [['A', 1],
@@ -30,47 +30,136 @@ data_arc = [[1, 3],
             [2, 3],
             [3, 1]]
 
-t_idx = TableSymbol('{name: string, node_id: int32}')
+t_idx = TableSymbol('idx', '{name: string, node_id: int32}')
 
-t_arc = TableSymbol('{node_out: int32, node_id: int32}')
+t_arc = TableSymbol('arc', '{node_out: int32, node_id: int32}')
 
-@skip("Spark not yet fully supported")
-def test_table():
+def test_spark_table():
     assert compute(t, rdd) == rdd
 
 
-@skip("Spark not yet fully supported")
-def test_projection():
-    assert compute(t['name'], rdd).collect() == rdd.map(lambda x:
-                                                        x[0]).collect()
+def test_spark_projection():
+    assert compute(t['name'], rdd).collect() == [row[0] for row in data]
 
 
-@skip("Spark not yet fully supported")
-def test_multicols_projection():
-    assert compute(t[['amount', 'name']], rdd).collect() == [[100, 'Alice'],
-                                                             [200, 'Bob'],
-                                                             [50, 'Alice']]
+def test_spark_multicols_projection():
+    result = compute(t[['amount', 'name']], rdd).collect()
+    expected = [(100, 'Alice'), (200, 'Bob'), (50, 'Alice')]
+
+    print(result)
+    print(expected)
+
+    assert result == expected
 
 
-@skip("Spark not yet fully supported")
-def test_selection():
-    assert compute(t[t['name'] == 'Alice'], rdd).collect() ==\
-        rdd.filter(lambda x: x[0] == 'Alice').collect()
+inc = lambda x: x + 1
 
 
-@skip("Spark not yet fully supported")
-def test_join():
+reduction_exprs = [
+    t['amount'].sum(),
+    t['amount'].min(),
+    t['amount'].max(),
+    t['amount'].nunique(),
+    t['name'].nunique(),
+    t['amount'].count(),
+    (t['amount'] > 150).any(),
+    (t['amount'] > 150).all(),
+    t['amount'].mean(),
+    t['amount'].var(),
+    t['amount'].std()]
+
+
+def test_spark_reductions():
+    for expr in reduction_exprs:
+        result = compute(expr, rdd)
+        expected = compute(expr, data)
+        if not result == expected:
+            print(result)
+            print(expected)
+            if isinstance(result, float):
+                assert abs(result - expected) < 0.001
+            else:
+                assert result == expected
+
+exprs = [
+    t['amount'],
+    t['amount'] == 100,
+    t[t['name'] == 'Alice'],
+    t[t['amount'] == 0],
+    t[t['amount'] > 150],
+    t['amount'] + t['id'],
+    t['amount'] % t['id'],
+    exp(t['amount']),
+    By(t, t['name'], t['amount'].sum()),
+    By(t, t['name'], (t['amount'] + 1).sum()),
+    (t['amount'] * 1).label('foo'),
+    t.map(lambda _, amt, id: amt + id),
+    t['amount'].map(inc)]
+
+
+def test_spark_basic():
+    check_exprs_against_python(exprs, data, rdd)
+
+
+def check_exprs_against_python(exprs):
+    any_bad = False
+    for expr in exprs:
+        result = compute(expr, rdd).collect()
+        expected = list(compute(expr, data))
+        if not result == expected:
+            any_bad = True
+            print("Expression:", expr)
+            print("Spark:", result)
+            print("Python:", expected)
+
+    assert not any_bad
+
+
+def test_spark_big_by():
+    tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
+
+    big_exprs = [
+        By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
+        By(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
+
+    databig = [['Alice', 'F', 100, 1],
+               ['Alice', 'F', 100, 3],
+               ['Drew', 'F', 100, 4],
+               ['Drew', 'M', 100, 5],
+               ['Drew', 'M', 200, 5]]
+
+    rddbig = sc.parallelize(databig)
+
+    check_exprs_against_python(big_exprs, databig, rddbig)
+
+
+def test_spark_head():
+    assert list(compute(t.head(1), rdd)) == list(compute(t.head(1), data))
+
+
+def test_spark_sort():
+    check_exprs_against_python([
+                t.sort('amount'),
+                t.sort('amount', ascending=True),
+                t.sort(['amount', 'id'])], data, rdd)
+
+def test_spark_distinct():
+    assert set(compute(t['name'].distinct(), rdd).collect()) == \
+            set(['Alice', 'Bob'])
+
+
+
+def test_spark_join():
 
     joined = Join(t, t2, 'name')
     expected = [['Alice', 100, 1, 'Austin'],
                 ['Bob', 200, 2, 'Boston'],
                 ['Alice', 50, 3, 'Austin']]
-    result = compute(joined, rdd, rdd2)
-    assert all([i in expected for i in result.collect()])
+    result = compute(joined, rdd, rdd2).collect()
+    assert all(i in expected for i in result)
 
-@skip("Spark not yet fully supported")
-def test_groupby():
 
+def test_spark_groupby():
     rddidx = sc.parallelize(data_idx)
     rddarc = sc.parallelize(data_arc)
 
@@ -80,8 +169,8 @@ def test_groupby():
     t = By(joined, joined['name'], joined['node_id'].count())
     a = compute(t, {t_arc: rddarc, t_idx:rddidx})
     in_degree = dict(a.collect())
-    assert in_degree['C'] == 2
-    assert in_degree['A'] == 1
+    assert in_degree == {'A': 1, 'C': 2}
+
 
 @skip("Spark not yet fully supported")
 def test_jaccard():
@@ -113,8 +202,3 @@ def test_jaccard():
     shared_neighbor_py = shared_neighbor_num.collect()
     assert shared_neighbor_py == [((3, 6), 3)]
     assert indeg_py == {1: 3, 3: 4, 6: 3}
-
-
-
-
-

@@ -5,7 +5,7 @@ from blaze.compute.python import *
 from blaze.expr.table import *
 from blaze.compatibility import builtins
 
-t = TableSymbol('{name: string, amount: int, id: int}')
+t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
 
 data = [['Alice', 100, 1],
@@ -13,7 +13,7 @@ data = [['Alice', 100, 1],
         ['Alice', 50, 3]]
 
 
-tbig = TableSymbol('{name: string, sex: string[1], amount: int, id: int}')
+tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
 
 
 databig = [['Alice', 'F', 100, 1],
@@ -52,6 +52,11 @@ def test_arithmetic():
 def test_unary_ops():
     assert list(compute(exp(t['amount']), data)) == [math.exp(x[1]) for x in data]
 
+
+def test_neg():
+    assert list(compute(-t['amount'], data)) == [-x[1] for x in data]
+
+
 def test_reductions():
     assert compute(sum(t['amount']), data) == 100 + 200 + 50
     assert compute(min(t['amount']), data) == 50
@@ -71,6 +76,11 @@ def test_by_one():
     print(compute(By(t, t['name'], t['amount'].sum()), data))
     assert set(compute(By(t, t['name'], t['amount'].sum()), data)) == \
             set([('Alice', 150), ('Bob', 200)])
+
+def test_by_compound_apply():
+    print(compute(By(t, t['name'], (t['amount'] + 1).sum()), data))
+    assert set(compute(By(t, t['name'], (t['amount'] + 1).sum()), data)) == \
+            set([('Alice', 152), ('Bob', 201)])
 
 
 def test_by_two():
@@ -110,8 +120,8 @@ def test_join():
     left = [('Alice', 100), ('Bob', 200)]
     right = [('Alice', 1), ('Bob', 2)]
 
-    L = TableSymbol('{name: string, amount: int}')
-    R = TableSymbol('{name: string, id: int}')
+    L = TableSymbol('L', '{name: string, amount: int}')
+    R = TableSymbol('R', '{name: string, id: int}')
     joined = Join(L, R, 'name')
 
     assert dshape(joined.schema) == \
@@ -136,6 +146,17 @@ def test_sort():
 
     assert list(compute(t.sort(['amount', 'id']), data)) == \
             sorted(data, key=lambda x: (x[1], x[2]), reverse=False)
+
+
+def test_fancy_sort():
+    assert list(compute(t.sort(t['amount']), data)) ==\
+            list(compute(t.sort('amount'), data))
+
+    assert list(compute(t.sort(t[['amount', 'id']]), data)) ==\
+            list(compute(t.sort(['amount', 'id']), data))
+
+    assert list(compute(t.sort(0-t['amount']), data)) ==\
+            list(compute(t.sort('amount'), data))[::-1]
 
 
 def test_head():
@@ -164,9 +185,9 @@ def test_graph_double_join():
     wanted = [['A'],
               ['F']]
 
-    t_idx = TableSymbol('{name: string, b: int32}')
-    t_arc = TableSymbol('{a: int32, b: int32}')
-    t_wanted = TableSymbol('{name: string}')
+    t_idx = TableSymbol('t_idx', '{name: string, b: int32}')
+    t_arc = TableSymbol('t_arc', '{a: int32, b: int32}')
+    t_wanted = TableSymbol('t_wanted', '{name: string}')
 
     j = Join(Join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'a', 'b']]
 
@@ -188,7 +209,7 @@ def test_label():
 
 
 def test_relabel_join():
-    names = TableSymbol('{first: string, last: string}')
+    names = TableSymbol('names', '{first: string, last: string}')
 
     siblings = Join(names.relabel({'first': 'left'}),
                     names.relabel({'first': 'right'}),
@@ -229,7 +250,7 @@ def test_apply():
 def test_map_datetime():
     from datetime import datetime
     data = [['A', 0], ['B', 1]]
-    t = TableSymbol('{foo: string, datetime: int64}')
+    t = TableSymbol('t', '{foo: string, datetime: int64}')
 
     result = list(compute(t['datetime'].map(datetime.utcfromtimestamp), data))
     expected = [datetime(1970, 1, 1, 0, 0, 0), datetime(1970, 1, 1, 0, 0, 1)]
@@ -238,7 +259,7 @@ def test_map_datetime():
 
 
 def test_by_multi_column_grouper():
-    t = TableSymbol('{x: int, y: int, z: int}')
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
     expr = By(t, t[['x', 'y']], t['z'].count())
     data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
 

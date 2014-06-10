@@ -3,7 +3,7 @@
 >>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.python import compute
 
->>> accounts = TableSymbol('{name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -18,58 +18,79 @@ from collections import Iterator
 import math
 from operator import itemgetter
 from functools import partial
+from toolz import map, isiterable
+from toolz.compatibility import zip
+import sys
 
 from ..expr.table import *
-from ..compatibility import builtins
-from .. import utils
-from ..utils import groupby, get, reduceby, unique
+from ..expr.scalar.core import *
+from ..expr import scalar
+from ..compatibility import builtins, apply
+from cytoolz import groupby, get, reduceby, unique, take
+import cytoolz
 from . import core
+
+# Dump exp, log, sin, ... into namespace
+from math import *
 
 __all__ = ['compute', 'Sequence']
 
 Sequence = (tuple, list, Iterator)
 
-@dispatch(Projection, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
+
+""" Rowfunc provides a function that can be mapped onto a sequence.
+
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+>>> f = rowfunc(accounts['amount'])
+
+>>> row = ('Alice', 100)
+>>> f(row)
+100
+
+See Also:
+    compute<Rowwise, Sequence>
+"""
+
+@dispatch(Projection)
+def rowfunc(t):
+    from toolz.curried import get
     indices = [t.parent.columns.index(col) for col in t.columns]
-    get = operator.itemgetter(*indices)
-    return (get(x) for x in parent)
+    return get(indices)
+
+@dispatch(Column)
+def rowfunc(t):
+    index = t.parent.columns.index(t.column)
+    return lambda x: x[index]
 
 
-@dispatch(Column, Sequence)
+@dispatch(ColumnWise)
+def rowfunc(t):
+    if sys.version_info[0] == 3:
+        # Python3 doesn't allow argument unpacking
+        # E.g. ``lambda (x, y, z): x + z`` is illegal
+        # Solution: Make ``lambda x, y, z: x + y``, then wrap with ``apply``
+        func = eval(core.columnwise_funcstr(t, variadic=True, full=True))
+        return partial(apply, func)
+    elif sys.version_info[0] == 2:
+        return eval(core.columnwise_funcstr(t, variadic=False, full=True))
+
+
+@dispatch(Map)
+def rowfunc(t):
+    if len(t.parent.columns) == 1:
+        return t.func
+    else:
+        return partial(apply, t.func)
+
+
+# Classes that operate equally on each row of the table
+RowWise = (Projection, ColumnWise, Map)
+
+
+@dispatch(RowWise, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    index = t.parent.columns.index(t.columns[0])
-    return (x[index] for x in parent)
-
-
-@dispatch(BinOp, Sequence)
-def compute(t, seq):
-    lhs_istable = isinstance(t.lhs, TableExpr)
-    rhs_istable = isinstance(t.rhs, TableExpr)
-
-    if lhs_istable and rhs_istable:
-
-        seq1, seq2 = itertools.tee(seq, 2)
-        lhs = compute(t.lhs, seq1)
-        rhs = compute(t.rhs, seq2)
-
-        return (t.op(left, right) for left, right in zip(lhs, rhs))
-
-    elif lhs_istable:
-
-        lhs = compute(t.lhs, seq)
-        right = compute(t.rhs, None)
-
-        return (t.op(left, right) for left in lhs)
-
-    elif rhs_istable:
-
-        rhs = compute(t.rhs, seq)
-        left = compute(t.lhs, None)
-
-        return (t.op(left, right) for right in rhs)
+    return map(rowfunc(t), parent)
 
 
 @dispatch(Selection, Sequence)
@@ -86,17 +107,12 @@ def compute(t, seq):
     return seq
 
 
-@dispatch(UnaryOp, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    op = getattr(math, t.symbol)
-    return (op(x) for x in parent)
-
 @dispatch(Reduction, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     op = getattr(builtins, t.symbol)
     return op(parent)
+
 
 def _mean(seq):
     total = 0
@@ -105,6 +121,7 @@ def _mean(seq):
         total += item
         count += 1
     return float(total) / count
+
 
 def _var(seq):
     total = 0
@@ -116,38 +133,51 @@ def _var(seq):
         count += 1
     return 1.0*total_squared/count - (1.0*total/count) ** 2
 
+
+def _std(seq):
+    return sqrt(_var(seq))
+
+
 @dispatch(count, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return builtins.sum(1 for i in parent)
+    return cytoolz.count(parent)
+
 
 @dispatch(Distinct, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return unique(parent)
 
+
 @dispatch(nunique, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return utils.count((unique(parent)))
+    return cytoolz.count(unique(parent))
+
 
 @dispatch(mean, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return _mean(parent)
 
+
 @dispatch(var, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
     return _var(parent)
 
+
 @dispatch(std, Sequence)
 def compute(t, seq):
-    return math.sqrt(compute(var(t.parent), seq))
+    parent = compute(t.parent, seq)
+    return _std(parent)
+
 
 lesser = lambda x, y: x if x < y else y
 greater = lambda x, y: x if x > y else y
 countit = lambda acc, _: acc + 1
+
 
 binops = {sum: (operator.add, 0),
           min: (lesser, 1e250),
@@ -156,37 +186,34 @@ binops = {sum: (operator.add, 0),
           any: (operator.or_, False),
           all: (operator.and_, True)}
 
+
 @dispatch(By, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
 
-    if isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
-        indices = [t.grouper.parent.columns.index(col)
-                        for col in t.grouper.columns]
-        grouper = operator.itemgetter(*indices)
-    else:
+    if not isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
         raise NotImplementedError("Grouper attribute of By must be Projection "
                                   "of parent table, got %s" % str(t.grouper))
 
-    # Match setting like
-    # By(t, t[column], t[column].reduction())
-    # TODO: Support more general streaming grouped reductions
     if (isinstance(t.apply, Reduction) and
-        isinstance(t.apply.parent, Column) and
-        t.apply.parent.parent.isidentical(t.grouper.parent) and
-        t.apply.parent.parent.isidentical(t.parent) and
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
+        a, b = itertools.tee(seq)
+        applied = compute(t.apply.parent, a)
+        grouped = compute(t.grouper, b)
 
-        col = t.apply.parent.columns[0]
-        getter = operator.itemgetter(t.apply.parent.parent.columns.index(col))
+        zipped = zip(grouped, applied)
+
         def binop2(acc, x):
-            x = getter(x)
-            return binop(acc, x)
+            return binop(acc, x[1])
 
-        d = reduceby(grouper, binop2, parent, initial)
+        d = reduceby(operator.itemgetter(0), binop2, zipped, initial)
     else:
+        indices = [t.grouper.parent.columns.index(col)
+                        for col in t.grouper.columns]
+        grouper = operator.itemgetter(*indices)
+
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 
@@ -235,13 +262,10 @@ def compute(t, lhs, rhs):
 @dispatch(Sort, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    if isinstance(t.column, (tuple, list)):
-        index = [t.parent.columns.index(col) for col in t.column]
-        key = operator.itemgetter(*index)
+    if isinstance(t.column, (str, tuple, list)):
+        key = rowfunc(t.parent[t.column])
     else:
-        index = t.parent.columns.index(t.column)
-        key = operator.itemgetter(index)
-
+        key = rowfunc(t.column)
     return sorted(parent,
                   key=key,
                   reverse=not t.ascending)
@@ -250,21 +274,12 @@ def compute(t, seq):
 @dispatch(Head, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-    return itertools.islice(parent, 0, t.n)
+    return tuple(take(t.n, parent))
 
 
 @dispatch((Label, ReLabel), Sequence)
 def compute(t, seq):
     return compute(t.parent, seq)
-
-
-@dispatch(Map, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    if len(t.parent.columns) == 1:
-        return map(t.func, parent)
-    else:
-        return itertools.starmap(t.func, parent)
 
 
 @dispatch(Apply, Sequence)

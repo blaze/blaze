@@ -3,7 +3,7 @@
 >>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.pandas import compute
 
->>> accounts = TableSymbol('{name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from pandas import DataFrame
@@ -23,6 +23,7 @@ from multipledispatch import dispatch
 import numpy as np
 
 from ..expr.table import *
+from ..expr.scalar import UnaryOp, BinOp
 from . import core
 
 __all__ = ['compute']
@@ -40,11 +41,32 @@ def compute(t, df):
     return parent[t.columns[0]]
 
 
+@dispatch(ColumnWise, DataFrame)
+def compute(t, df):
+    expr = t.expr
+    columns = [t.parent[c] for c in t.parent.columns]
+    expr = expr.subs(dict((col.scalar_symbol, col) for col in columns))
+    return compute(expr, df)
+
+
 @dispatch(BinOp, DataFrame)
 def compute(t, df):
     lhs = compute(t.lhs, df)
     rhs = compute(t.rhs, df)
     return t.op(lhs, rhs)
+
+
+@dispatch(UnaryOp, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    op = getattr(np, t.symbol)
+    return op(parent)
+
+
+@dispatch(Neg, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return -parent
 
 
 @dispatch(Selection, DataFrame)
@@ -89,13 +111,6 @@ def compute(t, lhs, rhs):
     return result.reset_index()[t.columns]
 
 
-@dispatch(UnaryOp, DataFrame)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    op = getattr(np, t.symbol)
-    return op(parent)
-
-
 @dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
 def compute(t, gb):
     return gb
@@ -124,7 +139,7 @@ def compute(t, df):
     groups = full.groupby(list(grouper.columns))[list(pregrouped.columns)]
 
     reduction = t.apply.subs({t.apply.parent:
-                              TableSymbol(t.apply.parent.schema)})
+                              TableSymbol('group', t.apply.parent.schema)})
 
     return compute(reduction, groups)[list(pregrouped.columns)].reset_index()
 

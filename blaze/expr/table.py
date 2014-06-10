@@ -1,6 +1,6 @@
 """ An abstract Table
 
->>> accounts = TableSymbol('{name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 """
 from __future__ import absolute_import, division, print_function
@@ -8,8 +8,14 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
+from toolz import concat, partial, first, pipe
+from toolz.curried import filter
+from . import scalar
 from .core import Expr, Scalar
+from .scalar import ScalarSymbol
+from .scalar import *
 from ..utils import unique
+from ..compatibility import _strtypes
 
 
 class TableExpr(Expr):
@@ -22,23 +28,48 @@ class TableExpr(Expr):
     def columns(self):
         return self.schema[0].names
 
+    @property
+    def dtype(self):
+        ds = self.schema[-1]
+        if isinstance(ds, Record):
+            if len(ds.fields.values()) > 1:
+                raise TypeError("`.dtype` not defined for multicolumn object. "
+                                "Use `.schema` instead")
+            else:
+                return dshape(first(ds.fields.values()))
+        else:
+            return dshape(ds)
+
     def __getitem__(self, key):
-        if isinstance(key, Relational):
-            return Selection(self, key)
-        if isinstance(key, (tuple, list)):
+        if isinstance(key, _strtypes):
+            if key not in self.columns:
+                raise ValueError("Mismatched Column: %s" % str(key))
+            return Column(self, key)
+        if isinstance(key, list) and all(isinstance(k, _strtypes) for k in key):
             key = tuple(key)
             if not all(col in self.columns for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
             return Projection(self, tuple(key))
-        else:
-            if key not in self.columns:
-                raise ValueError("Mismatched Column: %s" % str(key))
-            return Column(self, key)
+        if isinstance(key, TableExpr):
+            return Selection(self, key)
+        raise TypeError("Did not understand input: %s[%s]" % (self, key))
 
-    def sort(self, column=None, ascending=True):
-        if column is None:
-            column = self.columns[0]
-        return Sort(self, column, ascending)
+    def sort(self, key=None, ascending=True):
+        """ Sort table
+
+        Parameters
+        ----------
+        key: string, list of strings, TableExpr
+            Defines by what you want to sort.  Either:
+                A single column string, ``t.sort('amount')``
+                A list of column strings, ``t.sort(['name', 'amount'])``
+                A Table Expression, ``t.sort(-t['amount'])``
+        ascending: bool
+            Determines order of the sort
+        """
+        if key is None:
+            key = self.columns[0]
+        return Sort(self, key, ascending)
 
     def head(self, n=10):
         return Head(self, n)
@@ -55,22 +86,34 @@ class TableSymbol(TableExpr):
 
     This is a leaf in the expression tree
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
-    """
-    __slots__ = 'schema',
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts['amount'] + 1
+    accounts['amount'] + 1
 
-    def __init__(self, schema):
+    We define a TableSymbol with a name like ``accounts`` and the datashape of
+    a single row, called a schema.
+    """
+    __slots__ = 'name', 'schema'
+
+    def __init__(self, name, schema):
+        self.name = name
         self.schema = dshape(schema)
 
     def __str__(self):
-        return type(self).__name__ + "('%s')" % self.schema
+        return self.name
 
 
 class Projection(TableExpr):
-    """
+    """ Select columns from table
 
     SELECT a, b, c
     FROM table
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts[['name', 'amount']].schema
+    dshape("{ name : string, amount : int32 }")
     """
     __slots__ = 'parent', '_columns'
 
@@ -88,15 +131,115 @@ class Projection(TableExpr):
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
     def __str__(self):
-        return '%s[%s]' % (self.parent,
-                           ', '.join(["'%s'" % col for col in self.columns]))
+        return '%s[[%s]]' % (self.parent,
+                             ', '.join(["'%s'" % col for col in self.columns]))
 
 
-class Column(Projection):
-    """
+class ColumnSyntaxMixin(object):
+    def __eq__(self, other):
+        return columnwise(Eq, self, other)
+
+    def __ne__(self, other):
+        return columnwise(NE, self, other)
+
+    def __lt__(self, other):
+        return columnwise(LT, self, other)
+
+    def __le__(self, other):
+        return columnwise(LE, self, other)
+
+    def __gt__(self, other):
+        return columnwise(GT, self, other)
+
+    def __ge__(self, other):
+        return columnwise(GE, self, other)
+
+    def __add__(self, other):
+        return columnwise(Add, self, other)
+
+    def __radd__(self, other):
+        return columnwise(Add, other, self)
+
+    def __mul__(self, other):
+        return columnwise(Mul, self, other)
+
+    def __rmul__(self, other):
+        return columnwise(Mul, other, self)
+
+    def __div__(self, other):
+        return columnwise(Div, self, other)
+
+    def __rdiv__(self, other):
+        return columnwise(Div, other, self)
+
+    def __sub_(self, other):
+        return columnwise(Sub, self, other)
+
+    def __rsub__(self, other):
+        return columnwise(Sub, other, self)
+
+    def __pow__(self, other):
+        return columnwise(Pow, self, other)
+
+    def __rpow__(self, other):
+        return columnwise(Pow, other, self)
+
+    def __mod__(self, other):
+        return columnwise(Mod, self, other)
+
+    def __rmod__(self, other):
+        return columnwise(Mod, other, self)
+
+    def __neg__(self):
+        return columnwise(Neg, self)
+
+    def label(self, label):
+        return Label(self, label)
+
+    def count(self):
+        return count(self)
+
+    def distinct(self):
+        return Distinct(self)
+
+    def nunique(self):
+        return nunique(self)
+
+    def sum(self):
+        return sum(self)
+
+    def min(self):
+        return min(self)
+
+    def max(self):
+        return max(self)
+
+    def any(self):
+        return any(self)
+
+    def all(self):
+        return all(self)
+
+    def mean(self):
+        return mean(self)
+
+    def var(self):
+        return var(self)
+
+    def std(self):
+        return std(self)
+
+
+class Column(ColumnSyntaxMixin, Projection):
+    """ A single column from a table
 
     SELECT a
     FROM table
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts['name'].schema
+    dshape("{ name : string }")
     """
     __slots__ = 'parent', 'column'
 
@@ -113,95 +256,24 @@ class Column(Projection):
     def __str__(self):
         return "%s['%s']" % (self.parent, self.columns[0])
 
-    def __eq__(self, other):
-        return Eq(self, other)
-
-    def __lt__(self, other):
-        return LT(self, other)
-
-    def __gt__(self, other):
-        return GT(self, other)
-
-    def label(self, label):
-        return Label(self, label)
-
-    def __add__(self, other):
-        return Add(self, other)
-
-    def __radd__(self, other):
-        return Add(other, self)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(other, self)
-
-    def __div__(self, other):
-        return Div(self, other)
-
-    def __rdiv__(self, other):
-        return Div(other, self)
-
-    def __sub_(self, other):
-        return Sub(self, other)
-
-    def __rsub__(self, other):
-        return Sub(other, self)
-
-    def __pow__(self, other):
-        return Pow(self, other)
-
-    def __rpow__(self, other):
-        return Pow(other, self)
-
-    def __mod__(self, other):
-        return Mod(self, other)
-
-    def __rmod__(self, other):
-        return Mod(other, self)
-
-    def count(self):
-        return count(self)
-
-    def distinct(self):
-        return Distinct(self)
-
-    def nunique(self):
-        return nunique(self)
-
-    def sum(self):
-        return sum(self)
-
-    def min(self):
-        return min(self)
-
-    def max(self):
-        return max(self)
-
-    def any(self):
-        return any(self)
-
-    def all(self):
-        return all(self)
-
-    def mean(self):
-        return mean(self)
-
-    def var(self):
-        return var(self)
-
-    def std(self):
-        return std(self)
+    @property
+    def scalar_symbol(self):
+        return ScalarSymbol(self.column, dtype=self.dtype)
 
 
 class Selection(TableExpr):
-    """
-    WHERE a op b
+    """ Filter rows of table based on predicate
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> deadbeats = accounts[accounts['amount'] < 0]
     """
     __slots__ = 'parent', 'predicate'
 
     def __init__(self, table, predicate):
+        if predicate.dtype != dshape('bool'):
+            raise TypeError("Must select over a boolean predicate.  Got:\n"
+                            "%s[%s]" % (table, predicate))
         self.parent = table
         self.predicate = predicate  # A Relational
 
@@ -213,174 +285,88 @@ class Selection(TableExpr):
         return self.parent.schema
 
 
-class ColumnWise(TableExpr):
-    """
+def columnwise(op, *column_inputs):
+    """ Merge columns with scalar operation
 
-    a op b
+
+    Parameters
+    ----------
+    op - Scalar Operation like Add, Mul, Sin, Exp
+    column_inputs - either Column, ColumnWise or constant (like 1, 1.0, '1')
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+
+    >>> columnwise(Add, accounts['amount'], 100)
+    accounts['amount'] + 100
+
+    Fuses operations down into ScalarExpr level
+
+    >>> columnwise(Mul, 2, (accounts['amount'] + 100))
+    2 * (accounts['amount'] + 100)
     """
+    expr_inputs = []
+    parents = set()
+    for col in column_inputs:
+        if isinstance(col, ColumnWise):
+            expr_inputs.append(col.expr)
+            parents.add(col.parent)
+        elif isinstance(col, Column):
+            # TODO: specify dtype
+            expr_inputs.append(col.scalar_symbol)
+            parents.add(col.parent)
+        else:
+            # maybe something like 5 or 'Alice'
+            expr_inputs.append(col)
+
+    if not len(parents) == 1:
+        raise ValueError("All inputs must be from same Table.\n"
+                         "Saw the following tables: %s"
+                         % ', '.join(map(str, parents)))
+
+    expr = op(*expr_inputs)
+    return ColumnWise(first(parents), expr)
+
+
+class ColumnWise(TableExpr, ColumnSyntaxMixin):
+    """ Apply Scalar Expression onto columns of data
+
+    Parameters
+    ----------
+
+    parent - TableExpr
+    expr - ScalarExpr
+        The names of the varibles within the scalar expr must match the columns
+        of the parent.  Use ``Column.scalar_variable`` to generate the
+        appropriate ScalarSymbol
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+
+    >>> expr = Add(accounts['amount'].scalar_symbol, 100)
+    >>> ColumnWise(accounts, expr)
+    accounts['amount'] + 100
+    """
+    __slots__ = 'parent', 'expr'
+    def __init__(self, parent, expr):
+        self.parent = parent
+        self.expr = expr
+
     __hash__ = Expr.__hash__
 
-    def __eq__(self, other):
-        return Eq(self, other)
-
-    def __lt__(self, other):
-        return LT(self, other)
-
-    def __gt__(self, other):
-        return GT(self, other)
-
-    def label(self, label):
-        return Label(self, label)
-
-    def __add__(self, other):
-        return Add(self, other)
-
-    def __radd__(self, other):
-        return Add(other, self)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(other, self)
-
-    def __div__(self, other):
-        return Div(self, other)
-
-    def __rdiv__(self, other):
-        return Div(other, self)
-
-    def __sub_(self, other):
-        return Sub(self, other)
-
-    def __rsub__(self, other):
-        return Sub(other, self)
-
-    def __pow__(self, other):
-        return Pow(self, other)
-
-    def __rpow__(self, other):
-        return Pow(other, self)
-
-    def __mod__(self, other):
-        return Mod(self, other)
-
-    def __rmod__(self, other):
-        return Mod(other, self)
-
-    def count(self):
-        return count(self)
-
-    def distinct(self):
-        return Distinct(self)
-
-    def nunique(self):
-        return nunique(self)
-
-    def sum(self):
-        return sum(self)
-
-    def min(self):
-        return min(self)
-
-    def max(self):
-        return max(self)
-
-    def any(self):
-        return any(self)
-
-    def all(self):
-        return all(self)
-
-    def mean(self):
-        return mean(self)
-
-    def var(self):
-        return var(self)
-
-    def std(self):
-        return std(self)
-
-
-class BinOp(ColumnWise):
-    """ A column-wise Binary Operation
-
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
-
-    >>> data = [['Alice', 100, 1],
-    ...         ['Bob', 200, 2],
-    ...         ['Alice', 50, 3]]
-
-    >>> from blaze.compute.python import compute
-    >>> list(compute(t['amount'] * 10, data))
-    [1000, 2000, 500]
-    """
-    __slots__ = 'lhs', 'rhs'
-
-    def __init__(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
+    @property
+    def schema(self):
+        return self.expr.dshape
 
     def __str__(self):
-        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
+        columns = self.active_columns()
+        newcol = lambda c: "%s['%s']" % (self.parent, c)
+        return eval_str(self.expr.subs(dict(zip(columns,
+                                                map(newcol, columns)))))
 
-
-class Relational(BinOp):
-    @property
-    def schema(self):
-        return dshape('bool')
-
-
-class Eq(Relational):
-    symbol = '=='
-    op = operator.eq
-
-
-class GT(Relational):
-    symbol = '>'
-    op = operator.gt
-
-
-class LT(Relational):
-    symbol = '<'
-    op = operator.lt
-
-
-class Arithmetic(BinOp):
-    @property
-    def schema(self):
-        # TODO: Infer schema based on input types
-        return dshape('real')
-
-
-class Add(Arithmetic):
-    symbol = '+'
-    op = operator.add
-
-
-class Mul(Arithmetic):
-    symbol = '*'
-    op = operator.mul
-
-
-class Sub(Arithmetic):
-    symbol = '-'
-    op = operator.sub
-
-
-class Div(Arithmetic):
-    symbol = '/'
-    op = operator.truediv
-
-
-class Pow(Arithmetic):
-    symbol = '**'
-    op = operator.pow
-
-
-class Mod(Arithmetic):
-    symbol = '%'
-    op = operator.mod
+    def active_columns(self):
+        return sorted(unique(x.name for x in self.traverse()
+                                    if isinstance(x, ScalarSymbol)))
 
 
 class Join(TableExpr):
@@ -393,14 +379,14 @@ class Join(TableExpr):
     on_left : string
     on_right : string
 
-    >>> names = TableSymbol('{name: string, id: int}')
-    >>> amounts = TableSymbol('{amount: int, id: int}')
+    >>> names = TableSymbol('names', '{name: string, id: int}')
+    >>> amounts = TableSymbol('amounts', '{amount: int, id: int}')
 
     Join tables based on shared column name
     >>> joined = Join(names, amounts, 'id')
 
     Join based on different column names
-    >>> amounts = TableSymbol('{amount: int, acctNumber: int}')
+    >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = Join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', 'on_left', 'on_right'
@@ -425,42 +411,41 @@ class Join(TableExpr):
         return dshape(Record(rec))
 
 
-class UnaryOp(ColumnWise):
-    """ A column-wise Unary Operation
+sqrt = partial(columnwise, scalar.sqrt)
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+sin = partial(columnwise, scalar.sin)
+cos = partial(columnwise, scalar.cos)
+tan = partial(columnwise, scalar.tan)
+sinh = partial(columnwise, scalar.sinh)
+cosh = partial(columnwise, scalar.cosh)
+tanh = partial(columnwise, scalar.tanh)
+acos = partial(columnwise, scalar.acos)
+acosh = partial(columnwise, scalar.acosh)
+asin = partial(columnwise, scalar.asin)
+asinh = partial(columnwise, scalar.asinh)
+atan = partial(columnwise, scalar.atan)
+atanh = partial(columnwise, scalar.atanh)
 
-    >>> data = [['Alice', 100, 1],
-    ...         ['Bob', 200, 2],
-    ...         ['Alice', 50, 3]]
+exp = partial(columnwise, scalar.exp)
+log = partial(columnwise, scalar.log)
+expm1 = partial(columnwise, scalar.expm1)
+log10 = partial(columnwise, scalar.log10)
+log1p = partial(columnwise, scalar.log1p)
 
-    >>> from blaze.compute.python import compute
-    >>> list(compute(log(t['amount']), data))  # doctest: +SKIP
-    [4.605170185988092, 5.298317366548036, 3.912023005428146]
-    """
-    __slots__ = 'parent',
+radians = partial(columnwise, scalar.radians)
+degrees = partial(columnwise, scalar.degrees)
 
-    def __init__(self, table):
-        self.parent = table
+ceil = partial(columnwise, scalar.ceil)
+floor = partial(columnwise, scalar.floor)
+trunc = partial(columnwise, scalar.trunc)
 
-    def __str__(self):
-        return '%s(%s)' % (self.symbol, self.parent)
-
-    @property
-    def symbol(self):
-        return type(self).__name__
-
-class sin(UnaryOp): pass
-class cos(UnaryOp): pass
-class tan(UnaryOp): pass
-class exp(UnaryOp): pass
-class log(UnaryOp): pass
+isnan = partial(columnwise, scalar.isnan)
 
 
 class Reduction(Scalar):
     """ A column-wise reduction
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
     >>> data = [['Alice', 100, 1],
@@ -500,7 +485,7 @@ class nunique(Reduction): pass
 class By(TableExpr):
     """ Split-Apply-Combine Operator
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = By(t, t['name'], t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
@@ -516,7 +501,7 @@ class By(TableExpr):
 
     def __init__(self, parent, grouper, apply):
         self.parent = parent
-        s = TableSymbol(parent.schema)
+        s = TableSymbol('', parent.schema)
         self.grouper = grouper.subs({parent: s})
         self.apply = apply.subs({parent: s})
         if isdimension(self.apply.dshape[0]):
@@ -536,6 +521,17 @@ class By(TableExpr):
 
 
 class Sort(TableExpr):
+    """ Table in sorted order
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts.sort('amount', ascending=False).schema
+    dshape("{ name : string, amount : int32 }")
+
+
+    Some backends support sorting by arbitrary rowwise tables, e.g.
+
+    >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
+    """
     __slots__ = 'parent', 'column', 'ascending'
 
     def __init__(self, parent, column, ascending=True):
@@ -551,7 +547,7 @@ class Sort(TableExpr):
 class Distinct(TableExpr):
     """ Distinct elements filter
 
-    >>> t = TableSymbol('{name: string, amount: int, id: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = Distinct(t)
 
     >>> data = [('Alice', 100, 1),
@@ -571,6 +567,12 @@ class Distinct(TableExpr):
         return self.parent.schema
 
 class Head(TableExpr):
+    """ First ``n`` elements of table
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts.head(5).dshape
+    dshape("5 * { name : string, amount : int32 }")
+    """
     __slots__ = 'parent', 'n'
 
     def __init__(self, parent, n=10):
@@ -586,7 +588,17 @@ class Head(TableExpr):
         return self.n * self.schema
 
 
-class Label(ColumnWise):
+class Label(TableExpr, ColumnSyntaxMixin):
+    """ A Labeled column
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+
+    >>> (accounts['amount'] * 100).schema
+    dshape("float64")
+
+    >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
+    dshape("{ new_amount : float64 }")
+    """
     __slots__ = 'parent', 'label'
 
     def __init__(self, parent, label):
@@ -603,6 +615,15 @@ class Label(ColumnWise):
 
 
 class ReLabel(TableExpr):
+    """ Table with same content but new labels
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+
+    >>> accounts.schema
+    dshape("{ name : string, amount : int32 }")
+    >>> accounts.relabel({'amount': 'balance'}).schema
+    dshape("{ name : string, balance : int32 }")
+    """
     __slots__ = 'parent', 'labels'
 
     def __init__(self, parent, labels):
@@ -625,7 +646,7 @@ class Map(TableExpr):
 
     >>> from datetime import datetime
 
-    >>> t = TableSymbol('{price: real, time: int64}')  # times as integers
+    >>> t = TableSymbol('t', '{price: real, time: int64}')  # times as integers
     >>> datetimes = t['time'].map(datetime.utcfromtimestamp)
 
     Optionally provide extra schema information
@@ -654,7 +675,7 @@ class Map(TableExpr):
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
 
-    >>> t = TableSymbol('{name: string, amount: int}')
+    >>> t = TableSymbol('t', '{name: string, amount: int}')
     >>> h = Apply(hash, t)  # Hash value of resultant table
 
     Optionally provide extra datashape information

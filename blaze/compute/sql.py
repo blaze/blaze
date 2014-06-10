@@ -3,7 +3,7 @@
 >>> from blaze.expr.table import TableSymbol
 >>> from blaze.compute.sql import compute
 
->>> accounts = TableSymbol('{name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts['name'][accounts['amount'] < 0]
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
@@ -20,8 +20,9 @@ from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
 
-from blaze.expr.table import *
-from blaze.utils import unique
+from ..expr.table import *
+from ..expr.scalar import BinOp, UnaryOp
+from ..utils import unique
 from . import core
 
 __all__ = ['compute', 'computefull', 'select']
@@ -38,11 +39,32 @@ def compute(t, s):
     return parent.c.get(t.columns[0])
 
 
+@dispatch(ColumnWise, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    expr = t.expr
+    columns = [t.parent[c] for c in t.parent.columns]
+    expr = expr.subs(dict((col.scalar_symbol, col) for col in columns))
+    return compute(expr, s)
+
+
 @dispatch(BinOp, sqlalchemy.sql.Selectable)
 def compute(t, s):
     lhs = compute(t.lhs, s)
     rhs = compute(t.rhs, s)
     return t.op(lhs, rhs)
+
+
+@dispatch(UnaryOp, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    op = getattr(sa.func, t.symbol)
+    return op(parent)
+
+
+@dispatch(Neg, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    return -parent
 
 
 @dispatch(Selection, sqlalchemy.sql.Selectable)
@@ -91,12 +113,6 @@ def compute(t, lhs, rhs):
                      key=lambda c: c.name)
     return select(list(columns)).select_from(join)
 
-
-@dispatch(UnaryOp, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    op = getattr(sa.func, t.symbol)
-    return op(parent)
 
 
 names = {mean: 'avg',
