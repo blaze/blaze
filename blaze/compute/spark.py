@@ -4,7 +4,7 @@ from multipledispatch import dispatch
 import sys
 from operator import itemgetter
 import operator
-from toolz import compose
+from toolz import compose, identity
 from toolz.curried import get
 
 from blaze.expr.table import *
@@ -72,16 +72,20 @@ def compute(t, rdd):
     return reduction(compute(t.parent, rdd))
 
 
+def istruthy(x):
+    return not not x
+
+
 @dispatch(table.any, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    return rdd.fold(False, operator.or_)
+    return istruthy(rdd.filter(identity).take(1))
 
 
 @dispatch(table.all, RDD)
 def compute(t, rdd):
     rdd = compute(t.parent, rdd)
-    return rdd.fold(True, operator.and_)
+    return not rdd.filter(lambda x: not x).take(1)
 
 
 @dispatch(Head, RDD)
