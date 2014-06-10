@@ -438,6 +438,7 @@ trunc = partial(columnwise, scalar.trunc)
 
 isnan = partial(columnwise, scalar.isnan)
 
+
 class Reduction(Scalar):
     """ A column-wise reduction
 
@@ -517,6 +518,17 @@ class By(TableExpr):
 
 
 class Sort(TableExpr):
+    """ Table in sorted order
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts.sort('amount', ascending=False).schema
+    dshape("{ name : string, amount : int32 }")
+
+
+    Some backends support sorting by arbitrary rowwise tables, e.g.
+
+    >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
+    """
     __slots__ = 'parent', 'column', 'ascending'
 
     def __init__(self, parent, column, ascending=True):
