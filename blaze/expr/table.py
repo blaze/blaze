@@ -36,7 +36,7 @@ class TableExpr(Expr):
                 raise TypeError("`.dtype` not defined for multicolumn object. "
                                 "Use `.schema` instead")
             else:
-                return dshape(ds.fields.values()[0])
+                return dshape(first(ds.fields.values()))
         else:
             return dshape(ds)
 

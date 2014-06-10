@@ -21,7 +21,8 @@ try:
 except ImportError:
     #Create a dummy RDD for py 2.6
     class Dummy(object):
-        pass
+        def __getattr__(self, attr):
+            return None
     pyspark = Dummy()
     pyspark.rdd = Dummy()
     RDD = Dummy
