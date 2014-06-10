@@ -408,12 +408,35 @@ class Join(TableExpr):
         return dshape(Record(rec))
 
 
+sqrt = partial(columnwise, scalar.sqrt)
+
 sin = partial(columnwise, scalar.sin)
 cos = partial(columnwise, scalar.cos)
 tan = partial(columnwise, scalar.tan)
+sinh = partial(columnwise, scalar.sinh)
+cosh = partial(columnwise, scalar.cosh)
+tanh = partial(columnwise, scalar.tanh)
+acos = partial(columnwise, scalar.acos)
+acosh = partial(columnwise, scalar.acosh)
+asin = partial(columnwise, scalar.asin)
+asinh = partial(columnwise, scalar.asinh)
+atan = partial(columnwise, scalar.atan)
+atanh = partial(columnwise, scalar.atanh)
+
 exp = partial(columnwise, scalar.exp)
 log = partial(columnwise, scalar.log)
+expm1 = partial(columnwise, scalar.expm1)
+log10 = partial(columnwise, scalar.log10)
+log1p = partial(columnwise, scalar.log1p)
 
+radians = partial(columnwise, scalar.radians)
+degrees = partial(columnwise, scalar.degrees)
+
+ceil = partial(columnwise, scalar.ceil)
+floor = partial(columnwise, scalar.floor)
+trunc = partial(columnwise, scalar.trunc)
+
+isnan = partial(columnwise, scalar.isnan)
 
 class Reduction(Scalar):
     """ A column-wise reduction
