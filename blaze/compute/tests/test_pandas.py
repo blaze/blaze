@@ -259,3 +259,17 @@ def test_apply():
     expected = str(df)
 
     assert result == expected
+
+
+def test_collect():
+    col = (t['amount'] * 2).label('new')
+    expr = collect(t['name'], col)
+
+    expected = DataFrame([['Alice', 200],
+                          ['Bob', 400],
+                          ['Alice', 100]],
+                         columns=['name', 'new'])
+
+    result = compute(expr, df)
+
+    assert str(result) == str(expected)
