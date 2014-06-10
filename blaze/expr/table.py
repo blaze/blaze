@@ -81,7 +81,7 @@ class TableExpr(Expr):
         return Map(self, func, schema)
 
     def ancestors(self):
-        return NotImplementedError()
+        return (self,)
 
 
 
