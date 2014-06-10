@@ -34,15 +34,15 @@ t_idx = TableSymbol('idx', '{name: string, node_id: int32}')
 
 t_arc = TableSymbol('arc', '{node_out: int32, node_id: int32}')
 
-def test_table():
+def test_spark_table():
     assert compute(t, rdd) == rdd
 
 
-def test_projection():
+def test_spark_projection():
     assert compute(t['name'], rdd).collect() == [row[0] for row in data]
 
 
-def test_multicols_projection():
+def test_spark_multicols_projection():
     result = compute(t[['amount', 'name']], rdd).collect()
     expected = [(100, 'Alice'), (200, 'Bob'), (50, 'Alice')]
 
@@ -69,7 +69,7 @@ reduction_exprs = [
     t['amount'].std()]
 
 
-def test_reductions():
+def test_spark_reductions():
     for expr in reduction_exprs:
         result = compute(expr, rdd)
         expected = compute(expr, data)
@@ -97,11 +97,11 @@ exprs = [
     t['amount'].map(inc)]
 
 
-def test_basic():
-    check_exprs_against_python(exprs)
+def test_spark_basic():
+    check_exprs_against_python(exprs, data, rdd)
 
 
-def check_exprs_against_python(exprs, data=data, rdd=rdd):
+def check_exprs_against_python(exprs):
     any_bad = False
     for expr in exprs:
         result = compute(expr, rdd).collect()
@@ -115,7 +115,7 @@ def check_exprs_against_python(exprs, data=data, rdd=rdd):
     assert not any_bad
 
 
-def test_big_by():
+def test_spark_big_by():
     tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
 
     big_exprs = [
@@ -133,23 +133,23 @@ def test_big_by():
     check_exprs_against_python(big_exprs, databig, rddbig)
 
 
-def test_head():
+def test_spark_head():
     assert list(compute(t.head(1), rdd)) == list(compute(t.head(1), data))
 
 
-def test_sort():
+def test_spark_sort():
     check_exprs_against_python([
                 t.sort('amount'),
                 t.sort('amount', ascending=True),
-                t.sort(['amount', 'id'])])
+                t.sort(['amount', 'id'])], data, rdd)
 
-def test_distinct():
+def test_spark_distinct():
     assert set(compute(t['name'].distinct(), rdd).collect()) == \
             set(['Alice', 'Bob'])
 
 
 
-def test_join():
+def test_spark_join():
 
     joined = Join(t, t2, 'name')
     expected = [['Alice', 100, 1, 'Austin'],
@@ -159,7 +159,7 @@ def test_join():
     assert all(i in expected for i in result)
 
 
-def test_groupby():
+def test_spark_groupby():
     rddidx = sc.parallelize(data_idx)
     rddarc = sc.parallelize(data_arc)
 

@@ -21,8 +21,7 @@ try:
 except ImportError:
     #Create a dummy RDD for py 2.6
     class Dummy(object):
-        def __getattr__(self, attr):
-            return None
+        sum = max = min = count = distinct = mean = variance = stdev = None
     pyspark = Dummy()
     pyspark.rdd = Dummy()
     RDD = Dummy
@@ -54,6 +53,7 @@ def compute(t, rdd):
     rdd = compute(t.parent, rdd)
     predicate = rowfunc(t.predicate)
     return rdd.filter(predicate)
+
 
 
 rdd_reductions = {
