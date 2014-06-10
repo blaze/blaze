@@ -2,20 +2,29 @@ from __future__ import absolute_import
 
 import operator
 from datashape import dshape
-from .core import Scalar, ScalarSymbol, BinOp, UnaryOp
+from .core import Scalar, BinOp, UnaryOp
 from ..core import Expr
-from .boolean import Eq, LT, GT
+from .boolean import *
 
 
 class NumberInterface(Scalar):
     def __eq__(self, other):
         return Eq(self, other)
 
+    def __ne__(self, other):
+        return NE(self, other)
+
     def __lt__(self, other):
         return LT(self, other)
 
+    def __le__(self, other):
+        return LE(self, other)
+
     def __gt__(self, other):
         return GT(self, other)
+
+    def __ge__(self, other):
+        return GE(self, other)
 
     def __neg__(self):
         return Neg(self)
