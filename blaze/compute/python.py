@@ -83,10 +83,6 @@ def rowfunc(t):
         return partial(apply, t.func)
 
 
-# Classes that operate equally on each row of the table
-RowWise = (Projection, ColumnWise, Map)
-
-
 @dispatch(RowWise, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)

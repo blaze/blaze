@@ -111,7 +111,11 @@ class TableSymbol(TableExpr):
         return (self,)
 
 
-class Projection(TableExpr):
+class RowWise(TableExpr):
+    def ancestors(self):
+        return (self,) + self.parent.ancestors()
+
+class Projection(RowWise):
     """ Select columns from table
 
     SELECT a, b, c
@@ -335,7 +339,7 @@ def columnwise(op, *column_inputs):
     return ColumnWise(first(parents), expr)
 
 
-class ColumnWise(TableExpr, ColumnSyntaxMixin):
+class ColumnWise(RowWise, ColumnSyntaxMixin):
     """ Apply Scalar Expression onto columns of data
 
     Parameters
@@ -595,7 +599,7 @@ class Head(TableExpr):
         return self.n * self.schema
 
 
-class Label(TableExpr, ColumnSyntaxMixin):
+class Label(RowWise, ColumnSyntaxMixin):
     """ A Labeled column
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
@@ -621,7 +625,7 @@ class Label(TableExpr, ColumnSyntaxMixin):
         return DataShape(Record([[self.label, dtype]]))
 
 
-class ReLabel(TableExpr):
+class ReLabel(RowWise):
     """ Table with same content but new labels
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
@@ -648,7 +652,7 @@ class ReLabel(TableExpr):
             for name, dtype in self.parent.schema[0].parameters[0]]))
 
 
-class Map(TableExpr):
+class Map(RowWise):
     """ Map an arbitrary Python function across rows in a Table
 
     >>> from datetime import datetime
