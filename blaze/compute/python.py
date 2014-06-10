@@ -223,6 +223,11 @@ def compute(t, seq):
     else:
         return tuple(k + (v,) for k, v in d.items())
 
+@dispatch(Join, Sequence)
+def compute(t, seq):
+    a, b = itertools.tee(seq)
+    return compute(t, a, b)
+
 
 @dispatch(Join, Sequence, Sequence)
 def compute(t, lhs, rhs):
