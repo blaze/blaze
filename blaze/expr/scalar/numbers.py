@@ -44,6 +44,8 @@ class NumberInterface(Scalar):
     def __div__(self, other):
         return Div(self, other)
 
+    __truediv__ = __div__
+
     def __rdiv__(self, other):
         return Div(other, self)
 

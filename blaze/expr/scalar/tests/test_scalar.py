@@ -42,7 +42,6 @@ def test_ScalarSymbol_is_hashable():
 def test_relationals():
     x = ScalarSymbol('x', 'real')
     for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1]:
-        print expr
         assert expr.dshape == dshape('bool')
         assert eval(str(expr)) == expr
 
