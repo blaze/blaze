@@ -37,3 +37,19 @@ def ishashable(x):
 def test_ScalarSymbol_is_hashable():
     assert ishashable(x)
 
+
+def test_relationals():
+    x = ScalarSymbol('x', 'real')
+    for expr in [x < 1, x > 1, x == 1, x != 1, x <= 1, x >= 1]:
+        print expr
+        assert expr.dshape == dshape('bool')
+        assert eval(str(expr)) == expr
+
+
+def test_numbers():
+    x = ScalarSymbol('x', 'real')
+    y = ScalarSymbol('x', 'int')
+    for expr in [x + 1, x - 1, x * 1, x + y, x - y, x / y, x * y + x + y,
+                 x**y, x**2, 2**x, x % 5]:
+        assert expr.dshape == dshape('real')
+        assert eval(str(expr)) == expr
