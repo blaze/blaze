@@ -207,10 +207,7 @@ def compute(t, seq):
 
         d = reduceby(grouper, binop2, parent, initial)
     else:
-        indices = [t.grouper.parent.columns.index(col)
-                        for col in t.grouper.columns]
-        grouper = operator.itemgetter(*indices)
-
+        grouper = rowfunc(t.grouper)
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 

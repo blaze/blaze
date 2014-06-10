@@ -42,6 +42,13 @@ class Test_Other(unittest.TestCase):
             b = dshape('{name: string, amount: int64, date: date}')
             self.assertEqual(str(a), str(b))
 
+    def test_homogenous_schema(self):
+        text = "1,1\n2,2\n3,3"
+        with filetext(text) as fn:
+            self.assertEqual(CSV(fn, columns=['x', 'y']).schema,
+                    dshape('{x: int64, y: int64}'))
+
+
 
 class Test_Indexing(unittest.TestCase):
 
