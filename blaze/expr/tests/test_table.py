@@ -251,7 +251,25 @@ def test_collect():
                            '{name: string, balance: int32, id: int32}')
     new_amount = (accounts['balance'] * 1.5).label('new')
 
-    c = Collect(accounts[['name', 'balance']], new_amount)
+    c = collect(accounts[['name', 'balance']], new_amount)
     assert c.columns == ['name', 'balance', 'new']
 
-    assert eval(str(c)).isidentical(c)
+
+inc = lambda x: x + 1
+
+
+def test_ancestors():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    assert a.ancestors() == (a,)
+    assert set(a['x'].ancestors()) == set([a, a['x']])
+    assert set(a['x'].map(inc).ancestors()) == set([a, a['x'], a['x'].map(inc)])
+    assert a in set((a['x'] + 1).ancestors())
+
+
+def test_common_ancestor():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+
+    assert common_ancestor(a).isidentical(a)
+    assert common_ancestor(a, a['x']).isidentical(a)
+    assert common_ancestor(a['y'] + 1, a['x']).isidentical(a)
+    assert common_ancestor(a['x'].map(inc), a['x']).isidentical(a['x'])

@@ -8,14 +8,14 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, partial, first, pipe
+from toolz import concat, partial, first, pipe, compose
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol
 from .scalar import *
 from ..utils import unique
-from ..compatibility import _strtypes
+from ..compatibility import _strtypes, builtins
 
 
 class TableExpr(Expr):
@@ -80,6 +80,10 @@ class TableExpr(Expr):
     def map(self, func, schema=None):
         return Map(self, func, schema)
 
+    def ancestors(self):
+        return NotImplementedError()
+
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -102,6 +106,9 @@ class TableSymbol(TableExpr):
 
     def __str__(self):
         return self.name
+
+    def ancestors(self):
+        return (self,)
 
 
 class Projection(TableExpr):
@@ -713,7 +720,30 @@ class Apply(TableExpr):
             return NotImplementedError("Datashape of arbitrary Apply not defined")
 
 
-class Collect(TableExpr):
+def common_ancestor(*tables):
+    """ Common ancestor between subtables
+
+    >>> t = TableSymbol('t', '{x: int, y: int}')
+    >>> common_ancestor(t['x'], t['y'])
+    t
+    """
+    sets = [set(t.ancestors()) for t in tables]
+    return builtins.max(set.intersection(*sets),
+                        key=compose(len, str))
+
+def collect(*tables):
+    # Get common ancestor
+    parent = common_ancestor(*tables)
+    if not parent:
+        raise ValueError("No common ancestor found for input tables")
+
+    shim = TableSymbol('_ancestor', parent.schema)
+
+    tables = tuple(t.subs({parent: shim}) for t in tables)
+    return Collect(parent, tables)
+
+
+class Collect(RowWise):
     """ Collect many Tables together
 
     Must all descend from same table via RowWise operations
@@ -722,23 +752,22 @@ class Collect(TableExpr):
 
     >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
 
-    >>> Collect(accounts, newamount).columns
+    >>> collect(accounts, newamount).columns
     ['name', 'amount', 'new_amount']
     """
-    __slots__ = 'parents',
+    __slots__ = 'parent', 'children'
 
-    def __init__(self, *parents):
-        if len(parents) == 1 and isinstance(parents, (list, tuple)):
-            parents = parents[0]
+    def __init__(self, parent, children):
         # TODO: Assert all parents descend from the same parent via RowWise
         # operations
-        self.parents = parents
+        self.parent = parent
+        self.children = children
 
     @property
     def schema(self):
-        for p in self.parents:
-            if not isinstance(p.schema[0], Record):
+        for c in self.children:
+            if not isinstance(c.schema[0], Record):
                 raise TypeError("All schemas must have Record shape.  Got %s" %
-                                p.schema[0])
-        return dshape(Record(list(concat(p.schema[0].parameters[0] for p in
-            self.parents))))
+                                c.schema[0])
+        return dshape(Record(list(concat(c.schema[0].parameters[0] for c in
+            self.children))))
