@@ -209,3 +209,10 @@ def test_jaccard():
     shared_neighbor_py = shared_neighbor_num.collect()
     assert shared_neighbor_py == [((3, 6), 3)]
     assert indeg_py == {1: 3, 3: 4, 6: 3}
+
+
+def test_collect():
+    col = (t['amount'] * 2).label('new')
+    expr = collect(t['name'], col)
+
+    assert compute(expr, rdd).collect() == [(row[0], row[1] * 2) for row in data]
