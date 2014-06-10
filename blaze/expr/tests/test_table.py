@@ -273,3 +273,13 @@ def test_common_ancestor():
     assert common_ancestor(a, a['x']).isidentical(a)
     assert common_ancestor(a['y'] + 1, a['x']).isidentical(a)
     assert common_ancestor(a['x'].map(inc), a['x']).isidentical(a['x'])
+
+
+def test_schema_of_complex_interaction():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    expr = (a['x'] + a['y']) / a['z']
+    assert expr.dtype == dshape('real')
+
+    expr = expr.label('foo')
+    print(expr.dtype)
+    assert expr.dtype == dshape('real')

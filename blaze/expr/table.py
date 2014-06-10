@@ -180,6 +180,8 @@ class ColumnSyntaxMixin(object):
     def __div__(self, other):
         return columnwise(Div, self, other)
 
+    __truediv__ = __div__
+
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
 
@@ -619,9 +621,9 @@ class Label(RowWise, ColumnSyntaxMixin):
     @property
     def schema(self):
         if isinstance(self.parent.schema[0], Record):
-            dtype = list(self.parent.schema[0].fields.values()[0])
+            dtype = self.parent.schema[0].fields.values()[0]
         else:
-            dtype = list(self.parent.schema[0])
+            dtype = self.parent.schema[0]
         return DataShape(Record([[self.label, dtype]]))
 
 
