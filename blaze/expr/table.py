@@ -711,3 +711,34 @@ class Apply(TableExpr):
             return dshape(self._dshape)
         else:
             return NotImplementedError("Datashape of arbitrary Apply not defined")
+
+
+class Collect(TableExpr):
+    """ Collect many Tables together
+
+    Must all descend from same table via RowWise operations
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+
+    >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
+
+    >>> Collect(accounts, newamount).columns
+    ['name', 'amount', 'new_amount']
+    """
+    __slots__ = 'parents',
+
+    def __init__(self, *parents):
+        if len(parents) == 1 and isinstance(parents, (list, tuple)):
+            parents = parents[0]
+        # TODO: Assert all parents descend from the same parent via RowWise
+        # operations
+        self.parents = parents
+
+    @property
+    def schema(self):
+        for p in self.parents:
+            if not isinstance(p.schema[0], Record):
+                raise TypeError("All schemas must have Record shape.  Got %s" %
+                                p.schema[0])
+        return dshape(Record(list(concat(p.schema[0].parameters[0] for p in
+            self.parents))))

@@ -244,3 +244,14 @@ def test_dtype():
     assert accounts['name'].dtype == dshape('string')
     assert accounts['balance'].dtype == dshape('int32')
     assert (accounts['balance'] > accounts['id']).dtype == dshape('bool')
+
+
+def test_collect():
+    accounts = TableSymbol('accounts',
+                           '{name: string, balance: int32, id: int32}')
+    new_amount = (accounts['balance'] * 1.5).label('new')
+
+    c = Collect(accounts[['name', 'balance']], new_amount)
+    assert c.columns == ['name', 'balance', 'new']
+
+    assert eval(str(c)).isidentical(c)
