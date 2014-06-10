@@ -105,10 +105,15 @@ class TableSymbol(TableExpr):
 
 
 class Projection(TableExpr):
-    """
+    """ Select columns from table
 
     SELECT a, b, c
     FROM table
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts[['name', 'amount']].schema
+    dshape("{ name : string, amount : int32 }")
     """
     __slots__ = 'parent', '_columns'
 
@@ -223,10 +228,15 @@ class ColumnSyntaxMixin(object):
 
 
 class Column(ColumnSyntaxMixin, Projection):
-    """
+    """ A single column from a table
 
     SELECT a
     FROM table
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> accounts['name'].schema
+    dshape("{ name : string }")
     """
     __slots__ = 'parent', 'column'
 
@@ -249,8 +259,11 @@ class Column(ColumnSyntaxMixin, Projection):
 
 
 class Selection(TableExpr):
-    """
-    WHERE a op b
+    """ Filter rows of table based on predicate
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> deadbeats = accounts[accounts['amount'] < 0]
     """
     __slots__ = 'parent', 'predicate'
 
@@ -269,30 +282,25 @@ class Selection(TableExpr):
         return self.parent.schema
 
 
-def _index(t, element):
-    """ tuple.args fails when == is overloaded.  This is a hacky fix
-
-    Long term we shouldn't use == in Exprs.  We should use it only in the user
-    interface layer
-    """
-    for i, item in enumerate(t):
-        if isinstance(item, TableExpr) and isinstance(element, TableExpr):
-            eq = TableExpr.isidentical
-        else:
-            eq = lambda x, y: x is y
-        if eq(item, element):
-            return i
-
-    raise IndexError("Could not find %s in %s" % (element, t))
-
-
-
 def columnwise(op, *column_inputs):
-    """ Merge columns with op
+    """ Merge columns with scalar operation
 
-    *expr :: ScalarExpr
-    args :: (Column, base)
 
+    Parameters
+    ----------
+    op - Scalar Operation like Add, Mul, Sin, Exp
+    column_inputs - either Column, ColumnWise or constant (like 1, 1.0, '1')
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+
+    >>> columnwise(Add, accounts['amount'], 100)
+    accounts['amount'] + 100
+
+    Fuses operations down into ScalarExpr level
+
+    >>> columnwise(Mul, 2, (accounts['amount'] + 100))
+    2 * (accounts['amount'] + 100)
     """
     expr_inputs = []
     parents = set()
@@ -318,9 +326,23 @@ def columnwise(op, *column_inputs):
 
 
 class ColumnWise(TableExpr, ColumnSyntaxMixin):
-    """
+    """ Apply Scalar Expression onto columns of data
 
-    a op b
+    Parameters
+    ----------
+
+    parent - TableExpr
+    expr - ScalarExpr
+        The names of the varibles within the scalar expr must match the columns
+        of the parent.  Use ``Column.scalar_variable`` to generate the
+        appropriate ScalarSymbol
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+
+    >>> expr = Add(accounts['amount'].scalar_symbol, 100)
+    >>> ColumnWise(accounts, expr)
+    accounts['amount'] + 100
     """
     __slots__ = 'parent', 'expr'
     def __init__(self, parent, expr):
@@ -507,6 +529,12 @@ class Distinct(TableExpr):
         return self.parent.schema
 
 class Head(TableExpr):
+    """ First ``n`` elements of table
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> accounts.head(5).dshape
+    dshape("5 * { name : string, amount : int32 }")
+    """
     __slots__ = 'parent', 'n'
 
     def __init__(self, parent, n=10):
@@ -523,6 +551,16 @@ class Head(TableExpr):
 
 
 class Label(TableExpr, ColumnSyntaxMixin):
+    """ A Labeled column
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+
+    >>> (accounts['amount'] * 100).schema
+    dshape("float64")
+
+    >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
+    dshape("{ new_amount : float64 }")
+    """
     __slots__ = 'parent', 'label'
 
     def __init__(self, parent, label):
@@ -539,6 +577,15 @@ class Label(TableExpr, ColumnSyntaxMixin):
 
 
 class ReLabel(TableExpr):
+    """ Table with same content but new labels
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+
+    >>> accounts.schema
+    dshape("{ name : string, amount : int32 }")
+    >>> accounts.relabel({'amount': 'balance'}).schema
+    dshape("{ name : string, balance : int32 }")
+    """
     __slots__ = 'parent', 'labels'
 
     def __init__(self, parent, labels):
