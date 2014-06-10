@@ -63,6 +63,12 @@ def compute(t, df):
     return op(parent)
 
 
+@dispatch(Neg, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    return -parent
+
+
 @dispatch(Selection, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)

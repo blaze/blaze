@@ -52,6 +52,11 @@ def test_arithmetic():
 def test_unary_ops():
     assert list(compute(exp(t['amount']), data)) == [math.exp(x[1]) for x in data]
 
+
+def test_neg():
+    assert list(compute(-t['amount'], data)) == [-x[1] for x in data]
+
+
 def test_reductions():
     assert compute(sum(t['amount']), data) == 100 + 200 + 50
     assert compute(min(t['amount']), data) == 50

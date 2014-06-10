@@ -190,6 +190,9 @@ class ColumnSyntaxMixin(object):
     def __rmod__(self, other):
         return columnwise(Mod, other, self)
 
+    def __neg__(self):
+        return columnwise(Neg, self)
+
     def label(self, label):
         return Label(self, label)
 

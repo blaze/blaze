@@ -55,7 +55,6 @@ def compute(t, rdd):
     return rdd.filter(predicate)
 
 
-
 rdd_reductions = {
         table.sum: RDD.sum,
         table.min: RDD.min,
@@ -166,7 +165,6 @@ def compute(t, rdd):
     else:
         func = lambda x: (tuple(x[0]) + (reduction(x[1]),))
     return groups.map(func)
-
 
 
 @dispatch((Label, ReLabel), RDD)

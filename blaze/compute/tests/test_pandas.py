@@ -88,6 +88,9 @@ def test_join():
 def test_UnaryOp():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()
 
+def test_Neg():
+    assert (compute(-t['amount'], df) == -df['amount']).all()
+
 
 def test_columns_series():
     assert isinstance(compute(t['amount'], df), Series)

@@ -96,6 +96,10 @@ def test_unary_op():
     assert str(compute(exp(t['amount']), s)) == str(sa.func.exp(s.c.amount))
 
 
+def test_unary_op():
+    assert str(compute(-t['amount'], s)) == str(-s.c.amount)
+
+
 def test_reductions():
     assert str(compute(sum(t['amount']), s)) == \
             str(sa.sql.functions.sum(s.c.amount))

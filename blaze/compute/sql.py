@@ -53,11 +53,18 @@ def compute(t, s):
     rhs = compute(t.rhs, s)
     return t.op(lhs, rhs)
 
+
 @dispatch(UnaryOp, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     op = getattr(sa.func, t.symbol)
     return op(parent)
+
+
+@dispatch(Neg, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    return -parent
 
 
 @dispatch(Selection, sqlalchemy.sql.Selectable)
