@@ -103,6 +103,19 @@ then run:
 $ python setup.py install
 ```
 
+Installing from Binstar.org
+----------------------
+
+Binstar is a service that allows you to create and manage public
+and private package registries. 
+If you're on a Linux or Mac OS X platform, you can install a binary
+version of blaze (hosted on binstar) by typing:
+
+```bash
+$ conda install -c mwiebe -c mrocklin blaze
+```
+
+
 Documentation is generated using sphinx from the docs directory.
 
 Contributing
