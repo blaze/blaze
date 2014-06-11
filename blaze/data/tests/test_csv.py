@@ -48,6 +48,15 @@ class Test_Other(unittest.TestCase):
             self.assertEqual(CSV(fn, columns=['x', 'y']).schema,
                     dshape('{x: int64, y: int64}'))
 
+    def test_a_mode(self):
+        text = ("id, name, balance\n1, Alice, 100\n2, Bob, 200\n"
+                "3, Charlie, 300\n4, Denis, 400\n5, Edith, 500")
+        with filetext(text) as fn:
+            csv = CSV(fn, 'a')
+            csv.extend([(6, 'Frank', 600),
+                        (7, 'Georgina', 700)])
+
+            assert 'Georgina' in set(csv.py[:, 'name'])
 
 
 class Test_Indexing(unittest.TestCase):
