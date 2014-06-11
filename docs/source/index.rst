@@ -1,13 +1,12 @@
 Blaze
 =====
 
-Blaze provides a uniform and familiar interface to diverse computation and data
-storage.  Blaze extends the usability of NumPy and Pandas to diverse
-computational systems, enabling easy access to out-of-core, streaming, and
-distributed data.
+Blaze provides uniform interfaces to diverse computational resources.  Blaze
+extends the familiar interfaces of NumPy and Pandas to external projects,
+enabling easy access to out-of-core, streaming, and distributed computation.
 
 Blaze allows analysts and scientists to productively write robust and efficient
-code, without getting bogged down in the details of how to distribute
+code without getting bogged down in the details of how to distribute
 computation, or convert data between databases, formats, proprietary data
 warehouses, and other silos.
 
@@ -18,20 +17,19 @@ Core
 The core of Blaze consists of
 
 *   A type system to express data types and layouts
-*   A familiar user interface and symbolic expression system
+*   A user interface and symbolic expression system
 *   A set of interfaces to common data formats
-*   A set of interfaces to powerful computational engines
+*   A set of interfaces to computational engines
 
-Blaze depends on and exposes the hard work of countless projects.
+Blaze depends on and exposes the hard work of countless other projects.
 
 
 Under Development
 -----------------
 
-Please be aware that Blaze is under development. The documentation and
-implementation this project have gone through many changes, and there are many
-places where the implementation has not been properly brought into sync with
-this documentation.
+Please be aware that Blaze is under active development. The project has gone
+through many changes and this documentation has not been kept uniformly in
+sync.
 
 Index
 ~~~~~
