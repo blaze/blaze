@@ -9,11 +9,12 @@ Blaze Abstracts Computation and Storage
     :align: center
 
 
-The software ecosystem surrounding data analytics is rich with mature projects.
-Blaze augments this ecosystem with a uniform interface.  Blaze orchestrates
-computation and data access among these external projects.  It provides a
-consistent backdrop to build standard interfaces usable by the current Python
-community.
+Several projects provide rich and performant data analytics.  Competition
+between these projects gives rise to a vibrant and dynamic ecosystem.
+Blaze augments this ecosystem with a uniform and adaptable interface.  Blaze
+orchestrates computation and data access among these external projects.  It
+provides a consistent backdrop to build standard interfaces usable by the
+current Python community.
 
 
 Datashape
@@ -29,7 +30,7 @@ Data Descriptors
 Data descriptors provide uniform data access.  They support
 iteration, insertion, and fancy indexing over a variety of popular formats.
 They provide seemless data migration and robust access for computation.
-Data descriptors span from local memory to out of core storage to distributed
+Data descriptors span from local memory to out-of-core and distributed
 storage.
 
 Expressions
@@ -45,14 +46,14 @@ Backends
 
 Blaze backends include projects like streaming Python, Pandas, SQLAlchemy, and
 Spark.  A Blaze expression can run equally well on any of these backends,
-allowing developers to easily transition their computation as their needs
-change.
+allowing developers to easily transition their computation to changing
+performance needs.
 
 
 Interfaces
 ----------
 
-Blaze interfaces provide interactive Python objects focused on usability.
-These high level ``Table`` and ``Array`` objects manage Blaze expressions and
-computations in an interactive session similar to existing workflows with
-Pandas DataFrames and NumPy NDArrays.
+Blaze interfaces provide interactive Python objects and an intuitive user
+experience.  These high level ``Table`` and ``Array`` objects manage Blaze
+expressions and computations in an interactive session similar to existing
+workflows with Pandas DataFrames and NumPy NDArrays.
