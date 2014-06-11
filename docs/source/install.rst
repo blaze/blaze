@@ -5,6 +5,12 @@ Install
 Installing
 ~~~~~~~~~~
 
+Blaze can be most easily installed from conda
+
+::
+
+   $ conda install blaze
+
 If you are interested in the development version of Blaze you can
 obtain the source from Github.
 
@@ -70,4 +76,3 @@ Dependencies
 .. _spark: http://spark.apache.org/
 .. _toolz: http://toolz.readthedocs.org/
 .. _multipledispatch: http://multiple-dispatch.readthedocs.org/
-
