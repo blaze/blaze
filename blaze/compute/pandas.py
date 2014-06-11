@@ -202,3 +202,10 @@ def compute(t, df):
 def compute(t, df):
     parent = compute(t.parent, df)
     return t.func(parent)
+
+
+@dispatch(Merge, DataFrame)
+def compute(t, df):
+    parent = compute(t.parent, df)
+    children = [compute(child, parent) for child in t.children]
+    return pd.concat(children, axis=1)

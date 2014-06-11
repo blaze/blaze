@@ -8,7 +8,7 @@ from collections import Iterator
 
 import datashape
 from datashape.discovery import discover, null, string
-from datashape import dshape, Record, Option
+from datashape import dshape, Record, Option, Fixed, CType, Tuple
 from dynd import nd
 
 from .core import DataDescriptor
@@ -112,11 +112,19 @@ class CSV(DataDescriptor):
                 with open(self.path, 'r') as f:
                     data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
                     types = discover(data)
-                    types = types.subshape[0][0].dshapes
-                    types = [t.ty if isinstance(t, Option) else t
-                                  for t in types]
-                    types = [string if t == null else t
-                                    for t in types]
+                    rowtype = types.subshape[0]
+                    if isinstance(rowtype[0], Tuple):
+                        types = types.subshape[0][0].dshapes
+                        types = [t.ty if isinstance(t, Option) else t
+                                      for t in types]
+                        types = [string if t == null else t
+                                        for t in types]
+                    elif (isinstance(rowtype[0], Fixed) and
+                          isinstance(rowtype[1], CType)):
+                        types = int(rowtype[0]) * [rowtype[1]]
+                    else:
+                       ValueError("Could not discover schema from data.\n"
+                                  "Please specify schema.")
             if not columns:
                 if header:
                     with open(self.path, 'r') as f:

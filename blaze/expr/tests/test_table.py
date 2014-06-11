@@ -244,3 +244,42 @@ def test_dtype():
     assert accounts['name'].dtype == dshape('string')
     assert accounts['balance'].dtype == dshape('int32')
     assert (accounts['balance'] > accounts['id']).dtype == dshape('bool')
+
+
+def test_merge():
+    accounts = TableSymbol('accounts',
+                           '{name: string, balance: int32, id: int32}')
+    new_amount = (accounts['balance'] * 1.5).label('new')
+
+    c = merge(accounts[['name', 'balance']], new_amount)
+    assert c.columns == ['name', 'balance', 'new']
+
+
+inc = lambda x: x + 1
+
+
+def test_ancestors():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    assert a.ancestors() == (a,)
+    assert set(a['x'].ancestors()) == set([a, a['x']])
+    assert set(a['x'].map(inc).ancestors()) == set([a, a['x'], a['x'].map(inc)])
+    assert a in set((a['x'] + 1).ancestors())
+
+
+def test_common_ancestor():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+
+    assert common_ancestor(a).isidentical(a)
+    assert common_ancestor(a, a['x']).isidentical(a)
+    assert common_ancestor(a['y'] + 1, a['x']).isidentical(a)
+    assert common_ancestor(a['x'].map(inc), a['x']).isidentical(a['x'])
+
+
+def test_schema_of_complex_interaction():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    expr = (a['x'] + a['y']) / a['z']
+    assert expr.dtype == dshape('real')
+
+    expr = expr.label('foo')
+    print(expr.dtype)
+    assert expr.dtype == dshape('real')

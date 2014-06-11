@@ -8,14 +8,14 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, partial, first, pipe
+from toolz import concat, partial, first, pipe, compose
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol
 from .scalar import *
 from ..utils import unique
-from ..compatibility import _strtypes
+from ..compatibility import _strtypes, builtins
 
 
 class TableExpr(Expr):
@@ -80,6 +80,10 @@ class TableExpr(Expr):
     def map(self, func, schema=None):
         return Map(self, func, schema)
 
+    def ancestors(self):
+        return (self,)
+
+
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
@@ -103,8 +107,15 @@ class TableSymbol(TableExpr):
     def __str__(self):
         return self.name
 
+    def ancestors(self):
+        return (self,)
 
-class Projection(TableExpr):
+
+class RowWise(TableExpr):
+    def ancestors(self):
+        return (self,) + self.parent.ancestors()
+
+class Projection(RowWise):
     """ Select columns from table
 
     SELECT a, b, c
@@ -168,6 +179,8 @@ class ColumnSyntaxMixin(object):
 
     def __div__(self, other):
         return columnwise(Div, self, other)
+
+    __truediv__ = __div__
 
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
@@ -328,7 +341,7 @@ def columnwise(op, *column_inputs):
     return ColumnWise(first(parents), expr)
 
 
-class ColumnWise(TableExpr, ColumnSyntaxMixin):
+class ColumnWise(RowWise, ColumnSyntaxMixin):
     """ Apply Scalar Expression onto columns of data
 
     Parameters
@@ -588,7 +601,7 @@ class Head(TableExpr):
         return self.n * self.schema
 
 
-class Label(TableExpr, ColumnSyntaxMixin):
+class Label(RowWise, ColumnSyntaxMixin):
     """ A Labeled column
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
@@ -608,13 +621,13 @@ class Label(TableExpr, ColumnSyntaxMixin):
     @property
     def schema(self):
         if isinstance(self.parent.schema[0], Record):
-            dtype = list(self.parent.schema[0].fields.values()[0])
+            dtype = self.parent.schema[0].fields.values()[0]
         else:
-            dtype = list(self.parent.schema[0])
+            dtype = self.parent.schema[0]
         return DataShape(Record([[self.label, dtype]]))
 
 
-class ReLabel(TableExpr):
+class ReLabel(RowWise):
     """ Table with same content but new labels
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
@@ -641,7 +654,7 @@ class ReLabel(TableExpr):
             for name, dtype in self.parent.schema[0].parameters[0]]))
 
 
-class Map(TableExpr):
+class Map(RowWise):
     """ Map an arbitrary Python function across rows in a Table
 
     >>> from datetime import datetime
@@ -711,3 +724,56 @@ class Apply(TableExpr):
             return dshape(self._dshape)
         else:
             return NotImplementedError("Datashape of arbitrary Apply not defined")
+
+
+def common_ancestor(*tables):
+    """ Common ancestor between subtables
+
+    >>> t = TableSymbol('t', '{x: int, y: int}')
+    >>> common_ancestor(t['x'], t['y'])
+    t
+    """
+    sets = [set(t.ancestors()) for t in tables]
+    return builtins.max(set.intersection(*sets),
+                        key=compose(len, str))
+
+def merge(*tables):
+    # Get common ancestor
+    parent = common_ancestor(*tables)
+    if not parent:
+        raise ValueError("No common ancestor found for input tables")
+
+    shim = TableSymbol('_ancestor', parent.schema)
+
+    tables = tuple(t.subs({parent: shim}) for t in tables)
+    return Merge(parent, tables)
+
+
+class Merge(RowWise):
+    """ Merge many Tables together
+
+    Must all descend from same table via RowWise operations
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+
+    >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
+
+    >>> merge(accounts, newamount).columns
+    ['name', 'amount', 'new_amount']
+    """
+    __slots__ = 'parent', 'children'
+
+    def __init__(self, parent, children):
+        # TODO: Assert all parents descend from the same parent via RowWise
+        # operations
+        self.parent = parent
+        self.children = children
+
+    @property
+    def schema(self):
+        for c in self.children:
+            if not isinstance(c.schema[0], Record):
+                raise TypeError("All schemas must have Record shape.  Got %s" %
+                                c.schema[0])
+        return dshape(Record(list(concat(c.schema[0].parameters[0] for c in
+            self.children))))

@@ -195,3 +195,10 @@ def compute(t, s):
                for col, new_col in zip(t.parent.columns, t.columns)]
 
     return select(columns)
+
+
+@dispatch(Merge, sqlalchemy.sql.Selectable)
+def compute(t, s):
+    parent = compute(t.parent, s)
+    children = [compute(child, parent) for child in t.children]
+    return select(children)

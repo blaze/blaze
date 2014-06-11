@@ -101,7 +101,7 @@ def test_spark_basic():
     check_exprs_against_python(exprs, data, rdd)
 
 
-def check_exprs_against_python(exprs):
+def check_exprs_against_python(exprs, data, rdd):
     any_bad = False
     for expr in exprs:
         result = compute(expr, rdd).collect()
@@ -172,6 +172,12 @@ def test_spark_groupby():
     assert in_degree == {'A': 1, 'C': 2}
 
 
+def test_spark_multi_level_rowfunc_works():
+    expr = t['amount'].map(lambda x: x + 1)
+
+    assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
+
+
 @skip("Spark not yet fully supported")
 def test_jaccard():
     data_idx_j = sc.parallelize([['A', 1],['B', 2],['C', 3],['D', 4],['E', 5],['F', 6]])
@@ -202,3 +208,10 @@ def test_jaccard():
     shared_neighbor_py = shared_neighbor_num.collect()
     assert shared_neighbor_py == [((3, 6), 3)]
     assert indeg_py == {1: 3, 3: 4, 6: 3}
+
+
+def test_spark_merge():
+    col = (t['amount'] * 2).label('new')
+    expr = merge(t['name'], col)
+
+    assert compute(expr, rdd).collect() == [(row[0], row[1] * 2) for row in data]

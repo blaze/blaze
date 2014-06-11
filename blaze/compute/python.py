@@ -18,7 +18,7 @@ from collections import Iterator
 import math
 from operator import itemgetter
 from functools import partial
-from toolz import map, isiterable
+from toolz import map, isiterable, compose, juxt, identity
 from toolz.compatibility import zip
 import sys
 
@@ -38,24 +38,50 @@ __all__ = ['compute', 'Sequence']
 Sequence = (tuple, list, Iterator)
 
 
-""" Rowfunc provides a function that can be mapped onto a sequence.
 
->>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> f = rowfunc(accounts['amount'])
+def recursive_rowfunc(t):
+    """ Compose rowfunc functions up a tree
 
->>> row = ('Alice', 100)
->>> f(row)
-100
+    Stops when we hit a non-RowWise operation
 
-See Also:
-    compute<Rowwise, Sequence>
-"""
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> f = recursive_rowfunc(accounts['amount'].map(lambda x: x + 1))
+
+    >>> row = ('Alice', 100)
+    >>> f(row)
+    101
+
+    """
+    funcs = []
+    while isinstance(t, RowWise):
+        funcs.append(rowfunc(t))
+        t = t.parent
+    if not funcs:
+        raise TypeError("Expected RowWise operation, got %s" % str(t))
+    elif len(funcs) == 1:
+        return funcs[0]
+    else:
+        return compose(*funcs)
+
 
 @dispatch(Projection)
 def rowfunc(t):
+    """ Rowfunc provides a function that can be mapped onto a sequence.
+
+    >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> f = rowfunc(accounts['amount'])
+
+    >>> row = ('Alice', 100)
+    >>> f(row)
+    100
+
+    See Also:
+        compute<Rowwise, Sequence>
+    """
     from toolz.curried import get
     indices = [t.parent.columns.index(col) for col in t.columns]
     return get(indices)
+
 
 @dispatch(Column)
 def rowfunc(t):
@@ -83,8 +109,30 @@ def rowfunc(t):
         return partial(apply, t.func)
 
 
-# Classes that operate equally on each row of the table
-RowWise = (Projection, ColumnWise, Map)
+@dispatch((Label, ReLabel))
+def rowfunc(t):
+    return identity
+
+
+def concat_maybe_tuples(vals):
+    """
+
+    >>> concat_maybe_tuples([1, (2, 3)])
+    (1, 2, 3)
+    """
+    result = []
+    for v in vals:
+        if isinstance(v, (tuple, list)):
+            result.extend(v)
+        else:
+            result.append(v)
+    return tuple(result)
+
+
+@dispatch(Merge)
+def rowfunc(t):
+    funcs = list(map(recursive_rowfunc, t.children))
+    return compose(concat_maybe_tuples, juxt(*funcs))
 
 
 @dispatch(RowWise, Sequence)
@@ -199,21 +247,15 @@ def compute(t, seq):
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
-        a, b = itertools.tee(seq)
-        applied = compute(t.apply.parent, a)
-        grouped = compute(t.grouper, b)
-
-        zipped = zip(grouped, applied)
+        applier = rowfunc(t.apply.parent)
+        grouper = rowfunc(t.grouper)
 
         def binop2(acc, x):
-            return binop(acc, x[1])
+            return binop(acc, applier(x))
 
-        d = reduceby(operator.itemgetter(0), binop2, zipped, initial)
+        d = reduceby(grouper, binop2, parent, initial)
     else:
-        indices = [t.grouper.parent.columns.index(col)
-                        for col in t.grouper.columns]
-        grouper = operator.itemgetter(*indices)
-
+        grouper = rowfunc(t.grouper)
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 
@@ -222,6 +264,11 @@ def compute(t, seq):
         return d.items()
     else:
         return tuple(k + (v,) for k, v in d.items())
+
+@dispatch(Join, Sequence)
+def compute(t, seq):
+    a, b = itertools.tee(seq)
+    return compute(t, a, b)
 
 
 @dispatch(Join, Sequence, Sequence)
