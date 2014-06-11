@@ -156,7 +156,7 @@ class CSV(DataDescriptor):
             else:
                 return getter(result)
 
-        f = self.open(self.path, self.mode)
+        f = self.open(self.path, 'rt')
         if self.header:
             next(f)
         if isinstance(key, compatibility._inttypes):
@@ -193,8 +193,6 @@ class CSV(DataDescriptor):
     def _extend(self, rows):
         rows = iter(rows)
         f = self.open(self.path, self.mode)
-        if self.header:
-            next(f)
         row = next(rows)
         if isinstance(row, dict):
             schema = dshape(self.schema)
