@@ -47,7 +47,7 @@ else
  exit 1
 fi
 
-pip install cytoolz || exit 1
+pip install toolz cytoolz || exit 1
 
 # Temporary hack to install datashape
 rm -rf datashape

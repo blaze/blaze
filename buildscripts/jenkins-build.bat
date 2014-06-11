@@ -29,7 +29,7 @@ echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
 set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
 
-call pip install cytoolz
+call pip install toolz cytoolz
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 
 REM Temporary hack to install datashape
