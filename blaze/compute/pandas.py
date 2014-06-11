@@ -204,7 +204,7 @@ def compute(t, df):
     return t.func(parent)
 
 
-@dispatch(Collect, DataFrame)
+@dispatch(Merge, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
     children = [compute(child, parent) for child in t.children]

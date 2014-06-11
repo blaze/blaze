@@ -216,10 +216,10 @@ def test_relabel():
     assert str(result) == str(expected)
 
 
-def test_collect():
+def test_merge():
     col = (t['amount'] * 2).label('new')
 
-    expr = collect(t['name'], col)
+    expr = merge(t['name'], col)
 
     result = str(compute(expr, s))
 

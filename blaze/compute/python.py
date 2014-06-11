@@ -129,7 +129,7 @@ def concat_maybe_tuples(vals):
     return tuple(result)
 
 
-@dispatch(Collect)
+@dispatch(Merge)
 def rowfunc(t):
     funcs = list(map(recursive_rowfunc, t.children))
     return compose(concat_maybe_tuples, juxt(*funcs))

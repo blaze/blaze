@@ -197,7 +197,7 @@ def compute(t, s):
     return select(columns)
 
 
-@dispatch(Collect, sqlalchemy.sql.Selectable)
+@dispatch(Merge, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
     children = [compute(child, parent) for child in t.children]

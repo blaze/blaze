@@ -261,9 +261,9 @@ def test_apply():
     assert result == expected
 
 
-def test_collect():
+def test_merge():
     col = (t['amount'] * 2).label('new')
-    expr = collect(t['name'], col)
+    expr = merge(t['name'], col)
 
     expected = DataFrame([['Alice', 200],
                           ['Bob', 400],

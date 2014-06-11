@@ -246,12 +246,12 @@ def test_dtype():
     assert (accounts['balance'] > accounts['id']).dtype == dshape('bool')
 
 
-def test_collect():
+def test_merge():
     accounts = TableSymbol('accounts',
                            '{name: string, balance: int32, id: int32}')
     new_amount = (accounts['balance'] * 1.5).label('new')
 
-    c = collect(accounts[['name', 'balance']], new_amount)
+    c = merge(accounts[['name', 'balance']], new_amount)
     assert c.columns == ['name', 'balance', 'new']
 
 

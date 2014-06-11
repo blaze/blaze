@@ -737,7 +737,7 @@ def common_ancestor(*tables):
     return builtins.max(set.intersection(*sets),
                         key=compose(len, str))
 
-def collect(*tables):
+def merge(*tables):
     # Get common ancestor
     parent = common_ancestor(*tables)
     if not parent:
@@ -746,11 +746,11 @@ def collect(*tables):
     shim = TableSymbol('_ancestor', parent.schema)
 
     tables = tuple(t.subs({parent: shim}) for t in tables)
-    return Collect(parent, tables)
+    return Merge(parent, tables)
 
 
-class Collect(RowWise):
-    """ Collect many Tables together
+class Merge(RowWise):
+    """ Merge many Tables together
 
     Must all descend from same table via RowWise operations
 
@@ -758,7 +758,7 @@ class Collect(RowWise):
 
     >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
 
-    >>> collect(accounts, newamount).columns
+    >>> merge(accounts, newamount).columns
     ['name', 'amount', 'new_amount']
     """
     __slots__ = 'parent', 'children'
