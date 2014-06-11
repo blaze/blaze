@@ -2,107 +2,121 @@
 Data Descriptors
 ================
 
-Data Descriptors are unadorned blaze arrays, objects which
-expose data with a dshape but have no math or other facilities
-attached. The data descriptor interface is analogous to the
-Python buffer interface described in PEP 3118, but with some
+
+Data Descriptors provide uniform access to a variety of common data formats.
+They provide standard iteration, insertion, and numpy-like fancy indexing over
+on disk files in common formats like csv, json, and hdf5 in memory data
+strutures like Python list-of-lists and DyND arrays as well as more
+sophisticated data stores like SQL databases.  The data descriptor interface is
+analogous to the Python buffer interface described in PEP 3118, but with some
 more flexibility.
 
-An object signals it is a data descriptor by subclassing from
-the blaze.datadescriptor.DataDescriptor abstract base class,
-and implementing the necessary methods.
+Over the course of this document we'll refer to the following simple csv file:
+
+::
+
+   # accounts.csv
+   id, name, balance
+   1, Alice, 100
+   2, Bob, 200
+   3, Charlie, 300
+   4, Denis, 400
+   5, Edith, 500
+
+::
+
+   >>> csv = CSV('accounts.csv')
 
 Python-Style Iteration
 ======================
 
-A data descriptor must expose the Python __iter__ method,
-which should iterate over the outermost dimension of the data.
-If the data is a scalar, it should raise an IndexError.
+Data descriptors expose the ``__iter__`` method, which iterates over the
+outermost dimension of the data.  This iterator yields vanilla Python objects
+by default.
 
-This iterator must return only data descriptors for the
-iteration, and if the data is writable, the returned data descriptors
-must point into the same data, not contain copies. This can
-be tricky in some cases, for example NumPy returns a copy if
-it is returning a scalar.
+::
 
-This style of iteration can handle variable-sized/ragged arrays,
-because access is handled in a nested fashion one dimension at
-a time. Element iteration cannot handle this kind of dimension,
-because it requires that the data conform to a C storage layout
-that does not include variable-sized arrays presently.
+   >>> list(csv)
+   [(1L, u'Alice', 100L),
+    (2L, u'Bob', 200L),
+    (3L, u'Charlie', 300L),
+    (4L, u'Denis', 400L),
+    (5L, u'Edith', 500L)]
 
-Note that this style of iteration cannot be used to get at
-actual data values. For this, you must use the element
-access mechanisms.
 
-Python-Style GetItem
-====================
+Data descriptors also expose a ``chunks`` method, which also iterates over the
+outermost dimension but instead of yielding single rows of Python objects
+instead yields larger chunks of compactly stored data.  These chunks emerge as
+DyND arrays which are more efficient for bulk processing and data transfer.
+DyND arrays support the ``__array__`` interface and so can be easily converted
+to NumPy arrays.
 
-A data descriptor must expose the Python __getitem__ method,
-which should at a minimum support tuples of integers as
-input.
+::
 
-Calling the [] operator on a data descriptor must
-return another data descriptor. Just as for the iterator,
-when the data is writable the returned data descriptors
-must point into the same data.
+   >>> next(csv.chunks())
+   nd.array([[1, "Alice", 100],
+             [2, "Bob", 200],
+             [3, "Charlie", 300],
+             [4, "Denis", 400],
+             [5, "Edith", 500]],
+            type="5 * {id : int64, name : string, balance : int64}")
 
-Note that this style of access cannot be used to get at
-actual data values. For this, you must use the element
-access mechanisms.
+Insertion
+=========
 
-Element ReadIteration
-=====================
+Analagously to ``__iter__`` and ``chunks`` the methods ``extend`` and
+``extend_chunks`` allow for insertion of data into the data descriptor.  These
+methods take iterators of Python objects and DyND arrays respectively.  The
+data is coerced into whatever form is native for the storage medium e.g. text
+for CSV or ``INSERT`` statements for SQL.
 
-A data descriptor must expose a method element_read_iter_interface(),
-returning a subclass of blaze.datadescriptor.IReadElementIter.
-This object must be a Python iterator, returning raw pointer
-values as Python ints.
 
-It may also expose methods c_read_iter and llvm_read_iter, which return
-C function pointers/data and LLVM inlinable code respectively
-to do the iteration.
+::
 
-This iteration is for read access only, so if the data is on
-disk, compressed, or requires any other form of transformation
-the iterator should use a temporary intermediate buffer. Each
-iteration step is allowed to invalidate all previous pointers
-returned, in order to facilitate such buffering.
+   >>> csv = CSV('accounts.csv', mode='a')
+   >>> csv.extend([(6, 'Frank', 600),
+   ...             (7, 'Georgina', 700)])
 
-The elements pointed to by the pointers returned must be in
-C order, contiguous, and follow C alignment of the
-platform/compiler Python was built with.
 
-Get Element
-===========
+Migration
+=========
 
-A data descriptor must expose a method get_element_interface,
-which returns an object which can do a getitem for a fixed
-number of integer indices. Its get method must accept
-a tuple of nindex integers, and return a raw pointer to
-the data.
+The combination of iteration and insertion enables trivial data migration
+between storage formats.
 
-The returned object may also implement c_getter and llvm_getter,
-which produce C function pointers/data and inlinable LLVM
-code to do the same get operation.
+::
 
-Any get operation invalidates all previous pointers returned.
-This interface requirement is so that a buffer/element cache
-may be used by the implementation.
+   >>> sql = SQL('postgres://user:password@hostname/', 'accounts')
+   >>> sql.extend(iter(csv))  # Migrate csv file to Postgres database
 
-The elements pointed to by the pointers returned must be in
-C order, contiguous, and follow C alignment of the
-platform/compiler Python was built with.
 
-Element WriteIteration
-======================
+Indexing
+========
 
-This is the equivalent of ReadIteration for writing to
-a writable data descriptor. Details to be fleshed out.
+Data descriptors also support fancy indexing.  As with iteration this supports
+either Python objects or DyND arrays with the ``.py[...]`` and ``.dynd[...]``
+interfaces.
 
-Set Element
-===========
+::
 
-This is the equivalent of get element for writing to
-a writable data descriptor. Details to be fleshed out.
+   >>> list(csv.py[::2, ['name', 'balance']])
+   [(u'Alice', 100L),
+    (u'Charlie', 300L),
+    (u'Edith', 500L),
+    (u'Georgina', 700L),
+    (u'Georgina', 700L)]
 
+   >>> csv.dynd[::10, ['column_1', 'column_3']]
+   nd.array([["Alice", 100],
+             ["Charlie", 300],
+             ["Edith", 500],
+             ["Georgina", 700]],
+            type="var * {name : string, balance : int64}")
+
+Performance of this approach varies depending on the underlying storage system.
+For file-based storage systems like CSV and JSON we must seek through the file
+to find the right line (see iopro_), but don't incur deserialization costs.
+Some storage systems, like HDF5, support random access natively.
+
+
+.. _iopro: http://docs.continuum.io/iopro/index.html
