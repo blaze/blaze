@@ -106,7 +106,7 @@ interfaces.
     (u'Georgina', 700L),
     (u'Georgina', 700L)]
 
-   >>> csv.dynd[::10, ['column_1', 'column_3']]
+   >>> csv.dynd[::10, ['name', 'balance']]
    nd.array([["Alice", 100],
              ["Charlie", 300],
              ["Edith", 500],
