@@ -11,11 +11,11 @@ sophisticated data stores like SQL databases.  The data descriptor interface is
 analogous to the Python buffer interface described in PEP 3118, but with some
 more flexibility.
 
-Over the course of this document we'll refer to the following simple csv file:
+Over the course of this document we'll refer to the following simple
+``accounts.csv`` file:
 
 ::
 
-   # accounts.csv
    id, name, balance
    1, Alice, 100
    2, Bob, 200
