@@ -5,6 +5,7 @@ import itertools as it
 import os
 from operator import itemgetter
 from collections import Iterator
+import sys
 
 import datashape
 from datashape.discovery import discover, null, string
@@ -192,7 +193,11 @@ class CSV(DataDescriptor):
 
     def _extend(self, rows):
         rows = iter(rows)
-        f = self.open(self.path, self.mode)
+        if sys.version_info[0] == 3:
+            f = self.open(self.path, 'a', newline='')
+        elif sys.version_info[0] == 2:
+            f = self.open(self.path, 'ab')
+
         row = next(rows)
         if isinstance(row, dict):
             schema = dshape(self.schema)
@@ -200,7 +205,6 @@ class CSV(DataDescriptor):
             rows = (coerce_record_to_row(schema, row) for row in rows)
 
         # Write all rows to file
-        f.seek(0, os.SEEK_END)  # go to the end of the file
         writer = csv.writer(f, **self.dialect)
         writer.writerow(row)
         writer.writerows(rows)
