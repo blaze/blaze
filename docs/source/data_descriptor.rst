@@ -5,8 +5,8 @@ Data Descriptors
 
 Data Descriptors provide uniform access to a variety of common data formats.
 They provide standard iteration, insertion, and numpy-like fancy indexing over
-on disk files in common formats like csv, json, and hdf5 in memory data
-strutures like Python list-of-lists and DyND arrays as well as more
+on-disk files in common formats like csv, json, and hdf5 in memory data
+strutures like core Python data structures and DyND arrays as well as more
 sophisticated data stores like SQL databases.  The data descriptor interface is
 analogous to the Python buffer interface described in PEP 3118, but with some
 more flexibility.
@@ -23,7 +23,7 @@ Over the course of this document we'll refer to the following simple
    4, Denis, 400
    5, Edith, 500
 
-::
+.. code-block:: python
 
    >>> csv = CSV('accounts.csv')
 
@@ -34,7 +34,7 @@ Data descriptors expose the ``__iter__`` method, which iterates over the
 outermost dimension of the data.  This iterator yields vanilla Python objects
 by default.
 
-::
+.. code-block:: python
 
    >>> list(csv)
    [(1L, u'Alice', 100L),
@@ -51,7 +51,7 @@ DyND arrays which are more efficient for bulk processing and data transfer.
 DyND arrays support the ``__array__`` interface and so can be easily converted
 to NumPy arrays.
 
-::
+.. code-block:: python
 
    >>> next(csv.chunks())
    nd.array([[1, "Alice", 100],
@@ -71,7 +71,7 @@ data is coerced into whatever form is native for the storage medium e.g. text
 for CSV or ``INSERT`` statements for SQL.
 
 
-::
+.. code-block:: python
 
    >>> csv = CSV('accounts.csv', mode='a')
    >>> csv.extend([(6, 'Frank', 600),
@@ -81,10 +81,10 @@ for CSV or ``INSERT`` statements for SQL.
 Migration
 =========
 
-The combination of iteration and insertion enables trivial data migration
-between storage formats.
+The combination of uniform iteration and insertion enables trivial data
+migration between storage systems.
 
-::
+.. code-block:: python
 
    >>> sql = SQL('postgres://user:password@hostname/', 'accounts')
    >>> sql.extend(iter(csv))  # Migrate csv file to Postgres database
@@ -97,7 +97,7 @@ Data descriptors also support fancy indexing.  As with iteration this supports
 either Python objects or DyND arrays with the ``.py[...]`` and ``.dynd[...]``
 interfaces.
 
-::
+.. code-block:: python
 
    >>> list(csv.py[::2, ['name', 'balance']])
    [(u'Alice', 100L),
