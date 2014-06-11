@@ -2,55 +2,57 @@
 Overview
 ========
 
-Blaze is a Generalization of NumPy
-----------------------------------
+Blaze Abstracts Computation and Storage
+---------------------------------------
 
 .. image:: svg/numpy_plus.png
     :align: center
 
-We would like Blaze to be a generalization of NumPy.  Whether this means
-that the Array and Table objects replace NumPy arrays in the future
-has yet to be determined.  For now, it will augment NumPy and provide
-interoperability whenever possible.
+
+The software ecosystem surrounding data analytics is rich with mature projects.
+Blaze augments this ecosystem with a uniform interface.  Blaze orchestrates
+computation and data access among these external projects.  It provides a
+consistent backdrop to build standard interfaces usable by the current Python
+community.
+
 
 Datashape
-~~~~~~~~~
+---------
 
 The type system in Blaze is called Datashape, and generalizes the
 combination of shape and dtype in NumPy. The datashape of an array
 consists of a number of dimensions, followed by an element type.
 
-Data Descriptor
-~~~~~~~~~~~~~~~
+Data Descriptors
+----------------
 
-The data descriptor is the interface which exposes multi-dimensional
-data to Blaze. It provides data layout, iteration and indexing
-of data, no mathematical operations. This is similar to the Python
-memoryview object, but with a more general multi-dimensional structure.
-The data descriptor is for interfacing to data in any of local memory,
-out of core storage, or distributed storage.
+Data descriptors provide uniform data access.  They support
+iteration, insertion, and fancy indexing over a variety of popular formats.
+They provide seemless data migration and robust access for computation.
+Data descriptors span from local memory to out of core storage to distributed
+storage.
 
-Array
-~~~~~
+Expressions
+-----------
 
-The array object wraps a data descriptor, adding arithmetic, field
-access, and other properties to be the main array programming object
-in Blaze. Most algorithms will be written in terms of arrays.
+Blaze expressions describe computational workflows symbolically. They allow
+developers to architect and check their computations rapidly before applying
+them to data.  These expressions can then be compiled down to a variety of
+supported backends.
 
-Table
-~~~~~
+Backends
+--------
 
-The table object wraps a number of named data descriptors, representing
-an array of records with a field-oriented storage. It provides data-oriented
-access via various queries and selections.
+Blaze backends include projects like streaming Python, Pandas, SQLAlchemy, and
+Spark.  A Blaze expression can run equally well on any of these backends,
+allowing developers to easily transition their computation as their needs
+change.
 
-Blaze Functions
-~~~~~~~~~~~~~~~
 
-Blaze functions provide a way to define functions which operate on
-elements or subarrays of blaze arrays. Evaluation is deferred until
-the blaze.eval function is called on the result.
+Interfaces
+----------
 
-Blaze functions provide multiple dispatch into a table of kernels,
-which may be parameterized and use runtime code generation.
-
+Blaze interfaces provide interactive Python objects focused on usability.
+These high level ``Table`` and ``Array`` objects manage Blaze expressions and
+computations in an interactive session similar to existing workflows with
+Pandas DataFrames and NumPy NDArrays.
