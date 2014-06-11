@@ -172,11 +172,10 @@ def test_spark_groupby():
     assert in_degree == {'A': 1, 'C': 2}
 
 
-def test_multi_level_rowfunc_works():
+def test_spark_multi_level_rowfunc_works():
     expr = t['amount'].map(lambda x: x + 1)
 
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
-
 
 
 @skip("Spark not yet fully supported")
@@ -211,7 +210,7 @@ def test_jaccard():
     assert indeg_py == {1: 3, 3: 4, 6: 3}
 
 
-def test_collect():
+def test_spark_collect():
     col = (t['amount'] * 2).label('new')
     expr = collect(t['name'], col)
 
