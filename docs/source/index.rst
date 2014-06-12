@@ -43,11 +43,7 @@ Index
    data
    expressions
    backends
-   data_sources
    datashape
-   datashape-binary
-   blaze_function
-   deferred
    dev_workflow
 
 
