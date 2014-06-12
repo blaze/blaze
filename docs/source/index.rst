@@ -42,6 +42,7 @@ Index
    quickstart
    data
    expressions
+   backends
    data_sources
    datashape
    datashape-binary
