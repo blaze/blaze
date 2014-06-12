@@ -1,6 +1,6 @@
-================
-Data Descriptors
-================
+====
+Data
+====
 
 
 Data Descriptors provide uniform access to a variety of common data formats.
@@ -27,8 +27,11 @@ Over the course of this document we'll refer to the following simple
 
    >>> csv = CSV('accounts.csv')
 
-Python-Style Iteration
-======================
+Interface
+=========
+
+Iteration
+---------
 
 Data descriptors expose the ``__iter__`` method, which iterates over the
 outermost dimension of the data.  This iterator yields vanilla Python objects
@@ -62,7 +65,7 @@ to NumPy arrays.
             type="5 * {id : int64, name : string, balance : int64}")
 
 Insertion
-=========
+---------
 
 Analagously to ``__iter__`` and ``chunks`` the methods ``extend`` and
 ``extend_chunks`` allow for insertion of data into the data descriptor.  These
@@ -79,7 +82,7 @@ for CSV or ``INSERT`` statements for SQL.
 
 
 Migration
-=========
+---------
 
 The combination of uniform iteration and insertion enables trivial data
 migration between storage systems.
@@ -91,7 +94,7 @@ migration between storage systems.
 
 
 Indexing
-========
+--------
 
 Data descriptors also support fancy indexing.  As with iteration this supports
 either Python objects or DyND arrays with the ``.py[...]`` and ``.dynd[...]``
@@ -119,4 +122,102 @@ to find the right line (see iopro_), but don't incur deserialization costs.
 Some storage systems, like HDF5, support random access natively.
 
 
+Current State
+=============
+
+
+The ``blaze.data`` module robustly parses csv, json, hdf5 files and interacts
+with SQL databases.
+
+CSV/JSON
+--------
+
+For text-based formats (csv, json) it depends on standard Python modules
+like ``csv`` to tokenize strings and the fast library DyND to serialize and
+deserialize data elements.  This separation enables a *serialize what you need*
+approach ideal for subsampling datasets.
+
+.. code-block:: python
+
+   >>> csv = CSV(filename)
+   >>> csv.py[::2, 'name']  # Fast, deserializes a small fraction of dataset
+
+HDF5
+----
+
+HDF5 support comes via h5py_, which loads data in through ``numpy`` arrays
+and offers various forms of compression for binary data.
+
+.. code-block:: python
+
+   >>> hdf5 = HDF5(path, datapath)
+
+Directories
+-----------
+
+Directories of files are supported with meta descriptors ``Stack`` and
+``Concat`` which allow you to treat directories of files as a single, indexable
+data source.
+
+.. code-block:: python
+
+   >>> filenames = glob('*.csv')
+   >>> csvs = [CSV(filename) for filename in filename]
+
+   >>> stack = Stack(csvs)
+   >>> stack.py[:, ::2, 'name']
+
+   >>> cat = Concat(csvs)
+   >>> cat.py[::2, 'name']
+
+SQL
+---
+
+Robust SQL interaction is provided by SQLAlchemy_ which maps an abstract
+expression system onto a variety of SQL backends including Postgres, MySQL,
+SQLite, etc...
+
+.. code-block:: python
+
+   >>> sql = SQL('postgresql://username:password@hostname/path', 'table-name')
+
+Specifying Datashape
+--------------------
+
+Ideally Blaze is able to infer the schema/datashape of your dataset.  Systems
+like SQL carry enough meta-data to ensure that this is possible.  Other systems
+like CSV depend on heuristics.  These heurstics can fail or even err.  In that
+case you may be prompted to provide more information
+
+.. code-block:: python
+
+   >>> csv = CSV(filename)
+   TypeError: Could not determine schema
+
+   >>> # Full schema specification as a datashape string
+   >>> csv = CSV(filename, schema='{id: int, name: string, amount: float32}')
+
+   >>> # Just specify the column names, please discover types
+   >>> csv = CSV(filename, columns=['id', 'name', 'amount'])
+
+   >>> # Provide corrections where needed
+   >>> csv = CSV(filename, columns=['id', 'name', 'amount'],
+   ...           typehints={'amount': 'float64'})
+
+Interacting with ``open``
+-------------------------
+
+Files that are compressed or hosted from the web (via ``urlopen``) can still be
+accessed by specifying a custom ``open`` function.
+
+.. code-block:: python
+
+   >>> import gzip
+   >>> csv = CSV('accounts.csv.gz', open=gzip.open)
+
+
+
+
 .. _iopro: http://docs.continuum.io/iopro/index.html
+.. _h5py: http://docs.h5py.org/en/latest/
+.. _SQLAlchemy: http://www.sqlalchemy.org/

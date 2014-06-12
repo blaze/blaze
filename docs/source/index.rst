@@ -40,11 +40,10 @@ Index
    install
    overview
    quickstart
-   catalog
+   data
    data_sources
    datashape
    datashape-binary
-   data_descriptor
    blaze_function
    deferred
    dev_workflow
