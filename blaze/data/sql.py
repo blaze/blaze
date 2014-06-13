@@ -42,6 +42,9 @@ types = {'int64': sql.types.BigInteger,
 revtypes = dict(map(reversed, types.items()))
 
 revtypes.update({sql.types.VARCHAR: 'string',
+                 sql.types.DATETIME: 'datetime',
+                 sql.types.FLOAT: 'real',
+                 sql.types.DATE: 'date',
                  sql.types.INTEGER: 'int'})
 
 
