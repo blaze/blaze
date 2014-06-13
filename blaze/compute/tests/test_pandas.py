@@ -273,3 +273,10 @@ def test_merge():
     result = compute(expr, df)
 
     assert str(result) == str(expected)
+
+
+def test_by_nunique():
+    result = compute(By(t, t['name'], t['id'].nunique()), df)
+    expected = DataFrame([['Alice', 2], ['Bob', 1]], columns=['name', 'id'])
+
+    assert str(result) == str(expected)
