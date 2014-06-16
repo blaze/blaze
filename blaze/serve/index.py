@@ -21,7 +21,7 @@ def parse_index(ind):
 def emit_index(ind):
     """ Emit Python index into structured form
 
-    >>> emit_index((1, slice(0, 10, None)))
+    >>> emit_index((1, slice(0, 10, None))) #doctest: +SKIP
     [1, {'start': 0, 'stop': 10}]
 
     See also:
