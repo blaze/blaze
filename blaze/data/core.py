@@ -153,6 +153,15 @@ class DataDescriptor(object):
         raise TypeError('Datashape is not indexable to schema\n%s' %
                         self.dshape)
 
+    @property
+    def columns(self):
+        rec = self.schema[0]
+        if isinstance(rec, datashape.Record):
+            return rec.names
+        else:
+            raise TypeError('Columns attribute only valid on tabular '
+                            'datashapes of records, got %s' % self.dshape)
+
 
 from blaze.compute.python import dispatch
 from blaze.expr.table import Join, TableExpr

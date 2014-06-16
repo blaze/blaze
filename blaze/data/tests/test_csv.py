@@ -58,6 +58,12 @@ class Test_Other(unittest.TestCase):
 
             assert 'Georgina' in set(csv.py[:, 'name'])
 
+    def test_columns(self):
+        # This is really testing the core interface
+        dd = CSV('foo', 'w', schema='{name: string, amount: int}')
+        assert list(dd.columns) == ['name', 'amount']
+
+
 
 class Test_Indexing(unittest.TestCase):
 
