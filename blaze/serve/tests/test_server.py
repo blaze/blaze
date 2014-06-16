@@ -30,12 +30,6 @@ def test_full_response():
              'data': ['Alice', 'Bob']}
 
 
-
-
-def test_basic():
-    assert 'OK' in test.get('/').status
-
-
 def test_datasets():
     response = test.get('/datasets.json')
     assert json.loads(response.data) == {'accounts': str(accounts.dshape),
