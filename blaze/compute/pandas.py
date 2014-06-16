@@ -128,6 +128,20 @@ def compute(t, df):
     return parent.drop_duplicates()
 
 
+def unpack(seq):
+    """ Unpack sequence of length one
+
+    >>> unpack([1, 2, 3])
+    [1, 2, 3]
+
+    >>> unpack([1])
+    1
+    """
+    seq = list(seq)
+    if len(seq) == 1:
+        seq = seq[0]
+    return seq
+
 @dispatch(By, DataFrame)
 def compute(t, df):
     parent = compute(t.parent, df)
@@ -136,25 +150,17 @@ def compute(t, df):
     pregrouped = DataFrame(compute(t.apply.parent, parent))
 
     full = grouper.join(pregrouped)
-    groups = full.groupby(list(grouper.columns))[list(pregrouped.columns)]
+    groups = full.groupby(unpack(grouper.columns))[unpack(pregrouped.columns)]
 
     reduction = t.apply.subs({t.apply.parent:
                               TableSymbol('group', t.apply.parent.schema)})
+    result = compute(reduction, groups)
 
-    return compute(reduction, groups)[list(pregrouped.columns)].reset_index()
+    if isinstance(result, Series):
+        result.name = unpack(pregrouped.columns)
+        result = DataFrame(result)
 
-
-    if isinstance(t.grouper, Projection) and t.grouper.parent == t:
-        grouper = list(t.grouper.columns)
-    else:
-        grouper = compute(t.grouper, parent)
-
-
-    if isinstance(grouper, (list, str, Series)):
-        pregrouped = compute(t.apply.parent, parent)
-        return compute(reduction, pregrouped.groupby(grouper))
-    else:
-        return parent.groupby(grouper).apply(lambda x: compute(t.apply, x))
+    return result[list(pregrouped.columns)].reset_index()
 
 
 @dispatch(Sort, DataFrame)

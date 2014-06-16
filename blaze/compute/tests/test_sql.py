@@ -146,6 +146,18 @@ def test_by():
     assert str(result) == str(expected)
 
 
+def test_by_head():
+    t2 = t.head(100)
+    expr = By(t2, t2['name'], t2['amount'].sum())
+    result = compute(expr, s)
+    s2 = select(s).limit(100)
+    expected = sa.select([s2.c.name,
+                          sa.sql.functions.sum(s2.c.amount).label('amount')]
+                         ).group_by(s2.c.name)
+
+    assert str(result) == str(expected)
+
+
 def test_by_two():
     expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
     result = compute(expr, sbig)

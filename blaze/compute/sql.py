@@ -154,11 +154,12 @@ def compute(t, s):
 def compute(t, s):
     parent = compute(t.parent, s)
     if isinstance(t.grouper, Projection):
-        grouper = [compute(t.grouper.parent[col], s) for col in t.grouper.columns]
+        grouper = [compute(t.grouper.parent[col], parent)
+                    for col in t.grouper.columns]
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-    reduction = compute(t.apply, s)
+    reduction = compute(t.apply, parent)
     return select(grouper + [reduction]).group_by(*grouper)
 
 
