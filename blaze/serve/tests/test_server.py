@@ -1,6 +1,6 @@
 import json
 
-from blaze.serve.server import app, datasets
+from blaze.serve.server import Server
 from blaze.data.python import Python
 from blaze.serve.index import parse_index, emit_index
 
@@ -10,10 +10,9 @@ accounts = Python([['Alice', 100], ['Bob', 200]],
 cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
                   schema='{name: string, city: string}')
 
-datasets['accounts'] = accounts
-datasets['cities'] = cities
+server = Server(datasets={'accounts': accounts, 'cities': cities})
 
-test = app.test_client()
+test = server.app.test_client()
 
 def test_full_response():
     py_index = (slice(0, None), 'name')

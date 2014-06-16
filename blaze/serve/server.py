@@ -3,21 +3,45 @@ from __future__ import absolute_import, division, print_function
 from collections import Iterator
 from flask import Flask, request, jsonify
 import json
+from functools import partial, wraps
 
 from .index import parse_index
 
-app = Flask('Blaze-Server')
+class Server(object):
+    __slots__ = 'app', 'datasets'
 
-datasets = dict()
+    def __init__(self, name='Blaze-Server', datasets=None):
+        app = self.app = Flask(name)
+        self.datasets = datasets or dict()
+
+        for args, kwargs, func in routes:
+            func2 = wraps(func)(partial(func, self.datasets))
+            app.route(*args, **kwargs)(func2)
+
+    def __getitem__(self, key):
+        return self.datasets[key]
+
+    def __setitem__(self, key, value):
+        self.datasets[key] = value
+        return value
 
 
-@app.route('/datasets.json')
-def dataset():
+routes = list()
+
+def route(*args, **kwargs):
+    def f(func):
+        routes.append((args, kwargs, func))
+        return func
+    return f
+
+
+@route('/datasets.json')
+def dataset(datasets):
     return jsonify(dict((k, str(v.dshape)) for k, v in datasets.items()))
 
 
-@app.route('/data/<name>.json', methods=['POST'])
-def data(name):
+@route('/data/<name>.json', methods=['POST'])
+def data(datasets, name):
     """ Basic indexing API
 
     Allows remote indexing of datasets.  Takes indexing data as JSON
