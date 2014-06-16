@@ -1,6 +1,14 @@
 from blaze.compatibility import _strtypes
 
 def parse_index(ind):
+    """ Parse structured index into Pythonic form
+
+    >>> parse_index([1, {'start': 0, 'stop': 10}])
+    (1, slice(0, 10, None))
+
+    See also:
+        emit_index
+    """
     if isinstance(ind, (int, _strtypes)):
         return ind
     if isinstance(ind, list):
@@ -11,6 +19,14 @@ def parse_index(ind):
 
 
 def emit_index(ind):
+    """ Emit Python index into structured form
+
+    >>> emit_index((1, slice(0, 10, None)))
+    [1, {'start': 0, 'stop': 10}]
+
+    See also:
+        parse_index
+    """
     if isinstance(ind, (int, _strtypes)):
         return ind
     if isinstance(ind, tuple):
