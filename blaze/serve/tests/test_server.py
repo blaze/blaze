@@ -38,11 +38,8 @@ def test_basic():
 
 def test_datasets():
     response = test.get('/datasets.json')
-    assert 'accounts' in response.data
-    assert 'cities' in response.data
-
-    assert str(accounts.dshape) in response.data
-    assert str(cities.dshape) in response.data
+    assert json.loads(response.data) == {'accounts': str(accounts.dshape),
+                                         'cities': str(cities.dshape)}
 
 
 def test_data():
