@@ -14,5 +14,8 @@ def test_js_to_tuple():
             print(b)
             assert False
 
-
-
+    for a, b in data:
+        if emit_index(b) != a:
+            print(a)
+            print(b)
+            assert False
