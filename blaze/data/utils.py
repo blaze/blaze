@@ -7,6 +7,7 @@ from datashape import dshape, Record
 from datashape.predicates import isunit, isdimension
 
 from ..utils import partition_all
+from ..compatibility import _strtypes
 
 
 def validate(schema, item):
@@ -41,7 +42,7 @@ def coerce_to_ordered(ds, data):
     ...                   ((1, 2), (10, 20)))
     ((1, 2), (10, 20))
     """
-    if isinstance(ds, str):
+    if isinstance(ds, _strtypes):
         ds = dshape(ds)
     if isinstance(ds[0], Record):
         if isinstance(data, (list, tuple)):
@@ -111,13 +112,13 @@ def ordered_index(ind, ds):
     >>> ordered_index((0, ['x', 'y']), '3 * {x: int, y: int}')
     (0, [0, 1])
     """
-    if isinstance(ds, str):
+    if isinstance(ds, _strtypes):
         ds = dshape(ds)
     if isinstance(ind, (int, slice)):
         return ind
     if isinstance(ind, list):
         return [ordered_index(i, ds) for i in ind]
-    if isinstance(ind, str) and isinstance(ds[0], Record):
+    if isinstance(ind, _strtypes) and isinstance(ds[0], Record):
         return ds[0].names.index(ind)
     if isinstance(ind, tuple) and not ind:
         return ()
