@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-from datashape.dispatch import dispatch
 from collections import Iterable, Iterator
 from functools import partial
 from glob import glob
 import gzip
 
+from ..dispatch import dispatch
 from .csv import *
 from .json import *
 from .hdf5 import *

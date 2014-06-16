@@ -19,9 +19,9 @@ from __future__ import absolute_import, division, print_function
 import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
-from multipledispatch import dispatch
 import numpy as np
 
+from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar import UnaryOp, BinOp
 from . import core

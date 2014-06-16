@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
 from dynd import nd
-from datashape.dispatch import dispatch
 import datashape
 from datashape import DataShape, dshape, Record
 from datashape.user import validate, issubschema
 import numpy as np
+
+from ..dispatch import dispatch
 
 
 __all__ = ['into', 'discover']

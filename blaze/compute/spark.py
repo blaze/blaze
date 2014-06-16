@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from multipledispatch import dispatch
 import sys
 from operator import itemgetter
 import operator
@@ -13,6 +12,7 @@ from . import core, python
 from .python import compute, rowfunc, RowWise
 from ..compatibility import builtins
 from ..expr import table
+from ..dispatch import dispatch
 
 try:
     from itertools import compress, chain

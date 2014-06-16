@@ -163,7 +163,7 @@ class DataDescriptor(object):
                             'datashapes of records, got %s' % self.dshape)
 
 
-from blaze.compute.python import dispatch
+from ..dispatch import dispatch
 from blaze.expr.table import Join, TableExpr
 from blaze.expr.core import Expr
 @dispatch((Join, Expr), DataDescriptor)
