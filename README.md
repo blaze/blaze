@@ -104,7 +104,7 @@ $ python setup.py install
 ```
 
 Installing from Binstar.org
-----------------------
+---------------------------
 
 Binstar is a service that allows you to create and manage public
 and private package registries. 
