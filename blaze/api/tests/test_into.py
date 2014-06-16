@@ -6,6 +6,13 @@ import numpy as np
 from blaze.api import into
 import blaze
 
+def skip_if_not(x):
+    def maybe_a_test_function(test_foo):
+        if not x:
+            return
+        else:
+            return test_foo
+    return maybe_a_test_function
 
 class Test_into(unittest.TestCase):
     def test_containers(self):
@@ -38,3 +45,26 @@ class Test_into(unittest.TestCase):
                          into([], (1, 2, 3)))
         self.assertEqual(str(into(np.ndarray, (1, 2, 3))),
                          str(into(np.ndarray(()), (1, 2, 3))))
+
+
+try:
+    from pandas import DataFrame
+except ImportError:
+    DataFrame = None
+
+try:
+    from blaze.data.python import Python
+except ImportError:
+    Python = None
+
+
+@skip_if_not(DataFrame and Python)
+def test_pandas_data_descriptor():
+    data = [['Alice', 100], ['Bob', 200]]
+    dd = Python(data, schema='{name: string, amount: int}')
+    result = into(DataFrame, dd)
+    expected = DataFrame(data, columns=['name', 'amount'])
+    print(result)
+    print(expected)
+
+    assert str(result) == str(expected)

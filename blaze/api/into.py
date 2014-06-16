@@ -50,3 +50,9 @@ def into(a, b):
 @dispatch(list, np.ndarray)
 def into(a, b):
     return b.tolist()
+
+from blaze.data import DataDescriptor
+from pandas import DataFrame
+@dispatch(DataFrame, DataDescriptor)
+def into(a, b):
+    return DataFrame(list(b), columns=b.columns)
