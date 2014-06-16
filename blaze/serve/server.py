@@ -16,8 +16,7 @@ def hello():
 
 @app.route('/datasets.json')
 def dataset():
-    return '\n'.join(': '.join((name, str(dset.dshape))) for name, dset in
-                                datasets.items())
+    return jsonify(dict((k, str(v.dshape)) for k, v in datasets.items()))
 
 
 @app.route('/data/<name>.json', methods=['POST'])
