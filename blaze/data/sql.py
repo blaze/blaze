@@ -43,8 +43,10 @@ revtypes = dict(map(reversed, types.items()))
 
 revtypes.update({sql.types.VARCHAR: 'string',
                  sql.types.DATETIME: 'datetime',
+                 sql.types.TIMESTAMP: 'datetime',
                  sql.types.FLOAT: 'real',
                  sql.types.DATE: 'date',
+                 sql.types.BIGINT: 'int64',
                  sql.types.INTEGER: 'int'})
 
 
@@ -53,7 +55,10 @@ def discover(typ):
     if type(typ) in revtypes:
         return dshape(revtypes[type(typ)])[0]
     else:
-        raise NotImplementedError("No SQL-datashape match for type %s" % typ)
+        for k, v in revtypes.items():
+            if isinstance(typ, k):
+                return v
+    raise NotImplementedError("No SQL-datashape match for type %s" % typ)
 
 
 @dispatch(sql.Table)
