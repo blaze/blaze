@@ -21,7 +21,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION nose numpy sqlalchemy pandas h5py pip
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION nose numpy sqlalchemy pandas h5py pip flask
   - source activate test-environment
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; fi
   - pip install toolz cytoolz multipledispatch
