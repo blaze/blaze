@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from dynd import nd
 from datashape.dispatch import dispatch
-from datashape import DataShape
+from datashape import DataShape, dshape, Record
 from datashape.user import validate, issubschema
 import numpy as np
 
@@ -56,3 +56,13 @@ from pandas import DataFrame
 @dispatch(DataFrame, DataDescriptor)
 def into(a, b):
     return DataFrame(list(b), columns=b.columns)
+
+
+@dispatch(DataFrame, nd.array)
+def into(a, b):
+    ds = dshape(nd.dshape_of(b))
+    if isinstance(ds[-1], Record):
+        names = ds[-1].names
+        return DataFrame(nd.as_py(b), columns=names)
+    else:
+        return DataFrame(nd.as_py(b))

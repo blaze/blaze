@@ -61,8 +61,24 @@ except ImportError:
 @skip_if_not(DataFrame and Python)
 def test_pandas_data_descriptor():
     data = [['Alice', 100], ['Bob', 200]]
-    dd = Python(data, schema='{name: string, amount: int}')
+    schema='{name: string, amount: int}'
+    dd = Python(data, schema=schema)
     result = into(DataFrame, dd)
+    expected = DataFrame(data, columns=['name', 'amount'])
+    print(result)
+    print(expected)
+
+    assert str(result) == str(expected)
+
+
+@skip_if_not(DataFrame and nd.array)
+def test_pandas_dynd():
+    data = [['Alice', 100], ['Bob', 200]]
+    schema='{name: string, amount: int}'
+
+    arr = nd.array(data, dtype=schema)
+
+    result = into(DataFrame, arr)
     expected = DataFrame(data, columns=['name', 'amount'])
     print(result)
     print(expected)
