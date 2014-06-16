@@ -2,8 +2,9 @@ import unittest
 
 from dynd import nd
 import numpy as np
+from datashape import dshape
 
-from blaze.api import into
+from blaze.api import into, discover
 import blaze
 
 def skip_if_not(x):
@@ -84,3 +85,12 @@ def test_pandas_dynd():
     print(expected)
 
     assert str(result) == str(expected)
+
+
+@skip_if_not(DataFrame)
+def test_discover_pandas():
+    data = [['Alice', 100], ['Bob', 200]]
+    df = DataFrame(data, columns=['name', 'balance'])
+
+    print(discover(df))
+    assert discover(df) == dshape('{name: string, balance: int64}')

@@ -2,12 +2,13 @@ from __future__ import absolute_import, division, print_function
 
 from dynd import nd
 from datashape.dispatch import dispatch
+import datashape
 from datashape import DataShape, dshape, Record
 from datashape.user import validate, issubschema
 import numpy as np
 
 
-__all__ = ['into']
+__all__ = ['into', 'discover']
 
 
 @dispatch(type, object)
@@ -66,3 +67,13 @@ def into(a, b):
         return DataFrame(nd.as_py(b), columns=names)
     else:
         return DataFrame(nd.as_py(b))
+
+
+@dispatch(DataFrame)
+def discover(df):
+    obj = datashape.coretypes.object_
+    names = list(df.columns)
+    dtypes = list(map(datashape.CType.from_numpy_dtype, df.dtypes))
+    dtypes = [datashape.string if dt == obj else dt for dt in dtypes]
+    schema = Record(list(zip(names, dtypes)))
+    return DataShape(schema)
