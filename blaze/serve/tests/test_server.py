@@ -13,13 +13,30 @@ cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
 datasets['accounts'] = accounts
 datasets['cities'] = cities
 
+test = app.test_client()
+
+def test_full_response():
+    py_index = (slice(0, None), 'name')
+    json_index = [{'start': 0, 'stop': None}, 'name']
+
+    response = test.post('/data/accounts.json',
+                         data = json.dumps({'index': emit_index(py_index)}),
+                         content_type='application/json')
+
+    assert json.loads(response.data) == \
+            {'name': 'accounts',
+             'datashape': "var * string",
+             'index': json_index,
+             'data': ['Alice', 'Bob']}
+
+
+
+
 def test_basic():
-    test = app.test_client()
     assert 'OK' in test.get('/').status
 
 
 def test_datasets():
-    test = app.test_client()
     response = test.get('/datasets.json')
     assert 'accounts' in response.data
     assert 'cities' in response.data
@@ -34,7 +51,6 @@ def test_data():
              ((0, 'name'), 'Alice'),
              ((slice(0, None), 'name'), ['Alice', 'Bob'])]
 
-    test = app.test_client()
 
     for ind, expected in pairs:
         index = {'index': emit_index(ind)}
@@ -51,7 +67,6 @@ def test_data():
 
 
 def test_bad_responses():
-    test = app.test_client()
 
     assert 'OK' not in test.post('/data/accounts.json',
                                  data = json.dumps(500),
