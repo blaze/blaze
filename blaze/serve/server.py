@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
-from flask import Flask, request
+from collections import Iterator
+from flask import Flask, request, jsonify
 import json
 
 from .index import parse_index
@@ -22,23 +23,29 @@ def dataset():
 @app.route('/data/<name>.json', methods=['POST'])
 def data(name):
     if request.headers['content-type'] != 'application/json':
-        return "Expected JSON"
+        return ("Expected JSON data", 404)
     try:
         data = json.loads(request.data)
     except ValueError:
-        return "Bad JSON.  Got %s " % request.data
+        return ("Bad JSON.  Got %s " % request.data, 404)
 
     try:
         dset = datasets[name]
     except KeyError:
-        return "Dataset not found"
+        return ("Dataset %s not found" % name, 404)
 
     try:
         index = parse_index(data['index'])
     except ValueError:
-        return "Bad index"
+        return ("Bad index", 404)
 
-    return json.dumps(dset.py.__getitem__(index))
+    rv = dset.py.__getitem__(index)
+    if isinstance(rv, Iterator):
+        rv = list(rv)
+
+    return jsonify({'index': data['index'],
+                    'datashape': str(dset.dshape.subshape.__getitem__(index)),
+                    'data': rv})
 
 if __name__ == '__main__':
     from blaze.data.python import Python

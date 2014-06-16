@@ -37,7 +37,6 @@ def test_data():
     test = app.test_client()
 
     for ind, expected in pairs:
-        print(ind)
         index = {'index': emit_index(ind)}
 
         response = test.post('/data/accounts.json',
@@ -45,7 +44,19 @@ def test_data():
                              content_type='application/json')
         assert 'OK' in response.status
 
-        if not json.loads(response.data) == expected:
-            print(response.data)
+        if not json.loads(response.data)['data'] == expected:
+            print(response.data['data'])
             print(expected)
-        assert json.loads(response.data) == expected
+        assert json.loads(response.data)['data'] == expected
+
+
+def test_bad_responses():
+    test = app.test_client()
+
+    assert 'OK' not in test.post('/data/accounts.json',
+                                 data = json.dumps(500),
+                                 content_type='application/json').status
+    assert 'OK' not in test.post('/data/non-existent-table.json',
+                                 data = json.dumps(0),
+                                 content_type='application/json').status
+    assert 'OK' not in test.post('/data/accounts.json').status
