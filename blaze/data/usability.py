@@ -1,16 +1,19 @@
 from __future__ import absolute_import, division, print_function
 
+from datashape.dispatch import dispatch
+from collections import Iterable, Iterator
 from functools import partial
+from glob import glob
+import gzip
+
 from .csv import *
 from .json import *
 from .hdf5 import *
 from .meta import *
 from .sql import *
-from glob import glob
-import gzip
 from ..compatibility import urlopen, _strtypes
 
-__all__ = ['resource', 'copy']
+__all__ = ['resource', 'copy', 'into']
 
 filetypes = {'csv': CSV,
              'tsv': CSV,
@@ -88,3 +91,9 @@ def resource(uri, **kwargs):
 def copy(src, dest, **kwargs):
     """ Copy content from one data descriptor to another """
     dest.extend_chunks(src.chunks(**kwargs))
+
+
+@dispatch(DataDescriptor, (DataDescriptor, Iterable, Iterator))
+def into(a, b):
+    a.extend(b)
+    return a
