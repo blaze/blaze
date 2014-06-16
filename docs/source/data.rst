@@ -2,14 +2,13 @@
 Data
 ====
 
-
-Data Descriptors provide uniform access to a variety of common data formats.
-They provide standard iteration, insertion, and numpy-like fancy indexing over
-on-disk files in common formats like csv, json, and hdf5 in memory data
-strutures like core Python data structures and DyND arrays as well as more
-sophisticated data stores like SQL databases.  The data descriptor interface is
-analogous to the Python buffer interface described in PEP 3118, but with some
-more flexibility.
+Blaze Data Descriptors provide uniform access to a variety of common data
+formats.  They provide standard iteration, insertion, and numpy-like fancy
+indexing over on-disk files in common formats like csv, json, and hdf5 in
+memory data strutures like core Python data structures and DyND arrays as well
+as more sophisticated data stores like SQL databases.  The data descriptor
+interface is analogous to the Python buffer interface described in PEP 3118,
+but with some more flexibility.
 
 Over the course of this document we'll refer to the following simple
 ``accounts.csv`` file:
