@@ -46,16 +46,3 @@ def data(name):
     return jsonify({'index': data['index'],
                     'datashape': str(dset.dshape.subshape.__getitem__(index)),
                     'data': rv})
-
-if __name__ == '__main__':
-    from blaze.data.python import Python
-
-    accounts = Python([['Alice', 100], ['Bob', 200]],
-                      schema='{name: string, amount: int32}')
-
-    cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
-                      schema='{name: string, city: string}')
-
-    datasets['accounts'] = accounts
-    datasets['cities'] = cities
-    app.run(debug=True)
