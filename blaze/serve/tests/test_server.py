@@ -1,5 +1,8 @@
+import json
+
 from blaze.serve.server import app, datasets
 from blaze.data.python import Python
+from blaze.serve.index import parse_index, emit_index
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
@@ -23,3 +26,26 @@ def test_datasets():
 
     assert str(accounts.dshape) in response.data
     assert str(cities.dshape) in response.data
+
+
+def test_data():
+    pairs = [(0, ['Alice', 100]),
+             ((0, 0), 'Alice'),
+             ((0, 'name'), 'Alice'),
+             ((slice(0, None), 'name'), ['Alice', 'Bob'])]
+
+    test = app.test_client()
+
+    for ind, expected in pairs:
+        print(ind)
+        index = {'index': emit_index(ind)}
+
+        response = test.post('/data/accounts.json',
+                             data = json.dumps(index),
+                             content_type='application/json')
+        assert 'OK' in response.status
+
+        if not json.loads(response.data) == expected:
+            print(response.data)
+            print(expected)
+        assert json.loads(response.data) == expected
