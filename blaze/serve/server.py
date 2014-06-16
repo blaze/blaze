@@ -22,6 +22,35 @@ def dataset():
 
 @app.route('/data/<name>.json', methods=['POST'])
 def data(name):
+    """ Basic indexing API
+
+    Allows remote indexing of datasets.  Takes indexing data as JSON
+
+    Takes requests like
+    Example
+    -------
+
+    For the following array:
+
+    [['Alice', 100],
+     ['Bob', 200],
+     ['Charlie', 300]]
+
+    schema = '{name: string, amount: int32}'
+
+    And the following
+
+    url: /data/table-name.json
+    POST-data: {'index': [{'start': 0, 'step': 3}, 'name']}
+
+    and returns responses like
+
+    {"name": "table-name",
+     "index": [0, "name"],
+     "datashape": "3 * string",
+     "data": ["Alice", "Bob", "Charlie"]}
+     """
+
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
     try:
@@ -43,6 +72,7 @@ def data(name):
     if isinstance(rv, Iterator):
         rv = list(rv)
 
-    return jsonify({'index': data['index'],
+    return jsonify({'name': name,
+                    'index': data['index'],
                     'datashape': str(dset.dshape.subshape.__getitem__(index)),
                     'data': rv})
