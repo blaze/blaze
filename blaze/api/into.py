@@ -10,6 +10,15 @@ import numpy as np
 __all__ = ['into']
 
 
+@dispatch(type, object)
+def into(a, b):
+    f = into.resolve((a, type(b)))
+    try:
+        a = a()
+    except:
+        pass
+    return f(a, b)
+
 @dispatch((list, tuple, set), (list, tuple, set))
 def into(a, b):
     return type(a)(b)
