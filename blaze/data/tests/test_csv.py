@@ -38,7 +38,7 @@ class Test_Other(unittest.TestCase):
                     str(CSV(fn, types=['string', 'int32', 'date']).schema),
                     str(dshape('{name: string, amount: int32, date: date}')))
 
-            a = CSV(fn, hints={'date': 'date'}).schema
+            a = CSV(fn, typehints={'date': 'date'}).schema
             b = dshape('{name: string, amount: int64, date: date}')
             self.assertEqual(str(a), str(b))
 
