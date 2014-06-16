@@ -7,6 +7,10 @@ from datashape import dshape
 from blaze.api import into, discover
 import blaze
 
+
+def skip(test_foo):
+    return
+
 def skip_if_not(x):
     def maybe_a_test_function(test_foo):
         if not x:
@@ -14,6 +18,7 @@ def skip_if_not(x):
         else:
             return test_foo
     return maybe_a_test_function
+
 
 class Test_into(unittest.TestCase):
     def test_containers(self):
@@ -93,4 +98,15 @@ def test_discover_pandas():
     df = DataFrame(data, columns=['name', 'balance'])
 
     print(discover(df))
-    assert discover(df) == dshape('{name: string, balance: int64}')
+    assert discover(df).subshape[0] == dshape('{name: string, balance: int64}')
+
+
+@skip
+@skip_if_not(DataFrame and nd.array)
+def test_discover_pandas():
+    data = [['Alice', 100], ['Bob', 200]]
+    df = DataFrame(data, columns=['name', 'balance'])
+
+    result = into(nd.array, df)
+
+    assert result.as_py() == data

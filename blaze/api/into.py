@@ -70,6 +70,12 @@ def into(a, b):
         return DataFrame(nd.as_py(b))
 
 
+@dispatch(nd.array, DataFrame)
+def into(a, df):
+    schema = discover(df)
+    raise NotImplementedError()
+
+
 @dispatch(DataFrame)
 def discover(df):
     obj = datashape.coretypes.object_
@@ -77,4 +83,4 @@ def discover(df):
     dtypes = list(map(datashape.CType.from_numpy_dtype, df.dtypes))
     dtypes = [datashape.string if dt == obj else dt for dt in dtypes]
     schema = Record(list(zip(names, dtypes)))
-    return DataShape(schema)
+    return len(df) * schema
