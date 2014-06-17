@@ -4,6 +4,8 @@ from dynd import nd
 import datashape
 from datashape import DataShape, dshape, Record
 from datashape.user import validate, issubschema
+from numbers import Number
+from collections import Iterable
 import numpy as np
 
 from ..dispatch import dispatch
@@ -33,7 +35,7 @@ def into(a, b):
 def into(a, b):
     return type(a)(map(type(a), sorted(b.items(), key=lambda x: x[0])))
 
-@dispatch(nd.array, object)
+@dispatch(nd.array, (Iterable, Number, str))
 def into(a, b):
     return nd.array(b)
 
@@ -45,7 +47,7 @@ def into(a, b):
 def into(a, b):
     return nd.as_numpy(b, allow_copy=True)
 
-@dispatch(np.ndarray, object)
+@dispatch(np.ndarray, Iterable)
 def into(a, b):
     return np.asarray(b)
 
