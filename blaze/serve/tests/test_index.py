@@ -6,7 +6,9 @@ def test_js_to_tuple():
             ([1, 2], (1, 2)),
             ({'start': 0, 'stop': 10}, slice(0, 10)),
             ({'start': 0, 'stop': None, 'step': 2}, slice(0, None, 2)),
-            ([1, {'start': 0, 'stop': 10}], (1, slice(0, 10)))]
+            ([1, {'start': 0, 'stop': 10}], (1, slice(0, 10))),
+            ([{'start': 0, 'stop': 10}, ['name', 'amount']],
+                    (slice(0, 10), ['name', 'amount']))]
 
     for a, b in data:
         if parse_index(a) != b:
