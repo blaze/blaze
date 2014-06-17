@@ -1,11 +1,14 @@
-from ..data.core import DataDescriptor
-from ..data.utils import coerce
-from .index import emit_index
+from __future__ import absolute_import, division, print_function
+
 import requests
 import json
 import flask
 from dynd import nd
 from datashape import dshape
+
+from ..data.core import DataDescriptor
+from ..data.utils import coerce
+from .index import emit_index
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
@@ -55,9 +58,6 @@ class Client(DataDescriptor):
 
     def get_dynd(self, key):
         dshape, data = self._get_data(key)
-        print(dshape)
-        print(data)
-        dshape = dshape.replace('var', 'strided')
         return nd.array(data, type=str(dshape))
 
 

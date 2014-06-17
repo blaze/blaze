@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from flask import json
 
 from blaze.serve.server import Server
