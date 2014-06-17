@@ -127,7 +127,8 @@ def ordered_index(ind, ds):
     if isinstance(ind, tuple):
         return ((ordered_index(ind[0], ds),)
                 + tupleit(ordered_index(ind[1:], ds.subshape[0])))
-    raise NotImplementedError()
+    raise NotImplementedError("Rule for ind: %s, ds: %ds not found"
+                              % (str(ind), str(ds)))
 
 
 def tupleit(x):
