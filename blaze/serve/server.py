@@ -87,7 +87,11 @@ def data(datasets, name):
     except ValueError:
         return ("Bad index", 404)
 
-    rv = dset.py[index]
+    try:
+        rv = dset.py[index]
+    except RuntimeError:
+        return ("Bad index: %s" % (str(index)), 404)
+
     if isinstance(rv, Iterator):
         rv = list(rv)
 
