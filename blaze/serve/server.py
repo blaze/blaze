@@ -1,8 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import Iterator
-from flask import Flask, request, jsonify
-import json
+from flask import Flask, request, jsonify, json
 from functools import partial, wraps
 
 from .index import parse_index
