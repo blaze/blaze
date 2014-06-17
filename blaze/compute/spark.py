@@ -170,3 +170,18 @@ def compute(t, rdd):
 @dispatch((Label, ReLabel), RDD)
 def compute(t, rdd):
     return compute(t.parent, rdd)
+
+
+@dispatch(RDD, RDD)
+def into(a, b):
+    return b
+
+
+@dispatch(RDD, (list, tuple))
+def into(rdd, seq):
+    return rdd.context.parallelize(seq)
+
+
+@dispatch(list, RDD)
+def into(seq, rdd):
+    return rdd.collect()
