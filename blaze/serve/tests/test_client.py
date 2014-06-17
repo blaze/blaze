@@ -1,10 +1,11 @@
+from __future__ import absolute_import, division, print_function
+
+from dynd import nd
+
 from blaze.serve.server import Server
 from blaze.data.python import Python
 from blaze.serve.index import parse_index, emit_index
 from blaze.serve.client import Client
-
-from dynd import nd
-
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
