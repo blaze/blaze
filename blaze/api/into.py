@@ -75,7 +75,10 @@ def into(a, b):
 @dispatch(nd.array, DataFrame)
 def into(a, df):
     schema = discover(df)
-    raise NotImplementedError()
+    arr = nd.empty(str(schema))
+    for i in range(len(df.columns)):
+        arr[:, i] = np.asarray(df[df.columns[i]])
+    return arr
 
 
 @dispatch(DataFrame)

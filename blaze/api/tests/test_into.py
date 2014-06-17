@@ -101,12 +101,11 @@ def test_discover_pandas():
     assert discover(df).subshape[0] == dshape('{name: string, balance: int64}')
 
 
-@skip
 @skip_if_not(DataFrame and nd.array)
 def test_discover_pandas():
-    data = [['Alice', 100], ['Bob', 200]]
+    data = [('Alice', 100), ('Bob', 200)]
     df = DataFrame(data, columns=['name', 'balance'])
 
     result = into(nd.array, df)
 
-    assert result.as_py() == data
+    assert nd.as_py(result, tuple=True) == data
