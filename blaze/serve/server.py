@@ -87,11 +87,11 @@ def data(datasets, name):
     except ValueError:
         return ("Bad index", 404)
 
-    rv = dset.py.__getitem__(index)
+    rv = dset.py[index]
     if isinstance(rv, Iterator):
         rv = list(rv)
 
     return jsonify({'name': name,
                     'index': data['index'],
-                    'datashape': str(dset.dshape.subshape.__getitem__(index)),
+                    'datashape': str(dset.dshape.subshape[index]),
                     'data': rv})
