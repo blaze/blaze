@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import requests
-import json
+from flask import json
 import flask
 from dynd import nd
 from datashape import dshape
