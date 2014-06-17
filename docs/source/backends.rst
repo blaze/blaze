@@ -17,11 +17,12 @@ Blaze can operate on core Python data structures like lists, tuples, ints and
 strings.  This can be useful both in small cases like rapid prototyping or unit
 testing but also in large cases where streaming computation is desired.
 
-The preformant Python data structures like ``dict`` make Python a surprisingly
-performant platform for data-structure bound computations commonly found in
-split-apply-combine and join operations.  Additionally, Python's support for
-lazy iterators (i.e. generators) means that it can easily support *streaming*
-computations that pull data in from disk, taking up relatively little memory.
+The performance of Python data structures like ``dict`` make Python a
+surprisingly powerful platform for data-structure bound computations commonly
+found in split-apply-combine and join operations.  Additionally, Python's
+support for lazy iterators (i.e. generators) means that it can easily support
+*streaming* computations that pull data in from disk, taking up relatively
+little memory.
 
 Pandas
 ------
