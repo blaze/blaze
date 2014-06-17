@@ -20,19 +20,26 @@ import blaze.serve.client as client
 client.requests = test # OMG monkey patching
 
 
+dd = Client('http://localhost:5000', 'accounts')
 
 def test_dshape():
-    dd = Client('http://localhost:5000', 'accounts')
     assert dd.dshape == accounts.dshape
 
 
 def test_get_py():
-    dd = Client('http://localhost:5000', 'accounts')
     assert list(dd.py[0:, 'name']) == list(accounts.py[:, 'name'])
 
+
 def test_get_dynd():
-    dd = Client('http://localhost:5000', 'accounts')
     result = dd.dynd[0:, 'name']
     expected = accounts.dynd[:, 'name']
     assert nd.as_py(result) == nd.as_py(expected)
 
+
+def test_iter():
+    assert list(dd) == list(accounts)
+
+
+def test_chunks():
+    assert [nd.as_py(chunk) for chunk in dd.chunks()] == \
+            [nd.as_py(chunk) for chunk in accounts.chunks()]
