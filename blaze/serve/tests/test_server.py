@@ -1,4 +1,4 @@
-import json
+from flask import json
 
 from blaze.serve.server import Server
 from blaze.data.python import Python
