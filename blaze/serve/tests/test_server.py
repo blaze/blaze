@@ -14,6 +14,7 @@ server = Server(datasets={'accounts': accounts, 'cities': cities})
 
 test = server.app.test_client()
 
+
 def test_full_response():
     py_index = (slice(0, None), 'name')
     json_index = [{'start': 0, 'stop': None}, 'name']

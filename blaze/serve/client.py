@@ -4,7 +4,13 @@ from .index import emit_index
 import requests
 import json
 import flask
+from dynd import nd
 from datashape import dshape
+
+# These are a hack for testing
+# It's convenient to use requests for live production but use
+# flask for testing.  Sadly they have different Response objects,
+# hence the dispatched functions
 
 def content(response):
     if isinstance(response, flask.Response):
@@ -24,14 +30,14 @@ def reason(response):
     if isinstance(response, requests.Response):
         return response.reason
 
+
 class Client(DataDescriptor):
     __slots__ = 'uri', 'name'
     def __init__(self, url, name):
         self.url = url.strip('/')
         self.name = name
 
-    def get_py(self, key):
-        print(json.dumps(emit_index(key)))
+    def _get_data(self, key):
         response = requests.put('%s/data/%s.json' % (self.url, self.name),
                                 data=json.dumps({'index': emit_index(key)}),
                                 headers = {'Content-type': 'application/json',
@@ -41,9 +47,19 @@ class Client(DataDescriptor):
 
         data = json.loads(content(response))
 
-        print(data['datashape'])
-        print(data['data'])
-        return coerce(data['datashape'], data['data'])
+        return data['datashape'], data['data']
+
+    def get_py(self, key):
+        dshape, data = self._get_data(key)
+        return coerce(dshape, data)
+
+    def get_dynd(self, key):
+        dshape, data = self._get_data(key)
+        print(dshape)
+        print(data)
+        dshape = dshape.replace('var', 'strided')
+        return nd.array(data, type=str(dshape))
+
 
     @property
     def dshape(self):

@@ -3,19 +3,7 @@ from blaze.data.python import Python
 from blaze.serve.index import parse_index, emit_index
 from blaze.serve.client import Client
 
-from multiprocessing import Process
-from contextlib import contextmanager
-from functools import partial
-
-@contextmanager
-def alongside(func):
-    process = Process(target=func)
-    process.start()
-
-    yield
-
-    process.terminate()
-    process.join()
+from dynd import nd
 
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
@@ -38,8 +26,13 @@ def test_dshape():
     assert dd.dshape == accounts.dshape
 
 
-def test_get():
+def test_get_py():
     dd = Client('http://localhost:5000', 'accounts')
     assert list(dd.py[0:, 'name']) == list(accounts.py[:, 'name'])
 
+def test_get_dynd():
+    dd = Client('http://localhost:5000', 'accounts')
+    result = dd.dynd[0:, 'name']
+    expected = accounts.dynd[:, 'name']
+    assert nd.as_py(result) == nd.as_py(expected)
 
