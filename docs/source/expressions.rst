@@ -44,7 +44,7 @@ a comutation to do in the future.
 .. code-block:: python
 
    >>> deadbeats
-   "accounts[accounts['balance'] < 0]['name']"
+   accounts[accounts['balance'] < 0]['name']
 
    >>> deadbeats.schema
    dshape("{name: string}")
@@ -58,7 +58,9 @@ split-apply-combine workflows.
 
 .. code-block:: python
 
-   >>> by(accounts, accounts['name'], accounts['balance'].sum())
+   >>> by(accounts,                     # Table
+   ...    accounts['name'],             # Splitting/grouping element
+   ...    accounts['balance'].sum())    # Apply and reduction
 
 This operation groups the table by name and then sums the balance of each
 group.  It finds out how much all of the "Alice"s, "Bob"s, etc. of the world

@@ -18,7 +18,7 @@ obtain the source from Github.
 
     $ git clone git@github.com:ContinuumIO/blaze.git
 
-Many of the dependencies are non-trivial to install.
+However many of the dependencies are non-trivial to install.
 It is **highly recommend** that you build Blaze using the Anaconda
 distribution, a free Python distribution that comes with a host of
 scientific and numeric packages bundled and precompiled into a userspace
