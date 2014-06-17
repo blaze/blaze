@@ -39,7 +39,7 @@ def dataset(datasets):
     return jsonify(dict((k, str(v.dshape)) for k, v in datasets.items()))
 
 
-@route('/data/<name>.json', methods=['POST'])
+@route('/data/<name>.json', methods=['POST', 'PUT', 'GET'])
 def data(datasets, name):
     """ Basic indexing API
 
