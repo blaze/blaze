@@ -133,9 +133,11 @@ def test_join():
 
     assert result == expected
 
+
 def test_column_of_column():
     assert list(compute(t['name']['name'], data)) == \
             list(compute(t['name'], data))
+
 
 def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
@@ -144,8 +146,8 @@ def test_Distinct():
 def test_Distinct_count():
     t2 = t['name'].distinct()
     gby = By(t2, t2['name'], t2['name'].count())
-    result = list(compute(gby, data))
-    assert result == [('Alice', 1), ('Bob', 1)]
+    result = set(compute(gby, data))
+    assert result == set([('Alice', 1), ('Bob', 1)])
 
 
 def test_sort():
