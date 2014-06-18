@@ -1,25 +1,37 @@
-from ..expr.table import TableSymbol, TableExpr
-from ..data.core import DataDescriptor
-from ..data.python import Python
-from ..dispatch import dispatch
+
 from datashape import discover, Tuple, Record, dshape
 import itertools
+
+from ..expr.table import TableSymbol, TableExpr
+from ..data.python import Python
+from ..dispatch import dispatch
+from ..data.core import DataDescriptor, discover
 
 names = ('_%d' % i for i in itertools.count(1))
 
 class Table(TableSymbol):
-    """ Interactive Table """
+    """ Interactive Table
+
+    Parameters
+    ----------
+
+    data: DataDescriptor, tuple, DataFrame, RDD, SQL Table, ...
+        Anything that ``compute`` knows how to work with
+
+    Optional
+    --------
+
+    name: string
+        A name for the table
+    columns: iterable of strings
+        Column names, will be inferred from datasource if possible
+    schema: string or DataShape
+        Explitit Record containing datatypes and column names
+    """
     __slots__ = 'data', 'schema', 'name'
 
-    @dispatch(DataDescriptor)
-    def __init__(self, dd, name=None):
-        self.data = dd
-        self.schema = dd.schema
-        self.name = name or next(names)
-
-    @dispatch((list, tuple))
-    def __init__(self, seq, name=None, columns=None):
-        schema = discover(seq[:10]).subshape[0]
+    def __init__(self, data, name=None, columns=None, schema=None):
+        schema = schema or discover(data).subshape[0]
         if isinstance(schema[0], Tuple):
             columns = columns or list(range(len(schema[0].dshapes)))
             types = schema[0].dshapes
@@ -27,7 +39,8 @@ class Table(TableSymbol):
             columns = columns or schema[0].names
             types = schema[0].types
         self.schema = dshape(Record(list(zip(columns, types))))
-        self.data = tuple(seq)
+
+        self.data = data
         self.name = name or next(names)
 
     def resources(self):
