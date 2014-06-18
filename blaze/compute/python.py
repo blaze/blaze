@@ -85,6 +85,8 @@ def rowfunc(t):
 
 @dispatch(Column)
 def rowfunc(t):
+    if iscolumn(t.parent) and t.column == t.parent.columns[0]:
+        return identity
     index = t.parent.columns.index(t.column)
     return lambda x: x[index]
 
@@ -235,6 +237,10 @@ binops = {sum: (operator.add, 0),
           all: (operator.and_, True)}
 
 
+def iscolumn(t):
+    return isinstance(t, (Column, ColumnWise))
+
+
 @dispatch(By, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
@@ -259,7 +265,6 @@ def compute(t, seq):
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 
-    iscolumn = lambda x: isinstance(x, (Column, ColumnWise))
     if iscolumn(t.grouper):
         return d.items()
     else:
