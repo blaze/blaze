@@ -27,7 +27,8 @@ class TableExpr(Expr):
 
     @property
     def columns(self):
-        return self.schema[0].names
+        if isinstance(self.schema[0], Record):
+            return self.schema[0].names
 
     @property
     def dtype(self):
@@ -99,10 +100,6 @@ class TableExpr(Expr):
             return False
         raise NotImplementedError("%s.iscolumn not implemented" %
                 str(type(self).__name__))
-
-    def resources(self):
-        return toolz.merge([arg.resources() for arg in self.args
-                                            if isinstance(arg, TableExpr)])
 
 
 class TableSymbol(TableExpr):
