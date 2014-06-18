@@ -80,6 +80,15 @@ class TableExpr(Expr):
     def map(self, func, schema=None):
         return Map(self, func, schema)
 
+    def count(self):
+        return count(self)
+
+    def distinct(self):
+        return Distinct(self)
+
+    def nunique(self):
+        return nunique(self)
+
     def ancestors(self):
         return (self,)
 
@@ -208,15 +217,6 @@ class ColumnSyntaxMixin(object):
 
     def label(self, label):
         return Label(self, label)
-
-    def count(self):
-        return count(self)
-
-    def distinct(self):
-        return Distinct(self)
-
-    def nunique(self):
-        return nunique(self)
 
     def sum(self):
         return sum(self)

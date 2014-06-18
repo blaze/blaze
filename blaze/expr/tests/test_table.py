@@ -137,6 +137,9 @@ def test_Distinct():
     print(r.dshape)
     assert r.dshape  == dshape('var * {name: string}')
 
+    r = t.distinct()
+    assert r.dshape  == t.dshape
+
 
 def test_by():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
