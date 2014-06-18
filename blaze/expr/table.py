@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, partial, first, pipe, compose
+from toolz import concat, partial, first, pipe, compose, merge
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
@@ -99,6 +99,9 @@ class TableExpr(Expr):
         raise NotImplementedError("%s.iscolumn not implemented" %
                 str(type(self).__name__))
 
+    def resources(self):
+        return merge([arg.resources() for arg in self.args
+                                      if isinstance(arg, TableExpr)])
 
 
 class TableSymbol(TableExpr):
