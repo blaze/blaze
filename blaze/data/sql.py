@@ -242,9 +242,10 @@ class SQL(DataDescriptor):
 
 # from blaze.expr.core import Expr
 from blaze.expr.table import Join, Expr
+from blaze.compute.sql import select
 @dispatch((Join, Expr), SQL)
 def compute(t, ddesc):
-    query = compute(t, ddesc.table)             # Get the query out
+    query = select(compute(t, ddesc.table))      # Get the query out
     with ddesc.engine.connect() as conn:
         result = conn.execute(query).fetchall() # Use SQLAlchemy to actually perform the query
     return result
