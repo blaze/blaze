@@ -286,3 +286,21 @@ def test_schema_of_complex_interaction():
     expr = expr.label('foo')
     print(expr.dtype)
     assert expr.dtype == dshape('real')
+
+
+def test_iscolumn():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    assert not a.iscolumn
+    assert a['x'].iscolumn
+    assert not a[['x', 'y']].iscolumn
+    assert not a[['x']].iscolumn
+    assert (a['x'] + a['y']).iscolumn
+    assert a['x'].distinct().iscolumn
+    assert not a[['x']].distinct().iscolumn
+    assert not By(a, a['x'], a['y'].sum()).iscolumn
+    assert a['x'][a['x'] > 1].iscolumn
+    assert not a[['x', 'y']][a['x'] > 1].iscolumn
+    assert a['x'].sort().iscolumn
+    assert not a[['x', 'y']].sort().iscolumn
+    assert a['x'].head().iscolumn
+    assert not a[['x', 'y']].head().iscolumn
