@@ -571,6 +571,7 @@ class Distinct(TableExpr):
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
     """
+    __slots__ = 'parent',
 
     def __init__(self, table):
         self.parent = table

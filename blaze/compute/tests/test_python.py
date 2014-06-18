@@ -137,6 +137,14 @@ def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
 
 
+def test_Distinct2():
+    t3 = t['name']
+    t4 = Distinct(t['name'])
+    gby = By(t4, t4['name'], t4['name'].count())
+    ans5 = list(compute(gby, data))
+    assert ans5 == [('A', 1), ('B', 1)]
+
+
 def test_sort():
     assert list(compute(t.sort('amount'), data)) == \
             sorted(data, key=lambda x: x[1], reverse=False)
