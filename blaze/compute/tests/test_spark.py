@@ -217,7 +217,7 @@ def test_spark_merge():
     assert compute(expr, rdd).collect() == [(row[0], row[1] * 2) for row in data]
 
 
-def test_into():
+def test_spark_into():
     from blaze.api.into import into
     seq = [1, 2, 3]
     assert isinstance(into(rdd, seq), RDD)
