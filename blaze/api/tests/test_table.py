@@ -1,6 +1,8 @@
 from blaze.api.table import Table, compute
+from blaze.data.python import Python
 from blaze.compute.core import compute
 from blaze.compute.python import compute
+from datashape import dshape
 
 
 data = (('Alice', 100),
@@ -15,5 +17,22 @@ def test_resources():
 def test_compute():
     assert compute(t) == data
 
+
 def test_compute():
     assert list(compute(t['amount'] + 1)) == [101, 201]
+
+
+def test_create_with_raw_data():
+    t = Table(data, columns=['name', 'amount'])
+    assert t.schema == dshape('{name: string, amount: int64}')
+    assert t.name
+    assert t.data == data
+
+
+def test_create_with_data_descriptor():
+    schema='{name: string, amount: int64}'
+    ddesc = Python(data, schema=schema)
+    t = Table(ddesc)
+    assert t.schema == dshape(schema)
+    assert t.name
+    assert t.data == ddesc
