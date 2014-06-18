@@ -7,9 +7,9 @@ from dynd import nd
 import sqlalchemy as sql
 import datashape
 from datashape import dshape, var, Record
-from datashape.discovery import dispatch
 from itertools import chain
 
+from ..dispatch import dispatch
 from ..utils import partition_all
 from ..compatibility import basestring
 from .core import DataDescriptor
@@ -242,7 +242,6 @@ class SQL(DataDescriptor):
 
 # from blaze.expr.core import Expr
 from blaze.expr.table import Join, Expr
-from multipledispatch import dispatch
 @dispatch((Join, Expr), SQL)
 def compute(t, ddesc):
     query = compute(t, ddesc.table)             # Get the query out

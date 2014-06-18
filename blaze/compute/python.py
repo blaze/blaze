@@ -12,7 +12,6 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from multipledispatch import dispatch
 import itertools
 from collections import Iterator
 import math
@@ -22,6 +21,7 @@ from toolz import map, isiterable, compose, juxt, identity
 from toolz.compatibility import zip
 import sys
 
+from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar.core import *
 from ..expr import scalar

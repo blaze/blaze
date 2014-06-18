@@ -14,7 +14,7 @@ from dynd import nd
 
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
-from ..utils import partition_all, nth, nth_list, get
+from ..utils import nth, nth_list, get
 from .. import compatibility
 from ..compatibility import map
 
@@ -83,7 +83,7 @@ class CSV(DataDescriptor):
     remote = False
 
     def __init__(self, path, mode='rt',
-            schema=None, columns=None, types=None, hints=None,
+            schema=None, columns=None, types=None, typehints=None,
             dialect=None, header=None, open=open, nrows_discovery=50,
             **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
@@ -132,8 +132,8 @@ class CSV(DataDescriptor):
                         columns = next(csv.reader([next(f)], **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
-            if hints:
-                types = [hints.get(c, t) for c, t in zip(columns, types)]
+            if typehints:
+                types = [typehints.get(c, t) for c, t in zip(columns, types)]
 
             schema = dshape(Record(list(zip(columns, types))))
 

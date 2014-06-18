@@ -66,7 +66,7 @@ class DataDescriptor(object):
         def dshape(chunk):
             return str(len(chunk) * self.dshape.subshape[0])
 
-        chunks = list(self._chunks(**kwargs))
+        chunks = self._chunks(**kwargs)
         return (nd.array(chunk, dtype=dshape(chunk)) for chunk in chunks)
 
     def _chunks(self, blen=100):
@@ -153,8 +153,17 @@ class DataDescriptor(object):
         raise TypeError('Datashape is not indexable to schema\n%s' %
                         self.dshape)
 
+    @property
+    def columns(self):
+        rec = self.schema[0]
+        if isinstance(rec, datashape.Record):
+            return rec.names
+        else:
+            raise TypeError('Columns attribute only valid on tabular '
+                            'datashapes of records, got %s' % self.dshape)
 
-from blaze.compute.python import dispatch
+
+from ..dispatch import dispatch
 from blaze.expr.table import Join, TableExpr
 from blaze.expr.core import Expr
 @dispatch((Join, Expr), DataDescriptor)

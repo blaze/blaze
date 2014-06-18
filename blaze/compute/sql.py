@@ -16,10 +16,10 @@ FROM accounts
 WHERE accounts.amount < :amount_1
 """
 from __future__ import absolute_import, division, print_function
-from multipledispatch import dispatch
 import sqlalchemy as sa
 import sqlalchemy
 
+from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar import BinOp, UnaryOp
 from ..utils import unique
