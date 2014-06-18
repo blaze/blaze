@@ -8,7 +8,8 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, partial, first, pipe, compose, merge
+from toolz import concat, partial, first, pipe, compose
+import toolz
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
@@ -100,8 +101,8 @@ class TableExpr(Expr):
                 str(type(self).__name__))
 
     def resources(self):
-        return merge([arg.resources() for arg in self.args
-                                      if isinstance(arg, TableExpr)])
+        return toolz.merge([arg.resources() for arg in self.args
+                                            if isinstance(arg, TableExpr)])
 
 
 class TableSymbol(TableExpr):
@@ -129,6 +130,9 @@ class TableSymbol(TableExpr):
 
     def ancestors(self):
         return (self,)
+
+    def resources(self):
+        return dict()
 
 
 class RowWise(TableExpr):
