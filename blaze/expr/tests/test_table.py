@@ -304,3 +304,8 @@ def test_iscolumn():
     assert not a[['x', 'y']].sort().iscolumn
     assert a['x'].head().iscolumn
     assert not a[['x', 'y']].head().iscolumn
+
+    assert TableSymbol('b', '{x: int}', iscolumn=True).iscolumn
+    assert not TableSymbol('b', '{x: int}', iscolumn=False).iscolumn
+    assert TableSymbol('b', '{x: int}', iscolumn=True) != \
+            TableSymbol('b', '{x: int}', iscolumn=False)

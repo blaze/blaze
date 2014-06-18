@@ -96,7 +96,8 @@ class TableExpr(Expr):
     def iscolumn(self):
         if len(self.columns) > 1:
             return False
-        raise NotImplementedError()
+        raise NotImplementedError("%s.iscolumn not implemented" %
+                str(type(self).__name__))
 
 
 
@@ -113,11 +114,12 @@ class TableSymbol(TableExpr):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = 'name', 'schema'
+    __slots__ = 'name', 'schema', 'iscolumn'
 
-    def __init__(self, name, schema):
+    def __init__(self, name, schema, iscolumn=False):
         self.name = name
         self.schema = dshape(schema)
+        self.iscolumn = iscolumn
 
     def __str__(self):
         return self.name
@@ -538,7 +540,7 @@ class By(TableExpr):
 
     def __init__(self, parent, grouper, apply):
         self.parent = parent
-        s = TableSymbol('', parent.schema)
+        s = TableSymbol('', parent.schema, parent.iscolumn)
         self.grouper = grouper.subs({parent: s})
         self.apply = apply.subs({parent: s})
         if isdimension(self.apply.dshape[0]):
@@ -784,7 +786,7 @@ def merge(*tables):
     if not parent:
         raise ValueError("No common ancestor found for input tables")
 
-    shim = TableSymbol('_ancestor', parent.schema)
+    shim = TableSymbol('_ancestor', parent.schema, parent.iscolumn)
 
     tables = tuple(t.subs({parent: shim}) for t in tables)
     return Merge(parent, tables)
