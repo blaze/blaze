@@ -71,12 +71,15 @@ def table_repr(expr, n=10):
     from blaze.api.into import into
     if isinstance(expr, TableExpr):
         head = expr.head(n)
-    result = compute(head)
+        result = compute(head)
 
-    if expr.columns:
-        return repr(into(DataFrame(columns=expr.columns), result)) + '\n...'
+        if expr.columns:
+            return repr(into(DataFrame(columns=expr.columns), result)) + '\n...'
+        else:
+            return repr(into(DataFrame, result)) + '\n...'
+
     else:
-        return repr(into(DataFrame, result)) + '\n...'
+        return repr(compute(expr))
 
 
 @dispatch(object, TableExpr)
@@ -84,4 +87,4 @@ def into(a, b):
     return into(a, compute(b))
 
 
-TableExpr.__repr__ = table_repr
+Expr.__repr__ = table_repr
