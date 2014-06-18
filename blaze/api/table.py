@@ -2,6 +2,7 @@
 from datashape import discover, Tuple, Record, dshape
 import itertools
 
+from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
 from ..data.python import Python
 from ..dispatch import dispatch
@@ -28,9 +29,10 @@ class Table(TableSymbol):
     schema: string or DataShape
         Explitit Record containing datatypes and column names
     """
-    __slots__ = 'data', 'schema', 'name'
+    __slots__ = 'data', 'schema', 'name', 'iscolumn'
 
-    def __init__(self, data, name=None, columns=None, schema=None):
+    def __init__(self, data, name=None, columns=None, schema=None,
+            iscolumn=False):
         schema = schema or discover(data).subshape[0]
         if isinstance(schema[0], Tuple):
             columns = columns or list(range(len(schema[0].dshapes)))
@@ -42,6 +44,7 @@ class Table(TableSymbol):
 
         self.data = data
         self.name = name or next(names)
+        self.iscolumn = iscolumn
 
     def resources(self):
         return {self: self.data}
@@ -52,12 +55,33 @@ def compute(t):
     return t.data
 
 
-@dispatch(TableExpr)
+@dispatch(Expr)
 def compute(expr):
     resources = expr.resources()
     if not resources:
         raise ValueError("No data resources found")
-
     else:
-        print(resources)
         return compute(expr, resources)
+
+
+def table_repr(expr, n=10):
+    if not expr.resources():
+        return str(expr)
+    from blaze.data.pandas import into, DataFrame
+    from blaze.api.into import into
+    if isinstance(expr, TableExpr):
+        head = expr.head(n)
+    result = compute(head)
+
+    if expr.columns:
+        return repr(into(DataFrame(columns=expr.columns), result)) + '\n...'
+    else:
+        return repr(into(DataFrame, result)) + '\n...'
+
+
+@dispatch(object, TableExpr)
+def into(a, b):
+    return into(a, compute(b))
+
+
+TableExpr.__repr__ = table_repr

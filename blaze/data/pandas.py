@@ -1,13 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
 import pandas as pd
+from pandas import DataFrame
 from ..dispatch import dispatch
 from .csv import CSV
 from toolz import valmap
 from datashape import to_numpy_dtype
 
 
-@dispatch(pd.DataFrame, CSV)
+@dispatch(DataFrame, CSV)
 def into(a, b):
     dialect= b.dialect.copy()
     del dialect['lineterminator']

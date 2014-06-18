@@ -1,4 +1,4 @@
-from blaze.api.table import Table, compute
+from blaze.api.table import Table, compute, table_repr
 from blaze.data.python import Python
 from blaze.compute.core import compute
 from blaze.compute.python import compute
@@ -36,3 +36,13 @@ def test_create_with_data_descriptor():
     assert t.schema == dshape(schema)
     assert t.name
     assert t.data == ddesc
+
+
+def test_repr():
+    result = table_repr(t['name'])
+    assert isinstance(result, str)
+    assert 'Alice' in result
+
+    result = table_repr(t['amount'] + 1)
+    print(result)
+    assert '101' in result
