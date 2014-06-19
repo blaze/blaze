@@ -21,3 +21,5 @@ def test_js_to_tuple():
             print(a)
             print(b)
             assert False
+
+    assert parse_index([{'start': 0, 'stop': 10}]) == slice(0, 10)

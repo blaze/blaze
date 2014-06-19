@@ -12,8 +12,12 @@ def parse_index(ind, inside=False):
     if isinstance(ind, (_inttypes, _strtypes)):
         return ind
     if isinstance(ind, list):
-        typ = list if inside else tuple
-        return typ(parse_index(i, True) for i in ind)
+        result = [parse_index(i, True) for i in ind]
+        if not inside:
+            result = tuple(result)
+        if not inside and len(result) == 1:
+            result = result[0]
+        return result
     if isinstance(ind, dict):
         return slice(ind.get('start'), ind.get('stop'), ind.get('step'))
     raise ValueError('Do not know how to parse %s into an index' % str(ind))
