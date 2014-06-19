@@ -727,6 +727,11 @@ class Map(RowWise):
         else:
             raise NotImplementedError()
 
+    @property
+    def iscolumn(self):
+        return self.parent.iscolumn
+
+
 
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
