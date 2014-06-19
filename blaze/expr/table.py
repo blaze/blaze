@@ -224,6 +224,18 @@ class ColumnSyntaxMixin(object):
     def __rmod__(self, other):
         return columnwise(Mod, other, self)
 
+    def __or__(self, other):
+        return columnwise(Or, self, other)
+
+    def __ror__(self, other):
+        return columnwise(Or, other, self)
+
+    def __and__(self, other):
+        return columnwise(And, self, other)
+
+    def __rand__(self, other):
+        return columnwise(And, other, self)
+
     def __neg__(self):
         return columnwise(Neg, self)
 
