@@ -5,6 +5,12 @@ Install
 Installing
 ~~~~~~~~~~
 
+Blaze can be most easily installed from conda
+
+::
+
+   $ conda install blaze
+
 If you are interested in the development version of Blaze you can
 obtain the source from Github.
 
@@ -12,7 +18,7 @@ obtain the source from Github.
 
     $ git clone git@github.com:ContinuumIO/blaze.git
 
-Many of the dependencies are non-trivial to install.
+However many of the dependencies are non-trivial to install.
 It is **highly recommend** that you build Blaze using the Anaconda
 distribution, a free Python distribution that comes with a host of
 scientific and numeric packages bundled and precompiled into a userspace
@@ -41,28 +47,32 @@ To run tests:
 
 ::
 
-    $ python -c 'import blaze; blaze.test()'
+    $ nosetests --with-doctest
 
 Dependencies
 ~~~~~~~~~~~~
 
 * numpy_ >= 1.6
-* pyparsing_ >= 2.0.1
-* ply_ >= 3.4
-* flask_ >= 0.10.1
-* dynd-python_ >= 0.6.1
 * datashape_ >= 0.1.1
-* blz_ >= 0.6.1
-* nose_ (optional, for running tests)
-* pytables_ >= 3.0.0 (optional, for hdf5 files)
+* dynd-python_ >= 0.6.1
+* toolz_ >= 0.6.0
+* multipledispatch_ >= 0.4.2
+
+**Optional**
+
+* sqlalchemy_
+* h5py_
+* pandas_
+* spark_ >= 1.0.0
+* nose_ (for running tests)
+
 
 .. _numpy: http://www.numpy.org/
-.. _ply: http://www.dabeaz.com/ply/
+.. _h5py: http://docs.h5py.org/en/latest/
 .. _nose: https://pypi.python.org/pypi/nose/
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _datashape: https://github.com/ContinuumIO/datashape
 .. _blz: https://github.com/ContinuumIO/blz
-.. _pykit: https://github.com/pykit/pykit
-.. _pytables: http://www.pytables.org/moin
-.. _flask: http://flask.pocoo.org/
-.. _pyparsing: http://pyparsing.wikispaces.com/
+.. _spark: http://spark.apache.org/
+.. _toolz: http://toolz.readthedocs.org/
+.. _multipledispatch: http://multiple-dispatch.readthedocs.org/
