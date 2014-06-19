@@ -1,12 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
-from blaze.expr.scalar import *
+from datetime import datetime, date
+
+from ..expr.table import *
+from ..expr.scalar import *
 from ..dispatch import dispatch
 
 __all__ = ['compute']
 
-base = (int, float, str, bool)
+base = (int, float, str, bool, date, datetime)
 
 
 @dispatch(base, object)
