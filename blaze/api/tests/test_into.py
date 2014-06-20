@@ -4,7 +4,7 @@ from dynd import nd
 import numpy as np
 from datashape import dshape
 
-from blaze.api import into, discover
+from blaze.api.into import into, discover
 import blaze
 
 
