@@ -96,7 +96,7 @@ class CSV(DataDescriptor):
 
         if os.path.exists(path) and mode != 'w':
             f = self.open(path, 'rt')
-            sample = f.read(1024)
+            sample = f.read(16384)
             try:
                 f.close()
             except AttributeError:
