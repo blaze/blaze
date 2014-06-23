@@ -222,3 +222,19 @@ def test_spark_into():
     seq = [1, 2, 3]
     assert isinstance(into(rdd, seq), RDD)
     assert into([], into(rdd, seq)) == seq
+
+def test_spark_select_filter():
+    # TODO: work-around issue with filter/select for now
+    #t2 = t['name'][t['name'] != 'Alice']
+    t2 = t[t['name'] != 'Alice']['name']
+    ansrdd = compute(t2, rdd)
+    assert ansrdd.collect() == ['Bob']
+
+def test_spark_select_filter_by():
+    # TODO: work-around issue with filter/select for now
+    #t2 = t['name'][t['name'] != 'Alice']
+    t2 = t[t['name'] != 'Alice']['name']
+    t3 = t2.map(lambda x: x.lower(), schema='{name:string}')
+    gby = By(t3, t3['name'], t3['name'].count())
+    ansrdd = compute(gby, rdd)
+    assert ansrdd.collect() == [('bob', 1)]

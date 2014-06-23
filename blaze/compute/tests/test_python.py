@@ -286,3 +286,11 @@ def test_merge():
     expr = merge(t['name'], col)
 
     assert list(compute(expr, data)) == [(row[0], row[1] * 2) for row in data]
+
+def test_by_distinct_map():
+    t2 = t['name']
+    t3 = t2.map(lambda x: x.lower(), schema='{name:string}')
+    t4 = Distinct(t3)
+    gby = By(t4, t4['name'], t4['name'].count())
+    ans5 = set(compute(gby,  data))
+    assert ans5 == set([('alice', 1), ('bob', 1)])
