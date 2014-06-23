@@ -5,7 +5,7 @@ import datashape
 from datashape import DataShape, dshape, Record
 from datashape.user import validate, issubschema
 from numbers import Number
-from collections import Iterable
+from collections import Iterable, Iterator
 import numpy as np
 
 from ..dispatch import dispatch
@@ -23,7 +23,7 @@ def into(a, b):
         pass
     return f(a, b)
 
-@dispatch((list, tuple, set), (list, tuple, set))
+@dispatch((list, tuple, set), (list, tuple, set, Iterator))
 def into(a, b):
     return type(a)(b)
 
