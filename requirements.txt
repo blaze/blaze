@@ -1,16 +1,11 @@
-pyparsing >= 2.0.1
-flask >= 0.10.1
-nose >= 1.1
-dynd-python >= 0.6.1
-datashape >= 0.1.1
+dynd-python
+datashape
 numpy >= 1.6
-blz >= 0.6.1
-jinja2
-
-# Optional dependencies
-pytables >= 3.0.0
-networkx
-IPython
-matplotlib
+sqlalchemy
+pandas
+h5py
 multipledispatch
 cytoolz
+toolz
+flask >= 0.10.1
+nose >= 1.1

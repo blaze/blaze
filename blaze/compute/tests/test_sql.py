@@ -66,6 +66,7 @@ def test_arithmetic():
             str(sa.select([s.c.amount + s.c.id * 2]))
 
 def test_join():
+    metadata = sa.MetaData()
     lhs = sa.Table('amounts', metadata,
                    sa.Column('name', sa.String),
                    sa.Column('amount', sa.Integer))
