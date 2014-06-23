@@ -86,7 +86,7 @@ for lists.
 
 .. doctest::
 
-    >>> from blaze import array, dshape
+    >>> from blaze import array
     >>> alst = [1, 2, 3]
     >>> array(alst.__iter__())
     array([1, 2, 3],
