@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import toolz
+
 __all__ = ['Expr', 'Scalar']
 
 
@@ -50,6 +52,11 @@ class Expr(object):
         True
         """
         return subs(self, d)
+
+    def resources(self):
+        return toolz.merge([arg.resources() for arg in self.args
+                                            if isinstance(arg, Expr)])
+
 
 
 def subs(o, d):

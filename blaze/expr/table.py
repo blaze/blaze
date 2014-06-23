@@ -9,6 +9,7 @@ from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
 from toolz import concat, partial, first, pipe, compose
+import toolz
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
@@ -26,7 +27,8 @@ class TableExpr(Expr):
 
     @property
     def columns(self):
-        return self.schema[0].names
+        if isinstance(self.schema[0], Record):
+            return self.schema[0].names
 
     @property
     def dtype(self):
@@ -100,7 +102,6 @@ class TableExpr(Expr):
                 str(type(self).__name__))
 
 
-
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
 
@@ -126,6 +127,9 @@ class TableSymbol(TableExpr):
 
     def ancestors(self):
         return (self,)
+
+    def resources(self):
+        return dict()
 
 
 class RowWise(TableExpr):

@@ -93,12 +93,23 @@ def test_pandas_dynd():
 
 
 @skip_if_not(DataFrame)
+def test_pandas_seq():
+    assert str(into(DataFrame, [1, 2])) == \
+            str(DataFrame([1, 2]))
+    assert str(into(DataFrame, (1, 2))) == \
+            str(DataFrame([1, 2]))
+    assert str(into(DataFrame(columns=['a', 'b']), [(1, 2), (3, 4)])) == \
+            str(DataFrame([[1, 2], [3, 4]], columns=['a', 'b']))
+
+
+@skip_if_not(DataFrame)
 def test_discover_pandas():
     data = [['Alice', 100], ['Bob', 200]]
     df = DataFrame(data, columns=['name', 'balance'])
 
     print(discover(df))
     assert discover(df).subshape[0] == dshape('{name: string, balance: int64}')
+
 
 
 @skip_if_not(DataFrame and nd.array)

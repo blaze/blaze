@@ -1,4 +1,5 @@
 from blaze.data.python import *
+from blaze.data.core import discover
 from blaze.data.utils import tuplify
 from dynd import nd
 
@@ -25,3 +26,9 @@ def test_basic():
     assert tuple(dd.py[0]) == data[0]
     assert dd.py[0, 1] == data[0][1]
     assert tuple(dd.py[[0, 1], 1]) == (1, 2)
+
+
+def test_discover():
+    data = ((1, 1), (2, 2))
+    dd = Python([], schema='2 * int32')
+    assert discover(dd) == dd.dshape

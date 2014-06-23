@@ -8,7 +8,7 @@ from datashape.internal_utils import IndexCallable
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
 
-__all__ = ['DataDescriptor']
+__all__ = ['DataDescriptor', 'discover', 'compute']
 
 
 def isdimension(ds):
@@ -169,3 +169,8 @@ from blaze.expr.core import Expr
 @dispatch((Join, Expr), DataDescriptor)
 def compute(t, ddesc):
     return compute(t, iter(ddesc))  # use Python streaming by default
+
+
+@dispatch(DataDescriptor)
+def discover(dd):
+    return dd.dshape
