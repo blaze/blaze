@@ -65,11 +65,23 @@ def into(a, b):
 @dispatch(DataFrame, nd.array)
 def into(a, b):
     ds = dshape(nd.dshape_of(b))
-    if isinstance(ds[-1], Record):
+    if list(a.columns):
+        names = a.columns
+    elif isinstance(ds[-1], Record):
         names = ds[-1].names
+    else:
+        names = None
+    if names:
         return DataFrame(nd.as_py(b), columns=names)
     else:
         return DataFrame(nd.as_py(b))
+
+@dispatch(DataFrame, (list, tuple))
+def into(df, seq):
+    if list(df.columns):
+        return DataFrame(list(seq), columns=df.columns)
+    else:
+        return DataFrame(list(seq))
 
 
 @dispatch(nd.array, DataFrame)

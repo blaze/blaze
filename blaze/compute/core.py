@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from datetime import datetime, date
-
+from ..expr.core import *
 from ..expr.table import *
 from ..expr.scalar import *
 from ..dispatch import dispatch
@@ -16,7 +15,7 @@ def compute(a, b):
     return a
 
 
-@dispatch(TableExpr, dict)
+@dispatch(Expr, dict)
 def compute(t, d):
     if t in d:
         return d[t]

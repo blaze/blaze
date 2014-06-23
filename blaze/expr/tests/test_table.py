@@ -178,6 +178,14 @@ def test_label():
     assert quantity.columns == ['quantity']
 
 
+def test_columns():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    assert list(t.columns) == ['name', 'amount', 'id']
+    assert list(t['name'].columns) == ['name']
+    (t['amount'] + 1).columns
+
+
+
 def test_relabel():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
