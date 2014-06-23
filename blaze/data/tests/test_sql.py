@@ -1,15 +1,17 @@
 from sqlalchemy import create_engine
+import sqlalchemy as sa
 from dynd import nd
 import unittest
 
-from blaze.data import SQL
+from blaze.data.sql import SQL, discover
 from blaze.utils import raises
-from datashape import dshape
+from datashape import dshape, var
+import datashape
 
 
 class SingleTestClass(unittest.TestCase):
     def setUp(self):
-        self.engine = create_engine('sqlite:///:memory:', echo=True)
+        self.engine = create_engine('sqlite:///:memory:', echo=False)
 
     def tearDown(self):
         pass
@@ -55,7 +57,8 @@ class SingleTestClass(unittest.TestCase):
 
 
         assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
-        assert dd.as_py() == data_list or dd.as_py() == data_dict
+        assert (dd.as_py() == tuple(map(tuple, data_list)) or
+                dd.as_py() == data_dict)
 
 
     def test_chunks(self):
@@ -73,3 +76,57 @@ class SingleTestClass(unittest.TestCase):
         assert list(iter(dd)) == data_list or list(iter(dd)) == data_dict
 
         self.assertEquals(len(list(dd.chunks(blen=2))), 2)
+
+    def test_indexing(self):
+        dd = SQL(self.engine, 'testtable',
+                 schema='{name: string, amount: int, id: int}',
+                 primary_key='id')
+
+        data = [('Alice', 100, 1), ('Bob', 50, 2), ('Charlie', 200, 3)]
+        dd.extend(data)
+
+        self.assertEqual(set(dd.py[:, ['id', 'name']]),
+                        set(((1, 'Alice'), (2, 'Bob'), (3, 'Charlie'))))
+        self.assertEqual(set(dd.py[:, 'name']), set(('Alice', 'Bob', 'Charlie')))
+        assert dd.py[0, 'name'] in ('Alice', 'Bob', 'Charlie')
+        self.assertEqual(set(dd.py[:, 0]), set(dd.py[:, 'name']))
+        self.assertEqual(set(dd.py[:, [1, 0]]), set(dd.py[:, ['amount', 'name']]))
+        self.assertEqual(len(list(dd.py[:2, 'name'])), 2)
+        self.assertEqual(set(dd.py[:, :]), set(data))
+        self.assertEqual(set(dd.py[:, :2]), set(dd.py[:, ['name', 'amount']]))
+        self.assertEqual(set(dd.py[:]), set(dd.py[:, :]))
+        assert dd.py[0] in data
+
+
+def test_discovery():
+    assert discover(sa.String()) == datashape.string
+    metadata = sa.MetaData()
+    s = sa.Table('accounts', metadata,
+                 sa.Column('name', sa.String),
+                 sa.Column('amount', sa.Integer),
+                 sa.Column('timestamp', sa.DateTime, primary_key=True))
+
+    assert discover(s) == \
+            dshape('var * {name: string, amount: int32, timestamp: datetime}')
+
+
+def test_discovery_engine():
+    dd = SQL('sqlite:///:memory:',
+             'accounts',
+             schema='{name: string, amount: int}')
+
+    dshape = discover(dd.engine, 'accounts')
+
+    assert dshape == dd.dshape
+
+
+def test_schema_detection():
+    dd = SQL('sqlite:///my.db',
+             'accounts',
+             schema='{name: string, amount: int32}')
+
+    dd.extend([['Alice', 100], ['Bob', 200]])
+
+    dd2 = SQL('sqlite:///my.db', 'accounts')
+
+    assert dd.schema == dd2.schema

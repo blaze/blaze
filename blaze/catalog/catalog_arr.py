@@ -9,7 +9,7 @@ import datashape
 from datashape.type_equation_solver import matches_datashape_pattern
 
 import blaze
-from .. import py2help
+from .. import compatibility
 
 
 def load_blaze_array(conf, dir):
@@ -77,7 +77,7 @@ def load_blaze_array(conf, dir):
                'fspath': fsdir,  # Equivalent filesystem path
                'dshape': ds      # Datashape the result should have
                }
-        if py2help.PY2:
+        if compatibility.PY2:
             execfile(fsdir + '.py', gbl, gbl)
         else:
             with open(fsdir + '.py') as f:
@@ -113,4 +113,4 @@ def load_blaze_subcarray(conf, cdir, subcarray):
                 'HDF5 file does not have a dataset in %r' % dp)
         dd = HDF5_DDesc(cdir.fname, subcarray)
     return blaze.array(dd)
-    
+

@@ -9,44 +9,66 @@ python:
 branches:
   only:
     - master
-    - devel
-    - release
-    - py3
+    - reorg
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 install:
   # Install conda
-  - sudo pip install conda
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update conda
+
   # Install dependencies
-  - sudo conda init
-  - conda create -p $HOME/py --yes nose cython numpy pycparser pyparsing pyyaml flask pytables netcdf4 cffi multipledispatch sqlalchemy h5py pip "python=$TRAVIS_PYTHON_VERSION"
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install -p $HOME/py --yes unittest2; fi
-  - export PATH=$HOME/py/bin:$PATH
-  - pip install multipledispatch
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION nose numpy sqlalchemy pandas h5py pip
+  - source activate test-environment
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; fi
+  - pip install toolz cytoolz multipledispatch
+
+  # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
-  - pip install git+http://github.com/ContinuumIO/blz
+
+  # Install BLZ
+  # - pip install git+http://github.com/ContinuumIO/blz
+
+  # Install Spark
+  # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
+  # - tar xvfz spark-0.9.1.tgz
+  # - mv spark-0.9.1 spark
+  # - export SPARK_HOME=$PWD/spark
+  # - export PYTHONPATH=$PYTHONPATH:$SPARK_HOME/python
+  # - cd spark
+  # - ./sbt/sbt assembly
+  # - cd ..
+
   # Install dynd
-  - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
-  - mkdir libdynd/build
-  - pushd libdynd/build
-  - cmake -DDYND_BUILD_TESTS=False ..
-  - make
-  - sudo make install
-  - sudo ldconfig
-  - popd
-  - git clone --depth=1 https://github.com/ContinuumIO/dynd-python.git
-  - mkdir dynd-python/build
-  - pushd dynd-python/build
-  - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} ..
-  - make
-  - make install
-  - export PYTHONPATH=$PYTHONPATH:$PWD
-  - popd
+  - conda install -c mwiebe dynd-python
+  # - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
+  # - mkdir libdynd/build
+  # - pushd libdynd/build
+  # - cmake -DDYND_BUILD_TESTS=False ..
+  # - make
+  # - mkdir ../lib
+  # - cp libdynd* ../lib
+  # - chmod +x libdynd-config
+  # - export PATH=$PATH:$PWD
+  # - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+  # - popd
+  # - git clone --depth=1 https://github.com/ContinuumIO/dynd-python.git
+  # - mkdir dynd-python/build
+  # - pushd dynd-python/build
+  # - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SEPARATE_LIBDYND=ON -DCMAKE_INSTALL_PREFIX=${PWD} -DPYTHON_PACKAGE_INSTALL_PREFIX=${PWD} ..
+  # - make
+  # - make install
+  # - export PYTHONPATH=$PYTHONPATH:$PWD
+  # - popd
+
   # Install Blaze
   - python setup.py install
 
-script: cd $HOME; $HOME/py/bin/python -c 'import blaze; blaze.test(exit=True)'
+script: nosetests --with-doctest --exclude test_spark_\w* blaze/expr blaze/compute blaze/data
 
 notifications:
   email: false

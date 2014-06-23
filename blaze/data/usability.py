@@ -4,12 +4,11 @@ from functools import partial
 from .csv import *
 from .json import *
 from .hdf5 import *
-from .filesystem import *
+from .meta import *
 from .sql import *
 from glob import glob
 import gzip
-from ..compatibility import urlopen
-from ..py2help import _strtypes
+from ..compatibility import urlopen, _strtypes
 
 __all__ = ['resource', 'copy']
 
@@ -21,8 +20,9 @@ filetypes = {'csv': CSV,
 
 opens = {'http': urlopen,
          'https': urlopen,
-        #'ssh': paramiko.open?
+         #'ssh': paramiko.open?
          }
+
 
 def resource(uri, **kwargs):
     """ Get data resource from universal resource indicator
@@ -38,7 +38,7 @@ def resource(uri, **kwargs):
 
     >>> uri = '/path/to/data.csv'                     # csv, json, etc...
     >>> uri = '/path/to/data.json.gz'                 # handles gzip
-    >>> uri = '/path/to/*/many*/data.*.json'          # glob string - many files
+    >>> uri = '/path/to/*/many*/data.*.json'          # glob string - manyfiles
     >>> uri = '/path/to/data.hdf5::/path/within/hdf5' # HDF5 path :: datapath
     >>> uri = 'postgresql://sqlalchemy.uri::tablename'# SQLAlchemy :: tablename
     >>> uri = 'http://api.domain.com/data.json'       # Web requests
@@ -51,6 +51,7 @@ def resource(uri, **kwargs):
     """
     descriptor = None
     args = []
+    in_uri = uri
 
     if '::' in uri:
         uri, datapath = uri.rsplit('::')
@@ -74,8 +75,9 @@ def resource(uri, **kwargs):
     except:
         filenames = []
     if len(filenames) > 1:
-        args = [partial(descriptor, *args)]  # pack sub descriptor into args
-        descriptor = Files
+        resources = [resource(in_uri.replace(uri, filename), **kwargs)
+                     for filename in filenames]
+        return Stack(resources)
 
     if descriptor:
         return descriptor(uri, *args, **kwargs)

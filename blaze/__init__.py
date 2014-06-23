@@ -6,20 +6,6 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
-# build the blaze namespace with selected functions
-from . import catalog
-from . import compute, io
-from .objects.array import Array
-from .objects.constructors import (
-    array, empty, ones, zeros)
-from .compute.function import  BlazeFunc
-from .compute.eval import (
-    eval, append)
-from .compute.elwise_eval import _elwise_eval
-from .compute.ops.ufuncs import *
-from .datadescriptor import (
-    DyND_DDesc, BLZ_DDesc, HDF5_DDesc, CSV_DDesc, JSON_DDesc, Stream_DDesc)
-from .data import *
 
 inf = float('inf')
 nan = float('nan')
@@ -27,10 +13,11 @@ nan = float('nan')
 __version__ = '0.5'
 
 # If IPython is already loaded, register the Blaze catalog magic
-import sys
-if 'IPython' in sys.modules:
-    catalog.register_ipy_magic()
-del sys
+# from . import catalog
+# import sys
+# if 'IPython' in sys.modules:
+#     catalog.register_ipy_magic()
+# del sys
 
 def print_versions():
     """Print all the versions of software that Blaze relies on."""

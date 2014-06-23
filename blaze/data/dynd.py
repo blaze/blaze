@@ -25,8 +25,8 @@ class DyND(DataDescriptor):
     def _iter(self):
         return iter(self.arr)
 
-    def _getitem(self, key):
-        return self.storage[key]
+    def _get_dynd(self, key):
+        return self.arr[key]
 
     def _chunks(self, blen=100):
         for i in range(0, len(self.arr), blen):
