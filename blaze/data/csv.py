@@ -95,7 +95,7 @@ class CSV(DataDescriptor):
         self.open = open
 
         if os.path.exists(path) and mode != 'w':
-            f = self.open(path, 'rt')
+            f = self.open(path)
             sample = f.read(16384)
             try:
                 f.close()
@@ -116,7 +116,7 @@ class CSV(DataDescriptor):
 
         if not schema and 'w' not in mode:
             if not types:
-                with open(self.path, 'r') as f:
+                with open(self.path) as f:
                     data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
                     types = discover(data)
                     rowtype = types.subshape[0]
@@ -135,7 +135,7 @@ class CSV(DataDescriptor):
                                   "Please specify schema.")
             if not columns:
                 if header:
-                    with open(self.path, 'r') as f:
+                    with open(self.path) as f:
                         columns = next(csv.reader([next(f)], **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
@@ -164,7 +164,7 @@ class CSV(DataDescriptor):
             else:
                 return getter(result)
 
-        f = self.open(self.path, 'rt')
+        f = self.open(self.path)
         if self.header:
             next(f)
         if isinstance(key, compatibility._inttypes):
@@ -187,7 +187,7 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self):
-        f = self.open(self.path, 'rt')
+        f = self.open(self.path)
         if self.header:
             next(f)  # burn header
         for row in csv.reader(f, **self.dialect):
