@@ -22,6 +22,8 @@ requirements:
       - pandas
       - h5py 
       - datashape
+      - flask
+      - requests
 
 about:
     home: http://blaze.pydata.org
