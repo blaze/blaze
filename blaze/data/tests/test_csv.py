@@ -58,6 +58,11 @@ class Test_Other(unittest.TestCase):
 
             assert 'Georgina' in set(csv.py[:, 'name'])
 
+    def test_sep_kwarg(self):
+        csv = CSV('foo', 'w', sep=';', schema='{x: int, y: int}')
+        self.assertEqual(csv.dialect['delimiter'], ';')
+
+
     def test_columns(self):
         # This is really testing the core interface
         dd = CSV('foo', 'w', schema='{name: string, amount: int}')

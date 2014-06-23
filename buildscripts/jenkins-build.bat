@@ -24,7 +24,7 @@ REM Use conda to create a conda environment of the required
 REM python version and containing the dependencies.
 SET PYENV_PREFIX=%WORKSPACE%\build\pyenv
 REM TODO: Add cffi to this list once it is added to anaconda windows.
-call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/mwiebe -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py multipledispatch pandas || exit /b 1
+call C:\Anaconda\Scripts\conda create --yes --channel https://conda.binstar.org/mwiebe -p %PYENV_PREFIX% python=%PYTHON_VERSION%  cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py multipledispatch pandas requests || exit /b 1
 echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
 set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
@@ -50,6 +50,6 @@ popd
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 
-call nosetests --with-doctest --exclude test_spark_\w* --with-xunit --xunit-file=test_results.xml blaze/expr blaze/compute blaze/data || exit /b 1
+call nosetests --with-doctest --exclude test_spark_\w* --with-xunit --xunit-file=test_results.xml || exit /b 1
 
 exit /b 0

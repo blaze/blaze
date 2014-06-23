@@ -1,9 +1,0 @@
-type: csv
-import: {
-    headers: True
-}
-datashape: |
-    var * {
-        data: date,
-        values: int32
-    }
