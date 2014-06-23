@@ -143,6 +143,8 @@ later and, in another python session, gain access to it again:
 So, we see that we completely recovered the contents of the original
 array.  Finally, we can get rid of the array completely:
 
+.. doctest::
+
     >>> dd.remove()
 
 This will remove the dataset from disk, so it could not be restored in
