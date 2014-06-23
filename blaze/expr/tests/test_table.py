@@ -74,14 +74,14 @@ def test_selection_by_indexing():
     assert 'Alice' in str(result)
 
 
-def test_columnwise():
+def test_columnwise_syntax():
     t = TableSymbol('t', '{x: real, y: real, z: real}')
     x, y, z = t['x'], t['y'], t['z']
     assert (x + y).active_columns() == ['x', 'y']
     assert (z + y).active_columns() == ['y', 'z']
     assert ((z + y) * x).active_columns() == ['x', 'y', 'z']
 
-    expr = z % x * y + z ** 2
+    expr = (z % x * y + z ** 2 > 0) & (x < 0)
     assert isinstance(expr, ColumnWise)
 
 

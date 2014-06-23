@@ -54,11 +54,15 @@ class LT(Relational):
     op = operator.lt
 
 
-class And(Boolean):
+class And(BinOp, Boolean):
     symbol = '&'
     op = operator.and_
 
 
-class Or(Boolean):
+class Or(BinOp, Boolean):
     symbol = '|'
     op = operator.or_
+
+
+class Not(UnaryOp, Boolean):
+    op = operator.not_

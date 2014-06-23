@@ -1,3 +1,5 @@
+
+from functools import partial
 from blaze.data import CSV, JSON
 
 from blaze.utils import tmpfile, raises
@@ -15,7 +17,7 @@ def test_gzopen_csv():
         # Not a valid CSV file
         assert raises(Exception, lambda: list(CSV(filename, schema='2 * int')))
 
-        dd = CSV(filename, schema='2 * int', open=gzip.open)
+        dd = CSV(filename, schema='2 * int', open=partial(gzip.open, mode='rt'))
 
         assert tuplify(list(dd)) == ((1, 1), (2, 2))
 

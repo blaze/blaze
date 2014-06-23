@@ -8,7 +8,7 @@ from collections import Iterator
 import sys
 
 import datashape
-from datashape.discovery import discover, null, string
+from datashape.discovery import discover, null, string, unpack
 from datashape import dshape, Record, Option, Fixed, CType, Tuple
 from dynd import nd
 
@@ -95,8 +95,8 @@ class CSV(DataDescriptor):
         self.open = open
 
         if os.path.exists(path) and mode != 'w':
-            f = self.open(path, 'rt')
-            sample = f.read(1024)
+            f = self.open(path)
+            sample = f.read(16384)
             try:
                 f.close()
             except AttributeError:
@@ -116,13 +116,14 @@ class CSV(DataDescriptor):
 
         if not schema and 'w' not in mode:
             if not types:
-                with open(self.path, 'r') as f:
+                with open(self.path) as f:
                     data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
                     types = discover(data)
                     rowtype = types.subshape[0]
                     if isinstance(rowtype[0], Tuple):
                         types = types.subshape[0][0].dshapes
-                        types = [t.ty if isinstance(t, Option) else t
+                        types = [unpack(t) for t in types]
+                        types = [t.ty if isinstance(unpack(t), Option) else t
                                       for t in types]
                         types = [string if t == null else t
                                         for t in types]
@@ -134,7 +135,7 @@ class CSV(DataDescriptor):
                                   "Please specify schema.")
             if not columns:
                 if header:
-                    with open(self.path, 'r') as f:
+                    with open(self.path) as f:
                         columns = next(csv.reader([next(f)], **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
@@ -163,7 +164,7 @@ class CSV(DataDescriptor):
             else:
                 return getter(result)
 
-        f = self.open(self.path, 'rt')
+        f = self.open(self.path)
         if self.header:
             next(f)
         if isinstance(key, compatibility._inttypes):
@@ -186,7 +187,7 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self):
-        f = self.open(self.path, 'rt')
+        f = self.open(self.path)
         if self.header:
             next(f)  # burn header
         for row in csv.reader(f, **self.dialect):

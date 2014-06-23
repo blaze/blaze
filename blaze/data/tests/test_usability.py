@@ -28,6 +28,7 @@ class TestResource(TestCase):
             assert isinstance(dd, JSON)
             self.assertEqual(tuplify(list(dd)), ((1, 1), (2, 2)))
 
+    @skip
     def test_resource_gz(self):
         with filetext('1,1\n2,2', extension='.csv.gz', open=gzip.open) as fn:
             dd = resource(fn, schema='2 * int')
