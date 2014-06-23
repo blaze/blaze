@@ -7,6 +7,8 @@ from ..expr.table import TableSymbol, TableExpr
 from ..data.python import Python
 from ..dispatch import dispatch
 from ..data.core import DataDescriptor, discover
+from ..data.pandas import into, DataFrame
+from .into import into
 
 names = ('_%d' % i for i in itertools.count(1))
 
@@ -67,8 +69,6 @@ def compute(expr):
 def table_repr(expr, n=10):
     if not expr.resources():
         return str(expr)
-    from blaze.data.pandas import into, DataFrame
-    from blaze.api.into import into
     if isinstance(expr, TableExpr):
         head = expr.head(n)
         result = compute(head)
@@ -82,7 +82,7 @@ def table_repr(expr, n=10):
         return repr(compute(expr))
 
 
-@dispatch(object, TableExpr)
+@dispatch((type, object), TableExpr)
 def into(a, b):
     return into(a, compute(b))
 
