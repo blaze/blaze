@@ -80,8 +80,24 @@ class TableExpr(Expr):
     def map(self, func, schema=None):
         return Map(self, func, schema)
 
+    def count(self):
+        return count(self)
+
+    def distinct(self):
+        return Distinct(self)
+
+    def nunique(self):
+        return nunique(self)
+
     def ancestors(self):
         return (self,)
+
+    @property
+    def iscolumn(self):
+        if len(self.columns) > 1:
+            return False
+        raise NotImplementedError("%s.iscolumn not implemented" %
+                str(type(self).__name__))
 
 
 
@@ -98,11 +114,12 @@ class TableSymbol(TableExpr):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = 'name', 'schema'
+    __slots__ = 'name', 'schema', 'iscolumn'
 
-    def __init__(self, name, schema):
+    def __init__(self, name, schema, iscolumn=False):
         self.name = name
         self.schema = dshape(schema)
+        self.iscolumn = iscolumn
 
     def __str__(self):
         return self.name
@@ -144,6 +161,10 @@ class Projection(RowWise):
     def __str__(self):
         return '%s[[%s]]' % (self.parent,
                              ', '.join(["'%s'" % col for col in self.columns]))
+
+    @property
+    def iscolumn(self):
+        return False
 
 
 class ColumnSyntaxMixin(object):
@@ -203,20 +224,23 @@ class ColumnSyntaxMixin(object):
     def __rmod__(self, other):
         return columnwise(Mod, other, self)
 
+    def __or__(self, other):
+        return columnwise(Or, self, other)
+
+    def __ror__(self, other):
+        return columnwise(Or, other, self)
+
+    def __and__(self, other):
+        return columnwise(And, self, other)
+
+    def __rand__(self, other):
+        return columnwise(And, other, self)
+
     def __neg__(self):
         return columnwise(Neg, self)
 
     def label(self, label):
         return Label(self, label)
-
-    def count(self):
-        return count(self)
-
-    def distinct(self):
-        return Distinct(self)
-
-    def nunique(self):
-        return nunique(self)
 
     def sum(self):
         return sum(self)
@@ -242,6 +266,8 @@ class ColumnSyntaxMixin(object):
     def std(self):
         return std(self)
 
+    iscolumn = True
+
 
 class Column(ColumnSyntaxMixin, Projection):
     """ A single column from a table
@@ -257,6 +283,8 @@ class Column(ColumnSyntaxMixin, Projection):
     __slots__ = 'parent', 'column'
 
     __hash__ = Expr.__hash__
+
+    iscolumn = True
 
     def __init__(self, table, column):
         self.parent = table
@@ -296,6 +324,10 @@ class Selection(TableExpr):
     @property
     def schema(self):
         return self.parent.schema
+
+    @property
+    def iscolumn(self):
+        return self.parent.iscolumn
 
 
 def columnwise(op, *column_inputs):
@@ -367,6 +399,8 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
 
     __hash__ = Expr.__hash__
 
+    iscolumn = True
+
     @property
     def schema(self):
         return self.expr.dshape
@@ -403,6 +437,8 @@ class Join(TableExpr):
     >>> joined = Join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', 'on_left', 'on_right'
+
+    iscolumn = False
 
     def __init__(self, lhs, rhs, on_left, on_right=None):
         self.lhs = lhs
@@ -512,9 +548,11 @@ class By(TableExpr):
 
     __slots__ = 'parent', 'grouper', 'apply'
 
+    iscolumn = False
+
     def __init__(self, parent, grouper, apply):
         self.parent = parent
-        s = TableSymbol('', parent.schema)
+        s = TableSymbol('', parent.schema, parent.iscolumn)
         self.grouper = grouper.subs({parent: s})
         self.apply = apply.subs({parent: s})
         if isdimension(self.apply.dshape[0]):
@@ -556,6 +594,10 @@ class Sort(TableExpr):
     def schema(self):
         return self.parent.schema
 
+    @property
+    def iscolumn(self):
+        return self.parent.iscolumn
+
 
 class Distinct(TableExpr):
     """ Distinct elements filter
@@ -571,6 +613,7 @@ class Distinct(TableExpr):
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
     """
+    __slots__ = 'parent',
 
     def __init__(self, table):
         self.parent = table
@@ -578,6 +621,10 @@ class Distinct(TableExpr):
     @property
     def schema(self):
         return self.parent.schema
+
+    @property
+    def iscolumn(self):
+        return self.parent.iscolumn
 
 class Head(TableExpr):
     """ First ``n`` elements of table
@@ -599,6 +646,10 @@ class Head(TableExpr):
     @property
     def dshape(self):
         return self.n * self.schema
+
+    @property
+    def iscolumn(self):
+        return self.parent.iscolumn
 
 
 class Label(RowWise, ColumnSyntaxMixin):
@@ -652,6 +703,10 @@ class ReLabel(RowWise):
 
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self.parent.schema[0].parameters[0]]))
+
+    @property
+    def iscolumn(self):
+        return self.parent.iscolumn
 
 
 class Map(RowWise):
@@ -743,7 +798,7 @@ def merge(*tables):
     if not parent:
         raise ValueError("No common ancestor found for input tables")
 
-    shim = TableSymbol('_ancestor', parent.schema)
+    shim = TableSymbol('_ancestor', parent.schema, parent.iscolumn)
 
     tables = tuple(t.subs({parent: shim}) for t in tables)
     return Merge(parent, tables)
@@ -762,6 +817,8 @@ class Merge(RowWise):
     ['name', 'amount', 'new_amount']
     """
     __slots__ = 'parent', 'children'
+
+    iscolumn = False
 
     def __init__(self, parent, children):
         # TODO: Assert all parents descend from the same parent via RowWise

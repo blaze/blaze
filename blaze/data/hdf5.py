@@ -6,8 +6,8 @@ import h5py
 from dynd import nd
 import datashape
 from datashape import var
-from datashape.discovery import dispatch
 
+from ..dispatch import dispatch
 from .core import DataDescriptor
 from ..utils import partition_all, get
 from ..compatibility import _strtypes

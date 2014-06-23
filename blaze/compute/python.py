@@ -12,7 +12,6 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from multipledispatch import dispatch
 import itertools
 from collections import Iterator
 import math
@@ -22,6 +21,7 @@ from toolz import map, isiterable, compose, juxt, identity
 from toolz.compatibility import zip
 import sys
 
+from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar.core import *
 from ..expr import scalar
@@ -85,6 +85,8 @@ def rowfunc(t):
 
 @dispatch(Column)
 def rowfunc(t):
+    if t.parent.iscolumn and t.column == t.parent.columns[0]:
+        return identity
     index = t.parent.columns.index(t.column)
     return lambda x: x[index]
 
@@ -259,8 +261,7 @@ def compute(t, seq):
         groups = groupby(grouper, parent)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 
-    iscolumn = lambda x: isinstance(x, (Column, ColumnWise))
-    if iscolumn(t.grouper):
+    if t.grouper.iscolumn:
         return d.items()
     else:
         return tuple(k + (v,) for k, v in d.items())

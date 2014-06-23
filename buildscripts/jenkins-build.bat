@@ -52,6 +52,6 @@ popd
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1
 
-call nosetests --with-doctest --exclude test_spark_\w* --with-xunit --xunit-file=test_results.xml blaze/expr blaze/compute blaze/data || exit /b 1
+call nosetests --with-doctest --exclude test_spark_\w* --with-xunit --xunit-file=test_results.xml || exit /b 1
 
 exit /b 0

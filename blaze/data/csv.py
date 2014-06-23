@@ -8,13 +8,13 @@ from collections import Iterator
 import sys
 
 import datashape
-from datashape.discovery import discover, null, string
+from datashape.discovery import discover, null, string, unpack
 from datashape import dshape, Record, Option, Fixed, CType, Tuple
 from dynd import nd
 
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
-from ..utils import partition_all, nth, nth_list, get
+from ..utils import nth, nth_list, get
 from .. import compatibility
 from ..compatibility import map
 
@@ -83,7 +83,7 @@ class CSV(DataDescriptor):
     remote = False
 
     def __init__(self, path, mode='rt',
-            schema=None, columns=None, types=None, hints=None,
+            schema=None, columns=None, types=None, typehints=None,
             dialect=None, header=None, open=open, nrows_discovery=50,
             **kwargs):
         if 'r' in mode and os.path.isfile(path) is not True:
@@ -95,14 +95,20 @@ class CSV(DataDescriptor):
         self.open = open
 
         if os.path.exists(path) and mode != 'w':
-            f = self.open(path, 'rt')
-            sample = f.read(1024)
+            f = self.open(path)
+            sample = f.read(16384)
             try:
                 f.close()
             except AttributeError:
                 pass
         else:
             sample = ''
+
+        # Pandas uses sep instead of delimiter.
+        # Lets support that too
+        if 'sep' in kwargs:
+            kwargs['delimiter'] = kwargs['sep']
+
         dialect = discover_dialect(sample, dialect, **kwargs)
         assert dialect
         if header is None:
@@ -110,13 +116,14 @@ class CSV(DataDescriptor):
 
         if not schema and 'w' not in mode:
             if not types:
-                with open(self.path, 'r') as f:
+                with open(self.path) as f:
                     data = list(it.islice(csv.reader(f, **dialect), 1, nrows_discovery))
                     types = discover(data)
                     rowtype = types.subshape[0]
                     if isinstance(rowtype[0], Tuple):
                         types = types.subshape[0][0].dshapes
-                        types = [t.ty if isinstance(t, Option) else t
+                        types = [unpack(t) for t in types]
+                        types = [t.ty if isinstance(unpack(t), Option) else t
                                       for t in types]
                         types = [string if t == null else t
                                         for t in types]
@@ -128,12 +135,12 @@ class CSV(DataDescriptor):
                                   "Please specify schema.")
             if not columns:
                 if header:
-                    with open(self.path, 'r') as f:
+                    with open(self.path) as f:
                         columns = next(csv.reader([next(f)], **dialect))
                 else:
                     columns = ['_%d' % i for i in range(len(types))]
-            if hints:
-                types = [hints.get(c, t) for c, t in zip(columns, types)]
+            if typehints:
+                types = [typehints.get(c, t) for c, t in zip(columns, types)]
 
             schema = dshape(Record(list(zip(columns, types))))
 
@@ -157,7 +164,7 @@ class CSV(DataDescriptor):
             else:
                 return getter(result)
 
-        f = self.open(self.path, 'rt')
+        f = self.open(self.path)
         if self.header:
             next(f)
         if isinstance(key, compatibility._inttypes):
@@ -180,7 +187,7 @@ class CSV(DataDescriptor):
         return result
 
     def _iter(self):
-        f = self.open(self.path, 'rt')
+        f = self.open(self.path)
         if self.header:
             next(f)  # burn header
         for row in csv.reader(f, **self.dialect):

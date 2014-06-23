@@ -1,4 +1,4 @@
-from blaze.compatibility import _strtypes
+from blaze.compatibility import _strtypes, _inttypes
 
 def parse_index(ind, inside=False):
     """ Parse structured index into Pythonic form
@@ -9,11 +9,15 @@ def parse_index(ind, inside=False):
     See also:
         emit_index
     """
-    if isinstance(ind, (int, _strtypes)):
+    if isinstance(ind, (_inttypes, _strtypes)):
         return ind
     if isinstance(ind, list):
-        typ = list if inside else tuple
-        return typ(parse_index(i, True) for i in ind)
+        result = [parse_index(i, True) for i in ind]
+        if not inside:
+            result = tuple(result)
+        if not inside and len(result) == 1:
+            result = result[0]
+        return result
     if isinstance(ind, dict):
         return slice(ind.get('start'), ind.get('stop'), ind.get('step'))
     raise ValueError('Do not know how to parse %s into an index' % str(ind))
@@ -28,7 +32,7 @@ def emit_index(ind):
     See also:
         parse_index
     """
-    if isinstance(ind, (int, _strtypes)):
+    if isinstance(ind, (_inttypes, _strtypes)):
         return ind
     if isinstance(ind, (list, tuple)):
         return list(map(emit_index, ind))

@@ -5,8 +5,8 @@ from dynd import nd
 from collections import Iterator
 from datashape import dshape, Record
 from datashape.predicates import isunit, isdimension
+from toolz import partition_all, partial, map
 
-from ..utils import partition_all
 from ..compatibility import _strtypes
 
 
@@ -21,7 +21,7 @@ def validate(schema, item):
 def coerce(dshape, item):
     if isinstance(item, Iterator):
         blocks = partition_all(1000, item)
-        return chain.from_iterable(coerce(dshape, block) for block in blocks)
+        return chain.from_iterable(map(partial(coerce, dshape), blocks))
     return nd.as_py(nd.array(item, dtype=str(dshape)), tuple=True)
 
 
