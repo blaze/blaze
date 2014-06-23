@@ -68,6 +68,7 @@ Simple Calculations
 Blaze supports ufuncs and arithmetic similarly to NumPy.
 
 .. doctest::
+
     >>> a = array([1, 2, 3])
     >>> blaze.sin(a) + 1
     array([ 1.84147098,  1.90929743,  1.14112001],
