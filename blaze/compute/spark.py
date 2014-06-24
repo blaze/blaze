@@ -4,15 +4,16 @@ import sys
 from operator import itemgetter
 import operator
 from toolz import compose, identity
-from toolz.curried import get
 
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
-from .python import compute, rowfunc, RowWise
+from .python import compute, rowfunc, RowWise, listpack
 from ..compatibility import builtins
 from ..expr import table
 from ..dispatch import dispatch
+
+from toolz.curried import get
 
 try:
     from itertools import compress, chain
@@ -114,17 +115,19 @@ def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
-    col_idx_lhs = t.lhs.columns.index(t.on_left)
-    col_idx_rhs = t.rhs.columns.index(t.on_right)
+    on_left = rowfunc(t.lhs[t.on_left])
+    on_right = rowfunc(t.rhs[t.on_right])
 
-    lhs = lhs.keyBy(lambda x: x[col_idx_lhs])
-    rhs = rhs.keyBy(lambda x: x[col_idx_rhs])
+    lhs = lhs.keyBy(on_left)
+    rhs = rhs.keyBy(on_right)
 
     # Calculate the indices we want in the joined table
     columns = t.lhs.columns + t.rhs.columns
-    repeated_index = len(columns) - columns[::-1].index(t.on_right) - 1
-    wanted = list(range(len(columns)))
-    wanted.pop(repeated_index)
+    repeated_index = set([len(t.lhs.columns) + t.rhs.columns.index(col)
+            for col in listpack(t.on_right)])
+
+    wanted = [i for i in range(len(columns)) if i not in repeated_index]
+
     getter = get(wanted)
     reassemble = lambda x: getter(x[1][0] + x[1][1])
 

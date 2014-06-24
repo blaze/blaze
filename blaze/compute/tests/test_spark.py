@@ -159,6 +159,30 @@ def test_spark_join():
     assert all(i in expected for i in result)
 
 
+def test_multi_column_join():
+    left = [(1, 2, 3),
+            (2, 3, 4),
+            (1, 3, 5)]
+    right = [(1, 2, 30),
+             (1, 3, 50),
+             (1, 3, 150)]
+    rleft = sc.parallelize(left)
+    rright = sc.parallelize(right)
+
+    L = TableSymbol('L', '{x: int, y: int, z: int}')
+    R = TableSymbol('R', '{x: int, y: int, w: int}')
+
+    j = Join(L, R, ['x', 'y'])
+
+    result = compute(j, {L: rleft, R: rright})
+    expected = [(1, 2, 3, 30),
+                (1, 3, 5, 50),
+                (1, 3, 5, 150)]
+
+    print(result.collect())
+    assert result.collect() == expected
+
+
 def test_spark_groupby():
     rddidx = sc.parallelize(data_idx)
     rddarc = sc.parallelize(data_arc)
