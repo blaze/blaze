@@ -85,6 +85,35 @@ def test_join():
 
     assert list(result.columns) == list(joined.columns)
 
+
+def test_multi_column_join():
+    left = [(1, 2, 3),
+            (2, 3, 4),
+            (1, 3, 5)]
+    left = DataFrame(left, columns=['x', 'y', 'z'])
+    right = [(1, 2, 30),
+             (1, 3, 50),
+             (1, 3, 150)]
+    right = DataFrame(right, columns=['x', 'y', 'w'])
+
+    L = TableSymbol('L', '{x: int, y: int, z: int}')
+    R = TableSymbol('R', '{x: int, y: int, w: int}')
+
+    j = Join(L, R, ['x', 'y'])
+
+    expected = [(1, 2, 3, 30),
+                (1, 3, 5, 50),
+                (1, 3, 5, 150)]
+    expected = DataFrame(expected, columns=['x', 'y', 'z', 'w'])
+
+    result = compute(j, {L: left, R: right})
+
+    print(result)
+
+    assert str(result) == str(expected)
+    assert list(result.columns) == list(j.columns)
+
+
 def test_UnaryOp():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()
 
