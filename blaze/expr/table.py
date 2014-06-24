@@ -8,14 +8,13 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, partial, first, pipe, compose, get
+from toolz import concat, partial, first, pipe, compose, get, unique
 import toolz
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol
 from .scalar import *
-from ..utils import unique
 from ..compatibility import _strtypes, builtins
 
 
@@ -478,8 +477,7 @@ class Join(TableExpr):
         rec1 = self.lhs.schema[0]
         rec2 = self.rhs.schema[0]
 
-        rec = rec1.parameters[0] + tuple((k, v) for k, v in rec2.parameters[0]
-                                                 if  k != self.on_right)
+        rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
         return dshape(Record(rec))
 
 

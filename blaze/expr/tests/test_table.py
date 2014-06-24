@@ -117,6 +117,8 @@ def test_multi_column_join():
     assert j.on_left == j.on_right == ['x', 'y']
     assert hash(j)
 
+    assert j.columns == ['x', 'y', 'z', 'w']
+
 
 def test_traverse():
     t = TableSymbol('t', '{name: string, amount: int}')
