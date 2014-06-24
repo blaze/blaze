@@ -18,6 +18,7 @@ WHERE accounts.amount < :amount_1
 from __future__ import absolute_import, division, print_function
 import sqlalchemy as sa
 import sqlalchemy
+from operator import and_
 
 from ..dispatch import dispatch
 from ..expr.table import *
@@ -97,15 +98,20 @@ def computefull(t, s):
     return select(compute(t, s))
 
 
+def listpack(x):
+    if isinstance(x, list):
+        return x
+    else:
+        return [x]
+
+
 @dispatch(Join, sqlalchemy.sql.Selectable, sqlalchemy.sql.Selectable)
 def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
-    left_column = getattr(lhs.c, t.on_left)
-    right_column = getattr(rhs.c, t.on_right)
-
-    condition = left_column == right_column
+    condition = reduce(and_, [getattr(lhs.c, l) == getattr(rhs.c, r)
+        for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
     join = lhs.join(rhs, condition)
 
