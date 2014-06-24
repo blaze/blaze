@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, partial, first, pipe, compose
+from toolz import concat, partial, first, pipe, compose, get
 import toolz
 from toolz.curried import filter
 from . import scalar
@@ -449,9 +449,10 @@ class Join(TableExpr):
         self.rhs = rhs
         if not on_right:
             on_right = on_left
-        self.on_left = on_left
-        self.on_right = on_right
-        if lhs.schema[0][on_left] != rhs.schema[0][on_right]:
+        self.on_left = tuple(on_left) if isinstance(on_left, list) else on_left
+        self.on_right = (tuple(on_right) if isinstance(on_right, list)
+                            else on_right)
+        if get(on_left, lhs.schema[0]) != get(on_right, rhs.schema[0]):
             raise TypeError("Schema's of joining columns do not match")
 
     @property

@@ -107,6 +107,16 @@ def test_join():
     assert Join(t, s, 'name') == Join(t, s, 'name')
 
 
+def test_multi_column_join():
+    a = TableSymbol('a', '{x: int, y: int, z: int}')
+    b = TableSymbol('b', '{w: int, x: int, y: int}')
+    j = Join(a, b, ['x', 'y'])
+
+    assert set(j.columns) == set('wxyz')
+
+    assert hash(j)
+
+
 def test_traverse():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t in list(t.traverse())
