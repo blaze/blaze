@@ -23,6 +23,7 @@ from operator import and_
 from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar import BinOp, UnaryOp
+from ..compatibility import reduce
 from ..utils import unique
 from . import core
 
