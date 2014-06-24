@@ -10,6 +10,7 @@ from .data.csv import *
 from .data.json import *
 from .compute.python import *
 from .data.pandas import *
+from .data.meta import *
 from .compute.pandas import *
 
 
