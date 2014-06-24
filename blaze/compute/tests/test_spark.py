@@ -17,6 +17,7 @@ try:
 except ImportError:
     pass
 
+
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
 t2 = TableSymbol('t2', '{name: string, city: string}')
@@ -159,7 +160,7 @@ def test_spark_join():
     assert all(i in expected for i in result)
 
 
-def test_multi_column_join():
+def test_spark_multi_column_join():
     left = [(1, 2, 3),
             (2, 3, 4),
             (1, 3, 5)]
