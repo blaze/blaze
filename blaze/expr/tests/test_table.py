@@ -114,6 +114,7 @@ def test_multi_column_join():
 
     assert set(j.columns) == set('wxyz')
 
+    assert j.on_left == j.on_right == ['x', 'y']
     assert hash(j)
 
 
