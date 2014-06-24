@@ -4,6 +4,7 @@ import sys
 from operator import itemgetter
 import operator
 from toolz import compose, identity
+from collections import Iterator
 
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
@@ -182,9 +183,14 @@ def into(a, b):
     return b
 
 
+@dispatch(pyspark.SparkContext, (list, tuple, Iterator))
+def into(sc, seq):
+    return sc.parallelize(seq)
+
+
 @dispatch(RDD, (list, tuple))
 def into(rdd, seq):
-    return rdd.context.parallelize(seq)
+    return into(rdd.context, seq)
 
 
 @dispatch(list, RDD)
