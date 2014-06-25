@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from blaze.expr.core import discover
 from blaze.utils import raises
-from datashape import dshape
+from datashape import dshape, var
 
 
 def test_dshape():
@@ -330,3 +331,10 @@ def test_iscolumn():
     assert not TableSymbol('b', '{x: int}', iscolumn=False).iscolumn
     assert TableSymbol('b', '{x: int}', iscolumn=True) != \
             TableSymbol('b', '{x: int}', iscolumn=False)
+
+
+def test_discover():
+    schema = '{x: int, y: int, z: int}'
+    a = TableSymbol('a', schema)
+
+    assert discover(a) == var * schema
