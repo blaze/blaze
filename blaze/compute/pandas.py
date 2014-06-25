@@ -107,7 +107,7 @@ def compute(t, lhs, rhs):
 
     lhs = lhs.set_index(t.on_left)
     rhs = rhs.set_index(t.on_right)
-    result = lhs.join(rhs)
+    result = lhs.join(rhs, how='inner')
     return result.reset_index()[t.columns]
 
 

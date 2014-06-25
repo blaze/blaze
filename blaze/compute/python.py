@@ -30,6 +30,8 @@ from cytoolz import groupby, get, reduceby, unique, take
 import cytoolz
 from . import core
 
+from ..data import DataDescriptor
+
 # Dump exp, log, sin, ... into namespace
 from math import *
 
@@ -272,7 +274,26 @@ def compute(t, seq):
     return compute(t, a, b)
 
 
-@dispatch(Join, Sequence, Sequence)
+def listpack(x):
+    """
+
+    >>> listpack(1)
+    [1]
+    >>> listpack((1, 2))
+    [1, 2]
+    >>> listpack([1, 2])
+    [1, 2]
+    """
+    if isinstance(x, tuple):
+        return list(x)
+    elif isinstance(x, list):
+        return x
+    else:
+        return [x]
+
+
+
+@dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
 def compute(t, lhs, rhs):
     """ Join Operation for Python Streaming Backend
 
@@ -288,18 +309,20 @@ def compute(t, lhs, rhs):
     lhs = compute(t.lhs, lhs)
     rhs = compute(t.rhs, rhs)
 
-    left_index = t.lhs.columns.index(t.on_left)
-    right_index = t.rhs.columns.index(t.on_right)
+    on_left = rowfunc(t.lhs[t.on_left])
+    on_right = rowfunc(t.rhs[t.on_right])
 
     right_columns = list(range(len(t.rhs.columns)))
-    right_columns.remove(right_index)
+    for col in listpack(t.on_right):
+        right_columns.remove(t.rhs.columns.index(col))
+
     get_right = lambda x: type(x)(get(right_columns, x))
 
-    lhs_dict = groupby(partial(get, left_index), lhs)
+    lhs_dict = groupby(on_left, lhs)
 
     for row in rhs:
         try:
-            key = row[right_index]
+            key = on_right(row)
             matches = lhs_dict[key]
             for match in matches:
                 yield match + get_right(row)

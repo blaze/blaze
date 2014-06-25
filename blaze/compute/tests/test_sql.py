@@ -93,6 +93,39 @@ def test_join():
     assert list(result.c.keys()) == list(joined.columns)
 
 
+def test_multi_column_join():
+    metadata = sa.MetaData()
+    lhs = sa.Table('aaa', metadata,
+                   sa.Column('x', sa.Integer),
+                   sa.Column('y', sa.Integer),
+                   sa.Column('z', sa.Integer))
+
+    rhs = sa.Table('bbb', metadata,
+                   sa.Column('w', sa.Integer),
+                   sa.Column('x', sa.Integer),
+                   sa.Column('y', sa.Integer))
+
+    L = TableSymbol('L', '{x: int, y: int, z: int}')
+    R = TableSymbol('R', '{w: int, x: int, y: int}')
+    joined = Join(L, R, ['x', 'y'])
+
+    expected = lhs.join(rhs, (lhs.c.x == rhs.c.x)
+                           & (lhs.c.y == rhs.c.y))
+    expected = select(list(unique(expected.columns, key=lambda c:
+        c.name))).select_from(expected)
+
+    result = compute(joined, {L: lhs, R: rhs})
+
+    assert str(result) == str(expected)
+
+    assert str(select(result)) == str(select(expected))
+
+    # Schemas match
+    print(result.c.keys())
+    print(joined.columns)
+    assert list(result.c.keys()) == list(joined.columns)
+
+
 def test_unary_op():
     assert str(compute(exp(t['amount']), s)) == str(sa.func.exp(s.c.amount))
 

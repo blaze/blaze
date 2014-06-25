@@ -134,6 +134,25 @@ def test_join():
     assert result == expected
 
 
+def test_multi_column_join():
+    left = [(1, 2, 3),
+            (2, 3, 4),
+            (1, 3, 5)]
+    right = [(1, 2, 30),
+             (1, 3, 50),
+             (1, 3, 150)]
+
+    L = TableSymbol('L', '{x: int, y: int, z: int}')
+    R = TableSymbol('R', '{x: int, y: int, w: int}')
+
+    j = Join(L, R, ['x', 'y'])
+
+    print(list(compute(j, {L: left, R: right})))
+    assert list(compute(j, {L: left, R: right})) == [(1, 2, 3, 30),
+                                                     (1, 3, 5, 50),
+                                                     (1, 3, 5, 150)]
+
+
 def test_column_of_column():
     assert list(compute(t['name']['name'], data)) == \
             list(compute(t['name'], data))

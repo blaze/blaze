@@ -8,14 +8,13 @@ from __future__ import absolute_import, division, print_function
 from datashape import dshape, var, DataShape, Record, isdimension
 import datashape
 import operator
-from toolz import concat, partial, first, pipe, compose
+from toolz import concat, partial, first, pipe, compose, get, unique
 import toolz
 from toolz.curried import filter
 from . import scalar
 from .core import Expr, Scalar
 from .scalar import ScalarSymbol
 from .scalar import *
-from ..utils import unique
 from ..compatibility import _strtypes, builtins
 
 
@@ -440,7 +439,7 @@ class Join(TableExpr):
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = Join(names, amounts, 'id', 'acctNumber')
     """
-    __slots__ = 'lhs', 'rhs', 'on_left', 'on_right'
+    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
 
     iscolumn = False
 
@@ -449,18 +448,36 @@ class Join(TableExpr):
         self.rhs = rhs
         if not on_right:
             on_right = on_left
-        self.on_left = on_left
-        self.on_right = on_right
-        if lhs.schema[0][on_left] != rhs.schema[0][on_right]:
+        if isinstance(on_left, tuple):
+            on_left = list(on_left)
+        if isinstance(on_right, tuple):
+            on_right = list(on_right)
+        self._on_left = tuple(on_left) if isinstance(on_left, list) else on_left
+        self._on_right = (tuple(on_right) if isinstance(on_right, list)
+                            else on_right)
+        if get(on_left, lhs.schema[0]) != get(on_right, rhs.schema[0]):
             raise TypeError("Schema's of joining columns do not match")
+
+    @property
+    def on_left(self):
+        if isinstance(self._on_left, tuple):
+            return list(self._on_left)
+        else:
+            return self._on_left
+
+    @property
+    def on_right(self):
+        if isinstance(self._on_left, tuple):
+            return list(self._on_left)
+        else:
+            return self._on_left
 
     @property
     def schema(self):
         rec1 = self.lhs.schema[0]
         rec2 = self.rhs.schema[0]
 
-        rec = rec1.parameters[0] + tuple((k, v) for k, v in rec2.parameters[0]
-                                                 if  k != self.on_right)
+        rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
         return dshape(Record(rec))
 
 
