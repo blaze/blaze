@@ -22,6 +22,12 @@ def test_compute():
     assert list(compute(t['amount'] + 1)) == [101, 201]
 
 
+def test_create_with_schema():
+    t = Table(data, schema='{name: string, amount: float32}')
+    assert t.schema == dshape('{name: string, amount: float32}')
+
+
+
 def test_create_with_raw_data():
     t = Table(data, columns=['name', 'amount'])
     assert t.schema == dshape('{name: string, amount: int64}')

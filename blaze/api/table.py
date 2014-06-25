@@ -35,14 +35,16 @@ class Table(TableSymbol):
 
     def __init__(self, data, name=None, columns=None, schema=None,
             iscolumn=False):
-        schema = schema or discover(data).subshape[0]
-        if isinstance(schema[0], Tuple):
-            columns = columns or list(range(len(schema[0].dshapes)))
-            types = schema[0].dshapes
-        if isinstance(schema[0], Record):
-            columns = columns or schema[0].names
-            types = schema[0].types
-        self.schema = dshape(Record(list(zip(columns, types))))
+        if not schema:
+            schema = discover(data).subshape[0]
+            if isinstance(schema[0], Tuple):
+                columns = columns or list(range(len(schema[0].dshapes)))
+                types = schema[0].dshapes
+            if isinstance(schema[0], Record):
+                columns = columns or schema[0].names
+                types = schema[0].types
+            schema = dshape(Record(list(zip(columns, types))))
+        self.schema = dshape(schema)
 
         self.data = data
         self.name = name or next(names)
