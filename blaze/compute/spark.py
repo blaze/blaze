@@ -16,7 +16,7 @@ from ..dispatch import dispatch
 
 from toolz.curried import get
 
-__all__ = ['compute', 'into']
+__all__ = ['compute', 'into', 'RDD', 'pyspark']
 
 try:
     from itertools import compress, chain
