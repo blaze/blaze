@@ -1,6 +1,7 @@
 from blaze.expr.scalar import *
 from blaze.compatibility import skip
 import math
+from datetime import date, datetime
 
 x = ScalarSymbol('x')
 y = ScalarSymbol('y')
@@ -69,3 +70,15 @@ def test_arithmetic_dshape_inference():
     x = ScalarSymbol('x', 'int')
     y = ScalarSymbol('y', 'int')
     assert (x + y).dshape == dshape('int')
+
+
+def test_date_coercion():
+    d = ScalarSymbol('d', 'date')
+    expr = d < '2012-01-01'
+    assert isinstance(expr.rhs, date)
+
+
+def test_datetime_coercion():
+    d = ScalarSymbol('d', 'datetime')
+    expr = d > '2012-01-01T12:30:00'
+    assert isinstance(expr.rhs, datetime)
