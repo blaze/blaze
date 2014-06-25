@@ -16,16 +16,18 @@ from ..dispatch import dispatch
 
 from toolz.curried import get
 
-__all__ = ['compute', 'into', 'RDD', 'pyspark']
+__all__ = ['compute', 'into', 'RDD', 'pyspark', 'SparkContext']
 
 try:
     from itertools import compress, chain
+    from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
 except ImportError:
     #Create a dummy RDD for py 2.6
     class Dummy(object):
         sum = max = min = count = distinct = mean = variance = stdev = None
+    SparkContext = Dummy
     pyspark = Dummy()
     pyspark.rdd = Dummy()
     RDD = Dummy
@@ -183,7 +185,7 @@ def into(a, b):
     return b
 
 
-@dispatch(pyspark.SparkContext, (list, tuple, Iterator))
+@dispatch(SparkContext, (list, tuple, Iterator))
 def into(sc, seq):
     return sc.parallelize(seq)
 
