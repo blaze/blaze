@@ -46,9 +46,18 @@ def test_create_with_data_descriptor():
 
 def test_repr():
     result = table_repr(t['name'])
+    print(result)
     assert isinstance(result, str)
     assert 'Alice' in result
+    assert 'Bob' in result
+    assert '...' not in result
 
     result = table_repr(t['amount'] + 1)
     print(result)
     assert '101' in result
+
+    t2 = Table(tuple((i, i**2) for i in range(100)), columns=['x', 'y'])
+    result = table_repr(t2)
+    print(result)
+    assert len(result.split('\n')) < 20
+    assert '...' in result

@@ -1,5 +1,5 @@
 
-from datashape import discover, Tuple, Record, dshape
+from datashape import discover, Tuple, Record, dshape, Fixed
 import itertools
 
 from ..expr.core import Expr
@@ -37,12 +37,23 @@ class Table(TableSymbol):
             iscolumn=False):
         if not schema:
             schema = discover(data).subshape[0]
+            types = None
             if isinstance(schema[0], Tuple):
                 columns = columns or list(range(len(schema[0].dshapes)))
                 types = schema[0].dshapes
             if isinstance(schema[0], Record):
                 columns = columns or schema[0].names
                 types = schema[0].types
+            if isinstance(schema[0], Fixed):
+                types = (schema[1],) * int(schema[0])
+            if not columns:
+                raise TypeError("Could not infer column names from data. "
+                                "Please specify column names with `column=` "
+                                "keyword")
+            if not types:
+                raise TypeError("Could not infer data types from data. "
+                                "Please specify schema with `schema=` keyword")
+
             schema = dshape(Record(list(zip(columns, types))))
         self.schema = dshape(schema)
 
@@ -72,14 +83,18 @@ def table_repr(expr, n=10):
     if not expr.resources():
         return str(expr)
     if isinstance(expr, TableExpr):
-        head = expr.head(n)
+        head = expr.head(n + 1)
         result = compute(head)
 
         if expr.columns:
-            s = repr(into(DataFrame(columns=expr.columns), result))
+            df = into(DataFrame(columns=expr.columns), result)
         else:
-            s = repr(into(DataFrame, result))
-        return '\n'.join(s.split('\n')[:-2]) + '\n...'
+            df = into(DataFrame, result)
+        s = repr(df)
+        if len(df) > 10:
+            df = df[:10]
+            s = '\n'.join(s.split('\n')[:-1]) + '\n...'
+        return s
 
     else:
         return repr(compute(expr))
