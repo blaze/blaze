@@ -76,9 +76,10 @@ def table_repr(expr, n=10):
         result = compute(head)
 
         if expr.columns:
-            return repr(into(DataFrame(columns=expr.columns), result)) + '\n...'
+            s = repr(into(DataFrame(columns=expr.columns), result))
         else:
-            return repr(into(DataFrame, result)) + '\n...'
+            s = repr(into(DataFrame, result))
+        return '\n'.join(s.split('\n')[:-2]) + '\n...'
 
     else:
         return repr(compute(expr))
