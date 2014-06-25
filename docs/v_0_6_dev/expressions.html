@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Expressions &mdash; Blaze 0.6.0-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.6.0-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
+    <link rel="next" title="Backends" href="backends.html" />
+    <link rel="prev" title="Data" href="data.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+        
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+        
+        <li>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+        
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+        
+        <li>
+            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
+        </li>
+        
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+        
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Expressions</a><ul>
+<li><a class="reference internal" href="#tables">Tables</a><ul>
+<li><a class="reference internal" href="#tablesymbol">TableSymbol</a></li>
+<li><a class="reference internal" href="#projections-selection-arithmetic">Projections, Selection, Arithmetic</a></li>
+<li><a class="reference internal" href="#split-apply-combine-reductions">Split-apply-combine, Reductions</a></li>
+<li><a class="reference internal" href="#join">Join</a></li>
+<li><a class="reference internal" href="#other">Other</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="expressions">
+<h1>Expressions<a class="headerlink" href="#expressions" title="Permalink to this headline">¶</a></h1>
+<p>Blaze expressions describe computational workflows symbolically. They allow
+developers to architect and check their computations rapidly before applying
+them to data.  These expressions can then be compiled down to a variety of
+supported backends.</p>
+<div class="section" id="tables">
+<h2>Tables<a class="headerlink" href="#tables" title="Permalink to this headline">¶</a></h2>
+<p>Table expressions track operations found in relational algebra or your standard
+Pandas/R DataFrame object.  Operations include projecting columns, filtering, mapping and basic mathematics, reductions, split-apply-combine (groupby) operations, and joining.  This compact set of operations can express a surprisingly large set of common computations.  They are widely supported.</p>
+<div class="section" id="tablesymbol">
+<h3>TableSymbol<a class="headerlink" href="#tablesymbol" title="Permalink to this headline">¶</a></h3>
+<p>A <tt class="docutils literal"><span class="pre">TableSymbol</span></tt> refers to a single table in storage.  It must be given a name
+and a schema.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, balance: int}&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="projections-selection-arithmetic">
+<h3>Projections, Selection, Arithmetic<a class="headerlink" href="#projections-selection-arithmetic" title="Permalink to this headline">¶</a></h3>
+<p>Intuitive operations follow from intuitive Python syntax, learned from systems
+like NumPy and Pandas.  The following defines a table, <tt class="docutils literal"><span class="pre">accounts</span></tt>, and then
+selects the names of those accounts with negative balance.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, balance: int}&#39;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">deadbeats</span> <span class="o">=</span> <span class="n">accounts</span><span class="p">[</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Internally this doesn&#8217;t do any actual work (we haven&#8217;t specified a data source
+or a computational engine).  Instead it builds up a symbolic representation of
+a comutation to do in the future.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">deadbeats</span>
+<span class="go">accounts[accounts[&#39;balance&#39;] &lt; 0][&#39;name&#39;]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">deadbeats</span><span class="o">.</span><span class="n">schema</span>
+<span class="go">dshape(&quot;{name: string}&quot;)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="split-apply-combine-reductions">
+<h3>Split-apply-combine, Reductions<a class="headerlink" href="#split-apply-combine-reductions" title="Permalink to this headline">¶</a></h3>
+<p>Blaze borrows the <tt class="docutils literal"><span class="pre">by</span></tt> operation from <tt class="docutils literal"><span class="pre">R</span></tt> and <tt class="docutils literal"><span class="pre">Julia</span></tt>.  The <tt class="docutils literal"><span class="pre">by</span></tt>
+operation is a combined <tt class="docutils literal"><span class="pre">groupby</span></tt> and reduction, fulfilling
+split-apply-combine workflows.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">accounts</span><span class="p">,</span>                     <span class="c"># Table</span>
+<span class="gp">... </span>   <span class="n">accounts</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>             <span class="c"># Splitting/grouping element</span>
+<span class="gp">... </span>   <span class="n">accounts</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>    <span class="c"># Apply and reduction</span>
+</pre></div>
+</div>
+<p>This operation groups the table by name and then sums the balance of each
+group.  It finds out how much all of the &#8220;Alice&#8221;s, &#8220;Bob&#8221;s, etc. of the world
+have in total.</p>
+<p>Note the reduction <tt class="docutils literal"><span class="pre">sum</span></tt> in the third apply argument.  Blaze supports the
+standard reductions of numpy like <tt class="docutils literal"><span class="pre">sum</span></tt>, <tt class="docutils literal"><span class="pre">min</span></tt>, <tt class="docutils literal"><span class="pre">max</span></tt> and also the
+reductions of Pandas like <tt class="docutils literal"><span class="pre">count</span></tt> and <tt class="docutils literal"><span class="pre">nunique</span></tt>.</p>
+</div>
+<div class="section" id="join">
+<h3>Join<a class="headerlink" href="#join" title="Permalink to this headline">¶</a></h3>
+<p>Tables can be joined with the <tt class="docutils literal"><span class="pre">Join</span></tt> operation, which allows for advanced
+queries to span multiple tables.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, balance: int}&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cities</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;cities&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, city: string}&#39;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Join</span><span class="p">(</span><span class="n">accounts</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="other">
+<h3>Other<a class="headerlink" href="#other" title="Permalink to this headline">¶</a></h3>
+<p>Blaze supports a variety of other operations common to our supported backends.
+See our API docs for more details.</p>
+</div>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Access Data from Different Sources &mdash; Blaze 0.6.0-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.6.0-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+        
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+        
+        <li>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+        
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+        
+        <li>
+            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
+        </li>
+        
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+        
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Access Data from Different Sources</a><ul>
+<li><a class="reference internal" href="#working-with-blz-storage">Working with BLZ storage</a></li>
+<li><a class="reference internal" href="#working-with-csv-and-json-data-files">Working with CSV and JSON data files</a></li>
+<li><a class="reference internal" href="#working-with-hdf5-files">Working with HDF5 files</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="access-data-from-different-sources">
+<h1>Access Data from Different Sources<a class="headerlink" href="#access-data-from-different-sources" title="Permalink to this headline">¶</a></h1>
+<p>Blaze can access data from a variety of sources, as long as the format
+has been implemented as a Data Descriptor.
+Currently there are data descriptors for DyND, BLZ, HDF5, CSV and JSON
+files, although the list is growing.  This section shows how to access
+these files in a general way.</p>
+<div class="section" id="working-with-blz-storage">
+<h2>Working with BLZ storage<a class="headerlink" href="#working-with-blz-storage" title="Permalink to this headline">¶</a></h2>
+<p>BLZ is a storage solution that allows to keep your Blaze datasets
+either in-memory or on-disk.</p>
+<p>In-memory storage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">blz</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ddesc</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">,</span> <span class="n">bparams</span><span class="o">=</span><span class="n">blz</span><span class="o">.</span><span class="n">bparams</span><span class="p">(</span><span class="n">clevel</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">ddesc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+<span class="go">[1 2 3]</span>
+</pre></div>
+</div>
+<p>We can check that the array is backed by a the BLZ library by printing
+the associated data descritor</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">ddesc</span>
+<span class="go">&lt;blaze.datadescriptor.blz_data_descriptor.BLZ_DDesc object at 0x10d90dfd0&gt;</span>
+</pre></div>
+</div>
+<p>an you can access the underlying BLZ object if you want too</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">ddesc</span><span class="o">.</span><span class="n">blzarr</span>
+<span class="go">barray((3,), int64)</span>
+<span class="go">  nbytes: 24; cbytes: 4.00 KB; ratio: 0.01</span>
+<span class="go">  bparams := bparams(clevel=5, shuffle=True, cname=blosclz)</span>
+<span class="go">[1 2 3]</span>
+</pre></div>
+</div>
+<p>It is possible to force the type when creating the array. This
+allows for a broader selection of types on construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">e</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;3 * float32&#39;</span><span class="p">,</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">ddesc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e</span>
+<span class="go">array([ 1.,  2.,  3.],</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
+</pre></div>
+</div>
+<p>Note that the dimensions in the datashape when creating from a
+collection can be omitted. If that&#8217;s the case, the dimensions will be
+inferred. The following is thus equivalent:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;float32&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
+<span class="go">array([ 1.,  2.,  3.],</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
+</pre></div>
+</div>
+<p>BLZ also supports arrays to be made persistent. This can be achieved
+by adding the <cite>path</cite> parameter to the data descriptor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ddesc</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s">&#39;myarray.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dshape</span><span class="o">=</span><span class="s">&#39;float32&#39;</span><span class="p">,</span> <span class="n">ddesc</span><span class="o">=</span><span class="n">ddesc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
+<span class="go">array([ 1.,  2.,  3.],</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
+</pre></div>
+</div>
+<p>You can use the persistent array as if it was an in-memory
+array. However, it is persistent and it will survive your python
+session. Later you can gain a reference to the array, even from a
+different python session by name, using the <cite>from_*</cite> functions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ddesc</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">BLZ_DDesc</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s">&#39;myarray.blz&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ddesc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
+<span class="go">array([ 1.,  2.,  3.],</span>
+<span class="go">      dshape=&#39;3 * float32&#39;)</span>
+</pre></div>
+</div>
+<p>A persistent array is backed on non-volatile data descriptor. That
+means that there are system resources allocated to store that array,
+even when you exit your python session.</p>
+<p>A BLZ array can be enlarged anytime by using the <cite>blaze.append()</cite>
+function, e.g.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
+<span class="go">array([ 1.,  2.,  3.,  4.,  5.,  6.],</span>
+<span class="go">      dshape=&#39;6 * float32&#39;)</span>
+</pre></div>
+</div>
+<p>If you are done with the persistent array and want to physically
+remove its contents, you can just call the <cite>remove()</cite> method in the
+associated data descriptor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">ddesc</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After removing a persistent array this way, any &#8216;open&#8217; version you may
+had of it will no longer be valid. You won&#8217;t be able to reopen it
+either. It is effectively deleted.</p>
+</div>
+<div class="section" id="working-with-csv-and-json-data-files">
+<h2>Working with CSV and JSON data files<a class="headerlink" href="#working-with-csv-and-json-data-files" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s suppose that we have a file named &#8216;/tmp/test.csv&#8217; that we want
+to operate with from Blaze.  Blaze normally access data through
+filesystem paths, so first, let&#8217;s use the the <cite>DDesc</cite> class so as to
+specify the file, as well as its schema:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">csv_schema</span> <span class="o">=</span> <span class="s">&quot;{ f0: string, f1: string, f2: int16, f3: bool }&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ddesc</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">CSV_DDesc</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s">&#39;test.csv&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">csv_schema</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For JSON files it is just a matter of replacing the CSV data
+descriptor by the JSON one:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">json_schema</span> <span class="o">=</span> <span class="s">&quot;var * int8&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ddesc</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">CSV_DDesc</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s">&#39;test.json&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">json_schema</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now, for actually accessing the data in the file we need to create a
+Blaze array based on the descriptor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ddesc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>As we see, the <cite>array</cite> constructor only needs you to pass the data
+descriptor for your dataset and you are done.  If we want to have a
+look at the contents, then just print the Blaze array:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">ddesc</span><span class="o">.</span><span class="n">dynd_arr</span><span class="p">()</span>  <span class="c"># workaround for flaky blaze print function</span>
+<span class="go">nd.array([[&quot;k1&quot;, &quot;v1&quot;, 1, false], [&quot;k2&quot;, &quot;v2&quot;, 2, true], [&quot;k3&quot;, &quot;v3&quot;, 3, false]], type=&quot;var * {f0 : string, f1 : string, f2 : int16, f3 : bool}&quot;)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="working-with-hdf5-files">
+<h2>Working with HDF5 files<a class="headerlink" href="#working-with-hdf5-files" title="Permalink to this headline">¶</a></h2>
+<p>Blaze makes easy to work with HDF5 files via the included
+<cite>HDF5DataDescriptor</cite>.  For the purposes of this tutorial we are going
+to use some HDF5 files taken from the PO.DAAC project repository at
+JPL (<a class="reference external" href="http://podaac.jpl.nasa.gov/">http://podaac.jpl.nasa.gov/</a>).</p>
+<p>Getting a Blaze object out of a dataset in the HDF5 file is easy, but
+we need first a list of the datasets in the file.  For this, we are
+going to use the standard HDF5 tool called <cite>h5ls</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt;&gt; !h5ls test-daac.h5
+l3m_data                 Dataset {180, 360}
+palette                  Dataset {3, 256}
+</pre></div>
+</div>
+<p>So, we have a couple of datasets named <cite>l3m_data</cite> and <cite>palette</cite>.
+Let&#8217;s open the latter with Blaze:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ddesc</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">HDF5_DDesc</span><span class="p">(</span><span class="s">&quot;test-daac.h5&quot;</span><span class="p">,</span> <span class="n">datapath</span><span class="o">=</span><span class="s">&quot;/palette&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">palette</span> <span class="o">=</span> <span class="n">blaze</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ddesc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>As you see we needed first to create the usual <cite>DDesc</cite> instance where
+we are informing Blaze about the name and the format of the file.
+Then, we use <cite>blaze.array()</cite> with the data descriptor for actually
+opening the dataset.  It is important to understand that we just have
+a <em>handle</em> to the dataset, but that we have not loaded any data in
+memory yet.  This handle happens to be an actual Blaze <tt class="docutils literal"><span class="pre">Array</span></tt>
+object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">palette</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blaze</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">Array</span>
+</pre></div>
+</div>
+<p>which you can use as a lazy representation of the data on-disk, but
+without actually reading the data.</p>
+<p>Now, let&#8217;s peek into the contents of the dataset:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">palette</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">array(255,</span>
+<span class="go">      dshape=&#39;uint8&#39;)</span>
+</pre></div>
+</div>
+<p>Or a slice:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">palette</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
+<span class="go">array([[255,   0],</span>
+<span class="go">       [255, 207]],</span>
+<span class="go">      dshape=&#39;2 * 2 * uint8&#39;)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>

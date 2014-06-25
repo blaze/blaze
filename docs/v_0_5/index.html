@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Blaze &mdash; Blaze 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.5 documentation" href="#" />
+    <link rel="next" title="Install" href="install.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+        
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+        
+        <li>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+        
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+        
+        <li>
+            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
+        </li>
+        
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+        
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="#"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Blaze</a></li>
+<li><a class="reference internal" href="#the-core-of-blaze-consists-of-generic-multi-dimensional-array-and-table-objects">The core of Blaze consists of generic multi-dimensional Array and Table objects</a><ul>
+<li><a class="reference internal" href="#documentation-note">Documentation Note</a></li>
+<li><a class="reference internal" href="#index">Index</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#id1">Index</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="blaze">
+<h1>Blaze<a class="headerlink" href="#blaze" title="Permalink to this headline">¶</a></h1>
+<p>Blaze is the next generation of NumPy, Python’s extremely popular
+array library. Blaze is designed to handle out-of-core computations
+on large datasets that exceed the system memory capacity, as well as
+on distributed and streaming data.</p>
+<p>Blaze will allow analysts and scientists to productively write robust
+and efficient code, without getting bogged down in the details of how
+to distribute computation, or worse, how to transport and convert data
+between databases, formats, proprietary data warehouses, and other
+silos.</p>
+</div>
+<div class="section" id="the-core-of-blaze-consists-of-generic-multi-dimensional-array-and-table-objects">
+<h1>The core of Blaze consists of generic multi-dimensional Array and Table objects<a class="headerlink" href="#the-core-of-blaze-consists-of-generic-multi-dimensional-array-and-table-objects" title="Permalink to this headline">¶</a></h1>
+<p>with an associated type system for expressing all kinds of data
+types and layouts, especially semi-structured, sparse, and columnar
+data.  Blaze’s generalized calculation engine can iterate over the
+distributed array or table and dispatch to low-level kernels specialized
+for the layout and type of the data.</p>
+<div class="section" id="documentation-note">
+<h2>Documentation Note<a class="headerlink" href="#documentation-note" title="Permalink to this headline">¶</a></h2>
+<p>As you read this documentation, please be aware that the project
+is under development. The documentation and implementation of Blaze
+have gone through many changes, and there are many places where they
+have not been properly brought into sync.</p>
+</div>
+<div class="section" id="index">
+<h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#installing">Installing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#dependencies">Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#blaze-is-a-generalization-of-numpy">Blaze is a Generalization of NumPy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#blaze-arrays">Blaze Arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#simple-calculations">Simple Calculations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#iterators">Iterators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#disk-backed-array">Disk Backed Array</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="catalog.html#guided-tour">Guided Tour</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_sources.html">Access Data from Different Sources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_sources.html#working-with-blz-storage">Working with BLZ storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_sources.html#working-with-csv-and-json-data-files">Working with CSV and JSON data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_sources.html#working-with-hdf5-files">Working with HDF5 files</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datashape.html">Datashape</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_descriptor.html">Data Descriptors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#python-style-iteration">Python-Style Iteration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#python-style-getitem">Python-Style GetItem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_descriptor.html#memory-access">Memory Access</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="blaze_function.html">Blaze Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_workflow.html">Developer Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#test-driven-development">Test Driven Development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#github-flow">GitHub Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#unified-python-2-and-3-codebase">Unified Python 2 and 3 Codebase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_workflow.html#internal-import">Internal Import</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legal.html">Legal</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Index<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>
