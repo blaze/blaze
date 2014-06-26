@@ -65,6 +65,9 @@ def recursive_rowfunc(t):
     else:
         return compose(*funcs)
 
+@dispatch(TableSymbol)
+def rowfunc(t):
+    return identity
 
 @dispatch(Projection)
 def rowfunc(t):
@@ -242,10 +245,6 @@ binops = {sum: (operator.add, 0),
 @dispatch(By, Sequence)
 def compute(t, seq):
     parent = compute(t.parent, seq)
-
-    if not isinstance(t.grouper, Projection) and t.grouper.parent == t.parent:
-        raise NotImplementedError("Grouper attribute of By must be Projection "
-                                  "of parent table, got %s" % str(t.grouper))
 
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
