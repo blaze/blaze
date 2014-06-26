@@ -6,6 +6,7 @@ import h5py
 from dynd import nd
 import datashape
 from datashape import var, dshape
+from toolz.curried import pipe, concat, map
 
 from ..dispatch import dispatch
 from .core import DataDescriptor
@@ -117,11 +118,23 @@ class HDF5(DataDescriptor):
             if isinstance(rec_key, tuple):
                 rec_key = list(rec_key)
             key = (rec_key,) + key[:-1]
-            print(key)
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             result = np.asarray(arr.__getitem__(key))
         return nd.asarray(result, access='readonly')
+
+    def _get_py(self, key):
+        if (isinstance(key, tuple) and
+            len(key) > len(self.dshape.shape) and
+            isinstance(self.dshape[-1], datashape.Record)):
+            rec_key = get(key[-1], self.dshape[-1].names)
+            if isinstance(rec_key, tuple):
+                rec_key = list(rec_key)
+            key = (rec_key,) + key[:-1]
+        with h5py.File(self.path, mode='r') as f:
+            arr = f[self.datapath]
+            result = np.asarray(arr.__getitem__(key))
+        return result.tolist()
 
     def __setitem__(self, key, value):
         with h5py.File(self.path, mode=self.mode) as f:
@@ -129,11 +142,18 @@ class HDF5(DataDescriptor):
             arr[key] = value
         return self
 
+    def chunks(self, **kwargs):
+        for chunk in self._chunks(**kwargs):
+            yield nd.array(chunk)
+
     def _chunks(self, blen=100):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             for i in range(0, arr.shape[0], blen):
                 yield np.array(arr[i:i+blen])
+
+    def _iter(self):
+        return pipe(self._chunks(), map(np.ndarray.tolist), concat)
 
     def as_dynd(self):
         return self.dynd[:]
@@ -167,6 +187,3 @@ class HDF5(DataDescriptor):
                 dset.resize(shape)
                 dset[-len(arr):] = arr
 
-
-    def _iter(self):
-        return chain.from_iterable(self.chunks())

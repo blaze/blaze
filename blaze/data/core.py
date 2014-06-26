@@ -60,7 +60,7 @@ class DataDescriptor(object):
         def dtype_of(chunk):
             return str(len(chunk) * self.schema)
 
-        self._extend_chunks((nd.array(chunk, dtype=dtype_of(chunk))
+        self._extend_chunks((nd.array(chunk, type=dtype_of(chunk))
                              for chunk in chunks))
 
     def _extend_chunks(self, chunks):
@@ -71,8 +71,8 @@ class DataDescriptor(object):
         def dshape(chunk):
             return str(len(chunk) * self.dshape.subshape[0])
 
-        chunks = self._chunks(**kwargs)
-        return (nd.array(chunk, dtype=dshape(chunk)) for chunk in chunks)
+        for chunk in self._chunks(**kwargs):
+            yield nd.array(chunk, type=dshape(chunk))
 
     def _chunks(self, blen=100):
         return partition_all(blen, iter(self))
