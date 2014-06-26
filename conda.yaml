@@ -24,6 +24,8 @@ requirements:
       - datashape
       - flask
       - requests
+      - cytoolz
+      - toolz
 
 about:
     home: http://blaze.pydata.org
