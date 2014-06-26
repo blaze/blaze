@@ -82,3 +82,11 @@ def test_datetime_coercion():
     d = ScalarSymbol('d', 'datetime')
     expr = d > '2012-01-01T12:30:00'
     assert isinstance(expr.rhs, datetime)
+
+
+def test_exprify():
+    dtypes = {'x': 'int', 'y': 'real'}
+    x = ScalarSymbol('x', 'int')
+    y = ScalarSymbol('y', 'real')
+
+    assert exprify('x + y', dtypes) == x + y

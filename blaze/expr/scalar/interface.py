@@ -19,3 +19,18 @@ class ScalarSymbol(NumberInterface, BooleanInterface):
         return str(self.name)
 
     __hash__ = Expr.__hash__
+
+
+def exprify(expr, dtypes):
+    """ Transform string into scalar expression
+
+    >>> expr = exprify('x + y', {'x': 'int64', 'y': 'real'})
+    >>> expr
+    x + y
+    >>> isinstance(expr, Expr)
+    True
+    >>> expr.lhs.dshape
+    dshape("int64")
+    """
+    locals().update({k: ScalarSymbol(k, v) for k, v in dtypes.items()})
+    return eval(expr)
