@@ -23,13 +23,13 @@ types = {'int64': sql.types.BigInteger,
          'int': sql.types.Integer,
          'int16': sql.types.SmallInteger,
          'float': sql.types.Float,
-         'float32': sql.types.Float,
+         'float32': sql.types.REAL,
          'float64': sql.types.Float,
          'string': sql.types.String,  # Probably just use only this
          'date': sql.types.Date,
          'time': sql.types.Time,
          'datetime': sql.types.DateTime,
-#         bool: sql.types.Boolean,
+         'bool': sql.types.Boolean,
 #         ??: sql.types.LargeBinary,
 #         Decimal: sql.types.Numeric,
 #         ??: sql.types.PickleType,
@@ -44,10 +44,11 @@ revtypes = dict(map(reversed, types.items()))
 revtypes.update({sql.types.VARCHAR: 'string',
                  sql.types.DATETIME: 'datetime',
                  sql.types.TIMESTAMP: 'datetime',
-                 sql.types.FLOAT: 'real',
+                 sql.types.FLOAT: 'float64',
                  sql.types.DATE: 'date',
                  sql.types.BIGINT: 'int64',
-                 sql.types.INTEGER: 'int'})
+                 sql.types.INTEGER: 'int',
+                 sql.types.Float: 'float64'})
 
 
 @dispatch(sql.sql.type_api.TypeEngine)
