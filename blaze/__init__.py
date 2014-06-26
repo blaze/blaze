@@ -8,6 +8,7 @@ from .expr.table import *
 from .api import *
 from .data.csv import *
 from .data.json import *
+from .data.hdf5 import *
 from .compute.python import *
 from .data.pandas import *
 from .data.meta import *
