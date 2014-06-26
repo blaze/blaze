@@ -5,7 +5,7 @@ from itertools import chain
 import h5py
 from dynd import nd
 import datashape
-from datashape import var
+from datashape import var, dshape
 
 from ..dispatch import dispatch
 from .core import DataDescriptor
@@ -20,7 +20,8 @@ __all__ = ['HDF5', 'discover']
 
 @dispatch(h5py.Dataset)
 def discover(d):
-    return datashape.from_numpy(d.shape, d.dtype)
+    s = str(datashape.from_numpy(d.shape, d.dtype))
+    return dshape(s.replace('object', 'string'))
 
 
 def varlen_dtype(dt):

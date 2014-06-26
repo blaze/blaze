@@ -197,6 +197,17 @@ class TestDiscovery(MakeFile):
             self.assertEqual(discover(d),
                              dshape('3 * 2 * int32'))
 
+    def test_strings(self):
+        schema = '{x: int32, y: string}'
+        dd = HDF5(self.filename, 'data', 'a',
+                  schema=schema)
+        dd.extend([(1, 'Hello'), (2, 'World!')])
+
+        with h5py.File(dd.path) as f:
+            d = f.get(dd.datapath)
+            self.assertEqual(discover(d),
+                             dshape('2 * ' + schema))
+
     def test_ddesc_discovery(self):
         dd = HDF5(self.filename, 'data', 'a',
                   schema='2 * int32')
