@@ -72,6 +72,11 @@ def test_mean():
     assert 50 < compute(std(t['amount']), data) < 100
 
 
+def test_by_no_grouper():
+    names = t['name']
+    assert set(compute(By(names, names, names.count()), data)) == \
+            set([('Alice', 2), ('Bob', 1)])
+
 def test_by_one():
     print(compute(By(t, t['name'], t['amount'].sum()), data))
     assert set(compute(By(t, t['name'], t['amount'].sum()), data)) == \
