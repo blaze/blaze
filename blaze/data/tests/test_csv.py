@@ -62,12 +62,15 @@ class Test_Other(unittest.TestCase):
         csv = CSV('foo', 'w', sep=';', schema='{x: int, y: int}')
         self.assertEqual(csv.dialect['delimiter'], ';')
 
-
     def test_columns(self):
         # This is really testing the core interface
         dd = CSV('foo', 'w', schema='{name: string, amount: int}')
         assert list(dd.columns) == ['name', 'amount']
 
+    def test_unicode(self):
+        dd = CSV('blaze/data/tests/unicode.csv', columns=['a', 'b'])
+        assert dd.schema == dshape('{a: string, b: int64}')
+        assert dd.py[0]
 
 
 class Test_Indexing(unittest.TestCase):

@@ -1,11 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
-import csv
+import sys
+if sys.version_info.major == 2:
+    import unicodecsv as csv
+else:
+    import csv
 import itertools as it
 import os
 from operator import itemgetter
 from collections import Iterator
-import sys
 
 import datashape
 from datashape.discovery import discover, null, string, unpack
