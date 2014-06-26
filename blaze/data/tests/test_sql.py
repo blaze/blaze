@@ -97,6 +97,18 @@ class SingleTestClass(unittest.TestCase):
         self.assertEqual(set(dd.py[:]), set(dd.py[:, :]))
         assert dd.py[0] in data
 
+    def test_inconsistent_schemas(self):
+        dd = SQL('sqlite:///:memory:',
+                 'badtable',
+                 schema='{name: string, amount: string}')
+        dd.extend([('Alice', '100'), ('Bob', '200')])
+
+        dd2 = SQL(dd.engine,
+                 'badtable',
+                 schema='{name: string, amount: int}')
+
+        assert list(dd2) == [('Alice', 100), ('Bob', 200)]
+
 
 def test_discovery():
     assert discover(sa.String()) == datashape.string
@@ -118,6 +130,16 @@ def test_discovery_engine():
     dshape = discover(dd.engine, 'accounts')
 
     assert dshape == dd.dshape
+
+
+def test_extend_empty():
+    dd = SQL('sqlite:///:memory:',
+             'accounts',
+             schema='{name: string, amount: int}')
+
+    assert not list(dd)
+    dd.extend([])
+    assert not list(dd)
 
 
 def test_schema_detection():

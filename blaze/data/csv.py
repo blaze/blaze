@@ -205,7 +205,10 @@ class CSV(DataDescriptor):
         elif sys.version_info[0] == 2:
             f = self.open(self.path, 'ab')
 
-        row = next(rows)
+        try:
+            row = next(rows)
+        except StopIteration:
+            return
         if isinstance(row, dict):
             schema = dshape(self.schema)
             row = coerce_record_to_row(schema, row)

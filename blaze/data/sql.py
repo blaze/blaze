@@ -152,11 +152,12 @@ class SQL(DataDescriptor):
             metadata.reflect(engine)
             table = metadata.tables[tablename]
             engine_schema = discover(table).subshape[0]
-            if schema and dshape(schema) != engine_schema:
-                raise ValueError("Mismatched schemas:\n"
-                                 "\tIn database: %s\n"
-                                 "\nGiven: %s" % (engine_schema, schema))
-            schema = engine_schema
+            # if schema and dshape(schema) != engine_schema:
+                # raise ValueError("Mismatched schemas:\n"
+                #                 "\tIn database: %s\n"
+                #                 "\nGiven: %s" % (engine_schema, schema))
+            if not schema:
+                schema = engine_schema
         elif isinstance(schema, (_strtypes, datashape.DataShape)):
             columns = dshape_to_alchemy(schema)
             for column in columns:
@@ -171,7 +172,7 @@ class SQL(DataDescriptor):
         self.table = table
         metadata.create_all(engine)
 
-    def __iter__(self):
+    def _iter(self):
         with self.engine.connect() as conn:
             result = conn.execute(sql.sql.select([self.table]))
             for item in result:
@@ -183,7 +184,10 @@ class SQL(DataDescriptor):
 
     def extend(self, rows):
         rows = iter(rows)
-        row = next(rows)
+        try:
+            row = next(rows)
+        except StopIteration:
+            return
         rows = chain([row], rows)
         # Coerce rows to dicts
         if isinstance(row, (tuple, list)):
