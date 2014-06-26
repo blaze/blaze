@@ -2,8 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 import toolz
 
-__all__ = ['Expr', 'Scalar']
+from ..dispatch import dispatch
 
+__all__ = ['Expr', 'Scalar', 'discover']
 
 
 def _str(s):
@@ -75,3 +76,8 @@ def subs(o, d):
 
 class Scalar(Expr):
     pass
+
+
+@dispatch(Expr)
+def discover(expr):
+    return expr.dshape

@@ -235,6 +235,7 @@ def test_jaccard():
     assert indeg_py == {1: 3, 3: 4, 6: 3}
 
 
+@skip("pandas-numexpr-platform doesn't play well with spark")
 def test_spark_merge():
     col = (t['amount'] * 2).label('new')
     expr = merge(t['name'], col)

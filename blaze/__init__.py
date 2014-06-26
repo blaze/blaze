@@ -2,6 +2,18 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 
+from dynd import nd
+from pandas import DataFrame
+from .expr.table import *
+from .api import *
+from .data.csv import *
+from .data.json import *
+from .compute.python import *
+from .data.pandas import *
+from .data.meta import *
+from .compute.pandas import *
+
+
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -32,8 +44,6 @@ def print_versions():
     print("NumPy version: %s" % np.__version__)
     print("DyND version: %s / LibDyND %s" %
                     (dynd.__version__, dynd.__libdynd_version__))
-    print("BLZ version: %s" % blz.__version__)
-    print("Blosc version: %s (%s)" % blz.blosc_version())
     print("Python version: %s" % sys.version)
     (sysname, nodename, release, version, machine, processor) = \
         platform.uname()

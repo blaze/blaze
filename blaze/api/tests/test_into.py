@@ -24,6 +24,8 @@ class Test_into(unittest.TestCase):
     def test_containers(self):
         self.assertEqual(into([], (1, 2, 3)),
                                   [1, 2, 3])
+        self.assertEqual(into([], iter((1, 2, 3))),
+                                  [1, 2, 3])
         self.assertEqual(into((), (1, 2, 3)),
                                   (1, 2, 3))
         self.assertEqual(into({}, [(1, 2), (3, 4)]),
