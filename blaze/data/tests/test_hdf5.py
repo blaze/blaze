@@ -65,6 +65,14 @@ class SingleTestClass(MakeFile):
                         dtype=[('a', 'i4'), ('b', 'O')])
             d[:] = x
 
+    def test_extend_strings(self):
+        stdout.flush()
+        dt = h5py.special_dtype(vlen=unicode)
+        dd = HDF5(self.filename, '/data', mode='a',
+                  schema='{a: int32, b: string}')
+
+        dd.extend([(1, 'Hello'), (2, 'World!')])
+
     def test_extend_chunks(self):
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:

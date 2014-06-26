@@ -23,6 +23,15 @@ def discover(d):
     return datashape.from_numpy(d.shape, d.dtype)
 
 
+def varlen_dtype(dt):
+    """ Inject variable length string element for 'O' """
+    if "'O'" not in str(dt):
+        return dt
+    varlen = h5py.special_dtype(vlen=unicode)
+    return np.dtype(eval(str(dt).replace("'O'", 'varlen')))
+
+
+
 class HDF5(DataDescriptor):
     """
     A Blaze data descriptor which exposes an HDF5 file.
@@ -66,7 +75,7 @@ class HDF5(DataDescriptor):
         if dshape:
             dshape = datashape.dshape(dshape)
             shape = dshape.shape
-            dtype = dshape[-1].to_numpy_dtype()
+            dtype = varlen_dtype(dshape[-1].to_numpy_dtype())
             if shape[0] == datashape.Var():
                 kwargs['chunks'] = True
                 kwargs['maxshape'] = kwargs.get('maxshape', (None,) + shape[1:])
@@ -144,7 +153,19 @@ class HDF5(DataDescriptor):
                 dset[-len(arr):] = arr
 
     def _extend(self, seq):
-        self.extend_chunks(partition_all(100, seq))
+        chunks = partition_all(100, seq)
+
+        with h5py.File(self.path, mode=self.mode) as f:
+            dset = f[self.datapath]
+            dtype = dset.dtype
+            shape = dset.shape
+            for chunk in chunks:
+                arr = np.asarray(list(chunk), dtype=dtype)
+                shape = list(dset.shape)
+                shape[0] += len(arr)
+                dset.resize(shape)
+                dset[-len(arr):] = arr
+
 
     def _iter(self):
         return chain.from_iterable(self.chunks())

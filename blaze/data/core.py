@@ -4,6 +4,7 @@ from itertools import chain
 from dynd import nd
 import datashape
 from datashape.internal_utils import IndexCallable
+from functools import partial
 
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
@@ -43,10 +44,14 @@ class DataDescriptor(object):
             raise TypeError('Data Descriptor not appendable')
         rows = iter(rows)
         row = next(rows)
+        rows = chain([row], rows)
         if not validate(self.schema, row):
             raise ValueError('Invalid data:\n\t %s \nfor dshape \n\t%s' %
                              (str(row), self.schema))
-        self._extend(chain([row], rows))
+        if isinstance(row, dict):
+            rows = map(partial(coerce_to_ordered, self.schema), rows)
+
+        self._extend(rows)
 
     def extend_chunks(self, chunks):
         if not self.appendable or self.immutable:
