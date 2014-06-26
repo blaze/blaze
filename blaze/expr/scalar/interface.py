@@ -32,5 +32,5 @@ def exprify(expr, dtypes):
     >>> expr.lhs.dshape
     dshape("int64")
     """
-    locals().update({k: ScalarSymbol(k, v) for k, v in dtypes.items()})
+    locals().update(dict((k, ScalarSymbol(k, v)) for k, v in dtypes.items()))
     return eval(expr)
