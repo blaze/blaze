@@ -63,6 +63,9 @@ popd
 if [ "${PYTHON_VERSION}" == "2.6" ]; then
   pip install unittest2
 fi
+if [ "${PYTHON_VERSION:0:1}" == "2" ]; then
+  pip install unicodecsv
+fi
 rm -rf blz
 git clone https://github.com/ContinuumIO/blz.git || exit 1
 pushd blz
