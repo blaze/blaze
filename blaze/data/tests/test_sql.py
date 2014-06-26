@@ -120,6 +120,16 @@ def test_discovery_engine():
     assert dshape == dd.dshape
 
 
+def test_extend_empty():
+    dd = SQL('sqlite:///:memory:',
+             'accounts',
+             schema='{name: string, amount: int}')
+
+    assert not list(dd)
+    dd.extend([])
+    assert not list(dd)
+
+
 def test_schema_detection():
     dd = SQL('sqlite:///my.db',
              'accounts',

@@ -183,7 +183,10 @@ class SQL(DataDescriptor):
 
     def extend(self, rows):
         rows = iter(rows)
-        row = next(rows)
+        try:
+            row = next(rows)
+        except StopIteration:
+            return
         rows = chain([row], rows)
         # Coerce rows to dicts
         if isinstance(row, (tuple, list)):
