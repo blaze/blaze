@@ -10,7 +10,7 @@ from datashape import dshape
 
 from blaze.data.hdf5 import HDF5, discover
 from blaze.utils import tmpfile
-from blaze.compatibility import skip
+from blaze.compatibility import skip, unicode
 
 
 class MakeFile(unittest.TestCase):

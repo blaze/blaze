@@ -11,7 +11,7 @@ from toolz.curried import pipe, concat, map
 from ..dispatch import dispatch
 from .core import DataDescriptor
 from ..utils import partition_all, get
-from ..compatibility import _strtypes
+from ..compatibility import _strtypes, unicode
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
