@@ -54,6 +54,17 @@ class SingleTestClass(MakeFile):
         self.assertEqual(tuple(map(tuple, dd.as_py())),
                          ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
 
+    def test_strings(self):
+        stdout.flush()
+        dt = h5py.special_dtype(vlen=unicode)
+        with h5py.File(self.filename, 'w') as f:
+            dtype = [('a', 'i4'), ('b', dt)]
+            d = f.create_dataset('data', (3,), dtype=dtype,
+                                 chunks=True, maxshape=(None,))
+            x = np.array([(1, 'Hello'), (2, 'world'), (3, '!')],
+                        dtype=[('a', 'i4'), ('b', 'O')])
+            d[:] = x
+
     def test_extend_chunks(self):
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:
