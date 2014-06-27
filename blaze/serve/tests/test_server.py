@@ -18,8 +18,8 @@ cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
 pairs = Python([(1, 2), (2, 1), (3, 4), (4, 3)],
                schema='{x: int, y: int}')
 
-times = Python([(1, datetime(2012, 01, 01, 12, 00, 00)),
-                (2, datetime(2013, 01, 01, 12, 00, 00))],
+times = Python([(1, datetime(2012, 1, 1, 12, 0, 0)),
+                (2, datetime(2013, 1, 1, 12, 0, 0))],
                schema='{x: int, y: datetime}')
 
 server = Server(datasets={'accounts': accounts,
@@ -88,7 +88,7 @@ def test_bad_responses():
 
 def test_datetimes():
     query = {'index': 1}
-    expected = json.loads(json.dumps([2, datetime(2013, 01, 01, 12, 00, 00)]))
+    expected = json.loads(json.dumps([2, datetime(2013, 1, 1, 12, 0, 0)]))
 
     response = test.post('/data/times.json',
                          data = json.dumps(query),
