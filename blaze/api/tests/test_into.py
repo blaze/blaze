@@ -104,6 +104,12 @@ def test_pandas_seq():
             str(DataFrame([[1, 2], [3, 4]], columns=['a', 'b']))
 
 
+def test_discover_ndarray():
+    data = [['Alice', 100], ['Bob', 200]]
+    schema='{name: string, balance: int32}'
+    arr = nd.array(data, dtype=schema)
+    assert discover(arr) == 2 * dshape(schema)
+
 @skip_if_not(DataFrame)
 def test_discover_pandas():
     data = [['Alice', 100], ['Bob', 200]]

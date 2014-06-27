@@ -92,6 +92,9 @@ def into(a, df):
         arr[:, i] = np.asarray(df[df.columns[i]])
     return arr
 
+@dispatch(nd.array)
+def discover(arr):
+    return dshape(nd.dshape_of(arr))
 
 @dispatch(DataFrame)
 def discover(df):
