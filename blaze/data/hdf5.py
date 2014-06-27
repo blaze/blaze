@@ -146,14 +146,17 @@ class HDF5(DataDescriptor):
         for chunk in self._chunks(**kwargs):
             yield nd.array(chunk)
 
-    def _chunks(self, blen=100):
+    def _chunks(self, blen=None):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
+            blen = blen or arr.chunks[0]
             for i in range(0, arr.shape[0], blen):
                 yield np.array(arr[i:i+blen])
 
     def _iter(self):
         return pipe(self._chunks(), map(np.ndarray.tolist), concat)
+
+    __iter__ = _iter
 
     def as_dynd(self):
         return self.dynd[:]
