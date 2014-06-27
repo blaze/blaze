@@ -42,7 +42,8 @@ pushd datashape
 popd
 
 REM Temporary hack to install blz
-IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2
+IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2 unicodecsv
+IF "%PYTHON_VERSION%" == "2.7" call pip install unicodecsv
 rd /q /s blz
 git clone https://github.com/ContinuumIO/blz.git || exit /b 1
 pushd blz
