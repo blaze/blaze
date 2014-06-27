@@ -43,6 +43,10 @@ def into(a, b):
 def into(a, b):
     return nd.as_py(b)
 
+@dispatch(tuple, nd.array)
+def into(a, b):
+    return tuple(nd.as_py(b, tuple=True))
+
 @dispatch(np.ndarray, nd.array)
 def into(a, b):
     return nd.as_numpy(b, allow_copy=True)

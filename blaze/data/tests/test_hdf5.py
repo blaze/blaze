@@ -8,6 +8,7 @@ from sys import stdout
 from datetime import date, datetime
 from datashape import dshape
 
+from blaze.api.into import into
 from blaze.data.hdf5 import HDF5, discover
 from blaze.utils import tmpfile
 from blaze.compatibility import skip, unicode
@@ -154,6 +155,8 @@ class TestIndexing(MakeFile):
         dd.extend(self.data)
         self.assertEqual(tuple(dd.py[[0, 1], ['x', 'y']]), ((1, 100),
                                                             (2, 200)))
+        self.assertEqual(into((), dd.dynd[[0, 1], ['x', 'y']]),
+                        ((1, 100), (2, 200)))
 
 
 class TestRecordInputs(MakeFile):

@@ -116,8 +116,9 @@ class HDF5(DataDescriptor):
             isinstance(self.dshape[-1], datashape.Record)):
             rec_key = get(key[-1], self.dshape[-1].names)
             if isinstance(rec_key, tuple):
-                rec_key = list(rec_key)
-            key = (rec_key,) + key[:-1]
+                key = rec_key + key[:-1]
+            else:
+                key = (rec_key,) + key[:-1]
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             result = np.asarray(arr.__getitem__(key))
