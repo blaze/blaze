@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from collections import Iterator
 from flask import Flask, request, jsonify, json
+from dynd import nd
 from functools import partial, wraps
 
 from .index import parse_index
@@ -95,9 +96,13 @@ def data(datasets, name):
     if isinstance(rv, Iterator):
         rv = list(rv)
 
+    dshape = dset.dshape.subshape[index]
+    rv = json.loads(str(nd.format_json(nd.array(rv, type=str(dshape)),
+                                       tuple=True)))
+
     response = {'name': name,
                 'index': data['index'],
-                'datashape': str(dset.dshape.subshape[index]),
+                'datashape': str(dshape),
                 'data': rv}
 
     return jsonify(response)
