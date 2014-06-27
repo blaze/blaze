@@ -127,7 +127,7 @@ def select(datasets, name):
 
     And the following
 
-    url: /data/table-name.json
+    url: /select/table-name.json
     POST-data: {'selection': 'amount >= 200',
                 'columns': 'name'}
 
