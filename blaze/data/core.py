@@ -4,6 +4,7 @@ from itertools import chain
 from dynd import nd
 import datashape
 from datashape.internal_utils import IndexCallable
+from datashape import discover
 from functools import partial
 
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
@@ -119,7 +120,14 @@ class DataDescriptor(object):
         else:
             raise AttributeError("Data Descriptor defines neither "
                                  "_get_py nor _get_dynd.  Can not index")
-        return nd.array(result, type=str(subshape))
+
+        ds_result = discover(result)
+        if (subshape == ds_result or
+            (isdimension(subshape[0]) and isdimension(ds_result[0]) and
+                subshape.subshape[0] == subshape.subshape[0])):
+            return nd.array(result)
+        else:
+            return nd.array(result, type=str(subshape))
 
     def __iter__(self):
         if not isdimension(self.dshape[0]):
