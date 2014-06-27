@@ -41,6 +41,7 @@ def test_table():
 
 
 def test_projection():
+    print(compute(t[['name', 'amount']], s))
     assert str(compute(t[['name', 'amount']], s)) == \
             str(sa.select([s.c.name, s.c.amount]))
 
@@ -273,3 +274,8 @@ def test_merge():
     assert 'FROM accounts' in result
     assert 'SELECT accounts.name' in result
     assert 'new' in result
+
+def test_projection_of_selection():
+    print(compute(t[t['amount'] < 0][['name', 'amount']], s))
+    assert len(str(compute(t[t['amount'] < 0], s))) > \
+            len(str(compute(t[t['amount'] < 0][['name', 'amount']], s)))

@@ -32,7 +32,14 @@ __all__ = ['compute', 'computefull', 'select']
 @dispatch(Projection, sqlalchemy.sql.Selectable)
 def compute(t, s):
     parent = compute(t.parent, s)
-    return sa.select([parent.c.get(col) for col in t.columns])
+    # Walk up the tree to get the original columns
+    ancestor = t
+    while hasattr(ancestor, 'parent'):
+        ancestor = ancestor.parent
+    ancestor = compute(ancestor, s)
+    columns = [ancestor.c.get(col) for col in t.columns]
+
+    return select(parent).with_only_columns(columns)
 
 
 @dispatch(Column, sqlalchemy.sql.Selectable)
@@ -73,7 +80,10 @@ def compute(t, s):
 def compute(t, s):
     parent = compute(t.parent, s)
     predicate = compute(t.predicate, s)
-    return sa.select([parent]).where(predicate)
+    try:
+        return parent.where(predicate)
+    except AttributeError:
+        return select([parent]).where(predicate)
 
 
 @dispatch(TableSymbol, sqlalchemy.sql.Selectable)
