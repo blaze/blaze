@@ -68,6 +68,7 @@ Simple Calculations
 Blaze supports ufuncs and arithmetic similarly to NumPy.
 
 .. doctest::
+
     >>> a = array([1, 2, 3])
     >>> blaze.sin(a) + 1
     array([ 1.84147098,  1.90929743,  1.14112001],
@@ -85,7 +86,6 @@ for lists.
 
 .. doctest::
 
-    >>> from blaze import array, dshape
     >>> alst = [1, 2, 3]
     >>> array(alst.__iter__())
     array([1, 2, 3],
@@ -142,6 +142,8 @@ later and, in another python session, gain access to it again:
 
 So, we see that we completely recovered the contents of the original
 array.  Finally, we can get rid of the array completely:
+
+.. doctest::
 
     >>> dd.remove()
 
