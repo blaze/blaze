@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from flask import json
+from datetime import datetime
 
 from blaze.serve.server import Server
 from blaze.data.python import Python
@@ -17,9 +18,14 @@ cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
 pairs = Python([(1, 2), (2, 1), (3, 4), (4, 3)],
                schema='{x: int, y: int}')
 
+times = Python([(1, datetime(2012, 01, 01, 12, 00, 00)),
+                (2, datetime(2013, 01, 01, 12, 00, 00))],
+               schema='{x: int, y: datetime}')
+
 server = Server(datasets={'accounts': accounts,
                           'cities': cities,
-                          'pairs': pairs})
+                          'pairs': pairs,
+                          'times': times})
 
 test = server.app.test_client()
 
@@ -32,6 +38,7 @@ def test_full_response():
                          data = json.dumps({'index': emit_index(py_index)}),
                          content_type='application/json')
 
+    print(response.data)
     assert json.loads(response.data) == \
             {'name': 'accounts',
              'datashape': "var * string",
@@ -43,7 +50,8 @@ def test_datasets():
     response = test.get('/datasets.json')
     assert json.loads(response.data) == {'accounts': str(accounts.dshape),
                                          'cities': str(cities.dshape),
-                                         'pairs': str(pairs.dshape)}
+                                         'pairs': str(pairs.dshape),
+                                         'times': str(times.dshape)}
 
 
 def test_data():
@@ -62,7 +70,7 @@ def test_data():
         assert 'OK' in response.status
 
         if not json.loads(response.data)['data'] == expected:
-            print(response.data['data'])
+            print(json.loads(response.data)['data'])
             print(expected)
         assert json.loads(response.data)['data'] == expected
 
@@ -76,6 +84,20 @@ def test_bad_responses():
                                  data = json.dumps(0),
                                  content_type='application/json').status
     assert 'OK' not in test.post('/data/accounts.json').status
+
+
+def test_datetimes():
+    query = {'index': 1}
+    expected = json.loads(json.dumps([2, datetime(2013, 01, 01, 12, 00, 00)]))
+
+    response = test.post('/data/times.json',
+                         data = json.dumps(query),
+                         content_type='application/json')
+
+    assert 'OK' in response.status
+    result = json.loads(response.data)['data']
+    print(result)
+    assert result == expected
 
 
 def test_selection():

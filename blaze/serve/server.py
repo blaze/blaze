@@ -95,10 +95,12 @@ def data(datasets, name):
     if isinstance(rv, Iterator):
         rv = list(rv)
 
-    return jsonify({'name': name,
-                    'index': data['index'],
-                    'datashape': str(dset.dshape.subshape[index]),
-                    'data': rv})
+    response = {'name': name,
+                'index': data['index'],
+                'datashape': str(dset.dshape.subshape[index]),
+                'data': rv}
+
+    return jsonify(response)
 
 from ..expr.table import *
 from ..expr.scalar.interface import exprify
