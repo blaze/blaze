@@ -151,7 +151,7 @@ class HDF5(DataDescriptor):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
             if not blen and arr.chunks:
-                blen = arr.chunks[0]
+                blen = arr.chunks[0] * 4
             blen = blen or 1024
             for i in range(0, arr.shape[0], blen):
                 yield np.array(arr[i:i+blen])
