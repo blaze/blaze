@@ -148,8 +148,10 @@ class TestIndexing(MakeFile):
     def test_out_of_order_rows(self):
         assert tuple(dd.py[[1, 0], 'x']) == (2, 1)
 
-    @skip("when the world improves")
     def test_multiple_fields(self):
+        dd = HDF5(self.filename, 'data', 'a',
+                  dshape='var * {x: int, y: int}')
+        dd.extend(self.data)
         self.assertEqual(tuple(dd.py[[0, 1], ['x', 'y']]), ((1, 100),
                                                             (2, 200)))
 
