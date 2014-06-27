@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
-if sys.version_info.major == 2:
+if sys.version_info[0] == 2:
     import unicodecsv as csv
 else:
     import csv
