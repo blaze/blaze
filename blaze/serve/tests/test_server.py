@@ -12,7 +12,7 @@ accounts = Python([['Alice', 100], ['Bob', 200]],
 cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
                   schema='{name: string, city: string}')
 
-server = Server(datasets={'accounts': accounts, 'cities': cities})
+server = Server({'accounts': accounts, 'cities': cities})
 
 test = server.app.test_client()
 
