@@ -21,7 +21,7 @@ and a schema.
 
 .. code-block:: python
 
-   >>> accounts = TableSymbol('accounts', '{name: string, balance: int}')
+   >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
 
 
 Projections, Selection, Arithmetic
@@ -33,7 +33,7 @@ selects the names of those accounts with negative balance.
 
 .. code-block:: python
 
-   >>> accounts = TableSymbol('accounts', '{name: string, balance: int}')
+   >>> accounts = TableSymbol('accounts', '{id: int, name: string, balance: int}')
 
    >>> deadbeats = accounts[accounts['balance'] < 0]['name']
 

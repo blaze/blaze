@@ -5,7 +5,7 @@ Install
 Installing
 ~~~~~~~~~~
 
-Blaze can be most easily installed from conda
+Blaze can be most easily installed from conda_
 
 ::
 
@@ -76,3 +76,4 @@ Dependencies
 .. _spark: http://spark.apache.org/
 .. _toolz: http://toolz.readthedocs.org/
 .. _multipledispatch: http://multiple-dispatch.readthedocs.org/
+.. _conda: http://conda.pydata.org/
