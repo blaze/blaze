@@ -121,6 +121,11 @@ class DataDescriptor(object):
             raise AttributeError("Data Descriptor defines neither "
                                  "_get_py nor _get_dynd.  Can not index")
 
+        # Currently nd.array(result, type=discover(result)) is oddly slower
+        # than just nd.array(result) , even though no type coercion should be
+        # necessary.  As a short-term solution we check if this is the case and
+        # short-circuit the `type=` call
+        # This check can be deleted once these two run at similar speeds
         ds_result = discover(result)
         if (subshape == ds_result or
             (isdimension(subshape[0]) and isdimension(ds_result[0]) and
