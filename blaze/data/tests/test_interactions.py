@@ -106,7 +106,7 @@ class SingleTestClass(unittest.TestCase):
         with tmpfile('hdf5') as hdf5_fn:
             with filetext('1,1\n2,2\n') as csv_fn:
                 csv = CSV(csv_fn, schema='2 * int')
-                hdf5 = HDF5(hdf5_fn, '/data', mode='a', schema='2 * int')
+                hdf5 = HDF5(hdf5_fn, '/data', schema='2 * int')
 
                 copy(csv, hdf5)
 

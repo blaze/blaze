@@ -53,7 +53,7 @@ class TestResource(TestCase):
     def test_hdf5(self):
         with tmpfile('.hdf5') as filename:
             assert isinstance(resource(filename + '::/path/to/data/',
-                                        mode='w', schema='2 * int'),
+                                       schema='2 * int'),
                               HDF5)
 
 class TestCopy(TestCase):

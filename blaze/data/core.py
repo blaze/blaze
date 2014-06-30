@@ -4,6 +4,8 @@ from itertools import chain
 from dynd import nd
 import datashape
 from datashape.internal_utils import IndexCallable
+from datashape import discover
+from functools import partial
 
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
@@ -43,10 +45,14 @@ class DataDescriptor(object):
             raise TypeError('Data Descriptor not appendable')
         rows = iter(rows)
         row = next(rows)
+        rows = chain([row], rows)
         if not validate(self.schema, row):
             raise ValueError('Invalid data:\n\t %s \nfor dshape \n\t%s' %
                              (str(row), self.schema))
-        self._extend(chain([row], rows))
+        if isinstance(row, dict):
+            rows = map(partial(coerce_to_ordered, self.schema), rows)
+
+        self._extend(rows)
 
     def extend_chunks(self, chunks):
         if not self.appendable or self.immutable:
@@ -55,7 +61,7 @@ class DataDescriptor(object):
         def dtype_of(chunk):
             return str(len(chunk) * self.schema)
 
-        self._extend_chunks((nd.array(chunk, dtype=dtype_of(chunk))
+        self._extend_chunks((nd.array(chunk, type=dtype_of(chunk))
                              for chunk in chunks))
 
     def _extend_chunks(self, chunks):
@@ -66,8 +72,8 @@ class DataDescriptor(object):
         def dshape(chunk):
             return str(len(chunk) * self.dshape.subshape[0])
 
-        chunks = self._chunks(**kwargs)
-        return (nd.array(chunk, dtype=dshape(chunk)) for chunk in chunks)
+        for chunk in self._chunks(**kwargs):
+            yield nd.array(chunk, type=dshape(chunk))
 
     def _chunks(self, blen=100):
         return partition_all(blen, iter(self))
@@ -114,7 +120,19 @@ class DataDescriptor(object):
         else:
             raise AttributeError("Data Descriptor defines neither "
                                  "_get_py nor _get_dynd.  Can not index")
-        return nd.array(result, type=str(subshape))
+
+        # Currently nd.array(result, type=discover(result)) is oddly slower
+        # than just nd.array(result) , even though no type coercion should be
+        # necessary.  As a short-term solution we check if this is the case and
+        # short-circuit the `type=` call
+        # This check can be deleted once these two run at similar speeds
+        ds_result = discover(result)
+        if (subshape == ds_result or
+            (isdimension(subshape[0]) and isdimension(ds_result[0]) and
+                subshape.subshape[0] == subshape.subshape[0])):
+            return nd.array(result)
+        else:
+            return nd.array(result, type=str(subshape))
 
     def __iter__(self):
         if not isdimension(self.dshape[0]):

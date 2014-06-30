@@ -43,6 +43,10 @@ def into(a, b):
 def into(a, b):
     return nd.as_py(b)
 
+@dispatch(tuple, nd.array)
+def into(a, b):
+    return tuple(nd.as_py(b, tuple=True))
+
 @dispatch(np.ndarray, nd.array)
 def into(a, b):
     return nd.as_numpy(b, allow_copy=True)
@@ -92,6 +96,9 @@ def into(a, df):
         arr[:, i] = np.asarray(df[df.columns[i]])
     return arr
 
+@dispatch(nd.array)
+def discover(arr):
+    return dshape(nd.dshape_of(arr))
 
 @dispatch(DataFrame)
 def discover(df):
