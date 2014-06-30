@@ -44,8 +44,6 @@ class HDF5(DataDescriptor):
         Location of hdf5 file on disk
     datapath: string
         Location of array dataset in hdf5
-    mode : string
-        r, w, rw+
     dshape: string or Datashape
         a datashape describing the data
     schema: string or DataShape
@@ -59,11 +57,10 @@ class HDF5(DataDescriptor):
     appendable = True
     remote = False
 
-    def __init__(self, path, datapath, mode='r',
+    def __init__(self, path, datapath,
                  schema=None, dshape=None, **kwargs):
         self.path = path
         self.datapath = datapath
-        self.mode = mode
 
         if isinstance(schema, _strtypes):
             schema = datashape.dshape(schema)
@@ -72,27 +69,28 @@ class HDF5(DataDescriptor):
         if schema and not dshape:
             dshape = var * datashape.dshape(schema)
 
+        if not dshape:
+            with h5py.File(path, 'r') as f:
+                dset = f.get(datapath)
+                if dset:
+                    dshape = discover(dset)
+                else:
+                    raise ValueError("No datashape given or found. "
+                             "Please specify dshape or schema keyword args")
+
+
         # TODO: provide sane defaults for kwargs
         # Notably chunks and maxshape
-        if dshape:
-            dshape = datashape.dshape(dshape)
-            shape = dshape.shape
-            dtype = varlen_dtype(dshape[-1].to_numpy_dtype())
-            if shape[0] == datashape.Var():
-                kwargs['chunks'] = True
-                kwargs['maxshape'] = kwargs.get('maxshape', (None,) + shape[1:])
-                shape = (0,) + tuple(map(int, shape[1:]))
+        shape = dshape.shape
+        dtype = varlen_dtype(dshape[-1].to_numpy_dtype())
+        if shape[0] == datashape.Var():
+            kwargs['chunks'] = True
+            kwargs['maxshape'] = kwargs.get('maxshape', (None,) + shape[1:])
+            shape = (0,) + tuple(map(int, shape[1:]))
 
-        with h5py.File(path, mode) as f:
+
+        with h5py.File(path) as f:
             dset = f.get(datapath)
-            if dset:
-                file_dshape = discover(dset)
-                if dshape and file_dshape != dshape:
-                    raise TypeError("Inconsistent dshapes given:\n"
-                                    "\tGiven: %s\n"
-                                    "\tFound: %s\n" % (dshape, file_dshape))
-                else:
-                    dshape = file_dshape
             if not dset:
                 f.create_dataset(datapath, shape, dtype=dtype, **kwargs)
 
@@ -139,7 +137,7 @@ class HDF5(DataDescriptor):
         return result.tolist()
 
     def __setitem__(self, key, value):
-        with h5py.File(self.path, mode=self.mode) as f:
+        with h5py.File(self.path) as f:
             arr = f[self.datapath]
             arr[key] = value
         return self
@@ -166,10 +164,7 @@ class HDF5(DataDescriptor):
         return self.dynd[:]
 
     def _extend_chunks(self, chunks):
-        if 'w' not in self.mode and 'a' not in self.mode:
-            raise ValueError('Read only')
-
-        with h5py.File(self.path, mode=self.mode) as f:
+        with h5py.File(self.path, mode='a') as f:
             dset = f[self.datapath]
             dtype = dset.dtype
             shape = dset.shape
@@ -183,7 +178,7 @@ class HDF5(DataDescriptor):
     def _extend(self, seq):
         chunks = partition_all(100, seq)
 
-        with h5py.File(self.path, mode=self.mode) as f:
+        with h5py.File(self.path, mode='a') as f:
             dset = f[self.datapath]
             dtype = dset.dtype
             shape = dset.shape
