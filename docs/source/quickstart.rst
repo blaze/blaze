@@ -47,7 +47,7 @@ Blaze supports column selection and filtering similarly to Pandas.
    0   2    Bob     -200
    1   5  Edith     -500
 
-   [2 rows x 1 columns]
+   [2 rows x 3 columns]
 
    >>> t[t['balance'] < 0]['name']
        name
@@ -82,7 +82,7 @@ Blaze Tables can also be defined directly from storage like CSV or HDF5 files.
    ...
 
 This extends out to data in SQL databases or Spark resilient distributed
-datastructures.
+data-structures.
 
 .. doctest::
 
@@ -103,10 +103,6 @@ datastructures.
    10            6        5     782480 2013-04-10 14:22:50   65.450000
 
    ...
-
-In each of these cases Blaze consumes only as much as it needs to present what
-is on screen.  To fully evalute the result push your computation into a
-container.
 
 More Computations
 ~~~~~~~~~~~~~~~~~
@@ -145,8 +141,9 @@ of data
 Finishing Up
 ~~~~~~~~~~~~
 
-Fully evaluate the computation, returning an output similar to the input type
-by calling ``compute``.
+In each of these examples Blaze computes only as much as is necessary to
+present the results on screen.  Fully evaluate the computation, returning an
+output similar to the input type by calling ``compute``.
 
 .. doctest::
 
@@ -158,8 +155,8 @@ by calling ``compute``.
    >>> compute(t[t['balance'] < 0]['name'])     # Just a raw list
    ['Bob', 'Edith']
 
-Alternatively use the ``into`` operation to transform your output into various
-forms.
+Alternatively use the ``into`` operation to push your output into a suitable
+container type.
 
 .. doctest::
 
