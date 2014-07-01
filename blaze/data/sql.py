@@ -248,7 +248,11 @@ class SQL(DataDescriptor):
 # from blaze.expr.core import Expr
 from blaze.expr.table import Join, Expr
 from blaze.compute.sql import select
-@dispatch((Join, Expr), SQL)
+@dispatch(Expr, SQL)
+def compute_one(t, ddesc):
+    return compute_one(t, ddesc.table)
+
+@dispatch(Expr, SQL)
 def compute(t, ddesc):
     query = select(compute(t, ddesc.table))      # Get the query out
     with ddesc.engine.connect() as conn:

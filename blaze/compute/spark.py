@@ -14,9 +14,11 @@ from ..compatibility import builtins
 from ..expr import table
 from ..dispatch import dispatch
 
+from .core import compute, compute_one
+
 from toolz.curried import get
 
-__all__ = ['compute', 'into', 'RDD', 'pyspark', 'SparkContext']
+__all__ = ['compute', 'compute_one', 'into', 'RDD', 'pyspark', 'SparkContext']
 
 try:
     from pyspark import SparkContext
@@ -42,20 +44,13 @@ except:
 
 
 @dispatch(RowWise, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     func = rowfunc(t)
     return rdd.map(func)
 
 
-@dispatch(TableSymbol, RDD)
-def compute(t, s):
-    return s
-
-
 @dispatch(Selection, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     predicate = rowfunc(t.predicate)
     return rdd.filter(predicate)
 
@@ -72,9 +67,8 @@ rdd_reductions = {
 
 
 @dispatch(tuple(rdd_reductions), RDD)
-def compute(t, rdd):
-    reduction = rdd_reductions[type(t)]
-    return reduction(compute(t.parent, rdd))
+def compute_one(t, rdd):
+    return rdd_reductions[type(t)](rdd)
 
 
 def istruthy(x):
@@ -82,26 +76,22 @@ def istruthy(x):
 
 
 @dispatch(table.any, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     return istruthy(rdd.filter(identity).take(1))
 
 
 @dispatch(table.all, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     return not rdd.filter(lambda x: not x).take(1)
 
 
 @dispatch(Head, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     return rdd.take(t.n)
 
 
 @dispatch(Sort, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     func = rowfunc(t[t.column])
     return (rdd.keyBy(func)
                 .sortByKey(ascending=t.ascending)
@@ -109,16 +99,12 @@ def compute(t, rdd):
 
 
 @dispatch(Distinct, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     return rdd.distinct()
 
 
 @dispatch(Join, RDD, RDD)
-def compute(t, lhs, rhs):
-    lhs = compute(t.lhs, lhs)
-    rhs = compute(t.rhs, rhs)
-
+def compute_one(t, lhs, rhs):
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
 
@@ -152,8 +138,7 @@ python_reductions = {
 
 
 @dispatch(By, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd):
     try:
         reduction = python_reductions[type(t.apply)]
     except KeyError:
@@ -162,7 +147,6 @@ def compute(t, rdd):
 
     grouper = rowfunc(t.grouper)
     pre = rowfunc(t.apply.parent)
-
 
     groups = (rdd.map(lambda x: (grouper(x), pre(x)))
              .groupByKey())
@@ -175,8 +159,8 @@ def compute(t, rdd):
 
 
 @dispatch((Label, ReLabel), RDD)
-def compute(t, rdd):
-    return compute(t.parent, rdd)
+def compute_one(t, rdd):
+    return rdd
 
 
 @dispatch(RDD, RDD)

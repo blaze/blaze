@@ -20,6 +20,8 @@ from ..compatibility import _strtypes, builtins
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions """
+    inputs = 'parent',
+
     @property
     def dshape(self):
         return datashape.var * self.schema
@@ -90,9 +92,6 @@ class TableExpr(Expr):
     def nunique(self):
         return nunique(self)
 
-    def ancestors(self):
-        return (self,)
-
     @property
     def iscolumn(self):
         if len(self.columns) > 1:
@@ -115,6 +114,7 @@ class TableSymbol(TableExpr):
     a single row, called a schema.
     """
     __slots__ = 'name', 'schema', 'iscolumn'
+    inputs = ()
 
     def __init__(self, name, schema, iscolumn=False):
         self.name = name
@@ -124,16 +124,12 @@ class TableSymbol(TableExpr):
     def __str__(self):
         return self.name
 
-    def ancestors(self):
-        return (self,)
-
     def resources(self):
         return dict()
 
 
 class RowWise(TableExpr):
-    def ancestors(self):
-        return (self,) + self.parent.ancestors()
+    pass
 
 class Projection(RowWise):
     """ Select columns from table
@@ -446,6 +442,7 @@ class Join(TableExpr):
     >>> joined = Join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
+    inputs = 'lhs', 'rhs'
 
     iscolumn = False
 
@@ -584,8 +581,8 @@ class By(TableExpr):
     def __init__(self, parent, grouper, apply):
         self.parent = parent
         s = TableSymbol('', parent.schema, parent.iscolumn)
-        self.grouper = grouper.subs({parent: s})
-        self.apply = apply.subs({parent: s})
+        self.grouper = grouper # grouper.subs({parent: s})
+        self.apply = apply # apply.subs({parent: s})
         if isdimension(self.apply.dshape[0]):
             raise TypeError("Expected Reduction")
 

@@ -33,6 +33,7 @@ class Scalar(Expr):
 
 class BinOp(Scalar):
     __slots__ = 'lhs', 'rhs'
+    inputs = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
         self.lhs = lhs

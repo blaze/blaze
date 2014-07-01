@@ -29,13 +29,14 @@ from ..compatibility import builtins, apply
 from cytoolz import groupby, get, reduceby, unique, take
 import cytoolz
 from . import core
+from .core import compute, compute_one
 
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
 from math import *
 
-__all__ = ['compute', 'Sequence']
+__all__ = ['compute', 'compute_one', 'Sequence']
 
 Sequence = (tuple, list, Iterator)
 
@@ -143,30 +144,19 @@ def rowfunc(t):
 
 
 @dispatch(RowWise, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return map(rowfunc(t), parent)
+def compute_one(t, seq):
+    return map(rowfunc(t), seq)
 
 
 @dispatch(Selection, Sequence)
-def compute(t, seq):
-    seq1, seq2 = itertools.tee(seq)
-    parent = compute(t.parent, seq1)
-    predicate = compute(t.predicate, seq2)
-    return (x for x, tf in zip(parent, predicate)
-              if tf)
-
-
-@dispatch(TableSymbol, Sequence)
-def compute(t, seq):
-    return seq
+def compute_one(t, seq):
+    return filter(rowfunc(t.predicate), seq)
 
 
 @dispatch(Reduction, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
+def compute_one(t, seq):
     op = getattr(builtins, t.symbol)
-    return op(parent)
+    return op(seq)
 
 
 def _mean(seq):
@@ -194,39 +184,33 @@ def _std(seq):
 
 
 @dispatch(count, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return cytoolz.count(parent)
+def compute_one(t, seq):
+    return cytoolz.count(seq)
 
 
 @dispatch(Distinct, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return unique(parent)
+def compute_one(t, seq):
+    return unique(seq)
 
 
 @dispatch(nunique, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return cytoolz.count(unique(parent))
+def compute_one(t, seq):
+    return len(set(seq))
 
 
 @dispatch(mean, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return _mean(parent)
+def compute_one(t, seq):
+    return _mean(seq)
 
 
 @dispatch(var, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return _var(parent)
+def compute_one(t, seq):
+    return _var(seq)
 
 
 @dispatch(std, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return _std(parent)
+def compute_one(t, seq):
+    return _std(seq)
 
 
 lesser = lambda x, y: x if x < y else y
@@ -243,23 +227,22 @@ binops = {sum: (operator.add, 0),
 
 
 @dispatch(By, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-
+def compute_one(t, seq):
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
-        applier = rowfunc(t.apply.parent)
-        grouper = rowfunc(t.grouper)
+        applier = rowfunc(t.apply.parent.subs({t.apply.parent.parent:
+                                               t.parent}))
+        grouper = rowfunc(t.grouper.subs({t.grouper.parent: t.parent}))
 
         def binop2(acc, x):
             return binop(acc, applier(x))
 
-        d = reduceby(grouper, binop2, parent, initial)
+        d = reduceby(grouper, binop2, seq, initial)
     else:
         grouper = rowfunc(t.grouper)
-        groups = groupby(grouper, parent)
+        groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 
     if t.grouper.iscolumn:
@@ -268,7 +251,7 @@ def compute(t, seq):
         return tuple(k + (v,) for k, v in d.items())
 
 @dispatch(Join, Sequence)
-def compute(t, seq):
+def compute_one(t, seq):
     a, b = itertools.tee(seq)
     return compute(t, a, b)
 
@@ -293,7 +276,7 @@ def listpack(x):
 
 
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
-def compute(t, lhs, rhs):
+def compute_one(t, lhs, rhs):
     """ Join Operation for Python Streaming Backend
 
     Note that a pure streaming Join is challenging/impossible because any row
@@ -305,8 +288,8 @@ def compute(t, lhs, rhs):
 
     Always put your bigger table on the RIGHT side of the Join.
     """
-    lhs = compute(t.lhs, lhs)
-    rhs = compute(t.rhs, rhs)
+    if lhs == rhs:
+        lhs, rhs = itertools.tee(lhs, 2)
 
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
@@ -330,29 +313,26 @@ def compute(t, lhs, rhs):
 
 
 @dispatch(Sort, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
+def compute_one(t, seq):
     if isinstance(t.column, (str, tuple, list)):
         key = rowfunc(t.parent[t.column])
     else:
         key = rowfunc(t.column)
-    return sorted(parent,
+    return sorted(seq,
                   key=key,
                   reverse=not t.ascending)
 
 
 @dispatch(Head, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return tuple(take(t.n, parent))
+def compute_one(t, seq):
+    return tuple(take(t.n, seq))
 
 
 @dispatch((Label, ReLabel), Sequence)
-def compute(t, seq):
-    return compute(t.parent, seq)
+def compute_one(t, seq):
+    return seq
 
 
 @dispatch(Apply, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return t.func(parent)
+def compute_one(t, seq):
+    return t.func(seq)

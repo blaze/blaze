@@ -16,6 +16,7 @@ def _str(s):
 
 
 class Expr(object):
+    inputs = 'parent',
     @property
     def args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)
@@ -58,7 +59,9 @@ class Expr(object):
         return toolz.merge([arg.resources() for arg in self.args
                                             if isinstance(arg, Expr)])
 
-
+    def ancestors(self):
+        return (self,) + sum([getattr(self, i).ancestors()
+                                for i in self.inputs], ())
 
 def subs(o, d):
     if o in d:

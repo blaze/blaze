@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import math
 
+from blaze.compute.core import compute
 from blaze.compute.python import *
 from blaze.expr.table import *
 from blaze.compatibility import builtins
