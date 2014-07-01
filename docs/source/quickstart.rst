@@ -2,14 +2,12 @@ Quickstart
 ===========
 
 This quickstart is here to show some simple ways to get started created
-and manipulating Blaze arrays. To run these examples, import blaze
+and manipulating Blaze Tables. To run these examples, import blaze
 as follows.
 
 .. doctest::
 
-    >>> import blaze
-    >>> from blaze import array
-    >>> from datashape import dshape
+    >>> from blaze import *
 
 Blaze Arrays
 ~~~~~~~~~~~~
@@ -20,140 +18,166 @@ data type to use.
 
 .. doctest::
 
-    >>> array(3.14)
-    array(3.14,
-          dshape='float64')
+    >>> t = Table(((1, 'Alice', 100),
+                   (2, 'Bob', -200),
+                   (3, 'Charlie', 300),
+                   (4, 'Denis', 400),
+                   (5, 'Edith', -500)),
+                   columns=['id', 'name', 'balance'])
+    >>> t
+       id     name  balance
+    0   1    Alice      100
+    1   2      Bob     -200
+    2   3  Charlie      300
+    3   4    Denis      400
+    4   5    Edith     -500
 
-.. doctest::
+    [5 rows x 3 columns]
 
-    >>> array([[1, 2], [3, 4]])
-    array([[1, 2],
-           [3, 4]],
-          dshape='2 * 2 * int32')
-
-You can override the data type by providing the `dshape`
-parameter.
-
-.. doctest::
-
-    >>> array([[1, 2], [3, 4]], dshape='float64')
-    array([[ 1.,  2.],
-           [ 3.,  4.]],
-          dshape='2 * 2 * float64')
-
-Blaze has a slightly more general data model than NumPy,
-for example it supports variable-sized arrays.
-
-.. doctest::
-
-    >>> array([[1], [2, 3, 4], [5, 6]])
-    array([[     1],
-           [     2,      3,      4],
-           [     5,      6]],
-          dshape='3 * var * int32')
-
-Its support for strings includes variable-sized strings
-as well.
-
-.. doctest::
-
-    >>> array([['test', 'one', 'two', 'three'], ['a', 'braca', 'dabra']])
-    array([['test', 'one', 'two', 'three'],
-           ['a', 'braca', 'dabra']],
-          dshape='2 * var * string')
 
 Simple Calculations
 ~~~~~~~~~~~~~~~~~~~
 
-Blaze supports ufuncs and arithmetic similarly to NumPy.
-
-.. doctest::
-    >>> a = array([1, 2, 3])
-    >>> blaze.sin(a) + 1
-    array([ 1.84147098,  1.90929743,  1.14112001],
-          dshape='3 * float64')
-    >>> blaze.sum(3 * a)
-    array(18,
-          dshape='int32')
-
-Iterators
-~~~~~~~~~
-
-Unlike in NumPy, Blaze can construct arrays directly from iterators,
-automatically deducing the dimensions and type just like it does
-for lists.
+Blaze supports column selection and filtering similarly to Pandas.
 
 .. doctest::
 
-    >>> from blaze import array, dshape
-    >>> alst = [1, 2, 3]
-    >>> array(alst.__iter__())
-    array([1, 2, 3],
-          dshape='3 * int32')
+   >>> t[t['balance'] < 0]
+      id   name  balance
+   0   2    Bob     -200
+   1   5  Edith     -500
+
+   [2 rows x 1 columns]
+
+   >>> t[t['balance'] < 0]['name']
+       name
+   0    Bob
+   1  Edith
+
+   [2 rows x 1 columns]
+
+
+Stored Data
+~~~~~~~~~~~
+
+Blaze Tables can also be defined directly from storage like CSV or HDF5 files.
 
 .. doctest::
 
-    >>> array([j-i for j in range(1,4)] for i in range(1,4))
-    array([[ 0,  1,  2],
-           [-1,  0,  1],
-           [-2, -1,  0]],
-          dshape='3 * 3 * int32')
+   >>> iris = Table(CSV('iris.csv'))
+   >>> iris
+       sepal_length  sepal_width  petal_length  petal_width      species
+   0            5.1          3.5           1.4          0.2  Iris-setosa
+   1            4.9          3.0           1.4          0.2  Iris-setosa
+   2            4.7          3.2           1.3          0.2  Iris-setosa
+   3            4.6          3.1           1.5          0.2  Iris-setosa
+   4            5.0          3.6           1.4          0.2  Iris-setosa
+   5            5.4          3.9           1.7          0.4  Iris-setosa
+   6            4.6          3.4           1.4          0.3  Iris-setosa
+   7            5.0          3.4           1.5          0.2  Iris-setosa
+   8            4.4          2.9           1.4          0.2  Iris-setosa
+   9            4.9          3.1           1.5          0.1  Iris-setosa
+   10           5.4          3.7           1.5          0.2  Iris-setosa
+
+   ...
+
+This extends out to data in SQL databases or Spark resilient distributed
+datastructures.
 
 .. doctest::
 
-    >>> from random import randrange
-    >>> array((randrange(10) for i in range(randrange(5))) for j in range(4))
-    array([[           7,            9],
-           [           5,            2,            6,            4],
-           [           9,            2,            2,            5],
-           [           5]],
-          dshape='4 * var * int32')
+   >>> from blaze.sql import *
+   >>> bitcoin = Table(SQL('sqlite:///bitcoin.db', 'transactions'))
+   >>> bitcoin
+       transaction   sender  recipient                date       value
+   0             1        2          2 2013-04-10 14:22:50   24.375000
+   1             1        2     782477 2013-04-10 14:22:50    0.770900
+   2             2   620423    4571210 2011-12-27 11:43:12  614.174951
+   3             2   620423          3 2011-12-27 11:43:12  128.040520
+   4             3        3     782479 2013-04-10 14:22:50   47.140520
+   5             3        3          4 2013-04-10 14:22:50  150.000000
+   6             4    39337      39337 2012-06-17 12:02:02    0.310818
+   7             4    39337          3 2012-06-17 12:02:02   69.100000
+   8             5  2071196    2070358 2013-03-04 14:38:05   61.602352
+   9             5  2071196          5 2013-03-04 14:38:05  100.000000
+   10            6        5     782480 2013-04-10 14:22:50   65.450000
 
+   ...
 
-Disk Backed Array
+In each of these cases Blaze consumes only as much as it needs to present what
+is on screen.  To fully evalute the result push your computation into a
+container.
+
+More Computations
 ~~~~~~~~~~~~~~~~~
 
-Blaze can currently use the BLZ and HDF5 format for storing
-compressed, chunked arrays on disk. These can be used through the
-data descriptors:
+Common operations like Joins and split-apply-combine are available on any kind
+of data
 
 .. doctest::
 
-    >>> import blaze
-    >>> dd = blaze.BLZ_DDesc('foo.blz', mode='w')
-    >>> a = blaze.array([[1,2],[3,4]], '2 * 2 * int32', ddesc=dd)
-    >>> a
-    array([[1, 2],
-           [3, 4]],
-          dshape='2 * 2 * int32')
+   >>> By(iris,
+   ...    iris['species'],
+   ...    iris['petal_width'].mean())
+              species  petal_width
+   0   Iris-virginica        2.026
+   1      Iris-setosa        0.246
+   2  Iris-versicolor        1.326
 
-So, the dataset is now on disk, stored persistently.  Then we can come
-later and, in another python session, gain access to it again:
+
+   >>> By(bitcoin,
+   ...    bitcoin['sender'],
+   ...    bitcoin['value'].sum()).sort('value', ascending=False)
+       sender            value
+   0       11  52461821.941658
+   1     1374  23394277.034152
+   2       25  13178095.975724
+   3       29   5330179.983047
+   4    12564   3669712.399825
+   5   782688   2929023.064648
+   6       74   2122710.961163
+   7    91638   2094827.825161
+   8       27   2058124.131470
+   9       20   1182868.148780
+   10     628    977311.388250
+
+
+Finishing Up
+~~~~~~~~~~~~
+
+Fully evaluate the computation, returning an output similar to the input type
+by calling ``compute``.
 
 .. doctest::
 
-    >>> import blaze
-    >>> dd = blaze.BLZ_DDesc('foo.blz', mode='r')
-    >>> b = blaze.array(dd)
-    >>> b
-    array([[1, 2],
-           [3, 4]],
-          dshape='2 * 2 * int32')
+   >>> t[t['balance'] < 0]['name']              # Still a Table Expressions
+       name
+   0    Bob
+   1  Edith
 
-So, we see that we completely recovered the contents of the original
-array.  Finally, we can get rid of the array completely:
+   >>> compute(t[t['balance'] < 0]['name'])     # Just a raw list
+   ['Bob', 'Edith']
 
-    >>> dd.remove()
+Alternatively use the ``into`` operation to transform your output into various
+forms.
 
-This will remove the dataset from disk, so it could not be restored in
-the future, so if you love your data, be careful with this one.
+.. doctest::
 
-.. XXX: Added a dedicated toplevel page
+   >>> result = By(iris,
+   ...             iris['species'],
+   ...             iris['petal_width'].mean())
 
-.. Uncomment this when a way to remove the 'toplevel' from description
-.. would be found...
-.. Top level functions
-.. ~~~~~~~~~~~~~~~~~~~
+   >>> into([], result)                       # Push result into a list
+   [(u'Iris-virginica', 2.026),
+    (u'Iris-setosa', 0.2459999999999999),
+    (u'Iris-versicolor', 1.3259999999999998)]
 
-.. .. automodule blaze.toplevel
-..    :members:
+   >>> from pandas import DataFrame
+   >>> into(DataFrame(), result)              # Push result into a DataFrame
+              species  petal_width
+   0   Iris-virginica        2.026
+   1      Iris-setosa        0.246
+   2  Iris-versicolor        1.326
+
+   >>> into(CSV('output.csv', schema=result.schema), # Write result to CSV file
+   ...      result)
