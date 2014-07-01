@@ -8,6 +8,7 @@ import sqlalchemy as sql
 import datashape
 from datashape import dshape, var, Record
 from itertools import chain
+from toolz import first
 
 from ..dispatch import dispatch
 from ..utils import partition_all
@@ -252,9 +253,18 @@ from blaze.compute.sql import select
 def compute_one(t, ddesc):
     return compute_one(t, ddesc.table)
 
-@dispatch(Expr, SQL)
-def compute(t, ddesc):
-    query = select(compute(t, ddesc.table))      # Get the query out
-    with ddesc.engine.connect() as conn:
-        result = conn.execute(query).fetchall() # Use SQLAlchemy to actually perform the query
+
+@dispatch(sql.sql.Selectable, dict)
+def finalize(query, d):
+    try:
+        engines = set([dd.engine for dd in d.values()])
+    except:
+        return query
+    if len(map(str, engines)) != 1:
+        raise NotImplementedError("Expected single SQLAlchemy engine")
+
+    engine = first(engines)
+
+    with engine.connect() as conn:  # Perform query
+        result = conn.execute(select(query)).fetchall()
     return result

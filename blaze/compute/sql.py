@@ -1,10 +1,9 @@
 """
 
->>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.sql import compute
+>>> from blaze import *
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> deadbeats = accounts['name'][accounts['amount'] < 0]
+>>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
 >>> t = Table('accounts', MetaData(),
@@ -178,12 +177,12 @@ def compute_one(t, s):
     return select(s).order_by(col)
 
 
-@dispatch(Head, Selectable)
+@dispatch(Head, ClauseElement)
 def compute_one(t, s):
     return select(s).limit(t.n)
 
 
-@dispatch(Label, sql.elements.ClauseElement)
+@dispatch(Label, ClauseElement)
 def compute_one(t, s):
     return s.label(t.label)
 

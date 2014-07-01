@@ -1,10 +1,9 @@
-"""
+""" Python compute layer
 
->>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.python import compute
+>>> from blaze import *
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> deadbeats = accounts['name'][accounts['amount'] < 0]
+>>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
 >>> list(compute(deadbeats, data))

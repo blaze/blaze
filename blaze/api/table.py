@@ -65,11 +65,6 @@ class Table(TableSymbol):
         return {self: self.data}
 
 
-@dispatch(Table)
-def compute(t):
-    return t.data
-
-
 @dispatch(Expr)
 def compute(expr):
     resources = expr.resources()

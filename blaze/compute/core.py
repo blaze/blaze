@@ -26,6 +26,10 @@ def compute(expr, o):
 
 
 def bottom_up(d, expr):
+    """ Process an expression from the leaves upwards
+
+    Helper function for ``compute``
+    """
     try:
         return d[expr]
     except:
@@ -40,9 +44,17 @@ def bottom_up(d, expr):
 
     return result
 
+
+@dispatch(object, dict)
+def finalize(result, d):
+    """ Effects after the computation is complete """
+    return result
+
+
 @dispatch(Expr, dict)
 def compute(expr, d):
-    return bottom_up(d, expr)
+    result = bottom_up(d, expr)
+    return finalize(result, d)
 
 
 def columnwise_funcstr(t, variadic=True, full=False):

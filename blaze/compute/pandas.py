@@ -4,7 +4,7 @@
 >>> from blaze.compute.pandas import compute
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> deadbeats = accounts['name'][accounts['amount'] < 0]
+>>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from pandas import DataFrame
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
