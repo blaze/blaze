@@ -1,6 +1,7 @@
 """ Python compute layer
 
 >>> from blaze import *
+>>> from blaze.compute.core import compute
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
