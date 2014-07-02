@@ -179,7 +179,10 @@ def compute_one(t, s):
 
 @dispatch(Head, ClauseElement)
 def compute_one(t, s):
-    return select(s).limit(t.n)
+    if hasattr(s, 'limit'):
+        return s.limit(t.n)
+    else:
+        return select(s).limit(t.n)
 
 
 @dispatch(Label, ClauseElement)
