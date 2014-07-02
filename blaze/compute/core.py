@@ -43,8 +43,8 @@ def bottom_up(d, expr):
     return result
 
 
-@dispatch(object, dict)
-def finalize(result, d):
+@dispatch(Expr, object, dict)
+def finalize(expr, result, d):
     """ Effects after the computation is complete """
     return result
 
@@ -52,7 +52,7 @@ def finalize(result, d):
 @dispatch(Expr, dict)
 def compute(expr, d):
     result = bottom_up(d, expr)
-    return finalize(result, d)
+    return finalize(expr, result, d)
 
 
 def columnwise_funcstr(t, variadic=True, full=False):
