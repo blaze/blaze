@@ -60,7 +60,8 @@ with familiar Pandas getitem syntax.
 Stored Data
 ~~~~~~~~~~~
 
-Define Blaze Tables directly from storage like CSV or HDF5 files.
+Define Blaze Tables directly from storage like CSV or HDF5 files.  Here we
+operate on a CSV file of the traditional `iris dataset`_.
 
 .. doctest::
 
@@ -82,7 +83,8 @@ Define Blaze Tables directly from storage like CSV or HDF5 files.
    ...
 
 Use remote data like SQL databases or Spark resilient distributed
-data-structures in exactly the same way.
+data-structures in exactly the same way.  Here we operate on a SQL database
+stored in a `sqlite file`_.
 
 .. doctest::
 
@@ -161,3 +163,6 @@ container type.
 
    >>> into(CSV('output.csv', schema=result.schema), # Write result to CSV file
    ...      result)
+
+.. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.csv
+.. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.db
