@@ -190,7 +190,7 @@ def test_sort():
 
     assert s.schema == t.schema
 
-    assert t['amount'].sort().column == 'amount'
+    assert t['amount'].sort().key == 'amount'
 
 
 def test_head():

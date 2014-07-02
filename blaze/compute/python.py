@@ -314,10 +314,10 @@ def compute_one(t, lhs, rhs):
 
 @dispatch(Sort, Sequence)
 def compute_one(t, seq):
-    if isinstance(t.column, (str, tuple, list)):
-        key = rowfunc(t.parent[t.column])
+    if isinstance(t.key, (str, tuple, list)):
+        key = rowfunc(t.parent[t.key])
     else:
-        key = rowfunc(t.column)
+        key = rowfunc(t.key)
     return sorted(seq,
                   key=key,
                   reverse=not t.ascending)

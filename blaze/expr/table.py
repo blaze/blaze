@@ -611,11 +611,13 @@ class Sort(TableExpr):
 
     >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
     """
-    __slots__ = 'parent', 'column', 'ascending'
+    __slots__ = 'parent', '_key', 'ascending'
 
-    def __init__(self, parent, column, ascending=True):
+    def __init__(self, parent, key, ascending=True):
         self.parent = parent
-        self.column = column
+        if isinstance(key, list):
+            key = tuple(key)
+        self._key = key
         self.ascending = ascending
 
     @property
@@ -625,6 +627,13 @@ class Sort(TableExpr):
     @property
     def iscolumn(self):
         return self.parent.iscolumn
+
+    @property
+    def key(self):
+        if isinstance(self._key, tuple):
+            return list(self._key)
+        else:
+            return self._key
 
 
 class Distinct(TableExpr):

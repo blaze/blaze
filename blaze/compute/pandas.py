@@ -67,7 +67,7 @@ def compute_one(t, df):
     return -df
 
 
-@dispatch(Selection, DataFrame)
+@dispatch(Selection, (Series, DataFrame))
 def compute_one(t, df):
     predicate = compute(t.predicate, {t.parent: df})
     return df[predicate]
@@ -157,13 +157,13 @@ def compute_one(t, df):
 
 @dispatch(Sort, DataFrame)
 def compute_one(t, df):
-    return df.sort(t.column, ascending=t.ascending)
+    return df.sort(t.key, ascending=t.ascending)
 
 
 @dispatch(Sort, Series)
 def compute_one(t, s):
     s = s.copy()
-    s.sort(t.column, ascending=t.ascending)
+    s.sort(t.key, ascending=t.ascending)
     return s
 
 

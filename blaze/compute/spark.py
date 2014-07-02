@@ -92,8 +92,11 @@ def compute_one(t, rdd):
 
 @dispatch(Sort, RDD)
 def compute_one(t, rdd):
-    func = rowfunc(t[t.column])
-    return (rdd.keyBy(func)
+    if isinstance(t.key, (str, tuple, list)):
+        key = rowfunc(t.parent[t.key])
+    else:
+        key = rowfunc(t.key)
+    return (rdd.keyBy(key)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
 

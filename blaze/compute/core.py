@@ -30,10 +30,8 @@ def bottom_up(d, expr):
 
     Helper function for ``compute``
     """
-    try:
+    if expr in d:
         return d[expr]
-    except:
-        pass
 
     if isinstance(expr, base):
         return expr

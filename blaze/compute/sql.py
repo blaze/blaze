@@ -169,9 +169,9 @@ def compute_one(t, s):
 
 @dispatch(Sort, Selectable)
 def compute_one(t, s):
-    if isinstance(t.column, (tuple, list)):
+    if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
-    col = getattr(s.c, t.column)
+    col = getattr(s.c, t.key)
     if not t.ascending:
         col = sqlalchemy.desc(col)
     return select(s).order_by(col)
