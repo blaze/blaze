@@ -87,20 +87,20 @@ data-structures in exactly the same way.
 .. doctest::
 
    >>> from blaze.sql import *
-   >>> bitcoin = Table(SQL('sqlite:///bitcoin.db', 'transactions'))
-   >>> bitcoin
-       transaction   sender  recipient                date       value
-   0             1        2          2 2013-04-10 14:22:50   24.375000
-   1             1        2     782477 2013-04-10 14:22:50    0.770900
-   2             2   620423    4571210 2011-12-27 11:43:12  614.174951
-   3             2   620423          3 2011-12-27 11:43:12  128.040520
-   4             3        3     782479 2013-04-10 14:22:50   47.140520
-   5             3        3          4 2013-04-10 14:22:50  150.000000
-   6             4    39337      39337 2012-06-17 12:02:02    0.310818
-   7             4    39337          3 2012-06-17 12:02:02   69.100000
-   8             5  2071196    2070358 2013-03-04 14:38:05   61.602352
-   9             5  2071196          5 2013-03-04 14:38:05  100.000000
-   10            6        5     782480 2013-04-10 14:22:50   65.450000
+   >>> iris = Table(SQL('sqlite:///iris.db', 'iris'))
+   >>> iris
+       sepal_length  sepal_width  petal_length  petal_width      species
+   0            5.1          3.5           1.4          0.2  Iris-setosa
+   1            4.9          3.0           1.4          0.2  Iris-setosa
+   2            4.7          3.2           1.3          0.2  Iris-setosa
+   3            4.6          3.1           1.5          0.2  Iris-setosa
+   4            5.0          3.6           1.4          0.2  Iris-setosa
+   5            5.4          3.9           1.7          0.4  Iris-setosa
+   6            4.6          3.4           1.4          0.3  Iris-setosa
+   7            5.0          3.4           1.5          0.2  Iris-setosa
+   8            4.4          2.9           1.4          0.2  Iris-setosa
+   9            4.9          3.1           1.5          0.1  Iris-setosa
+   10           5.4          3.7           1.5          0.2  Iris-setosa
 
    ...
 
@@ -121,24 +121,6 @@ of data
    2  Iris-versicolor        1.326
 
 
-   >>> (By(bitcoin,                       # This computation happens in SQL
-   ...    bitcoin['sender'],              # Group by sender
-   ...    bitcoin['value'].sum()).        # Sum the value of transactions for each group
-   ...   .sort('value', ascending=False)) # Sort by total value
-       sender            value
-   0       11  52461821.941658
-   1     1374  23394277.034152
-   2       25  13178095.975724
-   3       29   5330179.983047
-   4    12564   3669712.399825
-   5   782688   2929023.064648
-   6       74   2122710.961163
-   7    91638   2094827.825161
-   8       27   2058124.131470
-   9       20   1182868.148780
-   10     628    977311.388250
-
-
 Finishing Up
 ~~~~~~~~~~~~
 
@@ -148,12 +130,12 @@ by calling ``compute``.
 
 .. doctest::
 
-   >>> t[t['balance'] < 0]['name']              # Still a Table Expressions
+   >>> t[t['balance'] < 0]['name']                  # Still a Table Expression
        name
    0    Bob
    1  Edith
 
-   >>> compute(t[t['balance'] < 0]['name'])     # Just a raw list
+   >>> list(compute(t[t['balance'] < 0]['name']))   # Just a raw list
    ['Bob', 'Edith']
 
 Alternatively use the ``into`` operation to push your output into a suitable
