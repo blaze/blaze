@@ -244,27 +244,3 @@ class SQL(DataDescriptor):
             return next(result)
         else:
             return result
-
-
-# from blaze.expr.core import Expr
-from blaze.expr.table import Join, Expr
-from blaze.compute.sql import select
-@dispatch(Expr, SQL)
-def compute_one(t, ddesc):
-    return compute_one(t, ddesc.table)
-
-
-@dispatch(sql.sql.Selectable, dict)
-def finalize(query, d):
-    try:
-        engines = set([dd.engine for dd in d.values()])
-    except:
-        return query
-    if len(map(str, engines)) != 1:
-        raise NotImplementedError("Expected single SQLAlchemy engine")
-
-    engine = first(engines)
-
-    with engine.connect() as conn:  # Perform query
-        result = conn.execute(select(query)).fetchall()
-    return result
