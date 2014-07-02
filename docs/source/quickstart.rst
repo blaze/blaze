@@ -12,9 +12,8 @@ as follows.
 Blaze Arrays
 ~~~~~~~~~~~~
 
-To create simple Blaze arrays, you can construct them from
-nested lists. Blaze will deduce the dimensionality and
-data type to use.
+Create simple Blaze tables from nested lists/tuples. Blaze will deduce the
+dimensionality and data type to use.
 
 .. doctest::
 
@@ -38,7 +37,8 @@ data type to use.
 Simple Calculations
 ~~~~~~~~~~~~~~~~~~~
 
-Blaze supports column selection and filtering similarly to Pandas.
+Blaze supports simple computations like column selection and filtering
+with familiar Pandas getitem syntax.
 
 .. doctest::
 
@@ -60,7 +60,7 @@ Blaze supports column selection and filtering similarly to Pandas.
 Stored Data
 ~~~~~~~~~~~
 
-Blaze Tables can also be defined directly from storage like CSV or HDF5 files.
+Define Blaze Tables directly from storage like CSV or HDF5 files.
 
 .. doctest::
 
@@ -81,8 +81,8 @@ Blaze Tables can also be defined directly from storage like CSV or HDF5 files.
 
    ...
 
-This extends out to data in SQL databases or Spark resilient distributed
-data-structures.
+Use remote data like SQL databases or Spark resilient distributed
+data-structures in exactly the same way.
 
 .. doctest::
 
@@ -112,18 +112,19 @@ of data
 
 .. doctest::
 
-   >>> By(iris,
-   ...    iris['species'],
-   ...    iris['petal_width'].mean())
+   >>> By(iris,                           # Split apply combine operation
+   ...    iris['species'],                # Group by species
+   ...    iris['petal_width'].mean())     # Take the mean of the petal_width column
               species  petal_width
    0   Iris-virginica        2.026
    1      Iris-setosa        0.246
    2  Iris-versicolor        1.326
 
 
-   >>> By(bitcoin,
-   ...    bitcoin['sender'],
-   ...    bitcoin['value'].sum()).sort('value', ascending=False)
+   >>> (By(bitcoin,                       # This computation happens in SQL
+   ...    bitcoin['sender'],              # Group by sender
+   ...    bitcoin['value'].sum()).        # Sum the value of transactions for each group
+   ...   .sort('value', ascending=False)) # Sort by total value
        sender            value
    0       11  52461821.941658
    1     1374  23394277.034152
@@ -141,9 +142,9 @@ of data
 Finishing Up
 ~~~~~~~~~~~~
 
-In each of these examples Blaze computes only as much as is necessary to
-present the results on screen.  Fully evaluate the computation, returning an
-output similar to the input type by calling ``compute``.
+Blaze computes only as much as is necessary to present the results on screen.
+Fully evaluate the computation, returning an output similar to the input type
+by calling ``compute``.
 
 .. doctest::
 
