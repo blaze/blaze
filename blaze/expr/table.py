@@ -205,11 +205,12 @@ class ColumnSyntaxMixin(object):
         return columnwise(Div, self, other)
 
     __truediv__ = __div__
+    __rtruediv__ = __truediv__
 
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
 
-    def __sub_(self, other):
+    def __sub__(self, other):
         return columnwise(Sub, self, other)
 
     def __rsub__(self, other):

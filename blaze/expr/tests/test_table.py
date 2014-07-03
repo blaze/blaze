@@ -18,6 +18,17 @@ def test_eq():
             TableSymbol('t', '{a: string, b: int}')
 
 
+def test_arithmetic():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    x, y, z = t['x'], t['y'], t['z']
+    exprs = [x + 1, x + y, 1 + y,
+             x - y, 1 - x, x - 1,
+             x ** y, x ** 2, 2 ** x,
+             x * y, x ** 2, 2 ** x,
+             x / y, x / 2, 2 / x,
+             x % y, x % 2, 2 % x]
+
+
 def test_column():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.columns == ['name', 'amount']
