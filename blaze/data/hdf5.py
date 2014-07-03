@@ -6,7 +6,7 @@ import h5py
 from dynd import nd
 import datashape
 from datashape import var, dshape
-from toolz.curried import pipe, concat, map
+from toolz.curried import pipe, concat, map, partial
 
 from ..dispatch import dispatch
 from .core import DataDescriptor
@@ -142,10 +142,6 @@ class HDF5(DataDescriptor):
             arr[key] = value
         return self
 
-    def chunks(self, **kwargs):
-        for chunk in self._chunks(**kwargs):
-            yield nd.array(chunk)
-
     def _chunks(self, blen=None):
         with h5py.File(self.path, mode='r') as f:
             arr = f[self.datapath]
@@ -155,10 +151,8 @@ class HDF5(DataDescriptor):
             for i in range(0, arr.shape[0], blen):
                 yield np.array(arr[i:i+blen])
 
-    def _iter(self):
-        return pipe(self._chunks(), map(np.ndarray.tolist), concat)
-
-    __iter__ = _iter
+    def __iter__(self):
+        return pipe(self.chunks(), map(partial(nd.as_py, tuple=True)), concat)
 
     def as_dynd(self):
         return self.dynd[:]
