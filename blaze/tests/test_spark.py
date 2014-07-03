@@ -1,8 +1,10 @@
 from blaze.spark import *
-import pyspark
 
-sc = pyspark.SparkContext("local", "Spark app")
-
+try:
+    import pyspark
+    sc = pyspark.SparkContext("local", "Spark app")
+except ImportError:
+    pass
 
 def test_spark_coerce():
     rdd = sc.parallelize([('1', 'hello'), ('2', 'world')])
