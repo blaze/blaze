@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from blaze.expr.scalar import *
 from blaze.compatibility import skip
 from blaze.utils import raises

@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 
 from blaze.expr.core import Expr
 from datashape import dshape
