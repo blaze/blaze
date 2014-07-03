@@ -419,6 +419,11 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
         return sorted(unique(x.name for x in self.traverse()
                                     if isinstance(x, ScalarSymbol)))
 
+def unpack(l):
+    if isinstance(l, (tuple, list, set)) and len(l) == 1:
+        return next(iter(l))
+    else:
+        return l
 
 class Join(TableExpr):
     """ Join two tables on common columns
@@ -444,9 +449,13 @@ class Join(TableExpr):
 
     iscolumn = False
 
-    def __init__(self, lhs, rhs, on_left, on_right=None):
+    def __init__(self, lhs, rhs, on_left=None, on_right=None):
         self.lhs = lhs
         self.rhs = rhs
+        if not on_left and not on_right:
+            on_left = on_right = unpack(list(sorted(
+                set(lhs.columns) & set(rhs.columns),
+                key=lhs.columns.index)))
         if not on_right:
             on_right = on_left
         if isinstance(on_left, tuple):
