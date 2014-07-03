@@ -3,9 +3,10 @@ from __future__ import absolute_import, division, print_function
 from itertools import chain
 from dynd import nd
 from collections import Iterator
-from datashape import dshape, Record
+from datashape import dshape, Record, DataShape
 from datashape.predicates import isunit, isdimension
 from toolz import partition_all, partial, map
+from ..dispatch import dispatch
 
 from ..compatibility import _strtypes
 
@@ -18,11 +19,20 @@ def validate(schema, item):
         return False
 
 
+@dispatch(DataShape, object)
 def coerce(dshape, item):
-    if isinstance(item, Iterator):
-        blocks = partition_all(1024, item)
-        return chain.from_iterable(map(partial(coerce, dshape), blocks))
-    return nd.as_py(nd.array(item, dtype=str(dshape)), tuple=True)
+    return coerce(str(dshape), item)
+
+
+@dispatch(_strtypes, object)
+def coerce(dshape, item):
+    return nd.as_py(nd.array(item, dtype=dshape), tuple=True)
+
+
+@dispatch(str, Iterator)
+def coerce(dshape, item):
+    blocks = partition_all(1024, item)
+    return chain.from_iterable(map(partial(coerce, dshape), blocks))
 
 
 def coerce_to_ordered(ds, data):
