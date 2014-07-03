@@ -9,8 +9,8 @@ from .index import parse_index
 class Server(object):
     __slots__ = 'app', 'datasets'
 
-    def __init__(self, name='Blaze-Server', datasets=None):
-        app = self.app = Flask(name)
+    def __init__(self, datasets=None):
+        app = self.app = Flask('blaze.serve.server')
         self.datasets = datasets or dict()
 
         for args, kwargs, func in routes:

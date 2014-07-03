@@ -2,36 +2,24 @@
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png">
 </p>
 
-**Blaze** is the next-generation of NumPy. It is designed as a
-foundational set of abstractions on which to build out-of-core and
-distributed algorithms over a wide variety of data sources and to extend
-the structure of NumPy itself.
+**Blaze** extends the usability of NumPy and Pandas to distributed and
+out-of-core computing.  Blaze provides an interface similar to that of the
+NumPy ND-Array or Pandas DataFrame.  Blaze maps inputs from these familiar
+interfaces onto a variety of other computational engines like Postgres or
+Spark.  Blaze connects users to big computation from the comfort of an
+interactive object.
 
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png">
 </p>
 
-Blaze allows easy composition of low level computation kernels
-( C, Fortran, Numba ) to form complex data transformations on large
-datasets.
-
-In Blaze, computations are described in a high-level language
-(Python) but executed on a low-level runtime (outside of Python),
-enabling the easy mapping of high-level expertise to data without sacrificing
-low-level performance. Blaze aims to bring Python and NumPy into the
-massively-multicore arena, allowing it to able to leverage many CPU and
-GPU cores across computers, virtual machines and cloud services.
+Blaze includes a rich set of computational and data primitives useful in
+building and communicating between computational systems.  Blaze can help with
+consistent and robust data migration, as well as remote execution.
 
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
 </p>
-
-Continuum Analytics' vision is to provide open technologies for data
-integration on a massive scale based on a vision of a structured,
-universal "data web". In the same way that URL, HTML, and HTTP form
-the basis of the World Wide Web for documents, Blaze could
-be a fabric for structured and numerical data spearheading
-innovations in data management, analytics, and distributed computation.
 
 Blaze aims to be a foundational project allowing many different users of
 other PyData projects (Pandas, Theano, Numba, SciPy, Scikit-Learn)
@@ -46,21 +34,19 @@ distributed context.
 Status
 ------
 
-Blaze is a work in progress at the moment, currently at release 0.5.
+Blaze is in development.
 Take a look at the [release notes](docs/source/releases.rst).
 
 Documentation
 -------------
 
-* [Dev Docs](http://blaze.pydata.org/docs/)
+Documentation is available at [blaze.pydata.org/](http://blaze.pydata.org/)
 
 Trying out Blaze
 ----------------
 
-The easiest way to try out Blaze is through the Anaconda
-distribution. The latest release includes a version of Blaze.
-
-http://continuum.io/downloads
+The easiest way to try out Blaze is through the
+[Anaconda distribution](http://continuum.io/downloads).
 
 To make sure you're running the latest released version
 of Blaze, use the
@@ -78,20 +64,19 @@ Dependencies
 ------------
 
 The Blaze project itself is spread out over multiple projects,
-in addition to the main `blaze` repo. These dependencies
-are
+in addition to the main `blaze` repo. Other Blaze projects include the
+following:
 
-  * [blz][blz]
   * [datashape][datashape]
   * [dynd-python][dynd-python]
-  * [pykit][pykit]
 
-To see a full list of dependencies, please see `requirements.txt`
+Additionally, Blaze hooks into and depends on several excellent projects
+written by the general community.  See `requirements.txt` for a full list of
+dependencies.
 
-[blz]: https://github.com/ContinuumIO/blz
 [datashape]: https://github.com/ContinuumIO/datashape
 [dynd-python]: https://github.com/ContinuumIO/dynd-python
-[pykit]: https://github.com/pykit/pykit
+
 
 Installing from Source
 ----------------------
@@ -106,17 +91,12 @@ $ python setup.py install
 Installing from Binstar.org
 ---------------------------
 
-Binstar is a service that allows you to create and manage public
-and private package registries. 
-If you're on a Linux or Mac OS X platform, you can install a binary
-version of blaze (hosted on binstar) by typing:
+If you're on a Linux or Mac OS-X platform, you can install a development
+version of Blaze (hosted on Binstar) by typing the following:
 
 ```bash
 $ conda install -c mwiebe -c mrocklin blaze
 ```
-
-
-Documentation is generated using sphinx from the docs directory.
 
 Contributing
 ------------

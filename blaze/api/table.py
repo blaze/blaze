@@ -105,4 +105,10 @@ def into(a, b):
     return into(a, compute(b))
 
 
+@dispatch(DataFrame, TableExpr)
+def into(a, b):
+    columns = b.columns
+    return into(DataFrame(columns=columns), compute(b))
+
+
 Expr.__repr__ = table_repr
