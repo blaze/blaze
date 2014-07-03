@@ -30,6 +30,7 @@ safe_scope = {'__builtins__': {}}
 math_operators = dict((k, v) for k, v in numbers.__dict__.items()
                       if isinstance(v, type) and issubclass(v, Scalar))
 
+illegal_terms = '__', 'lambda', 'for', 'if', ':', '.'
 
 def exprify(expr, dtypes):
     """ Transform string into scalar expression
@@ -42,7 +43,7 @@ def exprify(expr, dtypes):
     >>> expr.lhs.dshape
     dshape("int64")
     """
-    if '__' in expr:
+    if any(term in expr for term in illegal_terms):
         raise ValueError('Unclean input' % expr)
     variables = dict((k, ScalarSymbol(k, v)) for k, v in dtypes.items())
 
