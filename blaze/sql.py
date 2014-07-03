@@ -17,7 +17,7 @@ def finalize(expr, query, d):
         engines = set([dd.engine for dd in d.values()])
     except:
         return query
-    if len(map(str, engines)) != 1:
+    if len(set(map(str, engines))) != 1:
         raise NotImplementedError("Expected single SQLAlchemy engine")
 
     engine = first(engines)
