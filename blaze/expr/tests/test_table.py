@@ -108,6 +108,12 @@ def test_join():
     assert Join(t, s, 'name') == Join(t, s, 'name')
 
 
+def test_join_default_shared_columns():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    s = TableSymbol('t', '{name: string, id: int}')
+    assert Join(t, s) == Join(t, s, 'name', 'name')
+
+
 def test_multi_column_join():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     b = TableSymbol('b', '{w: int, x: int, y: int}')
