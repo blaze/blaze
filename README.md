@@ -21,13 +21,6 @@ consistent and robust data migration, as well as remote execution.
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
 </p>
 
-Continuum Analytics' vision is to provide open technologies for data
-integration on a massive scale based on a vision of a structured,
-universal "data web". In the same way that URL, HTML, and HTTP form
-the basis of the World Wide Web for documents, Blaze could
-be a fabric for structured and numerical data spearheading
-innovations in data management, analytics, and distributed computation.
-
 Blaze aims to be a foundational project allowing many different users of
 other PyData projects (Pandas, Theano, Numba, SciPy, Scikit-Learn)
 to interoperate at the application level and at the library level with
