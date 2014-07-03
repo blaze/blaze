@@ -74,6 +74,23 @@ class SingleTestClass(MakeFile):
 
         dd.extend([(1, 'Hello'), (2, 'World!')])
 
+    def test_coercion_after_creation(self):
+        stdout.flush()
+        dd = HDF5(self.filename, '/data',
+                  schema='{a: int32, b: int}')
+
+        dd.extend([(1, 10), (2, 20)])
+
+        dd2 = HDF5(self.filename, '/data',
+                   schema='{a: real, b: string}')
+
+        self.assertEqual(list(dd2),
+                          [(1.0, '10'), (2.0, '20')])
+
+        self.assertEqual(nd.as_py(next(dd2.chunks()), tuple=True),
+                         [(1.0, '10'), (2.0, '20')])
+
+
     def test_extend_chunks(self):
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:
