@@ -1,5 +1,6 @@
 from blaze.expr.scalar import *
 from blaze.compatibility import skip
+from blaze.utils import raises
 import math
 from datetime import date, datetime
 
@@ -90,3 +91,8 @@ def test_exprify():
     y = ScalarSymbol('y', 'real')
 
     assert exprify('x + y', dtypes) == x + y
+    assert exprify('isnan(sin(x) + y)', dtypes) == isnan(sin(x) + y)
+
+    assert raises(Exception, lambda: exprify('os.listdir()', {}))
+    assert raises(Exception, lambda: exprify('os.listdir()',
+        {'os': 'int', 'os.listdir': 'real'}))

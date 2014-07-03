@@ -1,8 +1,11 @@
+from datashape import dshape
+from toolz import merge
+
 from ..core import Expr
 from .core import Scalar
 from .numbers import NumberInterface
+from . import numbers
 from .boolean import BooleanInterface
-from datashape import dshape
 
 class ScalarSymbol(NumberInterface, BooleanInterface):
     __slots__ = 'name', 'dtype'
@@ -21,6 +24,11 @@ class ScalarSymbol(NumberInterface, BooleanInterface):
     __hash__ = Expr.__hash__
 
 
+safe_scope = {'__builtins__': {}}
+math_operators = dict((k, v) for k, v in numbers.__dict__.items()
+                      if isinstance(v, type) and issubclass(v, Scalar))
+
+
 def exprify(expr, dtypes):
     """ Transform string into scalar expression
 
@@ -32,5 +40,10 @@ def exprify(expr, dtypes):
     >>> expr.lhs.dshape
     dshape("int64")
     """
-    locals().update(dict((k, ScalarSymbol(k, v)) for k, v in dtypes.items()))
-    return eval(expr)
+    if '__' in expr:
+        raise ValueError('Unclean input' % expr)
+    variables = dict((k, ScalarSymbol(k, v)) for k, v in dtypes.items())
+
+    d = merge(safe_scope, math_operators, variables)
+
+    return eval(expr, d)
