@@ -19,7 +19,6 @@ from toolz.curried import get
 __all__ = ['compute', 'into', 'RDD', 'pyspark', 'SparkContext']
 
 try:
-    from itertools import compress, chain
     from pyspark import SparkContext
     import pyspark
     from pyspark.rdd import RDD
