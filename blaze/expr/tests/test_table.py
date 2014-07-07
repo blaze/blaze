@@ -4,6 +4,7 @@ from blaze.expr.table import *
 from blaze.expr.core import discover
 from blaze.utils import raises
 from datashape import dshape, var
+from toolz import identity
 
 
 def test_dshape():
@@ -240,10 +241,14 @@ def test_relabel_join():
 def test_map():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     inc = lambda x: x + 1
-    s = t['amount'].map(inc)
-    s = t['amount'].map(inc, schema='{amount: int}')
+    assert t['amount'].map(inc).iscolumn
+    assert t['amount'].map(inc, schema='{amount: int}').iscolumn
+    s = t['amount'].map(inc, schema='{amount: int}', iscolumn=False)
+    assert not s.iscolumn
 
     assert s.dshape == dshape('var * {amount: int}')
+
+    assert not t[['name', 'amount']].map(identity).iscolumn
 
 
 def test_apply():
