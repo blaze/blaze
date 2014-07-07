@@ -66,6 +66,11 @@ def into(a, b):
     return DataFrame(list(b), columns=b.columns)
 
 
+@dispatch(DataFrame, np.ndarray)
+def into(df, x):
+    return DataFrame(x)
+
+
 @dispatch(DataFrame, nd.array)
 def into(a, b):
     ds = dshape(nd.dshape_of(b))
