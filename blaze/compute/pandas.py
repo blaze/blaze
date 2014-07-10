@@ -162,9 +162,7 @@ def compute_one(t, df):
 
 @dispatch(Sort, Series)
 def compute_one(t, s):
-    s = s.copy()
-    s.sort(t.key, ascending=t.ascending)
-    return s
+    return s.order(t.key, ascending=t.ascending)
 
 
 @dispatch(Head, DataFrame)
