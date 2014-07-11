@@ -87,7 +87,7 @@ def into(df, seq):
     else:
         return DataFrame(list(seq))
 
-@dispatch(DataFrame, (DataFrame, DataFrame))
+@dispatch(DataFrame, DataFrame)
 def into(_, df):
     return df.copy()
 
