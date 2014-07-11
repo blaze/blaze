@@ -65,14 +65,12 @@ def test_repr():
 
 
 def test_mutable_backed_repr():
-    mutable_data = [[0]]
-    mutable_backed_table = Table(mutable_data, columns=["mutable"])
+    mutable_backed_table = Table([[0]], columns=['col1'])
     repr(mutable_backed_table)
 
 
 def test_dataframe_backed_repr():
-    mutable_data = range(2)
-    df = pd.DataFrame(data=mutable_data, columns=["mutable"])
+    df = pd.DataFrame(data=[0], columns=['col1'])
     dataframe_backed_table = Table(df)
     repr(dataframe_backed_table)
 
