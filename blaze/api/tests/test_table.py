@@ -4,6 +4,7 @@ from blaze.compute.core import compute
 from blaze.compute.python import compute
 from datashape import dshape
 
+import pandas as pd
 
 data = (('Alice', 100),
         ('Bob', 200))
@@ -61,3 +62,17 @@ def test_repr():
     print(result)
     assert len(result.split('\n')) < 20
     assert '...' in result
+
+
+def test_mutable_backed_repr():
+    mutable_data = [range(2)]
+    mutable_backed_table = Table(mutable_data, columns=["mutable"])
+    repr(mutable_backed_table)
+
+
+def test_dataframe_backed_repr():
+    mutable_data = range(2)
+    df = pd.DataFrame(data=mutable_data, columns=["mutable"])
+    dataframe_backed_table = Table(df)
+    repr(dataframe_backed_table)
+
