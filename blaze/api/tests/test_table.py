@@ -65,7 +65,7 @@ def test_repr():
 
 
 def test_mutable_backed_repr():
-    mutable_data = [range(2)]
+    mutable_data = [[0]]
     mutable_backed_table = Table(mutable_data, columns=["mutable"])
     repr(mutable_backed_table)
 

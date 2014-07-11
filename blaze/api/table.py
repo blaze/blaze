@@ -64,6 +64,13 @@ class Table(TableSymbol):
     def resources(self):
         return {self: self.data}
 
+    def __hash__(self):
+        info_to_hash = (self.schema, self.name, id(self.data))
+        return hash(info_to_hash)
+
+    def traverse(self):
+        return [self]
+
 
 @dispatch(Table)
 def compute(t):
