@@ -78,8 +78,8 @@ class TableExpr(Expr):
     def relabel(self, labels):
         return ReLabel(self, labels)
 
-    def map(self, func, schema=None):
-        return Map(self, func, schema)
+    def map(self, func, schema=None, iscolumn=None):
+        return Map(self, func, schema, iscolumn)
 
     def count(self):
         return count(self)
@@ -756,19 +756,30 @@ class Map(RowWise):
     See Also:
         Apply
     """
-    __slots__ = 'parent', 'func', '_schema'
+    __slots__ = 'parent', 'func', '_schema', '_iscolumn'
 
-    def __init__(self, parent, func, schema=None):
+    def __init__(self, parent, func, schema=None, iscolumn=None):
         self.parent = parent
         self.func = func
         self._schema = schema
+        self._iscolumn = iscolumn
 
     @property
     def schema(self):
         if self._schema:
             return dshape(self._schema)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("Schema of mapped column not known.\n"
+                    "Please specify schema keyword in .map method.\n"
+                    "t['columnname'].map(function, schema='{col: type}')")
+
+    @property
+    def iscolumn(self):
+        if self._iscolumn is not None:
+            return self._iscolumn
+        if self.parent.iscolumn is not None:
+            return self.parent.iscolumn
+        return self.schema[0].values()
 
 
 class Apply(TableExpr):
