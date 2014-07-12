@@ -57,6 +57,7 @@ Dependencies
 * dynd-python_ >= 0.6.1
 * toolz_ >= 0.6.0
 * multipledispatch_ >= 0.4.2
+* unicodecsv_
 
 **Optional**
 
@@ -77,3 +78,4 @@ Dependencies
 .. _toolz: http://toolz.readthedocs.org/
 .. _multipledispatch: http://multiple-dispatch.readthedocs.org/
 .. _conda: http://conda.pydata.org/
+.. _unicodecsv: https://github.com/jdunck/python-unicodecsv
