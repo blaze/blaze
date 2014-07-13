@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import tempfile
 import os
-import csv
 import sys
 from collections import Iterator
 
@@ -17,7 +16,6 @@ from blaze.data.csv import has_header, discover_dialect
 from blaze.utils import filetext
 from blaze.data.utils import tuplify
 from dynd import nd
-from nose.tools import assert_equal
 
 
 def sanitize(lines):
@@ -68,7 +66,9 @@ class Test_Other(unittest.TestCase):
         assert list(dd.columns) == ['name', 'amount']
 
     def test_unicode(self):
-        dd = CSV('blaze/data/tests/unicode.csv', columns=['a', 'b'])
+        this_dir = os.path.dirname(__file__)
+        filename = os.path.join(this_dir, 'unicode.csv')
+        dd = CSV(filename, columns=['a', 'b'])
         assert dd.schema == dshape('{a: string, b: int64}')
         assert dd.py[0]
 
@@ -136,7 +136,6 @@ class Test_Indexing(unittest.TestCase):
     def test_laziness(self):
         print(type(self.dd.py[:, 1]))
         assert isinstance(self.dd.py[:, 1], Iterator)
-
 
 
 class Test_Dialect(unittest.TestCase):
@@ -251,6 +250,7 @@ class TestCSV_New_File(unittest.TestCase):
         # TODO: datashape comparison is broken
         self.assertEqual(str(dd.dshape).replace(' ', ''),
                          str(expected_dshape).replace(' ', ''))
+
 
 class TestTransfer(unittest.TestCase):
 
