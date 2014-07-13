@@ -5,6 +5,8 @@ from blaze.compatibility import skip
 from blaze.expr.table import *
 from blaze.utils import raises
 
+import nose
+
 data = [['Alice', 100, 1],
         ['Bob', 200, 2],
         ['Alice', 50, 3]]
@@ -16,7 +18,7 @@ try:
     rdd = sc.parallelize(data)
     rdd2 = sc.parallelize(data2)
 except ImportError:
-    pass
+    raise nose.SkipTest('pyspark not available')
 
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')

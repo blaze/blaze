@@ -1,10 +1,12 @@
 from blaze.spark import *
+import nose
 
 try:
     import pyspark
     sc = pyspark.SparkContext("local", "Spark app")
 except ImportError:
-    pass
+    raise nose.SkipTest('pyspark not available')
+
 
 def test_spark_coerce():
     rdd = sc.parallelize([('1', 'hello'), ('2', 'world')])
