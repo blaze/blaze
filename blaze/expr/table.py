@@ -333,6 +333,29 @@ class Selection(TableExpr):
         return self.apply.iscolumn
 
 
+def _expr_parent(col):
+    """ Expr and Parent of column
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> _expr_parent(accounts['name'])
+    (name, accounts)
+
+    Helper function for ``columnwise``
+    """
+    if isinstance(col, ColumnWise):
+        return col.expr, col.parent
+        expr_inputs.append(col.expr)
+        parents.add(col.parent)
+    elif isinstance(col, Column):
+        # TODO: specify dtype
+        return col.scalar_symbol, col.parent
+    elif isinstance(col, Label):
+        return _expr_parent(col.parent)
+    else:
+        return col, None
+
+
 def columnwise(op, *column_inputs):
     """ Merge columns with scalar operation
 
@@ -355,17 +378,12 @@ def columnwise(op, *column_inputs):
     """
     expr_inputs = []
     parents = set()
+
     for col in column_inputs:
-        if isinstance(col, ColumnWise):
-            expr_inputs.append(col.expr)
-            parents.add(col.parent)
-        elif isinstance(col, Column):
-            # TODO: specify dtype
-            expr_inputs.append(col.scalar_symbol)
-            parents.add(col.parent)
-        else:
-            # maybe something like 5 or 'Alice'
-            expr_inputs.append(col)
+        expr, parent = _expr_parent(col)
+        expr_inputs.append(expr)
+        if parent:
+            parents.add(parent)
 
     if not len(parents) == 1:
         raise ValueError("All inputs must be from same Table.\n"
@@ -849,9 +867,6 @@ def merge(*tables):
     if not parent:
         raise ValueError("No common ancestor found for input tables")
 
-    shim = TableSymbol('_ancestor', parent.schema, parent.iscolumn)
-
-    tables = tuple(t.subs({parent: shim}) for t in tables)
     return Merge(parent, tables)
 
 

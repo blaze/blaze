@@ -5,6 +5,7 @@ from blaze.compute.core import compute
 from blaze.compute.python import *
 from blaze.expr.table import *
 from blaze.compatibility import builtins
+from blaze.utils import raises
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -317,3 +318,28 @@ def test_selection_out_of_order():
     expr = t['name'][t['amount'] < 100]
 
     assert list(compute(expr, data)) == ['Alice']
+
+
+def test_recursive_rowfunc():
+    f = rrowfunc(t['name'], t)
+    assert [f(row) for row in data] == [row[0] for row in data]
+
+    f = rrowfunc(t['amount'] + t['id'], t)
+    assert [f(row) for row in data] == [row[1] + row[2] for row in data]
+
+    assert raises(Exception, lambda: rrowfunc(t[t['amount'] < 0]['name'], t))
+
+
+def test_recursive_rowfunc_is_used():
+    expr = By(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
+    expected = [('Alice', 2*(101 + 53)),
+                ('Bob', 2*(202))]
+    assert set(compute(expr, data)) == set(expected)
+
+    expr = Selection(t[t['amount'] < 100]['name'], t['name'] == 'Alice')
+
+    assert raises(Exception, lambda: compute(expr, data))
+
+
+
+

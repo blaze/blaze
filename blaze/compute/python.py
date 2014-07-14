@@ -36,19 +36,17 @@ from ..data import DataDescriptor
 # Dump exp, log, sin, ... into namespace
 from math import *
 
-__all__ = ['compute', 'compute_one', 'Sequence']
+__all__ = ['compute', 'compute_one', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator)
 
 
-
-def recursive_rowfunc(t):
+def recursive_rowfunc(t, stop):
     """ Compose rowfunc functions up a tree
 
-    Stops when we hit a non-RowWise operation
-
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
-    >>> f = recursive_rowfunc(accounts['amount'].map(lambda x: x + 1))
+    >>> expr = accounts['amount'].map(lambda x: x + 1)
+    >>> f = recursive_rowfunc(expr, accounts)
 
     >>> row = ('Alice', 100)
     >>> f(row)
@@ -56,15 +54,14 @@ def recursive_rowfunc(t):
 
     """
     funcs = []
-    while isinstance(t, RowWise):
+    while not t.isidentical(stop):
         funcs.append(rowfunc(t))
         t = t.parent
-    if not funcs:
-        raise TypeError("Expected RowWise operation, got %s" % str(t))
-    elif len(funcs) == 1:
-        return funcs[0]
-    else:
-        return compose(*funcs)
+    return compose(*funcs)
+
+
+rrowfunc = recursive_rowfunc
+
 
 @dispatch(TableSymbol)
 def rowfunc(t):
@@ -139,7 +136,7 @@ def concat_maybe_tuples(vals):
 
 @dispatch(Merge)
 def rowfunc(t):
-    funcs = list(map(recursive_rowfunc, t.children))
+    funcs = [rrowfunc(child, t.parent) for child in t.children]
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
@@ -150,7 +147,9 @@ def compute_one(t, seq, **kwargs):
 
 @dispatch(Selection, Sequence)
 def compute_one(t, seq, **kwargs):
-    return map(rowfunc(t.apply), filter(rowfunc(t.predicate), seq))
+    return map(rrowfunc(t.apply, t.parent),
+               filter(rrowfunc(t.predicate, t.parent),
+                      seq))
 
 
 @dispatch(Reduction, Sequence)
@@ -228,20 +227,18 @@ binops = {sum: (operator.add, 0),
 
 @dispatch(By, Sequence)
 def compute_one(t, seq, **kwargs):
+    grouper = rrowfunc(t.grouper, t.parent)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
-        applier = rowfunc(t.apply.parent.subs({t.apply.parent.parent:
-                                               t.parent}))
-        grouper = rowfunc(t.grouper.subs({t.grouper.parent: t.parent}))
+        applier = rrowfunc(t.apply.parent, t.parent)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
 
         d = reduceby(grouper, binop2, seq, initial)
     else:
-        grouper = rowfunc(t.grouper)
         groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 
