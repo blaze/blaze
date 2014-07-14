@@ -98,3 +98,11 @@ def test_exprify():
     assert raises(Exception, lambda: exprify('os.listdir()', {}))
     assert raises(Exception, lambda: exprify('os.listdir()',
         {'os': 'int', 'os.listdir': 'real'}))
+
+
+def test_scalar_coerce():
+    assert scalar_coerce('int', 1) == 1
+    assert scalar_coerce('int', '1') == 1
+    assert scalar_coerce('{x: int}', '1') == 1
+    assert raises(TypeError, lambda: scalar_coerce('{x: int, y: int}', '1'))
+    assert raises(TypeError, lambda: scalar_coerce('3 * int', '1'))

@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import operator
+from toolz import first
+import numpy as np
 from datashape import dshape
 from dateutil.parser import parse as dt_parse
 from .core import Scalar, BinOp, UnaryOp
@@ -19,13 +21,35 @@ def scalar_coerce(_, val):
 def scalar_coerce(_, val):
     return dt_parse(val)
 
+@dispatch(ct.CType, _strtypes)
+def scalar_coerce(dt, val):
+    return np.asscalar(np.asarray(val, dtype=dt.to_numpy_dtype()))
+
+@dispatch(ct.Record, object)
+def scalar_coerce(rec, val):
+    if len(rec.fields) == 1:
+        return scalar_coerce(first(rec.fields.values()), val)
+    else:
+        raise TypeError("Trying to coerce complex datashape\n"
+                "got dshape: %s\n"
+                "scalar_coerce only intended for scalar values" % rec)
+
 @dispatch(ct.DataShape, object)
-def scalar_coerce(dtype, val):
-    return scalar_coerce(dtype[0], val)
+def scalar_coerce(ds, val):
+    if len(ds) == 1:
+        return scalar_coerce(ds[0], val)
+    else:
+        raise TypeError("Trying to coerce dimensional datashape\n"
+                "got dshape: %s\n"
+                "scalar_coerce only intended for scalar values" % ds)
 
 @dispatch(object, object)
 def scalar_coerce(dtype, val):
     return val
+
+@dispatch(_strtypes, object)
+def scalar_coerce(ds, val):
+    return scalar_coerce(dshape(ds), val)
 
 
 class NumberInterface(Scalar):
