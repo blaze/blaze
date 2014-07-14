@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from blaze.compute.spark import *
 from blaze.compatibility import skip
 from blaze.expr.table import *
+from blaze.utils import raises
 
 data = [['Alice', 100, 1],
         ['Bob', 200, 2],
@@ -222,3 +223,14 @@ def test_spark_selection_out_of_order():
     expr = t['name'][t['amount'] < 100]
 
     assert compute(expr, rdd).collect() == ['Alice']
+
+
+def test_recursive_rowfunc_is_used():
+    expr = By(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
+    expected = [('Alice', 2*(101 + 53)),
+                ('Bob', 2*(202))]
+    assert set(compute(expr, rdd).collect()) == set(expected)
+
+    expr = Selection(t[t['amount'] < 100]['name'], t['name'] == 'Alice')
+
+    assert raises(Exception, lambda: compute(expr, rdd))

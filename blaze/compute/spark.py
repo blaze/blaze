@@ -9,7 +9,7 @@ from collections import Iterator
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
-from .python import compute, rowfunc, RowWise, listpack
+from .python import compute, rrowfunc, rowfunc, RowWise, listpack
 from ..compatibility import builtins
 from ..expr import table
 from ..dispatch import dispatch
@@ -51,8 +51,8 @@ def compute_one(t, rdd, **kwargs):
 
 @dispatch(Selection, RDD)
 def compute_one(t, rdd, **kwargs):
-    predicate = rowfunc(t.predicate)
-    apply = rowfunc(t.apply)
+    predicate = rrowfunc(t.predicate, t.parent)
+    apply = rrowfunc(t.apply, t.parent)
     return rdd.filter(predicate).map(apply)
 
 
@@ -149,8 +149,8 @@ def compute_one(t, rdd, **kwargs):
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
 
-    grouper = rowfunc(t.grouper)
-    pre = rowfunc(t.apply.parent)
+    grouper = rrowfunc(t.grouper, t.parent)
+    pre = rrowfunc(t.apply.parent, t.parent)
 
     groups = (rdd.map(lambda x: (grouper(x), pre(x)))
              .groupByKey())
