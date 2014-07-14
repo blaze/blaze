@@ -106,3 +106,9 @@ def test_scalar_coerce():
     assert scalar_coerce('{x: int}', '1') == 1
     assert raises(TypeError, lambda: scalar_coerce('{x: int, y: int}', '1'))
     assert raises(TypeError, lambda: scalar_coerce('3 * int', '1'))
+
+    assert scalar_coerce('date', 'Jan 1st, 2012') == date(2012, 1, 1)
+    assert scalar_coerce('datetime', 'Jan 1st, 2012 12:00:00') == \
+            datetime(2012, 1, 1, 12, 0, 0)
+    assert raises(ValueError,
+                  lambda: scalar_coerce('date', 'Jan 1st, 2012 12:00:00'))

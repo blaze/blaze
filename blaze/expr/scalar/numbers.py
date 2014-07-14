@@ -15,7 +15,11 @@ from .boolean import *
 
 @dispatch(ct.Date, _strtypes)
 def scalar_coerce(_, val):
-    return dt_parse(val).date()
+    dt = dt_parse(val)
+    if dt.time():
+        raise ValueError("Can not coerce %s to type Date, "
+                "contains time information")
+    return dt.date()
 
 @dispatch(ct.DateTime, _strtypes)
 def scalar_coerce(_, val):
