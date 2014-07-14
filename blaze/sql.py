@@ -12,7 +12,7 @@ def compute_one(t, ddesc):
 
 
 @dispatch(Expr, sql.sql.ClauseElement, dict)
-def finalize(expr, query, d):
+def post_compute(expr, query, d):
     try:
         engines = set([dd.engine for dd in d.values()])
     except:

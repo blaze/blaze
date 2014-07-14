@@ -16,8 +16,21 @@ base = (int, float, str, bool, date, datetime)
 def compute_one(a):
     return a
 
+
 @dispatch(Expr, object)
 def compute(expr, o):
+    """ Compute against single input
+
+    Assumes that only one TableSymbol exists in expression
+
+    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> deadbeats = t[t['balance'] < 0]['name']
+
+    >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
+    >>> # list(compute(deadbeats, {t: data}))
+    >>> list(compute(deadbeats, data))
+    ['Bob', 'Charlie']
+    """
     ts = set([x for x in expr.ancestors() if isinstance(x, TableSymbol)])
     if len(ts) == 1:
         return compute(expr, {first(ts): o})
@@ -33,26 +46,39 @@ def bottom_up(d, expr):
     if expr in d:
         return d[expr]
 
-    if isinstance(expr, base):
-        return expr
-
-    parents = [bottom_up(d, getattr(expr, parent)) for parent in expr.inputs]
+    parents = ([bottom_up(d, getattr(expr, parent)) for parent in expr.inputs]
+                if hasattr(expr, 'inputs') else [])
 
     result = compute_one(expr, *parents)
 
     return result
 
 
+@dispatch(Expr, dict)
+def pre_compute(expr, d):
+    """ Transform expr prior to calling ``compute`` """
+    return expr
+
+
 @dispatch(Expr, object, dict)
-def finalize(expr, result, d):
+def post_compute(expr, result, d):
     """ Effects after the computation is complete """
     return result
 
 
 @dispatch(Expr, dict)
 def compute(expr, d):
+    """ Compute expression against data sources
+
+    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> deadbeats = t[t['balance'] < 0]['name']
+
+    >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
+    >>> list(compute(deadbeats, {t: data}))
+    ['Bob', 'Charlie']
+    """
     result = bottom_up(d, expr)
-    return finalize(expr, result, d)
+    return post_compute(expr, result, d)
 
 
 def columnwise_funcstr(t, variadic=True, full=False):
