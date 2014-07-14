@@ -216,3 +216,9 @@ def test_spark_into():
     seq = [1, 2, 3]
     assert isinstance(into(rdd, seq), RDD)
     assert into([], into(rdd, seq)) == seq
+
+
+def test_spark_selection_out_of_order():
+    expr = t['name'][t['amount'] < 100]
+
+    assert compute(expr, rdd).collect() == ['Alice']

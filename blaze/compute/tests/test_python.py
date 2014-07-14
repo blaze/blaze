@@ -311,3 +311,9 @@ def test_merge():
     expr = merge(t['name'], col)
 
     assert list(compute(expr, data)) == [(row[0], row[1] * 2) for row in data]
+
+
+def test_selection_out_of_order():
+    expr = t['name'][t['amount'] < 100]
+
+    assert list(compute(expr, data)) == ['Alice']

@@ -13,12 +13,12 @@ base = (int, float, str, bool, date, datetime)
 
 
 @dispatch(base)
-def compute_one(a):
+def compute_one(a, **kwargs):
     return a
 
 
 @dispatch(Expr, object)
-def compute(expr, o):
+def compute(expr, o, **kwargs):
     """ Compute against single input
 
     Assumes that only one TableSymbol exists in expression
@@ -33,7 +33,7 @@ def compute(expr, o):
     """
     ts = set([x for x in expr.ancestors() if isinstance(x, TableSymbol)])
     if len(ts) == 1:
-        return compute(expr, {first(ts): o})
+        return compute(expr, {first(ts): o}, **kwargs)
     else:
         raise ValueError("Give compute dictionary input, got %s" % str(o))
 
@@ -49,7 +49,7 @@ def bottom_up(d, expr):
     parents = ([bottom_up(d, getattr(expr, parent)) for parent in expr.inputs]
                 if hasattr(expr, 'inputs') else [])
 
-    result = compute_one(expr, *parents)
+    result = compute_one(expr, *parents, scope=d)
 
     return result
 

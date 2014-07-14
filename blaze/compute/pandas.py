@@ -31,50 +31,51 @@ __all__ = ['compute_one']
 
 
 @dispatch(Projection, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return df[list(t.columns)]
 
 
 @dispatch(Column, (DataFrame, DataFrameGroupBy))
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return df[t.columns[0]]
 
 
 @dispatch(ColumnWise, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     columns = [t.parent[c] for c in t.parent.columns]
     d = dict((t.parent[c].scalar_symbol, df[c]) for c in t.parent.columns)
     return compute(t.expr, d)
 
 
 @dispatch(BinOp, Series, (Series, base))
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(BinOp, (Series, base), Series)
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, Series)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return getattr(np, t.symbol)(df)
 
 
 @dispatch(Neg, (DataFrame, Series))
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return -df
 
 
 @dispatch(Selection, (Series, DataFrame))
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     predicate = compute(t.predicate, {t.parent: df})
-    return df[predicate]
+    apply = compute(t.apply, {t.parent: df})
+    return apply[predicate]
 
 
 @dispatch(TableSymbol, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
@@ -83,7 +84,7 @@ def compute_one(t, df):
 
 
 @dispatch(Join, DataFrame, DataFrame)
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     """ Join two pandas data frames on arbitrary columns
 
     The approach taken here could probably be improved.
@@ -107,17 +108,17 @@ def compute_one(t, lhs, rhs):
 
 
 @dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
-def compute_one(t, gb):
+def compute_one(t, gb, **kwargs):
     return gb
 
 
 @dispatch(Reduction, (DataFrame, DataFrameGroupBy, SeriesGroupBy, Series))
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return getattr(df, t.symbol)()
 
 
 @dispatch(Distinct, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return df.drop_duplicates()
 
 
@@ -136,7 +137,7 @@ def unpack(seq):
     return seq
 
 @dispatch(By, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     assert isinstance(t.apply, Reduction)
     grouper = DataFrame(compute(t.grouper, {t.parent: df}))
     pregrouped = DataFrame(compute(t.apply.parent, {t.parent: df}))
@@ -156,52 +157,52 @@ def compute_one(t, df):
 
 
 @dispatch(Sort, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return df.sort(t.key, ascending=t.ascending)
 
 
 @dispatch(Sort, Series)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     return s.order(t.key, ascending=t.ascending)
 
 
 @dispatch(Head, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return df.head(t.n)
 
 
 @dispatch(Label, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return DataFrame(df, columns=[t.label])
 
 
 @dispatch(Label, Series)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return Series(df, name=t.label)
 
 
 @dispatch(ReLabel, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return DataFrame(df, columns=t.columns)
 
 
 @dispatch(Map, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return df.apply(lambda tup: t.func(*tup), axis=1)
 
 
 @dispatch(Map, Series)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return df.map(t.func)
 
 
 @dispatch(Apply, (Series, DataFrame))
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     return t.func(df)
 
 
 @dispatch(Merge, DataFrame)
-def compute_one(t, df):
+def compute_one(t, df, **kwargs):
     ancestor = common_ancestor(*t.children)
     children = [compute(child, {ancestor: df}) for child in t.children]
     return pd.concat(children, axis=1)

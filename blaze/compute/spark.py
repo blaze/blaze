@@ -44,15 +44,16 @@ except:
 
 
 @dispatch(RowWise, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     func = rowfunc(t)
     return rdd.map(func)
 
 
 @dispatch(Selection, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     predicate = rowfunc(t.predicate)
-    return rdd.filter(predicate)
+    apply = rowfunc(t.apply)
+    return rdd.filter(predicate).map(apply)
 
 
 rdd_reductions = {
@@ -67,7 +68,7 @@ rdd_reductions = {
 
 
 @dispatch(tuple(rdd_reductions), RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     return rdd_reductions[type(t)](rdd)
 
 
@@ -76,22 +77,22 @@ def istruthy(x):
 
 
 @dispatch(table.any, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     return istruthy(rdd.filter(identity).take(1))
 
 
 @dispatch(table.all, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     return not rdd.filter(lambda x: not x).take(1)
 
 
 @dispatch(Head, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     return rdd.take(t.n)
 
 
 @dispatch(Sort, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     if isinstance(t.key, (str, tuple, list)):
         key = rowfunc(t.parent[t.key])
     else:
@@ -102,12 +103,12 @@ def compute_one(t, rdd):
 
 
 @dispatch(Distinct, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     return rdd.distinct()
 
 
 @dispatch(Join, RDD, RDD)
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
 
@@ -141,7 +142,7 @@ python_reductions = {
 
 
 @dispatch(By, RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     try:
         reduction = python_reductions[type(t.apply)]
     except KeyError:
@@ -162,7 +163,7 @@ def compute_one(t, rdd):
 
 
 @dispatch((Label, ReLabel), RDD)
-def compute_one(t, rdd):
+def compute_one(t, rdd, **kwargs):
     return rdd
 
 

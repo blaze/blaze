@@ -185,7 +185,7 @@ from ..dispatch import dispatch
 from blaze.expr.table import Join, TableExpr
 from blaze.expr.core import Expr
 @dispatch(Expr, DataDescriptor)
-def compute_one(t, ddesc):
+def compute_one(t, ddesc, **kwargs):
     return compute_one(t, iter(ddesc))  # use Python streaming by default
 
 

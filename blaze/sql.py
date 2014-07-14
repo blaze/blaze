@@ -7,8 +7,8 @@ from .expr.scalar.core import Scalar
 import sqlalchemy
 
 @dispatch(Expr, SQL)
-def compute_one(t, ddesc):
-    return compute_one(t, ddesc.table)
+def compute_one(t, ddesc, **kwargs):
+    return compute_one(t, ddesc.table, **kwargs)
 
 
 @dispatch(Expr, sql.sql.ClauseElement, dict)

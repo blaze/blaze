@@ -144,17 +144,17 @@ def rowfunc(t):
 
 
 @dispatch(RowWise, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return map(rowfunc(t), seq)
 
 
 @dispatch(Selection, Sequence)
-def compute_one(t, seq):
-    return filter(rowfunc(t.predicate), seq)
+def compute_one(t, seq, **kwargs):
+    return map(rowfunc(t.apply), filter(rowfunc(t.predicate), seq))
 
 
 @dispatch(Reduction, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     op = getattr(builtins, t.symbol)
     return op(seq)
 
@@ -184,32 +184,32 @@ def _std(seq):
 
 
 @dispatch(count, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return cytoolz.count(seq)
 
 
 @dispatch(Distinct, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return unique(seq)
 
 
 @dispatch(nunique, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return len(set(seq))
 
 
 @dispatch(mean, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return _mean(seq)
 
 
 @dispatch(var, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return _var(seq)
 
 
 @dispatch(std, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return _std(seq)
 
 
@@ -227,7 +227,7 @@ binops = {sum: (operator.add, 0),
 
 
 @dispatch(By, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
@@ -251,7 +251,7 @@ def compute_one(t, seq):
         return tuple(k + (v,) for k, v in d.items())
 
 @dispatch(Join, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     a, b = itertools.tee(seq)
     return compute(t, a, b)
 
@@ -276,7 +276,7 @@ def listpack(x):
 
 
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     """ Join Operation for Python Streaming Backend
 
     Note that a pure streaming Join is challenging/impossible because any row
@@ -313,7 +313,7 @@ def compute_one(t, lhs, rhs):
 
 
 @dispatch(Sort, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     if isinstance(t.key, (str, tuple, list)):
         key = rowfunc(t.parent[t.key])
     else:
@@ -324,15 +324,15 @@ def compute_one(t, seq):
 
 
 @dispatch(Head, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return tuple(take(t.n, seq))
 
 
 @dispatch((Label, ReLabel), Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return seq
 
 
 @dispatch(Apply, Sequence)
-def compute_one(t, seq):
+def compute_one(t, seq, **kwargs):
     return t.func(seq)

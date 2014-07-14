@@ -33,57 +33,61 @@ from .core import compute_one, compute, base
 __all__ = ['compute', 'compute_one', 'computefull', 'select']
 
 @dispatch(Projection, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, scope={}, **kwargs):
     # Walk up the tree to get the original columns
     ancestor = t
     while hasattr(ancestor, 'parent'):
         ancestor = ancestor.parent
-    ancestor = compute(ancestor, s)
-    columns = [ancestor.c.get(col) for col in t.columns]
+    cancestor = compute(ancestor, scope)
+    # Hack because cancestor may be SQL object
+    if not isinstance(cancestor, Selectable):
+        cancestor = cancestor.table
+    columns = [cancestor.c.get(col) for col in t.columns]
 
     return select(s).with_only_columns(columns)
 
 
 @dispatch(Column, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     return s.c.get(t.columns[0])
 
 
 @dispatch(ColumnWise, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     columns = [t.parent[c] for c in t.parent.columns]
     d = dict((t.parent[c].scalar_symbol, getattr(s.c, c)) for c in t.parent.columns)
     return compute(t.expr, d)
 
 
 @dispatch(BinOp, ClauseElement, (ClauseElement, base))
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(BinOp, (ClauseElement, base), ClauseElement)
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, ClauseElement)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
 
 
 @dispatch(Neg, (sa.Column, Selectable))
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     return -s
 
 
 @dispatch(Selection, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     predicate = compute(t.predicate, {t.parent: s})
+    apply = compute(t.apply, {t.parent: s})
     try:
-        return s.where(predicate)
+        return apply.where(predicate)
     except AttributeError:
-        return select([s]).where(predicate)
+        return select([apply]).where(predicate)
 
 
 def select(s):
@@ -112,7 +116,7 @@ def listpack(x):
 
 
 @dispatch(Join, Selectable, Selectable)
-def compute_one(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     condition = reduce(and_, [getattr(lhs.c, l) == getattr(rhs.c, r)
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
@@ -130,7 +134,7 @@ names = {mean: 'avg',
 
 
 @dispatch(Reduction, sql.elements.ClauseElement)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
     except:
@@ -146,17 +150,17 @@ def compute_one(t, s):
 
 
 @dispatch(nunique, ClauseElement)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     return sqlalchemy.sql.functions.count(sqlalchemy.distinct(s))
 
 
 @dispatch(Distinct, (sa.Column, Selectable))
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     return sqlalchemy.distinct(s)
 
 
 @dispatch(By, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     if isinstance(t.grouper, Projection):
         grouper = [compute(t.grouper.parent[col], {t.parent: s})
                     for col in t.grouper.columns]
@@ -168,7 +172,7 @@ def compute_one(t, s):
 
 
 @dispatch(Sort, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
     col = getattr(s.c, t.key)
@@ -178,7 +182,7 @@ def compute_one(t, s):
 
 
 @dispatch(Head, ClauseElement)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     if hasattr(s, 'limit'):
         return s.limit(t.n)
     else:
@@ -186,12 +190,12 @@ def compute_one(t, s):
 
 
 @dispatch(Label, ClauseElement)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     return s.label(t.label)
 
 
 @dispatch(ReLabel, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
@@ -201,7 +205,7 @@ def compute_one(t, s):
 
 
 @dispatch(Merge, Selectable)
-def compute_one(t, s):
+def compute_one(t, s, **kwargs):
     ancestor = common_ancestor(*t.children)
     children = [compute(child, {ancestor: s}) for child in t.children]
     return select(children)
