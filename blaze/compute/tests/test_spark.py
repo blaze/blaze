@@ -143,6 +143,8 @@ def test_spark_sort():
     check_exprs_against_python([
                 t.sort('amount'),
                 t.sort('amount', ascending=True),
+                t.sort(t['amount'], ascending=True),
+                t.sort(-t['amount'].label('foo') + 1, ascending=True),
                 t.sort(['amount', 'id'])], data, rdd)
 
 def test_spark_distinct():
@@ -225,12 +227,8 @@ def test_spark_selection_out_of_order():
     assert compute(expr, rdd).collect() == ['Alice']
 
 
-def test_recursive_rowfunc_is_used():
+def test_spark_recursive_rowfunc_is_used():
     expr = By(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, rdd).collect()) == set(expected)
-
-    expr = Selection(t[t['amount'] < 100]['name'], t['name'] == 'Alice')
-
-    assert raises(Exception, lambda: compute(expr, rdd))

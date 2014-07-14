@@ -96,7 +96,7 @@ def compute_one(t, rdd, **kwargs):
     if isinstance(t.key, (str, tuple, list)):
         key = rowfunc(t.parent[t.key])
     else:
-        key = rowfunc(t.key)
+        key = rrowfunc(t.key, t.parent)
     return (rdd.keyBy(key)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
