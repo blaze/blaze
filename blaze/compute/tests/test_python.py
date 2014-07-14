@@ -315,7 +315,7 @@ def test_merge():
 def test_map_columnwise():
     colwise = t['amount'] * t['id']
 
-    expr = colwise.map(lambda x: x % 10, schema="{mod: int64}", iscolumn=True)
+    expr = colwise.map(lambda x: x / 10, schema="{mod: int64}", iscolumn=True)
 
-    assert list(compute(expr, data)) == [((row[1]*row[1]) % 10) for row in data]
+    assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data]
 
