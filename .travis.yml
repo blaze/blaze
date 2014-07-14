@@ -69,7 +69,7 @@ install:
   # Install Blaze
   - python setup.py install
 
-script: nosetests --with-doctest --exclude test_spark_\w*
+script: nosetests -v --with-doctest --exclude test_spark_\w*
 
 notifications:
   email: false
