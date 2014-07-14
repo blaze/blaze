@@ -316,7 +316,7 @@ inc = lambda x: x + 1
 
 def test_ancestors():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
-    assert a.ancestors() == (a,)
+    assert list(a.ancestors()) == [a]
     assert set(a['x'].ancestors()) == set([a, a['x']])
     assert set(a['x'].map(inc).ancestors()) == set([a, a['x'], a['x'].map(inc)])
     assert a in set((a['x'] + 1).ancestors())

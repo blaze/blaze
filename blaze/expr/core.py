@@ -60,8 +60,10 @@ class Expr(object):
                                             if isinstance(arg, Expr)])
 
     def ancestors(self):
-        return (self,) + sum([getattr(self, i).ancestors()
-                                for i in self.inputs], ())
+        yield self
+        for i in self.inputs:
+            for node in getattr(self, i).ancestors():
+                yield node
 
     def __contains__(self, other):
         return other in set(self.ancestors())
