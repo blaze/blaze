@@ -369,3 +369,9 @@ def test_discover():
     a = TableSymbol('a', schema)
 
     assert discover(a) == var * schema
+
+
+def test_improper_selection():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+
+    assert raises(Exception, lambda: t[t['x'] > 0][t.sort()[t['y' > 0]]])

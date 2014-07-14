@@ -67,6 +67,7 @@ rrowfunc = recursive_rowfunc
 def rowfunc(t):
     return identity
 
+
 @dispatch(Projection)
 def rowfunc(t):
     """ Rowfunc provides a function that can be mapped onto a sequence.

@@ -335,11 +335,3 @@ def test_recursive_rowfunc_is_used():
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, data)) == set(expected)
-
-    expr = Selection(t[t['amount'] < 100]['name'], t['name'] == 'Alice')
-
-    assert raises(Exception, lambda: compute(expr, data))
-
-
-
-

@@ -12,7 +12,7 @@ from toolz import concat, partial, first, pipe, compose, get, unique
 import toolz
 from toolz.curried import filter
 from . import scalar
-from .core import Expr, Scalar
+from .core import Expr, Scalar, path
 from .scalar import ScalarSymbol
 from .scalar import *
 from ..compatibility import _strtypes, builtins
@@ -313,6 +313,15 @@ class Selection(TableExpr):
 
     def __init__(self, table, predicate):
         ancestor = common_ancestor(table, predicate)
+
+        if builtins.any(not isinstance(node, (RowWise, TableSymbol))
+               for node in concat([path(predicate, ancestor),
+                                   path(table, ancestor)])):
+
+            raise ValueError("Selection not properly matched with table:\n"
+                       "parent: %s\n"
+                       "apply: %s\n"
+                       "predicate: %s" % (ancestor, table, predicate))
 
         if predicate.dtype != dshape('bool'):
             raise TypeError("Must select over a boolean predicate.  Got:\n"
