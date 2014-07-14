@@ -87,6 +87,15 @@ def test_selection_by_indexing():
     assert 'Alice' in str(result)
 
 
+def test_selection_consistent_parents():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+
+    expr = t['name'][t['amount'] < 0]
+
+    assert expr.columns == ['name']
+    assert expr.parent == t
+
+
 def test_columnwise_syntax():
     t = TableSymbol('t', '{x: real, y: real, z: real}')
     x, y, z = t['x'], t['y'], t['z']

@@ -309,25 +309,28 @@ class Selection(TableExpr):
     ...                        '{name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts['amount'] < 0]
     """
-    __slots__ = 'parent', 'predicate'
+    __slots__ = 'parent', 'apply', 'predicate'
 
     def __init__(self, table, predicate):
+        ancestor = common_ancestor(table, predicate)
+
         if predicate.dtype != dshape('bool'):
             raise TypeError("Must select over a boolean predicate.  Got:\n"
                             "%s[%s]" % (table, predicate))
-        self.parent = table
+        self.parent = ancestor
+        self.apply = table
         self.predicate = predicate  # A Relational
 
     def __str__(self):
-        return "%s[%s]" % (self.parent, self.predicate)
+        return "%s[%s]" % (self.apply, self.predicate)
 
     @property
     def schema(self):
-        return self.parent.schema
+        return self.apply.schema
 
     @property
     def iscolumn(self):
-        return self.parent.iscolumn
+        return self.apply.iscolumn
 
 
 def columnwise(op, *column_inputs):
