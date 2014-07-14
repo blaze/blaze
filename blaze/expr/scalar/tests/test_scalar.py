@@ -1,6 +1,10 @@
+from __future__ import absolute_import, division, print_function
+
 from blaze.expr.scalar import *
 from blaze.compatibility import skip
+from blaze.utils import raises
 import math
+from datetime import date, datetime
 
 x = ScalarSymbol('x')
 y = ScalarSymbol('y')
@@ -69,3 +73,42 @@ def test_arithmetic_dshape_inference():
     x = ScalarSymbol('x', 'int')
     y = ScalarSymbol('y', 'int')
     assert (x + y).dshape == dshape('int')
+
+
+def test_date_coercion():
+    d = ScalarSymbol('d', 'date')
+    expr = d < '2012-01-01'
+    assert isinstance(expr.rhs, date)
+
+
+def test_datetime_coercion():
+    d = ScalarSymbol('d', 'datetime')
+    expr = d > '2012-01-01T12:30:00'
+    assert isinstance(expr.rhs, datetime)
+
+
+def test_exprify():
+    dtypes = {'x': 'int', 'y': 'real'}
+    x = ScalarSymbol('x', 'int')
+    y = ScalarSymbol('y', 'real')
+
+    assert exprify('x + y', dtypes) == x + y
+    assert exprify('isnan(sin(x) + y)', dtypes) == isnan(sin(x) + y)
+
+    assert raises(Exception, lambda: exprify('os.listdir()', {}))
+    assert raises(Exception, lambda: exprify('os.listdir()',
+        {'os': 'int', 'os.listdir': 'real'}))
+
+
+def test_scalar_coerce():
+    assert scalar_coerce('int', 1) == 1
+    assert scalar_coerce('int', '1') == 1
+    assert scalar_coerce('{x: int}', '1') == 1
+    assert raises(TypeError, lambda: scalar_coerce('{x: int, y: int}', '1'))
+    assert raises(TypeError, lambda: scalar_coerce('3 * int', '1'))
+
+    assert scalar_coerce('date', 'Jan 1st, 2012') == date(2012, 1, 1)
+    assert scalar_coerce('datetime', 'Jan 1st, 2012 12:00:00') == \
+            datetime(2012, 1, 1, 12, 0, 0)
+    assert raises(ValueError,
+                  lambda: scalar_coerce('date', 'Jan 1st, 2012 12:00:00'))

@@ -1,71 +1,120 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 import operator
+from toolz import first
+import numpy as np
 from datashape import dshape
+from dateutil.parser import parse as dt_parse
 from .core import Scalar, BinOp, UnaryOp
 from ..core import Expr
+from ...dispatch import dispatch
+from ...compatibility import _strtypes
+from datashape import coretypes as ct
 from .boolean import *
+
+
+@dispatch(ct.Date, _strtypes)
+def scalar_coerce(_, val):
+    dt = dt_parse(val)
+    if dt.time():
+        raise ValueError("Can not coerce %s to type Date, "
+                "contains time information")
+    return dt.date()
+
+@dispatch(ct.DateTime, _strtypes)
+def scalar_coerce(_, val):
+    return dt_parse(val)
+
+@dispatch(ct.CType, _strtypes)
+def scalar_coerce(dt, val):
+    return np.asscalar(np.asarray(val, dtype=dt.to_numpy_dtype()))
+
+@dispatch(ct.Record, object)
+def scalar_coerce(rec, val):
+    if len(rec.fields) == 1:
+        return scalar_coerce(first(rec.fields.values()), val)
+    else:
+        raise TypeError("Trying to coerce complex datashape\n"
+                "got dshape: %s\n"
+                "scalar_coerce only intended for scalar values" % rec)
+
+@dispatch(ct.DataShape, object)
+def scalar_coerce(ds, val):
+    if len(ds) == 1:
+        return scalar_coerce(ds[0], val)
+    else:
+        raise TypeError("Trying to coerce dimensional datashape\n"
+                "got dshape: %s\n"
+                "scalar_coerce only intended for scalar values" % ds)
+
+@dispatch(object, object)
+def scalar_coerce(dtype, val):
+    return val
+
+@dispatch(_strtypes, object)
+def scalar_coerce(ds, val):
+    return scalar_coerce(dshape(ds), val)
 
 
 class NumberInterface(Scalar):
     def __eq__(self, other):
-        return Eq(self, other)
+        return Eq(self, scalar_coerce(self.dshape, other))
 
     def __ne__(self, other):
-        return NE(self, other)
+        return NE(self, scalar_coerce(self.dshape, other))
 
     def __lt__(self, other):
-        return LT(self, other)
+        return LT(self, scalar_coerce(self.dshape, other))
 
     def __le__(self, other):
-        return LE(self, other)
+        return LE(self, scalar_coerce(self.dshape, other))
 
     def __gt__(self, other):
-        return GT(self, other)
+        return GT(self, scalar_coerce(self.dshape, other))
 
     def __ge__(self, other):
-        return GE(self, other)
+        return GE(self, scalar_coerce(self.dshape, other))
 
     def __neg__(self):
         return Neg(self)
 
     def __add__(self, other):
-        return Add(self, other)
+        return Add(self, scalar_coerce(self.dshape, other))
 
     def __radd__(self, other):
-        return Add(other, self)
+        return Add(scalar_coerce(self.dshape, other), self)
 
     def __mul__(self, other):
-        return Mul(self, other)
+        return Mul(self, scalar_coerce(self.dshape, other))
 
     def __rmul__(self, other):
-        return Mul(other, self)
+        return Mul(scalar_coerce(self.dshape, other), self)
 
     def __div__(self, other):
-        return Div(self, other)
+        return Div(self, scalar_coerce(self.dshape, other))
 
     __truediv__ = __div__
 
     def __rdiv__(self, other):
-        return Div(other, self)
+        return Div(scalar_coerce(self.dshape, other), self)
 
     def __sub__(self, other):
-        return Sub(self, other)
+        return Sub(self, scalar_coerce(self.dshape, other))
 
     def __rsub__(self, other):
-        return Sub(other, self)
+        return Sub(scalar_coerce(self.dshape, other), self)
 
     def __pow__(self, other):
-        return Pow(self, other)
+        return Pow(self, scalar_coerce(self.dshape, other))
 
     def __rpow__(self, other):
-        return Pow(other, self)
+        return Pow(scalar_coerce(self.dshape, other), self)
 
     def __mod__(self, other):
-        return Mod(self, other)
+        return Mod(self, scalar_coerce(self.dshape, other))
 
     def __rmod__(self, other):
-        return Mod(other, self)
+        return Mod(scalar_coerce(self.dshape, other), self)
 
 
 class Number(NumberInterface):
