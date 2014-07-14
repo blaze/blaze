@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Server &mdash; Blaze 0.6.0-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.6.0-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+
+        <li class="active">
+            <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+
+        <li>
+            <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Server</a><ul>
+<li><a class="reference internal" href="#client">Client</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="server">
+<h1>Server<a class="headerlink" href="#server" title="Permalink to this headline">¶</a></h1>
+<p>Blaze data descriptors provide uniform NumPy-like access to a variety of common
+data formats.  Blaze Server builds off of this uniform interface to host data
+remotely through a simple REST-ful API.</p>
+<p>To demonstrate the use of the Blaze server we first build a data descriptor
+from a CSV file.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;accounts.csv&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">py</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">(1L, &#39;Alice&#39;, 100L)</span>
+</pre></div>
+</div>
+<p>Then we host this data descriptor under the name <tt class="docutils literal"><span class="pre">'accounts'</span></tt>.  A Server is a
+mapping of names to datasets and a Flask app.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.serve</span> <span class="kn">import</span> <span class="n">Server</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">({</span><span class="s">&#39;accounts&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">server</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With this code our machine is now hosting our CSV file through a
+web-application on port 5000.  We can now access our CSV file, through Blaze,
+as a service from a variety of applications.</p>
+<p>Using the Python Requests library</p>
+<div class="highlight-python"><div class="highlight"><pre>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">json</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">requests</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://localhost:5000/data/accounts.json&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s">&#39;index&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}),</span>
+<span class="gp">... </span>                <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s">&#39;application/json&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+<span class="go">{u&#39;data&#39;: [1, u&#39;Alice&#39;, 100],</span>
+<span class="go"> u&#39;datashape&#39;: u&#39;{ id : int64, name : string, balance : int64 }&#39;,</span>
+<span class="go"> u&#39;index&#39;: 0,</span>
+<span class="go"> u&#39;name&#39;: u&#39;accounts&#39;}</span>
+</pre></div>
+</div>
+<p>Or using <tt class="docutils literal"><span class="pre">curl</span></tt></p>
+<blockquote>
+<div><p>$ curl -H &#8220;Content-Type: application/json&#8221; -d &#8216;{&#8220;index&#8221;: 0}&#8217;
+localhost:5000/data/accounts.json
+{</p>
+<blockquote>
+<div><blockquote>
+<div>&#8220;data&#8221;: [1, &#8220;Alice&#8221;, 100],
+&#8220;datashape&#8221;: &#8220;{ id : int64, name : string, balance : int64 }&#8221;,
+&#8220;index&#8221;: 0,
+&#8220;name&#8221;: &#8220;accounts&#8221;</div></blockquote>
+<p>}</p>
+</div></blockquote>
+</div></blockquote>
+<p>Because this process builds off of the Blaze data layer it would would work
+equally well for data stored in CSV files, HDF5 files, or even a SQL database.</p>
+<p>Valid inputs for <tt class="docutils literal"><span class="pre">&quot;index&quot;</span></tt> include integers for row numbers, slices in the
+form <tt class="docutils literal"><span class="pre">{&quot;start&quot;:</span> <span class="pre">0,</span> <span class="pre">&quot;stop&quot;:</span> <span class="pre">100,</span> <span class="pre">&quot;step&quot;:</span> <span class="pre">10}</span></tt>, column names or lists of column
+names like the following request which gets the first ten name, balance pairs:</p>
+<blockquote>
+<div>data=&#8217;{&#8220;index&#8221;: [{&#8220;start&#8221;: 0, &#8220;stop&#8221;: 10}, [&#8220;name&#8221;, &#8220;balance&#8221;]]}&#8217;</div></blockquote>
+<div class="section" id="client">
+<h2>Client<a class="headerlink" href="#client" title="Permalink to this headline">¶</a></h2>
+<p>Just as the <tt class="docutils literal"><span class="pre">Server</span></tt> object can host a data descriptor on the network, the
+<tt class="docutils literal"><span class="pre">Client</span></tt> data descriptor consumes the API to provide the same data descriptor
+at a remote location,  removing the need to use the API if the client
+application is also in Python.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.serve</span> <span class="kn">import</span> <span class="n">Client</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="s">&#39;http://hostname:5000/&#39;</span><span class="p">,</span> <span class="s">&#39;accounts&#39;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span><span class="o">.</span><span class="n">columns</span>
+<span class="go">[u&#39;id&#39;, u&#39;name&#39;, u&#39;balance&#39;]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dd</span><span class="o">.</span><span class="n">py</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;balance&#39;</span><span class="p">]]</span>
+<span class="go">[(u&#39;Alice&#39;, 100L),</span>
+<span class="go"> (u&#39;Bob&#39;, -200L),</span>
+<span class="go"> (u&#39;Charlie&#39;, 300L)]</span>
+</pre></div>
+</div>
+<p>These actions query the server hosted at <tt class="docutils literal"><span class="pre">hostname:5000</span></tt> for the data
+descriptor associated to the name accounts.</p>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>

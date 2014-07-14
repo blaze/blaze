@@ -48,27 +48,23 @@
         <li>
             <a href="/index.html"><i class="icon-home"></i> Blaze</a>
         </li>
-        
+
         <li class="active">
             <a href="/docs/index.html"><i class="icon-book"></i> Documentation</a>
         </li>
-        
+
         <li>
             <a href="/docs/quickstart.html"><i class="icon-ok"></i> Examples</a>
         </li>
-        
+
         <li>
             <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
-        
-        <li>
-            <a href="/vision.html"><i class="icon-star"></i> Vision</a>
-        </li>
-        
+
         <li>
             <a href="/people.html"><i class="icon-user"></i> People</a>
         </li>
-        
+
         <li>
             <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
         </li>
@@ -113,7 +109,7 @@ Pandas/R DataFrame object.  Operations include projecting columns, filtering, ma
 <h3>TableSymbol<a class="headerlink" href="#tablesymbol" title="Permalink to this headline">¶</a></h3>
 <p>A <tt class="docutils literal"><span class="pre">TableSymbol</span></tt> refers to a single table in storage.  It must be given a name
 and a schema.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, balance: int}&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{id: int, name: string, balance: int}&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -122,7 +118,7 @@ and a schema.</p>
 <p>Intuitive operations follow from intuitive Python syntax, learned from systems
 like NumPy and Pandas.  The following defines a table, <tt class="docutils literal"><span class="pre">accounts</span></tt>, and then
 selects the names of those accounts with negative balance.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, balance: int}&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{id: int, name: string, balance: int}&#39;</span><span class="p">)</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">deadbeats</span> <span class="o">=</span> <span class="n">accounts</span><span class="p">[</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
 </pre></div>
