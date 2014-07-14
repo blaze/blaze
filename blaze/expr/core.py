@@ -63,6 +63,10 @@ class Expr(object):
         return (self,) + sum([getattr(self, i).ancestors()
                                 for i in self.inputs], ())
 
+    def __contains__(self, other):
+        return other in set(self.ancestors())
+
+
 def subs(o, d):
     if o in d:
         d = d.copy()
