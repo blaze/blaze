@@ -88,3 +88,18 @@ class Scalar(Expr):
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
+
+
+def path(a, b):
+    """ A path of nodes from a to b
+
+    >>> from blaze.expr.table import TableSymbol
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> expr = t['amount'].sum()
+    >>> list(path(expr, t))
+    [sum(t['amount']), t['amount'], t]
+    """
+    while not a.isidentical(b):
+        yield a
+        a = a.parent
+    yield a
