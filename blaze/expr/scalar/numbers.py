@@ -11,82 +11,82 @@ from datashape import coretypes as ct
 from .boolean import *
 
 
-@dispatch(_strtypes, ct.Date)
-def coerce(val, _):
+@dispatch(ct.Date, _strtypes)
+def scalar_coerce(_, val):
     return dt_parse(val).date()
 
-@dispatch(_strtypes, ct.DateTime)
-def coerce(val, _):
+@dispatch(ct.DateTime, _strtypes)
+def scalar_coerce(_, val):
     return dt_parse(val)
 
-@dispatch(object, ct.DataShape)
-def coerce(val, dtype):
-    return coerce(val, dtype[0])
+@dispatch(ct.DataShape, object)
+def scalar_coerce(dtype, val):
+    return scalar_coerce(dtype[0], val)
 
 @dispatch(object, object)
-def coerce(val, dtype):
+def scalar_coerce(dtype, val):
     return val
 
 
 class NumberInterface(Scalar):
     def __eq__(self, other):
-        return Eq(self, coerce(other, self.dshape))
+        return Eq(self, scalar_coerce(self.dshape, other))
 
     def __ne__(self, other):
-        return NE(self, coerce(other, self.dshape))
+        return NE(self, scalar_coerce(self.dshape, other))
 
     def __lt__(self, other):
-        return LT(self, coerce(other, self.dshape))
+        return LT(self, scalar_coerce(self.dshape, other))
 
     def __le__(self, other):
-        return LE(self, coerce(other, self.dshape))
+        return LE(self, scalar_coerce(self.dshape, other))
 
     def __gt__(self, other):
-        return GT(self, coerce(other, self.dshape))
+        return GT(self, scalar_coerce(self.dshape, other))
 
     def __ge__(self, other):
-        return GE(self, coerce(other, self.dshape))
+        return GE(self, scalar_coerce(self.dshape, other))
 
     def __neg__(self):
         return Neg(self)
 
     def __add__(self, other):
-        return Add(self, coerce(other, self.dshape))
+        return Add(self, scalar_coerce(self.dshape, other))
 
     def __radd__(self, other):
-        return Add(coerce(other, self.dshape), self)
+        return Add(scalar_coerce(self.dshape, other), self)
 
     def __mul__(self, other):
-        return Mul(self, coerce(other, self.dshape))
+        return Mul(self, scalar_coerce(self.dshape, other))
 
     def __rmul__(self, other):
-        return Mul(coerce(other, self.dshape), self)
+        return Mul(scalar_coerce(self.dshape, other), self)
 
     def __div__(self, other):
-        return Div(self, coerce(other, self.dshape))
+        return Div(self, scalar_coerce(self.dshape, other))
 
     __truediv__ = __div__
 
     def __rdiv__(self, other):
-        return Div(coerce(other, self.dshape), self)
+        return Div(scalar_coerce(self.dshape, other), self)
 
     def __sub__(self, other):
-        return Sub(self, coerce(other, self.dshape))
+        return Sub(self, scalar_coerce(self.dshape, other))
 
     def __rsub__(self, other):
-        return Sub(coerce(other, self.dshape), self)
+        return Sub(scalar_coerce(self.dshape, other), self)
 
     def __pow__(self, other):
-        return Pow(self, coerce(other, self.dshape))
+        return Pow(self, scalar_coerce(self.dshape, other))
 
     def __rpow__(self, other):
-        return Pow(coerce(other, self.dshape), self)
+        return Pow(scalar_coerce(self.dshape, other), self)
 
     def __mod__(self, other):
-        return Mod(self, coerce(other, self.dshape))
+        return Mod(self, scalar_coerce(self.dshape, other))
 
     def __rmod__(self, other):
-        return Mod(coerce(other, self.dshape), self)
+        return Mod(scalar_coerce(self.dshape, other), self)
 
 
 class Number(NumberInterface):
