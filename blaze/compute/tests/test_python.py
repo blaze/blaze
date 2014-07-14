@@ -310,3 +310,12 @@ def test_merge():
     expr = merge(t['name'], col)
 
     assert list(compute(expr, data)) == [(row[0], row[1] * 2) for row in data]
+
+
+def test_map_columnwise():
+    colwise = t['amount'] * t['id']
+
+    expr = colwise.map(lambda x: x % 10, schema="{mod: int64}", iscolumn=True)
+
+    assert list(compute(expr, data)) == [((row[1]*row[1]) % 10) for row in data]
+
