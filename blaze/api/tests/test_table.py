@@ -74,3 +74,13 @@ def test_dataframe_backed_repr():
     dataframe_backed_table = Table(df)
     repr(dataframe_backed_table)
 
+
+def test_dataframe_backed_repr_complex():
+    df = pd.DataFrame([(1, 'Alice', 100),
+                       (2, 'Bob', -200),
+                       (3, 'Charlie', 300),
+                       (4, 'Denis', 400),
+                       (5, 'Edith', -500)],
+                      columns=['id', 'name', 'balance'])
+    t = Table(df)
+    repr(t[t['balance'] < 0])
