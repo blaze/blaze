@@ -20,12 +20,13 @@ requirements:
       - multipledispatch
       - sqlalchemy
       - pandas
-      - h5py 
+      - h5py
       - datashape
       - flask
       - requests
       - cytoolz
       - toolz
+      - unicodecsv
 
 about:
     home: http://blaze.pydata.org
