@@ -64,11 +64,14 @@ class Table(TableSymbol):
     def resources(self):
         return {self: self.data}
 
-    def __hash__(self):
-        return hash((self.schema, self.name, id(self.data)))
+    @property
+    def args(self):
+        return (id(self.data), self.schema, self.name, self.iscolumn)
 
-    def traverse(self):
-        return [self]
+
+@dispatch(Table, dict)
+def _subs(o, d):
+    return o
 
 
 @dispatch(Table)
