@@ -70,8 +70,7 @@ def compute_one(t, df, **kwargs):
 @dispatch(Selection, (Series, DataFrame))
 def compute_one(t, df, **kwargs):
     predicate = compute(t.predicate, {t.child: df})
-    apply = compute(t.apply, {t.child: df})
-    return apply[predicate]
+    return df[predicate]
 
 
 @dispatch(TableSymbol, DataFrame)

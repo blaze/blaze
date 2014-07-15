@@ -83,11 +83,10 @@ def compute_one(t, s, **kwargs):
 @dispatch(Selection, Selectable)
 def compute_one(t, s, **kwargs):
     predicate = compute(t.predicate, {t.child: s})
-    apply = compute(t.apply, {t.child: s})
     try:
-        return apply.where(predicate)
+        return s.where(predicate)
     except AttributeError:
-        return select([apply]).where(predicate)
+        return select([s]).where(predicate)
 
 
 def select(s):

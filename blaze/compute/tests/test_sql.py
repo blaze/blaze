@@ -82,7 +82,7 @@ def test_join():
 
     L = TableSymbol('L', '{name: string, amount: int}')
     R = TableSymbol('R', '{name: string, id: int}')
-    joined = Join(L, R, 'name')
+    joined = join(L, R, 'name')
 
     result = compute(joined, {L: lhs, R: rhs})
 
@@ -108,7 +108,7 @@ def test_multi_column_join():
 
     L = TableSymbol('L', '{x: int, y: int, z: int}')
     R = TableSymbol('R', '{w: int, x: int, y: int}')
-    joined = Join(L, R, ['x', 'y'])
+    joined = join(L, R, ['x', 'y'])
 
     expected = lhs.join(rhs, (lhs.c.x == rhs.c.x)
                            & (lhs.c.y == rhs.c.y))
@@ -171,7 +171,7 @@ def test_binary_reductions():
 
 
 def test_by():
-    expr = By(t, t['name'], t['amount'].sum())
+    expr = by(t, t['name'], t['amount'].sum())
     result = compute(expr, s)
     expected = sa.select([s.c.name,
                           sa.sql.functions.sum(s.c.amount).label('amount')]
@@ -182,7 +182,7 @@ def test_by():
 
 def test_by_head():
     t2 = t.head(100)
-    expr = By(t2, t2['name'], t2['amount'].sum())
+    expr = by(t2, t2['name'], t2['amount'].sum())
     result = compute(expr, s)
     s2 = select(s).limit(100)
     expected = sa.select([s2.c.name,
@@ -193,7 +193,7 @@ def test_by_head():
 
 
 def test_by_two():
-    expr = By(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
+    expr = by(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
     result = compute(expr, sbig)
     expected = (sa.select([sbig.c.name,
                            sbig.c.sex,
@@ -204,7 +204,7 @@ def test_by_two():
 
 
 def test_by_three():
-    result = compute(By(tbig,
+    result = compute(by(tbig,
                         tbig[['name', 'sex']],
                         (tbig['id'] + tbig['amount']).sum()),
                      sbig)
@@ -229,11 +229,11 @@ def test_join_projection():
 
     L = TableSymbol('L', '{name: string, amount: int}')
     R = TableSymbol('R', '{name: string, id: int}')
-    want = Join(L, R, 'name')[['amount', 'id']]
+    want = join(L, R, 'name')[['amount', 'id']]
 
     result = compute(want, {L: lhs, R: rhs})
     print(result)
-    assert 'JOIN' in str(result)
+    assert 'join' in str(result).lower()
     assert result.c.keys() == ['amount', 'id']
     assert 'amounts.name = ids.name' in str(result)
 

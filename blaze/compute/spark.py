@@ -52,8 +52,7 @@ def compute_one(t, rdd, **kwargs):
 @dispatch(Selection, RDD)
 def compute_one(t, rdd, **kwargs):
     predicate = rrowfunc(t.predicate, t.child)
-    apply = rrowfunc(t.apply, t.child)
-    return rdd.filter(predicate).map(apply)
+    return rdd.filter(predicate)
 
 
 rdd_reductions = {

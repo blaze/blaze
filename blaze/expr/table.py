@@ -829,7 +829,7 @@ class Apply(TableExpr):
     """
     __slots__ = 'child', 'func', '_dshape'
 
-    def __init__(self, child, func, dshape=None):
+    def __init__(self, func, child, dshape=None):
         self.child = child
         self.func = func
         self._dshape = dshape
