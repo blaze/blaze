@@ -87,13 +87,13 @@ def test_selection_by_indexing():
     assert 'Alice' in str(result)
 
 
-def test_selection_consistent_parents():
+def test_selection_consistent_children():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     expr = t['name'][t['amount'] < 0]
 
     assert expr.columns == ['name']
-    assert expr.parent == t
+    assert expr.child == t
 
 
 def test_columnwise_syntax():
@@ -274,13 +274,13 @@ def test_columnwise():
     y = t['y']
     z = t['z']
     assert str(columnwise(Add, x, y).expr) == 'x + y'
-    assert columnwise(Add, x, y).parent.isidentical(t)
+    assert columnwise(Add, x, y).child.isidentical(t)
 
     c1 = columnwise(Add, x, y)
     c2 = columnwise(Mul, x, z)
 
     assert eval_str(columnwise(Eq, c1, c2).expr) == '(x + y) == (x * z)'
-    assert columnwise(Eq, c1, c2).parent.isidentical(t)
+    assert columnwise(Eq, c1, c2).child.isidentical(t)
 
     assert str(columnwise(Add, x, 1).expr) == 'x + 1'
 
@@ -314,21 +314,21 @@ def test_merge():
 inc = lambda x: x + 1
 
 
-def test_ancestors():
+def test_subterms():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
-    assert list(a.ancestors()) == [a]
-    assert set(a['x'].ancestors()) == set([a, a['x']])
-    assert set(a['x'].map(inc).ancestors()) == set([a, a['x'], a['x'].map(inc)])
-    assert a in set((a['x'] + 1).ancestors())
+    assert list(a.subterms()) == [a]
+    assert set(a['x'].subterms()) == set([a, a['x']])
+    assert set(a['x'].map(inc).subterms()) == set([a, a['x'], a['x'].map(inc)])
+    assert a in set((a['x'] + 1).subterms())
 
 
-def test_common_ancestor():
+def test_common_subexpression():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
 
-    assert common_ancestor(a).isidentical(a)
-    assert common_ancestor(a, a['x']).isidentical(a)
-    assert common_ancestor(a['y'] + 1, a['x']).isidentical(a)
-    assert common_ancestor(a['x'].map(inc), a['x']).isidentical(a['x'])
+    assert common_subexpression(a).isidentical(a)
+    assert common_subexpression(a, a['x']).isidentical(a)
+    assert common_subexpression(a['y'] + 1, a['x']).isidentical(a)
+    assert common_subexpression(a['x'].map(inc), a['x']).isidentical(a['x'])
 
 
 def test_schema_of_complex_interaction():

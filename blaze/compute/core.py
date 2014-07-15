@@ -31,7 +31,7 @@ def compute(expr, o, **kwargs):
     >>> list(compute(deadbeats, data))
     ['Bob', 'Charlie']
     """
-    ts = set([x for x in expr.ancestors() if isinstance(x, TableSymbol)])
+    ts = set([x for x in expr.subterms() if isinstance(x, TableSymbol)])
     if len(ts) == 1:
         return compute(expr, {first(ts): o}, **kwargs)
     else:
@@ -57,11 +57,11 @@ def bottom_up(d, expr):
         return d[expr]
 
     # Compute children of this expression
-    parents = ([bottom_up(d, parent) for parent in expr.inputs]
+    children = ([bottom_up(d, child) for child in expr.inputs]
                 if hasattr(expr, 'inputs') else [])
 
     # Compute this expression given the children
-    result = compute_one(expr, *parents, scope=d)
+    result = compute_one(expr, *children, scope=d)
 
     return result
 
@@ -108,7 +108,7 @@ def columnwise_funcstr(t, variadic=True, full=False):
     'lambda (x, y, z): x + z'
     """
     if full:
-        columns = t.parent.columns
+        columns = t.child.columns
     else:
         columns = t.active_columns()
     if variadic:

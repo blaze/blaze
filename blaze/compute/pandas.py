@@ -42,8 +42,8 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(ColumnWise, DataFrame)
 def compute_one(t, df, **kwargs):
-    columns = [t.parent[c] for c in t.parent.columns]
-    d = dict((t.parent[c].scalar_symbol, df[c]) for c in t.parent.columns)
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c].scalar_symbol, df[c]) for c in t.child.columns)
     return compute(t.expr, d)
 
 
@@ -69,8 +69,8 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(Selection, (Series, DataFrame))
 def compute_one(t, df, **kwargs):
-    predicate = compute(t.predicate, {t.parent: df})
-    apply = compute(t.apply, {t.parent: df})
+    predicate = compute(t.predicate, {t.child: df})
+    apply = compute(t.apply, {t.child: df})
     return apply[predicate]
 
 
@@ -139,14 +139,14 @@ def unpack(seq):
 @dispatch(By, DataFrame)
 def compute_one(t, df, **kwargs):
     assert isinstance(t.apply, Reduction)
-    grouper = DataFrame(compute(t.grouper, {t.parent: df}))
-    pregrouped = DataFrame(compute(t.apply.parent, {t.parent: df}))
+    grouper = DataFrame(compute(t.grouper, {t.child: df}))
+    pregrouped = DataFrame(compute(t.apply.child, {t.child: df}))
 
     full = grouper.join(pregrouped)
     groups = full.groupby(unpack(grouper.columns))[unpack(pregrouped.columns)]
 
-    g = TableSymbol('group', t.apply.parent.schema)
-    reduction = t.apply.subs({t.apply.parent: g})
+    g = TableSymbol('group', t.apply.child.schema)
+    reduction = t.apply.subs({t.apply.child: g})
     result = compute(reduction, {g: groups})
 
     if isinstance(result, Series):
@@ -203,6 +203,6 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(Merge, DataFrame)
 def compute_one(t, df, **kwargs):
-    ancestor = common_ancestor(*t.children)
-    children = [compute(child, {ancestor: df}) for child in t.children]
+    subexpression = common_subexpression(*t.children)
+    children = [compute(child, {subexpression: df}) for child in t.children]
     return pd.concat(children, axis=1)

@@ -30,7 +30,7 @@ expression defines a fixed set of fields in the ``__slots__`` attribute
 .. code-block:: python
 
    class Column(ColumnSyntaxMixin, Projection):
-       __slots__ = 'parent', 'column'
+       __slots__ = 'child', 'column'
 
 
 To create a node in the tree explicitly we create a Python object of this class
@@ -136,8 +136,8 @@ mapping a ``Selection`` to a ``DataFrame``:
 
    @dispatch(Selection, DataFrame)
    def compute_one(t, df, **kwargs):
-       predicate = compute(t.predicate, {t.parent: df})
-       apply = compute(t.apply, {t.parent: df})
+       predicate = compute(t.predicate, {t.child: df})
+       apply = compute(t.apply, {t.child: df})
        return apply[predicate]
 
 The goal is that this approach is highly modular and allows interpretation
