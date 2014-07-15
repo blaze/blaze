@@ -464,11 +464,11 @@ class Join(TableExpr):
     >>> amounts = TableSymbol('amounts', '{amount: int, id: int}')
 
     Join tables based on shared column name
-    >>> joined = Join(names, amounts, 'id')
+    >>> joined = join(names, amounts, 'id')
 
     Join based on different column names
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
-    >>> joined = Join(names, amounts, 'id', 'acctNumber')
+    >>> joined = join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
     __inputs__ = 'lhs', 'rhs'
@@ -496,6 +496,7 @@ class Join(TableExpr):
 
         rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
         return dshape(Record(rec))
+
 
 def join(lhs, rhs, on_left=None, on_right=None):
     if not on_left and not on_right:
@@ -591,15 +592,15 @@ class By(TableExpr):
     """ Split-Apply-Combine Operator
 
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    >>> e = By(t, t['name'], t['amount'].sum())
+    >>> e = by(t, t['name'], t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
     ...         ['Bob', 200, 2],
     ...         ['Alice', 50, 3]]
 
     >>> from blaze.compute.python import compute
-    >>> compute(e, data) #doctest: +SKIP
-    {'Alice': 150, 'Bob': 200}
+    >>> sorted(compute(e, data))
+    [('Alice', 150), ('Bob', 200)]
     """
 
     __slots__ = 'child', 'grouper', 'apply'
@@ -666,7 +667,7 @@ class Distinct(TableExpr):
     """ Distinct elements filter
 
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    >>> e = Distinct(t)
+    >>> e = distinct(t)
 
     >>> data = [('Alice', 100, 1),
     ...         ('Bob', 200, 2),
