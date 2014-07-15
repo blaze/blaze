@@ -374,3 +374,16 @@ def test_improper_selection():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
 
     assert raises(Exception, lambda: t[t['x'] > 0][t.sort()[t['y' > 0]]])
+
+
+def test_union():
+    schema = '{x: int, y: int, z: int}'
+    a = TableSymbol('a', schema)
+    b = TableSymbol('b', schema)
+    c = TableSymbol('c', schema)
+
+    u = union(a, b, c)
+    assert u.schema == a.schema
+
+    assert raises(Exception,
+                  lambda: union(a, TableSymbol('q', '{name: string}')))
