@@ -74,16 +74,48 @@ class Expr(object):
 
 
 def subs(o, d):
-    if o in d:
-        d = d.copy()
-        other = d.pop(o)
-        return subs(other, d)
-    if isinstance(o, (tuple, list)):
-        return type(o)([subs(arg, d) for arg in o])
-    if hasattr(o, 'args'):
-        newargs = [subs(arg, d) for arg in o.args]
-        return type(o)(*newargs)
+    """ Substitute values within data structure
 
+    >>> subs(1, {1: 2})
+    2
+
+    >>> subs([1, 2, 3], {2: 'Hello'})
+    [1, 'Hello', 3]
+    """
+    try:
+        if o in d:
+            d = d.copy()
+            o = d.pop(o)
+    except TypeError:
+        pass
+    return _subs(o, d)
+
+
+@dispatch((tuple, list), dict)
+def _subs(o, d):
+    return type(o)([subs(arg, d) for arg in o])
+
+
+@dispatch(Expr, dict)
+def _subs(o, d):
+    """
+
+    >>> from blaze.expr.table import TableSymbol
+    >>> t = TableSymbol('t', '{name: string, balance: int}')
+    >>> subs(t, {'balance': 'amount'}).columns
+    ['name', 'amount']
+    """
+    newargs = [subs(arg, d) for arg in o.args]
+    return type(o)(*newargs)
+
+
+@dispatch(object, dict)
+def _subs(o, d):
+    """ Private dispatched version of ``subs``
+
+    >>> subs('Hello', {})
+    'Hello'
+    """
     return o
 
 

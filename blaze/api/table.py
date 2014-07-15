@@ -64,6 +64,15 @@ class Table(TableSymbol):
     def resources(self):
         return {self: self.data}
 
+    @property
+    def args(self):
+        return (id(self.data), self.schema, self.name, self.iscolumn)
+
+
+@dispatch(Table, dict)
+def _subs(o, d):
+    return o
+
 
 @dispatch(Expr)
 def compute(expr):

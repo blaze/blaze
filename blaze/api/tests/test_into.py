@@ -104,6 +104,32 @@ def test_pandas_seq():
             str(DataFrame([[1, 2], [3, 4]], columns=['a', 'b']))
 
 
+@skip_if_not(DataFrame)
+def test_pandas_pandas():
+    data = [('Alice', 100), ('Bob', 200)]
+    df = DataFrame(data, columns=['name', 'balance'])
+    new_df = into(DataFrame, df)
+    # Data must be the same
+    assert np.all(new_df == df)
+    # new_df should be a copy of df
+    assert id(new_df) != id(df)
+
+
+@skip_if_not(DataFrame)
+def test_DataFrame_Series():
+    data = [('Alice', 100), ('Bob', 200)]
+    df = DataFrame(data, columns=['name', 'balance'])
+
+    new_df = into(DataFrame, df['name'])
+
+    assert np.all(new_df == DataFrame([['Alice'], ['Bob']], columns=['name']))
+
+    # new_df should be a copy of df
+    assert id(new_df) != id(df['name'])
+
+    assert isinstance(new_df, DataFrame)
+
+
 def test_discover_ndarray():
     data = [['Alice', 100], ['Bob', 200]]
     schema='{name: string, balance: int32}'

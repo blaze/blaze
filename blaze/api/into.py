@@ -7,6 +7,7 @@ from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
 import numpy as np
+from pandas import DataFrame, Series
 
 from ..dispatch import dispatch
 
@@ -60,7 +61,6 @@ def into(a, b):
     return b.tolist()
 
 from blaze.data import DataDescriptor
-from pandas import DataFrame
 @dispatch(DataFrame, DataDescriptor)
 def into(a, b):
     return DataFrame(list(b), columns=b.columns)
@@ -92,6 +92,13 @@ def into(df, seq):
     else:
         return DataFrame(list(seq))
 
+@dispatch(DataFrame, DataFrame)
+def into(_, df):
+    return df.copy()
+
+@dispatch(DataFrame, Series)
+def into(_, df):
+    return DataFrame(df)
 
 @dispatch(nd.array, DataFrame)
 def into(a, df):
