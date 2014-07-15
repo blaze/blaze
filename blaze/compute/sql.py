@@ -36,8 +36,8 @@ __all__ = ['compute', 'compute_one', 'computefull', 'select']
 def compute_one(t, s, scope={}, **kwargs):
     # Walk up the tree to get the original columns
     ancestor = t
-    while hasattr(ancestor, 'parent'):
-        ancestor = ancestor.parent
+    while hasattr(ancestor, 'child'):
+        ancestor = ancestor.child
     cancestor = compute(ancestor, scope)
     # Hack because cancestor may be SQL object
     if not isinstance(cancestor, Selectable):
@@ -54,8 +54,8 @@ def compute_one(t, s, **kwargs):
 
 @dispatch(ColumnWise, Selectable)
 def compute_one(t, s, **kwargs):
-    columns = [t.parent[c] for c in t.parent.columns]
-    d = dict((t.parent[c].scalar_symbol, getattr(s.c, c)) for c in t.parent.columns)
+    columns = [t.child[c] for c in t.child.columns]
+    d = dict((t.child[c].scalar_symbol, getattr(s.c, c)) for c in t.child.columns)
     return compute(t.expr, d)
 
 
@@ -82,8 +82,8 @@ def compute_one(t, s, **kwargs):
 
 @dispatch(Selection, Selectable)
 def compute_one(t, s, **kwargs):
-    predicate = compute(t.predicate, {t.parent: s})
-    apply = compute(t.apply, {t.parent: s})
+    predicate = compute(t.predicate, {t.child: s})
+    apply = compute(t.apply, {t.child: s})
     try:
         return apply.where(predicate)
     except AttributeError:
@@ -142,8 +142,8 @@ def compute_one(t, s, **kwargs):
         op = getattr(sqlalchemy.sql.func, symbol)
     result = op(s)
 
-    if isinstance(t.parent.schema[0], Record):
-        name = list(t.parent.schema[0].fields.keys())[0]
+    if isinstance(t.child.schema[0], Record):
+        name = list(t.child.schema[0].fields.keys())[0]
         result = result.label(name)
 
     return result
@@ -162,12 +162,12 @@ def compute_one(t, s, **kwargs):
 @dispatch(By, Selectable)
 def compute_one(t, s, **kwargs):
     if isinstance(t.grouper, Projection):
-        grouper = [compute(t.grouper.parent[col], {t.parent: s})
+        grouper = [compute(t.grouper.child[col], {t.child: s})
                     for col in t.grouper.columns]
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-    reduction = compute(t.apply, {t.parent: s})
+    reduction = compute(t.apply, {t.child: s})
     return select(grouper + [reduction]).group_by(*grouper)
 
 
@@ -199,7 +199,7 @@ def compute_one(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
-               for col, new_col in zip(t.parent.columns, t.columns)]
+               for col, new_col in zip(t.child.columns, t.columns)]
 
     return select(columns)
 

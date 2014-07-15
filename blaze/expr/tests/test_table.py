@@ -87,13 +87,13 @@ def test_selection_by_indexing():
     assert 'Alice' in str(result)
 
 
-def test_selection_consistent_parents():
+def test_selection_consistent_children():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
     expr = t['name'][t['amount'] < 0]
 
     assert expr.columns == ['name']
-    assert expr.parent == t
+    assert expr.child == t
 
 
 def test_columnwise_syntax():
@@ -274,13 +274,13 @@ def test_columnwise():
     y = t['y']
     z = t['z']
     assert str(columnwise(Add, x, y).expr) == 'x + y'
-    assert columnwise(Add, x, y).parent.isidentical(t)
+    assert columnwise(Add, x, y).child.isidentical(t)
 
     c1 = columnwise(Add, x, y)
     c2 = columnwise(Mul, x, z)
 
     assert eval_str(columnwise(Eq, c1, c2).expr) == '(x + y) == (x * z)'
-    assert columnwise(Eq, c1, c2).parent.isidentical(t)
+    assert columnwise(Eq, c1, c2).child.isidentical(t)
 
     assert str(columnwise(Add, x, 1).expr) == 'x + 1'
 

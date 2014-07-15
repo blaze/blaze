@@ -51,8 +51,8 @@ def compute_one(t, rdd, **kwargs):
 
 @dispatch(Selection, RDD)
 def compute_one(t, rdd, **kwargs):
-    predicate = rrowfunc(t.predicate, t.parent)
-    apply = rrowfunc(t.apply, t.parent)
+    predicate = rrowfunc(t.predicate, t.child)
+    apply = rrowfunc(t.apply, t.child)
     return rdd.filter(predicate).map(apply)
 
 
@@ -94,9 +94,9 @@ def compute_one(t, rdd, **kwargs):
 @dispatch(Sort, RDD)
 def compute_one(t, rdd, **kwargs):
     if isinstance(t.key, (str, tuple, list)):
-        key = rowfunc(t.parent[t.key])
+        key = rowfunc(t.child[t.key])
     else:
-        key = rrowfunc(t.key, t.parent)
+        key = rrowfunc(t.key, t.child)
     return (rdd.keyBy(key)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
@@ -149,8 +149,8 @@ def compute_one(t, rdd, **kwargs):
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
 
-    grouper = rrowfunc(t.grouper, t.parent)
-    pre = rrowfunc(t.apply.parent, t.parent)
+    grouper = rrowfunc(t.grouper, t.child)
+    pre = rrowfunc(t.apply.child, t.child)
 
     groups = (rdd.map(lambda x: (grouper(x), pre(x)))
              .groupByKey())

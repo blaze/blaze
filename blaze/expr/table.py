@@ -20,7 +20,7 @@ from ..compatibility import _strtypes, builtins
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions """
-    __inputs__ = 'parent',
+    __inputs__ = 'child',
 
     @property
     def dshape(self):
@@ -142,10 +142,10 @@ class Projection(RowWise):
     >>> accounts[['name', 'amount']].schema
     dshape("{ name : string, amount : int32 }")
     """
-    __slots__ = 'parent', '_columns'
+    __slots__ = 'child', '_columns'
 
     def __init__(self, table, columns):
-        self.parent = table
+        self.child = table
         self._columns = tuple(columns)
 
     @property
@@ -154,11 +154,11 @@ class Projection(RowWise):
 
     @property
     def schema(self):
-        d = self.parent.schema[0].fields
+        d = self.child.schema[0].fields
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
     def __str__(self):
-        return '%s[[%s]]' % (self.parent,
+        return '%s[[%s]]' % (self.child,
                              ', '.join(["'%s'" % col for col in self.columns]))
 
     @property
@@ -280,14 +280,14 @@ class Column(ColumnSyntaxMixin, Projection):
     >>> accounts['name'].schema
     dshape("{ name : string }")
     """
-    __slots__ = 'parent', 'column'
+    __slots__ = 'child', 'column'
 
     __hash__ = Expr.__hash__
 
     iscolumn = True
 
     def __init__(self, table, column):
-        self.parent = table
+        self.child = table
         self.column = column
 
     @property
@@ -295,7 +295,7 @@ class Column(ColumnSyntaxMixin, Projection):
         return (self.column,)
 
     def __str__(self):
-        return "%s['%s']" % (self.parent, self.columns[0])
+        return "%s['%s']" % (self.child, self.columns[0])
 
     @property
     def scalar_symbol(self):
@@ -309,7 +309,7 @@ class Selection(TableExpr):
     ...                        '{name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts['amount'] < 0]
     """
-    __slots__ = 'parent', 'apply', 'predicate'
+    __slots__ = 'child', 'apply', 'predicate'
 
     def __init__(self, table, predicate):
         ancestor = common_ancestor(table, predicate)
@@ -319,14 +319,14 @@ class Selection(TableExpr):
                                    path(table, ancestor)])):
 
             raise ValueError("Selection not properly matched with table:\n"
-                       "parent: %s\n"
+                       "child: %s\n"
                        "apply: %s\n"
                        "predicate: %s" % (ancestor, table, predicate))
 
         if predicate.dtype != dshape('bool'):
             raise TypeError("Must select over a boolean predicate.  Got:\n"
                             "%s[%s]" % (table, predicate))
-        self.parent = ancestor
+        self.child = ancestor
         self.apply = table
         self.predicate = predicate  # A Relational
 
@@ -342,25 +342,23 @@ class Selection(TableExpr):
         return self.apply.iscolumn
 
 
-def _expr_parent(col):
-    """ Expr and Parent of column
+def _expr_child(col):
+    """ Expr and child of column
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
-    >>> _expr_parent(accounts['name'])
+    >>> _expr_child(accounts['name'])
     (name, accounts)
 
     Helper function for ``columnwise``
     """
     if isinstance(col, ColumnWise):
-        return col.expr, col.parent
-        expr_inputs.append(col.expr)
-        parents.add(col.parent)
+        return col.expr, col.child
     elif isinstance(col, Column):
         # TODO: specify dtype
-        return col.scalar_symbol, col.parent
+        return col.scalar_symbol, col.child
     elif isinstance(col, Label):
-        return _expr_parent(col.parent)
+        return _expr_child(col.child)
     else:
         return col, None
 
@@ -386,21 +384,21 @@ def columnwise(op, *column_inputs):
     2 * (accounts['amount'] + 100)
     """
     expr_inputs = []
-    parents = set()
+    children = set()
 
     for col in column_inputs:
-        expr, parent = _expr_parent(col)
+        expr, child = _expr_child(col)
         expr_inputs.append(expr)
-        if parent:
-            parents.add(parent)
+        if child:
+            children.add(child)
 
-    if not len(parents) == 1:
+    if not len(children) == 1:
         raise ValueError("All inputs must be from same Table.\n"
                          "Saw the following tables: %s"
-                         % ', '.join(map(str, parents)))
+                         % ', '.join(map(str, children)))
 
     expr = op(*expr_inputs)
-    return ColumnWise(first(parents), expr)
+    return ColumnWise(first(children), expr)
 
 
 class ColumnWise(RowWise, ColumnSyntaxMixin):
@@ -409,10 +407,10 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     Parameters
     ----------
 
-    parent - TableExpr
+    child - TableExpr
     expr - ScalarExpr
         The names of the varibles within the scalar expr must match the columns
-        of the parent.  Use ``Column.scalar_variable`` to generate the
+        of the child.  Use ``Column.scalar_variable`` to generate the
         appropriate ScalarSymbol
 
     >>> accounts = TableSymbol('accounts',
@@ -422,9 +420,9 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     >>> ColumnWise(accounts, expr)
     accounts['amount'] + 100
     """
-    __slots__ = 'parent', 'expr'
-    def __init__(self, parent, expr):
-        self.parent = parent
+    __slots__ = 'child', 'expr'
+    def __init__(self, child, expr):
+        self.child = child
         self.expr = expr
 
     __hash__ = Expr.__hash__
@@ -437,7 +435,7 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
 
     def __str__(self):
         columns = self.active_columns()
-        newcol = lambda c: "%s['%s']" % (self.parent, c)
+        newcol = lambda c: "%s['%s']" % (self.child, c)
         return eval_str(self.expr.subs(dict(zip(columns,
                                                 map(newcol, columns)))))
 
@@ -563,14 +561,14 @@ class Reduction(Scalar):
     >>> compute(e, data)
     350
     """
-    __slots__ = 'parent',
+    __slots__ = 'child',
 
     def __init__(self, table):
-        self.parent = table
+        self.child = table
 
     @property
     def dshape(self):
-        return self.parent.dshape.subarray(1)
+        return self.child.dshape.subarray(1)
 
     @property
     def symbol(self):
@@ -604,15 +602,15 @@ class By(TableExpr):
     {'Alice': 150, 'Bob': 200}
     """
 
-    __slots__ = 'parent', 'grouper', 'apply'
+    __slots__ = 'child', 'grouper', 'apply'
 
     iscolumn = False
 
-    def __init__(self, parent, grouper, apply):
-        self.parent = parent
-        s = TableSymbol('', parent.schema, parent.iscolumn)
-        self.grouper = grouper # grouper.subs({parent: s})
-        self.apply = apply # apply.subs({parent: s})
+    def __init__(self, child, grouper, apply):
+        self.child = child
+        s = TableSymbol('', child.schema, child.iscolumn)
+        self.grouper = grouper # grouper.subs({child: s})
+        self.apply = apply # apply.subs({child: s})
         if isdimension(self.apply.dshape[0]):
             raise TypeError("Expected Reduction")
 
@@ -641,10 +639,10 @@ class Sort(TableExpr):
 
     >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
     """
-    __slots__ = 'parent', '_key', 'ascending'
+    __slots__ = 'child', '_key', 'ascending'
 
-    def __init__(self, parent, key, ascending=True):
-        self.parent = parent
+    def __init__(self, child, key, ascending=True):
+        self.child = child
         if isinstance(key, list):
             key = tuple(key)
         self._key = key
@@ -652,11 +650,11 @@ class Sort(TableExpr):
 
     @property
     def schema(self):
-        return self.parent.schema
+        return self.child.schema
 
     @property
     def iscolumn(self):
-        return self.parent.iscolumn
+        return self.child.iscolumn
 
     @property
     def key(self):
@@ -680,18 +678,18 @@ class Distinct(TableExpr):
     >>> sorted(compute(e, data))
     [('Alice', 100, 1), ('Bob', 200, 2)]
     """
-    __slots__ = 'parent',
+    __slots__ = 'child',
 
     def __init__(self, table):
-        self.parent = table
+        self.child = table
 
     @property
     def schema(self):
-        return self.parent.schema
+        return self.child.schema
 
     @property
     def iscolumn(self):
-        return self.parent.iscolumn
+        return self.child.iscolumn
 
 class Head(TableExpr):
     """ First ``n`` elements of table
@@ -700,15 +698,15 @@ class Head(TableExpr):
     >>> accounts.head(5).dshape
     dshape("5 * { name : string, amount : int32 }")
     """
-    __slots__ = 'parent', 'n'
+    __slots__ = 'child', 'n'
 
-    def __init__(self, parent, n=10):
-        self.parent = parent
+    def __init__(self, child, n=10):
+        self.child = child
         self.n = n
 
     @property
     def schema(self):
-        return self.parent.schema
+        return self.child.schema
 
     @property
     def dshape(self):
@@ -716,7 +714,7 @@ class Head(TableExpr):
 
     @property
     def iscolumn(self):
-        return self.parent.iscolumn
+        return self.child.iscolumn
 
 
 class Label(RowWise, ColumnSyntaxMixin):
@@ -730,18 +728,18 @@ class Label(RowWise, ColumnSyntaxMixin):
     >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
     dshape("{ new_amount : float64 }")
     """
-    __slots__ = 'parent', 'label'
+    __slots__ = 'child', 'label'
 
-    def __init__(self, parent, label):
-        self.parent = parent
+    def __init__(self, child, label):
+        self.child = child
         self.label = label
 
     @property
     def schema(self):
-        if isinstance(self.parent.schema[0], Record):
-            dtype = self.parent.schema[0].fields.values()[0]
+        if isinstance(self.child.schema[0], Record):
+            dtype = self.child.schema[0].fields.values()[0]
         else:
-            dtype = self.parent.schema[0]
+            dtype = self.child.schema[0]
         return DataShape(Record([[self.label, dtype]]))
 
 
@@ -755,10 +753,10 @@ class ReLabel(RowWise):
     >>> accounts.relabel({'amount': 'balance'}).schema
     dshape("{ name : string, balance : int32 }")
     """
-    __slots__ = 'parent', 'labels'
+    __slots__ = 'child', 'labels'
 
-    def __init__(self, parent, labels):
-        self.parent = parent
+    def __init__(self, child, labels):
+        self.child = child
         if isinstance(labels, dict):  # Turn dict into tuples
             labels = tuple(sorted(labels.items()))
         self.labels = labels
@@ -766,14 +764,14 @@ class ReLabel(RowWise):
     @property
     def schema(self):
         subs = dict(self.labels)
-        d = self.parent.schema[0].fields
+        d = self.child.schema[0].fields
 
         return DataShape(Record([[subs.get(name, name), dtype]
-            for name, dtype in self.parent.schema[0].parameters[0]]))
+            for name, dtype in self.child.schema[0].parameters[0]]))
 
     @property
     def iscolumn(self):
-        return self.parent.iscolumn
+        return self.child.iscolumn
 
 
 class Map(RowWise):
@@ -792,10 +790,10 @@ class Map(RowWise):
     See Also:
         Apply
     """
-    __slots__ = 'parent', 'func', '_schema', '_iscolumn'
+    __slots__ = 'child', 'func', '_schema', '_iscolumn'
 
-    def __init__(self, parent, func, schema=None, iscolumn=None):
-        self.parent = parent
+    def __init__(self, child, func, schema=None, iscolumn=None):
+        self.child = child
         self.func = func
         self._schema = schema
         self._iscolumn = iscolumn
@@ -813,8 +811,8 @@ class Map(RowWise):
     def iscolumn(self):
         if self._iscolumn is not None:
             return self._iscolumn
-        if self.parent.iscolumn is not None:
-            return self.parent.iscolumn
+        if self.child.iscolumn is not None:
+            return self.child.iscolumn
         return self.schema[0].values()
 
 
@@ -837,10 +835,10 @@ class Apply(TableExpr):
     See Also:
         Map
     """
-    __slots__ = 'parent', 'func', '_dshape'
+    __slots__ = 'child', 'func', '_dshape'
 
-    def __init__(self, func, parent, dshape=None):
-        self.parent = parent
+    def __init__(self, func, child, dshape=None):
+        self.child = child
         self.func = func
         self._dshape = dshape
 
@@ -872,11 +870,11 @@ def common_ancestor(*tables):
 
 def merge(*tables):
     # Get common ancestor
-    parent = common_ancestor(*tables)
-    if not parent:
+    child = common_ancestor(*tables)
+    if not child:
         raise ValueError("No common ancestor found for input tables")
 
-    return Merge(parent, tables)
+    return Merge(child, tables)
 
 
 class Merge(RowWise):
@@ -891,14 +889,14 @@ class Merge(RowWise):
     >>> merge(accounts, newamount).columns
     ['name', 'amount', 'new_amount']
     """
-    __slots__ = 'parent', 'children'
+    __slots__ = 'child', 'children'
 
     iscolumn = False
 
-    def __init__(self, parent, children):
-        # TODO: Assert all parents descend from the same parent via RowWise
+    def __init__(self, child, children):
+        # TODO: Assert all children descend from the same child via RowWise
         # operations
-        self.parent = parent
+        self.child = child
         self.children = children
 
     @property

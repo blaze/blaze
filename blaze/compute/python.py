@@ -56,7 +56,7 @@ def recursive_rowfunc(t, stop):
     funcs = []
     while not t.isidentical(stop):
         funcs.append(rowfunc(t))
-        t = t.parent
+        t = t.child
     return compose(*funcs)
 
 
@@ -83,15 +83,15 @@ def rowfunc(t):
         compute<Rowwise, Sequence>
     """
     from toolz.curried import get
-    indices = [t.parent.columns.index(col) for col in t.columns]
+    indices = [t.child.columns.index(col) for col in t.columns]
     return get(indices)
 
 
 @dispatch(Column)
 def rowfunc(t):
-    if t.parent.iscolumn and t.column == t.parent.columns[0]:
+    if t.child.iscolumn and t.column == t.child.columns[0]:
         return identity
-    index = t.parent.columns.index(t.column)
+    index = t.child.columns.index(t.column)
     return lambda x: x[index]
 
 
@@ -109,7 +109,7 @@ def rowfunc(t):
 
 @dispatch(Map)
 def rowfunc(t):
-    if len(t.parent.columns) == 1:
+    if len(t.child.columns) == 1:
         return t.func
     else:
         return partial(apply, t.func)
@@ -137,7 +137,7 @@ def concat_maybe_tuples(vals):
 
 @dispatch(Merge)
 def rowfunc(t):
-    funcs = [rrowfunc(child, t.parent) for child in t.children]
+    funcs = [rrowfunc(child, t.child) for child in t.children]
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
@@ -148,8 +148,8 @@ def compute_one(t, seq, **kwargs):
 
 @dispatch(Selection, Sequence)
 def compute_one(t, seq, **kwargs):
-    return map(rrowfunc(t.apply, t.parent),
-               filter(rrowfunc(t.predicate, t.parent),
+    return map(rrowfunc(t.apply, t.child),
+               filter(rrowfunc(t.predicate, t.child),
                       seq))
 
 
@@ -228,12 +228,12 @@ binops = {sum: (operator.add, 0),
 
 @dispatch(By, Sequence)
 def compute_one(t, seq, **kwargs):
-    grouper = rrowfunc(t.grouper, t.parent)
+    grouper = rrowfunc(t.grouper, t.child)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
-        applier = rrowfunc(t.apply.parent, t.parent)
+        applier = rrowfunc(t.apply.child, t.child)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
@@ -308,7 +308,7 @@ def compute_one(t, lhs, rhs, **kwargs):
 @dispatch(Sort, Sequence)
 def compute_one(t, seq, **kwargs):
     if isinstance(t.key, (str, tuple, list)):
-        key = rowfunc(t.parent[t.key])
+        key = rowfunc(t.child[t.key])
     else:
         key = rowfunc(t.key)
     return sorted(seq,

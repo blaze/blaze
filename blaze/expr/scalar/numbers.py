@@ -163,12 +163,12 @@ class Neg(UnaryOp, Number):
     op = operator.neg
 
     def __str__(self):
-        return '-%s' % self.parent
+        return '-%s' % self.child
 
     @property
     def dshape(self):
         # TODO: better inference.  -uint -> int
-        return self.parent.dshape
+        return self.child.dshape
 
 
 

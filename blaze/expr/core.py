@@ -16,7 +16,7 @@ def _str(s):
 
 
 class Expr(object):
-    __inputs__ = 'parent',
+    __inputs__ = 'child',
     @property
     def args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)
@@ -107,5 +107,5 @@ def path(a, b):
     """
     while not a.isidentical(b):
         yield a
-        a = a.parent
+        a = a.child
     yield a
