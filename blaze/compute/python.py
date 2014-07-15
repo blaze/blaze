@@ -248,11 +248,6 @@ def compute_one(t, seq, **kwargs):
     else:
         return tuple(k + (v,) for k, v in d.items())
 
-@dispatch(Join, Sequence)
-def compute_one(t, seq, **kwargs):
-    a, b = itertools.tee(seq)
-    return compute(t, a, b)
-
 
 def listpack(x):
     """
