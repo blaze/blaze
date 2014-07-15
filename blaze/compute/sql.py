@@ -35,14 +35,14 @@ __all__ = ['compute', 'compute_one', 'computefull', 'select']
 @dispatch(Projection, Selectable)
 def compute_one(t, s, scope={}, **kwargs):
     # Walk up the tree to get the original columns
-    ancestor = t
-    while hasattr(ancestor, 'child'):
-        ancestor = ancestor.child
-    cancestor = compute(ancestor, scope)
-    # Hack because cancestor may be SQL object
-    if not isinstance(cancestor, Selectable):
-        cancestor = cancestor.table
-    columns = [cancestor.c.get(col) for col in t.columns]
+    subexpression = t
+    while hasattr(subexpression, 'child'):
+        subexpression = subexpression.child
+    csubexpression = compute(subexpression, scope)
+    # Hack because csubexpression may be SQL object
+    if not isinstance(csubexpression, Selectable):
+        csubexpression = csubexpression.table
+    columns = [csubexpression.c.get(col) for col in t.columns]
 
     return select(s).with_only_columns(columns)
 
@@ -206,6 +206,6 @@ def compute_one(t, s, **kwargs):
 
 @dispatch(Merge, Selectable)
 def compute_one(t, s, **kwargs):
-    ancestor = common_ancestor(*t.children)
-    children = [compute(child, {ancestor: s}) for child in t.children]
+    subexpression = common_subexpression(*t.children)
+    children = [compute(child, {subexpression: s}) for child in t.children]
     return select(children)

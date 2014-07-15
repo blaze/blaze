@@ -203,6 +203,6 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(Merge, DataFrame)
 def compute_one(t, df, **kwargs):
-    ancestor = common_ancestor(*t.children)
-    children = [compute(child, {ancestor: df}) for child in t.children]
+    subexpression = common_subexpression(*t.children)
+    children = [compute(child, {subexpression: df}) for child in t.children]
     return pd.concat(children, axis=1)

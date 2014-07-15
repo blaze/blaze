@@ -63,14 +63,14 @@ class Expr(object):
         return toolz.merge([arg.resources() for arg in self.args
                                             if isinstance(arg, Expr)])
 
-    def ancestors(self):
+    def subterms(self):
         yield self
         for i in self.inputs:
-            for node in i.ancestors():
+            for node in i.subterms():
                 yield node
 
     def __contains__(self, other):
-        return other in set(self.ancestors())
+        return other in set(self.subterms())
 
 
 def subs(o, d):

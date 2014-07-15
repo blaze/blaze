@@ -312,21 +312,21 @@ class Selection(TableExpr):
     __slots__ = 'child', 'apply', 'predicate'
 
     def __init__(self, table, predicate):
-        ancestor = common_ancestor(table, predicate)
+        subexpr = common_subexpression(table, predicate)
 
         if builtins.any(not isinstance(node, (RowWise, TableSymbol))
-               for node in concat([path(predicate, ancestor),
-                                   path(table, ancestor)])):
+               for node in concat([path(predicate, subexpr),
+                                   path(table, subexpr)])):
 
             raise ValueError("Selection not properly matched with table:\n"
                        "child: %s\n"
                        "apply: %s\n"
-                       "predicate: %s" % (ancestor, table, predicate))
+                       "predicate: %s" % (subexpr, table, predicate))
 
         if predicate.dtype != dshape('bool'):
             raise TypeError("Must select over a boolean predicate.  Got:\n"
                             "%s[%s]" % (table, predicate))
-        self.child = ancestor
+        self.child = subexpr
         self.apply = table
         self.predicate = predicate  # A Relational
 
@@ -857,22 +857,22 @@ class Apply(TableExpr):
             return NotImplementedError("Datashape of arbitrary Apply not defined")
 
 
-def common_ancestor(*tables):
-    """ Common ancestor between subtables
+def common_subexpression(*tables):
+    """ Common sub expression between subtables
 
     >>> t = TableSymbol('t', '{x: int, y: int}')
-    >>> common_ancestor(t['x'], t['y'])
+    >>> common_subexpression(t['x'], t['y'])
     t
     """
-    sets = [set(t.ancestors()) for t in tables]
+    sets = [set(t.subterms()) for t in tables]
     return builtins.max(set.intersection(*sets),
                         key=compose(len, str))
 
 def merge(*tables):
-    # Get common ancestor
-    child = common_ancestor(*tables)
+    # Get common sub expression
+    child = common_subexpression(*tables)
     if not child:
-        raise ValueError("No common ancestor found for input tables")
+        raise ValueError("No common sub expression found for input tables")
 
     return Merge(child, tables)
 
