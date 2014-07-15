@@ -12,7 +12,7 @@ from toolz import concat, partial, first, pipe, compose, get, unique
 import toolz
 from toolz.curried import filter
 from . import scalar
-from .core import Expr, Scalar
+from .core import Expr, Scalar, path
 from .scalar import ScalarSymbol
 from .scalar import *
 from ..compatibility import _strtypes, builtins
@@ -20,6 +20,8 @@ from ..compatibility import _strtypes, builtins
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions """
+    __inputs__ = 'parent',
+
     @property
     def dshape(self):
         return datashape.var * self.schema
@@ -90,9 +92,6 @@ class TableExpr(Expr):
     def nunique(self):
         return nunique(self)
 
-    def ancestors(self):
-        return (self,)
-
     @property
     def iscolumn(self):
         if len(self.columns) > 1:
@@ -115,6 +114,7 @@ class TableSymbol(TableExpr):
     a single row, called a schema.
     """
     __slots__ = 'name', 'schema', 'iscolumn'
+    __inputs__ = ()
 
     def __init__(self, name, schema, iscolumn=False):
         self.name = name
@@ -124,16 +124,12 @@ class TableSymbol(TableExpr):
     def __str__(self):
         return self.name
 
-    def ancestors(self):
-        return (self,)
-
     def resources(self):
         return dict()
 
 
 class RowWise(TableExpr):
-    def ancestors(self):
-        return (self,) + self.parent.ancestors()
+    pass
 
 class Projection(RowWise):
     """ Select columns from table
@@ -313,25 +309,60 @@ class Selection(TableExpr):
     ...                        '{name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts['amount'] < 0]
     """
-    __slots__ = 'parent', 'predicate'
+    __slots__ = 'parent', 'apply', 'predicate'
 
     def __init__(self, table, predicate):
+        ancestor = common_ancestor(table, predicate)
+
+        if builtins.any(not isinstance(node, (RowWise, TableSymbol))
+               for node in concat([path(predicate, ancestor),
+                                   path(table, ancestor)])):
+
+            raise ValueError("Selection not properly matched with table:\n"
+                       "parent: %s\n"
+                       "apply: %s\n"
+                       "predicate: %s" % (ancestor, table, predicate))
+
         if predicate.dtype != dshape('bool'):
             raise TypeError("Must select over a boolean predicate.  Got:\n"
                             "%s[%s]" % (table, predicate))
-        self.parent = table
+        self.parent = ancestor
+        self.apply = table
         self.predicate = predicate  # A Relational
 
     def __str__(self):
-        return "%s[%s]" % (self.parent, self.predicate)
+        return "%s[%s]" % (self.apply, self.predicate)
 
     @property
     def schema(self):
-        return self.parent.schema
+        return self.apply.schema
 
     @property
     def iscolumn(self):
-        return self.parent.iscolumn
+        return self.apply.iscolumn
+
+
+def _expr_parent(col):
+    """ Expr and Parent of column
+
+    >>> accounts = TableSymbol('accounts',
+    ...                        '{name: string, amount: int, id: int}')
+    >>> _expr_parent(accounts['name'])
+    (name, accounts)
+
+    Helper function for ``columnwise``
+    """
+    if isinstance(col, ColumnWise):
+        return col.expr, col.parent
+        expr_inputs.append(col.expr)
+        parents.add(col.parent)
+    elif isinstance(col, Column):
+        # TODO: specify dtype
+        return col.scalar_symbol, col.parent
+    elif isinstance(col, Label):
+        return _expr_parent(col.parent)
+    else:
+        return col, None
 
 
 def columnwise(op, *column_inputs):
@@ -356,17 +387,12 @@ def columnwise(op, *column_inputs):
     """
     expr_inputs = []
     parents = set()
+
     for col in column_inputs:
-        if isinstance(col, ColumnWise):
-            expr_inputs.append(col.expr)
-            parents.add(col.parent)
-        elif isinstance(col, Column):
-            # TODO: specify dtype
-            expr_inputs.append(col.scalar_symbol)
-            parents.add(col.parent)
-        else:
-            # maybe something like 5 or 'Alice'
-            expr_inputs.append(col)
+        expr, parent = _expr_parent(col)
+        expr_inputs.append(expr)
+        if parent:
+            parents.add(parent)
 
     if not len(parents) == 1:
         raise ValueError("All inputs must be from same Table.\n"
@@ -446,6 +472,7 @@ class Join(TableExpr):
     >>> joined = Join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
+    __inputs__ = 'lhs', 'rhs'
 
     iscolumn = False
 
@@ -584,8 +611,8 @@ class By(TableExpr):
     def __init__(self, parent, grouper, apply):
         self.parent = parent
         s = TableSymbol('', parent.schema, parent.iscolumn)
-        self.grouper = grouper.subs({parent: s})
-        self.apply = apply.subs({parent: s})
+        self.grouper = grouper # grouper.subs({parent: s})
+        self.apply = apply # apply.subs({parent: s})
         if isdimension(self.apply.dshape[0]):
             raise TypeError("Expected Reduction")
 
@@ -614,11 +641,13 @@ class Sort(TableExpr):
 
     >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
     """
-    __slots__ = 'parent', 'column', 'ascending'
+    __slots__ = 'parent', '_key', 'ascending'
 
-    def __init__(self, parent, column, ascending=True):
+    def __init__(self, parent, key, ascending=True):
         self.parent = parent
-        self.column = column
+        if isinstance(key, list):
+            key = tuple(key)
+        self._key = key
         self.ascending = ascending
 
     @property
@@ -628,6 +657,13 @@ class Sort(TableExpr):
     @property
     def iscolumn(self):
         return self.parent.iscolumn
+
+    @property
+    def key(self):
+        if isinstance(self._key, tuple):
+            return list(self._key)
+        else:
+            return self._key
 
 
 class Distinct(TableExpr):
@@ -840,9 +876,6 @@ def merge(*tables):
     if not parent:
         raise ValueError("No common ancestor found for input tables")
 
-    shim = TableSymbol('_ancestor', parent.schema, parent.iscolumn)
-
-    tables = tuple(t.subs({parent: shim}) for t in tables)
     return Merge(parent, tables)
 
 

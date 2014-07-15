@@ -13,6 +13,8 @@ from .compute.python import *
 from .data.pandas import *
 from .data.meta import *
 from .compute.pandas import *
+from .compute.core import *
+from .compute.core import compute
 
 
 logging.basicConfig()

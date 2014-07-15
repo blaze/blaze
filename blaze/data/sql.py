@@ -8,6 +8,7 @@ import sqlalchemy as sql
 import datashape
 from datashape import dshape, var, Record
 from itertools import chain
+from toolz import first
 
 from ..dispatch import dispatch
 from ..utils import partition_all
@@ -243,14 +244,3 @@ class SQL(DataDescriptor):
             return next(result)
         else:
             return result
-
-
-# from blaze.expr.core import Expr
-from blaze.expr.table import Join, Expr
-from blaze.compute.sql import select
-@dispatch((Join, Expr), SQL)
-def compute(t, ddesc):
-    query = select(compute(t, ddesc.table))      # Get the query out
-    with ddesc.engine.connect() as conn:
-        result = conn.execute(query).fetchall() # Use SQLAlchemy to actually perform the query
-    return result

@@ -87,6 +87,15 @@ def test_selection_by_indexing():
     assert 'Alice' in str(result)
 
 
+def test_selection_consistent_parents():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+
+    expr = t['name'][t['amount'] < 0]
+
+    assert expr.columns == ['name']
+    assert expr.parent == t
+
+
 def test_columnwise_syntax():
     t = TableSymbol('t', '{x: real, y: real, z: real}')
     x, y, z = t['x'], t['y'], t['z']
@@ -190,7 +199,7 @@ def test_sort():
 
     assert s.schema == t.schema
 
-    assert t['amount'].sort().column == 'amount'
+    assert t['amount'].sort().key == 'amount'
 
 
 def test_head():
@@ -307,7 +316,7 @@ inc = lambda x: x + 1
 
 def test_ancestors():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
-    assert a.ancestors() == (a,)
+    assert list(a.ancestors()) == [a]
     assert set(a['x'].ancestors()) == set([a, a['x']])
     assert set(a['x'].map(inc).ancestors()) == set([a, a['x'], a['x'].map(inc)])
     assert a in set((a['x'] + 1).ancestors())
@@ -360,3 +369,9 @@ def test_discover():
     a = TableSymbol('a', schema)
 
     assert discover(a) == var * schema
+
+
+def test_improper_selection():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+
+    assert raises(Exception, lambda: t[t['x'] > 0][t.sort()[t['y' > 0]]])

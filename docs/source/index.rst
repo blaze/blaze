@@ -48,6 +48,7 @@ Index
    backends
    datashape
    dev_workflow
+   expr-compute-dev
 
 
 API Reference

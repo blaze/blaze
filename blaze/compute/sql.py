@@ -1,10 +1,9 @@
 """
 
->>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.sql import compute
+>>> from blaze import *
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> deadbeats = accounts['name'][accounts['amount'] < 0]
+>>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from sqlalchemy import Table, Column, MetaData, Integer, String
 >>> t = Table('accounts', MetaData(),
@@ -18,6 +17,9 @@ WHERE accounts.amount < :amount_1
 from __future__ import absolute_import, division, print_function
 import sqlalchemy as sa
 import sqlalchemy
+from sqlalchemy import sql
+from sqlalchemy.sql import Selectable
+from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
 
 from ..dispatch import dispatch
@@ -26,69 +28,66 @@ from ..expr.scalar import BinOp, UnaryOp
 from ..compatibility import reduce
 from ..utils import unique
 from . import core
+from .core import compute_one, compute, base
 
-__all__ = ['compute', 'computefull', 'select']
+__all__ = ['compute', 'compute_one', 'computefull', 'select']
 
-@dispatch(Projection, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
+@dispatch(Projection, Selectable)
+def compute_one(t, s, scope={}, **kwargs):
     # Walk up the tree to get the original columns
     ancestor = t
     while hasattr(ancestor, 'parent'):
         ancestor = ancestor.parent
-    ancestor = compute(ancestor, s)
-    columns = [ancestor.c.get(col) for col in t.columns]
+    cancestor = compute(ancestor, scope)
+    # Hack because cancestor may be SQL object
+    if not isinstance(cancestor, Selectable):
+        cancestor = cancestor.table
+    columns = [cancestor.c.get(col) for col in t.columns]
 
-    return select(parent).with_only_columns(columns)
-
-
-@dispatch(Column, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    return parent.c.get(t.columns[0])
+    return select(s).with_only_columns(columns)
 
 
-@dispatch(ColumnWise, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    expr = t.expr
+@dispatch(Column, Selectable)
+def compute_one(t, s, **kwargs):
+    return s.c.get(t.columns[0])
+
+
+@dispatch(ColumnWise, Selectable)
+def compute_one(t, s, **kwargs):
     columns = [t.parent[c] for c in t.parent.columns]
-    expr = expr.subs(dict((col.scalar_symbol, col) for col in columns))
-    return compute(expr, s)
+    d = dict((t.parent[c].scalar_symbol, getattr(s.c, c)) for c in t.parent.columns)
+    return compute(t.expr, d)
 
 
-@dispatch(BinOp, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    lhs = compute(t.lhs, s)
-    rhs = compute(t.rhs, s)
+@dispatch(BinOp, ClauseElement, (ClauseElement, base))
+def compute_one(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(UnaryOp, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
+@dispatch(BinOp, (ClauseElement, base), ClauseElement)
+def compute_one(t, lhs, rhs, **kwargs):
+    return t.op(lhs, rhs)
+
+
+@dispatch(UnaryOp, ClauseElement)
+def compute_one(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
-    return op(parent)
+    return op(s)
 
 
-@dispatch(Neg, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    return -parent
+@dispatch(Neg, (sa.Column, Selectable))
+def compute_one(t, s, **kwargs):
+    return -s
 
 
-@dispatch(Selection, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    predicate = compute(t.predicate, s)
+@dispatch(Selection, Selectable)
+def compute_one(t, s, **kwargs):
+    predicate = compute(t.predicate, {t.parent: s})
+    apply = compute(t.apply, {t.parent: s})
     try:
-        return parent.where(predicate)
+        return apply.where(predicate)
     except AttributeError:
-        return select([parent]).where(predicate)
-
-
-@dispatch(TableSymbol, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    return s
+        return select([apply]).where(predicate)
 
 
 def select(s):
@@ -98,7 +97,7 @@ def select(s):
 
     Wraps input in list if neccessary
     """
-    if not isinstance(s, sqlalchemy.sql.selectable.Select):
+    if not isinstance(s, sqlalchemy.sql.Select):
         if not isinstance(s, (tuple, list)):
             s = [s]
         s = sa.select(s)
@@ -116,11 +115,8 @@ def listpack(x):
         return [x]
 
 
-@dispatch(Join, sqlalchemy.sql.Selectable, sqlalchemy.sql.Selectable)
-def compute(t, lhs, rhs):
-    lhs = compute(t.lhs, lhs)
-    rhs = compute(t.rhs, rhs)
-
+@dispatch(Join, Selectable, Selectable)
+def compute_one(t, lhs, rhs, **kwargs):
     condition = reduce(and_, [getattr(lhs.c, l) == getattr(rhs.c, r)
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
@@ -137,15 +133,14 @@ names = {mean: 'avg',
          std: 'stdev'}
 
 
-@dispatch(Reduction, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
+@dispatch(Reduction, sql.elements.ClauseElement)
+def compute_one(t, s, **kwargs):
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
     except:
         symbol = names.get(type(t), t.symbol)
         op = getattr(sqlalchemy.sql.func, symbol)
-    result = op(parent)
+    result = op(s)
 
     if isinstance(t.parent.schema[0], Record):
         name = list(t.parent.schema[0].fields.keys())[0]
@@ -154,59 +149,53 @@ def compute(t, s):
     return result
 
 
-@dispatch(nunique, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-
-    return sqlalchemy.sql.functions.count(sqlalchemy.distinct(parent))
+@dispatch(nunique, ClauseElement)
+def compute_one(t, s, **kwargs):
+    return sqlalchemy.sql.functions.count(sqlalchemy.distinct(s))
 
 
-@dispatch(Distinct, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    return sqlalchemy.distinct(parent)
+@dispatch(Distinct, (sa.Column, Selectable))
+def compute_one(t, s, **kwargs):
+    return sqlalchemy.distinct(s)
 
 
-@dispatch(By, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
+@dispatch(By, Selectable)
+def compute_one(t, s, **kwargs):
     if isinstance(t.grouper, Projection):
-        grouper = [compute(t.grouper.parent[col], parent)
+        grouper = [compute(t.grouper.parent[col], {t.parent: s})
                     for col in t.grouper.columns]
     else:
         raise NotImplementedError("Grouper must be a projection, got %s"
                                   % t.grouper)
-    reduction = compute(t.apply, parent)
+    reduction = compute(t.apply, {t.parent: s})
     return select(grouper + [reduction]).group_by(*grouper)
 
 
-@dispatch(Sort, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    if isinstance(t.column, (tuple, list)):
+@dispatch(Sort, Selectable)
+def compute_one(t, s, **kwargs):
+    if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
-    parent = compute(t.parent, s)
-    col = getattr(parent.c, t.column)
+    col = getattr(s.c, t.key)
     if not t.ascending:
         col = sqlalchemy.desc(col)
-    return select(parent).order_by(col)
+    return select(s).order_by(col)
 
 
-@dispatch(Head, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    return select(parent).limit(t.n)
+@dispatch(Head, ClauseElement)
+def compute_one(t, s, **kwargs):
+    if hasattr(s, 'limit'):
+        return s.limit(t.n)
+    else:
+        return select(s).limit(t.n)
 
 
-@dispatch(Label, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    return parent.label(t.label)
+@dispatch(Label, ClauseElement)
+def compute_one(t, s, **kwargs):
+    return s.label(t.label)
 
 
-@dispatch(ReLabel, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-
+@dispatch(ReLabel, Selectable)
+def compute_one(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
@@ -215,8 +204,8 @@ def compute(t, s):
     return select(columns)
 
 
-@dispatch(Merge, sqlalchemy.sql.Selectable)
-def compute(t, s):
-    parent = compute(t.parent, s)
-    children = [compute(child, parent) for child in t.children]
+@dispatch(Merge, Selectable)
+def compute_one(t, s, **kwargs):
+    ancestor = common_ancestor(*t.children)
+    children = [compute(child, {ancestor: s}) for child in t.children]
     return select(children)

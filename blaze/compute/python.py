@@ -1,10 +1,10 @@
-"""
+""" Python compute layer
 
->>> from blaze.expr.table import TableSymbol
->>> from blaze.compute.python import compute
+>>> from blaze import *
+>>> from blaze.compute.core import compute
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> deadbeats = accounts['name'][accounts['amount'] < 0]
+>>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
 >>> list(compute(deadbeats, data))
@@ -29,25 +29,24 @@ from ..compatibility import builtins, apply
 from cytoolz import groupby, get, reduceby, unique, take
 import cytoolz
 from . import core
+from .core import compute, compute_one
 
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
 from math import *
 
-__all__ = ['compute', 'Sequence']
+__all__ = ['compute', 'compute_one', 'Sequence', 'rowfunc', 'rrowfunc']
 
 Sequence = (tuple, list, Iterator)
 
 
-
-def recursive_rowfunc(t):
+def recursive_rowfunc(t, stop):
     """ Compose rowfunc functions up a tree
 
-    Stops when we hit a non-RowWise operation
-
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
-    >>> f = recursive_rowfunc(accounts['amount'].map(lambda x: x + 1))
+    >>> expr = accounts['amount'].map(lambda x: x + 1)
+    >>> f = recursive_rowfunc(expr, accounts)
 
     >>> row = ('Alice', 100)
     >>> f(row)
@@ -55,19 +54,19 @@ def recursive_rowfunc(t):
 
     """
     funcs = []
-    while isinstance(t, RowWise):
+    while not t.isidentical(stop):
         funcs.append(rowfunc(t))
         t = t.parent
-    if not funcs:
-        raise TypeError("Expected RowWise operation, got %s" % str(t))
-    elif len(funcs) == 1:
-        return funcs[0]
-    else:
-        return compose(*funcs)
+    return compose(*funcs)
+
+
+rrowfunc = recursive_rowfunc
+
 
 @dispatch(TableSymbol)
 def rowfunc(t):
     return identity
+
 
 @dispatch(Projection)
 def rowfunc(t):
@@ -138,35 +137,26 @@ def concat_maybe_tuples(vals):
 
 @dispatch(Merge)
 def rowfunc(t):
-    funcs = list(map(recursive_rowfunc, t.children))
+    funcs = [rrowfunc(child, t.parent) for child in t.children]
     return compose(concat_maybe_tuples, juxt(*funcs))
 
 
 @dispatch(RowWise, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return map(rowfunc(t), parent)
+def compute_one(t, seq, **kwargs):
+    return map(rowfunc(t), seq)
 
 
 @dispatch(Selection, Sequence)
-def compute(t, seq):
-    seq1, seq2 = itertools.tee(seq)
-    parent = compute(t.parent, seq1)
-    predicate = compute(t.predicate, seq2)
-    return (x for x, tf in zip(parent, predicate)
-              if tf)
-
-
-@dispatch(TableSymbol, Sequence)
-def compute(t, seq):
-    return seq
+def compute_one(t, seq, **kwargs):
+    return map(rrowfunc(t.apply, t.parent),
+               filter(rrowfunc(t.predicate, t.parent),
+                      seq))
 
 
 @dispatch(Reduction, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
+def compute_one(t, seq, **kwargs):
     op = getattr(builtins, t.symbol)
-    return op(parent)
+    return op(seq)
 
 
 def _mean(seq):
@@ -194,39 +184,33 @@ def _std(seq):
 
 
 @dispatch(count, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return cytoolz.count(parent)
+def compute_one(t, seq, **kwargs):
+    return cytoolz.count(seq)
 
 
 @dispatch(Distinct, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return unique(parent)
+def compute_one(t, seq, **kwargs):
+    return unique(seq)
 
 
 @dispatch(nunique, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return cytoolz.count(unique(parent))
+def compute_one(t, seq, **kwargs):
+    return len(set(seq))
 
 
 @dispatch(mean, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return _mean(parent)
+def compute_one(t, seq, **kwargs):
+    return _mean(seq)
 
 
 @dispatch(var, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return _var(parent)
+def compute_one(t, seq, **kwargs):
+    return _var(seq)
 
 
 @dispatch(std, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return _std(parent)
+def compute_one(t, seq, **kwargs):
+    return _std(seq)
 
 
 lesser = lambda x, y: x if x < y else y
@@ -243,34 +227,26 @@ binops = {sum: (operator.add, 0),
 
 
 @dispatch(By, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-
+def compute_one(t, seq, **kwargs):
+    grouper = rrowfunc(t.grouper, t.parent)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
         binop, initial = binops[type(t.apply)]
-        applier = rowfunc(t.apply.parent)
-        grouper = rowfunc(t.grouper)
+        applier = rrowfunc(t.apply.parent, t.parent)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
 
-        d = reduceby(grouper, binop2, parent, initial)
+        d = reduceby(grouper, binop2, seq, initial)
     else:
-        grouper = rowfunc(t.grouper)
-        groups = groupby(grouper, parent)
+        groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, v)) for k, v in groups.items())
 
     if t.grouper.iscolumn:
         return d.items()
     else:
         return tuple(k + (v,) for k, v in d.items())
-
-@dispatch(Join, Sequence)
-def compute(t, seq):
-    a, b = itertools.tee(seq)
-    return compute(t, a, b)
 
 
 def listpack(x):
@@ -293,7 +269,7 @@ def listpack(x):
 
 
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
-def compute(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     """ Join Operation for Python Streaming Backend
 
     Note that a pure streaming Join is challenging/impossible because any row
@@ -305,8 +281,8 @@ def compute(t, lhs, rhs):
 
     Always put your bigger table on the RIGHT side of the Join.
     """
-    lhs = compute(t.lhs, lhs)
-    rhs = compute(t.rhs, rhs)
+    if lhs == rhs:
+        lhs, rhs = itertools.tee(lhs, 2)
 
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
@@ -330,29 +306,26 @@ def compute(t, lhs, rhs):
 
 
 @dispatch(Sort, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    if isinstance(t.column, (str, tuple, list)):
-        key = rowfunc(t.parent[t.column])
+def compute_one(t, seq, **kwargs):
+    if isinstance(t.key, (str, tuple, list)):
+        key = rowfunc(t.parent[t.key])
     else:
-        key = rowfunc(t.column)
-    return sorted(parent,
+        key = rowfunc(t.key)
+    return sorted(seq,
                   key=key,
                   reverse=not t.ascending)
 
 
 @dispatch(Head, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return tuple(take(t.n, parent))
+def compute_one(t, seq, **kwargs):
+    return tuple(take(t.n, seq))
 
 
 @dispatch((Label, ReLabel), Sequence)
-def compute(t, seq):
-    return compute(t.parent, seq)
+def compute_one(t, seq, **kwargs):
+    return seq
 
 
 @dispatch(Apply, Sequence)
-def compute(t, seq):
-    parent = compute(t.parent, seq)
-    return t.func(parent)
+def compute_one(t, seq, **kwargs):
+    return t.func(seq)

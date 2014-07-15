@@ -4,7 +4,7 @@
 >>> from blaze.compute.pandas import compute
 
 >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
->>> deadbeats = accounts['name'][accounts['amount'] < 0]
+>>> deadbeats = accounts[accounts['amount'] < 0]['name']
 
 >>> from pandas import DataFrame
 >>> data = [['Alice', 100], ['Bob', -50], ['Charlie', -20]]
@@ -24,60 +24,58 @@ import numpy as np
 from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar import UnaryOp, BinOp
+from .core import compute, compute_one, base
 from . import core
 
-__all__ = ['compute']
+__all__ = ['compute_one']
 
 
 @dispatch(Projection, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    return parent[list(t.columns)]
+def compute_one(t, df, **kwargs):
+    return df[list(t.columns)]
 
 
 @dispatch(Column, (DataFrame, DataFrameGroupBy))
-def compute(t, df):
-    parent = compute(t.parent, df)
-    return parent[t.columns[0]]
+def compute_one(t, df, **kwargs):
+    return df[t.columns[0]]
 
 
 @dispatch(ColumnWise, DataFrame)
-def compute(t, df):
-    expr = t.expr
+def compute_one(t, df, **kwargs):
     columns = [t.parent[c] for c in t.parent.columns]
-    expr = expr.subs(dict((col.scalar_symbol, col) for col in columns))
-    return compute(expr, df)
+    d = dict((t.parent[c].scalar_symbol, df[c]) for c in t.parent.columns)
+    return compute(t.expr, d)
 
 
-@dispatch(BinOp, DataFrame)
-def compute(t, df):
-    lhs = compute(t.lhs, df)
-    rhs = compute(t.rhs, df)
+@dispatch(BinOp, Series, (Series, base))
+def compute_one(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(UnaryOp, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    op = getattr(np, t.symbol)
-    return op(parent)
+@dispatch(BinOp, (Series, base), Series)
+def compute_one(t, lhs, rhs, **kwargs):
+    return t.op(lhs, rhs)
 
 
-@dispatch(Neg, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    return -parent
+@dispatch(UnaryOp, Series)
+def compute_one(t, df, **kwargs):
+    return getattr(np, t.symbol)(df)
 
 
-@dispatch(Selection, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    predicate = compute(t.predicate, df)
-    return parent[predicate]
+@dispatch(Neg, (DataFrame, Series))
+def compute_one(t, df, **kwargs):
+    return -df
+
+
+@dispatch(Selection, (Series, DataFrame))
+def compute_one(t, df, **kwargs):
+    predicate = compute(t.predicate, {t.parent: df})
+    apply = compute(t.apply, {t.parent: df})
+    return apply[predicate]
 
 
 @dispatch(TableSymbol, DataFrame)
-def compute(t, df):
+def compute_one(t, df, **kwargs):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
@@ -86,7 +84,7 @@ def compute(t, df):
 
 
 @dispatch(Join, DataFrame, DataFrame)
-def compute(t, lhs, rhs):
+def compute_one(t, lhs, rhs, **kwargs):
     """ Join two pandas data frames on arbitrary columns
 
     The approach taken here could probably be improved.
@@ -95,8 +93,6 @@ def compute(t, lhs, rhs):
     dataframe, perform the join, and then reset the index back to the left
     side's original index.
     """
-    lhs = compute(t.lhs, lhs)
-    rhs = compute(t.rhs, rhs)
     old_left_index = lhs.index
     old_right_index = rhs.index
     if lhs.index.name:
@@ -112,20 +108,18 @@ def compute(t, lhs, rhs):
 
 
 @dispatch(TableSymbol, (DataFrameGroupBy, SeriesGroupBy))
-def compute(t, gb):
+def compute_one(t, gb, **kwargs):
     return gb
 
 
-@dispatch(Reduction, (DataFrame, DataFrameGroupBy, SeriesGroupBy))
-def compute(t, s):
-    parent = compute(t.parent, s)
-    return getattr(parent, t.symbol)()
+@dispatch(Reduction, (DataFrame, DataFrameGroupBy, SeriesGroupBy, Series))
+def compute_one(t, df, **kwargs):
+    return getattr(df, t.symbol)()
 
 
 @dispatch(Distinct, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    return parent.drop_duplicates()
+def compute_one(t, df, **kwargs):
+    return df.drop_duplicates()
 
 
 def unpack(seq):
@@ -143,18 +137,17 @@ def unpack(seq):
     return seq
 
 @dispatch(By, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    grouper = DataFrame(compute(t.grouper, parent))
+def compute_one(t, df, **kwargs):
     assert isinstance(t.apply, Reduction)
-    pregrouped = DataFrame(compute(t.apply.parent, parent))
+    grouper = DataFrame(compute(t.grouper, {t.parent: df}))
+    pregrouped = DataFrame(compute(t.apply.parent, {t.parent: df}))
 
     full = grouper.join(pregrouped)
     groups = full.groupby(unpack(grouper.columns))[unpack(pregrouped.columns)]
 
-    reduction = t.apply.subs({t.apply.parent:
-                              TableSymbol('group', t.apply.parent.schema)})
-    result = compute(reduction, groups)
+    g = TableSymbol('group', t.apply.parent.schema)
+    reduction = t.apply.subs({t.apply.parent: g})
+    result = compute(reduction, {g: groups})
 
     if isinstance(result, Series):
         result.name = unpack(pregrouped.columns)
@@ -164,54 +157,52 @@ def compute(t, df):
 
 
 @dispatch(Sort, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    if isinstance(parent, Series):
-        result = parent.copy()
-        result.sort(t.column, ascending=t.ascending)
-    else:
-        result = parent.sort(t.column, ascending=t.ascending)
-    return result
+def compute_one(t, df, **kwargs):
+    return df.sort(t.key, ascending=t.ascending)
+
+
+@dispatch(Sort, Series)
+def compute_one(t, s, **kwargs):
+    return s.order(t.key, ascending=t.ascending)
 
 
 @dispatch(Head, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    return parent.head(t.n)
+def compute_one(t, df, **kwargs):
+    return df.head(t.n)
 
 
 @dispatch(Label, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    if isinstance(parent, Series):
-        return Series(parent, name=t.label)
-    if isinstance(parent, DataFrame):
-        return DataFrame(parent, columns=[t.label])
+def compute_one(t, df, **kwargs):
+    return DataFrame(df, columns=[t.label])
+
+
+@dispatch(Label, Series)
+def compute_one(t, df, **kwargs):
+    return Series(df, name=t.label)
 
 
 @dispatch(ReLabel, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    return DataFrame(parent, columns=t.columns)
+def compute_one(t, df, **kwargs):
+    return DataFrame(df, columns=t.columns)
 
 
 @dispatch(Map, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    if isinstance(parent, Series):
-        return parent.map(t.func)
-    else:
-        return parent.apply(lambda tup: t.func(*tup), axis=1)
+def compute_one(t, df, **kwargs):
+    return df.apply(lambda tup: t.func(*tup), axis=1)
 
 
-@dispatch(Apply, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    return t.func(parent)
+@dispatch(Map, Series)
+def compute_one(t, df, **kwargs):
+    return df.map(t.func)
+
+
+@dispatch(Apply, (Series, DataFrame))
+def compute_one(t, df, **kwargs):
+    return t.func(df)
 
 
 @dispatch(Merge, DataFrame)
-def compute(t, df):
-    parent = compute(t.parent, df)
-    children = [compute(child, parent) for child in t.children]
+def compute_one(t, df, **kwargs):
+    ancestor = common_ancestor(*t.children)
+    children = [compute(child, {ancestor: df}) for child in t.children]
     return pd.concat(children, axis=1)

@@ -9,14 +9,16 @@ from collections import Iterator
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
-from .python import compute, rowfunc, RowWise, listpack
+from .python import compute, rrowfunc, rowfunc, RowWise, listpack
 from ..compatibility import builtins
 from ..expr import table
 from ..dispatch import dispatch
 
+from .core import compute, compute_one
+
 from toolz.curried import get
 
-__all__ = ['compute', 'into', 'RDD', 'pyspark', 'SparkContext']
+__all__ = ['compute', 'compute_one', 'into', 'RDD', 'pyspark', 'SparkContext']
 
 try:
     from pyspark import SparkContext
@@ -42,22 +44,16 @@ except:
 
 
 @dispatch(RowWise, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd, **kwargs):
     func = rowfunc(t)
     return rdd.map(func)
 
 
-@dispatch(TableSymbol, RDD)
-def compute(t, s):
-    return s
-
-
 @dispatch(Selection, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
-    predicate = rowfunc(t.predicate)
-    return rdd.filter(predicate)
+def compute_one(t, rdd, **kwargs):
+    predicate = rrowfunc(t.predicate, t.parent)
+    apply = rrowfunc(t.apply, t.parent)
+    return rdd.filter(predicate).map(apply)
 
 
 rdd_reductions = {
@@ -72,9 +68,8 @@ rdd_reductions = {
 
 
 @dispatch(tuple(rdd_reductions), RDD)
-def compute(t, rdd):
-    reduction = rdd_reductions[type(t)]
-    return reduction(compute(t.parent, rdd))
+def compute_one(t, rdd, **kwargs):
+    return rdd_reductions[type(t)](rdd)
 
 
 def istruthy(x):
@@ -82,43 +77,38 @@ def istruthy(x):
 
 
 @dispatch(table.any, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd, **kwargs):
     return istruthy(rdd.filter(identity).take(1))
 
 
 @dispatch(table.all, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd, **kwargs):
     return not rdd.filter(lambda x: not x).take(1)
 
 
 @dispatch(Head, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd, **kwargs):
     return rdd.take(t.n)
 
 
 @dispatch(Sort, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
-    func = rowfunc(t[t.column])
-    return (rdd.keyBy(func)
+def compute_one(t, rdd, **kwargs):
+    if isinstance(t.key, (str, tuple, list)):
+        key = rowfunc(t.parent[t.key])
+    else:
+        key = rrowfunc(t.key, t.parent)
+    return (rdd.keyBy(key)
                 .sortByKey(ascending=t.ascending)
                 .map(lambda x: x[1]))
 
 
 @dispatch(Distinct, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd, **kwargs):
     return rdd.distinct()
 
 
 @dispatch(Join, RDD, RDD)
-def compute(t, lhs, rhs):
-    lhs = compute(t.lhs, lhs)
-    rhs = compute(t.rhs, rhs)
-
+def compute_one(t, lhs, rhs, **kwargs):
     on_left = rowfunc(t.lhs[t.on_left])
     on_right = rowfunc(t.rhs[t.on_right])
 
@@ -152,17 +142,15 @@ python_reductions = {
 
 
 @dispatch(By, RDD)
-def compute(t, rdd):
-    rdd = compute(t.parent, rdd)
+def compute_one(t, rdd, **kwargs):
     try:
         reduction = python_reductions[type(t.apply)]
     except KeyError:
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
 
-    grouper = rowfunc(t.grouper)
-    pre = rowfunc(t.apply.parent)
-
+    grouper = rrowfunc(t.grouper, t.parent)
+    pre = rrowfunc(t.apply.parent, t.parent)
 
     groups = (rdd.map(lambda x: (grouper(x), pre(x)))
              .groupByKey())
@@ -175,8 +163,8 @@ def compute(t, rdd):
 
 
 @dispatch((Label, ReLabel), RDD)
-def compute(t, rdd):
-    return compute(t.parent, rdd)
+def compute_one(t, rdd, **kwargs):
+    return rdd
 
 
 @dispatch(RDD, RDD)
