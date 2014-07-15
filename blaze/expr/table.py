@@ -909,10 +909,7 @@ class Union(TableExpr):
     ['name', 'amount']
     """
     __slots__ = 'children',
-
-    @property
-    def inputs(self):
-        return self.children
+    __inputs__ = 'children',
 
     @property
     def schema(self):
