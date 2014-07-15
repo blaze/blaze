@@ -335,3 +335,25 @@ def test_recursive_rowfunc_is_used():
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, data)) == set(expected)
+
+
+def test_union():
+    L1 = [['Alice', 100, 1],
+          ['Bob', 200, 2],
+          ['Alice', 50, 3]]
+    L2 = [['Alice', 100, 4],
+          ['Bob', 200, 5],
+          ['Alice', 50, 6]]
+    L3 = [['Alice', 100, 7],
+          ['Bob', 200, 8],
+          ['Alice', 50, 9]]
+
+    t1 = TableSymbol('t1', '{name: string, amount: int, id: int}')
+    t2 = TableSymbol('t2', '{name: string, amount: int, id: int}')
+    t3 = TableSymbol('t3', '{name: string, amount: int, id: int}')
+
+    expr = union(t1, t2, t3)
+
+    result = list(compute(expr, {t1: L1, t2: L2, t3: L3}))
+
+    assert result == L1 + L2 + L3

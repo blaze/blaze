@@ -26,7 +26,7 @@ from ..expr.table import *
 from ..expr.scalar.core import *
 from ..expr import scalar
 from ..compatibility import builtins, apply
-from cytoolz import groupby, get, reduceby, unique, take
+from cytoolz import groupby, get, reduceby, unique, take, concat
 import cytoolz
 from . import core
 from .core import compute, compute_one
@@ -328,3 +328,8 @@ def compute_one(t, seq, **kwargs):
 @dispatch(Apply, Sequence)
 def compute_one(t, seq, **kwargs):
     return t.func(seq)
+
+
+@dispatch(Union, Sequence, tuple)
+def compute_one(t, example, children, **kwargs):
+    return concat(children)
