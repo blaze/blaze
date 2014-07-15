@@ -33,6 +33,7 @@ class Scalar(Expr):
 
 class BinOp(Scalar):
     __slots__ = 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
 
     def __init__(self, lhs, rhs):
         self.lhs = lhs
@@ -46,13 +47,13 @@ class BinOp(Scalar):
 
 
 class UnaryOp(Scalar):
-    __slots__ = 'parent',
+    __slots__ = 'child',
 
-    def __init__(self, parent):
-        self.parent = parent
+    def __init__(self, child):
+        self.child = child
 
     def __str__(self):
-        return '%s(%s)' % (self.symbol, eval_str(self.parent))
+        return '%s(%s)' % (self.symbol, eval_str(self.child))
 
     @property
     def symbol(self):

@@ -10,7 +10,7 @@ from functools import partial
 from .utils import validate, coerce, coerce_to_ordered, ordered_index
 from ..utils import partition_all
 
-__all__ = ['DataDescriptor', 'discover', 'compute']
+__all__ = ['DataDescriptor', 'discover', 'compute_one']
 
 
 def isdimension(ds):
@@ -184,9 +184,9 @@ class DataDescriptor(object):
 from ..dispatch import dispatch
 from blaze.expr.table import Join, TableExpr
 from blaze.expr.core import Expr
-@dispatch((Join, Expr), DataDescriptor)
-def compute(t, ddesc):
-    return compute(t, iter(ddesc))  # use Python streaming by default
+@dispatch(Expr, DataDescriptor)
+def compute_one(t, ddesc, **kwargs):
+    return compute_one(t, iter(ddesc))  # use Python streaming by default
 
 
 @dispatch(DataDescriptor)

@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from pandas import DataFrame, Series
 
+from blaze.compute.core import compute
 from blaze.compute.pandas import *
 from blaze.expr.table import *
 from blaze.compatibility import builtins
@@ -309,3 +310,9 @@ def test_by_nunique():
     expected = DataFrame([['Alice', 2], ['Bob', 1]], columns=['name', 'id'])
 
     assert str(result) == str(expected)
+
+
+def test_selection_out_of_order():
+    expr = t['name'][t['amount'] < 100]
+
+    assert str(compute(expr, df)) == str(df['name'][df['amount'] < 100])

@@ -16,9 +16,14 @@ def _str(s):
 
 
 class Expr(object):
+    __inputs__ = 'child',
     @property
     def args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)
+
+    @property
+    def inputs(self):
+        return tuple(getattr(self, i) for i in self.__inputs__)
 
     def isidentical(self, other):
         return type(self) == type(other) and self.args == other.args
@@ -58,6 +63,14 @@ class Expr(object):
         return toolz.merge([arg.resources() for arg in self.args
                                             if isinstance(arg, Expr)])
 
+    def subterms(self):
+        yield self
+        for i in self.inputs:
+            for node in i.subterms():
+                yield node
+
+    def __contains__(self, other):
+        return other in set(self.subterms())
 
 
 def subs(o, d):
@@ -81,3 +94,18 @@ class Scalar(Expr):
 @dispatch(Expr)
 def discover(expr):
     return expr.dshape
+
+
+def path(a, b):
+    """ A path of nodes from a to b
+
+    >>> from blaze.expr.table import TableSymbol
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> expr = t['amount'].sum()
+    >>> list(path(expr, t))
+    [sum(t['amount']), t['amount'], t]
+    """
+    while not a.isidentical(b):
+        yield a
+        a = a.child
+    yield a
