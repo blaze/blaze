@@ -63,6 +63,22 @@ is just a single line of nodes.  Notable exceptions include operations like
 ``Join`` and ``Binop``.
 
 
+Expression Invariants
+---------------------
+
+Blaze expressions adhere to the following properties:
+
+1.  They and all of their stored fields are immutable
+2.  Their string representations evaluate to themselves.  E.g.
+    ``eval(str(expr)) == expr``
+3.  They have simple ``__init__`` constructors that only copy in fields to the
+    object.  For intelligent argument handling they have functions.  E.g. the
+    ``Join`` class has an analagous ``join`` function that should be used by
+    users.
+4.  They can compute their datashape ``dshape`` and ``schema``/``columns`` if
+    they are tabular.
+
+
 Other Expressions
 -----------------
 
