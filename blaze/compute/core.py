@@ -39,16 +39,28 @@ def compute(expr, o, **kwargs):
 
 
 def bottom_up(d, expr):
-    """ Process an expression from the leaves upwards
+    """
+    Process an expression from the leaves upwards
+
+    Parameters
+    ----------
+
+    d : dict mapping {TableSymbol: data}
+        Maps expressions to data elements, likely at the leaves of the tree
+    expr : Expr
+        Expression to compute
 
     Helper function for ``compute``
     """
+    # Base case: expression is in dict, return associated data
     if expr in d:
         return d[expr]
 
+    # Compute children of this expression
     parents = ([bottom_up(d, getattr(expr, parent)) for parent in expr.inputs]
                 if hasattr(expr, 'inputs') else [])
 
+    # Compute this expression given the children
     result = compute_one(expr, *parents, scope=d)
 
     return result
@@ -77,6 +89,7 @@ def compute(expr, d):
     >>> list(compute(deadbeats, {t: data}))
     ['Bob', 'Charlie']
     """
+    expr = pre_compute(expr, d)
     result = bottom_up(d, expr)
     return post_compute(expr, result, d)
 

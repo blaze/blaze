@@ -13,10 +13,18 @@ def compute_one(t, ddesc, **kwargs):
 
 @dispatch(Expr, sql.sql.ClauseElement, dict)
 def post_compute(expr, query, d):
-    try:
-        engines = set([dd.engine for dd in d.values()])
-    except:
+    """ Execute SQLAlchemy query against SQLAlchemy engines
+
+    If the result of compute is a SQLAlchemy query then it is likely that the
+    data elements are themselves SQL objects which contain SQLAlchemy engines.
+    We find these engines and, if they are all the same, run the query against
+    these engines and return the result.
+    """
+    if not all(isinstance(val, SQL) for val in d.values()):
         return query
+
+    engines = set([dd.engine for dd in d.values()])
+
     if len(set(map(str, engines))) != 1:
         raise NotImplementedError("Expected single SQLAlchemy engine")
 
