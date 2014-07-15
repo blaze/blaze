@@ -338,7 +338,7 @@ def selection(table, predicate):
 
     if predicate.dtype != dshape('bool'):
         raise TypeError("Must select over a boolean predicate.  Got:\n"
-                        "%s[%s]" % (apply, predicate))
+                        "%s[%s]" % (table, predicate))
 
     return table.subs({subexpr: Selection(subexpr, predicate)})
 
