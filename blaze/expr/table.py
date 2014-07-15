@@ -20,7 +20,7 @@ from ..compatibility import _strtypes, builtins
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions """
-    inputs = 'parent',
+    __inputs__ = 'parent',
 
     @property
     def dshape(self):
@@ -114,7 +114,7 @@ class TableSymbol(TableExpr):
     a single row, called a schema.
     """
     __slots__ = 'name', 'schema', 'iscolumn'
-    inputs = ()
+    __inputs__ = ()
 
     def __init__(self, name, schema, iscolumn=False):
         self.name = name
@@ -472,7 +472,7 @@ class Join(TableExpr):
     >>> joined = Join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
-    inputs = 'lhs', 'rhs'
+    __inputs__ = 'lhs', 'rhs'
 
     iscolumn = False
 

@@ -57,7 +57,7 @@ def bottom_up(d, expr):
         return d[expr]
 
     # Compute children of this expression
-    parents = ([bottom_up(d, getattr(expr, parent)) for parent in expr.inputs]
+    parents = ([bottom_up(d, parent) for parent in expr.inputs]
                 if hasattr(expr, 'inputs') else [])
 
     # Compute this expression given the children

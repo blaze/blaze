@@ -16,10 +16,14 @@ def _str(s):
 
 
 class Expr(object):
-    inputs = 'parent',
+    __inputs__ = 'parent',
     @property
     def args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)
+
+    @property
+    def inputs(self):
+        return tuple(getattr(self, i) for i in self.__inputs__)
 
     def isidentical(self, other):
         return type(self) == type(other) and self.args == other.args
@@ -62,7 +66,7 @@ class Expr(object):
     def ancestors(self):
         yield self
         for i in self.inputs:
-            for node in getattr(self, i).ancestors():
+            for node in i.ancestors():
                 yield node
 
     def __contains__(self, other):
