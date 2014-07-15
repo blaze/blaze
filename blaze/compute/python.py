@@ -110,9 +110,8 @@ def rowfunc(t):
 
 @dispatch(Map)
 def rowfunc(t):
-    if t.parent.columns and len(t.parent.columns) == 1:
-        return t.func
-    elif isinstance(t.parent, ColumnWise) and len(t.parent.active_columns()) == 2:
+    if (isinstance(t.parent, ColumnWise) or
+        (t.parent.columns and len(t.parent.columns) == 1)):
         return t.func
     else:
         return partial(apply, t.func)
