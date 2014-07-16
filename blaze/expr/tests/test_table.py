@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from blaze.expr.table import *
 from blaze.expr.core import discover
 from blaze.utils import raises
-from datashape import dshape, var
+from datashape import dshape, var, int32, int64
 from toolz import identity
 
 
@@ -168,8 +168,25 @@ def test_reduction():
     r = sum(t['amount'])
     print(type(r.dshape))
     print(type(dshape('int32')))
-    assert r.dshape in (dshape('int32'), dshape('{amount: int32}'))
+    print(r.dshape)
+    assert r.dshape in (dshape('int32'),
+                        dshape('{amount: int32}'),
+                        dshape('{amount_sum: int32}'))
 
+    assert 'amount' not in str(t.count().dshape)
+
+    assert first(t.count().dshape[0].fields.values())[0] in (int32, int64)
+
+    assert 'int' in str(t.count().dshape)
+    assert 'int' in str(t.nunique().dshape)
+    assert 'string' in str(t['name'].max().dshape)
+    assert 'string' in str(t['name'].min().dshape)
+    assert 'string' not in str(t.count().dshape)
+
+    t = TableSymbol('t', '{name: string, amount: real, id: int}')
+
+    assert 'int' in str(t['id'].sum().dshape)
+    assert 'int' not in str(t['amount'].sum().dshape)
 
 def test_Distinct():
     t = TableSymbol('t', '{name: string, amount: int32}')
@@ -188,6 +205,16 @@ def test_by():
     print(r.schema)
     assert isinstance(r.schema[0], Record)
     assert str(r.schema[0]['name']) == 'string'
+
+
+def test_by_columns():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+
+    assert len(by(t, t['id'], t['amount'].sum()).columns) == 2
+    assert len(by(t, t['id'], t['id'].count()).columns) == 2
+    print(by(t, t, t.count()).columns)
+    assert len(by(t, t, t.count()).columns) == 4
+
 
 
 def test_sort():
