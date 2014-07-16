@@ -268,7 +268,6 @@ def listpack(x):
         return [x]
 
 
-
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
 def compute_one(t, lhs, rhs, **kwargs):
     """ Join Operation for Python Streaming Backend
@@ -282,22 +281,45 @@ def compute_one(t, lhs, rhs, **kwargs):
 
     Always put your bigger table on the RIGHT side of the Join.
     """
+    from cytoolz import get  # not curried version
     if lhs == rhs:
         lhs, rhs = itertools.tee(lhs, 2)
 
     on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
     on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
 
+    left_default = (None if t.how in ('right', 'outer')
+                         else toolz.itertoolz.no_default)
+    right_default = (None if t.how in ('left', 'outer')
+                         else toolz.itertoolz.no_default)
+
+    left_self_columns = [t.lhs.columns.index(c) for c in t.lhs.columns
+                                            if c not in listpack(t.on_left)]
+    right_self_columns = [t.rhs.columns.index(c) for c in t.rhs.columns
+                                            if c not in listpack(t.on_right)]
+
     pairs = toolz.join(on_left, lhs,
-                       on_right, rhs)
+                       on_right, rhs,
+                       left_default=left_default,
+                       right_default=right_default)
 
-    right_columns = list(t.rhs.columns)
-    for joined_column in listpack(t.on_right):
-        right_columns.remove(joined_column)
-    right_columns = [t.rhs.columns.index(col) for col in right_columns]
+    for a, b in pairs:
+        if a is not None:
+            joined = get(on_left, a)
+        else:
+            joined = get(on_right, b)
 
-    getter = get(right_columns)
-    return (tuple(a) + getter(b) for a, b in pairs)
+        if a is not None:
+            left_entries = get(left_self_columns, a)
+        else:
+            left_entries = (None,) * (len(t.lhs.columns) - len(on_left))
+
+        if b is not None:
+            right_entries = get(right_self_columns, b)
+        else:
+            right_entries = (None,) * (len(t.rhs.columns) - len(on_right))
+
+        yield joined + left_entries + right_entries
 
 
 @dispatch(Sort, Sequence)
