@@ -150,6 +150,14 @@ def test_join():
     assert join(t, s, 'name') == join(t, s, 'name')
 
 
+def test_joined_column_first_in_schema():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    s = TableSymbol('s', '{w: int, y: int}')
+
+    assert join(t, s).schema == dshape('{y: int, x: int, z: int, w: int}')
+
+
+
 def test_outer_join():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')

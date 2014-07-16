@@ -514,21 +514,22 @@ class Join(TableExpr):
         dshape("{ name : string, amount : int32, id : ?int32 }")
         """
         option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
-        rec1 = self.lhs.schema[0]
-        if self.how in ('right', 'outer'):
-            rec1 = Record([[name, dt if name in self.on_right or
-                                        isinstance(dt, Option)
-                                     else Option(dt)]
-                                     for name, dt in rec1.parameters[0]])
-        rec2 = self.rhs.schema[0]
-        if self.how in ('left', 'outer'):
-            rec2 = Record([[name, dt if name in self.on_left or
-                                        isinstance(dt, Option)
-                                     else Option(dt)]
-                                     for name, dt in rec2.parameters[0]])
 
-        rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
-        return dshape(Record(rec))
+        joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                        if name in self.on_left]
+
+        left = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                           if name not in self.on_left]
+
+        right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
+                            if name not in self.on_right]
+
+        if self.how in ('right', 'outer'):
+            left = [[name, option(dt)] for name, dt in left]
+        if self.how in ('left', 'outer'):
+            right = [[name, option(dt)] for name, dt in right]
+
+        return dshape(Record(joined + left + right))
 
 
 def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
