@@ -268,42 +268,21 @@ def listpack(x):
         return [x]
 
 
-@dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
-def compute_one(t, lhs, rhs, **kwargs):
-    """ Join Operation for Python Streaming Backend
+def pair_assemble(t):
+    """ Combine a pair of records into a single record
 
-    Note that a pure streaming Join is challenging/impossible because any row
-    in one seq might connect to any row in the other, requiring simultaneous
-    complete access.
-
-    As a result this approach compromises and fully realizes the LEFT sequence
-    while allowing the RIGHT sequence to stream.  As a result
-
-    Always put your bigger table on the RIGHT side of the Join.
+    This is mindful to shared columns as well as missing records
     """
     from cytoolz import get  # not curried version
-    if lhs == rhs:
-        lhs, rhs = itertools.tee(lhs, 2)
-
     on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
     on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
-
-    left_default = (None if t.how in ('right', 'outer')
-                         else toolz.itertoolz.no_default)
-    right_default = (None if t.how in ('left', 'outer')
-                         else toolz.itertoolz.no_default)
 
     left_self_columns = [t.lhs.columns.index(c) for c in t.lhs.columns
                                             if c not in listpack(t.on_left)]
     right_self_columns = [t.rhs.columns.index(c) for c in t.rhs.columns
                                             if c not in listpack(t.on_right)]
-
-    pairs = toolz.join(on_left, lhs,
-                       on_right, rhs,
-                       left_default=left_default,
-                       right_default=right_default)
-
-    for a, b in pairs:
+    def assemble(pair):
+        a, b = pair
         if a is not None:
             joined = get(on_left, a)
         else:
@@ -319,7 +298,42 @@ def compute_one(t, lhs, rhs, **kwargs):
         else:
             right_entries = (None,) * (len(t.rhs.columns) - len(on_right))
 
-        yield joined + left_entries + right_entries
+        return joined + left_entries + right_entries
+
+    return assemble
+
+@dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
+def compute_one(t, lhs, rhs, **kwargs):
+    """ Join Operation for Python Streaming Backend
+
+    Note that a pure streaming Join is challenging/impossible because any row
+    in one seq might connect to any row in the other, requiring simultaneous
+    complete access.
+
+    As a result this approach compromises and fully realizes the LEFT sequence
+    while allowing the RIGHT sequence to stream.  As a result
+
+    Always put your bigger table on the RIGHT side of the Join.
+    """
+    if lhs == rhs:
+        lhs, rhs = itertools.tee(lhs, 2)
+
+    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+
+    left_default = (None if t.how in ('right', 'outer')
+                         else toolz.itertoolz.no_default)
+    right_default = (None if t.how in ('left', 'outer')
+                         else toolz.itertoolz.no_default)
+
+    pairs = toolz.join(on_left, lhs,
+                       on_right, rhs,
+                       left_default=left_default,
+                       right_default=right_default)
+
+    assemble = pair_assemble(t)
+
+    return map(assemble, pairs)
 
 
 @dispatch(Sort, Sequence)
