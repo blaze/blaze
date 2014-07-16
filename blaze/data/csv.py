@@ -12,7 +12,7 @@ from collections import Iterator
 
 import datashape
 from datashape.discovery import discover, null, string, unpack
-from datashape import dshape, Record, Option, Fixed, CType, Tuple
+from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
 from dynd import nd
 
 from .core import DataDescriptor
@@ -126,10 +126,10 @@ class CSV(DataDescriptor):
                     if isinstance(rowtype[0], Tuple):
                         types = types.subshape[0][0].dshapes
                         types = [unpack(t) for t in types]
-                        types = [t.ty if isinstance(unpack(t), Option) else t
-                                      for t in types]
                         types = [string if t == null else t
                                         for t in types]
+                        types = [t if isinstance(t, Option) or t==string else Option(t)
+                                      for t in types]
                     elif (isinstance(rowtype[0], Fixed) and
                           isinstance(rowtype[1], CType)):
                         types = int(rowtype[0]) * [rowtype[1]]
