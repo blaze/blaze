@@ -317,7 +317,10 @@ def compute_one(t, seq, **kwargs):
 
 @dispatch(Head, Sequence)
 def compute_one(t, seq, **kwargs):
-    return tuple(take(t.n, seq))
+    if t.n < 100:
+        return tuple(take(t.n, seq))
+    else:
+        return take(t.n, seq)
 
 
 @dispatch((Label, ReLabel), Sequence)
