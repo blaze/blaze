@@ -9,7 +9,8 @@ from collections import Iterator
 from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
-from .python import compute, rrowfunc, rowfunc, RowWise, listpack
+from .python import (compute, rrowfunc, rowfunc, RowWise, listpack,
+        pair_assemble)
 from ..compatibility import builtins
 from ..expr import table
 from ..dispatch import dispatch
@@ -114,17 +115,20 @@ def compute_one(t, lhs, rhs, **kwargs):
     lhs = lhs.keyBy(on_left)
     rhs = rhs.keyBy(on_right)
 
-    # Calculate the indices we want in the joined table
-    columns = t.lhs.columns + t.rhs.columns
-    repeated_index = set([len(t.lhs.columns) + t.rhs.columns.index(col)
-            for col in listpack(t.on_right)])
 
-    wanted = [i for i in range(len(columns)) if i not in repeated_index]
+    if t.how == 'inner':
+        rdd = lhs.join(rhs)
+    elif t.how == 'left':
+        rdd = lhs.leftOuterJoin(rhs)
+    elif t.how == 'right':
+        rdd = lhs.rightOuterJoin(rhs)
+    elif t.how == 'outer':
+        # https://issues.apache.org/jira/browse/SPARK-546
+        raise NotImplementedError("Spark does not yet support full outer join")
 
-    getter = get(wanted)
-    reassemble = lambda x: getter(x[1][0] + x[1][1])
+    assemble = pair_assemble(t)
 
-    return lhs.join(rhs).map(reassemble)
+    return rdd.map(lambda x: assemble(x[1]))
 
 
 python_reductions = {
