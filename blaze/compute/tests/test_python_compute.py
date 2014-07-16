@@ -170,6 +170,13 @@ def test_outer_join():
              (3, None, None, 'LA'),
              (4, 'Dennis', 400, 'Moscow')])
 
+    assert set(compute(join(L, R, how='outer'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
 
 def test_multi_column_join():
     left = [(1, 2, 3),
