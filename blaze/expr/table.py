@@ -6,6 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 from datashape import dshape, var, DataShape, Record, isdimension
+from datashape import coretypes as ct
 import datashape
 import operator
 from toolz import concat, partial, first, pipe, compose, get, unique
@@ -566,26 +567,60 @@ class Reduction(Scalar):
     350
     """
     __slots__ = 'child',
+    dtype = None
 
     @property
     def dshape(self):
-        return self.child.dshape.subarray(1)
+        if self.child.columns and len(self.child.columns) == 1:
+            name = self.child.columns[0] + '_' + type(self).__name__
+            dtype = self.dtype or first(self.child.schema[0].fields.values()[0])
+            return DataShape(Record([[name, self.dtype]]))
+        else:
+            return DataShape(Record([[type(self).__name__, self.dtype]]))
 
     @property
     def symbol(self):
         return type(self).__name__
 
 
-class any(Reduction): pass
-class all(Reduction): pass
-class sum(Reduction): pass
-class max(Reduction): pass
-class min(Reduction): pass
-class mean(Reduction): pass
-class var(Reduction): pass
-class std(Reduction): pass
-class count(Reduction): pass
-class nunique(Reduction): pass
+class any(Reduction):
+    dtype = ct.bool_
+class all(Reduction):
+    dtype = ct.bool_
+class sum(Reduction):
+    @property
+    def dtype(self):
+        schema = self.child.schema[0]
+        if isinstance(schema, Record) and len(schema.fields.values()) == 1:
+            return first(schema.fields.values())
+        else:
+            return schema
+class max(Reduction):
+    @property
+    def dtype(self):
+        schema = self.child.schema[0]
+        if isinstance(schema, Record) and len(schema.fields.values()) == 1:
+            return first(schema.fields.values())
+        else:
+            return schema
+class min(Reduction):
+    @property
+    def dtype(self):
+        schema = self.child.schema[0]
+        if isinstance(schema, Record) and len(schema.fields.values()) == 1:
+            return first(schema.fields.values())
+        else:
+            return schema
+class mean(Reduction):
+    dtype = ct.real
+class var(Reduction):
+    dtype = ct.real
+class std(Reduction):
+    dtype = ct.real
+class count(Reduction):
+    dtype = ct.int_
+class nunique(Reduction):
+    dtype = ct.int_
 
 
 class By(TableExpr):
@@ -610,14 +645,16 @@ class By(TableExpr):
     @property
     def schema(self):
         group = self.grouper.schema[0].parameters[0]
+        reduction_name = type(self.apply).__name__
         if isinstance(self.apply.dshape[0], Record):
             apply = self.apply.dshape[0].parameters[0]
         else:
-            apply = (('0', self.apply.dshape),)
+            apply = ((reduction_name, self.apply.dshape),)
 
         params = unique(group + apply, key=lambda x: x[0])
 
         return dshape(Record(list(params)))
+
 
 def by(child, grouper, apply):
     if isdimension(apply.dshape[0]):
