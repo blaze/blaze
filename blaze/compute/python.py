@@ -19,6 +19,9 @@ from operator import itemgetter
 from functools import partial
 from toolz import map, isiterable, compose, juxt, identity
 from toolz.compatibility import zip
+from cytoolz import groupby, reduceby, unique, take
+import cytoolz
+import toolz
 import sys
 
 from ..dispatch import dispatch
@@ -26,10 +29,9 @@ from ..expr.table import *
 from ..expr.scalar.core import *
 from ..expr import scalar
 from ..compatibility import builtins, apply
-from cytoolz import groupby, get, reduceby, unique, take
-import cytoolz
 from . import core
 from .core import compute, compute_one
+from cytoolz.curried import get
 
 from ..data import DataDescriptor
 
@@ -283,25 +285,19 @@ def compute_one(t, lhs, rhs, **kwargs):
     if lhs == rhs:
         lhs, rhs = itertools.tee(lhs, 2)
 
-    on_left = rowfunc(t.lhs[t.on_left])
-    on_right = rowfunc(t.rhs[t.on_right])
+    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
 
-    right_columns = list(range(len(t.rhs.columns)))
-    for col in listpack(t.on_right):
-        right_columns.remove(t.rhs.columns.index(col))
+    pairs = toolz.join(on_left, lhs,
+                       on_right, rhs)
 
-    get_right = lambda x: type(x)(get(right_columns, x))
+    right_columns = list(t.rhs.columns)
+    for joined_column in listpack(t.on_right):
+        right_columns.remove(joined_column)
+    right_columns = [t.rhs.columns.index(col) for col in right_columns]
 
-    lhs_dict = groupby(on_left, lhs)
-
-    for row in rhs:
-        try:
-            key = on_right(row)
-            matches = lhs_dict[key]
-            for match in matches:
-                yield match + get_right(row)
-        except KeyError:
-            pass
+    getter = get(right_columns)
+    return (tuple(a) + getter(b) for a, b in pairs)
 
 
 @dispatch(Sort, Sequence)
