@@ -92,8 +92,8 @@ exprs = [
     t['amount'] + t['id'],
     t['amount'] % t['id'],
     exp(t['amount']),
-    By(t, t['name'], t['amount'].sum()),
-    By(t, t['name'], (t['amount'] + 1).sum()),
+    by(t, t['name'], t['amount'].sum()),
+    by(t, t['name'], (t['amount'] + 1).sum()),
     (t['amount'] * 1).label('foo'),
     t.map(lambda _, amt, id: amt + id),
     t['amount'].map(inc)]
@@ -121,8 +121,8 @@ def test_spark_big_by():
     tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
 
     big_exprs = [
-        By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
-        By(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
+        by(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
+        by(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
 
     databig = [['Alice', 'F', 100, 1],
                ['Alice', 'F', 100, 3],
@@ -155,7 +155,7 @@ def test_spark_distinct():
 
 def test_spark_join():
 
-    joined = Join(t, t2, 'name')
+    joined = join(t, t2, 'name')
     expected = [['Alice', 100, 1, 'Austin'],
                 ['Bob', 200, 2, 'Boston'],
                 ['Alice', 50, 3, 'Austin']]
@@ -176,7 +176,7 @@ def test_spark_multi_column_join():
     L = TableSymbol('L', '{x: int, y: int, z: int}')
     R = TableSymbol('R', '{x: int, y: int, w: int}')
 
-    j = Join(L, R, ['x', 'y'])
+    j = join(L, R, ['x', 'y'])
 
     result = compute(j, {L: rleft, R: rright})
     expected = [(1, 2, 3, 30),
@@ -191,10 +191,10 @@ def test_spark_groupby():
     rddidx = sc.parallelize(data_idx)
     rddarc = sc.parallelize(data_arc)
 
-    joined = Join(t_arc, t_idx, "node_id")
+    joined = join(t_arc, t_idx, "node_id")
 
     result_blaze = compute(joined, {t_arc: rddarc, t_idx:rddidx})
-    t = By(joined, joined['name'], joined['node_id'].count())
+    t = by(joined, joined['name'], joined['node_id'].count())
     a = compute(t, {t_arc: rddarc, t_idx:rddidx})
     in_degree = dict(a.collect())
     assert in_degree == {'A': 1, 'C': 2}
@@ -228,7 +228,7 @@ def test_spark_selection_out_of_order():
 
 
 def test_spark_recursive_rowfunc_is_used():
-    expr = By(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
+    expr = by(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, rdd).collect()) == set(expected)

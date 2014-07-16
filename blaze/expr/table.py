@@ -48,13 +48,13 @@ class TableExpr(Expr):
             if key not in self.columns:
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
-        if isinstance(key, list) and all(isinstance(k, _strtypes) for k in key):
+        if isinstance(key, list) and builtins.all(isinstance(k, _strtypes) for k in key):
             key = tuple(key)
-            if not all(col in self.columns for col in key):
+            if not builtins.all(col in self.columns for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
-            return Projection(self, tuple(key))
+            return projection(self, tuple(key))
         if isinstance(key, TableExpr):
-            return Selection(self, key)
+            return selection(self, key)
         raise TypeError("Did not understand input: %s[%s]" % (self, key))
 
     def sort(self, key=None, ascending=True):
@@ -72,13 +72,13 @@ class TableExpr(Expr):
         """
         if key is None:
             key = self.columns[0]
-        return Sort(self, key, ascending)
+        return sort(self, key, ascending)
 
     def head(self, n=10):
-        return Head(self, n)
+        return head(self, n)
 
     def relabel(self, labels):
-        return ReLabel(self, labels)
+        return relabel(self, labels)
 
     def map(self, func, schema=None, iscolumn=None):
         return Map(self, func, schema, iscolumn)
@@ -87,7 +87,7 @@ class TableExpr(Expr):
         return count(self)
 
     def distinct(self):
-        return Distinct(self)
+        return distinct(self)
 
     def nunique(self):
         return nunique(self)
@@ -118,7 +118,9 @@ class TableSymbol(TableExpr):
 
     def __init__(self, name, schema, iscolumn=False):
         self.name = name
-        self.schema = dshape(schema)
+        if isinstance(schema, _strtypes):
+            schema = dshape(schema)
+        self.schema = schema
         self.iscolumn = iscolumn
 
     def __str__(self):
@@ -130,6 +132,7 @@ class TableSymbol(TableExpr):
 
 class RowWise(TableExpr):
     pass
+
 
 class Projection(RowWise):
     """ Select columns from table
@@ -143,10 +146,6 @@ class Projection(RowWise):
     dshape("{ name : string, amount : int32 }")
     """
     __slots__ = 'child', '_columns'
-
-    def __init__(self, table, columns):
-        self.child = table
-        self._columns = tuple(columns)
 
     @property
     def columns(self):
@@ -166,7 +165,15 @@ class Projection(RowWise):
         return False
 
 
+def projection(table, columns):
+    return Projection(table, tuple(columns))
+
+projection.__doc__ = Projection.__doc__
+
+
 class ColumnSyntaxMixin(object):
+    iscolumn = True
+
     def __eq__(self, other):
         return columnwise(Eq, self, other)
 
@@ -266,8 +273,6 @@ class ColumnSyntaxMixin(object):
     def std(self):
         return std(self)
 
-    iscolumn = True
-
 
 class Column(ColumnSyntaxMixin, Projection):
     """ A single column from a table
@@ -285,10 +290,6 @@ class Column(ColumnSyntaxMixin, Projection):
     __hash__ = Expr.__hash__
 
     iscolumn = True
-
-    def __init__(self, table, column):
-        self.child = table
-        self.column = column
 
     @property
     def columns(self):
@@ -309,37 +310,39 @@ class Selection(TableExpr):
     ...                        '{name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts['amount'] < 0]
     """
-    __slots__ = 'child', 'apply', 'predicate'
-
-    def __init__(self, table, predicate):
-        subexpr = common_subexpression(table, predicate)
-
-        if builtins.any(not isinstance(node, (RowWise, TableSymbol))
-               for node in concat([path(predicate, subexpr),
-                                   path(table, subexpr)])):
-
-            raise ValueError("Selection not properly matched with table:\n"
-                       "child: %s\n"
-                       "apply: %s\n"
-                       "predicate: %s" % (subexpr, table, predicate))
-
-        if predicate.dtype != dshape('bool'):
-            raise TypeError("Must select over a boolean predicate.  Got:\n"
-                            "%s[%s]" % (table, predicate))
-        self.child = subexpr
-        self.apply = table
-        self.predicate = predicate  # A Relational
+    __slots__ = 'child', 'predicate'
 
     def __str__(self):
-        return "%s[%s]" % (self.apply, self.predicate)
+        return "%s[%s]" % (self.child, self.predicate)
 
     @property
     def schema(self):
-        return self.apply.schema
+        return self.child.schema
 
     @property
     def iscolumn(self):
-        return self.apply.iscolumn
+        return self.child.iscolumn
+
+
+def selection(table, predicate):
+    subexpr = common_subexpression(table, predicate)
+
+    if builtins.any(not isinstance(node, (RowWise, TableSymbol))
+           for node in concat([path(predicate, subexpr),
+                               path(table, subexpr)])):
+
+        raise ValueError("Selection not properly matched with table:\n"
+                   "child: %s\n"
+                   "apply: %s\n"
+                   "predicate: %s" % (subexpr, table, predicate))
+
+    if predicate.dtype != dshape('bool'):
+        raise TypeError("Must select over a boolean predicate.  Got:\n"
+                        "%s[%s]" % (table, predicate))
+
+    return table.subs({subexpr: Selection(subexpr, predicate)})
+
+selection.__doc__ = Selection.__doc__
 
 
 def _expr_child(col):
@@ -421,9 +424,6 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     accounts['amount'] + 100
     """
     __slots__ = 'child', 'expr'
-    def __init__(self, child, expr):
-        self.child = child
-        self.expr = expr
 
     __hash__ = Expr.__hash__
 
@@ -449,6 +449,7 @@ def unpack(l):
     else:
         return l
 
+
 class Join(TableExpr):
     """ Join two tables on common columns
 
@@ -463,35 +464,16 @@ class Join(TableExpr):
     >>> amounts = TableSymbol('amounts', '{amount: int, id: int}')
 
     Join tables based on shared column name
-    >>> joined = Join(names, amounts, 'id')
+    >>> joined = join(names, amounts, 'id')
 
     Join based on different column names
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
-    >>> joined = Join(names, amounts, 'id', 'acctNumber')
+    >>> joined = join(names, amounts, 'id', 'acctNumber')
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
     __inputs__ = 'lhs', 'rhs'
 
     iscolumn = False
-
-    def __init__(self, lhs, rhs, on_left=None, on_right=None):
-        self.lhs = lhs
-        self.rhs = rhs
-        if not on_left and not on_right:
-            on_left = on_right = unpack(list(sorted(
-                set(lhs.columns) & set(rhs.columns),
-                key=lhs.columns.index)))
-        if not on_right:
-            on_right = on_left
-        if isinstance(on_left, tuple):
-            on_left = list(on_left)
-        if isinstance(on_right, tuple):
-            on_right = list(on_right)
-        self._on_left = tuple(on_left) if isinstance(on_left, list) else on_left
-        self._on_right = (tuple(on_right) if isinstance(on_right, list)
-                            else on_right)
-        if get(on_left, lhs.schema[0]) != get(on_right, rhs.schema[0]):
-            raise TypeError("Schema's of joining columns do not match")
 
     @property
     def on_left(self):
@@ -514,6 +496,28 @@ class Join(TableExpr):
 
         rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
         return dshape(Record(rec))
+
+
+def join(lhs, rhs, on_left=None, on_right=None):
+    if not on_left and not on_right:
+        on_left = on_right = unpack(list(sorted(
+            set(lhs.columns) & set(rhs.columns),
+            key=lhs.columns.index)))
+    if not on_right:
+        on_right = on_left
+    if isinstance(on_left, tuple):
+        on_left = list(on_left)
+    if isinstance(on_right, tuple):
+        on_right = list(on_right)
+    if get(on_left, lhs.schema[0]) != get(on_right, rhs.schema[0]):
+        raise TypeError("Schema's of joining columns do not match")
+    _on_left = tuple(on_left) if isinstance(on_left, list) else on_left
+    _on_right = (tuple(on_right) if isinstance(on_right, list)
+                        else on_right)
+
+    return Join(lhs, rhs, _on_left, _on_right)
+
+join.__doc__ = Join.__doc__
 
 
 sqrt = partial(columnwise, scalar.sqrt)
@@ -563,9 +567,6 @@ class Reduction(Scalar):
     """
     __slots__ = 'child',
 
-    def __init__(self, table):
-        self.child = table
-
     @property
     def dshape(self):
         return self.child.dshape.subarray(1)
@@ -591,28 +592,20 @@ class By(TableExpr):
     """ Split-Apply-Combine Operator
 
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    >>> e = By(t, t['name'], t['amount'].sum())
+    >>> e = by(t, t['name'], t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
     ...         ['Bob', 200, 2],
     ...         ['Alice', 50, 3]]
 
     >>> from blaze.compute.python import compute
-    >>> compute(e, data) #doctest: +SKIP
-    {'Alice': 150, 'Bob': 200}
+    >>> sorted(compute(e, data))
+    [('Alice', 150), ('Bob', 200)]
     """
 
     __slots__ = 'child', 'grouper', 'apply'
 
     iscolumn = False
-
-    def __init__(self, child, grouper, apply):
-        self.child = child
-        s = TableSymbol('', child.schema, child.iscolumn)
-        self.grouper = grouper # grouper.subs({child: s})
-        self.apply = apply # apply.subs({child: s})
-        if isdimension(self.apply.dshape[0]):
-            raise TypeError("Expected Reduction")
 
     @property
     def schema(self):
@@ -625,6 +618,13 @@ class By(TableExpr):
         params = unique(group + apply, key=lambda x: x[0])
 
         return dshape(Record(list(params)))
+
+def by(child, grouper, apply):
+    if isdimension(apply.dshape[0]):
+        raise TypeError("Expected Reduction")
+    return By(child, grouper, apply)
+
+by.__doc__ = By.__doc__
 
 
 class Sort(TableExpr):
@@ -640,13 +640,6 @@ class Sort(TableExpr):
     >>> accounts.sort(-accounts['amount']) # doctest: +SKIP
     """
     __slots__ = 'child', '_key', 'ascending'
-
-    def __init__(self, child, key, ascending=True):
-        self.child = child
-        if isinstance(key, list):
-            key = tuple(key)
-        self._key = key
-        self.ascending = ascending
 
     @property
     def schema(self):
@@ -664,11 +657,17 @@ class Sort(TableExpr):
             return self._key
 
 
+def sort(child, key, ascending=True):
+    if isinstance(key, list):
+        key = tuple(key)
+    return Sort(child, key, ascending)
+
+
 class Distinct(TableExpr):
     """ Distinct elements filter
 
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    >>> e = Distinct(t)
+    >>> e = distinct(t)
 
     >>> data = [('Alice', 100, 1),
     ...         ('Bob', 200, 2),
@@ -680,9 +679,6 @@ class Distinct(TableExpr):
     """
     __slots__ = 'child',
 
-    def __init__(self, table):
-        self.child = table
-
     @property
     def schema(self):
         return self.child.schema
@@ -690,6 +686,10 @@ class Distinct(TableExpr):
     @property
     def iscolumn(self):
         return self.child.iscolumn
+
+
+distinct = Distinct
+
 
 class Head(TableExpr):
     """ First ``n`` elements of table
@@ -699,10 +699,6 @@ class Head(TableExpr):
     dshape("5 * { name : string, amount : int32 }")
     """
     __slots__ = 'child', 'n'
-
-    def __init__(self, child, n=10):
-        self.child = child
-        self.n = n
 
     @property
     def schema(self):
@@ -717,6 +713,12 @@ class Head(TableExpr):
         return self.child.iscolumn
 
 
+def head(child, n=10):
+    return Head(child, n)
+
+head.__doc__ = Head.__doc__
+
+
 class Label(RowWise, ColumnSyntaxMixin):
     """ A Labeled column
 
@@ -729,10 +731,6 @@ class Label(RowWise, ColumnSyntaxMixin):
     dshape("{ new_amount : float64 }")
     """
     __slots__ = 'child', 'label'
-
-    def __init__(self, child, label):
-        self.child = child
-        self.label = label
 
     @property
     def schema(self):
@@ -755,12 +753,6 @@ class ReLabel(RowWise):
     """
     __slots__ = 'child', 'labels'
 
-    def __init__(self, child, labels):
-        self.child = child
-        if isinstance(labels, dict):  # Turn dict into tuples
-            labels = tuple(sorted(labels.items()))
-        self.labels = labels
-
     @property
     def schema(self):
         subs = dict(self.labels)
@@ -772,6 +764,13 @@ class ReLabel(RowWise):
     @property
     def iscolumn(self):
         return self.child.iscolumn
+
+def relabel(child, labels):
+    if isinstance(labels, dict):  # Turn dict into tuples
+        labels = tuple(sorted(labels.items()))
+    return ReLabel(child, labels)
+
+relabel.__doc__ = ReLabel.__doc__
 
 
 class Map(RowWise):
@@ -791,12 +790,6 @@ class Map(RowWise):
         Apply
     """
     __slots__ = 'child', 'func', '_schema', '_iscolumn'
-
-    def __init__(self, child, func, schema=None, iscolumn=None):
-        self.child = child
-        self.func = func
-        self._schema = schema
-        self._iscolumn = iscolumn
 
     @property
     def schema(self):
@@ -892,12 +885,6 @@ class Merge(RowWise):
     __slots__ = 'child', 'children'
 
     iscolumn = False
-
-    def __init__(self, child, children):
-        # TODO: Assert all children descend from the same child via RowWise
-        # operations
-        self.child = child
-        self.children = children
 
     @property
     def schema(self):

@@ -76,22 +76,22 @@ def test_mean():
 
 def test_by_no_grouper():
     names = t['name']
-    assert set(compute(By(names, names, names.count()), data)) == \
+    assert set(compute(by(names, names, names.count()), data)) == \
             set([('Alice', 2), ('Bob', 1)])
 
 def test_by_one():
-    print(compute(By(t, t['name'], t['amount'].sum()), data))
-    assert set(compute(By(t, t['name'], t['amount'].sum()), data)) == \
+    print(compute(by(t, t['name'], t['amount'].sum()), data))
+    assert set(compute(by(t, t['name'], t['amount'].sum()), data)) == \
             set([('Alice', 150), ('Bob', 200)])
 
 def test_by_compound_apply():
-    print(compute(By(t, t['name'], (t['amount'] + 1).sum()), data))
-    assert set(compute(By(t, t['name'], (t['amount'] + 1).sum()), data)) == \
+    print(compute(by(t, t['name'], (t['amount'] + 1).sum()), data))
+    assert set(compute(by(t, t['name'], (t['amount'] + 1).sum()), data)) == \
             set([('Alice', 152), ('Bob', 201)])
 
 
 def test_by_two():
-    result = compute(By(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
+    result = compute(by(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
                      databig)
 
     expected = [('Alice', 'F', 200),
@@ -103,7 +103,7 @@ def test_by_two():
 
 
 def test_by_three():
-    result = compute(By(tbig,
+    result = compute(by(tbig,
                         tbig[['name', 'sex']],
                         (tbig['id'] + tbig['amount']).sum()),
                      databig)
@@ -129,7 +129,7 @@ def test_join():
 
     L = TableSymbol('L', '{name: string, amount: int}')
     R = TableSymbol('R', '{name: string, id: int}')
-    joined = Join(L, R, 'name')
+    joined = join(L, R, 'name')
 
     assert dshape(joined.schema) == \
             dshape('{name: string, amount: int, id: int}')
@@ -152,7 +152,7 @@ def test_multi_column_join():
     L = TableSymbol('L', '{x: int, y: int, z: int}')
     R = TableSymbol('R', '{x: int, y: int, w: int}')
 
-    j = Join(L, R, ['x', 'y'])
+    j = join(L, R, ['x', 'y'])
 
     print(list(compute(j, {L: left, R: right})))
     assert list(compute(j, {L: left, R: right})) == [(1, 2, 3, 30),
@@ -171,7 +171,7 @@ def test_Distinct():
 
 def test_Distinct_count():
     t2 = t['name'].distinct()
-    gby = By(t2, t2['name'], t2['name'].count())
+    gby = by(t2, t2['name'], t2['name'].count())
     result = set(compute(gby, data))
     assert result == set([('Alice', 1), ('Bob', 1)])
 
@@ -228,7 +228,7 @@ def test_graph_double_join():
     t_arc = TableSymbol('t_arc', '{a: int32, b: int32}')
     t_wanted = TableSymbol('t_wanted', '{name: string}')
 
-    j = Join(Join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'a', 'b']]
+    j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'a', 'b']]
 
     result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
     result = set(map(tuple, result))
@@ -250,7 +250,7 @@ def test_label():
 def test_relabel_join():
     names = TableSymbol('names', '{first: string, last: string}')
 
-    siblings = Join(names.relabel({'first': 'left'}),
+    siblings = join(names.relabel({'first': 'left'}),
                     names.relabel({'first': 'right'}),
                     'last')[['left', 'right']]
 
@@ -299,7 +299,7 @@ def test_map_datetime():
 
 def test_by_multi_column_grouper():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
-    expr = By(t, t[['x', 'y']], t['z'].count())
+    expr = by(t, t[['x', 'y']], t['z'].count())
     data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
 
     print(set(compute(expr, data)))
@@ -348,7 +348,7 @@ def test_recursive_rowfunc():
 
 
 def test_recursive_rowfunc_is_used():
-    expr = By(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
+    expr = by(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, data)) == set(expected)

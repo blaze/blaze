@@ -40,7 +40,7 @@ def test_column():
 
 def test_Projection():
     t = TableSymbol('t', '{name: string, amount: int, id: int32}')
-    p = Projection(t, ['amount', 'name'])
+    p = projection(t, ['amount', 'name'])
     assert p.schema == dshape('{amount: int32, name: string}')
     print(t['amount'].dshape)
     print(dshape('var * int32'))
@@ -51,7 +51,7 @@ def test_Projection():
 
 def test_indexing():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    assert t[['amount', 'id']] == Projection(t, ['amount', 'id'])
+    assert t[['amount', 'id']] == projection(t, ['amount', 'id'])
     assert t['amount'].isidentical(Column(t, 'amount'))
 
 
@@ -66,7 +66,7 @@ def test_relational():
 def test_selection():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
-    s = Selection(t, t['name'] == 'Alice')
+    s = selection(t, t['name'] == 'Alice')
 
     assert s.dshape == t.dshape
 
@@ -92,8 +92,7 @@ def test_selection_consistent_children():
 
     expr = t['name'][t['amount'] < 0]
 
-    assert expr.columns == ['name']
-    assert expr.child == t
+    assert list(expr.columns) == ['name']
 
 
 def test_columnwise_syntax():
@@ -122,23 +121,23 @@ def test_str():
 def test_join():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
-    j = Join(t, s, 'name', 'name')
+    j = join(t, s, 'name', 'name')
 
     assert j.schema == dshape('{name: string, amount: int, id: int}')
 
-    assert Join(t, s, 'name') == Join(t, s, 'name')
+    assert join(t, s, 'name') == join(t, s, 'name')
 
 
 def test_join_default_shared_columns():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
-    assert Join(t, s) == Join(t, s, 'name', 'name')
+    assert join(t, s) == join(t, s, 'name', 'name')
 
 
 def test_multi_column_join():
     a = TableSymbol('a', '{x: int, y: int, z: int}')
     b = TableSymbol('b', '{w: int, x: int, y: int}')
-    j = Join(a, b, ['x', 'y'])
+    j = join(a, b, ['x', 'y'])
 
     assert set(j.columns) == set('wxyz')
 
@@ -174,7 +173,7 @@ def test_reduction():
 
 def test_Distinct():
     t = TableSymbol('t', '{name: string, amount: int32}')
-    r = Distinct(t['name'])
+    r = distinct(t['name'])
     print(r.dshape)
     assert r.dshape  == dshape('var * {name: string}')
 
@@ -184,7 +183,7 @@ def test_Distinct():
 
 def test_by():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    r = By(t, t['name'], sum(t['amount']))
+    r = by(t, t['name'], sum(t['amount']))
 
     print(r.schema)
     assert isinstance(r.schema[0], Record)
@@ -241,7 +240,7 @@ def test_relabel():
 def test_relabel_join():
     names = TableSymbol('names', '{first: string, last: string}')
 
-    siblings = Join(names.relabel({'last': 'left'}),
+    siblings = join(names.relabel({'last': 'left'}),
                     names.relabel({'last': 'right'}), 'first')
 
     assert siblings.columns == ['first', 'left', 'right']
@@ -350,7 +349,7 @@ def test_iscolumn():
     assert (a['x'] + a['y']).iscolumn
     assert a['x'].distinct().iscolumn
     assert not a[['x']].distinct().iscolumn
-    assert not By(a, a['x'], a['y'].sum()).iscolumn
+    assert not by(a, a['x'], a['y'].sum()).iscolumn
     assert a['x'][a['x'] > 1].iscolumn
     assert not a[['x', 'y']][a['x'] > 1].iscolumn
     assert a['x'].sort().iscolumn

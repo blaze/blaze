@@ -17,6 +17,11 @@ def _str(s):
 
 class Expr(object):
     __inputs__ = 'child',
+
+    def __init__(self, *args):
+        for slot, arg in zip(self.__slots__, args):
+            setattr(self, slot, arg)
+
     @property
     def args(self):
         return tuple(getattr(self, slot) for slot in self.__slots__)

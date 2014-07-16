@@ -70,7 +70,7 @@ def test_join():
 
     L = TableSymbol('L', '{name: string, amount: int}')
     R = TableSymbol('R', '{name: string, id: int}')
-    joined = Join(L, R, 'name')
+    joined = join(L, R, 'name')
 
     assert dshape(joined.schema) == \
             dshape('{name: string, amount: int, id: int}')
@@ -100,7 +100,7 @@ def test_multi_column_join():
     L = TableSymbol('L', '{x: int, y: int, z: int}')
     R = TableSymbol('R', '{x: int, y: int, w: int}')
 
-    j = Join(L, R, ['x', 'y'])
+    j = join(L, R, ['x', 'y'])
 
     expected = [(1, 2, 3, 30),
                 (1, 3, 5, 50),
@@ -158,14 +158,14 @@ def test_Distinct():
 
 
 def test_by_one():
-    result = compute(By(t, t['name'], sum(t['amount'])), df)
+    result = compute(by(t, t['name'], sum(t['amount'])), df)
     expected = df.groupby('name')['amount'].sum()
 
     assert str(result) == str(expected.reset_index())
 
 
 def test_by_two():
-    result = compute(By(tbig, tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
+    result = compute(by(tbig, tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
 
     expected = dfbig.groupby(['name', 'sex'])['amount'].sum()
 
@@ -173,7 +173,7 @@ def test_by_two():
 
 
 def test_by_three():
-    result = compute(By(tbig,
+    result = compute(by(tbig,
                         tbig[['name', 'sex']],
                         (tbig['id'] + tbig['amount']).sum()),
                      dfbig)
@@ -187,7 +187,7 @@ def test_by_three():
 
 def test_by_four():
     t = tbig[['sex', 'amount']]
-    result = compute(By(t, t['sex'], t['amount'].max()), dfbig)
+    result = compute(by(t, t['sex'], t['amount'].max()), dfbig)
 
     expected = dfbig[['sex', 'amount']].groupby('sex')['amount'].max()
 
@@ -209,9 +209,9 @@ def test_join_by_arcs():
 
     t_arc = TableSymbol('t_arc', '{node_out: int32, node_id: int32}')
 
-    joined = Join(t_arc, t_idx, "node_id")
+    joined = join(t_arc, t_idx, "node_id")
 
-    want = By(joined, joined['name'], joined['node_id'].count())
+    want = by(joined, joined['name'], joined['node_id'].count())
 
     result = compute(want, {t_arc: df_arc, t_idx:df_idx})
 
@@ -306,7 +306,7 @@ def test_merge():
 
 
 def test_by_nunique():
-    result = compute(By(t, t['name'], t['id'].nunique()), df)
+    result = compute(by(t, t['name'], t['id'].nunique()), df)
     expected = DataFrame([['Alice', 2], ['Bob', 1]], columns=['name', 'id'])
 
     assert str(result) == str(expected)

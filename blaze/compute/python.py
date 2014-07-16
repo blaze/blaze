@@ -148,9 +148,8 @@ def compute_one(t, seq, **kwargs):
 
 @dispatch(Selection, Sequence)
 def compute_one(t, seq, **kwargs):
-    return map(rrowfunc(t.apply, t.child),
-               filter(rrowfunc(t.predicate, t.child),
-                      seq))
+    predicate = rrowfunc(t.predicate, t.child)
+    return filter(predicate, seq)
 
 
 @dispatch(Reduction, Sequence)
