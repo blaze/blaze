@@ -1,14 +1,11 @@
-from blaze.spark import *
-import nose
+from blaze.spark import coerce
+import pytest
 
-try:
-    import pyspark
-    sc = pyspark.SparkContext("local", "Spark app")
-except ImportError:
-    raise nose.SkipTest('pyspark not available')
+pyspark = pytest.importorskip('pyspark')
+sc = pyspark.SparkContext("local", "Spark app")
 
 
 def test_spark_coerce():
     rdd = sc.parallelize([('1', 'hello'), ('2', 'world')])
-    assert coerce('{x: int, y: string}', rdd).collect() == \
-            [(1, 'hello'), (2, 'world')]
+    assert (coerce('{x: int, y: string}', rdd).collect() ==
+            [(1, 'hello'), (2, 'world')])
