@@ -101,7 +101,7 @@ class CSV(DataDescriptor):
 
     Or specify a datashape explicitly
 
-    >>> schema = '{id: int, name: string, timestamp: datetime, value: float64}')
+    >>> schema = '{id: int, name: string, timestamp: datetime, value: float64}'
     >>> dd = CSV('myfile.csv', schema=schema)  # doctest: +SKIP
 
     Parameters
