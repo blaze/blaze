@@ -6,7 +6,7 @@ from decimal import Decimal
 from dynd import nd
 import sqlalchemy as sql
 import datashape
-from datashape import dshape, var, Record
+from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
 from toolz import first
 
@@ -63,9 +63,17 @@ def discover(typ):
     raise NotImplementedError("No SQL-datashape match for type %s" % typ)
 
 
+@dispatch(sql.Column)
+def discover(col):
+    if col.nullable:
+        return Record([[col.name, Option(discover(col.type))]])
+    else:
+        return Record([[col.name, discover(col.type)]])
+
+
 @dispatch(sql.Table)
 def discover(t):
-    return var * Record([[c.name, discover(c.type)] for c in t.columns])
+    return var * Record(list(sum([discover(c).parameters[0] for c in t.columns], ())))
 
 
 @dispatch(sql.engine.base.Engine, str)
@@ -86,16 +94,29 @@ def dshape_to_alchemy(dshape):
     <class 'sqlalchemy.sql.sqltypes.String'>
 
     >>> dshape_to_alchemy('{name: string, amount: int}')
+    [Column('name', String(), table=None, nullable=False), Column('amount', Integer(), table=None, nullable=False)]
+
+    >>> dshape_to_alchemy('{name: ?string, amount: ?int}')
     [Column('name', String(), table=None), Column('amount', Integer(), table=None)]
     """
-    dshape = datashape.dshape(dshape)
+    if isinstance(dshape, _strtypes):
+        dshape = datashape.dshape(dshape)
+    if isinstance(dshape, Option):
+        return dshape_to_alchemy(dshape.ty)
     if str(dshape) in types:
         return types[str(dshape)]
-    if isinstance(dshape[0], datashape.Record):
-        return [sql.Column(name, dshape_to_alchemy(typ))
-                for name, typ in dshape.parameters[0].parameters[0]]
+    if isinstance(dshape, datashape.Record):
+        return [sql.Column(name,
+                           dshape_to_alchemy(typ),
+                           nullable=isinstance(typ[0], Option))
+                    for name, typ in dshape.parameters[0]]
+    if isinstance(dshape, datashape.DataShape):
+        if isdimension(dshape[0]):
+            return dshape_to_alchemy(dshape[1])
+        else:
+            return dshape_to_alchemy(dshape[0])
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
-                              % dshape)
+            % dshape)
 
 
 class SQL(DataDescriptor):

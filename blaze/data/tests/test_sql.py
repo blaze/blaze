@@ -119,7 +119,14 @@ def test_discovery():
                  sa.Column('timestamp', sa.DateTime, primary_key=True))
 
     assert discover(s) == \
-            dshape('var * {name: string, amount: int32, timestamp: datetime}')
+            dshape('var * {name: ?string, amount: ?int32, timestamp: datetime}')
+
+
+def test_discover_null_columns():
+    assert dshape(discover(sa.Column('name', sa.String, nullable=True))) == \
+            dshape('{name: ?string}')
+    assert dshape(discover(sa.Column('name', sa.String, nullable=False))) == \
+            dshape('{name: string}')
 
 
 def test_discovery_engine():
@@ -143,12 +150,13 @@ def test_extend_empty():
 
 
 def test_schema_detection():
-    dd = SQL('sqlite:///my.db',
+    engine = sa.create_engine('sqlite:///:memory:')
+    dd = SQL(engine,
              'accounts',
              schema='{name: string, amount: int32}')
 
     dd.extend([['Alice', 100], ['Bob', 200]])
 
-    dd2 = SQL('sqlite:///my.db', 'accounts')
+    dd2 = SQL(engine, 'accounts')
 
     assert dd.schema == dd2.schema
