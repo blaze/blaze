@@ -95,6 +95,7 @@ def test_exprify():
     x = ScalarSymbol('x', 'int')
     y = ScalarSymbol('y', 'real')
     z = ScalarSymbol('z', 'int32')
+    name = ScalarSymbol('name', 'string')
 
     assert exprify('x + y', dtypes) == x + y
     assert exprify('isnan(sin(x) + y)', dtypes) == isnan(sin(x) + y)
@@ -104,6 +105,7 @@ def test_exprify():
     assert exprify('x ** y', dtypes) == x ** y
     assert exprify('x / y / z + 1', dtypes) == x / y / z + 1
     assert exprify('x / y % z + 2 ** y', dtypes) == x / y % z + 2 ** y
+    assert exprify('name == "Alice"', {'name': 'string'}) == (name == "Alice")
 
     with pytest.raises(AssertionError):
         exprify('x < y < z', dtypes)
