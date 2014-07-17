@@ -96,6 +96,12 @@ def test_selection_by_getattr():
     assert 'Alice' in str(result)
 
 
+def test_getattr_doesnt_override_properties():
+    t = TableSymbol('t', '{iscolumn: string, schema: string}')
+    assert isinstance(t.iscolumn, bool)
+    assert isinstance(t.schema, DataShape)
+
+
 def test_dir_contains_columns():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
     result = dir(t)
