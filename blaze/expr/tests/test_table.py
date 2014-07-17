@@ -87,6 +87,15 @@ def test_selection_by_indexing():
     assert 'Alice' in str(result)
 
 
+def test_selection_by_getattr():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+
+    result = t[t.name == 'Alice']
+
+    assert t.schema == result.schema
+    assert 'Alice' in str(result)
+
+
 def test_selection_consistent_children():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -188,6 +197,7 @@ def test_reduction():
     assert 'int' in str(t['id'].sum().dshape)
     assert 'int' not in str(t['amount'].sum().dshape)
 
+
 def test_Distinct():
     t = TableSymbol('t', '{name: string, amount: int32}')
     r = distinct(t['name'])
@@ -214,7 +224,6 @@ def test_by_columns():
     assert len(by(t, t['id'], t['id'].count()).columns) == 2
     print(by(t, t, t.count()).columns)
     assert len(by(t, t, t.count()).columns) == 4
-
 
 
 def test_sort():
@@ -250,7 +259,6 @@ def test_columns():
     assert list(t.columns) == ['name', 'amount', 'id']
     assert list(t['name'].columns) == ['name']
     (t['amount'] + 1).columns
-
 
 
 def test_relabel():
