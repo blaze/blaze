@@ -5,6 +5,8 @@ from blaze.compatibility import xfail
 from blaze.utils import raises
 from datetime import date, datetime
 
+import pytest
+
 x = ScalarSymbol('x')
 y = ScalarSymbol('y')
 
@@ -89,16 +91,46 @@ def test_datetime_coercion():
 
 
 def test_exprify():
-    dtypes = {'x': 'int', 'y': 'real'}
+    dtypes = {'x': 'int', 'y': 'real', 'z': 'string'}
     x = ScalarSymbol('x', 'int')
     y = ScalarSymbol('y', 'real')
+    z = ScalarSymbol('z', 'string')
 
     assert exprify('x + y', dtypes) == x + y
     assert exprify('isnan(sin(x) + y)', dtypes) == isnan(sin(x) + y)
+    assert exprify('-x', dtypes) == -x
+    assert exprify('-x + y', dtypes) == -x + y
+    assert exprify('x * y + z', dtypes) == x * y + z
+    assert exprify('x ** y', dtypes) == x ** y
+    assert exprify('x / y / z + 1', dtypes) == x / y / z + 1
+    assert exprify('x / y % z + 2 ** y', dtypes) == x / y % z + 2 ** y
 
-    assert raises(Exception, lambda: exprify('os.listdir()', {}))
-    assert raises(Exception, lambda: exprify('os.listdir()',
-        {'os': 'int', 'os.listdir': 'real'}))
+    with pytest.raises(NotImplementedError):
+        exprify('os.listdir()', {})
+
+    with pytest.raises(NotImplementedError):
+        exprify('os.listdir()', {'os': 'int', 'os.listdir': 'real'})
+
+    with pytest.raises(ValueError):
+        exprify('__x + __y', dtypes)
+
+    with pytest.raises(NotImplementedError):
+        exprify('y if x else y', dtypes)
+
+    with pytest.raises(NotImplementedError):
+        exprify('lambda x, y: x + y', dtypes)
+
+    with pytest.raises(NotImplementedError):
+        exprify('{x: y for z in y}', dtypes)
+
+    with pytest.raises(NotImplementedError):
+        exprify('[x for z in y]', dtypes)
+
+    with pytest.raises(NotImplementedError):
+        exprify('{x for z in y}', dtypes)
+
+    with pytest.raises(NotImplementedError):
+        exprify('(x for y in z)', dtypes)
 
 
 def test_scalar_coerce():
