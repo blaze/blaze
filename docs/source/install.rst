@@ -56,6 +56,7 @@ Dependencies
 * datashape_ >= 0.1.1
 * dynd-python_ >= 0.6.1
 * toolz_ >= 0.6.0
+* cytoolz_
 * multipledispatch_ >= 0.4.2
 * unicodecsv_
 
@@ -75,6 +76,7 @@ Dependencies
 .. _datashape: https://github.com/ContinuumIO/datashape
 .. _blz: https://github.com/ContinuumIO/blz
 .. _pandas: http://pandas.pydata.org/
+.. _cytoolz: https://github.com/pytoolz/cytoolz/
 .. _sqlalchemy: http://www.sqlalchemy.org/
 .. _spark: http://spark.apache.org/
 .. _toolz: http://toolz.readthedocs.org/
