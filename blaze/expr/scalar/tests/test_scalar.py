@@ -105,7 +105,8 @@ def test_exprify():
     assert exprify('x ** y', dtypes) == x ** y
     assert exprify('x / y / z + 1', dtypes) == x / y / z + 1
     assert exprify('x / y % z + 2 ** y', dtypes) == x / y % z + 2 ** y
-    assert exprify('name == "Alice"', {'name': 'string'}) == (name == "Alice")
+    other = name == "Alice"
+    assert exprify('name == "Alice"', {'name': 'string'}).isidentical(other)
 
     with pytest.raises(AssertionError):
         exprify('x < y < z', dtypes)
