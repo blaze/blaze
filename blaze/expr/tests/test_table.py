@@ -96,6 +96,13 @@ def test_selection_by_getattr():
     assert 'Alice' in str(result)
 
 
+def test_dir_contains_columns():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    result = dir(t)
+    columns_set = set(t.columns)
+    assert set(result) & columns_set == columns_set
+
+
 def test_selection_consistent_children():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 

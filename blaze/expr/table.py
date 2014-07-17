@@ -65,6 +65,10 @@ class TableExpr(Expr):
             return self[key]
         return object.__getattribute__(self, key)
 
+    def __dir__(self):
+        return sorted(set(dir(type(self)) + list(self.__dict__.keys()) +
+                          self.columns))
+
     def sort(self, key=None, ascending=True):
         """ Sort table
 
