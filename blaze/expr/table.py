@@ -5,13 +5,11 @@
 """
 from __future__ import absolute_import, division, print_function
 
+from abc import abstractproperty
 from datashape import dshape, var, DataShape, Record, isdimension
 from datashape import coretypes as ct
 import datashape
-import operator
-from toolz import concat, partial, first, pipe, compose, get, unique
-import toolz
-from toolz.curried import filter
+from toolz import concat, partial, first, compose, get, unique
 from . import scalar
 from .core import Expr, Scalar, path
 from .scalar import ScalarSymbol
@@ -31,6 +29,10 @@ class TableExpr(Expr):
     def columns(self):
         if isinstance(self.schema[0], Record):
             return self.schema[0].names
+
+    @abstractproperty
+    def schema(self):
+        pass
 
     @property
     def dtype(self):
@@ -57,6 +59,15 @@ class TableExpr(Expr):
         if isinstance(key, TableExpr):
             return selection(self, key)
         raise TypeError("Did not understand input: %s[%s]" % (self, key))
+
+    def __getattr__(self, key):
+        if key in self.columns:
+            return self[key]
+        return object.__getattribute__(self, key)
+
+    def __dir__(self):
+        return sorted(set(dir(type(self)) + list(self.__dict__.keys()) +
+                          self.columns))
 
     def sort(self, key=None, ascending=True):
         """ Sort table
@@ -114,18 +125,18 @@ class TableSymbol(TableExpr):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = 'name', 'schema', 'iscolumn'
+    __slots__ = '_name', 'schema', 'iscolumn'
     __inputs__ = ()
 
     def __init__(self, name, schema, iscolumn=False):
-        self.name = name
+        self._name = name
         if isinstance(schema, _strtypes):
             schema = dshape(schema)
         self.schema = schema
         self.iscolumn = iscolumn
 
     def __str__(self):
-        return self.name
+        return self._name
 
     def resources(self):
         return dict()
@@ -441,7 +452,7 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
                                                 map(newcol, columns)))))
 
     def active_columns(self):
-        return sorted(unique(x.name for x in self.traverse()
+        return sorted(unique(x._name for x in self.traverse()
                                     if isinstance(x, ScalarSymbol)))
 
 def unpack(l):

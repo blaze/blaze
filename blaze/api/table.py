@@ -31,7 +31,7 @@ class Table(TableSymbol):
     schema: string or DataShape
         Explitit Record containing datatypes and column names
     """
-    __slots__ = 'data', 'schema', 'name', 'iscolumn'
+    __slots__ = 'data', 'schema', '_name', 'iscolumn'
 
     def __init__(self, data, name=None, columns=None, schema=None,
             iscolumn=False):
@@ -58,7 +58,7 @@ class Table(TableSymbol):
         self.schema = dshape(schema)
 
         self.data = data
-        self.name = name or next(names)
+        self._name = name or next(names)
         self.iscolumn = iscolumn
 
     def resources(self):
@@ -66,7 +66,7 @@ class Table(TableSymbol):
 
     @property
     def args(self):
-        return (id(self.data), self.schema, self.name, self.iscolumn)
+        return (id(self.data), self.schema, self._name, self.iscolumn)
 
 
 @dispatch(Table, dict)
