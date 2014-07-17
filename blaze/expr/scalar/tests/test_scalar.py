@@ -1,9 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.scalar import *
-from blaze.compatibility import skip
+from blaze.compatibility import xfail
 from blaze.utils import raises
-import math
 from datetime import date, datetime
 
 x = ScalarSymbol('x')
@@ -32,12 +31,14 @@ def test_str():
 
     assert str(x + 10) == 'x + 10'
 
+
 def ishashable(x):
     try:
         hash(x)
         return True
     except:
         return False
+
 
 def test_ScalarSymbol_is_hashable():
     assert ishashable(x)
@@ -62,13 +63,13 @@ def test_numbers():
     assert (-y).dshape == dshape('int')
 
 
-@skip("TODO")
+@xfail(reason="TODO")
 def test_neg_dshape_unsigned():
     y = ScalarSymbol('x', 'uint32')
     assert (-y).dshape == dshape('int32')
 
 
-@skip("TODO")
+@xfail(reason="TODO")
 def test_arithmetic_dshape_inference():
     x = ScalarSymbol('x', 'int')
     y = ScalarSymbol('y', 'int')
