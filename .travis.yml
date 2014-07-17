@@ -69,7 +69,7 @@ install:
   # Install Blaze
   - python setup.py install
 
-script: py.test -v
+script: py.test --doctest-modules --verbose --pyargs blaze
 
 notifications:
   email: false
