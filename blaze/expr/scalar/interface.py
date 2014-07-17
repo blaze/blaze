@@ -10,10 +10,10 @@ from . import numbers
 from .boolean import BooleanInterface
 
 class ScalarSymbol(NumberInterface, BooleanInterface):
-    __slots__ = 'name', 'dtype'
+    __slots__ = '_name', 'dtype'
 
     def __init__(self, name, dtype='real'):
-        self.name = name
+        self._name = name
         self.dtype = dtype
 
     @property
@@ -21,7 +21,7 @@ class ScalarSymbol(NumberInterface, BooleanInterface):
         return dshape(self.dtype)
 
     def __str__(self):
-        return str(self.name)
+        return str(self._name)
 
     __hash__ = Expr.__hash__
 
