@@ -22,14 +22,12 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION nose numpy sqlalchemy pandas h5py pip flask requests
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
-  - pip install toolz cytoolz multipledispatch
+  - conda install -c mwiebe -c mrocklin --file requirements.txt
 
   # Install DataShape
-  - pip install git+http://github.com/ContinuumIO/datashape
+  # - pip install git+http://github.com/ContinuumIO/datashape
 
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
@@ -45,7 +43,7 @@ install:
   # - cd ..
 
   # Install dynd
-  - conda install -c mwiebe dynd-python
+  # - conda install -c mwiebe dynd-python
   # - git clone --depth=1 https://github.com/ContinuumIO/libdynd.git
   # - mkdir libdynd/build
   # - pushd libdynd/build
