@@ -74,6 +74,8 @@ Dependencies
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _datashape: https://github.com/ContinuumIO/datashape
 .. _blz: https://github.com/ContinuumIO/blz
+.. _pandas: http://pandas.pydata.org/
+.. _sqlalchemy: http://www.sqlalchemy.org/
 .. _spark: http://spark.apache.org/
 .. _toolz: http://toolz.readthedocs.org/
 .. _multipledispatch: http://multiple-dispatch.readthedocs.org/
