@@ -52,10 +52,9 @@ class TableExpr(Expr):
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
         if isinstance(key, list) and builtins.all(isinstance(k, _strtypes) for k in key):
-            key = tuple(key)
             if not builtins.all(col in self.columns for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
-            return projection(self, tuple(key))
+            return projection(self, key)
         if isinstance(key, TableExpr):
             return selection(self, key)
         raise TypeError("Did not understand input: %s[%s]" % (self, key))
@@ -161,7 +160,7 @@ class Projection(RowWise):
 
     @property
     def columns(self):
-        return self._columns
+        return list(self._columns)
 
     @property
     def schema(self):
@@ -305,7 +304,7 @@ class Column(ColumnSyntaxMixin, Projection):
 
     @property
     def columns(self):
-        return (self.column,)
+        return [self.column]
 
     def __str__(self):
         return "%s['%s']" % (self.child, self.columns[0])
