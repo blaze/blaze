@@ -1,29 +1,16 @@
 import ast
 from itertools import repeat
 
+from toolz import merge
+
 from ..core import Expr
-from datashape import dshape
-from .boolean import BooleanInterface
-from .numbers import (NumberInterface, Add, Sub, Mul, Div, And, Or, Eq,
-                      NE as Ne, LT as Lt, GT as Gt, LE as Le, GE as Ge, Neg,
-                      Pow, Mod)
+from . import numbers
+from .core import Scalar
 
+from .interface import ScalarSymbol
+from .numbers import (Add, Sub, Mul, Div, And, Or, Eq, NE as Ne, LT as Lt,
 
-class ScalarSymbol(NumberInterface, BooleanInterface):
-    __slots__ = '_name', 'dtype'
-
-    def __init__(self, name, dtype='real'):
-        self._name = name
-        self.dtype = dtype
-
-    @property
-    def dshape(self):
-        return dshape(self.dtype)
-
-    def __str__(self):
-        return str(self._name)
-
-    __hash__ = Expr.__hash__
+                      GT as Gt, LE as Le, GE as Ge, Neg, Pow, Mod)
 
 
 def generate_methods(node_names, funcs, builder):
@@ -87,3 +74,29 @@ class BlazeParser(ast.NodeVisitor):
         assert node.starargs is None, 'starargs not allowed'
         assert node.kwargs is None, 'kwargs not allowed'
         return self.visit(node.func)(*map(self.visit, node.args))
+
+
+# Operations like sin, cos, exp, isnan, floor, ceil, ...
+math_operators = dict((k, v) for k, v in numbers.__dict__.items()
+                      if isinstance(v, type) and issubclass(v, Scalar))
+safe_scope = {'__builtins__': {},  # Python 2
+              'builtins': {}}      # Python 3
+
+
+def exprify(expr, dtypes):
+    """ Transform string into scalar expression
+
+    >>> expr = exprify('x + y', {'x': 'int64', 'y': 'real'})
+    >>> expr
+    x + y
+    >>> isinstance(expr, Expr)
+    True
+    >>> expr.lhs.dshape
+    dshape("int64")
+    """
+    scope = merge(safe_scope, math_operators)
+
+    # use eval mode to raise a SyntaxError if any statements are passed in
+    parsed = ast.parse(expr, mode='eval')
+    parser = BlazeParser(dtypes, scope)
+    return parser.visit(parsed.body)

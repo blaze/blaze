@@ -1,36 +1,23 @@
 from __future__ import absolute_import, division, print_function
 
-import ast
-
-from toolz import merge
-
 from ..core import Expr
-from .core import Scalar
-from . import numbers
-from .parser import BlazeParser
+from datashape import dshape
+from .boolean import BooleanInterface
+from .numbers import NumberInterface
 
 
-safe_scope = {'__builtins__': {},  # Python 2
-              'builtins': {}}      # Python 3
-# Operations like sin, cos, exp, isnan, floor, ceil, ...
-math_operators = dict((k, v) for k, v in numbers.__dict__.items()
-                      if isinstance(v, type) and issubclass(v, Scalar))
+class ScalarSymbol(NumberInterface, BooleanInterface):
+    __slots__ = '_name', 'dtype'
 
+    def __init__(self, name, dtype='real'):
+        self._name = name
+        self.dtype = dtype
 
-def exprify(expr, dtypes):
-    """ Transform string into scalar expression
+    @property
+    def dshape(self):
+        return dshape(self.dtype)
 
-    >>> expr = exprify('x + y', {'x': 'int64', 'y': 'real'})
-    >>> expr
-    x + y
-    >>> isinstance(expr, Expr)
-    True
-    >>> expr.lhs.dshape
-    dshape("int64")
-    """
-    scope = merge(safe_scope, math_operators)
+    def __str__(self):
+        return str(self._name)
 
-    # use eval mode to raise a SyntaxError if any statements are passed in
-    parsed = ast.parse(expr, mode='eval')
-    parser = BlazeParser(dtypes, scope)
-    return parser.visit(parsed.body)
+    __hash__ = Expr.__hash__
