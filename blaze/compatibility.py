@@ -84,9 +84,14 @@ else:
     exec_ = getattr(builtins, "exec")
 
 
-import pytest
-skipif = pytest.mark.skipif
-xfail = pytest.mark.xfail
+try:
+    import pytest
+    skipif = pytest.mark.skipif
+    xfail = pytest.mark.xfail
+    min_python_version = skipif(sys.version_info < (2, 7),
+                                reason="Python >= 2.7 required")
+except ImportError:
+    pass
 
 
 if sys.version_info >= (2, 7):
@@ -97,7 +102,3 @@ else:
         c_ssize_t = ctypes.c_int32
     else:
         c_ssize_t = ctypes.c_int64
-
-
-min_python_version = skipif(sys.version_info < (2, 7),
-                            reason="Python >= 2.7 required")
