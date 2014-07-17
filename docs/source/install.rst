@@ -59,12 +59,12 @@ Dependencies
 * cytoolz_
 * multipledispatch_ >= 0.4.2
 * unicodecsv_
+* pandas_
 
 **Optional**
 
 * sqlalchemy_
 * h5py_
-* pandas_
 * spark_ >= 1.0.0
 * nose_ (for running tests)
 
