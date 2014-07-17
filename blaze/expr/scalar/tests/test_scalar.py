@@ -91,10 +91,10 @@ def test_datetime_coercion():
 
 
 def test_exprify():
-    dtypes = {'x': 'int', 'y': 'real', 'z': 'string'}
+    dtypes = {'x': 'int', 'y': 'real', 'z': 'int32'}
     x = ScalarSymbol('x', 'int')
     y = ScalarSymbol('y', 'real')
-    z = ScalarSymbol('z', 'string')
+    z = ScalarSymbol('z', 'int32')
 
     assert exprify('x + y', dtypes) == x + y
     assert exprify('isnan(sin(x) + y)', dtypes) == isnan(sin(x) + y)
