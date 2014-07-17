@@ -105,6 +105,9 @@ def test_exprify():
     assert exprify('x / y / z + 1', dtypes) == x / y / z + 1
     assert exprify('x / y % z + 2 ** y', dtypes) == x / y % z + 2 ** y
 
+    with pytest.raises(AssertionError):
+        exprify('x < y < z', dtypes)
+
     with pytest.raises(NotImplementedError):
         exprify('os.listdir()', {})
 
