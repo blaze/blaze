@@ -143,22 +143,22 @@ class TestDiscovery(AccountTestData):
 
 class Test_Indexing(AccountTestData):
     def test_indexing_basic(self):
-        assert tuplify(self.dd.py[0]) == self.tuples[0]
-        assert tuplify(self.dd.py[0:3]) == self.tuples[0:3]
-        assert tuplify(self.dd.py[0::2]) == self.tuples[0::2]
-        self.assertEqual(tuplify(self.dd.py[[3, 1, 3]]),
+        assert tuplify(self.dd[0]) == self.tuples[0]
+        assert tuplify(self.dd[0:3]) == self.tuples[0:3]
+        assert tuplify(self.dd[0::2]) == self.tuples[0::2]
+        self.assertEqual(tuplify(self.dd[[3, 1, 3]]),
                          tuple(self.tuples[i] for i in [3, 1, 3]))
 
     def test_indexing_nested(self):
-        assert tuplify(self.dd.py[0, 'name']) == self.tuples[0][0]
-        assert tuplify(self.dd.py[0, 0]) == self.tuples[0][0]
-        self.assertEqual(tuplify(self.dd.py[[2, 0], 'name']), ('Bob', 'Alice'))
-        self.assertEqual(tuplify(self.dd.py[[2, 0], 0]), ('Bob', 'Alice'))
-        self.assertEqual(tuplify(self.dd.py[[2, 0], [1, 0]]), ((10, 'Bob'),
+        assert tuplify(self.dd[0, 'name']) == self.tuples[0][0]
+        assert tuplify(self.dd[0, 0]) == self.tuples[0][0]
+        self.assertEqual(tuplify(self.dd[[2, 0], 'name']), ('Bob', 'Alice'))
+        self.assertEqual(tuplify(self.dd[[2, 0], 0]), ('Bob', 'Alice'))
+        self.assertEqual(tuplify(self.dd[[2, 0], [1, 0]]), ((10, 'Bob'),
                                                    (100, 'Alice')))
 
     def test_laziness(self):
-        assert isinstance(self.dd.py[:, 'name'], Iterator)
+        assert isinstance(self.dd[:, 'name'], Iterator)
 
 class Test_StreamingTransfer(AccountTestData):
     def test_init(self):
@@ -205,8 +205,8 @@ class Test_StreamingTransfer(AccountTestData):
     def test_getitem(self):
         with filetext(self.text) as fn:
             dd = JSON_Streaming(fn, mode='r', schema=self.schema)
-            self.assertEqual(tuplify(dd.py[0]), self.tuples[0])
-            self.assertEqual(tuplify(dd.py[2:4]), self.tuples[2:4])
+            self.assertEqual(tuplify(dd[0]), self.tuples[0])
+            self.assertEqual(tuplify(dd[2:4]), self.tuples[2:4])
 
     def test_as_dynd(self):
         with filetext(self.text) as fn:

@@ -86,17 +86,17 @@ class SingleTestClass(unittest.TestCase):
         data = [('Alice', 100, 1), ('Bob', 50, 2), ('Charlie', 200, 3)]
         dd.extend(data)
 
-        self.assertEqual(set(dd.py[:, ['id', 'name']]),
+        self.assertEqual(set(dd[:, ['id', 'name']]),
                         set(((1, 'Alice'), (2, 'Bob'), (3, 'Charlie'))))
-        self.assertEqual(set(dd.py[:, 'name']), set(('Alice', 'Bob', 'Charlie')))
-        assert dd.py[0, 'name'] in ('Alice', 'Bob', 'Charlie')
-        self.assertEqual(set(dd.py[:, 0]), set(dd.py[:, 'name']))
-        self.assertEqual(set(dd.py[:, [1, 0]]), set(dd.py[:, ['amount', 'name']]))
-        self.assertEqual(len(list(dd.py[:2, 'name'])), 2)
-        self.assertEqual(set(dd.py[:, :]), set(data))
-        self.assertEqual(set(dd.py[:, :2]), set(dd.py[:, ['name', 'amount']]))
-        self.assertEqual(set(dd.py[:]), set(dd.py[:, :]))
-        assert dd.py[0] in data
+        self.assertEqual(set(dd[:, 'name']), set(('Alice', 'Bob', 'Charlie')))
+        assert dd[0, 'name'] in ('Alice', 'Bob', 'Charlie')
+        self.assertEqual(set(dd[:, 0]), set(dd[:, 'name']))
+        self.assertEqual(set(dd[:, [1, 0]]), set(dd[:, ['amount', 'name']]))
+        self.assertEqual(len(list(dd[:2, 'name'])), 2)
+        self.assertEqual(set(dd[:, :]), set(data))
+        self.assertEqual(set(dd[:, :2]), set(dd[:, ['name', 'amount']]))
+        self.assertEqual(set(dd[:]), set(dd[:, :]))
+        assert dd[0] in data
 
     def test_inconsistent_schemas(self):
         dd = SQL('sqlite:///:memory:',

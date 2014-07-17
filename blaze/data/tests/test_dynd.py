@@ -28,5 +28,5 @@ class TestDyND(TestCase):
         assert isinstance(self.dd.as_dynd(), nd.array)
 
     def test_indexing(self):
-        assert self.dd.py[0, 0] == 1
-        assert tuple(self.dd.py[:, 0]) == (1, 2)
+        assert self.dd[0, 0] == 1
+        assert tuple(self.dd[:, 0]) == (1, 2)

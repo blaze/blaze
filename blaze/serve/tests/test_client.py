@@ -28,7 +28,7 @@ def test_dshape():
 
 
 def test_get_py():
-    assert list(dd.py[0:, 'name']) == list(accounts.py[:, 'name'])
+    assert list(dd[0:, 'name']) == list(accounts[:, 'name'])
 
 
 def test_get_dynd():
