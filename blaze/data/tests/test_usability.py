@@ -6,6 +6,7 @@ import gzip
 from blaze.utils import filetext, filetexts, tmpfile
 from blaze.data.utils import tuplify
 from blaze.data import *
+from blaze.compatibility import xfail
 
 
 class TestResource(TestCase):
@@ -28,6 +29,7 @@ class TestResource(TestCase):
             assert isinstance(dd, JSON)
             self.assertEqual(tuplify(list(dd)), ((1, 1), (2, 2)))
 
+    @xfail
     def test_resource_gz(self):
         with filetext('1,1\n2,2', extension='.csv.gz', open=gzip.open) as fn:
             dd = resource(fn, schema='2 * int')
