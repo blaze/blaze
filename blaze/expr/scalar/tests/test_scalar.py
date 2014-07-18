@@ -113,3 +113,11 @@ def test_scalar_coerce():
             datetime(2012, 1, 1, 12, 0, 0)
     assert raises(ValueError,
                   lambda: scalar_coerce('date', 'Jan 1st, 2012 12:00:00'))
+
+
+def test_scalar_construction():
+    s = Scalar(1)
+    assert s.value == 1
+
+    s = Scalar('a')
+    assert s.value == 'a'
