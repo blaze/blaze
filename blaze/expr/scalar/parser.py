@@ -24,7 +24,7 @@ disallowed = ('Attribute', 'Lambda', 'IfExp', 'Dict', 'Set', 'ListComp',
               'SetComp', 'DictComp', 'GeneratorExp', 'Yield')
 
 comparison_ops = {'Eq': Eq, 'Ne': Ne, 'Lt': Lt, 'Gt': Gt, 'Le': Le, 'Ge': Ge,
-                  'And': And, 'Or': Or, 'Neg': Neg, 'Add': Add, 'Mult': Mul,
+                  'And': And, 'Or': Or, 'USub': Neg, 'Add': Add, 'Mult': Mul,
                   'Div': Div, 'Pow': Pow, 'Mod': Mod, 'Sub': Sub}
 
 
@@ -65,6 +65,9 @@ class BlazeParser(ast.NodeVisitor):
     def visit_BinOp(self, node):
         return self.visit(node.op)(self.visit(node.left),
                                    self.visit(node.right))
+
+    def visit_UnaryOp(self, node):
+        return self.visit(node.op)(self.visit(node.operand))
 
     def visit_Call(self, node):
         assert len(node.args) <= 1, 'only single argument functions allowed'
