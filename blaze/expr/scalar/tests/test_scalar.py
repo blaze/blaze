@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
+
 from blaze.expr.scalar import *
 from blaze.compatibility import xfail, basestring
 from blaze.utils import raises
