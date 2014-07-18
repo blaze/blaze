@@ -14,17 +14,14 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 from collections import Iterator
-import math
-from operator import itemgetter
+import operator
 from functools import partial
-from toolz import map, isiterable, compose, juxt, identity
-from toolz.compatibility import zip
+from toolz import map, compose, juxt, identity
 import sys
 
 from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar.core import *
-from ..expr import scalar
 from ..compatibility import builtins, apply
 from cytoolz import groupby, get, reduceby, unique, take
 import cytoolz
