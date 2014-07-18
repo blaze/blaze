@@ -28,7 +28,7 @@ def parenthesize(s):
 
 
 class Scalar(Expr):
-    __slots__ = 'value',
+    __slots__ = ()
 
     def eval_str(self):
         return str(self)

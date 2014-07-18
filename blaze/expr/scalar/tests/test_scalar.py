@@ -116,8 +116,6 @@ def test_scalar_coerce():
 
 
 def test_scalar_construction():
-    s = Scalar(1)
-    assert s.value == 1
-
-    s = Scalar('a')
-    assert s.value == 'a'
+    s = Scalar()
+    t = Scalar()
+    assert s.isidentical(t)
