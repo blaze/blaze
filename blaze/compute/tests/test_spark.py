@@ -1,22 +1,23 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.spark import *
-from blaze.compatibility import skip
+from blaze.compatibility import xfail
 from blaze.expr.table import *
-from blaze.utils import raises
+
+import pytest
+
 
 data = [['Alice', 100, 1],
         ['Bob', 200, 2],
         ['Alice', 50, 3]]
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
-try:
-    from pyspark import SparkContext
-    sc = SparkContext("local", "Simple App")
-    rdd = sc.parallelize(data)
-    rdd2 = sc.parallelize(data2)
-except ImportError:
-    pass
+
+
+pyspark = pytest.importorskip('pyspark')
+sc = pyspark.SparkContext("local", "Simple App")
+rdd = sc.parallelize(data)
+rdd2 = sc.parallelize(data2)
 
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -206,7 +207,7 @@ def test_spark_multi_level_rowfunc_works():
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
 
 
-@skip("pandas-numexpr-platform doesn't play well with spark")
+@xfail(reason="pandas-numexpr-platform doesn't play well with spark")
 def test_spark_merge():
     col = (t['amount'] * 2).label('new')
     expr = merge(t['name'], col)

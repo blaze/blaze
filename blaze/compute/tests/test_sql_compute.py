@@ -4,7 +4,7 @@ from blaze.compute.sql import compute, computefull, select
 from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
-from blaze.compatibility import skip
+from blaze.compatibility import xfail
 from blaze.utils import unique
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -164,7 +164,7 @@ def test_nunique():
     assert 'amount' in result.lower()
 
 
-@skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
+@xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
             str(sa.sql.functions.any(s.c.amount > 150))

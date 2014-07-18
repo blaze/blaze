@@ -3,13 +3,12 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import tempfile
 import os
-import sys
 from collections import Iterator
 
 import datashape
 from datashape import dshape
 
-from blaze.compatibility import skipIf
+from blaze.compatibility import min_python_version
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
 from blaze.data.csv import has_header, discover_dialect
@@ -167,7 +166,7 @@ class Test_Dialect(unittest.TestCase):
         dd = CSV(self.csv_file, columns=['foo', 'bar'])
         assert dd.schema == dshape('{foo: string, bar: ?int64}')
 
-    @skipIf(sys.version_info[:2] < (2, 7), 'CSV module unable to parse')
+    @min_python_version
     def test_has_header(self):
         assert has_header(self.buf)
 

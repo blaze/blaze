@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import create_engine
 import sqlalchemy as sa
 from dynd import nd
@@ -5,7 +6,7 @@ import unittest
 
 from blaze.data.sql import SQL, discover
 from blaze.utils import raises
-from datashape import dshape, var
+from datashape import dshape
 import datashape
 
 
@@ -152,3 +153,6 @@ def test_schema_detection():
     dd2 = SQL('sqlite:///my.db', 'accounts')
 
     assert dd.schema == dd2.schema
+
+    if os.path.isfile('my.db'):
+        os.remove('my.db')

@@ -8,5 +8,5 @@ multipledispatch >= 0.4.3
 cytoolz
 toolz
 flask >= 0.10.1
-nose >= 1.1
+pytest
 unicodecsv
