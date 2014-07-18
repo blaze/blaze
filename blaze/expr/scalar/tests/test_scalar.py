@@ -160,14 +160,21 @@ class TestExprify(object):
         with pytest.raises(NotImplementedError):
             exprify('lambda x, y: x + y', dtypes)
 
-        with pytest.raises(NotImplementedError):
+        if sys.version_info < (2, 7):
+            # dict and set comprehensions are not implemented in Python < 2.7
+            error = SyntaxError
+        else:
+            # and we don't allow them in versions that do
+            error = NotImplementedError
+
+        with pytest.raises(error):
             exprify('{x: y for z in y}', dtypes)
+
+        with pytest.raises(error):
+            exprify('{x for z in y}', dtypes)
 
         with pytest.raises(NotImplementedError):
             exprify('[x for z in y]', dtypes)
-
-        with pytest.raises(NotImplementedError):
-            exprify('{x for z in y}', dtypes)
 
         with pytest.raises(NotImplementedError):
             exprify('(x for y in z)', dtypes)
