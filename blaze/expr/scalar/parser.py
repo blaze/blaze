@@ -49,11 +49,10 @@ class BlazeParser(ast.NodeVisitor):
                                        self.visit(node.comparators[0]))
 
     def visit_Num(self, node):
-        num = node.n
-        return ScalarSymbol(num, str(type(num).__name__))
+        return node.n
 
     def visit_Str(self, node):
-        return ScalarSymbol(repr(node.s), dtype='string')
+        return node.s
 
     def visit_Name(self, node):
         name = node.id
