@@ -9,7 +9,6 @@ from .core import Scalar
 
 from .interface import ScalarSymbol
 from .numbers import (Add, Sub, Mul, Div, And, Or, Eq, NE as Ne, LT as Lt,
-
                       GT as Gt, LE as Le, GE as Ge, Neg, Pow, Mod)
 
 
