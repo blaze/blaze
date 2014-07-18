@@ -67,7 +67,11 @@ class BlazeParser(ast.NodeVisitor):
                                    self.visit(node.right))
 
     def visit_UnaryOp(self, node):
-        return self.visit(node.op)(self.visit(node.operand))
+        op = node.op
+        operand = node.operand
+        if isinstance(operand, ast.Num):
+            return -1 * isinstance(op, ast.USub) * operand.n
+        return self.visit(op)(self.visit(operand))
 
     def visit_Call(self, node):
         assert len(node.args) <= 1, 'only single argument functions allowed'

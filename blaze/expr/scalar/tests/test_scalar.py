@@ -105,7 +105,7 @@ class TestExprify(object):
         other = isnan(sin(x) + y)
         assert exprify('isnan(sin(x) + y)', self.dtypes).isidentical(other)
 
-        # parsed as a Num
+        # parsed as a Num in Python 2 and a UnaryOp in Python 3
         assert exprify('-1', {}) == -1
 
         # parsed as UnaryOp(op=USub(), operand=1)
