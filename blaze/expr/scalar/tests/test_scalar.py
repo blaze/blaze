@@ -181,6 +181,14 @@ class TestExprify(object):
         with pytest.raises(NotImplementedError):
             exprify('(x for y in z)', dtypes)
 
+    def test_scope(self):
+        dtypes = {'sin': 'int'}
+        with pytest.raises(ValueError):
+            exprify('sin + 1', dtypes)
+
+        with pytest.raises(TypeError):
+            sin + 1
+
 
 def test_scalar_coerce():
     assert scalar_coerce('int', 1) == 1

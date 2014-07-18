@@ -103,5 +103,8 @@ def exprify(expr, dtypes):
 
     # use eval mode to raise a SyntaxError if any statements are passed in
     parsed = ast.parse(expr, mode='eval')
+    overlapping_names = set(dtypes) & set(scope)
+    if overlapping_names:
+        raise ValueError('overlapping names %s' % overlapping_names)
     parser = BlazeParser(dtypes, scope)
     return parser.visit(parsed.body)
