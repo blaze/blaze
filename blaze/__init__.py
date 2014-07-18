@@ -61,46 +61,54 @@ def print_versions():
     print("-=" * 38)
 
 
-def test(verbosity=1, xunitfile=None, exit=False):
+def test(verbose=False, junitfile=None, exit=False):
     """
     Runs the full Blaze test suite, outputting
     the results of the tests to sys.stdout.
 
-    This uses nose tests to discover which tests to
+    This uses py.test to discover which tests to
     run, and runs tests in any 'tests' subdirectory
     within the Blaze module.
 
     Parameters
     ----------
-    verbosity : int, optional
+    verbose : int, optional
         Value 0 prints very little, 1 prints a little bit,
         and 2 prints the test names while testing.
-    xunitfile : string, optional
-        If provided, writes the test results to an xunit
+    junitfile : string, optional
+        If provided, writes the test results to an junit xml
         style xml file. This is useful for running the tests
         in a CI server such as Jenkins.
     exit : bool, optional
         If True, the function will call sys.exit with an
         error code after the tests are finished.
     """
-    import nose
     import os
     import sys
-    argv = ['nosetests', '--verbosity=%d' % verbosity]
+    import pytest
+
+    args = []
+
+    if verbose:
+        args.append('--verbose')
+
     # Output an xunit file if requested
-    if xunitfile:
-        argv.extend(['--with-xunit', '--xunit-file=%s' % xunitfile])
-    # Set the logging level to warn
-    argv.extend(['--logging-level=WARN'])
+    if junitfile is not None:
+        args.append('--junit-xml=%s' % junitfile)
+
     # Add all 'tests' subdirectories to the options
     rootdir = os.path.dirname(__file__)
     for root, dirs, files in os.walk(rootdir):
         if 'tests' in dirs:
             testsdir = os.path.join(root, 'tests')
-            argv.append(testsdir)
-            print('Test dir: %s' % testsdir[len(rootdir)+1:])
+            args.append(testsdir)
+            print('Test dir: %s' % testsdir[len(rootdir) + 1:])
     # print versions (handy when reporting problems)
     print_versions()
     sys.stdout.flush()
-    # Ask nose to do its thing
-    return nose.main(argv=argv, exit=exit)
+
+    # Ask pytest to do its thing
+    error_code = pytest.main(args=args)
+    if exit:
+        return sys.exit(error_code)
+    return error_code
