@@ -11,9 +11,10 @@ from datashape import coretypes as ct
 import datashape
 from toolz import concat, partial, first, compose, get, unique
 from . import scalar
-from .core import Expr, Scalar, path
+from .core import Expr, path
 from .scalar import ScalarSymbol
-from .scalar import *
+from .scalar import (Eq, NE, LT, LE, GT, GE, Add, Mul, Div, Sub, Pow, Mod, Or,
+                     And, Neg, eval_str, Scalar)
 from ..compatibility import _strtypes, builtins
 
 
@@ -454,6 +455,7 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
         return sorted(unique(x._name for x in self.traverse()
                                     if isinstance(x, ScalarSymbol)))
 
+
 def unpack(l):
     if isinstance(l, (tuple, list, set)) and len(l) == 1:
         return next(iter(l))
@@ -528,6 +530,7 @@ def join(lhs, rhs, on_left=None, on_right=None):
 
     return Join(lhs, rhs, _on_left, _on_right)
 
+
 join.__doc__ = Join.__doc__
 
 
@@ -583,7 +586,6 @@ class Reduction(Scalar):
     def dshape(self):
         if self.child.columns and len(self.child.columns) == 1:
             name = self.child.columns[0] + '_' + type(self).__name__
-            dtype = self.dtype or first(self.child.schema[0].fields.values()[0])
             return DataShape(Record([[name, self.dtype]]))
         else:
             return DataShape(Record([[type(self).__name__, self.dtype]]))
