@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.scalar import *
-from blaze.compatibility import xfail
+from blaze.compatibility import xfail, basestring
 from blaze.utils import raises
 from datetime import date, datetime
 
@@ -90,53 +90,87 @@ def test_datetime_coercion():
     assert isinstance(expr.rhs, datetime)
 
 
-def test_exprify():
+class TestExprify(object):
     dtypes = {'x': 'int', 'y': 'real', 'z': 'int32'}
     x = ScalarSymbol('x', 'int')
     y = ScalarSymbol('y', 'real')
     z = ScalarSymbol('z', 'int32')
     name = ScalarSymbol('name', 'string')
 
-    assert exprify('x + y', dtypes) == x + y
-    assert exprify('isnan(sin(x) + y)', dtypes) == isnan(sin(x) + y)
-    assert exprify('-x', dtypes) == -x
-    assert exprify('-x + y', dtypes) == -x + y
-    assert exprify('x * y + z', dtypes) == x * y + z
-    assert exprify('x ** y', dtypes) == x ** y
-    assert exprify('x / y / z + 1', dtypes) == x / y / z + 1
-    assert exprify('x / y % z + 2 ** y', dtypes) == x / y % z + 2 ** y
-    other = name == "Alice"
-    assert exprify('name == "Alice"', {'name': 'string'}).isidentical(other)
+    def test_basic_arithmetic(self):
+        assert exprify('x + y', self.dtypes).isidentical(self.x + self.y)
 
-    with pytest.raises(AssertionError):
-        exprify('x < y < z', dtypes)
+        other = isnan(sin(x) + y)
+        assert exprify('isnan(sin(x) + y)', self.dtypes).isidentical(other)
 
-    with pytest.raises(NotImplementedError):
-        exprify('os.listdir()', {})
+        # parsed as a Num
+        assert exprify('-1', {}) == -1
 
-    with pytest.raises(NotImplementedError):
-        exprify('os.listdir()', {'os': 'int', 'os.listdir': 'real'})
+        # parsed as UnaryOp(op=USub(), operand=1)
+        assert exprify('-x', self.dtypes).isidentical(-self.x)
 
-    with pytest.raises(ValueError):
-        exprify('__x + __y', dtypes)
+        assert exprify('-x + y', self.dtypes).isidentical(-self.x + self.y)
 
-    with pytest.raises(NotImplementedError):
-        exprify('y if x else y', dtypes)
+        other = self.x * self.y + self.z
+        assert exprify('x * y + z', self.dtypes).isidentical(other)
+        assert exprify('x ** y', self.dtypes).isidentical(self.x ** self.y)
 
-    with pytest.raises(NotImplementedError):
-        exprify('lambda x, y: x + y', dtypes)
+        other = self.x / self.y / self.z + 1
+        assert exprify('x / y / z + 1', self.dtypes).isidentical(other)
 
-    with pytest.raises(NotImplementedError):
-        exprify('{x: y for z in y}', dtypes)
+        other = self.x / self.y % self.z + 2 ** self.y
+        assert exprify('x / y % z + 2 ** y', self.dtypes).isidentical(other)
 
-    with pytest.raises(NotImplementedError):
-        exprify('[x for z in y]', dtypes)
+    def test_literal_string_compare(self):
+        other = self.name == "Alice"
+        result = exprify('name == "Alice"', {'name': 'string'})
+        assert isinstance(result.rhs, basestring)
+        assert result.isidentical(other)
 
-    with pytest.raises(NotImplementedError):
-        exprify('{x for z in y}', dtypes)
+    def test_literal_int_compare(self):
+        other = self.x == 1
+        result = exprify('x == 1', self.dtypes)
+        assert isinstance(result.rhs, int)
+        assert result.isidentical(other)
 
-    with pytest.raises(NotImplementedError):
-        exprify('(x for y in z)', dtypes)
+    def test_literal_float_compare(self):
+        other = self.y == 1.0
+        result = exprify('y == 1.0', self.dtypes)
+        assert isinstance(result.rhs, float)
+        assert result.isidentical(other)
+
+    def test_failing_exprify(self):
+        dtypes = {'x': 'int', 'y': 'real', 'z': 'int32'}
+
+        with pytest.raises(AssertionError):
+            exprify('x < y < z', dtypes)
+
+        with pytest.raises(NotImplementedError):
+            exprify('os.listdir()', {})
+
+        with pytest.raises(NotImplementedError):
+            exprify('os.listdir()', {'os': 'int', 'os.listdir': 'real'})
+
+        with pytest.raises(ValueError):
+            exprify('__x + __y', dtypes)
+
+        with pytest.raises(NotImplementedError):
+            exprify('y if x else y', dtypes)
+
+        with pytest.raises(NotImplementedError):
+            exprify('lambda x, y: x + y', dtypes)
+
+        with pytest.raises(NotImplementedError):
+            exprify('{x: y for z in y}', dtypes)
+
+        with pytest.raises(NotImplementedError):
+            exprify('[x for z in y]', dtypes)
+
+        with pytest.raises(NotImplementedError):
+            exprify('{x for z in y}', dtypes)
+
+        with pytest.raises(NotImplementedError):
+            exprify('(x for y in z)', dtypes)
 
 
 def test_scalar_coerce():
