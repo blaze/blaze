@@ -10,6 +10,32 @@ then please email blaze-dev@continuum.io.
 Installing Development Blaze
 ----------------------------
 
+Blaze has a number of dependencies, both due to relying on community projects
+and also because it itself is split among a few projects.
+
+**TL;DR**:  Install `conda_`, then copy-paste the following ::
+
+   # Get source
+   git clone https://github.com/ContinuumIO/blaze.git
+   cd blaze
+
+   # Install most of the requirements through conda
+   conda install --yes --file requirements.txt  # Basic requirements
+   conda install --yes -c mwiebe dynd-python    # Development version of DyND
+   conda install --yes unicodecsv               # If on Python 2
+
+   # Some requirements are kept up-to-date on PyPI
+   conda install --yes pip
+   pip install git+http://github.com/ContinuumIO/datashape
+   pip install toolz cytoolz multipledispatch  --upgrade
+
+   # Install and run tests
+   python setup.py install                      # Install Blaze
+   python -c 'import blaze; blaze.test()'       # Run tests
+
+
+**Detailed Version**:
+
 Get Source:  Fork and clone the Blaze git repository to your local machine (see
 Github Flow below)
 
