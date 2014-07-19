@@ -10,6 +10,7 @@ from datetime import date, datetime
 x = ScalarSymbol('x')
 y = ScalarSymbol('y')
 
+
 def test_basic():
     expr = (x + y) * 3
 
@@ -148,7 +149,7 @@ class TestExprify(object):
         assert result.isidentical(other)
 
     def test_failing_exprify(self):
-        dtypes = {'x': 'int', 'y': 'real', 'z': 'int32'}
+        dtypes = self.dtypes
 
         with raises(AssertionError):
             exprify('x < y < z', dtypes)
@@ -165,8 +166,16 @@ class TestExprify(object):
         with raises(NotImplementedError):
             exprify('y if x else y', dtypes)
 
+    def test_functiondef_fail(self):
+        dtypes = self.dtypes
         with raises(NotImplementedError):
             exprify('lambda x, y: x + y', dtypes)
+
+        with raises(SyntaxError):
+            exprify('def f(x): return x', dtypes={'x': 'int'})
+
+    def test_comprehensions_fail(self):
+        dtypes = self.dtypes
 
         if sys.version_info < (2, 7):
             # dict and set comprehensions are not implemented in Python < 2.7
@@ -187,6 +196,18 @@ class TestExprify(object):
         with raises(NotImplementedError):
             exprify('(x for y in z)', dtypes)
 
+    def test_boolop_fails(self):
+        dtypes = self.dtypes
+
+        with raises(NotImplementedError):
+            exprify('x or y', dtypes)
+
+        with raises(NotImplementedError):
+            exprify('x and y', dtypes)
+
+        with raises(NotImplementedError):
+            exprify('not x', dtypes)
+
     def test_scope(self):
         dtypes = {'sin': 'int'}
         with raises(ValueError):
@@ -206,8 +227,8 @@ def test_scalar_coerce():
         scalar_coerce('3 * int', '1')
 
     assert scalar_coerce('date', 'Jan 1st, 2012') == date(2012, 1, 1)
-    assert scalar_coerce('datetime', 'Jan 1st, 2012 12:00:00') == \
-            datetime(2012, 1, 1, 12, 0, 0)
+    assert (scalar_coerce('datetime', 'Jan 1st, 2012 12:00:00') ==
+            datetime(2012, 1, 1, 12, 0, 0))
 
     with raises(ValueError):
         scalar_coerce('date', 'Jan 1st, 2012 12:00:00')
