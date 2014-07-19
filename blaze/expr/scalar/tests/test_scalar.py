@@ -160,7 +160,7 @@ class TestExprify(object):
             exprify('os.listdir()', {'os': 'int', 'os.listdir': 'real'})
 
         with raises(ValueError):
-            exprify('__x + __y', dtypes)
+            exprify('__x + __y', {'__x': 'int', '__y': 'real'})
 
         with raises(NotImplementedError):
             exprify('y if x else y', dtypes)
