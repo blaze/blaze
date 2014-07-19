@@ -4,8 +4,8 @@ from .core import Scalar, BinOp, UnaryOp
 
 
 class BooleanInterface(Scalar):
-    def __not__(self):
-        return Not(self)
+    def __invert__(self):
+        return Invert(self)
 
     def __and__(self, other):
         return And(self, other)
@@ -65,6 +65,7 @@ class Or(BinOp, Boolean):
 
 
 class Not(UnaryOp, Boolean):
+    symbol = '~'
     op = operator.not_
 
 
