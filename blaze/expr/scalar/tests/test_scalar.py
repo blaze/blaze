@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 
-from blaze.expr.scalar import (ScalarSymbol, scalar_coerce, Mul, eval_str,
+from blaze.expr.scalar import (ScalarSymbol, scalar_coerce, Mult, eval_str,
                                Add, dshape, sin, exprify, cos, isnan, exp, log)
 from blaze.compatibility import xfail, basestring, raises
 from datetime import date, datetime
@@ -13,8 +13,8 @@ y = ScalarSymbol('y')
 def test_basic():
     expr = (x + y) * 3
 
-    assert eval(str(expr)) == expr
-    assert expr == Mul(Add(ScalarSymbol('x'), ScalarSymbol('y')), 3)
+    assert eval(str(expr)).isidentical(expr)
+    assert expr.isidentical(Mult(Add(ScalarSymbol('x'), ScalarSymbol('y')), 3))
 
 
 def test_eval_str():
@@ -120,6 +120,14 @@ class TestExprify(object):
 
         other = self.x / self.y % self.z + 2 ** self.y
         assert exprify('x / y % z + 2 ** y', self.dtypes).isidentical(other)
+
+        assert exprify('x // y', self.dtypes).isidentical(self.x // self.y)
+        assert exprify('1 // y // x', self.dtypes).isidentical(
+            1 // self.y // self.x)
+
+    def test_comparison(self):
+        other = (self.x == 1) | (self.x == 2)
+        assert exprify('(x == 1) | (x == 2)', self.dtypes).isidentical(other)
 
     def test_literal_string_compare(self):
         other = self.name == "Alice"
