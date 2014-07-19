@@ -17,24 +17,13 @@ def generate_methods(node_names, funcs, builder):
     return wrapped
 
 
-disallowed = ('Attribute', 'Lambda', 'IfExp', 'Dict', 'Set', 'ListComp',
-              'SetComp', 'DictComp', 'GeneratorExp', 'Yield')
-
-boolean_ops = ('Eq', 'Ne', 'Lt', 'Gt', 'Le', 'Ge', 'And', 'Or', 'Not', 'BitAnd',
-               'BitOr', 'Invert')
+boolean_ops = 'Eq', 'Ne', 'Lt', 'Gt', 'Le', 'Ge', 'BitAnd', 'BitOr', 'Invert'
 
 arithmetic_ops = 'USub', 'Add', 'Mult', 'Div', 'FloorDiv', 'Pow', 'Mod', 'Sub'
 
 
-def disallower(self, node):
-    raise NotImplementedError
-
-
-@generate_methods(disallowed, repeat(disallower, len(disallowed)),
-                  builder=lambda func: lambda self, node: func(self, node))
 @generate_methods(boolean_ops + arithmetic_ops, boolean_ops + arithmetic_ops,
-                  builder=lambda func: lambda self, node: getattr(numbers,
-                                                                  func))
+                  builder=lambda func: lambda self, node: getattr(numbers, func))
 class BlazeParser(ast.NodeVisitor):
     def __init__(self, dtypes, scope):
         self.dtypes = dtypes
@@ -78,6 +67,14 @@ class BlazeParser(ast.NodeVisitor):
         assert node.starargs is None, 'starargs not allowed'
         assert node.kwargs is None, 'kwargs not allowed'
         return self.visit(node.func)(*map(self.visit, node.args))
+
+    def visit(self, node):
+        name = node.__class__.__name__
+        method = 'visit_' + name
+        visitor = getattr(self, method, None)
+        if visitor is None:
+            raise NotImplementedError('%s nodes are not implemented' % name)
+        return visitor(node)
 
 
 # Operations like sin, cos, exp, isnan, floor, ceil, ...
