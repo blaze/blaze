@@ -130,6 +130,10 @@ class TestExprify(object):
         other = (self.x == 1) | (self.x == 2)
         assert exprify('(x == 1) | (x == 2)', self.dtypes).isidentical(other)
 
+    def test_simple_boolean_not(self):
+        other = ~self.x
+        assert exprify('~x', {'x': 'bool'}).isidentical(other)
+
     def test_literal_string_compare(self):
         other = self.name == "Alice"
         result = exprify('name == "Alice"', {'name': 'string'})
