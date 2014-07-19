@@ -2,12 +2,10 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 
-from blaze.expr.scalar import *
-from blaze.compatibility import xfail, basestring
-from blaze.utils import raises
+from blaze.expr.scalar import (ScalarSymbol, scalar_coerce, Mul, eval_str,
+                               Add, dshape, sin, exprify, cos, isnan, exp, log)
+from blaze.compatibility import xfail, basestring, raises
 from datetime import date, datetime
-
-import pytest
 
 x = ScalarSymbol('x')
 y = ScalarSymbol('y')
@@ -144,22 +142,22 @@ class TestExprify(object):
     def test_failing_exprify(self):
         dtypes = {'x': 'int', 'y': 'real', 'z': 'int32'}
 
-        with pytest.raises(AssertionError):
+        with raises(AssertionError):
             exprify('x < y < z', dtypes)
 
-        with pytest.raises(NotImplementedError):
+        with raises(NotImplementedError):
             exprify('os.listdir()', {})
 
-        with pytest.raises(NotImplementedError):
+        with raises(NotImplementedError):
             exprify('os.listdir()', {'os': 'int', 'os.listdir': 'real'})
 
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             exprify('__x + __y', dtypes)
 
-        with pytest.raises(NotImplementedError):
+        with raises(NotImplementedError):
             exprify('y if x else y', dtypes)
 
-        with pytest.raises(NotImplementedError):
+        with raises(NotImplementedError):
             exprify('lambda x, y: x + y', dtypes)
 
         if sys.version_info < (2, 7):
@@ -169,24 +167,24 @@ class TestExprify(object):
             # and we don't allow them in versions that do
             error = NotImplementedError
 
-        with pytest.raises(error):
+        with raises(error):
             exprify('{x: y for z in y}', dtypes)
 
-        with pytest.raises(error):
+        with raises(error):
             exprify('{x for z in y}', dtypes)
 
-        with pytest.raises(NotImplementedError):
+        with raises(NotImplementedError):
             exprify('[x for z in y]', dtypes)
 
-        with pytest.raises(NotImplementedError):
+        with raises(NotImplementedError):
             exprify('(x for y in z)', dtypes)
 
     def test_scope(self):
         dtypes = {'sin': 'int'}
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             exprify('sin + 1', dtypes)
 
-        with pytest.raises(TypeError):
+        with raises(TypeError):
             sin + 1
 
 
@@ -194,11 +192,14 @@ def test_scalar_coerce():
     assert scalar_coerce('int', 1) == 1
     assert scalar_coerce('int', '1') == 1
     assert scalar_coerce('{x: int}', '1') == 1
-    assert raises(TypeError, lambda: scalar_coerce('{x: int, y: int}', '1'))
-    assert raises(TypeError, lambda: scalar_coerce('3 * int', '1'))
+    with raises(TypeError):
+        scalar_coerce('{x: int, y: int}', '1')
+    with raises(TypeError):
+        scalar_coerce('3 * int', '1')
 
     assert scalar_coerce('date', 'Jan 1st, 2012') == date(2012, 1, 1)
     assert scalar_coerce('datetime', 'Jan 1st, 2012 12:00:00') == \
             datetime(2012, 1, 1, 12, 0, 0)
-    assert raises(ValueError,
-                  lambda: scalar_coerce('date', 'Jan 1st, 2012 12:00:00'))
+
+    with raises(ValueError):
+        scalar_coerce('date', 'Jan 1st, 2012 12:00:00')
