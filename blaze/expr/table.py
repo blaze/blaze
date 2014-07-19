@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 from abc import abstractproperty
-from datashape import dshape, var, DataShape, Record, isdimension
+from datashape import dshape, var, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import concat, partial, first, compose, get, unique
@@ -481,7 +481,7 @@ class Join(TableExpr):
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
     """
-    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
+    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'
 
     iscolumn = False
@@ -502,14 +502,37 @@ class Join(TableExpr):
 
     @property
     def schema(self):
-        rec1 = self.lhs.schema[0]
-        rec2 = self.rhs.schema[0]
+        """
 
-        rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
-        return dshape(Record(rec))
+        >>> t = TableSymbol('t', '{name: string, amount: int}')
+        >>> s = TableSymbol('t', '{name: string, id: int}')
+
+        >>> join(t, s).schema
+        dshape("{ name : string, amount : int32, id : int32 }")
+
+        >>> join(t, s, how='left').schema
+        dshape("{ name : string, amount : int32, id : ?int32 }")
+        """
+        option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
+
+        joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                        if name in self.on_left]
+
+        left = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                           if name not in self.on_left]
+
+        right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
+                            if name not in self.on_right]
+
+        if self.how in ('right', 'outer'):
+            left = [[name, option(dt)] for name, dt in left]
+        if self.how in ('left', 'outer'):
+            right = [[name, option(dt)] for name, dt in right]
+
+        return dshape(Record(joined + left + right))
 
 
-def join(lhs, rhs, on_left=None, on_right=None):
+def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
             set(lhs.columns) & set(rhs.columns),
@@ -526,7 +549,13 @@ def join(lhs, rhs, on_left=None, on_right=None):
     _on_right = (tuple(on_right) if isinstance(on_right, list)
                         else on_right)
 
-    return Join(lhs, rhs, _on_left, _on_right)
+    how = how.lower()
+    if how not in ('inner', 'outer', 'left', 'right'):
+        raise ValueError("How parameter should be one of "
+                         "\n\tinner, outer, left, right."
+                         "\nGot: %s" % how)
+
+    return Join(lhs, rhs, _on_left, _on_right, how)
 
 join.__doc__ = Join.__doc__
 

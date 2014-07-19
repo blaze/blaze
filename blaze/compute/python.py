@@ -19,6 +19,9 @@ from operator import itemgetter
 from functools import partial
 from toolz import map, isiterable, compose, juxt, identity
 from toolz.compatibility import zip
+from cytoolz import groupby, reduceby, unique, take
+import cytoolz
+import toolz
 import sys
 
 from ..dispatch import dispatch
@@ -26,10 +29,9 @@ from ..expr.table import *
 from ..expr.scalar.core import *
 from ..expr import scalar
 from ..compatibility import builtins, apply
-from cytoolz import groupby, get, reduceby, unique, take
-import cytoolz
 from . import core
 from .core import compute, compute_one
+from cytoolz.curried import get
 
 from ..data import DataDescriptor
 
@@ -266,6 +268,39 @@ def listpack(x):
         return [x]
 
 
+def pair_assemble(t):
+    """ Combine a pair of records into a single record
+
+    This is mindful to shared columns as well as missing records
+    """
+    from cytoolz import get  # not curried version
+    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
+
+    left_self_columns = [t.lhs.columns.index(c) for c in t.lhs.columns
+                                            if c not in listpack(t.on_left)]
+    right_self_columns = [t.rhs.columns.index(c) for c in t.rhs.columns
+                                            if c not in listpack(t.on_right)]
+    def assemble(pair):
+        a, b = pair
+        if a is not None:
+            joined = get(on_left, a)
+        else:
+            joined = get(on_right, b)
+
+        if a is not None:
+            left_entries = get(left_self_columns, a)
+        else:
+            left_entries = (None,) * (len(t.lhs.columns) - len(on_left))
+
+        if b is not None:
+            right_entries = get(right_self_columns, b)
+        else:
+            right_entries = (None,) * (len(t.rhs.columns) - len(on_right))
+
+        return joined + left_entries + right_entries
+
+    return assemble
 
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
 def compute_one(t, lhs, rhs, **kwargs):
@@ -283,25 +318,22 @@ def compute_one(t, lhs, rhs, **kwargs):
     if lhs == rhs:
         lhs, rhs = itertools.tee(lhs, 2)
 
-    on_left = rowfunc(t.lhs[t.on_left])
-    on_right = rowfunc(t.rhs[t.on_right])
+    on_left = [t.lhs.columns.index(col) for col in listpack(t.on_left)]
+    on_right = [t.rhs.columns.index(col) for col in listpack(t.on_right)]
 
-    right_columns = list(range(len(t.rhs.columns)))
-    for col in listpack(t.on_right):
-        right_columns.remove(t.rhs.columns.index(col))
+    left_default = (None if t.how in ('right', 'outer')
+                         else toolz.itertoolz.no_default)
+    right_default = (None if t.how in ('left', 'outer')
+                         else toolz.itertoolz.no_default)
 
-    get_right = lambda x: type(x)(get(right_columns, x))
+    pairs = toolz.join(on_left, lhs,
+                       on_right, rhs,
+                       left_default=left_default,
+                       right_default=right_default)
 
-    lhs_dict = groupby(on_left, lhs)
+    assemble = pair_assemble(t)
 
-    for row in rhs:
-        try:
-            key = on_right(row)
-            matches = lhs_dict[key]
-            for match in matches:
-                yield match + get_right(row)
-        except KeyError:
-            pass
+    return map(assemble, pairs)
 
 
 @dispatch(Sort, Sequence)

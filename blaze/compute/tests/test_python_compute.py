@@ -141,6 +141,43 @@ def test_join():
     assert result == expected
 
 
+def test_outer_join():
+    left = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    right = [('NYC', 1),
+             ('Boston', 1),
+             ('LA', 3),
+             ('Moscow', 4)]
+
+    L = TableSymbol('L', '{id: int, name: string, amount: real}')
+    R = TableSymbol('R', '{city: string, id: int}')
+
+    assert set(compute(join(L, R), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='left'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='right'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='outer'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+
 def test_multi_column_join():
     left = [(1, 2, 3),
             (2, 3, 4),
@@ -228,11 +265,11 @@ def test_graph_double_join():
     t_arc = TableSymbol('t_arc', '{a: int32, b: int32}')
     t_wanted = TableSymbol('t_wanted', '{name: string}')
 
-    j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'a', 'b']]
+    j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'b', 'a']]
 
     result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
-    result = set(map(tuple, result))
-    expected = set([('A', 3, 1),
+    result = sorted(map(tuple, result))
+    expected = sorted([('A', 3, 1),
                     ('A', 2, 1),
                     ('A', 5, 1),
                     ('F', 1, 6),

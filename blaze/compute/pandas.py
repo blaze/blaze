@@ -92,17 +92,9 @@ def compute_one(t, lhs, rhs, **kwargs):
     dataframe, perform the join, and then reset the index back to the left
     side's original index.
     """
-    old_left_index = lhs.index
-    old_right_index = rhs.index
-    if lhs.index.name:
-        old_left = lhs.index.name
-        rhs = lhs.reset_index()
-    if rhs.index.name:
-        rhs = rhs.reset_index()
-
-    lhs = lhs.set_index(t.on_left)
-    rhs = rhs.set_index(t.on_right)
-    result = lhs.join(rhs, how='inner')
+    result = pd.merge(lhs, rhs,
+                      left_on=t.on_left, right_on=t.on_right,
+                      how=t.how)
     return result.reset_index()[t.columns]
 
 
