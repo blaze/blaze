@@ -190,12 +190,12 @@ def compute_one(t, ddesc, **kwargs):
 
 @dispatch(Projection, DataDescriptor)
 def compute_one(t, ddesc, **kwargs):
-    return ddesc.py[:, t.columns]
+    return ddesc[:, t.columns]
 
 
 @dispatch(Column, DataDescriptor)
 def compute_one(t, ddesc, **kwargs):
-    return ddesc.py[:, t.columns[0]]
+    return ddesc[:, t.columns[0]]
 
 
 @dispatch(DataDescriptor)
