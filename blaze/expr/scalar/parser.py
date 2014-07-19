@@ -3,13 +3,10 @@ from itertools import repeat
 
 from toolz import merge
 
-from ..core import Expr
 from . import numbers
 from .core import Scalar
 
 from .interface import ScalarSymbol
-from .numbers import (Add, Sub, Mul, Div, And, Or, Eq, NE as Ne, LT as Lt,
-                      GT as Gt, LE as Le, GE as Ge, Neg, Pow, Mod)
 
 
 def generate_methods(node_names, funcs, builder):
@@ -23,9 +20,10 @@ def generate_methods(node_names, funcs, builder):
 disallowed = ('Attribute', 'Lambda', 'IfExp', 'Dict', 'Set', 'ListComp',
               'SetComp', 'DictComp', 'GeneratorExp', 'Yield')
 
-comparison_ops = {'Eq': Eq, 'Ne': Ne, 'Lt': Lt, 'Gt': Gt, 'Le': Le, 'Ge': Ge,
-                  'And': And, 'Or': Or, 'USub': Neg, 'Add': Add, 'Mult': Mul,
-                  'Div': Div, 'Pow': Pow, 'Mod': Mod, 'Sub': Sub}
+boolean_ops = ('Eq', 'Ne', 'Lt', 'Gt', 'Le', 'Ge', 'And', 'Or', 'Not', 'BitAnd',
+               'BitOr', 'Invert')
+
+arithmetic_ops = 'USub', 'Add', 'Mult', 'Div', 'FloorDiv', 'Pow', 'Mod', 'Sub'
 
 
 def disallower(self, node):
@@ -34,8 +32,9 @@ def disallower(self, node):
 
 @generate_methods(disallowed, repeat(disallower, len(disallowed)),
                   builder=lambda func: lambda self, node: func(self, node))
-@generate_methods(comparison_ops.keys(), comparison_ops.values(),
-                  builder=lambda func: lambda self, node: func)
+@generate_methods(boolean_ops + arithmetic_ops, boolean_ops + arithmetic_ops,
+                  builder=lambda func: lambda self, node: getattr(numbers,
+                                                                  func))
 class BlazeParser(ast.NodeVisitor):
     def __init__(self, dtypes, scope):
         self.dtypes = dtypes
@@ -91,6 +90,7 @@ safe_scope = {'__builtins__': {},  # Python 2
 def exprify(expr, dtypes):
     """ Transform string into scalar expression
 
+    >>> from blaze import Expr
     >>> expr = exprify('x + y', {'x': 'int64', 'y': 'real'})
     >>> expr
     x + y
