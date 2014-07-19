@@ -40,7 +40,6 @@ def print_versions():
     import numpy as np
     import dynd
     import datashape
-    import blz
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("Datashape version: %s" % datashape.__version__)
@@ -57,7 +56,6 @@ def print_versions():
         processor = "not recognized"
     print("Processor: %s" % processor)
     print("Byte-ordering: %s" % sys.byteorder)
-    print("Detected cores: %s" % blz.detect_number_of_cores())
     print("-=" * 38)
 
 
