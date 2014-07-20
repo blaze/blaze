@@ -189,19 +189,19 @@ class ColumnSyntaxMixin(object):
         return columnwise(Eq, self, other)
 
     def __ne__(self, other):
-        return columnwise(NE, self, other)
+        return columnwise(Ne, self, other)
 
     def __lt__(self, other):
-        return columnwise(LT, self, other)
+        return columnwise(Lt, self, other)
 
     def __le__(self, other):
-        return columnwise(LE, self, other)
+        return columnwise(Le, self, other)
 
     def __gt__(self, other):
-        return columnwise(GT, self, other)
+        return columnwise(Gt, self, other)
 
     def __ge__(self, other):
-        return columnwise(GE, self, other)
+        return columnwise(Ge, self, other)
 
     def __add__(self, other):
         return columnwise(Add, self, other)
@@ -210,16 +210,22 @@ class ColumnSyntaxMixin(object):
         return columnwise(Add, other, self)
 
     def __mul__(self, other):
-        return columnwise(Mul, self, other)
+        return columnwise(Mult, self, other)
 
     def __rmul__(self, other):
-        return columnwise(Mul, other, self)
+        return columnwise(Mult, other, self)
 
     def __div__(self, other):
         return columnwise(Div, self, other)
 
     __truediv__ = __div__
     __rtruediv__ = __truediv__
+
+    def __floordiv__(self, other):
+        return columnwise(FloorDiv, self, other)
+
+    def __rfloordiv__(self, other):
+        return columnwise(FloorDiv, other, self)
 
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
@@ -255,7 +261,7 @@ class ColumnSyntaxMixin(object):
         return columnwise(And, other, self)
 
     def __neg__(self):
-        return columnwise(Neg, self)
+        return columnwise(USub, self)
 
     def label(self, label):
         return Label(self, label)
@@ -383,7 +389,7 @@ def columnwise(op, *column_inputs):
 
     Parameters
     ----------
-    op - Scalar Operation like Add, Mul, Sin, Exp
+    op - Scalar Operation like Add, Mult, Sin, Exp
     column_inputs - either Column, ColumnWise or constant (like 1, 1.0, '1')
 
     >>> accounts = TableSymbol('accounts',
@@ -394,7 +400,7 @@ def columnwise(op, *column_inputs):
 
     Fuses operations down into ScalarExpr level
 
-    >>> columnwise(Mul, 2, (accounts['amount'] + 100))
+    >>> columnwise(Mult, 2, (accounts['amount'] + 100))
     2 * (accounts['amount'] + 100)
     """
     expr_inputs = []

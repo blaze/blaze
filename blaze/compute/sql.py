@@ -27,7 +27,6 @@ from ..expr.table import *
 from ..expr.scalar import BinOp, UnaryOp
 from ..compatibility import reduce
 from ..utils import unique
-from . import core
 from .core import compute_one, compute, base
 
 __all__ = ['compute', 'compute_one', 'computefull', 'select']
@@ -75,7 +74,7 @@ def compute_one(t, s, **kwargs):
     return op(s)
 
 
-@dispatch(Neg, (sa.Column, Selectable))
+@dispatch(USub, (sa.Column, Selectable))
 def compute_one(t, s, **kwargs):
     return -s
 

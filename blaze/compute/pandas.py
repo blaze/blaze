@@ -25,7 +25,6 @@ from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar import UnaryOp, BinOp
 from .core import compute, compute_one, base
-from . import core
 
 __all__ = ['compute_one']
 
@@ -62,7 +61,7 @@ def compute_one(t, df, **kwargs):
     return getattr(np, t.symbol)(df)
 
 
-@dispatch(Neg, (DataFrame, Series))
+@dispatch(USub, (DataFrame, Series))
 def compute_one(t, df, **kwargs):
     return -df
 

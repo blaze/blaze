@@ -346,7 +346,7 @@ def test_apply():
 
 
 def test_columnwise():
-    from blaze.expr.scalar import Add, Eq, Mul
+    from blaze.expr.scalar import Add, Eq, Mult
     t = TableSymbol('t', '{x: int, y: int, z: int}')
     x = t['x']
     y = t['y']
@@ -355,7 +355,7 @@ def test_columnwise():
     assert columnwise(Add, x, y).child.isidentical(t)
 
     c1 = columnwise(Add, x, y)
-    c2 = columnwise(Mul, x, z)
+    c2 = columnwise(Mult, x, z)
 
     assert eval_str(columnwise(Eq, c1, c2).expr) == '(x + y) == (x * z)'
     assert columnwise(Eq, c1, c2).child.isidentical(t)
