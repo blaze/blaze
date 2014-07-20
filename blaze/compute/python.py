@@ -242,7 +242,7 @@ def compute_one(t, seq, **kwargs):
         d = reduceby(grouper, binop2, seq, initial)
     else:
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, v)) for k, v in groups.items())
+        d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
     if t.grouper.iscolumn:
         return d.items()
