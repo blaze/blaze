@@ -19,7 +19,7 @@ Blaze separates the computations that we want to perform:
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 ```
 
-From the representation of that data
+From the representation of data
 
 ```Python
 >>> L = [[1, 'Alice',   100],
@@ -36,25 +36,27 @@ Blaze enables users to solve data-oriented problems
 ['Bob', 'Edith']
 ```
 
-The separation of expression from data allows users to switch seemlessly
-between different backends.  Here we solve the same problem using Pandas
-instead of Pure Python.
+But the separation of expression from data allows us to switch between
+different backends.
+
+Here we solve the same problem using Pandas instead of Pure Python.
 
 ```Python
 >>> df = DataFrame(L, columns=['id', 'name', 'amount'])
 
 >>> compute(deadbeats, df)
-
+1      Bob
+4    Edith
+Name: name, dtype: object
 ```
 
-Blaze allows us to write down what we want to compute abstractly.  Blaze also
-knows how to drive other systems to compute what was asked.  These systems can
-range from simple Pure Python iterators to powerful distributed Spark clusters.
-Blaze doesn't compute your answer, Blaze intelligently drives other projects to
-do the computation.
+Blaze doesn't compute these results, Blaze intelligently drives other projects
+to compute them instead.  These projects range from simple Pure Python
+iterators to powerful distributed Spark clusters.  Blaze is built to be
+extended to new systems as they evolve.
 
 
-Useful Abstractions
+Usable Abstractions
 -------------------
 
 Blaze includes a rich set of computational and data primitives useful in
@@ -79,17 +81,14 @@ distributed context.
 Getting Started
 ---------------
 
-Development installation instructions available [here](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze).
+Development installation instructions available [here](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze).  Quick usage available [here](http://blaze.pydata.org/docs/dev/quickstart.html).
 
-Quick usage available [here](http://blaze.pydata.org/docs/dev/quickstart.html).
+Blaze is in development.  We reserve the right to break the API.
 
-Again, Blaze is in development.  We reserve the right to break the API.
-We are currently looking for patient users and creative developers.  If you
-have a problem that can use Blaze or if you have a computation backend or data
-file format that would like integrate into Blaze then please contact the
-[Mailing list](mailto:blaze-dev@continuum.io) or
-[Install the development version of Blaze](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze) and let
-us know about your experience.
+Blaze needs your help.  Blaze needs users with interesting problems.  Blaze
+needs developers with expertise in new data formats and computational backends.
+Blaze needs core developers to tie everything together.  Please e-mail the
+[Mailing list](mailto:blaze-dev@continuum.io).
 
 Source code for the latest development version of blaze can
 be obtained [from Github](https://github.com/ContinuumIO/blaze).
