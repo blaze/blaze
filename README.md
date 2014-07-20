@@ -7,7 +7,8 @@ out-of-core computing.  Blaze provides an interface similar to that of the
 NumPy ND-Array or Pandas DataFrame but maps these familiar interfacess onto a
 variety of other computational engines like Postgres or Spark.
 
-### Example
+Example
+-------
 
 Blaze separates the computations that we want to perform:
 
@@ -53,10 +54,8 @@ Blaze doesn't compute your answer, Blaze intelligently drives other projects to
 do the computation.
 
 
-### Useful Abstractions
-<p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png">
-</p>
+Useful Abstractions
+-------------------
 
 Blaze includes a rich set of computational and data primitives useful in
 building and communicating between computational systems.  Blaze primitives can
@@ -80,37 +79,20 @@ distributed context.
 Getting Started
 ---------------
 
-Again, Blaze is in development.  We reserve the right to break the API.
+Development installation instructions available [here](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze).
 
+Quick usage available [here](http://blaze.pydata.org/docs/dev/quickstart.html).
+
+Again, Blaze is in development.  We reserve the right to break the API.
 We are currently looking for patient users and creative developers.  If you
 have a problem that can use Blaze or if you have a computation backend or data
 file format that would like integrate into Blaze then please contact the
-[Mailing list]() or [Install the development version of Blaze]() and let us
-know about your experience.
+[Mailing list](mailto:blaze-dev@continuum.io) or
+[Install the development version of Blaze](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze) and let
+us know about your experience.
 
 Source code for the latest development version of blaze can
 be obtained [from Github](https://github.com/ContinuumIO/blaze).
-
-Development installation instructions available [here]()
-
-
-Installing from Source
-----------------------
-
-Install all the pre-requisites using conda or another mechanism,
-then run:
-
-```bash
-$ python setup.py install
-```
-
-Contributing
-------------
-
-Anyone wishing to discuss on Blaze should join the
-[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev)
-mailing list. To get started contributing, read through the
-[Developer Workflow](docs/source/dev_workflow.rst) documentation.
 
 
 Documentation
