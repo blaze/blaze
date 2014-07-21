@@ -389,3 +389,20 @@ def test_recursive_rowfunc_is_used():
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, data)) == set(expected)
+
+
+def test_by_groupby_deep():
+    data = [(1, 2, 'Alice'),
+            (1, 3, 'Bob'),
+            (2, 4, 'Alice'),
+            (2, 4, '')]
+
+    schema = '{x: int, y: int, name: string}'
+    t = TableSymbol('t', schema)
+
+    t2 = t[t['name'] != '']
+    t3 = merge(t2.x, t2.name)
+    expr = by(t3, t3.name, t3.x.mean())
+    result = set(compute(expr, data))
+    assert result == set([('Alice', 1.5), ('Bob', 1.0)])
+
