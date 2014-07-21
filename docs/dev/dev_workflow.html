@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
-    <link rel="next" title="Release Notes" href="releases.html" />
+    <link rel="next" title="Expressions and Computation" href="expr-compute-dev.html" />
     <link rel="prev" title="Datashape" href="datashape.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -79,12 +79,10 @@
          <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
 <ul>
 <li><a class="reference internal" href="#">Developer Workflow</a><ul>
-<li><a class="reference internal" href="#test-driven-development">Test Driven Development</a></li>
+<li><a class="reference internal" href="#installing-development-blaze">Installing Development Blaze</a></li>
 <li><a class="reference internal" href="#github-flow">GitHub Flow</a></li>
-<li><a class="reference internal" href="#unified-python-2-and-3-codebase">Unified Python 2 and 3 Codebase</a></li>
-<li><a class="reference internal" href="#testing">Testing</a></li>
-<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
-<li><a class="reference internal" href="#internal-import">Internal Import</a></li>
+<li><a class="reference internal" href="#coding-standards">Coding Standards</a></li>
+<li><a class="reference internal" href="#relation-with-continuum">Relation with Continuum</a></li>
 </ul>
 </li>
 </ul>
@@ -95,29 +93,60 @@
           
   <div class="section" id="developer-workflow">
 <h1>Developer Workflow<a class="headerlink" href="#developer-workflow" title="Permalink to this headline">¶</a></h1>
-<p>Blaze is being developed as an open source project by
-<a class="reference external" href="http://continuum.io/">Continuum Analytics</a>. This page describes the basic workflow
-that development follows, and may be used as a guide for how
-to contribute to the project.</p>
-<p>For any questions about Blaze and how to get involved, please
-email <a class="reference external" href="mailto:blaze-dev&#37;&#52;&#48;continuum&#46;io">blaze-dev<span>&#64;</span>continuum<span>&#46;</span>io</a>.</p>
-<div class="section" id="test-driven-development">
-<h2>Test Driven Development<a class="headerlink" href="#test-driven-development" title="Permalink to this headline">¶</a></h2>
-<p>Blaze is actively changing and evolving. In such an environment,
-aspects of the code such as documentation, webpages, docstring, and
-unspoken intentions are secondary to tests.  To add code to Blaze repo
-the preferred process is as follows:</p>
-<ul class="simple">
-<li>Propose a feature via the email list or github issues</li>
-<li>Add a design doc to docs/design</li>
-<li>Add a test suite to the appropriate test directory</li>
-<li>Implement feature</li>
-</ul>
-<p>This will allow developers know when a feature is broken based on the
-various testing proceedures below. Anything that is not tested is
-subject to change, thus all regressions should be reported with
-appropriate tests. Likewise, any added feature without a test is
-subject to breakage and/or removal.</p>
+<p>This page describes how to install and improve the development version of Blaze.</p>
+<p>If this documentation isn&#8217;t sufficiently clear or if you have other questions
+then please email <a class="reference external" href="mailto:blaze-dev&#37;&#52;&#48;continuum&#46;io">blaze-dev<span>&#64;</span>continuum<span>&#46;</span>io</a>.</p>
+<div class="section" id="installing-development-blaze">
+<h2>Installing Development Blaze<a class="headerlink" href="#installing-development-blaze" title="Permalink to this headline">¶</a></h2>
+<p>Blaze has a number of dependencies, both due to relying on community projects
+and also because it itself is split among a few projects.</p>
+<p><strong>TL;DR</strong>:  Install <cite>conda_</cite>, then copy-paste the following</p>
+<div class="highlight-python"><div class="highlight"><pre># Get source
+git clone https://github.com/ContinuumIO/blaze.git
+cd blaze
+
+# Install most of the requirements through conda
+conda install --yes --file requirements.txt  # Basic requirements
+conda install --yes -c mwiebe dynd-python    # Development version of DyND
+conda install --yes unicodecsv               # If on Python 2
+
+# Some requirements are kept up-to-date on PyPI
+conda install --yes pip
+pip install git+http://github.com/ContinuumIO/datashape --upgrade
+pip install toolz cytoolz multipledispatch  --upgrade
+
+# Install and run tests
+python setup.py install                      # Install Blaze
+python -c &#39;import blaze; blaze.test()&#39;       # Run tests
+</pre></div>
+</div>
+<p><strong>Detailed Version</strong>:</p>
+<p>Get Source:  Fork and clone the Blaze git repository to your local machine (see
+Github Flow below)</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone git@github.com:ContinuumIO/blaze.git
+or
+git clone git@github.com:GITHUB-USERNAME/blaze.git
+</pre></div>
+</div>
+<p>Install dependencies:  Blaze depends on a number of projects within the larger
+scientific Python ecosystem.  We strongly suggest that you install these
+dependencies using <a class="reference external" href="http://conda.pydata.org/">conda</a>, preferably from the <a class="reference external" href="http://continuum.io/downloads">Anaconda</a> download.</p>
+<div class="highlight-python"><div class="highlight"><pre>conda install --file requirements.txt
+</pre></div>
+</div>
+<p>It may be that newer versions of these projects have critical updates that have
+not yet reached the main conda channel.  Because of this we recommend
+installing with some additional Binstar channels.</p>
+<div class="highlight-python"><div class="highlight"><pre>conda install -c mwiebe -c mrocklin --file requirements.txt
+</pre></div>
+</div>
+<p>If you don&#8217;t want to use conda that&#8217;s fine too.  Most of the requirements can
+be installed from PyPI.  A notable exception is <a class="reference external" href="https://github.com/ContinuumIO/dynd-python">DyND</a> which must be compiled
+from source.</p>
+<p>If you use Python 2 you should also include the <tt class="docutils literal"><span class="pre">unicodecsv</span></tt> module</p>
+<div class="highlight-python"><div class="highlight"><pre>conda install unicodecsv
+</pre></div>
+</div>
 </div>
 <div class="section" id="github-flow">
 <h2>GitHub Flow<a class="headerlink" href="#github-flow" title="Permalink to this headline">¶</a></h2>
@@ -127,28 +156,19 @@ is that the <cite>master</cite> branch is generally expected to be stable,
 with tests passing on all platforms, and features are developed in
 descriptively named feature branches and merged via github&#8217;s
 Pull Requests.</p>
-<p>The only cases where it&#8217;s ok to push directly to master are
-really minor fixes, or to fix tests that are failing.</p>
 </div>
-<div class="section" id="unified-python-2-and-3-codebase">
-<h2>Unified Python 2 and 3 Codebase<a class="headerlink" href="#unified-python-2-and-3-codebase" title="Permalink to this headline">¶</a></h2>
-<p>Blaze is being developed with one codebase that simultaneously
-supports both Python 2 and Python 3. To make this manageable,
-just Python 2.6, 2.7, and &gt;= 3.3 are being supported.</p>
+<div class="section" id="coding-standards">
+<h2>Coding Standards<a class="headerlink" href="#coding-standards" title="Permalink to this headline">¶</a></h2>
+<p><strong>Unified Python 2 and 3 Codebase:</strong></p>
+<p>Blaze source code simultaneously supports both Python 2 and Python 3 with a
+single codebase.</p>
 <p>To support this, all .py files must begin with a few <cite>__future__</cite>
 imports, as follows.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 </pre></div>
 </div>
-<p>Additionally, there is a helper submodule <cite>blaze.py2help</cite> including
-a number of utilities to smooth the differences between Python versions.
-Please browse the source file to see what is there, and read the
-documentation for the <a class="reference external" href="http://pythonhosted.org/six/">six library</a> for details on this style of
-unified codebase.</p>
-</div>
-<div class="section" id="testing">
-<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
-<p>In order to keep the <cite>master</cite> branch functioning with passing tests,
+<p><strong>Testing:</strong></p>
+<p>In order to keep the <tt class="docutils literal"><span class="pre">master</span></tt> branch functioning with passing tests,
 there are two automated testing mechanisms being used. First is
 <a class="reference external" href="https://travis-ci.org/">Travis CI</a>, which is configured to automatically build any pull
 requests that are made. This provides a smoke test against both
@@ -160,22 +180,7 @@ versions 2.6, 2.7, and 3.3 for different 32-bit and 64-bit versions
 of Linux, OS X, and Windows. That these configurations are all working
 should be verified by someone at Continuum after each merge of a
 pull request.</p>
-</div>
-<div class="section" id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<p>Blaze has a large number of dependencies, some of which are developed
-in concert with the blaze repo. For <cite>datashape</cite>, <cite>pykit</cite>, and <cite>dynd-python</cite>,
-it is generally expected that the current master branch of all of them
-should work together. When a release is made, particular versions of
-all the dependencies are fixed.</p>
-<p>In the case of <a class="reference external" href="https://github.com/ContinuumIO/dynd-python">dynd-python</a>, its Jenkins build additionally uploads
-a conda package to a <a class="reference external" href="https://binstar.org/">binstar</a> channel, which is installable into
-<a class="reference external" href="http://continuum.io/downloads">Anaconda</a>. As the
-binstar infrastructure gets built out, we expect to eventually have daily
-builds of all these dependencies and of blaze itself.</p>
-</div>
-<div class="section" id="internal-import">
-<h2>Internal Import<a class="headerlink" href="#internal-import" title="Permalink to this headline">¶</a></h2>
+<p><strong>Relative Imports:</strong></p>
 <p>To avoid the side effects of top level imports, e.g. <cite>import blaze</cite>, all internal code should be imported relatively.  Thus:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">#file: blaze/objects/table.py</span>
 <span class="kn">from</span> <span class="nn">blaze</span> <span class="kn">import</span> <span class="n">Array</span>
@@ -191,6 +196,12 @@ builds of all these dependencies and of blaze itself.</p>
 <span class="kn">from</span> <span class="nn">..io</span> <span class="kn">import</span> <span class="n">printing</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="relation-with-continuum">
+<h2>Relation with Continuum<a class="headerlink" href="#relation-with-continuum" title="Permalink to this headline">¶</a></h2>
+<p>Blaze is developed in part by <a class="reference external" href="http://continuum.io/">Continuum Analytics</a>, a for profit company.
+Continuum&#8217;s efforts on Blaze are open source and freely available to the public.
+The open nature of Blaze is protected by a BSD license.</p>
 </div>
 </div>
 

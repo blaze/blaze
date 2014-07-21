@@ -9,7 +9,7 @@ as follows.
 
     >>> from blaze import *
 
-Blaze Arrays
+Blaze Tables
 ~~~~~~~~~~~~
 
 Create simple Blaze tables from nested lists/tuples. Blaze will deduce the
@@ -17,12 +17,13 @@ dimensionality and data type to use.
 
 .. doctest::
 
-    >>> t = Table(((1, 'Alice', 100),
-                   (2, 'Bob', -200),
-                   (3, 'Charlie', 300),
-                   (4, 'Denis', 400),
-                   (5, 'Edith', -500)),
-                   columns=['id', 'name', 'balance'])
+    >>> t = Table([(1, 'Alice', 100),
+    ...            (2, 'Bob', -200),
+    ...            (3, 'Charlie', 300),
+    ...            (4, 'Denis', 400),
+    ...            (5, 'Edith', -500)],
+    ...            columns=['id', 'name', 'balance'])
+
     >>> t
        id     name  balance
     0   1    Alice      100
@@ -114,7 +115,7 @@ of data
 
 .. doctest::
 
-   >>> By(iris,                           # Split apply combine operation
+   >>> by(iris,                           # Split apply combine operation
    ...    iris['species'],                # Group by species
    ...    iris['petal_width'].mean())     # Take the mean of the petal_width column
               species  petal_width
@@ -145,7 +146,7 @@ container type.
 
 .. doctest::
 
-   >>> result = By(iris,
+   >>> result = by(iris,
    ...             iris['species'],
    ...             iris['petal_width'].mean())
 

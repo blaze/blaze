@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Expressions and Computation &mdash; Blaze 0.6.0-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.6.0-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
+    <link rel="next" title="Release Notes" href="releases.html" />
+    <link rel="prev" title="Developer Workflow" href="dev_workflow.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+
+        <li class="active">
+            <a href="index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+
+        <li>
+            <a href="quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Expressions and Computation</a><ul>
+<li><a class="reference internal" href="#expressions">Expressions</a></li>
+<li><a class="reference internal" href="#expression-invariants">Expression Invariants</a></li>
+<li><a class="reference internal" href="#other-expressions">Other Expressions</a></li>
+<li><a class="reference internal" href="#computation">Computation</a></li>
+<li><a class="reference internal" href="#compute-traversal">Compute Traversal</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="expressions-and-computation">
+<h1>Expressions and Computation<a class="headerlink" href="#expressions-and-computation" title="Permalink to this headline">¶</a></h1>
+<p>This is a developer level document.  It conveys some of the design decisions
+around the use of expressions and their lowering to computational backends.  It
+is intended for new developers.  It is not necessary to understand this
+document in order to use Blaze.</p>
+<div class="section" id="expressions">
+<h2>Expressions<a class="headerlink" href="#expressions" title="Permalink to this headline">¶</a></h2>
+<p>Blaze represents expressions as Python objects.  Classes include:</p>
+<div class="highlight-python"><div class="highlight"><pre>TableSymbol - leaf expression, t
+Projection - subset of columns, t[[&#39;name&#39;, &#39;amount&#39;]]
+Selection - subset of rows t[t[&#39;amount&#39;] &lt; 0]
+Column - single column t[&#39;name&#39;]
+ColumnWise - a combination of a table and a scalar expression, -t[&#39;amount&#39;] + 1
+Join - join two tables on shared columns, join(t, s, &#39;id&#39;)
+Reduction - perform a sum or min or max on a table, t[&#39;amount&#39;].sum()
+By - split-apply-combine operation, by(t, t[&#39;name&#39;], t[&#39;amount&#39;].sum())
+
+Also:
+    Sort, Distinct, Head, Label, Map, Apply, Merge
+</pre></div>
+</div>
+<p>In each case an operation (like <tt class="docutils literal"><span class="pre">Selection</span></tt>) is a Python class.  Each
+expression defines a fixed set of fields in the <tt class="docutils literal"><span class="pre">__slots__</span></tt> attribute</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Column</span><span class="p">(</span><span class="n">ColumnSyntaxMixin</span><span class="p">,</span> <span class="n">Projection</span><span class="p">):</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="s">&#39;child&#39;</span><span class="p">,</span> <span class="s">&#39;column&#39;</span>
+</pre></div>
+</div>
+<p>To create a node in the tree explicitly we create a Python object of this class</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">names</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This object contains its information in a .args attribute</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names</span><span class="o">.</span><span class="n">args</span>
+<span class="go">(t, &#39;name&#39;)</span>
+</pre></div>
+</div>
+<p>And the set of input expressions in a <tt class="docutils literal"><span class="pre">.inputs</span></tt> attribute</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names</span><span class="o">.</span><span class="n">inputs</span>
+<span class="go">(t,)</span>
+</pre></div>
+</div>
+<p>By traversing <tt class="docutils literal"><span class="pre">.args</span></tt> one can traverse the tree of all identifying
+information (including annotating strings and values like <tt class="docutils literal"><span class="pre">'name'</span></tt>) or by
+traversing <tt class="docutils literal"><span class="pre">.inputs</span></tt> one can inspect the much sparser tree of just the major
+table expressions.</p>
+<p>Most terms have only a single child input.  And so often the <tt class="docutils literal"><span class="pre">.inputs</span></tt> tree
+is just a single line of nodes.  Notable exceptions include operations like
+<tt class="docutils literal"><span class="pre">Join</span></tt> and <tt class="docutils literal"><span class="pre">Binop</span></tt>.</p>
+</div>
+<div class="section" id="expression-invariants">
+<h2>Expression Invariants<a class="headerlink" href="#expression-invariants" title="Permalink to this headline">¶</a></h2>
+<p>Blaze expressions adhere to the following properties:</p>
+<ol class="arabic simple">
+<li>They and all of their stored fields are immutable</li>
+<li>Their string representations evaluate to themselves.  E.g.
+<tt class="docutils literal"><span class="pre">eval(str(expr))</span> <span class="pre">==</span> <span class="pre">expr</span></tt></li>
+<li>They have simple <tt class="docutils literal"><span class="pre">__init__</span></tt> constructors that only copy in fields to the
+object.  For intelligent argument handling they have functions.  E.g. the
+<tt class="docutils literal"><span class="pre">Join</span></tt> class has an analagous <tt class="docutils literal"><span class="pre">join</span></tt> function that should be used by
+users.</li>
+<li>They can compute their datashape <tt class="docutils literal"><span class="pre">dshape</span></tt> and <tt class="docutils literal"><span class="pre">schema</span></tt>/<tt class="docutils literal"><span class="pre">columns</span></tt> if
+they are tabular.</li>
+</ol>
+</div>
+<div class="section" id="other-expressions">
+<h2>Other Expressions<a class="headerlink" href="#other-expressions" title="Permalink to this headline">¶</a></h2>
+<p>Most work today happens in <tt class="docutils literal"><span class="pre">blaze/expr/table.py</span></tt> which contains definitions
+for all of the classes / terms above.  Additionally much of the traversing
+logic is defined on the <tt class="docutils literal"><span class="pre">Expr</span></tt> super-class defined in <tt class="docutils literal"><span class="pre">blaze/expr/core.py</span></tt>.
+This class exists to support common code between <a href="#id1"><span class="problematic" id="id2">``</span></a>TableSymbol``s and
+<a href="#id3"><span class="problematic" id="id4">``</span></a>ScalarSymbol``s and also in anticipation of arrays in the future.</p>
+<p>Scalar symbols live in <tt class="docutils literal"><span class="pre">blaze/expr/scalar/*.py</span></tt>.  These include arithmetic
+operations like <tt class="docutils literal"><span class="pre">Add</span></tt> and <tt class="docutils literal"><span class="pre">Mul</span></tt> as well as mathematical operations like
+<tt class="docutils literal"><span class="pre">sin</span></tt>, <tt class="docutils literal"><span class="pre">cos</span></tt>, <tt class="docutils literal"><span class="pre">exp</span></tt>, and <tt class="docutils literal"><span class="pre">isnan</span></tt>.  These scalar operations interact
+with tables (mostly <tt class="docutils literal"><span class="pre">Column</span></tt> objects) through the <tt class="docutils literal"><span class="pre">ColumnWise</span></tt> operation,
+which broadcasts a scalar expression onto a table expression.</p>
+</div>
+<div class="section" id="computation">
+<h2>Computation<a class="headerlink" href="#computation" title="Permalink to this headline">¶</a></h2>
+<p>Once we have a Blaze expression like</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">deadbeats</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>and some data like</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">data</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;Alice&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;Bob&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;Charlie&#39;</span><span class="p">,</span> <span class="mi">300</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>and a mapping of TableSymbols to data like</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="n">data</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>then we need to evaluate the intent of the expression on the data.  We do this
+in a step-by-step system outlined by various <tt class="docutils literal"><span class="pre">compute</span></tt> functions.  The user
+experience is as follows</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">compute</span><span class="p">(</span><span class="n">deadbeats</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+<span class="go">[&#39;Bob&#39;]</span>
+</pre></div>
+</div>
+<p>But internally <tt class="docutils literal"><span class="pre">compute</span></tt> traverses our expression from the leaves (like
+<tt class="docutils literal"><span class="pre">t</span></tt>) on up, transforming <tt class="docutils literal"><span class="pre">data</span></tt> as it goes.  At each step it looks at a
+node in the Blaze expression graph like</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>and transforms the data appropriately, like</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">predicate</span> <span class="o">=</span> <span class="k">lambda</span> <span class="nb">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">amt</span><span class="p">:</span> <span class="n">amt</span> <span class="o">&lt;</span> <span class="mi">0</span>
+<span class="n">result</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">predicate</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This step-by-step approach is easy to define through dispatched <tt class="docutils literal"><span class="pre">compute_one</span></tt>
+functions.  We create a small recipe for how to compute each expression type
+(e.g. <tt class="docutils literal"><span class="pre">Projection</span></tt>, <tt class="docutils literal"><span class="pre">Selection</span></tt>, <tt class="docutils literal"><span class="pre">By</span></tt>) against each data type (e.g.,
+<tt class="docutils literal"><span class="pre">list</span></tt>, <tt class="docutils literal"><span class="pre">DataFrame</span></tt>, <tt class="docutils literal"><span class="pre">sqlalchemy.Table</span></tt>, ....)  Here is the recipe
+mapping a <tt class="docutils literal"><span class="pre">Selection</span></tt> to a <tt class="docutils literal"><span class="pre">DataFrame</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Selection</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_one</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">predicate</span> <span class="o">=</span> <span class="n">compute</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">predicate</span><span class="p">,</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">child</span><span class="p">:</span> <span class="n">df</span><span class="p">})</span>
+    <span class="nb">apply</span> <span class="o">=</span> <span class="n">compute</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">apply</span><span class="p">,</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">child</span><span class="p">:</span> <span class="n">df</span><span class="p">})</span>
+    <span class="k">return</span> <span class="nb">apply</span><span class="p">[</span><span class="n">predicate</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The goal is that this approach is highly modular and allows interpretation
+systems to be built up as a collection of small pieces.  One can begin the
+construction of a new backend by showing Blaze how to perform each individual
+operation on a new data type.  For example here is a start on a new PyTables
+backend:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@dispatch</span><span class="p">(</span><span class="n">Selection</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_one</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">eval_str</span><span class="p">(</span><span class="n">sel</span><span class="o">.</span><span class="n">predicate</span><span class="p">)</span>  <span class="c"># produce string like &#39;amount &lt; 0&#39;</span>
+    <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">read_where</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>       <span class="c"># use PyTables read_where method</span>
+
+<span class="nd">@dispatch</span><span class="p">(</span><span class="n">Head</span><span class="p">,</span> <span class="n">tb</span><span class="o">.</span><span class="n">Table</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_one</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">t</span><span class="p">[:</span><span class="n">h</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The intention is that these are isolated enough from Blaze to be easy for new
+developers to write.</p>
+</div>
+<div class="section" id="compute-traversal">
+<h2>Compute Traversal<a class="headerlink" href="#compute-traversal" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">compute_one</span></tt> functions expect to be given:</p>
+<ol class="arabic simple">
+<li>The expression containing information about the computation to be performed</li>
+<li>The data elements corresponding to the <tt class="docutils literal"><span class="pre">.inputs</span></tt> of that expression</li>
+</ol>
+<p>The <tt class="docutils literal"><span class="pre">compute</span></tt> function orchestrates <tt class="docutils literal"><span class="pre">compute_one</span></tt> functions and performs
+the actual traversal, accruing intermediate results from the use of
+<tt class="docutils literal"><span class="pre">compute_one</span></tt>.  By default <tt class="docutils literal"><span class="pre">compute</span></tt> performs a <tt class="docutils literal"><span class="pre">bottom_up</span></tt> traversal.
+First it evaluates the leaves of the computation by swapping out keys for
+values in the input dictionary, <tt class="docutils literal"><span class="pre">{t:</span> <span class="pre">data}</span></tt>.  It then calls <tt class="docutils literal"><span class="pre">compute_one</span></tt>
+functions on these leaves to find intermediate nodes in the tree.  It repeats
+this process, walking up the tree, and at each stage translating a Blaze
+expression into the matching data element given the data elements of the
+expression&#8217;s children.  It continues this process until it reaches the root
+node, at which point it can return the result to the user.</p>
+<p>Sometimes we want to perform pre-processing or post-processing on the
+expression or the result.  For example when calling <tt class="docutils literal"><span class="pre">compute</span></tt> on a
+<tt class="docutils literal"><span class="pre">blaze.data.SQL</span></tt> object we actually want to pre-process this input to extract
+out the <tt class="docutils literal"><span class="pre">sqlalchemy.Table</span></tt> object and call <tt class="docutils literal"><span class="pre">compute_one</span></tt> on that.  When
+we&#8217;re finished and have successfully translated our Blaze expression to a
+SQLAlchemy expression we want to post-process this result by actually running
+the query in our SQL database and returning the concrete results.</p>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>
