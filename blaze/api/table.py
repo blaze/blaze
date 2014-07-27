@@ -4,9 +4,7 @@ import itertools
 
 from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
-from ..data.python import Python
 from ..dispatch import dispatch
-from ..data.core import DataDescriptor, discover
 from ..data.pandas import into, DataFrame
 from .into import into
 
@@ -58,6 +56,12 @@ class Table(TableSymbol):
         self.schema = dshape(schema)
 
         self.data = data
+
+        if hasattr(data, 'schema') and self.schema != data.schema:
+            raise TypeError('%s schema %s does not match %s schema %s' %
+                            (type(data).__name__, data.schema,
+                             type(self).__name__, self.schema))
+
         self._name = name or next(names)
         self.iscolumn = iscolumn
 
