@@ -4,7 +4,7 @@
 
 **Blaze** extends the usability of NumPy and Pandas to distributed and
 out-of-core computing.  Blaze provides an interface similar to that of the
-NumPy ND-Array or Pandas DataFrame but maps these familiar interfacess onto a
+NumPy ND-Array or Pandas DataFrame but maps these familiar interfaces onto a
 variety of other computational engines like Postgres or Spark.
 
 Example
