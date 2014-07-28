@@ -1,5 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
+import tempfile
+import pandas as pd
+
+from blaze import CSV, Table
 from blaze.expr.table import *
 from blaze.expr.core import discover
 from blaze.utils import raises
@@ -94,6 +99,14 @@ def test_selection_by_getattr():
 
     assert t.schema == result.schema
     assert 'Alice' in str(result)
+
+
+def test_different_schema_raises():
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        df = pd.DataFrame(np.random.randn(10, 2))
+        df.to_csv(f.name, index=False, header=False)
+        with pytest.raises(TypeError):
+            Table(CSV(f.name), columns=list('ab'))
 
 
 def test_getattr_doesnt_override_properties():
