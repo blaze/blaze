@@ -153,7 +153,7 @@ def compute_one(t, s, **kwargs):
     result = op(s)
 
     if isinstance(t.child.schema[0], Record):
-        name = list(t.child.schema[0].fields.keys())[0]
+        name = list(t.child.schema[0].names)[0]
         result = result.label(name)
 
     return result

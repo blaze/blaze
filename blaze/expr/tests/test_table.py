@@ -241,7 +241,7 @@ def test_reduction():
 
     assert 'amount' not in str(t.count().dshape)
 
-    assert first(t.count().dshape[0].fields.values())[0] in (int32, int64)
+    assert first(t.count().dshape[0].types)[0] in (int32, int64)
 
     assert 'int' in str(t.count().dshape)
     assert 'int' in str(t.nunique().dshape)
@@ -466,3 +466,17 @@ def test_improper_selection():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
 
     assert raises(Exception, lambda: t[t['x'] > 0][t.sort()[t['y' > 0]]])
+
+
+def test_serializable():
+    t = TableSymbol('t', '{id: int, name: string, amount: int}')
+    import pickle
+    t2 = pickle.loads(pickle.dumps(t))
+
+    assert t.isidentical(t2)
+
+    s = TableSymbol('t', '{id: int, city: string}')
+    expr = join(t[t.amount < 0], s).sort('id').city.head()
+    expr2 = pickle.loads(pickle.dumps(expr))
+
+    assert expr.isidentical(expr2)

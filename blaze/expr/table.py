@@ -38,11 +38,11 @@ class TableExpr(Expr):
     def dtype(self):
         ds = self.schema[-1]
         if isinstance(ds, Record):
-            if len(ds.fields.values()) > 1:
+            if len(ds.fields) > 1:
                 raise TypeError("`.dtype` not defined for multicolumn object. "
                                 "Use `.schema` instead")
             else:
-                return dshape(first(ds.fields.values()))
+                return dshape(first(ds.types))
         else:
             return dshape(ds)
 
@@ -164,7 +164,7 @@ class Projection(RowWise):
 
     @property
     def schema(self):
-        d = self.child.schema[0].fields
+        d = self.child.schema[0].dict
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
     def __str__(self):
@@ -618,7 +618,7 @@ class Reduction(Scalar):
     def dshape(self):
         if self.child.columns and len(self.child.columns) == 1:
             name = self.child.columns[0] + '_' + type(self).__name__
-            dtype = self.dtype or first(self.child.schema[0].fields.values()[0])
+            dtype = self.dtype or first(self.child.schema[0].types[0])
             return DataShape(Record([[name, self.dtype]]))
         else:
             return DataShape(Record([[type(self).__name__, self.dtype]]))
@@ -636,24 +636,24 @@ class sum(Reduction):
     @property
     def dtype(self):
         schema = self.child.schema[0]
-        if isinstance(schema, Record) and len(schema.fields.values()) == 1:
-            return first(schema.fields.values())
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            return first(schema.types)
         else:
             return schema
 class max(Reduction):
     @property
     def dtype(self):
         schema = self.child.schema[0]
-        if isinstance(schema, Record) and len(schema.fields.values()) == 1:
-            return first(schema.fields.values())
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            return first(schema.types)
         else:
             return schema
 class min(Reduction):
     @property
     def dtype(self):
         schema = self.child.schema[0]
-        if isinstance(schema, Record) and len(schema.fields.values()) == 1:
-            return first(schema.fields.values())
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            return first(schema.types)
         else:
             return schema
 class mean(Reduction):
@@ -817,7 +817,7 @@ class Label(RowWise, ColumnSyntaxMixin):
     @property
     def schema(self):
         if isinstance(self.child.schema[0], Record):
-            dtype = self.child.schema[0].fields.values()[0]
+            dtype = self.child.schema[0].types[0]
         else:
             dtype = self.child.schema[0]
         return DataShape(Record([[self.label, dtype]]))
@@ -838,7 +838,7 @@ class ReLabel(RowWise):
     @property
     def schema(self):
         subs = dict(self.labels)
-        d = self.child.schema[0].fields
+        d = self.child.schema[0].dict
 
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self.child.schema[0].parameters[0]]))
