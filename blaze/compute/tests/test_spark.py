@@ -233,3 +233,45 @@ def test_spark_recursive_rowfunc_is_used():
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, rdd).collect()) == set(expected)
+
+
+def test_spark_outer_join():
+    left = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    left = sc.parallelize(left)
+    right = [('NYC', 1),
+             ('Boston', 1),
+             ('LA', 3),
+             ('Moscow', 4)]
+    right = sc.parallelize(right)
+
+    L = TableSymbol('L', '{id: int, name: string, amount: real}')
+    R = TableSymbol('R', '{city: string, id: int}')
+
+    assert set(compute(join(L, R), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='left'), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='right'), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    # Full outer join not yet supported
+    """
+    assert set(compute(join(L, R, how='outer'), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+    """

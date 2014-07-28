@@ -150,6 +150,37 @@ def test_join():
     assert join(t, s, 'name') == join(t, s, 'name')
 
 
+def test_joined_column_first_in_schema():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    s = TableSymbol('s', '{w: int, y: int}')
+
+    assert join(t, s).schema == dshape('{y: int, x: int, z: int, w: int}')
+
+
+
+def test_outer_join():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    s = TableSymbol('t', '{name: string, id: int}')
+
+    jleft = join(t, s, 'name', 'name', how='left')
+    jright = join(t, s, 'name', 'name', how='right')
+    jinner = join(t, s, 'name', 'name', how='inner')
+    jouter = join(t, s, 'name', 'name', how='outer')
+
+    js = [jleft, jright, jinner, jouter]
+
+    assert len(set(js)) == 4  # not equal
+
+    assert jinner.schema == dshape('{name: string, amount: int, id: int}')
+    assert jleft.schema == dshape('{name: string, amount: int, id: ?int}')
+    assert jright.schema == dshape('{name: string, amount: ?int, id: int}')
+    assert jouter.schema == dshape('{name: string, amount: ?int, id: ?int}')
+
+    # Default behavior
+    assert join(t, s, 'name', 'name', how='inner') == \
+            join(t, s, 'name', 'name')
+
+
 def test_join_default_shared_columns():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
@@ -315,7 +346,7 @@ def test_apply():
 
 
 def test_columnwise():
-    from blaze.expr.scalar import Add, Eq, Mul
+    from blaze.expr.scalar import Add, Eq, Mult
     t = TableSymbol('t', '{x: int, y: int, z: int}')
     x = t['x']
     y = t['y']
@@ -324,7 +355,7 @@ def test_columnwise():
     assert columnwise(Add, x, y).child.isidentical(t)
 
     c1 = columnwise(Add, x, y)
-    c2 = columnwise(Mul, x, z)
+    c2 = columnwise(Mult, x, z)
 
     assert eval_str(columnwise(Eq, c1, c2).expr) == '(x + y) == (x * z)'
     assert columnwise(Eq, c1, c2).child.isidentical(t)

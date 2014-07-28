@@ -10,7 +10,7 @@ from ..core import Expr
 from ...dispatch import dispatch
 from ...compatibility import _strtypes
 from datashape import coretypes as ct
-from .boolean import *
+from .boolean import Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not, Invert
 
 
 @dispatch(ct.Date, _strtypes)
@@ -61,22 +61,22 @@ class NumberInterface(Scalar):
         return Eq(self, scalar_coerce(self.dshape, other))
 
     def __ne__(self, other):
-        return NE(self, scalar_coerce(self.dshape, other))
+        return Ne(self, scalar_coerce(self.dshape, other))
 
     def __lt__(self, other):
-        return LT(self, scalar_coerce(self.dshape, other))
+        return Lt(self, scalar_coerce(self.dshape, other))
 
     def __le__(self, other):
-        return LE(self, scalar_coerce(self.dshape, other))
+        return Le(self, scalar_coerce(self.dshape, other))
 
     def __gt__(self, other):
-        return GT(self, scalar_coerce(self.dshape, other))
+        return Gt(self, scalar_coerce(self.dshape, other))
 
     def __ge__(self, other):
-        return GE(self, scalar_coerce(self.dshape, other))
+        return Ge(self, scalar_coerce(self.dshape, other))
 
     def __neg__(self):
-        return Neg(self)
+        return USub(self)
 
     def __add__(self, other):
         return Add(self, scalar_coerce(self.dshape, other))
@@ -85,18 +85,25 @@ class NumberInterface(Scalar):
         return Add(scalar_coerce(self.dshape, other), self)
 
     def __mul__(self, other):
-        return Mul(self, scalar_coerce(self.dshape, other))
+        return Mult(self, scalar_coerce(self.dshape, other))
 
     def __rmul__(self, other):
-        return Mul(scalar_coerce(self.dshape, other), self)
+        return Mult(scalar_coerce(self.dshape, other), self)
 
     def __div__(self, other):
         return Div(self, scalar_coerce(self.dshape, other))
 
-    __truediv__ = __div__
-
     def __rdiv__(self, other):
         return Div(scalar_coerce(self.dshape, other), self)
+
+    def __floordiv__(self, other):
+        return FloorDiv(self, scalar_coerce(self.dshape, other))
+
+    def __rfloordiv__(self, other):
+        return FloorDiv(scalar_coerce(self.dshape, other), self)
+
+    __truediv__ = __div__
+    __rtruediv__ = __rdiv__
 
     def __sub__(self, other):
         return Sub(self, scalar_coerce(self.dshape, other))
@@ -134,7 +141,7 @@ class Add(Arithmetic):
     op = operator.add
 
 
-class Mul(Arithmetic):
+class Mult(Arithmetic):
     symbol = '*'
     op = operator.mul
 
@@ -149,6 +156,11 @@ class Div(Arithmetic):
     op = operator.truediv
 
 
+class FloorDiv(Arithmetic):
+    symbol = '//'
+    op = operator.floordiv
+
+
 class Pow(Arithmetic):
     symbol = '**'
     op = operator.pow
@@ -159,7 +171,7 @@ class Mod(Arithmetic):
     op = operator.mod
 
 
-class Neg(UnaryOp, Number):
+class USub(UnaryOp, Number):
     op = operator.neg
 
     def __str__(self):

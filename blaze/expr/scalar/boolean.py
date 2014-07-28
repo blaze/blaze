@@ -4,8 +4,8 @@ from .core import Scalar, BinOp, UnaryOp
 
 
 class BooleanInterface(Scalar):
-    def __not__(self):
-        return Not(self)
+    def __invert__(self):
+        return Invert(self)
 
     def __and__(self, other):
         return And(self, other)
@@ -29,27 +29,27 @@ class Eq(Relational):
     op = operator.eq
 
 
-class NE(Relational):
+class Ne(Relational):
     symbol = '!='
     op = operator.ne
 
 
-class GE(Relational):
+class Ge(Relational):
     symbol = '>='
     op = operator.ge
 
 
-class LE(Relational):
+class Le(Relational):
     symbol = '<='
     op = operator.le
 
 
-class GT(Relational):
+class Gt(Relational):
     symbol = '>'
     op = operator.gt
 
 
-class LT(Relational):
+class Lt(Relational):
     symbol = '<'
     op = operator.lt
 
@@ -65,4 +65,10 @@ class Or(BinOp, Boolean):
 
 
 class Not(UnaryOp, Boolean):
+    symbol = '~'
     op = operator.not_
+
+
+Invert = Not
+BitAnd = And
+BitOr = Or

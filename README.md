@@ -4,18 +4,64 @@
 
 **Blaze** extends the usability of NumPy and Pandas to distributed and
 out-of-core computing.  Blaze provides an interface similar to that of the
-NumPy ND-Array or Pandas DataFrame.  Blaze maps inputs from these familiar
-interfaces onto a variety of other computational engines like Postgres or
-Spark.  Blaze connects users to big computation from the comfort of an
-interactive object.
+NumPy ND-Array or Pandas DataFrame but maps these familiar interfacess onto a
+variety of other computational engines like Postgres or Spark.
 
-<p align="center" style="padding: 20px">
-<img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/numpy_plus.png">
-</p>
+Example
+-------
+
+Blaze separates the computations that we want to perform:
+
+```Python
+>>> accounts = TableSymbol('accounts',
+...                        schema='{id: int, name: string, amount: int}')
+
+>>> deadbeats = accounts[accounts['amount'] < 0]['name']
+```
+
+From the representation of data
+
+```Python
+>>> L = [[1, 'Alice',   100],
+...      [2, 'Bob',    -200],
+...      [3, 'Charlie', 300],
+...      [4, 'Denis',   400],
+...      [5, 'Edith',  -500]]
+```
+
+Blaze enables users to solve data-oriented problems
+
+```Python
+>>> list(compute(deadbeats, L))
+['Bob', 'Edith']
+```
+
+But the separation of expression from data allows us to switch between
+different backends.
+
+Here we solve the same problem using Pandas instead of Pure Python.
+
+```Python
+>>> df = DataFrame(L, columns=['id', 'name', 'amount'])
+
+>>> compute(deadbeats, df)
+1      Bob
+4    Edith
+Name: name, dtype: object
+```
+
+Blaze doesn't compute these results, Blaze intelligently drives other projects
+to compute them instead.  These projects range from simple Pure Python
+iterators to powerful distributed Spark clusters.  Blaze is built to be
+extended to new systems as they evolve.
+
+
+Usable Abstractions
+-------------------
 
 Blaze includes a rich set of computational and data primitives useful in
-building and communicating between computational systems.  Blaze can help with
-consistent and robust data migration, as well as remote execution.
+building and communicating between computational systems.  Blaze primitives can
+help with consistent and robust data migration, as well as remote execution.
 
 <p align="center" style="padding: 20px">
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/codepush.png">
@@ -31,80 +77,29 @@ distributed context.
 <img src="https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/sources.png">
 </p>
 
-Status
-------
 
-Blaze is in development.
-Take a look at the [release notes](docs/source/releases.rst).
+Getting Started
+---------------
 
-Documentation
--------------
+Development installation instructions available [here](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze).  Quick usage available [here](http://blaze.pydata.org/docs/dev/quickstart.html).
 
-Documentation is available at [blaze.pydata.org/](http://blaze.pydata.org/)
+Blaze is in development.  We reserve the right to break the API.
 
-Trying out Blaze
-----------------
-
-The easiest way to try out Blaze is through the
-[Anaconda distribution](http://continuum.io/downloads).
-
-To make sure you're running the latest released version
-of Blaze, use the
-[conda package manager](http://docs.continuum.io/conda/index.html)
-to update.
-
-```bash
-$ conda update blaze
-```
+Blaze needs your help.  Blaze needs users with interesting problems.  Blaze
+needs developers with expertise in new data formats and computational backends.
+Blaze needs core developers to tie everything together.  Please e-mail the
+[Mailing list](mailto:blaze-dev@continuum.io).
 
 Source code for the latest development version of blaze can
 be obtained [from Github](https://github.com/ContinuumIO/blaze).
 
-Dependencies
-------------
 
-The Blaze project itself is spread out over multiple projects,
-in addition to the main `blaze` repo. Other Blaze projects include the
-following:
+Documentation
+-------------
 
-  * [datashape][datashape]
-  * [dynd-python][dynd-python]
+Documentation is available at
+[blaze.pydata.org/docs/dev/](http://blaze.pydata.org/docs/dev/)
 
-Additionally, Blaze hooks into and depends on several excellent projects
-written by the general community.  See `requirements.txt` for a full list of
-dependencies.
-
-[datashape]: https://github.com/ContinuumIO/datashape
-[dynd-python]: https://github.com/ContinuumIO/dynd-python
-
-
-Installing from Source
-----------------------
-
-Install all the pre-requisites using conda or another mechanism,
-then run:
-
-```bash
-$ python setup.py install
-```
-
-Installing from Binstar.org
----------------------------
-
-If you're on a Linux or Mac OS-X platform, you can install a development
-version of Blaze (hosted on Binstar) by typing the following:
-
-```bash
-$ conda install -c mwiebe -c mrocklin blaze
-```
-
-Contributing
-------------
-
-Anyone wishing to discuss on Blaze should join the
-[blaze-dev](https://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev)
-mailing list. To get started contributing, read through the
-[Developer Workflow](docs/source/dev_workflow.rst) documentation.
 
 License
 -------

@@ -9,4 +9,4 @@ as its type system.
 * Source_
 
 .. _Source: https://github.com/ContinuumIO/datashape
-.. _Documentation: http://datashape.pydata.org/)
+.. _Documentation: http://datashape.pydata.org/

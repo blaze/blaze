@@ -25,7 +25,6 @@ from ..dispatch import dispatch
 from ..expr.table import *
 from ..expr.scalar import UnaryOp, BinOp
 from .core import compute, compute_one, base
-from . import core
 
 __all__ = ['compute_one']
 
@@ -62,7 +61,7 @@ def compute_one(t, df, **kwargs):
     return getattr(np, t.symbol)(df)
 
 
-@dispatch(Neg, (DataFrame, Series))
+@dispatch(USub, (DataFrame, Series))
 def compute_one(t, df, **kwargs):
     return -df
 
@@ -92,17 +91,9 @@ def compute_one(t, lhs, rhs, **kwargs):
     dataframe, perform the join, and then reset the index back to the left
     side's original index.
     """
-    old_left_index = lhs.index
-    old_right_index = rhs.index
-    if lhs.index.name:
-        old_left = lhs.index.name
-        rhs = lhs.reset_index()
-    if rhs.index.name:
-        rhs = rhs.reset_index()
-
-    lhs = lhs.set_index(t.on_left)
-    rhs = rhs.set_index(t.on_right)
-    result = lhs.join(rhs, how='inner')
+    result = pd.merge(lhs, rhs,
+                      left_on=t.on_left, right_on=t.on_right,
+                      how=t.how)
     return result.reset_index()[t.columns]
 
 

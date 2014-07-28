@@ -90,7 +90,9 @@ try:
     xfail = pytest.mark.xfail
     min_python_version = skipif(sys.version_info < (2, 7),
                                 reason="Python >= 2.7 required")
+    raises = pytest.raises
 except ImportError:
+    # TODO: move the above into a separate testing utils module
     pass
 
 

@@ -63,7 +63,46 @@ def discover_dialect(sample, dialect=None, **kwargs):
 
 class CSV(DataDescriptor):
     """
-    A Blaze data descriptor which exposes a CSV file.
+    Blaze data descriptor to a CSV file.
+
+    This reads in a portion of the file to discover the CSV dialect
+    (i.e delimiter, endline character, ...), the column names (from the header)
+    and the types (by looking at the values in the first 50 lines.  Often this
+    just works however for complex datasets you may have to supply more
+    metadata about your file.
+
+    For full automatic handling just specify the filename
+
+    >>> dd = CSV('myfile.csv')  # doctest: +SKIP
+
+    Standard csv parsing terms like ``delimiter`` are available as keyword
+    arguments.  See the standard ``csv`` library for more details on dialects.
+
+    >>> dd = CSV('myfile.csv', delimiter='\t') # doctest: +SKIP
+
+    If column names are not present in the header, specify them with the
+    columns keyword argument
+
+    >>> dd = CSV('myfile.csv',
+    ...          columns=['id', 'name', 'timestamp', 'value'])  # doctest: +SKIP
+
+    If a few types are not correctly discovered from the data then add additional
+    type hints.
+
+    >>> dd = CSV('myfile.csv',
+    ...          columns=['id', 'name', 'timestamp', 'value'],
+    ...          typehints={'timestamp': 'datetime'}) # doctest: +SKIP
+
+    Alternatively specify all types manually
+
+    >>> dd = CSV('myfile.csv',
+    ...          columns=['id', 'name', 'timestamp', 'value'],
+    ...          types=['int', 'string', 'datetime', 'float64'])  # doctest: +SKIP
+
+    Or specify a datashape explicitly
+
+    >>> schema = '{id: int, name: string, timestamp: datetime, value: float64}'
+    >>> dd = CSV('myfile.csv', schema=schema)  # doctest: +SKIP
 
     Parameters
     ----------
@@ -78,6 +117,11 @@ class CSV(DataDescriptor):
     header : boolean
         Whether the CSV file has a header or not.  If not specified a value
         is guessed.
+    open : context manager
+        An alternative method to open the file.
+        For examples: gzip.open, codecs.open
+    nrows_discovery : int
+        Number of rows to read when determining datashape
     """
     immutable = False
     deferred = False

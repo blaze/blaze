@@ -6,15 +6,15 @@
 from __future__ import absolute_import, division, print_function
 
 from abc import abstractproperty
-from datashape import dshape, var, DataShape, Record, isdimension
+from datashape import dshape, var, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import concat, partial, first, compose, get, unique
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
-from .scalar import (Eq, NE, LT, LE, GT, GE, Add, Mul, Div, Sub, Pow, Mod, Or,
-                     And, Neg, eval_str, Scalar)
+from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
+                     And, USub, eval_str, Scalar)
 from ..compatibility import _strtypes, builtins
 
 
@@ -190,19 +190,19 @@ class ColumnSyntaxMixin(object):
         return columnwise(Eq, self, other)
 
     def __ne__(self, other):
-        return columnwise(NE, self, other)
+        return columnwise(Ne, self, other)
 
     def __lt__(self, other):
-        return columnwise(LT, self, other)
+        return columnwise(Lt, self, other)
 
     def __le__(self, other):
-        return columnwise(LE, self, other)
+        return columnwise(Le, self, other)
 
     def __gt__(self, other):
-        return columnwise(GT, self, other)
+        return columnwise(Gt, self, other)
 
     def __ge__(self, other):
-        return columnwise(GE, self, other)
+        return columnwise(Ge, self, other)
 
     def __add__(self, other):
         return columnwise(Add, self, other)
@@ -211,16 +211,22 @@ class ColumnSyntaxMixin(object):
         return columnwise(Add, other, self)
 
     def __mul__(self, other):
-        return columnwise(Mul, self, other)
+        return columnwise(Mult, self, other)
 
     def __rmul__(self, other):
-        return columnwise(Mul, other, self)
+        return columnwise(Mult, other, self)
 
     def __div__(self, other):
         return columnwise(Div, self, other)
 
     __truediv__ = __div__
     __rtruediv__ = __truediv__
+
+    def __floordiv__(self, other):
+        return columnwise(FloorDiv, self, other)
+
+    def __rfloordiv__(self, other):
+        return columnwise(FloorDiv, other, self)
 
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
@@ -256,7 +262,7 @@ class ColumnSyntaxMixin(object):
         return columnwise(And, other, self)
 
     def __neg__(self):
-        return columnwise(Neg, self)
+        return columnwise(USub, self)
 
     def label(self, label):
         return Label(self, label)
@@ -384,7 +390,7 @@ def columnwise(op, *column_inputs):
 
     Parameters
     ----------
-    op - Scalar Operation like Add, Mul, Sin, Exp
+    op - Scalar Operation like Add, Mult, Sin, Exp
     column_inputs - either Column, ColumnWise or constant (like 1, 1.0, '1')
 
     >>> accounts = TableSymbol('accounts',
@@ -395,7 +401,7 @@ def columnwise(op, *column_inputs):
 
     Fuses operations down into ScalarExpr level
 
-    >>> columnwise(Mul, 2, (accounts['amount'] + 100))
+    >>> columnwise(Mult, 2, (accounts['amount'] + 100))
     2 * (accounts['amount'] + 100)
     """
     expr_inputs = []
@@ -483,7 +489,7 @@ class Join(TableExpr):
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
     """
-    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
+    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'
 
     iscolumn = False
@@ -504,14 +510,37 @@ class Join(TableExpr):
 
     @property
     def schema(self):
-        rec1 = self.lhs.schema[0]
-        rec2 = self.rhs.schema[0]
+        """
 
-        rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
-        return dshape(Record(rec))
+        >>> t = TableSymbol('t', '{name: string, amount: int}')
+        >>> s = TableSymbol('t', '{name: string, id: int}')
+
+        >>> join(t, s).schema
+        dshape("{ name : string, amount : int32, id : int32 }")
+
+        >>> join(t, s, how='left').schema
+        dshape("{ name : string, amount : int32, id : ?int32 }")
+        """
+        option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
+
+        joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                        if name in self.on_left]
+
+        left = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                           if name not in self.on_left]
+
+        right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
+                            if name not in self.on_right]
+
+        if self.how in ('right', 'outer'):
+            left = [[name, option(dt)] for name, dt in left]
+        if self.how in ('left', 'outer'):
+            right = [[name, option(dt)] for name, dt in right]
+
+        return dshape(Record(joined + left + right))
 
 
-def join(lhs, rhs, on_left=None, on_right=None):
+def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
             set(lhs.columns) & set(rhs.columns),
@@ -528,7 +557,13 @@ def join(lhs, rhs, on_left=None, on_right=None):
     _on_right = (tuple(on_right) if isinstance(on_right, list)
                         else on_right)
 
-    return Join(lhs, rhs, _on_left, _on_right)
+    how = how.lower()
+    if how not in ('inner', 'outer', 'left', 'right'):
+        raise ValueError("How parameter should be one of "
+                         "\n\tinner, outer, left, right."
+                         "\nGot: %s" % how)
+
+    return Join(lhs, rhs, _on_left, _on_right, how)
 
 
 join.__doc__ = Join.__doc__

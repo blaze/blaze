@@ -27,7 +27,6 @@ from ..expr.table import *
 from ..expr.scalar import BinOp, UnaryOp
 from ..compatibility import reduce
 from ..utils import unique
-from . import core
 from .core import compute_one, compute, base
 
 __all__ = ['compute', 'compute_one', 'computefull', 'select']
@@ -75,7 +74,7 @@ def compute_one(t, s, **kwargs):
     return op(s)
 
 
-@dispatch(Neg, (sa.Column, Selectable))
+@dispatch(USub, (sa.Column, Selectable))
 def compute_one(t, s, **kwargs):
     return -s
 
@@ -119,10 +118,22 @@ def compute_one(t, lhs, rhs, **kwargs):
     condition = reduce(and_, [getattr(lhs.c, l) == getattr(rhs.c, r)
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
-    join = lhs.join(rhs, condition)
+    if t.how == 'inner':
+        join = lhs.join(rhs, condition)
+        main, other = lhs, rhs
+    elif t.how == 'left':
+        join = lhs.join(rhs, condition, isouter=True)
+        main, other = lhs, rhs
+    elif t.how == 'right':
+        join = rhs.join(lhs, condition, isouter=True)
+        main, other = rhs, lhs
+    else:
+        # http://stackoverflow.com/questions/20361017/sqlalchemy-full-outer-join
+        raise NotImplementedError("SQLAlchemy doesn't support full outer Join")
 
-    columns = unique(join.columns,
+    columns = unique(list(main.columns) + list(other.columns),
                      key=lambda c: c.name)
+    columns = sorted(columns, key=lambda c: t.columns.index(c.name))
     return select(list(columns)).select_from(join)
 
 
