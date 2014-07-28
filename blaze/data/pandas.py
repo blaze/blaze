@@ -14,7 +14,7 @@ def into(a, b):
     del dialect['lineterminator']
     dates = [i for i, typ in enumerate(b.schema[0].types)
                if 'date' in str(typ)]
-    dtypes = valmap(to_numpy_dtype, b.schema[0].fields)
+    dtypes = valmap(to_numpy_dtype, b.schema[0].dict)
     return pd.read_csv(b.path,
                        names=b.columns,
                        parse_dates=dates,

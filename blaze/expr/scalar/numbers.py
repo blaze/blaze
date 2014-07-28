@@ -32,7 +32,7 @@ def scalar_coerce(dt, val):
 @dispatch(ct.Record, object)
 def scalar_coerce(rec, val):
     if len(rec.fields) == 1:
-        return scalar_coerce(first(rec.fields.values()), val)
+        return scalar_coerce(first(rec.types), val)
     else:
         raise TypeError("Trying to coerce complex datashape\n"
                 "got dshape: %s\n"
