@@ -231,6 +231,7 @@ def test_scalar_coerce():
         scalar_coerce('3 * int', '1')
 
     assert scalar_coerce('date', 'Jan 1st, 2012') == date(2012, 1, 1)
+
     assert (scalar_coerce('datetime', 'Jan 1st, 2012 12:00:00') ==
             datetime(2012, 1, 1, 12, 0, 0))
 
