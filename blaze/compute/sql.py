@@ -134,7 +134,6 @@ def compute_one(t, lhs, rhs, **kwargs):
     columns = unique(list(main.columns) + list(other.columns),
                      key=lambda c: c.name)
     columns = sorted(columns, key=lambda c: t.columns.index(c.name))
-    print(columns)
     return select(list(columns)).select_from(join)
 
 
