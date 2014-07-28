@@ -417,7 +417,11 @@ def columnwise(op, *column_inputs):
                          "Saw the following tables: %s"
                          % ', '.join(map(str, children)))
 
-    expr = op(*expr_inputs)
+    if hasattr(op, 'op'):
+        expr = op.op(*expr_inputs)
+    else:
+        expr = op(*expr_inputs)
+
     return ColumnWise(first(children), expr)
 
 
