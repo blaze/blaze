@@ -3,8 +3,7 @@ from __future__ import absolute_import, division, print_function
 import sys
 
 from blaze.expr.scalar import (ScalarSymbol, scalar_coerce, Mult, eval_str,
-                               Add, dshape, sin, exprify, cos, isnan, exp, log,
-                               Scalar)
+                               Add, dshape, sin, exprify, cos, isnan, exp, log)
 from blaze.compatibility import xfail, basestring, raises
 from datetime import date, datetime
 
@@ -238,9 +237,3 @@ def test_scalar_coerce():
 
     with raises(ValueError):
         scalar_coerce('date', 'Jan 1st, 2012 12:00:00')
-
-
-def test_scalar_construction():
-    s = Scalar()
-    t = Scalar()
-    assert s.isidentical(t)
