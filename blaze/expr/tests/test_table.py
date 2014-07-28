@@ -1,10 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
+import tempfile
+import pandas as pd
+
+from blaze import CSV, Table
 from blaze.expr.table import *
 from blaze.expr.core import discover
 from blaze.utils import raises
 from datashape import dshape, var, int32, int64
 from toolz import identity
+import numpy as np
 
 
 def test_dshape():
@@ -94,6 +100,14 @@ def test_selection_by_getattr():
 
     assert t.schema == result.schema
     assert 'Alice' in str(result)
+
+
+def test_different_schema_raises():
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        df = pd.DataFrame(np.random.randn(10, 2))
+        df.to_csv(f.name, index=False, header=False)
+        with pytest.raises(TypeError):
+            Table(CSV(f.name), columns=list('ab'))
 
 
 def test_getattr_doesnt_override_properties():
@@ -228,7 +242,7 @@ def test_reduction():
 
     assert 'amount' not in str(t.count().dshape)
 
-    assert first(t.count().dshape[0].fields.values())[0] in (int32, int64)
+    assert first(t.count().dshape[0].types)[0] in (int32, int64)
 
     assert 'int' in str(t.count().dshape)
     assert 'int' in str(t.nunique().dshape)
@@ -453,3 +467,17 @@ def test_improper_selection():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
 
     assert raises(Exception, lambda: t[t['x'] > 0][t.sort()[t['y' > 0]]])
+
+
+def test_serializable():
+    t = TableSymbol('t', '{id: int, name: string, amount: int}')
+    import pickle
+    t2 = pickle.loads(pickle.dumps(t))
+
+    assert t.isidentical(t2)
+
+    s = TableSymbol('t', '{id: int, city: string}')
+    expr = join(t[t.amount < 0], s).sort('id').city.head()
+    expr2 = pickle.loads(pickle.dumps(expr))
+
+    assert expr.isidentical(expr2)

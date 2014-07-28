@@ -77,6 +77,12 @@ class Expr(object):
     def __contains__(self, other):
         return other in set(self.subterms())
 
+    def __getstate__(self):
+        return self.args
+
+    def __setstate__(self, state):
+        self.__init__(*state)
+
 
 def subs(o, d):
     """ Substitute values within data structure
