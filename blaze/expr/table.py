@@ -60,9 +60,6 @@ class TableExpr(Expr):
         raise TypeError("Did not understand input: %s[%s]" % (self, key))
 
     def __getattr__(self, key):
-        print(type(self))
-        print(key)
-
         if key in self.columns:
             return self[key]
         return object.__getattribute__(self, key)
