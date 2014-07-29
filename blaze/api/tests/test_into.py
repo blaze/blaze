@@ -45,6 +45,7 @@ class Test_into(unittest.TestCase):
 
     def test_numpy(self):
         assert (into(np.array(0), [1, 2]) == np.array([1, 2])).all()
+        assert (into(np.array(0), iter([1, 2])) == np.array([1, 2])).all()
         self.assertEqual(into([], np.array([1, 2])),
                          [1, 2])
 

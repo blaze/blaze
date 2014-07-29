@@ -52,6 +52,10 @@ def into(a, b):
 def into(a, b):
     return nd.as_numpy(b, allow_copy=True)
 
+@dispatch(np.ndarray, Iterator)
+def into(a, b):
+    return np.asarray(list(b))
+
 @dispatch(np.ndarray, Iterable)
 def into(a, b):
     return np.asarray(b)
