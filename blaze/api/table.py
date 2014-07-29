@@ -1,11 +1,12 @@
 
 from datashape import discover, Tuple, Record, dshape, Fixed
+from pandas import DataFrame, Series
 import itertools
 
 from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
-from ..data.pandas import into, DataFrame
+from ..data.pandas import into
 from .into import into
 
 names = ('_%d' % i for i in itertools.count(1))
@@ -87,25 +88,41 @@ def compute(expr):
         return compute(expr, resources)
 
 
-def table_repr(expr, n=10):
+def concrete_head(expr, n=10):
+    """ Return head of computed expression """
     if not expr.resources():
-        return str(expr)
+        raise ValueError("Expression does not contain data resources")
     if isinstance(expr, TableExpr):
         head = expr.head(n + 1)
         result = compute(head)
 
         if expr.columns:
-            df = into(DataFrame(columns=expr.columns), result)
+            return into(DataFrame(columns=expr.columns), result)
         else:
-            df = into(DataFrame, result)
-        s = repr(df)
-        if len(df) > 10:
-            df = df[:10]
-            s = '\n'.join(s.split('\n')[:-1]) + '\n...'
-        return s
-
+            return into(DataFrame, result)
     else:
         return repr(compute(expr))
+
+
+def table_repr(expr, n=10):
+    if not expr.resources():
+        return str(expr)
+
+    result = concrete_head(expr, n)
+
+    if isinstance(result, (DataFrame, Series)):
+        s = repr(result)
+        if len(result) > 10:
+            result = result[:10]
+            s = '\n'.join(s.split('\n')[:-1]) + '\n...'
+        return s
+    else:
+        return repr(result)
+
+
+def table_html(expr, n=10):
+    return concrete_head(expr).to_html()
+
 
 
 @dispatch((type, object), TableExpr)
@@ -118,3 +135,5 @@ def into(a, b):
     return into(DataFrame(columns=b.columns), compute(b))
 
 Expr.__repr__ = table_repr
+TableExpr.to_html = table_html
+TableExpr._repr_html_ = table_html
