@@ -123,12 +123,6 @@ class CSV(DataDescriptor):
     nrows_discovery : int
         Number of rows to read when determining datashape
     """
-    immutable = False
-    deferred = False
-    persistent = True
-    appendable = True
-    remote = False
-
     def __init__(self, path, mode='rt',
             schema=None, columns=None, types=None, typehints=None,
             dialect=None, header=None, open=open, nrows_discovery=50,
