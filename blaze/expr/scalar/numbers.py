@@ -13,6 +13,13 @@ from datashape import coretypes as ct
 from .boolean import Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not, Invert
 
 
+@dispatch(ct.Option, object)
+def scalar_coerce(ds, val):
+    if val:
+        return scalar_coerce(ds.ty, val)
+    else:
+        return None
+
 @dispatch(ct.Date, _strtypes)
 def scalar_coerce(_, val):
     dt = dt_parse(val)

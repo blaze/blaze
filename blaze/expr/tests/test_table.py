@@ -481,3 +481,11 @@ def test_serializable():
     expr2 = pickle.loads(pickle.dumps(expr))
 
     assert expr.isidentical(expr2)
+
+
+def test_table_coercion():
+    from datetime import date
+    t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
+    assert (t.amount + '10').expr.rhs == 10
+
+    assert (t.timestamp < '2014-12-01').expr.rhs == date(2014, 12, 1)
