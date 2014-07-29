@@ -115,8 +115,6 @@ def into(a, b):
 
 @dispatch(DataFrame, TableExpr)
 def into(a, b):
-    columns = b.columns
-    return into(DataFrame(columns=columns), compute(b))
-
+    return into(DataFrame(columns=b.columns), compute(b))
 
 Expr.__repr__ = table_repr

@@ -84,3 +84,8 @@ def test_dataframe_backed_repr_complex():
                       columns=['id', 'name', 'balance'])
     t = Table(df)
     repr(t[t['balance'] < 0])
+
+
+def test_into():
+    from blaze.api.into import into
+    assert into([], t) == into([], data)
