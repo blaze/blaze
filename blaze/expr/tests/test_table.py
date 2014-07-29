@@ -10,6 +10,7 @@ from blaze.expr.core import discover
 from blaze.utils import raises
 from datashape import dshape, var, int32, int64
 from toolz import identity
+import numpy as np
 
 
 def test_dshape():

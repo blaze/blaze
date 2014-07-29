@@ -4,7 +4,7 @@ import toolz
 
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'Scalar', 'discover']
+__all__ = ['Expr', 'discover']
 
 
 def _str(s):
@@ -128,10 +128,6 @@ def _subs(o, d):
     'Hello'
     """
     return o
-
-
-class Scalar(Expr):
-    pass
 
 
 @dispatch(Expr)

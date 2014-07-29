@@ -41,47 +41,18 @@ import itertools
 
 
 PY2 = sys.version_info[0] == 2
+from toolz.compatibility import map, zip, range, reduce
 
 if PY2:
-    import __builtin__
-    def dict_iteritems(d):
-        return d.iteritems()
-    xrange = __builtin__.xrange
-    from itertools import izip
-    unicode = __builtin__.unicode
-    basestring = __builtin__.basestring
-    reduce = __builtin__.reduce
-
     _strtypes = (str, unicode)
-
     _inttypes = (int, long)
-    map = itertools.imap
-    import urlparse
-    def exec_(_code_, _globs_=None, _locs_=None):
-        """Execute code in a namespace."""
-        if _globs_ is None:
-            frame = sys._getframe(1)
-            _globs_ = frame.f_globals
-            if _locs_ is None:
-                _locs_ = frame.f_locals
-            del frame
-        elif _locs_ is None:
-            _locs_ = _globs_
-        exec("""exec _code_ in _globs_, _locs_""")
+    unicode = unicode
+    basestring = basestring
 else:
-    def dict_iteritems(d):
-        return d.items().__iter__()
-    xrange = range
-    izip = zip
     _inttypes = (int,)
     _strtypes = (str,)
     unicode = str
-    map = map
     basestring = str
-    import urllib.parse as urlparse
-    from functools import reduce
-    import builtins
-    exec_ = getattr(builtins, "exec")
 
 
 try:

@@ -44,7 +44,6 @@ class BinOp(Scalar):
         lhs = parenthesize(eval_str(self.lhs))
         rhs = parenthesize(eval_str(self.rhs))
         return '%s %s %s' % (lhs, self.symbol, rhs)
-        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
 
 
 class UnaryOp(Scalar):
