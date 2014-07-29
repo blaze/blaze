@@ -406,3 +406,7 @@ def test_by_groupby_deep():
     result = set(compute(expr, data))
     assert result == set([('Alice', 1.5), ('Bob', 1.0)])
 
+
+def test_by_then_sort_dict_items_sequence():
+    expr = by(tbig, tbig.name, tbig.amount.sum()).sort('name')
+    assert compute(expr, databig)

@@ -37,7 +37,7 @@ from math import *
 
 __all__ = ['compute', 'compute_one', 'Sequence', 'rowfunc', 'rrowfunc']
 
-Sequence = (tuple, list, Iterator)
+Sequence = (tuple, list, Iterator, type(dict().items()))
 
 
 def recursive_rowfunc(t, stop):
