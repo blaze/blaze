@@ -152,10 +152,6 @@ class SQL(DataDescriptor):
         The datashape/schema of the database
         Possibly a list of SQLAlchemy columns
     """
-    immutable = False
-    deferred = False
-    appendable = True
-
     @property
     def remote(self):
         return self.engine.dialect.name != 'sqlite'

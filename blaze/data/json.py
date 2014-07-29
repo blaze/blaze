@@ -29,12 +29,6 @@ class JSON(DataDescriptor):
         A datashape (or its string representation) of the schema
         in the JSON file.
     """
-    immutable = True
-    deferred = False
-    persistent = True
-    appendable = False
-    remote = False
-
     def __init__(self, path, mode='rt', schema=None, dshape=None, open=open):
         self.path = path
         self.mode = mode
