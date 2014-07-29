@@ -66,6 +66,11 @@ try:
 except ImportError:
     Python = None
 
+try:
+    from bokeh.objects import ColumnDataSource
+except ImportError:
+    ColumnDataSource = None
+
 
 @skip_if_not(DataFrame and Python)
 def test_pandas_data_descriptor():
@@ -155,3 +160,27 @@ def test_discover_pandas():
     result = into(nd.array, df)
 
     assert nd.as_py(result, tuple=True) == data
+
+
+@skip_if_not(DataFrame and ColumnDataSource)
+def test_Column_data_source():
+    data = [('Alice', 100), ('Bob', 200)]
+    df = DataFrame(data, columns=['name', 'balance'])
+
+    cds = into(ColumnDataSource(), df)
+
+    assert isinstance(cds, ColumnDataSource)
+    assert set(cds.column_names) == set(df.columns)
+    assert str(into(DataFrame(), cds)['name']) == str(df['name'])
+
+
+@skip_if_not(DataFrame and ColumnDataSource)
+def test_Column_data_source():
+    data = [('Alice', 100), ('Bob', 200)]
+    df = DataFrame(data, columns=['name', 'balance'])
+
+    cds = into(ColumnDataSource(), df)
+
+    assert isinstance(cds, ColumnDataSource)
+    assert set(cds.column_names) == set(df.columns)
+    assert str(into(DataFrame(), cds)['name']) == str(df['name'])

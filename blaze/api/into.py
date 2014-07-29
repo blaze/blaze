@@ -124,3 +124,20 @@ def discover(df):
     dtypes = [datashape.string if dt == obj else dt for dt in dtypes]
     schema = Record(list(zip(names, dtypes)))
     return len(df) * schema
+
+
+try:
+    from bokeh.objects import ColumnDataSource
+    from blaze.expr.table import TableExpr
+
+    @dispatch(ColumnDataSource, (TableExpr, DataFrame))
+    def into(cds, t):
+        return ColumnDataSource(data=dict((col, into(np.ndarray, t[col]))
+                                          for col in t.columns))
+
+    @dispatch(DataFrame, ColumnDataSource)
+    def into(df, cds):
+        return cds.to_df()
+
+except ImportError:
+    pass
