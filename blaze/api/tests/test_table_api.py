@@ -96,3 +96,12 @@ def test_to_html():
 def test_into():
     from blaze.api.into import into
     assert into([], t) == into([], data)
+
+
+def test_serialization():
+    import pickle
+    t2 = pickle.loads(pickle.dumps(t))
+
+    assert t.schema == t2.schema
+    assert t._name == t2._name
+    assert t.iscolumn == t2.iscolumn

@@ -73,6 +73,10 @@ class Table(TableSymbol):
     def args(self):
         return (id(self.data), self.schema, self._name, self.iscolumn)
 
+    def __setstate__(self, state):
+        for slot, arg in zip(self.__slots__, state):
+            setattr(self, slot, arg)
+
 
 @dispatch(Table, dict)
 def _subs(o, d):
