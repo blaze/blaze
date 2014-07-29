@@ -89,10 +89,8 @@ def test_dataframe_backed_repr_complex():
 def test_to_html():
     s = t.to_html()
     assert s
-    print(s)
     assert 'Alice' in s
     assert '<table' in s
-
 
 
 def test_into():

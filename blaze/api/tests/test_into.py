@@ -6,6 +6,7 @@ from datashape import dshape
 
 from blaze.api.into import into, discover
 import blaze
+from blaze import Table
 
 
 def skip(test_foo):
@@ -162,25 +163,12 @@ def test_discover_pandas():
     assert nd.as_py(result, tuple=True) == data
 
 
-@skip_if_not(DataFrame and ColumnDataSource)
+@skip_if_not(Table and ColumnDataSource)
 def test_Column_data_source():
     data = [('Alice', 100), ('Bob', 200)]
-    df = DataFrame(data, columns=['name', 'balance'])
+    t = Table(data, columns=['name', 'balance'])
 
-    cds = into(ColumnDataSource(), df)
-
-    assert isinstance(cds, ColumnDataSource)
-    assert set(cds.column_names) == set(df.columns)
-    assert str(into(DataFrame(), cds)['name']) == str(df['name'])
-
-
-@skip_if_not(DataFrame and ColumnDataSource)
-def test_Column_data_source():
-    data = [('Alice', 100), ('Bob', 200)]
-    df = DataFrame(data, columns=['name', 'balance'])
-
-    cds = into(ColumnDataSource(), df)
+    cds = into(ColumnDataSource(), t)
 
     assert isinstance(cds, ColumnDataSource)
-    assert set(cds.column_names) == set(df.columns)
-    assert str(into(DataFrame(), cds)['name']) == str(df['name'])
+    assert set(cds.column_names) == set(t.columns)
