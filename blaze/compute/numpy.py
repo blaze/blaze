@@ -116,3 +116,11 @@ def compute_one(t, x, **kwargs):
 @dispatch(Selection, np.ndarray)
 def compute_one(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel.child: x})]
+
+
+@dispatch(TableExpr, np.ndarray)
+def compute_one(t, x, **kwargs):
+    from blaze.api.into import into
+    from pandas import DataFrame
+    df = into(DataFrame(columns=t.child.columns), x)
+    return compute_one(t, df, **kwargs)
