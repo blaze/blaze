@@ -71,7 +71,10 @@ def into(a, b):
 
 @dispatch(DataFrame, np.ndarray)
 def into(df, x):
-    columns = df.columns or x.dtype.names
+    if len(df.columns) > 0:
+        columns = list(df.columns)
+    else:
+        columns = list(x.dtype.names)
     return DataFrame(x, columns=columns)
 
 @dispatch(list, DataFrame)
