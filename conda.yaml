@@ -1,6 +1,6 @@
 package:
     name: blaze
-    version: "0.5.1"
+    version: "0.6.0"
 
 build:
     number: {{environ.get('BINSTAR_BUILD', 1)}}
