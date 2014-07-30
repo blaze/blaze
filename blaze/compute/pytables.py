@@ -12,11 +12,11 @@ def discover(t):
 
 
 @dispatch(Selection, tb.Table)
-def compute_one(sel, t):
-    s = eval_str(sel.predicate)
+def compute_one(sel, t, **kwargs):
+    s = eval_str(sel.predicate.expr)
     return t.read_where(s)
 
 
 @dispatch(Head, tb.Table)
-def compute_one(h, t):
+def compute_one(h, t, **kwargs):
     return t[:h.n]
