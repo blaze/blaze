@@ -104,6 +104,12 @@ class TableExpr(Expr):
     def nunique(self):
         return nunique(self)
 
+    def min(self):
+        return min(self)
+
+    def max(self):
+        return max(self)
+
     @property
     def iscolumn(self):
         if len(self.columns) > 1:
@@ -269,12 +275,6 @@ class ColumnSyntaxMixin(object):
 
     def sum(self):
         return sum(self)
-
-    def min(self):
-        return min(self)
-
-    def max(self):
-        return max(self)
 
     def any(self):
         return any(self)

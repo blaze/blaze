@@ -84,3 +84,24 @@ def test_dataframe_backed_repr_complex():
                       columns=['id', 'name', 'balance'])
     t = Table(df)
     repr(t[t['balance'] < 0])
+
+
+def test_to_html():
+    s = t.to_html()
+    assert s
+    assert 'Alice' in s
+    assert '<table' in s
+
+
+def test_into():
+    from blaze.api.into import into
+    assert into([], t) == into([], data)
+
+
+def test_serialization():
+    import pickle
+    t2 = pickle.loads(pickle.dumps(t))
+
+    assert t.schema == t2.schema
+    assert t._name == t2._name
+    assert t.iscolumn == t2.iscolumn

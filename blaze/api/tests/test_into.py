@@ -6,6 +6,7 @@ from datashape import dshape
 
 from blaze.api.into import into, discover
 import blaze
+from blaze import Table
 
 
 def skip(test_foo):
@@ -45,6 +46,7 @@ class Test_into(unittest.TestCase):
 
     def test_numpy(self):
         assert (into(np.array(0), [1, 2]) == np.array([1, 2])).all()
+        assert (into(np.array(0), iter([1, 2])) == np.array([1, 2])).all()
         self.assertEqual(into([], np.array([1, 2])),
                          [1, 2])
 
@@ -64,6 +66,11 @@ try:
     from blaze.data.python import Python
 except ImportError:
     Python = None
+
+try:
+    from bokeh.objects import ColumnDataSource
+except ImportError:
+    ColumnDataSource = None
 
 
 @skip_if_not(DataFrame and Python)
@@ -154,3 +161,14 @@ def test_discover_pandas():
     result = into(nd.array, df)
 
     assert nd.as_py(result, tuple=True) == data
+
+
+@skip_if_not(Table and ColumnDataSource)
+def test_Column_data_source():
+    data = [('Alice', 100), ('Bob', 200)]
+    t = Table(data, columns=['name', 'balance'])
+
+    cds = into(ColumnDataSource(), t)
+
+    assert isinstance(cds, ColumnDataSource)
+    assert set(cds.column_names) == set(t.columns)

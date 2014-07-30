@@ -8,3 +8,8 @@ from .dispatch import dispatch
 @dispatch(_strtypes, RDD)
 def coerce(dshape, rdd):
     return rdd.mapPartitions(partial(coerce, dshape))
+
+
+@dispatch((type, object), RDD)
+def into(o, rdd):
+    return into(o, rdd.collect())
