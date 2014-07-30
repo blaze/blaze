@@ -22,6 +22,10 @@ try:
     from .spark import *
 except ImportError:
     pass
+try:
+    from .compute.pytables import *
+except ImportError:
+    pass
 
 
 logging.basicConfig()
