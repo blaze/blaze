@@ -12,6 +12,12 @@ __all__ = ['compute', 'compute_one']
 base = (int, float, str, bool, date, datetime)
 
 
+@dispatch(object, object)
+def compute_one(a, b, **kwargs):
+    raise NotImplementedError("Blaze does not know how to compute "
+                              "expression of type `%s` on data of type `%s`"
+                              % (type(a).__name__, type(b).__name__))
+
 @dispatch(base)
 def compute_one(a, **kwargs):
     return a
