@@ -124,9 +124,15 @@ def table_repr(expr, n=10):
         return repr(result)
 
 
+def expr_repr(expr):
+    if not expr.resources():
+        return str(expr)
+    else:
+        return str(compute(expr))
+
+
 def table_html(expr, n=10):
     return concrete_head(expr).to_html()
-
 
 
 @dispatch((type, object), TableExpr)
@@ -138,6 +144,7 @@ def into(a, b):
 def into(a, b):
     return into(DataFrame(columns=b.columns), compute(b))
 
-Expr.__repr__ = table_repr
+Expr.__repr__ = expr_repr
+TableExpr.__repr__ = table_repr
 TableExpr.to_html = table_html
 TableExpr._repr_html_ = table_html
