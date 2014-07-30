@@ -112,7 +112,7 @@ def test_pandas_numpy():
     expected = DataFrame(data, columns=['name', 'amount'])
     assert str(result) == str(expected)
 
-    result = into(DataFrame(['name', 'amount']), x)
+    result = into(DataFrame(columns=['name', 'amount']), x)
     expected = DataFrame(data, columns=['name', 'amount'])
     print(result)
     print(expected)
