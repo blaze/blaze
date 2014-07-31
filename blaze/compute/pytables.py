@@ -20,3 +20,8 @@ def compute_one(sel, t, **kwargs):
 @dispatch(Head, tb.Table)
 def compute_one(h, t, **kwargs):
     return t[:h.n]
+
+
+@dispatch(Column, tb.Table)
+def compute_one(c, t, **kwargs):
+    return t.col(c.column)
