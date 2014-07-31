@@ -31,6 +31,14 @@ try:
     from .compute.pytables import *
 except ImportError:
     pass
+try:
+    from .compute.blz import *
+except ImportError:
+    pass
+try:
+    from .compute.bcolz import *
+except ImportError:
+    pass
 
 restart_ordering() # Restart multipledispatch ordering and do ordering
 
