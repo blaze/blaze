@@ -4,6 +4,11 @@ import logging
 
 from dynd import nd
 from pandas import DataFrame
+
+from multipledispatch import halt_ordering, restart_ordering
+
+halt_ordering() # Turn off multipledispatch ordering
+
 from .expr.table import *
 from .api import *
 from .data.csv import *
@@ -27,6 +32,7 @@ try:
 except ImportError:
     pass
 
+restart_ordering() # Restart multipledispatch ordering and do ordering
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
