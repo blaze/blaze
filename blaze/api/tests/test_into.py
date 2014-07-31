@@ -102,6 +102,24 @@ def test_pandas_dynd():
 
 
 @skip_if_not(DataFrame)
+def test_pandas_numpy():
+    data = [('Alice', 100), ('Bob', 200)]
+    dtype=[('name', 'O'), ('amount', int)]
+
+    x = np.array(data, dtype=dtype)
+
+    result = into(DataFrame(), x)
+    expected = DataFrame(data, columns=['name', 'amount'])
+    assert str(result) == str(expected)
+
+    result = into(DataFrame(columns=['name', 'amount']), x)
+    expected = DataFrame(data, columns=['name', 'amount'])
+    print(result)
+    print(expected)
+    assert str(result) == str(expected)
+
+
+@skip_if_not(DataFrame)
 def test_pandas_seq():
     assert str(into(DataFrame, [1, 2])) == \
             str(DataFrame([1, 2]))
@@ -161,6 +179,14 @@ def test_discover_pandas():
     result = into(nd.array, df)
 
     assert nd.as_py(result, tuple=True) == data
+
+@skip_if_not(Table and DataFrame)
+def test_into_table_dataframe():
+    data = [['Alice', 100], ['Bob', 200]]
+    t = Table(data, columns=['name', 'amount'])
+
+    assert list(into(DataFrame(), t).columns) == list(t.columns)
+    assert into([], into(DataFrame(), t)) == data
 
 
 @skip_if_not(Table and ColumnDataSource)

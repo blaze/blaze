@@ -69,11 +69,17 @@ from blaze.data import DataDescriptor
 def into(a, b):
     return DataFrame(list(b), columns=b.columns)
 
-
 @dispatch(DataFrame, np.ndarray)
 def into(df, x):
-    return DataFrame(x)
+    if len(df.columns) > 0:
+        columns = list(df.columns)
+    else:
+        columns = list(x.dtype.names)
+    return DataFrame(x, columns=columns)
 
+@dispatch(list, DataFrame)
+def into(_, df):
+    return np.asarray(df).tolist()
 
 @dispatch(DataFrame, nd.array)
 def into(a, b):
