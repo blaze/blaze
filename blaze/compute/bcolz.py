@@ -32,6 +32,11 @@ def compute_one(p, t, **kwargs):
     return t[p.columns]
 
 
+@dispatch(sum, bcolz.ctable)
+def compute_one(expr, t, **kwargs):
+    return t.sum()
+
+
 @dispatch(count, bcolz.ctable)
 def compute_one(c, t):
     return len(t)
