@@ -14,7 +14,7 @@ from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, eval_str, Scalar)
+                     And, USub, eval_str, Scalar, FloorDiv)
 from ..compatibility import _strtypes, builtins
 
 
