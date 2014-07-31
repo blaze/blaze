@@ -38,7 +38,7 @@ def compute_one(expr, t, **kwargs):
 
 
 @dispatch(count, bcolz.ctable)
-def compute_one(c, t):
+def compute_one(c, t, **kwargs):
     return len(t)
 
 
