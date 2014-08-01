@@ -6,6 +6,8 @@ from collections import Iterator
 import pymongo
 from toolz import take, concat, partition_all
 from pymongo.collection import Collection
+from .data.core import DataDescriptor
+import copy
 
 
 @dispatch(Collection)
@@ -32,6 +34,7 @@ def into(coll, seq, columns=None, schema=None, chunksize=1024):
     seq = iter(seq)
     item = next(seq)
     seq = concat([[item], seq])
+
     if isinstance(item, (tuple, list)):
         if not columns and schema:
             columns = dshape(schema)[0].names
@@ -41,7 +44,7 @@ def into(coll, seq, columns=None, schema=None, chunksize=1024):
         seq = (dict(zip(columns, item)) for item in seq)
 
     for block in partition_all(1024, seq):
-        coll.insert(block)
+        coll.insert(copy.deepcopy(block))
 
     return coll
 

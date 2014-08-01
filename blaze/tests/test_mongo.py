@@ -15,10 +15,8 @@ def collection(data=[]):
 
     try:
         yield coll
-    except:
-        pass
-
-    coll.drop()
+    finally:
+        coll.drop()
 
 
 bank = [{'name': 'Alice', 'amount': 100},
@@ -29,9 +27,9 @@ bank = [{'name': 'Alice', 'amount': 100},
 
 def test_discover():
     with collection(bank) as coll:
-        assert discover(coll) == dshape('5 * {name: string, amount: int32}')
+        assert discover(coll) == dshape('5 * {amount: int64, name: string}')
 
 
 def test_into():
     with collection([]) as coll:
-        assert into([], into(coll, bank)) == bank
+        assert sorted(into([], into(coll, bank))) == sorted(bank)
