@@ -7,6 +7,7 @@ import pymongo
 from toolz import take, concat, partition_all
 from pymongo.collection import Collection
 from .data.core import DataDescriptor
+from .compute.mongo import *
 import copy
 
 
