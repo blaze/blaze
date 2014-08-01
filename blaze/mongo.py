@@ -22,6 +22,11 @@ def discover(coll, n=50):
         raise ValueError("Consistent datashape not found")
 
 
+@dispatch(Collection, DataDescriptor)
+def into(coll, dd, chunksize=1024):
+    return into(coll, iter(dd), chunksize=chunksize, schema=dd.schema)
+
+
 @dispatch(Collection, (tuple, list, Iterator))
 def into(coll, seq, columns=None, schema=None, chunksize=1024):
     seq = iter(seq)
