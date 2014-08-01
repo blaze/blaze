@@ -32,7 +32,7 @@ try:
 except ImportError:
     pass
 try:
-    from .compute.blz import *
+    from .blz import *
 except ImportError:
     pass
 try:
