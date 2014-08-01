@@ -106,10 +106,18 @@ def match(expr):
         if not isinstance(expr.lhs, Expr):
             return match(expr.rhs > expr.lhs)
         return {name(expr.lhs): {'$lt': name(expr.rhs)}}
+    if isinstance(expr, Le):
+        if not isinstance(expr.lhs, Expr):
+            return match(expr.rhs >= expr.lhs)
+        return {name(expr.lhs): {'$lte': name(expr.rhs)}}
     if isinstance(expr, Gt):
         if not isinstance(expr.lhs, Expr):
             return match(expr.rhs < expr.lhs)
         return {name(expr.lhs): {'$gt': name(expr.rhs)}}
+    if isinstance(expr, Ge):
+        if not isinstance(expr.lhs, Expr):
+            return match(expr.rhs <= expr.lhs)
+        return {name(expr.lhs): {'$gte': name(expr.rhs)}}
     if isinstance(expr, And):
         return toolz.merge(match(expr.lhs), match(expr.rhs))
     if isinstance(expr, Or):

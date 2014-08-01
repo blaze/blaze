@@ -49,9 +49,22 @@ def test_projection_one():
 def test_projection():
     with collection(bank) as coll:
         assert set(compute(t.name, coll)) == set(['Alice', 'Bob'])
+        assert set(compute(t[['name']], coll)) == set([('Alice',), ('Bob',)])
 
 
 def test_selection():
     with collection(bank) as coll:
         assert set(compute(t[t.name=='Alice'], coll)) == set([('Alice', 100),
                                                               ('Alice', 200)])
+        assert set(compute(t['Alice'==t.name], coll)) == set([('Alice', 100),
+                                                              ('Alice', 200)])
+        assert set(compute(t[t.amount > 200], coll)) == set([('Bob', 300)])
+        assert set(compute(t[t.amount >= 200], coll)) == set([('Bob', 300),
+                                                              ('Bob', 200),
+                                                              ('Alice', 200)])
+        assert set(compute(t[(t.name=='Alice') & (t.amount > 150)], coll)) == \
+                set([('Alice', 200)])
+        assert set(compute(t[(t.name=='Alice') | (t.amount > 250)], coll)) == \
+                set([('Alice', 200),
+                     ('Alice', 100),
+                     ('Bob', 300)])
