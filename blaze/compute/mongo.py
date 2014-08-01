@@ -75,6 +75,19 @@ def compute_one(t, q, **kwargs):
                                  {name: '$'+name})
      }))
 
+@dispatch(count, query)
+def compute_one(t, q, **kwargs):
+    name = t.dshape[0].names[0]
+    return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
+
+
+@dispatch((sum, min, max, mean), query)
+def compute_one(t, q, **kwargs):
+    name = t.dshape[0].names[0]
+    reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
+    column = '$' + t.child.columns[0]
+    return q.append({'$group': {'_id': {}, name: {reduction: column}}})
+
 
 def group_apply(expr):
     assert isinstance(expr.dshape[0], Record)
@@ -100,6 +113,12 @@ def post_compute(e, c, d):
 
 
 @dispatch(Expr, query, dict)
+def post_compute(e, q, d):
+    name = e.dshape[0].names[0]
+    return q.coll.aggregate(list(q.query))['result'][0][name]
+
+
+@dispatch(TableExpr, query, dict)
 def post_compute(e, q, d):
     q = q.append({'$project': toolz.merge({'_id': 0},
                                       dict((col, 1) for col in e.columns))})

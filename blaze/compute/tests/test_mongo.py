@@ -106,6 +106,14 @@ def test_by():
         assert set(compute(by(t, t.name, t.name.count()), coll)) == \
                 set([('Alice', 2), ('Bob', 3)])
 
+
+def test_reductions():
+    with collection(bank) as coll:
+        assert compute(t.amount.min(), coll) == 100
+        assert compute(t.amount.max(), coll) == 300
+        assert compute(t.amount.sum(), coll) == 900
+
+
 def test_by_multi_column():
     with collection(bank) as coll:
         assert set(compute(by(t, t[['name', 'amount']], t.count()), coll)) == \
