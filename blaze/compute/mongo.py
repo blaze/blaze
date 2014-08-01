@@ -57,6 +57,43 @@ def compute_one(t, q, **kwargs):
     return q.append({'$match': match(t.predicate.expr)})
 
 
+@dispatch(By, query)
+def compute_one(t, q, **kwargs):
+    if not (isinstance(t.grouper, Projection) and t.grouper.child == t.child):
+        raise ValueError("Complex By operations not supported on MongoDB.\n"
+                "Must be of the form `by(t, t[columns], t[column].reduction()`")
+    name = t.apply.dshape[0].names[0]
+    return query(q.coll, q.query +
+    ({
+        '$group': toolz.merge(
+                    {'_id': {col: '$'+col for col in t.grouper.columns}},
+                    group_apply(t.apply)
+                    )
+     },
+     {
+         '$project': toolz.merge({col: '$_id.'+col for col in t.grouper.columns},
+                                 {name: '$'+name})
+     }))
+
+
+def group_apply(expr):
+    assert isinstance(expr.dshape[0], Record)
+    key = expr.dshape[0].names[0]
+    col = '$'+expr.child.columns[0]
+    if isinstance(expr, count):
+        return {key: {'$sum': 1}}
+    if isinstance(expr, sum):
+        return {key: {'$sum': col}}
+    if isinstance(expr, max):
+        return {key: {'$max': col}}
+    if isinstance(expr, min):
+        return {key: {'$min': col}}
+    if isinstance(expr, mean):
+        return {key: {'$avg': col}}
+    raise NotImplementedError("Only certain reductions supported in MongoDB")
+
+
+
 @dispatch(Expr, Collection, dict)
 def post_compute(e, c, d):
     return post_compute(e, query(c, ()), d)

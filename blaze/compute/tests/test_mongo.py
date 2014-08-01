@@ -6,6 +6,7 @@ from blaze.compute.mongo import *
 from blaze.compute.core import compute
 from blaze.mongo import *
 from blaze.expr.table import TableSymbol
+from blaze.compatibility import xfail
 
 conn = pymongo.MongoClient()
 db = conn.test_db
@@ -28,7 +29,14 @@ bank = [{'name': 'Alice', 'amount': 100},
         {'name': 'Bob', 'amount': 200},
         {'name': 'Bob', 'amount': 300}]
 
+points = [{'x': 1, 'y': 10, 'z': 100},
+          {'x': 2, 'y': 20, 'z': 200},
+          {'x': 3, 'y': 30, 'z': 300},
+          {'x': 4, 'y': 40, 'z': 400}]
+
 t = TableSymbol('t', '{name: string, amount: int}')
+
+p = TableSymbol('p', '{x: int, y: int, z: int}')
 
 q = query('fake', [])
 
@@ -73,3 +81,32 @@ def test_selection():
                 set([('Alice', 200),
                      ('Alice', 100),
                      ('Bob', 300)])
+
+
+@xfail()
+def test_columnwise():
+    with collection(points) as coll:
+        assert set(compute(p.x + p.y, coll)) == set([11, 22, 33])
+
+
+def test_by_one():
+    assert compute_one(by(t, t.name, t.amount.sum()), q).query == \
+            ({'$group': {'_id': {'name': '$name'},
+                         'amount_sum': {'$sum': '$amount'}}},
+             {'$project': {'amount_sum': '$amount_sum', 'name': '$_id.name'}})
+
+def test_by():
+    with collection(bank) as coll:
+        assert set(compute(by(t, t.name, t.amount.sum()), coll)) == \
+                set([('Alice', 300), ('Bob', 600)])
+        assert set(compute(by(t, t.name, t.amount.min()), coll)) == \
+                set([('Alice', 100), ('Bob', 100)])
+        assert set(compute(by(t, t.name, t.amount.max()), coll)) == \
+                set([('Alice', 200), ('Bob', 300)])
+        assert set(compute(by(t, t.name, t.name.count()), coll)) == \
+                set([('Alice', 2), ('Bob', 3)])
+
+def test_by_multi_column():
+    with collection(bank) as coll:
+        assert set(compute(by(t, t[['name', 'amount']], t.count()), coll)) == \
+                set([(d['name'], d['amount'], 1) for d in bank])
