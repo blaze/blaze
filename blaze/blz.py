@@ -6,11 +6,11 @@ from .dispatch import dispatch
 from .compute.blz import *
 
 
-@dispatch((type, object), blz.btable)
+@dispatch((type, object), (blz.btable, blz.barray))
 def into(o, b):
     return into(o, into(np.ndarray(0), b))
 
 
-@dispatch(np.ndarray, blz.btable)
+@dispatch(np.ndarray, (blz.btable, blz.barray))
 def into(a, b):
     return b[:]
