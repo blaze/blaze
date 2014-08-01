@@ -43,8 +43,12 @@ def test_tablesymbol():
 def test_projection_one():
     assert compute_one(t[['name']], q).query == ({'$project': {'name': 1}},)
 
-def test_projection_one():
+def test_head_one():
     assert compute_one(t.head(5), q).query == ({'$limit': 5},)
+
+def test_head():
+    with collection(bank) as coll:
+        assert len(compute(t.head(2), coll)) == 2
 
 def test_projection():
     with collection(bank) as coll:
@@ -62,6 +66,7 @@ def test_selection():
         assert set(compute(t[t.amount >= 200], coll)) == set([('Bob', 300),
                                                               ('Bob', 200),
                                                               ('Alice', 200)])
+        assert set(compute(t[t.name!='Alice'].name, coll)) == set(['Bob'])
         assert set(compute(t[(t.name=='Alice') & (t.amount > 150)], coll)) == \
                 set([('Alice', 200)])
         assert set(compute(t[(t.name=='Alice') | (t.amount > 250)], coll)) == \

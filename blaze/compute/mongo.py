@@ -82,6 +82,9 @@ def name(e):
     else:
         return e
 
+
+binop_swap = {Lt: Gt, Gt: Lt, Ge: Le, Le: Ge, Eq: Eq, Ne: Ne}
+
 def match(expr):
     """ Match query for MongoDB
 
@@ -100,25 +103,23 @@ def match(expr):
     >>> match((x > 10) | (name == 'Alice'))
     {'$or': [{'x': {'$gt': 10}}, {'name': 'Alice'}]}
     """
+    if not isinstance(expr.lhs, Expr):
+        return match(binop_swap(type(expr))(expr.lhs, expr.rhs))
     if isinstance(expr, Eq):
         return {name(expr.lhs): name(expr.rhs)}
     if isinstance(expr, Lt):
-        if not isinstance(expr.lhs, Expr):
-            return match(expr.rhs > expr.lhs)
-        return {name(expr.lhs): {'$lt': name(expr.rhs)}}
+        return {name(expr.lhs): {'$lt': expr.rhs}}
     if isinstance(expr, Le):
-        if not isinstance(expr.lhs, Expr):
-            return match(expr.rhs >= expr.lhs)
-        return {name(expr.lhs): {'$lte': name(expr.rhs)}}
+        return {name(expr.lhs): {'$lte': expr.rhs}}
     if isinstance(expr, Gt):
-        if not isinstance(expr.lhs, Expr):
-            return match(expr.rhs < expr.lhs)
-        return {name(expr.lhs): {'$gt': name(expr.rhs)}}
+        return {name(expr.lhs): {'$gt': expr.rhs}}
     if isinstance(expr, Ge):
-        if not isinstance(expr.lhs, Expr):
-            return match(expr.rhs <= expr.lhs)
-        return {name(expr.lhs): {'$gte': name(expr.rhs)}}
+        return {name(expr.lhs): {'$gte': expr.rhs}}
     if isinstance(expr, And):
         return toolz.merge(match(expr.lhs), match(expr.rhs))
     if isinstance(expr, Or):
         return {'$or': [match(expr.lhs), match(expr.rhs)]}
+    if isinstance(expr, Ne):
+        return {name(expr.lhs): {'$ne': expr.rhs}}
+    raise NotImplementedError("Matching not supported on expressions of type %s"
+            % type(expr).__name__)
