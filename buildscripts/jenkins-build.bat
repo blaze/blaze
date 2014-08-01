@@ -35,7 +35,7 @@ call pip install toolz cytoolz
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 
 REM Install Optional Dependencies
-call conda install --yes blz tables
+call conda install --yes blz
 call pip install bcolz
 
 
