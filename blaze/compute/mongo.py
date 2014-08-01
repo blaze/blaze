@@ -75,19 +75,6 @@ def compute_one(t, q, **kwargs):
                                  {name: '$'+name})
      }))
 
-@dispatch(count, query)
-def compute_one(t, q, **kwargs):
-    name = t.dshape[0].names[0]
-    return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
-
-
-@dispatch((sum, min, max, mean), query)
-def compute_one(t, q, **kwargs):
-    name = t.dshape[0].names[0]
-    reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
-    column = '$' + t.child.columns[0]
-    return q.append({'$group': {'_id': {}, name: {reduction: column}}})
-
 
 def group_apply(expr):
     assert isinstance(expr.dshape[0], Record)
@@ -105,6 +92,24 @@ def group_apply(expr):
         return {key: {'$avg': col}}
     raise NotImplementedError("Only certain reductions supported in MongoDB")
 
+
+@dispatch(count, query)
+def compute_one(t, q, **kwargs):
+    name = t.dshape[0].names[0]
+    return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
+
+
+@dispatch((sum, min, max, mean), query)
+def compute_one(t, q, **kwargs):
+    name = t.dshape[0].names[0]
+    reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
+    column = '$' + t.child.columns[0]
+    return q.append({'$group': {'_id': {}, name: {reduction: column}}})
+
+
+@dispatch(Sort, query)
+def compute_one(t, q, **kwargs):
+    return q.append({'$sort': {t.key: 1 if t.ascending else -1}})
 
 
 @dispatch(Expr, Collection, dict)

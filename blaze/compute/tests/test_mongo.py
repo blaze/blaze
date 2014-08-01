@@ -114,6 +114,13 @@ def test_reductions():
         assert compute(t.amount.sum(), coll) == 900
 
 
+def test_sort():
+    with collection(bank) as coll:
+        assert compute(t.amount.sort('amount'), coll) == \
+                [100, 100, 200, 200, 300]
+        assert compute(t.amount.sort('amount', ascending=False), coll) == \
+                [300, 200, 200, 100, 100]
+
 def test_by_multi_column():
     with collection(bank) as coll:
         assert set(compute(by(t, t[['name', 'amount']], t.count()), coll)) == \
