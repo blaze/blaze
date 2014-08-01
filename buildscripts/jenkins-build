@@ -51,6 +51,10 @@ fi
 
 pip install toolz cytoolz || exit 1
 
+# Install Optional Dependencies
+conda install --yes blz tables || exit 1
+pip install bcolz || exit 1
+
 # Temporary hack to install datashape
 rm -rf datashape
 git clone https://github.com/ContinuumIO/datashape.git || exit 1

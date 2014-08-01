@@ -34,6 +34,11 @@ set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
 call pip install toolz cytoolz
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 
+REM Install Optional Dependencies
+call conda install --yes blz tables
+call pip install bcolz
+
+
 REM Temporary hack to install datashape
 rd /q /s datashape
 git clone https://github.com/ContinuumIO/datashape.git || exit /b 1

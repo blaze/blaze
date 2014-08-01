@@ -28,6 +28,10 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
   - pip install toolz cytoolz multipledispatch
 
+  # Install Optional Dependencies
+  - conda install blz tables
+  - pip install bcolz
+
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
 
