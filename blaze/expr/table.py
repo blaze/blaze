@@ -959,7 +959,7 @@ def merge(*tables):
 
 
 class Merge(RowWise):
-    """ Merge many Tables together
+    """ Merge the columns of many Tables together
 
     Must all descend from same table via RowWise operations
 
@@ -982,3 +982,31 @@ class Merge(RowWise):
                                 c.schema[0])
         return dshape(Record(list(concat(c.schema[0].parameters[0] for c in
             self.children))))
+
+
+class Union(TableExpr):
+    """ Merge the rows of many Tables together
+
+    Must all have the same schema
+
+    >>> usa_accounts = TableSymbol('accounts', '{name: string, amount: int}')
+    >>> euro_accounts = TableSymbol('accounts', '{name: string, amount: int}')
+
+    >>> all_accounts = union(usa_accounts, euro_accounts)
+    >>> all_accounts.columns
+    ['name', 'amount']
+    """
+    __slots__ = 'children',
+    __inputs__ = 'children',
+
+    @property
+    def schema(self):
+        return self.children[0].schema
+
+
+def union(*children):
+    schemas = set(child.schema for child in children)
+    if len(schemas) != 1:
+        raise ValueError("Inconsistent schemas:\n\t%s" %
+                            '\n\t'.join(map(str, schemas)))
+    return Union(children)
