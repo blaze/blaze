@@ -11,13 +11,13 @@ def discover(t):
     return datashape.from_numpy(t.shape, t.dtype)
 
 
-@dispatch(Selection, bcolz.ctable)
+@dispatch(Selection, (bcolz.ctable, bcolz.carray))
 def compute_one(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
     return ChunkIter(t.whereblocks(s))
 
 
-@dispatch(Head, bcolz.ctable)
+@dispatch(Head, (bcolz.carray, bcolz.ctable))
 def compute_one(h, t, **kwargs):
     return t[:h.n]
 
@@ -62,7 +62,7 @@ def compute_one(expr, ba, **kwargs):
     return math.sqrt(compute_one(expr.child.var(), ba, **kwargs))
 
 
-@dispatch(Expr, (bcolz.carray, bcolz.ctable))
+@dispatch((RowWise, Distinct, Reduction, By, count, Label, ReLabel, nunique), (bcolz.carray, bcolz.ctable))
 def compute_one(c, t, **kwargs):
     return compute_one(c, Chunks(t), **kwargs)
 

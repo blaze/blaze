@@ -8,7 +8,7 @@ from .dispatch import dispatch
 from .compute.blz import *
 
 
-@dispatch((type, object), (blz.btable, blz.barray))
+@dispatch((tuple, set, list, type, object), (blz.btable, blz.barray))
 def into(o, b):
     return into(o, into(np.ndarray(0), b))
 

@@ -8,7 +8,7 @@ from .dispatch import dispatch
 from .compute.bcolz import *
 
 
-@dispatch((type, object), (bcolz.ctable, bcolz.carray))
+@dispatch((tuple, set, list, type, object), (bcolz.ctable, bcolz.carray))
 def into(o, b):
     return into(o, into(np.ndarray(0), b))
 
