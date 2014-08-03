@@ -56,17 +56,7 @@ def compute_one(expr, c, **kwargs):
     return ChunkIter(compute_one(expr, chunk) for chunk in c)
 
 
-@dispatch(Join, object, ChunkIter)
-def compute_one(expr, other, c, **kwargs):
-    return ChunkIter(compute_one(expr, other, chunk) for chunk in c)
-
-
-@dispatch(Join, ChunkIter, object)
-def compute_one(expr, c, other, **kwargs):
-    return ChunkIter(compute_one(expr, chunk, other) for chunk in c)
-
-
-@dispatch(Join, Chunks, ChunkIter)
+@dispatch(Join, Chunks, (Chunks, ChunkIter))
 def compute_one(expr, c1, c2, **kwargs):
     return ChunkIter(compute_one(expr, c1, chunk) for chunk in c2)
 
@@ -80,6 +70,17 @@ def compute_one(expr, c1, c2, **kwargs):
 def compute_one(expr, c1, c2, **kwargs):
     raise NotImplementedError("Can not perform chunked join of "
             "two chunked iterators")
+
+
+@dispatch(Join, object, ChunkIter)
+def compute_one(expr, other, c, **kwargs):
+    return ChunkIter(compute_one(expr, other, chunk) for chunk in c)
+
+
+@dispatch(Join, ChunkIter, object)
+def compute_one(expr, c, other, **kwargs):
+    return ChunkIter(compute_one(expr, chunk, other) for chunk in c)
+
 
 @dispatch(Distinct, ChunkIter)
 def compute_one(expr, c, **kwargs):
