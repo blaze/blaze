@@ -999,6 +999,12 @@ class Union(TableExpr):
     __slots__ = 'children',
     __inputs__ = 'children',
 
+    def subterms(self):
+        yield self
+        for i in self.children:
+            for node in i.subterms():
+                yield node
+
     @property
     def schema(self):
         return self.children[0].schema
