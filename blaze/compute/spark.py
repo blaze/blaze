@@ -188,3 +188,8 @@ def into(rdd, seq):
 @dispatch(list, RDD)
 def into(seq, rdd):
     return rdd.collect()
+
+
+@dispatch(Union, RDD, tuple)
+def compute_one(t, _, children):
+    return reduce(RDD.union, children)

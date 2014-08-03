@@ -17,7 +17,7 @@ from collections import Iterator
 import operator
 from functools import partial
 from toolz import map, compose, juxt, identity
-from cytoolz import groupby, reduceby, unique, take
+from cytoolz import groupby, reduceby, unique, take, concat
 import cytoolz
 import toolz
 import sys
@@ -188,6 +188,15 @@ def compute_one(t, seq, **kwargs):
 
 @dispatch(Distinct, Sequence)
 def compute_one(t, seq, **kwargs):
+    try:
+        row = first(seq)
+    except StopIteration:
+        return ()
+    seq = concat([[row], seq]) # re-add row to seq
+
+    if isinstance(row, list):
+        seq = map(tuple, seq)
+
     return unique(seq)
 
 
@@ -360,3 +369,8 @@ def compute_one(t, seq, **kwargs):
 @dispatch(Apply, Sequence)
 def compute_one(t, seq, **kwargs):
     return t.func(seq)
+
+
+@dispatch(Union, Sequence, tuple)
+def compute_one(t, example, children, **kwargs):
+    return concat(children)

@@ -196,3 +196,8 @@ def compute_one(t, df, **kwargs):
     subexpression = common_subexpression(*t.children)
     children = [compute(child, {subexpression: df}) for child in t.children]
     return pd.concat(children, axis=1)
+
+
+@dispatch(Union, DataFrame, tuple)
+def compute_one(t, example, children, **kwargs):
+    return pd.concat(children, axis=0)
