@@ -41,6 +41,11 @@ def test_reductions():
     assert compute(t.id.mean(), c) == 3
 
 
+def test_distinct():
+    assert sorted(compute(t.name.distinct(), c)) == \
+            ['Alice', 'Bob', 'Charlie', 'Edith']
+
+
 def test_columnwise():
     assert list(concat(compute(t.id + 1, c))) == [2, 3, 4, 5, 6]
 

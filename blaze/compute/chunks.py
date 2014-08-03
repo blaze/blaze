@@ -81,6 +81,15 @@ def compute_one(expr, c1, c2, **kwargs):
     raise NotImplementedError("Can not perform chunked join of "
             "two chunked iterators")
 
+@dispatch(Distinct, ChunkIter)
+def compute_one(expr, c, **kwargs):
+    t1 = TableSymbol('t1', expr.schema)
+    t2 = TableSymbol('t2', expr.schema)
+
+    binop = lambda a, b: compute(union(t1, t2).distinct(), {t1: a, t2: b})
+
+    return reduce(binop, (compute_one(expr, chunk) for chunk in c))
+
 
 @dispatch((list, tuple, Iterator))
 def chunks(seq, chunksize=1024):
