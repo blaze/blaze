@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
+from blaze.compute.core import compute
 from toolz import map, partition_all
 import numpy as np
 import math
