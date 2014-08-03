@@ -23,6 +23,11 @@ def compute_one(a, **kwargs):
     return a
 
 
+@dispatch((list, tuple))
+def compute_one(seq, scope={}, **kwargs):
+    return type(seq)(compute(item, scope, **kwargs) for item in seq)
+
+
 @dispatch(Expr, object)
 def compute(expr, o, **kwargs):
     """ Compute against single input
@@ -123,3 +128,8 @@ def columnwise_funcstr(t, variadic=True, full=False):
         prefix = 'lambda (%s): '
 
     return prefix % ', '.join(map(str, columns)) + eval_str(t.expr)
+
+
+@dispatch(Union, (list, tuple))
+def compute_one(t, children, **kwargs):
+    return compute_one(t, children[0], tuple(children))
