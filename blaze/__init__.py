@@ -36,7 +36,7 @@ try:
 except ImportError:
     pass
 try:
-    from .compute.bcolz import *
+    from .bcolz import *
 except ImportError:
     pass
 

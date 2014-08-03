@@ -14,7 +14,7 @@ def discover(t):
 @dispatch(Selection, bcolz.ctable)
 def compute_one(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
-    return map(tuple, t.where(s))
+    return ChunkIter(t.whereblocks(s))
 
 
 @dispatch(Head, bcolz.ctable)
@@ -42,6 +42,35 @@ def compute_one(c, t, **kwargs):
     return len(t)
 
 
-@dispatch(Expr, bcolz.ctable)
-def compute_one(e, t, **kwargs):
-    return compute_one(e, iter(t), **kwargs)
+@dispatch(mean, bcolz.carray)
+def compute_one(expr, ba, **kwargs):
+    return ba.sum() / ba.len
+
+
+@dispatch(var, bcolz.carray)
+def compute_one(expr, ba, **kwargs):
+    E_X_2 = builtins.sum((chunk**2).sum() / 1024 for chunk in chunks(ba))
+    E_X_2 *= 1024. * math.ceil(ba.len / 1024.) / ba.len
+
+    E_2_X = float(ba.sum()) / ba.len
+
+    return E_X_2 - E_2_X**2
+
+
+@dispatch(std, bcolz.carray)
+def compute_one(expr, ba, **kwargs):
+    return math.sqrt(compute_one(expr.child.var(), ba, **kwargs))
+
+
+@dispatch(Expr, (bcolz.carray, bcolz.ctable))
+def compute_one(c, t, **kwargs):
+    return compute_one(c, Chunks(t), **kwargs)
+
+
+@dispatch((bcolz.carray, bcolz.ctable))
+def chunks(b, chunksize=1024):
+    start = 0
+    n = b.len
+    while start < n:
+        yield b[start:start + chunksize]
+        start += chunksize
