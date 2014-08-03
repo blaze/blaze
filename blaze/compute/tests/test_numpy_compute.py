@@ -56,6 +56,10 @@ def test_Neg():
               -x['amount'])
 
 
+def test_union():
+    assert eq(compute(union(t, t), x), np.vstack([x, x]))
+
+
 def test_Reductions():
     assert compute(t['amount'].mean(), x) == x['amount'].mean()
     assert compute(t['amount'].count(), x) == len(x['amount'])
