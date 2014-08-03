@@ -5,6 +5,7 @@ import blz
 from toolz import map
 import numpy as np
 import math
+from .chunks import Chunks
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
@@ -45,34 +46,9 @@ def compute_one(c, t, **kwargs):
     return len(t)
 
 
-reductions = {min: (min, min), max: (max, max),
-              any: (any, any), all: (all, all)}
-
-@dispatch(tuple(reductions), blz.barray)
-def compute_one(expr, col, **kwargs):
-    t = TableSymbol('_', schema=expr.child)
-    a, b = reductions[type(expr)]
-
-    return compute_one(b(t),
-                       [compute_one(a(t), chunk) for chunk in chunks(col)])
-
-
-@dispatch(nunique, (blz.barray, blz.btable))
-def compute_one(expr, bt, **kwargs):
-    t = TableSymbol('_', schema=expr.child)
-    # TODO: replace this with union operation
-    union = np.vstack([compute_one(t.distinct(), chunk) for chunk in chunks(bt)])
-    return compute_one(t.nunique(), union)
-
-
-@dispatch(Distinct, (blz.barray, blz.btable))
-def compute_one(expr, bt, **kwargs):
-    t = TableSymbol('_', schema=expr.child.schema)
-    intermediates = [compute_one(t.distinct(), chunk) for chunk in chunks(bt)]
-    children = [TableSymbol('_%d'%i, schema=expr.child.schema) for i in
-            range(len(intermediates))]
-    u = compute_one(union(*children), intermediates)
-    return compute_one(t.distinct(), u)
+@dispatch(Expr, (blz.barray, blz.btable))
+def compute_one(c, t, **kwargs):
+    return compute_one(c, Chunks(t), **kwargs)
 
 
 @dispatch(mean, blz.barray)
@@ -93,11 +69,6 @@ def compute_one(expr, ba, **kwargs):
 @dispatch(std, blz.barray)
 def compute_one(expr, ba, **kwargs):
     return math.sqrt(compute_one(expr.child.var(), ba, **kwargs))
-
-
-@dispatch(Expr, blz.btable)
-def compute_one(e, t, **kwargs):
-    return compute_one(e, iter(t), **kwargs)
 
 
 @dispatch((blz.barray, blz.btable))
