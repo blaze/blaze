@@ -4,6 +4,7 @@ from blaze.expr.table import *
 import blz
 from toolz import map
 import numpy as np
+import math
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
@@ -69,6 +70,27 @@ def compute_one(expr, bt, **kwargs):
     t = TableSymbol('_', schema=expr.child)
     union = np.vstack([compute_one(t.distinct(), chunk) for chunk in chunks(bt)])
     return compute_one(t.distinct(), union)
+
+
+@dispatch(mean, blz.barray)
+def compute_one(expr, ba, **kwargs):
+    return ba.sum() / ba.len
+
+
+@dispatch(var, blz.barray)
+def compute_one(expr, ba, **kwargs):
+    E_X_2 = builtins.sum((chunk**2).sum() / 1024 for chunk in chunks(ba))
+    E_X_2 *= 1024. * math.ceil(ba.len / 1024.) / ba.len
+
+    E_2_X = float(ba.sum()) / ba.len
+
+    return E_X_2 - E_2_X**2
+
+
+@dispatch(std, blz.barray)
+def compute_one(expr, ba, **kwargs):
+    return math.sqrt(compute_one(expr.child.var(), ba, **kwargs))
+
 
 @dispatch(Expr, blz.btable)
 def compute_one(e, t, **kwargs):
