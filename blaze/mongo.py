@@ -50,6 +50,13 @@ def into(coll, seq, columns=None, schema=None, chunksize=1024):
     return coll
 
 
+@dispatch(Collection, TableExpr)
+def into(coll, t, **kwargs):
+    from blaze import compute
+    result = compute(t)
+    return into(coll, result, schema=t.schema, **kwargs)
+
+
 @dispatch((tuple, list), Collection)
 def into(l, coll, columns=None, schema=None):
     seq = list(coll.find())
