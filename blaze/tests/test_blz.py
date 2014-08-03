@@ -33,8 +33,3 @@ def test_into_DataFrame_btable():
 
 def test_into_list_barray():
     assert into([], b['a']) == [1, 2, 3]
-
-
-def test_chunks():
-    assert len(list(chunks(b, chunksize=2))) == 2
-    assert (next(chunks(b, chunksize=2)) == into(np.array(0), b)[:2]).all()
