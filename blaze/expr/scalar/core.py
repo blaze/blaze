@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.core import Expr
-from datashape import dshape
 
 
 def eval_str(expr):
@@ -12,6 +11,7 @@ def eval_str(expr):
         return "'%s'" % expr
     else:
         return str(expr)
+
 
 def parenthesize(s):
     """
@@ -25,6 +25,7 @@ def parenthesize(s):
         return '(%s)' % s
     else:
         return s
+
 
 class Scalar(Expr):
     def eval_str(self):
@@ -43,7 +44,6 @@ class BinOp(Scalar):
         lhs = parenthesize(eval_str(self.lhs))
         rhs = parenthesize(eval_str(self.rhs))
         return '%s %s %s' % (lhs, self.symbol, rhs)
-        return '%s %s %s' % (self.lhs, self.symbol, self.rhs)
 
 
 class UnaryOp(Scalar):

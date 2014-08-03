@@ -3,13 +3,12 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import tempfile
 import os
-import sys
 from collections import Iterator
 
 import datashape
 from datashape import dshape
 
-from blaze.compatibility import skipIf
+from blaze.compatibility import min_python_version
 from blaze.data.core import DataDescriptor
 from blaze.data import CSV
 from blaze.data.csv import has_header, discover_dialect
@@ -27,17 +26,17 @@ class Test_Other(unittest.TestCase):
         text = "name amount date\nAlice 100 20120101\nBob 200 20120102"
         with filetext(text) as fn:
             self.assertEqual(CSV(fn).schema,
-                         dshape('{name: string, amount: int64, date: int64}'))
+                         dshape('{name: string, amount: ?int64, date: ?int64}'))
 
             self.assertEqual(CSV(fn, columns=['NAME', 'AMOUNT', 'DATE']).schema,
-                         dshape('{NAME: string, AMOUNT: int64, DATE: int64}'))
+                         dshape('{NAME: string, AMOUNT: ?int64, DATE: ?int64}'))
 
             self.assertEqual(
                     str(CSV(fn, types=['string', 'int32', 'date']).schema),
                     str(dshape('{name: string, amount: int32, date: date}')))
 
             a = CSV(fn, typehints={'date': 'date'}).schema
-            b = dshape('{name: string, amount: int64, date: date}')
+            b = dshape('{name: string, amount: ?int64, date: date}')
             self.assertEqual(str(a), str(b))
 
     def test_homogenous_schema(self):
@@ -69,7 +68,7 @@ class Test_Other(unittest.TestCase):
         this_dir = os.path.dirname(__file__)
         filename = os.path.join(this_dir, 'unicode.csv')
         dd = CSV(filename, columns=['a', 'b'])
-        assert dd.schema == dshape('{a: string, b: int64}')
+        assert dd.schema == dshape('{a: string, b: ?int64}')
         assert dd.py[0]
 
 
@@ -162,12 +161,12 @@ class Test_Dialect(unittest.TestCase):
 
     def test_schema_detection(self):
         dd = CSV(self.csv_file)
-        assert dd.schema == dshape('{Name: string, Amount: int64}')
+        assert dd.schema == dshape('{Name: string, Amount: ?int64}')
 
         dd = CSV(self.csv_file, columns=['foo', 'bar'])
-        assert dd.schema == dshape('{foo: string, bar: int64}')
+        assert dd.schema == dshape('{foo: string, bar: ?int64}')
 
-    @skipIf(sys.version_info[:2] < (2, 7), 'CSV module unable to parse')
+    @min_python_version
     def test_has_header(self):
         assert has_header(self.buf)
 

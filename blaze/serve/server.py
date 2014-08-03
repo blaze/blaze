@@ -108,7 +108,7 @@ def data(datasets, name):
     return jsonify(response)
 
 from ..expr.table import *
-from ..expr.scalar.interface import exprify
+from ..expr.scalar import exprify
 from ..api.into import into
 from ..compute.core import compute
 

@@ -47,7 +47,7 @@ To run tests:
 
 ::
 
-    $ nosetests --with-doctest
+    $ py.test --doctest-modules --pyargs blaze
 
 Dependencies
 ~~~~~~~~~~~~
@@ -56,24 +56,28 @@ Dependencies
 * datashape_ >= 0.1.1
 * dynd-python_ >= 0.6.1
 * toolz_ >= 0.6.0
+* cytoolz_
 * multipledispatch_ >= 0.4.2
 * unicodecsv_
+* pandas_
 
 **Optional**
 
 * sqlalchemy_
 * h5py_
-* pandas_
 * spark_ >= 1.0.0
-* nose_ (for running tests)
+* pytest_ (for running tests)
 
 
 .. _numpy: http://www.numpy.org/
 .. _h5py: http://docs.h5py.org/en/latest/
-.. _nose: https://pypi.python.org/pypi/nose/
+.. _pytest: http://pytest.org/latest/
 .. _dynd-python: https://github.com/ContinuumIO/dynd-python
 .. _datashape: https://github.com/ContinuumIO/datashape
 .. _blz: https://github.com/ContinuumIO/blz
+.. _pandas: http://pandas.pydata.org/
+.. _cytoolz: https://github.com/pytoolz/cytoolz/
+.. _sqlalchemy: http://www.sqlalchemy.org/
 .. _spark: http://spark.apache.org/
 .. _toolz: http://toolz.readthedocs.org/
 .. _multipledispatch: http://multiple-dispatch.readthedocs.org/

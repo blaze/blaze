@@ -1,22 +1,23 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.spark import *
-from blaze.compatibility import skip
+from blaze.compatibility import xfail
 from blaze.expr.table import *
-from blaze.utils import raises
+
+import pytest
+
 
 data = [['Alice', 100, 1],
         ['Bob', 200, 2],
         ['Alice', 50, 3]]
 data2 = [['Alice', 'Austin'],
          ['Bob', 'Boston']]
-try:
-    from pyspark import SparkContext
-    sc = SparkContext("local", "Simple App")
-    rdd = sc.parallelize(data)
-    rdd2 = sc.parallelize(data2)
-except ImportError:
-    pass
+
+
+pyspark = pytest.importorskip('pyspark')
+sc = pyspark.SparkContext("local", "Simple App")
+rdd = sc.parallelize(data)
+rdd2 = sc.parallelize(data2)
 
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -206,7 +207,7 @@ def test_spark_multi_level_rowfunc_works():
     assert compute(expr, rdd).collect() == [x[1] + 1 for x in data]
 
 
-@skip("pandas-numexpr-platform doesn't play well with spark")
+@xfail(reason="pandas-numexpr-platform doesn't play well with spark")
 def test_spark_merge():
     col = (t['amount'] * 2).label('new')
     expr = merge(t['name'], col)
@@ -257,3 +258,45 @@ def test_union():
     result = compute(expr, {t1: r1, t2: r2, t3: r3}).collect()
 
     assert set(map(tuple, result)) == set(map(tuple, L1 + L2 + L3))
+
+
+def test_spark_outer_join():
+    left = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    left = sc.parallelize(left)
+    right = [('NYC', 1),
+             ('Boston', 1),
+             ('LA', 3),
+             ('Moscow', 4)]
+    right = sc.parallelize(right)
+
+    L = TableSymbol('L', '{id: int, name: string, amount: real}')
+    R = TableSymbol('R', '{city: string, id: int}')
+
+    assert set(compute(join(L, R), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='left'), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='right'), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    # Full outer join not yet supported
+    """
+    assert set(compute(join(L, R, how='outer'), {L: left, R: right}).collect()) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+    """

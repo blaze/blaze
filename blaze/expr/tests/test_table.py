@@ -1,10 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
+import tempfile
+import pandas as pd
+
+from blaze import CSV, Table
 from blaze.expr.table import *
 from blaze.expr.core import discover
 from blaze.utils import raises
-from datashape import dshape, var
+from datashape import dshape, var, int32, int64
 from toolz import identity
+import numpy as np
 
 
 def test_dshape():
@@ -87,6 +93,36 @@ def test_selection_by_indexing():
     assert 'Alice' in str(result)
 
 
+def test_selection_by_getattr():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+
+    result = t[t.name == 'Alice']
+
+    assert t.schema == result.schema
+    assert 'Alice' in str(result)
+
+
+def test_different_schema_raises():
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        df = pd.DataFrame(np.random.randn(10, 2))
+        df.to_csv(f.name, index=False, header=False)
+        with pytest.raises(TypeError):
+            Table(CSV(f.name), columns=list('ab'))
+
+
+def test_getattr_doesnt_override_properties():
+    t = TableSymbol('t', '{iscolumn: string, schema: string}')
+    assert isinstance(t.iscolumn, bool)
+    assert isinstance(t.schema, DataShape)
+
+
+def test_dir_contains_columns():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    result = dir(t)
+    columns_set = set(t.columns)
+    assert set(result) & columns_set == columns_set
+
+
 def test_selection_consistent_children():
     t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -126,6 +162,37 @@ def test_join():
     assert j.schema == dshape('{name: string, amount: int, id: int}')
 
     assert join(t, s, 'name') == join(t, s, 'name')
+
+
+def test_joined_column_first_in_schema():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+    s = TableSymbol('s', '{w: int, y: int}')
+
+    assert join(t, s).schema == dshape('{y: int, x: int, z: int, w: int}')
+
+
+
+def test_outer_join():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    s = TableSymbol('t', '{name: string, id: int}')
+
+    jleft = join(t, s, 'name', 'name', how='left')
+    jright = join(t, s, 'name', 'name', how='right')
+    jinner = join(t, s, 'name', 'name', how='inner')
+    jouter = join(t, s, 'name', 'name', how='outer')
+
+    js = [jleft, jright, jinner, jouter]
+
+    assert len(set(js)) == 4  # not equal
+
+    assert jinner.schema == dshape('{name: string, amount: int, id: int}')
+    assert jleft.schema == dshape('{name: string, amount: int, id: ?int}')
+    assert jright.schema == dshape('{name: string, amount: ?int, id: int}')
+    assert jouter.schema == dshape('{name: string, amount: ?int, id: ?int}')
+
+    # Default behavior
+    assert join(t, s, 'name', 'name', how='inner') == \
+            join(t, s, 'name', 'name')
 
 
 def test_join_default_shared_columns():
@@ -168,7 +235,25 @@ def test_reduction():
     r = sum(t['amount'])
     print(type(r.dshape))
     print(type(dshape('int32')))
-    assert r.dshape in (dshape('int32'), dshape('{amount: int32}'))
+    print(r.dshape)
+    assert r.dshape in (dshape('int32'),
+                        dshape('{amount: int32}'),
+                        dshape('{amount_sum: int32}'))
+
+    assert 'amount' not in str(t.count().dshape)
+
+    assert first(t.count().dshape[0].types)[0] in (int32, int64)
+
+    assert 'int' in str(t.count().dshape)
+    assert 'int' in str(t.nunique().dshape)
+    assert 'string' in str(t['name'].max().dshape)
+    assert 'string' in str(t['name'].min().dshape)
+    assert 'string' not in str(t.count().dshape)
+
+    t = TableSymbol('t', '{name: string, amount: real, id: int}')
+
+    assert 'int' in str(t['id'].sum().dshape)
+    assert 'int' not in str(t['amount'].sum().dshape)
 
 
 def test_Distinct():
@@ -188,6 +273,15 @@ def test_by():
     print(r.schema)
     assert isinstance(r.schema[0], Record)
     assert str(r.schema[0]['name']) == 'string'
+
+
+def test_by_columns():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+
+    assert len(by(t, t['id'], t['amount'].sum()).columns) == 2
+    assert len(by(t, t['id'], t['id'].count()).columns) == 2
+    print(by(t, t, t.count()).columns)
+    assert len(by(t, t, t.count()).columns) == 4
 
 
 def test_sort():
@@ -223,7 +317,6 @@ def test_columns():
     assert list(t.columns) == ['name', 'amount', 'id']
     assert list(t['name'].columns) == ['name']
     (t['amount'] + 1).columns
-
 
 
 def test_relabel():
@@ -267,7 +360,7 @@ def test_apply():
 
 
 def test_columnwise():
-    from blaze.expr.scalar import Add, Eq, Mul
+    from blaze.expr.scalar import Add, Eq, Mult
     t = TableSymbol('t', '{x: int, y: int, z: int}')
     x = t['x']
     y = t['y']
@@ -276,7 +369,7 @@ def test_columnwise():
     assert columnwise(Add, x, y).child.isidentical(t)
 
     c1 = columnwise(Add, x, y)
-    c2 = columnwise(Mul, x, z)
+    c2 = columnwise(Mult, x, z)
 
     assert eval_str(columnwise(Eq, c1, c2).expr) == '(x + y) == (x * z)'
     assert columnwise(Eq, c1, c2).child.isidentical(t)
@@ -387,3 +480,25 @@ def test_union():
 
     assert raises(Exception,
                   lambda: union(a, TableSymbol('q', '{name: string}')))
+
+
+def test_serializable():
+    t = TableSymbol('t', '{id: int, name: string, amount: int}')
+    import pickle
+    t2 = pickle.loads(pickle.dumps(t))
+
+    assert t.isidentical(t2)
+
+    s = TableSymbol('t', '{id: int, city: string}')
+    expr = join(t[t.amount < 0], s).sort('id').city.head()
+    expr2 = pickle.loads(pickle.dumps(expr))
+
+    assert expr.isidentical(expr2)
+
+
+def test_table_coercion():
+    from datetime import date
+    t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
+    assert (t.amount + '10').expr.rhs == 10
+
+    assert (t.timestamp < '2014-12-01').expr.rhs == date(2014, 12, 1)

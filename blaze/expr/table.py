@@ -5,16 +5,16 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from datashape import dshape, var, DataShape, Record, isdimension
+from abc import abstractproperty
+from datashape import dshape, var, DataShape, Record, isdimension, Option
+from datashape import coretypes as ct
 import datashape
-import operator
-from toolz import concat, partial, first, pipe, compose, get, unique
-import toolz
-from toolz.curried import filter
+from toolz import concat, partial, first, compose, get, unique
 from . import scalar
-from .core import Expr, Scalar, path
+from .core import Expr, path
 from .scalar import ScalarSymbol
-from .scalar import *
+from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
+                     And, USub, eval_str, Scalar)
 from ..compatibility import _strtypes, builtins
 
 
@@ -31,15 +31,19 @@ class TableExpr(Expr):
         if isinstance(self.schema[0], Record):
             return self.schema[0].names
 
+    @abstractproperty
+    def schema(self):
+        pass
+
     @property
     def dtype(self):
         ds = self.schema[-1]
         if isinstance(ds, Record):
-            if len(ds.fields.values()) > 1:
+            if len(ds.fields) > 1:
                 raise TypeError("`.dtype` not defined for multicolumn object. "
                                 "Use `.schema` instead")
             else:
-                return dshape(first(ds.fields.values()))
+                return dshape(first(ds.types))
         else:
             return dshape(ds)
 
@@ -49,13 +53,21 @@ class TableExpr(Expr):
                 raise ValueError("Mismatched Column: %s" % str(key))
             return Column(self, key)
         if isinstance(key, list) and builtins.all(isinstance(k, _strtypes) for k in key):
-            key = tuple(key)
             if not builtins.all(col in self.columns for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
-            return projection(self, tuple(key))
+            return projection(self, key)
         if isinstance(key, TableExpr):
             return selection(self, key)
         raise TypeError("Did not understand input: %s[%s]" % (self, key))
+
+    def __getattr__(self, key):
+        if key in self.columns:
+            return self[key]
+        return object.__getattribute__(self, key)
+
+    def __dir__(self):
+        return sorted(set(dir(type(self)) + list(self.__dict__.keys()) +
+                          self.columns))
 
     def sort(self, key=None, ascending=True):
         """ Sort table
@@ -92,6 +104,12 @@ class TableExpr(Expr):
     def nunique(self):
         return nunique(self)
 
+    def min(self):
+        return min(self)
+
+    def max(self):
+        return max(self)
+
     @property
     def iscolumn(self):
         if len(self.columns) > 1:
@@ -113,18 +131,18 @@ class TableSymbol(TableExpr):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = 'name', 'schema', 'iscolumn'
+    __slots__ = '_name', 'schema', 'iscolumn'
     __inputs__ = ()
 
     def __init__(self, name, schema, iscolumn=False):
-        self.name = name
+        self._name = name
         if isinstance(schema, _strtypes):
             schema = dshape(schema)
         self.schema = schema
         self.iscolumn = iscolumn
 
     def __str__(self):
-        return self.name
+        return self._name
 
     def resources(self):
         return dict()
@@ -149,11 +167,11 @@ class Projection(RowWise):
 
     @property
     def columns(self):
-        return self._columns
+        return list(self._columns)
 
     @property
     def schema(self):
-        d = self.child.schema[0].fields
+        d = self.child.schema[0].dict
         return DataShape(Record([(col, d[col]) for col in self.columns]))
 
     def __str__(self):
@@ -178,19 +196,19 @@ class ColumnSyntaxMixin(object):
         return columnwise(Eq, self, other)
 
     def __ne__(self, other):
-        return columnwise(NE, self, other)
+        return columnwise(Ne, self, other)
 
     def __lt__(self, other):
-        return columnwise(LT, self, other)
+        return columnwise(Lt, self, other)
 
     def __le__(self, other):
-        return columnwise(LE, self, other)
+        return columnwise(Le, self, other)
 
     def __gt__(self, other):
-        return columnwise(GT, self, other)
+        return columnwise(Gt, self, other)
 
     def __ge__(self, other):
-        return columnwise(GE, self, other)
+        return columnwise(Ge, self, other)
 
     def __add__(self, other):
         return columnwise(Add, self, other)
@@ -199,16 +217,22 @@ class ColumnSyntaxMixin(object):
         return columnwise(Add, other, self)
 
     def __mul__(self, other):
-        return columnwise(Mul, self, other)
+        return columnwise(Mult, self, other)
 
     def __rmul__(self, other):
-        return columnwise(Mul, other, self)
+        return columnwise(Mult, other, self)
 
     def __div__(self, other):
         return columnwise(Div, self, other)
 
     __truediv__ = __div__
     __rtruediv__ = __truediv__
+
+    def __floordiv__(self, other):
+        return columnwise(FloorDiv, self, other)
+
+    def __rfloordiv__(self, other):
+        return columnwise(FloorDiv, other, self)
 
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
@@ -244,19 +268,13 @@ class ColumnSyntaxMixin(object):
         return columnwise(And, other, self)
 
     def __neg__(self):
-        return columnwise(Neg, self)
+        return columnwise(USub, self)
 
     def label(self, label):
         return Label(self, label)
 
     def sum(self):
         return sum(self)
-
-    def min(self):
-        return min(self)
-
-    def max(self):
-        return max(self)
 
     def any(self):
         return any(self)
@@ -293,7 +311,7 @@ class Column(ColumnSyntaxMixin, Projection):
 
     @property
     def columns(self):
-        return (self.column,)
+        return [self.column]
 
     def __str__(self):
         return "%s['%s']" % (self.child, self.columns[0])
@@ -372,7 +390,7 @@ def columnwise(op, *column_inputs):
 
     Parameters
     ----------
-    op - Scalar Operation like Add, Mul, Sin, Exp
+    op - Scalar Operation like Add, Mult, Sin, Exp
     column_inputs - either Column, ColumnWise or constant (like 1, 1.0, '1')
 
     >>> accounts = TableSymbol('accounts',
@@ -383,7 +401,7 @@ def columnwise(op, *column_inputs):
 
     Fuses operations down into ScalarExpr level
 
-    >>> columnwise(Mul, 2, (accounts['amount'] + 100))
+    >>> columnwise(Mult, 2, (accounts['amount'] + 100))
     2 * (accounts['amount'] + 100)
     """
     expr_inputs = []
@@ -400,7 +418,11 @@ def columnwise(op, *column_inputs):
                          "Saw the following tables: %s"
                          % ', '.join(map(str, children)))
 
-    expr = op(*expr_inputs)
+    if hasattr(op, 'op'):
+        expr = op.op(*expr_inputs)
+    else:
+        expr = op(*expr_inputs)
+
     return ColumnWise(first(children), expr)
 
 
@@ -440,8 +462,9 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
                                                 map(newcol, columns)))))
 
     def active_columns(self):
-        return sorted(unique(x.name for x in self.traverse()
+        return sorted(unique(x._name for x in self.traverse()
                                     if isinstance(x, ScalarSymbol)))
+
 
 def unpack(l):
     if isinstance(l, (tuple, list, set)) and len(l) == 1:
@@ -470,7 +493,7 @@ class Join(TableExpr):
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
     """
-    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right'
+    __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'
 
     iscolumn = False
@@ -491,14 +514,37 @@ class Join(TableExpr):
 
     @property
     def schema(self):
-        rec1 = self.lhs.schema[0]
-        rec2 = self.rhs.schema[0]
+        """
 
-        rec = tuple(unique(rec1.parameters[0] + rec2.parameters[0]))
-        return dshape(Record(rec))
+        >>> t = TableSymbol('t', '{name: string, amount: int}')
+        >>> s = TableSymbol('t', '{name: string, id: int}')
+
+        >>> join(t, s).schema
+        dshape("{ name : string, amount : int32, id : int32 }")
+
+        >>> join(t, s, how='left').schema
+        dshape("{ name : string, amount : int32, id : ?int32 }")
+        """
+        option = lambda dt: dt if isinstance(dt, Option) else Option(dt)
+
+        joined = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                        if name in self.on_left]
+
+        left = [[name, dt] for name, dt in self.lhs.schema[0].parameters[0]
+                           if name not in self.on_left]
+
+        right = [[name, dt] for name, dt in self.rhs.schema[0].parameters[0]
+                            if name not in self.on_right]
+
+        if self.how in ('right', 'outer'):
+            left = [[name, option(dt)] for name, dt in left]
+        if self.how in ('left', 'outer'):
+            right = [[name, option(dt)] for name, dt in right]
+
+        return dshape(Record(joined + left + right))
 
 
-def join(lhs, rhs, on_left=None, on_right=None):
+def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     if not on_left and not on_right:
         on_left = on_right = unpack(list(sorted(
             set(lhs.columns) & set(rhs.columns),
@@ -515,7 +561,14 @@ def join(lhs, rhs, on_left=None, on_right=None):
     _on_right = (tuple(on_right) if isinstance(on_right, list)
                         else on_right)
 
-    return Join(lhs, rhs, _on_left, _on_right)
+    how = how.lower()
+    if how not in ('inner', 'outer', 'left', 'right'):
+        raise ValueError("How parameter should be one of "
+                         "\n\tinner, outer, left, right."
+                         "\nGot: %s" % how)
+
+    return Join(lhs, rhs, _on_left, _on_right, how)
+
 
 join.__doc__ = Join.__doc__
 
@@ -566,26 +619,59 @@ class Reduction(Scalar):
     350
     """
     __slots__ = 'child',
+    dtype = None
 
     @property
     def dshape(self):
-        return self.child.dshape.subarray(1)
+        if self.child.columns and len(self.child.columns) == 1:
+            name = self.child.columns[0] + '_' + type(self).__name__
+            return DataShape(Record([[name, self.dtype]]))
+        else:
+            return DataShape(Record([[type(self).__name__, self.dtype]]))
 
     @property
     def symbol(self):
         return type(self).__name__
 
 
-class any(Reduction): pass
-class all(Reduction): pass
-class sum(Reduction): pass
-class max(Reduction): pass
-class min(Reduction): pass
-class mean(Reduction): pass
-class var(Reduction): pass
-class std(Reduction): pass
-class count(Reduction): pass
-class nunique(Reduction): pass
+class any(Reduction):
+    dtype = ct.bool_
+class all(Reduction):
+    dtype = ct.bool_
+class sum(Reduction):
+    @property
+    def dtype(self):
+        schema = self.child.schema[0]
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            return first(schema.types)
+        else:
+            return schema
+class max(Reduction):
+    @property
+    def dtype(self):
+        schema = self.child.schema[0]
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            return first(schema.types)
+        else:
+            return schema
+class min(Reduction):
+    @property
+    def dtype(self):
+        schema = self.child.schema[0]
+        if isinstance(schema, Record) and len(schema.types) == 1:
+            return first(schema.types)
+        else:
+            return schema
+class mean(Reduction):
+    dtype = ct.real
+class var(Reduction):
+    dtype = ct.real
+class std(Reduction):
+    dtype = ct.real
+class count(Reduction):
+    dtype = ct.int_
+class nunique(Reduction):
+    dtype = ct.int_
 
 
 class By(TableExpr):
@@ -610,14 +696,16 @@ class By(TableExpr):
     @property
     def schema(self):
         group = self.grouper.schema[0].parameters[0]
+        reduction_name = type(self.apply).__name__
         if isinstance(self.apply.dshape[0], Record):
             apply = self.apply.dshape[0].parameters[0]
         else:
-            apply = (('0', self.apply.dshape),)
+            apply = ((reduction_name, self.apply.dshape),)
 
         params = unique(group + apply, key=lambda x: x[0])
 
         return dshape(Record(list(params)))
+
 
 def by(child, grouper, apply):
     if isdimension(apply.dshape[0]):
@@ -735,7 +823,7 @@ class Label(RowWise, ColumnSyntaxMixin):
     @property
     def schema(self):
         if isinstance(self.child.schema[0], Record):
-            dtype = self.child.schema[0].fields.values()[0]
+            dtype = self.child.schema[0].types[0]
         else:
             dtype = self.child.schema[0]
         return DataShape(Record([[self.label, dtype]]))
@@ -756,7 +844,7 @@ class ReLabel(RowWise):
     @property
     def schema(self):
         subs = dict(self.labels)
-        d = self.child.schema[0].fields
+        d = self.child.schema[0].dict
 
         return DataShape(Record([[subs.get(name, name), dtype]
             for name, dtype in self.child.schema[0].parameters[0]]))

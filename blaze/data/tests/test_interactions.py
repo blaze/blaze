@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 
 from blaze.data import CSV, JSON_Streaming, HDF5, SQL, copy
 from blaze.utils import filetext, tmpfile
-from blaze.compatibility import skip
 from blaze.data.utils import tuplify
 
 class SingleTestClass(unittest.TestCase):

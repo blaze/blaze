@@ -35,13 +35,13 @@ def reason(response):
 
 
 class Client(DataDescriptor):
-    __slots__ = 'uri', 'name'
+    __slots__ = 'uri', '_name'
     def __init__(self, url, name):
         self.url = url.strip('/')
-        self.name = name
+        self._name = name
 
     def _get_data(self, key):
-        response = requests.put('%s/data/%s.json' % (self.url, self.name),
+        response = requests.put('%s/data/%s.json' % (self.url, self._name),
                                 data=json.dumps({'index': emit_index(key)}),
                                 headers = {'Content-type': 'application/json',
                                            'Accept': 'text/plain'})
@@ -70,4 +70,4 @@ class Client(DataDescriptor):
 
         data = json.loads(content(response))
 
-        return dshape(data[self.name])
+        return dshape(data[self._name])

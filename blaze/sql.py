@@ -1,12 +1,12 @@
 from .compute.sql import *
 from .compute.sql import select
 from .data.sql import *
-from .expr.table import Join, Expr, TableExpr
+from .expr.table import Join, Expr, TableExpr, Projection, Column
 from .expr.scalar.core import Scalar
 
 import sqlalchemy
 
-@dispatch(Expr, SQL)
+@dispatch((Column, Projection, Expr), SQL)
 def compute_one(t, ddesc, **kwargs):
     return compute_one(t, ddesc.table, **kwargs)
 

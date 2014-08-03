@@ -141,6 +141,43 @@ def test_join():
     assert result == expected
 
 
+def test_outer_join():
+    left = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    right = [('NYC', 1),
+             ('Boston', 1),
+             ('LA', 3),
+             ('Moscow', 4)]
+
+    L = TableSymbol('L', '{id: int, name: string, amount: real}')
+    R = TableSymbol('R', '{city: string, id: int}')
+
+    assert set(compute(join(L, R), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='left'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='right'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert set(compute(join(L, R, how='outer'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+
 def test_multi_column_join():
     left = [(1, 2, 3),
             (2, 3, 4),
@@ -228,11 +265,11 @@ def test_graph_double_join():
     t_arc = TableSymbol('t_arc', '{a: int32, b: int32}')
     t_wanted = TableSymbol('t_wanted', '{name: string}')
 
-    j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'a', 'b']]
+    j = join(join(t_idx, t_arc, 'b'), t_wanted, 'name')[['name', 'b', 'a']]
 
     result = compute(j, {t_idx: idx, t_arc: arc, t_wanted: wanted})
-    result = set(map(tuple, result))
-    expected = set([('A', 3, 1),
+    result = sorted(map(tuple, result))
+    expected = sorted([('A', 3, 1),
                     ('A', 2, 1),
                     ('A', 5, 1),
                     ('F', 1, 6),
@@ -314,6 +351,23 @@ def test_merge():
     assert list(compute(expr, data)) == [(row[0], row[1] * 2) for row in data]
 
 
+def test_map_columnwise():
+    colwise = t['amount'] * t['id']
+
+    expr = colwise.map(lambda x: x / 10, schema="{mod: int64}", iscolumn=True)
+
+    assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data]
+
+
+def test_map_columnwise_of_selection():
+    tsel = t[ t['name'] == 'Alice' ]
+    colwise = tsel['amount'] * tsel['id']
+
+    expr = colwise.map(lambda x: x / 10, schema="{mod: int64}", iscolumn=True)
+
+    assert list(compute(expr, data)) == [((row[1]*row[2]) / 10) for row in data[::2]]
+
+
 def test_selection_out_of_order():
     expr = t['name'][t['amount'] < 100]
 
@@ -357,3 +411,24 @@ def test_union():
     result = list(compute(expr, {t1: L1, t2: L2, t3: L3}))
 
     assert result == L1 + L2 + L3
+
+
+def test_by_groupby_deep():
+    data = [(1, 2, 'Alice'),
+            (1, 3, 'Bob'),
+            (2, 4, 'Alice'),
+            (2, 4, '')]
+
+    schema = '{x: int, y: int, name: string}'
+    t = TableSymbol('t', schema)
+
+    t2 = t[t['name'] != '']
+    t3 = merge(t2.x, t2.name)
+    expr = by(t3, t3.name, t3.x.mean())
+    result = set(compute(expr, data))
+    assert result == set([('Alice', 1.5), ('Bob', 1.0)])
+
+
+def test_by_then_sort_dict_items_sequence():
+    expr = by(tbig, tbig.name, tbig.amount.sum()).sort('name')
+    assert compute(expr, databig)

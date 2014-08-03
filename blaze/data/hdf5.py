@@ -51,12 +51,6 @@ class HDF5(DataDescriptor):
     **kwargs:
         Options to send to h5py - see h5py.File.create_dataset for options
     """
-    immutable = False
-    deferred = False
-    persistent = True
-    appendable = True
-    remote = False
-
     def __init__(self, path, datapath,
                  schema=None, dshape=None, **kwargs):
         self.path = path

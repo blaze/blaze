@@ -6,6 +6,7 @@ from datashape import dshape
 
 from blaze.api.into import into, discover
 import blaze
+from blaze import Table
 
 
 def skip(test_foo):
@@ -45,6 +46,7 @@ class Test_into(unittest.TestCase):
 
     def test_numpy(self):
         assert (into(np.array(0), [1, 2]) == np.array([1, 2])).all()
+        assert (into(np.array(0), iter([1, 2])) == np.array([1, 2])).all()
         self.assertEqual(into([], np.array([1, 2])),
                          [1, 2])
 
@@ -64,6 +66,11 @@ try:
     from blaze.data.python import Python
 except ImportError:
     Python = None
+
+try:
+    from bokeh.objects import ColumnDataSource
+except ImportError:
+    ColumnDataSource = None
 
 
 @skip_if_not(DataFrame and Python)
@@ -95,6 +102,24 @@ def test_pandas_dynd():
 
 
 @skip_if_not(DataFrame)
+def test_pandas_numpy():
+    data = [('Alice', 100), ('Bob', 200)]
+    dtype=[('name', 'O'), ('amount', int)]
+
+    x = np.array(data, dtype=dtype)
+
+    result = into(DataFrame(), x)
+    expected = DataFrame(data, columns=['name', 'amount'])
+    assert str(result) == str(expected)
+
+    result = into(DataFrame(columns=['name', 'amount']), x)
+    expected = DataFrame(data, columns=['name', 'amount'])
+    print(result)
+    print(expected)
+    assert str(result) == str(expected)
+
+
+@skip_if_not(DataFrame)
 def test_pandas_seq():
     assert str(into(DataFrame, [1, 2])) == \
             str(DataFrame([1, 2]))
@@ -102,6 +127,32 @@ def test_pandas_seq():
             str(DataFrame([1, 2]))
     assert str(into(DataFrame(columns=['a', 'b']), [(1, 2), (3, 4)])) == \
             str(DataFrame([[1, 2], [3, 4]], columns=['a', 'b']))
+
+
+@skip_if_not(DataFrame)
+def test_pandas_pandas():
+    data = [('Alice', 100), ('Bob', 200)]
+    df = DataFrame(data, columns=['name', 'balance'])
+    new_df = into(DataFrame, df)
+    # Data must be the same
+    assert np.all(new_df == df)
+    # new_df should be a copy of df
+    assert id(new_df) != id(df)
+
+
+@skip_if_not(DataFrame)
+def test_DataFrame_Series():
+    data = [('Alice', 100), ('Bob', 200)]
+    df = DataFrame(data, columns=['name', 'balance'])
+
+    new_df = into(DataFrame, df['name'])
+
+    assert np.all(new_df == DataFrame([['Alice'], ['Bob']], columns=['name']))
+
+    # new_df should be a copy of df
+    assert id(new_df) != id(df['name'])
+
+    assert isinstance(new_df, DataFrame)
 
 
 def test_discover_ndarray():
@@ -128,3 +179,22 @@ def test_discover_pandas():
     result = into(nd.array, df)
 
     assert nd.as_py(result, tuple=True) == data
+
+@skip_if_not(Table and DataFrame)
+def test_into_table_dataframe():
+    data = [['Alice', 100], ['Bob', 200]]
+    t = Table(data, columns=['name', 'amount'])
+
+    assert list(into(DataFrame(), t).columns) == list(t.columns)
+    assert into([], into(DataFrame(), t)) == data
+
+
+@skip_if_not(Table and ColumnDataSource)
+def test_Column_data_source():
+    data = [('Alice', 100), ('Bob', 200)]
+    t = Table(data, columns=['name', 'balance'])
+
+    cds = into(ColumnDataSource(), t)
+
+    assert isinstance(cds, ColumnDataSource)
+    assert set(cds.column_names) == set(t.columns)

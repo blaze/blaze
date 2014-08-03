@@ -340,3 +340,55 @@ def test_union():
 
     assert np.all(result.columns == d1.columns)
     assert set(result['id']) == set(range(1, 10))
+
+
+def test_outer_join():
+    left = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    left = DataFrame(left, columns=['id', 'name', 'amount'])
+
+    right = [('NYC', 1),
+             ('Boston', 1),
+             ('LA', 3),
+             ('Moscow', 4)]
+    right = DataFrame(right, columns=['city', 'id'])
+
+    L = TableSymbol('L', '{id: int, name: string, amount: real}')
+    R = TableSymbol('R', '{city: string, id: int}')
+
+    convert = lambda df: set(df.to_records(index=False).tolist())
+
+    assert convert(compute(join(L, R), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    assert convert(compute(join(L, R, how='left'), {L: left, R: right})) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, np.nan),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    df = compute(join(L, R, how='right'), {L: left, R: right})
+    expected = DataFrame(
+            [(1., 'Alice', 100., 'NYC'),
+             (1., 'Alice', 100., 'Boston'),
+             (3., np.nan, np.nan, 'LA'),
+             (4., 'Dennis', 400., 'Moscow')],
+            columns=['id', 'name', 'amount', 'city'])
+
+    assert str(df.sort('id').to_records(index=False)) ==\
+            str(expected.sort('id').to_records(index=False))
+
+    df = compute(join(L, R, how='outer'), {L: left, R: right})
+    expected = DataFrame(
+            [(1., 'Alice', 100., 'NYC'),
+             (1., 'Alice', 100., 'Boston'),
+             (2., 'Bob', 200., np.nan),
+             (3., np.nan, np.nan, 'LA'),
+             (4., 'Dennis', 400., 'Moscow')],
+            columns=['id', 'name', 'amount', 'city'])
+
+    assert str(df.sort('id').to_records(index=False)) ==\
+            str(expected.sort('id').to_records(index=False))

@@ -7,6 +7,7 @@ from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
 import numpy as np
+from pandas import DataFrame, Series
 
 from ..dispatch import dispatch
 
@@ -51,6 +52,10 @@ def into(a, b):
 def into(a, b):
     return nd.as_numpy(b, allow_copy=True)
 
+@dispatch(np.ndarray, Iterator)
+def into(a, b):
+    return np.asarray(list(b))
+
 @dispatch(np.ndarray, Iterable)
 def into(a, b):
     return np.asarray(b)
@@ -60,16 +65,21 @@ def into(a, b):
     return b.tolist()
 
 from blaze.data import DataDescriptor
-from pandas import DataFrame
 @dispatch(DataFrame, DataDescriptor)
 def into(a, b):
     return DataFrame(list(b), columns=b.columns)
 
-
 @dispatch(DataFrame, np.ndarray)
 def into(df, x):
-    return DataFrame(x)
+    if len(df.columns) > 0:
+        columns = list(df.columns)
+    else:
+        columns = list(x.dtype.names)
+    return DataFrame(x, columns=columns)
 
+@dispatch(list, DataFrame)
+def into(_, df):
+    return np.asarray(df).tolist()
 
 @dispatch(DataFrame, nd.array)
 def into(a, b):
@@ -92,6 +102,13 @@ def into(df, seq):
     else:
         return DataFrame(list(seq))
 
+@dispatch(DataFrame, DataFrame)
+def into(_, df):
+    return df.copy()
+
+@dispatch(DataFrame, Series)
+def into(_, df):
+    return DataFrame(df)
 
 @dispatch(nd.array, DataFrame)
 def into(a, df):
@@ -113,3 +130,20 @@ def discover(df):
     dtypes = [datashape.string if dt == obj else dt for dt in dtypes]
     schema = Record(list(zip(names, dtypes)))
     return len(df) * schema
+
+
+try:
+    from bokeh.objects import ColumnDataSource
+    from blaze.expr.table import TableExpr
+
+    @dispatch(ColumnDataSource, (TableExpr, DataFrame))
+    def into(cds, t):
+        return ColumnDataSource(data=dict((col, into(np.ndarray, t[col]))
+                                          for col in t.columns))
+
+    @dispatch(DataFrame, ColumnDataSource)
+    def into(df, cds):
+        return cds.to_df()
+
+except ImportError:
+    pass

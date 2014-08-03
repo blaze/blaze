@@ -4,7 +4,7 @@ from blaze.compute.sql import compute, computefull, select
 from blaze.expr.table import *
 import sqlalchemy
 import sqlalchemy as sa
-from blaze.compatibility import skip
+from blaze.compatibility import xfail
 from blaze.utils import unique
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -164,7 +164,7 @@ def test_nunique():
     assert 'amount' in result.lower()
 
 
-@skip("Fails because SQLAlchemy doesn't seem to know binary reductions")
+@xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
             str(sa.sql.functions.any(s.c.amount > 150))
@@ -294,3 +294,70 @@ def test_union():
 
     assert "SELECT name, amount, id" in str(result)
     assert "accounts_1 UNION accounts_2 UNION accounts_3" in str(result)
+
+
+def test_outer_join():
+    L = TableSymbol('L', '{id: int, name: string, amount: real}')
+    R = TableSymbol('R', '{city: string, id: int}')
+
+    from blaze.sql import SQL
+    engine = sa.create_engine('sqlite:///:memory:')
+
+    _left = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    left = SQL(engine, 'left', schema=L.schema)
+    left.extend(_left)
+
+    _right = [('NYC', 1),
+             ('Boston', 1),
+             ('LA', 3),
+             ('Moscow', 4)]
+    right = SQL(engine, 'right', schema=R.schema)
+    right.extend(_right)
+
+    conn = engine.connect()
+
+
+    query = compute(join(L, R, how='inner'), {L: left.table, R: right.table})
+    result = list(map(tuple, conn.execute(query).fetchall()))
+
+    assert set(result) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    query = compute(join(L, R, how='left'), {L: left.table, R: right.table})
+    result = list(map(tuple, conn.execute(query).fetchall()))
+
+    assert set(result) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    query = compute(join(L, R, how='right'), {L: left.table, R: right.table})
+    print(query)
+    result = list(map(tuple, conn.execute(query).fetchall()))
+    print(result)
+
+    assert set(result) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+
+    # SQLAlchemy doesn't support full outer join
+    """
+    query = compute(join(L, R, how='outer'), {L: left.table, R: right.table})
+    result = list(map(tuple, conn.execute(query).fetchall()))
+
+    assert set(result) == set(
+            [(1, 'Alice', 100, 'NYC'),
+             (1, 'Alice', 100, 'Boston'),
+             (2, 'Bob', 200, None),
+             (3, None, None, 'LA'),
+             (4, 'Dennis', 400, 'Moscow')])
+    """
+
+    conn.close()

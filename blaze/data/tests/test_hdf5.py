@@ -7,11 +7,11 @@ import numpy as np
 from sys import stdout
 from datetime import date, datetime
 from datashape import dshape
+import pytest
 
 from blaze.api.into import into
 from blaze.data.hdf5 import HDF5, discover
-from blaze.utils import tmpfile
-from blaze.compatibility import skip, unicode
+from blaze.compatibility import unicode, xfail
 
 
 class MakeFile(unittest.TestCase):
@@ -146,6 +146,7 @@ class SingleTestClass(MakeFile):
         self.assertEqual(nd.as_py(dd.as_dynd()), [[[2, 2], [1, 1]],
                                                   [[1, 1], [1, 1]]])
 
+
 class TestIndexing(MakeFile):
     data = [(1, 100),
             (2, 200),
@@ -162,7 +163,7 @@ class TestIndexing(MakeFile):
         self.assertEqual(tuple(dd.py[[0, 1], 'y']), (100, 200))
         self.assertEqual(tuple(dd.py[::2, 'y']), (100, 300))
 
-    @skip("when the world improves")
+    @xfail(reason="when the world improves")
     def test_out_of_order_rows(self):
         assert tuple(dd.py[[1, 0], 'x']) == (2, 1)
 
@@ -195,13 +196,13 @@ class TestRecordInputs(MakeFile):
 
 
 class TestTypes(MakeFile):
-    @skip("h5py doesn't support datetimes well")
+    @xfail(reason="h5py doesn't support datetimes well")
     def test_date(self):
         dd = HDF5(self.filename, 'data',
                   dshape='var * {x: int, y: date}')
         dd.extend([(1, date(2000, 1, 1)), (2, date(2000, 1, 2))])
 
-    @skip("h5py doesn't support datetimes well")
+    @xfail(reason="h5py doesn't support datetimes well")
     def test_datetime(self):
         dd = HDF5(self.filename, 'data',
                   dshape='var * {x: int, y: datetime}')
@@ -239,11 +240,9 @@ class TestDiscovery(MakeFile):
         self.assertEqual(dd.schema, dd2.schema)
         self.assertEqual(dd.dshape, dd2.dshape)
 
-
-    @skip("No longer enforcing same dshapes")
+    @xfail(reason="No longer enforcing same dshapes")
     def test_ddesc_conflicts(self):
-        dd = HDF5(self.filename, 'data',
-                  schema='2 * int32')
+        dd = HDF5(self.filename, 'data', schema='2 * int32')
         dd.extend([(1, 2), (2, 3), (4, 5)])
-        self.assertRaises(TypeError, lambda: HDF5(self.filename, 'data',
-                                                  schema='2 * float32'))
+        with pytest.raises(TypeError):
+            HDF5(self.filename, 'data', schema='2 * float32')

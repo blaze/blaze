@@ -4,6 +4,11 @@ import logging
 
 from dynd import nd
 from pandas import DataFrame
+
+from multipledispatch import halt_ordering, restart_ordering
+
+halt_ordering() # Turn off multipledispatch ordering
+
 from .expr.table import *
 from .api import *
 from .data.csv import *
@@ -13,9 +18,17 @@ from .compute.python import *
 from .data.pandas import *
 from .data.meta import *
 from .compute.pandas import *
+from .compute.numpy import *
 from .compute.core import *
 from .compute.core import compute
+from .sql import *
 
+try:
+    from .spark import *
+except ImportError:
+    pass
+
+restart_ordering() # Restart multipledispatch ordering and do ordering
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -40,7 +53,6 @@ def print_versions():
     import numpy as np
     import dynd
     import datashape
-    import blz
     print("-=" * 38)
     print("Blaze version: %s" % __version__)
     print("Datashape version: %s" % datashape.__version__)
@@ -57,50 +69,57 @@ def print_versions():
         processor = "not recognized"
     print("Processor: %s" % processor)
     print("Byte-ordering: %s" % sys.byteorder)
-    print("Detected cores: %s" % blz.detect_number_of_cores())
     print("-=" * 38)
 
 
-def test(verbosity=1, xunitfile=None, exit=False):
+def test(verbose=False, junitfile=None, exit=False):
     """
     Runs the full Blaze test suite, outputting
     the results of the tests to sys.stdout.
 
-    This uses nose tests to discover which tests to
+    This uses py.test to discover which tests to
     run, and runs tests in any 'tests' subdirectory
     within the Blaze module.
 
     Parameters
     ----------
-    verbosity : int, optional
+    verbose : int, optional
         Value 0 prints very little, 1 prints a little bit,
         and 2 prints the test names while testing.
-    xunitfile : string, optional
-        If provided, writes the test results to an xunit
+    junitfile : string, optional
+        If provided, writes the test results to an junit xml
         style xml file. This is useful for running the tests
         in a CI server such as Jenkins.
     exit : bool, optional
         If True, the function will call sys.exit with an
         error code after the tests are finished.
     """
-    import nose
     import os
     import sys
-    argv = ['nosetests', '--verbosity=%d' % verbosity]
+    import pytest
+
+    args = []
+
+    if verbose:
+        args.append('--verbose')
+
     # Output an xunit file if requested
-    if xunitfile:
-        argv.extend(['--with-xunit', '--xunit-file=%s' % xunitfile])
-    # Set the logging level to warn
-    argv.extend(['--logging-level=WARN'])
+    if junitfile is not None:
+        args.append('--junit-xml=%s' % junitfile)
+
     # Add all 'tests' subdirectories to the options
     rootdir = os.path.dirname(__file__)
     for root, dirs, files in os.walk(rootdir):
         if 'tests' in dirs:
             testsdir = os.path.join(root, 'tests')
-            argv.append(testsdir)
-            print('Test dir: %s' % testsdir[len(rootdir)+1:])
+            args.append(testsdir)
+            print('Test dir: %s' % testsdir[len(rootdir) + 1:])
     # print versions (handy when reporting problems)
     print_versions()
     sys.stdout.flush()
-    # Ask nose to do its thing
-    return nose.main(argv=argv, exit=exit)
+
+    # Ask pytest to do its thing
+    error_code = pytest.main(args=args)
+    if exit:
+        return sys.exit(error_code)
+    return error_code

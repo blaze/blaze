@@ -1,5 +1,5 @@
-dynd-python >= 0.6.3
-datashape >= 0.2.1
+dynd-python
+datashape
 numpy >= 1.6
 sqlalchemy
 pandas
@@ -8,5 +8,5 @@ multipledispatch >= 0.4.3
 cytoolz
 toolz
 flask >= 0.10.1
-nose >= 1.1
-unicodecsv
+pytest
+requests
