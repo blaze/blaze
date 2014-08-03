@@ -45,6 +45,10 @@ def test_distinct():
     assert sorted(compute(t.name.distinct(), c)) == \
             ['Alice', 'Bob', 'Charlie', 'Edith']
 
+def test_nunique():
+    assert compute(t.name.nunique(), c) == 4
+    assert compute(t.nunique(), c) == 5
+
 
 def test_columnwise():
     assert list(concat(compute(t.id + 1, c))) == [2, 3, 4, 5, 6]

@@ -91,6 +91,12 @@ def compute_one(expr, c, **kwargs):
     return reduce(binop, (compute_one(expr, chunk) for chunk in c))
 
 
+@dispatch(nunique, ChunkIter)
+def compute_one(expr, c, **kwargs):
+    dist = compute_one(expr.child.distinct(), c)
+    return compute_one(expr.child.count(), dist)
+
+
 @dispatch((list, tuple, Iterator))
 def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
