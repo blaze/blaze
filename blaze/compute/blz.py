@@ -67,9 +67,12 @@ def compute_one(expr, bt, **kwargs):
 
 @dispatch(Distinct, (blz.barray, blz.btable))
 def compute_one(expr, bt, **kwargs):
-    t = TableSymbol('_', schema=expr.child)
-    union = np.vstack([compute_one(t.distinct(), chunk) for chunk in chunks(bt)])
-    return compute_one(t.distinct(), union)
+    t = TableSymbol('_', schema=expr.child.schema)
+    intermediates = [compute_one(t.distinct(), chunk) for chunk in chunks(bt)]
+    children = [TableSymbol('_%d'%i, schema=expr.child.schema) for i in
+            range(len(intermediates))]
+    u = compute_one(union(*children), intermediates)
+    return compute_one(t.distinct(), u)
 
 
 @dispatch(mean, blz.barray)
