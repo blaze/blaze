@@ -81,3 +81,12 @@ def test_join():
     assert set(concat(compute(join(t, cities, 'id')[['name', 'city']],
                               {t: c, cities: city_data}))) == \
             set((('Alice', 'NYC'), ('Alice', 'Chicago'), ('Edith', 'Paris')))
+
+
+def test_by():
+    assert set(compute(by(t, t.name, t.amount.sum()), c)) == \
+            set([('Alice', -200), ('Bob', 200),
+                 ('Charlie', 400), ('Edith', 200)])
+    assert set(compute(by(t, t.name, t.amount.count()), c)) == \
+            set([('Alice', 2), ('Bob', 1),
+                 ('Charlie', 1), ('Edith', 1)])

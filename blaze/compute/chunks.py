@@ -97,6 +97,36 @@ def compute_one(expr, c, **kwargs):
     return compute_one(expr.child.count(), dist)
 
 
+@dispatch(By, ChunkIter)
+def compute_one(expr, c, **kwargs):
+    if not isinstance(expr.apply, tuple(reductions)):
+        raise NotImplementedError("Chunked split-apply-combine only "
+                "implemented for simple reductions")
+
+    a, b = reductions[type(expr.apply)]
+
+    perchunk = by(expr.child, expr.grouper, a(expr.apply.child))
+
+
+    apply_cols = expr.apply.child.columns
+    if expr.apply.child.iscolumn:
+        apply_cols = apply_cols[0]
+
+
+    t1 = TableSymbol('t1', expr.child.schema)
+    t2 = TableSymbol('t2', expr.child.schema)
+    u = union(t1, t2)
+
+    group = by(u,
+               u[expr.grouper.columns],
+               b(u[apply_cols]))
+
+    binop = lambda x, y: compute(group, {t1: x, t2: y})
+
+    return reduce(binop, (compute_one(perchunk, chunk) for chunk in c))
+
+
+
 @dispatch((list, tuple, Iterator))
 def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
