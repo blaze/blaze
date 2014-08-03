@@ -26,3 +26,11 @@ def into(a, b, columns=None, schema=None):
                                     sorted(b.names)),
                                 orient='columns',
                                 columns=columns)
+
+@dispatch((blz.barray, blz.btable))
+def chunks(b, chunksize=1024):
+    start = 0
+    n = b.len
+    while start < n:
+        yield b[start:start + chunksize]
+        start += chunksize

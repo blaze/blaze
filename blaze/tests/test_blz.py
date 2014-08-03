@@ -4,7 +4,7 @@ import blz
 import numpy as np
 from pandas import DataFrame
 
-from blaze.blz import into
+from blaze.blz import into, chunks
 
 
 b = blz.btable([[1, 2, 3],
@@ -33,3 +33,7 @@ def test_into_DataFrame_btable():
 
 def test_into_list_barray():
     assert into([], b['a']) == [1, 2, 3]
+
+
+def test_chunks():
+    assert len(list(chunks(b, chunksize=2))) == 2
