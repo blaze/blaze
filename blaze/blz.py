@@ -28,9 +28,13 @@ def into(a, b, columns=None, schema=None):
                                 columns=columns)
 
 @dispatch((blz.barray, blz.btable))
-def chunks(b, chunksize=1024):
+def chunks(b, chunksize=1024, columns=None, schema=None):
+    if not columns and schema:
+        columns = dshape(schema)[0].names
     start = 0
     n = b.len
     while start < n:
-        yield b[start:start + chunksize]
+        yield DataFrame.from_items(((column, b[column][start:start + chunksize])
+                                    for column in sorted(b.names)),
+                                    orient='columns', columns=columns)
         start += chunksize
