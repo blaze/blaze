@@ -37,5 +37,4 @@ def test_into_list_barray():
 
 def test_chunks():
     assert len(list(chunks(b, chunksize=2))) == 2
-    assert str(next(chunks(b, chunksize=2))) == \
-            str(into(DataFrame(), b)[:2])
+    assert (next(chunks(b, chunksize=2)) == into(np.array(0), b)[:2]).all()
