@@ -39,7 +39,7 @@ Simple Calculations
 ~~~~~~~~~~~~~~~~~~~
 
 Blaze supports simple computations like column selection and filtering
-with familiar Pandas getitem syntax.
+with familiar Pandas getitem or attribute syntax.
 
 .. doctest::
 
@@ -48,14 +48,15 @@ with familiar Pandas getitem syntax.
    0   2    Bob     -200
    1   5  Edith     -500
 
-   [2 rows x 3 columns]
+   >>> t[t.balance < 0]
+      id   name  balance
+   0   2    Bob     -200
+   1   5  Edith     -500
 
-   >>> t[t['balance'] < 0]['name']
+   >>> t[t.balance < 0].name
        name
    0    Bob
    1  Edith
-
-   [2 rows x 1 columns]
 
 
 Stored Data
@@ -115,9 +116,9 @@ of data
 
 .. doctest::
 
-   >>> by(iris,                           # Split apply combine operation
-   ...    iris['species'],                # Group by species
-   ...    iris['petal_width'].mean())     # Take the mean of the petal_width column
+   >>> by(iris,                        # Split apply combine operation
+   ...    iris.species,                # Group by species
+   ...    iris.petal_width.mean())     # Take the mean of the petal_width column
               species  petal_width
    0   Iris-virginica        2.026
    1      Iris-setosa        0.246
@@ -133,12 +134,12 @@ by calling ``compute``.
 
 .. doctest::
 
-   >>> t[t['balance'] < 0]['name']                  # Still a Table Expression
+   >>> t[t.balance < 0].name                  # Still a Table Expression
        name
    0    Bob
    1  Edith
 
-   >>> list(compute(t[t['balance'] < 0]['name']))   # Just a raw list
+   >>> list(compute(t[t.balance < 0].name))   # Just a raw list
    ['Bob', 'Edith']
 
 Alternatively use the ``into`` operation to push your output into a suitable
@@ -147,8 +148,8 @@ container type.
 .. doctest::
 
    >>> result = by(iris,
-   ...             iris['species'],
-   ...             iris['petal_width'].mean())
+   ...             iris.species,
+   ...             iris.petal_width.mean())
 
    >>> into([], result)                       # Push result into a list
    [(u'Iris-virginica', 2.026),

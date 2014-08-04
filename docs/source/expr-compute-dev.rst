@@ -56,11 +56,12 @@ And the set of input expressions in a ``.inputs`` attribute
 By traversing ``.args`` one can traverse the tree of all identifying
 information (including annotating strings and values like ``'name'``) or by
 traversing ``.inputs`` one can inspect the much sparser tree of just the major
-table expressions.
+table expressions, skipping parameters like the particular column name to be
+selected.
 
 Most terms have only a single child input.  And so often the ``.inputs`` tree
 is just a single line of nodes.  Notable exceptions include operations like
-``Join`` and ``Binop``.
+``Join`` and ``Binop`` which contain two inputs.
 
 
 Expression Invariants
@@ -74,9 +75,11 @@ Blaze expressions adhere to the following properties:
 3.  They have simple ``__init__`` constructors that only copy in fields to the
     object.  For intelligent argument handling they have functions.  E.g. the
     ``Join`` class has an analagous ``join`` function that should be used by
-    users.
-4.  They can compute their datashape ``dshape`` and ``schema``/``columns`` if
-    they are tabular.
+    users.  Same with the internal ``By`` class as the user-level ``by``
+    function.
+4.  They can compute their datashape ``dshape``.  Table expressions can compute
+    their ``schema`` (the ``dshape`` of a single row) and ``columns``, a list
+    of fields.
 
 
 Other Expressions
@@ -98,13 +101,13 @@ which broadcasts a scalar expression onto a table expression.
 Computation
 -----------
 
-Once we have a Blaze expression like
+Once we have a Blaze expression like the following:
 
 .. code-block:: python
 
    deadbeats = t[t['amount'] < 0]['name']
 
-and some data like
+and some data like the following:
 
 .. code-block:: python
 
@@ -112,7 +115,7 @@ and some data like
            [2, 'Bob', -200],
            [3, 'Charlie', 300]]
 
-and a mapping of TableSymbols to data like
+and a mapping of TableSymbols to data like the following:
 
 .. code-block:: python
 
@@ -140,7 +143,7 @@ and transforms the data appropriately, like
 .. code-block:: python
 
    predicate = lambda id, name, amt: amt < 0
-   result = filter(predicate, data)
+   data = filter(predicate, data)
 
 This step-by-step approach is easy to define through dispatched ``compute_one``
 functions.  We create a small recipe for how to compute each expression type
@@ -156,25 +159,29 @@ mapping a ``Selection`` to a ``DataFrame``:
        apply = compute(t.apply, {t.child: df})
        return apply[predicate]
 
-The goal is that this approach is highly modular and allows interpretation
-systems to be built up as a collection of small pieces.  One can begin the
-construction of a new backend by showing Blaze how to perform each individual
-operation on a new data type.  For example here is a start on a new PyTables
-backend:
+This approach is modular and allows interpretation systems to be built up as a
+collection of small pieces.  One can begin the construction of a new backend by
+showing Blaze how to perform each individual operation on a new data type.  For
+example here is a start of a backend for PyTables:
 
 .. code-block:: python
 
    @dispatch(Selection, tb.Table)
-   def compute_one(sel, t):
-       s = eval_str(sel.predicate)  # produce string like 'amount < 0'
-       return t.read_where(s)       # use PyTables read_where method
+   def compute_one(expr, data):
+       s = eval_str(expr.predicate)  # Produce string like 'amount < 0'
+       return data.read_where(s)     # Use PyTables read_where method
 
    @dispatch(Head, tb.Table)
-   def compute_one(h, t):
-       return t[:h.n]
+   def compute_one(expr, data):
+       return data[:expr.n]          # PyTables supports standard indexing
 
-The intention is that these are isolated enough from Blaze to be easy for new
-developers to write.
+    @dispatch(Column, tb.Table)
+    def compute_one(expr, data):
+        return data.col(expr.column) # Use the PyTables .col method
+
+
+These small functions are isolated enough from Blaze to be easy for new
+developers to write, even without deep knowledge of Blaze internals.
 
 
 Compute Traversal

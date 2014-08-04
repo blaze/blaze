@@ -25,7 +25,7 @@ combination of shape and dtype in NumPy. The datashape of an array
 consists of a number of dimensions, followed by an element type.
 
 Data
-----------------
+----
 
 Blaze data provides uniform data access.  Blaze allows users to deal with
 CSV, JSON, HDF5, SQL, etc. formats as though they were NumPy arrays.
