@@ -1,9 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
-from ..dispatch import dispatch
 import bcolz
 from toolz import map
+import numpy as np
+import math
+from .chunks import Chunks, ChunkIter
+
+from ..compatibility import builtins
+from ..dispatch import dispatch
 
 
 @dispatch(bcolz.ctable)

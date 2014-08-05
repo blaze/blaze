@@ -5,7 +5,7 @@ import blz
 from toolz import map
 import numpy as np
 import math
-from .chunks import Chunks
+from .chunks import Chunks, ChunkIter
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
