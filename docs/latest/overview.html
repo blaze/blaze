@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview &mdash; Blaze 0.6.0-dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-2.2.1.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/bootstrap-responsive-2.2.1.min.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.6.0-dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-2.2.1.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
+    <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
+    <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
+    <link rel="next" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="Install" href="install.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+<div class="container">
+  <!-- This is copied from /web, find better solution -->
+  <div class="masthead">
+    <ul class="nav nav-pills pull-right">
+        <li>
+            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
+        </li>
+
+        <li class="active">
+            <a href="index.html"><i class="icon-book"></i> Documentation</a>
+        </li>
+
+        <li>
+            <a href="quickstart.html"><i class="icon-ok"></i> Examples</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+        </li>
+
+        <li>
+            <a href="/people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://groups.google.com/a/continuum.io/forum/#!forum/blaze-dev"><i class="icon-envelope"></i> Mailing List</a>
+        </li>
+    </ul>
+    <h3 class="muted"><img src="_static/img/logo.png">Blaze</h3>
+  </div>
+
+  <hr>
+
+  <div class="row">
+      <div class="span3">
+         <ul id="nav" class="nav nav-list" data-spy="affix" data-offset-top="200"><li><a href="index.html"><b>Index</b></a></li>
+<ul>
+<li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#blaze-abstracts-computation-and-storage">Blaze Abstracts Computation and Storage</a></li>
+<li><a class="reference internal" href="#datashape">Datashape</a></li>
+<li><a class="reference internal" href="#data">Data</a></li>
+<li><a class="reference internal" href="#expressions">Expressions</a></li>
+<li><a class="reference internal" href="#backends">Backends</a></li>
+<li><a class="reference internal" href="#interfaces">Interfaces</a></li>
+</ul>
+</li>
+</ul>
+
+         </ul>
+      </div>
+      <div class="span9">
+          
+  <div class="section" id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="blaze-abstracts-computation-and-storage">
+<h2>Blaze Abstracts Computation and Storage<a class="headerlink" href="#blaze-abstracts-computation-and-storage" title="Permalink to this headline">¶</a></h2>
+<img alt="_images/numpy_plus.png" class="align-center" src="_images/numpy_plus.png" />
+<p>Several projects provide rich and performant data analytics.  Competition
+between these projects gives rise to a vibrant and dynamic ecosystem.
+Blaze augments this ecosystem with a uniform and adaptable interface.  Blaze
+orchestrates computation and data access among these external projects.  It
+provides a consistent backdrop to build standard interfaces usable by the
+current Python community.</p>
+</div>
+<div class="section" id="datashape">
+<h2>Datashape<a class="headerlink" href="#datashape" title="Permalink to this headline">¶</a></h2>
+<p>The type system in Blaze is called Datashape, and generalizes the
+combination of shape and dtype in NumPy. The datashape of an array
+consists of a number of dimensions, followed by an element type.</p>
+</div>
+<div class="section" id="data">
+<h2>Data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h2>
+<p>Blaze data provides uniform data access.  Blaze allows users to deal with
+CSV, JSON, HDF5, SQL, etc. formats as though they were NumPy arrays.
+Blaze data supports iteration, insertion, and fancy indexing over a variety of
+popular formats.  They provide seemless data migration and robust access for
+computation.  They allow applications to span from local memory to out-of-core
+and distributed storage.</p>
+</div>
+<div class="section" id="expressions">
+<h2>Expressions<a class="headerlink" href="#expressions" title="Permalink to this headline">¶</a></h2>
+<p>Blaze expressions describe computational workflows symbolically. They allow
+developers to architect and check their computations rapidly before applying
+them to data.  Their abstract nature allows them to be moved between backends
+as needs change.  Their symbolic expression allows us to analyze and optimize
+them before they ever reach data.</p>
+</div>
+<div class="section" id="backends">
+<h2>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h2>
+<p>Blaze backends include projects like streaming Python, Pandas, SQLAlchemy, and
+Spark.  A Blaze expression can run equally well on any of these backends,
+allowing developers to easily transition their computation to changing
+performance needs.</p>
+</div>
+<div class="section" id="interfaces">
+<h2>Interfaces<a class="headerlink" href="#interfaces" title="Permalink to this headline">¶</a></h2>
+<p>Blaze interfaces provide interactive Python objects and an intuitive user
+experience.  These high level <tt class="docutils literal"><span class="pre">Table</span></tt> and <tt class="docutils literal"><span class="pre">Array</span></tt> objects manage Blaze
+expressions and computations in an interactive session similar to existing
+workflows with Pandas DataFrames and NumPy NDArrays.</p>
+</div>
+</div>
+
+
+      </div>
+  </div>
+</div>
+  </body>
+</html>
