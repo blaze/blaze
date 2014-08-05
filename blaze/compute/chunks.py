@@ -54,11 +54,20 @@ def compute_one(expr, c, **kwargs):
 @dispatch(Head, ChunkIter)
 def compute_one(expr, c, **kwargs):
     chunk = first(c)
-    if len(chunk) > expr.n:
-        return compute_one(expr, chunk)
-    else:
-        raise NotImplementedError(
-            "Long heads of ChunkIter not yet implemented")
+    n = 0
+    cs = []
+    for chunk in c:
+        cs.append(chunk)
+        n += len(chunk)
+        if n >= expr.n:
+            break
+
+    t1 = TableSymbol('t1', expr.schema)
+    t2 = TableSymbol('t2', expr.schema)
+    binop = lambda a, b: compute(union(t1, t2), {t1: a, t2: b})
+    u = reduce(binop, c)
+
+    return compute_one(expr, u)
 
 
 @dispatch((Selection, RowWise), ChunkIter)
