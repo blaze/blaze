@@ -1,14 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
-from blaze.compute.core import compute
-from toolz import map, partition_all
+from toolz import map, partition_all, reduce
 import numpy as np
 import math
 from collections import Iterator
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
+from .core import compute
 
 
 class ChunkIter(object):
@@ -20,11 +20,12 @@ class ChunkIter(object):
 
 
 class Chunks(ChunkIter):
-    def __init__(self, seq, chunksize=1024):
+    def __init__(self, seq, **kwargs):
         self.seq = seq
+        self.kwargs = kwargs
 
     def __iter__(self):
-        return chunks(self.seq)
+        return chunks(self.seq, **self.kwargs)
 
 
 reductions = {sum: (sum, sum), count: (count, sum),
@@ -50,6 +51,31 @@ def compute_one(expr, c, **kwargs):
         total_count += compute_one(expr.child.count(), chunk)
 
     return total_sum / total_count
+
+
+@dispatch(Head, ChunkIter)
+def compute_one(expr, c, **kwargs):
+    c = iter(c)
+    n = 0
+    cs = []
+    for chunk in c:
+        cs.append(chunk)
+        n += len(chunk)
+        if n >= expr.n:
+            break
+
+    if not cs:
+        return []
+
+    if len(cs) == 1:
+        return compute_one(expr, cs[0])
+
+    t1 = TableSymbol('t1', expr.schema)
+    t2 = TableSymbol('t2', expr.schema)
+    binop = lambda a, b: compute(union(t1, t2), {t1: a, t2: b})
+    u = reduce(binop, cs)
+
+    return compute_one(expr, u)
 
 
 @dispatch((Selection, RowWise), ChunkIter)
@@ -110,13 +136,13 @@ def compute_one(expr, c, **kwargs):
     perchunk = by(expr.child, expr.grouper, a(expr.apply.child))
 
 
-    apply_cols = expr.apply.child.columns
+    apply_cols = expr.apply.dshape[0].names
     if expr.apply.child.iscolumn:
         apply_cols = apply_cols[0]
 
 
-    t1 = TableSymbol('t1', expr.child.schema)
-    t2 = TableSymbol('t2', expr.child.schema)
+    t1 = TableSymbol('t1', perchunk.schema)
+    t2 = TableSymbol('t2', perchunk.schema)
     u = union(t1, t2)
 
     group = by(u,
@@ -128,8 +154,6 @@ def compute_one(expr, c, **kwargs):
     return reduce(binop, (compute_one(perchunk, chunk) for chunk in c))
 
 
-
 @dispatch((list, tuple, Iterator))
 def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
-

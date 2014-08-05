@@ -67,6 +67,10 @@ def test_compound():
     assert compute(t[t.name == 'Alice'].amount.sum(), c) == -200
 
 
+def test_head():
+    assert list(compute(t.head(2), c)) == list(data[:2])
+    assert list(compute(t.head(3), c)) == list(data[:3])
+
 
 def test_join():
     cities = TableSymbol('cities', schema='{id: int, city: string}')

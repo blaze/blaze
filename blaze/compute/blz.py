@@ -5,7 +5,7 @@ import blz
 from toolz import map
 import numpy as np
 import math
-from .chunks import Chunks
+from .chunks import Chunks, ChunkIter
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
@@ -21,7 +21,13 @@ def compute_one(sel, t, **kwargs):
     return map(tuple, t.where(s))
 
 
-@dispatch(Head, blz.btable)
+@dispatch(Selection, blz.barray)
+def compute_one(sel, t, **kwargs):
+    s = eval_str(sel.predicate.expr)
+    return t.where(s)
+
+
+@dispatch(Head, (blz.barray, blz.btable))
 def compute_one(h, t, **kwargs):
     return t[:h.n]
 
@@ -46,7 +52,7 @@ def compute_one(c, t, **kwargs):
     return len(t)
 
 
-@dispatch(Expr, (blz.barray, blz.btable))
+@dispatch((RowWise, Distinct, Reduction, By, count, Label, ReLabel, nunique),  (blz.barray, blz.btable))
 def compute_one(c, t, **kwargs):
     return compute_one(c, Chunks(t), **kwargs)
 
@@ -72,7 +78,7 @@ def compute_one(expr, ba, **kwargs):
 
 
 @dispatch((blz.barray, blz.btable))
-def chunks(b, chunksize=1024):
+def chunks(b, chunksize=2**20):
     start = 0
     n = b.len
     while start < n:
