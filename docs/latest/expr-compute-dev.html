@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -16,7 +17,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
+        URL_ROOT:    '',
         VERSION:     '0.6.0-dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -31,7 +32,6 @@
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
-    <link rel="next" title="Release Notes" href="releases.html" />
     <link rel="prev" title="Developer Workflow" href="dev_workflow.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -46,11 +46,7 @@
   <div class="masthead">
     <ul class="nav nav-pills pull-right">
         <li>
-            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
-        </li>
-
-        <li class="active">
-            <a href="index.html"><i class="icon-book"></i> Documentation</a>
+            <a href="index.html"><i class="icon-home"></i> Blaze</a>
         </li>
 
         <li>
@@ -58,11 +54,15 @@
         </li>
 
         <li>
-            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+            <a href="api.html"><i class="icon-download"></i> API</a>
         </li>
 
         <li>
-            <a href="/people.html"><i class="icon-user"></i> People</a>
+            <a href="people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
 
         <li>
@@ -101,18 +101,17 @@ document in order to use Blaze.</p>
 <div class="section" id="expressions">
 <h2>Expressions<a class="headerlink" href="#expressions" title="Permalink to this headline">¶</a></h2>
 <p>Blaze represents expressions as Python objects.  Classes include:</p>
-<div class="highlight-python"><div class="highlight"><pre>TableSymbol - leaf expression, t
-Projection - subset of columns, t[[&#39;name&#39;, &#39;amount&#39;]]
-Selection - subset of rows t[t[&#39;amount&#39;] &lt; 0]
-Column - single column t[&#39;name&#39;]
-ColumnWise - a combination of a table and a scalar expression, -t[&#39;amount&#39;] + 1
-Join - join two tables on shared columns, join(t, s, &#39;id&#39;)
-Reduction - perform a sum or min or max on a table, t[&#39;amount&#39;].sum()
-By - split-apply-combine operation, by(t, t[&#39;name&#39;], t[&#39;amount&#39;].sum())
+<div class="highlight-python"><pre>TableSymbol - leaf expression, t
+Projection - subset of columns, t[['name', 'amount']]
+Selection - subset of rows t[t['amount'] &lt; 0]
+Column - single column t['name']
+ColumnWise - a combination of a table and a scalar expression, -t['amount'] + 1
+Join - join two tables on shared columns, join(t, s, 'id')
+Reduction - perform a sum or min or max on a table, t['amount'].sum()
+By - split-apply-combine operation, by(t, t['name'], t['amount'].sum())
 
 Also:
-    Sort, Distinct, Head, Label, Map, Apply, Merge
-</pre></div>
+    Sort, Distinct, Head, Label, Map, Apply, Merge</pre>
 </div>
 <p>In each case an operation (like <tt class="docutils literal"><span class="pre">Selection</span></tt>) is a Python class.  Each
 expression defines a fixed set of fields in the <tt class="docutils literal"><span class="pre">__slots__</span></tt> attribute</p>
@@ -271,5 +270,14 @@ the query in our SQL database and returning the concrete results.</p>
       </div>
   </div>
 </div>
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-27761864-10', 'auto');
+    ga('send', 'pageview');
+    </script>
   </body>
 </html>

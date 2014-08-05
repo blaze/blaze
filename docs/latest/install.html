@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -16,7 +17,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
+        URL_ROOT:    '',
         VERSION:     '0.6.0-dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -32,7 +33,7 @@
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
     <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
     <link rel="next" title="Overview" href="overview.html" />
-    <link rel="prev" title="Blaze" href="index.html" />
+    <link rel="prev" title="Core" href="index.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -46,11 +47,7 @@
   <div class="masthead">
     <ul class="nav nav-pills pull-right">
         <li>
-            <a href="/index.html"><i class="icon-home"></i> Blaze</a>
-        </li>
-
-        <li class="active">
-            <a href="index.html"><i class="icon-book"></i> Documentation</a>
+            <a href="index.html"><i class="icon-home"></i> Blaze</a>
         </li>
 
         <li>
@@ -58,11 +55,15 @@
         </li>
 
         <li>
-            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
+            <a href="api.html"><i class="icon-download"></i> API</a>
         </li>
 
         <li>
-            <a href="/people.html"><i class="icon-user"></i> People</a>
+            <a href="people.html"><i class="icon-user"></i> People</a>
+        </li>
+
+        <li>
+            <a href="http://github.com/ContinuumIO/blaze"><i class="icon-download"></i> Source</a>
         </li>
 
         <li>
@@ -95,13 +96,11 @@
 <div class="section" id="installing">
 <h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h2>
 <p>Blaze can be most easily installed from <a class="reference external" href="http://conda.pydata.org/">conda</a></p>
-<div class="highlight-python"><div class="highlight"><pre>$ conda install blaze
-</pre></div>
+<div class="highlight-python"><pre>$ conda install blaze</pre>
 </div>
 <p>If you are interested in the development version of Blaze you can
 obtain the source from Github.</p>
-<div class="highlight-python"><div class="highlight"><pre>$ git clone git@github.com:ContinuumIO/blaze.git
-</pre></div>
+<div class="highlight-python"><pre>$ git clone git@github.com:ContinuumIO/blaze.git</pre>
 </div>
 <p>However many of the dependencies are non-trivial to install.
 It is <strong>highly recommend</strong> that you build Blaze using the Anaconda
@@ -114,17 +113,14 @@ Python environment.</p>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>To build project inside of Anaconda:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ python setup.py install
-</pre></div>
+<div class="highlight-python"><pre>$ python setup.py install</pre>
 </div>
 <p>To build documentation on a unix-based system:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ cd docs
-$ make docs
-</pre></div>
+<div class="highlight-python"><pre>$ cd docs
+$ make docs</pre>
 </div>
 <p>To run tests:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ py.test --doctest-modules --pyargs blaze
-</pre></div>
+<div class="highlight-python"><pre>$ py.test --doctest-modules --pyargs blaze</pre>
 </div>
 </div>
 <div class="section" id="dependencies">
@@ -153,5 +149,14 @@ $ make docs
       </div>
   </div>
 </div>
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-27761864-10', 'auto');
+    ga('send', 'pageview');
+    </script>
   </body>
 </html>
