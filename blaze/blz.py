@@ -13,7 +13,13 @@ from .compute.blz import *
 __all__ = ['into', 'chunks']
 
 
-@dispatch((tuple, set, list, type, object), (blz.btable, blz.barray))
+@dispatch(type, (blz.btable, blz.barray))
+def into(a, b, **kwargs):
+    f = into.resolve((a, type(b)))
+    return f(a, b, **kwargs)
+
+
+@dispatch((tuple, set, list, object), (blz.btable, blz.barray))
 def into(o, b):
     return into(o, into(np.ndarray(0), b))
 
