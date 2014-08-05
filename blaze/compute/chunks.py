@@ -136,13 +136,13 @@ def compute_one(expr, c, **kwargs):
     perchunk = by(expr.child, expr.grouper, a(expr.apply.child))
 
 
-    apply_cols = expr.apply.child.columns
+    apply_cols = expr.apply.dshape[0].names
     if expr.apply.child.iscolumn:
         apply_cols = apply_cols[0]
 
 
-    t1 = TableSymbol('t1', expr.child.schema)
-    t2 = TableSymbol('t2', expr.child.schema)
+    t1 = TableSymbol('t1', perchunk.schema)
+    t2 = TableSymbol('t2', perchunk.schema)
     u = union(t1, t2)
 
     group = by(u,
