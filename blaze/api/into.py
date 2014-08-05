@@ -151,3 +151,19 @@ try:
 
 except ImportError:
     pass
+
+
+try:
+    import h5py
+    from ..compute.chunks import Chunks
+    import bcolz
+    import blz
+
+    @dispatch((bcolz.ctable, bcolz.carray, blz.btable, blz.barray),
+              h5py.Dataset)
+    def into(a, hdf5, **kwargs):
+        return into(a, Chunks(hdf5), **kwargs)
+
+except ImportError:
+    pass
+
