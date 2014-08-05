@@ -640,6 +640,10 @@ isnan = partial(columnwise, scalar.isnan)
 class Reduction(Scalar):
     """ A column-wise reduction
 
+    Blaze supports the same class of reductions as NumPy and Pandas.
+
+        sum, min, max, any, all, mean, var, std, count, nunique
+
     Examples
     --------
 

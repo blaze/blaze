@@ -5,6 +5,15 @@ This page contains a comprehensive list of functionality within ``blaze``.
 Docstrings should provide sufficient understanding for any individual function.
 
 
+Usability
+---------
+
+.. currentmodule:: blaze.api.table
+
+.. autosummary::
+   Table
+
+
 Table Expressions
 -----------------
 
@@ -29,33 +38,12 @@ Table Expressions
    Join
 
 
-Computation
------------
-
-.. currentmodule:: blaze.compute.core
-
-.. autosummary::
-   compute
-
-Usability
----------
-
-.. currentmodule:: blaze.api.table
-
-.. autosummary::
-   Table
-
-
 Definitions
 -----------
+
+.. automodule:: blaze.api.table
+   :members:
 
 .. automodule:: blaze.expr.table
    :members:
 
-.. automodule:: blaze.compute.core
-   :members:
-
-.. automodule:: blaze.api.into
-   :members:
-.. automodule:: blaze.api.table
-   :members:
