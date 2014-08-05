@@ -1,7 +1,6 @@
 
 .. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
    :align: center
-   :
 
 **Blaze** provides a familiar interface to various computational resources.
 
@@ -46,6 +45,8 @@ Index
    expressions
    backends
    datashape
+   server
+   api
    dev_workflow
    expr-compute-dev
 
