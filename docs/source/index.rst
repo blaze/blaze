@@ -36,7 +36,7 @@ Index
 ~~~~~
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    install
    overview
@@ -49,20 +49,3 @@ Index
    api
    dev_workflow
    expr-compute-dev
-
-
-API Reference
-~~~~~~~~~~~~~
-
-.. toctree::
-   :maxdepth: 1
-
-   releases
-   legal
-
-Index
-~~~~~
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
