@@ -25,6 +25,15 @@ def discover(d):
     return dshape(s.replace('object', 'string'))
 
 
+@dispatch(h5py.Dataset)
+def chunks(x, chunksize=1024):
+    start = 0
+    n = len(x)
+    while start < n:
+        yield x[start:start + chunksize]
+        start += chunksize
+
+
 def varlen_dtype(dt):
     """ Inject variable length string element for 'O' """
     if "'O'" not in str(dt):
