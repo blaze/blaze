@@ -29,8 +29,7 @@ install:
   - pip install toolz cytoolz multipledispatch
 
   # Install Optional Dependencies
-  - conda install blz pytables
-  - pip install bcolz
+  - conda install blz pytables bcolz nose
 
   # Install DataShape
   - pip install git+http://github.com/ContinuumIO/datashape
