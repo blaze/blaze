@@ -56,6 +56,10 @@ def test_Neg():
               -x['amount'])
 
 
+def test_union():
+    assert eq(compute(union(t, t), x), np.vstack([x, x]))
+
+
 def test_Reductions():
     assert compute(t['amount'].mean(), x) == x['amount'].mean()
     assert compute(t['amount'].count(), x) == len(x['amount'])
@@ -111,3 +115,11 @@ def test_relabel():
 
     assert result.dtype.names == expected.dtype.names
     assert eq(result, expected)
+
+
+def test_by():
+    from blaze.api.into import into
+    expr = by(t, t.amount > 0, t.id.count())
+    result = compute(expr, x)
+
+    assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])
