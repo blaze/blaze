@@ -16,13 +16,13 @@ __all__ = ['into', 'discover']
 
 
 @dispatch(type, object)
-def into(a, b):
+def into(a, b, **kwargs):
     f = into.resolve((a, type(b)))
     try:
         a = a()
     except:
         pass
-    return f(a, b)
+    return f(a, b, **kwargs)
 
 @dispatch((list, tuple, set), (list, tuple, set, Iterator))
 def into(a, b):
