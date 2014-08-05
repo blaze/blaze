@@ -77,12 +77,3 @@ def into(a, b, **kwargs):
         a.append(into(np.ndarray(0), chunk))
     a.flush()
     return a
-
-
-@dispatch((bcolz.carray, bcolz.ctable))
-def chunks(x, chunksize=1024):
-    start = 0
-    n = len(x)
-    while start < n:
-        yield x[start:start + chunksize]
-        start += chunksize
