@@ -144,6 +144,11 @@ def into(a, b):
 def into(a, b):
     return into(DataFrame(columns=b.columns), compute(b))
 
+from dynd import nd
+@dispatch(nd.array, TableExpr)
+def into(a, b):
+    return into(nd.array([], dtype=str(b.schema)), compute(b))
+
 Expr.__repr__ = expr_repr
 TableExpr.__repr__ = table_repr
 TableExpr.to_html = table_html
