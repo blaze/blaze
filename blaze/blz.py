@@ -28,7 +28,6 @@ def into(a, b, **kwargs):
     return blz.btable(b, **kwargs)
 
 
-
 def fix_len_string_filter(ser):
     """ Convert object strings to fixed length, pass through others """
     if ser.dtype == np.dtype('O'):
