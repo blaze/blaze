@@ -5,7 +5,7 @@ import numpy as np
 from pandas import DataFrame
 
 from blaze.blz import into, chunks
-from blaze.expr.table import TableSymbol
+from blaze.expr.table import *
 from blaze.compute.core import compute
 
 

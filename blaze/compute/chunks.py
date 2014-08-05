@@ -8,6 +8,7 @@ from collections import Iterator
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
+from .core import compute
 
 
 class ChunkIter(object):
@@ -19,11 +20,12 @@ class ChunkIter(object):
 
 
 class Chunks(ChunkIter):
-    def __init__(self, seq, chunksize=1024):
+    def __init__(self, seq, **kwargs):
         self.seq = seq
+        self.kwargs = kwargs
 
     def __iter__(self):
-        return chunks(self.seq)
+        return chunks(self.seq, **self.kwargs)
 
 
 reductions = {sum: (sum, sum), count: (count, sum),

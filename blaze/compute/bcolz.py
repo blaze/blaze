@@ -53,9 +53,10 @@ def compute_one(expr, ba, **kwargs):
 
 
 @dispatch(var, bcolz.carray)
-def compute_one(expr, ba, **kwargs):
-    E_X_2 = builtins.sum((chunk**2).sum() / 1024 for chunk in chunks(ba))
-    E_X_2 *= 1024. * math.ceil(ba.len / 1024.) / ba.len
+def compute_one(expr, ba, chunksize=2**20, **kwargs):
+
+    E_X_2 = builtins.sum((chunk**2).sum() / chunksize for chunk in chunks(ba))
+    E_X_2 *= float(chunksize) * math.ceil(ba.len / float(chunksize)) / ba.len
 
     E_2_X = float(ba.sum()) / ba.len
 
@@ -73,7 +74,7 @@ def compute_one(c, t, **kwargs):
 
 
 @dispatch((bcolz.carray, bcolz.ctable))
-def chunks(b, chunksize=1024):
+def chunks(b, chunksize=2**20):
     start = 0
     n = b.len
     while start < n:
