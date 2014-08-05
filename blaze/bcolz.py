@@ -54,6 +54,7 @@ def into(a, b, **kwargs):
     a = bcolz.ctable(list(zip(*chunk)), **kwargs)
     for chunk in chunks:
         a.append(list(zip(*chunk)))
+    a.flush()
     return a
 
 @dispatch(DataFrame, bcolz.ctable)
@@ -74,6 +75,7 @@ def into(a, b, **kwargs):
     a = into(a, next(b), **kwargs)
     for chunk in b:
         a.append(into(np.ndarray(0), chunk))
+    a.flush()
     return a
 
 
