@@ -149,7 +149,14 @@ class TableSymbol(TableExpr):
 
 
 class RowWise(TableExpr):
-    pass
+    """ Apply an operation equally to each of the rows.  An Interface.
+
+    Common rowwise operations include ``Map``, ``ColumnWise``, ``Projection``,
+    and anything else that operates by applying some transformation evenly
+    across all rows in a table.
+
+    RowWise operations have the same number of rows as their children
+    """
 
 
 class Projection(RowWise):
@@ -345,7 +352,8 @@ class Selection(TableExpr):
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
-    if builtins.any(not isinstance(node, (RowWise, TableSymbol))
+    if not builtins.all(isinstance(node, (RowWise, TableSymbol))
+                        or node.isidentical(subexpr)
            for node in concat([path(predicate, subexpr),
                                path(table, subexpr)])):
 
