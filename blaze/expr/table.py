@@ -123,6 +123,9 @@ class TableSymbol(TableExpr):
 
     This is a leaf in the expression tree
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
     >>> accounts['amount'] + 1
@@ -164,6 +167,9 @@ class Projection(RowWise):
 
     SELECT a, b, c
     FROM table
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
@@ -331,6 +337,9 @@ class Column(ColumnSyntaxMixin, Projection):
 class Selection(TableExpr):
     """ Filter rows of table based on predicate
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
     >>> deadbeats = accounts[accounts['amount'] < 0]
@@ -374,6 +383,9 @@ selection.__doc__ = Selection.__doc__
 def _expr_child(col):
     """ Expr and child of column
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
     >>> _expr_child(accounts['name'])
@@ -398,8 +410,12 @@ def columnwise(op, *column_inputs):
 
     Parameters
     ----------
-    op - Scalar Operation like Add, Mult, Sin, Exp
-    column_inputs - either Column, ColumnWise or constant (like 1, 1.0, '1')
+    op : Scalar Operation like Add, Mult, Sin, Exp
+
+    column_inputs : either Column, ColumnWise or constant (like 1, 1.0, '1')
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
@@ -440,11 +456,14 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     Parameters
     ----------
 
-    child - TableExpr
-    expr - ScalarExpr
+    child : TableExpr
+    expr : ScalarExpr
         The names of the varibles within the scalar expr must match the columns
         of the child.  Use ``Column.scalar_variable`` to generate the
         appropriate ScalarSymbol
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
@@ -491,6 +510,9 @@ class Join(TableExpr):
     on_left : string
     on_right : string
 
+    Examples
+    --------
+
     >>> names = TableSymbol('names', '{name: string, id: int}')
     >>> amounts = TableSymbol('amounts', '{amount: int, id: int}')
 
@@ -523,6 +545,9 @@ class Join(TableExpr):
     @property
     def schema(self):
         """
+
+        Examples
+        --------
 
         >>> t = TableSymbol('t', '{name: string, amount: int}')
         >>> s = TableSymbol('t', '{name: string, id: int}')
@@ -615,6 +640,9 @@ isnan = partial(columnwise, scalar.isnan)
 class Reduction(Scalar):
     """ A column-wise reduction
 
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
@@ -685,6 +713,9 @@ class nunique(Reduction):
 class By(TableExpr):
     """ Split-Apply-Combine Operator
 
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = by(t, t['name'], t['amount'].sum())
 
@@ -726,10 +757,12 @@ by.__doc__ = By.__doc__
 class Sort(TableExpr):
     """ Table in sorted order
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
     >>> accounts.sort('amount', ascending=False).schema
     dshape("{ name : string, amount : int32 }")
-
 
     Some backends support sorting by arbitrary rowwise tables, e.g.
 
@@ -762,6 +795,9 @@ def sort(child, key, ascending=True):
 class Distinct(TableExpr):
     """ Distinct elements filter
 
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = distinct(t)
 
@@ -789,6 +825,9 @@ distinct = Distinct
 
 class Head(TableExpr):
     """ First ``n`` elements of table
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
     >>> accounts.head(5).dshape
@@ -818,6 +857,9 @@ head.__doc__ = Head.__doc__
 class Label(RowWise, ColumnSyntaxMixin):
     """ A Labeled column
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> (accounts['amount'] * 100).schema
@@ -839,6 +881,9 @@ class Label(RowWise, ColumnSyntaxMixin):
 
 class ReLabel(RowWise):
     """ Table with same content but new labels
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
@@ -871,6 +916,9 @@ relabel.__doc__ = ReLabel.__doc__
 
 class Map(RowWise):
     """ Map an arbitrary Python function across rows in a Table
+
+    Examples
+    --------
 
     >>> from datetime import datetime
 
@@ -907,6 +955,9 @@ class Map(RowWise):
 
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
+
+    Examples
+    --------
 
     >>> t = TableSymbol('t', '{name: string, amount: int}')
     >>> h = Apply(hash, t)  # Hash value of resultant table
@@ -949,6 +1000,9 @@ class Apply(TableExpr):
 def common_subexpression(*tables):
     """ Common sub expression between subtables
 
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{x: int, y: int}')
     >>> common_subexpression(t['x'], t['y'])
     t
@@ -970,6 +1024,9 @@ class Merge(RowWise):
     """ Merge the columns of many Tables together
 
     Must all descend from same table via RowWise operations
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
@@ -996,6 +1053,9 @@ class Union(TableExpr):
     """ Merge the rows of many Tables together
 
     Must all have the same schema
+
+    Examples
+    --------
 
     >>> usa_accounts = TableSymbol('accounts', '{name: string, amount: int}')
     >>> euro_accounts = TableSymbol('accounts', '{name: string, amount: int}')
