@@ -131,4 +131,3 @@ def compute_one(expr, c, **kwargs):
 @dispatch((list, tuple, Iterator))
 def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
-

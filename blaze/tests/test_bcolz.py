@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import bcolz
 import numpy as np
 from pandas import DataFrame
+from toolz import count
 
 from blaze.bcolz import into, chunks
 
@@ -68,3 +69,26 @@ def test_into_DataFrame_ctable():
 
 def test_into_list_carray():
     assert into([], b['a']) == [1, 2, 3]
+
+
+def test_chunks():
+    x = np.array([(int(i), float(i)) for i in range(100)],
+                 dtype=[('a', np.int32), ('b', np.float32)])
+    b = bcolz.ctable(x)
+
+    assert count(chunks(b, chunksize=10)) == 10
+    assert (next(chunks(b, chunksize=10)) == x[:10]).all()
+
+
+def test_into_chunks():
+    from blaze.compute.numpy import *
+    from blaze.compute.chunks import *
+    from blaze import into
+    x = np.array([(int(i), float(i)) for i in range(100)],
+                 dtype=[('a', np.int32), ('b', np.float32)])
+    cs = chunks(x, chunksize=10)
+
+    b1 = into(bcolz.ctable, ChunkIter(cs))
+    b2 = into(bcolz.ctable, x)
+
+    assert str(b1) == str(b2)

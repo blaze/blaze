@@ -64,3 +64,23 @@ def into(a, b, columns=None, schema=None):
                                     sorted(b.names)),
                                 orient='columns',
                                 columns=columns)
+
+
+from .compute.chunks import ChunkIter
+
+@dispatch((bcolz.carray, bcolz.ctable), ChunkIter)
+def into(a, b, **kwargs):
+    b = iter(b)
+    a = into(a, next(b), **kwargs)
+    for chunk in b:
+        a.append(into(np.ndarray(0), chunk))
+    return a
+
+
+@dispatch((bcolz.carray, bcolz.ctable))
+def chunks(x, chunksize=1024):
+    start = 0
+    n = len(x)
+    while start < n:
+        yield x[start:start + chunksize]
+        start += chunksize
