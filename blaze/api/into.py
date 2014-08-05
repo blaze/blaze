@@ -160,9 +160,9 @@ try:
     import blz
 
     @dispatch((bcolz.ctable, bcolz.carray, blz.btable, blz.barray),
-              h5py.Dataset)
-    def into(a, hdf5, **kwargs):
-        return into(a, Chunks(hdf5), **kwargs)
+              (bcolz.ctable, bcolz.carray, blz.btable, blz.barray, h5py.Dataset))
+    def into(a, b, **kwargs):
+        return into(a, Chunks(b), **kwargs)
 
 except ImportError:
     pass
