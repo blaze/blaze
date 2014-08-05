@@ -51,6 +51,16 @@ def compute_one(expr, c, **kwargs):
     return total_sum / total_count
 
 
+@dispatch(Head, ChunkIter)
+def compute_one(expr, c, **kwargs):
+    chunk = first(c)
+    if len(chunk) > expr.n:
+        return compute_one(expr, chunk)
+    else:
+        raise NotImplementedError(
+            "Long heads of ChunkIter not yet implemented")
+
+
 @dispatch((Selection, RowWise), ChunkIter)
 def compute_one(expr, c, **kwargs):
     return ChunkIter(compute_one(expr, chunk) for chunk in c)
