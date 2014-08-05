@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
-from toolz import map, partition_all
+from toolz import map, partition_all, reduce
 import numpy as np
 import math
 from collections import Iterator
@@ -152,7 +152,6 @@ def compute_one(expr, c, **kwargs):
     binop = lambda x, y: compute(group, {t1: x, t2: y})
 
     return reduce(binop, (compute_one(perchunk, chunk) for chunk in c))
-
 
 
 @dispatch((list, tuple, Iterator))

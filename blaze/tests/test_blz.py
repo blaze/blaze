@@ -81,8 +81,8 @@ def test_chunks():
 
 
 def test_into_chunks():
-    from blaze.compute.numpy import *
-    from blaze.compute.chunks import *
+    from blaze.compute.numpy import chunks, compute_one
+    from blaze.compute.chunks import chunks, compute_one, ChunkIter
     from blaze import into
     x = np.array([(int(i), float(i)) for i in range(100)],
                  dtype=[('a', np.int32), ('b', np.float32)])
