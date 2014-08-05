@@ -18,7 +18,6 @@ def into(a, b, **kwargs):
     f = into.resolve((a, type(b)))
     return f(a, b, **kwargs)
 
-
 @dispatch((tuple, set, list, object), (bcolz.ctable, bcolz.carray))
 def into(o, b):
     return into(o, into(np.ndarray(0), b))
