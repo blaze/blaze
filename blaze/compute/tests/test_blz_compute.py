@@ -42,3 +42,9 @@ def test_selection_head():
     assert compute((t.a < t.b).all(), b) == True
     assert list(compute(t[t.a < t.b].a.head(10), b)) == list(range(10))
     assert list(compute(t[t.a > t.b].a.head(10), b)) == []
+
+    assert into([], compute(t[t.a + t.b > t.c], b)) == [(0, 1, 0),
+                                                        (1, 2, 1),
+                                                        (2, 3, 4)]
+    assert compute(t[t.a + t.b > t.c].head(10), b)
+    assert compute(t[t.a + t.b < t.c].head(10), b)

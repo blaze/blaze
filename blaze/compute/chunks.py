@@ -53,7 +53,7 @@ def compute_one(expr, c, **kwargs):
 
 @dispatch(Head, ChunkIter)
 def compute_one(expr, c, **kwargs):
-    chunk = first(c)
+    c = iter(c)
     n = 0
     cs = []
     for chunk in c:
@@ -62,10 +62,16 @@ def compute_one(expr, c, **kwargs):
         if n >= expr.n:
             break
 
+    if not cs:
+        return []
+
+    if len(cs) == 1:
+        return compute_one(expr, cs[0])
+
     t1 = TableSymbol('t1', expr.schema)
     t2 = TableSymbol('t2', expr.schema)
     binop = lambda a, b: compute(union(t1, t2), {t1: a, t2: b})
-    u = reduce(binop, c)
+    u = reduce(binop, cs)
 
     return compute_one(expr, u)
 
