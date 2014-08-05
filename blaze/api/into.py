@@ -16,13 +16,13 @@ __all__ = ['into', 'discover']
 
 
 @dispatch(type, object)
-def into(a, b):
+def into(a, b, **kwargs):
     f = into.resolve((a, type(b)))
     try:
         a = a()
     except:
         pass
-    return f(a, b)
+    return f(a, b, **kwargs)
 
 @dispatch((list, tuple, set), (list, tuple, set, Iterator))
 def into(a, b):
@@ -47,6 +47,10 @@ def into(a, b):
 @dispatch(tuple, nd.array)
 def into(a, b):
     return tuple(nd.as_py(b, tuple=True))
+
+@dispatch(np.ndarray, np.ndarray)
+def into(a, b):
+    return b
 
 @dispatch(np.ndarray, nd.array)
 def into(a, b):
@@ -147,3 +151,19 @@ try:
 
 except ImportError:
     pass
+
+
+try:
+    import h5py
+    from ..compute.chunks import Chunks
+    import bcolz
+    import blz
+
+    @dispatch((bcolz.ctable, bcolz.carray, blz.btable, blz.barray),
+              (bcolz.ctable, bcolz.carray, blz.btable, blz.barray, h5py.Dataset))
+    def into(a, b, **kwargs):
+        return into(a, Chunks(b), **kwargs)
+
+except ImportError:
+    pass
+

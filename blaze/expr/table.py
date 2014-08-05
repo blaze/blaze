@@ -14,7 +14,7 @@ from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, eval_str, Scalar)
+                     And, USub, eval_str, Scalar, FloorDiv)
 from ..compatibility import _strtypes, builtins
 
 
@@ -1006,6 +1006,12 @@ class Union(TableExpr):
     """
     __slots__ = 'children',
     __inputs__ = 'children',
+
+    def subterms(self):
+        yield self
+        for i in self.children:
+            for node in i.subterms():
+                yield node
 
     @property
     def schema(self):

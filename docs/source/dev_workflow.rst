@@ -26,7 +26,7 @@ and also because it itself is split among a few projects.
 
    # Some requirements are kept up-to-date on PyPI
    conda install --yes pip
-   pip install git+http://github.com/ContinuumIO/datashape --upgrade
+   pip install git+https://github.com/ContinuumIO/datashape.git --upgrade
    pip install toolz cytoolz multipledispatch  --upgrade
 
    # Install and run tests

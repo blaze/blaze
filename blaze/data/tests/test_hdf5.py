@@ -33,6 +33,15 @@ class SingleTestClass(MakeFile):
 
         self.assertRaises(Exception, lambda: HDF5('bar.hdf5', 'foo'))
 
+    def test_chunks(self):
+        with h5py.File(self.filename, 'w') as f:
+            d = f.create_dataset('data', (3, 3), dtype='i4',
+                                 chunks=True, maxshape=(None, 3))
+            d[:] = 1
+
+            assert len(list(chunks(d, chunksize=2))) == 2
+            assert (chunks(d, chunksize=2) == d[:2]).np.all()
+
     def test_existing_array(self):
         stdout.flush()
         with h5py.File(self.filename, 'w') as f:
