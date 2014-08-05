@@ -345,7 +345,8 @@ class Selection(TableExpr):
 def selection(table, predicate):
     subexpr = common_subexpression(table, predicate)
 
-    if builtins.any(not isinstance(node, (RowWise, TableSymbol))
+    if not builtins.all(isinstance(node, (RowWise, TableSymbol))
+                        or node.isidentical(subexpr)
            for node in concat([path(predicate, subexpr),
                                path(table, subexpr)])):
 

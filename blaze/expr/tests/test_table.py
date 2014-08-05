@@ -102,6 +102,13 @@ def test_selection_by_getattr():
     assert 'Alice' in str(result)
 
 
+def test_selection_path_check():
+    t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    t2 = t[t.name == 'Alice']
+    t3 = t2[t2.amount > 0]
+    assert t3
+
+
 def test_different_schema_raises():
     with tempfile.NamedTemporaryFile(delete=False) as f:
         df = pd.DataFrame(np.random.randn(10, 2))
