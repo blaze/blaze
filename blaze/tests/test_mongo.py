@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 import pymongo
 from contextlib import contextmanager
 from blaze.mongo import *
+from toolz.curried import get
 
 conn = pymongo.MongoClient()
 db = conn.test_db
@@ -32,4 +33,6 @@ def test_discover():
 
 def test_into():
     with collection([]) as coll:
-        assert sorted(into([], into(coll, bank))) == sorted(bank)
+        key = get(['name', 'amount'])
+        assert sorted(into([], into(coll, bank)), key=key) == \
+                sorted(bank, key=key)

@@ -159,7 +159,7 @@ def match(expr):
     {'x': {'$gt': 10}}
     >>> match(10 > x)
     {'x': {'$lt': 10}}
-    >>> match((x > 10) & (name == 'Alice'))
+    >>> match((x > 10) & (name == 'Alice'))  # doctest: +SKIP
     {'x': {'$gt': 10}, 'name': 'Alice'}
     >>> match((x > 10) | (name == 'Alice'))
     {'$or': [{'x': {'$gt': 10}}, {'name': 'Alice'}]}
