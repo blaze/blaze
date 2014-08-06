@@ -89,7 +89,7 @@ def data(datasets, name):
         return ("Bad index", 404)
 
     try:
-        rv = dset.py[index]
+        rv = dset[index]
     except RuntimeError:
         return ("Bad index: %s" % (str(index)), 404)
 

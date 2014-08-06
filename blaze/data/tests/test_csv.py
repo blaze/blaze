@@ -53,7 +53,7 @@ class Test_Other(unittest.TestCase):
             csv.extend([(6, 'Frank', 600),
                         (7, 'Georgina', 700)])
 
-            assert 'Georgina' in set(csv.py[:, 'name'])
+            assert 'Georgina' in set(csv[:, 'name'])
 
     def test_sep_kwarg(self):
         csv = CSV('foo', 'w', sep=';', schema='{x: int, y: int}')
@@ -69,7 +69,7 @@ class Test_Other(unittest.TestCase):
         filename = os.path.join(this_dir, 'unicode.csv')
         dd = CSV(filename, columns=['a', 'b'])
         assert dd.schema == dshape('{a: string, b: ?int64}')
-        assert dd.py[0]
+        assert dd[0]
 
 
 class Test_Indexing(unittest.TestCase):
@@ -96,45 +96,45 @@ class Test_Indexing(unittest.TestCase):
             os.remove(self.csv_file)
 
     def test_row(self):
-        self.assertEqual(tuplify(self.dd.py[0]), ('Alice', 100))
-        self.assertEqual(tuplify(self.dd.py[1]), ('Bob', 200))
+        self.assertEqual(tuplify(self.dd[0]), ('Alice', 100))
+        self.assertEqual(tuplify(self.dd[1]), ('Bob', 200))
 
     def test_dynd(self):
         assert isinstance(self.dd.dynd[0], nd.array)
 
     def test_rows(self):
-        self.assertEqual(tuplify(self.dd.py[[0, 1]]), (('Alice', 100), ('Bob', 200)))
+        self.assertEqual(tuplify(self.dd[[0, 1]]), (('Alice', 100), ('Bob', 200)))
 
 
     def test_point(self):
-        self.assertEqual(self.dd.py[0, 0], 'Alice')
-        self.assertEqual(self.dd.py[1, 1], 200)
+        self.assertEqual(self.dd[0, 0], 'Alice')
+        self.assertEqual(self.dd[1, 1], 200)
 
     def test_nested(self):
-        self.assertEqual(tuplify(self.dd.py[[0, 1], 0]), ('Alice', 'Bob'))
-        self.assertEqual(tuplify(self.dd.py[[0, 1], 1]), (100, 200))
-        self.assertEqual(tuplify(self.dd.py[0, [0, 1]]), ('Alice', 100))
-        self.assertEqual(tuplify(self.dd.py[[1, 0], [0, 1]]),
+        self.assertEqual(tuplify(self.dd[[0, 1], 0]), ('Alice', 'Bob'))
+        self.assertEqual(tuplify(self.dd[[0, 1], 1]), (100, 200))
+        self.assertEqual(tuplify(self.dd[0, [0, 1]]), ('Alice', 100))
+        self.assertEqual(tuplify(self.dd[[1, 0], [0, 1]]),
                         (('Bob', 200), ('Alice', 100)))
 
     def test_slices(self):
-        self.assertEqual(list(self.dd.py[:, 1]), [100, 200, 50])
-        self.assertEqual(list(self.dd.py[1:, 1]), [200, 50])
-        self.assertEqual(list(self.dd.py[0, :]), ['Alice', 100])
+        self.assertEqual(list(self.dd[:, 1]), [100, 200, 50])
+        self.assertEqual(list(self.dd[1:, 1]), [200, 50])
+        self.assertEqual(list(self.dd[0, :]), ['Alice', 100])
 
     def test_names(self):
-        self.assertEqual(list(self.dd.py[:, 'name']), ['Alice', 'Bob', 'Alice'])
-        self.assertEqual(tuplify(self.dd.py[:, ['amount', 'name']]),
+        self.assertEqual(list(self.dd[:, 'name']), ['Alice', 'Bob', 'Alice'])
+        self.assertEqual(tuplify(self.dd[:, ['amount', 'name']]),
                     ((100, 'Alice'), (200, 'Bob'), (50, 'Alice')))
 
     def test_dynd_complex(self):
-        self.assertEqual(tuplify(self.dd.py[:, ['amount', 'name']]),
+        self.assertEqual(tuplify(self.dd[:, ['amount', 'name']]),
                          tuplify(nd.as_py(self.dd.dynd[:, ['amount', 'name']],
                                           tuple=True)))
 
     def test_laziness(self):
-        print(type(self.dd.py[:, 1]))
-        assert isinstance(self.dd.py[:, 1], Iterator)
+        print(type(self.dd[:, 1]))
+        assert isinstance(self.dd[:, 1], Iterator)
 
 
 class Test_Dialect(unittest.TestCase):
@@ -344,19 +344,19 @@ class TestCSV(unittest.TestCase):
 
     def test_getitem_start(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(tuplify(dd.py[0]), self.data[0])
+        self.assertEqual(tuplify(dd[0]), self.data[0])
 
     def test_getitem_stop(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(tuplify(dd.py[:1]), self.data[:1])
+        self.assertEqual(tuplify(dd[:1]), self.data[:1])
 
     def test_getitem_step(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(tuplify(dd.py[::2]), self.data[::2])
+        self.assertEqual(tuplify(dd[::2]), self.data[::2])
 
     def test_getitem_start_step(self):
         dd = CSV(self.csv_file, schema=self.schema)
-        self.assertEqual(tuplify(dd.py[1::2]), self.data[1::2])
+        self.assertEqual(tuplify(dd[1::2]), self.data[1::2])
 
 
 if __name__ == '__main__':
