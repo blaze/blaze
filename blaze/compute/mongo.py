@@ -66,12 +66,12 @@ def compute_one(t, q, **kwargs):
     return query(q.coll, q.query +
     ({
         '$group': toolz.merge(
-                    {'_id': {col: '$'+col for col in t.grouper.columns}},
+                    {'_id': dict((col, '$'+col) for col in t.grouper.columns)},
                     group_apply(t.apply)
                     )
      },
      {
-         '$project': toolz.merge({col: '$_id.'+col for col in t.grouper.columns},
+         '$project': toolz.merge(dict((col, '$_id.'+col) for col in t.grouper.columns),
                                  {name: '$'+name})
      }))
 
