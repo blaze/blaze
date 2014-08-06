@@ -11,6 +11,9 @@ branches:
     - master
     - reorg
 
+services:
+    - mongodb
+
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
 install:
@@ -35,8 +38,6 @@ install:
   # - pip install git+http://github.com/ContinuumIO/blz
 
   # Install MongoDB
-  - conda install mongodb
-  - mongod &
   - pip install pymongo
 
   # Install Spark
