@@ -157,21 +157,21 @@ class TestIndexing(MakeFile):
                   dshape='var * {x: int, y: int}')
         dd.extend(self.data)
 
-        self.assertEqual(dd.py[0, 0], 1)
-        self.assertEqual(dd.py[0, 'x'], 1)
-        self.assertEqual(tuple(dd.py[[0, 1], 'x']), (1, 2))
-        self.assertEqual(tuple(dd.py[[0, 1], 'y']), (100, 200))
-        self.assertEqual(tuple(dd.py[::2, 'y']), (100, 300))
+        self.assertEqual(dd[0, 0], 1)
+        self.assertEqual(dd[0, 'x'], 1)
+        self.assertEqual(tuple(dd[[0, 1], 'x']), (1, 2))
+        self.assertEqual(tuple(dd[[0, 1], 'y']), (100, 200))
+        self.assertEqual(tuple(dd[::2, 'y']), (100, 300))
 
     @xfail(reason="when the world improves")
     def test_out_of_order_rows(self):
-        assert tuple(dd.py[[1, 0], 'x']) == (2, 1)
+        assert tuple(dd[[1, 0], 'x']) == (2, 1)
 
     def test_multiple_fields(self):
         dd = HDF5(self.filename, 'data',
                   dshape='var * {x: int, y: int}')
         dd.extend(self.data)
-        self.assertEqual(tuple(dd.py[[0, 1], ['x', 'y']]), ((1, 100),
+        self.assertEqual(tuple(dd[[0, 1], ['x', 'y']]), ((1, 100),
                                                             (2, 200)))
         self.assertEqual(into((), dd.dynd[[0, 1], ['x', 'y']]),
                         ((1, 100), (2, 200)))
