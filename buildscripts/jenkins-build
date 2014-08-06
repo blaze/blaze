@@ -76,4 +76,4 @@ popd
 # Build/install Blaze
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
 
-nosetests --with-doctest --exclude test_spark_\w* --with-xunit --xunit-file=test_results.xml || exit 1
+py.test --doctest-modules -vv --pyargs blaze --junitxml=test_results.xml || exit 1
