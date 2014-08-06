@@ -14,7 +14,7 @@ x = np.array([(1, 'Alice', 100),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)],
-            dtype=[('id', '<i8'), ('name', 'S7'), ('amount', '<i8')])
+            dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
 
 def eq(a, b):
     return (a == b).all()
@@ -100,13 +100,13 @@ def test_head():
 
 def test_label():
     expected = x['amount'] * 10
-    expected = np.array(expected, dtype=[('foo', int)])
+    expected = np.array(expected, dtype=[('foo', 'i8')])
     assert eq(compute((t['amount'] * 10).label('foo'), x),
               expected)
 
 
 def test_relabel():
-    expected = np.array(x, dtype=[('ID', int), ('NAME', 'S7'), ('amount', int)])
+    expected = np.array(x, dtype=[('ID', 'i8'), ('NAME', 'S7'), ('amount', 'i8')])
     result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), x)
 
     assert result.dtype.names == expected.dtype.names
