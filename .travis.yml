@@ -35,7 +35,7 @@ install:
   # - pip install git+http://github.com/ContinuumIO/blz
 
   # Install MongoDB
-  - apt-get install mongodb-server mongodb-clients -y
+  - sudo apt-get install mongodb-server mongodb-clients -y
   - mongod &
   - pip install pymongo
 
