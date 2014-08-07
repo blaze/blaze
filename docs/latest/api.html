@@ -140,7 +140,7 @@ Docstrings should provide sufficient understanding for any individual function.<
 <td>Table in sorted order   ..</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Distinct" title="blaze.expr.table.Distinct"><tt class="xref py py-obj docutils literal"><span class="pre">Distinct</span></tt></a>(*args)</td>
-<td>Distinct elements filter   ..</td>
+<td>Removes duplicate rows from the table, so every row is distinct   ..</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.Head" title="blaze.expr.table.Head"><tt class="xref py py-obj docutils literal"><span class="pre">Head</span></tt></a>(*args)</td>
 <td>First <tt class="docutils literal"><span class="pre">n</span></tt> elements of table   ..</td>
@@ -149,7 +149,7 @@ Docstrings should provide sufficient understanding for any individual function.<
 <td>A Labeled column</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#blaze.expr.table.ReLabel" title="blaze.expr.table.ReLabel"><tt class="xref py py-obj docutils literal"><span class="pre">ReLabel</span></tt></a>(*args)</td>
-<td>Table with same content but new labels   ..</td>
+<td>Table with same content but with new labels   ..</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#blaze.expr.table.Map" title="blaze.expr.table.Map"><tt class="xref py py-obj docutils literal"><span class="pre">Map</span></tt></a>(*args)</td>
 <td>Map an arbitrary Python function across rows in a Table</td>
@@ -288,6 +288,10 @@ Blaze&#8217;s abstract expressions.</p>
 <dt id="blaze.expr.table.Apply">
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Apply</tt><big>(</big><em>func</em>, <em>child</em>, <em>dshape=None</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply an arbitrary Python function onto a Table</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Map" title="blaze.expr.table.Map"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Map</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">h</span> <span class="o">=</span> <span class="n">Apply</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>  <span class="c"># Hash value of resultant table</span>
@@ -301,10 +305,6 @@ Blaze&#8217;s abstract expressions.</p>
 The following transformation is often valid</p>
 <p>Before <tt class="docutils literal"><span class="pre">compute(Apply(f,</span> <span class="pre">expr),</span> <span class="pre">...)</span></tt>
 After  <tt class="docutils literal"><span class="pre">f(compute(expr,</span> <span class="pre">...)</span></tt></p>
-<dl class="docutils">
-<dt>See Also:</dt>
-<dd>Map</dd>
-</dl>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -448,6 +448,10 @@ FROM table</p>
 <span class="go">dshape(&quot;{ name : string }&quot;)</span>
 </pre></div>
 </div>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Projection" title="blaze.expr.table.Projection"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Projection</span></tt></a></p>
+</div>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -526,6 +530,42 @@ FROM table</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="blaze.expr.table.ColumnSyntaxMixin">
+<em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">ColumnSyntaxMixin</tt><a class="headerlink" href="#blaze.expr.table.ColumnSyntaxMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Syntax bits for table expressions of column shape</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">all</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">any</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">label</span></tt>(label)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">mean</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">std</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-obj docutils literal"><span class="pre">sum</span></tt>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-obj docutils literal"><span class="pre">var</span></tt>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
 <dt id="blaze.expr.table.ColumnWise">
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">ColumnWise</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.ColumnWise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply Scalar Expression onto columns of data</p>
@@ -544,6 +584,10 @@ appropriate ScalarSymbol</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.columnwise" title="blaze.expr.table.columnwise"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.columnwise</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                       <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -637,7 +681,7 @@ appropriate ScalarSymbol</p>
 <dl class="class">
 <dt id="blaze.expr.table.Distinct">
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Distinct</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Distinct" title="Permalink to this definition">¶</a></dt>
-<dd><p>Distinct elements filter</p>
+<dd><p>Removes duplicate rows from the table, so every row is distinct</p>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">e</span> <span class="o">=</span> <span class="n">distinct</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
@@ -791,6 +835,10 @@ appropriate ScalarSymbol</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Merge" title="blaze.expr.table.Merge"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Merge</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.Union" title="blaze.expr.table.Union"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Union</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;names&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, id: int}&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">amounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;amounts&#39;</span><span class="p">,</span> <span class="s">&#39;{amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -879,6 +927,10 @@ appropriate ScalarSymbol</p>
 <dt id="blaze.expr.table.Label">
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Label</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Label" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Labeled column</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.ReLabel" title="blaze.expr.table.ReLabel"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.ReLabel</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
 </pre></div>
@@ -969,6 +1021,10 @@ appropriate ScalarSymbol</p>
 <dt id="blaze.expr.table.Map">
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Map</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Map an arbitrary Python function across rows in a Table</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Apply" title="blaze.expr.table.Apply"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Apply</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 </pre></div>
@@ -982,10 +1038,6 @@ appropriate ScalarSymbol</p>
 <span class="gp">... </span>                          <span class="n">schema</span><span class="o">=</span><span class="s">&#39;{time: datetime}&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<dl class="docutils">
-<dt>See Also:</dt>
-<dd>Apply</dd>
-</dl>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1047,6 +1099,10 @@ appropriate ScalarSymbol</p>
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Merge</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Merge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merge the columns of many Tables together</p>
 <p>Must all descend from same table via RowWise operations</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Union" title="blaze.expr.table.Union"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Union</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.Join" title="blaze.expr.table.Join"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Join</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
 </pre></div>
@@ -1120,6 +1176,10 @@ appropriate ScalarSymbol</p>
 <dd><p>Select columns from table</p>
 <p>SELECT a, b, c
 FROM table</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Column" title="blaze.expr.table.Column"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Column</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                       <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -1186,12 +1246,14 @@ FROM table</p>
 <dl class="class">
 <dt id="blaze.expr.table.ReLabel">
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">ReLabel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.ReLabel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Table with same content but new labels</p>
+<dd><p>Table with same content but with new labels</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Label" title="blaze.expr.table.Label"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Label</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span><span class="o">.</span><span class="n">schema</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span><span class="o">.</span><span class="n">schema</span>
 <span class="go">dshape(&quot;{ name : string, amount : int32 }&quot;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span><span class="o">.</span><span class="n">relabel</span><span class="p">({</span><span class="s">&#39;amount&#39;</span><span class="p">:</span> <span class="s">&#39;balance&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">schema</span>
 <span class="go">dshape(&quot;{ name : string, balance : int32 }&quot;)</span>
@@ -1324,6 +1386,10 @@ FROM table</p>
 and anything else that operates by applying some transformation evenly
 across all rows in a table.</p>
 <p>RowWise operations have the same number of rows as their children</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Projection" title="blaze.expr.table.Projection"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Projection</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.Map" title="blaze.expr.table.Map"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Map</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.ColumnWise" title="blaze.expr.table.ColumnWise"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.ColumnWise</span></tt></a>, <tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.</span></tt>, <tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.</span></tt>, <tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.</span></tt></p>
+</div>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1520,6 +1586,11 @@ across all rows in a table.</p>
 <dt id="blaze.expr.table.TableExpr">
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">TableExpr</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.TableExpr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Super class for all Table Expressions</p>
+<p>This is not intended to be constructed by users.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.TableSymbol" title="blaze.expr.table.TableSymbol"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.TableSymbol</span></tt></a></p>
+</div>
 <p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -1679,6 +1750,10 @@ a single row, called a schema.</p>
 <em class="property">class </em><tt class="descclassname">blaze.expr.table.</tt><tt class="descname">Union</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#blaze.expr.table.Union" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merge the rows of many Tables together</p>
 <p>Must all have the same schema</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Merge" title="blaze.expr.table.Merge"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Merge</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.Join" title="blaze.expr.table.Join"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Join</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">usa_accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">euro_accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
@@ -1842,6 +1917,10 @@ a single row, called a schema.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Merge" title="blaze.expr.table.Merge"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Merge</span></tt></a>, <a class="reference internal" href="#blaze.expr.table.Union" title="blaze.expr.table.Union"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Union</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;names&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, id: int}&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">amounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;amounts&#39;</span><span class="p">,</span> <span class="s">&#39;{amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -1860,6 +1939,10 @@ a single row, called a schema.</p>
 <dd><p>Select columns from table</p>
 <p>SELECT a, b, c
 FROM table</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Column" title="blaze.expr.table.Column"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Column</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                       <span class="s">&#39;{name: string, amount: int, id: int}&#39;</span><span class="p">)</span>
@@ -1872,12 +1955,14 @@ FROM table</p>
 <dl class="function">
 <dt id="blaze.expr.table.relabel">
 <tt class="descclassname">blaze.expr.table.</tt><tt class="descname">relabel</tt><big>(</big><em>child</em>, <em>labels</em><big>)</big><a class="headerlink" href="#blaze.expr.table.relabel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Table with same content but new labels</p>
+<dd><p>Table with same content but with new labels</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#blaze.expr.table.Label" title="blaze.expr.table.Label"><tt class="xref py py-obj docutils literal"><span class="pre">blaze.expr.table.Label</span></tt></a></p>
+</div>
 <p class="rubric">Examples</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span> <span class="o">=</span> <span class="n">TableSymbol</span><span class="p">(</span><span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="s">&#39;{name: string, amount: int}&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span><span class="o">.</span><span class="n">schema</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span><span class="o">.</span><span class="n">schema</span>
 <span class="go">dshape(&quot;{ name : string, amount : int32 }&quot;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">accounts</span><span class="o">.</span><span class="n">relabel</span><span class="p">({</span><span class="s">&#39;amount&#39;</span><span class="p">:</span> <span class="s">&#39;balance&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">schema</span>
 <span class="go">dshape(&quot;{ name : string, balance : int32 }&quot;)</span>
