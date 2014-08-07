@@ -2,6 +2,15 @@
 Release Notes
 ======================
 
+Release 0.6
+-----------
+
+* Nearly complete rewrite
+* Add abstract table expression system
+* Translate expressions onto a variety of backends
+* Support Python, NumPy, Pandas, h5py, sqlalchemy,
+  pyspark, PyTables, pymongo
+
 Release 0.5
 -----------
 
