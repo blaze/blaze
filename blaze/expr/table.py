@@ -19,7 +19,15 @@ from ..compatibility import _strtypes, builtins
 
 
 class TableExpr(Expr):
-    """ Super class for all Table Expressions """
+    """ Super class for all Table Expressions
+
+    This is not intended to be constructed by users.
+
+    See Also
+    --------
+
+    blaze.expr.table.TableSymbol
+    """
     __inputs__ = 'child',
 
     @property
@@ -159,6 +167,16 @@ class RowWise(TableExpr):
     across all rows in a table.
 
     RowWise operations have the same number of rows as their children
+
+    See Also
+    --------
+
+    blaze.expr.table.Projection
+    blaze.expr.table.Map
+    blaze.expr.table.ColumnWise
+    blaze.expr.table.
+    blaze.expr.table.
+    blaze.expr.table.
     """
 
 
@@ -175,6 +193,11 @@ class Projection(RowWise):
     ...                        '{name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{ name : string, amount : int32 }")
+
+    See Also
+    --------
+
+    blaze.expr.table.Column
     """
     __slots__ = 'child', '_columns'
 
@@ -203,6 +226,7 @@ projection.__doc__ = Projection.__doc__
 
 
 class ColumnSyntaxMixin(object):
+    """ Syntax bits for table expressions of column shape """
     iscolumn = True
 
     def __eq__(self, other):
@@ -315,6 +339,11 @@ class Column(ColumnSyntaxMixin, Projection):
     ...                        '{name: string, amount: int, id: int}')
     >>> accounts['name'].schema
     dshape("{ name : string }")
+
+    See Also
+    --------
+
+    blaze.expr.table.Projection
     """
     __slots__ = 'child', 'column'
 
@@ -471,6 +500,11 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     >>> expr = Add(accounts['amount'].scalar_symbol, 100)
     >>> ColumnWise(accounts, expr)
     accounts['amount'] + 100
+
+    See Also
+    --------
+
+    blaze.expr.table.columnwise
     """
     __slots__ = 'child', 'expr'
 
@@ -522,6 +556,12 @@ class Join(TableExpr):
     Join based on different column names
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
+
+    See Also
+    --------
+
+    blaze.expr.table.Merge
+    blaze.expr.table.Union
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'
@@ -797,7 +837,8 @@ def sort(child, key, ascending=True):
 
 
 class Distinct(TableExpr):
-    """ Distinct elements filter
+    """
+    Removes duplicate rows from the table, so every row is distinct
 
     Examples
     --------
@@ -871,6 +912,11 @@ class Label(RowWise, ColumnSyntaxMixin):
 
     >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
     dshape("{ new_amount : float64 }")
+
+    See Also
+    --------
+
+    blaze.expr.table.ReLabel
     """
     __slots__ = 'child', 'label'
 
@@ -884,17 +930,22 @@ class Label(RowWise, ColumnSyntaxMixin):
 
 
 class ReLabel(RowWise):
-    """ Table with same content but new labels
+    """
+    Table with same content but with new labels
 
     Examples
     --------
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
-
     >>> accounts.schema
     dshape("{ name : string, amount : int32 }")
     >>> accounts.relabel({'amount': 'balance'}).schema
     dshape("{ name : string, balance : int32 }")
+
+    See Also
+    --------
+
+    blaze.expr.table.Label
     """
     __slots__ = 'child', 'labels'
 
@@ -934,8 +985,10 @@ class Map(RowWise):
     >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
     ...                           schema='{time: datetime}')
 
-    See Also:
-        Apply
+    See Also
+    --------
+
+    blaze.expr.table.Apply
     """
     __slots__ = 'child', 'func', '_schema', '_iscolumn'
 
@@ -976,8 +1029,10 @@ class Apply(TableExpr):
     Before ``compute(Apply(f, expr), ...)``
     After  ``f(compute(expr, ...)``
 
-    See Also:
-        Map
+    See Also
+    --------
+
+    blaze.expr.table.Map
     """
     __slots__ = 'child', 'func', '_dshape'
 
@@ -1038,6 +1093,12 @@ class Merge(RowWise):
 
     >>> merge(accounts, newamount).columns
     ['name', 'amount', 'new_amount']
+
+    See Also
+    --------
+
+    blaze.expr.table.Union
+    blaze.expr.table.Join
     """
     __slots__ = 'child', 'children'
 
@@ -1067,6 +1128,12 @@ class Union(TableExpr):
     >>> all_accounts = union(usa_accounts, euro_accounts)
     >>> all_accounts.columns
     ['name', 'amount']
+
+    See Also
+    --------
+
+    blaze.expr.table.Merge
+    blaze.expr.table.Join
     """
     __slots__ = 'children',
     __inputs__ = 'children',
