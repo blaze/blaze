@@ -203,18 +203,31 @@ def post_compute(e, q, d):
 def post_compute(e, q, d):
     """
     Execute a query using MongoDB's aggregation pipeline
+
+    The compute_one functions operate on Mongo Collection / list-of-dict
+    queries.  Once they're done we need to actually execute the query on
+    MongoDB.  We do this using the aggregation pipeline framework.
+
+    http://docs.mongodb.org/manual/core/aggregation-pipeline/
     """
-    q = q.append({'$project': toolz.merge({'_id': 0},
+    q = q.append({'$project': toolz.merge({'_id': 0}, # remove mongo identifier
                                       dict((col, 1) for col in e.columns))})
     dicts = q.coll.aggregate(list(q.query))['result']
 
-    if isinstance(e, TableExpr) and e.iscolumn:
-        return list(pluck(e.columns[0], dicts))
-    if isinstance(e, TableExpr):
-        return list(pluck(e.columns, dicts))
+    if e.iscolumn:
+        return list(pluck(e.columns[0], dicts)) # dicts -> values
+    else:
+        return list(pluck(e.columns, dicts))    # dicts -> tuples
 
 
 def name(e):
+    """
+
+    >>> name(ScalarSymbol('x', 'int32'))
+    'x'
+    >>> name(1)
+    1
+    """
     if isinstance(e, ScalarSymbol):
         return e._name
     elif isinstance(e, Expr):
