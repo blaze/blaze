@@ -38,11 +38,11 @@ t = TableSymbol('t', '{name: string, amount: int}')
 
 p = TableSymbol('p', '{x: int, y: int, z: int}')
 
-q = query('fake', [])
+q = MongoQuery('fake', [])
 
 def test_tablesymbol_one():
     with collection(bank) as coll:
-        assert compute_one(t, coll) == query(coll, ())
+        assert compute_one(t, coll) == MongoQuery(coll, ())
 
 def test_tablesymbol():
     with collection(bank) as coll:
