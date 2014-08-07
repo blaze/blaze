@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-pyspark = pytest.importorskip('pyspark')
+pymongo = pytest.importorskip('pymongo')
 
 from contextlib import contextmanager
 from blaze.mongo import *

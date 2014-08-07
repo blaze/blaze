@@ -17,6 +17,7 @@ Migrate data into MongoDB
 
 >>> import pymongo
 >>> db = pymongo.MongoClient().db
+>>> db.mydata.drop()  # clear out old results
 >>> _ = into(db.mydata, data, columns=['id', 'name', 'amount'])
 
 Objective: find the name of accounts with negative amount
