@@ -12,23 +12,38 @@ from .into import into
 names = ('_%d' % i for i in itertools.count(1))
 
 class Table(TableSymbol):
-    """ Interactive Table
+    """ Table of data
+
+    The ``Table`` object presents a familiar view onto a variety of forms of
+    data.  This user-level object provides an interactive experience to using
+    Blaze's abstract expressions.
 
     Parameters
     ----------
 
-    data: DataDescriptor, tuple, DataFrame, RDD, SQL Table, ...
-        Anything that ``compute`` knows how to work with
+    data: anything
+        Any type with ``discover`` and ``compute`` implementations
+    columns: list of strings - optional
+        Column names, will be inferred from datasource if possible
+    schema: string or DataShape - optional
+        Explicit Record containing datatypes and column names
+    name: string - optional
+        A name for the table
 
-    Optional
+    Examples
     --------
 
-    name: string
-        A name for the table
-    columns: iterable of strings
-        Column names, will be inferred from datasource if possible
-    schema: string or DataShape
-        Explitit Record containing datatypes and column names
+    >>> t = Table([(1, 'Alice', 100),
+    ...            (2, 'Bob', -200),
+    ...            (3, 'Charlie', 300),
+    ...            (4, 'Denis', 400),
+    ...            (5, 'Edith', -500)],
+    ...            columns=['id', 'name', 'balance'])
+
+    >>> t[t.balance < 0].name
+        name
+    0    Bob
+    1  Edith
     """
     __slots__ = 'data', 'schema', '_name', 'iscolumn'
 

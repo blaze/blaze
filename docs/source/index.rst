@@ -1,15 +1,13 @@
-Blaze
-=====
 
-Blaze improves access to computational resources.  It does this by providing a
-uniform and familiar interface to other computational projects.  Blaze
-extends the familiar interfaces of NumPy and Pandas to external projects,
-enabling easy access to out-of-core, streaming, and distributed computation.
+.. image:: https://raw.github.com/ContinuumIO/blaze/master/docs/source/svg/blaze_med.png
+   :align: center
 
-Blaze allows analysts and scientists to productively write robust and efficient
-code without getting bogged down in the details of how to distribute
-computation, or convert data between databases, formats, proprietary data
-warehouses, and other silos.
+**Blaze** provides a familiar interface to various computational resources.
+
+Blaze extends the usability of NumPy and Pandas to distributed and
+out-of-core computing.  Blaze provides an interface similar to that of the
+NumPy ND-Array or Pandas DataFrame but maps these familiar interfaces onto a
+variety of other computational engines like Postgres or Spark.
 
 
 Core
@@ -38,7 +36,7 @@ Index
 ~~~~~
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    install
    overview
@@ -47,22 +45,14 @@ Index
    expressions
    backends
    datashape
+   server
+   api
    dev_workflow
    expr-compute-dev
 
+Older Versions
+~~~~~~~~~~~~~~
 
-API Reference
-~~~~~~~~~~~~~
+Older versions of these documents can be found here_.
 
-.. toctree::
-   :maxdepth: 1
-
-   releases
-   legal
-
-Index
-~~~~~
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. _here: ../

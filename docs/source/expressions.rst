@@ -74,7 +74,7 @@ reductions of Pandas like ``count`` and ``nunique``.
 Join
 ----
 
-Tables can be joined with the ``Join`` operation, which allows for advanced
+Tables can be joined with the ``join`` operation, which allows for advanced
 queries to span multiple tables.
 
 .. code-block:: python
@@ -82,7 +82,13 @@ queries to span multiple tables.
    >>> accounts = TableSymbol('accounts', '{name: string, balance: int}')
    >>> cities = TableSymbol('cities', '{name: string, city: string}')
 
-   >>> Join(accounts, cities, 'name')
+   >>> join(accounts, cities, 'name')
+
+If given no inputs, ``join`` will join on all columns with shared names between
+the two tables.
+
+   >>> join(accounts, cities)
+
 
 Other
 -----

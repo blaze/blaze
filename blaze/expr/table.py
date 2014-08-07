@@ -19,7 +19,15 @@ from ..compatibility import _strtypes, builtins
 
 
 class TableExpr(Expr):
-    """ Super class for all Table Expressions """
+    """ Super class for all Table Expressions
+
+    This is not intended to be constructed by users.
+
+    See Also
+    --------
+
+    blaze.expr.table.TableSymbol
+    """
     __inputs__ = 'child',
 
     @property
@@ -123,6 +131,9 @@ class TableSymbol(TableExpr):
 
     This is a leaf in the expression tree
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
     >>> accounts['amount'] + 1
@@ -156,6 +167,16 @@ class RowWise(TableExpr):
     across all rows in a table.
 
     RowWise operations have the same number of rows as their children
+
+    See Also
+    --------
+
+    blaze.expr.table.Projection
+    blaze.expr.table.Map
+    blaze.expr.table.ColumnWise
+    blaze.expr.table.
+    blaze.expr.table.
+    blaze.expr.table.
     """
 
 
@@ -165,10 +186,18 @@ class Projection(RowWise):
     SELECT a, b, c
     FROM table
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
     >>> accounts[['name', 'amount']].schema
     dshape("{ name : string, amount : int32 }")
+
+    See Also
+    --------
+
+    blaze.expr.table.Column
     """
     __slots__ = 'child', '_columns'
 
@@ -197,6 +226,7 @@ projection.__doc__ = Projection.__doc__
 
 
 class ColumnSyntaxMixin(object):
+    """ Syntax bits for table expressions of column shape """
     iscolumn = True
 
     def __eq__(self, other):
@@ -309,6 +339,11 @@ class Column(ColumnSyntaxMixin, Projection):
     ...                        '{name: string, amount: int, id: int}')
     >>> accounts['name'].schema
     dshape("{ name : string }")
+
+    See Also
+    --------
+
+    blaze.expr.table.Projection
     """
     __slots__ = 'child', 'column'
 
@@ -330,6 +365,9 @@ class Column(ColumnSyntaxMixin, Projection):
 
 class Selection(TableExpr):
     """ Filter rows of table based on predicate
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
@@ -374,6 +412,9 @@ selection.__doc__ = Selection.__doc__
 def _expr_child(col):
     """ Expr and child of column
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
     >>> _expr_child(accounts['name'])
@@ -398,8 +439,12 @@ def columnwise(op, *column_inputs):
 
     Parameters
     ----------
-    op - Scalar Operation like Add, Mult, Sin, Exp
-    column_inputs - either Column, ColumnWise or constant (like 1, 1.0, '1')
+    op : Scalar Operation like Add, Mult, Sin, Exp
+
+    column_inputs : either Column, ColumnWise or constant (like 1, 1.0, '1')
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
@@ -440,11 +485,14 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     Parameters
     ----------
 
-    child - TableExpr
-    expr - ScalarExpr
+    child : TableExpr
+    expr : ScalarExpr
         The names of the varibles within the scalar expr must match the columns
         of the child.  Use ``Column.scalar_variable`` to generate the
         appropriate ScalarSymbol
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts',
     ...                        '{name: string, amount: int, id: int}')
@@ -452,6 +500,11 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
     >>> expr = Add(accounts['amount'].scalar_symbol, 100)
     >>> ColumnWise(accounts, expr)
     accounts['amount'] + 100
+
+    See Also
+    --------
+
+    blaze.expr.table.columnwise
     """
     __slots__ = 'child', 'expr'
 
@@ -491,6 +544,9 @@ class Join(TableExpr):
     on_left : string
     on_right : string
 
+    Examples
+    --------
+
     >>> names = TableSymbol('names', '{name: string, id: int}')
     >>> amounts = TableSymbol('amounts', '{amount: int, id: int}')
 
@@ -500,6 +556,12 @@ class Join(TableExpr):
     Join based on different column names
     >>> amounts = TableSymbol('amounts', '{amount: int, acctNumber: int}')
     >>> joined = join(names, amounts, 'id', 'acctNumber')
+
+    See Also
+    --------
+
+    blaze.expr.table.Merge
+    blaze.expr.table.Union
     """
     __slots__ = 'lhs', 'rhs', '_on_left', '_on_right', 'how'
     __inputs__ = 'lhs', 'rhs'
@@ -523,6 +585,9 @@ class Join(TableExpr):
     @property
     def schema(self):
         """
+
+        Examples
+        --------
 
         >>> t = TableSymbol('t', '{name: string, amount: int}')
         >>> s = TableSymbol('t', '{name: string, id: int}')
@@ -615,6 +680,13 @@ isnan = partial(columnwise, scalar.isnan)
 class Reduction(Scalar):
     """ A column-wise reduction
 
+    Blaze supports the same class of reductions as NumPy and Pandas.
+
+        sum, min, max, any, all, mean, var, std, count, nunique
+
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = t['amount'].sum()
 
@@ -685,6 +757,9 @@ class nunique(Reduction):
 class By(TableExpr):
     """ Split-Apply-Combine Operator
 
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = by(t, t['name'], t['amount'].sum())
 
@@ -726,10 +801,12 @@ by.__doc__ = By.__doc__
 class Sort(TableExpr):
     """ Table in sorted order
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
     >>> accounts.sort('amount', ascending=False).schema
     dshape("{ name : string, amount : int32 }")
-
 
     Some backends support sorting by arbitrary rowwise tables, e.g.
 
@@ -760,7 +837,11 @@ def sort(child, key, ascending=True):
 
 
 class Distinct(TableExpr):
-    """ Distinct elements filter
+    """
+    Removes duplicate rows from the table, so every row is distinct
+
+    Examples
+    --------
 
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
     >>> e = distinct(t)
@@ -790,6 +871,9 @@ distinct = Distinct
 class Head(TableExpr):
     """ First ``n`` elements of table
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
     >>> accounts.head(5).dshape
     dshape("5 * { name : string, amount : int32 }")
@@ -818,6 +902,9 @@ head.__doc__ = Head.__doc__
 class Label(RowWise, ColumnSyntaxMixin):
     """ A Labeled column
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> (accounts['amount'] * 100).schema
@@ -825,6 +912,11 @@ class Label(RowWise, ColumnSyntaxMixin):
 
     >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
     dshape("{ new_amount : float64 }")
+
+    See Also
+    --------
+
+    blaze.expr.table.ReLabel
     """
     __slots__ = 'child', 'label'
 
@@ -838,14 +930,22 @@ class Label(RowWise, ColumnSyntaxMixin):
 
 
 class ReLabel(RowWise):
-    """ Table with same content but new labels
+    """
+    Table with same content but with new labels
+
+    Examples
+    --------
 
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
-
     >>> accounts.schema
     dshape("{ name : string, amount : int32 }")
     >>> accounts.relabel({'amount': 'balance'}).schema
     dshape("{ name : string, balance : int32 }")
+
+    See Also
+    --------
+
+    blaze.expr.table.Label
     """
     __slots__ = 'child', 'labels'
 
@@ -872,6 +972,9 @@ relabel.__doc__ = ReLabel.__doc__
 class Map(RowWise):
     """ Map an arbitrary Python function across rows in a Table
 
+    Examples
+    --------
+
     >>> from datetime import datetime
 
     >>> t = TableSymbol('t', '{price: real, time: int64}')  # times as integers
@@ -882,8 +985,10 @@ class Map(RowWise):
     >>> datetimes = t['time'].map(datetime.utcfromtimestamp,
     ...                           schema='{time: datetime}')
 
-    See Also:
-        Apply
+    See Also
+    --------
+
+    blaze.expr.table.Apply
     """
     __slots__ = 'child', 'func', '_schema', '_iscolumn'
 
@@ -908,6 +1013,9 @@ class Map(RowWise):
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
 
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{name: string, amount: int}')
     >>> h = Apply(hash, t)  # Hash value of resultant table
 
@@ -921,8 +1029,10 @@ class Apply(TableExpr):
     Before ``compute(Apply(f, expr), ...)``
     After  ``f(compute(expr, ...)``
 
-    See Also:
-        Map
+    See Also
+    --------
+
+    blaze.expr.table.Map
     """
     __slots__ = 'child', 'func', '_dshape'
 
@@ -949,6 +1059,9 @@ class Apply(TableExpr):
 def common_subexpression(*tables):
     """ Common sub expression between subtables
 
+    Examples
+    --------
+
     >>> t = TableSymbol('t', '{x: int, y: int}')
     >>> common_subexpression(t['x'], t['y'])
     t
@@ -971,12 +1084,21 @@ class Merge(RowWise):
 
     Must all descend from same table via RowWise operations
 
+    Examples
+    --------
+
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> newamount = (accounts['amount'] * 1.5).label('new_amount')
 
     >>> merge(accounts, newamount).columns
     ['name', 'amount', 'new_amount']
+
+    See Also
+    --------
+
+    blaze.expr.table.Union
+    blaze.expr.table.Join
     """
     __slots__ = 'child', 'children'
 
@@ -997,12 +1119,21 @@ class Union(TableExpr):
 
     Must all have the same schema
 
+    Examples
+    --------
+
     >>> usa_accounts = TableSymbol('accounts', '{name: string, amount: int}')
     >>> euro_accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> all_accounts = union(usa_accounts, euro_accounts)
     >>> all_accounts.columns
     ['name', 'amount']
+
+    See Also
+    --------
+
+    blaze.expr.table.Merge
+    blaze.expr.table.Join
     """
     __slots__ = 'children',
     __inputs__ = 'children',
