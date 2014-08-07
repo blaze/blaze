@@ -1,5 +1,5 @@
 
-from datashape import discover, Tuple, Record, dshape, Fixed
+from datashape import discover, Tuple, Record, dshape, Fixed, DataShape
 from pandas import DataFrame, Series
 import itertools
 
@@ -73,7 +73,9 @@ class Table(TableSymbol):
 
         self.data = data
 
-        if hasattr(data, 'schema') and self.schema != data.schema:
+        if (hasattr(data, 'schema')
+             and isinstance(data.schema, (DataShape, str))
+             and self.schema != data.schema):
             raise TypeError('%s schema %s does not match %s schema %s' %
                             (type(data).__name__, data.schema,
                              type(self).__name__, self.schema))
