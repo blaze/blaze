@@ -5,38 +5,38 @@ If you don't have a mongo server running
     $ conda install mongodb -y
     $ mongod &
 
->>> from blaze import *
+>> from blaze import *
 
->>> data = [(1, 'Alice', 100),
-...         (2, 'Bob', -200),
-...         (3, 'Charlie', 300),
-...         (4, 'Denis', 400),
-...         (5, 'Edith', -500)]
+>> data = [(1, 'Alice', 100),
+...        (2, 'Bob', -200),
+...        (3, 'Charlie', 300),
+...        (4, 'Denis', 400),
+...        (5, 'Edith', -500)]
 
 Migrate data into MongoDB
 
->>> import pymongo
->>> db = pymongo.MongoClient().db
->>> db.mydata.drop()  # clear out old results
->>> _ = into(db.mydata, data, columns=['id', 'name', 'amount'])
+>> import pymongo
+>> db = pymongo.MongoClient().db
+>> db.mydata.drop()  # clear out old results
+>> _ = into(db.mydata, data, columns=['id', 'name', 'amount'])
 
 Objective: find the name of accounts with negative amount
 
 Using MongoDB query language
 
->>> db.mydata.aggregate([{'$match': {'amount': {'$lt': 0}}}, # doctest: +SKIP
-...                      {'$project': {'name': 1, '_id': 0}}])['result']
+>> db.mydata.aggregate([{'$match': {'amount': {'$lt': 0}}}, # doctest: +SKIP
+..                      {'$project': {'name': 1, '_id': 0}}])['result']
 [{'name': 'Bob'}, {'name': 'Edith'}]
 
 Using Blaze
 
->>> t = Table(db.mydata)
->>> t[t.amount < 0].name
+>> t = Table(db.mydata)
+>> t[t.amount < 0].name
     name
 0    Bob
 1  Edith
 
->>> db.mydata.drop()
+>> db.mydata.drop()
 
 Uses the aggregation pipeline
 http://docs.mongodb.org/manual/core/aggregation-pipeline/
