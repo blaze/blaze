@@ -13,7 +13,7 @@ If you don't have a mongo server running
 
 >>> import pymongo
 >>> db = pymongo.MongoClient().db
->>> into(db.test_database, data, columns=['name', 'amount'])
+>>> into(db.test_database, data, columns=['name', 'amount']) # doctest: +SKIP
 Collection(Database(MongoClient('localhost', 27017), u'db'), u'test_database')
 
 >>> compute(deadbeats, db.test_database) # doctest: +SKIP
