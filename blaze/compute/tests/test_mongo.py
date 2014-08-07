@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-import pymongo
+import pytest
+pyspark = pytest.importorskip('pyspark')
+
 from contextlib import contextmanager
 from blaze.compute.mongo import *
 from blaze.compute.core import compute

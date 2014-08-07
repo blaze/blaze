@@ -1,11 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
+try:
+    from pymongo.collection import Collection
+except ImportError:
+    Collection = None
+
 from .dispatch import dispatch
 from datashape import discover, isdimension, dshape
 from collections import Iterator
-import pymongo
 from toolz import take, concat, partition_all
-from pymongo.collection import Collection
 from .data.core import DataDescriptor
 from .compute.mongo import *
 import copy

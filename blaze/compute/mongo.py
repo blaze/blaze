@@ -42,13 +42,15 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 """
 
 from __future__ import absolute_import, division, print_function
+try:
+    from pymongo.collection import Collection
+except ImportError:
+    Collection = type(None)
 
 from datashape import discover, isdimension, dshape
 from collections import Iterator
-import pymongo
 from toolz import take, concat, partition_all, pluck
 import toolz
-from pymongo.collection import Collection
 
 from ..expr.table import *
 from ..expr.core import Expr
