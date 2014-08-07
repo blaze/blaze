@@ -17,6 +17,20 @@ __all__ = ['into', 'discover']
 
 @dispatch(type, object)
 def into(a, b):
+    """
+    Resolve into when given a type as a first argument
+
+    Usually we give into an example of the thing that we want
+
+    >>> into([], (1, 2, 3)) # give me a list like []
+    [1, 2, 3]
+
+    However sometimes it's inconvenient to construct a dummy example.
+    In those cases we just specify the desired type
+
+    >>> into(list, (1, 2, 3))
+    [1, 2, 3]
+    """
     f = into.resolve((a, type(b)))
     try:
         a = a()
