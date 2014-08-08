@@ -1,10 +1,10 @@
 dynd-python
 datashape
-numpy >= 1.6
+numpy >= 1.7
 sqlalchemy
 pandas
 h5py
-multipledispatch >= 0.4.3
+multipledispatch >= 0.4.5
 cytoolz
 toolz
 flask >= 0.10.1
