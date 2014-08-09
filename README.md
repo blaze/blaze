@@ -81,7 +81,7 @@ distributed context.
 Getting Started
 ---------------
 
-Development installation instructions available [here](http://blaze.pydata.org/docs/dev/dev_workflow.html#installing-development-blaze).  Quick usage available [here](http://blaze.pydata.org/docs/dev/quickstart.html).
+Development installation instructions available [here](http://blaze.pydata.org/docs/latest/dev_workflow.html#installing-development-blaze).  Quick usage available [here](http://blaze.pydata.org/docs/latest/quickstart.html).
 
 Blaze is in development.  We reserve the right to break the API.
 
@@ -98,7 +98,7 @@ Documentation
 -------------
 
 Documentation is available at
-[blaze.pydata.org/docs/dev/](http://blaze.pydata.org/docs/dev/)
+[blaze.pydata.org/](http://blaze.pydata.org/)
 
 
 License
