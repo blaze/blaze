@@ -5,6 +5,7 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from dynd import nd
 import sqlalchemy as sql
+import sqlalchemy
 import datashape
 from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
@@ -16,6 +17,7 @@ from ..compatibility import basestring
 from .core import DataDescriptor
 from .utils import coerce_row_to_dict
 from ..compatibility import _inttypes, _strtypes
+from .csv import CSV
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
 
@@ -261,3 +263,38 @@ class SQL(DataDescriptor):
             return next(result)
         else:
             return result
+
+@dispatch(SQL, CSV)
+def into(sql, csv, if_exists="replace"):
+    """
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    """
+    db = sql.engine.url.drivername
+    engine = sql.engine
+    abspath = csv._abspath
+    tblname = sql.tablename
+
+    if if_exists == 'replace':
+        if engine.has_table(tblname):
+            metadata = sqlalchemy.MetaData()
+            metadata.reflect(engine, only=[tblname])
+            t = metadata.tables[tblname]
+            del_stmnt = t.delete()
+            engine.execute(del_stmnt)
+
+
+    if db == 'postgresql':
+        conn = sql.engine.raw_connection()
+        cursor = conn.cursor()
+
+        #lots of options here to handle formatting
+        sql_stmnt = "copy {} from '{}'(FORMAT CSV, DELIMITER ',', NULL '');"
+        sql_stmnt = sql_stmnt.format(tblname, abspath)
+        cursor.execute(sql_stmnt)
+        conn.commit()
+
+    # if 'sqlite' in url:
+    #     pass
