@@ -3,10 +3,12 @@ import unittest
 from dynd import nd
 import numpy as np
 from datashape import dshape
+import tempfile
+import os
 
 from blaze.api.into import into, discover
 import blaze
-from blaze import Table
+from blaze import Table, TableSymbol, compute
 
 
 def skip(test_foo):
@@ -72,6 +74,60 @@ try:
 except ImportError:
     ColumnDataSource = None
 
+try:
+    from tables import (Table as PyTables, open_file, UInt8Col, StringCol,
+        IsDescription)
+except ImportError:
+    PyTables = None
+
+
+class Test_into_pytables(unittest.TestCase):
+
+    @skip_if_not(PyTables and DataFrame)
+    def setUp(self):
+        self.h5_file = tempfile.mktemp(".h5")
+        class Test(IsDescription):
+            posted_dow = UInt8Col()
+            jobtype  = UInt8Col()
+            location  = UInt8Col()
+            date  = StringCol(20)
+            country  = StringCol(2)
+
+        h5file = open_file(self.h5_file, mode = "w", title = "Test file")
+        group = h5file.create_group("/", 'test', 'Info')
+        tab = h5file.create_table(group, 'sample', Test, "Example")
+        arow = tab.row
+        arow['country'] = 'ab'
+        arow['date'] = '20121105'
+        arow['location'] = 0
+        arow['jobtype']  = 1
+        arow['posted_dow']  = 3
+        # Insert a new record
+        arow.append()
+        # Close (and flush) the file
+        h5file.close()
+
+    @skip_if_not(PyTables and DataFrame)
+    def tearDown(self):
+        if os.path.exists(self.h5_file):
+            os.remove(self.h5_file)
+
+    @skip_if_not(PyTables and DataFrame)
+    def test_into_pytables_dataframe(self):
+        schema = '''
+           {country: string,
+           date: string,
+           type: uint8,
+           location: uint8,
+           posted_dow: uint8}
+          '''
+
+        thefile = open_file(self.h5_file)
+        samp = thefile.root.test.sample
+        # Create a Blaze TableSymbol of similar schema
+        t = TableSymbol('example', schema=schema)
+        final = into(DataFrame, compute(t, {t:samp}))
+        self.assertEqual(len(final), 1)
 
 @skip_if_not(DataFrame and Python)
 def test_pandas_data_descriptor():
