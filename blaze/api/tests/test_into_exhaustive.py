@@ -6,6 +6,7 @@ from pandas import DataFrame
 
 from blaze.api.into import into, discover
 from datashape import dshape
+from blaze.bcolz import *
 import blaze
 from blaze import Table
 import bcolz

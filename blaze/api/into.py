@@ -176,3 +176,20 @@ try:
 
 except ImportError:
     pass
+
+
+try:
+    import bcolz
+    from blaze.expr.table import TableExpr
+    from blaze.api.table import compute
+
+    @dispatch(bcolz.ctable, TableExpr)
+    def into(a, b, **kwargs):
+        c = compute(b)
+        if isinstance(c, (list, tuple)):
+            kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
+                    b.schema[0].types]
+        return into(a, c, **kwargs)
+
+except ImportError:
+    pass
