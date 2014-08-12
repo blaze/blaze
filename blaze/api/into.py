@@ -16,7 +16,7 @@ __all__ = ['into', 'discover']
 
 
 @dispatch(type, object)
-def into(a, b):
+def into(a, b, **kwargs):
     """
     Resolve into when given a type as a first argument
 
@@ -36,7 +36,7 @@ def into(a, b):
         a = a()
     except:
         pass
-    return f(a, b)
+    return f(a, b, **kwargs)
 
 @dispatch((list, tuple, set), (list, tuple, set, Iterator))
 def into(a, b):
@@ -110,11 +110,11 @@ def into(a, b):
         return DataFrame(nd.as_py(b))
 
 @dispatch(DataFrame, (list, tuple))
-def into(df, seq):
+def into(df, seq, **kwargs):
     if list(df.columns):
-        return DataFrame(list(seq), columns=df.columns)
+        return DataFrame(list(seq), columns=df.columns, **kwargs)
     else:
-        return DataFrame(list(seq))
+        return DataFrame(list(seq), **kwargs)
 
 @dispatch(DataFrame, DataFrame)
 def into(_, df):
