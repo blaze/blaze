@@ -321,6 +321,29 @@ def into(coll, seq, columns=None, schema=None, chunksize=1024):
     return coll
 
 
+@dispatch(Collection, (nd.array, np.ndarray))
+def into(coll, x, **kwargs):
+    return into(coll, into(DataFrame(), x), **kwargs)
+
+
+@dispatch(Collection, ctable)
+def into(coll, x, **kwargs):
+    from blaze.bcolz import chunks
+    for chunk in chunks(x):
+        into(coll, chunk)
+
+
+@dispatch(Collection, Collection)
+def into(a, b, **kwargs):
+    """ Copy collection on server-side
+
+    https://groups.google.com/forum/#!topic/mongodb-user/wHqJFp44baY
+    """
+    b.database.command('eval', 'db.%s.copyTo("%s")' % (b.name, a.name),
+                 nolock=True)
+    return b
+
+
 @dispatch(Collection, DataFrame)
 def into(coll, df, **kwargs):
     return into(coll, into([], df), columns=list(df.columns), **kwargs)

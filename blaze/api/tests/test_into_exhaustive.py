@@ -38,7 +38,7 @@ try:
     into(db.test, df)
     sources.append(db.test)
 except ImportError:
-    pass
+    pymongo = None
 
 
 def normalize(a):
@@ -74,3 +74,11 @@ def skip_if_not(x):
 def test_ColumnDataSource():
     for a in sources:
         assert into(ColumnDataSource, a).data == cds.data
+
+
+@skip_if_not(pymongo)
+def test_mongo_Collection():
+    for a in sources:
+        db.test_into.drop()
+        into(db.test_into, a)
+        assert normalize(into([], db.test_into)) == normalize(L)
