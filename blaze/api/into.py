@@ -12,6 +12,8 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from ..dispatch import dispatch
+from ..expr.table import TableExpr
+from ..compute.core import compute
 
 
 __all__ = ['into', 'discover']
@@ -31,19 +33,13 @@ except ImportError:
     ColumnDataSource = type(None)
 
 try:
-    from blaze.expr.table import TableExpr
-    from blaze.api.table import compute
-except ImportError:
-    TableExpr = type(None)
-
-try:
     import bcolz
     from bcolz import ctable, carray
 except ImportError:
     ctable = type(None)
 
 try:
-    from blaze.data import DataDescriptor
+    from ..data.core import DataDescriptor
 except ImportError:
     DataDescriptor = type(None)
 
@@ -200,6 +196,8 @@ def discover(df):
     return len(df) * schema
 
 
+assert TableExpr is not type(None)
+assert ColumnDataSource is not type(None)
 @dispatch(ColumnDataSource, (TableExpr, DataFrame))
 def into(cds, t):
     return ColumnDataSource(data=dict((col, into(np.ndarray, t[col]))
@@ -216,3 +214,10 @@ def into(a, b, **kwargs):
         kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
                 b.schema[0].types]
     return into(a, c, **kwargs)
+
+@dispatch(ctable, nd.array)
+def into(a, b, **kwargs):
+    names = dshape(nd.dshape_of(b))[1].names
+    columns = [into(np.ndarray(0), getattr(b, name)) for name in names]
+
+    return bcolz.ctable(columns, names=names, **kwargs)
