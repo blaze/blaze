@@ -46,7 +46,8 @@ def into(a, b, **kwargs):
         pass
     return f(a, b, **kwargs)
 
-@dispatch((list, tuple, set), (list, tuple, set, Iterator))
+@dispatch((list, tuple, set), (list, tuple, set, Iterator,
+                               type(dict().items())))
 def into(a, b):
     return type(a)(b)
 
