@@ -26,7 +26,8 @@ from ..expr.table import *
 from ..expr.scalar import UnaryOp, BinOp
 from .core import compute, compute_one, base
 
-__all__ = ['compute_one']
+# __all__ = ['pandas', 'DataFrame', 'Series']
+__all__ = []
 
 
 @dispatch(Projection, DataFrame)

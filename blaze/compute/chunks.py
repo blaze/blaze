@@ -33,6 +33,7 @@ from ..compatibility import builtins
 from ..dispatch import dispatch
 from .core import compute
 
+__all__ = ['Chunks', 'ChunkIter', 'chunks', 'into']
 
 class ChunkIter(object):
     def __init__(self, seq):

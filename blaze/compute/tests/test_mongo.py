@@ -5,11 +5,14 @@ pymongo = pytest.importorskip('pymongo')
 
 from datetime import datetime
 from contextlib import contextmanager
+from datashape import discover
+from toolz import pluck
+
 from blaze.compute.mongo import *
-from blaze.compute.core import compute
 from blaze.api.into import *
+from blaze.compute.core import compute, compute_one
 from blaze.mongo import *
-from blaze.expr.table import TableSymbol
+from blaze.expr.table import *
 from blaze.compatibility import xfail
 
 conn = pymongo.MongoClient()

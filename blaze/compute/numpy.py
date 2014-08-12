@@ -7,7 +7,7 @@ from datashape import Record
 from .core import base, compute
 from ..dispatch import dispatch
 
-__all__ = ['compute_one', 'np', 'chunks']
+__all__ = ['np']
 
 
 @dispatch(Column, np.ndarray)

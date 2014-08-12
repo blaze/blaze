@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 
 from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
     to_numpy_dtype)

@@ -29,7 +29,7 @@ from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base
 
-__all__ = ['compute', 'compute_one', 'computefull', 'select']
+__all__ = ['sqlalchemy', 'select']
 
 @dispatch(Projection, Selectable)
 def compute_one(t, s, scope={}, **kwargs):

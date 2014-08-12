@@ -10,6 +10,7 @@ from .chunks import Chunks, ChunkIter
 from ..compatibility import builtins
 from ..dispatch import dispatch
 
+__all__ = ['bcolz']
 
 @dispatch(bcolz.ctable)
 def discover(t):

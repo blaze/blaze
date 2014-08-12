@@ -167,7 +167,7 @@ def test_nunique():
 @xfail(reason="Fails because SQLAlchemy doesn't seem to know binary reductions")
 def test_binary_reductions():
     assert str(compute(any(t['amount'] > 150), s)) == \
-            str(sa.sql.functions.any(s.c.amount > 150))
+            str(sqlalchemy.sql.functions.any(s.c.amount > 150))
 
 
 def test_by():

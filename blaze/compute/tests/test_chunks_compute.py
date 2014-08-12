@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.expr.table import *
-from toolz import map
+from toolz import map, pluck
 import math
+from pandas import DataFrame
 from collections import Iterator
 from blaze.compute.chunks import *
 from blaze.compute.core import compute

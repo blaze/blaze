@@ -6,6 +6,9 @@ from datashape import Record
 from ..dispatch import dispatch
 
 
+__all__ = ['tb']
+
+
 @dispatch(tb.Table)
 def discover(t):
     return t.shape[0] * Record([[col, t.coltypes[col]] for col in t.colnames])

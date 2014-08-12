@@ -45,8 +45,10 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 from __future__ import absolute_import, division, print_function
 try:
     from pymongo.collection import Collection
+    import pymongo
 except ImportError:
     Collection = type(None)
+    pymongo = None
 
 from datashape import discover, isdimension, dshape
 from collections import Iterator
@@ -57,6 +59,9 @@ from ..expr.table import *
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
+
+
+__all__ = ['pymongo', 'MongoQuery']
 
 
 class MongoQuery(object):
