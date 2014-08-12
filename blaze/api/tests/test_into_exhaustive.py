@@ -42,10 +42,15 @@ except ImportError:
 
 
 def normalize(a):
+    """ Normalize results prior to equality test
+
+    Ensure that (1, 2, 3) == [1, 2, 3] and that u'Hello' == 'Hello'
+    """
     return str(a).replace("u'", "'").replace("(", "[").replace(")", "]")
 
 
 def test_base():
+    """ Test all pairs of base in-memory data structures """
     for a in sources:
         for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
@@ -62,6 +67,7 @@ except ImportError:
 
 
 def skip_if_not(x):
+    """ Possibly skip test if type is not present """
     def maybe_a_test_function(test_foo):
         if not x:
             return
