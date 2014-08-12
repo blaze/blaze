@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
-import bcolz
+import pytest
+bcolz = pytest.importorskip('bcolz')
+
 import numpy as np
 from pandas import DataFrame
 from toolz import count
