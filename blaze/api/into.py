@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 import datashape
 from datashape import DataShape, dshape, Record
+import toolz
+from datetime import datetime
 from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
@@ -66,13 +68,14 @@ def into(a, b):
 def into(a, b):
     return nd.as_numpy(b, allow_copy=True)
 
-@dispatch(np.ndarray, Iterator)
+@dispatch(np.ndarray, (Iterable, Iterator))
 def into(a, b):
+    b = iter(b)
+    first = next(b)
+    b = toolz.concat([[first], b])
+    if b and isinstance(first, datetime):
+        b = map(np.datetime64, b)
     return np.asarray(list(b))
-
-@dispatch(np.ndarray, Iterable)
-def into(a, b):
-    return np.asarray(b)
 
 @dispatch(list, np.ndarray)
 def into(a, b):
