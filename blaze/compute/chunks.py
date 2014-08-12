@@ -21,7 +21,7 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
+from blaze.expr import *
 from toolz import map, partition_all, reduce
 import numpy as np
 import math

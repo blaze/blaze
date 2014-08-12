@@ -17,7 +17,7 @@ from collections import Iterator
 import operator
 from functools import partial
 from toolz import map, compose, juxt, identity
-from cytoolz import groupby, reduceby, unique, take, concat
+from cytoolz import groupby, reduceby, unique, take, concat, first
 import cytoolz
 import toolz
 import sys

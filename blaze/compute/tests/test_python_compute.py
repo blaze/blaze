@@ -3,7 +3,7 @@ import math
 
 from blaze.compute.core import compute
 from blaze.compute.python import *
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.compatibility import builtins
 from blaze.utils import raises
 

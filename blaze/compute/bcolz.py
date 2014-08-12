@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
+from blaze.expr import *
 import bcolz
 from toolz import map
 import numpy as np

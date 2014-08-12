@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.expr.scalar import BinOp, UnaryOp, USub
 from datashape import Record
 from .core import base, compute

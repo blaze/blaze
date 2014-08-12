@@ -7,7 +7,7 @@ import numpy as np
 from pandas import DataFrame
 
 from blaze.bcolz import into, chunks
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.compute.core import compute
 
 

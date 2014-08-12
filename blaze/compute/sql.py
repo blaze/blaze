@@ -21,10 +21,10 @@ from sqlalchemy import sql
 from sqlalchemy.sql import Selectable
 from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
+from datashape import Record
 
 from ..dispatch import dispatch
-from ..expr.table import *
-from ..expr.scalar import BinOp, UnaryOp
+from ..expr import *
 from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base

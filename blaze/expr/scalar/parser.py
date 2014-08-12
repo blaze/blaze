@@ -5,6 +5,7 @@ from toolz import merge
 
 from . import numbers
 from .core import Scalar
+from ..core import Expr
 
 from .interface import ScalarSymbol
 

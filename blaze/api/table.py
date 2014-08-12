@@ -13,6 +13,8 @@ from ..dispatch import dispatch
 from ..data.pandas import into
 from .into import into
 
+__all__ = ['Table', 'compute', 'into']
+
 names = ('_%d' % i for i in itertools.count(1))
 
 class Table(TableSymbol):

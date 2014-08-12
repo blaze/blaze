@@ -4,7 +4,7 @@ import numpy as np
 
 from blaze.compute.core import compute
 from blaze.compute.numpy import *
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.compatibility import xfail
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')

@@ -50,12 +50,12 @@ except ImportError:
     Collection = type(None)
     pymongo = None
 
-from datashape import discover, isdimension, dshape
+from datashape import discover, isdimension, dshape, Record
 from collections import Iterator
 from toolz import take, concat, partition_all, pluck
 import toolz
 
-from ..expr.table import *
+from ..expr import *
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
