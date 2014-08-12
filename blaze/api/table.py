@@ -4,6 +4,7 @@ from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
 from pandas import DataFrame, Series
 import itertools
 import numpy as np
+from dynd import nd
 
 from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
@@ -168,6 +169,11 @@ def into(a, b):
 @dispatch(DataFrame, TableExpr)
 def into(a, b):
     return into(DataFrame(columns=b.columns), compute(b))
+
+
+@dispatch(nd.array, TableExpr)
+def into(a, b):
+    return into(nd.array(), compute(b), dtype=str(b.schema))
 
 
 @dispatch(np.ndarray, TableExpr)

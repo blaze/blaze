@@ -60,8 +60,8 @@ def into(a, b):
     return type(a)(map(type(a), sorted(b.items(), key=lambda x: x[0])))
 
 @dispatch(nd.array, (Iterable, Number, str))
-def into(a, b):
-    return nd.array(b)
+def into(a, b, **kwargs):
+    return nd.array(b, **kwargs)
 
 @dispatch(list, nd.array)
 def into(a, b):
@@ -91,10 +91,12 @@ def into(a, b, **kwargs):
 def into(a, b):
     return b.tolist()
 
+
 from blaze.data import DataDescriptor
 @dispatch(DataFrame, DataDescriptor)
 def into(a, b):
     return DataFrame(list(b), columns=b.columns)
+
 
 @dispatch(DataFrame, np.ndarray)
 def into(df, x):

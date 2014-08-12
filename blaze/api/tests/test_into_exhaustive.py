@@ -17,12 +17,12 @@ L = [[1, 'Alice', 100],
 
 df = DataFrame(L, columns=['id', 'name', 'amount'])
 
-x = np.array(list(map(tuple, L)), dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
+x = np.array(list(map(tuple, L)), dtype=[('id', 'i8'), ('name', 'U7'), ('amount', 'i8')])
 
 arr = nd.array(L, dtype='{id: int64, name: string, amount: int64}')
 
 bc = bcolz.ctable([np.array([1, 2, 3], dtype=np.int64),
-                   np.array(['Alice', 'Bob', 'Charlie'], dtype='S7'),
+                   np.array(['Alice', 'Bob', 'Charlie'], dtype='U7'),
                    np.array([100, 200, 300], dtype=np.int64)],
                   names=['id', 'name', 'amount'])
 
