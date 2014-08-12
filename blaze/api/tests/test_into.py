@@ -208,8 +208,11 @@ def test_Column_data_source():
 def test_numpy_list():
     data = [('Alice', 100), ('Bob', 200)]
 
-    assert into(np.ndarray, data).dtype == \
-            np.dtype([('f0', 'S5'), ('f1', 'i8')])
+    dtype = into(np.ndarray, data).dtype
+    assert np.issubdtype(dtype[0], str)
+    assert np.issubdtype(dtype[1], int)
+
+    assert into([], into(np.ndarray, data)) == data
 
 
 @skip_if_not(Table)
