@@ -11,13 +11,13 @@ from blaze import Table
 import bcolz
 
 
-L = [(1, 'Alice', 100),
-     (2, 'Bob', 200),
-     (3, 'Charlie', 300)]
+L = [[1, 'Alice', 100],
+     [2, 'Bob', 200],
+     [3, 'Charlie', 300]]
 
 df = DataFrame(L, columns=['id', 'name', 'amount'])
 
-x = np.array(L, dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
+x = np.array(list(map(tuple, L)), dtype=[('id', 'i8'), ('name', 'S7'), ('amount', 'i8')])
 
 arr = nd.array(L, dtype='{id: int64, name: string, amount: int64}')
 
@@ -27,7 +27,8 @@ bc = bcolz.ctable([np.array([1, 2, 3], dtype=np.int64),
                   names=['id', 'name', 'amount'])
 
 def test_base():
-    A = [Table(L, columns=['id', 'name', 'amount']), df, x, arr, bc]
+    A = [Table(L, schema='{id: int64, name: string[7], amount: int64}'),
+         df, x, arr, bc]
     B = [L, df, x, arr, bc]
     for a in A:
         for b in B:

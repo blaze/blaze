@@ -76,13 +76,16 @@ def into(a, b):
     return nd.as_numpy(b, allow_copy=True)
 
 @dispatch(np.ndarray, (Iterable, Iterator))
-def into(a, b):
+def into(a, b, **kwargs):
     b = iter(b)
     first = next(b)
     b = toolz.concat([[first], b])
-    if b and isinstance(first, datetime):
+    if isinstance(first, datetime):
         b = map(np.datetime64, b)
-    return np.asarray(list(b))
+    if isinstance(first, (list, tuple)):
+        return np.rec.fromrecords(list(b), **kwargs)
+    else:
+        return np.asarray(list(b), **kwargs)
 
 @dispatch(list, np.ndarray)
 def into(a, b):
