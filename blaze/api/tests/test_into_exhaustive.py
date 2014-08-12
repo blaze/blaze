@@ -26,15 +26,41 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                    np.array([1, 2, 3], dtype=np.int64),
                    np.array(['Alice', 'Bob', 'Charlie'], dtype='U7')],
                   names=['amount', 'id', 'name'])
+sources = [Table(L, schema='{amount: int64, id: int64, name: string[7]}'),
+             df, x, arr, bc]
+targets = [L, df, x, arr, bc]
 
 
 def normalize(a):
     return str(a).replace("u'", "'").replace("(", "[").replace(")", "]")
 
+
 def test_base():
-    A = [Table(L, schema='{amount: int64, id: int64, name: string[7]}'),
-         df, x, arr, bc]
-    B = [L, df, x, arr, bc]
-    for a in A:
-        for b in B:
+    for a in sources:
+        for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
+
+try:
+    from bokeh.objects import ColumnDataSource
+    cds = ColumnDataSource({
+         'id': [1, 2, 3],
+         'name': ['Alice', 'Bob', 'Charlie'],
+         'amount': [100, 200, 300]
+         })
+except ImportError:
+    ColumnDataSource = None
+
+
+def skip_if_not(x):
+    def maybe_a_test_function(test_foo):
+        if not x:
+            return
+        else:
+            return test_foo
+    return maybe_a_test_function
+
+
+@skip_if_not(ColumnDataSource)
+def test_ColumnDataSource():
+    for a in sources:
+        assert into(ColumnDataSource, a).data == cds.data

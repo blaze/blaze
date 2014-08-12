@@ -167,6 +167,10 @@ def into(_, df):
 def into(_, df):
     return DataFrame(df)
 
+@dispatch(list, Series)
+def into(_, ser):
+    return ser.tolist()
+
 @dispatch(nd.array, DataFrame)
 def into(a, df):
     schema = discover(df)
@@ -196,10 +200,17 @@ def discover(df):
     return len(df) * schema
 
 
-@dispatch(ColumnDataSource, (TableExpr, DataFrame))
+@dispatch(ColumnDataSource, (TableExpr, DataFrame, np.ndarray, ctable))
 def into(cds, t):
-    return ColumnDataSource(data=dict((col, into(np.ndarray, t[col]))
-                                      for col in t.columns))
+    columns = discover(t).subshape[0][0].names
+    return ColumnDataSource(data=dict((col, into([], t[col]))
+                                      for col in columns))
+
+@dispatch(ColumnDataSource, nd.array)
+def into(cds, t):
+    columns = discover(t).subshape[0][0].names
+    return ColumnDataSource(data=dict((col, into([], getattr(t, col)))
+                                      for col in columns))
 
 @dispatch(DataFrame, ColumnDataSource)
 def into(df, cds):
