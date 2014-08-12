@@ -7,6 +7,7 @@ from datetime import datetime
 from contextlib import contextmanager
 from blaze.compute.mongo import *
 from blaze.compute.core import compute
+from blaze.api.into import *
 from blaze.mongo import *
 from blaze.expr.table import TableSymbol
 from blaze.compatibility import xfail

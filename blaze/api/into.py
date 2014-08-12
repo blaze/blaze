@@ -4,6 +4,9 @@ from dynd import nd
 import datashape
 from datashape import DataShape, dshape, Record, to_numpy_dtype
 import toolz
+from toolz import concat, partition_all
+from cytoolz import pluck
+import copy
 from datetime import datetime
 from datashape.user import validate, issubschema
 from numbers import Number
@@ -55,6 +58,12 @@ try:
     from bcolz import ctable, carray
 except ImportError:
     ctable = type(None)
+
+try:
+    import pymongo
+    from pymongo.collection import Collection
+except ImportError:
+    Collection = None
 
 try:
     from ..data.core import DataDescriptor
@@ -285,3 +294,86 @@ def into(a, b, **kwargs):
         return b
     else:
         raise NotImplementedError()
+
+
+@dispatch(Collection, DataDescriptor)
+def into(coll, dd, chunksize=1024):
+    return into(coll, iter(dd), chunksize=chunksize, schema=dd.schema)
+
+
+@dispatch(Collection, (tuple, list, Iterator))
+def into(coll, seq, columns=None, schema=None, chunksize=1024):
+    seq = iter(seq)
+    item = next(seq)
+    seq = concat([[item], seq])
+
+    if isinstance(item, (tuple, list)):
+        if not columns and schema:
+            columns = dshape(schema)[0].names
+        if not columns:
+            raise ValueError("Inputs must be dictionaries. "
+                "Or provide columns=[...] or schema=DataShape(...) keyword")
+        seq = (dict(zip(columns, item)) for item in seq)
+
+    for block in partition_all(1024, seq):
+        coll.insert(copy.deepcopy(block))
+
+    return coll
+
+
+@dispatch(Collection, DataFrame)
+def into(coll, df, **kwargs):
+    return into(coll, into([], df), columns=list(df.columns), **kwargs)
+
+
+@dispatch(Collection, TableExpr)
+def into(coll, t, **kwargs):
+    from blaze import compute
+    result = compute(t)
+    return into(coll, result, schema=t.schema, **kwargs)
+
+
+@dispatch(DataFrame, Collection)
+def into(df, coll, **kwargs):
+    seq = list(coll.find())
+    for item in seq:
+        del item['_id']
+    return DataFrame(seq, **kwargs)
+
+
+@dispatch((nd.array, np.ndarray), Collection)
+def into(x, coll, **kwargs):
+    return into(x, into(DataFrame(), coll), **kwargs)
+
+
+def _into_iter_mongodb(l, coll, columns=None, schema=None):
+    """ Into helper function
+
+    Return both a lazy sequence of tuples and a list of column names
+    """
+    seq = coll.find()
+    if not columns and schema:
+        columns = schema[0].names
+    elif not columns:
+        item = next(seq)
+        seq = concat([[item], seq])
+        columns = sorted(item.keys())
+        columns.remove('_id')
+    return columns, pluck(columns, seq)
+
+
+@dispatch(Iterator, Collection)
+def into(l, coll, columns=None, schema=None):
+    columns, seq = _into_iter_mongodb(l, coll, columns=columns, schema=schema)
+    return seq
+
+
+@dispatch((tuple, list), Collection)
+def into(l, coll, columns=None, schema=None):
+    return type(l)(into(Iterator, coll, columns=columns, schema=schema))
+
+
+@dispatch(ctable, Collection)
+def into(x, coll, columns=None, schema=None, **kwargs):
+    columns, seq = _into_iter_mongodb(x, coll, columns=None, schema=None)
+    return into(x, seq, names=columns, **kwargs)

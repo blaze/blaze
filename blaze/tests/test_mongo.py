@@ -5,6 +5,7 @@ pymongo = pytest.importorskip('pymongo')
 
 from contextlib import contextmanager
 from blaze.mongo import *
+from blaze.api.into import *
 from toolz.curried import get
 
 conn = pymongo.MongoClient()
@@ -36,5 +37,6 @@ def test_discover():
 def test_into():
     with collection([]) as coll:
         key = get(['name', 'amount'])
-        assert sorted(into([], into(coll, bank)), key=key) == \
-                sorted(bank, key=key)
+        assert set(into([], into(coll, bank), columns=['name', 'amount'])) ==\
+                set([('Alice', 100), ('Alice', 200), ('Bob', 100),
+                     ('Bob', 200), ('Bob', 300)])

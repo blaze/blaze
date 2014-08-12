@@ -26,9 +26,19 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                    np.array([1, 2, 3], dtype=np.int64),
                    np.array(['Alice', 'Bob', 'Charlie'], dtype='U7')],
                   names=['amount', 'id', 'name'])
+
 sources = [Table(L, schema='{amount: int64, id: int64, name: string[7]}'),
              df, x, arr, bc]
 targets = [L, df, x, arr, bc]
+
+try:
+    import pymongo
+    db = pymongo.MongoClient().db
+    db.test.drop()
+    into(db.test, df)
+    sources.append(db.test)
+except ImportError:
+    pass
 
 
 def normalize(a):
