@@ -23,6 +23,31 @@ def into(a, b, **kwargs):
             "Blaze does not know a rule for the following conversion"
             "\n%s <- %s" % (type(a).__name__, type(b).__name__))
 
+# Optional imports
+
+try:
+    from bokeh.objects import ColumnDataSource
+except ImportError:
+    ColumnDataSource = type(None)
+
+try:
+    from blaze.expr.table import TableExpr
+    from blaze.api.table import compute
+except ImportError:
+    TableExpr = type(None)
+
+try:
+    import bcolz
+    from bcolz import ctable, carray
+except ImportError:
+    ctable = type(None)
+
+try:
+    from blaze.data import DataDescriptor
+except ImportError:
+    DataDescriptor = type(None)
+
+
 @dispatch(type, object)
 def into(a, b, **kwargs):
     """
@@ -100,7 +125,6 @@ def into(a, b):
     return b.tolist()
 
 
-from blaze.data import DataDescriptor
 @dispatch(DataFrame, DataDescriptor)
 def into(a, b):
     return DataFrame(list(b), columns=b.columns)
@@ -176,35 +200,19 @@ def discover(df):
     return len(df) * schema
 
 
-try:
-    from bokeh.objects import ColumnDataSource
-    from blaze.expr.table import TableExpr
+@dispatch(ColumnDataSource, (TableExpr, DataFrame))
+def into(cds, t):
+    return ColumnDataSource(data=dict((col, into(np.ndarray, t[col]))
+                                      for col in t.columns))
 
-    @dispatch(ColumnDataSource, (TableExpr, DataFrame))
-    def into(cds, t):
-        return ColumnDataSource(data=dict((col, into(np.ndarray, t[col]))
-                                          for col in t.columns))
+@dispatch(DataFrame, ColumnDataSource)
+def into(df, cds):
+    return cds.to_df()
 
-    @dispatch(DataFrame, ColumnDataSource)
-    def into(df, cds):
-        return cds.to_df()
-
-except ImportError:
-    pass
-
-
-try:
-    import bcolz
-    from blaze.expr.table import TableExpr
-    from blaze.api.table import compute
-
-    @dispatch(bcolz.ctable, TableExpr)
-    def into(a, b, **kwargs):
-        c = compute(b)
-        if isinstance(c, (list, tuple)):
-            kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
-                    b.schema[0].types]
-        return into(a, c, **kwargs)
-
-except ImportError:
-    pass
+@dispatch(ctable, TableExpr)
+def into(a, b, **kwargs):
+    c = compute(b)
+    if isinstance(c, (list, tuple)):
+        kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
+                b.schema[0].types]
+    return into(a, c, **kwargs)
