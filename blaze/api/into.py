@@ -196,8 +196,6 @@ def discover(df):
     return len(df) * schema
 
 
-assert TableExpr is not type(None)
-assert ColumnDataSource is not type(None)
 @dispatch(ColumnDataSource, (TableExpr, DataFrame))
 def into(cds, t):
     return ColumnDataSource(data=dict((col, into(np.ndarray, t[col]))
