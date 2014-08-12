@@ -204,6 +204,7 @@ def test_column_of_column():
 
 def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
+    assert set(compute(Distinct(t), data)) == set(map(tuple, data))
 
 
 def test_Distinct_count():

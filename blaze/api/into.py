@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 import datashape
 from datashape import DataShape, dshape, Record
+import toolz
+from datetime import datetime
 from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
@@ -15,8 +17,14 @@ from ..dispatch import dispatch
 __all__ = ['into', 'discover']
 
 
+@dispatch(object, object)
+def into(a, b, **kwargs):
+    raise NotImplementedError(
+            "Blaze does not know a rule for the following conversion"
+            "\n%s <- %s" % (type(a).__name__, type(b).__name__))
+
 @dispatch(type, object)
-def into(a, b):
+def into(a, b, **kwargs):
     """
     Resolve into when given a type as a first argument
 
@@ -36,9 +44,10 @@ def into(a, b):
         a = a()
     except:
         pass
-    return f(a, b)
+    return f(a, b, **kwargs)
 
-@dispatch((list, tuple, set), (list, tuple, set, Iterator))
+@dispatch((list, tuple, set), (list, tuple, set, Iterator,
+                               type(dict().items())))
 def into(a, b):
     return type(a)(b)
 
@@ -66,13 +75,14 @@ def into(a, b):
 def into(a, b):
     return nd.as_numpy(b, allow_copy=True)
 
-@dispatch(np.ndarray, Iterator)
+@dispatch(np.ndarray, (Iterable, Iterator))
 def into(a, b):
+    b = iter(b)
+    first = next(b)
+    b = toolz.concat([[first], b])
+    if b and isinstance(first, datetime):
+        b = map(np.datetime64, b)
     return np.asarray(list(b))
-
-@dispatch(np.ndarray, Iterable)
-def into(a, b):
-    return np.asarray(b)
 
 @dispatch(list, np.ndarray)
 def into(a, b):
@@ -110,11 +120,11 @@ def into(a, b):
         return DataFrame(nd.as_py(b))
 
 @dispatch(DataFrame, (list, tuple))
-def into(df, seq):
+def into(df, seq, **kwargs):
     if list(df.columns):
-        return DataFrame(list(seq), columns=df.columns)
+        return DataFrame(list(seq), columns=df.columns, **kwargs)
     else:
-        return DataFrame(list(seq))
+        return DataFrame(list(seq), **kwargs)
 
 @dispatch(DataFrame, DataFrame)
 def into(_, df):

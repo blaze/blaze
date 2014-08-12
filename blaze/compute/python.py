@@ -81,7 +81,7 @@ def rowfunc(t):
     See Also:
         compute<Rowwise, Sequence>
     """
-    from toolz.curried import get
+    from cytoolz.curried import get
     indices = [t.child.columns.index(col) for col in t.columns]
     return get(indices)
 
@@ -188,6 +188,15 @@ def compute_one(t, seq, **kwargs):
 
 @dispatch(Distinct, Sequence)
 def compute_one(t, seq, **kwargs):
+    try:
+        row = first(seq)
+    except StopIteration:
+        return ()
+    seq = concat([[row], seq]) # re-add row to seq
+
+    if isinstance(row, list):
+        seq = map(tuple, seq)
+
     return unique(seq)
 
 
