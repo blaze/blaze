@@ -27,10 +27,14 @@ bc = bcolz.ctable([np.array([1, 2, 3], dtype=np.int64),
                    np.array([100, 200, 300], dtype=np.int64)],
                   names=['id', 'name', 'amount'])
 
+
+def normalize(a):
+    return str(a).replace("u'", "'").replace("(", "[").replace(")", "]")
+
 def test_base():
     A = [Table(L, schema='{id: int64, name: string[7], amount: int64}'),
          df, x, arr, bc]
     B = [L, df, x, arr, bc]
     for a in A:
         for b in B:
-            assert str(into(type(b), a)) == str(b)
+            assert normalize(into(type(b), a)) == normalize(b)

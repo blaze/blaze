@@ -63,9 +63,17 @@ def into(a, b):
 def into(a, b, **kwargs):
     return nd.array(b, **kwargs)
 
+@dispatch(nd.array, nd.array)
+def into(a, b):
+    return b
+
+@dispatch(np.ndarray, np.ndarray)
+def into(a, b):
+    return b
+
 @dispatch(list, nd.array)
 def into(a, b):
-    return nd.as_py(b)
+    return nd.as_py(b, tuple=True)
 
 @dispatch(tuple, nd.array)
 def into(a, b):
@@ -152,9 +160,11 @@ def into(a, df):
 def into(a, df):
     return df.to_records(index=False)
 
+
 @dispatch(nd.array)
 def discover(arr):
     return dshape(nd.dshape_of(arr))
+
 
 @dispatch(DataFrame)
 def discover(df):
