@@ -17,6 +17,12 @@ from ..dispatch import dispatch
 __all__ = ['into', 'discover']
 
 
+@dispatch(object, object)
+def into(a, b, **kwargs):
+    raise NotImplementedError(
+            "Blaze does not know a rule for the following conversion"
+            "\n%s <- %s" % (type(a).__name__, type(b).__name__))
+
 @dispatch(type, object)
 def into(a, b, **kwargs):
     """
