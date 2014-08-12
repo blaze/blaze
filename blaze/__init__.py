@@ -32,6 +32,14 @@ try:
 except ImportError:
     pass
 try:
+    from .compute.chunks import *
+except ImportError:
+    pass
+try:
+    from .bcolz import *
+except ImportError:
+    pass
+try:
     from .mongo import *
 except ImportError:
     pass
