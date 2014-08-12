@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from dynd import nd
 import datashape
-from datashape import DataShape, dshape, Record
+from datashape import DataShape, dshape, Record, to_numpy_dtype
 import toolz
 from datetime import datetime
 from datashape.user import validate, issubschema
@@ -215,9 +215,28 @@ def into(a, b, **kwargs):
                 b.schema[0].types]
     return into(a, c, **kwargs)
 
+
+def fix_len_string_filter(ser):
+    """ Convert object strings to fixed length, pass through others """
+    if ser.dtype == np.dtype('O'):
+        return np.asarray(list(ser))
+    else:
+        return np.asarray(ser)
+
+
 @dispatch(ctable, nd.array)
 def into(a, b, **kwargs):
     names = dshape(nd.dshape_of(b))[1].names
-    columns = [into(np.ndarray(0), getattr(b, name)) for name in names]
+    columns = [getattr(b, name) for name in names]
+    columns = [np.asarray(nd.as_py(c))
+            if to_numpy_dtype(dshape(nd.dshape_of(c))) == np.dtype('O')
+            else into(np.ndarray(0), c) for c in columns]
 
     return bcolz.ctable(columns, names=names, **kwargs)
+
+
+
+@dispatch(ctable, DataFrame)
+def into(a, df, **kwargs):
+    return ctable([fix_len_string_filter(df[c]) for c in df.columns],
+                      names=list(df.columns), **kwargs)
