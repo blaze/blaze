@@ -49,7 +49,7 @@ else
  exit 1
 fi
 
-pip install multipledispatch toolz cytoolz || exit 1
+pip install multipledispatch toolz cytoolz bcolz || exit 1
 
 # Temporary hack to install datashape
 rm -rf datashape
