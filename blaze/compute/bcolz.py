@@ -20,10 +20,9 @@ def discover(t):
 def compute_one(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
     try:
-        t.where(s)
-        return ChunkIter(t.whereblocks(s))
+        return t.where(s)
     except (NotImplementedError, NameError): # numexpr may not be able to handle the predicate
-        return ChunkIter(compute_one(sel, chunk) for chunk in chunks(t))
+        return compute_one(sel, iter(t), **kwargs)
 
 
 @dispatch(Head, (bcolz.carray, bcolz.ctable))
@@ -46,7 +45,7 @@ def compute_one(expr, t, **kwargs):
     return t.sum()
 
 
-@dispatch(count, bcolz.ctable)
+@dispatch(count, (bcolz.ctable, bcolz.carray))
 def compute_one(c, t, **kwargs):
     return len(t)
 
@@ -72,9 +71,24 @@ def compute_one(expr, ba, **kwargs):
     return math.sqrt(compute_one(expr.child.var(), ba, **kwargs))
 
 
-@dispatch((RowWise, Distinct, Reduction, By, count, Label, ReLabel, nunique), (bcolz.carray, bcolz.ctable))
+@dispatch((ReLabel, Label), (bcolz.carray, bcolz.ctable))
+def compute_one(expr, b, **kwargs):
+    raise NotImplementedError()
+
+
+@dispatch((RowWise, Distinct, By, nunique), bcolz.ctable)
 def compute_one(c, t, **kwargs):
-    return compute_one(c, Chunks(t), **kwargs)
+    return compute_one(c, iter(t), **kwargs)
+
+
+@dispatch(nunique, bcolz.carray)
+def compute_one(expr, data, **kwargs):
+    return len(set(data))
+
+
+@dispatch(Reduction, (bcolz.carray, bcolz.ctable))
+def compute_one(expr, data, **kwargs):
+    return compute_one(expr, Chunks(data), **kwargs)
 
 
 @dispatch((bcolz.carray, bcolz.ctable))
