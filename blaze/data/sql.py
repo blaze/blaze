@@ -277,6 +277,9 @@ def into(sql, csv, if_exists="replace"):
     abspath = csv._abspath
     tblname = sql.tablename
 
+    delimiter = csv.dialect['delimiter']
+    header = csv.header
+
     if if_exists == 'replace':
         if engine.has_table(tblname):
             metadata = sqlalchemy.MetaData()
@@ -291,8 +294,9 @@ def into(sql, csv, if_exists="replace"):
         cursor = conn.cursor()
 
         #lots of options here to handle formatting
-        sql_stmnt = "copy {} from '{}'(FORMAT CSV, DELIMITER ',', NULL '');"
-        sql_stmnt = sql_stmnt.format(tblname, abspath)
+        sql_stmnt = "copy {} from '{}' (FORMAT CSV, DELIMITER E'{}', NULL '', HEADER {});"
+        sql_stmnt = sql_stmnt.format(tblname, abspath, delimiter, header)
+
         cursor.execute(sql_stmnt)
         conn.commit()
 

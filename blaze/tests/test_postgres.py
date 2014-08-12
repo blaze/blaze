@@ -17,20 +17,38 @@ import os
 import csv as csv_module
 from blaze import Table
 from blaze import compute
+import pandas as pd
+import datetime as dt
 
-def test_csv_postgres_load():
+url = 'postgresql://localhost/postgres'
+file_name = 'test.csv'
 
+# @pytest.fixture(scope='module')
+def setup_function(function):
     data = [(1, 2), (10, 20), (100, 200)]
-    file_name = 'test.csv'
-    tbl = 'testtable'
 
     with open(file_name, 'w') as f:
         csv_writer = csv_module.writer(f)
         for row in data:
             csv_writer.writerow(row)
-    engine = sqlalchemy.create_engine('postgresql://localhost/postgres')
 
-    if engine.has_table('testtable'):
+def teardown_function(function):
+    os.remove(file_name)
+    engine = sqlalchemy.create_engine(url)
+    metadata = sqlalchemy.MetaData()
+    metadata.reflect(engine)
+
+    for t in metadata.tables:
+        if 'testtable' in t:
+            metadata.tables[t].drop(engine)
+
+def test_csv_postgres_load():
+
+    tbl = 'testtable'
+
+    engine = sqlalchemy.create_engine(url)
+
+    if engine.has_table(tbl):
         metadata = sqlalchemy.MetaData()
         metadata.reflect(engine)
         t = metadata.tables[tbl]
@@ -38,7 +56,7 @@ def test_csv_postgres_load():
 
     csv = CSV(file_name)
 
-    sql = SQL('postgresql://localhost/postgres',tbl, schema=csv.schema)
+    sql = SQL(url,tbl, schema=csv.schema)
     engine = sql.engine
     conn = engine.raw_connection()
 
@@ -49,18 +67,48 @@ def test_csv_postgres_load():
     conn.commit()
 
 
-def test_into():
+def test_simple_into():
 
     file_name = 'test.csv'
-    tbl = 'testtable_into'
+    tbl = 'testtable_into_2'
 
-    csv = CSV(file_name)
-    sql = SQL('postgresql://localhost/postgres',tbl, schema=csv.schema)
+    csv = CSV(file_name, columns=['a', 'b'])
+    sql = SQL(url,tbl, schema= csv.schema)
 
     into(sql,csv, if_exists="replace")
-    t = Table(sql)
 
-    assert compute(t['_0']) == [1L, 10L, 100L]
-    assert compute(t[['_0']]) == [(1L,), (10L,), (100L,)]
-    assert compute(t['_1']) == [2L, 20L, 200L]
+    assert list(sql[:, 'a']) == [1, 10, 100]
+    assert list(sql[:, 'b']) == [2, 20, 200]
 
+def test_complex_into():
+    # data from: http://dummydata.me/generate
+
+    this_dir = os.path.dirname(__file__)
+    file_name = os.path.join(this_dir, 'dummydata.csv')
+
+    tbl = 'testtable_into_complex'
+
+    csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int32, Consts: float64}')
+    sql = SQL(url,tbl, schema=csv.schema)
+
+    into(sql,csv, if_exists="replace")
+
+    data = pd.read_csv(file_name, parse_dates=['RegistrationDate'])
+
+    assert sql[0] == csv[0]
+
+    #implement count method
+    print(len(list(sql[:])))
+
+    # assert sql[] == csv[-1]
+    for col in sql.columns:
+        #need to convert to python datetime
+        if col == "RegistrationDate":
+            py_dates = list(data['RegistrationDate'].astype(object).values)
+            py_dates = [dt.date(d.year, d.month, d.day) for d in py_dates]
+            assert list(sql[:,col]) == list(csv[:,col]) == py_dates
+        #handle floating point precision -- perhaps it's better to call out to assert_array_almost_equal
+        elif col == 'Consts':
+            assert list(sql[:,col]) == list(csv[:,col]) == [round(val, 6) for val in data[col].values]
+        else:
+            assert list(sql[:,col]) == list(csv[:,col]) == list(data[col].values)
