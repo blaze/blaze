@@ -240,3 +240,8 @@ def into(a, b, **kwargs):
 def into(a, df, **kwargs):
     return ctable([fix_len_string_filter(df[c]) for c in df.columns],
                       names=list(df.columns), **kwargs)
+
+
+@dispatch(DataFrame, ctable)
+def into(a, b, **kwargs):
+    return b.todataframe()
