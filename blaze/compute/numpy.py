@@ -7,7 +7,7 @@ from datashape import Record
 from .core import base, compute
 from ..dispatch import dispatch
 
-__all__ = ['compute_one', 'np']
+__all__ = ['compute_one', 'np', 'chunks']
 
 
 @dispatch(Column, np.ndarray)
@@ -48,6 +48,10 @@ def compute_one(t, lhs, rhs, **kwargs):
 @dispatch(UnaryOp, np.ndarray)
 def compute_one(t, x, **kwargs):
     return getattr(np, t.symbol)(x)
+
+@dispatch(Not, np.ndarray)
+def compute_one(t, x, **kwargs):
+    return ~x
 
 
 @dispatch(USub, np.ndarray)
@@ -118,9 +122,23 @@ def compute_one(sel, x, **kwargs):
     return x[compute(sel.predicate, {sel.child: x})]
 
 
+@dispatch(Union, np.ndarray, tuple)
+def compute_one(expr, example, children, **kwargs):
+    return np.concatenate(list(children), axis=0)
+
+
 @dispatch(TableExpr, np.ndarray)
 def compute_one(t, x, **kwargs):
     from blaze.api.into import into
     from pandas import DataFrame
     df = into(DataFrame(columns=t.child.columns), x)
     return compute_one(t, df, **kwargs)
+
+
+@dispatch(np.ndarray)
+def chunks(x, chunksize=1024):
+    start = 0
+    n = len(x)
+    while start < n:
+        yield x[start:start + chunksize]
+        start += chunksize
