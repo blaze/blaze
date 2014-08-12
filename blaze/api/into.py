@@ -147,6 +147,11 @@ def into(a, df):
         arr[:, i] = np.asarray(df[df.columns[i]])
     return arr
 
+
+@dispatch(np.ndarray, DataFrame)
+def into(a, df):
+    return df.to_records(index=False)
+
 @dispatch(nd.array)
 def discover(arr):
     return dshape(nd.dshape_of(arr))
