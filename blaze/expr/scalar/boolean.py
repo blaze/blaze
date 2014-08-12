@@ -13,6 +13,9 @@ class BooleanInterface(Scalar):
     def __or__(self, other):
         return Or(self, other)
 
+    def __invert__(self):
+        return Not(self)
+
 
 class Boolean(BooleanInterface):
     @property
@@ -66,7 +69,7 @@ class Or(BinOp, Boolean):
 
 class Not(UnaryOp, Boolean):
     symbol = '~'
-    op = operator.not_
+    op = operator.invert
 
 
 Invert = Not
