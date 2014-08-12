@@ -245,3 +245,16 @@ def into(a, df, **kwargs):
 @dispatch(DataFrame, ctable)
 def into(a, b, **kwargs):
     return b.todataframe()
+
+
+@dispatch(nd.array, ctable)
+def into(a, b, **kwargs):
+    return into(a, b[:], **kwargs)
+
+
+@dispatch(ctable, ctable)
+def into(a, b, **kwargs):
+    if not kwargs and a == ctable:
+        return b
+    else:
+        raise NotImplementedError()
