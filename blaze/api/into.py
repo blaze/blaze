@@ -21,6 +21,24 @@ __all__ = ['into', 'discover']
 
 @dispatch(object, object)
 def into(a, b, **kwargs):
+    """
+    Push data in ``b`` into a container of type ``a``
+
+    Examples
+    --------
+
+    >>> into([], (1, 2, 3))
+    [1, 2, 3]
+
+    >>> into(np.ndarray, [['Alice', 100], ['Bob', 200]], names=['name', 'amt'])
+    rec.array([('Alice', 100), ('Bob', 200)],
+                  dtype=[('name', 'S5'), ('amt', '<i8')])
+
+    >>> into(DataFrame, _)
+        name  amt
+    0  Alice  100
+    1    Bob  200
+    """
     raise NotImplementedError(
             "Blaze does not know a rule for the following conversion"
             "\n%s <- %s" % (type(a).__name__, type(b).__name__))
