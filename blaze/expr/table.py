@@ -14,7 +14,7 @@ from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, eval_str, Scalar)
+                     And, USub, Not, eval_str, Scalar, FloorDiv)
 from ..compatibility import _strtypes, builtins
 
 
@@ -307,6 +307,9 @@ class ColumnSyntaxMixin(object):
     def __neg__(self):
         return columnwise(USub, self)
 
+    def __invert__(self):
+        return columnwise(Not, self)
+
     def label(self, label):
         return Label(self, label)
 
@@ -327,6 +330,9 @@ class ColumnSyntaxMixin(object):
 
     def std(self):
         return std(self)
+
+    def isnan(self):
+        return columnwise(scalar.isnan, self)
 
 
 class Column(ColumnSyntaxMixin, Projection):
@@ -1137,6 +1143,12 @@ class Union(TableExpr):
     """
     __slots__ = 'children',
     __inputs__ = 'children',
+
+    def subterms(self):
+        yield self
+        for i in self.children:
+            for node in i.subterms():
+                yield node
 
     @property
     def schema(self):
