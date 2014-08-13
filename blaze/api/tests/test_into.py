@@ -8,6 +8,7 @@ from datetime import datetime
 from blaze.api.into import into, discover
 import blaze
 from blaze import Table
+from blaze.utils import filetext
 
 
 def skip(test_foo):
@@ -68,9 +69,10 @@ except ImportError:
     DataFrame = None
 
 try:
-    from blaze.data.python import Python
+    from blaze.data import Python, CSV
 except ImportError:
     Python = None
+    CSV = None
 
 try:
     from bokeh.objects import ColumnDataSource
@@ -222,3 +224,17 @@ def test_numpy_tableExpr():
 
     assert into(np.ndarray, t).dtype == \
             np.dtype([('name', 'O'), ('amount', 'i8')])
+
+
+@skip_if_not(DataFrame and CSV)
+def test_DataFrame_CSV():
+    with filetext('1,2\n3,4\n') as fn:
+        csv = CSV(fn, schema='{a: int64, b: float64}')
+        df = into(DataFrame, csv)
+
+        expected = DataFrame([[1, 2.0], [3, 4.0]],
+                             columns=['a', 'b'])
+
+
+        assert str(df) == str(expected)
+        assert list(df.dtypes) == [np.int64, np.float64]
