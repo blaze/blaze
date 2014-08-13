@@ -46,7 +46,9 @@ def normalize(a):
 
     Ensure that (1, 2, 3) == [1, 2, 3] and that u'Hello' == 'Hello'
     """
-    return str(a).replace("u'", "'").replace("(", "[").replace(")", "]")
+    return (str(a).replace("u'", "'")
+                  .replace("(", "[").replace(")", "]")
+                  .replace('L', ''))
 
 
 def test_base():
