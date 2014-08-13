@@ -4,6 +4,7 @@ import logging
 
 from dynd import nd
 from pandas import DataFrame
+import h5py
 
 from multipledispatch import halt_ordering, restart_ordering
 

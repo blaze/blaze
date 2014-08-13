@@ -39,32 +39,23 @@ def into(a, b, **kwargs):
     return carray(b, **kwargs)
 
 
-def fix_len_string_filter(ser):
-    """ Convert object strings to fixed length, pass through others """
-    if ser.dtype == np.dtype('O'):
-        return np.asarray(list(ser))
-    else:
-        return np.asarray(ser)
-
-
-@dispatch(ctable, DataFrame)
-def into(a, df, **kwargs):
-    return ctable([fix_len_string_filter(df[c]) for c in df.columns],
-                      names=list(df.columns), **kwargs)
-
-
 @dispatch(carray, (tuple, list))
-def into(a, b, **kwargs):
-    x = into(np.ndarray(0), b)
+def into(a, b, dtype=None, **kwargs):
+    x = into(np.ndarray(0), b, dtype=dtype)
     return into(a, x, **kwargs)
 
 
 @dispatch(ctable, (tuple, list))
-def into(a, b, **kwargs):
+def into(a, b, types=None, **kwargs):
     if isinstance(b[0], (tuple, list)):
-        return ctable([into(np.ndarray(0), c2) for c2 in zip(*b)], **kwargs)
+        if not types:
+            types=[None] * len(b[0])
+        return ctable([into(np.ndarray(0), c2, dtype=dt)
+                        for (c2, dt) in zip(zip(*b), types)],
+                      **kwargs)
     else:
-        return ctable([into(np.ndarray(0), b)], **kwargs)
+        return ctable([into(np.ndarray(0), b, dtype=types)],
+                      **kwargs)
 
 
 @dispatch((carray, ctable), Iterator)

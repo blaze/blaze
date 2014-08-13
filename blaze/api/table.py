@@ -1,7 +1,10 @@
 
-from datashape import discover, Tuple, Record, dshape, Fixed, DataShape
+from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
+    to_numpy_dtype)
 from pandas import DataFrame, Series
 import itertools
+import numpy as np
+from dynd import nd
 
 from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
@@ -152,7 +155,13 @@ def table_html(expr, n=10):
     return concrete_head(expr).to_html()
 
 
-@dispatch((type, object), TableExpr)
+@dispatch(type, TableExpr)
+def into(a, b, **kwargs):
+    f = into.resolve((a, type(b)))
+    return f(a, b, **kwargs)
+
+
+@dispatch(object, TableExpr)
 def into(a, b):
     return into(a, compute(b))
 
@@ -160,6 +169,21 @@ def into(a, b):
 @dispatch(DataFrame, TableExpr)
 def into(a, b):
     return into(DataFrame(columns=b.columns), compute(b))
+
+
+@dispatch(nd.array, TableExpr)
+def into(a, b):
+    return into(nd.array(), compute(b), dtype=str(b.schema))
+
+
+@dispatch(np.ndarray, TableExpr)
+def into(a, b):
+    if b.iscolumn:
+        return into(np.ndarray(0), compute(b),
+                dtype=to_numpy_dtype(b.schema[0].types[0]))
+    else:
+        return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(b.schema))
+
 
 Expr.__repr__ = expr_repr
 TableExpr.__repr__ = table_repr

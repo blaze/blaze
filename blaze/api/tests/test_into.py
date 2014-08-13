@@ -203,3 +203,22 @@ def test_Column_data_source():
 
     assert isinstance(cds, ColumnDataSource)
     assert set(cds.column_names) == set(t.columns)
+
+
+def test_numpy_list():
+    data = [('Alice', 100), ('Bob', 200)]
+
+    dtype = into(np.ndarray, data).dtype
+    assert np.issubdtype(dtype[0], str)
+    assert np.issubdtype(dtype[1], int)
+
+    assert into([], into(np.ndarray, data)) == data
+
+
+@skip_if_not(Table)
+def test_numpy_tableExpr():
+    data = [('Alice', 100), ('Bob', 200)]
+    t = Table(data, schema='{name: string, amount: int64}')
+
+    assert into(np.ndarray, t).dtype == \
+            np.dtype([('name', 'O'), ('amount', 'i8')])
