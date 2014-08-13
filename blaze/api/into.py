@@ -427,12 +427,6 @@ def into(c, dd, **kwargs):
     return type(c)(dd)
 
 
-@dispatch(DataDescriptor, DataDescriptor)
-def into(a, b, **kwargs):
-    a.extend(b)
-    return a
-
-
 @dispatch((np.ndarray, DataFrame, ColumnDataSource, ctable), DataDescriptor)
 def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
