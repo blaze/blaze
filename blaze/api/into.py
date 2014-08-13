@@ -446,9 +446,6 @@ def into(a, b, **kwargs):
 @dispatch(np.ndarray, CSV)
 def into(a, b, **kwargs):
     return into(a, into(DataFrame(), b, **kwargs))
-    return np.loadtxt(b.path, dtype=datashape.to_numpy_dtype(b.schema),
-            delimiter=b.dialect['delimiter'], skiprows=1 if b.header else 0,
-            **kwargs)
 
 
 @dispatch(DataFrame, CSV)
