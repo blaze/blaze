@@ -58,12 +58,13 @@ try:
     from bcolz import ctable, carray
 except ImportError:
     ctable = type(None)
+    carray = type(None)
 
 try:
     import pymongo
     from pymongo.collection import Collection
 except ImportError:
-    Collection = None
+    Collection = type(None)
 
 try:
     from ..data.core import DataDescriptor
