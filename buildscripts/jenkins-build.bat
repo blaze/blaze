@@ -31,9 +31,6 @@ echo on
 set PYTHON_EXECUTABLE=%PYENV_PREFIX%\Python.exe
 set PATH=%PYENV_PREFIX%;%PYENV_PREFIX%\Scripts;%PATH%
 
-call pip install multipledispatch toolz cytoolz bcolz
-IF %ERRORLEVEL% NEQ 0 exit /b 1
-
 REM Temporary hack to install datashape
 rd /q /s datashape
 git clone https://github.com/ContinuumIO/datashape.git || exit /b 1
@@ -44,11 +41,9 @@ popd
 REM Temporary hack to install blz
 IF "%PYTHON_VERSION%" == "2.6" call pip install unittest2 unicodecsv
 IF "%PYTHON_VERSION%" == "2.7" call pip install unicodecsv
-rd /q /s blz
-git clone https://github.com/ContinuumIO/blz.git || exit /b 1
-pushd blz
-%PYTHON_EXECUTABLE% setup.py install || exit /b 1
-popd
+
+call pip install multipledispatch toolz cytoolz bcolz
+IF %ERRORLEVEL% NEQ 0 exit /b 1
 
 REM Build/install Blaze
 %PYTHON_EXECUTABLE% setup.py install || exit /b 1

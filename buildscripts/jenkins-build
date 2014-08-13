@@ -49,8 +49,6 @@ else
  exit 1
 fi
 
-pip install multipledispatch toolz cytoolz bcolz || exit 1
-
 # Temporary hack to install datashape
 rm -rf datashape
 git clone https://github.com/ContinuumIO/datashape.git || exit 1
@@ -66,12 +64,8 @@ fi
 if [ "${PYTHON_VERSION}" == "2.7" ]; then
   pip install unicodecsv
 fi
-rm -rf blz
-git clone https://github.com/ContinuumIO/blz.git || exit 1
-pushd blz
-${PYTHON_EXECUTABLE} setup.py install || exit 1
-popd
 
+pip install multipledispatch toolz cytoolz bcolz || exit 1
 
 # Build/install Blaze
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
