@@ -390,6 +390,12 @@ def _into_iter_mongodb(l, coll, columns=None, schema=None):
     return columns, pluck(columns, seq)
 
 
+@dispatch((carray, ctable), Collection)
+def into(x, coll, columns=None, schema=None, **kwargs):
+    columns, seq = _into_iter_mongodb(x, coll, columns=None, schema=None)
+    return into(x, seq, names=columns, **kwargs)
+
+
 @dispatch(Iterator, Collection)
 def into(l, coll, columns=None, schema=None):
     columns, seq = _into_iter_mongodb(l, coll, columns=columns, schema=schema)
@@ -401,7 +407,3 @@ def into(l, coll, columns=None, schema=None):
     return type(l)(into(Iterator, coll, columns=columns, schema=schema))
 
 
-@dispatch(ctable, Collection)
-def into(x, coll, columns=None, schema=None, **kwargs):
-    columns, seq = _into_iter_mongodb(x, coll, columns=None, schema=None)
-    return into(x, seq, names=columns, **kwargs)
