@@ -10,7 +10,10 @@ from blaze.bcolz import *
 import blaze
 from blaze import Table
 import bcolz
+from blaze.data import CSV
 
+
+csv = CSV('blaze/api/tests/accounts.csv')
 
 L = [[100, 1, 'Alice'],
      [200, 2, 'Bob'],
@@ -28,7 +31,7 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                   names=['amount', 'id', 'name'])
 
 sources = [Table(L, schema='{amount: int64, id: int64, name: string[7]}'),
-             df, x, arr, bc]
+             df, x, arr, bc, csv]
 targets = [L, df, x, arr, bc]
 
 try:
