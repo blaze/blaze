@@ -5,14 +5,17 @@ try:
 except ImportError:
     Collection = None
 
-from .dispatch import dispatch
-from datashape import discover, isdimension, dshape
 from collections import Iterator
 from toolz import take, concat, partition_all
-from .data.core import DataDescriptor
-from .compute.mongo import *
+from datashape import discover, isdimension, dshape
 import copy
 
+from .dispatch import dispatch
+from .data.core import DataDescriptor
+from .compute.mongo import *
+from .expr.table import TableExpr
+
+__all__ = ['pymongo']
 
 @dispatch(Collection)
 def discover(coll, n=50):

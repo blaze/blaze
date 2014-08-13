@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr.table import *
+from blaze.expr import *
 import bcolz
 from toolz import map
 import numpy as np
@@ -10,6 +10,7 @@ from .chunks import Chunks, ChunkIter
 from ..compatibility import builtins
 from ..dispatch import dispatch
 
+__all__ = ['bcolz']
 
 @dispatch(bcolz.ctable)
 def discover(t):

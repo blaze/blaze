@@ -17,6 +17,13 @@ from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, Scalar, FloorDiv)
 from ..compatibility import _strtypes, builtins
 
+__all__ = '''
+TableExpr TableSymbol RowWise Projection Column Selection ColumnWise Join
+Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
+exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
+min max mean var std count nunique By by Sort Distinct distinct Head head Label
+ReLabel relabel Map Apply common_subexpression merge Merge Union selection
+projection union columnwise'''.split()
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions

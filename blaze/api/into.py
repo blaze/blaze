@@ -249,6 +249,7 @@ def into(cds, other):
 def into(df, cds):
     return cds.to_df()
 
+
 @dispatch(ctable, TableExpr)
 def into(a, b, **kwargs):
     c = compute(b)
@@ -256,6 +257,11 @@ def into(a, b, **kwargs):
         kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
                 b.schema[0].types]
     return into(a, c, **kwargs)
+
+
+@dispatch(DataFrame, ColumnDataSource)
+def into(df, cds):
+    return cds.to_df()
 
 
 def fix_len_string_filter(ser):

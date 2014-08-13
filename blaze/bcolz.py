@@ -11,7 +11,7 @@ from .dispatch import dispatch
 from .compute.bcolz import *
 
 
-__all__ = ['into']
+__all__ = ['into', 'bcolz', 'chunks']
 
 
 @dispatch(type, (ctable, carray))
@@ -78,7 +78,7 @@ def into(a, b, columns=None, schema=None):
                                 columns=columns)
 
 
-from .compute.chunks import ChunkIter
+from .compute.chunks import ChunkIter, chunks
 
 @dispatch((carray, ctable), ChunkIter)
 def into(a, b, **kwargs):

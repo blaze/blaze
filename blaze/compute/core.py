@@ -3,8 +3,7 @@ from datetime import date, datetime
 from toolz import first
 
 from ..expr.core import *
-from ..expr.table import *
-from ..expr.scalar import *
+from ..expr import *
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_one']

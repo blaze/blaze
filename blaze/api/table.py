@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 
 from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
     to_numpy_dtype)
@@ -11,6 +12,8 @@ from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
 from ..data.pandas import into
 from .into import into
+
+__all__ = ['Table', 'compute', 'into']
 
 names = ('_%d' % i for i in itertools.count(1))
 

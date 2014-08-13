@@ -6,7 +6,7 @@ from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
 from blaze.compute.pandas import *
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.compatibility import builtins
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')

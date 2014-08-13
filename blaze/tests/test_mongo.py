@@ -3,10 +3,12 @@ from __future__ import absolute_import, division, print_function
 import pytest
 pymongo = pytest.importorskip('pymongo')
 
+from datashape import discover, dshape
 from contextlib import contextmanager
+from toolz.curried import get
+
 from blaze.mongo import *
 from blaze.api.into import *
-from toolz.curried import get
 
 conn = pymongo.MongoClient()
 db = conn.test_db

@@ -1,9 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
 import tables as tb
-from blaze.expr.table import *
+from blaze.expr import *
 from datashape import Record
 from ..dispatch import dispatch
+
+
+__all__ = ['tb']
 
 
 @dispatch(tb.Table)

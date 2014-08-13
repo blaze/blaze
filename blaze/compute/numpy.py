@@ -1,13 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.expr.scalar import BinOp, UnaryOp, USub
 from datashape import Record
 from .core import base, compute
 from ..dispatch import dispatch
 
-__all__ = ['compute_one', 'np', 'chunks']
+__all__ = ['np']
 
 
 @dispatch(Column, np.ndarray)

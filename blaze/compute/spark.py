@@ -19,7 +19,7 @@ from .core import compute, compute_one
 
 from toolz.curried import get
 
-__all__ = ['compute', 'compute_one', 'into', 'RDD', 'pyspark', 'SparkContext']
+__all__ = ['RDD', 'pyspark', 'SparkContext']
 
 try:
     from pyspark import SparkContext

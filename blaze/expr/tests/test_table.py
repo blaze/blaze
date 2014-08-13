@@ -5,11 +5,11 @@ import tempfile
 import pandas as pd
 
 from blaze import CSV, Table
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.expr.core import discover
 from blaze.utils import raises
-from datashape import dshape, var, int32, int64
-from toolz import identity
+from datashape import dshape, var, int32, int64, Record, DataShape
+from toolz import identity, first
 import numpy as np
 
 
