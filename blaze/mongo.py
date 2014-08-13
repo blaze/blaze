@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 try:
     from pymongo.collection import Collection
 except ImportError:
-    Collection = None
+    Collection = type(None)
 
 from collections import Iterator
 from toolz import take, concat, partition_all
