@@ -10,7 +10,6 @@ from dynd import nd
 from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
-from ..data.pandas import into
 from .into import into
 
 __all__ = ['Table', 'compute', 'into']

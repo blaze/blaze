@@ -4,7 +4,7 @@ from dynd import nd
 import datashape
 from datashape import DataShape, dshape, Record, to_numpy_dtype
 import toolz
-from toolz import concat, partition_all
+from toolz import concat, partition_all, valmap
 from cytoolz import pluck
 import copy
 from datetime import datetime
@@ -12,6 +12,7 @@ from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
 import numpy as np
+import pandas
 from pandas import DataFrame, Series
 
 from ..dispatch import dispatch
@@ -67,9 +68,10 @@ except ImportError:
     Collection = type(None)
 
 try:
-    from ..data.core import DataDescriptor
+    from ..data import DataDescriptor, CSV
 except ImportError:
     DataDescriptor = type(None)
+    CSV = type(None)
 
 
 @dispatch(type, object)
@@ -148,10 +150,6 @@ def into(a, b, **kwargs):
 def into(a, b):
     return b.tolist()
 
-
-@dispatch(DataFrame, DataDescriptor)
-def into(a, b):
-    return DataFrame(list(b), columns=b.columns)
 
 
 @dispatch(DataFrame, np.ndarray)
@@ -413,4 +411,56 @@ def into(l, coll, columns=None, schema=None):
 def into(l, coll, columns=None, schema=None):
     return type(l)(into(Iterator, coll, columns=columns, schema=schema))
 
+
+@dispatch(nd.array, DataDescriptor)
+def into(_, dd, **kwargs):
+    return dd.dynd[:]
+
+
+@dispatch(Iterator, DataDescriptor)
+def into(_, dd, **kwargs):
+    return iter(dd)
+
+
+@dispatch((list, tuple, set), DataDescriptor)
+def into(c, dd, **kwargs):
+    return type(c)(dd)
+
+
+@dispatch((np.ndarray, DataFrame, ColumnDataSource, ctable), DataDescriptor)
+def into(a, b, **kwargs):
+    return into(a, into(nd.array(), b), **kwargs)
+
+
+@dispatch((np.ndarray, DataFrame, ColumnDataSource, ctable), CSV)
+def into(a, b, **kwargs):
+    return into(a, into(DataFrame(), b), **kwargs)
+
+
+@dispatch(np.ndarray, CSV)
+def into(a, b, **kwargs):
+    return into(a, into(DataFrame(), b, **kwargs))
+
+
+@dispatch(DataFrame, CSV)
+def into(a, b):
+    dialect= b.dialect.copy()
+    del dialect['lineterminator']
+    dates = [i for i, typ in enumerate(b.schema[0].types)
+               if 'date' in str(typ)]
+    schema = b.schema
+    if '?' in str(schema):
+        schema = dshape(str(schema).replace('?', ''))
+
+    dtypes = valmap(to_numpy_dtype, schema[0].dict)
+    return pandas.read_csv(b.path,
+                           skiprows=1 if b.header else 0,
+                           dtype=dtypes,
+                           names=b.columns,
+                           **dialect)
+
+
+@dispatch(DataFrame, DataDescriptor)
+def into(a, b):
+    return DataFrame(list(b), columns=b.columns)
 

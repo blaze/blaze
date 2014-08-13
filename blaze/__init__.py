@@ -16,7 +16,6 @@ from .data.csv import *
 from .data.json import *
 from .data.hdf5 import *
 from .compute.python import *
-from .data.pandas import *
 from .data.meta import *
 from .compute.pandas import *
 from .compute.numpy import *
