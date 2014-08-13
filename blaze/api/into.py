@@ -239,6 +239,11 @@ def into(cds, t):
     return ColumnDataSource(data=dict((col, into([], getattr(t, col)))
                                       for col in columns))
 
+@dispatch(ColumnDataSource, Collection)
+def into(cds, other):
+    return into(cds, into(DataFrame(), other))
+
+
 @dispatch(DataFrame, ColumnDataSource)
 def into(df, cds):
     return cds.to_df()
