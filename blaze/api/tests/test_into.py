@@ -9,6 +9,7 @@ import os
 from blaze.api.into import into, discover
 import blaze
 from blaze import Table, TableSymbol, compute
+import pytest
 
 
 def skip(test_foo):
@@ -81,19 +82,17 @@ except ImportError:
     PyTables = None
 
 
-class Test_into_pytables(unittest.TestCase):
+@pytest.yield_fixture
+def h5():
+    class Test(IsDescription):
+        posted_dow = UInt8Col()
+        jobtype  = UInt8Col()
+        location  = UInt8Col()
+        date  = StringCol(20)
+        country  = StringCol(2)
 
-    @skip_if_not(PyTables and DataFrame)
-    def setUp(self):
-        self.h5_file = tempfile.mktemp(".h5")
-        class Test(IsDescription):
-            posted_dow = UInt8Col()
-            jobtype  = UInt8Col()
-            location  = UInt8Col()
-            date  = StringCol(20)
-            country  = StringCol(2)
-
-        h5file = open_file(self.h5_file, mode = "w", title = "Test file")
+    with tempfile.NamedTemporaryFile(mode='w') as f:
+        h5file = open_file(f.name, mode = "w", title = "Test file")
         group = h5file.create_group("/", 'test', 'Info')
         tab = h5file.create_table(group, 'sample', Test, "Example")
         arow = tab.row
@@ -104,30 +103,16 @@ class Test_into_pytables(unittest.TestCase):
         arow['posted_dow']  = 3
         # Insert a new record
         arow.append()
+        tab.flush()
+        yield h5file
         # Close (and flush) the file
         h5file.close()
 
-    @skip_if_not(PyTables and DataFrame)
-    def tearDown(self):
-        if os.path.exists(self.h5_file):
-            os.remove(self.h5_file)
-
-    @skip_if_not(PyTables and DataFrame)
-    def test_into_pytables_dataframe(self):
-        schema = '''
-           {country: string,
-           date: string,
-           type: uint8,
-           location: uint8,
-           posted_dow: uint8}
-          '''
-
-        thefile = open_file(self.h5_file)
-        samp = thefile.root.test.sample
-        # Create a Blaze TableSymbol of similar schema
-        t = TableSymbol('example', schema=schema)
-        final = into(DataFrame, compute(t, {t:samp}))
-        self.assertEqual(len(final), 1)
+@skip_if_not(PyTables and DataFrame)
+def test_into_pytables_dataframe(h5):
+    samp = h5.root.test.sample
+    final = into(DataFrame, samp)
+    assert len(final) == 1
 
 @skip_if_not(DataFrame and Python)
 def test_pandas_data_descriptor():

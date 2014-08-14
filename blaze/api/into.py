@@ -8,6 +8,7 @@ from numbers import Number
 from collections import Iterable, Iterator
 import numpy as np
 from pandas import DataFrame, Series
+import h5py
 import tables
 
 from ..dispatch import dispatch
