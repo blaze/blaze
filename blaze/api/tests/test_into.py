@@ -3,14 +3,14 @@ import unittest
 from dynd import nd
 import numpy as np
 from datashape import dshape
+from datetime import datetime
 import tempfile
 import os
 
 from blaze.api.into import into, discover
 import blaze
-from blaze import Table, TableSymbol, compute
+from blaze import Table
 import pytest
-
 
 def skip(test_foo):
     return
@@ -53,6 +53,10 @@ class Test_into(unittest.TestCase):
         self.assertEqual(into([], np.array([1, 2])),
                          [1, 2])
 
+    def test_numpy_datetime(self):
+        assert isinstance(into(np.ndarray(0), [datetime(2014, 1, 1)])[0],
+                          np.datetime64)
+
     def test_type(self):
         self.assertEqual(into(list, (1, 2, 3)),
                          into([], (1, 2, 3)))
@@ -66,9 +70,10 @@ except ImportError:
     DataFrame = None
 
 try:
-    from blaze.data.python import Python
+    from blaze.data import Python, CSV
 except ImportError:
     Python = None
+    CSV = None
 
 try:
     from bokeh.objects import ColumnDataSource
@@ -236,3 +241,36 @@ def test_Column_data_source():
 
     assert isinstance(cds, ColumnDataSource)
     assert set(cds.column_names) == set(t.columns)
+
+
+def test_numpy_list():
+    data = [('Alice', 100), ('Bob', 200)]
+
+    dtype = into(np.ndarray, data).dtype
+    assert np.issubdtype(dtype[0], str)
+    assert np.issubdtype(dtype[1], int)
+
+    assert into([], into(np.ndarray, data)) == data
+
+
+@skip_if_not(Table)
+def test_numpy_tableExpr():
+    data = [('Alice', 100), ('Bob', 200)]
+    t = Table(data, schema='{name: string, amount: int64}')
+
+    assert into(np.ndarray, t).dtype == \
+            np.dtype([('name', 'O'), ('amount', 'i8')])
+
+
+@skip_if_not(DataFrame and CSV)
+def test_DataFrame_CSV():
+    with filetext('1,2\n3,4\n') as fn:
+        csv = CSV(fn, schema='{a: int64, b: float64}')
+        df = into(DataFrame, csv)
+
+        expected = DataFrame([[1, 2.0], [3, 4.0]],
+                             columns=['a', 'b'])
+
+
+        assert str(df) == str(expected)
+        assert list(df.dtypes) == [np.int64, np.float64]

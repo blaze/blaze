@@ -5,11 +5,11 @@ import tempfile
 import pandas as pd
 
 from blaze import CSV, Table
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.expr.core import discover
 from blaze.utils import raises
-from datashape import dshape, var, int32, int64
-from toolz import identity
+from datashape import dshape, var, int32, int64, Record, DataShape
+from toolz import identity, first
 import numpy as np
 
 
@@ -235,6 +235,8 @@ def test_unary_ops():
     t = TableSymbol('t', '{name: string, amount: int}')
     expr = cos(exp(t['amount']))
     assert 'cos' in str(expr)
+
+    assert '~' in str(~(t.amount > 0))
 
 
 def test_reduction():
@@ -509,3 +511,13 @@ def test_table_coercion():
     assert (t.amount + '10').expr.rhs == 10
 
     assert (t.timestamp < '2014-12-01').expr.rhs == date(2014, 12, 1)
+
+
+def test_isnan():
+    t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
+
+    for expr in [t.amount.isnan(), ~t.amount.isnan()]:
+        assert eval(str(expr)).isidentical(expr)
+
+    assert isinstance(t.amount.isnan(), TableExpr)
+    assert 'bool' in str(t.amount.isnan().dshape)

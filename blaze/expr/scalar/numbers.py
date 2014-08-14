@@ -10,7 +10,8 @@ from ..core import Expr
 from ...dispatch import dispatch
 from ...compatibility import _strtypes
 from datashape import coretypes as ct
-from .boolean import Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not, Invert
+from .boolean import (Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not,
+        Invert, BooleanInterface)
 
 
 @dispatch(ct.Option, object)
@@ -239,7 +240,7 @@ class floor(IntegerMath): pass
 class trunc(IntegerMath): pass
 
 
-class BooleanMath(Number, UnaryOp):
+class BooleanMath(Number, UnaryOp, BooleanInterface):
     """ Mathematical unary operator with bool valued dshape like isnan """
     @property
     def dshape(self):

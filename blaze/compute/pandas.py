@@ -22,11 +22,11 @@ from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 
 from ..dispatch import dispatch
-from ..expr.table import *
-from ..expr.scalar import UnaryOp, BinOp
+from ..expr import *
 from .core import compute, compute_one, base
 
-__all__ = ['compute_one']
+# __all__ = ['pandas', 'DataFrame', 'Series']
+__all__ = []
 
 
 @dispatch(Projection, DataFrame)

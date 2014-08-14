@@ -3,7 +3,7 @@ import math
 
 from blaze.compute.core import compute
 from blaze.compute.python import *
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.compatibility import builtins
 from blaze.utils import raises
 
@@ -204,6 +204,7 @@ def test_column_of_column():
 
 def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
+    assert set(compute(Distinct(t), data)) == set(map(tuple, data))
 
 
 def test_Distinct_count():
