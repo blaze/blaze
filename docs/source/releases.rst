@@ -2,6 +2,13 @@
 Release Notes
 ======================
 
+Release 0.6.1
+-------------
+
+* More consistent behavior of ``into``
+* ``bcolz`` backend
+* Control namespace leakage
+
 Release 0.6
 -----------
 
