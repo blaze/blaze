@@ -75,15 +75,13 @@ try:
 except ImportError:
     ColumnDataSource = None
 
-try:
-    from tables import (Table as PyTables, open_file, UInt8Col, StringCol,
-        IsDescription)
-except ImportError:
-    PyTables = None
-
 
 @pytest.yield_fixture
 def h5():
+    # importorskip will cause this test to be skipped if pytables not found
+    tables = pytest.importorskip("tables")
+    from tables import (Table as PyTables, open_file, UInt8Col, StringCol,
+        IsDescription)
     class Test(IsDescription):
         posted_dow = UInt8Col()
         jobtype  = UInt8Col()
@@ -108,7 +106,6 @@ def h5():
         # Close (and flush) the file
         h5file.close()
 
-@skip_if_not(PyTables and DataFrame)
 def test_into_pytables_dataframe(h5):
     samp = h5.root.test.sample
     final = into(DataFrame, samp)
