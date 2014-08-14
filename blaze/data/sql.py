@@ -265,40 +265,105 @@ class SQL(DataDescriptor):
             return result
 
 @dispatch(SQL, CSV)
-def into(sql, csv, if_exists="replace"):
+def into(sql, csv, if_exists="replace", **kwargs):
     """
     Parameters
     ----------
     if_exists : string
         {replace, append, fail}
+    FORMAT : string
+         Data Format
+         text, csv, binary default: CSV
+    DELIMITER : string
+        Delimiter character
+    NULL :
+        Null character
+        Default: '' (empty string)
+    HEADER : bool
+        Flag to define file contains a header (only to be used with CSV)
+    QUOTE : string
+        Single byte quote:  Default is double-quote. ex: "1997","Ford","E350")
+    ESCAPE : string
+        A single one-byte character for defining escape characters. Default is the same as the QUOTE
+
+    ##NOT IMPLEMENTED
+    # FORCE_QUOTE { ( column_name [, ...] ) | * }
+    # FORCE_NOT_NULL ( column_name [, ...] )
+    # ENCODING 'encoding_name'
+    # OIDS : bool
+    #     Specifies copying the OID for each row
+
     """
     db = sql.engine.url.drivername
     engine = sql.engine
     abspath = csv._abspath
     tblname = sql.tablename
 
-    delimiter = csv.dialect['delimiter']
-    header = csv.header
+    # postgres copy options
+    format = kwargs.get('FORMAT','csv')
+    delimiter = kwargs.get('DELIMITER', csv.dialect['delimiter'])
+    null = kwargs.get('NULL',"")
+    quote = kwargs.get('QUOTE', '"')
+    escape = kwargs.get('ESCAPE', quote)
+    header = kwargs.get('HEADER',csv.header)
+
+    copy_info = {'abspath': abspath,
+                 'tblname': tblname,
+                 'format': format,
+                 'delimiter':delimiter,
+                 'null': null,
+                 'quote': quote,
+                 'escape': escape,
+                 'header': header}
 
     if if_exists == 'replace':
         if engine.has_table(tblname):
+
+            # drop old table
             metadata = sqlalchemy.MetaData()
             metadata.reflect(engine, only=[tblname])
             t = metadata.tables[tblname]
-            del_stmnt = t.delete()
-            engine.execute(del_stmnt)
+            t.drop(engine)
+
+            # create a new one
+            sql.table.create(engine)
 
 
     if db == 'postgresql':
-        conn = sql.engine.raw_connection()
-        cursor = conn.cursor()
 
-        #lots of options here to handle formatting
-        sql_stmnt = "copy {} from '{}' (FORMAT CSV, DELIMITER E'{}', NULL '', HEADER {});"
-        sql_stmnt = sql_stmnt.format(tblname, abspath, delimiter, header)
+        try:
+            conn = sql.engine.raw_connection()
+            cursor = conn.cursor()
 
-        cursor.execute(sql_stmnt)
-        conn.commit()
+            #lots of options here to handle formatting
 
-    # if 'sqlite' in url:
-    #     pass
+            sql_stmnt = """
+                        COPY {tblname} from '{abspath}'
+                        (FORMAT {format}, DELIMITER E'{delimiter}',
+                        NULL '{null}', QUOTE '{quote}', ESCAPE '{escape}',
+                        HEADER {header});
+                        """
+            sql_stmnt = sql_stmnt.format(**copy_info)
+
+            cursor.execute(sql_stmnt)
+            conn.commit()
+
+        #not sure about failures yet
+        except Exception as e:
+            print("Failed to use POSTGRESQL COPY.\nERR MSG: ", e)
+            print("Defaulting to sql.extend() method")
+            sql.extend(csv)
+
+    #only works on OSX/Unix
+    if db == 'sqlite':
+        import subprocess
+
+        cmd = "echo 'create table {tbl} (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
+        ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
+        output = ps.stdout.read()
+
+
+        # (echo ".mode csv"; echo ".import test.csv test";) | sqlite3 bar.db
+        #
+        #
+        # sqlite3 bar.db 'select * from test' | awk '{printf "%s\n",$1}'

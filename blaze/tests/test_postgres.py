@@ -69,7 +69,6 @@ def test_csv_postgres_load():
 
 def test_simple_into():
 
-    file_name = 'test.csv'
     tbl = 'testtable_into_2'
 
     csv = CSV(file_name, columns=['a', 'b'])
@@ -79,6 +78,33 @@ def test_simple_into():
 
     assert list(sql[:, 'a']) == [1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200]
+
+def test_tryexcept_into():
+
+    tbl = 'testtable_into_2'
+
+    csv = CSV(file_name, columns=['a', 'b'])
+    sql = SQL(url,tbl, schema= csv.schema)
+
+    into(sql,csv, if_exists="replace", QUOTE="alpha") # uses multi-byte character and
+                                                      # fails over to using sql.extend()
+
+    assert list(sql[:, 'a']) == [1, 10, 100]
+    assert list(sql[:, 'b']) == [2, 20, 200]
+
+def test_no_header_no_columns():
+
+    tbl = 'testtable_into_2'
+
+    csv = CSV(file_name)
+    sql = SQL(url,tbl, schema= '{x: int, y: int}')
+    # import pdb
+    # pdb.set_trace()
+    into(sql,csv, if_exists="replace")
+
+    assert list(sql[:, 'x']) == [1, 10, 100]
+    assert list(sql[:, 'y']) == [2, 20, 200]
+
 
 def test_complex_into():
     # data from: http://dummydata.me/generate
