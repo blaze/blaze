@@ -45,7 +45,8 @@ class TableExpr(Expr):
         try:
             return int(self.dshape[0])
         except TypeError:
-            raise ValueError('Length of table not known')
+            raise ValueError('Can not determine length of table with the '
+                    'following datashape: %s' % self.dshape)
 
     def __len__(self):
         return self._len()
@@ -169,6 +170,9 @@ class TableSymbol(TableExpr):
 
     def __init__(self, name, dshape=None, iscolumn=False, schema=None):
         self._name = name
+        if schema and dshape:
+            raise ValueError("Please specify one of schema= or dshape= keyword"
+                    " arguments")
         if schema and not dshape:
             dshape = datashape.var * schema
         if isinstance(dshape, _strtypes):

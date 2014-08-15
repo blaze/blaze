@@ -56,6 +56,9 @@ class Table(TableSymbol):
 
     def __init__(self, data, dshape=None, name=None, columns=None,
             iscolumn=False, schema=None):
+        if schema and dshape:
+            raise ValueError("Please specify one of schema= or dshape= keyword"
+                    " arguments")
         if schema and not dshape:
             dshape = var * schema
         if dshape and isinstance(dshape, _strtypes):
@@ -199,7 +202,7 @@ def into(a, b):
 def table_length(expr):
     try:
         return expr._len()
-    except:
+    except TypeError:
         return compute(expr.count())
 
 
