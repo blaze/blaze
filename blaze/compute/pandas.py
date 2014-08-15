@@ -131,8 +131,10 @@ def compute_one(t, df, **kwargs):
     assert isinstance(t.apply, Reduction)
     grouper = DataFrame(compute(t.grouper, {t.child: df}))
     pregrouped = DataFrame(compute(t.apply.child, {t.child: df}))
+    pregrouped.columns = t.columns[len(t.grouper.columns):]
 
     full = grouper.join(pregrouped)
+
     groups = full.groupby(unpack(grouper.columns))[unpack(pregrouped.columns)]
 
     g = TableSymbol('group', t.apply.child.schema)

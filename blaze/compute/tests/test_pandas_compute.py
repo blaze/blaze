@@ -402,3 +402,15 @@ def test_outer_join():
 
     assert str(df.sort('id').to_records(index=False)) ==\
             str(expected.sort('id').to_records(index=False))
+
+
+def test_by_on_same_column():
+    df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
+    t = TableSymbol('data', schema='{id:int, value:int}')
+
+    gby = by(t, t['id'], t['id'].count())
+
+    expected = DataFrame([[1, 2], [2, 1]], columns=['id', 'id_count'])
+    result = compute(gby, {t:df})
+
+    assert str(result) == str(expected)
