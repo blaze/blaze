@@ -53,6 +53,9 @@ class TableExpr(Expr):
     def __nonzero__(self):
         return True
 
+    def __bool__(self):
+        return True
+
     @property
     def columns(self):
         if isinstance(self.schema[0], Record):
