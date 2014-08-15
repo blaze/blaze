@@ -41,12 +41,14 @@ class TableExpr(Expr):
     def dshape(self):
         return datashape.var * self.schema
 
-
-    def __len__(self):
+    def _len(self):
         try:
             return int(self.dshape[0])
         except TypeError:
             raise ValueError('Length of table not known')
+
+    def __len__(self):
+        return self._len()
 
     def __nonzero__(self):
         return True
@@ -203,8 +205,8 @@ class RowWise(TableExpr):
     blaze.expr.table.
     blaze.expr.table.
     """
-    def __len__(self):
-        return len(self.child)
+    def _len(self):
+        return self.child._len()
 
 
 class Projection(RowWise):
@@ -862,8 +864,8 @@ class Sort(TableExpr):
         else:
             return self._key
 
-    def __len__(self):
-        return len(self.child)
+    def _len(self):
+        return self.child._len()
 
 
 def sort(child, key, ascending=True):
@@ -928,8 +930,8 @@ class Head(TableExpr):
     def iscolumn(self):
         return self.child.iscolumn
 
-    def __len__(self):
-        return builtins.min(len(self.child), self.n)
+    def _len(self):
+        return builtins.min(self.child._len(), self.n)
 
 
 def head(child, n=10):

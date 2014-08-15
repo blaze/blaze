@@ -196,7 +196,15 @@ def into(a, b):
         return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(b.schema))
 
 
+def table_length(expr):
+    try:
+        return expr._len()
+    except:
+        return compute(expr.count())
+
+
 Expr.__repr__ = expr_repr
 TableExpr.__repr__ = table_repr
 TableExpr.to_html = table_html
 TableExpr._repr_html_ = table_html
+TableExpr.__len__ = table_length
