@@ -66,7 +66,7 @@ def test_relational():
 
     r = (t['name'] == 'Alice')
 
-    assert r.dshape == dshape('var * bool')
+    assert r.dshape == dshape('var * {name: bool}')
 
 
 def test_selection():
@@ -521,3 +521,10 @@ def test_isnan():
 
     assert isinstance(t.amount.isnan(), TableExpr)
     assert 'bool' in str(t.amount.isnan().dshape)
+
+
+def test_columnwise_naming():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+
+    assert t.x.name == 'x'
+    assert (t.x + 1).name == 'x'

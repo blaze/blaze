@@ -132,7 +132,16 @@ def compute_one(t, df, **kwargs):
     grouper = DataFrame(compute(t.grouper, {t.child: df}))
     pregrouped = DataFrame(compute(t.apply.child, {t.child: df}))
 
+    # Pandas and Blaze column naming schemes differ
+    # Coerce DataFrame column names to match Blaze's names
+    # In particular, reductions include reduction name
+    #   t.amount.sum() is named 'amount_sum' rather than 'amount'
+    # We do this before the join to avoid collisions if columns are in both the
+    # grouping dataframe and the apply dataframe
+    pregrouped.columns = t.columns[len(t.grouper.columns):]
+
     full = grouper.join(pregrouped)
+
     groups = full.groupby(unpack(grouper.columns))[unpack(pregrouped.columns)]
 
     g = TableSymbol('group', t.apply.child.schema)
@@ -143,7 +152,12 @@ def compute_one(t, df, **kwargs):
         result.name = unpack(pregrouped.columns)
         result = DataFrame(result)
 
-    return result[list(pregrouped.columns)].reset_index()
+    result = result[list(pregrouped.columns)].reset_index()
+    # Pandas and Blaze column naming schemes differ
+    # Coerce DataFrame column names to match Blaze's names
+    result.columns = t.columns
+
+    return result
 
 
 @dispatch(Sort, DataFrame)
