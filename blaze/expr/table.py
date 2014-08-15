@@ -534,6 +534,10 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
 
     @property
     def schema(self):
+        names = [x._name for x in self.expr.traverse()
+                         if isinstance(x, ScalarSymbol)]
+        if len(names) == 1 and not isinstance(self.expr.dshape[0], Record):
+            return DataShape(Record([[names[0], self.expr.dshape[0]]]))
         return self.expr.dshape
 
     def __str__(self):
@@ -928,7 +932,7 @@ class Label(RowWise, ColumnSyntaxMixin):
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> (accounts['amount'] * 100).schema
-    dshape("float64")
+    dshape("{ amount : float64 }")
 
     >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
     dshape("{ new_amount : float64 }")
