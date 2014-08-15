@@ -341,6 +341,13 @@ class ColumnSyntaxMixin(object):
     def isnan(self):
         return columnwise(scalar.isnan, self)
 
+    @property
+    def name(self):
+        try:
+            return self.schema[0].names[0]
+        except AttributeError:
+            raise ValueError("Column is un-named, name with col.label('name')")
+
 
 class Column(ColumnSyntaxMixin, Projection):
     """ A single column from a table
