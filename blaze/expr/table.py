@@ -41,6 +41,16 @@ class TableExpr(Expr):
     def dshape(self):
         return datashape.var * self.schema
 
+
+    def __len__(self):
+        try:
+            return int(self.dshape[0])
+        except TypeError:
+            raise ValueError('Length of table not known')
+
+    def __nonzero__(self):
+        return True
+
     @property
     def columns(self):
         if isinstance(self.schema[0], Record):

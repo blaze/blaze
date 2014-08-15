@@ -18,6 +18,18 @@ def test_dshape():
     assert t.dshape == dshape('var * {name: string, amount: int}')
 
 
+def test_length():
+    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    assert t.dshape == dshape('10 * {name: string, amount: int}')
+    assert len(t) == 10
+
+
+def test_nonzero():
+    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    assert t
+    assert (not not t) is True
+
+
 def test_eq():
     assert TableSymbol('t', '{a: string, b: int}') == \
             TableSymbol('t', '{a: string, b: int}')
