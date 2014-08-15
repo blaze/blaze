@@ -139,4 +139,4 @@ def test(verbose=False, junitfile=None, exit=False):
     error_code = pytest.main(args=args)
     if exit:
         return sys.exit(error_code)
-    return error_code
+    return error_code == 0
