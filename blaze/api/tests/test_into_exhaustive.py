@@ -30,7 +30,7 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                    np.array(['Alice', 'Bob', 'Charlie'], dtype='U7')],
                   names=['amount', 'id', 'name'])
 
-sources = [Table(L, schema='{amount: int64, id: int64, name: string[7]}'),
+sources = [Table(L, '{amount: int64, id: int64, name: string[7]}'),
              df, x, arr, bc, csv]
 targets = [L, df, x, arr, bc]
 

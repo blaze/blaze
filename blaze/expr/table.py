@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 from abc import abstractproperty
-from datashape import dshape, var, DataShape, Record, isdimension, Option
+from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import concat, partial, first, compose, get, unique
@@ -40,6 +40,22 @@ class TableExpr(Expr):
     @property
     def dshape(self):
         return datashape.var * self.schema
+
+    def _len(self):
+        try:
+            return int(self.dshape[0])
+        except TypeError:
+            raise ValueError('Can not determine length of table with the '
+                    'following datashape: %s' % self.dshape)
+
+    def __len__(self):
+        return self._len()
+
+    def __nonzero__(self):
+        return True
+
+    def __bool__(self):
+        return True
 
     @property
     def columns(self):
@@ -149,14 +165,21 @@ class TableSymbol(TableExpr):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = '_name', 'schema', 'iscolumn'
+    __slots__ = '_name', 'dshape', 'iscolumn'
     __inputs__ = ()
 
-    def __init__(self, name, schema, iscolumn=False):
+    def __init__(self, name, dshape=None, iscolumn=False, schema=None):
         self._name = name
-        if isinstance(schema, _strtypes):
-            schema = dshape(schema)
-        self.schema = schema
+        if schema and dshape:
+            raise ValueError("Please specify one of schema= or dshape= keyword"
+                    " arguments")
+        if schema and not dshape:
+            dshape = datashape.var * schema
+        if isinstance(dshape, _strtypes):
+            dshape = datashape.dshape(dshape)
+        if not isdimension(dshape[0]):
+            dshape = datashape.var * dshape
+        self.dshape = dshape
         self.iscolumn = iscolumn
 
     def __str__(self):
@@ -164,6 +187,10 @@ class TableSymbol(TableExpr):
 
     def resources(self):
         return dict()
+
+    @property
+    def schema(self):
+        return self.dshape.subshape[0]
 
 
 class RowWise(TableExpr):
@@ -185,6 +212,8 @@ class RowWise(TableExpr):
     blaze.expr.table.
     blaze.expr.table.
     """
+    def _len(self):
+        return self.child._len()
 
 
 class Projection(RowWise):
@@ -853,6 +882,9 @@ class Sort(TableExpr):
         else:
             return self._key
 
+    def _len(self):
+        return self.child._len()
+
 
 def sort(child, key, ascending=True):
     if isinstance(key, list):
@@ -915,6 +947,9 @@ class Head(TableExpr):
     @property
     def iscolumn(self):
         return self.child.iscolumn
+
+    def _len(self):
+        return builtins.min(self.child._len(), self.n)
 
 
 def head(child, n=10):

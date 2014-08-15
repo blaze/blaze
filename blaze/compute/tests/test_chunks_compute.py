@@ -18,7 +18,7 @@ data = [[1, 'Alice', 100],
         [4, 'Charlie', 400],
         [5, 'Edith', 200]]
 
-t = TableSymbol('t', schema='{id: int, name: string, amount: int}')
+t = TableSymbol('t', '{id: int, name: string, amount: int}')
 
 c = Chunks(data, chunksize=2)
 
