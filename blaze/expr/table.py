@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 from abc import abstractproperty
-from datashape import dshape, var, DataShape, Record, isdimension, Option
+from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import concat, partial, first, compose, get, unique
@@ -149,14 +149,18 @@ class TableSymbol(TableExpr):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = '_name', 'schema', 'iscolumn'
+    __slots__ = '_name', 'dshape', 'iscolumn'
     __inputs__ = ()
 
-    def __init__(self, name, schema, iscolumn=False):
+    def __init__(self, name, dshape=None, iscolumn=False, schema=None):
         self._name = name
-        if isinstance(schema, _strtypes):
-            schema = dshape(schema)
-        self.schema = schema
+        if schema and not dshape:
+            dshape = datashape.var * schema
+        if isinstance(dshape, _strtypes):
+            dshape = datashape.dshape(dshape)
+        if not isdimension(dshape[0]):
+            dshape = datashape.var * dshape
+        self.dshape = dshape
         self.iscolumn = iscolumn
 
     def __str__(self):
@@ -164,6 +168,10 @@ class TableSymbol(TableExpr):
 
     def resources(self):
         return dict()
+
+    @property
+    def schema(self):
+        return self.dshape.subshape[0]
 
 
 class RowWise(TableExpr):

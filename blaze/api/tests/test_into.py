@@ -220,7 +220,7 @@ def test_numpy_list():
 @skip_if_not(Table)
 def test_numpy_tableExpr():
     data = [('Alice', 100), ('Bob', 200)]
-    t = Table(data, schema='{name: string, amount: int64}')
+    t = Table(data, '{name: string, amount: int64}')
 
     assert into(np.ndarray, t).dtype == \
             np.dtype([('name', 'O'), ('amount', 'i8')])

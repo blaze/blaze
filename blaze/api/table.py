@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
+import datashape
 from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
-    to_numpy_dtype)
+    to_numpy_dtype, isdimension, var)
 from pandas import DataFrame, Series
 import itertools
 import numpy as np
@@ -11,6 +12,7 @@ from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
 from .into import into
+from ..compatibility import _strtypes
 
 __all__ = ['Table', 'compute', 'into']
 
@@ -50,21 +52,27 @@ class Table(TableSymbol):
     0    Bob
     1  Edith
     """
-    __slots__ = 'data', 'schema', '_name', 'iscolumn'
+    __slots__ = 'data', 'dshape', '_name', 'iscolumn'
 
-    def __init__(self, data, name=None, columns=None, schema=None,
-            iscolumn=False):
-        if not schema:
-            schema = discover(data).subshape[0]
+    def __init__(self, data, dshape=None, name=None, columns=None,
+            iscolumn=False, schema=None):
+        if schema and not dshape:
+            dshape = var * schema
+        if dshape and isinstance(dshape, _strtypes):
+            dshape = datashape.dshape(dshape)
+        if dshape and not isdimension(dshape[0]):
+            dshape = var * dshape
+        if not dshape:
+            dshape = discover(data)
             types = None
-            if isinstance(schema[0], Tuple):
-                columns = columns or list(range(len(schema[0].dshapes)))
-                types = schema[0].dshapes
-            if isinstance(schema[0], Record):
-                columns = columns or schema[0].names
-                types = schema[0].types
-            if isinstance(schema[0], Fixed):
-                types = (schema[1],) * int(schema[0])
+            if isinstance(dshape[1], Tuple):
+                columns = columns or list(range(len(dshape[1].dshapes)))
+                types = dshape[1].dshapes
+            if isinstance(dshape[1], Record):
+                columns = columns or dshape[1].names
+                types = dshape[1].types
+            if isinstance(dshape[1], Fixed):
+                types = (dshape[2],) * int(dshape[1])
             if not columns:
                 raise TypeError("Could not infer column names from data. "
                                 "Please specify column names with `column=` "
@@ -73,8 +81,9 @@ class Table(TableSymbol):
                 raise TypeError("Could not infer data types from data. "
                                 "Please specify schema with `schema=` keyword")
 
-            schema = dshape(Record(list(zip(columns, types))))
-        self.schema = dshape(schema)
+            dshape = dshape[0] * datashape.dshape(Record(list(zip(columns, types))))
+
+        self.dshape = datashape.dshape(dshape)
 
         self.data = data
 
@@ -93,7 +102,7 @@ class Table(TableSymbol):
 
     @property
     def args(self):
-        return (id(self.data), self.schema, self._name, self.iscolumn)
+        return (id(self.data), self.dshape, self._name, self.iscolumn)
 
     def __setstate__(self, state):
         for slot, arg in zip(self.__slots__, state):
