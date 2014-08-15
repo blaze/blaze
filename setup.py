@@ -131,11 +131,10 @@ class CleanCommand(Command):
 #------------------------------------------------------------------------
 
 longdesc = open('README.md').read()
-import blaze
 
 setup(
     name='blaze',
-    version=blaze.__version__,
+    version='0.6.1',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',
