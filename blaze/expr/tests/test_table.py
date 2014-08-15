@@ -22,6 +22,11 @@ def test_length():
     t = TableSymbol('t', '10 * {name: string, amount: int}')
     assert t.dshape == dshape('10 * {name: string, amount: int}')
     assert len(t) == 10
+    assert len(t.name) == 10
+    assert len(t[['name']]) == 10
+    assert len(t.sort('name')) == 10
+    assert len(t.head(5)) == 5
+    assert len(t.head(50)) == 10
 
 
 def test_nonzero():

@@ -203,6 +203,8 @@ class RowWise(TableExpr):
     blaze.expr.table.
     blaze.expr.table.
     """
+    def __len__(self):
+        return len(self.child)
 
 
 class Projection(RowWise):
@@ -860,6 +862,9 @@ class Sort(TableExpr):
         else:
             return self._key
 
+    def __len__(self):
+        return len(self.child)
+
 
 def sort(child, key, ascending=True):
     if isinstance(key, list):
@@ -922,6 +927,9 @@ class Head(TableExpr):
     @property
     def iscolumn(self):
         return self.child.iscolumn
+
+    def __len__(self):
+        return builtins.min(len(self.child), self.n)
 
 
 def head(child, n=10):
