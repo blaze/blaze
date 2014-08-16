@@ -127,6 +127,11 @@ def test_reductions():
         assert compute(t.amount.sum(), coll) == 900
 
 
+def test_distinct():
+    with collection(bank) as coll:
+        assert set(compute(t.name.distinct(), coll)) == set(['Alice', 'Bob'])
+
+
 def test_sort():
     with collection(bank) as coll:
         assert compute(t.amount.sort('amount'), coll) == \
