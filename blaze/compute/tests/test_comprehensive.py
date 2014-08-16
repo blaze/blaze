@@ -12,8 +12,8 @@ from blaze.compute import compute
 import blaze.compute.numpy
 import blaze.compute.pandas
 import blaze.compute.bcolz
+from blaze.expr.functions import *
 from blaze.sql import SQL
-
 
 
 sources = []
@@ -37,24 +37,38 @@ sql.extend(L)
 
 sources = [df, x, bc, sql]
 
+try:
+    import pymongo
+    from blaze.mongo import *
+    db = pymongo.MongoClient().db
+    db._test_coll.drop()
+    mongo = into(db._test_coll, df)
+except ImportError:
+    mongo = None
+
+sources.append(mongo)
+
 # {expr: [list-of-exclusions]}
 expressions = {
         t: [],
         t['id']: [],
         t.id.max(): [],
         t.amount.sum(): [],
-        t.amount + 1: [],
-        t.amount > 100: [],
+        t.amount + 1: [mongo],
+        sin(t.amount): [sql, mongo], # sqlite doesn't support trig
+        exp(t.amount): [sql, mongo],
+        t.amount > 100: [mongo],
+        t[t.amount > 100]: [],
         t.sort('name'): [bc],
         t.sort('name', ascending=False): [bc],
         t.name.distinct(): [],
         by(t, t.name, t.amount.sum()): [],
         by(t, t.id, t.id.count()): [],
         by(t, t[['id', 'amount']], t.id.count()): [],
-        by(t, t[['id', 'amount']], (t.amount + 1).sum()): [],
-        by(t, t[['id', 'amount']], t.name.nunique()): [],
+        by(t, t[['id', 'amount']], (t.amount + 1).sum()): [mongo],
+        by(t, t[['id', 'amount']], t.name.nunique()): [mongo],
         by(t, t.id, t.amount.count()): [],
-        by(t, t.id, t.id.nunique()): [],
+        by(t, t.id, t.id.nunique()): [mongo],
         # by(t, t.id, t.count()): [df],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting
