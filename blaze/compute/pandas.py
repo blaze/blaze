@@ -111,6 +111,12 @@ def compute_one(t, df, **kwargs):
 def compute_one(t, df, **kwargs):
     return df.drop_duplicates()
 
+@dispatch(Distinct, Series)
+def compute_one(t, s, **kwargs):
+    s2 = Series(s.unique())
+    s2.name = s.name
+    return s2
+
 
 def unpack(seq):
     """ Unpack sequence of length one
@@ -129,35 +135,83 @@ def unpack(seq):
 @dispatch(By, DataFrame)
 def compute_one(t, df, **kwargs):
     assert isinstance(t.apply, Reduction)
-    grouper = DataFrame(compute(t.grouper, {t.child: df}))
-    pregrouped = DataFrame(compute(t.apply.child, {t.child: df}))
-
+    names = t.apply.dshape[0].names
+    preapply = compute(t.apply.child, {t.child: df})
     # Pandas and Blaze column naming schemes differ
     # Coerce DataFrame column names to match Blaze's names
-    # In particular, reductions include reduction name
-    #   t.amount.sum() is named 'amount_sum' rather than 'amount'
-    # We do this before the join to avoid collisions if columns are in both the
-    # grouping dataframe and the apply dataframe
-    pregrouped.columns = t.columns[len(t.grouper.columns):]
+    preapply = preapply.copy()
+    if isinstance(preapply, Series):
+        preapply.name = names[0]
+    else:
+        preapply.columns = names
 
-    full = grouper.join(pregrouped)
+    if t.grouper.iscolumn:
+        grouper = compute(t.grouper, {t.child: df}) # a Series
+    elif isinstance(t.grouper, Projection) and t.grouper.child is t.child:
+        grouper = t.grouper.columns  # list of column names
 
-    groups = full.groupby(unpack(grouper.columns))[unpack(pregrouped.columns)]
+    df2 = concat_nodup(df, preapply)
 
-    g = TableSymbol('group', t.apply.child.schema)
-    reduction = t.apply.subs({t.apply.child: g})
-    result = compute(reduction, {g: groups})
+    if t.apply.child.iscolumn:
+        groups = df2.groupby(grouper)[names[0]]
+    else:
+        groups = df2.groupby(grouper)[names]
 
-    if isinstance(result, Series):
-        result.name = unpack(pregrouped.columns)
-        result = DataFrame(result)
-
-    result = result[list(pregrouped.columns)].reset_index()
-    # Pandas and Blaze column naming schemes differ
-    # Coerce DataFrame column names to match Blaze's names
+    result = compute_one(t.apply, groups) # do reduction
+    result = DataFrame(result).reset_index()
     result.columns = t.columns
-
     return result
+
+
+def concat_nodup(a, b):
+    """ Concatenate two dataframes/series without duplicately named columns
+
+
+    >>> df = DataFrame([[1, 'Alice',   100],
+    ...                 [2, 'Bob',    -200],
+    ...                 [3, 'Charlie', 300]],
+    ...                columns=['id','name', 'amount'])
+
+    >>> concat_nodup(df, df)
+       id     name  amount
+    0   1    Alice     100
+    1   2      Bob    -200
+    2   3  Charlie     300
+
+
+    >>> concat_nodup(df.name, df.amount)
+          name  amount
+    0    Alice     100
+    1      Bob    -200
+    2  Charlie     300
+
+
+
+    >>> concat_nodup(df, df.amount + df.id)
+       id     name  amount    0
+    0   1    Alice     100  101
+    1   2      Bob    -200 -198
+    2   3  Charlie     300  303
+    """
+
+    if isinstance(a, DataFrame) and isinstance(b, DataFrame):
+        return pd.concat([a, b[[c for c in b.columns
+                                  if c not in a.columns]]],
+                            axis=1)
+    if isinstance(a, DataFrame) and isinstance(b, Series):
+        if b.name not in a.columns:
+            return pd.concat([a, b], axis=1)
+        else:
+            return a
+    if isinstance(a, Series) and isinstance(b, DataFrame):
+        return pd.concat([a, b[[c for c in b.columns
+                                      if c != a.name]]],
+                            axis=1)
+    if isinstance(a, Series) and isinstance(b, Series):
+        if a.name == b.name:
+            return a
+        else:
+            return pd.concat([a, b], axis=1)
 
 
 @dispatch(Sort, DataFrame)
@@ -170,7 +224,8 @@ def compute_one(t, s, **kwargs):
     return s.order(t.key, ascending=t.ascending)
 
 
-@dispatch(Head, DataFrame)
+
+@dispatch(Head, (Series, DataFrame))
 def compute_one(t, df, **kwargs):
     return df.head(t.n)
 

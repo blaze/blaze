@@ -16,7 +16,7 @@ import pandas
 from pandas import DataFrame, Series
 
 from ..dispatch import dispatch
-from ..expr.table import TableExpr
+from ..expr import TableExpr, Expr
 from ..compute.core import compute
 
 
@@ -101,6 +101,15 @@ def into(a, b, **kwargs):
                                type(dict().items())))
 def into(a, b):
     return type(a)(b)
+
+
+@dispatch(set, list)
+def into(a, b):
+    try:
+        return set(b)
+    except TypeError:
+        return set(map(tuple, b))
+
 
 @dispatch(dict, (list, tuple, set))
 def into(a, b):
@@ -189,6 +198,30 @@ def into(df, seq, **kwargs):
 def into(_, df):
     return df.copy()
 
+@dispatch(Series, Series)
+def into(_, ser):
+    return ser
+
+@dispatch(Series, Iterator)
+def into(a, b, **kwargs):
+    return into(a, list(b), **kwargs)
+
+@dispatch(Series, (list, tuple))
+def into(a, b, **kwargs):
+    return Series(b, **kwargs)
+
+@dispatch(Series, TableExpr)
+def into(ser, col):
+    ser = into(ser, compute(col))
+    ser.name = col.name
+    return ser
+
+@dispatch(Series, np.ndarray)
+def into(_, x):
+    return Series(x)
+    df = into(DataFrame(), x)
+    return df[df.columns[0]]
+
 @dispatch(DataFrame, Series)
 def into(_, df):
     return DataFrame(df)
@@ -225,6 +258,14 @@ def discover(df):
     schema = Record(list(zip(names, dtypes)))
     return len(df) * schema
 
+
+@dispatch(np.ndarray, carray)
+def into(a, b):
+    return b[:]
+
+@dispatch(Series, carray)
+def into(a, b):
+    return into(a, into(np.ndarray, b))
 
 @dispatch(ColumnDataSource, (TableExpr, DataFrame, np.ndarray, ctable))
 def into(cds, t):
@@ -464,3 +505,7 @@ def into(a, b):
 def into(a, b):
     return DataFrame(list(b), columns=b.columns)
 
+
+@dispatch(object, Expr)
+def into(a, b):
+    return compute(b)
