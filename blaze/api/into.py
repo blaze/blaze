@@ -187,7 +187,7 @@ def into(a, b):
     else:
         return DataFrame(nd.as_py(b))
 
-@dispatch(DataFrame, (list, tuple, Iterator))
+@dispatch(DataFrame, (list, tuple, Iterator, type(dict().items())))
 def into(df, seq, **kwargs):
     if list(df.columns):
         return DataFrame(list(seq), columns=df.columns, **kwargs)

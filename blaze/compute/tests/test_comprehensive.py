@@ -61,7 +61,11 @@ expressions = {
         t[t.amount > 100]: [],
         t.sort('name'): [bc],
         t.sort('name', ascending=False): [bc],
+        t.head(3): [],
         t.name.distinct(): [],
+        # t[t.amount > 100]['name']: [], # odd ordering issue
+        t.id.map(lambda x: x + 1, '{id: int}'): [sql, mongo],
+        t[t.amount > 100]['name']: [],
         by(t, t.name, t.amount.sum()): [],
         by(t, t.id, t.id.count()): [],
         by(t, t[['id', 'amount']], t.id.count()): [],
@@ -69,6 +73,7 @@ expressions = {
         by(t, t[['id', 'amount']], t.name.nunique()): [mongo],
         by(t, t.id, t.amount.count()): [],
         by(t, t.id, t.id.nunique()): [mongo],
+        # by(t, t, t.count()): [],
         # by(t, t.id, t.count()): [df],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting

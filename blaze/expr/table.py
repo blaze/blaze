@@ -1068,6 +1068,16 @@ class Map(RowWise):
             return self.child.iscolumn
         return self.schema[0].values()
 
+    @property
+    def name(self):
+        if len(self.columns) != 1:
+            raise ValueError("Can only determine name of single-column. "
+                    "Use .columns to find all names")
+        try:
+            return self.schema[0].names[0]
+        except AttributeError:
+            raise ValueError("Column is un-named, name with col.label('name')")
+
 
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
