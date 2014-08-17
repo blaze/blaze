@@ -9,7 +9,7 @@ from abc import abstractproperty
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
-from toolz import concat, partial, first, compose, get, unique
+from toolz import concat, partial, first, compose, get, unique, second
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
@@ -23,7 +23,7 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise'''.split()
+projection union columnwise Summary summary'''.split()
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions
@@ -805,6 +805,24 @@ class count(Reduction):
     dtype = ct.int_
 class nunique(Reduction):
     dtype = ct.int_
+
+
+class Summary(Expr):
+    __slots__ = 'child', 'names', 'values'
+
+    @property
+    def dshape(self):
+        return dshape(Record(list(zip(self.names,
+                                      [v.dtype for v in self.values]))))
+
+
+def summary(**kwargs):
+    items = sorted(kwargs.items(), key=first)
+    names = list(map(first, items))
+    values = list(map(second, items))
+    child = common_subexpression(*values)
+
+    return Summary(child, names, values)
 
 
 class By(TableExpr):
