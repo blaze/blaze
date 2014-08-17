@@ -19,6 +19,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         Summary, count)
 from blaze.expr.core import discover
 from blaze.utils import raises
+from blaze.compatibility import xfail
 from datashape import dshape, var, int32, int64, Record, DataShape
 from toolz import identity, first
 import numpy as np
@@ -509,6 +510,15 @@ def test_merge():
 
     c = merge(accounts[['name', 'balance']], new_amount)
     assert c.columns == ['name', 'balance', 'new']
+
+
+@xfail(reason="Need to implement Merge.__getitem__ or Merge.project")
+def test_merge_getitem():
+    accounts = TableSymbol('accounts',
+                           '{name: string, balance: int32, id: int32}')
+    new_amount = (accounts['balance'] * 1.5).label('new')
+    c = merge(accounts[['name', 'balance']], new_amount)
+    assert c['new'].isidentical(new_amount)
 
 
 inc = lambda x: x + 1

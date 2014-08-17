@@ -34,8 +34,10 @@ class Scalar(Expr):
 
     @property
     def name(self):
-        if isinstance(self.dshape[0], Record):
+        try:
             return self.dshape[0].names[0]
+        except:
+            raise ValueError("No name found in dshape %s" % self.dshape)
 
     @property
     def dtype(self):
