@@ -332,6 +332,8 @@ def test_summary():
     t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
     s = summary(total=t.amount.sum(), num=t.id.count())
     assert s.dshape == dshape('{num: int32, total: int32}')
+    assert hash(s)
+    assert eval(str(s)).isidentical(s)
 
 
 def test_Distinct():

@@ -818,8 +818,8 @@ class Summary(Expr):
 
 def summary(**kwargs):
     items = sorted(kwargs.items(), key=first)
-    names = list(map(first, items))
-    values = list(map(second, items))
+    names = tuple(map(first, items))
+    values = tuple(map(second, items))
     child = common_subexpression(*values)
 
     return Summary(child, names, values)
