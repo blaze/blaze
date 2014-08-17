@@ -389,3 +389,8 @@ def compute_one(t, seq, **kwargs):
 @dispatch(Union, Sequence, tuple)
 def compute_one(t, example, children, **kwargs):
     return concat(children)
+
+
+@dispatch(Summary, Sequence)
+def compute_one(expr, data, **kwargs):
+    return tuple(compute(val, {expr.child: data}) for val in expr.values)

@@ -464,3 +464,8 @@ def test_by_groupby_deep():
 def test_by_then_sort_dict_items_sequence():
     expr = by(tbig, tbig.name, tbig.amount.sum()).sort('name')
     assert compute(expr, databig)
+
+
+def test_summary():
+    expr = summary(count=t.id.count(), sum=t.amount.sum())
+    assert compute(expr, data) == (3, 350)
