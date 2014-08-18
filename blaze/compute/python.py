@@ -464,3 +464,13 @@ def compute_one(t, example, children, **kwargs):
 @dispatch(Summary, Sequence)
 def compute_one(expr, data, **kwargs):
     return tuple(compute(val, {expr.child: data}) for val in expr.values)
+
+
+@dispatch(BinOp, object, object)
+def compute_one(expr, x, y, **kwargs):
+    return expr.op(x, y)
+
+
+@dispatch(UnaryOp, object)
+def compute_one(expr, x, **kwargs):
+    return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
