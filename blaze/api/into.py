@@ -14,6 +14,8 @@ from collections import Iterable, Iterator
 import numpy as np
 import pandas
 from pandas import DataFrame, Series
+import h5py
+import tables
 
 from ..dispatch import dispatch
 from ..expr.table import TableExpr
@@ -159,6 +161,10 @@ def into(df, x):
     else:
         columns = list(x.dtype.names)
     return DataFrame(x, columns=columns)
+
+@dispatch(DataFrame, tables.Table)
+def into(df, x):
+    return DataFrame.from_records(x[:])
 
 @dispatch(list, DataFrame)
 def into(_, df):
