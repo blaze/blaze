@@ -80,13 +80,9 @@ def test_reductions():
 
 
 def test_reduction_arithmetic():
+    from blaze.compatibility import builtins as bts
     exprs = sum, min, max
     funcs = 'add', 'mul'
-
-    try:
-        import builtins as bts
-    except ImportError:
-        import __builtin__ as bts
 
     for blaze_expr, py_func in itertools.product(exprs, funcs):
         f = getattr(operator, py_func)
