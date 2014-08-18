@@ -3,9 +3,13 @@ from __future__ import absolute_import, division, print_function
 import pytest
 import tempfile
 import pandas as pd
+from operator import add, sub, mul, div, floordiv, mod, pow
 
 from blaze import CSV, Table
-from blaze.expr import *
+from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
+                        join, cos, by, union, TableExpr, exp, distinct, Apply,
+                        columnwise, eval_str, merge, common_subexpression, sum,
+                        Label, ReLabel, Head, Sort, isnan, any)
 from blaze.expr.core import discover
 from blaze.utils import raises
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -195,7 +199,6 @@ def test_joined_column_first_in_schema():
     assert join(t, s).schema == dshape('{y: int, x: int, z: int, w: int}')
 
 
-
 def test_outer_join():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
@@ -280,6 +283,40 @@ def test_reduction():
 
     assert 'int' in str(t['id'].sum().dshape)
     assert 'int' not in str(t['amount'].sum().dshape)
+
+
+@pytest.fixture
+def symsum():
+    t = TableSymbol('t', '{name: string, amount: int32}')
+    return t, t.amount.sum()
+
+
+class TestScalarArithmetic(object):
+    ops = '+', '-', '*', '/', '//', '%', '**',
+    funcs = add, sub, mul, div, floordiv, mod, pow
+
+    def test_scalar_arith(self, symsum):
+        t, r = symsum
+        r = t.amount.sum()
+        for op, f in zip(self.ops, self.funcs):
+            result = f(r, 1)
+            assert eval('r %s 1' % op).isidentical(result)
+
+            result = f(r, r)
+            assert eval('r %s r' % op).isidentical(result)
+
+            result = f(1, r)
+            assert eval('1 %s r' % op).isidentical(result)
+
+    def test_scalar_usub(self, symsum):
+        t, r = symsum
+        result = -r
+        assert eval(str(result)).isidentical(result)
+
+    def test_scalar_uadd(self, symsum):
+        t, r = symsum
+        with pytest.raises(TypeError):
+            +r
 
 
 def test_Distinct():
