@@ -3,7 +3,12 @@ from __future__ import absolute_import, division, print_function
 import pytest
 import tempfile
 import pandas as pd
-from operator import add, sub, mul, div, floordiv, mod, pow
+from operator import add, sub, mul, floordiv, mod, pow, truediv
+
+try:
+    from operator import div
+except ImportError:
+    from operator import truediv as div
 
 from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
@@ -292,8 +297,8 @@ def symsum():
 
 
 class TestScalarArithmetic(object):
-    ops = '+', '-', '*', '/', '//', '%', '**',
-    funcs = add, sub, mul, div, floordiv, mod, pow
+    ops = '+', '-', '*', '/', '/', '//', '%', '**'
+    funcs = add, sub, mul, div, truediv, floordiv, mod, pow
 
     def test_scalar_arith(self, symsum):
         t, r = symsum
