@@ -130,6 +130,7 @@ def unpack(seq):
         seq = seq[0]
     return seq
 
+
 @dispatch(By, DataFrame)
 def compute_one(t, df, **kwargs):
     assert isinstance(t.apply, Reduction)

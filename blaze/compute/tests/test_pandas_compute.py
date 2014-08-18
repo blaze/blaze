@@ -414,3 +414,21 @@ def test_by_on_same_column():
     result = compute(gby, {t:df})
 
     assert str(result) == str(expected)
+
+
+def test_summary_by():
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum()))
+    assert str(compute(expr, df)) == \
+            str(Dataframe([['Alice', 2, 150],
+                           ['Bob', 1, 200]], columns=['name', 'count', 'sum']))
+
+    expr = by(t, t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
+    assert str(compute(expr, df)) == \
+            str(Dataframe([['Alice', 2, 152],
+                           ['Bob', 1, 201]], columns=['name', 'count', 'sum']))
+
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
+    assert str(compute(expr, df)) == \
+            str(Dataframe([['Alice', 2, 151],
+                           ['Bob', 1, 202]], columns=['name', 'count', 'sum']))
+
