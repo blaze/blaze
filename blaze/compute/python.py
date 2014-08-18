@@ -167,8 +167,8 @@ def compute_one(arith, a, b, **kwargs):
 
 
 @dispatch(UnaryOp, numbers.Real)
-def compute_one(uop, a):
-    return uop.op(a)
+def compute_one(expr, x, **kwargs):
+    return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
 
 
 def _mean(seq):
