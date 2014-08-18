@@ -13,6 +13,7 @@
 from __future__ import absolute_import, division, print_function
 
 import itertools
+import numbers
 from collections import Iterator
 import operator
 from functools import partial
@@ -23,13 +24,16 @@ import toolz
 import sys
 
 from ..dispatch import dispatch
-from ..expr.table import *
-from ..expr.scalar.core import *
+from ..expr.table import TableSymbol
+from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
+                          Merge, RowWise, Join, Selection, Reduction, Distinct,
+                          By, Sort, Head, Apply, Union)
+from ..expr.table import count, nunique, mean, var, std
+from ..expr.scalar.core import Scalar
+from ..expr.scalar.numbers import Arithmetic, UnaryOp
 from ..compatibility import builtins, apply
 from . import core
 from .core import compute, compute_one
-from cytoolz.curried import get
-
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
@@ -155,6 +159,26 @@ def compute_one(t, seq, **kwargs):
 def compute_one(t, seq, **kwargs):
     op = getattr(builtins, t.symbol)
     return op(seq)
+
+
+@dispatch(Arithmetic, numbers.Real, numbers.Real)
+def compute_one(arith, a, b, **kwargs):
+    return arith.op(a, b)
+
+
+@dispatch(Arithmetic, numbers.Real, Scalar)
+def compute_one(arith, a, b, **kwargs):
+    return arith.op(a, compute_one(b, **kwargs))
+
+
+@dispatch(Arithmetic, Scalar, numbers.Real)
+def compute_one(arith, a, b, **kwargs):
+    return arith.op(compute_one(a, **kwargs), b)
+
+
+@dispatch(UnaryOp, numbers.Real)
+def compute_one(uop, a):
+    return uop.op(a)
 
 
 def _mean(seq):
