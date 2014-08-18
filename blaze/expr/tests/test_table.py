@@ -313,10 +313,10 @@ class TestScalarArithmetic(object):
         result = -r
         assert eval(str(result)).isidentical(result)
 
+    @pytest.mark.xfail
     def test_scalar_uadd(self, symsum):
         t, r = symsum
-        with pytest.raises(TypeError):
-            +r
+        +r
 
 
 def test_Distinct():
