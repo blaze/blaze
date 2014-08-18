@@ -293,3 +293,9 @@ def compute_one(t, df, **kwargs):
 @dispatch(Union, DataFrame, tuple)
 def compute_one(t, example, children, **kwargs):
     return pd.concat(children, axis=0)
+
+
+@dispatch(Summary, DataFrame)
+def compute_one(expr, data, **kwargs):
+    return Series(dict(zip(expr.names,
+        [compute(val, {expr.child: data}) for val in expr.values])))

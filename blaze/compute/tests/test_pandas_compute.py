@@ -434,3 +434,8 @@ def test_summary_by_reduction_arithmetic():
     assert str(compute(expr, df)) == \
             str(DataFrame([['Alice', 2, 151],
                            ['Bob', 1, 202]], columns=['name', 'count', 'sum']))
+
+
+def test_summary():
+    expr = summary(count=t.id.count(), sum=t.amount.sum())
+    assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
