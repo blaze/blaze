@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import numbers
 import toolz
 
 from ..dispatch import dispatch
@@ -48,7 +49,7 @@ class Expr(object):
         """ Traverse over tree, yielding all subtrees and leaves """
         yield self
         traversals = (arg.traverse() if isinstance(arg, Expr) else [arg]
-                        for arg in self.args)
+                      for arg in self.args)
         for trav in traversals:
             for item in trav:
                 yield item
@@ -66,13 +67,10 @@ class Expr(object):
 
     def resources(self):
         return toolz.merge([arg.resources() for arg in self.args
-                                            if isinstance(arg, Expr)])
+                            if isinstance(arg, Expr)])
 
     def subterms(self):
-        yield self
-        for i in self.inputs:
-            for node in i.subterms():
-                yield node
+        return subterms(self)
 
     def __contains__(self, other):
         return other in set(self.subterms())
@@ -82,6 +80,19 @@ class Expr(object):
 
     def __setstate__(self, state):
         self.__init__(*state)
+
+
+@dispatch(Expr)
+def subterms(expr):
+    yield expr
+    for i in expr.inputs:
+        for node in subterms(i):
+            yield node
+
+
+@dispatch(numbers.Real)
+def subterms(x):
+    yield x
 
 
 def subs(o, d):
