@@ -161,19 +161,9 @@ def compute_one(t, seq, **kwargs):
     return op(seq)
 
 
-@dispatch(Arithmetic, numbers.Real, numbers.Real)
+@dispatch(Arithmetic, (numbers.Real, Scalar), (numbers.Real, Scalar))
 def compute_one(arith, a, b, **kwargs):
     return arith.op(a, b)
-
-
-@dispatch(Arithmetic, numbers.Real, Scalar)
-def compute_one(arith, a, b, **kwargs):
-    return arith.op(a, compute_one(b, **kwargs))
-
-
-@dispatch(Arithmetic, Scalar, numbers.Real)
-def compute_one(arith, a, b, **kwargs):
-    return arith.op(compute_one(a, **kwargs), b)
 
 
 @dispatch(UnaryOp, numbers.Real)
