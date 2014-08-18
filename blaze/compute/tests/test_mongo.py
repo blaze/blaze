@@ -3,6 +3,11 @@ from __future__ import absolute_import, division, print_function
 import pytest
 pymongo = pytest.importorskip('pymongo')
 
+try:
+    pymongo.MongoClient()
+except pymongo.errors.ConnectionFailure:
+    pytest.importorskip('fhskjfdskfhsf')
+
 from datetime import datetime
 from contextlib import contextmanager
 from datashape import discover
