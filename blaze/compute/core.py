@@ -1,14 +1,15 @@
 from __future__ import absolute_import, division, print_function
+import numbers
 from datetime import date, datetime
 from toolz import first
 
-from ..expr.core import *
-from ..expr import *
+from ..expr.core import Expr
+from ..expr import TableSymbol, eval_str, Union
 from ..dispatch import dispatch
 
 __all__ = ['compute', 'compute_one']
 
-base = (int, float, str, bool, date, datetime)
+base = (numbers.Real, str, date, datetime)
 
 
 @dispatch(object, object)
@@ -16,6 +17,7 @@ def compute_one(a, b, **kwargs):
     raise NotImplementedError("Blaze does not know how to compute "
                               "expression of type `%s` on data of type `%s`"
                               % (type(a).__name__, type(b).__name__))
+
 
 @dispatch(base)
 def compute_one(a, **kwargs):
