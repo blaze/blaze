@@ -12,8 +12,7 @@ from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
 import numpy as np
-import pandas
-from pandas import DataFrame, Series
+import pandas as pd
 import h5py
 import tables
 
@@ -40,7 +39,7 @@ def into(a, b, **kwargs):
     rec.array([('Alice', 100), ('Bob', 200)],
                   dtype=[('name', 'S5'), ('amt', '<i8')])
 
-    >>> into(DataFrame, _)
+    >>> into(pd.DataFrame, _)
         name  amt
     0  Alice  100
     1    Bob  200
@@ -163,23 +162,23 @@ def into(a, b):
 
 
 
-@dispatch(DataFrame, np.ndarray)
+@dispatch(pd.DataFrame, np.ndarray)
 def into(df, x):
     if len(df.columns) > 0:
         columns = list(df.columns)
     else:
         columns = list(x.dtype.names)
-    return DataFrame(x, columns=columns)
+    return pd.DataFrame(x, columns=columns)
 
-@dispatch(DataFrame, tables.Table)
+@dispatch(pd.DataFrame, tables.Table)
 def into(df, x):
-    return DataFrame.from_records(x[:])
+    return pd.DataFrame.from_records(x[:])
 
-@dispatch(list, DataFrame)
+@dispatch(list, pd.DataFrame)
 def into(_, df):
     return np.asarray(df).tolist()
 
-@dispatch(DataFrame, nd.array)
+@dispatch(pd.DataFrame, nd.array)
 def into(a, b):
     ds = dshape(nd.dshape_of(b))
     if list(a.columns):
@@ -189,54 +188,54 @@ def into(a, b):
     else:
         names = None
     if names:
-        return DataFrame(nd.as_py(b), columns=names)
+        return pd.DataFrame(nd.as_py(b), columns=names)
     else:
-        return DataFrame(nd.as_py(b))
+        return pd.DataFrame(nd.as_py(b))
 
-@dispatch(DataFrame, (list, tuple, Iterator, type(dict().items())))
+@dispatch(pd.DataFrame, (list, tuple, Iterator, type(dict().items())))
 def into(df, seq, **kwargs):
     if list(df.columns):
-        return DataFrame(list(seq), columns=df.columns, **kwargs)
+        return pd.DataFrame(list(seq), columns=df.columns, **kwargs)
     else:
-        return DataFrame(list(seq), **kwargs)
+        return pd.DataFrame(list(seq), **kwargs)
 
-@dispatch(DataFrame, DataFrame)
+@dispatch(pd.DataFrame, pd.DataFrame)
 def into(_, df):
     return df.copy()
 
-@dispatch(Series, Series)
+@dispatch(pd.Series, pd.Series)
 def into(_, ser):
     return ser
 
-@dispatch(Series, Iterator)
+@dispatch(pd.Series, Iterator)
 def into(a, b, **kwargs):
     return into(a, list(b), **kwargs)
 
-@dispatch(Series, (list, tuple))
+@dispatch(pd.Series, (list, tuple))
 def into(a, b, **kwargs):
-    return Series(b, **kwargs)
+    return pd.Series(b, **kwargs)
 
-@dispatch(Series, TableExpr)
+@dispatch(pd.Series, TableExpr)
 def into(ser, col):
     ser = into(ser, compute(col))
     ser.name = col.name
     return ser
 
-@dispatch(Series, np.ndarray)
+@dispatch(pd.Series, np.ndarray)
 def into(_, x):
-    return Series(x)
-    df = into(DataFrame(), x)
+    return pd.Series(x)
+    df = into(pd.DataFrame(), x)
     return df[df.columns[0]]
 
-@dispatch(DataFrame, Series)
+@dispatch(pd.DataFrame, pd.Series)
 def into(_, df):
-    return DataFrame(df)
+    return pd.DataFrame(df)
 
-@dispatch(list, Series)
+@dispatch(list, pd.Series)
 def into(_, ser):
     return ser.tolist()
 
-@dispatch(nd.array, DataFrame)
+@dispatch(nd.array, pd.DataFrame)
 def into(a, df):
     schema = discover(df)
     arr = nd.empty(str(schema))
@@ -245,7 +244,7 @@ def into(a, df):
     return arr
 
 
-@dispatch(np.ndarray, DataFrame)
+@dispatch(np.ndarray, pd.DataFrame)
 def into(a, df):
     return df.to_records(index=False)
 
@@ -255,7 +254,7 @@ def discover(arr):
     return dshape(nd.dshape_of(arr))
 
 
-@dispatch(DataFrame)
+@dispatch(pd.DataFrame)
 def discover(df):
     obj = datashape.coretypes.object_
     names = list(df.columns)
@@ -269,11 +268,11 @@ def discover(df):
 def into(a, b):
     return b[:]
 
-@dispatch(Series, carray)
+@dispatch(pd.Series, carray)
 def into(a, b):
     return into(a, into(np.ndarray, b))
 
-@dispatch(ColumnDataSource, (TableExpr, DataFrame, np.ndarray, ctable))
+@dispatch(ColumnDataSource, (TableExpr, pd.DataFrame, np.ndarray, ctable))
 def into(cds, t):
     columns = discover(t).subshape[0][0].names
     return ColumnDataSource(data=dict((col, into([], t[col]))
@@ -287,10 +286,10 @@ def into(cds, t):
 
 @dispatch(ColumnDataSource, Collection)
 def into(cds, other):
-    return into(cds, into(DataFrame(), other))
+    return into(cds, into(pd.DataFrame(), other))
 
 
-@dispatch(DataFrame, ColumnDataSource)
+@dispatch(pd.DataFrame, ColumnDataSource)
 def into(df, cds):
     return cds.to_df()
 
@@ -304,7 +303,7 @@ def into(a, b, **kwargs):
     return into(a, c, **kwargs)
 
 
-@dispatch(DataFrame, ColumnDataSource)
+@dispatch(pd.DataFrame, ColumnDataSource)
 def into(df, cds):
     return cds.to_df()
 
@@ -329,13 +328,13 @@ def into(a, b, **kwargs):
 
 
 
-@dispatch(ctable, DataFrame)
+@dispatch(ctable, pd.DataFrame)
 def into(a, df, **kwargs):
     return ctable([fix_len_string_filter(df[c]) for c in df.columns],
                       names=list(df.columns), **kwargs)
 
 
-@dispatch(DataFrame, ctable)
+@dispatch(pd.DataFrame, ctable)
 def into(a, b, **kwargs):
     return b.todataframe()
 
@@ -380,7 +379,7 @@ def into(coll, seq, columns=None, schema=None, chunksize=1024):
 
 @dispatch(Collection, (nd.array, np.ndarray))
 def into(coll, x, **kwargs):
-    return into(coll, into(DataFrame(), x), **kwargs)
+    return into(coll, into(pd.DataFrame(), x), **kwargs)
 
 
 @dispatch(Collection, ctable)
@@ -401,7 +400,7 @@ def into(a, b, **kwargs):
     return b
 
 
-@dispatch(Collection, DataFrame)
+@dispatch(Collection, pd.DataFrame)
 def into(coll, df, **kwargs):
     return into(coll, into([], df), columns=list(df.columns), **kwargs)
 
@@ -413,17 +412,17 @@ def into(coll, t, **kwargs):
     return into(coll, result, schema=t.schema, **kwargs)
 
 
-@dispatch(DataFrame, Collection)
+@dispatch(pd.DataFrame, Collection)
 def into(df, coll, **kwargs):
     seq = list(coll.find())
     for item in seq:
         del item['_id']
-    return DataFrame(seq, **kwargs)
+    return pd.DataFrame(seq, **kwargs)
 
 
 @dispatch((nd.array, np.ndarray), Collection)
 def into(x, coll, **kwargs):
-    return into(x, into(DataFrame(), coll), **kwargs)
+    return into(x, into(pd.DataFrame(), coll), **kwargs)
 
 
 def _into_iter_mongodb(l, coll, columns=None, schema=None):
@@ -474,22 +473,22 @@ def into(c, dd, **kwargs):
     return type(c)(dd)
 
 
-@dispatch((np.ndarray, DataFrame, ColumnDataSource, ctable), DataDescriptor)
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable), DataDescriptor)
 def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, DataFrame, ColumnDataSource, ctable), CSV)
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable), CSV)
 def into(a, b, **kwargs):
-    return into(a, into(DataFrame(), b), **kwargs)
+    return into(a, into(pd.DataFrame(), b), **kwargs)
 
 
 @dispatch(np.ndarray, CSV)
 def into(a, b, **kwargs):
-    return into(a, into(DataFrame(), b, **kwargs))
+    return into(a, into(pd.DataFrame(), b, **kwargs))
 
 
-@dispatch(DataFrame, CSV)
+@dispatch(pd.DataFrame, CSV)
 def into(a, b):
     dialect= b.dialect.copy()
     del dialect['lineterminator']
@@ -500,16 +499,16 @@ def into(a, b):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
-    return pandas.read_csv(b.path,
-                           skiprows=1 if b.header else 0,
-                           dtype=dtypes,
-                           names=b.columns,
-                           **dialect)
+    return pd.read_csv(b.path,
+                       skiprows=1 if b.header else 0,
+                       dtype=dtypes,
+                       names=b.columns,
+                       **dialect)
 
 
-@dispatch(DataFrame, DataDescriptor)
+@dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):
-    return DataFrame(list(b), columns=b.columns)
+    return pd.DataFrame(list(b), columns=b.columns)
 
 
 @dispatch(object, Expr)
