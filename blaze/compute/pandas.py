@@ -20,6 +20,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
+from collections import defaultdict
 
 from ..dispatch import dispatch
 from ..expr import *
@@ -133,30 +134,53 @@ def unpack(seq):
 
 @dispatch(By, DataFrame)
 def compute_one(t, df, **kwargs):
-    assert isinstance(t.apply, Reduction)
-    names = t.apply.dshape[0].names
-    preapply = compute(t.apply.child, {t.child: df})
-    # Pandas and Blaze column naming schemes differ
-    # Coerce DataFrame column names to match Blaze's names
-    preapply = preapply.copy()
-    if isinstance(preapply, Series):
-        preapply.name = names[0]
-    else:
-        preapply.columns = names
-
     if t.grouper.iscolumn:
         grouper = compute(t.grouper, {t.child: df}) # a Series
     elif isinstance(t.grouper, Projection) and t.grouper.child is t.child:
         grouper = t.grouper.columns  # list of column names
 
-    df2 = concat_nodup(df, preapply)
 
-    if t.apply.child.iscolumn:
-        groups = df2.groupby(grouper)[names[0]]
-    else:
-        groups = df2.groupby(grouper)[names]
+    if isinstance(t.apply, Summary):
+        names = t.apply.names
+        preapply = DataFrame(dict(zip(
+            names,
+            [compute(v.child, {t.child: df}) for v in t.apply.values])))
 
-    result = compute_one(t.apply, groups) # do reduction
+        df2 = concat_nodup(df, preapply)
+
+        groups = df2.groupby(grouper)
+
+        d = defaultdict(list)
+        for name, v in zip(names, t.apply.values):
+            d[name].append(getattr(Series, v.symbol))
+
+        result = groups.agg(dict(d))
+
+        # Rearrange columns to match names order
+        result = result[sorted(list(result.columns),
+                               key=lambda t: names.index(t[0]))]
+        result.columns = t.apply.names  # flatten down multiindex
+
+    if isinstance(t.apply, Reduction):
+        names = t.apply.dshape[0].names
+        preapply = compute(t.apply.child, {t.child: df})
+        # Pandas and Blaze column naming schemes differ
+        # Coerce DataFrame column names to match Blaze's names
+        preapply = preapply.copy()
+        if isinstance(preapply, Series):
+            preapply.name = names[0]
+        else:
+            preapply.columns = names
+
+        df2 = concat_nodup(df, preapply)
+
+        if t.apply.child.iscolumn:
+            groups = df2.groupby(grouper)[names[0]]
+        else:
+            groups = df2.groupby(grouper)[names]
+
+        result = compute_one(t.apply, groups) # do reduction
+
     result = DataFrame(result).reset_index()
     result.columns = t.columns
     return result
