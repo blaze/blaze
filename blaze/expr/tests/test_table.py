@@ -336,6 +336,12 @@ def test_summary():
     assert eval(str(s)).isidentical(s)
 
 
+def test_reduction_arithmetic():
+    t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
+    expr = t.amount.sum() + 1
+    assert eval(str(expr)).isidentical(expr)
+
+
 def test_Distinct():
     t = TableSymbol('t', '{name: string, amount: int32}')
     r = distinct(t['name'])

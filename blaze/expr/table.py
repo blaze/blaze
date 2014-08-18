@@ -12,7 +12,7 @@ import datashape
 from toolz import concat, partial, first, compose, get, unique, second
 from . import scalar
 from .core import Expr, path
-from .scalar import ScalarSymbol
+from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins
@@ -771,7 +771,7 @@ class any(Reduction):
     dtype = ct.bool_
 class all(Reduction):
     dtype = ct.bool_
-class sum(Reduction):
+class sum(Reduction, Number):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -779,7 +779,7 @@ class sum(Reduction):
             return first(schema.types)
         else:
             return schema
-class max(Reduction):
+class max(Reduction, Number):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -787,7 +787,7 @@ class max(Reduction):
             return first(schema.types)
         else:
             return schema
-class min(Reduction):
+class min(Reduction, Number):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -795,15 +795,15 @@ class min(Reduction):
             return first(schema.types)
         else:
             return schema
-class mean(Reduction):
+class mean(Reduction, Number):
     dtype = ct.real
-class var(Reduction):
+class var(Reduction, Number):
     dtype = ct.real
-class std(Reduction):
+class std(Reduction, Number):
     dtype = ct.real
-class count(Reduction):
+class count(Reduction, Number):
     dtype = ct.int_
-class nunique(Reduction):
+class nunique(Reduction, Number):
     dtype = ct.int_
 
 
