@@ -254,3 +254,9 @@ def test_scalar_coerce():
     assert scalar_coerce('?date', 'Jan 1st, 2012') == date(2012, 1, 1)
     assert scalar_coerce('?date', '2012-12-01') == date(2012, 12, 1)
     assert scalar_coerce('?date', '') == None
+
+
+def test_scalar_name_dtype():
+    x = ScalarSymbol('x', 'int64')
+    assert x.name == 'x'
+    assert x.dtype == dshape('int64')

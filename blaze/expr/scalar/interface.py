@@ -11,7 +11,11 @@ class ScalarSymbol(NumberInterface, BooleanInterface):
 
     def __init__(self, name, dtype='real'):
         self._name = name
-        self.dtype = dtype
+        self.dtype = dshape(dtype)
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def dshape(self):
