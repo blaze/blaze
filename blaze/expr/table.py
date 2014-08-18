@@ -14,7 +14,7 @@ from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, Not, eval_str, Scalar, FloorDiv)
+                     And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins
 
 __all__ = '''
@@ -730,7 +730,7 @@ trunc = partial(columnwise, scalar.trunc)
 isnan = partial(columnwise, scalar.isnan)
 
 
-class Reduction(Scalar):
+class Reduction(NumberInterface):
     """ A column-wise reduction
 
     Blaze supports the same class of reductions as NumPy and Pandas.
