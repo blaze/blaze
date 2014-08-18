@@ -22,18 +22,20 @@ from cytoolz import groupby, reduceby, unique, take, concat, first
 import cytoolz
 import toolz
 import sys
+import math
 
 from ..dispatch import dispatch
 from ..expr.table import TableSymbol
 from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
-                          By, Sort, Head, Apply, Union)
+                          By, Sort, Head, Apply, Union, Summary)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr.scalar.core import Scalar
 from ..expr.scalar.numbers import BinOp, UnaryOp
 from ..compatibility import builtins, apply
 from . import core
-from .core import compute, compute_one
+from .core import compute, compute_one, base
+
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
@@ -394,3 +396,13 @@ def compute_one(t, example, children, **kwargs):
 @dispatch(Summary, Sequence)
 def compute_one(expr, data, **kwargs):
     return tuple(compute(val, {expr.child: data}) for val in expr.values)
+
+
+@dispatch(BinOp, object, object)
+def compute_one(expr, x, y, **kwargs):
+    return expr.op(x, y)
+
+
+@dispatch(UnaryOp, object)
+def compute_one(expr, x, **kwargs):
+    return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))

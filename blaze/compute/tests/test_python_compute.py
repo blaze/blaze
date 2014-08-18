@@ -469,3 +469,28 @@ def test_by_then_sort_dict_items_sequence():
 def test_summary():
     expr = summary(count=t.id.count(), sum=t.amount.sum())
     assert compute(expr, data) == (3, 350)
+
+
+def test_reduction_arithmetic():
+    expr = t.amount.sum() + 1
+    assert compute(expr, data) == 351
+
+
+def test_scalar_arithmetic():
+    x = ScalarSymbol('x', 'real')
+    y = ScalarSymbol('y', 'real')
+    assert compute(x + y, {x: 2, y: 3}) == 5
+    assert compute_one(x + y, 2, 3) == 5
+    assert compute_one(x * y, 2, 3) == 6
+    assert compute_one(x / y, 6, 3) == 2
+    assert compute_one(x % y, 4, 3) == 1
+    assert compute_one(x ** y, 4, 3) == 64
+
+    assert compute(x + 1, {x: 2}) == 3
+    assert compute(x * 2, {x: 2}) == 4
+    assert compute(1 + x, {x: 2}) == 3
+    assert compute(2 * x, {x: 2}) == 4
+
+    assert compute_one(-x, 1) == -1
+
+    assert compute_one(scalar.numbers.sin(x), 1) == math.sin(1)
