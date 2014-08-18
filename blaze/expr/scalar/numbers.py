@@ -65,6 +65,12 @@ def scalar_coerce(ds, val):
 
 
 class NumberInterface(Scalar):
+
+    def __hash__(self):
+        # defined here because __hash__ is set to None in Python 3 when __eq__
+        # is defined and __hash__ isn't
+        return super(NumberInterface, self).__hash__()
+
     def __eq__(self, other):
         return Eq(self, scalar_coerce(self.dshape, other))
 
