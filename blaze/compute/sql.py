@@ -224,3 +224,9 @@ def compute_one(t, s, **kwargs):
 @dispatch(Union, Selectable, tuple)
 def compute_one(t, _, children):
     return sqlalchemy.union(*children)
+
+
+@dispatch(Summary, ClauseElement)
+def compute_one(t, s, **kwargs):
+    return select([compute(value, {t.child: s}).label(name)
+        for value, name in zip(t.values, t.names)])
