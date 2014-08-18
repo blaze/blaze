@@ -471,6 +471,20 @@ def test_summary():
     assert compute(expr, data) == (3, 350)
 
 
+def test_summary_by():
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum()))
+    assert set(compute(expr, data)) == set([('Alice', 2, 150),
+                                            ('Bob', 1, 200)])
+
+    expr = by(t, t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
+    assert set(compute(expr, data)) == set([('Alice', 2, 152),
+                                            ('Bob', 1, 201)])
+
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
+    assert set(compute(expr, data)) == set([('Alice', 2, 151),
+                                            ('Bob', 1, 201)])
+
+
 def test_reduction_arithmetic():
     expr = t.amount.sum() + 1
     assert compute(expr, data) == 351

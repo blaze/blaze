@@ -262,14 +262,30 @@ def compute_one(t, seq, **kwargs):
             return binop(acc, applier(x))
 
         d = reduceby(grouper, binop2, seq, initial)
+    elif (isinstance(t.apply, Summary) and
+        builtins.all(type(val) in binops for val in t.apply.values)):
+
+        binops2, inits = zip(*[binops[type(v)] for v in t.apply.values])
+        appliers = [rrowfunc(v.child, t.child) for v in t.apply.values]
+
+        def binop2(accs, x):
+            return tuple(binop(acc, applier(x)) for binop, acc, applier in
+                        zip(binops2, accs, appliers))
+
+        d = reduceby(grouper, binop2, seq, tuple(inits))
     else:
         groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
     if t.grouper.iscolumn:
-        return d.items()
+        keyfunc = lambda x: (x,)
     else:
-        return tuple(k + (v,) for k, v in d.items())
+        keyfunc = identity
+    if isinstance(t.apply, Reduction):
+        valfunc = lambda x: (x,)
+    else:
+        valfunc = identity
+    return tuple(keyfunc(k) + valfunc(v) for k, v in d.items())
 
 
 def listpack(x):
