@@ -4,12 +4,13 @@ from dynd import nd
 import numpy as np
 from datashape import dshape
 from datetime import datetime
+import tempfile
+import os
 
 from blaze.api.into import into, discover
 import blaze
 from blaze import Table
-from blaze.utils import filetext
-
+import pytest
 
 def skip(test_foo):
     return
@@ -79,6 +80,43 @@ try:
 except ImportError:
     ColumnDataSource = None
 
+try:
+    from tables import (Table as PyTables, open_file, UInt8Col, StringCol,
+        IsDescription)
+except ImportError:
+    PyTables = None
+
+@pytest.yield_fixture
+def h5():
+    class Test(IsDescription):
+        posted_dow = UInt8Col()
+        jobtype  = UInt8Col()
+        location  = UInt8Col()
+        date  = StringCol(20)
+        country  = StringCol(2)
+
+    with tempfile.NamedTemporaryFile(mode='w') as f:
+        h5file = open_file(f.name, mode = "w", title = "Test file")
+        group = h5file.create_group("/", 'test', 'Info')
+        tab = h5file.create_table(group, 'sample', Test, "Example")
+        arow = tab.row
+        arow['country'] = 'ab'
+        arow['date'] = '20121105'
+        arow['location'] = 0
+        arow['jobtype']  = 1
+        arow['posted_dow']  = 3
+        # Insert a new record
+        arow.append()
+        tab.flush()
+        yield h5file
+        # Close (and flush) the file
+        h5file.close()
+
+@skip_if_not(PyTables and DataFrame)
+def test_into_pytables_dataframe(h5):
+    samp = h5.root.test.sample
+    final = into(DataFrame, samp)
+    assert len(final) == 1
 
 @skip_if_not(DataFrame and Python)
 def test_pandas_data_descriptor():
