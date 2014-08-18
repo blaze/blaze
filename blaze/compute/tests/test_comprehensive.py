@@ -43,10 +43,10 @@ try:
     db = pymongo.MongoClient().db
     db._test_coll.drop()
     mongo = into(db._test_coll, df)
+    sources.append(mongo)
 except ImportError:
     mongo = None
 
-sources.append(mongo)
 
 # {expr: [list-of-exclusions]}
 expressions = {
