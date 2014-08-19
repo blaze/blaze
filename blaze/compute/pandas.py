@@ -40,7 +40,6 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(ColumnWise, DataFrame)
 def compute_one(t, df, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
     d = dict((t.child[c].scalar_symbol, df[c]) for c in t.child.columns)
     return compute(t.expr, d)
 
