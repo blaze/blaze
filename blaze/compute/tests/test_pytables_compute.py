@@ -39,8 +39,12 @@ def test_table(data):
     assert compute(t, data) == data
 
 
-def test_projection(data):
+def test_single_column(data):
     assert eq(compute(t['name'], data), x['name'])
+
+
+def test_projection(data):
+    assert eq(compute(t[['name', 'amount']], data), x[['name', 'amount']])
 
 
 def test_eq(data):
@@ -56,6 +60,8 @@ def test_arithmetic(data):
     assert eq(compute(t['amount'] + t['id'], data), x['amount'] + x['id'])
     assert eq(compute(t['amount'] * t['id'], data), x['amount'] * x['id'])
     assert eq(compute(t['amount'] % t['id'], data), x['amount'] % x['id'])
+    assert eq(compute(t['amount'] + t['id'] + 3, data),
+              x['amount'] + x['id'] + 3)
 
 
 def test_reductions(data):
