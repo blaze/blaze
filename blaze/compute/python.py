@@ -30,14 +30,16 @@ from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           By, Sort, Head, Apply, Union)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr.scalar.core import Scalar
-from ..expr.scalar.numbers import BinOp, UnaryOp
+from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
 from ..compatibility import builtins, apply
 from . import core
 from .core import compute, compute_one
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
+import math
 from math import *
+
 
 __all__ = ['compute', 'compute_one', 'Sequence', 'rowfunc', 'rrowfunc']
 
@@ -166,9 +168,14 @@ def compute_one(bop, a, b, **kwargs):
     return bop.op(a, b)
 
 
-@dispatch(UnaryOp, numbers.Real)
-def compute_one(expr, x, **kwargs):
-    return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))
+@dispatch(UnaryOp, (numbers.Real, Scalar))
+def compute_one(uop, x, **kwargs):
+    return uop.op(x)
+
+
+@dispatch(RealMath, (numbers.Real, Scalar))
+def compute_one(f, n, **kwargs):
+    return getattr(math, type(f).__name__)(n)
 
 
 def _mean(seq):
@@ -192,7 +199,7 @@ def _var(seq):
 
 
 def _std(seq):
-    return sqrt(_var(seq))
+    return math.sqrt(_var(seq))
 
 
 @dispatch(count, Sequence)
