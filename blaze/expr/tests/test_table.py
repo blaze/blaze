@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 import pytest
 import tempfile
 import pandas as pd
-from operator import add, sub, mul, floordiv, mod, pow, truediv
+from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
+                      gt, le, ge)
 
 try:
     from operator import div
@@ -298,7 +299,7 @@ def symsum():
 
 class TestScalarArithmetic(object):
     ops = {'+': add, '-': sub, '*': mul, '/': div, '//': floordiv, '%': mod,
-           '**': pow}
+           '**': pow, '==': eq, '!=': ne, '<': lt, '>': gt, '<=': le, '>=': ge}
 
     def test_scalar_arith(self, symsum):
         def runner(f):
