@@ -18,20 +18,17 @@ x = np.array([(1, 'Alice', 100),
               (3, 'Charlie', 300),
               (4, 'Denis', 400),
               (5, 'Edith', -500)],
-            dtype=[('id', '<i8'), ('name', 'S7'), ('amount', '<i8')])
+             dtype=[('id', '<i8'), ('name', 'S7'), ('amount', '<i8')])
 
 
 @pytest.yield_fixture
 def data():
-    filename = tempfile.mktemp()
-    f = tables.open_file(filename, 'w')
-    d = f.createTable('/', 'title',  x)
-
-    yield d
-
-    d.close()
-    f.close()
-    os.remove(filename)
+    with tempfile.NamedTemporaryFile() as fobj:
+        f = tables.open_file(fobj.name, mode='w')
+        d = f.create_table('/', 'title',  x)
+        yield d
+        d.close()
+        f.close()
 
 
 def eq(a, b):
@@ -46,7 +43,6 @@ def test_projection(data):
     assert eq(compute(t['name'], data), x['name'])
 
 
-@xfail(reason="ColumnWise not yet supported")
 def test_eq(data):
     assert eq(compute(t['amount'] == 100, data), x['amount'] == 100)
 
@@ -56,7 +52,6 @@ def test_selection(data):
     assert eq(compute(t[t['amount'] < 0], data), x[x['amount'] < 0])
 
 
-@xfail(reason="ColumnWise not yet supported")
 def test_arithmetic(data):
     assert eq(compute(t['amount'] + t['id'], data), x['amount'] + x['id'])
     assert eq(compute(t['amount'] * t['id'], data), x['amount'] * x['id'])
