@@ -5,7 +5,6 @@ tables = pytest.importorskip('tables')
 
 import numpy as np
 import tempfile
-import os
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
@@ -65,7 +64,13 @@ def test_arithmetic(data):
 
 
 def test_reductions(data):
+    from blaze import sum, mean
     assert compute(t['amount'].count(), data) == len(x['amount'])
+    assert compute(t['amount'].sum(), data) == x['amount'].sum()
+    assert compute(t['amount'].mean(), data) == x['amount'].mean()
+    assert compute(t['amount'].count(), data) == len(x['amount'])
+    assert compute(sum(t['amount']), data) == x['amount'].sum()
+    assert compute(mean(t['amount']), data) == x['amount'].mean()
 
 
 @xfail(reason="TODO: sorting could work if on indexed column")
