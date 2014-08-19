@@ -30,7 +30,7 @@ from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           By, Sort, Head, Apply, Union)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr.scalar.core import Scalar
-from ..expr.scalar.numbers import Arithmetic, UnaryOp
+from ..expr.scalar.numbers import BinOp, UnaryOp
 from ..compatibility import builtins, apply
 from . import core
 from .core import compute, compute_one
@@ -161,9 +161,9 @@ def compute_one(t, seq, **kwargs):
     return op(seq)
 
 
-@dispatch(Arithmetic, (numbers.Real, Scalar), (numbers.Real, Scalar))
-def compute_one(arith, a, b, **kwargs):
-    return arith.op(a, b)
+@dispatch(BinOp, (numbers.Real, Scalar), (numbers.Real, Scalar))
+def compute_one(bop, a, b, **kwargs):
+    return bop.op(a, b)
 
 
 @dispatch(UnaryOp, numbers.Real)
@@ -321,6 +321,7 @@ def pair_assemble(t):
         return joined + left_entries + right_entries
 
     return assemble
+
 
 @dispatch(Join, (DataDescriptor, Sequence), (DataDescriptor, Sequence))
 def compute_one(t, lhs, rhs, **kwargs):
