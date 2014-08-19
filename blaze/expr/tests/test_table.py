@@ -297,13 +297,11 @@ def symsum():
 
 
 class TestScalarArithmetic(object):
-    ops = '+', '-', '*', '/', '/', '//', '%', '**'
-    funcs = add, sub, mul, div, truediv, floordiv, mod, pow
+    ops = {'+': add, '-': sub, '*': mul, '/': div, '//': floordiv, '%': mod,
+           '**': pow}
 
     def test_scalar_arith(self, symsum):
-        t, r = symsum
-        r = t.amount.sum()
-        for op, f in zip(self.ops, self.funcs):
+        def runner(f):
             result = f(r, 1)
             assert eval('r %s 1' % op).isidentical(result)
 
@@ -312,6 +310,14 @@ class TestScalarArithmetic(object):
 
             result = f(1, r)
             assert eval('1 %s r' % op).isidentical(result)
+
+        t, r = symsum
+        r = t.amount.sum()
+        for op, f in self.ops.items():
+            if op == '/':
+                runner(truediv)
+            runner(f)
+
 
     def test_scalar_usub(self, symsum):
         t, r = symsum
