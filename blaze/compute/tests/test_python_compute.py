@@ -79,23 +79,24 @@ def test_reductions():
     assert compute(any(t['amount'] > 250), data) is False
 
 
-class TestReductionScalarOps(object):
-    def runner(self, funcs):
-        from blaze.compatibility import builtins as bts
-        exprs = sum, min, max
-        for blaze_expr, py_func in itertools.product(exprs, funcs):
-            f = getattr(operator, py_func)
-            reduc_f = getattr(bts, blaze_expr.__name__)
-            ground_truth = f(reduc_f([100, 200, 50]), 5)
-            assert compute(f(blaze_expr(t['amount']), 5), data) == ground_truth
+def reduction_runner(funcs):
+    from blaze.compatibility import builtins as bts
+    exprs = sum, min, max
+    for blaze_expr, py_func in itertools.product(exprs, funcs):
+        f = getattr(operator, py_func)
+        reduc_f = getattr(bts, blaze_expr.__name__)
+        ground_truth = f(reduc_f([100, 200, 50]), 5)
+        assert compute(f(blaze_expr(t['amount']), 5), data) == ground_truth
 
-    def test_arithmetic(self):
-        funcs = 'add', 'mul'
-        self.runner(funcs)
 
-    def test_compare(self):
-        funcs = 'eq', 'ne', 'lt', 'gt', 'le', 'ge'
-        self.runner(funcs)
+def test_reduction_arithmetic():
+    funcs = 'add', 'mul'
+    reduction_runner(funcs)
+
+
+def test_reduction_compare():
+    funcs = 'eq', 'ne', 'lt', 'gt', 'le', 'ge'
+    reduction_runner(funcs)
 
 
 def test_mean():
