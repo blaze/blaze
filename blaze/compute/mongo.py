@@ -101,8 +101,8 @@ class MongoQuery(object):
         return hash((type(self), self.info()))
 
 
-@dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction, Head, ReLabel,
-    Apply, Distinct, RowWise,  By), Collection)
+@dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
+           Head, ReLabel, Apply, Distinct, RowWise, By), Collection)
 def compute_one(e, coll, **kwargs):
     return compute_one(e, MongoQuery(coll, []))
 
@@ -146,6 +146,15 @@ def compute_one(t, q, **kwargs):
      }))
 
 
+@dispatch(Distinct, MongoQuery)
+def compute_one(t, q, **kwargs):
+    return MongoQuery(q.coll, q.query +
+    ({'$group': {'_id': dict((col, '$'+col) for col in t.columns)}},
+     {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.columns),
+                              {'_id': 0})}))
+
+
+
 def group_apply(expr):
     """
     Dictionary corresponding to apply part of split-apply-combine operation
@@ -167,7 +176,8 @@ def group_apply(expr):
         return {key: {'$min': col}}
     if isinstance(expr, mean):
         return {key: {'$avg': col}}
-    raise NotImplementedError("Only certain reductions supported in MongoDB")
+    raise NotImplementedError("Reduction %s not yet supported in MongoDB"
+            % type(expr).__name__)
 
 
 @dispatch(count, MongoQuery)

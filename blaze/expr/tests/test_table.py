@@ -545,3 +545,19 @@ def test_columnwise_naming():
 
     assert t.x.name == 'x'
     assert (t.x + 1).name == 'x'
+
+
+def test_scalar_symbol():
+    t = TableSymbol('t', '{x: int64, y: int32, z: int64}')
+    x = t.x.scalar_symbol
+    y = t.y.scalar_symbol
+    assert 'int64' in str(x.dshape)
+    assert 'int32' in str(y.dshape)
+
+    expr = (t.x + 1).expr
+    assert expr.inputs[0].dshape == x.dshape
+    assert expr.inputs[0].isidentical(x)
+
+    t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
+    expr = (t.amount + 1).expr
+    assert 'int64' in str(expr.inputs[0].dshape)
