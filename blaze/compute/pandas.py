@@ -25,7 +25,6 @@ from ..dispatch import dispatch
 from ..expr import *
 from .core import compute, compute_one, base
 
-# __all__ = ['pandas', 'DataFrame', 'Series']
 __all__ = []
 
 
