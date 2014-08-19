@@ -45,8 +45,7 @@ group_by = GroupBy
 
 @dispatch(TableExpr)
 def summarize(t, **kwargs):
-    # TODO: row result
-    pass
+    return summary(**kwargs)
 
 
 n_distinct = nunique
