@@ -57,15 +57,15 @@ expressions = {
         t.amount + 1: [mongo],
         sin(t.amount): [sql, mongo], # sqlite doesn't support trig
         exp(t.amount): [sql, mongo],
-        t.amount > 100: [mongo],
-        t[t.amount > 100]: [],
+        t.amount > 50: [mongo],
+        t[t.amount > 50]: [],
         t.sort('name'): [bc],
         t.sort('name', ascending=False): [bc],
         t.head(3): [],
         t.name.distinct(): [],
-        # t[t.amount > 100]['name']: [], # odd ordering issue
+        t[t.amount > 50]['name']: [], # odd ordering issue
         t.id.map(lambda x: x + 1, '{id: int}'): [sql, mongo],
-        t[t.amount > 100]['name']: [],
+        t[t.amount > 50]['name']: [],
         by(t, t.name, t.amount.sum()): [],
         by(t, t.id, t.id.count()): [],
         by(t, t[['id', 'amount']], t.id.count()): [],
