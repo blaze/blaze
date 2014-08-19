@@ -8,10 +8,12 @@ from blaze.compute.core import compute
 from blaze.compute.python import nunique, mean, std, rrowfunc
 from blaze import dshape
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
-                        Apply, sum, min, max, any, exp)
+                        Apply, sum, min, max, any)
 
+from blaze import cos, sin, exp
 from blaze.compatibility import builtins
 from blaze.utils import raises
+import random
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -421,6 +423,49 @@ def test_recursive_rowfunc_is_used():
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, data)) == set(expected)
+
+
+class TestFunctionExpressions(object):
+    def test_simple(self):
+        expr = cos(t.amount.sum())
+        result = compute(expr, data)
+        assert result == math.cos(compute(t.amount.sum(), data))
+
+    def test_compound(self):
+        s = t.amount.mean()
+        r = compute(s, data)
+        assert isinstance(r, float)
+
+        expr = cos(s) ** 2 + sin(s) ** 2
+        result = compute(expr, data)
+        expected = math.cos(r) ** 2 + math.sin(r) ** 2
+        assert result == expected
+
+    def test_user_defined_function(self):
+        s = t.amount.count()
+        r = compute(s, data)
+        assert isinstance(r, int)
+
+        def myfunc(x):
+            return (cos(x) + sin(x)) ** 2 / math.pi
+
+        result = compute(myfunc(s), data)
+        expected = (math.cos(r) + math.sin(r)) ** 2 / math.pi
+        assert result == expected
+
+    def test_user_defined_calls(self):
+        s = t.amount.count()
+        r = compute(s, data)
+
+        def myother(y):
+            return 2 + y ** 10
+
+        def myfunc(x):
+            return myother((cos(x) + sin(x)) ** 2 / math.pi)
+
+        result = compute(myfunc(s), data)
+        expected = myother((math.cos(r) + math.sin(r)) ** 2 / math.pi)
+        assert result == expected
 
 
 def test_union():
