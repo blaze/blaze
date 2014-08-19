@@ -11,7 +11,7 @@ from ...dispatch import dispatch
 from ...compatibility import _strtypes
 from datashape import coretypes as ct
 from .boolean import (Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not,
-        Invert, BooleanInterface)
+                      Invert, BooleanInterface)
 
 
 @dispatch(ct.Option, object)
