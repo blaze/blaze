@@ -5,13 +5,10 @@ tables = pytest.importorskip('tables')
 
 import numpy as np
 import tempfile
-from contextlib import contextmanager
 import os
 
 from blaze.compute.core import compute
-from blaze.compute.pytables import *
-from blaze.compute.numpy import *
-from blaze.expr import *
+from blaze.expr import TableSymbol
 from blaze.compatibility import xfail
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -23,7 +20,8 @@ x = np.array([(1, 'Alice', 100),
               (5, 'Edith', -500)],
             dtype=[('id', '<i8'), ('name', 'S7'), ('amount', '<i8')])
 
-@contextmanager
+
+@pytest.yield_fixture
 def data():
     filename = tempfile.mktemp()
     f = tables.open_file(filename, 'w')
@@ -40,58 +38,43 @@ def eq(a, b):
     return (a == b).all()
 
 
-def test_table():
-    with data() as d:
-        assert compute(t, d) == d
+def test_table(data):
+    assert compute(t, data) == data
 
 
-def test_projection():
-    with data() as d:
-        assert eq(compute(t['name'], d), x['name'])
-
-
-@xfail(reason="ColumnWise not yet supported")
-def test_eq():
-    with data() as d:
-        assert eq(compute(t['amount'] == 100, d),
-                  x['amount'] == 100)
-
-
-def test_selection():
-    with data() as d:
-        assert eq(compute(t[t['amount'] == 100], d), x[x['amount'] == 0])
-        assert eq(compute(t[t['amount'] < 0], d), x[x['amount'] < 0])
+def test_projection(data):
+    assert eq(compute(t['name'], data), x['name'])
 
 
 @xfail(reason="ColumnWise not yet supported")
-def test_arithmetic():
-    with data() as d:
-        assert eq(compute(t['amount'] + t['id'], d),
-                  x['amount'] + x['id'])
-        assert eq(compute(t['amount'] * t['id'], d),
-                  x['amount'] * x['id'])
-        assert eq(compute(t['amount'] % t['id'], d),
-                  x['amount'] % x['id'])
+def test_eq(data):
+    assert eq(compute(t['amount'] == 100, data), x['amount'] == 100)
 
-def test_Reductions():
-    with data() as d:
-        assert compute(t['amount'].count(), d) == len(x['amount'])
+
+def test_selection(data):
+    assert eq(compute(t[t['amount'] == 100], data), x[x['amount'] == 0])
+    assert eq(compute(t[t['amount'] < 0], data), x[x['amount'] < 0])
+
+
+@xfail(reason="ColumnWise not yet supported")
+def test_arithmetic(data):
+    assert eq(compute(t['amount'] + t['id'], data), x['amount'] + x['id'])
+    assert eq(compute(t['amount'] * t['id'], data), x['amount'] * x['id'])
+    assert eq(compute(t['amount'] % t['id'], data), x['amount'] % x['id'])
+
+
+def test_reductions(data):
+    assert compute(t['amount'].count(), data) == len(x['amount'])
 
 
 @xfail(reason="TODO: sorting could work if on indexed column")
-def test_sort():
-    with data() as d:
-        assert eq(compute(t.sort('amount'), d),
-                  np.sort(x, order='amount'))
-
-        assert eq(compute(t.sort('amount', ascending=False), d),
-                  np.sort(x, order='amount')[::-1])
-
-        assert eq(compute(t.sort(['amount', 'id']), d),
-                  np.sort(x, order=['amount', 'id']))
+def test_sort(data):
+    assert eq(compute(t.sort('amount'), data), np.sort(x, order='amount'))
+    assert eq(compute(t.sort('amount', ascending=False), data),
+              np.sort(x, order='amount')[::-1])
+    assert eq(compute(t.sort(['amount', 'id']), data),
+              np.sort(x, order=['amount', 'id']))
 
 
-def test_head():
-    with data() as d:
-        assert eq(compute(t.head(2), d),
-                  x[:2])
+def test_head(data):
+    assert eq(compute(t.head(2), data), x[:2])
