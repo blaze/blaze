@@ -170,6 +170,12 @@ def compute_one(t, rdd, **kwargs):
     return rdd
 
 
+@dispatch(Summary, RDD)
+def compute_one(t, rdd, **kwargs):
+    rdd = rdd.cache()
+    return tuple(compute(value, {t.child: rdd}) for value in t.values)
+
+
 @dispatch(RDD, RDD)
 def into(a, b):
     return b
