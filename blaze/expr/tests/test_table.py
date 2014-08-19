@@ -621,3 +621,12 @@ def test_scalar_symbol():
     t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
     expr = (t.amount + 1).expr
     assert 'int64' in str(expr.inputs[0].dshape)
+
+
+def test_distinct_name():
+    t = TableSymbol('t', '{id: int32, name: string}')
+
+    assert t.name.isidentical(t['name'])
+    assert t.distinct().name.isidentical(t.distinct()['name'])
+    assert t.id.distinct().name == 'id'
+    assert t.name.name == 'name'
