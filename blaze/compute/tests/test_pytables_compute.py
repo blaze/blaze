@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 import pytest
 tables = pytest.importorskip('tables')
 
+from blaze.compatibility import xfail
+
 import numpy as np
 import tempfile
 
@@ -149,13 +151,13 @@ class TestFailingSort(object):
         with pytest.raises(ValueError):
             compute(t.sort('id'), data)
 
+    @xfail(reason='PyTables does not support multiple column sorting')
     def test_multiple_columns(self, data):
-        with pytest.raises(TypeError):
-            compute(t.sort(['amount', 'id']), data)
+        compute(t.sort(['amount', 'id']), data)
 
+    @xfail(reason='PyTables does not support multiple column sorting')
     def test_multiple_columns_sorted_data(self, csi_data):
-        with pytest.raises(TypeError):
-            compute(t.sort(['amount', 'id']), csi_data)
+        compute(t.sort(['amount', 'id']), csi_data)
 
 
 class TestCSISort(object):
@@ -175,13 +177,13 @@ class TestCSISort(object):
 class TestIndexSort(object):
     """Fails with a partially sorted index"""
 
+    @xfail(reason='PyTables cannot sort with a standard index')
     def test_basic(self, idx_data):
-        with pytest.raises(ValueError):
-            compute(t.sort('amount'), idx_data)
+        compute(t.sort('amount'), idx_data)
 
+    @xfail(reason='PyTables cannot sort with a standard index')
     def test_ascending(self, idx_data):
-        with pytest.raises(ValueError):
-            compute(t.sort('amount', ascending=False), idx_data)
+        compute(t.sort('amount', ascending=False), idx_data)
 
 
 def test_head(data):
