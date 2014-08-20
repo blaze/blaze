@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tables as tb
 from blaze.expr import Selection, Head, Column, ColumnWise, Projection
-from blaze.expr import eval_str, Expr, TableSymbol, Sort, TrueDiv, FloorDiv
+from blaze.expr import eval_str, Expr, TableSymbol, Sort, FloorDiv
 from datashape import Record
 from ..dispatch import dispatch
 
@@ -64,7 +64,7 @@ def compute_one(expr, c, t, **kwargs):
 @dispatch(Expr, list, tb.Table)
 def compute_one(expr, columns, t, **kwargs):
     uservars = dict((col, getattr(t.cols, col)) for col in columns)
-    e = tb.Expr(str(expr), uservars=uservars, truediv=isinstance(expr, TrueDiv))
+    e = tb.Expr(str(expr), uservars=uservars, truediv=True)
     return e.eval()
 
 

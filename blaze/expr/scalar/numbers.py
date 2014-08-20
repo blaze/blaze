@@ -109,11 +109,8 @@ class NumberInterface(Scalar):
     def __rdiv__(self, other):
         return Div(scalar_coerce(self.dshape, other), self)
 
-    def __truediv__(self, other):
-        return TrueDiv(self, scalar_coerce(self.dshape, other))
-
-    def __rtruediv__(self, other):
-        return TrueDiv(scalar_coerce(self.dshape, other), self)
+    __truediv__ = __div__
+    __rtruediv__ = __rdiv__
 
     def __floordiv__(self, other):
         return FloorDiv(self, scalar_coerce(self.dshape, other))
@@ -169,10 +166,6 @@ class Sub(Arithmetic):
 
 class Div(Arithmetic):
     symbol = '/'
-    op = operator.div if hasattr(operator, 'div') else operator.truediv
-
-
-class TrueDiv(Div):
     op = operator.truediv
 
 

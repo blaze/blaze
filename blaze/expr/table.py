@@ -14,8 +14,7 @@ from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, Not, eval_str, FloorDiv, NumberInterface,
-                     TrueDiv)
+                     And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins
 
 __all__ = '''
@@ -302,17 +301,14 @@ class ColumnSyntaxMixin(object):
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
 
+    __truediv__ = __div__
+    __rtruediv__ = __rdiv__
+
     def __floordiv__(self, other):
         return columnwise(FloorDiv, self, other)
 
     def __rfloordiv__(self, other):
         return columnwise(FloorDiv, other, self)
-
-    def __truediv__(self, other):
-        return columnwise(TrueDiv, self, other)
-
-    def __rtruediv__(self, other):
-        return columnwise(TrueDiv, other, self)
 
     def __sub__(self, other):
         return columnwise(Sub, self, other)

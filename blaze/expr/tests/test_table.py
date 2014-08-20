@@ -304,7 +304,8 @@ class TestScalarArithmetic(object):
     def test_scalar_arith(self, symsum):
         def runner(f):
             result = f(r, 1)
-            assert eval('r %s 1' % op).isidentical(result)
+            expected = eval('r %s 1' % op)
+            assert expected.isidentical(result)
 
             result = f(r, r)
             assert eval('r %s r' % op).isidentical(result)
@@ -315,10 +316,7 @@ class TestScalarArithmetic(object):
         t, r = symsum
         r = t.amount.sum()
         for op, f in self.ops.items():
-            if op == '/':
-                runner(truediv)
             runner(f)
-
 
     def test_scalar_usub(self, symsum):
         t, r = symsum
