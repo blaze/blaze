@@ -465,8 +465,11 @@ def compute_one(t, example, children, **kwargs):
 def compute_one(expr, data, **kwargs):
     if isinstance(data, Iterator):
         datas = itertools.tee(data, len(expr.values))
-    return tuple(compute(val, {expr.child: data})
-                    for val, data in zip(expr.values, datas))
+        return tuple(compute(val, {expr.child: data})
+                        for val, data in zip(expr.values, datas))
+    else:
+        return tuple(compute(val, {expr.child: data})
+                        for val in expr.values)
 
 
 @dispatch(BinOp, object, object)
