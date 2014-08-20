@@ -241,39 +241,61 @@ greater = lambda x, y: x if x > y else y
 countit = lambda acc, _: acc + 1
 
 
-binops = {sum: (operator.add, 0),
-          min: (lesser, 1e250),
-          max: (greater, -1e250),
-          count: (countit, 0),
-          any: (operator.or_, False),
-          all: (operator.and_, True)}
+from operator import add, or_, and_
+
+# Dict mapping
+# Reduction : (binop, combiner, init)
+
+# Reduction :: [a] -> b
+# binop     :: b, a -> b
+# combiner  :: b, b -> b
+# init      :: b
+binops = {sum: (add, add, 0),
+          min: (lesser, lesser, 1e250),
+          max: (greater, lesser, -1e250),
+          count: (countit, add, 0),
+          any: (or_, or_, False),
+          all: (and_, and_, True)}
 
 
-@dispatch(By, Sequence)
-def compute_one(t, seq, **kwargs):
+def reduce_by_funcs(t):
     grouper = rrowfunc(t.grouper, t.child)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
-        binop, initial = binops[type(t.apply)]
+        binop, combiner, initial = binops[type(t.apply)]
         applier = rrowfunc(t.apply.child, t.child)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
 
-        d = reduceby(grouper, binop2, seq, initial)
+        return grouper, binop2, combiner, initial
+
     elif (isinstance(t.apply, Summary) and
         builtins.all(type(val) in binops for val in t.apply.values)):
 
-        binops2, inits = zip(*[binops[type(v)] for v in t.apply.values])
+        binops2, combiners, inits = zip(*[binops[type(v)] for v in t.apply.values])
         appliers = [rrowfunc(v.child, t.child) for v in t.apply.values]
 
         def binop2(accs, x):
             return tuple(binop(acc, applier(x)) for binop, acc, applier in
                         zip(binops2, accs, appliers))
 
-        d = reduceby(grouper, binop2, seq, tuple(inits))
+        def combiner(a, b):
+            return tuple(c(x, y) for c, x, y in zip(combiners, a, b))
+
+        return grouper, binop2, combiner, tuple(inits)
+
+
+@dispatch(By, Sequence)
+def compute_one(t, seq, **kwargs):
+    if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
+        (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
+                                                for val in t.apply.values))):
+        grouper, binop, combiner, initial = reduce_by_funcs(t)
+        d = reduceby(grouper, binop, seq, initial)
     else:
+        grouper = rrowfunc(t.grouper, t.child)
         groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
