@@ -62,11 +62,12 @@ def into(a, b, types=None, **kwargs):
 def into(a, b, **kwargs):
     chunks = partition_all(1024, b)
     chunk = next(chunks)
-    a = ctable([into(np.ndarray(0), c2) for c2 in zip(*chunk)], **kwargs)
+    a = into(a, chunk, **kwargs)
     for chunk in chunks:
         a.append(list(zip(*chunk)))
     a.flush()
     return a
+
 
 @dispatch(DataFrame, ctable)
 def into(a, b, columns=None, schema=None):

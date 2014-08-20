@@ -297,9 +297,10 @@ def into(df, cds):
 @dispatch(ctable, TableExpr)
 def into(a, b, **kwargs):
     c = compute(b)
-    if isinstance(c, (list, tuple)):
+    if isinstance(c, (list, tuple, Iterator)):
         kwargs['types'] = [datashape.to_numpy_dtype(t) for t in
                 b.schema[0].types]
+        kwargs['names'] = b.columns
     return into(a, c, **kwargs)
 
 
@@ -325,7 +326,6 @@ def into(a, b, **kwargs):
             else into(np.ndarray(0), c) for c in columns]
 
     return bcolz.ctable(columns, names=names, **kwargs)
-
 
 
 @dispatch(ctable, pd.DataFrame)
