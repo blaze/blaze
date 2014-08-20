@@ -298,14 +298,13 @@ def symsum():
 
 
 class TestScalarArithmetic(object):
-    ops = {'+': add, '-': sub, '*': mul, '/': div, '//': floordiv, '%': mod,
+    ops = {'+': add, '-': sub, '*': mul, '/': truediv, '//': floordiv, '%': mod,
            '**': pow, '==': eq, '!=': ne, '<': lt, '>': gt, '<=': le, '>=': ge}
 
     def test_scalar_arith(self, symsum):
         def runner(f):
             result = f(r, 1)
-            expected = eval('r %s 1' % op)
-            assert expected.isidentical(result)
+            assert eval('r %s 1' % op).isidentical(result)
 
             result = f(r, r)
             assert eval('r %s r' % op).isidentical(result)
