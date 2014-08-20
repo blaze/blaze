@@ -4,11 +4,12 @@ import itertools
 import operator
 import functools
 
-from blaze.compute.core import compute
+from blaze.compute.core import compute, compute_one
 from blaze.compute.python import nunique, mean, std, rrowfunc
 from blaze import dshape
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
-                        Apply, sum, min, max, any, exp)
+                        Apply, sum, min, max, any, exp, summary, ScalarSymbol,
+                        count, scalar)
 
 from blaze.compatibility import builtins
 from blaze.utils import raises

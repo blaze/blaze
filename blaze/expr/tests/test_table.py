@@ -15,7 +15,8 @@ from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
-                        Label, ReLabel, Head, Sort, isnan, any)
+                        Label, ReLabel, Head, Sort, isnan, any, summary,
+                        Summary, count)
 from blaze.expr.core import discover
 from blaze.utils import raises
 from datashape import dshape, var, int32, int64, Record, DataShape

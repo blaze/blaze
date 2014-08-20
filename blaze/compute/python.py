@@ -30,6 +30,7 @@ from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
                           By, Sort, Head, Apply, Union, Summary)
 from ..expr.table import count, nunique, mean, var, std
+from ..expr import table, eval_str
 from ..expr.scalar.core import Scalar
 from ..expr.scalar.numbers import BinOp, UnaryOp
 from ..compatibility import builtins, apply
@@ -250,12 +251,12 @@ from operator import add, or_, and_
 # binop     :: b, a -> b
 # combiner  :: b, b -> b
 # init      :: b
-binops = {sum: (add, add, 0),
-          min: (lesser, lesser, 1e250),
-          max: (greater, lesser, -1e250),
-          count: (countit, add, 0),
-          any: (or_, or_, False),
-          all: (and_, and_, True)}
+binops = {table.sum: (add, add, 0),
+          table.min: (lesser, lesser, 1e250),
+          table.max: (greater, lesser, -1e250),
+          table.count: (countit, add, 0),
+          table.any: (or_, or_, False),
+          table.all: (and_, and_, True)}
 
 
 def reduce_by_funcs(t):
