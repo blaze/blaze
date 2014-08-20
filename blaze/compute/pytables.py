@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tables as tb
 from blaze.expr import Selection, Head, Column, ColumnWise, Projection
-from blaze.expr import eval_str
+from blaze.expr import eval_str, Expr, TableSymbol, Sort, TrueDiv, FloorDiv
 from datashape import Record
 from ..dispatch import dispatch
 
@@ -11,6 +11,11 @@ from ..dispatch import dispatch
 @dispatch(tb.Table)
 def discover(t):
     return t.shape[0] * Record([[col, t.coltypes[col]] for col in t.colnames])
+
+
+@dispatch(TableSymbol, tb.Table)
+def compute_one(sym, t, **kwargs):
+    return t.read()
 
 
 @dispatch(Selection, tb.Table)
@@ -32,7 +37,7 @@ def compute_one(proj, t, **kwargs):
     #
     # TODO: benchmark on big tables because i'm not sure exactly what the
     # implications here are for memory usage
-    columns = list(proj.columns)
+    columns = proj.columns
     dtype = np.dtype([(col, t.dtype[col]) for col in columns])
     out = np.empty(t.shape, dtype=dtype)
     for c in columns:
@@ -40,19 +45,25 @@ def compute_one(proj, t, **kwargs):
     return out
 
 
-@dispatch(Head, tb.Table)
-def compute_one(h, t, **kwargs):
-    return t[:h.n]
-
-
 @dispatch(Column, tb.Table)
 def compute_one(c, t, **kwargs):
     return t.col(c.column)
 
 
+@dispatch(Head, tb.Table)
+def compute_one(h, t, **kwargs):
+    return t[:h.n]
+
+
+
+
+@dispatch(Expr, list, tb.Table)
+def compute_one(expr, columns, t, **kwargs):
+    uservars = dict((col, getattr(t.cols, col)) for col in columns)
+    e = tb.Expr(str(expr), uservars=uservars, truediv=isinstance(expr, TrueDiv))
+    return e.eval()
+
+
 @dispatch(ColumnWise, tb.Table)
 def compute_one(c, t, **kwargs):
-    columns = c.active_columns()
-    uservars = dict((col, getattr(t.cols, col)) for col in columns)
-    expr = tb.Expr(str(c.expr), uservars=uservars)
-    return expr.eval()
+    return compute_one(c.expr, c.active_columns(), t, **kwargs)
