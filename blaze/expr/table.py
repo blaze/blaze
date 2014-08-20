@@ -299,7 +299,6 @@ class ColumnSyntaxMixin(object):
         return columnwise(Div, self, other)
 
     __truediv__ = __div__
-    __rtruediv__ = __truediv__
 
     def __floordiv__(self, other):
         return columnwise(FloorDiv, self, other)
@@ -309,6 +308,8 @@ class ColumnSyntaxMixin(object):
 
     def __rdiv__(self, other):
         return columnwise(Div, other, self)
+
+    __rtruediv__ = __rdiv__
 
     def __sub__(self, other):
         return columnwise(Sub, self, other)
