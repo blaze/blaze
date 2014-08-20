@@ -71,3 +71,11 @@ def compute_one(expr, columns, t, **kwargs):
 @dispatch(ColumnWise, tb.Table)
 def compute_one(c, t, **kwargs):
     return compute_one(c.expr, c.active_columns(), t, **kwargs)
+
+
+@dispatch(Sort, tb.Table)
+def compute_one(s, t, **kwargs):
+    result = np.sort(t[:], order=s.key)
+    if s.ascending:
+        return result
+    return result[::-1]

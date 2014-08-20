@@ -112,6 +112,14 @@ class TestReductions(object):
         assert compute(mean(t['amount']), data) == x['amount'].mean()
 
 
+class TestSort(object):
+    def test_basic(self, data):
+        assert eq(compute(t.sort('amount'), data), np.sort(x, order='amount'))
+
+    def test_ascending(self, data):
+        assert eq(compute(t.sort('amount', ascending=False), data),
+                np.sort(x, order='amount')[::-1])
+
     def test_multiple_columns(self, data):
         assert eq(compute(t.sort(['amount', 'id']), data),
                   np.sort(x, order=['amount', 'id']))
