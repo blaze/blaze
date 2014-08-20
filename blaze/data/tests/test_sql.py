@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from dynd import nd
 import unittest
 
-from blaze.data.sql import SQL, discover
+from blaze.data.sql import SQL, discover, dshape_to_alchemy
 from blaze.utils import raises
 from datashape import dshape
 import datashape
@@ -164,3 +164,8 @@ def test_schema_detection():
 
     if os.path.isfile('my.db'):
         os.remove('my.db')
+
+
+def test_dshape_to_alchemy():
+    assert dshape_to_alchemy('string') == sa.String
+    assert dshape_to_alchemy('string[40]') == sa.String

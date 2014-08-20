@@ -39,7 +39,6 @@ types = {'int64': sql.types.BigInteger,
 #         str: sql.types.Text,  # ??
          }
 
-
 revtypes = dict(map(reversed, types.items()))
 
 revtypes.update({sql.types.VARCHAR: 'string',
@@ -115,6 +114,8 @@ def dshape_to_alchemy(dshape):
             return dshape_to_alchemy(dshape[1])
         else:
             return dshape_to_alchemy(dshape[0])
+    if isinstance(dshape, datashape.String):
+        return sql.types.String
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
