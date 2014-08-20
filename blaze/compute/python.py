@@ -17,7 +17,7 @@ import numbers
 from collections import Iterator
 import operator
 from functools import partial
-from toolz import map, compose, juxt, identity
+from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first
 import cytoolz
 import toolz
