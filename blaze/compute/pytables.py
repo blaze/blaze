@@ -13,11 +13,6 @@ def discover(t):
     return t.shape[0] * Record([[col, t.coltypes[col]] for col in t.colnames])
 
 
-@dispatch(TableSymbol, tb.Table)
-def compute_one(sym, t, **kwargs):
-    return t.read()
-
-
 @dispatch(Selection, tb.Table)
 def compute_one(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
