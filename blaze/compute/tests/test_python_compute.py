@@ -2,18 +2,17 @@ from __future__ import absolute_import, division, print_function
 import math
 import itertools
 import operator
-import functools
 
+import blaze
 from blaze.compute.core import compute
 from blaze.compute.python import nunique, mean, std, rrowfunc
 from blaze import dshape
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
                         Apply, sum, min, max, any)
 
-from blaze import cos, sin, exp
+from blaze import cos, sin
 from blaze.compatibility import builtins
 from blaze.utils import raises
-import random
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -62,8 +61,11 @@ def test_arithmetic():
 
 
 def test_unary_ops():
-    result = list(compute(exp(t['amount']), data))
-    assert result == [math.exp(x[1]) for x in data]
+    for op in ('cos', 'sin', 'exp', 'ceil', 'floor', 'trunc', 'isnan'):
+        f = getattr(blaze, op)
+        pyf = getattr(math, op)
+        result = list(compute(f(t['amount']), data))
+        assert result == [pyf(x[1]) for x in data]
 
 
 def test_neg():
@@ -426,11 +428,6 @@ def test_recursive_rowfunc_is_used():
 
 
 class TestFunctionExpressions(object):
-    def test_simple(self):
-        expr = cos(t.amount.sum())
-        result = compute(expr, data)
-        assert result == math.cos(compute(t.amount.sum(), data))
-
     def test_compound(self):
         s = t.amount.mean()
         r = compute(s, data)
