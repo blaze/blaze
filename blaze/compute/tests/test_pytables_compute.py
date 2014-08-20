@@ -30,6 +30,30 @@ def data():
         f.close()
 
 
+@pytest.yield_fixture
+def csi_data():
+    with tempfile.NamedTemporaryFile() as fobj:
+        f = tables.open_file(fobj.name, mode='w')
+        d = f.create_table('/', 'title', x)
+        d.cols.amount.create_csindex()
+        d.cols.id.create_csindex()
+        yield d
+        d.close()
+        f.close()
+
+
+@pytest.yield_fixture
+def idx_data():
+    with tempfile.NamedTemporaryFile() as fobj:
+        f = tables.open_file(fobj.name, mode='w')
+        d = f.create_table('/', 'title', x)
+        d.cols.amount.create_index()
+        d.cols.id.create_index()
+        yield d
+        d.close()
+        f.close()
+
+
 def eq(a, b):
     return (a == b).all()
 
@@ -58,6 +82,10 @@ def test_scalar_ops(data):
         assert eq(compute(op(t.amount, t.id), data), op(x['amount'], x['id']))
         assert eq(compute(op(10.0, t.amount), data), op(10.0, x['amount']))
         assert eq(compute(op(10, t.amount), data), op(10, x['amount']))
+
+
+def test_neg(data):
+    assert eq(compute(-t.amount, data), -x['amount'])
 
 
 def test_failing_floordiv(data):
@@ -112,17 +140,46 @@ class TestReductions(object):
         assert compute(mean(t['amount']), data) == x['amount'].mean()
 
 
-class TestSort(object):
-    def test_basic(self, data):
-        assert eq(compute(t.sort('amount'), data), np.sort(x, order='amount'))
+class TestFailingSort(object):
+    """These fail because we haven't created a completely sorted index"""
 
-    def test_ascending(self, data):
-        assert eq(compute(t.sort('amount', ascending=False), data),
-                np.sort(x, order='amount')[::-1])
+    def test_basic(self, data):
+        with pytest.raises(ValueError):
+            compute(t.sort('id'), data)
 
     def test_multiple_columns(self, data):
-        assert eq(compute(t.sort(['amount', 'id']), data),
-                  np.sort(x, order=['amount', 'id']))
+        with pytest.raises(TypeError):
+            compute(t.sort(['amount', 'id']), data)
+
+    def test_multiple_columns_sorted_data(self, csi_data):
+        with pytest.raises(TypeError):
+            compute(t.sort(['amount', 'id']), csi_data)
+
+
+class TestCSISort(object):
+    def test_basic(self, csi_data):
+        assert eq(compute(t.sort('amount'), csi_data),
+                  np.sort(x, order='amount'))
+        assert eq(compute(t.sort('id'), csi_data),
+                  np.sort(x, order='id'))
+
+    def test_ascending(self, csi_data):
+        assert eq(compute(t.sort('amount', ascending=False), csi_data),
+                  np.sort(x, order='amount')[::-1])
+        assert eq(compute(t.sort('amount', ascending=False), csi_data),
+                  np.sort(x, order='amount')[::-1])
+
+
+class TestIndexSort(object):
+    """Fails with a partially sorted index"""
+
+    def test_basic(self, idx_data):
+        with pytest.raises(ValueError):
+            compute(t.sort('amount'), idx_data)
+
+    def test_ascending(self, idx_data):
+        with pytest.raises(ValueError):
+            compute(t.sort('amount', ascending=False), idx_data)
 
 
 def test_head(data):
