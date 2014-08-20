@@ -58,7 +58,7 @@ def compute_one(h, t, **kwargs):
 @dispatch(ColumnWise, tb.Table)
 def compute_one(c, t, **kwargs):
     uservars = dict((col, getattr(t.cols, col)) for col in c.active_columns())
-    e = tb.Expr(str(c), uservars=uservars, truediv=True)
+    e = tb.Expr(str(c.expr), uservars=uservars, truediv=True)
     return e.eval()
 
 
