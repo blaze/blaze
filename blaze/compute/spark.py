@@ -10,7 +10,7 @@ from blaze.expr.table import *
 from blaze.expr.table import count as Count
 from . import core, python
 from .python import (compute, rrowfunc, rowfunc, RowWise, listpack,
-        pair_assemble)
+        pair_assemble, reduce_by_funcs, binops)
 from ..compatibility import builtins
 from ..expr import table
 from ..dispatch import dispatch
@@ -143,26 +143,35 @@ python_reductions = {
               table.std: python._std,
               table.nunique: lambda x: len(set(x))}
 
-
 @dispatch(By, RDD)
 def compute_one(t, rdd, **kwargs):
-    try:
-        reduction = python_reductions[type(t.apply)]
-    except KeyError:
+    if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
+        (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
+                                                for val in t.apply.values))):
+        grouper, binop, combiner, initial = reduce_by_funcs(t)
+
+        if t.grouper.iscolumn:
+            keyfunc = lambda x: (x,)
+        else:
+            keyfunc = identity
+        if isinstance(t.apply, Reduction):
+            valfunc = lambda x: (x,)
+        else:
+            valfunc = identity
+        unpack = lambda kv: keyfunc(kv[0]) + valfunc(kv[1])
+
+
+        create = lambda v: binop(initial, v)
+
+        return (rdd.keyBy(grouper)
+                   .combineByKey(create, binop, combiner)
+                   .map(unpack))
+
+
+        d = reduceby(grouper, binop, seq, initial)
+    else:
         raise NotImplementedError("By only implemented for common reductions."
                                   "\nGot %s" % type(t.apply))
-
-    grouper = rrowfunc(t.grouper, t.child)
-    pre = rrowfunc(t.apply.child, t.child)
-
-    groups = (rdd.map(lambda x: (grouper(x), pre(x)))
-             .groupByKey())
-
-    if isinstance(t.grouper, (Column, ColumnWise)):
-        func = lambda x: (x[0], reduction(x[1]))
-    else:
-        func = lambda x: (tuple(x[0]) + (reduction(x[1]),))
-    return groups.map(func)
 
 
 @dispatch((Label, ReLabel), RDD)
