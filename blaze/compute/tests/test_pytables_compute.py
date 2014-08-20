@@ -53,7 +53,7 @@ def test_eq(data):
 def test_scalar_ops(data):
     from operator import add, sub, mul, truediv
 
-    for op in add, sub, mul, truediv:
+    for op in (add, sub, mul, truediv):
         assert eq(compute(op(t.amount, 10), data), op(x['amount'], 10))
         assert eq(compute(op(t.amount, t.id), data), op(x['amount'], x['id']))
         assert eq(compute(op(10.0, t.amount), data), op(10.0, x['amount']))
