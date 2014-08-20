@@ -91,16 +91,16 @@ def test_neg(data):
 def test_failing_floordiv(data):
     from operator import floordiv as op
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(TypeError):
         assert eq(compute(op(t.amount, 10), data), op(x['amount'], 10))
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(TypeError):
         assert eq(compute(op(t.amount, t.id), data), op(x['amount'], x['id']))
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(TypeError):
         assert eq(compute(op(10.0, t.amount), data), op(10.0, x['amount']))
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(TypeError):
         assert eq(compute(op(10, t.amount), data), op(10, x['amount']))
 
 
