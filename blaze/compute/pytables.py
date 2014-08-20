@@ -75,7 +75,7 @@ def compute_one(c, t, **kwargs):
 
 @dispatch(Sort, tb.Table)
 def compute_one(s, t, **kwargs):
-    result = np.sort(t[:], order=s.key)
+    result = t.read_sorted(sortby=s.key, checkCSI=True)
     if s.ascending:
         return result
     return result[::-1]
