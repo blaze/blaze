@@ -2,8 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tables as tb
-from blaze.expr import Selection, Head, Column, ColumnWise, Projection
-from blaze.expr import eval_str, Sort
+from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
+                        TableSymbol, Sort, Reduction, count)
+from blaze.expr import eval_str
 from datashape import Record
 from ..dispatch import dispatch
 
@@ -17,6 +18,16 @@ def discover(t):
 def compute_one(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
     return t.read_where(s)
+
+
+@dispatch(TableSymbol, tb.Table)
+def compute_one(ts, t, **kwargs):
+    return t
+
+
+@dispatch(Reduction, (tb.Column, tb.Table))
+def compute_one(r, c, **kwargs):
+    return compute_one(r, c[:])
 
 
 @dispatch(Projection, tb.Table)
@@ -42,7 +53,12 @@ def compute_one(proj, t, **kwargs):
 
 @dispatch(Column, tb.Table)
 def compute_one(c, t, **kwargs):
-    return t.col(c.column)
+    return getattr(t.cols, c.column)
+
+
+@dispatch(count, tb.Column)
+def compute_one(r, c, **kwargs):
+    return len(c)
 
 
 @dispatch(Head, tb.Table)
