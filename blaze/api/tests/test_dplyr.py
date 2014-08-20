@@ -29,12 +29,12 @@ def test_mutate():
 def test_groupby():
     g = group_by(t, name)
     result = summarize(g, sum=amount.sum())
-    assert isinstance(result.child, By)
+    assert isinstance(result, By)
     assert result.columns == ['name', 'sum']
 
 
 def test_groupby_multicolumn():
     g = group_by(t, name, id)
     result = summarize(g, count=amount.count())
-    assert isinstance(result.child, By)
+    assert isinstance(result, By)
     assert result.columns == ['name', 'id', 'count']
