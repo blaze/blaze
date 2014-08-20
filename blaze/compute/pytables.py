@@ -55,16 +55,11 @@ def compute_one(h, t, **kwargs):
     return t[:h.n]
 
 
-@dispatch(Expr, list, tb.Table)
-def compute_one(expr, columns, t, **kwargs):
-    uservars = dict((col, getattr(t.cols, col)) for col in columns)
-    e = tb.Expr(str(expr), uservars=uservars, truediv=True)
-    return e.eval()
-
-
 @dispatch(ColumnWise, tb.Table)
 def compute_one(c, t, **kwargs):
-    return compute_one(c.expr, c.active_columns(), t, **kwargs)
+    uservars = dict((col, getattr(t.cols, col)) for col in c.active_columns())
+    e = tb.Expr(str(c), uservars=uservars, truediv=True)
+    return e.eval()
 
 
 @dispatch(Sort, tb.Table)
