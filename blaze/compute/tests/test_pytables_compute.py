@@ -127,15 +127,17 @@ class TestReductions(object):
     def test_mean(self, data):
         assert compute(t['amount'].mean(), data) == x['amount'].mean()
 
-    def test_count_func(self, data):
+
+class TestTopLevelReductions(object):
+    def test_count(self, data):
         from blaze import count
         assert compute(count(t['amount']), data) == len(x['amount'])
 
-    def test_sum_func(self, data):
+    def test_sum(self, data):
         from blaze import sum
         assert compute(sum(t['amount']), data) == x['amount'].sum()
 
-    def test_mean_func(self, data):
+    def test_mean(self, data):
         from blaze import mean
         assert compute(mean(t['amount']), data) == x['amount'].mean()
 
