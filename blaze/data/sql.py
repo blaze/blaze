@@ -26,7 +26,7 @@ types = {'int64': sql.types.BigInteger,
          'float': sql.types.Float,
          'float32': sql.types.REAL,
          'float64': sql.types.Float,
-         'string': sql.types.String,  # Probably just use only this
+#         'string': sql.types.String,  # Probably just use only this
          'date': sql.types.Date,
          'time': sql.types.Time,
          'datetime': sql.types.DateTime,
@@ -42,6 +42,8 @@ types = {'int64': sql.types.BigInteger,
 revtypes = dict(map(reversed, types.items()))
 
 revtypes.update({sql.types.VARCHAR: 'string',
+                 sql.types.String: 'string',
+                 sql.types.Unicode: 'string',
                  sql.types.DATETIME: 'datetime',
                  sql.types.TIMESTAMP: 'datetime',
                  sql.types.FLOAT: 'float64',
@@ -90,13 +92,13 @@ def dshape_to_alchemy(dshape):
     <class 'sqlalchemy.sql.sqltypes.Integer'>
 
     >>> dshape_to_alchemy('string')
-    <class 'sqlalchemy.sql.sqltypes.String'>
+    Unicode()
 
     >>> dshape_to_alchemy('{name: string, amount: int}')
-    [Column('name', String(), table=None, nullable=False), Column('amount', Integer(), table=None, nullable=False)]
+    [Column('name', Unicode(), table=None, nullable=False), Column('amount', Integer(), table=None, nullable=False)]
 
     >>> dshape_to_alchemy('{name: ?string, amount: ?int}')
-    [Column('name', String(), table=None), Column('amount', Integer(), table=None)]
+    [Column('name', Unicode(), table=None), Column('amount', Integer(), table=None)]
     """
     if isinstance(dshape, _strtypes):
         dshape = datashape.dshape(dshape)
@@ -115,7 +117,10 @@ def dshape_to_alchemy(dshape):
         else:
             return dshape_to_alchemy(dshape[0])
     if isinstance(dshape, datashape.String):
-        return sql.types.String
+        if 'U' in dshape.encoding:
+            return sql.types.Unicode(length=dshape[0].fixlen)
+        if 'A' in dshape.encoding:
+            return sql.types.String(length=dshape[0].fixlen)
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
