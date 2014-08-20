@@ -75,6 +75,7 @@ def compute_one(c, t, **kwargs):
 
 @dispatch(Sort, tb.Table)
 def compute_one(s, t, **kwargs):
+    assert isinstance(s.key, Column) and s.key.child.isidentical(s.child)
     result = t.read_sorted(sortby=s.key, checkCSI=True)
     if s.ascending:
         return result
