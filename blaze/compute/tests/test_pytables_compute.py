@@ -167,6 +167,16 @@ class TestCSISort(object):
         assert eq(compute(t.sort('id'), csi_data),
                   np.sort(x, order='id'))
 
+    def test_column_expr(self, csi_data):
+        assert eq(compute(t.sort(t.amount), csi_data),
+                  np.sort(x, order='amount'))
+        assert eq(compute(t.sort(t.id), csi_data),
+                  np.sort(x, order='id'))
+
+    def test_non_existent_column(self, csi_data):
+        with pytest.raises(AssertionError):
+            compute(t.sort('not here'), csi_data)
+
     def test_ascending(self, csi_data):
         assert eq(compute(t.sort('amount', ascending=False), csi_data),
                   np.sort(x, order='amount')[::-1])

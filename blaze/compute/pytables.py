@@ -75,8 +75,12 @@ def compute_one(c, t, **kwargs):
 
 @dispatch(Sort, tb.Table)
 def compute_one(s, t, **kwargs):
-    assert isinstance(s.key, Column) and s.key.child.isidentical(s.child)
-    result = t.read_sorted(sortby=s.key, checkCSI=True)
+    if isinstance(s.key, Column) and s.key.child.isidentical(s.child):
+        key = s.key.name
+    else:
+        key = s.key
+    assert hasattr(t.cols, key), 'Table has no column(s) %s' % s.key
+    result = t.read_sorted(sortby=key, checkCSI=True)
     if s.ascending:
         return result
     return result[::-1]
