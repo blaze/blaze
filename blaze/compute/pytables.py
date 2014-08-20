@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tables as tb
 from blaze.expr import Selection, Head, Column, ColumnWise, Projection
-from blaze.expr import eval_str, Expr, TableSymbol, Sort, FloorDiv
+from blaze.expr import eval_str, Sort
 from datashape import Record
 from ..dispatch import dispatch
 
