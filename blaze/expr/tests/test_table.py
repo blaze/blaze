@@ -298,7 +298,7 @@ def symsum():
 
 
 class TestScalarArithmetic(object):
-    ops = {'+': add, '-': sub, '*': mul, '/': div, '//': floordiv, '%': mod,
+    ops = {'+': add, '-': sub, '*': mul, '/': truediv, '//': floordiv, '%': mod,
            '**': pow, '==': eq, '!=': ne, '<': lt, '>': gt, '<=': le, '>=': ge}
 
     def test_scalar_arith(self, symsum):
@@ -315,10 +315,7 @@ class TestScalarArithmetic(object):
         t, r = symsum
         r = t.amount.sum()
         for op, f in self.ops.items():
-            if op == '/':
-                runner(truediv)
             runner(f)
-
 
     def test_scalar_usub(self, symsum):
         t, r = symsum

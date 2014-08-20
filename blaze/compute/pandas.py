@@ -25,7 +25,6 @@ from ..dispatch import dispatch
 from ..expr import *
 from .core import compute, compute_one, base
 
-# __all__ = ['pandas', 'DataFrame', 'Series']
 __all__ = []
 
 
@@ -41,7 +40,6 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(ColumnWise, DataFrame)
 def compute_one(t, df, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
     d = dict((t.child[c].scalar_symbol, df[c]) for c in t.child.columns)
     return compute(t.expr, d)
 

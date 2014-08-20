@@ -298,17 +298,17 @@ class ColumnSyntaxMixin(object):
     def __div__(self, other):
         return columnwise(Div, self, other)
 
+    def __rdiv__(self, other):
+        return columnwise(Div, other, self)
+
     __truediv__ = __div__
-    __rtruediv__ = __truediv__
+    __rtruediv__ = __rdiv__
 
     def __floordiv__(self, other):
         return columnwise(FloorDiv, self, other)
 
     def __rfloordiv__(self, other):
         return columnwise(FloorDiv, other, self)
-
-    def __rdiv__(self, other):
-        return columnwise(Div, other, self)
 
     def __sub__(self, other):
         return columnwise(Sub, self, other)

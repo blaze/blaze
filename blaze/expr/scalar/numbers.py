@@ -109,14 +109,14 @@ class NumberInterface(Scalar):
     def __rdiv__(self, other):
         return Div(scalar_coerce(self.dshape, other), self)
 
+    __truediv__ = __div__
+    __rtruediv__ = __rdiv__
+
     def __floordiv__(self, other):
         return FloorDiv(self, scalar_coerce(self.dshape, other))
 
     def __rfloordiv__(self, other):
         return FloorDiv(scalar_coerce(self.dshape, other), self)
-
-    __truediv__ = __div__
-    __rtruediv__ = __rdiv__
 
     def __sub__(self, other):
         return Sub(self, scalar_coerce(self.dshape, other))
