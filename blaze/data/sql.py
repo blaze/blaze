@@ -294,26 +294,44 @@ def into(sql, csv, if_exists="replace", **kwargs):
     #     Specifies copying the OID for each row
 
     """
-    db = sql.engine.url.drivername
+    dbtype = sql.engine.url.drivername
+    db = sql.engine.url.database
     engine = sql.engine
     abspath = csv._abspath
     tblname = sql.tablename
 
-    # postgres copy options
-    format = kwargs.get('FORMAT','csv')
-    delimiter = kwargs.get('DELIMITER', csv.dialect['delimiter'])
-    null = kwargs.get('NULL',"")
-    quote = kwargs.get('QUOTE', '"')
-    escape = kwargs.get('ESCAPE', quote)
-    header = kwargs.get('HEADER',csv.header)
+    # using dialect mappings to support multiple term mapping for similar concepts
+    from .dialect_mappings import dialect_terms
+
+    def retrieve_kwarg(term):
+        terms = [k for k, v in dialect_terms.iteritems() if v == term]
+        for t in terms:
+            val = kwargs.get(t, None)
+            if val:
+                return val
+        return val
+
+    for k in kwargs.keys():
+        try:
+            dialect_terms[k]
+        except KeyError:
+            raise KeyError(k, " not found in dialect mapping")
+
+    format_str = retrieve_kwarg('format_str') or 'csv'
+    delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
+    na_values = retrieve_kwarg('na_values') or ""
+    quotechar = retrieve_kwarg('quotechar') or '"'
+    escapechar = retrieve_kwarg('escapechar') or quotechar
+    header = retrieve_kwarg('header') or csv.header
 
     copy_info = {'abspath': abspath,
                  'tblname': tblname,
-                 'format': format,
+                 'db': db,
+                 'format_str': format_str,
                  'delimiter':delimiter,
-                 'null': null,
-                 'quote': quote,
-                 'escape': escape,
+                 'na_values': na_values,
+                 'quotechar': quotechar,
+                 'escapechar': escapechar,
                  'header': header}
 
     if if_exists == 'replace':
@@ -329,8 +347,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
             sql.table.create(engine)
 
 
-    if db == 'postgresql':
-
+    if dbtype == 'postgresql':
+        import psycopg2
         try:
             conn = sql.engine.raw_connection()
             cursor = conn.cursor()
@@ -339,8 +357,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
             sql_stmnt = """
                         COPY {tblname} from '{abspath}'
-                        (FORMAT {format}, DELIMITER E'{delimiter}',
-                        NULL '{null}', QUOTE '{quote}', ESCAPE '{escape}',
+                        (FORMAT {format_str}, DELIMITER E'{delimiter}',
+                        NULL '{na_values}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
                         HEADER {header});
                         """
             sql_stmnt = sql_stmnt.format(**copy_info)
@@ -349,21 +367,23 @@ def into(sql, csv, if_exists="replace", **kwargs):
             conn.commit()
 
         #not sure about failures yet
-        except Exception as e:
+        except psycopg2.NotSupportedError as e:
             print("Failed to use POSTGRESQL COPY.\nERR MSG: ", e)
             print("Defaulting to sql.extend() method")
             sql.extend(csv)
 
     #only works on OSX/Unix
-    if db == 'sqlite':
+    if dbtype == 'sqlite':
         import subprocess
 
-        cmd = "echo 'create table {tbl} (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
-        ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
+        #only to be used when table isn't already created?
+        # cmd = """
+        #     echo 'create table {tblname}
+        #     (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
+        #     """
+
+        copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
+        copy_cmd = copy_cmd.format(**copy_info)
+
+        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
         output = ps.stdout.read()
-
-
-        # (echo ".mode csv"; echo ".import test.csv test";) | sqlite3 bar.db
-        #
-        #
-        # sqlite3 bar.db 'select * from test' | awk '{printf "%s\n",$1}'

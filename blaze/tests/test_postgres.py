@@ -86,11 +86,22 @@ def test_tryexcept_into():
     csv = CSV(file_name, columns=['a', 'b'])
     sql = SQL(url,tbl, schema= csv.schema)
 
-    into(sql,csv, if_exists="replace", QUOTE="alpha") # uses multi-byte character and
+    into(sql,csv, if_exists="replace", QUOTE="alpha", FORMAT="csv") # uses multi-byte character and
                                                       # fails over to using sql.extend()
 
     assert list(sql[:, 'a']) == [1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200]
+
+
+@pytest.mark.xfail(raises=KeyError)
+def test_failing_argument():
+
+    tbl = 'testtable_into_2'
+
+    csv = CSV(file_name, columns=['a', 'b'])
+    sql = SQL(url,tbl, schema= csv.schema)
+
+    into(sql,csv, if_exists="replace", skipinitialspace="alpha") # failing call
 
 def test_no_header_no_columns():
 
@@ -119,7 +130,7 @@ def test_complex_into():
 
     into(sql,csv, if_exists="replace")
 
-    data = pd.read_csv(file_name, parse_dates=['RegistrationDate'])
+    df = pd.read_csv(file_name, parse_dates=['RegistrationDate'])
 
     assert sql[0] == csv[0]
 
@@ -130,11 +141,11 @@ def test_complex_into():
     for col in sql.columns:
         #need to convert to python datetime
         if col == "RegistrationDate":
-            py_dates = list(data['RegistrationDate'].astype(object).values)
+            py_dates = list(df['RegistrationDate'].astype(object).values)
             py_dates = [dt.date(d.year, d.month, d.day) for d in py_dates]
             assert list(sql[:,col]) == list(csv[:,col]) == py_dates
         #handle floating point precision -- perhaps it's better to call out to assert_array_almost_equal
         elif col == 'Consts':
-            assert list(sql[:,col]) == list(csv[:,col]) == [round(val, 6) for val in data[col].values]
+            assert list(sql[:,col]) == list(csv[:,col]) == [round(val, 6) for val in df[col].values]
         else:
-            assert list(sql[:,col]) == list(csv[:,col]) == list(data[col].values)
+            assert list(sql[:,col]) == list(csv[:,col]) == list(df[col].values)
