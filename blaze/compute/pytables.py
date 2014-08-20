@@ -55,6 +55,10 @@ def compute_one(h, t, **kwargs):
     return t[:h.n]
 
 
+@dispatch(FloorDiv, list, tb.Table)
+def compute_one(expr, c, t, **kwargs):
+    raise NotImplementedError('expr %r using // not implemented by numexpr' %
+                              expr)
 
 
 @dispatch(Expr, list, tb.Table)
