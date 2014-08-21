@@ -173,5 +173,5 @@ def test_dshape_to_alchemy():
     assert isinstance(dshape_to_alchemy('string[40, "U8"]'), sa.Unicode)
     assert dshape_to_alchemy('string[40]').length == 40
 
-    assert dshape_to_alchemy('float32').precision == 32
-    assert dshape_to_alchemy('float64').precision == 64
+    assert dshape_to_alchemy('float32').precision == 24
+    assert dshape_to_alchemy('float64').precision == 53
