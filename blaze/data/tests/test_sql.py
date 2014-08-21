@@ -167,9 +167,8 @@ def test_schema_detection():
 
 
 def test_dshape_to_alchemy():
-    assert isinstance(dshape_to_alchemy('string'), sa.String)
+    assert dshape_to_alchemy('string') == sa.Text
     assert isinstance(dshape_to_alchemy('string[40]'), sa.String)
     assert not isinstance(dshape_to_alchemy('string["ascii"]'), sa.Unicode)
-    assert isinstance(dshape_to_alchemy('string["U8"]'), sa.Unicode)
     assert isinstance(dshape_to_alchemy('string[40, "U8"]'), sa.Unicode)
     assert dshape_to_alchemy('string[40]').length == 40

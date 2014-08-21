@@ -92,13 +92,13 @@ def dshape_to_alchemy(dshape):
     <class 'sqlalchemy.sql.sqltypes.Integer'>
 
     >>> dshape_to_alchemy('string')
-    Unicode()
+    <class 'sqlalchemy.sql.sqltypes.Text'>
 
     >>> dshape_to_alchemy('{name: string, amount: int}')
-    [Column('name', Unicode(), table=None, nullable=False), Column('amount', Integer(), table=None, nullable=False)]
+    [Column('name', Text(), table=None, nullable=False), Column('amount', Integer(), table=None, nullable=False)]
 
     >>> dshape_to_alchemy('{name: ?string, amount: ?int}')
-    [Column('name', Unicode(), table=None), Column('amount', Integer(), table=None)]
+    [Column('name', Text(), table=None), Column('amount', Integer(), table=None)]
     """
     if isinstance(dshape, _strtypes):
         dshape = datashape.dshape(dshape)
@@ -117,6 +117,8 @@ def dshape_to_alchemy(dshape):
         else:
             return dshape_to_alchemy(dshape[0])
     if isinstance(dshape, datashape.String):
+        if dshape[0].fixlen is None:
+            return sql.types.Text
         if 'U' in dshape.encoding:
             return sql.types.Unicode(length=dshape[0].fixlen)
         if 'A' in dshape.encoding:
