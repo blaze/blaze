@@ -361,3 +361,22 @@ def test_outer_join():
     """
 
     conn.close()
+
+
+def test_summary():
+    expr = summary(a=t.amount.sum(), b=t.id.count())
+    result = str(compute(expr, s))
+
+    assert 'sum(accounts.amount) as a' in result.lower()
+    assert 'count(accounts.id) as b' in result.lower()
+
+
+def test_summary_by():
+    expr = by(t, t.name, summary(a=t.amount.sum(), b=t.id.count()))
+
+    result = str(compute(expr, s))
+
+    assert 'sum(accounts.amount) as a' in result.lower()
+    assert 'count(accounts.id) as b' in result.lower()
+
+    assert 'group by accounts.name' in result.lower()

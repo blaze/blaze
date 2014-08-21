@@ -15,7 +15,8 @@ from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
-                        Label, ReLabel, Head, Sort, isnan, any)
+                        Label, ReLabel, Head, Sort, isnan, any, summary,
+                        Summary, count)
 from blaze.expr.core import discover
 from blaze.utils import raises
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -349,6 +350,20 @@ class TestScalarArithmetic(object):
         +r
 
 
+def test_summary():
+    t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
+    s = summary(total=t.amount.sum(), num=t.id.count())
+    assert s.dshape == dshape('{num: int32, total: int32}')
+    assert hash(s)
+    assert eval(str(s)).isidentical(s)
+
+
+def test_reduction_arithmetic():
+    t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
+    expr = t.amount.sum() + 1
+    assert eval(str(expr)).isidentical(expr)
+
+
 def test_Distinct():
     t = TableSymbol('t', '{name: string, amount: int32}')
     r = distinct(t['name'])
@@ -628,3 +643,12 @@ def test_scalar_symbol():
     t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
     expr = (t.amount + 1).expr
     assert 'int64' in str(expr.inputs[0].dshape)
+
+
+def test_distinct_name():
+    t = TableSymbol('t', '{id: int32, name: string}')
+
+    assert t.name.isidentical(t['name'])
+    assert t.distinct().name.isidentical(t.distinct()['name'])
+    assert t.id.distinct().name == 'id'
+    assert t.name.name == 'name'

@@ -353,12 +353,12 @@ def into(a, b, **kwargs):
 
 
 @dispatch(Collection, DataDescriptor)
-def into(coll, dd, chunksize=1024):
+def into(coll, dd, chunksize=1024, **kwargs):
     return into(coll, iter(dd), chunksize=chunksize, schema=dd.schema)
 
 
 @dispatch(Collection, (tuple, list, Iterator))
-def into(coll, seq, columns=None, schema=None, chunksize=1024):
+def into(coll, seq, columns=None, schema=None, chunksize=1024, **kwargs):
     seq = iter(seq)
     item = next(seq)
     seq = concat([[item], seq])

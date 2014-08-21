@@ -9,10 +9,10 @@ from abc import abstractproperty
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
-from toolz import concat, partial, first, compose, get, unique
+from toolz import concat, partial, first, compose, get, unique, second
 from . import scalar
 from .core import Expr, path
-from .scalar import ScalarSymbol
+from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins
@@ -23,7 +23,7 @@ Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
 exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
-projection union columnwise'''.split()
+projection union columnwise Summary summary'''.split()
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions
@@ -147,6 +147,18 @@ class TableExpr(Expr):
             return False
         raise NotImplementedError("%s.iscolumn not implemented" %
                 str(type(self).__name__))
+
+    @property
+    def name(self):
+        if self.iscolumn:
+            try:
+                return self.schema[0].names[0]
+            except AttributeError:
+                raise ValueError("Column is un-named, name with col.label('name')")
+        elif 'name' in self.columns:
+            return self['name']
+        else:
+            raise ValueError("Can not compute name of table")
 
 
 class TableSymbol(TableExpr):
@@ -367,13 +379,6 @@ class ColumnSyntaxMixin(object):
 
     def isnan(self):
         return columnwise(scalar.isnan, self)
-
-    @property
-    def name(self):
-        try:
-            return self.schema[0].names[0]
-        except AttributeError:
-            raise ValueError("Column is un-named, name with col.label('name')")
 
 
 class Column(ColumnSyntaxMixin, Projection):
@@ -769,7 +774,7 @@ class any(Reduction):
     dtype = ct.bool_
 class all(Reduction):
     dtype = ct.bool_
-class sum(Reduction):
+class sum(Reduction, Number):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -777,7 +782,7 @@ class sum(Reduction):
             return first(schema.types)
         else:
             return schema
-class max(Reduction):
+class max(Reduction, Number):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -785,7 +790,7 @@ class max(Reduction):
             return first(schema.types)
         else:
             return schema
-class min(Reduction):
+class min(Reduction, Number):
     @property
     def dtype(self):
         schema = self.child.schema[0]
@@ -793,16 +798,52 @@ class min(Reduction):
             return first(schema.types)
         else:
             return schema
-class mean(Reduction):
+class mean(Reduction, Number):
     dtype = ct.real
-class var(Reduction):
+class var(Reduction, Number):
     dtype = ct.real
-class std(Reduction):
+class std(Reduction, Number):
     dtype = ct.real
-class count(Reduction):
+class count(Reduction, Number):
     dtype = ct.int_
-class nunique(Reduction):
+class nunique(Reduction, Number):
     dtype = ct.int_
+
+
+class Summary(Expr):
+    """ A collection of named reductions
+
+    Examples
+    --------
+
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> expr = summary(number=t.id.nunique(), sum=t.amount.sum())
+
+    >>> data = [['Alice', 100, 1],
+    ...         ['Bob', 200, 2],
+    ...         ['Alice', 50, 1]]
+
+    >>> from blaze.compute.python import compute
+    >>> compute(expr, data)
+    (2, 350)
+    """
+    __slots__ = 'child', 'names', 'values'
+
+    @property
+    def dshape(self):
+        return dshape(Record(list(zip(self.names,
+                                      [v.dtype for v in self.values]))))
+
+
+def summary(**kwargs):
+    items = sorted(kwargs.items(), key=first)
+    names = tuple(map(first, items))
+    values = tuple(map(second, items))
+    child = common_subexpression(*values)
+
+    return Summary(child, names, values)
+
+summary.__doc__ = Summary.__doc__
 
 
 class By(TableExpr):

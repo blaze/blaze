@@ -17,4 +17,4 @@ def test_math():
     assert sin(0) == 0
     assert isinstance(sin(0), float)
     assert isinstance(sin(np.int32(0)), np.float)
-    assert isinstance(sin(ScalarSymbol('x', 'float')), Expr)
+    assert isinstance(sin(ScalarSymbol('x', 'real')), Expr)

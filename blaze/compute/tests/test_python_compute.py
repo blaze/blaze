@@ -4,11 +4,12 @@ import itertools
 import operator
 import functools
 
-from blaze.compute.core import compute
+from blaze.compute.core import compute, compute_one
 from blaze.compute.python import nunique, mean, std, rrowfunc
 from blaze import dshape
 from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
-                        Apply, sum, min, max, any, exp)
+                        Apply, sum, min, max, any, exp, summary, ScalarSymbol,
+                        count, scalar)
 
 from blaze.compatibility import builtins
 from blaze.utils import raises
@@ -464,3 +465,47 @@ def test_by_groupby_deep():
 def test_by_then_sort_dict_items_sequence():
     expr = by(tbig, tbig.name, tbig.amount.sum()).sort('name')
     assert compute(expr, databig)
+
+
+def test_summary():
+    expr = summary(count=t.id.count(), sum=t.amount.sum())
+    assert compute(expr, data) == (3, 350)
+
+
+def test_summary_by():
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum()))
+    assert set(compute(expr, data)) == set([('Alice', 2, 150),
+                                            ('Bob', 1, 200)])
+
+    expr = by(t, t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
+    assert set(compute(expr, data)) == set([('Alice', 2, 152),
+                                            ('Bob', 1, 201)])
+
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
+    assert set(compute(expr, data)) == set([('Alice', 2, 151),
+                                            ('Bob', 1, 201)])
+
+
+def test_reduction_arithmetic():
+    expr = t.amount.sum() + 1
+    assert compute(expr, data) == 351
+
+
+def test_scalar_arithmetic():
+    x = ScalarSymbol('x', 'real')
+    y = ScalarSymbol('y', 'real')
+    assert compute(x + y, {x: 2, y: 3}) == 5
+    assert compute_one(x + y, 2, 3) == 5
+    assert compute_one(x * y, 2, 3) == 6
+    assert compute_one(x / y, 6, 3) == 2
+    assert compute_one(x % y, 4, 3) == 1
+    assert compute_one(x ** y, 4, 3) == 64
+
+    assert compute(x + 1, {x: 2}) == 3
+    assert compute(x * 2, {x: 2}) == 4
+    assert compute(1 + x, {x: 2}) == 3
+    assert compute(2 * x, {x: 2}) == 4
+
+    assert compute_one(-x, 1) == -1
+
+    assert compute_one(scalar.numbers.sin(x), 1) == math.sin(1)

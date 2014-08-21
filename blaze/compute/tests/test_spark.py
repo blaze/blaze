@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from blaze.compute.spark import *
+from blaze.compute import compute, compute_one
 from blaze.compatibility import xfail
 from blaze.expr import *
 
@@ -69,6 +70,7 @@ reduction_exprs = [
     (t['amount'] > 150).all(),
     t['amount'].mean(),
     t['amount'].var(),
+    summary(a=t.amount.sum(), b=t.id.count()),
     t['amount'].std()]
 
 

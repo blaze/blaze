@@ -22,18 +22,21 @@ from cytoolz import groupby, reduceby, unique, take, concat, first
 import cytoolz
 import toolz
 import sys
+import math
 
 from ..dispatch import dispatch
 from ..expr.table import TableSymbol
 from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           Merge, RowWise, Join, Selection, Reduction, Distinct,
-                          By, Sort, Head, Apply, Union)
+                          By, Sort, Head, Apply, Union, Summary)
 from ..expr.table import count, nunique, mean, var, std
+from ..expr import table, eval_str
 from ..expr.scalar.core import Scalar
 from ..expr.scalar.numbers import BinOp, UnaryOp
 from ..compatibility import builtins, apply
 from . import core
-from .core import compute, compute_one
+from .core import compute, compute_one, base
+
 from ..data import DataDescriptor
 
 # Dump exp, log, sin, ... into namespace
@@ -239,35 +242,95 @@ greater = lambda x, y: x if x > y else y
 countit = lambda acc, _: acc + 1
 
 
-binops = {sum: (operator.add, 0),
-          min: (lesser, 1e250),
-          max: (greater, -1e250),
-          count: (countit, 0),
-          any: (operator.or_, False),
-          all: (operator.and_, True)}
+from operator import add, or_, and_
+
+# Dict mapping
+# Reduction : (binop, combiner, init)
+
+# Reduction :: [a] -> b
+# binop     :: b, a -> b
+# combiner  :: b, b -> b
+# init      :: b
+binops = {table.sum: (add, add, 0),
+          table.min: (lesser, lesser, 1e250),
+          table.max: (greater, lesser, -1e250),
+          table.count: (countit, add, 0),
+          table.any: (or_, or_, False),
+          table.all: (and_, and_, True)}
 
 
-@dispatch(By, Sequence)
-def compute_one(t, seq, **kwargs):
+def reduce_by_funcs(t):
+    """ Create grouping func and binary operator for a by-reduction/summary
+
+    Turns a by operation like
+
+        by(t, t.name, t.amount.sum())
+
+    into a grouper like
+
+    >>> def grouper(row):
+    ...     return row[name_index]
+
+    and a binary operator like
+
+    >>> def binop(acc, row):
+    ...     return binops[sum](acc, row[amount_index])
+
+    It also handles this in the more complex ``summary`` case in which case
+    several binary operators are juxtaposed together.
+
+    See Also:
+        compute_one(By, Sequence)
+    """
     grouper = rrowfunc(t.grouper, t.child)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
 
-        binop, initial = binops[type(t.apply)]
+        binop, combiner, initial = binops[type(t.apply)]
         applier = rrowfunc(t.apply.child, t.child)
 
         def binop2(acc, x):
             return binop(acc, applier(x))
 
-        d = reduceby(grouper, binop2, seq, initial)
+        return grouper, binop2, combiner, initial
+
+    elif (isinstance(t.apply, Summary) and
+        builtins.all(type(val) in binops for val in t.apply.values)):
+
+        binops2, combiners, inits = zip(*[binops[type(v)] for v in t.apply.values])
+        appliers = [rrowfunc(v.child, t.child) for v in t.apply.values]
+
+        def binop2(accs, x):
+            return tuple(binop(acc, applier(x)) for binop, acc, applier in
+                        zip(binops2, accs, appliers))
+
+        def combiner(a, b):
+            return tuple(c(x, y) for c, x, y in zip(combiners, a, b))
+
+        return grouper, binop2, combiner, tuple(inits)
+
+
+@dispatch(By, Sequence)
+def compute_one(t, seq, **kwargs):
+    if ((isinstance(t.apply, Reduction) and type(t.apply) in binops) or
+        (isinstance(t.apply, Summary) and builtins.all(type(val) in binops
+                                                for val in t.apply.values))):
+        grouper, binop, combiner, initial = reduce_by_funcs(t)
+        d = reduceby(grouper, binop, seq, initial)
     else:
+        grouper = rrowfunc(t.grouper, t.child)
         groups = groupby(grouper, seq)
         d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
     if t.grouper.iscolumn:
-        return d.items()
+        keyfunc = lambda x: (x,)
     else:
-        return tuple(k + (v,) for k, v in d.items())
+        keyfunc = identity
+    if isinstance(t.apply, Reduction):
+        valfunc = lambda x: (x,)
+    else:
+        valfunc = identity
+    return tuple(keyfunc(k) + valfunc(v) for k, v in d.items())
 
 
 def listpack(x):
@@ -389,3 +452,8 @@ def compute_one(t, seq, **kwargs):
 @dispatch(Union, Sequence, tuple)
 def compute_one(t, example, children, **kwargs):
     return concat(children)
+
+
+@dispatch(Summary, Sequence)
+def compute_one(expr, data, **kwargs):
+    return tuple(compute(val, {expr.child: data}) for val in expr.values)
