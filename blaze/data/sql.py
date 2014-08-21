@@ -25,10 +25,11 @@ types = {'int64': sql.types.BigInteger,
          'int32': sql.types.Integer,
          'int': sql.types.Integer,
          'int16': sql.types.SmallInteger,
-         'float': sql.types.Float,
-         'float32': sql.types.REAL,
-         'float64': sql.types.Float,
-         'string': sql.types.Text,  # Probably just use only this
+         'float32': sql.types.Float(precision=24), # sqlalchemy uses mantissa
+         'float64': sql.types.Float(precision=53), # for precision
+         'float': sql.types.Float(precision=53),
+         'real': sql.types.Float(precision=53),
+         'string': sql.types.Text,
          'date': sql.types.Date,
          'time': sql.types.Time,
          'datetime': sql.types.DateTime,
@@ -41,11 +42,11 @@ types = {'int64': sql.types.BigInteger,
 #         str: sql.types.Text,  # ??
          }
 
-
 revtypes = dict(map(reversed, types.items()))
 
 revtypes.update({sql.types.VARCHAR: 'string',
-                 sql.types.TEXT: 'string',
+                 sql.types.String: 'string',
+                 sql.types.Unicode: 'string',
                  sql.types.DATETIME: 'datetime',
                  sql.types.TIMESTAMP: 'datetime',
                  sql.types.FLOAT: 'float64',
@@ -57,11 +58,15 @@ revtypes.update({sql.types.VARCHAR: 'string',
 
 @dispatch(sql.sql.type_api.TypeEngine)
 def discover(typ):
+    if typ in revtypes:
+        return dshape(revtypes[typ])[0]
     if type(typ) in revtypes:
         return dshape(revtypes[type(typ)])[0]
     else:
         for k, v in revtypes.items():
-            if isinstance(typ, k):
+            if isinstance(k, type) and isinstance(typ, k):
+                return v
+            if k == typ:
                 return v
     raise NotImplementedError("No SQL-datashape match for type %s" % typ)
 
@@ -94,13 +99,13 @@ def dshape_to_alchemy(dshape):
     <class 'sqlalchemy.sql.sqltypes.Integer'>
 
     >>> dshape_to_alchemy('string')
-    <class 'sqlalchemy.sql.sqltypes.String'>
+    <class 'sqlalchemy.sql.sqltypes.Text'>
 
     >>> dshape_to_alchemy('{name: string, amount: int}')
-    [Column('name', String(), table=None, nullable=False), Column('amount', Integer(), table=None, nullable=False)]
+    [Column('name', Text(), table=None, nullable=False), Column('amount', Integer(), table=None, nullable=False)]
 
     >>> dshape_to_alchemy('{name: ?string, amount: ?int}')
-    [Column('name', String(), table=None), Column('amount', Integer(), table=None)]
+    [Column('name', Text(), table=None), Column('amount', Integer(), table=None)]
     """
     if isinstance(dshape, _strtypes):
         dshape = datashape.dshape(dshape)
@@ -118,6 +123,13 @@ def dshape_to_alchemy(dshape):
             return dshape_to_alchemy(dshape[1])
         else:
             return dshape_to_alchemy(dshape[0])
+    if isinstance(dshape, datashape.String):
+        if dshape[0].fixlen is None:
+            return sql.types.Text
+        if 'U' in dshape.encoding:
+            return sql.types.Unicode(length=dshape[0].fixlen)
+        if 'A' in dshape.encoding:
+            return sql.types.String(length=dshape[0].fixlen)
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
