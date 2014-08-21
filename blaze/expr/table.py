@@ -813,6 +813,22 @@ class nunique(Reduction, Number):
 
 
 class Summary(Expr):
+    """ A collection of named reductions
+
+    Examples
+    --------
+
+    >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
+    >>> expr = summary(number=t.id.nunique(), sum=t.amount.sum())
+
+    >>> data = [['Alice', 100, 1],
+    ...         ['Bob', 200, 2],
+    ...         ['Alice', 50, 1]]
+
+    >>> from blaze.compute.python import compute
+    >>> compute(expr, data)
+    (2, 350)
+    """
     __slots__ = 'child', 'names', 'values'
 
     @property
@@ -828,6 +844,8 @@ def summary(**kwargs):
     child = common_subexpression(*values)
 
     return Summary(child, names, values)
+
+summary.__doc__ = Summary.__doc__
 
 
 class By(TableExpr):
