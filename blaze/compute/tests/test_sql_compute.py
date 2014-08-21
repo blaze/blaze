@@ -394,22 +394,19 @@ def table_data():
             (4, 'Dennis', 400)]
     sql = SQL(engine, str(t), schema=t.schema)
     sql.extend(data)
-    data = t, sql
+    index_name = 'yeehaw'
+    data = t, sql, index_name
     yield data
     conn.close()
 
 
 def test_create_index(table_data):
-    t, sql = table_data
-    index_name = 'yeehaw'
-    ci = create_index(index_name, t.id)
-    q = compute(ci, {t: sql.table})
-    assert str(q).strip().lower() == 'create index %s on t (id)' % index_name
+    t, sql, name = table_data
+    create_index(sql, name)
+    assert False
 
 
 def test_drop_index(table_data):
-    t, sql = table_data
-    index_name = 'yeehaw'
-    ci = drop_index(index_name, t.id)
-    q = compute(ci, {t: sql.table})
-    assert str(q).strip().lower() == 'drop index %s' % index_name
+    t, sql, name = table_data
+    drop_index(sql, name)
+    assert False
