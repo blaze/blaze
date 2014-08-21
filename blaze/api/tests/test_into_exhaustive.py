@@ -40,19 +40,36 @@ bc = bcolz.ctable([np.array([100, 200, 300], dtype=np.int64),
                              datetime(2002, 12, 25, 0, 0, 1)], dtype='M8[us]')],
                   names=['amount', 'id', 'name', 'timestamp'])
 
-sources = [Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}'),
-             df, x, arr, bc, csv]
+data = {list: L,
+        Table: Table(L, '{amount: int64, id: int64, name: string[7], timestamp: datetime}'),
+        DataFrame: df,
+        np.ndarray: x,
+        nd.array: arr,
+        bcolz.ctable: bc,
+        CSV: csv}
 
-targets = [L, df, x, bc, arr]
+no_date = {list: list(pluck([0, 1, 2], L)),
+           Table: Table(list(pluck([0, 1, 2], L)),
+                        '{amount: int64, id: int64, name: string[7]}'),
+           DataFrame: df[['amount', 'id', 'name']],
+           np.ndarray: x[['amount', 'id', 'name']],
+           nd.array: nd.fields(arr, 'amount', 'id', 'name'),
+           bcolz.ctable: bc[['amount', 'id', 'name']]}
+
 
 try:
     import pymongo
+    from pymongo import Collection
     db = pymongo.MongoClient().db
+
     db.test.drop()
-    into(db.test, df)
-    sources.append(db.test)
+    data[pymongo.Collection] = into(db.test, df)
+
+    db.no_date.drop()
+    no_date[pymongo.Collection] = into(db.no_date, no_date[DataFrame])
 except ImportError:
     pymongo = None
+    Collection = None
 
 
 def normalize(a):
@@ -71,21 +88,21 @@ def normalize(a):
 
 def test_base():
     """ Test all pairs of base in-memory data structures """
+    sources = [v for k, v in data.items() if k not in [list]]
+    targets = [v for k, v in data.items() if k not in [Table, Collection]]
     for a in sources:
         for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
 
 
-no_date_targets = [list(pluck([0, 1, 2], L)),
-                   df[['amount', 'id', 'name']],
-                   x[['amount', 'id', 'name']],
-                   bc[['amount', 'id', 'name']]]
-no_date_sources = [df, x, bc]
-
 def test_expressions():
-    for a in no_date_sources:
-        for b in no_date_targets:
-            c = Table(a, '{amount: int64, id: int64, name: string}')[['amount', 'id', 'name']]
+    sources = [v for k, v in data.items() if k not in [nd.array, CSV, Table]]
+    targets = [v for k, v in no_date.items() if k not in [Table, CSV,
+        Collection, nd.array]]
+
+    for a in sources:
+        for b in targets:
+            c = Table(a, '{amount: int64, id: int64, name: string[7], timestamp: datetime}')[['amount', 'id', 'name']]
             assert normalize(into(type(b), c)) == normalize(b)
 
 try:
@@ -114,12 +131,14 @@ def skip_if_not(x):
 
 @skip_if_not(ColumnDataSource)
 def test_ColumnDataSource():
+    sources = [v for k, v in data.items() if k not in [list]]
     for a in sources:
         assert into(ColumnDataSource, a).data == cds.data
 
 
 @skip_if_not(pymongo)
 def test_mongo_Collection():
+    sources = [v for k, v in data.items() if k not in [list]]
     for a in sources:
         db.test_into.drop()
         into(db.test_into, a)
