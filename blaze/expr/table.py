@@ -700,30 +700,6 @@ def join(lhs, rhs, on_left=None, on_right=None, how='inner'):
     return Join(lhs, rhs, _on_left, _on_right, how)
 
 
-class DropIndex(TableExpr):
-    __slots__ = 'name', 'child',
-
-    @property
-    def schema(self):
-        return self.child.schema
-
-
-def drop_index(name, t):
-    return DropIndex(name, t)
-
-
-class CreateIndex(TableExpr):
-    __slots__ = 'name', 'child'
-
-    @property
-    def schema(self):
-        return self.child.schema
-
-
-def create_index(name, t):
-    return CreateIndex(name, t)
-
-
 join.__doc__ = Join.__doc__
 
 
