@@ -23,10 +23,11 @@ types = {'int64': sql.types.BigInteger,
          'int32': sql.types.Integer,
          'int': sql.types.Integer,
          'int16': sql.types.SmallInteger,
-         'float': sql.types.Float,
-         'float32': sql.types.REAL,
-         'float64': sql.types.Float,
-#         'string': sql.types.String,  # Probably just use only this
+         'float32': sql.types.Float(precision=32),
+         'float64': sql.types.Float(precision=64),
+         'float': sql.types.Float(precision=64),
+         'real': sql.types.Float(precision=64),
+         'string': sql.types.Text,
          'date': sql.types.Date,
          'time': sql.types.Time,
          'datetime': sql.types.DateTime,
@@ -55,11 +56,15 @@ revtypes.update({sql.types.VARCHAR: 'string',
 
 @dispatch(sql.sql.type_api.TypeEngine)
 def discover(typ):
+    if typ in revtypes:
+        return dshape(revtypes[typ])[0]
     if type(typ) in revtypes:
         return dshape(revtypes[type(typ)])[0]
     else:
         for k, v in revtypes.items():
-            if isinstance(typ, k):
+            if isinstance(k, type) and isinstance(typ, k):
+                return v
+            if k == typ:
                 return v
     raise NotImplementedError("No SQL-datashape match for type %s" % typ)
 
