@@ -382,31 +382,3 @@ def test_summary_by():
     assert 'count(accounts.id) as b' in result.lower()
 
     assert 'group by accounts.name' in result.lower()
-
-
-@pytest.yield_fixture
-def table_data():
-    engine = sa.create_engine('sqlite:///:memory:')
-    conn = engine.connect()
-    t = TableSymbol('t', '{id: int, name: string, amount: real}')
-    data = [(1, 'Alice', 100),
-            (2, 'Bob', 200),
-            (4, 'Dennis', 400)]
-    sql = SQL(engine, str(t), schema=t.schema)
-    sql.extend(data)
-    index_name = 'yeehaw'
-    data = t, sql, index_name
-    yield data
-    conn.close()
-
-
-def test_create_index(table_data):
-    t, sql, name = table_data
-    create_index(sql, name)
-    assert False
-
-
-def test_drop_index(table_data):
-    t, sql, name = table_data
-    drop_index(sql, name)
-    assert False
