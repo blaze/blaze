@@ -45,6 +45,7 @@ types = {'int64': sql.types.BigInteger,
 revtypes = dict(map(reversed, types.items()))
 
 revtypes.update({sql.types.VARCHAR: 'string',
+                 sql.types.TEXT: 'string',
                  sql.types.DATETIME: 'datetime',
                  sql.types.TIMESTAMP: 'datetime',
                  sql.types.FLOAT: 'float64',
@@ -86,7 +87,7 @@ def discover(engine, tablename):
     return discover(table)
 
 
-def dshape_to_alchemy(dshape):
+def dshape_to_alchemy(dshape, mysql=False):
     """
 
     >>> dshape_to_alchemy('int')
@@ -106,17 +107,23 @@ def dshape_to_alchemy(dshape):
     if isinstance(dshape, Option):
         return dshape_to_alchemy(dshape.ty)
     if str(dshape) in types:
-        return types[str(dshape)]
+        t = types[str(dshape)]
+
+        #String requires value (VARCHAR) for MySQL default to Text
+        if mysql and t == sql.types.String:
+            return t # sql.types.Text
+        else:
+            return t
     if isinstance(dshape, datashape.Record):
         return [sql.Column(name,
-                           dshape_to_alchemy(typ),
+                           dshape_to_alchemy(typ, mysql=mysql),
                            nullable=isinstance(typ[0], Option))
                     for name, typ in dshape.parameters[0]]
     if isinstance(dshape, datashape.DataShape):
         if isdimension(dshape[0]):
-            return dshape_to_alchemy(dshape[1])
+            return dshape_to_alchemy(dshape[1], mysql=mysql)
         else:
-            return dshape_to_alchemy(dshape[0])
+            return dshape_to_alchemy(dshape[0], mysql=mysql)
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
@@ -167,6 +174,7 @@ class SQL(DataDescriptor):
             engine = sql.create_engine(engine)
         self.engine = engine
         self.tablename = tablename
+        self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
 
         if engine.has_table(tablename):
@@ -180,10 +188,14 @@ class SQL(DataDescriptor):
             if not schema:
                 schema = engine_schema
         elif isinstance(schema, (_strtypes, datashape.DataShape)):
-            columns = dshape_to_alchemy(schema)
+            if self.dbtype == 'mysql':
+                columns = dshape_to_alchemy(schema,mysql=True)
+            else:
+                columns = dshape_to_alchemy(schema)
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
+            print(tablename,metadata,*columns)
             table = sql.Table(tablename, metadata, *columns)
         else:
             raise ValueError('Must provide schema or point to valid table. '
@@ -323,6 +335,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
     quotechar = retrieve_kwarg('quotechar') or '"'
     escapechar = retrieve_kwarg('escapechar') or quotechar
     header = retrieve_kwarg('header') or csv.header
+    lineterminator = retrieve_kwarg('lineterminator') or u'\n'
+    skiprows = retrieve_kwarg('skiprows') or int(csv.header) #hack to skip 0 or 1
 
     copy_info = {'abspath': abspath,
                  'tblname': tblname,
@@ -332,6 +346,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
                  'na_values': na_values,
                  'quotechar': quotechar,
                  'escapechar': escapechar,
+                 'lineterminator': lineterminator,
+                 'skiprows': skiprows,
                  'header': header}
 
     if if_exists == 'replace':
@@ -362,7 +378,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
                         HEADER {header});
                         """
             sql_stmnt = sql_stmnt.format(**copy_info)
-
             cursor.execute(sql_stmnt)
             conn.commit()
 
@@ -387,3 +402,33 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
         ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
         output = ps.stdout.read()
+
+    #only works on OSX/Unix
+    if dbtype == 'mysql':
+        import MySQLdb
+        try:
+            conn = sql.engine.raw_connection()
+            cursor = conn.cursor()
+
+            #no null handling
+            sql_stmnt = u"""
+                        LOAD DATA LOCAL INFILE '{abspath}'
+                        INTO TABLE {tblname}
+                        FIELDS
+                            TERMINATED BY '{delimiter}'
+                            ENCLOSED BY '{quotechar}'
+                            ESCAPED BY '{escapechar}'
+                        LINES TERMINATED by '{lineterminator}'
+                        IGNORE {skiprows} LINES;
+                        """
+            sql_stmnt = sql_stmnt.format(**copy_info)
+
+            cursor.execute(sql_stmnt)
+            conn.commit()
+
+        #not sure about failures yet
+        except MySQLdb.OperationalError as e:
+            print("Failed to use MySQL LOAD.\nERR MSG: ", e)
+            print("Defaulting to sql.extend() method")
+            sql.extend(csv)
+

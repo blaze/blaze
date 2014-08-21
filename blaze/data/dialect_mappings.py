@@ -19,6 +19,17 @@ dialect_terms.update({'na_values': na_str, 'null': na_str, 'NULL': na_str,})
 esc_str = "escapechar"
 dialect_terms.update({'escapechar': esc_str, 'ESCAPECHAR': esc_str, 'ESCAPE': esc_str, 'escape': esc_str,})
 
+#  string used to terminate lines. default is r'\n'
+lineterminator_str = "lineterminator"
+dialect_terms.update({'lineterminator': lineterminator_str, 'LINETERMINATOR': lineterminator_str})
+
+
+# Interger value for number of rows to skip
+skiprows_str = "skiprows"
+dialect_terms.update({'skiprows': skiprows_str, 'SKIPROWS': skiprows_str,
+                      'ignorerows': skiprows_str, 'IGNOREROWS': skiprows_str,
+                      })
+
 # format is a restricted word in python
 format_str = "format_str"
 dialect_terms.update({'format': format_str, 'FORMAT': format_str,})
