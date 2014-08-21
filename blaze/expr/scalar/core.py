@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from datashape import Record
 from blaze.expr.core import Expr
 
 
@@ -30,6 +31,18 @@ def parenthesize(s):
 class Scalar(Expr):
     def eval_str(self):
         return str(self)
+
+    @property
+    def name(self):
+        if isinstance(self.dshape[0], Record):
+            return self.dshape[0].names[0]
+
+    @property
+    def dtype(self):
+        if isinstance(self.dshape[0], Record):
+            return self.dshape[0].types[0]
+        else:
+            return self.dshape
 
 
 class BinOp(Scalar):

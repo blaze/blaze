@@ -15,7 +15,8 @@ from blaze import CSV, Table
 from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
-                        Label, ReLabel, Head, Sort, isnan, any)
+                        Label, ReLabel, Head, Sort, isnan, any, summary,
+                        Summary, count)
 from blaze.expr.core import discover
 from blaze.utils import raises
 from datashape import dshape, var, int32, int64, Record, DataShape
@@ -297,6 +298,27 @@ def symsum():
     return t, t.amount.sum()
 
 
+@pytest.fixture
+def ds():
+    return dshape("var * { "
+            "transaction_key : int64, "
+            "user_from_key : int64, "
+            "user_to_key : int64, "
+            "date : int64, "
+            "value : float64 "
+            "}")
+
+
+def test_discover_dshape_symbol(ds):
+    t_ds = TableSymbol('t', dshape=ds)
+    assert t_ds.columns is not None
+
+    t_sch = TableSymbol('t', dshape=ds.subshape[0])
+    assert t_sch.columns is not None
+
+    assert t_ds.isidentical(t_sch)
+
+
 class TestScalarArithmetic(object):
     ops = {'+': add, '-': sub, '*': mul, '/': truediv, '//': floordiv, '%': mod,
            '**': pow, '==': eq, '!=': ne, '<': lt, '>': gt, '<=': le, '>=': ge}
@@ -326,6 +348,20 @@ class TestScalarArithmetic(object):
     def test_scalar_uadd(self, symsum):
         t, r = symsum
         +r
+
+
+def test_summary():
+    t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
+    s = summary(total=t.amount.sum(), num=t.id.count())
+    assert s.dshape == dshape('{num: int32, total: int32}')
+    assert hash(s)
+    assert eval(str(s)).isidentical(s)
+
+
+def test_reduction_arithmetic():
+    t = TableSymbol('t', '{id: int32, name: string, amount: int32}')
+    expr = t.amount.sum() + 1
+    assert eval(str(expr)).isidentical(expr)
 
 
 def test_Distinct():
@@ -607,3 +643,12 @@ def test_scalar_symbol():
     t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
     expr = (t.amount + 1).expr
     assert 'int64' in str(expr.inputs[0].dshape)
+
+
+def test_distinct_name():
+    t = TableSymbol('t', '{id: int32, name: string}')
+
+    assert t.name.isidentical(t['name'])
+    assert t.distinct().name.isidentical(t.distinct()['name'])
+    assert t.id.distinct().name == 'id'
+    assert t.name.name == 'name'

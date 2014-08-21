@@ -7,7 +7,7 @@ from pandas import DataFrame, Series
 from blaze.compute.core import compute
 from blaze.compute.pandas import *
 from blaze.expr import *
-from blaze.compatibility import builtins
+from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
 
@@ -406,7 +406,7 @@ def test_outer_join():
 
 def test_by_on_same_column():
     df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
-    t = TableSymbol('data', schema='{id:int, value:int}')
+    t = TableSymbol('data', dshape='{id:int, value:int}')
 
     gby = by(t, t['id'], t['id'].count())
 
@@ -414,3 +414,28 @@ def test_by_on_same_column():
     result = compute(gby, {t:df})
 
     assert str(result) == str(expected)
+
+
+def test_summary_by():
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum()))
+    assert str(compute(expr, df)) == \
+            str(DataFrame([['Alice', 2, 150],
+                           ['Bob', 1, 200]], columns=['name', 'count', 'sum']))
+
+    expr = by(t, t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
+    assert str(compute(expr, df)) == \
+            str(DataFrame([['Alice', 2, 152],
+                           ['Bob', 1, 201]], columns=['name', 'count', 'sum']))
+
+
+@xfail(reason="reduction assumed to be at the end")
+def test_summary_by_reduction_arithmetic():
+    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
+    assert str(compute(expr, df)) == \
+            str(DataFrame([['Alice', 2, 151],
+                           ['Bob', 1, 202]], columns=['name', 'count', 'sum']))
+
+
+def test_summary():
+    expr = summary(count=t.id.count(), sum=t.amount.sum())
+    assert str(compute(expr, df)) == str(Series({'count': 3, 'sum': 350}))
