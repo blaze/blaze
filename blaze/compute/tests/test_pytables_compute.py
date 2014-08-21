@@ -62,7 +62,7 @@ def eq(a, b):
     return (a == b).all()
 
 
-def test_discover_datashape(self, data):
+def test_discover_datashape(data):
     ds = discover(data)
     t = TableSymbol('t', dshape=ds)
     columns = t.columns
