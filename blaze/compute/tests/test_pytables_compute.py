@@ -10,6 +10,8 @@ import tempfile
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
+from blaze import discover
+import tables as tb
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -60,8 +62,16 @@ def eq(a, b):
     return (a == b).all()
 
 
+def test_discover_datashape(self, data):
+    ds = discover(data)
+    t = TableSymbol('t', dshape=ds)
+    columns = t.columns
+    assert columns is not None
+
+
 def test_table(data):
     assert compute(t, data) == data
+    assert isinstance(data, tb.Table)
 
 
 def test_single_column(data):
