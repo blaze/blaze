@@ -338,7 +338,10 @@ def into(sql, csv, if_exists="replace", **kwargs):
     escapechar = retrieve_kwarg('escapechar') or quotechar
     header = retrieve_kwarg('header') or csv.header
     lineterminator = retrieve_kwarg('lineterminator') or u'\n'
-    skiprows = retrieve_kwarg('skiprows') or int(csv.header) #hack to skip 0 or 1
+
+    skiprows = csv.header or 0 # None or 0 returns 0
+    skiprows = retrieve_kwarg('skiprows') or int(skiprows) #hack to skip 0 or 1
+
 
     copy_info = {'abspath': abspath,
                  'tblname': tblname,
