@@ -156,10 +156,30 @@ def into(a, b, **kwargs):
     else:
         return np.asarray(list(b), **kwargs)
 
+def degrade_numpy_dtype_to_python(dt):
+    """
+
+    >>> degrade_numpy_dtype_to_python(np.dtype('M8[ns]'))
+    dtype('<M8[us]')
+    >>> dt = np.dtype([('a', 'S7'), ('b', 'M8[D]'), ('c', 'M8[ns]')])
+    >>> degrade_numpy_dtype_to_python(dt)
+    dtype([('a', 'S7'), ('b', '<M8[D]'), ('c', '<M8[us]')])
+    """
+    replacements = {'M8[ns]': np.dtype('M8[us]'),
+                    'M8[as]': np.dtype('M8[us]')}
+    dt = replacements.get(dt.str.lstrip('<>'), dt)
+
+    if str(dt)[0] == '[':
+        return np.dtype([(name, degrade_numpy_dtype_to_python(dt[name]))
+                        for name in dt.names])
+    return dt
+
+
 @dispatch(list, np.ndarray)
 def into(a, b):
+    if 'M8' in str(b.dtype) or 'datetime' in str(b.dtype):
+        b = b.astype(degrade_numpy_dtype_to_python(b.dtype))
     return b.tolist()
-
 
 
 @dispatch(pd.DataFrame, np.ndarray)
@@ -176,7 +196,7 @@ def into(df, x):
 
 @dispatch(list, pd.DataFrame)
 def into(_, df):
-    return np.asarray(df).tolist()
+    return into([], into(np.ndarray(0), df))
 
 @dispatch(pd.DataFrame, nd.array)
 def into(a, b):
