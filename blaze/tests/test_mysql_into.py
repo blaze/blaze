@@ -24,6 +24,7 @@ import os
 import csv as csv_module
 import pandas as pd
 import datetime as dt
+import numpy as np
 import getpass
 
 username = getpass.getuser()
@@ -178,8 +179,13 @@ def test_complex_into():
             assert list(sql[:,col]) == list(csv[:,col]) == py_dates
         #handle floating point precision -- perhaps it's better to call out to assert_array_almost_equal
         elif col == 'Consts':
+
             ##  WARNING!!! Floats are truncated with MySQL and the assertion fails
-            assert list(sql[:,col]) == list(csv[:,col]) == [round(val, 4) for val in df[col].values]
+            sql_array = np.array(list(sql[:,col]))
+            csv_array = list(csv[:,col])
+            df_array = df[col].values
+            np.testing.assert_almost_equal(sql_array,csv_array, decimal=5)
+            np.testing.assert_almost_equal(sql_array,df_array, decimal=5)
         else:
             assert list(sql[:,col]) == list(csv[:,col]) == list(df[col].values)
 

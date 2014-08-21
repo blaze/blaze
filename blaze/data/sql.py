@@ -28,7 +28,7 @@ types = {'int64': sql.types.BigInteger,
          'float': sql.types.Float,
          'float32': sql.types.REAL,
          'float64': sql.types.Float,
-         'string': sql.types.String,  # Probably just use only this
+         'string': sql.types.Text,  # Probably just use only this
          'date': sql.types.Date,
          'time': sql.types.Time,
          'datetime': sql.types.DateTime,
@@ -87,7 +87,7 @@ def discover(engine, tablename):
     return discover(table)
 
 
-def dshape_to_alchemy(dshape, mysql=False):
+def dshape_to_alchemy(dshape):
     """
 
     >>> dshape_to_alchemy('int')
@@ -107,23 +107,17 @@ def dshape_to_alchemy(dshape, mysql=False):
     if isinstance(dshape, Option):
         return dshape_to_alchemy(dshape.ty)
     if str(dshape) in types:
-        t = types[str(dshape)]
-
-        #String requires value (VARCHAR) for MySQL default to Text
-        if mysql and t == sql.types.String:
-            return sql.types.Text
-        else:
-            return t
+        return types[str(dshape)]
     if isinstance(dshape, datashape.Record):
         return [sql.Column(name,
-                           dshape_to_alchemy(typ, mysql=mysql),
+                           dshape_to_alchemy(typ),
                            nullable=isinstance(typ[0], Option))
                     for name, typ in dshape.parameters[0]]
     if isinstance(dshape, datashape.DataShape):
         if isdimension(dshape[0]):
-            return dshape_to_alchemy(dshape[1], mysql=mysql)
+            return dshape_to_alchemy(dshape[1])
         else:
-            return dshape_to_alchemy(dshape[0], mysql=mysql)
+            return dshape_to_alchemy(dshape[0])
     raise NotImplementedError("No SQLAlchemy dtype match for datashape: %s"
             % dshape)
 
@@ -188,10 +182,7 @@ class SQL(DataDescriptor):
             if not schema:
                 schema = engine_schema
         elif isinstance(schema, (_strtypes, datashape.DataShape)):
-            if self.dbtype == 'mysql':
-                columns = dshape_to_alchemy(schema,mysql=True)
-            else:
-                columns = dshape_to_alchemy(schema)
+            columns = dshape_to_alchemy(schema)
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
@@ -330,7 +321,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
     format_str = retrieve_kwarg('format_str') or 'csv'
     delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
-    na_values = retrieve_kwarg('na_values') or ""
+    na_value = retrieve_kwarg('na_value') or ""
     quotechar = retrieve_kwarg('quotechar') or '"'
     escapechar = retrieve_kwarg('escapechar') or quotechar
     header = retrieve_kwarg('header') or csv.header
@@ -342,7 +333,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
                  'db': db,
                  'format_str': format_str,
                  'delimiter':delimiter,
-                 'na_values': na_values,
+                 'na_value': na_value,
                  'quotechar': quotechar,
                  'escapechar': escapechar,
                  'lineterminator': lineterminator,
@@ -371,9 +362,9 @@ def into(sql, csv, if_exists="replace", **kwargs):
             #lots of options here to handle formatting
 
             sql_stmnt = """
-                        COPY {tblname} from '{abspath}'
+                        COPY {tblname} FROM '{abspath}'
                         (FORMAT {format_str}, DELIMITER E'{delimiter}',
-                        NULL '{na_values}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
+                        NULL '{na_value}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
                         HEADER {header});
                         """
             sql_stmnt = sql_stmnt.format(**copy_info)
