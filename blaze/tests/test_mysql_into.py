@@ -1,22 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-# A "/etc/my.cnf" from another install may interfere with a Homebrew-built
-# server starting up correctly.
-#
-# To connect:
-#     mysql -uroot
-#
-# To have launchd start mysql at login:
-#     ln -sfv /usr/local/opt/mysql/*.plist ~/Library/LaunchAgents
-# Then to load mysql now:
-#     launchctl load ~/Library/LaunchAgents/homebrew.mxcl.mysql.plist
-# Or, if you don't want/need launchctl, you can just run:
-#     mysql.server start
-# ==> /usr/local/Cellar/mysql/5.6.17_1/bin/mysql_install_db --verbose --user=quasiben --basedir=/usr/local/Cellar/mysql/5.6.17_1 --datadir=/usr/local/var/mysql --tmpdir=/tmp
-# ==> Summary
-# /usr/local/Cellar/mysql/5.6.17_1: 9510 files, 338M
-# mysql.server restart
-
+# brew install mysql
 # unset TMPDIR
 # mysql_install_db --verbose --user=`whoami` --basedir="$(brew --prefix mysql)" --datadir=/usr/local/var/mysql --tmpdir=/tmp
 # sudo chown -R _mysql /usr/local/var/mysql
@@ -25,11 +9,11 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-psycopg2 = pytest.importorskip('psycopg2')
+MySQLdb = pytest.importorskip('MySQLdb')
 import subprocess
-ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
+ps = subprocess.Popen("ps aux | grep mysql",shell=True, stdout=subprocess.PIPE)
 output = ps.stdout.read()
-pytestmark = pytest.mark.skipif(len(output.split('\n')) < 6, reason="No Postgres Installation")
+pytestmark = pytest.mark.skipif(len(output.split('\n')) < 6, reason="No MySQL Installation")
 
 
 from blaze import SQL
@@ -38,8 +22,6 @@ from blaze.api.into import into
 import sqlalchemy
 import os
 import csv as csv_module
-from blaze import Table
-from blaze import compute
 import pandas as pd
 import datetime as dt
 import getpass
@@ -159,8 +141,7 @@ def test_no_header_no_columns():
 
     csv = CSV(file_name)
     sql = SQL(url,tbl, schema= '{x: int, y: int}')
-    # import pdb
-    # pdb.set_trace()
+
     into(sql,csv, if_exists="replace")
 
     assert list(sql[:, 'x']) == [1, 10, 100]
@@ -176,8 +157,7 @@ def test_complex_into():
     tbl = 'testtable_into_complex'
 
     csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int64, Consts: float64}')
-    import pdb
-    pdb.set_trace()
+
     sql = SQL(url,tbl, schema=csv.schema)
     sql.extend(csv)
     # into(sql,csv, if_exists="replace")
@@ -198,9 +178,9 @@ def test_complex_into():
             assert list(sql[:,col]) == list(csv[:,col]) == py_dates
         #handle floating point precision -- perhaps it's better to call out to assert_array_almost_equal
         elif col == 'Consts':
-            print([round(val, 6) for val in df[col].values])
-            import pdb
-            pdb.set_trace()
-            # assert list(sql[:,col]) == list(csv[:,col]) == [round(val, 6) for val in df[col].values]
+            ##  WARNING!!! Floats are truncated with MySQL and the assertion fails
+            assert list(sql[:,col]) == list(csv[:,col]) == [round(val, 4) for val in df[col].values]
         else:
             assert list(sql[:,col]) == list(csv[:,col]) == list(df[col].values)
+
+#

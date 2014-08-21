@@ -111,7 +111,7 @@ def dshape_to_alchemy(dshape, mysql=False):
 
         #String requires value (VARCHAR) for MySQL default to Text
         if mysql and t == sql.types.String:
-            return t # sql.types.Text
+            return sql.types.Text
         else:
             return t
     if isinstance(dshape, datashape.Record):
@@ -195,7 +195,6 @@ class SQL(DataDescriptor):
             for column in columns:
                 if column.name == primary_key:
                     column.primary_key = True
-            print(tablename,metadata,*columns)
             table = sql.Table(tablename, metadata, *columns)
         else:
             raise ValueError('Must provide schema or point to valid table. '
