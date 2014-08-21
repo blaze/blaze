@@ -24,12 +24,16 @@ from operator import and_
 from datashape import Record
 
 from ..dispatch import dispatch
-from ..expr import *
+from ..expr import Projection, Selection, Column, ColumnWise
+from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction
+from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
+from ..expr import common_subexpression, Union, DropIndex, CreateIndex
 from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base
 
 __all__ = ['sqlalchemy', 'select']
+
 
 @dispatch(Projection, Selectable)
 def compute_one(t, s, scope={}, **kwargs):
