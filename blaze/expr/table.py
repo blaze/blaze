@@ -168,16 +168,14 @@ class TableSymbol(TableExpr):
     __slots__ = '_name', 'dshape', 'iscolumn'
     __inputs__ = ()
 
-    def __init__(self, name, dshape=None, iscolumn=False, schema=None):
+    def __init__(self, name, dshape=None, iscolumn=False):
         self._name = name
-        if schema and dshape:
-            raise ValueError("Please specify one of schema= or dshape= keyword"
-                    " arguments")
-        if schema and not dshape:
-            dshape = datashape.var * schema
         if isinstance(dshape, _strtypes):
             dshape = datashape.dshape(dshape)
-        if not isdimension(dshape[0]):
+        try:
+            if not isdimension(dshape[0]):
+                dshape = datashape.var * dshape
+        except TypeError:
             dshape = datashape.var * dshape
         self.dshape = dshape
         self.iscolumn = iscolumn
