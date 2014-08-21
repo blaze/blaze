@@ -21,15 +21,15 @@ from sqlalchemy import sql
 from sqlalchemy.sql import Selectable
 from sqlalchemy.sql.elements import ClauseElement
 from operator import and_
+from datashape import Record
 
 from ..dispatch import dispatch
-from ..expr.table import *
-from ..expr.scalar import BinOp, UnaryOp
+from ..expr import *
 from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base
 
-__all__ = ['compute', 'compute_one', 'computefull', 'select']
+__all__ = ['sqlalchemy', 'select']
 
 @dispatch(Projection, Selectable)
 def compute_one(t, s, scope={}, **kwargs):

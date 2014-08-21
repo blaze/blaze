@@ -6,6 +6,7 @@ import gzip
 from blaze.utils import filetext, filetexts, tmpfile
 from blaze.data.utils import tuplify
 from blaze.data import *
+from blaze.data.usability import *
 from blaze.compatibility import xfail
 
 

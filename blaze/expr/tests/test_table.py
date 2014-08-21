@@ -3,19 +3,46 @@ from __future__ import absolute_import, division, print_function
 import pytest
 import tempfile
 import pandas as pd
+from operator import (add, sub, mul, floordiv, mod, pow, truediv, eq, ne, lt,
+                      gt, le, ge)
+
+try:
+    from operator import div
+except ImportError:
+    from operator import truediv as div
 
 from blaze import CSV, Table
-from blaze.expr.table import *
+from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
+                        join, cos, by, union, TableExpr, exp, distinct, Apply,
+                        columnwise, eval_str, merge, common_subexpression, sum,
+                        Label, ReLabel, Head, Sort, isnan, any)
 from blaze.expr.core import discover
 from blaze.utils import raises
-from datashape import dshape, var, int32, int64
-from toolz import identity
+from datashape import dshape, var, int32, int64, Record, DataShape
+from toolz import identity, first
 import numpy as np
 
 
 def test_dshape():
     t = TableSymbol('t', '{name: string, amount: int}')
     assert t.dshape == dshape('var * {name: string, amount: int}')
+
+
+def test_length():
+    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    assert t.dshape == dshape('10 * {name: string, amount: int}')
+    assert len(t) == 10
+    assert len(t.name) == 10
+    assert len(t[['name']]) == 10
+    assert len(t.sort('name')) == 10
+    assert len(t.head(5)) == 5
+    assert len(t.head(50)) == 10
+
+
+def test_nonzero():
+    t = TableSymbol('t', '10 * {name: string, amount: int}')
+    assert t
+    assert (not not t) is True
 
 
 def test_eq():
@@ -66,7 +93,7 @@ def test_relational():
 
     r = (t['name'] == 'Alice')
 
-    assert r.dshape == dshape('var * bool')
+    assert r.dshape == dshape('var * {name: bool}')
 
 
 def test_selection():
@@ -178,7 +205,6 @@ def test_joined_column_first_in_schema():
     assert join(t, s).schema == dshape('{y: int, x: int, z: int, w: int}')
 
 
-
 def test_outer_join():
     t = TableSymbol('t', '{name: string, amount: int}')
     s = TableSymbol('t', '{name: string, id: int}')
@@ -236,6 +262,8 @@ def test_unary_ops():
     expr = cos(exp(t['amount']))
     assert 'cos' in str(expr)
 
+    assert '~' in str(~(t.amount > 0))
+
 
 def test_reduction():
     t = TableSymbol('t', '{name: string, amount: int32}')
@@ -261,6 +289,43 @@ def test_reduction():
 
     assert 'int' in str(t['id'].sum().dshape)
     assert 'int' not in str(t['amount'].sum().dshape)
+
+
+@pytest.fixture
+def symsum():
+    t = TableSymbol('t', '{name: string, amount: int32}')
+    return t, t.amount.sum()
+
+
+class TestScalarArithmetic(object):
+    ops = {'+': add, '-': sub, '*': mul, '/': truediv, '//': floordiv, '%': mod,
+           '**': pow, '==': eq, '!=': ne, '<': lt, '>': gt, '<=': le, '>=': ge}
+
+    def test_scalar_arith(self, symsum):
+        def runner(f):
+            result = f(r, 1)
+            assert eval('r %s 1' % op).isidentical(result)
+
+            result = f(r, r)
+            assert eval('r %s r' % op).isidentical(result)
+
+            result = f(1, r)
+            assert eval('1 %s r' % op).isidentical(result)
+
+        t, r = symsum
+        r = t.amount.sum()
+        for op, f in self.ops.items():
+            runner(f)
+
+    def test_scalar_usub(self, symsum):
+        t, r = symsum
+        result = -r
+        assert eval(str(result)).isidentical(result)
+
+    @pytest.mark.xfail
+    def test_scalar_uadd(self, symsum):
+        t, r = symsum
+        +r
 
 
 def test_Distinct():
@@ -509,3 +574,36 @@ def test_table_coercion():
     assert (t.amount + '10').expr.rhs == 10
 
     assert (t.timestamp < '2014-12-01').expr.rhs == date(2014, 12, 1)
+
+
+def test_isnan():
+    t = TableSymbol('t', '{name: string, amount: int, timestamp: ?date}')
+
+    for expr in [t.amount.isnan(), ~t.amount.isnan()]:
+        assert eval(str(expr)).isidentical(expr)
+
+    assert isinstance(t.amount.isnan(), TableExpr)
+    assert 'bool' in str(t.amount.isnan().dshape)
+
+
+def test_columnwise_naming():
+    t = TableSymbol('t', '{x: int, y: int, z: int}')
+
+    assert t.x.name == 'x'
+    assert (t.x + 1).name == 'x'
+
+
+def test_scalar_symbol():
+    t = TableSymbol('t', '{x: int64, y: int32, z: int64}')
+    x = t.x.scalar_symbol
+    y = t.y.scalar_symbol
+    assert 'int64' in str(x.dshape)
+    assert 'int32' in str(y.dshape)
+
+    expr = (t.x + 1).expr
+    assert expr.inputs[0].dshape == x.dshape
+    assert expr.inputs[0].isidentical(x)
+
+    t = TableSymbol('t', '{ amount : int64, id : int64, name : string }')
+    expr = (t.amount + 1).expr
+    assert 'int64' in str(expr.inputs[0].dshape)

@@ -1,9 +1,15 @@
 from __future__ import absolute_import, division, print_function
 import math
+import itertools
+import operator
+import functools
 
 from blaze.compute.core import compute
-from blaze.compute.python import *
-from blaze.expr.table import *
+from blaze.compute.python import nunique, mean, std, rrowfunc
+from blaze import dshape
+from blaze.expr import (TableSymbol, by, union, merge, join, count, Distinct,
+                        Apply, sum, min, max, any, exp)
+
 from blaze.compatibility import builtins
 from blaze.utils import raises
 
@@ -43,6 +49,7 @@ def test_selection():
     assert list(compute(t[t['amount'] > 150], data)) == \
                 [x for x in data if x[1] > 150]
 
+
 def test_arithmetic():
     assert list(compute(t['amount'] + t['id'], data)) == \
                 [b + c for a, b, c, in data]
@@ -51,8 +58,10 @@ def test_arithmetic():
     assert list(compute(t['amount'] % t['id'], data)) == \
                 [b % c for a, b, c, in data]
 
+
 def test_unary_ops():
-    assert list(compute(exp(t['amount']), data)) == [math.exp(x[1]) for x in data]
+    result = list(compute(exp(t['amount']), data))
+    assert result == [math.exp(x[1]) for x in data]
 
 
 def test_neg():
@@ -69,6 +78,27 @@ def test_reductions():
     assert compute(any(t['amount'] > 150), data) is True
     assert compute(any(t['amount'] > 250), data) is False
 
+
+def reduction_runner(funcs):
+    from blaze.compatibility import builtins as bts
+    exprs = sum, min, max
+    for blaze_expr, py_func in itertools.product(exprs, funcs):
+        f = getattr(operator, py_func)
+        reduc_f = getattr(bts, blaze_expr.__name__)
+        ground_truth = f(reduc_f([100, 200, 50]), 5)
+        assert compute(f(blaze_expr(t['amount']), 5), data) == ground_truth
+
+
+def test_reduction_arithmetic():
+    funcs = 'add', 'mul'
+    reduction_runner(funcs)
+
+
+def test_reduction_compare():
+    funcs = 'eq', 'ne', 'lt', 'gt', 'le', 'ge'
+    reduction_runner(funcs)
+
+
 def test_mean():
     assert compute(mean(t['amount']), data) == float(100 + 200 + 50) / 3
     assert 50 < compute(std(t['amount']), data) < 100
@@ -79,10 +109,12 @@ def test_by_no_grouper():
     assert set(compute(by(names, names, names.count()), data)) == \
             set([('Alice', 2), ('Bob', 1)])
 
+
 def test_by_one():
     print(compute(by(t, t['name'], t['amount'].sum()), data))
     assert set(compute(by(t, t['name'], t['amount'].sum()), data)) == \
             set([('Alice', 150), ('Bob', 200)])
+
 
 def test_by_compound_apply():
     print(compute(by(t, t['name'], (t['amount'] + 1).sum()), data))
@@ -204,6 +236,7 @@ def test_column_of_column():
 
 def test_Distinct():
     assert set(compute(Distinct(t['name']), data)) == set(['Alice', 'Bob'])
+    assert set(compute(Distinct(t), data)) == set(map(tuple, data))
 
 
 def test_Distinct_count():
@@ -306,9 +339,8 @@ def test_map_column():
 
 
 def test_map():
-    inc = lambda x: x + 1
-    assert list(compute(t.map(lambda _, amt, id: amt + id), data)) == \
-            [x[1] + x[2] for x in data]
+    assert (list(compute(t.map(lambda _, amt, id: amt + id), data)) ==
+            [x[1] + x[2] for x in data])
 
 
 def test_apply_column():
@@ -360,7 +392,7 @@ def test_map_columnwise():
 
 
 def test_map_columnwise_of_selection():
-    tsel = t[ t['name'] == 'Alice' ]
+    tsel = t[t['name'] == 'Alice']
     colwise = tsel['amount'] * tsel['id']
 
     expr = colwise.map(lambda x: x / 10, schema="{mod: int64}", iscolumn=True)

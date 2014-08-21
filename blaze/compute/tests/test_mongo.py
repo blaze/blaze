@@ -3,12 +3,21 @@ from __future__ import absolute_import, division, print_function
 import pytest
 pymongo = pytest.importorskip('pymongo')
 
+try:
+    pymongo.MongoClient()
+except pymongo.errors.ConnectionFailure:
+    pytest.importorskip('fhskjfdskfhsf')
+
 from datetime import datetime
 from contextlib import contextmanager
+from datashape import discover
+from toolz import pluck
+
 from blaze.compute.mongo import *
-from blaze.compute.core import compute
+from blaze.api.into import *
+from blaze.compute.core import compute, compute_one
 from blaze.mongo import *
-from blaze.expr.table import TableSymbol
+from blaze.expr import *
 from blaze.compatibility import xfail
 
 conn = pymongo.MongoClient()
@@ -121,6 +130,11 @@ def test_reductions():
         assert compute(t.amount.min(), coll) == 100
         assert compute(t.amount.max(), coll) == 300
         assert compute(t.amount.sum(), coll) == 900
+
+
+def test_distinct():
+    with collection(bank) as coll:
+        assert set(compute(t.name.distinct(), coll)) == set(['Alice', 'Bob'])
 
 
 def test_sort():

@@ -4,18 +4,19 @@ import logging
 
 from dynd import nd
 from pandas import DataFrame
+import h5py
 
 from multipledispatch import halt_ordering, restart_ordering
 
 halt_ordering() # Turn off multipledispatch ordering
 
-from .expr.table import *
+from .expr import *
+from .expr.functions import *
 from .api import *
 from .data.csv import *
 from .data.json import *
 from .data.hdf5 import *
 from .compute.python import *
-from .data.pandas import *
 from .data.meta import *
 from .compute.pandas import *
 from .compute.numpy import *
@@ -29,6 +30,14 @@ except ImportError:
     pass
 try:
     from .compute.pytables import *
+except ImportError:
+    pass
+try:
+    from .compute.chunks import *
+except ImportError:
+    pass
+try:
+    from .bcolz import *
 except ImportError:
     pass
 try:
@@ -46,7 +55,7 @@ logger.setLevel(logging.WARNING)
 inf = float('inf')
 nan = float('nan')
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 # If IPython is already loaded, register the Blaze catalog magic
 # from . import catalog
@@ -130,4 +139,4 @@ def test(verbose=False, junitfile=None, exit=False):
     error_code = pytest.main(args=args)
     if exit:
         return sys.exit(error_code)
-    return error_code
+    return error_code == 0

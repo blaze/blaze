@@ -1,13 +1,20 @@
+from __future__ import absolute_import, division, print_function
 
-from datashape import discover, Tuple, Record, dshape, Fixed, DataShape
+import datashape
+from datashape import (discover, Tuple, Record, dshape, Fixed, DataShape,
+    to_numpy_dtype, isdimension, var)
 from pandas import DataFrame, Series
 import itertools
+import numpy as np
+from dynd import nd
 
 from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
-from ..data.pandas import into
 from .into import into
+from ..compatibility import _strtypes
+
+__all__ = ['Table', 'compute', 'into']
 
 names = ('_%d' % i for i in itertools.count(1))
 
@@ -45,21 +52,30 @@ class Table(TableSymbol):
     0    Bob
     1  Edith
     """
-    __slots__ = 'data', 'schema', '_name', 'iscolumn'
+    __slots__ = 'data', 'dshape', '_name', 'iscolumn'
 
-    def __init__(self, data, name=None, columns=None, schema=None,
-            iscolumn=False):
-        if not schema:
-            schema = discover(data).subshape[0]
+    def __init__(self, data, dshape=None, name=None, columns=None,
+            iscolumn=False, schema=None):
+        if schema and dshape:
+            raise ValueError("Please specify one of schema= or dshape= keyword"
+                    " arguments")
+        if schema and not dshape:
+            dshape = var * schema
+        if dshape and isinstance(dshape, _strtypes):
+            dshape = datashape.dshape(dshape)
+        if dshape and not isdimension(dshape[0]):
+            dshape = var * dshape
+        if not dshape:
+            dshape = discover(data)
             types = None
-            if isinstance(schema[0], Tuple):
-                columns = columns or list(range(len(schema[0].dshapes)))
-                types = schema[0].dshapes
-            if isinstance(schema[0], Record):
-                columns = columns or schema[0].names
-                types = schema[0].types
-            if isinstance(schema[0], Fixed):
-                types = (schema[1],) * int(schema[0])
+            if isinstance(dshape[1], Tuple):
+                columns = columns or list(range(len(dshape[1].dshapes)))
+                types = dshape[1].dshapes
+            if isinstance(dshape[1], Record):
+                columns = columns or dshape[1].names
+                types = dshape[1].types
+            if isinstance(dshape[1], Fixed):
+                types = (dshape[2],) * int(dshape[1])
             if not columns:
                 raise TypeError("Could not infer column names from data. "
                                 "Please specify column names with `column=` "
@@ -68,8 +84,9 @@ class Table(TableSymbol):
                 raise TypeError("Could not infer data types from data. "
                                 "Please specify schema with `schema=` keyword")
 
-            schema = dshape(Record(list(zip(columns, types))))
-        self.schema = dshape(schema)
+            dshape = dshape[0] * datashape.dshape(Record(list(zip(columns, types))))
+
+        self.dshape = datashape.dshape(dshape)
 
         self.data = data
 
@@ -88,7 +105,7 @@ class Table(TableSymbol):
 
     @property
     def args(self):
-        return (id(self.data), self.schema, self._name, self.iscolumn)
+        return (id(self.data), self.dshape, self._name, self.iscolumn)
 
     def __setstate__(self, state):
         for slot, arg in zip(self.__slots__, state):
@@ -152,7 +169,13 @@ def table_html(expr, n=10):
     return concrete_head(expr).to_html()
 
 
-@dispatch((type, object), TableExpr)
+@dispatch(type, TableExpr)
+def into(a, b, **kwargs):
+    f = into.resolve((a, type(b)))
+    return f(a, b, **kwargs)
+
+
+@dispatch(object, TableExpr)
 def into(a, b):
     return into(a, compute(b))
 
@@ -161,7 +184,30 @@ def into(a, b):
 def into(a, b):
     return into(DataFrame(columns=b.columns), compute(b))
 
+
+@dispatch(nd.array, TableExpr)
+def into(a, b):
+    return into(nd.array(), compute(b), dtype=str(b.schema))
+
+
+@dispatch(np.ndarray, TableExpr)
+def into(a, b):
+    if b.iscolumn:
+        return into(np.ndarray(0), compute(b),
+                dtype=to_numpy_dtype(b.schema[0].types[0]))
+    else:
+        return into(np.ndarray(0), compute(b), dtype=to_numpy_dtype(b.schema))
+
+
+def table_length(expr):
+    try:
+        return expr._len()
+    except TypeError:
+        return compute(expr.count())
+
+
 Expr.__repr__ = expr_repr
 TableExpr.__repr__ = table_repr
 TableExpr.to_html = table_html
 TableExpr._repr_html_ = table_html
+TableExpr.__len__ = table_length

@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 from abc import abstractproperty
-from datashape import dshape, var, DataShape, Record, isdimension, Option
+from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import concat, partial, first, compose, get, unique
@@ -14,9 +14,16 @@ from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
-                     And, USub, eval_str, Scalar)
+                     And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins
 
+__all__ = '''
+TableExpr TableSymbol RowWise Projection Column Selection ColumnWise Join
+Reduction join sqrt sin cos tan sinh cosh tanh acos acosh asin asinh atan atanh
+exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
+min max mean var std count nunique By by Sort Distinct distinct Head head Label
+ReLabel relabel Map Apply common_subexpression merge Merge Union selection
+projection union columnwise'''.split()
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions
@@ -33,6 +40,22 @@ class TableExpr(Expr):
     @property
     def dshape(self):
         return datashape.var * self.schema
+
+    def _len(self):
+        try:
+            return int(self.dshape[0])
+        except TypeError:
+            raise ValueError('Can not determine length of table with the '
+                    'following datashape: %s' % self.dshape)
+
+    def __len__(self):
+        return self._len()
+
+    def __nonzero__(self):
+        return True
+
+    def __bool__(self):
+        return True
 
     @property
     def columns(self):
@@ -142,14 +165,21 @@ class TableSymbol(TableExpr):
     We define a TableSymbol with a name like ``accounts`` and the datashape of
     a single row, called a schema.
     """
-    __slots__ = '_name', 'schema', 'iscolumn'
+    __slots__ = '_name', 'dshape', 'iscolumn'
     __inputs__ = ()
 
-    def __init__(self, name, schema, iscolumn=False):
+    def __init__(self, name, dshape=None, iscolumn=False, schema=None):
         self._name = name
-        if isinstance(schema, _strtypes):
-            schema = dshape(schema)
-        self.schema = schema
+        if schema and dshape:
+            raise ValueError("Please specify one of schema= or dshape= keyword"
+                    " arguments")
+        if schema and not dshape:
+            dshape = datashape.var * schema
+        if isinstance(dshape, _strtypes):
+            dshape = datashape.dshape(dshape)
+        if not isdimension(dshape[0]):
+            dshape = datashape.var * dshape
+        self.dshape = dshape
         self.iscolumn = iscolumn
 
     def __str__(self):
@@ -157,6 +187,10 @@ class TableSymbol(TableExpr):
 
     def resources(self):
         return dict()
+
+    @property
+    def schema(self):
+        return self.dshape.subshape[0]
 
 
 class RowWise(TableExpr):
@@ -178,6 +212,8 @@ class RowWise(TableExpr):
     blaze.expr.table.
     blaze.expr.table.
     """
+    def _len(self):
+        return self.child._len()
 
 
 class Projection(RowWise):
@@ -262,17 +298,17 @@ class ColumnSyntaxMixin(object):
     def __div__(self, other):
         return columnwise(Div, self, other)
 
+    def __rdiv__(self, other):
+        return columnwise(Div, other, self)
+
     __truediv__ = __div__
-    __rtruediv__ = __truediv__
+    __rtruediv__ = __rdiv__
 
     def __floordiv__(self, other):
         return columnwise(FloorDiv, self, other)
 
     def __rfloordiv__(self, other):
         return columnwise(FloorDiv, other, self)
-
-    def __rdiv__(self, other):
-        return columnwise(Div, other, self)
 
     def __sub__(self, other):
         return columnwise(Sub, self, other)
@@ -307,6 +343,9 @@ class ColumnSyntaxMixin(object):
     def __neg__(self):
         return columnwise(USub, self)
 
+    def __invert__(self):
+        return columnwise(Not, self)
+
     def label(self, label):
         return Label(self, label)
 
@@ -327,6 +366,16 @@ class ColumnSyntaxMixin(object):
 
     def std(self):
         return std(self)
+
+    def isnan(self):
+        return columnwise(scalar.isnan, self)
+
+    @property
+    def name(self):
+        try:
+            return self.schema[0].names[0]
+        except AttributeError:
+            raise ValueError("Column is un-named, name with col.label('name')")
 
 
 class Column(ColumnSyntaxMixin, Projection):
@@ -514,6 +563,10 @@ class ColumnWise(RowWise, ColumnSyntaxMixin):
 
     @property
     def schema(self):
+        names = [x._name for x in self.expr.traverse()
+                         if isinstance(x, ScalarSymbol)]
+        if len(names) == 1 and not isinstance(self.expr.dshape[0], Record):
+            return DataShape(Record([[names[0], self.expr.dshape[0]]]))
         return self.expr.dshape
 
     def __str__(self):
@@ -677,7 +730,7 @@ trunc = partial(columnwise, scalar.trunc)
 isnan = partial(columnwise, scalar.isnan)
 
 
-class Reduction(Scalar):
+class Reduction(NumberInterface):
     """ A column-wise reduction
 
     Blaze supports the same class of reductions as NumPy and Pandas.
@@ -829,6 +882,9 @@ class Sort(TableExpr):
         else:
             return self._key
 
+    def _len(self):
+        return self.child._len()
+
 
 def sort(child, key, ascending=True):
     if isinstance(key, list):
@@ -892,6 +948,9 @@ class Head(TableExpr):
     def iscolumn(self):
         return self.child.iscolumn
 
+    def _len(self):
+        return builtins.min(self.child._len(), self.n)
+
 
 def head(child, n=10):
     return Head(child, n)
@@ -908,7 +967,7 @@ class Label(RowWise, ColumnSyntaxMixin):
     >>> accounts = TableSymbol('accounts', '{name: string, amount: int}')
 
     >>> (accounts['amount'] * 100).schema
-    dshape("float64")
+    dshape("{ amount : float64 }")
 
     >>> (accounts['amount'] * 100).label('new_amount').schema #doctest: +SKIP
     dshape("{ new_amount : float64 }")
@@ -1008,6 +1067,16 @@ class Map(RowWise):
         if self.child.iscolumn is not None:
             return self.child.iscolumn
         return self.schema[0].values()
+
+    @property
+    def name(self):
+        if len(self.columns) != 1:
+            raise ValueError("Can only determine name of single-column. "
+                    "Use .columns to find all names")
+        try:
+            return self.schema[0].names[0]
+        except AttributeError:
+            raise ValueError("Column is un-named, name with col.label('name')")
 
 
 class Apply(TableExpr):
@@ -1137,6 +1206,12 @@ class Union(TableExpr):
     """
     __slots__ = 'children',
     __inputs__ = 'children',
+
+    def subterms(self):
+        yield self
+        for i in self.children:
+            for node in i.subterms():
+                yield node
 
     @property
     def schema(self):

@@ -10,7 +10,8 @@ from ..core import Expr
 from ...dispatch import dispatch
 from ...compatibility import _strtypes
 from datashape import coretypes as ct
-from .boolean import Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not, Invert
+from .boolean import (Eq, Ne, Lt, Gt, Le, Ge, And, Or, BitAnd, BitOr, Not,
+                      Invert, BooleanInterface)
 
 
 @dispatch(ct.Option, object)
@@ -64,6 +65,11 @@ def scalar_coerce(ds, val):
 
 
 class NumberInterface(Scalar):
+
+    # defined here because __hash__ is set to None in Python 3 when __eq__
+    # is defined and __hash__ isn't
+    __hash__ = Scalar.__hash__
+
     def __eq__(self, other):
         return Eq(self, scalar_coerce(self.dshape, other))
 
@@ -103,14 +109,14 @@ class NumberInterface(Scalar):
     def __rdiv__(self, other):
         return Div(scalar_coerce(self.dshape, other), self)
 
+    __truediv__ = __div__
+    __rtruediv__ = __rdiv__
+
     def __floordiv__(self, other):
         return FloorDiv(self, scalar_coerce(self.dshape, other))
 
     def __rfloordiv__(self, other):
         return FloorDiv(scalar_coerce(self.dshape, other), self)
-
-    __truediv__ = __div__
-    __rtruediv__ = __rdiv__
 
     def __sub__(self, other):
         return Sub(self, scalar_coerce(self.dshape, other))
@@ -239,7 +245,7 @@ class floor(IntegerMath): pass
 class trunc(IntegerMath): pass
 
 
-class BooleanMath(Number, UnaryOp):
+class BooleanMath(Number, UnaryOp, BooleanInterface):
     """ Mathematical unary operator with bool valued dshape like isnan """
     @property
     def dshape(self):

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from .compute.sql import *
 from .compute.sql import select
 from .data.sql import *
@@ -5,6 +7,8 @@ from .expr.table import Join, Expr, TableExpr, Projection, Column
 from .expr.scalar.core import Scalar
 
 import sqlalchemy
+
+__all__ = ['compute_one', 'sqlalchemy', 'SQL']
 
 @dispatch((Column, Projection, Expr), SQL)
 def compute_one(t, ddesc, **kwargs):

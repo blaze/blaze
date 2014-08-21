@@ -19,6 +19,11 @@ def test_compute():
     assert compute(t) == data
 
 
+def test_len():
+    assert len(t) == 2
+    assert len(t.name) == 2
+
+
 def test_compute():
     assert list(compute(t['amount'] + 1)) == [101, 201]
 

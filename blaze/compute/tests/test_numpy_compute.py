@@ -4,7 +4,7 @@ import numpy as np
 
 from blaze.compute.core import compute
 from blaze.compute.numpy import *
-from blaze.expr.table import *
+from blaze.expr import *
 from blaze.compatibility import xfail
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -54,6 +54,25 @@ def test_UnaryOp():
 def test_Neg():
     assert eq(compute(-t['amount'], x),
               -x['amount'])
+
+def test_invert_not():
+    assert eq(compute(~(t.amount > 0), x),
+              ~(x['amount'] > 0))
+
+
+def test_union_1d():
+    t = TableSymbol('t', '{x: int}', iscolumn=True)
+    x = np.array([1, 2, 3])
+    assert eq(compute(union(t, t), x), np.array([1, 2, 3, 1, 2, 3]))
+
+
+def test_union():
+    result = compute(union(t, t), x)
+    assert result.shape == (x.shape[0] * 2,)
+    assert eq(result[:5], x)
+    assert eq(result[5:], x)
+    result = compute(union(t.id, t.id), x)
+    assert eq(result, np.array([1, 2, 3, 4, 5, 1, 2, 3, 4, 5]))
 
 
 def test_Reductions():
