@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
 from blaze.compute.sql import compute, computefull, select
+from blaze import SQL
 from blaze.expr import *
 import sqlalchemy
 import sqlalchemy as sa
@@ -380,3 +382,34 @@ def test_summary_by():
     assert 'count(accounts.id) as b' in result.lower()
 
     assert 'group by accounts.name' in result.lower()
+
+
+@pytest.yield_fixture
+def table_data():
+    engine = sa.create_engine('sqlite:///:memory:')
+    conn = engine.connect()
+    t = TableSymbol('t', '{id: int, name: string, amount: real}')
+    data = [(1, 'Alice', 100),
+            (2, 'Bob', 200),
+            (4, 'Dennis', 400)]
+    sql = SQL(engine, str(t), schema=t.schema)
+    sql.extend(data)
+    data = t, sql
+    yield data
+    conn.close()
+
+
+def test_create_index(table_data):
+    t, sql = table_data
+    index_name = 'yeehaw'
+    ci = create_index(index_name, t.id)
+    q = compute(ci, {t: sql.table})
+    assert str(q).strip().lower() == 'create index %s on t (id)' % index_name
+
+
+def test_drop_index(table_data):
+    t, sql = table_data
+    index_name = 'yeehaw'
+    ci = drop_index(index_name, t.id)
+    q = compute(ci, {t: sql.table})
+    assert str(q).strip().lower() == 'drop index %s' % index_name
