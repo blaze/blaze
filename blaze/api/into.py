@@ -129,7 +129,7 @@ def into(a, b):
     return b
 
 @dispatch(np.ndarray, np.ndarray)
-def into(a, b):
+def into(a, b, **kwargs):
     return b
 
 @dispatch(list, nd.array)
@@ -141,7 +141,7 @@ def into(a, b):
     return tuple(nd.as_py(b, tuple=True))
 
 @dispatch(np.ndarray, nd.array)
-def into(a, b):
+def into(a, b, **kwargs):
     return nd.as_numpy(b, allow_copy=True)
 
 @dispatch(np.ndarray, (Iterable, Iterator))
@@ -265,7 +265,7 @@ def into(a, df):
 
 
 @dispatch(np.ndarray, pd.DataFrame)
-def into(a, df):
+def into(a, df, **kwargs):
     return df.to_records(index=False)
 
 
@@ -285,7 +285,7 @@ def discover(df):
 
 
 @dispatch(np.ndarray, carray)
-def into(a, b):
+def into(a, b, **kwargs):
     return b[:]
 
 @dispatch(pd.Series, carray)

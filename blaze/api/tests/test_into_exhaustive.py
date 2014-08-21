@@ -9,10 +9,11 @@ from blaze.api.into import degrade_numpy_dtype_to_python
 from datashape import dshape
 from blaze.bcolz import *
 import blaze
-from blaze import Table
+from blaze import Table, TableExpr, TableSymbol, compute
 import bcolz
 from blaze.data import CSV
 from datetime import datetime
+from toolz import pluck
 
 
 csv = CSV('blaze/api/tests/accounts.csv')
@@ -73,6 +74,19 @@ def test_base():
     for a in sources:
         for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
+
+
+no_date_targets = [list(pluck([0, 1, 2], L)),
+                   df[['amount', 'id', 'name']],
+                   x[['amount', 'id', 'name']],
+                   bc[['amount', 'id', 'name']]]
+no_date_sources = [df, x, bc]
+
+def test_expressions():
+    for a in no_date_sources:
+        for b in no_date_targets:
+            c = Table(a, '{amount: int64, id: int64, name: string}')[['amount', 'id', 'name']]
+            assert normalize(into(type(b), c)) == normalize(b)
 
 try:
     from bokeh.objects import ColumnDataSource
