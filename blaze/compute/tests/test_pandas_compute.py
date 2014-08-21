@@ -406,7 +406,7 @@ def test_outer_join():
 
 def test_by_on_same_column():
     df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
-    t = TableSymbol('data', schema='{id:int, value:int}')
+    t = TableSymbol('data', dshape='{id:int, value:int}')
 
     gby = by(t, t['id'], t['id'].count())
 
