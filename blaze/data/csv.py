@@ -10,14 +10,12 @@ import os
 from operator import itemgetter
 from collections import Iterator
 
-import datashape
-from datashape.discovery import discover, null, string, unpack
+from datashape.discovery import discover, null, unpack
 from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
-from dynd import nd
 
 from .core import DataDescriptor
 from .utils import coerce_record_to_row
-from ..utils import nth, nth_list, get
+from ..utils import nth, nth_list
 from .. import compatibility
 from ..compatibility import map
 
