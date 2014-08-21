@@ -76,7 +76,7 @@ def test_head():
 
 
 def test_join():
-    cities = TableSymbol('cities', schema='{id: int, city: string}')
+    cities = TableSymbol('cities', dshape='{id: int, city: string}')
     j = join(t, cities, 'id')
 
     city_data = [[1, 'NYC'], [1, 'Chicago'], [5, 'Paris']]

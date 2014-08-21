@@ -297,6 +297,27 @@ def symsum():
     return t, t.amount.sum()
 
 
+@pytest.fixture
+def ds():
+    return dshape("var * { "
+            "transaction_key : int64, "
+            "user_from_key : int64, "
+            "user_to_key : int64, "
+            "date : int64, "
+            "value : float64 "
+            "}")
+
+
+def test_discover_dshape_symbol(ds):
+    t_ds = TableSymbol('t', dshape=ds)
+    assert t_ds.columns is not None
+
+    t_sch = TableSymbol('t', dshape=ds.subshape[0])
+    assert t_sch.columns is not None
+
+    assert t_ds.isidentical(t_sch)
+
+
 class TestScalarArithmetic(object):
     ops = {'+': add, '-': sub, '*': mul, '/': truediv, '//': floordiv, '%': mod,
            '**': pow, '==': eq, '!=': ne, '<': lt, '>': gt, '<=': le, '>=': ge}
