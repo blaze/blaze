@@ -27,7 +27,7 @@ from ..dispatch import dispatch
 from ..expr import Projection, Selection, Column, ColumnWise
 from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction
 from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
-from ..expr import common_subexpression, Union, DropIndex, CreateIndex
+from ..expr import common_subexpression, Union
 from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base
