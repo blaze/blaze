@@ -260,6 +260,28 @@ binops = {table.sum: (add, add, 0),
 
 
 def reduce_by_funcs(t):
+    """ Create grouping func and binary operator for a by-reduction/summary
+
+    Turns a by operation like
+
+        by(t, t.name, t.amount.sum())
+
+    into a grouper like
+
+    >>> def grouper(row):
+    ...     return row[name_index]
+
+    and a binary operator like
+
+    >>> def binop(acc, row):
+    ...     return binops[sum](acc, row[amount_index])
+
+    It also handles this in the more complex ``summary`` case in which case
+    several binary operators are juxtaposed together.
+
+    See Also:
+        compute_one(By, Sequence)
+    """
     grouper = rrowfunc(t.grouper, t.child)
     if (isinstance(t.apply, Reduction) and
         type(t.apply) in binops):
