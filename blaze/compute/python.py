@@ -163,17 +163,17 @@ def compute_one(t, seq, **kwargs):
     return op(seq)
 
 
-@dispatch(BinOp, (numbers.Real, Scalar), (numbers.Real, Scalar))
+@dispatch(BinOp, numbers.Real, numbers.Real)
 def compute_one(bop, a, b, **kwargs):
     return bop.op(a, b)
 
 
-@dispatch(UnaryOp, (numbers.Real, Scalar))
+@dispatch(UnaryOp, numbers.Real)
 def compute_one(uop, x, **kwargs):
     return uop.op(x)
 
 
-@dispatch(RealMath, (numbers.Real, Scalar))
+@dispatch(RealMath, numbers.Real)
 def compute_one(f, n, **kwargs):
     return getattr(math, type(f).__name__)(n)
 
