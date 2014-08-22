@@ -25,4 +25,6 @@ dialect_terms = {'delimiter': "delimiter", # Delimiter character (ALL)
                  'FORMAT': "format_str",
                  'header': "header", # Boolean Flag (POSTGRES,MySQL) to define if file contains a header
                  'HEADER': "header",
+                 'encoding': "encoding", # Boolean Flag (POSTGRES,MySQL) to define if file contains a header
+                 'ENCODING': "encoding",
                  }

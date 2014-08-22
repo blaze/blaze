@@ -332,6 +332,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
             raise KeyError(k, " not found in dialect mapping")
 
     format_str = retrieve_kwarg('format_str') or 'csv'
+    encoding =  retrieve_kwarg('encoding') or 'utf8'
     delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
     na_value = retrieve_kwarg('na_value') or ""
     quotechar = retrieve_kwarg('quotechar') or '"'
@@ -353,7 +354,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
                  'escapechar': escapechar,
                  'lineterminator': lineterminator,
                  'skiprows': skiprows,
-                 'header': header}
+                 'header': header,
+                 'encoding': encoding}
 
     if if_exists == 'replace':
         if engine.has_table(tblname):
@@ -380,7 +382,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
                         COPY {tblname} FROM '{abspath}'
                         (FORMAT {format_str}, DELIMITER E'{delimiter}',
                         NULL '{na_value}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
-                        HEADER {header});
+                        HEADER {header}, ENCODING {encoding});
                         """
             sql_stmnt = sql_stmnt.format(**copy_info)
             cursor.execute(sql_stmnt)
