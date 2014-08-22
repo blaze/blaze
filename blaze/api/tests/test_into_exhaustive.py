@@ -59,17 +59,21 @@ no_date = {list: list(pluck([0, 1, 2], L)),
 
 try:
     import pymongo
-    from pymongo import Collection
-    db = pymongo.MongoClient().db
-
-    db.test.drop()
-    data[pymongo.Collection] = into(db.test, df)
-
-    db.no_date.drop()
-    no_date[pymongo.Collection] = into(db.no_date, no_date[DataFrame])
 except ImportError:
     pymongo = None
-    Collection = None
+if pymongo:
+    from pymongo.collection import Collection
+    try:
+        db = pymongo.MongoClient().db
+
+        db.test.drop()
+        data[Collection] = into(db.test, df)
+
+        db.no_date.drop()
+        no_date[Collection] = into(db.no_date, no_date[DataFrame])
+    except pymongo.errors.ConnectionFailure:
+        pymongo = None
+        Collection = None
 
 
 def normalize(a):
