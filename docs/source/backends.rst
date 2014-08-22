@@ -45,14 +45,14 @@ Blaze drives MongoDB through the `pymongo
 is able to use many of the built in operations such as aggregration and group
 by.
 
-`PyTables <http://www.pytables.org>`
-------------------------------------
+`PyTables <http://www.pytables.org>`_
+-------------------------------------
 PyTables provides compressed Table objects backed by the popular HDF5 library.
 Blaze can compute simple expressions using PyTables, such as elementwise
 operations and row-wise selections.
 
-`Spark <https://spark.apache.org/>`
------------------------------------
+`Spark <https://spark.apache.org/>`_
+------------------------------------
 
 Spark provides resilient distributed in-memory computing and easy access to
 HDFS storage.  Blaze drives Spark through the `PySpark
