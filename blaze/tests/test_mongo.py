@@ -87,6 +87,10 @@ class TestCreateIndex(object):
         create_index(mongo_idx.tmp_collection, 'idx_id', 'id')
         assert 'idx_id' in mongo_idx.tmp_collection.index_information()
 
+    def test_create_index_single_element_list(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection, 'idx_id', ['id'])
+        assert 'idx_id' in mongo_idx.tmp_collection.index_information()
+
     def test_create_composite_index(self, mongo_idx):
         create_index(mongo_idx.tmp_collection, 'c_idx', ['id', 'amount'])
         assert 'c_idx' in mongo_idx.tmp_collection.index_information()
