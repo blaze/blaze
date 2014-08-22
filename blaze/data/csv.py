@@ -9,6 +9,7 @@ import itertools as it
 import os
 from operator import itemgetter
 from collections import Iterator
+from multipledispatch import dispatch
 
 from datashape.discovery import discover, null, unpack
 from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
@@ -19,7 +20,7 @@ from ..utils import nth, nth_list
 from .. import compatibility
 from ..compatibility import map
 
-__all__ = ['CSV']
+__all__ = ['CSV', 'drop']
 
 
 def has_header(sample):
@@ -266,3 +267,8 @@ class CSV(DataDescriptor):
     def remove(self):
         """Remove the persistent storage."""
         os.unlink(self.path)
+
+
+@dispatch(CSV)
+def drop(c):
+    c.remove()
