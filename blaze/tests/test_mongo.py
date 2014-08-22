@@ -12,14 +12,16 @@ from datashape import discover, dshape
 from contextlib import contextmanager
 from toolz.curried import get
 
-from blaze.mongo import *
-from blaze.api.into import *
+from blaze import drop, into
 
 conn = pymongo.MongoClient()
 db = conn.test_db
 
+
 @contextmanager
-def collection(data=[]):
+def collection(data=None):
+    if data is None:
+        data = []
     coll = db.tmp_collection
     if data:
         coll = into(coll, data)
@@ -47,3 +49,19 @@ def test_into():
         assert set(into([], into(coll, bank), columns=['name', 'amount'])) ==\
                 set([('Alice', 100), ('Alice', 200), ('Bob', 100),
                      ('Bob', 200), ('Bob', 300)])
+
+
+@pytest.yield_fixture
+def mongo():
+    pymongo = pytest.importorskip('pymongo')
+    conn = pymongo.MongoClient()
+    db = conn.test_db
+    db.tmp_collection.insert(bank)
+    yield conn
+    conn.close()
+
+
+def test_drop(mongo):
+    db = mongo.test_db
+    drop(db.tmp_collection)
+    assert db.tmp_collection.count() == 0
