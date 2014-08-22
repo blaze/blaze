@@ -19,6 +19,44 @@ def drop(t):
     t.remove()
 
 
+@dispatch(object)
+def create_index(o):
+    """Create an index on a column.
+
+    Parameters
+    ----------
+    o : indexable object
+
+    Examples
+    --------
+    >>> import tables as tb
+    >>> import numpy as np
+    >>> data = [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
+    >>> arr = np.array(data, dtype=[('id', 'i8'), ('value', 'f8'),
+    ...                             ('key', '|S1')])
+    >>> f = tb.open_file(tempfile.mkstemp(), mode='w')
+    >>> t = f.create_table('/', 'table', arr)
+    >>> create_index(t, 'id')
+    >>> 'id' in t.colsindexed
+    >>> t.close()
+    >>> f.close()
+    """
+    raise NotImplementedError("create_index not implemented for type %r" %
+                              type(o).__name__)
+
+
+@dispatch(tb.Table, basestring)
+def create_index(t, column_name,  **kwargs):
+    assert hasattr(t.cols, column_name), ('table %s has no column %r' %
+                                          (t, column_name))
+    create_index(getattr(t.cols, column_name), **kwargs)
+
+
+@dispatch(tb.Column)
+def create_index(c, optlevel=9, kind='full', **kwargs):
+    c.create_index(optlevel=optlevel, kind=kind, **kwargs)
+
+
 @dispatch(Selection, tb.Table)
 def compute_one(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
