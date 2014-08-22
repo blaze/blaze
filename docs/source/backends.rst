@@ -2,16 +2,16 @@
 Backends
 ========
 
-Blaze backends include projects like streaming Python, Pandas, SQLAlchemy, and
-Spark.  A Blaze expression can run equally well on any of these backends,
-allowing developers to easily transition their computation to changing
-performance needs.
+Blaze backends include projects like streaming Python, Pandas, SQLAlchemy,
+MongoDB, PyTables, and Spark.  A Blaze expression can run equally well on any
+of these backends, allowing developers to easily transition their computation
+to changing performance needs.
 
 Existing Backends
 =================
 
-Streaming Python
-----------------
+Streaming Python via `toolz <http://toolz.readthedocs.org/en/latest/>`_ and `cytoolz <https://github.com/pytoolz/cytoolz/>`_
+----------------------------------------------------------------------------------------------------------------------------
 
 Blaze can operate on core Python data structures like lists, tuples, ints and
 strings.  This can be useful both in small cases like rapid prototyping or unit
@@ -24,25 +24,40 @@ support for lazy iterators (i.e. generators) means that it can easily support
 *streaming* computations that pull data in from disk, taking up relatively
 little memory.
 
-Pandas
-------
+`Pandas <http://pandas.pydata.org>`_
+------------------------------------
 
 Pandas DataFrames are the gold standard for in-memory data analytics.  They are
 fast, intuitive, and come with a wealth of additional features like plotting,
 and data I/O.
 
-SQLAlchemy
-----------
+`SQLAlchemy <http://www.sqlalchemy.org>`_
+-----------------------------------------
 
 Blaze levarages the SQLAlchemy project, which provides a uniform interface over
 the varied landscape of SQL systems.  Blaze manipulates SQLAlchemy expressions
 which are then compiled down to SQL query strings of the appropriate backend.
 
-Spark
------
+`MongoDB <http://www.mongodb.org/>`_
+-------------------------------------
+Blaze drives MongoDB through the `pymongo
+<http://api.mongodb.org/python/current/api/pymongo/index.html>`_ interface and
+is able to use many of the built in operations such as aggregration and group
+by.
+
+`PyTables <http://www.pytables.org>`_
+-------------------------------------
+PyTables provides compressed Table objects backed by the popular HDF5 library.
+Blaze can compute simple expressions using PyTables, such as elementwise
+operations and row-wise selections.
+
+`Spark <https://spark.apache.org/>`_
+------------------------------------
 
 Spark provides resilient distributed in-memory computing and easy access to
-HDFS storage.  Blaze drives Spark through the PySpark interface.
+HDFS storage.  Blaze drives Spark through the `PySpark
+<https://spark.apache.org/docs/0.9.0/python-programming-guide.html>`_
+interface.
 
 
 Benefits of Backend Agnostic Computation
