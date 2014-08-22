@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function,
 
 from datetime import date, datetime, time
 from decimal import Decimal
+import sys
 from dynd import nd
 import sqlalchemy as sql
 import sqlalchemy
@@ -299,11 +300,12 @@ def into(sql, csv, if_exists="replace", **kwargs):
         Single byte quote:  Default is double-quote. ex: "1997","Ford","E350")
     ESCAPE : string
         A single one-byte character for defining escape characters. Default is the same as the QUOTE
+    ENCODING :
+        An encoding name (POSTGRES): utf8, latin-1, ascii.  Default: UTF8
 
     ##NOT IMPLEMENTED
     # FORCE_QUOTE { ( column_name [, ...] ) | * }
     # FORCE_NOT_NULL ( column_name [, ...] )
-    # ENCODING 'encoding_name'
     # OIDS : bool
     #     Specifies copying the OID for each row
 
@@ -332,7 +334,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
             raise KeyError(k, " not found in dialect mapping")
 
     format_str = retrieve_kwarg('format_str') or 'csv'
-    encoding =  retrieve_kwarg('encoding') or 'utf8'
+    encoding =  retrieve_kwarg('encoding') or ('utf8' if db=='mysql' else 'latin1')
     delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
     na_value = retrieve_kwarg('na_value') or ""
     quotechar = retrieve_kwarg('quotechar') or '"'
@@ -382,7 +384,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
                         COPY {tblname} FROM '{abspath}'
                         (FORMAT {format_str}, DELIMITER E'{delimiter}',
                         NULL '{na_value}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
-                        HEADER {header}, ENCODING {encoding});
+                        HEADER {header}, ENCODING '{encoding}');
                         """
             sql_stmnt = sql_stmnt.format(**copy_info)
             cursor.execute(sql_stmnt)
@@ -395,22 +397,26 @@ def into(sql, csv, if_exists="replace", **kwargs):
             sql.extend(csv)
 
     #only works on OSX/Unix
-    if dbtype == 'sqlite':
+    elif dbtype == 'sqlite':
         import subprocess
+        if sys.platform == 'win32':
+            print("Windows native sqlite copy is not supported")
+            print("Defaulting to sql.extend() method")
+            sql.extend(csv)
+        else:
+            #only to be used when table isn't already created?
+            # cmd = """
+            #     echo 'create table {tblname}
+            #     (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
+            #     """
 
-        #only to be used when table isn't already created?
-        # cmd = """
-        #     echo 'create table {tblname}
-        #     (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
-        #     """
+            copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
+            copy_cmd = copy_cmd.format(**copy_info)
 
-        copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
-        copy_cmd = copy_cmd.format(**copy_info)
+            ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+            output = ps.stdout.read()
 
-        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
-        output = ps.stdout.read()
-
-    if dbtype == 'mysql':
+    elif dbtype == 'mysql':
         import MySQLdb
         try:
             conn = sql.engine.raw_connection()
@@ -420,6 +426,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
             sql_stmnt = u"""
                         LOAD DATA LOCAL INFILE '{abspath}'
                         INTO TABLE {tblname}
+                        CHARACTER SET {encoding}
                         FIELDS
                             TERMINATED BY '{delimiter}'
                             ENCLOSED BY '{quotechar}'
@@ -437,3 +444,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
             print("Failed to use MySQL LOAD.\nERR MSG: ", e)
             print("Defaulting to sql.extend() method")
             sql.extend(csv)
+
+    else:
+        print("Warning! Could not find native copy call")
+        print("Defaulting to sql.extend() method")
+        sql.extend(csv)
