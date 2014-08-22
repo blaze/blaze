@@ -109,3 +109,8 @@ def test_into_DataFrame_chunks():
                     ChunkIterable(data, chunksize=2),
                     columns=['name', 'id'])) == \
                 str(DataFrame(data, columns=['name', 'id']))
+
+def test_chunk_list():
+    data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    assert chunk(data, 0, chunksize=2) == [1, 2]
+    assert chunk(data, 2, chunksize=2) == [5, 6]

@@ -33,7 +33,7 @@ from ..compatibility import builtins
 from ..dispatch import dispatch
 from .core import compute
 
-__all__ = ['ChunkIterable', 'ChunkIterator', 'chunks', 'into']
+__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'chunk', 'chunks', 'into']
 
 class ChunkIterator(object):
     def __init__(self, seq):
@@ -54,6 +54,29 @@ class ChunkIterable(ChunkIterator):
     def __iter__(self):
         return chunks(self.seq, **self.kwargs)
 
+
+class ChunkIndexable(ChunkIterable):
+    def __init__(self, seq, **kwargs):
+        self.seq = seq
+        self.kwargs = kwargs
+
+    def __getitem__(self, key):
+        return chunk(self.seq, key, **self.kwargs)
+
+    def __iter__(self):
+        try:
+            cs = chunks(self.seq, **self.kwargs)
+        except NotImplementedError:
+            cs = None
+        if cs:
+            for c in cs:
+                yield c
+        else:
+            for i in itertools.count(0):
+                try:
+                    yield chunk(self.seq, i, **self.kwargs)
+                except IndexError:
+                    raise StopIteration()
 
 reductions = {sum: (sum, sum), count: (count, sum),
               min: (min, min), max: (max, max),
@@ -177,10 +200,84 @@ def compute_one(expr, c, **kwargs):
     return compute_one(group, intermediate)
 
 
+@dispatch(object)
+def chunks(seq, chunksize=None):
+    """ Produce iterable of chunks from data source
+
+    Chunks consumes a data resource and produces an iterator of data resources.
+
+    Elements of the return iterator should have the following properties:
+
+    *  They should fit in memory
+    *  They should cover the dataset
+    *  They should not overlap
+    *  They should honor order if the underlying dataset is ordered
+    *  Has appropriate implementations for ``discover``, ``compute_one``,
+       and  ``into``
+
+    Example
+    -------
+
+    >>> seq = chunks(range(1000), chunksize=3)
+    >>> next(seq)
+    (0, 1, 2)
+
+    >>> next(seq)
+    (3, 4, 5)
+
+    See Also
+    --------
+
+    blaze.compute.chunks.chunk
+    """
+    raise NotImplementedError("chunks not implemented on type %s" %
+            type(seq).__name__)
+
+
+@dispatch(object, int)
+def chunk(data, i, chunksize=None):
+    """ Get the ``i``th chunk from a data resource
+
+    Returns a single chunk of the data
+
+    Return chunks should have the following properties
+
+    *  They should fit in memory
+    *  They should cover the dataset
+    *  They should not overlap
+    *  They should honor order if the underlying dataset is ordered
+    *  Has appropriate implementations for ``discover``, ``compute_one``,
+       and  ``into``
+
+    Example
+    -------
+
+    >>> data = list(range(1000))
+    >>> chunk(data, 0, chunksize=3)
+    [0, 1, 2]
+
+    >>> chunk(data, 3, chunksize=3)
+    [9, 10, 11]
+
+
+    See Also
+    --------
+
+    blaze.compute.chunks.chunk
+    """
+    raise NotImplementedError("chunk not implemented on type %s" %
+            type(data).__name__)
+
+
 @dispatch((list, tuple, Iterator))
 def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
 
+@dispatch((list, tuple), int)
+def chunk(seq, i, chunksize=1024):
+    start = chunksize * i
+    stop = chunksize * (i + 1)
+    return seq[start:stop]
 
 @dispatch((list, tuple), ChunkIterator)
 def into(a, b):
