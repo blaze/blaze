@@ -11,7 +11,7 @@ import tempfile
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
-from blaze import drop, discover
+from blaze import drop, discover, create_index
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -229,3 +229,13 @@ def test_pytables(pyt):
     drop(pyt)
     with pytest.raises(tb.ClosedNodeError):
         drop(pyt)
+
+
+def test_create_index(pyt):
+    create_index(pyt, 'id')
+    assert 'id' in pyt.colindexes
+
+
+def test_create_index_fails(pyt):
+    with pytest.raises(AssertionError):
+        create_index(pyt, 'no column here!')
