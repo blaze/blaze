@@ -522,7 +522,8 @@ def into(a, b):
     datenames = [name for name in dtypes
                       if np.issubdtype(dtypes[name], np.datetime64)]
 
-    dtypes = {k: v for k, v in dtypes.items() if not np.issubdtype(v, np.datetime64)}
+    dtypes = dict((k, v) for k, v in dtypes.items()
+                         if not np.issubdtype(v, np.datetime64))
 
     return pd.read_csv(b.path,
                        skiprows=1 if b.header else 0,
