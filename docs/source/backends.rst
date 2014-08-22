@@ -2,10 +2,10 @@
 Backends
 ========
 
-Blaze backends include projects like streaming Python, Pandas, SQLAlchemy, and
-Spark.  A Blaze expression can run equally well on any of these backends,
-allowing developers to easily transition their computation to changing
-performance needs.
+Blaze backends include projects like streaming Python, Pandas, SQLAlchemy,
+MongoDB, PyTables, and Spark.  A Blaze expression can run equally well on any
+of these backends, allowing developers to easily transition their computation
+to changing performance needs.
 
 Existing Backends
 =================
@@ -37,6 +37,19 @@ SQLAlchemy
 Blaze levarages the SQLAlchemy project, which provides a uniform interface over
 the varied landscape of SQL systems.  Blaze manipulates SQLAlchemy expressions
 which are then compiled down to SQL query strings of the appropriate backend.
+
+MongoDB
+-------
+Blaze drives `MongoDB <http://www.mongodb.org/>`_ through the `pymongo
+<http://api.mongodb.org/python/current/api/pymongo/index.html>`_ interface and
+is able to use many of the built in operations such as aggregration and group
+by.
+
+PyTables
+--------
+PyTables provides compressed Table objects backed by the popular HDF5 library.
+Blaze can compute simple expressions using PyTables, such as elementwise
+operations and row-wise selections.
 
 Spark
 -----
