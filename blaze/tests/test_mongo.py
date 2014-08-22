@@ -99,3 +99,8 @@ class TestCreateIndex(object):
     def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
         with pytest.raises(AssertionError):
             create_index(mongo_idx.tmp_collection, 'asdf', [['id', DESCENDING]])
+
+    def test_create_index_with_unique(self, mongo_idx):
+        coll = mongo_idx.tmp_collection
+        create_index(coll, 'c_idx', 'id', unique=True)
+        assert coll.index_information()['c_idx']['unique']
