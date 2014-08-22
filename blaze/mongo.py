@@ -5,17 +5,14 @@ try:
 except ImportError:
     Collection = type(None)
 
-from collections import Iterator
-from toolz import take, concat, partition_all
-from datashape import discover, isdimension, dshape
-import copy
+from toolz import take
+from datashape import discover, isdimension
 
 from .dispatch import dispatch
-from .data.core import DataDescriptor
 from .compute.mongo import *
-from .expr.table import TableExpr
 
-__all__ = ['pymongo']
+__all__ = ['discover', 'drop']
+
 
 @dispatch(Collection)
 def discover(coll, n=50):
@@ -31,3 +28,6 @@ def discover(coll, n=50):
         raise ValueError("Consistent datashape not found")
 
 
+@dispatch(Collection)
+def drop(m):
+    m.drop()
