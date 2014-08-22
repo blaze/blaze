@@ -91,6 +91,21 @@ def test_simple_into():
     assert list(sql[:, 'a']) == [1, 10, 100]
     assert list(sql[:, 'b']) == [2, 20, 200]
 
+def test_append():
+
+    tbl = 'testtable_into_append'
+
+    csv = CSV(file_name, columns=['a', 'b'])
+    sql = SQL(url,tbl, schema= csv.schema)
+
+    into(sql,csv, if_exists="replace")
+
+    assert list(sql[:, 'a']) == [1, 10, 100]
+    assert list(sql[:, 'b']) == [2, 20, 200]
+
+    into(sql,csv, if_exists="append")
+    assert list(sql[:, 'a']) == [1, 10, 100, 1, 10, 100]
+    assert list(sql[:, 'b']) == [2, 20, 200, 2, 20, 200]
 
 def test_simple_float_into():
 
@@ -149,7 +164,7 @@ def test_complex_into():
 
     tbl = 'testtable_into_complex'
 
-    csv = CSV(file_name, schema='{Name: string, RegistrationDate: datetime, ZipCode: int64, Consts: float64}')
+    csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int64, Consts: float64}')
 
     sql = SQL(url,tbl, schema=csv.schema)
     into(sql,csv, if_exists="replace")
