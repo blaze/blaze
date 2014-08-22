@@ -225,7 +225,7 @@ def pyt():
         pass
 
 
-def test_pytables(pyt):
+def test_drop(pyt):
     drop(pyt)
     with pytest.raises(tb.ClosedNodeError):
         drop(pyt)
