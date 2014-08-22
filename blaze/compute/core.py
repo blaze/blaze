@@ -3,11 +3,12 @@ import numbers
 from datetime import date, datetime
 from toolz import first
 
+from ..compatibility import basestring
 from ..expr.core import Expr
 from ..expr import TableSymbol, eval_str, Union
 from ..dispatch import dispatch
 
-__all__ = ['compute', 'compute_one']
+__all__ = ['compute', 'compute_one', 'drop', 'create_index']
 
 base = (numbers.Real, str, date, datetime)
 
@@ -134,3 +135,67 @@ def columnwise_funcstr(t, variadic=True, full=False):
 @dispatch(Union, (list, tuple))
 def compute_one(t, children, **kwargs):
     return compute_one(t, children[0], tuple(children))
+
+
+@dispatch(object, basestring, (basestring, list, tuple))
+def create_index(t, index_name, column_name_or_names):
+    """Create an index on a column.
+
+    Parameters
+    ----------
+    o : table-like
+    index_name : str
+        The name of the index to create
+    column_name_or_names : basestring, list, tuple
+        A column name to index on, or a list or tuple for a composite index
+
+    Examples
+    --------
+    >>> # Using PyTables
+    >>> import tables as tb
+    >>> import numpy as np
+    >>> import tempfile
+    >>> _, filename = tempfile.mkstemp()
+    >>> data = [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
+    >>> arr = np.array(data, dtype=[('id', 'i8'), ('value', 'f8'),
+    ...                             ('key', '|S1')])
+    >>> f = tb.open_file(filename, mode='w')
+    >>> t = f.create_table('/', 'table', arr)
+    >>> create_index(t, 'id')
+    >>> assert t.colindexed['id']
+    >>> t.close()
+    >>> f.close()
+    """
+    raise NotImplementedError("create_index not implemented for type %r" %
+                              type(t).__name__)
+
+
+@dispatch(object)
+def drop(rsrc):
+    """Remove a resource.
+
+    Parameters
+    ----------
+    rsrc : CSV, SQL, tables.Table, pymongo.Collection
+        A resource that will be removed. For example, calling ``drop(csv)`` will
+        delete the CSV file.
+
+    Examples
+    --------
+    >>> # Using PyTables
+    >>> import tables as tb
+    >>> import numpy as np
+    >>> import tempfile
+    >>> _, filename = tempfile.mkstemp()
+    >>> data = [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
+    >>> arr = np.array(data, dtype=np.dtype([('id', 'i8'), ('value', 'f8'),
+    ...                                      ('key', '|S1')]))
+    >>> f = tb.open_file(filename, mode='w')
+    >>> t = f.create_table('/', 'table', arr)
+    >>> assert t in f.list_nodes('/')
+    >>> drop(t)
+    >>> assert t not in f.list_nodes('/')
+    >>> f.close()
+    """
+    raise NotImplementedError("drop not implemented for type %r" %
+                              type(rsrc).__name__)
