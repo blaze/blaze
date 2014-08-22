@@ -43,25 +43,23 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 """
 
 from __future__ import absolute_import, division, print_function
-try:
-    from pymongo.collection import Collection
-    import pymongo
-except ImportError:
-    Collection = type(None)
-    pymongo = None
 
-from datashape import discover, isdimension, dshape, Record
-from collections import Iterator
-from toolz import take, concat, partition_all, pluck
+from pymongo.collection import Collection
+
+from datashape import Record
+from toolz import pluck
 import toolz
 
-from ..expr import *
+from ..expr import (var, Label, std, Sort, count, nunique, Selection, mean,
+                    Reduction, Head, ReLabel, Apply, Distinct, RowWise, By,
+                    TableSymbol, Projection, sum, min, max, TableExpr,
+                    Gt, Lt, Ge, Le, Eq, Ne, ScalarSymbol, And, Or)
 from ..expr.core import Expr
 
 from ..dispatch import dispatch
 
 
-__all__ = ['pymongo', 'MongoQuery']
+__all__ = ['MongoQuery']
 
 
 class MongoQuery(object):
