@@ -6,7 +6,7 @@ import bcolz
 from toolz import map
 import numpy as np
 import math
-from .chunks import Chunks, ChunkIter
+from .chunks import ChunkIterable, ChunkIterator
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
@@ -90,7 +90,7 @@ def compute_one(expr, data, **kwargs):
 
 @dispatch(Reduction, (bcolz.carray, bcolz.ctable))
 def compute_one(expr, data, **kwargs):
-    return compute_one(expr, Chunks(data), **kwargs)
+    return compute_one(expr, ChunkIterable(data), **kwargs)
 
 
 @dispatch((bcolz.carray, bcolz.ctable))

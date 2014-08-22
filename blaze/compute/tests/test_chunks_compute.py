@@ -20,7 +20,7 @@ data = [[1, 'Alice', 100],
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
 
-c = Chunks(data, chunksize=2)
+c = ChunkIterable(data, chunksize=2)
 
 
 def test_basic():
@@ -100,12 +100,12 @@ def test_by():
 
 
 def test_into_list_chunks():
-    assert into([], Chunks([1, 2, 3, 4], chunksize=2)) == [1, 2, 3, 4]
+    assert into([], ChunkIterable([1, 2, 3, 4], chunksize=2)) == [1, 2, 3, 4]
 
 
 def test_into_DataFrame_chunks():
     data = [['Alice', 1], ['Bob', 2], ['Charlie', 3]]
     assert str(into(DataFrame,
-                    Chunks(data, chunksize=2),
+                    ChunkIterable(data, chunksize=2),
                     columns=['name', 'id'])) == \
                 str(DataFrame(data, columns=['name', 'id']))

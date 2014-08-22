@@ -79,9 +79,9 @@ def into(a, b, columns=None, schema=None):
                                 columns=columns)
 
 
-from .compute.chunks import ChunkIter, chunks
+from .compute.chunks import ChunkIterator, chunks
 
-@dispatch((carray, ctable), ChunkIter)
+@dispatch((carray, ctable), ChunkIterator)
 def into(a, b, **kwargs):
     b = iter(b)
     a = into(a, next(b), **kwargs)
