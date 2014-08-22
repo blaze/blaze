@@ -1,21 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
-from .compute.sql import *
 from .compute.sql import select
-from .data.sql import *
-from .expr.table import Join, Expr, TableExpr, Projection, Column
+from .data.sql import SQL, dispatch, first
+from .expr.table import Expr, TableExpr, Projection, Column
 from .expr.scalar.core import Scalar
 
-import sqlalchemy
+import sqlalchemy as sa
 
-__all__ = ['compute_one', 'sqlalchemy', 'SQL']
+__all__ = ['compute_one', 'SQL']
+
 
 @dispatch((Column, Projection, Expr), SQL)
 def compute_one(t, ddesc, **kwargs):
     return compute_one(t, ddesc.table, **kwargs)
 
 
-@dispatch(Expr, sql.sql.ClauseElement, dict)
+@dispatch(Expr, sa.sql.ClauseElement, dict)
 def post_compute(expr, query, d):
     """ Execute SQLAlchemy query against SQLAlchemy engines
 
@@ -42,3 +42,8 @@ def post_compute(expr, query, d):
     if isinstance(expr, TableExpr) and expr.iscolumn:
         return [x[0] for x in result]
     return result
+
+
+@dispatch(SQL)
+def drop(s):
+    s.table.drop(s.engine)
