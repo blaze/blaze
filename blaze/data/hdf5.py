@@ -177,3 +177,8 @@ class HDF5(DataDescriptor):
                 dset.resize(shape)
                 dset[-len(arr):] = arr
 
+
+@dispatch(HDF5)
+def drop(h):
+    with h5py.File(h.path) as f:
+        del f[h.datapath]
