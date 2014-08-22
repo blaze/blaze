@@ -51,15 +51,51 @@ def test_into(empty_collec):
 
 @pytest.yield_fixture
 def mongo():
-    pymongo = pytest.importorskip('pymongo')
     conn = pymongo.MongoClient()
-    db = conn.test_db
+    db = conn.db
     db.tmp_collection.insert(bank)
-    yield conn
+    yield db
+    db.tmp_collection.drop()
     conn.close()
 
 
 def test_drop(mongo):
-    db = mongo.test_db
-    drop(db.tmp_collection)
-    assert db.tmp_collection.count() == 0
+    drop(mongo.tmp_collection)
+    assert mongo.tmp_collection.count() == 0
+
+
+bank_idx = [{'name': 'Alice', 'amount': 100, 'id': 1},
+            {'name': 'Alice', 'amount': 200, 'id': 2},
+            {'name': 'Bob', 'amount': 100, 'id': 3},
+            {'name': 'Bob', 'amount': 200, 'id': 4},
+            {'name': 'Bob', 'amount': 300, 'id': 5}]
+
+
+@pytest.yield_fixture
+def mongo_idx():
+    pymongo = pytest.importorskip('pymongo')
+    conn = pymongo.MongoClient()
+    db = conn.db
+    db.tmp_collection.insert(bank_idx)
+    yield db
+    db.tmp_collection.drop()
+    conn.close()
+
+
+class TestCreateIndex(object):
+    def test_create_index(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection, 'idx_id', 'id')
+        assert 'idx_id' in mongo_idx.tmp_collection.index_information()
+
+    def test_create_composite_index(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection, 'c_idx', ['id', 'amount'])
+        assert 'c_idx' in mongo_idx.tmp_collection.index_information()
+
+    def test_create_composite_index_params(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection, 'c_idx',
+                     [('id', ASCENDING), ('amount', DESCENDING)])
+        assert 'c_idx' in mongo_idx.tmp_collection.index_information()
+
+    def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
+        with pytest.raises(AssertionError):
+            create_index(mongo_idx.tmp_collection, 'asdf', [['id', DESCENDING]])
