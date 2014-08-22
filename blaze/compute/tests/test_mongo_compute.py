@@ -10,18 +10,17 @@ except pymongo.errors.ConnectionFailure:
 
 from datetime import datetime
 from contextlib import contextmanager
-from datashape import discover
 from toolz import pluck
 
-from blaze.compute.mongo import *
-from blaze.api.into import *
-from blaze.compute.core import compute, compute_one
-from blaze.mongo import *
-from blaze.expr import *
+from blaze import into, compute, compute_one
+
+from blaze.compute.mongo import MongoQuery
+from blaze.expr import TableSymbol, by
 from blaze.compatibility import xfail
 
 conn = pymongo.MongoClient()
 db = conn.test_db
+
 
 @contextmanager
 def collection(data=[]):
