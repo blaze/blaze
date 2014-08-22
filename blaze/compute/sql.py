@@ -38,7 +38,8 @@ __all__ = ['sqlalchemy', 'select']
 @dispatch(Projection, Selectable)
 def compute_one(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
-    scope = scope if scope is not None else {}
+    if scope is None:
+        scope = {}
     subexpression = t
     while hasattr(subexpression, 'child'):
         subexpression = subexpression.child
