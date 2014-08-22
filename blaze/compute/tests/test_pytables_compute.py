@@ -236,6 +236,21 @@ def test_create_index(pyt):
     assert 'id' in pyt.colindexes
 
 
-def test_create_index_fails(pyt):
+def test_create_multiple_indexes(pyt):
+    create_index(pyt, ['id', 'amount'])
+    assert len(pyt.colindexes) == 2
+    assert 'id' in pyt.colindexes
+    assert 'amount' in pyt.colindexes
+
+
+def test_create_multiple_indexes_fails(pyt):
     with pytest.raises(AssertionError):
+        create_index(pyt, ['id', 'blarg'])
+
+    with pytest.raises(AssertionError):
+        create_index(pyt, ['foo', 'bar'])
+
+
+def test_create_index_fails(pyt):
+    with pytest.raises(AttributeError):
         create_index(pyt, 'no column here!')

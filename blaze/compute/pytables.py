@@ -5,6 +5,7 @@ import tables as tb
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
                         TableSymbol, Sort, Reduction, count)
 from blaze.expr import eval_str
+from blaze.compatibility import basestring
 from datashape import Record
 from ..dispatch import dispatch
 
@@ -46,10 +47,16 @@ def create_index(o):
 
 
 @dispatch(tb.Table, basestring)
-def create_index(t, column_name,  **kwargs):
-    assert hasattr(t.cols, column_name), ('table %s has no column %r' %
-                                          (t, column_name))
+def create_index(t, column_name, **kwargs):
     create_index(getattr(t.cols, column_name), **kwargs)
+
+
+@dispatch(tb.Table, (list, tuple))
+def create_index(t, column_names, **kwargs):
+    assert all(hasattr(t.cols, column_name) for column_name in column_names), \
+        'table %s does not have all passed in columns %s' % (t, column_names)
+    for column_name in column_names:
+        create_index(t, column_name, **kwargs)
 
 
 @dispatch(tb.Column)
