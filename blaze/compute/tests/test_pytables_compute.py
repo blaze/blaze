@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
+import os
 import pytest
-tables = pytest.importorskip('tables')
+tb = pytest.importorskip('tables')
 
 from blaze.compatibility import xfail
 
@@ -10,8 +11,7 @@ import tempfile
 
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
-from blaze import discover
-import tables as tb
+from blaze import drop, discover
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -27,7 +27,7 @@ x = np.array([(1, 'Alice', 100),
 @pytest.yield_fixture
 def data():
     with tempfile.NamedTemporaryFile() as fobj:
-        f = tables.open_file(fobj.name, mode='w')
+        f = tb.open_file(fobj.name, mode='w')
         d = f.create_table('/', 'title',  x)
         yield d
         d.close()
@@ -37,7 +37,7 @@ def data():
 @pytest.yield_fixture
 def csi_data():
     with tempfile.NamedTemporaryFile() as fobj:
-        f = tables.open_file(fobj.name, mode='w')
+        f = tb.open_file(fobj.name, mode='w')
         d = f.create_table('/', 'title', x)
         d.cols.amount.create_csindex()
         d.cols.id.create_csindex()
@@ -49,7 +49,7 @@ def csi_data():
 @pytest.yield_fixture
 def idx_data():
     with tempfile.NamedTemporaryFile() as fobj:
-        f = tables.open_file(fobj.name, mode='w')
+        f = tb.open_file(fobj.name, mode='w')
         d = f.create_table('/', 'title', x)
         d.cols.amount.create_index()
         d.cols.id.create_index()
@@ -208,3 +208,24 @@ class TestIndexSort(object):
 
 def test_head(data):
     assert eq(compute(t.head(2), data), x[:2])
+
+
+@pytest.yield_fixture
+def pyt():
+    tb = pytest.importorskip('tables')
+    fn = 'test.pyt.h5'
+    f = tb.open_file(fn, mode='w')
+    d = f.create_table('/', 'test', x)
+    yield d
+    d.close()
+    f.close()
+    try:
+        os.remove(fn)
+    except OSError:
+        pass
+
+
+def test_pytables(pyt):
+    drop(pyt)
+    with pytest.raises(tb.ClosedNodeError):
+        drop(pyt)
