@@ -408,7 +408,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
         ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
         output = ps.stdout.read()
 
-    #only works on OSX/Unix
     if dbtype == 'mysql':
         import MySQLdb
         try:
@@ -436,4 +435,3 @@ def into(sql, csv, if_exists="replace", **kwargs):
             print("Failed to use MySQL LOAD.\nERR MSG: ", e)
             print("Defaulting to sql.extend() method")
             sql.extend(csv)
-

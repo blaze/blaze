@@ -23,7 +23,6 @@ import datetime as dt
 url = 'postgresql://localhost/postgres'
 file_name = 'test.csv'
 
-# @pytest.fixture(scope='module')
 def setup_function(function):
     data = [(1, 2), (10, 20), (100, 200)]
 

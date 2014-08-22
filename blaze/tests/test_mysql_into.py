@@ -1,12 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-# brew install mysql
-# unset TMPDIR
-# mysql_install_db --verbose --user=`whoami` --basedir="$(brew --prefix mysql)" --datadir=/usr/local/var/mysql --tmpdir=/tmp
-# sudo chown -R _mysql /usr/local/var/mysql
-# sudo chmod -R o+rwx /usr/local/var/mysql
-# conda install -c https://conda.binstar.org/chuongdo mysql-python
-
 import pytest
 
 MySQLdb = pytest.importorskip('MySQLdb')
@@ -39,7 +32,6 @@ def create_csv(data, file_name):
             csv_writer.writerow(row)
 
 
-# @pytest.fixture(scope='module')
 def setup_function(function):
     data = [(1, 2), (10, 20), (100, 200)]
     data_floats = [(1.02, 2.02), (102.02, 202.02), (1002.02, 2002.02)]
@@ -157,11 +149,10 @@ def test_complex_into():
 
     tbl = 'testtable_into_complex'
 
-    csv = CSV(file_name, schema='{Name: string, RegistrationDate: date, ZipCode: int64, Consts: float64}')
+    csv = CSV(file_name, schema='{Name: string, RegistrationDate: datetime, ZipCode: int64, Consts: float64}')
 
     sql = SQL(url,tbl, schema=csv.schema)
-    sql.extend(csv)
-    # into(sql,csv, if_exists="replace")
+    into(sql,csv, if_exists="replace")
 
     df = pd.read_csv(file_name, parse_dates=['RegistrationDate'])
 
