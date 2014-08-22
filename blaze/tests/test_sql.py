@@ -1,5 +1,6 @@
 import pytest
 from sqlalchemy.exc import OperationalError
+from cytoolz import first
 from blaze.sql import drop, create_index
 from blaze import compute, Table, SQL
 
@@ -38,6 +39,13 @@ class TestCreateIndex(object):
     def test_create_index_fails(self, sql):
         with pytest.raises(AttributeError):
             create_index(sql, 'zidx', 'z')
+
+    def test_create_index_unique(self, sql):
+        create_index(sql, 'y_idx', 'y', unique=True)
+        assert len(sql.table.indexes) == 1
+        idx = first(sql.table.indexes)
+        assert idx.unique
+        assert idx.columns.y == sql.table.c.y
 
     def test_composite_index(self, sql):
         create_index(sql, 'idx_xy', ['x', 'y'])
