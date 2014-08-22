@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy.exc import OperationalError, ArgumentError
+from sqlalchemy.exc import OperationalError
 from blaze.sql import drop, create_index
 from blaze import compute, Table, SQL
 
