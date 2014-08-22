@@ -19,6 +19,8 @@ import tables
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr
 from ..compute.core import compute
+from .resource import resource
+from ..compatibility import _strtypes
 
 
 __all__ = ['into', 'discover']
@@ -172,7 +174,24 @@ def into(df, x):
 
 @dispatch(pd.DataFrame, tables.Table)
 def into(df, x):
-    return pd.DataFrame.from_records(x[:])
+    return pd.DataFrame(nd.as_py(nd.array(x[:])))
+
+
+@dispatch(tables.Table, pd.DataFrame)
+def into(a, b, **kwargs):
+    arow = a.row
+    for rw in b.iterrows():
+        for col in a.colnames:
+            arow[col] = rw[1][col]
+        arow.append()
+    a.flush()
+    return a
+
+
+@dispatch(tables.Table, _strtypes)
+def into(a, b, **kwargs):
+    return into(a, resource(b, **kwargs), **kwargs)
+
 
 @dispatch(list, pd.DataFrame)
 def into(_, df):

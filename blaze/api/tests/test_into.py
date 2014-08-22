@@ -65,7 +65,7 @@ class Test_into(unittest.TestCase):
 
 
 try:
-    from pandas import DataFrame
+    from pandas import DataFrame, read_csv
 except ImportError:
     DataFrame = None
 
@@ -111,6 +111,56 @@ def h5():
         yield h5file
         # Close (and flush) the file
         h5file.close()
+
+
+@pytest.yield_fixture
+def emptyT():
+    class Test(IsDescription):
+        userid = UInt8Col()
+        text  = StringCol(20)
+        country  = StringCol(2)
+
+    with tempfile.NamedTemporaryFile(mode='w') as f:
+        h5file = open_file(f.name, mode = "w", title = "Test file")
+        group = h5file.create_group("/", 'test', 'Info')
+        tab = h5file.create_table(group, 'sample', Test, "Example")
+        tab.flush()
+        yield h5file
+        # Close (and flush) the file
+        h5file.close()
+
+
+@pytest.yield_fixture
+def good_csv():
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix="csv") as f:
+        badfile = open(f.name, mode="w")
+        # Insert a new record
+        badfile.write("userid,text,country\n")
+        badfile.write("14,asdfsadf,az\n")
+        badfile.write("15,asdfsadf,az\n")
+        badfile.write("5,assddfsadf,gt\n")
+        badfile.flush()
+        yield badfile
+        # Close (and flush) the file
+        badfile.close()
+
+
+@pytest.yield_fixture
+def bad_csv_df():
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix="csv") as f:
+        badfile = open(f.name, mode="w")
+        # Insert a new record
+        badfile.write("userid,text,country\n")
+        badfile.write("14,asdfsadf,az\n")
+        badfile.write("15,asdfsadf,az\n")
+        badfile.write("5,assddfsadf,gt,extra,extra\n")
+        badfile.flush()
+        yield badfile
+        # Close (and flush) the file
+        badfile.close()
+
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_pytables_dataframe(h5):
@@ -215,7 +265,6 @@ def test_discover_pandas():
     assert discover(df).subshape[0] == dshape('{name: string, balance: int64}')
 
 
-
 @skip_if_not(DataFrame and nd.array)
 def test_discover_pandas():
     data = [('Alice', 100), ('Bob', 200)]
@@ -273,6 +322,26 @@ def test_DataFrame_CSV():
         expected = DataFrame([[1, 2.0], [3, 4.0]],
                              columns=['a', 'b'])
 
-
         assert str(df) == str(expected)
         assert list(df.dtypes) == [np.int64, np.float64]
+
+
+@skip_if_not(DataFrame)
+def test_into_tables_path(emptyT, good_csv):
+    samp = emptyT.root.test.sample
+    tble = into(samp, good_csv.name)
+    assert len(tble) == 3
+
+
+@skip_if_not(DataFrame)
+def test_into_tables_path_bad_csv(emptyT, bad_csv_df):
+
+    samp = emptyT.root.test.sample
+    tble = into(samp, bad_csv_df.name, error_bad_lines=False)
+    df_from_tbl = into(DataFrame, tble)
+    #Check that it's the same as straight from the CSV
+    df_from_csv = read_csv( bad_csv_df.name, error_bad_lines=False)
+    assert len(df_from_csv) == 2
+    assert len(df_from_tbl) == 2
+    for col in df_from_csv.columns:
+        assert all(df_from_csv[col] == df_from_tbl[col])
