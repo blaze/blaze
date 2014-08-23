@@ -2,14 +2,14 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 import pytest
+from blaze.compatibility import xfail
 
-rt = pytest.importorskip('rethinkdb')
-pytestmark = pytest.mark.skipif(sys.version_info[0] >= 3,
-                                reason='RethinkDB is not compatible with '
-                                'Python 3')
+
+nopython3 = xfail(sys.version_info[0] >= 3,
+                  reason='RethinkDB is not compatible with Python 3')
+
 
 from blaze import TableSymbol, discover, dshape, compute
-from blaze.compute.rethink import RTable
 
 
 bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
@@ -21,6 +21,8 @@ bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
 
 @pytest.yield_fixture(scope='module')
 def tb():
+    rt = pytest.importorskip('rethinkdb')
+    from blaze.compute.rethink import RTable
     conn = rt.connect()
     rt.table_create('test').run(conn)
     t = rt.table('test')
@@ -59,6 +61,8 @@ def bsg():
                         {u'content': u'The Cylons have the ability...',
                          u'title': u'They look like us'}],
              u'tv_show': u'Battlestar Galactica'}]
+    rt = pytest.importorskip('rethinkdb')
+    from blaze.compute.rethink import RTable
     conn = rt.connect()
     rt.table_create('bsg').run(conn)
     rt.table('bsg').insert(data).run(conn)
@@ -66,6 +70,7 @@ def bsg():
     rt.table_drop('bsg').run(conn)
 
 
+@nopython3
 def test_discover(bsg):
     result = discover(bsg)
     expected_s = ('3 * {id: string, name: string, '
@@ -75,12 +80,14 @@ def test_discover(bsg):
     assert result == expected
 
 
+@nopython3
 def test_table_symbol(ts, tb):
     result = compute(ts.child, tb)
     assert isinstance(result, list)
     assert result == list(tb.t.run(tb.conn))
 
 
+@nopython3
 def test_projection(ts, tb):
     result = compute(ts[['name', 'id']], tb)
     bank = [{'name': 'Alice', 'id': 3},
@@ -92,6 +99,7 @@ def test_projection(ts, tb):
     assert result == bank
 
 
+@nopython3
 def test_head_column(ts, tb):
     expr = ts.name.head(3)
     result = compute(expr, tb)
@@ -99,6 +107,7 @@ def test_head_column(ts, tb):
     assert result == [{'name': 'Alice'}, {'name': 'Alice'}, {'name': 'Bob'}]
 
 
+@nopython3
 def test_head(ts, tb):
     result = compute(ts.head(3), tb)
     assert isinstance(result, list)
@@ -107,6 +116,7 @@ def test_head(ts, tb):
                       {'name': 'Bob', 'amount': 100, 'id': 7}]
 
 
+@nopython3
 def test_selection(ts, tb):
     q = ts[(ts.name == 'Alice') & (ts.amount < 200)]
     result = compute(q, tb)
@@ -114,6 +124,7 @@ def test_selection(ts, tb):
     assert result == [{'name': 'Alice', 'amount': 100, 'id': 3}]
 
 
+@nopython3
 def test_multiple_column_sort(ts, tb):
     expr = ts.sort(['name', 'id'], ascending=False).head(3)[['name', 'id']]
     result = compute(expr, tb)
@@ -126,6 +137,7 @@ def test_multiple_column_sort(ts, tb):
     assert result == bank[:-4:-1]
 
 
+@nopython3
 class TestReductions(object):
     def test_sum(self, ts, tb):
         expr = ts.amount.sum()
