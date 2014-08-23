@@ -2,15 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 import pytest
-from blaze.compatibility import xfail
 
+from blaze.compatibility import xfail
+from blaze import TableSymbol, discover, dshape, compute, by
 
 nopython3 = xfail(sys.version_info[0] >= 3,
                   reason='RethinkDB is not compatible with Python 3')
-
-
-from blaze import TableSymbol, discover, dshape, compute
-
 
 bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
         {'name': 'Alice', 'amount': 200, 'id': 4},
