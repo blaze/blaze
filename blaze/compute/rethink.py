@@ -8,15 +8,14 @@ from ..compatibility import basestring
 
 from ..dispatch import dispatch
 
-from cytoolz import take
-
+from cytoolz import take, first
 
 import rethinkdb as rt
+from rethinkdb.ast import RqlQuery
 
 __all__ = ['compute_one', 'discover', 'RTable']
 
 
-__all__ = ['compute_one', 'discover']
 class RTable(object):
     """
     Examples
@@ -28,30 +27,35 @@ class RTable(object):
         self.t = t
         self.conn = conn
 
-    def __getattr__(self, attr):
-        return getattr(self.t, attr)
+    def __repr__(self):
+        return '%s(t=%s)' % (type(self).__name__, self.t)
+
+    __str__ = __repr__
 
 
 @dispatch(RTable)
 def discover(t, n=50):
-    return discover(list(take(n, t.run(t.conn))))
+    return discover(list(take(n, t.t.run(t.conn))))
 
 
+@dispatch(Expr, RTable)
+def compute_one(e, t, **kwargs):
+    return compute_one(e, t.t, **kwargs)
 
 
-@dispatch(TableSymbol, RTable)
-def compute_one(_, t):
+@dispatch(TableSymbol, RqlQuery)
+def compute_one(_, t, **kwargs):
     return t
 
 
-@dispatch(Projection, RTable)
-def compute_one(p, t):
-    return compute_one(p.child, t).pluck(*p.columns)
+@dispatch(Projection, RqlQuery)
+def compute_one(p, t, **kwargs):
+    return t.pluck(*p.columns)
 
 
-@dispatch(Head, RTable)
-def compute_one(h, t):
-    return compute_one(h.child, t).limit(h.n)
+@dispatch(Head, RqlQuery)
+def compute_one(h, t, **kwargs):
+    return t.limit(h.n)
 
 
 @dispatch(basestring)
@@ -65,68 +69,75 @@ def default_sort_order(keys, f=rt.asc):
         yield f(key)
 
 
-@dispatch(Sort, RTable)
-def compute_one(s, t):
+@dispatch(Sort, RqlQuery)
+def compute_one(s, t, **kwargs):
     f = rt.asc if s.ascending else rt.desc
-    child_result = compute_one(s.child, t)
-    return child_result.order_by(*default_sort_order(s.key, f=f))
+    return t.order_by(*default_sort_order(s.key, f=f))
 
 
-@dispatch(sum, RTable)
-def compute_one(f, t):
-    return compute_one(f.child, t).sum(f.child.column)
+@dispatch(sum, RqlQuery)
+def compute_one(f, t, **kwargs):
+    return t.sum(f.child.column)
 
 
-@dispatch((min, max), RTable)
-def compute_one(f, t):
-    return getattr(compute_one(f.child, t),
-                   type(f).__name__)(f.child.column)[f.child.column]
+@dispatch((min, max), RqlQuery)
+def compute_one(f, t, **kwargs):
+    column = f.child.column
+    return getattr(t, type(f).__name__)(column)[column]
 
 
-@dispatch(count, RTable)
-def compute_one(f, t):
-    return compute_one(f.child, t).count()
+@dispatch(count, RqlQuery)
+def compute_one(f, t, **kwargs):
+    return t.count()
 
 
-@dispatch(mean, RTable)
-def compute_one(f, t):
-    return compute_one(f.child, t).avg(f.child.column)
+@dispatch(mean, RqlQuery)
+def compute_one(f, t, **kwargs):
+    return t.avg(f.child.column)
 
 
-@dispatch(nunique, RTable)
-def compute_one(f, t):
-    return compute_one(f.child, t).distinct().count()
+@dispatch(nunique, RqlQuery)
+def compute_one(f, t, **kwargs):
+    return t.distinct().count()
 
 
-@dispatch(ScalarSymbol, RTable)
-def compute_one(ss, _):
+@dispatch(ScalarSymbol, RqlQuery)
+def compute_one(ss, _, **kwargs):
     return rt.row[ss.name]
 
 
-@dispatch((basestring, numbers.Real), RTable)
-def compute_one(s, _):
+@dispatch((basestring, numbers.Real), RqlQuery)
+def compute_one(s, _, **kwargs):
     return s
 
 
-@dispatch(Relational, RTable)
-def compute_one(r, t):
+@dispatch(Relational, RqlQuery)
+def compute_one(r, t, **kwargs):
     return r.op(compute_one(r.lhs, t), compute_one(r.rhs, t))
 
 
-@dispatch(Selection, RTable)
-def compute_one(s, t):
+@dispatch(Selection, RqlQuery)
+def compute_one(s, t, **kwargs):
     e = s.predicate.expr
     return t.filter(e.op(compute_one(e.lhs, t), compute_one(e.rhs, t)))
 
 
-@dispatch(Distinct, RTable)
-def compute_one(d, t):
+@dispatch(Distinct, RqlQuery)
+def compute_one(d, t, **kwargs):
     return t.with_fields(*d.columns).distinct()
 
 
-@dispatch(Expr, RTable)
-def compute_one(e, t):
-    result = compute_one(e, t).run(t.conn)
+@dispatch(Expr, RTable, dict)
+def post_compute(e, t, d):
+    return post_compute(e, t.t, d)
+
+
+@dispatch(Expr, RqlQuery, dict)
+def post_compute(e, t, d):
+    assert len(d) == 1  # we only have a single RTable in scope
+    conn = first(d.values()).conn
+    result = t.run(conn)
+
     try:
         return list(result)
     except TypeError:
