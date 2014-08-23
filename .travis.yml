@@ -50,14 +50,13 @@ install:
   - pip install pymysql
 
   # install rethinkdb
-  - [[ ${TRAVIS_PYTHON_VERSION:0:1} == 2 ]]
-  - is_py2=$?
-  - [[ $is_py2 == 0 ]] && source /etc/lsb-release && echo "deb http://download.rethinkdb.com/apt $DISTRIB_CODENAME main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list
-  - [[ $is_py2 == 0 ]] && wget -qO- http://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -
-  - [[ $is_py2 == 0 ]] && sudo apt-get update
-  - [[ $is_py2 == 0 ]] && sudo apt-get install rethinkdb
-  - [[ $is_py2 == 0 ]] && pip install rethinkdb
-  - [[ $is_py2 == 0 ]] && sudo rethinkdb &
+  - if [[ ${TRAVIS_PYTHON_VERSION:0:1} == 2 ]]; then is_py2=0; else is_py2=1; fi
+  - if [[ $is_py2 == 0 ]]; then source /etc/lsb-release && echo "deb http://download.rethinkdb.com/apt $DISTRIB_CODENAME main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list; fi
+  - if [[ $is_py2 == 0 ]]; then wget -qO- http://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -; fi
+  - if [[ $is_py2 == 0 ]]; then sudo apt-get update; fi
+  - if [[ $is_py2 == 0 ]]; then sudo apt-get install rethinkdb; fi
+  - if [[ $is_py2 == 0 ]]; then pip install rethinkdb; fi
+  - if [[ $is_py2 == 0 ]]; then sudo rethinkdb &; fi
 
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
