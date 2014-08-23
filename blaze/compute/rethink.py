@@ -8,12 +8,24 @@ from ..compatibility import basestring
 
 from ..dispatch import dispatch
 
+from cytoolz import take
+
 import rethinkdb as rt
 from rethinkdb.ast import Table as RTable
 from rethinkdb.net import Connection
 
 
-__all__ = ['compute_one']
+__all__ = ['compute_one', 'discover']
+
+
+@dispatch(RTable)
+def discover(t, n=50):
+    return discover(t, rt.connect())
+
+
+@dispatch(RTable, Connection)
+def discover(t, conn, n=50):
+    return discover(list(take(n, t.run(conn))))
 
 
 @dispatch(TableSymbol, RTable)
