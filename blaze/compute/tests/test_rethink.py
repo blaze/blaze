@@ -73,3 +73,34 @@ def test_multiple_column_sort(ts, tb):
             {'name': 'Bob', 'id': 10},
             {'name': 'Bob', 'id': 42}]
     assert result == bank[:-4:-1]
+
+
+class TestReductions(object):
+    def test_sum(self, ts, tb):
+        expr = ts.amount.sum()
+        result = compute_one(expr, tb, conn)
+        expected = 900
+        assert result == expected
+
+    def test_min(self, ts, tb):
+        result = compute_one(ts.amount.min(), tb, conn)
+        assert result == 100
+
+    def test_max(self, ts, tb):
+        result = compute_one(ts.amount.max(), tb, conn)
+        assert result == 300
+
+    def test_count(self, ts, tb):
+        expr = ts.head(3).id.count()
+        result = compute_one(expr, tb, conn)
+        assert result == 3
+
+    def test_mean(self, ts, tb):
+        expr = ts.amount.mean()
+        result = compute_one(expr, tb, conn)
+        expected = 900.0 / len(bank)
+        assert result == expected
+
+    def test_nunique(self, ts, tb):
+        result = compute_one(ts.amount.nunique(), tb, conn)
+        assert result == 3
