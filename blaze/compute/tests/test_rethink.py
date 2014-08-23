@@ -4,7 +4,7 @@ import pytest
 
 rt = pytest.importorskip('rethinkdb')
 
-from blaze import TableSymbol
+from blaze import TableSymbol, discover, dshape
 from blaze.compute.rethink import compute_one
 
 
@@ -32,6 +32,45 @@ def tb():
 def ts():
     dshape = '{name: string, amount: int64, id: int64}'
     return TableSymbol('t', dshape).sort('id')
+
+
+@pytest.yield_fixture
+def bsg():
+    data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
+             u'name': u'Jean-Luc Picard',
+             u'posts': [{u'content': (u"There are some words I've known "
+                                      "since..."),
+                         u'title': u'Civil rights'}],
+             u'tv_show': u'Star Trek TNG'},
+            {u'id': u'7ca1d1c3-084f-490e-8b47-2b64b60ccad5',
+             u'name': u'William Adama',
+             u'posts': [{u'content': u'The Cylon War is long over...',
+                         u'title': u'Decommissioning speech'},
+                        {u'content': u'Moments ago, this ship received...',
+                         u'title': u'We are at war'},
+                        {u'content': u'The discoveries of the past few days...',
+                         u'title': u'The new Earth'}],
+             u'tv_show': u'Battlestar Galactica'},
+            {u'id': u'520df804-1c91-4300-8a8d-61c2499a8b0d',
+             u'name': u'Laura Roslin',
+             u'posts': [{u'content': u'I, Laura Roslin, ...',
+                         u'title': u'The oath of office'},
+                        {u'content': u'The Cylons have the ability...',
+                         u'title': u'They look like us'}],
+             u'tv_show': u'Battlestar Galactica'}]
+    rt.table_create('bsg').run(conn)
+    rt.table('bsg').insert(data).run(conn)
+    yield rt.table('bsg')
+    rt.table_drop('bsg').run(conn)
+
+
+def test_discover(bsg):
+    result = discover(bsg)
+    expected_s = ('3 * {id: string, name: string, '
+                  'posts: var * {content: string, title: string},'
+                  'tv_show: string}')
+    expected = dshape(expected_s)
+    assert result == expected
 
 
 def test_table_symbol(ts, tb):
