@@ -1,8 +1,8 @@
 import numbers
 
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection
-from ..expr import Selection, Relational
-from ..expr import count, sum, min, max, mean, ScalarSymbol
+from ..expr import Selection, Relational, ScalarSymbol
+from ..expr import count, sum, min, max, mean, nunique
 
 from ..compatibility import basestring
 
@@ -49,14 +49,30 @@ def compute_one(s, t):
     return child_result.order_by(*default_sort_order(s.key, f=f))
 
 
-@dispatch((count, sum, min, max), RTable)
+@dispatch(sum, RTable)
 def compute_one(f, t):
-    return getattr(compute_one(f.child, t), type(f).__name__)(f.child.column)
+    return compute_one(f.child, t).sum(f.child.column)
+
+
+@dispatch((min, max), RTable)
+def compute_one(f, t):
+    return getattr(compute_one(f.child, t),
+                   type(f).__name__)(f.child.column)[f.child.column]
+
+
+@dispatch(count, RTable)
+def compute_one(f, t):
+    return compute_one(f.child, t).count()
 
 
 @dispatch(mean, RTable)
 def compute_one(f, t):
     return compute_one(f.child, t).avg(f.child.column)
+
+
+@dispatch(nunique, RTable)
+def compute_one(f, t):
+    return compute_one(f.child, t).distinct().count()
 
 
 @dispatch(ScalarSymbol, RTable)
