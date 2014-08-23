@@ -37,9 +37,6 @@ def discover(t, n=50):
     return discover(list(take(n, t.run(t.conn))))
 
 
-@dispatch(RTable, Connection)
-def discover(t, conn, n=50):
-    return discover(list(take(n, t.run(conn))))
 
 
 @dispatch(TableSymbol, RTable)
