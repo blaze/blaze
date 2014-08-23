@@ -25,7 +25,6 @@ from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
-from .compute.rethink import *
 from .compute.core import *
 from .compute.core import compute
 from .sql import *
@@ -62,6 +61,7 @@ except ImportError:
     pass
 try:
     from .pytables import *
+    from .compute.rethink import *
 except ImportError:
     pass
 
