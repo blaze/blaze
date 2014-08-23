@@ -1,6 +1,6 @@
 import numbers
 
-from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection
+from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By
 from ..expr import Selection, Relational, ScalarSymbol
 from ..expr import count, sum, min, max, mean, nunique
 
@@ -125,6 +125,15 @@ def compute_one(s, t, **kwargs):
 @dispatch(Distinct, RqlQuery)
 def compute_one(d, t, **kwargs):
     return t.with_fields(*d.columns).distinct()
+
+
+@dispatch(By, RqlQuery)
+def compute_one(b, t, **kwargs):
+    app = b.apply
+    tb = t.group(*b.grouper.columns)
+    agg = getattr(tb, app.symbol)
+    ret = agg(app.child.column)
+    return ret
 
 
 @dispatch(Expr, RTable, dict)
