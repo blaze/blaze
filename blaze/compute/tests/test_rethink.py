@@ -34,6 +34,12 @@ def ts():
     return TableSymbol('t', dshape).sort('id')
 
 
+@pytest.fixture
+def tsc():
+    dshape = '{name: string, amount: int64, id: int64}'
+    return TableSymbol('t', dshape)
+
+
 @pytest.yield_fixture(scope='module')
 def bsg():
     data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
@@ -174,8 +180,8 @@ class TestReductions(object):
 
 @nopython3
 class TestBy(object):
-    def test_simple(self, ts, tb):
-        expr = by(ts.child, ts.child.name, ts.child.amount.sum())
+    def test_simple(self, tsc, tb):
+        expr = by(tsc, tsc.name, tsc.amount.sum())
         result = compute(expr, tb)
         assert isinstance(result, dict)
         assert result == {'Alice': 300, 'Bob': 600}
