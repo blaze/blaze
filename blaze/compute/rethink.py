@@ -135,10 +135,14 @@ def post_compute(e, t, d):
 @dispatch(Expr, RqlQuery, dict)
 def post_compute(e, t, d):
     assert len(d) == 1  # we only have a single RTable in scope
-    conn = first(d.values()).conn
-    result = t.run(conn)
+    return rql_result(t.run(first(d.values()).conn))
 
-    try:
-        return list(result)
-    except TypeError:
-        return result
+
+@dispatch(object)
+def rql_result(o):
+    return o
+
+
+@dispatch(rt.net.Cursor)
+def rql_result(c):
+    return list(c)
