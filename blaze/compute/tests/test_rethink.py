@@ -185,3 +185,12 @@ class TestBy(object):
         result = compute(expr, tb)
         assert isinstance(result, dict)
         assert result == {'Alice': 300, 'Bob': 600}
+
+
+@nopython3
+class TestColumnWise(object):
+    def test_add(self, ts, tb):
+        expr = ts.id + ts.amount
+        result = compute(expr, tb)
+        assert isinstance(result, list)
+        assert result == [r['amount'] + r['id'] for r in bank]
