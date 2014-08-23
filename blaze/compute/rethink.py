@@ -4,6 +4,8 @@ from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection
 from ..expr import Selection, Relational
 from ..expr import count, sum, min, max, mean, ScalarSymbol
 
+from ..compatibility import basestring
+
 from ..dispatch import dispatch
 
 import rethinkdb as rt
@@ -31,7 +33,7 @@ def compute_one(h, t):
 
 @dispatch(basestring)
 def default_sort_order(key, f=rt.asc):
-    return [f(key)]
+    return f(key),
 
 
 @dispatch(list)
@@ -42,8 +44,9 @@ def default_sort_order(keys, f=rt.asc):
 
 @dispatch(Sort, Table)
 def compute_one(s, t):
-    f = {True: rt.asc, False: rt.desc}[s.ascending]
-    return compute_one(s.child, t).order_by(*default_sort_order(s.key, f=f))
+    f = rt.asc if s.ascending else rt.desc
+    child_result = compute_one(s.child, t)
+    return child_result.order_by(*default_sort_order(s.key, f=f))
 
 
 @dispatch(count, Table)
