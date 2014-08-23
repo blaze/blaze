@@ -17,7 +17,7 @@ bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
 conn = rt.connect()
 
 
-@pytest.yield_fixture
+@pytest.yield_fixture(scope='module')
 def tb():
     rt.table_create('test').run(conn)
     t = rt.table('test')
@@ -32,7 +32,7 @@ def ts():
     return TableSymbol('t', dshape).sort('id')
 
 
-@pytest.yield_fixture
+@pytest.yield_fixture(scope='module')
 def bsg():
     data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
              u'name': u'Jean-Luc Picard',
