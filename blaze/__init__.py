@@ -25,6 +25,7 @@ from .compute.dynd import *
 from .compute.python import *
 from .compute.pandas import *
 from .compute.numpy import *
+from .compute.rethink import *
 from .compute.core import *
 from .compute.core import compute
 from .sql import *
@@ -63,6 +64,7 @@ try:
     from .pytables import *
 except ImportError:
     pass
+
 
 restart_ordering() # Restart multipledispatch ordering and do ordering
 
