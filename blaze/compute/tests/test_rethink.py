@@ -8,8 +8,8 @@ pytestmark = pytest.mark.skipif(sys.version_info[0] >= 3,
                                 reason='RethinkDB is not compatible with '
                                 'Python 3')
 
-from blaze import TableSymbol, discover, dshape
-from blaze.compute.rethink import compute_one, RTable
+from blaze import TableSymbol, discover, dshape, compute
+from blaze.compute.rethink import RTable
 
 
 bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
@@ -76,29 +76,32 @@ def test_discover(bsg):
 
 
 def test_table_symbol(ts, tb):
-    # get the child here because we're sorting for predictable results in other
-    # tests
-    assert compute_one(ts.child, tb) is tb
+    result = compute(ts.child, tb)
+    assert isinstance(result, list)
+    assert result == list(tb.t.run(tb.conn))
 
 
 def test_projection(ts, tb):
-    result = compute_one(ts[['name', 'id']], tb)
+    result = compute(ts[['name', 'id']], tb)
     bank = [{'name': 'Alice', 'id': 3},
             {'name': 'Alice', 'id': 4},
             {'name': 'Bob', 'id': 7},
             {'name': 'Bob', 'id': 10},
             {'name': 'Bob', 'id': 42}]
+    assert isinstance(result, list)
     assert result == bank
 
 
 def test_head_column(ts, tb):
     expr = ts.name.head(3)
-    result = compute_one(expr, tb)
+    result = compute(expr, tb)
+    assert isinstance(result, list)
     assert result == [{'name': 'Alice'}, {'name': 'Alice'}, {'name': 'Bob'}]
 
 
 def test_head(ts, tb):
-    result = compute_one(ts.head(3), tb)
+    result = compute(ts.head(3), tb)
+    assert isinstance(result, list)
     assert result == [{'name': 'Alice', 'amount': 100, 'id': 3},
                       {'name': 'Alice', 'amount': 200, 'id': 4},
                       {'name': 'Bob', 'amount': 100, 'id': 7}]
@@ -106,13 +109,15 @@ def test_head(ts, tb):
 
 def test_selection(ts, tb):
     q = ts[(ts.name == 'Alice') & (ts.amount < 200)]
-    result = compute_one(q, tb)
+    result = compute(q, tb)
+    assert isinstance(result, list)
     assert result == [{'name': 'Alice', 'amount': 100, 'id': 3}]
 
 
 def test_multiple_column_sort(ts, tb):
     expr = ts.sort(['name', 'id'], ascending=False).head(3)[['name', 'id']]
-    result = compute_one(expr, tb)
+    result = compute(expr, tb)
+    assert isinstance(result, list)
     bank = [{'name': 'Alice', 'id': 3},
             {'name': 'Alice', 'id': 4},
             {'name': 'Bob', 'id': 7},
@@ -124,29 +129,35 @@ def test_multiple_column_sort(ts, tb):
 class TestReductions(object):
     def test_sum(self, ts, tb):
         expr = ts.amount.sum()
-        result = compute_one(expr, tb)
+        result = compute(expr, tb)
+        assert isinstance(result, int)
         expected = 900
         assert result == expected
 
     def test_min(self, ts, tb):
-        result = compute_one(ts.amount.min(), tb)
+        result = compute(ts.amount.min(), tb)
+        assert isinstance(result, int)
         assert result == 100
 
     def test_max(self, ts, tb):
-        result = compute_one(ts.amount.max(), tb)
+        result = compute(ts.amount.max(), tb)
+        assert isinstance(result, int)
         assert result == 300
 
     def test_count(self, ts, tb):
         expr = ts.head(3).id.count()
-        result = compute_one(expr, tb)
+        result = compute(expr, tb)
+        assert isinstance(result, int)
         assert result == 3
 
     def test_mean(self, ts, tb):
         expr = ts.amount.mean()
-        result = compute_one(expr, tb)
+        result = compute(expr, tb)
+        assert isinstance(result, (int, float))
         expected = 900.0 / len(bank)
         assert result == expected
 
     def test_nunique(self, ts, tb):
-        result = compute_one(ts.amount.nunique(), tb)
+        result = compute(ts.amount.nunique(), tb)
+        assert isinstance(result, int)
         assert result == 3
