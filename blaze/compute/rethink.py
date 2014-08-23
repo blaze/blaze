@@ -1,7 +1,7 @@
 import numbers
 
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection
-from ..expr import Selection, Relational, Column
+from ..expr import Selection, Relational
 from ..expr import count, sum, min, max, mean, ScalarSymbol
 
 from ..dispatch import dispatch
@@ -21,27 +21,29 @@ def compute_one(_, t):
 
 @dispatch(Projection, Table)
 def compute_one(p, t):
-    import ipdb; ipdb.set_trace()
-    return t.with_fields(*p.columns)
-
-
-@dispatch(Column, Table)
-def compute_one(c, t):
-    import ipdb; ipdb.set_trace()
-    return t.with_fields(c.column)
+    return compute_one(p.child, t).pluck(*p.columns)
 
 
 @dispatch(Head, Table)
 def compute_one(h, t):
-    import ipdb; ipdb.set_trace()
-    child = compute_one(h.child, t)
-    return child.limit(h.n)
+    return compute_one(h.child, t).limit(h.n)
+
+
+@dispatch(basestring)
+def default_sort_order(key, f=rt.asc):
+    return [f(key)]
+
+
+@dispatch(list)
+def default_sort_order(keys, f=rt.asc):
+    for key in keys:
+        yield f(key)
 
 
 @dispatch(Sort, Table)
 def compute_one(s, t):
-    sort_order = {True: rt.asc, False: rt.desc}[s.ascending]
-    return t.order_by(list(map(sort_order, s.key)))
+    f = {True: rt.asc, False: rt.desc}[s.ascending]
+    return compute_one(s.child, t).order_by(*default_sort_order(s.key, f=f))
 
 
 @dispatch(count, Table)
