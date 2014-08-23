@@ -194,3 +194,9 @@ class TestColumnWise(object):
         result = compute(expr, tb)
         assert isinstance(result, list)
         assert result == [r['amount'] + r['id'] for r in bank]
+
+    def test_nested(self, ts, tb):
+        expr = 1 + ts.id + ts.amount * 2
+        result = compute(expr, tb)
+        assert isinstance(result, list)
+        assert result == [1 + r['id'] + r['amount'] * 2 for r in bank]
