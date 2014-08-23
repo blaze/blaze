@@ -170,3 +170,12 @@ class TestReductions(object):
         result = compute(ts.amount.nunique(), tb)
         assert isinstance(result, int)
         assert result == 3
+
+
+@nopython3
+class TestBy(object):
+    def test_simple(self, ts, tb):
+        expr = by(ts.child, ts.child.name, ts.child.amount.sum())
+        result = compute(expr, tb)
+        assert isinstance(result, dict)
+        assert result == {'Alice': 300, 'Bob': 600}
