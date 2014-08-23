@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 import pytest
 
 rt = pytest.importorskip('rethinkdb')
@@ -28,15 +30,18 @@ def tb():
 
 @pytest.fixture
 def ts():
-    return TableSymbol('t', '{name: string, amount: int64, id: int64}')
+    dshape = '{name: string, amount: int64, id: int64}'
+    return TableSymbol('t', dshape).sort('id')
 
 
 def test_table_symbol(ts, tb):
-    assert compute_one(ts, tb) is tb
+    # get the child here because we're sorting for predictable results in other
+    # tests
+    assert compute_one(ts.child, tb) is tb
 
 
 def test_projection(ts, tb):
-    result = compute_one(ts[['name', 'id']].sort('id'), tb, conn)
+    result = compute_one(ts[['name', 'id']], tb, conn)
     bank = [{'name': 'Alice', 'id': 3},
             {'name': 'Alice', 'id': 4},
             {'name': 'Bob', 'id': 7},
@@ -46,13 +51,13 @@ def test_projection(ts, tb):
 
 
 def test_head_column(ts, tb):
-    expr = ts.sort('id').name.head(3)
+    expr = ts.name.head(3)
     result = compute_one(expr, tb, conn)
     assert result == [{'name': 'Alice'}, {'name': 'Alice'}, {'name': 'Bob'}]
 
 
 def test_head(ts, tb):
-    result = compute_one(ts.sort('id').head(3), tb, conn)
+    result = compute_one(ts.head(3), tb, conn)
     assert result == [{'name': 'Alice', 'amount': 100, 'id': 3},
                       {'name': 'Alice', 'amount': 200, 'id': 4},
                       {'name': 'Bob', 'amount': 100, 'id': 7}]
