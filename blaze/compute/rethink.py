@@ -12,8 +12,8 @@ from cytoolz import take
 
 
 import rethinkdb as rt
-from rethinkdb.ast import Table as RTable
-from rethinkdb.net import Connection
+
+__all__ = ['compute_one', 'discover', 'RTable']
 
 
 __all__ = ['compute_one', 'discover']
