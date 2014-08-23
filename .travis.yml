@@ -55,6 +55,7 @@ install:
   - sudo apt-get update
   - sudo apt-get install rethinkdb
   - pip install rethinkdb
+  - sudo rethinkdb &
 
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
