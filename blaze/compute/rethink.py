@@ -10,17 +10,31 @@ from ..dispatch import dispatch
 
 from cytoolz import take
 
+
 import rethinkdb as rt
 from rethinkdb.ast import Table as RTable
 from rethinkdb.net import Connection
 
 
 __all__ = ['compute_one', 'discover']
+class RTable(object):
+    """
+    Examples
+    --------
+    >>> import rethinkdb as r
+    >>> t = RTable(r.table('test'), r.connect())
+    """
+    def __init__(self, t, conn):
+        self.t = t
+        self.conn = conn
+
+    def __getattr__(self, attr):
+        return getattr(self.t, attr)
 
 
 @dispatch(RTable)
 def discover(t, n=50):
-    return discover(t, rt.connect())
+    return discover(list(take(n, t.run(t.conn))))
 
 
 @dispatch(RTable, Connection)
@@ -113,9 +127,9 @@ def compute_one(d, t):
     return t.with_fields(*d.columns).distinct()
 
 
-@dispatch(Expr, RTable, Connection)
-def compute_one(e, t, c):
-    result = compute_one(e, t).run(c)
+@dispatch(Expr, RTable)
+def compute_one(e, t):
+    result = compute_one(e, t).run(t.conn)
     try:
         return list(result)
     except TypeError:

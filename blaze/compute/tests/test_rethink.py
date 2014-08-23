@@ -1,11 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
+import sys
 import pytest
 
 rt = pytest.importorskip('rethinkdb')
+pytestmark = pytest.mark.skipif(sys.version_info[0] >= 3,
+                                reason='RethinkDB is not compatible with '
+                                'Python 3')
 
 from blaze import TableSymbol, discover, dshape
-from blaze.compute.rethink import compute_one
+from blaze.compute.rethink import compute_one, RTable
 
 
 bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
@@ -14,15 +18,14 @@ bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
         {'name': 'Bob', 'amount': 200, 'id': 10},
         {'name': 'Bob', 'amount': 300, 'id': 42}]
 
-conn = rt.connect()
-
 
 @pytest.yield_fixture(scope='module')
 def tb():
+    conn = rt.connect()
     rt.table_create('test').run(conn)
     t = rt.table('test')
     t.insert(bank).run(conn)
-    yield t
+    yield RTable(t, conn)
     rt.table_drop('test').run(conn)
 
 
@@ -56,9 +59,10 @@ def bsg():
                         {u'content': u'The Cylons have the ability...',
                          u'title': u'They look like us'}],
              u'tv_show': u'Battlestar Galactica'}]
+    conn = rt.connect()
     rt.table_create('bsg').run(conn)
     rt.table('bsg').insert(data).run(conn)
-    yield rt.table('bsg')
+    yield RTable(rt.table('bsg'), conn)
     rt.table_drop('bsg').run(conn)
 
 
@@ -78,7 +82,7 @@ def test_table_symbol(ts, tb):
 
 
 def test_projection(ts, tb):
-    result = compute_one(ts[['name', 'id']], tb, conn)
+    result = compute_one(ts[['name', 'id']], tb)
     bank = [{'name': 'Alice', 'id': 3},
             {'name': 'Alice', 'id': 4},
             {'name': 'Bob', 'id': 7},
@@ -89,12 +93,12 @@ def test_projection(ts, tb):
 
 def test_head_column(ts, tb):
     expr = ts.name.head(3)
-    result = compute_one(expr, tb, conn)
+    result = compute_one(expr, tb)
     assert result == [{'name': 'Alice'}, {'name': 'Alice'}, {'name': 'Bob'}]
 
 
 def test_head(ts, tb):
-    result = compute_one(ts.head(3), tb, conn)
+    result = compute_one(ts.head(3), tb)
     assert result == [{'name': 'Alice', 'amount': 100, 'id': 3},
                       {'name': 'Alice', 'amount': 200, 'id': 4},
                       {'name': 'Bob', 'amount': 100, 'id': 7}]
@@ -108,7 +112,7 @@ def test_selection(ts, tb):
 
 def test_multiple_column_sort(ts, tb):
     expr = ts.sort(['name', 'id'], ascending=False).head(3)[['name', 'id']]
-    result = compute_one(expr, tb, conn)
+    result = compute_one(expr, tb)
     bank = [{'name': 'Alice', 'id': 3},
             {'name': 'Alice', 'id': 4},
             {'name': 'Bob', 'id': 7},
@@ -120,29 +124,29 @@ def test_multiple_column_sort(ts, tb):
 class TestReductions(object):
     def test_sum(self, ts, tb):
         expr = ts.amount.sum()
-        result = compute_one(expr, tb, conn)
+        result = compute_one(expr, tb)
         expected = 900
         assert result == expected
 
     def test_min(self, ts, tb):
-        result = compute_one(ts.amount.min(), tb, conn)
+        result = compute_one(ts.amount.min(), tb)
         assert result == 100
 
     def test_max(self, ts, tb):
-        result = compute_one(ts.amount.max(), tb, conn)
+        result = compute_one(ts.amount.max(), tb)
         assert result == 300
 
     def test_count(self, ts, tb):
         expr = ts.head(3).id.count()
-        result = compute_one(expr, tb, conn)
+        result = compute_one(expr, tb)
         assert result == 3
 
     def test_mean(self, ts, tb):
         expr = ts.amount.mean()
-        result = compute_one(expr, tb, conn)
+        result = compute_one(expr, tb)
         expected = 900.0 / len(bank)
         assert result == expected
 
     def test_nunique(self, ts, tb):
-        result = compute_one(ts.amount.nunique(), tb, conn)
+        result = compute_one(ts.amount.nunique(), tb)
         assert result == 3
