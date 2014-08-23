@@ -56,7 +56,7 @@ install:
   - if [[ $is_py2 == 0 ]]; then sudo apt-get update; fi
   - if [[ $is_py2 == 0 ]]; then sudo apt-get install rethinkdb; fi
   - if [[ $is_py2 == 0 ]]; then pip install rethinkdb; fi
-  - if [[ $is_py2 == 0 ]]; then sudo rethinkdb &; fi
+  - if [[ $is_py2 == 0 ]]; then sudo rethinkdb & ; fi
 
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
