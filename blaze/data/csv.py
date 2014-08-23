@@ -132,6 +132,7 @@ class CSV(DataDescriptor):
         if not schema and 'w' in mode:
             raise ValueError('Please specify schema for writable CSV file')
         self.path = path
+        self._abspath = os.path.abspath(path)
         self.mode = mode
         self.open = open
 

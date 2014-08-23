@@ -3,8 +3,10 @@ from __future__ import (absolute_import, division, print_function,
 
 from datetime import date, datetime, time
 from decimal import Decimal
+import sys
 from dynd import nd
 import sqlalchemy as sql
+import sqlalchemy
 import datashape
 from datashape import dshape, var, Record, Option, isdimension
 from itertools import chain
@@ -16,6 +18,7 @@ from ..compatibility import basestring
 from .core import DataDescriptor
 from .utils import coerce_row_to_dict
 from ..compatibility import _inttypes, _strtypes
+from .csv import CSV
 
 # http://docs.sqlalchemy.org/en/latest/core/types.html
 
@@ -178,6 +181,7 @@ class SQL(DataDescriptor):
             engine = sql.create_engine(engine)
         self.engine = engine
         self.tablename = tablename
+        self.dbtype = engine.url.drivername
         metadata = sql.MetaData()
 
         if engine.has_table(tablename):
@@ -274,3 +278,174 @@ class SQL(DataDescriptor):
             return next(result)
         else:
             return result
+
+@dispatch(SQL, CSV)
+def into(sql, csv, if_exists="replace", **kwargs):
+    """
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    FORMAT : string
+         Data Format
+         text, csv, binary default: CSV
+    DELIMITER : string
+        Delimiter character
+    NULL :
+        Null character
+        Default: '' (empty string)
+    HEADER : bool
+        Flag to define file contains a header (only to be used with CSV)
+    QUOTE : string
+        Single byte quote:  Default is double-quote. ex: "1997","Ford","E350")
+    ESCAPE : string
+        A single one-byte character for defining escape characters. Default is the same as the QUOTE
+    ENCODING :
+        An encoding name (POSTGRES): utf8, latin-1, ascii.  Default: UTF8
+
+    ##NOT IMPLEMENTED
+    # FORCE_QUOTE { ( column_name [, ...] ) | * }
+    # FORCE_NOT_NULL ( column_name [, ...] )
+    # OIDS : bool
+    #     Specifies copying the OID for each row
+
+    """
+    dbtype = sql.engine.url.drivername
+    db = sql.engine.url.database
+    engine = sql.engine
+    abspath = csv._abspath
+    tblname = sql.tablename
+
+    # using dialect mappings to support multiple term mapping for similar concepts
+    from .dialect_mappings import dialect_terms
+
+    def retrieve_kwarg(term):
+        terms = [k for k, v in dialect_terms.iteritems() if v == term]
+        for t in terms:
+            val = kwargs.get(t, None)
+            if val:
+                return val
+        return val
+
+    for k in kwargs.keys():
+        try:
+            dialect_terms[k]
+        except KeyError:
+            raise KeyError(k, " not found in dialect mapping")
+
+    format_str = retrieve_kwarg('format_str') or 'csv'
+    encoding =  retrieve_kwarg('encoding') or ('utf8' if db=='mysql' else 'latin1')
+    delimiter = retrieve_kwarg('delimiter') or csv.dialect['delimiter']
+    na_value = retrieve_kwarg('na_value') or ""
+    quotechar = retrieve_kwarg('quotechar') or '"'
+    escapechar = retrieve_kwarg('escapechar') or quotechar
+    header = retrieve_kwarg('header') or csv.header
+    lineterminator = retrieve_kwarg('lineterminator') or u'\n'
+
+    skiprows = csv.header or 0 # None or 0 returns 0
+    skiprows = retrieve_kwarg('skiprows') or int(skiprows) #hack to skip 0 or 1
+
+
+    copy_info = {'abspath': abspath,
+                 'tblname': tblname,
+                 'db': db,
+                 'format_str': format_str,
+                 'delimiter':delimiter,
+                 'na_value': na_value,
+                 'quotechar': quotechar,
+                 'escapechar': escapechar,
+                 'lineterminator': lineterminator,
+                 'skiprows': skiprows,
+                 'header': header,
+                 'encoding': encoding}
+
+    if if_exists == 'replace':
+        if engine.has_table(tblname):
+
+            # drop old table
+            metadata = sqlalchemy.MetaData()
+            metadata.reflect(engine, only=[tblname])
+            t = metadata.tables[tblname]
+            t.drop(engine)
+
+            # create a new one
+            sql.table.create(engine)
+
+
+    if dbtype == 'postgresql':
+        import psycopg2
+        try:
+            conn = sql.engine.raw_connection()
+            cursor = conn.cursor()
+
+            #lots of options here to handle formatting
+
+            sql_stmnt = """
+                        COPY {tblname} FROM '{abspath}'
+                        (FORMAT {format_str}, DELIMITER E'{delimiter}',
+                        NULL '{na_value}', QUOTE '{quotechar}', ESCAPE '{escapechar}',
+                        HEADER {header}, ENCODING '{encoding}');
+                        """
+            sql_stmnt = sql_stmnt.format(**copy_info)
+            cursor.execute(sql_stmnt)
+            conn.commit()
+
+        #not sure about failures yet
+        except psycopg2.NotSupportedError as e:
+            print("Failed to use POSTGRESQL COPY.\nERR MSG: ", e)
+            print("Defaulting to sql.extend() method")
+            sql.extend(csv)
+
+    #only works on OSX/Unix
+    elif dbtype == 'sqlite':
+        import subprocess
+        if sys.platform == 'win32':
+            print("Windows native sqlite copy is not supported")
+            print("Defaulting to sql.extend() method")
+            sql.extend(csv)
+        else:
+            #only to be used when table isn't already created?
+            # cmd = """
+            #     echo 'create table {tblname}
+            #     (id integer, datatype_id integer, other_id integer);') | sqlite3 bar.db"
+            #     """
+
+            copy_cmd = "(echo '.mode csv'; echo '.import {abspath} {tblname}';) | sqlite3 {db}"
+            copy_cmd = copy_cmd.format(**copy_info)
+
+            ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+            output = ps.stdout.read()
+
+    elif dbtype == 'mysql':
+        import MySQLdb
+        try:
+            conn = sql.engine.raw_connection()
+            cursor = conn.cursor()
+
+            #no null handling
+            sql_stmnt = u"""
+                        LOAD DATA LOCAL INFILE '{abspath}'
+                        INTO TABLE {tblname}
+                        CHARACTER SET {encoding}
+                        FIELDS
+                            TERMINATED BY '{delimiter}'
+                            ENCLOSED BY '{quotechar}'
+                            ESCAPED BY '{escapechar}'
+                        LINES TERMINATED by '{lineterminator}'
+                        IGNORE {skiprows} LINES;
+                        """
+            sql_stmnt = sql_stmnt.format(**copy_info)
+
+            cursor.execute(sql_stmnt)
+            conn.commit()
+
+        #not sure about failures yet
+        except MySQLdb.OperationalError as e:
+            print("Failed to use MySQL LOAD.\nERR MSG: ", e)
+            print("Defaulting to sql.extend() method")
+            sql.extend(csv)
+
+    else:
+        print("Warning! Could not find native copy call")
+        print("Defaulting to sql.extend() method")
+        sql.extend(csv)
