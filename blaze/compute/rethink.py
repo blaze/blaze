@@ -1,8 +1,9 @@
 import numbers
 
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By
-from ..expr import Selection, Relational, ScalarSymbol
+from ..expr import Selection, Relational, ScalarSymbol, ColumnWise
 from ..expr import count, sum, min, max, mean, nunique
+from ..expr import Arithmetic
 
 from ..compatibility import basestring
 
@@ -111,7 +112,7 @@ def compute_one(s, _, **kwargs):
     return s
 
 
-@dispatch(Relational, RqlQuery)
+@dispatch((Relational, Arithmetic), RqlQuery)
 def compute_one(r, t, **kwargs):
     return r.op(compute_one(r.lhs, t), compute_one(r.rhs, t))
 
@@ -125,6 +126,11 @@ def compute_one(s, t, **kwargs):
 @dispatch(Distinct, RqlQuery)
 def compute_one(d, t, **kwargs):
     return t.with_fields(*d.columns).distinct()
+
+
+@dispatch(ColumnWise, RqlQuery)
+def compute_one(cw, t, **kwargs):
+    return t.map(compute_one(cw.expr, t))
 
 
 @dispatch(By, RqlQuery)
