@@ -19,13 +19,11 @@ conn = rt.connect()
 
 @pytest.yield_fixture
 def tb():
-    rt.db_create('test').run(conn)
-    rt.db('test').table_create('test').run(conn)
+    rt.table_create('test').run(conn)
     t = rt.table('test')
     t.insert(bank).run(conn)
     yield t
     rt.table_drop('test').run(conn)
-    rt.db_drop('test').run(conn)
 
 
 @pytest.fixture
