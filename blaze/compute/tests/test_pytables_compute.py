@@ -244,10 +244,10 @@ def test_create_multiple_indexes(pyt):
 
 
 def test_create_multiple_indexes_fails(pyt):
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         create_index(pyt, ['id', 'blarg'])
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         create_index(pyt, ['foo', 'bar'])
 
 

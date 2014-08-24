@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+from functools import partial
 import numpy as np
 import tables as tb
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
                         TableSymbol, Sort, Reduction, count)
 from blaze.expr import eval_str
-from blaze.compatibility import basestring
+from blaze.compatibility import basestring, map
 from datashape import Record
 from ..dispatch import dispatch
 
@@ -21,16 +22,17 @@ def drop(t):
 
 
 @dispatch(tb.Table, basestring)
-def create_index(t, column_name, **kwargs):
-    create_index(getattr(t.cols, column_name), **kwargs)
+def create_index(t, column, **kwargs):
+    create_index(getattr(t.cols, column), **kwargs)
 
 
-@dispatch(tb.Table, (list, tuple))
-def create_index(t, column_names, **kwargs):
-    assert all(hasattr(t.cols, column_name) for column_name in column_names), \
-        'table %s does not have all passed in columns %s' % (t, column_names)
-    for column_name in column_names:
-        create_index(t, column_name, **kwargs)
+@dispatch(tb.Table, list)
+def create_index(t, columns, **kwargs):
+    if not all(map(partial(hasattr, t.cols), columns)):
+        raise ValueError('table %s does not have all passed in columns %s' %
+                         (t, columns))
+    for column in columns:
+        create_index(t, column, **kwargs)
 
 
 @dispatch(tb.Column)
