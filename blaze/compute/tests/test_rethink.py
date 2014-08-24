@@ -173,7 +173,7 @@ class TestReductions(object):
 
 
 @nopython3
-def test_simple_by(self, tsc, tb):
+def test_simple_by(tsc, tb):
     expr = by(tsc, tsc.name, tsc.amount.sum())
     result = compute(expr, tb)
     assert isinstance(result, dict)
@@ -181,7 +181,7 @@ def test_simple_by(self, tsc, tb):
 
 
 @nopython3
-def test_simple_summary(self, tsc, tb):
+def test_simple_summary(tsc, tb):
     t = tsc
     expr = summary(nuniq=t.id.nunique(), sum=t.amount.sum(),
                     mean=t.amount.mean())
