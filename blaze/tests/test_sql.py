@@ -24,9 +24,9 @@ def test_column(sql):
 
 
 def test_drop(sql):
+    assert sql.table.exists(sql.engine)
     drop(sql)
-    with pytest.raises(OperationalError):
-        drop(sql)
+    assert not sql.table.exists(sql.engine)
 
 
 class TestCreateIndex(object):
