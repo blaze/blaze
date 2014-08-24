@@ -173,24 +173,21 @@ class TestReductions(object):
 
 
 @nopython3
-class TestBy(object):
-    def test_simple(self, tsc, tb):
-        expr = by(tsc, tsc.name, tsc.amount.sum())
-        result = compute(expr, tb)
-        assert isinstance(result, dict)
-        assert result == {'Alice': 300, 'Bob': 600}
+def test_simple_by(self, tsc, tb):
+    expr = by(tsc, tsc.name, tsc.amount.sum())
+    result = compute(expr, tb)
+    assert isinstance(result, dict)
+    assert result == {'Alice': 300, 'Bob': 600}
 
 
 @nopython3
-class TestSummary(object):
-
-    def test_simple(self, tsc, tb):
-        t = tsc
-        expr = summary(nuniq=t.id.nunique(), sum=t.amount.sum(),
-                       mean=t.amount.mean())
-        result = compute(expr, tb)
-        assert isinstance(result, dict)
-        assert result == {'id_nuniq': 5, 'amount_sum': 900, 'amount_mean': 180}
+def test_simple_summary(self, tsc, tb):
+    t = tsc
+    expr = summary(nuniq=t.id.nunique(), sum=t.amount.sum(),
+                    mean=t.amount.mean())
+    result = compute(expr, tb)
+    assert isinstance(result, dict)
+    assert result == {'id_nuniq': 5, 'amount_sum': 900, 'amount_mean': 180}
 
 
 @nopython3
