@@ -4,7 +4,7 @@ import sys
 import pytest
 
 from blaze.compatibility import xfail
-from blaze import TableSymbol, discover, dshape, compute, by
+from blaze import TableSymbol, discover, dshape, compute, by, summary
 
 nopython3 = xfail(sys.version_info[0] >= 3,
                   reason='RethinkDB is not compatible with Python 3')
@@ -179,6 +179,18 @@ class TestBy(object):
         result = compute(expr, tb)
         assert isinstance(result, dict)
         assert result == {'Alice': 300, 'Bob': 600}
+
+
+@nopython3
+class TestSummary(object):
+
+    def test_simple(self, tsc, tb):
+        t = tsc
+        expr = summary(nuniq=t.id.nunique(), sum=t.amount.sum(),
+                       mean=t.amount.mean())
+        result = compute(expr, tb)
+        assert isinstance(result, dict)
+        assert result == {'id_nuniq': 5, 'amount_sum': 900, 'amount_mean': 180}
 
 
 @nopython3
