@@ -51,25 +51,17 @@ def drop(s):
     s.table.drop(s.engine)
 
 
-@dispatch(SQL, basestring, basestring)
-def create_index(s, index_name, column_name, unique=False):
-    sa.Index(index_name, getattr(s.table.c, column_name),
-             unique=unique).create(s.engine)
+@dispatch(SQL, basestring)
+def create_index(s, column, name=None, unique=False):
+    if name is None:
+        raise ValueError('SQL indexes must have a name')
+    sa.Index(name, getattr(s.table.c, column), unique=unique).create(s.engine)
 
 
-@dispatch(SQL, basestring, list)
-def create_index(s, index_name, column_names, unique=False):
-    args = index_name,
-    args += tuple(getattr(s.table.c, column_name)
-                  for column_name in column_names)
+@dispatch(SQL, list)
+def create_index(s, columns, name=None, unique=False):
+    if name is None:
+        raise ValueError('SQL indexes must have a name')
+    args = name,
+    args += tuple(getattr(s.table.c, column) for column in columns)
     sa.Index(*args, unique=unique).create(s.engine)
-
-
-@dispatch(SQL, dict)
-def create_index(s, index_pairs, unique=False):
-    column_names = list(index_pairs.values())
-    assert all(hasattr(s.table.c, col_name) for col_name in column_names), \
-        ('table %s does not have all input columns %s' % (s.table,
-                                                          column_names))
-    for index_name, column_name in index_pairs.items():
-        create_index(s, index_name, column_name)
