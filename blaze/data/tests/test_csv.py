@@ -383,8 +383,9 @@ schema = "{ f0: string, f1: string, f2: int16, f3: bool }"
 
 
 def test_drop(csv):
+    assert os.path.exists(csv.path)
     drop(csv)
-    assert not os.path.exists('test.csv')
+    assert not os.path.exists(csv.path)
 
 
 if __name__ == '__main__':
