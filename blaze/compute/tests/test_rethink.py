@@ -85,35 +85,31 @@ def test_discover(bsg):
 
 @nopython3
 def test_table_symbol(ts, tb):
-    result = compute(ts.child, tb)
-    assert isinstance(result, list)
+    result = list(compute(ts.child, tb))
     assert result == list(tb.t.run(tb.conn))
 
 
 @nopython3
 def test_projection(ts, tb):
-    result = compute(ts[['name', 'id']], tb)
+    result = list(compute(ts[['name', 'id']], tb))
     bank = [{'name': 'Alice', 'id': 3},
             {'name': 'Alice', 'id': 4},
             {'name': 'Bob', 'id': 7},
             {'name': 'Bob', 'id': 10},
             {'name': 'Bob', 'id': 42}]
-    assert isinstance(result, list)
     assert result == bank
 
 
 @nopython3
 def test_head_column(ts, tb):
     expr = ts.name.head(3)
-    result = compute(expr, tb)
-    assert isinstance(result, list)
+    result = list(compute(expr, tb))
     assert result == [{'name': 'Alice'}, {'name': 'Alice'}, {'name': 'Bob'}]
 
 
 @nopython3
 def test_head(ts, tb):
-    result = compute(ts.head(3), tb)
-    assert isinstance(result, list)
+    result = list(compute(ts.head(3), tb))
     assert result == [{'name': 'Alice', 'amount': 100, 'id': 3},
                       {'name': 'Alice', 'amount': 200, 'id': 4},
                       {'name': 'Bob', 'amount': 100, 'id': 7}]
@@ -123,15 +119,13 @@ def test_head(ts, tb):
 def test_selection(ts, tb):
     q = ts[(ts.name == 'Alice') & (ts.amount < 200)]
     result = compute(q, tb)
-    assert isinstance(result, list)
-    assert result == [{'name': 'Alice', 'amount': 100, 'id': 3}]
+    assert list(result) == [{'name': 'Alice', 'amount': 100, 'id': 3}]
 
 
 @nopython3
 def test_multiple_column_sort(ts, tb):
     expr = ts.sort(['name', 'id'], ascending=False).head(3)[['name', 'id']]
-    result = compute(expr, tb)
-    assert isinstance(result, list)
+    result = list(compute(expr, tb))
     bank = [{'name': 'Alice', 'id': 3},
             {'name': 'Alice', 'id': 4},
             {'name': 'Bob', 'id': 7},
@@ -191,12 +185,10 @@ class TestBy(object):
 class TestColumnWise(object):
     def test_add(self, ts, tb):
         expr = ts.id + ts.amount
-        result = compute(expr, tb)
-        assert isinstance(result, list)
+        result = list(compute(expr, tb))
         assert result == [r['amount'] + r['id'] for r in bank]
 
     def test_nested(self, ts, tb):
         expr = 1 + ts.id + ts.amount * 2
-        result = compute(expr, tb)
-        assert isinstance(result, list)
+        result = list(compute(expr, tb))
         assert result == [1 + r['id'] + r['amount'] * 2 for r in bank]
