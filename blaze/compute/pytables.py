@@ -22,12 +22,12 @@ def drop(t):
 
 
 @dispatch(tb.Table, basestring)
-def create_index(t, column, **kwargs):
+def create_index(t, column, name=None, **kwargs):
     create_index(getattr(t.cols, column), **kwargs)
 
 
 @dispatch(tb.Table, list)
-def create_index(t, columns, **kwargs):
+def create_index(t, columns, name=None, **kwargs):
     if not all(map(partial(hasattr, t.cols), columns)):
         raise ValueError('table %s does not have all passed in columns %s' %
                          (t, columns))
@@ -36,7 +36,7 @@ def create_index(t, columns, **kwargs):
 
 
 @dispatch(tb.Column)
-def create_index(c, optlevel=9, kind='full', **kwargs):
+def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
     c.create_index(optlevel=optlevel, kind=kind, **kwargs)
 
 
