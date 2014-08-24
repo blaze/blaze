@@ -1,7 +1,7 @@
 import numbers
 
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By
-from ..expr import Selection, Relational, ScalarSymbol, ColumnWise
+from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
 from ..expr import count, sum, min, max, mean, nunique
 from ..expr import Arithmetic
 
@@ -131,6 +131,13 @@ def compute_one(d, t, **kwargs):
 @dispatch(ColumnWise, RqlQuery)
 def compute_one(cw, t, **kwargs):
     return t.map(compute_one(cw.expr, t))
+
+
+@dispatch(Summary, RqlQuery)
+def compute_one(s, t, **kwargs):
+    return rt.expr(dict(('%s_%s' % (op.child.column, name),
+                         compute_one(op, t, **kwargs))
+                        for name, op in zip(s.names, s.values)))
 
 
 @dispatch(By, RqlQuery)
