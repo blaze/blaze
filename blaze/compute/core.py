@@ -151,20 +151,19 @@ def create_index(t, index_name, column_name_or_names):
 
     Examples
     --------
-    >>> # Using PyTables
-    >>> import tables as tb
-    >>> import numpy as np
-    >>> import tempfile
-    >>> _, filename = tempfile.mkstemp()
+    >>> # Using SQLite
+    >>> from blaze import SQL
+    >>> # create a table called 'tb', in memory
+    >>> sql = SQL('sqlite:///:memory:', 'tb',
+    ...           schema='{id: int64, value: float64, categ: string}')
     >>> data = [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
-    >>> arr = np.array(data, dtype=[('id', 'i8'), ('value', 'f8'),
-    ...                             ('key', '|S1')])
-    >>> f = tb.open_file(filename, mode='w')
-    >>> t = f.create_table('/', 'table', arr)
-    >>> create_index(t, 'id')
-    >>> assert t.colindexed['id']
-    >>> t.close()
-    >>> f.close()
+    >>> sql.extend(data)
+    >>> # create an index on the 'id' column (for SQL we must provide a name)
+    >>> sql.table.indexes
+    set()
+    >>> create_index(sql, 'id', name='id_index')
+    >>> sql.table.indexes
+    {Index('id_index', Column('id', BigInteger(), table=<tb>, nullable=False))}
     """
     raise NotImplementedError("create_index not implemented for type %r" %
                               type(t).__name__)
@@ -182,20 +181,20 @@ def drop(rsrc):
 
     Examples
     --------
-    >>> # Using PyTables
-    >>> import tables as tb
-    >>> import numpy as np
-    >>> import tempfile
-    >>> _, filename = tempfile.mkstemp()
+    >>> # Using SQLite
+    >>> from blaze import SQL, into
+    >>> # create a table called 'tb', in memory
+    >>> sql = SQL('sqlite:///:memory:', 'tb',
+    ...           schema='{id: int64, value: float64, categ: string}')
     >>> data = [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
-    >>> arr = np.array(data, dtype=np.dtype([('id', 'i8'), ('value', 'f8'),
-    ...                                      ('key', '|S1')]))
-    >>> f = tb.open_file(filename, mode='w')
-    >>> t = f.create_table('/', 'table', arr)
-    >>> assert t in f.list_nodes('/')
-    >>> drop(t)
-    >>> assert t not in f.list_nodes('/')
-    >>> f.close()
+    >>> sql.extend(data)
+    >>> into(list, sql)
+    [(1, 2.0, 'a'), (2, 3.0, 'b'), (3, 4.0, 'c')]
+    >>> sql.table.exists(sql.engine)
+    True
+    >>> drop(sql)
+    >>> sql.table.exists(sql.engine)
+    False
     """
     raise NotImplementedError("drop not implemented for type %r" %
                               type(rsrc).__name__)
