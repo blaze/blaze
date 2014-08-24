@@ -54,17 +54,17 @@ def scrub_keys(t):
 @dispatch(list)
 def scrub_keys(seq):
     for el in seq:
-        assert isinstance(el, (tuple, basestring)), \
-            ('indexing keys must be a string or pair of '
-             '(<column name>, <parameter>)')
+        if not isinstance(el, (tuple, basestring)):
+            raise TypeError('indexing keys must be a string or pair of '
+                            '(<column name>, <parameter>)')
         yield scrub_keys(el)
 
 
-@dispatch(Collection, basestring, list)
-def create_index(coll, index_name, keys, **kwargs):
-    coll.create_index(list(scrub_keys(keys)), name=index_name, **kwargs)
+@dispatch(Collection, basestring)
+def create_index(coll, key, **kwargs):
+    coll.create_index(key, **kwargs)
 
 
-@dispatch(Collection, basestring, basestring)
-def create_index(coll, index_name, key, **kwargs):
-    coll.create_index(key, name=index_name, **kwargs)
+@dispatch(Collection, list)
+def create_index(coll, keys, **kwargs):
+    coll.create_index(list(scrub_keys(keys)), **kwargs)

@@ -84,27 +84,56 @@ def mongo_idx():
 
 class TestCreateIndex(object):
     def test_create_index(self, mongo_idx):
-        create_index(mongo_idx.tmp_collection, 'idx_id', 'id')
-        assert 'idx_id' in mongo_idx.tmp_collection.index_information()
+        create_index(mongo_idx.tmp_collection, 'id')
+        assert 'id_1' in mongo_idx.tmp_collection.index_information()
 
     def test_create_index_single_element_list(self, mongo_idx):
-        create_index(mongo_idx.tmp_collection, 'idx_id', ['id'])
-        assert 'idx_id' in mongo_idx.tmp_collection.index_information()
+        create_index(mongo_idx.tmp_collection, ['id'])
+        assert 'id_1' in mongo_idx.tmp_collection.index_information()
 
     def test_create_composite_index(self, mongo_idx):
-        create_index(mongo_idx.tmp_collection, 'c_idx', ['id', 'amount'])
-        assert 'c_idx' in mongo_idx.tmp_collection.index_information()
+        create_index(mongo_idx.tmp_collection, ['id', 'amount'])
+        assert 'id_1_amount_1' in mongo_idx.tmp_collection.index_information()
 
     def test_create_composite_index_params(self, mongo_idx):
-        create_index(mongo_idx.tmp_collection, 'c_idx',
+        create_index(mongo_idx.tmp_collection,
                      [('id', ASCENDING), ('amount', DESCENDING)])
-        assert 'c_idx' in mongo_idx.tmp_collection.index_information()
+        assert 'id_1_amount_-1' in mongo_idx.tmp_collection.index_information()
 
     def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
-        with pytest.raises(AssertionError):
-            create_index(mongo_idx.tmp_collection, 'asdf', [['id', DESCENDING]])
+        with pytest.raises(TypeError):
+            create_index(mongo_idx.tmp_collection, [['id', DESCENDING]])
 
     def test_create_index_with_unique(self, mongo_idx):
         coll = mongo_idx.tmp_collection
-        create_index(coll, 'c_idx', 'id', unique=True)
+        create_index(coll, 'id', unique=True)
+        assert coll.index_information()['id_1']['unique']
+
+
+class TestCreateNamedIndex(object):
+    def test_create_index(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection, 'id', name='idx_id')
+        assert 'idx_id' in mongo_idx.tmp_collection.index_information()
+
+    def test_create_index_single_element_list(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection, ['id'], name='idx_id')
+        assert 'idx_id' in mongo_idx.tmp_collection.index_information()
+
+    def test_create_composite_index(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection, ['id', 'amount'], name='c_idx')
+        assert 'c_idx' in mongo_idx.tmp_collection.index_information()
+
+    def test_create_composite_index_params(self, mongo_idx):
+        create_index(mongo_idx.tmp_collection,
+                     [('id', ASCENDING), ('amount', DESCENDING)],
+                     name='c_idx')
+        assert 'c_idx' in mongo_idx.tmp_collection.index_information()
+
+    def test_fails_when_using_not_list_of_tuples_or_strings(self, mongo_idx):
+        with pytest.raises(TypeError):
+            create_index(mongo_idx.tmp_collection, [['id', DESCENDING]])
+
+    def test_create_index_with_unique(self, mongo_idx):
+        coll = mongo_idx.tmp_collection
+        create_index(coll, 'id', unique=True, name='c_idx')
         assert coll.index_information()['c_idx']['unique']
