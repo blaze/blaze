@@ -7,9 +7,9 @@ from toolz import concat
 from collections import Iterator
 
 from blaze.expr import *
-from blaze.compute.chunks import *
 from blaze.compute.core import compute
 from blaze.compute.python import *
+from blaze.compute.chunks import *
 
 
 data = [[1, 'Alice', 100],

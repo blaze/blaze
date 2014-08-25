@@ -32,6 +32,7 @@ from cytoolz import unique
 from ..compatibility import builtins
 from ..dispatch import dispatch
 from .core import compute
+from ..data.core import DataDescriptor
 
 __all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'chunk', 'chunks', 'into']
 
@@ -129,7 +130,7 @@ def compute_one(expr, c, **kwargs):
     return compute_one(expr, u)
 
 
-@dispatch((Selection, RowWise), ChunkIterator)
+@dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
 def compute_one(expr, c, **kwargs):
     return ChunkIterator(compute_one(expr, chunk) for chunk in c)
 
@@ -149,13 +150,15 @@ def compute_one(expr, c1, c2, **kwargs):
     raise NotImplementedError("Can not perform chunked join of "
             "two chunked iterators")
 
+dict_items = type(dict().items())
 
-@dispatch(Join, object, ChunkIterator)
+@dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
 def compute_one(expr, other, c, **kwargs):
     return ChunkIterator(compute_one(expr, other, chunk) for chunk in c)
 
 
-@dispatch(Join, ChunkIterator, object)
+@dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator,
+    DataDescriptor))
 def compute_one(expr, c, other, **kwargs):
     return ChunkIterator(compute_one(expr, chunk, other) for chunk in c)
 
