@@ -9,7 +9,8 @@ from abc import abstractproperty
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
-from toolz import concat, partial, first, compose, get, unique, second
+from toolz import (concat, partial, first, compose, get, unique, second,
+        isdistinct, frequencies)
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol, Number
@@ -1188,7 +1189,13 @@ def merge(*tables):
     if not child:
         raise ValueError("No common sub expression found for input tables")
 
-    return Merge(child, tables)
+    result = Merge(child, tables)
+
+    if not isdistinct(result.columns):
+        raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
+            frequencies(child.columns).items() if v > 1))
+
+    return result
 
 
 class Merge(RowWise):
