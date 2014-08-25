@@ -34,7 +34,7 @@ from ..dispatch import dispatch
 from .core import compute
 from ..data.core import DataDescriptor
 
-__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'chunk', 'chunks', 'into']
+__all__ = ['ChunkIterable', 'ChunkIterator', 'ChunkIndexable', 'get_chunk', 'chunks', 'into']
 
 class ChunkIterator(object):
     def __init__(self, seq):
@@ -62,7 +62,7 @@ class ChunkIndexable(ChunkIterable):
         self.kwargs = kwargs
 
     def __getitem__(self, key):
-        return chunk(self.seq, key, **self.kwargs)
+        return get_chunk(self.seq, key, **self.kwargs)
 
     def __iter__(self):
         try:
@@ -75,7 +75,7 @@ class ChunkIndexable(ChunkIterable):
         else:
             for i in itertools.count(0):
                 try:
-                    yield chunk(self.seq, i, **self.kwargs)
+                    yield get_chunk(self.seq, i, **self.kwargs)
                 except IndexError:
                     raise StopIteration()
 
@@ -238,7 +238,7 @@ def chunks(seq, chunksize=None):
 
 
 @dispatch(object, int)
-def chunk(data, i, chunksize=None):
+def get_chunk(data, i, chunksize=None):
     """ Get the ``i``th chunk from a data resource
 
     Returns a single chunk of the data
@@ -256,10 +256,10 @@ def chunk(data, i, chunksize=None):
     -------
 
     >>> data = list(range(1000))
-    >>> chunk(data, 0, chunksize=3)
+    >>> get_chunk(data, 0, chunksize=3)
     [0, 1, 2]
 
-    >>> chunk(data, 3, chunksize=3)
+    >>> get_chunk(data, 3, chunksize=3)
     [9, 10, 11]
 
 
@@ -277,7 +277,7 @@ def chunks(seq, chunksize=1024):
     return partition_all(chunksize, seq)
 
 @dispatch((list, tuple), int)
-def chunk(seq, i, chunksize=1024):
+def get_chunk(seq, i, chunksize=1024):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return seq[start:stop]

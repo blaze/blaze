@@ -103,7 +103,7 @@ def chunks(b, chunksize=2**15):
 
 
 @dispatch((bcolz.carray, bcolz.ctable), int)
-def chunk(b, i, chunksize=2**15):
+def get_chunk(b, i, chunksize=2**15):
     start = chunksize * i
     stop = chunksize * (i + 1)
     return b[start:stop]

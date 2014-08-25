@@ -112,5 +112,5 @@ def test_into_DataFrame_chunks():
 
 def test_chunk_list():
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    assert chunk(data, 0, chunksize=2) == [1, 2]
-    assert chunk(data, 2, chunksize=2) == [5, 6]
+    assert get_chunk(data, 0, chunksize=2) == [1, 2]
+    assert get_chunk(data, 2, chunksize=2) == [5, 6]
