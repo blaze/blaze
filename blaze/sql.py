@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from .compute.sql import select
 from .data.sql import SQL, dispatch, first
-from .expr.table import Expr, TableExpr, Projection, Column
+from .expr import Expr, TableExpr, Projection, Column, UnaryOp
 from .expr.scalar.core import Scalar
 from .compatibility import basestring
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 __all__ = ['compute_one', 'SQL']
 
 
-@dispatch((Column, Projection, Expr), SQL)
+@dispatch((Column, Projection, Expr, UnaryOp), SQL)
 def compute_one(t, ddesc, **kwargs):
     return compute_one(t, ddesc.table, **kwargs)
 
