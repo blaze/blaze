@@ -25,6 +25,10 @@ def test_mutate():
     assert expr.columns == ['id', 'name', 'amount', 'x']
 #     assert expr.x.isidentical(t.amount + t.id)
 
+def test_transform():
+    expr = transform(t, x=amount + id)
+    assert expr.columns == ['id', 'name', 'amount', 'x']
+
 
 def test_groupby():
     g = group_by(t, name)

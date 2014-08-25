@@ -31,6 +31,9 @@ def mutate(t, **kwargs):
     return merge(*args)
 
 
+transform = mutate
+
+
 class GroupBy(Expr):
     def __init__(self, child, *grouper):
         self.child = child
