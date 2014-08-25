@@ -181,10 +181,9 @@ def test_simple_by(tsc, tb):
 
 
 @nopython3
-def test_simple_summary(tsc, tb):
-    t = tsc
-    expr = summary(nuniq=t.id.nunique(), sum=t.amount.sum(),
-                   mean=t.amount.mean())
+def test_simple_summary(ts, tb):
+    expr = summary(nuniq=ts.id.nunique(), sum=ts.amount.sum(),
+                   mean=ts.amount.mean())
     result = compute(expr, tb)
     assert isinstance(result, dict)
     assert result == {'id_nuniq': 5, 'amount_sum': 900, 'amount_mean': 180}
