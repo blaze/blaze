@@ -4,6 +4,17 @@ from toolz import first, reduce
 import inspect
 
 def inject(t, ns=None):
+    """ Inject columns into local namespace
+
+    >>> t = TableSymbol('t', '{x: int, y: int}')
+    >>> inject(t)
+
+    >>> x
+    t['x']
+
+    >>> x + y
+    t['x'] + t['y']
+    """
     if not ns:
         ns = inspect.currentframe().f_back.f_locals
     for c in t.columns:
@@ -23,18 +34,42 @@ def arrange(t, *columns):
 
 
 def select(t, *columns):
+    """ Select columns from table
+
+    >>> t = TableSymbol('t', '{x: int, y: int, z: int}')
+    >>> select(t, t.x, t.z)
+    t[['x', 'z']]
+    """
     return t[[c.name for c in columns]]
 
 
-def mutate(t, **kwargs):
+def transform(t, **kwargs):
+    """ Add named columns to table
+
+    >>> t = TableSymbol('t', '{x: int, y: int}')
+    >>> transform(t, xy=t.x + t.y).columns
+    ['x', 'y', 'xy']
+    """
+
     args = [t] + [v.label(k) for k, v in kwargs.items()]
     return merge(*args)
 
 
-transform = mutate
+mutate = transform
 
 
 class GroupBy(Expr):
+    """ A Group By object
+
+    To be operated on by ``blaze.dplyr.api.summarize``
+
+    >>> t = TableSymbol('t', '{x: int, y: int}')
+    >>> g = group_by(t, t.x)
+    >>> summarize(g, total=t.y.sum()).columns
+    ['x', 'total']
+    """
+    __slots__ = ['child', 'grouper']
+
     def __init__(self, child, *grouper):
         self.child = child
         if len(grouper) == 1:
