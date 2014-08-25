@@ -1121,6 +1121,12 @@ class Map(RowWise):
         except AttributeError:
             raise ValueError("Column is un-named, name with col.label('name')")
 
+    def label(self, name):
+        assert self.iscolumn
+        return Map(self.child,
+                   self.func,
+                   Record([[name, self.schema[0].types[0]]]),
+                   self.iscolumn)
 
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table

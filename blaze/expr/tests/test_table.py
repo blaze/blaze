@@ -429,6 +429,14 @@ def test_label():
     assert quantity.columns == ['quantity']
 
 
+def test_map_label():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    c = t.amount.map(identity, schema='{foo: int32}')
+    assert c.label('bar').name == 'bar'
+    assert c.label('bar').child.isidentical(c.child)
+
+
+
 def test_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     assert list(t.columns) == ['name', 'amount', 'id']
