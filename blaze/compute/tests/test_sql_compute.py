@@ -145,7 +145,7 @@ def test_reductions():
     assert str(compute(count(t['amount']), s)) == \
             str(sa.sql.func.count(s.c.amount))
 
-    assert 'amount' == compute(sum(t['amount']), s).name
+    assert 'amount_sum' == compute(sum(t['amount']), s).name
 
 def test_distinct():
     result = str(compute(Distinct(t['amount']), s))
@@ -176,7 +176,7 @@ def test_by():
     expr = by(t, t['name'], t['amount'].sum())
     result = compute(expr, s)
     expected = sa.select([s.c.name,
-                          sa.sql.functions.sum(s.c.amount).label('amount')]
+                          sa.sql.functions.sum(s.c.amount).label('amount_sum')]
                          ).group_by(s.c.name)
 
     assert str(result) == str(expected)
@@ -188,7 +188,7 @@ def test_by_head():
     result = compute(expr, s)
     s2 = select(s).limit(100)
     expected = sa.select([s2.c.name,
-                          sa.sql.functions.sum(s2.c.amount).label('amount')]
+                          sa.sql.functions.sum(s2.c.amount).label('amount_sum')]
                          ).group_by(s2.c.name)
 
     assert str(result) == str(expected)
@@ -199,7 +199,7 @@ def test_by_two():
     result = compute(expr, sbig)
     expected = (sa.select([sbig.c.name,
                            sbig.c.sex,
-                           sa.sql.functions.sum(sbig.c.amount).label('amount')])
+                           sa.sql.functions.sum(sbig.c.amount).label('amount_sum')])
                         .group_by(sbig.c.name, sbig.c.sex))
 
     assert str(result) == str(expected)
