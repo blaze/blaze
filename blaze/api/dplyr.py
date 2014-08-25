@@ -1,6 +1,6 @@
 from ..expr import *
 from operator import and_
-from toolz import first
+from toolz import first, reduce
 import inspect
 
 def inject(t, ns=None):
