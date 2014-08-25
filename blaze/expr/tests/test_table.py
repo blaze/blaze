@@ -384,6 +384,14 @@ def test_by():
     assert str(r.schema[0]['name']) == 'string'
 
 
+def test_by_summary():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    a = by(t, t['name'], sum=sum(t['amount']))
+    b = by(t, t['name'], summary(sum=sum(t['amount'])))
+
+    assert a.isidentical(b)
+
+
 def test_by_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 

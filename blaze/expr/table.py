@@ -16,6 +16,7 @@ from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins
+from ..dispatch import dispatch
 
 __all__ = '''
 TableExpr TableSymbol RowWise Projection Column Selection ColumnWise Join
@@ -882,12 +883,14 @@ class By(TableExpr):
         return dshape(Record(list(params)))
 
 
+@dispatch(TableExpr, TableExpr, (Summary, Reduction))
 def by(child, grouper, apply):
-    if isdimension(apply.dshape[0]):
-        raise TypeError("Expected Reduction")
     return By(child, grouper, apply)
 
-by.__doc__ = By.__doc__
+
+@dispatch(TableExpr, TableExpr)
+def by(child, grouper, **kwargs):
+    return By(child, grouper, summary(**kwargs))
 
 
 class Sort(TableExpr):
