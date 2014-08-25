@@ -1193,7 +1193,7 @@ def merge(*tables):
 
     if not isdistinct(result.columns):
         raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
-            frequencies(child.columns).items() if v > 1))
+            frequencies(result.columns).items() if v > 1))
 
     return result
 
