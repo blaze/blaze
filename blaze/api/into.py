@@ -163,7 +163,6 @@ def into(a, b):
     return b.tolist()
 
 
-
 @dispatch(pd.DataFrame, np.ndarray)
 def into(df, x):
     if len(df.columns) > 0:
@@ -188,7 +187,7 @@ def into(a, b, **kwargs):
     return a
 
 
-@dispatch(tables.Table, _strtypes)
+@dispatch(object, _strtypes)
 def into(a, b, **kwargs):
     return into(a, resource(b, **kwargs), **kwargs)
 
@@ -497,9 +496,10 @@ def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable), CSV)
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table),
+          CSV)
 def into(a, b, **kwargs):
-    return into(a, into(pd.DataFrame(), b), **kwargs)
+    return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
 
 
 @dispatch(np.ndarray, CSV)
@@ -508,7 +508,7 @@ def into(a, b, **kwargs):
 
 
 @dispatch(pd.DataFrame, CSV)
-def into(a, b):
+def into(a, b, **kwargs):
     dialect= b.dialect.copy()
     del dialect['lineterminator']
     dates = [i for i, typ in enumerate(b.schema[0].types)
@@ -518,11 +518,14 @@ def into(a, b):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
-    return pd.read_csv(b.path,
-                       skiprows=1 if b.header else 0,
-                       dtype=dtypes,
-                       names=b.columns,
-                       **dialect)
+    dialect.update(b.add_kwargs)
+    if 'strict' in dialect:
+        del dialect['strict']
+
+    if b.header:
+        dialect['header'] = 0
+
+    return pd.read_csv(b.path, dtype=dtypes, names=b.columns, **dialect)
 
 
 @dispatch(pd.DataFrame, DataDescriptor)

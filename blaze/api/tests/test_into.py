@@ -326,18 +326,19 @@ def test_DataFrame_CSV():
         assert list(df.dtypes) == [np.int64, np.float64]
 
 
-@skip_if_not(DataFrame)
+@skip_if_not(PyTables and DataFrame)
 def test_into_tables_path(emptyT, good_csv):
     samp = emptyT.root.test.sample
     tble = into(samp, good_csv.name)
     assert len(tble) == 3
 
 
-@skip_if_not(DataFrame)
+@skip_if_not(PyTables and DataFrame)
 def test_into_tables_path_bad_csv(emptyT, bad_csv_df):
 
     samp = emptyT.root.test.sample
-    tble = into(samp, bad_csv_df.name, error_bad_lines=False)
+    tble = into(samp, bad_csv_df.name, error_bad_lines=False, header=0,
+                schema="{userid:int32, text:string, country:string}")
     df_from_tbl = into(DataFrame, tble)
     #Check that it's the same as straight from the CSV
     df_from_csv = read_csv( bad_csv_df.name, error_bad_lines=False)
