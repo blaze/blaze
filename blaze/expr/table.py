@@ -1232,6 +1232,12 @@ class Merge(RowWise):
         return dshape(Record(list(concat(c.schema[0].parameters[0] for c in
             self.children))))
 
+    def subterms(self):
+        yield self
+        for i in self.children:
+            for node in i.subterms():
+                yield node
+
 
 class Union(TableExpr):
     """ Merge the rows of many Tables together
