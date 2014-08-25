@@ -25,6 +25,7 @@ min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union columnwise Summary summary'''.split()
 
+
 class TableExpr(Expr):
     """ Super class for all Table Expressions
 

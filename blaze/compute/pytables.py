@@ -1,10 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
+from functools import partial
 import numpy as np
 import tables as tb
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
                         TableSymbol, Sort, Reduction, count)
 from blaze.expr import eval_str
+from blaze.compatibility import basestring, map
 from datashape import Record
 from ..dispatch import dispatch
 
@@ -12,6 +14,30 @@ from ..dispatch import dispatch
 @dispatch(tb.Table)
 def discover(t):
     return t.shape[0] * Record([[col, t.coltypes[col]] for col in t.colnames])
+
+
+@dispatch(tb.Table)
+def drop(t):
+    t.remove()
+
+
+@dispatch(tb.Table, basestring)
+def create_index(t, column, name=None, **kwargs):
+    create_index(getattr(t.cols, column), **kwargs)
+
+
+@dispatch(tb.Table, list)
+def create_index(t, columns, name=None, **kwargs):
+    if not all(map(partial(hasattr, t.cols), columns)):
+        raise ValueError('table %s does not have all passed in columns %s' %
+                         (t, columns))
+    for column in columns:
+        create_index(t, column, **kwargs)
+
+
+@dispatch(tb.Column)
+def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
+    c.create_index(optlevel=optlevel, kind=kind, **kwargs)
 
 
 @dispatch(Selection, tb.Table)
