@@ -147,7 +147,7 @@ def raises(err, lamda):
 
 
 def keywords(func):
-    """ Get the arugment names of a function
+    """ Get the argument names of a function
 
     >>> def f(x, y=2):
     ...     pass
