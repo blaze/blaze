@@ -70,7 +70,7 @@ class GroupBy(Expr):
     >>> summarize(g, total=t.y.sum()).columns
     ['x', 'total']
     """
-    __slots__ = ['grouper']
+    __slots__ = ['child', 'grouper']
 
     def __init__(self, child, *grouper):
         self.child = child
