@@ -1,9 +1,10 @@
 import numbers
 
+from blaze import compute
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By
 from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
 from ..expr import count, sum, min, max, mean, nunique
-from ..expr import Arithmetic
+from ..expr import Arithmetic, UnaryOp
 
 from ..compatibility import basestring
 
@@ -12,18 +13,33 @@ from ..dispatch import dispatch
 from cytoolz import take, first
 
 import rethinkdb as rt
-from rethinkdb.ast import RqlQuery
+from rethinkdb.ast import RqlQuery, Group
 
-__all__ = ['compute_one', 'discover', 'RTable']
+import pandas as pd
+
+
+__all__ = ['compute_one', 'discover', 'RTable', 'into']
 
 
 class RTable(object):
-    """
+
+    """Lightweight wrapper around ``rethinkdb.ast.Table``.
+
+    Parameters
+    ----------
+    t : RqlQuery
+        Usually an instance of ``rethinkdb.ast.Table``
+    conn : rethinkdb.net.Connection
+        A connection object against which queries will run.
+
     Examples
     --------
     >>> import rethinkdb as r
     >>> t = RTable(r.table('test'), r.connect())
+    >>> t
+    RTable(t=r.table('test'))
     """
+
     def __init__(self, t, conn):
         self.t = t
         self.conn = conn
@@ -117,6 +133,11 @@ def compute_one(r, t, **kwargs):
     return r.op(compute_one(r.lhs, t), compute_one(r.rhs, t))
 
 
+@dispatch(UnaryOp, RqlQuery)
+def compute_one(o, t):
+    raise NotImplementedError('ReQL does not support unary operations')
+
+
 @dispatch(Selection, RqlQuery)
 def compute_one(s, t, **kwargs):
     e = s.predicate.expr
@@ -134,19 +155,20 @@ def compute_one(cw, t, **kwargs):
 
 
 @dispatch(Summary, RqlQuery)
-def compute_one(s, t, **kwargs):
-    return rt.expr(dict(('%s_%s' % (op.child.column, name),
-                         compute_one(op, t, **kwargs))
-                        for name, op in zip(s.names, s.values)))
+def compute_one(s, subgroup, **kwargs):
+    return dict(('%s_%s' % (op.child.column, name),
+                 compute_one(op, subgroup, **kwargs))
+                for name, op in zip(s.names, s.values))
+
+
+@dispatch(Summary, Group)
+def compute_one(s, g, **kwargs):
+    return g.do(lambda x: compute_one(s, x, **kwargs))
 
 
 @dispatch(By, RqlQuery)
 def compute_one(b, t, **kwargs):
-    app = b.apply
-    tb = t.group(*b.grouper.columns)
-    agg = getattr(tb, app.symbol)
-    ret = agg(app.child.column)
-    return ret
+    return compute_one(b.apply, t.group(*b.grouper.columns))
 
 
 @dispatch(Expr, RTable, dict)
