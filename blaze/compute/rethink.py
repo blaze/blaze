@@ -144,7 +144,8 @@ def compute_one(s, _, **kwargs):
 
 @dispatch((Relational, Arithmetic), RqlQuery)
 def compute_one(r, t, **kwargs):
-    return r.op(compute_one(r.lhs, t), compute_one(r.rhs, t))
+    return r.op(compute_one(r.lhs, t, **kwargs),
+                compute_one(r.rhs, t, **kwargs))
 
 
 @dispatch(UnaryOp, (RqlQuery, RTable))
@@ -155,7 +156,8 @@ def compute_one(o, t):
 @dispatch(Selection, RqlQuery)
 def compute_one(s, t, **kwargs):
     e = s.predicate.expr
-    return t.filter(e.op(compute_one(e.lhs, t), compute_one(e.rhs, t)))
+    return t.filter(e.op(compute_one(e.lhs, t, **kwargs),
+                         compute_one(e.rhs, t, **kwargs)))
 
 
 @dispatch(Distinct, RqlQuery)
@@ -165,7 +167,7 @@ def compute_one(d, t, **kwargs):
 
 @dispatch(ColumnWise, RqlQuery)
 def compute_one(cw, t, **kwargs):
-    return t.map(compute_one(cw.expr, t))
+    return t.map(compute_one(cw.expr, t, **kwargs))
 
 
 @dispatch(Summary, RqlQuery)
@@ -182,7 +184,7 @@ def compute_one(s, g, **kwargs):
 
 @dispatch(By, RqlQuery)
 def compute_one(b, t, **kwargs):
-    return compute_one(b.apply, t.group(*b.grouper.columns))
+    return compute_one(b.apply, t.group(*b.grouper.columns), **kwargs)
 
 
 @dispatch(Expr, RTable, dict)
@@ -198,10 +200,8 @@ def post_compute(e, t, d):
 
 
 @dispatch(RTable, basestring)
-def create_index(t, column, name=None, **kwargs):
-    if name is not None:
-        raise ValueError("RethinkDB indexes cannot be named")
-    t.t.index_create(column).run(t.conn)
+def create_index(t, column, **kwargs):
+    t.t.index_create(column, **kwargs).run(t.conn)
 
 
 @dispatch(RTable)
