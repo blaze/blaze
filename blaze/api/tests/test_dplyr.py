@@ -37,14 +37,14 @@ def test_transform():
 
 
 def test_groupby():
-    g = group_by(t, name)
+    g = group_by(name)
     result = summarize(g, sum=amount.sum())
     assert isinstance(result, By)
     assert result.columns == ['name', 'sum']
 
 
 def test_groupby_multicolumn():
-    g = group_by(t, name, id)
+    g = group_by(name, id)
     result = summarize(g, count=amount.count())
     assert isinstance(result, By)
     assert result.columns == ['name', 'id', 'count']
