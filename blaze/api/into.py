@@ -518,7 +518,7 @@ def into(a, b, **kwargs):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
-    dialect.update(b.add_kwargs)
+    dialect.update(b.extra_kwargs)
     if 'strict' in dialect:
         del dialect['strict']
 
