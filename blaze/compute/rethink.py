@@ -12,7 +12,7 @@ from ..dispatch import dispatch
 from cytoolz import take, first
 
 import rethinkdb as rt
-from rethinkdb.ast import RqlQuery, Group
+from rethinkdb.ast import RqlQuery, Group as RqlGroup
 
 
 __all__ = ['compute_one', 'discover', 'RTable']
@@ -130,7 +130,7 @@ def compute_one(r, t, **kwargs):
     return r.op(compute_one(r.lhs, t), compute_one(r.rhs, t))
 
 
-@dispatch(UnaryOp, RqlQuery)
+@dispatch(UnaryOp, (RqlQuery, RTable))
 def compute_one(o, t):
     raise NotImplementedError('ReQL does not support unary operations')
 
@@ -158,7 +158,7 @@ def compute_one(s, subgroup, **kwargs):
                 for name, op in zip(s.names, s.values))
 
 
-@dispatch(Summary, Group)
+@dispatch(Summary, RqlGroup)
 def compute_one(s, g, **kwargs):
     return g.do(lambda x: compute_one(s, x, **kwargs))
 
