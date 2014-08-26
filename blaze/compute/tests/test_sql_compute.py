@@ -173,7 +173,7 @@ def test_binary_reductions():
 
 
 def test_by():
-    expr = by(t, t['name'], t['amount'].sum())
+    expr = by(t['name'], t['amount'].sum())
     result = compute(expr, s)
     expected = sa.select([s.c.name,
                           sa.sql.functions.sum(s.c.amount).label('amount_sum')]
@@ -184,7 +184,7 @@ def test_by():
 
 def test_by_head():
     t2 = t.head(100)
-    expr = by(t2, t2['name'], t2['amount'].sum())
+    expr = by(t2['name'], t2['amount'].sum())
     result = compute(expr, s)
     s2 = select(s).limit(100)
     expected = sa.select([s2.c.name,
@@ -195,7 +195,7 @@ def test_by_head():
 
 
 def test_by_two():
-    expr = by(tbig, tbig[['name', 'sex']], tbig['amount'].sum())
+    expr = by(tbig[['name', 'sex']], tbig['amount'].sum())
     result = compute(expr, sbig)
     expected = (sa.select([sbig.c.name,
                            sbig.c.sex,
@@ -206,8 +206,7 @@ def test_by_two():
 
 
 def test_by_three():
-    result = compute(by(tbig,
-                        tbig[['name', 'sex']],
+    result = compute(by(tbig[['name', 'sex']],
                         (tbig['id'] + tbig['amount']).sum()),
                      sbig)
 
@@ -374,7 +373,7 @@ def test_summary():
 
 
 def test_summary_by():
-    expr = by(t, t.name, summary(a=t.amount.sum(), b=t.id.count()))
+    expr = by(t.name, summary(a=t.amount.sum(), b=t.id.count()))
 
     result = str(compute(expr, s))
 
