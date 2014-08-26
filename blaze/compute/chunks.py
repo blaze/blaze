@@ -183,7 +183,7 @@ def compute_one(expr, c, **kwargs):
 
     a, b = reductions[type(expr.apply)]
 
-    perchunk = by(expr.child, expr.grouper, a(expr.apply.child))
+    perchunk = by(expr.grouper, a(expr.apply.child))
 
     # Put each chunk into a list, then concatenate
     intermediate = concat(into([], compute_one(perchunk, chunk))
@@ -196,8 +196,7 @@ def compute_one(expr, c, **kwargs):
     if expr.apply.child.iscolumn:
         apply_cols = apply_cols[0]
 
-    group = by(t,
-               t[expr.grouper.columns],
+    group = by(t[expr.grouper.columns],
                b(t[apply_cols]))
 
     return compute_one(group, intermediate)
