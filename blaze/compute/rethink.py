@@ -1,6 +1,5 @@
 import numbers
 
-from blaze import compute
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By
 from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
 from ..expr import count, sum, min, max, mean, nunique
@@ -15,10 +14,8 @@ from cytoolz import take, first
 import rethinkdb as rt
 from rethinkdb.ast import RqlQuery, Group
 
-import pandas as pd
 
-
-__all__ = ['compute_one', 'discover', 'RTable', 'into']
+__all__ = ['compute_one', 'discover', 'RTable']
 
 
 class RTable(object):
