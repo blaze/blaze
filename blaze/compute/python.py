@@ -271,7 +271,7 @@ def reduce_by_funcs(t):
 
     Turns a by operation like
 
-        by(t, t.name, t.amount.sum())
+        by(t.name, t.amount.sum())
 
     into a grouper like
 
@@ -325,9 +325,9 @@ def compute_one(t, seq, **kwargs):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
         d = reduceby(grouper, binop, seq, initial)
     else:
-        grouper = rrowfunc(t.grouper, t.child)
+        grouper = rrowfunc(t.grouper, t)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
+        d = dict((k, compute(t.apply, {t: v})) for k, v in groups.items())
 
     if t.grouper.iscolumn:
         keyfunc = lambda x: (x,)
