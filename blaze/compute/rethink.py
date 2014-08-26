@@ -1,8 +1,10 @@
+from __future__ import absolute_import, print_function
+
 import numbers
 
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By
 from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
-from ..expr import count, sum, min, max, mean, nunique
+from ..expr import count, sum, min, max, mean, nunique, var, std
 from ..expr import Arithmetic, UnaryOp
 
 from ..compatibility import basestring
@@ -92,6 +94,21 @@ def compute_one(s, t, **kwargs):
 @dispatch(sum, RqlQuery)
 def compute_one(f, t, **kwargs):
     return t.sum(f.child.column)
+
+
+@dispatch(var, RqlQuery)
+def compute_one(v, t, **kwargs):
+    column = v.child.column
+    tavg = t.avg(column)
+    row = rt.row[column]
+    sumsqr = t.map(row * row).sum() / compute_one(count(v.child), t, **kwargs)
+    ms = tavg * tavg
+    return sumsqr - ms
+
+
+@dispatch(std, RqlQuery)
+def compute_one(s, t, **kwargs):
+    raise NotImplementedError('No way to call a function on a number')
 
 
 @dispatch((min, max), RqlQuery)
