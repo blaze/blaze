@@ -243,10 +243,11 @@ def test_create_index(tb):
 
 
 @nopython3
-@xfail(True, reason='adsf')
 def test_create_index_with_name(tb):
     from blaze.compute.rethink import create_index
-    create_index(tb, 'name', name='awesome')
+    import rethinkdb as rt
+    with pytest.raises(rt.RqlCompileError):
+        create_index(tb, 'name', name='awesome')
 
 
 @pytest.fixture
