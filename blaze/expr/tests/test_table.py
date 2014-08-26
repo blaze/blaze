@@ -544,6 +544,8 @@ def test_merge_project():
     assert c['new'].isidentical(new_amount)
     assert c['name'].isidentical(accounts['name'])
 
+    assert c[['name', 'new']].isidentical(merge(accounts.name, new_amount))
+
 
 inc = lambda x: x + 1
 

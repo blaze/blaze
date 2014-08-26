@@ -1276,7 +1276,7 @@ class Merge(RowWise):
                 if key in child.columns:
                     return child[key]
         elif isinstance(key, list):
-            cols = [self.project(self, c) for c in key]
+            cols = [self.project(c) for c in key]
             return merge(*cols)
 
 
