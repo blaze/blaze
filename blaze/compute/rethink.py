@@ -17,7 +17,7 @@ import rethinkdb as rt
 from rethinkdb.ast import RqlQuery, Group as RqlGroup
 
 
-__all__ = ['compute_one', 'discover', 'RTable']
+__all__ = ['compute_one', 'discover', 'RTable', 'create_index', 'drop']
 
 
 class RTable(object):
@@ -195,3 +195,15 @@ def post_compute(e, t, d):
     # TODO: test if we can use any connection for tables on different nodes
     assert len(d) == 1  # we only have a single RTable in scope
     return t.run(first(d.values()).conn)
+
+
+@dispatch(RTable, basestring)
+def create_index(t, column, name=None, **kwargs):
+    if name is not None:
+        raise ValueError("RethinkDB indexes cannot be named")
+    t.t.index_create(column).run(t.conn)
+
+
+@dispatch(RTable)
+def drop(t):
+    rt.table_drop(t.t.args[0].data).run(t.conn)
