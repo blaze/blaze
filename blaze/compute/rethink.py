@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 
 import numbers
 
-from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By
+from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By, Map
 from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
 from ..expr import count, sum, min, max, mean, nunique, var, std
 from ..expr import Arithmetic, UnaryOp
@@ -185,6 +185,11 @@ def compute_one(s, g, **kwargs):
 @dispatch(By, RqlQuery)
 def compute_one(b, t, **kwargs):
     return compute_one(b.apply, t.group(*b.grouper.columns), **kwargs)
+
+
+@dispatch(Map, RqlQuery)
+def compute_one(m, t, **kwargs):
+    return t.with_fields(*m.columns).map(m.func)
 
 
 @dispatch(Expr, RTable, dict)
