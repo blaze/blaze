@@ -192,7 +192,6 @@ class CSV(DataDescriptor):
 
         self.header = header
         self.dialect = dialect
-        self.extra_kwargs = kwargs
 
     def _get_py(self, key):
         if isinstance(key, tuple):

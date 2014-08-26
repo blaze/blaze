@@ -21,6 +21,7 @@ from ..expr import TableExpr, Expr
 from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes
+from ..utils import keywords
 
 
 __all__ = ['into', 'discover']
@@ -518,14 +519,19 @@ def into(a, b, **kwargs):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
-    dialect.update(b.extra_kwargs)
     if 'strict' in dialect:
         del dialect['strict']
 
     if b.header:
         dialect['header'] = 0
 
-    return pd.read_csv(b.path, dtype=dtypes, names=b.columns, **dialect)
+    # Pass only keyword arguments appropriate for read_csv
+    kws = keywords(pd.read_csv)
+    options = toolz.merge(dialect, kwargs)
+    options = toolz.keyfilter(lambda k: k in kws, options)
+
+    return pd.read_csv(b.path, dtype=dtypes, names=b.columns,
+                        **options)
 
 
 @dispatch(pd.DataFrame, DataDescriptor)

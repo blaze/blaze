@@ -323,7 +323,9 @@ def test_into_tables_path(good_csv, out_hdf5):
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
-    tble = into(PyTables, bad_csv_df.name, output_path=out_hdf5.name, error_bad_lines=False)
+    tble = into(PyTables, bad_csv_df.name,
+                          output_path=out_hdf5.name,
+                          error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
     #Check that it's the same as straight from the CSV
     df_from_csv = read_csv(bad_csv_df.name, error_bad_lines=False)
