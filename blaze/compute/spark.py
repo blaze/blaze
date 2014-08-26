@@ -11,7 +11,7 @@ from blaze.expr.table import count as Count
 from . import core, python
 from .python import (compute, rrowfunc, rowfunc, RowWise, listpack,
         pair_assemble, reduce_by_funcs, binops)
-from ..compatibility import builtins
+from ..compatibility import builtins, unicode
 from ..expr import table
 from ..dispatch import dispatch
 
@@ -93,7 +93,7 @@ def compute_one(t, rdd, **kwargs):
 
 @dispatch(Sort, RDD)
 def compute_one(t, rdd, **kwargs):
-    if isinstance(t.key, (str, tuple, list)):
+    if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t.child[t.key])
     else:
         key = rrowfunc(t.key, t.child)

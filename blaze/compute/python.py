@@ -33,7 +33,7 @@ from ..expr.table import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.core import Scalar
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
-from ..compatibility import builtins, apply
+from ..compatibility import builtins, apply, unicode
 from . import core
 from .core import compute, compute_one, base
 
@@ -429,7 +429,7 @@ def compute_one(t, lhs, rhs, **kwargs):
 
 @dispatch(Sort, Sequence)
 def compute_one(t, seq, **kwargs):
-    if isinstance(t.key, (str, tuple, list)):
+    if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t.child[t.key])
     else:
         key = rowfunc(t.key)
@@ -463,4 +463,20 @@ def compute_one(t, example, children, **kwargs):
 
 @dispatch(Summary, Sequence)
 def compute_one(expr, data, **kwargs):
-    return tuple(compute(val, {expr.child: data}) for val in expr.values)
+    if isinstance(data, Iterator):
+        datas = itertools.tee(data, len(expr.values))
+        return tuple(compute(val, {expr.child: data})
+                        for val, data in zip(expr.values, datas))
+    else:
+        return tuple(compute(val, {expr.child: data})
+                        for val in expr.values)
+
+
+@dispatch(BinOp, object, object)
+def compute_one(expr, x, y, **kwargs):
+    return expr.op(x, y)
+
+
+@dispatch(UnaryOp, object)
+def compute_one(expr, x, **kwargs):
+    return eval(eval_str(expr), toolz.merge(locals(), math.__dict__))

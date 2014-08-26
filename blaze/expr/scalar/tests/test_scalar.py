@@ -24,6 +24,7 @@ def test_eval_str():
 
     assert eval_str(1) == '1'
     assert eval_str('Alice') == "'Alice'"
+    assert "'Alice'" in eval_str(u'Alice')
 
     print(eval_str(-x))
     assert eval_str(-x) == '-x'

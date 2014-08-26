@@ -161,8 +161,8 @@ def test_works_on_generators():
 
 
 def test_join():
-    left = [('Alice', 100), ('Bob', 200)]
-    right = [('Alice', 1), ('Bob', 2)]
+    left = [['Alice', 100], ['Bob', 200]]
+    right = [['Alice', 1], ['Bob', 2]]
 
     L = TableSymbol('L', '{name: string, amount: int}')
     R = TableSymbol('R', '{name: string, id: int}')

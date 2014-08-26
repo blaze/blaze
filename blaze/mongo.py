@@ -1,21 +1,17 @@
 from __future__ import absolute_import, division, print_function
 
-try:
-    from pymongo.collection import Collection
-except ImportError:
-    Collection = type(None)
+from toolz import take
+from datashape import discover, isdimension
 
-from collections import Iterator
-from toolz import take, concat, partition_all
-from datashape import discover, isdimension, dshape
-import copy
+from .compatibility import basestring, map
+from .compute.mongo import dispatch
 
-from .dispatch import dispatch
-from .data.core import DataDescriptor
-from .compute.mongo import *
-from .expr.table import TableExpr
+from pymongo.collection import Collection
+from pymongo import ASCENDING
 
-__all__ = ['pymongo']
+
+__all__ = ['discover', 'drop', 'create_index']
+
 
 @dispatch(Collection)
 def discover(coll, n=50):
@@ -31,3 +27,44 @@ def discover(coll, n=50):
         raise ValueError("Consistent datashape not found")
 
 
+@dispatch(Collection)
+def drop(m):
+    m.drop()
+
+
+@dispatch(object)
+def scrub_keys(o):
+    """Add an ascending sort key when pass a string, to make the MongoDB
+    interface similar to SQL.
+    """
+    raise NotImplementedError("scrub_keys not implemented for type %r" %
+                              type(o).__name__)
+
+
+@dispatch(basestring)
+def scrub_keys(s):
+    return s, ASCENDING
+
+
+@dispatch(tuple)
+def scrub_keys(t):
+    return t
+
+
+@dispatch(list)
+def scrub_keys(seq):
+    for el in seq:
+        if not isinstance(el, (tuple, basestring)):
+            raise TypeError('indexing keys must be a string or pair of '
+                            '(<column name>, <parameter>)')
+        yield scrub_keys(el)
+
+
+@dispatch(Collection, basestring)
+def create_index(coll, key, **kwargs):
+    coll.create_index(key, **kwargs)
+
+
+@dispatch(Collection, list)
+def create_index(coll, keys, **kwargs):
+    coll.create_index(list(scrub_keys(keys)), **kwargs)

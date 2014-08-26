@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from datashape import Record
 from blaze.expr.core import Expr
+from ...compatibility import unicode
 
 
 def eval_str(expr):
@@ -10,6 +11,8 @@ def eval_str(expr):
         return expr.eval_str()
     elif isinstance(expr, str):
         return "'%s'" % expr
+    elif isinstance(expr, unicode):
+        return "u'%s'" % expr
     else:
         return str(expr)
 
@@ -34,8 +37,10 @@ class Scalar(Expr):
 
     @property
     def name(self):
-        if isinstance(self.dshape[0], Record):
+        try:
             return self.dshape[0].names[0]
+        except:
+            raise ValueError("No name found in dshape %s" % self.dshape)
 
     @property
     def dtype(self):

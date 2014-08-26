@@ -9,13 +9,15 @@ from abc import abstractproperty
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
-from toolz import concat, partial, first, compose, get, unique, second
+from toolz import (concat, partial, first, compose, get, unique, second,
+        isdistinct, frequencies)
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
 from ..compatibility import _strtypes, builtins
+from ..dispatch import dispatch
 
 __all__ = '''
 TableExpr TableSymbol RowWise Projection Column Selection ColumnWise Join
@@ -24,6 +26,7 @@ exp log expm1 log10 log1p radians degrees ceil floor trunc isnan any all sum
 min max mean var std count nunique By by Sort Distinct distinct Head head Label
 ReLabel relabel Map Apply common_subexpression merge Merge Union selection
 projection union columnwise Summary summary'''.split()
+
 
 class TableExpr(Expr):
     """ Super class for all Table Expressions
@@ -882,12 +885,14 @@ class By(TableExpr):
         return dshape(Record(list(params)))
 
 
+@dispatch(TableExpr, TableExpr, (Summary, Reduction))
 def by(child, grouper, apply):
-    if isdimension(apply.dshape[0]):
-        raise TypeError("Expected Reduction")
     return By(child, grouper, apply)
 
-by.__doc__ = By.__doc__
+
+@dispatch(TableExpr, TableExpr)
+def by(child, grouper, **kwargs):
+    return By(child, grouper, summary(**kwargs))
 
 
 class Sort(TableExpr):
@@ -1184,7 +1189,13 @@ def merge(*tables):
     if not child:
         raise ValueError("No common sub expression found for input tables")
 
-    return Merge(child, tables)
+    result = Merge(child, tables)
+
+    if not isdistinct(result.columns):
+        raise ValueError("Repeated columns found: " + ', '.join(k for k, v in
+            frequencies(result.columns).items() if v > 1))
+
+    return result
 
 
 class Merge(RowWise):
@@ -1220,6 +1231,12 @@ class Merge(RowWise):
                                 c.schema[0])
         return dshape(Record(list(concat(c.schema[0].parameters[0] for c in
             self.children))))
+
+    def subterms(self):
+        yield self
+        for i in self.children:
+            for node in i.subterms():
+                yield node
 
 
 class Union(TableExpr):

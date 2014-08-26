@@ -6,7 +6,7 @@ import bcolz
 from toolz import map
 import numpy as np
 import math
-from .chunks import Chunks, ChunkIter
+from .chunks import ChunkIterable, ChunkIterator, ChunkIndexable
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
@@ -90,7 +90,7 @@ def compute_one(expr, data, **kwargs):
 
 @dispatch(Reduction, (bcolz.carray, bcolz.ctable))
 def compute_one(expr, data, **kwargs):
-    return compute_one(expr, Chunks(data), **kwargs)
+    return compute_one(expr, ChunkIndexable(data), **kwargs)
 
 
 @dispatch((bcolz.carray, bcolz.ctable))
@@ -100,3 +100,10 @@ def chunks(b, chunksize=2**15):
     while start < n:
         yield b[start:start + chunksize]
         start += chunksize
+
+
+@dispatch((bcolz.carray, bcolz.ctable), int)
+def get_chunk(b, i, chunksize=2**15):
+    start = chunksize * i
+    stop = chunksize * (i + 1)
+    return b[start:stop]

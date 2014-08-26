@@ -7,9 +7,9 @@ from toolz import concat
 from collections import Iterator
 
 from blaze.expr import *
-from blaze.compute.chunks import *
 from blaze.compute.core import compute
 from blaze.compute.python import *
+from blaze.compute.chunks import *
 
 
 data = [[1, 'Alice', 100],
@@ -20,7 +20,7 @@ data = [[1, 'Alice', 100],
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
 
-c = Chunks(data, chunksize=2)
+c = ChunkIterable(data, chunksize=2)
 
 
 def test_basic():
@@ -100,12 +100,17 @@ def test_by():
 
 
 def test_into_list_chunks():
-    assert into([], Chunks([1, 2, 3, 4], chunksize=2)) == [1, 2, 3, 4]
+    assert into([], ChunkIterable([1, 2, 3, 4], chunksize=2)) == [1, 2, 3, 4]
 
 
 def test_into_DataFrame_chunks():
     data = [['Alice', 1], ['Bob', 2], ['Charlie', 3]]
     assert str(into(DataFrame,
-                    Chunks(data, chunksize=2),
+                    ChunkIterable(data, chunksize=2),
                     columns=['name', 'id'])) == \
                 str(DataFrame(data, columns=['name', 'id']))
+
+def test_chunk_list():
+    data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    assert get_chunk(data, 0, chunksize=2) == [1, 2]
+    assert get_chunk(data, 2, chunksize=2) == [5, 6]

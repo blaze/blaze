@@ -2,15 +2,15 @@ import unittest
 import tempfile
 import os
 from dynd import nd
-import h5py
 import numpy as np
 from sys import stdout
 from datetime import date, datetime
 from datashape import dshape
 import pytest
 
-from blaze.api.into import into
-from blaze.data.hdf5 import HDF5, discover
+h5py = pytest.importorskip('h5py')
+
+from blaze import HDF5, discover, into, drop
 from blaze.compatibility import unicode, xfail
 
 
@@ -246,3 +246,32 @@ class TestDiscovery(MakeFile):
         dd.extend([(1, 2), (2, 3), (4, 5)])
         with pytest.raises(TypeError):
             HDF5(self.filename, 'data', schema='2 * float32')
+
+
+data = [(1, 32.4, 'Alice'),
+        (2, 234.24, 'Bob'),
+        (4, -430.0, 'Joe')]
+
+
+x = np.array(data, dtype=[('id', int), ('amount', float), ('name', str, 100)])
+
+schema = dshape("{ id : int64, amount : float64, name : string }")
+
+
+@pytest.yield_fixture
+def h5():
+    h = HDF5('test.h5', '/test', schema=schema)
+    yield h
+    try:
+        os.remove(h.path)
+    except OSError:
+        pass
+
+
+def test_hdf5(h5):
+    import h5py
+    h5.extend(data)
+    drop(h5)
+    with h5py.File(h5.path, mode='r') as f:
+        with pytest.raises(KeyError):
+            f['/test']

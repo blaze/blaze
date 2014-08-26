@@ -24,16 +24,22 @@ from operator import and_
 from datashape import Record
 
 from ..dispatch import dispatch
-from ..expr import *
+from ..expr import Projection, Selection, Column, ColumnWise
+from ..expr import BinOp, UnaryOp, USub, Join, mean, var, std, Reduction
+from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
+from ..expr import common_subexpression, Union, Summary
 from ..compatibility import reduce
 from ..utils import unique
 from .core import compute_one, compute, base
 
 __all__ = ['sqlalchemy', 'select']
 
+
 @dispatch(Projection, Selectable)
-def compute_one(t, s, scope={}, **kwargs):
+def compute_one(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
+    if scope is None:
+        scope = {}
     subexpression = t
     while hasattr(subexpression, 'child'):
         subexpression = subexpression.child
@@ -154,7 +160,7 @@ def compute_one(t, s, **kwargs):
 
     if isinstance(t.child.schema[0], Record):
         name = list(t.child.schema[0].names)[0]
-        result = result.label(name)
+        result = result.label(name + '_' + type(t).__name__)
 
     return result
 

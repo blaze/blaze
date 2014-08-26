@@ -177,8 +177,8 @@ class DataDescriptor(object):
 
 from ..dispatch import dispatch
 from blaze.expr.table import Join, TableExpr, Projection, Column
-from blaze.expr.core import Expr
-@dispatch(Expr, DataDescriptor)
+from blaze.expr import Expr, UnaryOp
+@dispatch((Expr, UnaryOp), DataDescriptor)
 def compute_one(t, ddesc, **kwargs):
     return compute_one(t, iter(ddesc))  # use Python streaming by default
 

@@ -13,8 +13,7 @@ Example
 Blaze separates the computations that we want to perform:
 
 ```Python
->>> accounts = TableSymbol('accounts',
-...                        schema='{id: int, name: string, amount: int}')
+>>> accounts = TableSymbol('accounts', '{id: int, name: string, amount: int}')
 
 >>> deadbeats = accounts[accounts['amount'] < 0]['name']
 ```

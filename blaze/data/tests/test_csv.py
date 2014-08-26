@@ -5,6 +5,7 @@ import tempfile
 import sys
 import os
 from collections import Iterator
+import pytest
 
 import datashape
 from datashape import dshape
@@ -15,6 +16,7 @@ from blaze.data import CSV
 from blaze.data.csv import has_header, discover_dialect
 from blaze.utils import filetext
 from blaze.data.utils import tuplify
+from blaze.data.csv import drop
 from dynd import nd
 
 osx_py3 = sys.platform == 'darwin' and sys.version_info[0] == 3
@@ -360,6 +362,30 @@ class TestCSV(unittest.TestCase):
     def test_getitem_start_step(self):
         dd = CSV(self.csv_file, schema=self.schema)
         self.assertEqual(tuplify(dd[1::2]), self.data[1::2])
+
+
+@pytest.yield_fixture
+def csv():
+    csv = CSV('test.csv', schema=schema, mode='w')
+    csv.extend(data)
+    yield csv
+    try:
+        os.remove(csv.path)
+    except OSError:
+        pass
+
+
+data = (('k1', 'v1', 1, False),
+        ('k2', 'v2', 2, True),
+        ('k3', 'v3', 3, False))
+
+schema = "{ f0: string, f1: string, f2: int16, f3: bool }"
+
+
+def test_drop(csv):
+    assert os.path.exists(csv.path)
+    drop(csv)
+    assert not os.path.exists(csv.path)
 
 
 if __name__ == '__main__':

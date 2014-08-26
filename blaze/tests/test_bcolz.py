@@ -90,13 +90,13 @@ def test_chunks():
 
 def test_into_chunks():
     from blaze.compute.numpy import chunks, compute_one
-    from blaze.compute.chunks import chunks, compute_one, ChunkIter
+    from blaze.compute.chunks import chunks, compute_one, ChunkIterator
     from blaze import into
     x = np.array([(int(i), float(i)) for i in range(100)],
                  dtype=[('a', np.int32), ('b', np.float32)])
     cs = chunks(x, chunksize=10)
 
-    b1 = into(bcolz.ctable, ChunkIter(cs))
+    b1 = into(bcolz.ctable, ChunkIterator(cs))
     b2 = into(bcolz.ctable, x)
 
     assert str(b1) == str(b2)
