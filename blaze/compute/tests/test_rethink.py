@@ -9,7 +9,7 @@ from multipledispatch import dispatch
 
 from blaze.compatibility import xfail
 from blaze import TableSymbol, discover, dshape, compute, by, summary
-from blaze import create_index, drop, RTable
+from blaze.compute.rethink import create_index, drop, RTable
 
 nopython3 = xfail(sys.version_info[0] >= 3,
                   reason='RethinkDB is not compatible with Python 3')
