@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import tempfile
 import os
 from collections import Iterator
+import inspect
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
@@ -143,3 +144,15 @@ def raises(err, lamda):
         return False
     except err:
         return True
+
+
+def keywords(func):
+    """ Get the arugment names of a function
+
+    >>> def f(x, y=2):
+    ...     pass
+
+    >>> keywords(f)
+    ['x', 'y']
+    """
+    return inspect.getargspec(func).args
