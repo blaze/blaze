@@ -235,6 +235,12 @@ class TestColumnWise(object):
         assert result == [-r['id'] + r['amount'] for r in bank]
 
 
+def test_map(ts, tb):
+    add_one = lambda x: x + 1
+    result = list(compute(ts.amount.map(add_one), tb))
+    assert result == [{'amount': add_one(r['amount'])} for r in bank]
+
+
 @nopython3
 def test_create_index(tb):
     from blaze.compute.rethink import create_index
