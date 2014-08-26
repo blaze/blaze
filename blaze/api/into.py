@@ -178,11 +178,13 @@ def into(df, x):
 
 
 @dispatch(tables.Table, pd.DataFrame)
-def into(a, b, **kwargs):
-    fname = kwargs.get('output_path', "blaze.h5")
-    store = pd.HDFStore(fname, mode='w')
-    store.put('df',b,format='table',data_columns=True)
-    return store.root.df.table
+def into(a, b, filename=None, datapath=None, **kwargs):
+    if filename is None or datapath is None:
+        raise ValueError("Must specify filename for new PyTables file. \n"
+        "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
+    store = pd.HDFStore(filename, mode='w')
+    store.put(datapath, b, format='table', data_columns=True)
+    return getattr(store.root, datapath).table
 
 
 @dispatch(tables.Table, _strtypes)
