@@ -66,15 +66,20 @@ class GroupBy(Expr):
     To be operated on by ``blaze.dplyr.api.summarize``
 
     >>> t = TableSymbol('t', '{x: int, y: int}')
-    >>> g = group_by(t.x)
+    >>> g = group_by(t, t.x)
     >>> summarize(g, total=t.y.sum()).columns
     ['x', 'total']
     """
     __slots__ = ['grouper']
 
-    def __init__(self, *grouper):
-        grouper = merge(*grouper)
+    def __init__(self, child, *grouper):
+        self.child = child
+        if len(grouper) == 1:
+            grouper = grouper[0]
+        else:
+            grouper = merge(*grouper)
         self.grouper = grouper
+
 
 group_by = GroupBy
 
