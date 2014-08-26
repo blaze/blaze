@@ -536,3 +536,9 @@ def into(a, b):
 @dispatch(object, Expr)
 def into(a, b):
     return compute(b)
+
+
+@dispatch((tuple, list, Iterator, np.ndarray, pd.DataFrame, Collection, set,
+    ctable), _strtypes)
+def into(a, b, **kwargs):
+    return into(a, resource(b, **kwargs), **kwargs)
