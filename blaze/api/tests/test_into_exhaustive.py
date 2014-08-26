@@ -93,7 +93,8 @@ def normalize(a):
 def test_base():
     """ Test all pairs of base in-memory data structures """
     sources = [v for k, v in data.items() if k not in [list]]
-    targets = [v for k, v in data.items() if k not in [Table, Collection, CSV]]
+    targets = [v for k, v in data.items() if k not in [Table, Collection, CSV,
+        nd.array]]
     for a in sources:
         for b in targets:
             assert normalize(into(type(b), a)) == normalize(b)
