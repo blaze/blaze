@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
+import numbers
 import sys
 import pytest
+import numpy as np
 
 from blaze.compatibility import xfail
 from blaze import TableSymbol, discover, dshape, compute, by, summary
@@ -170,6 +172,17 @@ class TestReductions(object):
         result = compute(ts.amount.nunique(), tb)
         assert isinstance(result, int)
         assert result == 3
+
+    def test_var(self, ts, tb):
+        result = compute(ts.amount.var(), tb)
+        assert isinstance(result, numbers.Real)
+        assert result == np.var([r['amount'] for r in bank]).item()
+
+    @xfail(True, reason='No way to call math.sqrt on the result of var')
+    def test_std(self, ts, tb):
+        result = compute(ts.amount.std(), tb)
+        assert isinstance(result, numbers.Real)
+        assert result == np.std([r['amount'] for r in bank]).item()
 
 
 @nopython3
