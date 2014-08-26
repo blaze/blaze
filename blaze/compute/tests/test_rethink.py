@@ -181,6 +181,20 @@ def test_simple_by(tsc, tb):
 
 
 @nopython3
+def test_by_with_summary(tsc, tb):
+    ts = tsc
+    s = summary(nuniq=ts.id.nunique(), sum=ts.amount.sum(),
+                mean=ts.amount.mean())
+    expr = by(ts, ts.name, s)
+    result = compute(expr, tb)
+    assert isinstance(result, dict)
+    assert result == {'Alice':
+                      {'id_nuniq': 2, 'amount_sum': 300, 'amount_mean': 150},
+                      'Bob':
+                      {'id_nuniq': 3, 'amount_sum': 600, 'amount_mean': 200}}
+
+
+@nopython3
 def test_simple_summary(ts, tb):
     expr = summary(nuniq=ts.id.nunique(), sum=ts.amount.sum(),
                    mean=ts.amount.mean())
@@ -200,3 +214,9 @@ class TestColumnWise(object):
         expr = 1 + ts.id + ts.amount * 2
         result = list(compute(expr, tb))
         assert result == [1 + r['id'] + r['amount'] * 2 for r in bank]
+
+    @xfail(True, reason='ReQL does not support unary operations')
+    def test_unary(self, ts, tb):
+        expr = -ts.id + ts.amount
+        result = list(compute(expr, tb))
+        assert result == [-r['id'] + r['amount'] for r in bank]
