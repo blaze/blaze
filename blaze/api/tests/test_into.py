@@ -120,9 +120,9 @@ def good_csv():
         badfile = open(f.name, mode="w")
         # Insert a new record
         badfile.write("userid,text,country\n")
-        badfile.write("14,asdfsadf,az\n")
-        badfile.write("15,asdfsadf,az\n")
-        badfile.write("5,assddfsadf,gt\n")
+        badfile.write("1,Alice,az\n")
+        badfile.write("2,Bob,bl\n")
+        badfile.write("3,Charlie,cz\n")
         badfile.flush()
         yield badfile
         # Close (and flush) the file
@@ -136,11 +136,11 @@ def bad_csv_df():
         badfile = open(f.name, mode="w")
         # Insert a new record
         badfile.write("userid,text,country\n")
-        badfile.write("14,asdfsadf,az\n")
-        badfile.write("15,asdfsadf,az\n")
+        badfile.write("1,Alice,az\n")
+        badfile.write("2,Bob,bl\n")
         for i in range(0,100):
-            badfile.write(str(i) + ",asdfsadf,az\n")
-        badfile.write("5,assddfsadf,gt,extra,extra\n")
+            badfile.write(str(i) + ",badguy,zz\n")
+        badfile.write("4,Dan,gb,extra,extra\n")
         badfile.flush()
         yield badfile
         # Close (and flush) the file
@@ -269,7 +269,7 @@ def test_into_table_dataframe():
     t = Table(data, columns=['name', 'amount'])
 
     assert list(into(DataFrame(), t).columns) == list(t.columns)
-    assert into([], into(DataFrame(), t)) == data
+    assert into([], into(DataFrame(), t)) == list(map(tuple, data))
 
 
 @skip_if_not(Table and ColumnDataSource)
@@ -330,7 +330,11 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     df_from_tbl = into(DataFrame, tble)
     #Check that it's the same as straight from the CSV
     df_from_csv = read_csv(bad_csv_df.name, error_bad_lines=False)
+    assert (df_from_csv == df_from_tbl).all().all()
     assert len(df_from_csv) == 102
     assert len(df_from_tbl) == 102
-    for col in df_from_csv.columns:
-        assert all(df_from_csv[col] == df_from_tbl[col])
+
+def test_numpy_datetimes():
+    L = [datetime(2000, 12, 1), datetime(2000, 1, 1, 1, 1, 1)]
+    assert into([], np.array(L, dtype='M8[us]')) == L
+    assert into([], np.array(L, dtype='M8[ns]')) == L

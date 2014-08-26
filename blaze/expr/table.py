@@ -16,7 +16,7 @@ from .core import Expr, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from ..compatibility import _strtypes, builtins
+from ..compatibility import _strtypes, builtins, unicode, basestring
 from ..dispatch import dispatch
 
 __all__ = '''
@@ -82,6 +82,13 @@ class TableExpr(Expr):
             return dshape(ds)
 
     def __getitem__(self, key):
+        if isinstance(key, (list, basestring, unicode)):
+            return self.project(key)
+        if isinstance(key, TableExpr):
+            return selection(self, key)
+        raise ValueError("Did not understand input: %s[%s]" % (self, key))
+
+    def project(self, key):
         if isinstance(key, _strtypes):
             if key not in self.columns:
                 raise ValueError("Mismatched Column: %s" % str(key))
@@ -90,9 +97,7 @@ class TableExpr(Expr):
             if not builtins.all(col in self.columns for col in key):
                 raise ValueError("Mismatched Columns: %s" % str(key))
             return projection(self, key)
-        if isinstance(key, TableExpr):
-            return selection(self, key)
-        raise TypeError("Did not understand input: %s[%s]" % (self, key))
+        raise ValueError("Did not understand input: %s[%s]" % (self, key))
 
     def __getattr__(self, key):
         if key in self.columns:
@@ -267,6 +272,13 @@ class Projection(RowWise):
     def iscolumn(self):
         return False
 
+    def project(self, key):
+        if isinstance(key, _strtypes) and key in self.columns:
+            return self.child[key]
+        if isinstance(key, list) and set(key).issubset(set(self.columns)):
+            return self.child[key]
+        raise ValueError("Column Mismatch: %s" % key)
+
 
 def projection(table, columns):
     return Projection(table, tuple(columns))
@@ -416,6 +428,12 @@ class Column(ColumnSyntaxMixin, Projection):
     @property
     def scalar_symbol(self):
         return ScalarSymbol(self.column, dtype=self.dtype)
+
+    def project(self, key):
+        if key == self.column:
+            return self
+        else:
+            raise ValueError("Column Mismatch: %s" % key)
 
 
 class Selection(TableExpr):
@@ -887,11 +905,13 @@ class By(TableExpr):
 
 @dispatch(TableExpr, TableExpr, (Summary, Reduction))
 def by(child, grouper, apply):
+    child = common_subexpression(child, grouper, apply)
     return By(child, grouper, apply)
 
 
 @dispatch(TableExpr, TableExpr)
 def by(child, grouper, **kwargs):
+    child = common_subexpression(child, grouper)
     return By(child, grouper, summary(**kwargs))
 
 
@@ -1031,6 +1051,12 @@ class Label(RowWise, ColumnSyntaxMixin):
             dtype = self.child.schema[0]
         return DataShape(Record([[self.label, dtype]]))
 
+    def project(self, key):
+        if key == self.columns[0]:
+            return self
+        else:
+            raise ValueError("Column Mismatch: %s" % key)
+
 
 class ReLabel(RowWise):
     """
@@ -1122,6 +1148,12 @@ class Map(RowWise):
         except AttributeError:
             raise ValueError("Column is un-named, name with col.label('name')")
 
+    def label(self, name):
+        assert self.iscolumn
+        return Map(self.child,
+                   self.func,
+                   Record([[name, self.schema[0].types[0]]]),
+                   self.iscolumn)
 
 class Apply(TableExpr):
     """ Apply an arbitrary Python function onto a Table
@@ -1237,6 +1269,15 @@ class Merge(RowWise):
         for i in self.children:
             for node in i.subterms():
                 yield node
+
+    def project(self, key):
+        if isinstance(key, _strtypes):
+            for child in self.children:
+                if key in child.columns:
+                    return child[key]
+        elif isinstance(key, list):
+            cols = [self.project(c) for c in key]
+            return merge(*cols)
 
 
 class Union(TableExpr):
