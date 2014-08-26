@@ -5,11 +5,8 @@ import sys
 import pytest
 import numpy as np
 
-from multipledispatch import dispatch
-
 from blaze.compatibility import xfail
 from blaze import TableSymbol, discover, dshape, compute, by, summary
-from blaze.compute.rethink import create_index, drop, RTable
 
 nopython3 = xfail(sys.version_info[0] >= 3,
                   reason='RethinkDB is not compatible with Python 3')
@@ -240,6 +237,7 @@ class TestColumnWise(object):
 
 @nopython3
 def test_create_index(tb):
+    from blaze.compute.rethink import create_index
     create_index(tb, 'name')
     assert 'name' in tb.t.index_list().run(tb.conn)
 
@@ -247,18 +245,8 @@ def test_create_index(tb):
 @nopython3
 @xfail(True, reason='adsf')
 def test_create_index_with_name(tb):
+    from blaze.compute.rethink import create_index
     create_index(tb, 'name', name='awesome')
-
-
-@dispatch(basestring)
-def table_exists(table_name):
-    import rethinkdb as rt
-    return table_name in rt.table_list().run(rt.connect())
-
-
-@dispatch(RTable)
-def table_exists(t):
-    return table_exists(t.t.args[0].data)
 
 
 @pytest.fixture
@@ -274,7 +262,9 @@ def drop_tb():
 
 @nopython3
 def test_drop(drop_tb):
-    tb = drop_tb
-    assert table_exists(tb)
+    from blaze.compute.rethink import drop
+    import rethinkdb as rt
+    table_name = drop_tb.t.args[0].data
+    assert table_name in rt.table_list().run(rt.connect())
     drop(tb)
-    assert not table_exists(tb)
+    assert table_name not in rt.table_list().run(rt.connect())
