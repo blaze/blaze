@@ -267,6 +267,11 @@ def test_relabel():
     assert list(result.columns) == ['NAME', 'amount', 'ID']
 
 
+def test_relabel_series():
+    result = compute(t.relabel({'name': 'NAME'}), df.name)
+    assert result.name == 'NAME'
+
+
 def test_map_column():
     inc = lambda x: x + 1
     result = compute(t['amount'].map(inc), df)
