@@ -101,7 +101,7 @@ def compute_one(v, t, **kwargs):
     column = v.child.column
     tavg = t.avg(column)
     row = rt.row[column]
-    sumsqr = t.map(row * row).sum() / compute_one(count(v.child), t, **kwargs)
+    sumsqr = t.map(row * row).sum() / t.pluck(column).count()
     ms = tavg * tavg
     return sumsqr - ms
 
