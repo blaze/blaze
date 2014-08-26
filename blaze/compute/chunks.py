@@ -86,7 +86,7 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 @dispatch(tuple(reductions), ChunkIterator)
 def compute_one(expr, c, **kwargs):
-    t = TableSymbol('_', dshape=expr.child)
+    t = TableSymbol('_', dshape=expr.child.dshape)
     a, b = reductions[type(expr)]
 
     return compute_one(b(t), [compute_one(a(t), chunk) for chunk in c])
