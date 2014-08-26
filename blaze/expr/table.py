@@ -872,6 +872,10 @@ class By(TableExpr):
     iscolumn = False
 
     @property
+    def child(self):
+    return common_subexpression(self.grouper, self.apply)
+
+    @property
     def schema(self):
         group = self.grouper.schema[0].parameters[0]
         reduction_name = type(self.apply).__name__
@@ -883,6 +887,7 @@ class By(TableExpr):
         params = unique(group + apply, key=lambda x: x[0])
 
         return dshape(Record(list(params)))
+
 
 
 @dispatch(TableExpr, (Summary, Reduction))
