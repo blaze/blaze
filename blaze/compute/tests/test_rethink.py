@@ -266,5 +266,5 @@ def test_drop(drop_tb):
     import rethinkdb as rt
     table_name = drop_tb.t.args[0].data
     assert table_name in rt.table_list().run(rt.connect())
-    drop(tb)
+    drop(drop_tb)
     assert table_name not in rt.table_list().run(rt.connect())
