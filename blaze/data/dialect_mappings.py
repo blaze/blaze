@@ -27,4 +27,6 @@ dialect_terms = {'delimiter': "delimiter", # Delimiter character (ALL)
                  'HEADER': "header",
                  'encoding': "encoding", # Charatcter Encoding -- POSTGRES: utf (default),MySQL latin1 (default)
                  'ENCODING': "encoding",
+                 'local': "local", # MySQL LOAD DATA ARG. -- used when file is located on client host
+                 "LOCAL": "local", # http://dev.mysql.com/doc/refman/5.1/en/load-data-local.html
                  }
