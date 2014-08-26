@@ -1,4 +1,4 @@
-amount, id, name
-100, 1, Alice
-200, 2, Bob
-300, 3, Charlie
+amount, id, name, timestamp
+100, 1, Alice, 2000-12-25T00:00:01
+200, 2, Bob, 2001-12-25T00:00:01
+300, 3, Charlie, 2002-12-25T00:00:01

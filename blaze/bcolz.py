@@ -25,7 +25,7 @@ def into(o, b):
 
 
 @dispatch(np.ndarray, (ctable, carray))
-def into(a, b):
+def into(a, b, **kwargs):
     return b[:]
 
 

@@ -129,7 +129,7 @@ def into(a, b):
     return b
 
 @dispatch(np.ndarray, np.ndarray)
-def into(a, b):
+def into(a, b, **kwargs):
     return b
 
 @dispatch(list, nd.array)
@@ -141,7 +141,7 @@ def into(a, b):
     return tuple(nd.as_py(b, tuple=True))
 
 @dispatch(np.ndarray, nd.array)
-def into(a, b):
+def into(a, b, **kwargs):
     return nd.as_numpy(b, allow_copy=True)
 
 @dispatch(np.ndarray, (Iterable, Iterator))
@@ -156,10 +156,30 @@ def into(a, b, **kwargs):
     else:
         return np.asarray(list(b), **kwargs)
 
+def degrade_numpy_dtype_to_python(dt):
+    """
+
+    >>> degrade_numpy_dtype_to_python(np.dtype('M8[ns]'))
+    dtype('<M8[us]')
+    >>> dt = np.dtype([('a', 'S7'), ('b', 'M8[D]'), ('c', 'M8[ns]')])
+    >>> degrade_numpy_dtype_to_python(dt)
+    dtype([('a', 'S7'), ('b', '<M8[D]'), ('c', '<M8[us]')])
+    """
+    replacements = {'M8[ns]': np.dtype('M8[us]'),
+                    'M8[as]': np.dtype('M8[us]')}
+    dt = replacements.get(dt.str.lstrip('<>'), dt)
+
+    if str(dt)[0] == '[':
+        return np.dtype([(name, degrade_numpy_dtype_to_python(dt[name]))
+                        for name in dt.names])
+    return dt
+
+
 @dispatch(list, np.ndarray)
 def into(a, b):
+    if 'M8' in str(b.dtype) or 'datetime' in str(b.dtype):
+        b = b.astype(degrade_numpy_dtype_to_python(b.dtype))
     return b.tolist()
-
 
 
 @dispatch(pd.DataFrame, np.ndarray)
@@ -176,7 +196,7 @@ def into(df, x):
 
 @dispatch(list, pd.DataFrame)
 def into(_, df):
-    return np.asarray(df).tolist()
+    return into([], into(np.ndarray(0), df))
 
 @dispatch(pd.DataFrame, nd.array)
 def into(a, b):
@@ -245,7 +265,7 @@ def into(a, df):
 
 
 @dispatch(np.ndarray, pd.DataFrame)
-def into(a, df):
+def into(a, df, **kwargs):
     return df.to_records(index=False)
 
 
@@ -265,7 +285,7 @@ def discover(df):
 
 
 @dispatch(np.ndarray, carray)
-def into(a, b):
+def into(a, b, **kwargs):
     return b[:]
 
 @dispatch(pd.Series, carray)
@@ -499,9 +519,16 @@ def into(a, b):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
+    datenames = [name for name in dtypes
+                      if np.issubdtype(dtypes[name], np.datetime64)]
+
+    dtypes = dict((k, v) for k, v in dtypes.items()
+                         if not np.issubdtype(v, np.datetime64))
+
     return pd.read_csv(b.path,
                        skiprows=1 if b.header else 0,
                        dtype=dtypes,
+                       parse_dates=datenames,
                        names=b.columns,
                        **dialect)
 
