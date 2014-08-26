@@ -873,7 +873,7 @@ class By(TableExpr):
 
     @property
     def child(self):
-    return common_subexpression(self.grouper, self.apply)
+            return common_subexpression(self.grouper, self.apply)
 
     @property
     def schema(self):

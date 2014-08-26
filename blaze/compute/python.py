@@ -325,9 +325,9 @@ def compute_one(t, seq, **kwargs):
         grouper, binop, combiner, initial = reduce_by_funcs(t)
         d = reduceby(grouper, binop, seq, initial)
     else:
-        grouper = rrowfunc(t.grouper, t)
+        grouper = rrowfunc(t.grouper, t.child)
         groups = groupby(grouper, seq)
-        d = dict((k, compute(t.apply, {t: v})) for k, v in groups.items())
+        d = dict((k, compute(t.apply, {t.child: v})) for k, v in groups.items())
 
     if t.grouper.iscolumn:
         keyfunc = lambda x: (x,)
