@@ -80,7 +80,6 @@ class GroupBy(Expr):
             grouper = merge(*grouper)
         self.grouper = grouper
 
-
 group_by = GroupBy
 
 
