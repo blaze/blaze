@@ -33,7 +33,7 @@ from ..expr.table import count, nunique, mean, var, std
 from ..expr import table, eval_str
 from ..expr.scalar.core import Scalar
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
-from ..compatibility import builtins, apply
+from ..compatibility import builtins, apply, unicode
 from . import core
 from .core import compute, compute_one, base
 
@@ -429,7 +429,7 @@ def compute_one(t, lhs, rhs, **kwargs):
 
 @dispatch(Sort, Sequence)
 def compute_one(t, seq, **kwargs):
-    if isinstance(t.key, (str, tuple, list)):
+    if isinstance(t.key, (str, unicode, tuple, list)):
         key = rowfunc(t.child[t.key])
     else:
         key = rowfunc(t.key)

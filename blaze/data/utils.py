@@ -29,7 +29,7 @@ def coerce(dshape, item):
     return nd.as_py(nd.array(item, dtype=dshape), tuple=True)
 
 
-@dispatch(str, Iterator)
+@dispatch(_strtypes, Iterator)
 def coerce(dshape, item):
     blocks = partition_all(1024, item)
     return chain.from_iterable(map(partial(coerce, dshape), blocks))

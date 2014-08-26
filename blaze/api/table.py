@@ -12,7 +12,7 @@ from ..expr.core import Expr
 from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
 from .into import into
-from ..compatibility import _strtypes
+from ..compatibility import _strtypes, unicode
 
 __all__ = ['Table', 'compute', 'into']
 
@@ -91,7 +91,7 @@ class Table(TableSymbol):
         self.data = data
 
         if (hasattr(data, 'schema')
-             and isinstance(data.schema, (DataShape, str))
+             and isinstance(data.schema, (DataShape, str, unicode))
              and self.schema != data.schema):
             raise TypeError('%s schema %s does not match %s schema %s' %
                             (type(data).__name__, data.schema,
