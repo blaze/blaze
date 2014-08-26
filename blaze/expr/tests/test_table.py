@@ -535,13 +535,14 @@ def test_merge_repeats():
         merge(accounts, (accounts.balance + 1).label('balance'))
 
 
-@xfail(reason="Need to implement Merge.__getitem__ or Merge.project")
-def test_merge_getitem():
+def test_merge_project():
     accounts = TableSymbol('accounts',
                            '{name: string, balance: int32, id: int32}')
     new_amount = (accounts['balance'] * 1.5).label('new')
     c = merge(accounts[['name', 'balance']], new_amount)
+
     assert c['new'].isidentical(new_amount)
+    assert c['name'].isidentical(accounts['name'])
 
 
 inc = lambda x: x + 1
