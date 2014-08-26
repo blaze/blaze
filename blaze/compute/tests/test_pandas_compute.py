@@ -293,6 +293,13 @@ def test_map_with_rename(tframe):
     assert renamed.columns == ['date']
 
 
+def test_multiple_renames_on_series_fails(tframe):
+    t = Table(tframe)
+    expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
+    with pytest.raises(ValueError):
+        compute(expr)
+
+
 def test_map_column():
     inc = lambda x: x + 1
     result = compute(t['amount'].map(inc), df)
