@@ -377,7 +377,7 @@ def test_Distinct():
 
 def test_by():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    r = by(t, t['name'], sum(t['amount']))
+    r = by(t['name'], sum(t['amount']))
 
     print(r.schema)
     assert isinstance(r.schema[0], Record)
@@ -386,8 +386,8 @@ def test_by():
 
 def test_by_summary():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
-    a = by(t, t['name'], sum=sum(t['amount']))
-    b = by(t, t['name'], summary(sum=sum(t['amount'])))
+    a = by(t['name'], sum=sum(t['amount']))
+    b = by(t['name'], summary(sum=sum(t['amount'])))
 
     assert a.isidentical(b)
 
@@ -395,10 +395,10 @@ def test_by_summary():
 def test_by_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
 
-    assert len(by(t, t['id'], t['amount'].sum()).columns) == 2
-    assert len(by(t, t['id'], t['id'].count()).columns) == 2
-    print(by(t, t, t.count()).columns)
-    assert len(by(t, t, t.count()).columns) == 4
+    assert len(by(t['id'], t['amount'].sum()).columns) == 2
+    assert len(by(t['id'], t['id'].count()).columns) == 2
+    print(by(t, t.count()).columns)
+    assert len(by(t, t.count()).columns) == 4
 
 
 def test_sort():
@@ -586,7 +586,7 @@ def test_iscolumn():
     assert (a['x'] + a['y']).iscolumn
     assert a['x'].distinct().iscolumn
     assert not a[['x']].distinct().iscolumn
-    assert not by(a, a['x'], a['y'].sum()).iscolumn
+    assert not by(a['x'], a['y'].sum()).iscolumn
     assert a['x'][a['x'] > 1].iscolumn
     assert not a[['x', 'y']][a['x'] > 1].iscolumn
     assert a['x'].sort().iscolumn
