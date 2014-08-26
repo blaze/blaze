@@ -114,23 +114,6 @@ def h5():
 
 
 @pytest.yield_fixture
-def emptyT():
-    class Test(IsDescription):
-        userid = UInt8Col()
-        text  = StringCol(20)
-        country  = StringCol(2)
-
-    with tempfile.NamedTemporaryFile(mode='w') as f:
-        h5file = open_file(f.name, mode = "w", title = "Test file")
-        group = h5file.create_group("/", 'test', 'Info')
-        tab = h5file.create_table(group, 'sample', Test, "Example")
-        tab.flush()
-        yield h5file
-        # Close (and flush) the file
-        h5file.close()
-
-
-@pytest.yield_fixture
 def good_csv():
 
     with tempfile.NamedTemporaryFile(mode='w', suffix="csv") as f:
@@ -155,12 +138,18 @@ def bad_csv_df():
         badfile.write("userid,text,country\n")
         badfile.write("14,asdfsadf,az\n")
         badfile.write("15,asdfsadf,az\n")
+        for i in range(0,100):
+            badfile.write(str(i) + ",asdfsadf,az\n")
         badfile.write("5,assddfsadf,gt,extra,extra\n")
         badfile.flush()
         yield badfile
         # Close (and flush) the file
         badfile.close()
 
+@pytest.yield_fixture
+def out_hdf5():
+    with tempfile.NamedTemporaryFile(mode='w', suffix=".h5") as f:
+        yield f
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_pytables_dataframe(h5):
@@ -327,22 +316,18 @@ def test_DataFrame_CSV():
 
 
 @skip_if_not(PyTables and DataFrame)
-def test_into_tables_path(emptyT, good_csv):
-    samp = emptyT.root.test.sample
-    tble = into(samp, good_csv.name)
+def test_into_tables_path(good_csv, out_hdf5):
+    tble = into(PyTables, good_csv.name, output_path=out_hdf5.name)
     assert len(tble) == 3
 
 
 @skip_if_not(PyTables and DataFrame)
-def test_into_tables_path_bad_csv(emptyT, bad_csv_df):
-
-    samp = emptyT.root.test.sample
-    tble = into(samp, bad_csv_df.name, error_bad_lines=False, header=0,
-                schema="{userid:int32, text:string, country:string}")
+def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
+    tble = into(PyTables, bad_csv_df.name, output_path=out_hdf5.name, error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
     #Check that it's the same as straight from the CSV
-    df_from_csv = read_csv( bad_csv_df.name, error_bad_lines=False)
-    assert len(df_from_csv) == 2
-    assert len(df_from_tbl) == 2
+    df_from_csv = read_csv(bad_csv_df.name, error_bad_lines=False)
+    assert len(df_from_csv) == 102
+    assert len(df_from_tbl) == 102
     for col in df_from_csv.columns:
         assert all(df_from_csv[col] == df_from_tbl[col])

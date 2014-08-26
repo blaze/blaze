@@ -3,15 +3,9 @@ from dynd import nd
 import pandas as pd
 import os
 from ..dispatch import dispatch
-
-try:
-    from ..data import DataDescriptor, CSV
-except ImportError:
-    DataDescriptor = type(None)
-    CSV = type(None)
+from ..data import DataDescriptor, CSV
 
 
-@dispatch(str)
 def resource(a, **kwargs):
     if os.path.isfile(a) and a.endswith("csv"):
         return CSV(a, **kwargs)

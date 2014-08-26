@@ -178,18 +178,18 @@ def into(df, x):
 
 @dispatch(tables.Table, pd.DataFrame)
 def into(a, b, **kwargs):
-    arow = a.row
-    for rw in b.iterrows():
-        for col in a.colnames:
-            arow[col] = rw[1][col]
-        arow.append()
-    a.flush()
-    return a
+    fname = kwargs.get('output_path', "blaze.h5")
+    store = pd.HDFStore(fname, mode='w')
+    store.put('df',b,format='table',data_columns=True)
+    return store.root.df.table
 
 
-@dispatch(object, _strtypes)
+@dispatch(tables.Table, _strtypes)
 def into(a, b, **kwargs):
-    return into(a, resource(b, **kwargs), **kwargs)
+    kw = dict(kwargs)
+    if 'output_path' in kw:
+        del kw['output_path']
+    return into(a, resource(b, **kw), **kwargs)
 
 
 @dispatch(list, pd.DataFrame)
