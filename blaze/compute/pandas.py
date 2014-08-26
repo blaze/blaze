@@ -135,8 +135,8 @@ def unpack(seq):
 @dispatch(By, DataFrame)
 def compute_one(t, df, **kwargs):
     if t.grouper.iscolumn:
-        grouper = compute(t.grouper, {t.child: df}) # a Series
-    elif isinstance(t.grouper, Projection) and t.grouper.child is t.child:
+        grouper = compute(t.grouper, {t: df}) # a Series
+    elif isinstance(t.grouper, Projection) and t.grouper is t:
         grouper = t.grouper.columns  # list of column names
 
 
@@ -144,7 +144,7 @@ def compute_one(t, df, **kwargs):
         names = t.apply.names
         preapply = DataFrame(dict(zip(
             names,
-            [compute(v.child, {t.child: df}) for v in t.apply.values])))
+            [compute(v.child, {t: df}) for v in t.apply.values])))
 
         df2 = concat_nodup(df, preapply)
 
@@ -163,7 +163,7 @@ def compute_one(t, df, **kwargs):
 
     if isinstance(t.apply, Reduction):
         names = t.apply.dshape[0].names
-        preapply = compute(t.apply.child, {t.child: df})
+        preapply = compute(t.apply.child, {t: df})
         # Pandas and Blaze column naming schemes differ
         # Coerce DataFrame column names to match Blaze's names
         preapply = preapply.copy()
