@@ -16,7 +16,7 @@ from .core import Expr, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from ..compatibility import _strtypes, builtins
+from ..compatibility import _strtypes, builtins, unicode, basestring
 from ..dispatch import dispatch
 
 __all__ = '''
@@ -82,7 +82,7 @@ class TableExpr(Expr):
             return dshape(ds)
 
     def __getitem__(self, key):
-        if isinstance(key, (list, str, unicode)):
+        if isinstance(key, (list, basestring, unicode)):
             return self.project(key)
         if isinstance(key, TableExpr):
             return selection(self, key)
