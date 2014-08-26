@@ -172,9 +172,14 @@ def into(df, x):
         columns = list(x.dtype.names)
     return pd.DataFrame(x, columns=columns)
 
-@dispatch(pd.DataFrame, tables.Table)
-def into(df, x):
-    return pd.DataFrame(nd.as_py(nd.array(x[:])))
+@dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tables.Table)
+def into(a, x):
+    return into(a, into(np.ndarray, x))
+
+
+@dispatch(np.ndarray, tables.Table)
+def into(_, t):
+    return t[:]
 
 
 @dispatch(tables.Table, pd.DataFrame)
