@@ -520,6 +520,13 @@ def test_merge():
     assert c.columns == ['name', 'balance', 'new']
 
 
+def test_merge_repeats():
+    accounts = TableSymbol('accounts',
+                           '{name: string, balance: int32, id: int32}')
+    with pytest.raises(ValueError):
+        merge(accounts, (accounts.balance + 1).label('balance'))
+
+
 @xfail(reason="Need to implement Merge.__getitem__ or Merge.project")
 def test_merge_getitem():
     accounts = TableSymbol('accounts',

@@ -30,6 +30,11 @@ def test_transform():
     expr = transform(t, x=amount + id)
     assert expr.columns == ['id', 'name', 'amount', 'x']
 
+    expr = transform(t, amount=amount + 1)
+    assert expr.columns == ['id', 'name', 'amount']
+    assert (t['amount'] + 1) in expr.subterms()
+    assert t[['id', 'name']] in expr.subterms()
+
 
 def test_groupby():
     g = group_by(t, name)

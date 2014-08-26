@@ -43,13 +43,15 @@ def select(t, *columns):
     return t[[c.name for c in columns]]
 
 
-def transform(t, **kwargs):
+def transform(t, replace=True, **kwargs):
     """ Add named columns to table
 
     >>> t = TableSymbol('t', '{x: int, y: int}')
     >>> transform(t, xy=t.x + t.y).columns
     ['x', 'y', 'xy']
     """
+    if replace and set(t.columns).intersection(set(kwargs)):
+        t = t[[c for c in t.columns if c not in kwargs]]
 
     args = [t] + [v.label(k) for k, v in kwargs.items()]
     return merge(*args)
