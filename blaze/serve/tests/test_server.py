@@ -6,7 +6,7 @@ from pandas import DataFrame
 import pickle
 
 from blaze import discover, TableSymbol
-from blaze.serve.server import Server
+from blaze.serve.server import Server, to_tree, from_tree
 from blaze.data.python import Python
 from blaze.serve.index import parse_index, emit_index
 from blaze.compute.python import compute
@@ -137,6 +137,27 @@ def test_pickle():
     expected = 300
 
     response = test.post('/pickle/accounts_df.json',
+                         data = json.dumps(query),
+                         content_type='application/json')
+
+    assert 'OK' in response.status
+    assert json.loads(response.data)['data'] == expected
+
+
+def test_to_from_json():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    expr = t.amount.sum()
+
+    assert from_tree(to_tree(t)).isidentical(t)
+
+
+def test_compute():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    expr = t.amount.sum()
+    query = {'expr': to_tree(expr)}
+    expected = 300
+
+    response = test.post('/compute/accounts_df.json',
                          data = json.dumps(query),
                          content_type='application/json')
 

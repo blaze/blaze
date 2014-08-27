@@ -6,6 +6,8 @@ from dynd import nd
 import pickle
 from functools import partial, wraps
 from ..api import discover
+from ..expr import Expr
+from datashape import DataShape
 
 from .index import parse_index
 
@@ -202,6 +204,46 @@ def pkl(datasets, name):
         return ("Dataset %s not found" % name, 404)
 
     expr = pickle.loads(data['pickle'])
+    result = compute(expr, dset)
+    return jsonify({'name': name,
+                    'datashape': str(expr.dshape),
+                    'data': result})
+
+
+def to_tree(expr):
+    if isinstance(expr, Expr):
+        return {type(expr).__name__: list(map(to_tree, expr.args))}
+    elif isinstance(expr, DataShape):
+        return str(expr)
+    else:
+        return expr
+
+
+def from_tree(expr):
+    import blaze
+    if isinstance(expr, dict):
+        cls = getattr(blaze, expr.keys()[0])
+        children = list(map(from_tree, expr.values()[0]))
+        return cls(*children)
+    else:
+        return expr
+
+
+@route('/compute/<name>.json', methods=['POST', 'PUT', 'GET'])
+def comp(datasets, name):
+    if request.headers['content-type'] != 'application/json':
+        return ("Expected JSON data", 404)
+    try:
+        data = json.loads(request.data)
+    except ValueError:
+        return ("Bad JSON.  Got %s " % request.data, 404)
+
+    try:
+        dset = datasets[name]
+    except KeyError:
+        return ("Dataset %s not found" % name, 404)
+
+    expr = from_tree(data['expr'])
     result = compute(expr, dset)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
