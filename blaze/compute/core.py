@@ -51,6 +51,35 @@ def compute(expr, o, **kwargs):
         raise ValueError("Give compute dictionary input, got %s" % str(o))
 
 
+@dispatch(object)
+def compute_down(expr):
+    """ Compute the expression on the entire inputs
+
+    inputs match up to leaves of the expression
+    """
+    return expr
+
+
+def V(d, expr):
+    """ Processes an expression top-down then bottom-up """
+    # Base case: expression is in dict, return associated data
+    if expr in d:
+        return d[expr]
+
+    # See if we have a direct computation path
+    if (hasattr(expr, 'leaves') and compute_down.resolve(
+            (type(expr),) + tuple(type(d[leaf]) for leaf in expr.leaves()))):
+        leaves = [d[leaf] for leaf in expr.leaves()]
+        return compute_down(expr, *leaves)
+    else:
+        # Compute children of this expression
+        children = ([V(d, child) for child in expr.inputs]
+                    if hasattr(expr, 'inputs') else [])
+
+        # Compute this expression given the children
+        return compute_one(expr, *children, scope=d)
+
+
 def bottom_up(d, expr):
     """
     Process an expression from the leaves upwards
@@ -103,7 +132,7 @@ def compute(expr, d):
     ['Bob', 'Charlie']
     """
     expr = pre_compute(expr, d)
-    result = bottom_up(d, expr)
+    result = V(d, expr)
     return post_compute(expr, result, d)
 
 
