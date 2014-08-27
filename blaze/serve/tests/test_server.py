@@ -1,16 +1,22 @@
 from __future__ import absolute_import, division, print_function
 
+import os
+
 from flask import json
 from datetime import datetime
 from pandas import DataFrame
 import pickle
 
-from blaze import discover, TableSymbol
+import blaze
+from blaze import discover, TableSymbol, by, CSV, compute
 from blaze.serve.server import Server, to_tree, from_tree
 from blaze.data.python import Python
-from blaze.serve.index import parse_index, emit_index
-from blaze.compute.python import compute
+from blaze.serve.index import emit_index
 
+
+iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir, 'examples',
+                         'data', 'iris.csv')
+iris = CSV(iris_path)
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
@@ -32,7 +38,8 @@ server = Server(datasets={'accounts': accounts,
                           'accounts_df': df,
                           'cities': cities,
                           'pairs': pairs,
-                          'times': times})
+                          'times': times,
+                          'iris': iris})
 
 test = server.app.test_client()
 
@@ -130,6 +137,7 @@ def test_selection_on_columns():
     assert 'OK' in response.status
     assert json.loads(response.data)['data'] == expected
 
+
 def test_pickle():
     t = TableSymbol('t', '{name: string, amount: int}')
     expr = t.amount.sum()
@@ -163,3 +171,16 @@ def test_compute():
 
     assert 'OK' in response.status
     assert json.loads(response.data)['data'] == expected
+
+
+def test_compute_by():
+    t = TableSymbol('t', iris.dshape)
+    expr = by(t, t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
+    tree = to_tree(expr)
+    blob = json.dumps({'expr': tree})
+    resp = test.post('/compute/iris.json', data=blob,
+                     content_type='application/json')
+    assert 'OK' in resp.status
+    result = json.loads(resp.data)['data']
+    expected = compute(expr, iris)
+    assert result == list(map(list, expected))
