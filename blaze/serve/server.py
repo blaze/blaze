@@ -8,7 +8,7 @@ from dynd import nd
 import pickle
 from cytoolz import first
 from functools import partial, wraps
-from ..api import discover
+from ..api import discover, Table
 from ..expr import Expr
 from ..dispatch import dispatch
 from ..compatibility import map
@@ -218,6 +218,11 @@ def pkl(datasets, name):
 @dispatch(Expr)
 def to_tree(expr):
     return {type(expr).__name__: list(map(to_tree, expr.args))}
+
+
+@dispatch(Table)
+def to_tree(expr):
+    return to_tree(TableSymbol(expr._name, expr.schema))
 
 
 @dispatch(DataShape)

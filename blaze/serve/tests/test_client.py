@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 from pandas import DataFrame
 
-from blaze import TableSymbol, compute
+from blaze import TableSymbol, compute, Table, by, into
 from blaze.serve.server import Server
 from blaze.data.python import Python
 from blaze.serve.index import parse_index, emit_index
@@ -62,3 +62,13 @@ def test_expr_client():
 
     assert compute(expr, ec) == 300
     assert compute(t.name, ec) == ['Alice', 'Bob']
+
+
+def test_expr_client_interactive():
+    ec = ExprClient('http://localhost:5000', 'accounts_df')
+    t = Table(ec)
+
+    assert compute(t.name) == ['Alice', 'Bob']
+    assert into(set, compute(by(t, t.name, min=t.amount.min(),
+                                     max=t.amount.max()))) == \
+            set([('Alice', 100, 100), ('Bob', 200, 200)])
