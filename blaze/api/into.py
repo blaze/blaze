@@ -199,9 +199,6 @@ def into(df, x):
 @dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tables.Table)
 def into(a, t):
     x = into(np.ndarray, t)
-    if sys.version_info[0] >= 3:
-        dt = [(n, x.dtype[n].str.replace('S', 'U')) for n in x.dtype.names]
-        x = x.astype(dt)
     return into(a, x)
 
 
@@ -234,7 +231,7 @@ def into(_, x, filename=None, datapath=None, **kwargs):
         "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
 
     f = tables.open_file(filename, 'w')
-    t = f.create_table('/', datapath, obj=fixlen_dtype(numpy_ensure_strings(x)))
+    t = f.create_table('/', datapath, obj=fixlen_dtype(x))
     return t
 
 
