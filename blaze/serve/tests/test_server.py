@@ -216,8 +216,8 @@ def test_compute_by_with_summary(iris_server, iris):
 def test_compute_column_wise(iris_server, iris):
     test = iris_server
     t = TableSymbol('t', iris.dshape)
-    subexpr = ((t.petal_width / t.petal_width.max() > 0.5) &
-               (t.petal_length / t.petal_length.max() > 0.5))
+    subexpr = ((t.petal_width / 2 > 0.5) &
+               (t.petal_length / 2 > 0.5))
     expr = t[subexpr]
     tree = to_tree(expr)
     blob = json.dumps({'expr': tree})
