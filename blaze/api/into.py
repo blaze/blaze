@@ -221,9 +221,11 @@ def fixlen_dtype(x):
     rec.array([(1, 'Alice', 100), (2, 'Bob', 200)],
           dtype=[('id', '<i8'), ('name', 'S5'), ('amount', '<i8')])
     """
-    dt = [(n, "S%d" % max(map(len, x[n])) if x.dtype[n] == 'O' else x.dtype[n])
-            for n in x.dtype.names]
-    return x.astype(dt)
+    if "'O'" in str(x.dtype):
+        dt = [(n, "S%d" % max(map(len, x[n])) if x.dtype[n] == 'O' else x.dtype[n])
+                for n in x.dtype.names]
+        x = x.astype(dt)
+    return x
 
 @dispatch(tables.Table, np.ndarray)
 def into(_, x, filename=None, datapath=None, **kwargs):
@@ -472,7 +474,7 @@ def numpy_ensure_strings(x):
     >>> numpy_ensure_strings(x)  # doctest: +SKIP
     np.array(['a', 'b'], dtype='U1')
     """
-    if sys.version_info[0] >= 3:
+    if sys.version_info[0] >= 3 and "S" in str(x.dtype):
         if x.dtype.names:
             dt = [(n, x.dtype[n].str.replace('S', 'U')) for n in x.dtype.names]
             x = x.astype(dt)
