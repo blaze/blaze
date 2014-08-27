@@ -12,7 +12,7 @@ from ..api import discover, Table
 from ..expr import Expr
 from ..dispatch import dispatch
 from ..compatibility import map
-from datashape import DataShape
+from datashape import DataShape, Mono
 
 from .index import parse_index
 
@@ -218,7 +218,7 @@ def pkl(datasets, name):
 def to_tree(expr):
     if isinstance(expr, tuple):
         return list(map(to_tree, expr))
-    elif isinstance(expr, DataShape):
+    elif isinstance(expr, (Mono, DataShape)):
         return str(expr)
     elif isinstance(expr, Table):
         return to_tree(TableSymbol(expr._name, expr.schema))
