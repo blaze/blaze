@@ -4,6 +4,7 @@ from collections import Iterator
 from flask import Flask, request, jsonify, json
 from dynd import nd
 from functools import partial, wraps
+from ..api import discover
 
 from .index import parse_index
 
@@ -37,7 +38,7 @@ def route(*args, **kwargs):
 
 @route('/datasets.json')
 def dataset(datasets):
-    return jsonify(dict((k, str(v.dshape)) for k, v in datasets.items()))
+    return jsonify(dict((k, str(discover(v))) for k, v in datasets.items()))
 
 
 @route('/data/<name>.json', methods=['POST', 'PUT', 'GET'])

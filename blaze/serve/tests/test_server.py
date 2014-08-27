@@ -2,7 +2,9 @@ from __future__ import absolute_import, division, print_function
 
 from flask import json
 from datetime import datetime
+from pandas import DataFrame
 
+from blaze import discover
 from blaze.serve.server import Server
 from blaze.data.python import Python
 from blaze.serve.index import parse_index, emit_index
@@ -11,6 +13,9 @@ from blaze.compute.python import compute
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
+
+df = DataFrame([['Alice', 100], ['Bob', 200]],
+               columns=['name', 'amount'])
 
 cities = Python([['Alice', 'NYC'], ['Bob', 'LA'], ['Charlie', 'Beijing']],
                   schema='{name: string, city: string}')
@@ -23,6 +28,7 @@ times = Python([(1, datetime(2012, 1, 1, 12, 0, 0)),
                schema='{x: int, y: datetime}')
 
 server = Server(datasets={'accounts': accounts,
+                          'accounts_df': df,
                           'cities': cities,
                           'pairs': pairs,
                           'times': times})
@@ -49,6 +55,7 @@ def test_full_response():
 def test_datasets():
     response = test.get('/datasets.json')
     assert json.loads(response.data) == {'accounts': str(accounts.dshape),
+                                         'accounts_df': str(discover(df)),
                                          'cities': str(cities.dshape),
                                          'pairs': str(pairs.dshape),
                                          'times': str(times.dshape)}
