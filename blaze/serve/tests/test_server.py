@@ -156,6 +156,19 @@ def test_to_from_json():
     assert from_tree(to_tree(t)).isidentical(t)
 
 
+def test_to_tree():
+    t = TableSymbol('t', '{name: string, amount: int32}')
+    expr = t.amount.sum()
+    expected = {'sum': [
+                {'Column': [
+                  {'TableSymbol': ['t',
+                                   'var * { name : string, amount : int32 }',
+                                   False]},
+                  'amount'
+                ]}
+              ]}
+    assert to_tree(expr) == expected
+
 def test_compute():
     t = TableSymbol('t', '{name: string, amount: int}')
     expr = t.amount.sum()
