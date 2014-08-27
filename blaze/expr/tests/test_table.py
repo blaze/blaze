@@ -16,7 +16,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         join, cos, by, union, TableExpr, exp, distinct, Apply,
                         columnwise, eval_str, merge, common_subexpression, sum,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
-                        Summary, count)
+                        Summary, count, ScalarSymbol)
 from blaze.expr.core import discover
 from blaze.utils import raises
 from blaze.compatibility import xfail
@@ -695,3 +695,15 @@ def test_to_json():
     expr = t[t.id > 2]
     result = expr.to_json()
     assert False
+
+
+def test_leaves():
+    t = TableSymbol('t', '{id: int32, name: string}')
+    v = TableSymbol('v', '{id: int32, city: string}')
+    x = ScalarSymbol('x', 'int32')
+
+    assert t.leaves() == [t]
+    assert t.id.leaves() == [t]
+    assert by(t, t.name, t.id.nunique()).leaves() == [t]
+    assert join(t, v).leaves() == [t, v]
+    assert join(v, t).leaves() == [v, t]

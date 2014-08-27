@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import numbers
 import toolz
+from toolz import unique, concat
 
 from ..dispatch import dispatch
 
@@ -30,6 +31,30 @@ class Expr(object):
     @property
     def inputs(self):
         return tuple(getattr(self, i) for i in self.__inputs__)
+
+    def leaves(self):
+        """ Leaves of an expresion tree
+
+        All nodes without inputs.  Leaves are returned in order, left to right.
+
+        >>> from blaze import TableSymbol, join, by
+
+        >>> t = TableSymbol('t', '{id: int32, name: string}')
+        >>> t.leaves()
+        [t]
+        >>> by(t, t.name, t.id.nunique()).leaves()
+        [t]
+
+        >>> v = TableSymbol('v', '{id: int32, city: string}')
+        >>> join(t, v).leaves()
+        [t, v]
+        """
+
+        if not self.inputs:
+            return [self]
+        else:
+            return list(unique(concat(i.leaves() for i in self.inputs)))
+
 
     def isidentical(self, other):
         return type(self) == type(other) and self.args == other.args
