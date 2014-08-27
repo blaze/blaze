@@ -5,18 +5,20 @@
 """
 from __future__ import absolute_import, division, print_function
 
+from functools import partial
 from abc import abstractproperty
+from operator import methodcaller
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import (concat, partial, first, compose, get, unique, second,
-        isdistinct, frequencies)
+                   isdistinct, frequencies)
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from ..compatibility import _strtypes, builtins, unicode, basestring
+from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
 __all__ = '''
@@ -168,6 +170,11 @@ class TableExpr(Expr):
         else:
             raise ValueError("Can not compute name of table")
 
+    def to_json(self):
+        jsonify = compose(methodcaller('to_json'), partial(getattr, self))
+        inputs = dict(zip(self.__inputs__, map(jsonify, self.__inputs__)))
+        slots = dict(zip(self.__slots__, map(jsonify, self.__slots__)))
+        return {type(self).__name__: {'inputs': inputs, 'slots': slots}}
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
