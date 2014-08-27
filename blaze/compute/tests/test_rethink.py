@@ -247,6 +247,7 @@ def test_map(ts, tb):
     assert result == [{'amount': add_one(r['amount'])} for r in bank]
 
 
+@nopython3
 def test_map_with_columns(ts, tb):
     add_one = lambda x: x + 1
     expr = ts[['amount', 'id']].map(add_one, schema='{amount: int64, id: int64}')
