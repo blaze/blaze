@@ -171,7 +171,7 @@ def table_html(expr, n=10):
 
 @dispatch(type, TableExpr)
 def into(a, b, **kwargs):
-    f = into.resolve((a, type(b)))
+    f = into.dispatch(a, type(b))
     return f(a, b, **kwargs)
 
 

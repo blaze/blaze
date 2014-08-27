@@ -220,6 +220,8 @@ def to_tree(expr):
         return list(map(to_tree, expr))
     elif isinstance(expr, DataShape):
         return str(expr)
+    elif isinstance(expr, Table):
+        return to_tree(TableSymbol(expr._name, expr.schema))
     elif isinstance(expr, Expr):
         return {type(expr).__name__: list(map(to_tree, expr.args))}
     else:

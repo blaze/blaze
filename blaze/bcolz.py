@@ -16,7 +16,7 @@ __all__ = ['into', 'bcolz', 'chunks']
 
 @dispatch(type, (ctable, carray))
 def into(a, b, **kwargs):
-    f = into.resolve((a, type(b)))
+    f = into.dispatch(a, type(b))
     return f(a, b, **kwargs)
 
 @dispatch((tuple, set, list), (ctable, carray))
