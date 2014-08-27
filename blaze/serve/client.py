@@ -110,6 +110,9 @@ def compute_down(expr, ec):
                      data = json.dumps({'expr': tree}),
                      headers={'Content-Type': 'application/json'})
 
+    if not ok(r):
+        raise ValueError("Bad response: %s" % reason(r))
+
     data = json.loads(content(r))
 
     return data['data']
