@@ -149,7 +149,7 @@ def compute_one(r, t, **kwargs):
 
 
 @dispatch(UnaryOp, (RqlQuery, RTable))
-def compute_one(o, t):
+def compute_one(o, t, **kwargs):
     raise NotImplementedError('ReQL does not support unary operations')
 
 
@@ -189,7 +189,7 @@ def compute_one(b, t, **kwargs):
 
 @dispatch(Map, RqlQuery)
 def compute_one(m, t, **kwargs):
-    return t.with_fields(*m.columns).map(m.func)
+    return t.map(dict((column, m.func(rt.row[column])) for column in m.columns))
 
 
 @dispatch(Expr, RTable, dict)
