@@ -170,6 +170,19 @@ def test_compute():
     assert json.loads(response.data)['data'] == expected
 
 
+def test_compute_with_namespace():
+    t = TableSymbol('t', '{name: string, amount: int}')
+    query = {'expr': {'Column': ['accounts_df', 'name']}}
+    expected = ['Alice', 'Bob']
+
+    response = test.post('/compute/accounts_df.json',
+                         data = json.dumps(query),
+                         content_type='application/json')
+
+    assert 'OK' in response.status
+    assert json.loads(response.data)['data'] == expected
+
+
 @pytest.fixture
 def iris_server():
     iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir, 'examples',

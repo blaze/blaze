@@ -228,13 +228,18 @@ def to_tree(expr):
         return expr
 
 
-def from_tree(expr):
+def from_tree(expr, namespace=dict()):
     if isinstance(expr, dict):
         cls = getattr(blaze, first(expr.keys()))
-        children = list(map(from_tree, first(expr.values())))
+        if 'Symbol' in first(expr.keys()):
+            children = [from_tree(arg) for arg in first(expr.values())]
+        else:
+            children = [from_tree(arg, namespace) for arg in first(expr.values())]
         return cls(*children)
     elif isinstance(expr, list):
-        return tuple(map(from_tree, expr))
+        return tuple(from_tree(arg, namespace) for arg in expr)
+    if expr in namespace:
+        return namespace[expr]
     else:
         return expr
 
@@ -253,7 +258,10 @@ def comp(datasets, name):
     except KeyError:
         return ("Dataset %s not found" % name, 404)
 
-    expr = from_tree(data['expr'])
+    t = TableSymbol(name, discover(dset))
+
+    expr = from_tree(data['expr'], namespace={name: t})
+
     result = compute(expr, dset)
     if isinstance(expr, TableExpr):
         result = into(list, result)
