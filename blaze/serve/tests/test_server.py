@@ -223,7 +223,8 @@ def test_compute_column_wise(iris_server, iris):
     blob = json.dumps({'expr': tree})
     resp = test.post('/compute/iris.json', data=blob,
                      content_type='application/json')
+
     assert 'OK' in resp.status
     result = json.loads(resp.data)['data']
     expected = compute(expr, iris)
-    assert result == list(map(list, expected))
+    assert result == list(expected)

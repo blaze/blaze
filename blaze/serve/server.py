@@ -8,11 +8,14 @@ from dynd import nd
 import pickle
 from cytoolz import first
 from functools import partial, wraps
+from blaze import into, compute
 from ..api import discover, Table
-from ..expr import Expr
-from ..dispatch import dispatch
+from ..expr import Expr, TableSymbol, Selection, ColumnWise, TableSymbol
+from ..expr import TableExpr
+from ..expr.scalar.parser import exprify
+
 from ..compatibility import map
-from datashape import DataShape, Mono
+from datashape import Mono
 
 from .index import parse_index
 
@@ -116,11 +119,6 @@ def data(datasets, name):
 
     return jsonify(response)
 
-from ..expr.table import *
-from ..expr.scalar import exprify
-from ..api.into import into
-from ..compute.core import compute
-
 
 @route('/select/<name>.json', methods=['POST', 'PUT', 'GET'])
 def select(datasets, name):
@@ -218,7 +216,7 @@ def pkl(datasets, name):
 def to_tree(expr):
     if isinstance(expr, tuple):
         return list(map(to_tree, expr))
-    elif isinstance(expr, (Mono, DataShape)):
+    elif isinstance(expr, Mono):
         return str(expr)
     elif isinstance(expr, Table):
         return to_tree(TableSymbol(expr._name, expr.schema))
