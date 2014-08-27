@@ -688,10 +688,3 @@ def test_distinct_name():
     assert t.distinct().name.isidentical(t.distinct()['name'])
     assert t.id.distinct().name == 'id'
     assert t.name.name == 'name'
-
-
-def test_to_json():
-    t = TableSymbol('t', '{id: int32, name: string}')
-    expr = t[t.id > 2]
-    result = expr.to_json()
-    assert False
