@@ -116,7 +116,7 @@ def h5():
 @pytest.yield_fixture
 def good_csv():
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix="csv") as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix=".csv") as f:
         badfile = open(f.name, mode="w")
         # Insert a new record
         badfile.write("userid,text,country\n")
@@ -132,7 +132,7 @@ def good_csv():
 @pytest.yield_fixture
 def bad_csv_df():
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix="csv") as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix=".csv") as f:
         badfile = open(f.name, mode="w")
         # Insert a new record
         badfile.write("userid,text,country\n")
@@ -329,10 +329,9 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
                           error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
     #Check that it's the same as straight from the CSV
-    df_from_csv = read_csv(bad_csv_df.name, error_bad_lines=False)
+    df_from_csv = into(DataFrame, bad_csv_df.name, error_bad_lines=False)
     assert (df_from_csv == df_from_tbl).all().all()
-    assert len(df_from_csv) == 102
-    assert len(df_from_tbl) == 102
+
 
 def test_numpy_datetimes():
     L = [datetime(2000, 12, 1), datetime(2000, 1, 1, 1, 1, 1)]
