@@ -17,6 +17,8 @@ addons:
 services:
     - mongodb
     - postgres
+    - mysql
+
 
 # Note: conda is not available for anything but python 2.7. So below we try to install
 # conda in 2.7 and use conda to install dependencies in the virtualenv for version x.y
@@ -78,6 +80,9 @@ install:
 
   # Install Blaze
   - python setup.py install
+
+before_script:
+  - mysql -e 'create database test'
 
 script: py.test --doctest-modules --verbose --pyargs blaze
 

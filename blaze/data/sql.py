@@ -340,11 +340,12 @@ def into(sql, csv, if_exists="replace", **kwargs):
     quotechar = retrieve_kwarg('quotechar') or '"'
     escapechar = retrieve_kwarg('escapechar') or quotechar
     header = retrieve_kwarg('header') or csv.header
-    lineterminator = retrieve_kwarg('lineterminator') or u'\n'
+    lineterminator = retrieve_kwarg('lineterminator') or u'\r\n'
 
     skiprows = csv.header or 0 # None or 0 returns 0
     skiprows = retrieve_kwarg('skiprows') or int(skiprows) #hack to skip 0 or 1
 
+    mysql_local = retrieve_kwarg('local') or ''
 
     copy_info = {'abspath': abspath,
                  'tblname': tblname,
@@ -357,7 +358,8 @@ def into(sql, csv, if_exists="replace", **kwargs):
                  'lineterminator': lineterminator,
                  'skiprows': skiprows,
                  'header': header,
-                 'encoding': encoding}
+                 'encoding': encoding,
+                 'mysql_local': mysql_local}
 
     if if_exists == 'replace':
         if engine.has_table(tblname):
@@ -424,7 +426,7 @@ def into(sql, csv, if_exists="replace", **kwargs):
 
             #no null handling
             sql_stmnt = u"""
-                        LOAD DATA LOCAL INFILE '{abspath}'
+                        LOAD DATA {mysql_local} INFILE '{abspath}'
                         INTO TABLE {tblname}
                         CHARACTER SET {encoding}
                         FIELDS
@@ -435,7 +437,6 @@ def into(sql, csv, if_exists="replace", **kwargs):
                         IGNORE {skiprows} LINES;
                         """
             sql_stmnt = sql_stmnt.format(**copy_info)
-
             cursor.execute(sql_stmnt)
             conn.commit()
 

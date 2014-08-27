@@ -1,12 +1,16 @@
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
 import pandas as pd
 import numpy as np
 from pandas import DataFrame, Series
 
 from blaze.compute.core import compute
-from blaze.compute.pandas import *
-from blaze.expr import *
+from blaze import dshape, Table
+from blaze.expr import TableSymbol, join, by, summary, Distinct
+from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
+                        min, max, any, all)
 from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -64,6 +68,7 @@ def test_arithmetic():
     assert str(compute(t['amount'] % t['id'], df)) == \
                 str(df.amount % df.id)
 
+
 def test_join():
     left = DataFrame([['Alice', 100], ['Bob', 200]], columns=['name', 'amount'])
     right = DataFrame([['Alice', 1], ['Bob', 2]], columns=['name', 'id'])
@@ -117,6 +122,7 @@ def test_multi_column_join():
 
 def test_UnaryOp():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()
+
 
 def test_Neg():
     assert (compute(-t['amount'], df) == -df['amount']).all()
@@ -191,6 +197,7 @@ def test_by_three():
 
     assert str(result) == str(expected)
 
+
 def test_by_four():
     t = tbig[['sex', 'amount']]
     expr = by(t['sex'], t['amount'].max())
@@ -264,6 +271,32 @@ def test_label():
 def test_relabel():
     result = compute(t.relabel({'name': 'NAME', 'id': 'ID'}), df)
     assert list(result.columns) == ['NAME', 'amount', 'ID']
+
+
+def test_relabel_series():
+    result = compute(t.relabel({'name': 'NAME'}), df.name)
+    assert result.name == 'NAME'
+
+
+@pytest.fixture
+def tframe():
+    ts = pd.date_range('now', periods=10).to_series().reset_index(drop=True)
+    df = DataFrame({'timestamp': ts})
+    return df
+
+
+def test_map_with_rename(tframe):
+    t = Table(tframe)
+    result = t.timestamp.map(lambda x: x.date(), schema='{date: datetime}')
+    renamed = result.relabel({'timestamp': 'date'})
+    assert renamed.columns == ['date']
+
+
+def test_multiple_renames_on_series_fails(tframe):
+    t = Table(tframe)
+    expr = t.timestamp.relabel({'timestamp': 'date', 'hello': 'world'})
+    with pytest.raises(ValueError):
+        compute(expr)
 
 
 def test_map_column():

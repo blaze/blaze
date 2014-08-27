@@ -231,7 +231,7 @@ def test_into_table_dataframe():
     t = Table(data, columns=['name', 'amount'])
 
     assert list(into(DataFrame(), t).columns) == list(t.columns)
-    assert into([], into(DataFrame(), t)) == data
+    assert into([], into(DataFrame(), t)) == list(map(tuple, data))
 
 
 @skip_if_not(Table and ColumnDataSource)
@@ -276,3 +276,9 @@ def test_DataFrame_CSV():
 
         assert str(df) == str(expected)
         assert list(df.dtypes) == [np.int64, np.float64]
+
+
+def test_numpy_datetimes():
+    L = [datetime(2000, 12, 1), datetime(2000, 1, 1, 1, 1, 1)]
+    assert into([], np.array(L, dtype='M8[us]')) == L
+    assert into([], np.array(L, dtype='M8[ns]')) == L

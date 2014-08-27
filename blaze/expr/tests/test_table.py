@@ -429,6 +429,14 @@ def test_label():
     assert quantity.columns == ['quantity']
 
 
+def test_map_label():
+    t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
+    c = t.amount.map(identity, schema='{foo: int32}')
+    assert c.label('bar').name == 'bar'
+    assert c.label('bar').child.isidentical(c.child)
+
+
+
 def test_columns():
     t = TableSymbol('t', '{name: string, amount: int32, id: int32}')
     assert list(t.columns) == ['name', 'amount', 'id']
@@ -527,13 +535,16 @@ def test_merge_repeats():
         merge(accounts, (accounts.balance + 1).label('balance'))
 
 
-@xfail(reason="Need to implement Merge.__getitem__ or Merge.project")
-def test_merge_getitem():
+def test_merge_project():
     accounts = TableSymbol('accounts',
                            '{name: string, balance: int32, id: int32}')
     new_amount = (accounts['balance'] * 1.5).label('new')
     c = merge(accounts[['name', 'balance']], new_amount)
+
     assert c['new'].isidentical(new_amount)
+    assert c['name'].isidentical(accounts['name'])
+
+    assert c[['name', 'new']].isidentical(merge(accounts.name, new_amount))
 
 
 inc = lambda x: x + 1

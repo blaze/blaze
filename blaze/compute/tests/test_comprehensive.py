@@ -39,14 +39,17 @@ sources = [df, x, bc, sql]
 
 try:
     import pymongo
-    from blaze.mongo import *
-    db = pymongo.MongoClient().db
-    db._test_coll.drop()
-    mongo = into(db._test_coll, df)
-    sources.append(mongo)
 except ImportError:
-    mongo = None
-
+    pymongo = mongo = None
+if pymongo:
+    from blaze.mongo import *
+    try:
+        db = pymongo.MongoClient().db
+        db._test_comprehensive.drop()
+        mongo = into(db._test_comprehensive, df)
+        sources.append(mongo)
+    except pymongo.errors.ConnectionFailure:
+        mongo = None
 
 # {expr: [list-of-exclusions]}
 expressions = {

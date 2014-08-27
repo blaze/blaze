@@ -23,7 +23,11 @@ import numpy as np
 from collections import defaultdict
 
 from ..dispatch import dispatch
-from ..expr import *
+from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
+                    Reduction, Distinct, Join, By, Summary, Label, ReLabel,
+                    Map, Apply, Merge, Union)
+from ..expr import UnaryOp, USub, BinOp
+from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
 
 __all__ = []
@@ -76,7 +80,7 @@ def compute_one(t, df, **kwargs):
     if not list(t.columns) == list(df.columns):
         # TODO also check dtype
         raise ValueError("Schema mismatch: \n\nTable:\n%s\n\nDataFrame:\n%s"
-                        % (t, df))
+                         % (t, df))
     return df
 
 
@@ -110,6 +114,7 @@ def compute_one(t, df, **kwargs):
 def compute_one(t, df, **kwargs):
     return df.drop_duplicates()
 
+
 @dispatch(Distinct, Series)
 def compute_one(t, s, **kwargs):
     s2 = Series(s.unique())
@@ -138,7 +143,6 @@ def compute_one(t, df, **kwargs):
         grouper = compute(t.grouper, {t.child: df}) # a Series
     elif isinstance(t.grouper, Projection) and t.grouper.child is t.child:
         grouper = t.grouper.columns  # list of column names
-
 
     if isinstance(t.apply, Summary):
         names = t.apply.names
@@ -218,18 +222,15 @@ def concat_nodup(a, b):
     """
 
     if isinstance(a, DataFrame) and isinstance(b, DataFrame):
-        return pd.concat([a, b[[c for c in b.columns
-                                  if c not in a.columns]]],
-                            axis=1)
+        return pd.concat([a, b[[c for c in b.columns if c not in a.columns]]],
+                         axis=1)
     if isinstance(a, DataFrame) and isinstance(b, Series):
         if b.name not in a.columns:
             return pd.concat([a, b], axis=1)
         else:
             return a
     if isinstance(a, Series) and isinstance(b, DataFrame):
-        return pd.concat([a, b[[c for c in b.columns
-                                      if c != a.name]]],
-                            axis=1)
+        return pd.concat([a, b[[c for c in b.columns if c != a.name]]], axis=1)
     if isinstance(a, Series) and isinstance(b, Series):
         if a.name == b.name:
             return a
@@ -245,7 +246,6 @@ def compute_one(t, df, **kwargs):
 @dispatch(Sort, Series)
 def compute_one(t, s, **kwargs):
     return s.order(t.key, ascending=t.ascending)
-
 
 
 @dispatch(Head, (Series, DataFrame))
@@ -265,7 +265,17 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(ReLabel, DataFrame)
 def compute_one(t, df, **kwargs):
-    return DataFrame(df, columns=t.columns)
+    return df.rename(columns=dict(t.labels))
+
+
+@dispatch(ReLabel, Series)
+def compute_one(t, s, **kwargs):
+    labels = t.labels
+    if len(labels) > 1:
+        raise ValueError('You can only relabel a Series with a single name')
+    pair, = labels
+    _, replacement = pair
+    return Series(s, name=replacement)
 
 
 @dispatch(Map, DataFrame)
@@ -297,5 +307,5 @@ def compute_one(t, example, children, **kwargs):
 
 @dispatch(Summary, DataFrame)
 def compute_one(expr, data, **kwargs):
-    return Series(dict(zip(expr.names,
-        [compute(val, {expr.child: data}) for val in expr.values])))
+    return Series(dict(zip(expr.names, [compute(val, {expr.child: data})
+                                        for val in expr.values])))
