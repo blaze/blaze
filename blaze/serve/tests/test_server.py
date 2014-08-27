@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import pytest
 
 from flask import json
 from datetime import datetime
@@ -14,9 +15,6 @@ from blaze.data.python import Python
 from blaze.serve.index import emit_index
 
 
-iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir, 'examples',
-                         'data', 'iris.csv')
-iris = CSV(iris_path)
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
@@ -38,8 +36,7 @@ server = Server(datasets={'accounts': accounts,
                           'accounts_df': df,
                           'cities': cities,
                           'pairs': pairs,
-                          'times': times,
-                          'iris': iris})
+                          'times': times})
 
 test = server.app.test_client()
 
@@ -173,7 +170,25 @@ def test_compute():
     assert json.loads(response.data)['data'] == expected
 
 
-def test_compute_by():
+
+@pytest.fixture
+def iris_server():
+    iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir, 'examples',
+                            'data', 'iris.csv')
+    iris = CSV(iris_path)
+    server = Server(datasets={'iris': iris})
+    return server.app.test_client()
+
+
+@pytest.fixture
+def iris():
+    iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir,
+                             'examples', 'data', 'iris.csv')
+    return CSV(iris_path)
+
+
+def test_compute_by(iris_server, iris):
+    test = iris_server
     t = TableSymbol('t', iris.dshape)
     expr = by(t, t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
     tree = to_tree(expr)
