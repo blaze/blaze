@@ -170,7 +170,6 @@ def test_compute():
     assert json.loads(response.data)['data'] == expected
 
 
-
 @pytest.fixture
 def iris_server():
     iris_path = os.path.join(os.path.dirname(blaze.__file__), os.pardir, 'examples',
@@ -191,6 +190,21 @@ def test_compute_by_with_summary(iris_server, iris):
     test = iris_server
     t = TableSymbol('t', iris.dshape)
     expr = by(t, t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
+    tree = to_tree(expr)
+    blob = json.dumps({'expr': tree})
+    resp = test.post('/compute/iris.json', data=blob,
+                     content_type='application/json')
+    assert 'OK' in resp.status
+    result = json.loads(resp.data)['data']
+    expected = compute(expr, iris)
+    assert result == list(map(list, expected))
+
+
+def test_compute_column_wise(iris_server, iris):
+    test = iris_server
+    t = TableSymbol('t', iris.dshape)
+    expr = t[(t.petal_width.max() / t.petal_width.max() > 0.5) &
+             (t.petal_length / t.petal_length.max() > 0.5)]
     tree = to_tree(expr)
     blob = json.dumps({'expr': tree})
     resp = test.post('/compute/iris.json', data=blob,
