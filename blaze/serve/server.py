@@ -215,46 +215,28 @@ def pkl(datasets, name):
                     'data': result})
 
 
-@dispatch(Expr)
 def to_tree(expr):
-    return {type(expr).__name__: list(map(to_tree, expr.args))}
+    if isinstance(expr, tuple):
+        return list(map(to_tree, expr))
+    elif isinstance(expr, DataShape):
+        return str(expr)
+    elif isinstance(expr, Table):
+        return to_tree(TableSymbol(expr._name, expr.schema))
+    elif isinstance(expr, Expr):
+        return {type(expr).__name__: list(map(to_tree, expr.args))}
+    else:
+        return expr
 
 
-@dispatch(Table)
-def to_tree(expr):
-    return to_tree(TableSymbol(expr._name, expr.schema))
-
-
-@dispatch(DataShape)
-def to_tree(ds):
-    return str(ds)
-
-
-@dispatch(tuple)
-def to_tree(t):
-    return list(map(to_tree, t))
-
-
-@dispatch(object)
-def to_tree(o):
-    return o
-
-
-@dispatch(dict)
-def from_tree(d):
-    cls = getattr(blaze, first(d.keys()))
-    children = list(map(from_tree, first(d.values())))
-    return cls(*children)
-
-
-@dispatch(list)
-def from_tree(t):
-    return tuple(map(from_tree, t))
-
-
-@dispatch(object)
 def from_tree(expr):
-    return expr
+    if isinstance(expr, dict):
+        cls = getattr(blaze, first(expr.keys()))
+        children = list(map(from_tree, first(expr.values())))
+        return cls(*children)
+    elif isinstance(expr, list):
+        return tuple(map(from_tree, expr))
+    else:
+        return expr
 
 
 @route('/compute/<name>.json', methods=['POST', 'PUT', 'GET'])
