@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from collections import Iterator
 from flask import Flask, request, jsonify, json
 from dynd import nd
+import pickle
 from functools import partial, wraps
 from ..api import discover
 
@@ -184,3 +185,24 @@ def select(datasets, name):
                     'selection': str(select),
                     'datashape': str(expr.dshape),
                     'data': rv})
+
+
+@route('/pickle/<name>.json', methods=['POST', 'PUT', 'GET'])
+def pkl(datasets, name):
+    if request.headers['content-type'] != 'application/json':
+        return ("Expected JSON data", 404)
+    try:
+        data = json.loads(request.data)
+    except ValueError:
+        return ("Bad JSON.  Got %s " % request.data, 404)
+
+    try:
+        dset = datasets[name]
+    except KeyError:
+        return ("Dataset %s not found" % name, 404)
+
+    expr = pickle.loads(data['pickle'])
+    result = compute(expr, dset)
+    return jsonify({'name': name,
+                    'datashape': str(expr.dshape),
+                    'data': result})
