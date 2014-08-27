@@ -16,6 +16,7 @@ import pandas as pd
 import h5py
 import tables
 
+from ..compute.chunks import ChunkIterator
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr
 from ..compute.core import compute
@@ -583,3 +584,26 @@ def into(a, b):
     ctable), _strtypes)
 def into(a, b, **kwargs):
     return into(a, resource(b, **kwargs), **kwargs)
+
+
+@dispatch(Iterator, (list, tuple, set, Iterator))
+def into(a, b):
+    return b
+
+
+@dispatch(pd.DataFrame, ChunkIterator)
+def into(df, chunks, **kwargs):
+    dfs = [into(df, chunk, **kwargs) for chunk in chunks]
+    return pd.concat(dfs, ignore_index=True)
+
+
+@dispatch(np.ndarray, ChunkIterator)
+def into(x, chunks, **kwargs):
+    arrs = [into(x, chunk, **kwargs) for chunk in chunks]
+    return np.vstack(arrs)
+
+@dispatch(Collection, ChunkIterator)
+def into(coll, chunks, **kwargs):
+    for chunk in chunks:
+        into(coll, chunk, **kwargs)
+    return coll

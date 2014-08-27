@@ -23,8 +23,12 @@ def resource(uri, **kwargs):
         uris = sorted(glob(uri))
         return ChunkList(list(map(resource, uris)))
 
-    if os.path.isfile(uri) and uri.endswith("csv"):
+    csv_extensions = ['csv', 'data', 'txt', 'dat']
+    if os.path.isfile(uri) and uri.split('.')[-1] in csv_extensions:
         return CSV(uri, **kwargs)
+    if (os.path.isfile(uri) and uri.endswith("gz")
+                            and uri.split('.')[-2] in csv_extensions):
+        return CSV(uri, open=gzip.open, **kwargs)
     else:
         raise NotImplementedError(
             "Blaze can't read '%s' yet!" % uri)
