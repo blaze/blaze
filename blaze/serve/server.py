@@ -1,12 +1,17 @@
 from __future__ import absolute_import, division, print_function
 
+
+import blaze
 from collections import Iterator
 from flask import Flask, request, jsonify, json
 from dynd import nd
 import pickle
+from cytoolz import first
 from functools import partial, wraps
 from ..api import discover
 from ..expr import Expr
+from ..dispatch import dispatch
+from ..compatibility import map
 from datashape import DataShape
 
 from .index import parse_index
@@ -210,23 +215,41 @@ def pkl(datasets, name):
                     'data': result})
 
 
+@dispatch(Expr)
 def to_tree(expr):
-    if isinstance(expr, Expr):
-        return {type(expr).__name__: list(map(to_tree, expr.args))}
-    elif isinstance(expr, DataShape):
-        return str(expr)
-    else:
-        return expr
+    return {type(expr).__name__: list(map(to_tree, expr.args))}
 
 
+@dispatch(DataShape)
+def to_tree(ds):
+    return str(ds)
+
+
+@dispatch(tuple)
+def to_tree(t):
+    return list(map(to_tree, t))
+
+
+@dispatch(object)
+def to_tree(o):
+    return o
+
+
+@dispatch(dict)
+def from_tree(d):
+    cls = getattr(blaze, first(d.keys()))
+    children = tuple(map(from_tree, first(d.values())))
+    return cls(*children)
+
+
+@dispatch(list)
+def from_tree(t):
+    return tuple(map(from_tree, t))
+
+
+@dispatch(object)
 def from_tree(expr):
-    import blaze
-    if isinstance(expr, dict):
-        cls = getattr(blaze, expr.keys()[0])
-        children = list(map(from_tree, expr.values()[0]))
-        return cls(*children)
-    else:
-        return expr
+    return expr
 
 
 @route('/compute/<name>.json', methods=['POST', 'PUT', 'GET'])
