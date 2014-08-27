@@ -11,6 +11,7 @@ from datetime import datetime
 from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
+import gzip
 import numpy as np
 import pandas as pd
 import h5py
@@ -204,14 +205,38 @@ def into(_, t):
     return t[:]
 
 
-@dispatch(tables.Table, pd.DataFrame)
-def into(a, b, filename=None, datapath=None, **kwargs):
+def fixlen_dtype(x):
+    """ Returns new array with strings as fixed length
+
+    >>> from numpy import rec
+    >>> x = rec.array([(1, 'Alice', 100), (2, 'Bob', 200)],
+    ...               dtype=[('id', 'i8'), ('name', 'O'), ('amount', 'i8')])
+
+    >>> fixlen_dtype(x) # doctest: +SKIP
+    rec.array([(1, 'Alice', 100), (2, 'Bob', 200)],
+          dtype=[('id', '<i8'), ('name', 'S5'), ('amount', '<i8')])
+    """
+    dt = [(n, "S%d" % max(map(len, x[n])) if x.dtype[n] == 'O' else x.dtype[n])
+            for n in x.dtype.names]
+    return x.astype(dt)
+
+@dispatch(tables.Table, np.ndarray)
+def into(_, x, filename=None, datapath=None, **kwargs):
     if filename is None or datapath is None:
         raise ValueError("Must specify filename for new PyTables file. \n"
         "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
-    store = pd.HDFStore(filename, mode='w')
-    store.put(datapath, b, format='table', data_columns=True)
-    return getattr(store.root, datapath).table
+
+    f = tables.open_file(filename, 'w')
+    t = f.create_table('/', datapath, obj=fixlen_dtype(x))
+    return t
+
+
+@dispatch(tables.Table, pd.DataFrame)
+def into(a, df, **kwargs):
+    return into(a, into(np.ndarray, df), **kwargs)
+    # store = pd.HDFStore(filename, mode='w')
+    # store.put(datapath, df, format='table', data_columns=True, index=False)
+    # return getattr(store.root, datapath).table
 
 
 @dispatch(tables.Table, _strtypes)
@@ -526,7 +551,8 @@ def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
 
 
-@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table),
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table,
+    list, tuple, set),
           CSV)
 def into(a, b, **kwargs):
     return into(a, into(pd.DataFrame(), b, **kwargs), **kwargs)
@@ -548,11 +574,12 @@ def into(a, b, **kwargs):
         schema = dshape(str(schema).replace('?', ''))
 
     dtypes = valmap(to_numpy_dtype, schema[0].dict)
-    dtypes = dict((k, v) for k, v in dtypes.items()
-                         if not np.issubdtype(v, np.datetime64))
 
     datenames = [name for name in dtypes
                       if np.issubdtype(dtypes[name], np.datetime64)]
+
+    dtypes = dict((k, v) for k, v in dtypes.items()
+                         if not np.issubdtype(v, np.datetime64))
 
     if 'strict' in dialect:
         del dialect['strict']
@@ -561,6 +588,9 @@ def into(a, b, **kwargs):
     kws = keywords(pd.read_csv)
     options = toolz.merge(dialect, kwargs)
     options = toolz.keyfilter(lambda k: k in kws, options)
+
+    if b.open == gzip.open:
+        options['compression'] = 'gzip'
 
     return pd.read_csv(b.path,
                        skiprows=1 if b.header else 0,

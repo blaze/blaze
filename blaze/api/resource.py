@@ -3,6 +3,7 @@ from dynd import nd
 import pandas as pd
 import os
 from glob import glob
+import gzip
 from ..dispatch import dispatch
 from ..data import DataDescriptor, CSV
 from blaze.compute.chunks import ChunkIndexable
