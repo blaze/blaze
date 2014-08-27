@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from dynd import nd
 import datashape
+import sys
 from datashape import DataShape, dshape, Record, to_numpy_dtype
 import toolz
 from toolz import concat, partition_all, valmap
@@ -184,7 +185,7 @@ def degrade_numpy_dtype_to_python(dt):
 def into(a, b):
     if 'M8' in str(b.dtype) or 'datetime' in str(b.dtype):
         b = b.astype(degrade_numpy_dtype_to_python(b.dtype))
-    return b.tolist()
+    return numpy_ensure_strings(b).tolist()
 
 
 @dispatch(pd.DataFrame, np.ndarray)
@@ -193,11 +194,15 @@ def into(df, x):
         columns = list(df.columns)
     else:
         columns = list(x.dtype.names)
-    return pd.DataFrame(x, columns=columns)
+    return pd.DataFrame(numpy_ensure_strings(x), columns=columns)
 
 @dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tables.Table)
-def into(a, x):
-    return into(a, into(np.ndarray, x))
+def into(a, t):
+    x = into(np.ndarray, t)
+    if sys.version_info[0] >= 3:
+        dt = [(n, x.dtype[n].str.replace('S', 'U')) for n in x.dtype.names]
+        x = x.astype(dt)
+    return into(a, x)
 
 
 @dispatch(np.ndarray, tables.Table)
@@ -227,7 +232,7 @@ def into(_, x, filename=None, datapath=None, **kwargs):
         "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
 
     f = tables.open_file(filename, 'w')
-    t = f.create_table('/', datapath, obj=fixlen_dtype(x))
+    t = f.create_table('/', datapath, obj=fixlen_dtype(numpy_ensure_strings(x)))
     return t
 
 
@@ -296,7 +301,7 @@ def into(ser, col):
 
 @dispatch(pd.Series, np.ndarray)
 def into(_, x):
-    return pd.Series(x)
+    return pd.Series(numpy_ensure_strings(x))
     df = into(pd.DataFrame(), x)
     return df[df.columns[0]]
 
@@ -448,6 +453,33 @@ def into(coll, seq, columns=None, schema=None, chunksize=1024, **kwargs):
         coll.insert(copy.deepcopy(block))
 
     return coll
+
+
+def numpy_ensure_strings(x):
+    """ Return a new array with strings that will be turned into the str type
+
+    In Python 3 the 'S' numpy type results in ``bytes`` objects.  This coerces the
+    numpy type to a form that will create ``str`` objects
+
+    Examples
+    ========
+
+    >>> x = np.array(['a', 'b'], dtype='S1')
+    >>> # Python 2
+    >>> numpy_ensure_strings(x)  # doctest: +SKIP
+    np.array(['a', 'b'], dtype='S1')
+    >>> # Python 3
+    >>> numpy_ensure_strings(x)  # doctest: +SKIP
+    np.array(['a', 'b'], dtype='U1')
+    """
+    if sys.version_info[0] >= 3:
+        if x.dtype.names:
+            dt = [(n, x.dtype[n].str.replace('S', 'U')) for n in x.dtype.names]
+            x = x.astype(dt)
+        else:
+            dt = x.dtype.str.replace('S', 'U')
+            x = x.astype(dt)
+    return x
 
 
 @dispatch(Collection, (nd.array, np.ndarray))
