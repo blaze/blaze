@@ -4,7 +4,7 @@ numpy >= 1.7
 sqlalchemy
 pandas
 h5py
-multipledispatch >= 0.4.5
+multipledispatch >= 0.4.6
 cytoolz
 toolz
 flask >= 0.10.1

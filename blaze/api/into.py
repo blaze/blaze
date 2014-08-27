@@ -91,7 +91,7 @@ def into(a, b, **kwargs):
     >>> into(list, (1, 2, 3))
     [1, 2, 3]
     """
-    f = into.resolve((a, type(b)))
+    f = into.dispatch(a, type(b))
     try:
         a = a()
     except:
