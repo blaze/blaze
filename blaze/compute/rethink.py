@@ -17,7 +17,8 @@ import rethinkdb as rt
 from rethinkdb.ast import RqlQuery, Group as RqlGroup
 
 
-__all__ = ['compute_one', 'discover', 'RTable', 'create_index', 'drop']
+__all__ = ['compute_one', 'discover', 'RTable', 'create_index', 'drop',
+           'compute']
 
 
 class RTable(object):
@@ -212,3 +213,8 @@ def create_index(t, column, **kwargs):
 @dispatch(RTable)
 def drop(t):
     rt.table_drop(t.t.args[0].data).run(t.conn)
+
+
+@dispatch(RTable)
+def compute(t, **kwargs):
+    return t.t.run(t.conn)
