@@ -245,6 +245,8 @@ def comp(datasets, name):
 
     expr = from_tree(data['expr'])
     result = compute(expr, dset)
+    if isinstance(expr, TableExpr):
+        result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
                     'data': result})
