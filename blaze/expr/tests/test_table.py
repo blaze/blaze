@@ -693,6 +693,5 @@ def test_distinct_name():
 def test_to_json():
     t = TableSymbol('t', '{id: int32, name: string}')
     expr = t[t.id > 2]
-    import ipdb; ipdb.set_trace()
     result = expr.to_json()
-    import ipdb; ipdb.set_trace()
+    assert False
