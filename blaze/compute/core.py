@@ -68,7 +68,7 @@ def V(d, expr):
 
     # See if we have a direct computation path
     if (hasattr(expr, 'leaves') and compute_down.resolve(
-            (type(expr),) + tuple(type(d[leaf]) for leaf in expr.leaves()))):
+            (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr.leaves()))):
         leaves = [d[leaf] for leaf in expr.leaves()]
         return compute_down(expr, *leaves)
     else:
