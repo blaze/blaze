@@ -8,7 +8,7 @@ from dynd import nd
 import pickle
 from cytoolz import first
 from functools import partial, wraps
-from ..api import discover
+from ..api import discover, Table
 from ..expr import Expr
 from ..dispatch import dispatch
 from ..compatibility import map
@@ -253,6 +253,8 @@ def comp(datasets, name):
 
     expr = from_tree(data['expr'])
     result = compute(expr, dset)
+    if isinstance(expr, TableExpr):
+        result = into(list, result)
     return jsonify({'name': name,
                     'datashape': str(expr.dshape),
                     'data': result})

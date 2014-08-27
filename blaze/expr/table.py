@@ -1281,6 +1281,9 @@ class Merge(RowWise):
             cols = [self.project(c) for c in key]
             return merge(*cols)
 
+    def leaves(self):
+        return list(unique(concat(i.leaves() for i in self.children)))
+
 
 class Union(TableExpr):
     """ Merge the rows of many Tables together
@@ -1315,6 +1318,9 @@ class Union(TableExpr):
     @property
     def schema(self):
         return self.children[0].schema
+
+    def leaves(self):
+        return list(unique(concat(i.leaves() for i in self.children)))
 
 
 def union(*children):
