@@ -227,4 +227,4 @@ def test_compute_column_wise(iris_server, iris):
     assert 'OK' in resp.status
     result = json.loads(resp.data)['data']
     expected = compute(expr, iris)
-    assert result == list(expected)
+    assert list(map(tuple, result)) == list(map(tuple, expected))
