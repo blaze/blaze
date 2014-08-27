@@ -137,7 +137,35 @@ def compute(expr, d):
 
 
 def columnwise_funcstr(t, variadic=True, full=False):
-    """
+    """Build a string that can be eval'd to return a ``lambda`` expression.
+
+    Parameters
+    ----------
+    t : ColumnWise
+        An expression whose leaves (at each application of the returned
+        expression) are all instances of ``ScalarExpression``.
+        For example ::
+
+            t.petal_length / max(t.petal_length)
+
+        is **not** a valid ``ColumnWise``, since the expression ::
+
+            max(t.petal_length)
+
+        has a leaf ``t`` that is not a ``ScalarExpression``. A example of a
+        valid ``ColumnWise`` expression is ::
+
+            t.petal_length / 4
+
+    Returns
+    -------
+    f : str
+        A string that can be passed to ``eval`` and will return a function that
+        operates on each row and applies a scalar expression to a subset of the
+        columns in each row.
+
+    Examples
+    --------
     >>> t = TableSymbol('t', '{x: real, y: real, z: real}')
     >>> cw = t['x'] + t['z']
     >>> columnwise_funcstr(cw)
