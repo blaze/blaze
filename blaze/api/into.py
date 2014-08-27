@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import tables
+import blaze
 
 from ..dispatch import dispatch
 from ..expr import TableExpr, Expr
@@ -69,11 +70,12 @@ except ImportError:
     Collection = type(None)
 
 try:
-    from ..data import DataDescriptor, CSV
+    from ..data import DataDescriptor, CSV, JSON, JSON_Streaming
 except ImportError:
     DataDescriptor = type(None)
     CSV = type(None)
-
+    JSON = type(None)
+    JSON_STREAMING = type(None)
 
 @dispatch(type, object)
 def into(a, b, **kwargs):
@@ -456,6 +458,89 @@ def into(l, coll, columns=None, schema=None):
 @dispatch((tuple, list), Collection)
 def into(l, coll, columns=None, schema=None):
     return type(l)(into(Iterator, coll, columns=columns, schema=schema))
+
+
+@dispatch(Collection, ((CSV, JSON, JSON_Streaming)) )
+def into(coll, d, if_exists="replace", **kwargs):
+    """
+    into function which converts TSV/CSV/JSON into a MongoDB Collection
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    header: bool (TSV/CSV only)
+        Flag to define if file contains a header
+    columns: list (TSV/CSV only)
+        list of column names
+    ignore_blank: bool
+        Ignores empty fields in csv and tsv exports. Default: creates fields without values
+    json_array : bool
+        Accepts the import of data expressed with multiple MongoDB documents within a single JSON array.
+    """
+    import subprocess
+
+    db = coll.database
+
+    copy_info = {
+        'dbname':db.name,
+        'coll': coll.name,
+        'abspath': d._abspath
+        }
+    optional_flags = []
+
+    if isinstance(d, blaze.data.CSV):
+        csv_dd = d
+        if if_exists=='replace':
+            optional_flags.append('--drop')
+
+        if kwargs.get('header',csv_dd.header):
+            optional_flags.append('--headerline')
+        if kwargs.get('ignore_blank', None):
+            optional_flags.append('--ignoreBlanks')
+
+        cols = kwargs.get('columns', csv_dd.columns)
+        copy_info['column_names'] = ','.join(cols)
+
+        if csv_dd.dialect['delimiter'] == ',':
+            copy_info['file_type'] = 'csv'
+        elif csv_dd.dialect['delimiter'] == '\t':
+            copy_info['file_type'] = 'tsv'
+        else:
+            raise NotImplemented("Only CSV and TSV files are supported by mongoimport")
+
+        copy_cmd = """
+                mongoimport -d {dbname} \
+                 -c {coll} --type {file_type} \
+                 --file {abspath} --fields {column_names}\
+                 """
+
+        copy_cmd = copy_cmd.format(**copy_info)
+        copy_cmd = copy_cmd + ' '.join(optional_flags)
+        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+        output = ps.stdout.read()
+
+    if isinstance(d, blaze.data.JSON) or isinstance(d, blaze.data.JSON_Streaming):
+
+        json_dd = d
+
+        if if_exists=='replace':
+            optional_flags.append('--drop')
+
+        if kwargs.get('json_array', None):
+            optional_flags.append('--jsonArray')
+
+        copy_info['file_type'] = 'json'
+
+        copy_cmd = "mongoimport -d {dbname} -c {coll} --type {file_type} --file {abspath} "
+
+        copy_cmd = copy_cmd.format(**copy_info)
+        copy_cmd = copy_cmd + ' '.join(optional_flags)
+        print(copy_cmd)
+        ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
+
+        output = ps.stdout.read()
+        print(output)
+
 
 
 @dispatch(nd.array, DataDescriptor)
