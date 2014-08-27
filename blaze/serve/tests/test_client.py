@@ -54,7 +54,7 @@ def test_chunks():
 
 
 def test_expr_client():
-    ec = ExprClient('http://localhost:5000', 'accounts_df')
+    ec = ExprClient('localhost:5000', 'accounts_df')
     assert discover(ec) == discover(df)
 
     t = TableSymbol('t', discover(ec))
@@ -65,7 +65,7 @@ def test_expr_client():
 
 
 def test_expr_client_interactive():
-    ec = ExprClient('http://localhost:5000', 'accounts_df')
+    ec = ExprClient('localhost:5000', 'accounts_df')
     t = Table(ec)
 
     assert compute(t.name) == ['Alice', 'Bob']

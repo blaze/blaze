@@ -78,7 +78,10 @@ class Client(DataDescriptor):
 class ExprClient(object):
     __slots__ = 'url', 'name'
     def __init__(self, url, name):
-        self.url = url.strip('/')
+        url = url.strip('/')
+        if not url[:4] == 'http':
+            url = 'http://' + url
+        self.url = url
         self.name = name
 
     @property
