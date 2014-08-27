@@ -228,17 +228,31 @@ class TestColumnWise(object):
         result = list(compute(expr, tb))
         assert result == [1 + r['id'] + r['amount'] * 2 for r in bank]
 
-    @xfail(True, reason='ReQL does not support unary operations')
-    def test_unary(self, ts, tb):
-        expr = -ts.id + ts.amount
-        result = list(compute(expr, tb))
-        assert result == [-r['id'] + r['amount'] for r in bank]
+
+@xfail(raises=NotImplementedError,
+       reason='ReQL does not support unary operations')
+def test_unary(ts, tb):
+    if sys.version_info[0] >= 3:
+        pytest.xfail('RethinkDB is not compatible with Python 3')
+    expr = -ts.id + ts.amount
+    result = list(compute(expr, tb))
+    assert result == [-r['id'] + r['amount'] for r in bank]
 
 
+@nopython3
 def test_map(ts, tb):
     add_one = lambda x: x + 1
-    result = list(compute(ts.amount.map(add_one), tb))
+    expr = ts.amount.map(add_one, schema='{amount: int64}')
+    result = compute(expr, tb)
     assert result == [{'amount': add_one(r['amount'])} for r in bank]
+
+
+def test_map_with_columns(ts, tb):
+    add_one = lambda x: x + 1
+    expr = ts[['amount', 'id']].map(add_one, schema='{amount: int64, id: int64}')
+    result = compute(expr, tb)
+    assert result == [{'amount': add_one(r['amount']),
+                       'id': add_one(r['id'])} for r in bank]
 
 
 @nopython3
