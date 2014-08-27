@@ -207,14 +207,14 @@ def into(_, t):
     return t[:]
 
 
-def fixlen_dtype(x):
+def numpy_fixlen_strings(x):
     """ Returns new array with strings as fixed length
 
     >>> from numpy import rec
     >>> x = rec.array([(1, 'Alice', 100), (2, 'Bob', 200)],
     ...               dtype=[('id', 'i8'), ('name', 'O'), ('amount', 'i8')])
 
-    >>> fixlen_dtype(x) # doctest: +SKIP
+    >>> numpy_fixlen_strings(x) # doctest: +SKIP
     rec.array([(1, 'Alice', 100), (2, 'Bob', 200)],
           dtype=[('id', '<i8'), ('name', 'S5'), ('amount', '<i8')])
     """
@@ -231,7 +231,7 @@ def into(_, x, filename=None, datapath=None, **kwargs):
         "Example: into(tb.Tables, df, filename='myfile.h5', datapath='/data')")
 
     f = tables.open_file(filename, 'w')
-    t = f.create_table('/', datapath, obj=fixlen_dtype(x))
+    t = f.create_table('/', datapath, obj=numpy_fixlen_strings(x))
     return t
 
 
