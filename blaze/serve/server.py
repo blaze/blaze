@@ -238,7 +238,7 @@ def to_tree(o):
 @dispatch(dict)
 def from_tree(d):
     cls = getattr(blaze, first(d.keys()))
-    children = tuple(map(from_tree, first(d.values())))
+    children = list(map(from_tree, first(d.values())))
     return cls(*children)
 
 
