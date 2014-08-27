@@ -1,12 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
+from functools import partial
+from cytoolz import compose
 import numbers
 import sys
 import pytest
 import numpy as np
+import pandas as pd
 
 from blaze.compatibility import xfail
-from blaze import TableSymbol, discover, dshape, compute, by, summary
+from blaze import TableSymbol, discover, dshape, compute, by, summary, into
 
 nopython3 = xfail(sys.version_info[0] >= 3,
                   reason='RethinkDB is not compatible with Python 3')
@@ -28,6 +31,17 @@ def tb():
     t.insert(bank).run(conn)
     yield RTable(t, conn)
     rt.table_drop('test').run(conn)
+
+
+@pytest.yield_fixture
+def tb_into():
+    rt = pytest.importorskip('rethinkdb')
+    from blaze.compute.rethink import RTable
+    conn = rt.connect()
+    rt.table_create('into').run(conn)
+    t = rt.table('into')
+    yield RTable(t, conn)
+    rt.table_drop('into').run(conn)
 
 
 @pytest.fixture
@@ -250,7 +264,8 @@ def test_map(ts, tb):
 @nopython3
 def test_map_with_columns(ts, tb):
     add_one = lambda x: x + 1
-    expr = ts[['amount', 'id']].map(add_one, schema='{amount: int64, id: int64}')
+    expr = ts[['amount', 'id']].map(add_one,
+                                    schema='{amount: int64, id: int64}')
     result = compute(expr, tb)
     assert result == [{'amount': add_one(r['amount']),
                        'id': add_one(r['id'])} for r in bank]
@@ -290,3 +305,27 @@ def test_drop(drop_tb):
     assert table_name in rt.table_list().run(rt.connect())
     drop(drop_tb)
     assert table_name not in rt.table_list().run(rt.connect())
+
+
+@nopython3
+class TestInto(object):
+    def test_list(self, tb, tb_into):
+        expected = sorted(compute(tb))
+        into(tb_into, expected)
+        assert sorted(compute(tb_into)) == expected
+
+    def test_numpy(self, tb_into):
+        df = pd.DataFrame({'a': [1, 2, 3], 'b': list('def'),
+                           'c': [1.0, 2.0, 3.0]})
+        recs = df.to_records(index=False)
+        into(tb_into, recs)
+        rec_list = map(partial(compose(dict, zip), recs.dtype.fields.keys()),
+                       recs)
+        result = tb_into.t.with_fields('a', 'b', 'c').run(tb_into.conn)
+        assert sorted(result) == sorted(rec_list)
+
+    def test_rql(self, tb, tb_into):
+        into(tb_into, tb)
+        lhs = sorted(compute(tb_into))
+        rhs = sorted(compute(tb))
+        assert lhs == rhs
