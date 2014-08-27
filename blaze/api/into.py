@@ -535,11 +535,9 @@ def into(coll, d, if_exists="replace", **kwargs):
 
         copy_cmd = copy_cmd.format(**copy_info)
         copy_cmd = copy_cmd + ' '.join(optional_flags)
-        print(copy_cmd)
         ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
 
         output = ps.stdout.read()
-        print(output)
 
 
 

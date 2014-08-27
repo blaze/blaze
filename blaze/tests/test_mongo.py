@@ -179,9 +179,9 @@ def test_csv_mongodb_load(empty_collec):
 
     ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
     output = ps.stdout.read()
-    a = list(coll.find({},{'_0': 1, '_id': 0}))
+    mongo_data = list(coll.find({},{'_0': 1, '_id': 0}))
 
-    assert list(csv[:,'_0']) == [i['_0'] for i in a]
+    assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
 
 
 def test_csv_into_mongodb(empty_collec):
@@ -191,9 +191,9 @@ def test_csv_into_mongodb(empty_collec):
 
     coll = empty_collec
     into(coll,csv)
-    a = list(coll.find({},{'_0': 1, '_id': 0}))
+    mongo_data = list(coll.find({},{'_0': 1, '_id': 0}))
 
-    assert list(csv[:,'_0']) == [i['_0'] for i in a]
+    assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
 
 def test_csv_into_mongodb_columns(empty_collec):
 
@@ -202,9 +202,9 @@ def test_csv_into_mongodb_columns(empty_collec):
 
     coll = empty_collec
     into(coll,csv)
-    a = list(coll.find({},{'x': 1, '_id': 0}))
+    mongo_data = list(coll.find({},{'x': 1, '_id': 0}))
 
-    assert list(csv[:,'x']) == [i['x'] for i in a]
+    assert list(csv[:,'x']) == [i['x'] for i in mongo_data]
 
 
 def test_json_into_mongodb(empty_collec):
@@ -216,9 +216,14 @@ def test_json_into_mongodb(empty_collec):
     coll = empty_collec
     into(coll,dd)
 
-    a = list(coll.find())
-    print(a)
-    # tuplify(dd.as_py())
+    mongo_data = list(coll.find())
+
+    last = mongo_data[0]['nodes'][-1]
+    first = mongo_data[0]['nodes'][0]
+
+    assert dd.as_py()[1][-1] == tuple(last.values())
+    assert dd.as_py()[1][0] == tuple(first.values())
+
 
 data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
          u'name': u'Jean-Luc Picard',
@@ -250,10 +255,12 @@ def test_jsonarray_into_mongodb(empty_collec):
     with open(filename, "w") as f:
         json.dump(data, f)
 
-    dd = JSON(filename, schema = "3 * { id : string, name : string, posts : var * { content : string, title : string }, tv_show : string }")
+    dd = JSON(filename, schema = "3 * { id : string, name : string, posts : var * { content : string, title : string },\
+                                 tv_show : string }")
     coll = empty_collec
     into(coll,dd, json_array=True)
 
 
-    a = list(coll.find())
-    print(a)
+    mongo_data = list(coll.find({},{'_id': 0,}))
+
+    assert mongo_data[0] == data[0]
