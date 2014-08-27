@@ -690,13 +690,6 @@ def test_distinct_name():
     assert t.name.name == 'name'
 
 
-def test_to_json():
-    t = TableSymbol('t', '{id: int32, name: string}')
-    expr = t[t.id > 2]
-    result = expr.to_json()
-    assert False
-
-
 def test_leaves():
     t = TableSymbol('t', '{id: int32, name: string}')
     v = TableSymbol('v', '{id: int32, city: string}')

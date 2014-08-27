@@ -170,11 +170,6 @@ class TableExpr(Expr):
         else:
             raise ValueError("Can not compute name of table")
 
-    def to_json(self):
-        jsonify = compose(methodcaller('to_json'), partial(getattr, self))
-        inputs = dict(zip(self.__inputs__, map(jsonify, self.__inputs__)))
-        slots = dict(zip(self.__slots__, map(jsonify, self.__slots__)))
-        return {type(self).__name__: {'inputs': inputs, 'slots': slots}}
 
 class TableSymbol(TableExpr):
     """ A Symbol for Tabular data
