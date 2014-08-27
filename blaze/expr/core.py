@@ -53,7 +53,8 @@ class Expr(object):
         if not self.inputs:
             return [self]
         else:
-            return list(unique(concat(i.leaves() for i in self.inputs)))
+            return list(unique(concat(i.leaves() for i in self.inputs if
+                                      isinstance(i, Expr))))
 
 
     def isidentical(self, other):
