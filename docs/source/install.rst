@@ -57,7 +57,7 @@ Dependencies
 * dynd-python_ >= 0.6.4
 * toolz_ >= 0.7.0
 * cytoolz_
-* multipledispatch_ >= 0.4.5
+* multipledispatch_ >= 0.4.6
 * unicodecsv_
 * pandas_
 

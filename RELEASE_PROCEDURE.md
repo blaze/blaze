@@ -6,8 +6,8 @@ a new version of Blaze.
 
 1. Update version numbers in the following locations:
 
- * /setup.py, in the setup(...) call.
  * /blaze/__init__.py
+ * /conda.yaml
 
 2. Confirm the dependencies and their version numbers in
    /docs/source/install.rst
