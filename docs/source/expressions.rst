@@ -58,8 +58,7 @@ split-apply-combine workflows.
 
 .. code-block:: python
 
-   >>> by(accounts,                     # Table
-   ...    accounts['name'],             # Splitting/grouping element
+   >>> by(accounts['name'],             # Splitting/grouping element
    ...    accounts['balance'].sum())    # Apply and reduction
 
 This operation groups the table by name and then sums the balance of each

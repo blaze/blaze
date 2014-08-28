@@ -117,8 +117,7 @@ of data
 
 .. doctest::
 
-   >>> by(iris,                        # Split apply combine operation
-   ...    iris.species,                # Group by species
+   >>> by(iris.species,                # Group by species
    ...    iris.petal_width.mean())     # Take the mean of the petal_width column
               species  petal_width
    0   Iris-virginica        2.026
@@ -148,8 +147,7 @@ container type.
 
 .. doctest::
 
-   >>> result = by(iris,
-   ...             iris.species,
+   >>> result = by(iris.species,
    ...             iris.petal_width.mean())
 
    >>> into(list, result)                     # Push result into a list
