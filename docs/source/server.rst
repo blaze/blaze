@@ -48,7 +48,7 @@ Then we host this under the name ``'iris'`` and serve publicly on port
 A Server is the following
 
 1.  A mapping of names to datasets
-2.  A [Flask](http://flask.pocoo.org/) app.
+2.  A `Flask <http://flask.pocoo.org/>`_ app.
 
 With this code our machine is now hosting our CSV file through a
 web-application on port 5000.  We can now access our CSV file, through Blaze,
