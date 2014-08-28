@@ -8,7 +8,7 @@ input
 >>> type(sum([1, 2, 3])).__name__
 'int'
 
->>> type(sum(np.array([1, 2, 3]))).__name__
+>>> type(sum(np.array([1, 2, 3], dtype=np.int64))).__name__
 'int64'
 
 >>> t = TableSymbol('t', '{x: int, y: int}')

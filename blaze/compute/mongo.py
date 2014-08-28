@@ -44,7 +44,10 @@ http://docs.mongodb.org/manual/core/aggregation-pipeline/
 
 from __future__ import absolute_import, division, print_function
 
-from pymongo.collection import Collection
+try:
+    from pymongo.collection import Collection
+except ImportError:
+    Collection = type(None)
 
 from datashape import Record
 from toolz import pluck
