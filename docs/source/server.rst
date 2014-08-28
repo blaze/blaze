@@ -153,7 +153,7 @@ Given our iris web server we can use Blaze on the client to drive the server to
 do work for us
 
    >>> from blaze import *
-   >>> from blaze.serve.client import ExprClient
+   >>> from blaze.serve import ExprClient
    >>> ec = ExprClient('http://localhost:5000', 'iris')
 
    >>> t = Table(ec)
