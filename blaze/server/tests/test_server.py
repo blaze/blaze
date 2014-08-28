@@ -220,7 +220,7 @@ def iris():
 def test_compute_by_with_summary(iris_server, iris):
     test = iris_server
     t = TableSymbol('t', iris.dshape)
-    expr = by(t, t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
+    expr = by(t.species, max=t.petal_length.max(), sum=t.petal_width.sum())
     tree = to_tree(expr)
     blob = json.dumps({'expr': tree})
     resp = test.post('/compute/iris.json', data=blob,
