@@ -4,10 +4,10 @@ from dynd import nd
 from pandas import DataFrame
 
 from blaze import TableSymbol, compute, Table, by, into
-from blaze.serve.server import Server
+from blaze.server import Server
 from blaze.data.python import Python
-from blaze.serve.index import parse_index, emit_index
-from blaze.serve.client import Client, ExprClient, discover
+from blaze.server.index import parse_index, emit_index
+from blaze.server.client import Client, ExprClient, discover
 
 accounts = Python([['Alice', 100], ['Bob', 200]],
                   schema='{name: string, amount: int32}')
@@ -24,7 +24,7 @@ server = Server(datasets={'accounts': accounts,
 
 test = server.app.test_client()
 
-import blaze.serve.client as client
+import blaze.server.client as client
 client.requests = test # OMG monkey patching
 
 

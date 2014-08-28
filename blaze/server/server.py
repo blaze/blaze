@@ -22,7 +22,7 @@ class Server(object):
     __slots__ = 'app', 'datasets'
 
     def __init__(self, datasets=None):
-        app = self.app = Flask('blaze.serve.server')
+        app = self.app = Flask('blaze.server.server')
         self.datasets = datasets or dict()
 
         for args, kwargs, func in routes:
@@ -239,7 +239,7 @@ def to_tree(expr, names=dict()):
     See Also
     --------
 
-    ``blaze.serve.server.from_tree``
+    ``blaze.server.server.from_tree``
     """
     if expr in names:
         return names[expr]
@@ -310,7 +310,7 @@ def from_tree(expr, namespace=dict()):
     See Also
     --------
 
-    ``blaze.serve.server.to_tree``
+    ``blaze.server.server.to_tree``
     """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']

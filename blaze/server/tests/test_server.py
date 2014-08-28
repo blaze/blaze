@@ -9,9 +9,9 @@ from pandas import DataFrame
 
 import blaze
 from blaze import discover, TableSymbol, by, CSV, compute
-from blaze.serve.server import Server, to_tree, from_tree
+from blaze.server.server import Server, to_tree, from_tree
 from blaze.data.python import Python
-from blaze.serve.index import emit_index
+from blaze.server.index import emit_index
 
 
 
