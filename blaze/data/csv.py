@@ -154,6 +154,9 @@ class CSV(DataDescriptor):
         assert dialect
         if header is None:
             header = has_header(sample)
+        elif isinstance(header, int):
+            dialect['header'] = header
+            header = True
 
         if not schema and 'w' not in mode:
             if not types:

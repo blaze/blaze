@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import tempfile
 import os
 from collections import Iterator
+import inspect
 
 # Imports that replace older utils.
 from cytoolz import count, unique, partition_all, nth, groupby, reduceby
@@ -131,10 +132,14 @@ def filetexts(d, open=open):
 def tmpfile(extension=''):
     filename = tempfile.mktemp(extension)
 
-    yield filename
-
-    if os.path.exists(filename):
-        os.remove(filename)
+    try:
+        yield filename
+    finally:
+        try:
+            if os.path.exists(filename):
+                os.remove(filename)
+        except Exception:  # Sometimes Windows can't close files
+            pass
 
 
 def raises(err, lamda):
@@ -143,3 +148,15 @@ def raises(err, lamda):
         return False
     except err:
         return True
+
+
+def keywords(func):
+    """ Get the argument names of a function
+
+    >>> def f(x, y=2):
+    ...     pass
+
+    >>> keywords(f)
+    ['x', 'y']
+    """
+    return inspect.getargspec(func).args

@@ -26,8 +26,10 @@ from toolz import map, partition_all, reduce
 import numpy as np
 import math
 from collections import Iterator
-from toolz import concat
+from toolz import concat, first
 from cytoolz import unique
+from datashape import var, isdimension
+import pandas as pd
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
@@ -108,26 +110,17 @@ def compute_one(expr, c, **kwargs):
 @dispatch(Head, ChunkIterator)
 def compute_one(expr, c, **kwargs):
     c = iter(c)
-    n = 0
-    cs = []
+    df = into(DataFrame, compute_one(expr, next(c)),
+              columns=expr.columns)
     for chunk in c:
-        cs.append(chunk)
-        n += len(chunk)
-        if n >= expr.n:
+        if len(df) >= expr.n:
             break
+        df2 = into(DataFrame,
+                   compute_one(expr.child.head(expr.n - len(df)), chunk),
+                   columns=expr.columns)
+        df = pd.concat([df, df2], axis=0, ignore_index=True)
 
-    if not cs:
-        return []
-
-    if len(cs) == 1:
-        return compute_one(expr, cs[0])
-
-    t1 = TableSymbol('t1', expr.schema)
-    t2 = TableSymbol('t2', expr.schema)
-    binop = lambda a, b: compute(union(t1, t2), {t1: a, t2: b})
-    u = reduce(binop, cs)
-
-    return compute_one(expr, u)
+    return df
 
 
 @dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
@@ -165,7 +158,7 @@ def compute_one(expr, c, other, **kwargs):
 
 @dispatch(Distinct, ChunkIterator)
 def compute_one(expr, c, **kwargs):
-    intermediates = concat(into([], compute_one(expr, chunk)) for chunk in c)
+    intermediates = concat(into(Iterator, compute_one(expr, chunk)) for chunk in c)
     return unique(intermediates)
 
 
@@ -294,3 +287,10 @@ import pandas
 def into(df, b, **kwargs):
     chunks = [into(df, chunk, **kwargs) for chunk in b]
     return pandas.concat(chunks, ignore_index=True)
+
+
+@dispatch(ChunkIterable)
+def discover(c):
+    ds = discover(first(c))
+    assert isdimension(ds[0])
+    return var * ds.subshape[0]
