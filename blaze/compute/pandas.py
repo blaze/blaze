@@ -43,10 +43,20 @@ def compute_one(t, df, **kwargs):
     return df[t.columns[0]]
 
 
+@dispatch(Column, (Series, SeriesGroupBy))
+def compute_one(_, s, **kwargs):
+    return s
+
+
 @dispatch(ColumnWise, DataFrame)
 def compute_one(t, df, **kwargs):
     d = dict((t.child[c].scalar_symbol, df[c]) for c in t.child.columns)
     return compute(t.expr, d)
+
+
+@dispatch(ColumnWise, Series)
+def compute_one(c, s, **kwargs):
+    return compute(c.expr, {c.child[c.child.columns[0]].scalar_symbol: s})
 
 
 @dispatch(BinOp, Series, (Series, base))
