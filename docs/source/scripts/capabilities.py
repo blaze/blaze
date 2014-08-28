@@ -93,7 +93,6 @@ statuses = [capabilities[x].values() for x in xnames]
 ynames = ['Arithmetic','Reductions', 'Selections', 'Grouping', 'Join', 'Sort', 'Distinct', 'Python Mapping']
 
 statuses = list(concat(statuses))
-#import pdb; pdb.set_trace()
 x, y = zip(*itertools.product(xnames, ynames))
 
 colors = [colormap[value] for value in statuses]
