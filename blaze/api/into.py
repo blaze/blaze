@@ -582,6 +582,7 @@ def into(coll, d, if_exists="replace", **kwargs):
         Accepts the import of data expressed with multiple MongoDB documents within a single JSON array.
     """
     import subprocess
+    from dateutil import parser
 
     db = coll.database
 
@@ -622,6 +623,25 @@ def into(coll, d, if_exists="replace", **kwargs):
         copy_cmd = copy_cmd + ' '.join(optional_flags)
         ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
         output = ps.stdout.read()
+
+        #need to check for date columns and update
+        date_cols = []
+        dshape = csv_dd.dshape
+        for t, c in zip(dshape[1].types, dshape[1].names):
+            if hasattr(t, "ty"):
+                if isinstance(t.ty, datashape.Date) or isinstance(t.ty, datashape.DateTime):
+                    date_cols.append((c, t.ty))
+
+        for d_col, ty in date_cols:
+            mongo_data = list(coll.find({},{d_col:1}))
+            for doc in mongo_data:
+                try:
+                    t = parser.parse(doc[d_col])
+                except AttributeError:
+                    print(m_id, " is already of type datetime")
+                    t = doc[d_col]
+                m_id = doc['_id']
+                coll.update({'_id':m_id},{"$set": {d_col: t}})
 
     if isinstance(d, blaze.data.JSON) or isinstance(d, blaze.data.JSON_Streaming):
 

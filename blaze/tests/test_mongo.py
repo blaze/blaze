@@ -195,6 +195,7 @@ def test_csv_into_mongodb(empty_collec):
 
     assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
 
+
 def test_csv_into_mongodb_columns(empty_collec):
 
     csv = CSV(file_name, schema='{x: int, y: int}')
@@ -205,6 +206,20 @@ def test_csv_into_mongodb_columns(empty_collec):
     mongo_data = list(coll.find({},{'x': 1, '_id': 0}))
 
     assert list(csv[:,'x']) == [i['x'] for i in mongo_data]
+
+def test_csv_into_mongodb_complex(empty_collec):
+
+    this_dir = os.path.dirname(__file__)
+    file_name = os.path.join(this_dir, 'dummydata.csv')
+
+    csv = CSV(file_name, schema = "{ Name : string, RegistrationDate : ?datetime, ZipCode : ?int64, Consts : ?float64 }")
+    coll = empty_collec
+    into(coll,csv)
+
+    mongo_data = list(coll.find({},{'_id': 0}))
+
+    assert list(csv[0]) == [mongo_data[0][col] for col in csv.columns]
+    assert list(csv[9]) == [mongo_data[-1][col] for col in csv.columns]
 
 
 def test_json_into_mongodb(empty_collec):
