@@ -6,7 +6,6 @@ import pytest
 from flask import json
 from datetime import datetime
 from pandas import DataFrame
-import pickle
 
 import blaze
 from blaze import discover, TableSymbol, by, CSV, compute
@@ -131,20 +130,6 @@ def test_selection_on_columns():
     response = test.post('/select/cities.json',
                          data = json.dumps(query),
                          content_type='application/json')
-    assert 'OK' in response.status
-    assert json.loads(response.data)['data'] == expected
-
-
-def test_pickle():
-    t = TableSymbol('t', '{name: string, amount: int}')
-    expr = t.amount.sum()
-    query = {'pickle': pickle.dumps(expr)}
-    expected = 300
-
-    response = test.post('/pickle/accounts_df.json',
-                         data = json.dumps(query),
-                         content_type='application/json')
-
     assert 'OK' in response.status
     assert json.loads(response.data)['data'] == expected
 
