@@ -18,8 +18,7 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
    >>> from blaze import *
    >>> csv = CSV('examples/data/iris.csv')
    >>> csv.schema
-   dshape("{ sepal_length : ?float64, sepal_width : ?float64, petal_length :
-   ?float64, petal_width : ?float64, species : string }")
+   dshape("{ sepal_length : ?float64, sepal_width : ?float64, petal_length : ?float64, petal_width : ?float64, species : string }")
 
    >>> Table(csv)
        sepal_length  sepal_width  petal_length  petal_width      species
@@ -48,7 +47,7 @@ Then we host this under the name ``'iris'`` and serve publicly on port
 A Server is the following
 
 1.  A mapping of names to datasets
-2.  A `Flask <http://flask.pocoo.org/>`_ app.
+2.  A `Flask <http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application>`_ app.
 
 With this code our machine is now hosting our CSV file through a
 web-application on port 5000.  We can now access our CSV file, through Blaze,
@@ -132,8 +131,8 @@ Now we use Blaze to generate the query programmatically
 
    >>> from blaze import *
 
+   >>> # Build a TableSymbol like our served iris data
    >>> schema = "{ sepal_length : ?float64, sepal_width : ?float64, petal_length : ?float64, petal_width : ?float64, species : string }"  # matching schema to csv file
-
    >>> t = TableSymbol('t', schema)
    >>> expr = t.petal_length.sum()
 
