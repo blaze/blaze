@@ -6,9 +6,14 @@ Blaze provides uniform access to a variety of common data formats.  Blaze
 Server builds off of this uniform interface to host data remotely through a
 simple REST-ful API.
 
+Setting up a Blaze Server
+=========================
+
 To demonstrate the use of the Blaze server we serve the iris csv file.
 
 .. code-block:: python
+
+   >>> # Server code, run this once.  Leave running.
 
    >>> from blaze import *
    >>> csv = CSV('examples/data/iris.csv')
@@ -36,7 +41,7 @@ Then we host this under the name ``'iris'`` and serve publicly on port
 
 .. code-block:: python
 
-   >>> from blaze.serve import Server
+   >>> from blaze.server import Server
    >>> server = Server({'iris': csv})
    >>> server.app.run(host='0.0.0.0', port=5000)
 
@@ -49,8 +54,8 @@ With this code our machine is now hosting our CSV file through a
 web-application on port 5000.  We can now access our CSV file, through Blaze,
 as a service from a variety of applications.
 
-Interacting with the Web Server
--------------------------------
+Interacting with the Web Server from the Client
+===============================================
 
 Computation is now available on this server at
 ``hostname:5000/compute/iris.json``.  To communicate the computation to be done
@@ -81,7 +86,7 @@ We can use standard command line tools to interact with this web service::
        -H "Content-Type: application/json" \
        -d  '{"expr": {"op": "sum", \
                       "args": [{"op": "Column", \
-                                 "args": ["iris", "petal_Length"]}]}}'
+                                 "args": ["iris", "petal_Length"]}]}}' \
        localhost:5000/compute/iris.json
 
    {
@@ -102,6 +107,8 @@ First we repeat the same experiment as before, this time using the Python
 ``requests`` library instead of the command line tool ``curl``.
 
 .. code-block:: python
+
+   >>> # Client code, run this in a separate process from the Server
 
    >>> import json
    >>> import requests
@@ -130,7 +137,7 @@ Now we use Blaze to generate the query programmatically
    >>> t = TableSymbol('t', schema)
    >>> expr = t.petal_length.sum()
 
-   >>> from blaze.serve import to_tree
+   >>> from blaze.server import to_tree
 
    >>> d = to_tree(expr, names={t: 'iris'})
    >>> d
@@ -152,8 +159,12 @@ Alternatively we can use this API to have one Blaze process control another.
 Given our iris web server we can use Blaze on the client to drive the server to
 do work for us
 
+.. code-block:: python
+
+   >>> # Client code, run this in a separate process from the Server
+
    >>> from blaze import *
-   >>> from blaze.serve import ExprClient
+   >>> from blaze.server import ExprClient
    >>> ec = ExprClient('http://localhost:5000', 'iris')
 
    >>> t = Table(ec)
