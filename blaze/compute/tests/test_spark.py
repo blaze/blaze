@@ -95,8 +95,8 @@ exprs = [
     t['amount'] + t['id'],
     t['amount'] % t['id'],
     exp(t['amount']),
-    by(t, t['name'], t['amount'].sum()),
-    by(t, t['name'], (t['amount'] + 1).sum()),
+    by(t['name'], t['amount'].sum()),
+    by(t['name'], (t['amount'] + 1).sum()),
     (t['amount'] * 1).label('foo'),
     t.map(lambda _, amt, id: amt + id),
     t['amount'].map(inc)]
@@ -124,8 +124,8 @@ def test_spark_big_by():
     tbig = TableSymbol('tbig', '{name: string, sex: string[1], amount: int, id: int}')
 
     big_exprs = [
-        by(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
-        by(tbig, tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
+        by(tbig[['name', 'sex']], tbig['amount'].sum()),
+        by(tbig[['name', 'sex']], (tbig['id'] + tbig['amount']).sum())]
 
     databig = [['Alice', 'F', 100, 1],
                ['Alice', 'F', 100, 3],
@@ -197,7 +197,7 @@ def test_spark_groupby():
     joined = join(t_arc, t_idx, "node_id")
 
     result_blaze = compute(joined, {t_arc: rddarc, t_idx:rddidx})
-    t = by(joined, joined['name'], joined['node_id'].count())
+    t = by(joined['name'], joined['node_id'].count())
     a = compute(t, {t_arc: rddarc, t_idx:rddidx})
     in_degree = dict(a.collect())
     assert in_degree == {'A': 1, 'C': 2}
@@ -231,7 +231,7 @@ def test_spark_selection_out_of_order():
 
 
 def test_spark_recursive_rowfunc_is_used():
-    expr = by(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
+    expr = by(t['name'], (2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, rdd).collect()) == set(expected)

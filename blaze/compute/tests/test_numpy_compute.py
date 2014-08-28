@@ -134,7 +134,7 @@ def test_relabel():
 
 def test_by():
     from blaze.api.into import into
-    expr = by(t, t.amount > 0, t.id.count())
+    expr = by(t.amount > 0, t.id.count())
     result = compute(expr, x)
 
     assert set(map(tuple, into([], result))) == set([(False, 2), (True, 3)])

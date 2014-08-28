@@ -164,7 +164,7 @@ def test_Distinct():
 
 
 def test_by_one():
-    result = compute(by(t, t['name'], t['amount'].sum()), df)
+    result = compute(by(t['name'], t['amount'].sum()), df)
     expected = df.groupby('name')['amount'].sum().reset_index()
     expected.columns = ['name', 'amount_sum']
 
@@ -172,7 +172,7 @@ def test_by_one():
 
 
 def test_by_two():
-    result = compute(by(tbig, tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
+    result = compute(by(tbig[['name', 'sex']], sum(tbig['amount'])), dfbig)
 
     expected = DataFrame([['Alice', 'F', 200],
                           ['Drew',  'F', 100],
@@ -184,8 +184,7 @@ def test_by_two():
 
 def test_by_three():
 
-    expr = by(tbig,
-              tbig[['name', 'sex']],
+    expr = by(tbig[['name', 'sex']],
               (tbig['id'] + tbig['amount']).sum())
 
     result = compute(expr, dfbig)
@@ -201,7 +200,7 @@ def test_by_three():
 
 def test_by_four():
     t = tbig[['sex', 'amount']]
-    expr = by(t, t['sex'], t['amount'].max())
+    expr = by(t['sex'], t['amount'].max())
     result = compute(expr, dfbig)
 
     expected = DataFrame([['F', 100],
@@ -227,7 +226,7 @@ def test_join_by_arcs():
 
     joined = join(t_arc, t_idx, "node_id")
 
-    want = by(joined, joined['name'], joined['node_id'].count())
+    want = by(joined['name'], joined['node_id'].count())
 
     result = compute(want, {t_arc: df_arc, t_idx:df_idx})
 
@@ -348,7 +347,7 @@ def test_merge():
 
 
 def test_by_nunique():
-    result = compute(by(t, t['name'], t['id'].nunique()), df)
+    result = compute(by(t['name'], t['id'].nunique()), df)
     expected = DataFrame([['Alice', 2], ['Bob', 1]],
                          columns=['name', 'id_nunique'])
 
@@ -441,7 +440,7 @@ def test_by_on_same_column():
     df = pd.DataFrame([[1,2],[1,4],[2,9]], columns=['id', 'value'])
     t = TableSymbol('data', dshape='{id:int, value:int}')
 
-    gby = by(t, t['id'], t['id'].count())
+    gby = by(t['id'], t['id'].count())
 
     expected = DataFrame([[1, 2], [2, 1]], columns=['id', 'id_count'])
     result = compute(gby, {t:df})
@@ -450,12 +449,12 @@ def test_by_on_same_column():
 
 
 def test_summary_by():
-    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum()))
+    expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum()))
     assert str(compute(expr, df)) == \
             str(DataFrame([['Alice', 2, 150],
                            ['Bob', 1, 200]], columns=['name', 'count', 'sum']))
 
-    expr = by(t, t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
+    expr = by(t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
     assert str(compute(expr, df)) == \
             str(DataFrame([['Alice', 2, 152],
                            ['Bob', 1, 201]], columns=['name', 'count', 'sum']))
@@ -463,7 +462,7 @@ def test_summary_by():
 
 @xfail(reason="reduction assumed to be at the end")
 def test_summary_by_reduction_arithmetic():
-    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
+    expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
     assert str(compute(expr, df)) == \
             str(DataFrame([['Alice', 2, 151],
                            ['Bob', 1, 202]], columns=['name', 'count', 'sum']))

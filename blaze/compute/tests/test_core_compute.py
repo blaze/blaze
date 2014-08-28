@@ -9,4 +9,4 @@ from blaze.compatibility import raises
 def test_errors():
     t = TableSymbol('t', '{foo: int}')
     with raises(NotImplementedError):
-        compute_one(by(t, t, t.count()), 1)
+        compute_one(by(t, t.count()), 1)
