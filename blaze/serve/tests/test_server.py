@@ -156,6 +156,19 @@ def test_to_from_json():
     assert from_tree(to_tree(t)).isidentical(t)
 
 
+def test_to_tree():
+    t = TableSymbol('t', '{name: string, amount: int32}')
+    expr = t.amount.sum()
+    expected = {'sum': [
+                {'Column': [
+                  {'TableSymbol': ['t',
+                                   'var * { name : string, amount : int32 }',
+                                   False]},
+                  'amount'
+                ]}
+              ]}
+    assert to_tree(expr) == expected
+
 def test_compute():
     t = TableSymbol('t', '{name: string, amount: int}')
     expr = t.amount.sum()
@@ -227,4 +240,4 @@ def test_compute_column_wise(iris_server, iris):
     assert 'OK' in resp.status
     result = json.loads(resp.data)['data']
     expected = compute(expr, iris)
-    assert result == list(expected)
+    assert list(map(tuple, result)) == list(map(tuple, expected))
