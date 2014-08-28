@@ -19,6 +19,21 @@ from datashape import Mono
 from .index import parse_index
 
 class Server(object):
+    """ Blaze Data Server
+
+    Host local data through a web API
+
+    >>> from pandas import DataFrame
+    >>> df = DataFrame([[1, 'Alice',   100],
+    ...                 [2, 'Bob',    -200],
+    ...                 [3, 'Alice',   300],
+    ...                 [4, 'Dennis',  400],
+    ...                 [5,  'Bob',   -500]],
+    ...                columns=['id', 'name', 'amount'])
+
+    >>> server = Server({'accounts': df})
+    >>> server.app.run() # doctest: +SKIP
+    """
     __slots__ = 'app', 'datasets'
 
     def __init__(self, datasets=None):
@@ -239,7 +254,7 @@ def to_tree(expr, names=dict()):
     See Also
     --------
 
-    ``blaze.server.server.from_tree``
+    blaze.server.server.from_tree
     """
     if expr in names:
         return names[expr]
@@ -310,7 +325,7 @@ def from_tree(expr, namespace=dict()):
     See Also
     --------
 
-    ``blaze.server.server.to_tree``
+    blaze.server.server.to_tree
     """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']

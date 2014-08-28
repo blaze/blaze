@@ -76,6 +76,28 @@ class Client(DataDescriptor):
 
 
 class ExprClient(object):
+    """ Expression Client for Blaze Server
+
+    Parameters
+    ----------
+
+    url: str
+        URL of a Blaze server
+    name: str
+        Name of dataset on that server
+
+    Examples
+    --------
+
+    >>> # This example matches with the docstring of ``Server``
+    >>> ec = ExprClient('localhost:5000', 'accounts')
+    >>> t = Table(ec) # doctest: +SKIP
+
+    See Also
+    --------
+
+    blaze.server.server.Server
+    """
     __slots__ = 'url', 'name'
     def __init__(self, url, name):
         url = url.strip('/')
