@@ -14,9 +14,12 @@ import bcolz
 from blaze.data import CSV
 from datetime import datetime
 from toolz import pluck
+import os
+
+dirname = os.path.dirname(__file__)
 
 
-csv = CSV('blaze/api/tests/accounts.csv')
+csv = CSV(os.path.join(dirname, 'accounts.csv'))
 
 L = [[100, 1, 'Alice', datetime(2000, 12, 25, 0, 0, 1)],
      [200, 2, 'Bob', datetime(2001, 12, 25, 0, 0, 1)],
@@ -81,7 +84,7 @@ try:
     # f = tables.open_file('blaze/blaze/api/tests/accounts.h5', 'w')
     # t = f.create_table('/', 'accounts', obj=x)
     # t.flush()
-    f = tables.open_file('blaze/api/tests/accounts.h5')
+    f = tables.open_file(os.path.join(dirname, 'accounts.h5'))
     tb = f.get_node('/accounts')
     no_date[tables.Table] = tb
     from tables import Table as PyTable
