@@ -130,7 +130,7 @@ def compute_one(t, q, **kwargs):
 
 @dispatch(By, MongoQuery)
 def compute_one(t, q, **kwargs):
-    if not (isinstance(t.grouper, Projection) and t.grouper.child == t.child):
+    if not isinstance(t.grouper, Projection):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
     name = t.apply.dshape[0].names[0]
