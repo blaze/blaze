@@ -60,7 +60,7 @@ def compute_down(expr):
     return expr
 
 
-def V(d, expr):
+def top_to_bottom(d, expr):
     """ Processes an expression top-down then bottom-up """
     # Base case: expression is in dict, return associated data
     if expr in d:
@@ -73,7 +73,7 @@ def V(d, expr):
         return compute_down(expr, *leaves)
     else:
         # Compute children of this expression
-        children = ([V(d, child) for child in expr.inputs]
+        children = ([top_to_bottom(d, child) for child in expr.inputs]
                     if hasattr(expr, 'inputs') else [])
 
         # Compute this expression given the children
@@ -132,7 +132,7 @@ def compute(expr, d):
     ['Bob', 'Charlie']
     """
     expr = pre_compute(expr, d)
-    result = V(d, expr)
+    result = top_to_bottom(d, expr)
     return post_compute(expr, result, d)
 
 
