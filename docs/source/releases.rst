@@ -5,17 +5,17 @@ Release Notes
 Release 0.6.2
 -------------
 
-* Efficient CSV to SQL migration using native tools
-* Dispatched ``drop`` and ``create_index`` functions
-* DPlyr interface at ``blaze.api.dplyr``.  Various bits borrowed from that interface
+* Efficient CSV to SQL migration using native tools #454
+* Dispatched ``drop`` and ``create_index`` functions  #495
+* DPlyr interface at ``blaze.api.dplyr``.  #484
+* Various bits borrowed from that interface
     * ``transform`` function adopted to main namespace
     * ``Summary`` object for named reductions
     * Keyword syntax in ``by`` and ``merge`` e.g.
       ``by(t, t.col, label=t.col2.max(), label2=t.col2.min())``
-* New Computation Server
-* Better PyTables support
-* Better SQLAlchemy type conversion, particularly for various text types
-* Spark split-apply-combine uses combineByKey, not groupBy
+* New Computation Server  #527
+* Better PyTables support  #487 #496 #526
+
 
 Release 0.6.1
 -------------
