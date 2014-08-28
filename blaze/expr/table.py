@@ -5,18 +5,20 @@
 """
 from __future__ import absolute_import, division, print_function
 
+from functools import partial
 from abc import abstractproperty
+from operator import methodcaller
 from datashape import dshape, DataShape, Record, isdimension, Option
 from datashape import coretypes as ct
 import datashape
 from toolz import (concat, partial, first, compose, get, unique, second,
-        isdistinct, frequencies)
+                   isdistinct, frequencies)
 from . import scalar
 from .core import Expr, path
 from .scalar import ScalarSymbol, Number
 from .scalar import (Eq, Ne, Lt, Le, Gt, Ge, Add, Mult, Div, Sub, Pow, Mod, Or,
                      And, USub, Not, eval_str, FloorDiv, NumberInterface)
-from ..compatibility import _strtypes, builtins, unicode, basestring
+from ..compatibility import _strtypes, builtins, unicode, basestring, map, zip
 from ..dispatch import dispatch
 
 __all__ = '''
@@ -1279,6 +1281,9 @@ class Merge(RowWise):
             cols = [self.project(c) for c in key]
             return merge(*cols)
 
+    def leaves(self):
+        return list(unique(concat(i.leaves() for i in self.children)))
+
 
 class Union(TableExpr):
     """ Merge the rows of many Tables together
@@ -1313,6 +1318,9 @@ class Union(TableExpr):
     @property
     def schema(self):
         return self.children[0].schema
+
+    def leaves(self):
+        return list(unique(concat(i.leaves() for i in self.children)))
 
 
 def union(*children):

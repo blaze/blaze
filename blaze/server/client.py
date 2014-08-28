@@ -8,6 +8,8 @@ from datashape import dshape
 
 from ..data.core import DataDescriptor
 from ..data.utils import coerce
+from ..expr import Expr, TableExpr
+from ..dispatch import dispatch
 from .index import emit_index
 
 # These are a hack for testing
@@ -35,7 +37,7 @@ def reason(response):
 
 
 class Client(DataDescriptor):
-    __slots__ = 'uri', '_name'
+    __slots__ = 'url', '_name'
     def __init__(self, url, name):
         self.url = url.strip('/')
         self._name = name
@@ -71,3 +73,71 @@ class Client(DataDescriptor):
         data = json.loads(content(response))
 
         return dshape(data[self._name])
+
+
+class ExprClient(object):
+    """ Expression Client for Blaze Server
+
+    Parameters
+    ----------
+
+    url: str
+        URL of a Blaze server
+    name: str
+        Name of dataset on that server
+
+    Examples
+    --------
+
+    >>> # This example matches with the docstring of ``Server``
+    >>> ec = ExprClient('localhost:5000', 'accounts')
+    >>> t = Table(ec) # doctest: +SKIP
+
+    See Also
+    --------
+
+    blaze.server.server.Server
+    """
+    __slots__ = 'url', 'name'
+    def __init__(self, url, name):
+        url = url.strip('/')
+        if not url[:4] == 'http':
+            url = 'http://' + url
+        self.url = url
+        self.name = name
+
+    @property
+    def dshape(self):
+        response = requests.get('%s/datasets.json' % self.url)
+
+        if not ok(response):
+            raise ValueError("Bad Response: %s" % reason(response))
+
+        data = json.loads(content(response))
+
+        return dshape(data[self.name])
+
+
+@dispatch(ExprClient)
+def discover(ec):
+    return ec.dshape
+
+
+@dispatch(Expr, ExprClient)
+def compute_down(expr, ec):
+    from .server import to_tree
+    from ..api import Table
+    from ..api import into
+    from pandas import DataFrame
+    tree = to_tree(expr)
+
+    r = requests.get('%s/compute/%s.json' % (ec.url, ec.name),
+                     data = json.dumps({'expr': tree}),
+                     headers={'Content-Type': 'application/json'})
+
+    if not ok(r):
+        raise ValueError("Bad response: %s" % reason(r))
+
+    data = json.loads(content(r))
+
+    return data['data']

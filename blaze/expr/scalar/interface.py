@@ -8,6 +8,7 @@ from .numbers import NumberInterface
 
 class ScalarSymbol(NumberInterface, BooleanInterface):
     __slots__ = '_name', 'dtype'
+    __inputs__ = ()
 
     def __init__(self, name, dtype='real'):
         self._name = name

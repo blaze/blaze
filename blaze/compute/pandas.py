@@ -105,9 +105,21 @@ def compute_one(t, gb, **kwargs):
     return gb
 
 
-@dispatch(Reduction, (DataFrame, DataFrameGroupBy, SeriesGroupBy, Series))
+@dispatch(Reduction, (DataFrame, DataFrameGroupBy))
 def compute_one(t, df, **kwargs):
     return getattr(df, t.symbol)()
+
+
+@dispatch(Reduction, (SeriesGroupBy, Series))
+def compute_one(t, s, **kwargs):
+    result = getattr(s, t.symbol)()
+
+    # pandas may return an int, numpy scalar or non scalar here so we need to
+    # program defensively so that things are JSON serializable
+    try:
+        return result.item()
+    except (AttributeError, ValueError):
+        return result
 
 
 @dispatch(Distinct, DataFrame)

@@ -1,4 +1,4 @@
-from blaze.serve.index import *
+from blaze.server.index import *
 
 def test_js_to_tuple():
     data = [(1, 1),

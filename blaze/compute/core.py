@@ -51,6 +51,35 @@ def compute(expr, o, **kwargs):
         raise ValueError("Give compute dictionary input, got %s" % str(o))
 
 
+@dispatch(object)
+def compute_down(expr):
+    """ Compute the expression on the entire inputs
+
+    inputs match up to leaves of the expression
+    """
+    return expr
+
+
+def top_to_bottom(d, expr):
+    """ Processes an expression top-down then bottom-up """
+    # Base case: expression is in dict, return associated data
+    if expr in d:
+        return d[expr]
+
+    # See if we have a direct computation path
+    if (hasattr(expr, 'leaves') and compute_down.resolve(
+            (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr.leaves()))):
+        leaves = [d[leaf] for leaf in expr.leaves()]
+        return compute_down(expr, *leaves)
+    else:
+        # Compute children of this expression
+        children = ([top_to_bottom(d, child) for child in expr.inputs]
+                    if hasattr(expr, 'inputs') else [])
+
+        # Compute this expression given the children
+        return compute_one(expr, *children, scope=d)
+
+
 def bottom_up(d, expr):
     """
     Process an expression from the leaves upwards
@@ -103,12 +132,40 @@ def compute(expr, d):
     ['Bob', 'Charlie']
     """
     expr = pre_compute(expr, d)
-    result = bottom_up(d, expr)
+    result = top_to_bottom(d, expr)
     return post_compute(expr, result, d)
 
 
 def columnwise_funcstr(t, variadic=True, full=False):
-    """
+    """Build a string that can be eval'd to return a ``lambda`` expression.
+
+    Parameters
+    ----------
+    t : ColumnWise
+        An expression whose leaves (at each application of the returned
+        expression) are all instances of ``ScalarExpression``.
+        For example ::
+
+            t.petal_length / max(t.petal_length)
+
+        is **not** a valid ``ColumnWise``, since the expression ::
+
+            max(t.petal_length)
+
+        has a leaf ``t`` that is not a ``ScalarExpression``. A example of a
+        valid ``ColumnWise`` expression is ::
+
+            t.petal_length / 4
+
+    Returns
+    -------
+    f : str
+        A string that can be passed to ``eval`` and will return a function that
+        operates on each row and applies a scalar expression to a subset of the
+        columns in each row.
+
+    Examples
+    --------
     >>> t = TableSymbol('t', '{x: real, y: real, z: real}')
     >>> cw = t['x'] + t['z']
     >>> columnwise_funcstr(cw)
