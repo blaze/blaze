@@ -76,6 +76,19 @@ if pymongo:
         pymongo = None
         Collection = None
 
+try:
+    import tables
+    # f = tables.open_file('blaze/blaze/api/tests/accounts.h5', 'w')
+    # t = f.create_table('/', 'accounts', obj=x)
+    # t.flush()
+    f = tables.open_file('blaze/api/tests/accounts.h5')
+    tb = f.get_node('/accounts')
+    no_date[tables.Table] = tb
+    from tables import Table as PyTable
+except ImportError:
+    tables = None
+    PyTable = None
+
 
 def normalize(a):
     """ Normalize results prior to equality test
@@ -104,7 +117,7 @@ def test_base():
 def test_expressions():
     sources = [v for k, v in data.items() if k not in [nd.array, CSV, Table]]
     targets = [v for k, v in no_date.items() if k not in [Table, CSV,
-        Collection, nd.array]]
+        Collection, nd.array, PyTable]]
 
     for a in sources:
         for b in targets:

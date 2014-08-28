@@ -65,7 +65,7 @@ class Test_into(unittest.TestCase):
 
 
 try:
-    from pandas import DataFrame
+    from pandas import DataFrame, read_csv
 except ImportError:
     DataFrame = None
 
@@ -111,6 +111,45 @@ def h5():
         yield h5file
         # Close (and flush) the file
         h5file.close()
+
+
+@pytest.yield_fixture
+def good_csv():
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix=".csv") as f:
+        badfile = open(f.name, mode="w")
+        # Insert a new record
+        badfile.write("userid,text,country\n")
+        badfile.write("1,Alice,az\n")
+        badfile.write("2,Bob,bl\n")
+        badfile.write("3,Charlie,cz\n")
+        badfile.flush()
+        yield badfile
+        # Close (and flush) the file
+        badfile.close()
+
+
+@pytest.yield_fixture
+def bad_csv_df():
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix=".csv") as f:
+        badfile = open(f.name, mode="w")
+        # Insert a new record
+        badfile.write("userid,text,country\n")
+        badfile.write("1,Alice,az\n")
+        badfile.write("2,Bob,bl\n")
+        for i in range(0,100):
+            badfile.write(str(i) + ",badguy,zz\n")
+        badfile.write("4,Dan,gb,extra,extra\n")
+        badfile.flush()
+        yield badfile
+        # Close (and flush) the file
+        badfile.close()
+
+@pytest.yield_fixture
+def out_hdf5():
+    with tempfile.NamedTemporaryFile(mode='w', suffix=".h5") as f:
+        yield f
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_pytables_dataframe(h5):
@@ -215,7 +254,6 @@ def test_discover_pandas():
     assert discover(df).subshape[0] == dshape('{name: string, balance: int64}')
 
 
-
 @skip_if_not(DataFrame and nd.array)
 def test_discover_pandas():
     data = [('Alice', 100), ('Bob', 200)]
@@ -273,12 +311,38 @@ def test_DataFrame_CSV():
         expected = DataFrame([[1, 2.0], [3, 4.0]],
                              columns=['a', 'b'])
 
-
         assert str(df) == str(expected)
         assert list(df.dtypes) == [np.int64, np.float64]
+
+
+@skip_if_not(PyTables and DataFrame)
+def test_into_tables_path(good_csv, out_hdf5):
+    tble = into(PyTables, good_csv.name, filename=out_hdf5.name, datapath='foo')
+    assert len(tble) == 3
+
+
+@skip_if_not(PyTables and DataFrame)
+def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
+    tble = into(PyTables, bad_csv_df.name,
+                          filename=out_hdf5.name,
+                          datapath='foo',
+                          error_bad_lines=False)
+    df_from_tbl = into(DataFrame, tble)
+    #Check that it's the same as straight from the CSV
+    df_from_csv = into(DataFrame, bad_csv_df.name, error_bad_lines=False)
+    assert len(df_from_csv) == len(df_from_tbl)
+    assert list(df_from_csv.columns) == list(df_from_tbl.columns)
+    assert (df_from_csv == df_from_tbl).all().all()
 
 
 def test_numpy_datetimes():
     L = [datetime(2000, 12, 1), datetime(2000, 1, 1, 1, 1, 1)]
     assert into([], np.array(L, dtype='M8[us]')) == L
     assert into([], np.array(L, dtype='M8[ns]')) == L
+
+
+def test_numpy_python3_bytes_to_string_conversion():
+    x = np.array(['a','b'], dtype='S1')
+    assert all(isinstance(s, str) for s in into(list, x))
+    x = np.array([(1, 'a'), (2, 'b')], dtype=[('id', 'i4'), ('letter', 'S1')])
+    assert isinstance(into(list, x)[0][1], str)
