@@ -200,18 +200,20 @@ def to_tree(expr):
     elif isinstance(expr, Table):
         return to_tree(TableSymbol(expr._name, expr.schema))
     elif isinstance(expr, Expr):
-        return {type(expr).__name__: list(map(to_tree, expr.args))}
+        return {'op': type(expr).__name__,
+                'args': list(map(to_tree, expr.args))}
     else:
         return expr
 
 
 def from_tree(expr, namespace=dict()):
     if isinstance(expr, dict):
-        cls = getattr(blaze, first(expr.keys()))
-        if 'Symbol' in first(expr.keys()):
-            children = [from_tree(arg) for arg in first(expr.values())]
+        op, args = expr['op'], expr['args']
+        cls = getattr(blaze.expr, op)
+        if 'Symbol' in op:
+            children = [from_tree(arg) for arg in args]
         else:
-            children = [from_tree(arg, namespace) for arg in first(expr.values())]
+            children = [from_tree(arg, namespace) for arg in args]
         return cls(*children)
     elif isinstance(expr, list):
         return tuple(from_tree(arg, namespace) for arg in expr)

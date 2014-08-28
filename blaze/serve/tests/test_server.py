@@ -144,14 +144,21 @@ def test_to_from_json():
 def test_to_tree():
     t = TableSymbol('t', '{name: string, amount: int32}')
     expr = t.amount.sum()
-    expected = {'sum': [
-                {'Column': [
-                  {'TableSymbol': ['t',
-                                   'var * { name : string, amount : int32 }',
-                                   False]},
-                  'amount'
-                ]}
-              ]}
+    expected = {'op': 'sum',
+                'args': [{'op': 'Column',
+                          'args':
+                            [
+                              {'op': 'TableSymbol',
+                               'args': [
+                                    't',
+                                    'var * { name : string, amount : int32 }',
+                                    False
+                                    ]
+                               },
+                              'amount'
+                            ]
+                        }]
+                }
     assert to_tree(expr) == expected
 
 def test_compute():
@@ -170,7 +177,8 @@ def test_compute():
 
 def test_compute_with_namespace():
     t = TableSymbol('t', '{name: string, amount: int}')
-    query = {'expr': {'Column': ['accounts_df', 'name']}}
+    query = {'expr': {'op': 'Column',
+                      'args': ['accounts_df', 'name']}}
     expected = ['Alice', 'Bob']
 
     response = test.post('/compute/accounts_df.json',
