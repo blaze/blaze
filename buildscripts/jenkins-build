@@ -36,7 +36,11 @@ fi
 # TODO: Re-add cffi to this list when it is in anaconda python 3.3
 export PYENV_PREFIX=${WORKSPACE}/build/pyenv
 
-~/anaconda/bin/conda create --yes --channel https://conda.binstar.org/mwiebe -p ${PYENV_PREFIX} python=${PYTHON_VERSION} cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools dateutil pip pytables sqlalchemy h5py pandas requests pytest || exit 1
+~/anaconda/bin/conda create --yes \
+    --channel https://conda.binstar.org/mwiebe -p ${PYENV_PREFIX} python=${PYTHON_VERSION} \
+    cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools \
+    dateutil pip pytables sqlalchemy h5py pandas requests pytest \
+    multipledispatch toolz cytoolz bcolz || exit 1
 
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
@@ -64,8 +68,6 @@ fi
 if [ "${PYTHON_VERSION}" == "2.7" ]; then
   pip install unicodecsv
 fi
-
-pip install multipledispatch toolz cytoolz bcolz || exit 1
 
 # Build/install Blaze
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
