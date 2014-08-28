@@ -42,6 +42,20 @@ def df_all(a_df, b_df):
     return True
 
 
+def test_series_column():
+    s = Series([1, 2, 3], name='a')
+    t = TableSymbol('t', '{a: int64}')
+    result = compute(t.a, s)
+    pd.util.testing.assert_series_equal(s, result)
+
+
+def test_series_columnwise():
+    s = Series([1, 2, 3], name='a')
+    t = TableSymbol('t', '{a: int64}')
+    result = compute(t.a + 1, s)
+    pd.util.testing.assert_series_equal(s + 1, result)
+
+
 def test_table():
     assert str(compute(t, df)) == str(df)
 
