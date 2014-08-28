@@ -40,7 +40,7 @@ export PYENV_PREFIX=${WORKSPACE}/build/pyenv
     --channel https://conda.binstar.org/mwiebe -p ${PYENV_PREFIX} python=${PYTHON_VERSION} \
     cython scipy ply dynd-python nose flask pyparsing pyyaml setuptools \
     dateutil pip pytables sqlalchemy h5py pandas requests pytest \
-    multipledispatch toolz cytoolz bcolz || exit 1
+    toolz cytoolz bcolz || exit 1
 
 export PATH=${PYENV_PREFIX}/bin:${PATH}
 
@@ -68,6 +68,8 @@ fi
 if [ "${PYTHON_VERSION}" == "2.7" ]; then
   pip install unicodecsv
 fi
+
+pip install multipledispatch || exit 1
 
 # Build/install Blaze
 ${PYTHON_EXECUTABLE} setup.py install || exit 1
