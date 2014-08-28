@@ -37,6 +37,22 @@ Table Expressions
    By
    Join
 
+Data Server
+-----------
+
+.. currentmodule:: blaze.server.server
+
+.. autosummary::
+   Server
+   to_tree
+   from_tree
+
+.. currentmodule:: blaze.server.client
+
+.. autosummary::
+   ExprClient
+
+
 
 Definitions
 -----------
@@ -47,3 +63,8 @@ Definitions
 .. automodule:: blaze.expr.table
    :members:
 
+.. automodule:: blaze.server.server
+   :members:
+
+.. automodule:: blaze.server.client
+   :members:
