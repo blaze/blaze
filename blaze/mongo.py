@@ -6,8 +6,11 @@ from datashape import discover, isdimension
 from .compatibility import basestring, map
 from .compute.mongo import dispatch
 
-from pymongo.collection import Collection
-from pymongo import ASCENDING
+try:
+    from pymongo.collection import Collection
+    from pymongo import ASCENDING
+except ImportError:
+    Collection = type(None)
 
 
 __all__ = ['discover', 'drop', 'create_index']

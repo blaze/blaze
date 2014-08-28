@@ -18,7 +18,7 @@ from blaze.expr import (TableSymbol, projection, Column, selection, ColumnWise,
                         Label, ReLabel, Head, Sort, isnan, any, summary,
                         Summary, count, ScalarSymbol)
 from blaze.expr.core import discover
-from blaze.utils import raises
+from blaze.utils import raises, tmpfile
 from blaze.compatibility import xfail
 from datashape import dshape, var, int32, int64, Record, DataShape
 from toolz import identity, first
@@ -139,11 +139,11 @@ def test_selection_path_check():
 
 
 def test_different_schema_raises():
-    with tempfile.NamedTemporaryFile(delete=False) as f:
+    with tmpfile('.csv') as filename:
         df = pd.DataFrame(np.random.randn(10, 2))
-        df.to_csv(f.name, index=False, header=False)
+        df.to_csv(filename, index=False, header=False)
         with pytest.raises(TypeError):
-            Table(CSV(f.name), columns=list('ab'))
+            Table(CSV(filename), columns=list('ab'))
 
 
 def test_getattr_doesnt_override_properties():
