@@ -52,12 +52,12 @@ To run tests:
 Dependencies
 ~~~~~~~~~~~~
 
-* numpy_ >= 1.6
-* datashape_ >= 0.1.1
-* dynd-python_ >= 0.6.1
-* toolz_ >= 0.6.0
+* numpy_ >= 1.7
+* datashape_ >= 0.3.0
+* dynd-python_ >= 0.6.4
+* toolz_ >= 0.7.0
 * cytoolz_
-* multipledispatch_ >= 0.4.2
+* multipledispatch_ >= 0.4.6
 * unicodecsv_
 * pandas_
 
@@ -66,6 +66,10 @@ Dependencies
 * sqlalchemy_
 * h5py_
 * spark_ >= 1.0.0
+* pymongo_
+* pytables_
+* bcolz_
+* flask_ >= 0.10.1
 * pytest_ (for running tests)
 
 
@@ -83,3 +87,8 @@ Dependencies
 .. _multipledispatch: http://multiple-dispatch.readthedocs.org/
 .. _conda: http://conda.pydata.org/
 .. _unicodecsv: https://github.com/jdunck/python-unicodecsv
+.. _pymongo: http://api.mongodb.org/python/current/
+.. _pytables: http://www.pytables.org/moin
+.. _bcolz: https://github.com/Blosc/bcolz
+.. _flask: http://flask.pocoo.org/
+

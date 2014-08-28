@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Quickstart &mdash; Blaze 0.6.0-dev documentation</title>
+    <title>Quickstart &mdash; Blaze 0.6.2 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.6.0-dev',
+        VERSION:     '0.6.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.6.2 documentation" href="index.html" />
     <link rel="next" title="Data" href="data.html" />
     <link rel="prev" title="Overview" href="overview.html" />
 <meta charset='utf-8'>
@@ -171,7 +171,8 @@ operate on a CSV file of the traditional <a class="reference external" href="htt
 data-structures in exactly the same way.  Here we operate on a SQL database
 stored in a <a class="reference external" href="https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.db">sqlite file</a>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blaze.sql</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">SQL</span><span class="p">(</span><span class="s">&#39;sqlite:///iris.db&#39;</span><span class="p">,</span> <span class="s">&#39;iris&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s">&#39;sqlite:///iris.db&#39;</span><span class="p">,</span> <span class="s">&#39;iris&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="n">SQL</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">iris</span>
 <span class="go">    sepal_length  sepal_width  petal_length  petal_width      species</span>
 <span class="go">0            5.1          3.5           1.4          0.2  Iris-setosa</span>
@@ -224,20 +225,20 @@ container type.</p>
 <span class="gp">... </span>            <span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
 <span class="gp">... </span>            <span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">([],</span> <span class="n">result</span><span class="p">)</span>                       <span class="c"># Push result into a list</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                     <span class="c"># Push result into a list</span>
 <span class="go">[(u&#39;Iris-virginica&#39;, 2.026),</span>
 <span class="go"> (u&#39;Iris-setosa&#39;, 0.2459999999999999),</span>
 <span class="go"> (u&#39;Iris-versicolor&#39;, 1.3259999999999998)]</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">DataFrame</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">(),</span> <span class="n">result</span><span class="p">)</span>              <span class="c"># Push result into a DataFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                <span class="c"># Push result into a DataFrame</span>
 <span class="go">           species  petal_width</span>
 <span class="go">0   Iris-virginica        2.026</span>
 <span class="go">1      Iris-setosa        0.246</span>
 <span class="go">2  Iris-versicolor        1.326</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="n">CSV</span><span class="p">(</span><span class="s">&#39;output.csv&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">schema</span><span class="p">),</span> <span class="c"># Write result to CSV file</span>
-<span class="gp">... </span>     <span class="n">result</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csv</span> <span class="o">=</span> <span class="n">CSV</span><span class="p">(</span><span class="s">&#39;output.csv&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="n">csv</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                      <span class="c"># Write result to CSV file</span>
 </pre></div>
 </div>
 </div>

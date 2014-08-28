@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backends &mdash; Blaze 0.6.0-dev documentation</title>
+    <title>Backends &mdash; Blaze 0.6.2 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.6.0-dev',
+        VERSION:     '0.6.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.0-dev documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.6.2 documentation" href="index.html" />
     <link rel="next" title="Datashape" href="datashape.html" />
     <link rel="prev" title="Expressions" href="expressions.html" />
 <meta charset='utf-8'>
@@ -81,10 +81,12 @@
 <ul>
 <li><a class="reference internal" href="#">Backends</a><ul>
 <li><a class="reference internal" href="#existing-backends">Existing Backends</a><ul>
-<li><a class="reference internal" href="#streaming-python">Streaming Python</a></li>
-<li><a class="reference internal" href="#pandas">Pandas</a></li>
-<li><a class="reference internal" href="#sqlalchemy">SQLAlchemy</a></li>
-<li><a class="reference internal" href="#spark">Spark</a></li>
+<li><a class="reference internal" href="#streaming-python-via-toolz-and-cytoolz">Streaming Python via toolz and cytoolz</a></li>
+<li><a class="reference internal" href="#id1">Pandas</a></li>
+<li><a class="reference internal" href="#id2">SQLAlchemy</a></li>
+<li><a class="reference internal" href="#id3">MongoDB</a></li>
+<li><a class="reference internal" href="#id4">PyTables</a></li>
+<li><a class="reference internal" href="#id5">Spark</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#benefits-of-backend-agnostic-computation">Benefits of Backend Agnostic Computation</a><ul>
@@ -103,14 +105,14 @@
           
   <div class="section" id="backends">
 <h1>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h1>
-<p>Blaze backends include projects like streaming Python, Pandas, SQLAlchemy, and
-Spark.  A Blaze expression can run equally well on any of these backends,
-allowing developers to easily transition their computation to changing
-performance needs.</p>
+<p>Blaze backends include projects like streaming Python, Pandas, SQLAlchemy,
+MongoDB, PyTables, and Spark.  A Blaze expression can run equally well on any
+of these backends, allowing developers to easily transition their computation
+to changing performance needs.</p>
 <div class="section" id="existing-backends">
 <h2>Existing Backends<a class="headerlink" href="#existing-backends" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="streaming-python">
-<h3>Streaming Python<a class="headerlink" href="#streaming-python" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="streaming-python-via-toolz-and-cytoolz">
+<h3>Streaming Python via <a class="reference external" href="http://toolz.readthedocs.org/en/latest/">toolz</a> and <a class="reference external" href="https://github.com/pytoolz/cytoolz/">cytoolz</a><a class="headerlink" href="#streaming-python-via-toolz-and-cytoolz" title="Permalink to this headline">¶</a></h3>
 <p>Blaze can operate on core Python data structures like lists, tuples, ints and
 strings.  This can be useful both in small cases like rapid prototyping or unit
 testing but also in large cases where streaming computation is desired.</p>
@@ -121,22 +123,35 @@ support for lazy iterators (i.e. generators) means that it can easily support
 <em>streaming</em> computations that pull data in from disk, taking up relatively
 little memory.</p>
 </div>
-<div class="section" id="pandas">
-<h3>Pandas<a class="headerlink" href="#pandas" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id1">
+<h3><a class="reference external" href="http://pandas.pydata.org">Pandas</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>Pandas DataFrames are the gold standard for in-memory data analytics.  They are
 fast, intuitive, and come with a wealth of additional features like plotting,
 and data I/O.</p>
 </div>
-<div class="section" id="sqlalchemy">
-<h3>SQLAlchemy<a class="headerlink" href="#sqlalchemy" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h3><a class="reference external" href="http://www.sqlalchemy.org">SQLAlchemy</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>Blaze levarages the SQLAlchemy project, which provides a uniform interface over
 the varied landscape of SQL systems.  Blaze manipulates SQLAlchemy expressions
 which are then compiled down to SQL query strings of the appropriate backend.</p>
 </div>
-<div class="section" id="spark">
-<h3>Spark<a class="headerlink" href="#spark" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id3">
+<h3><a class="reference external" href="http://www.mongodb.org/">MongoDB</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>Blaze drives MongoDB through the <a class="reference external" href="http://api.mongodb.org/python/current/api/pymongo/index.html">pymongo</a> interface and
+is able to use many of the built in operations such as aggregration and group
+by.</p>
+</div>
+<div class="section" id="id4">
+<h3><a class="reference external" href="http://www.pytables.org">PyTables</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>PyTables provides compressed Table objects backed by the popular HDF5 library.
+Blaze can compute simple expressions using PyTables, such as elementwise
+operations and row-wise selections.</p>
+</div>
+<div class="section" id="id5">
+<h3><a class="reference external" href="https://spark.apache.org/">Spark</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <p>Spark provides resilient distributed in-memory computing and easy access to
-HDFS storage.  Blaze drives Spark through the PySpark interface.</p>
+HDFS storage.  Blaze drives Spark through the <a class="reference external" href="https://spark.apache.org/docs/0.9.0/python-programming-guide.html">PySpark</a>
+interface.</p>
 </div>
 </div>
 <div class="section" id="benefits-of-backend-agnostic-computation">

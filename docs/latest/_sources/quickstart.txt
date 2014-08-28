@@ -91,7 +91,8 @@ stored in a `sqlite file`_.
 .. doctest::
 
    >>> from blaze.sql import *
-   >>> iris = Table(SQL('sqlite:///iris.db', 'iris'))
+   >>> sql = SQL('sqlite:///iris.db', 'iris')
+   >>> iris = Table(SQL)
    >>> iris
        sepal_length  sepal_width  petal_length  petal_width      species
    0            5.1          3.5           1.4          0.2  Iris-setosa
@@ -151,20 +152,20 @@ container type.
    ...             iris.species,
    ...             iris.petal_width.mean())
 
-   >>> into([], result)                       # Push result into a list
+   >>> into(list, result)                     # Push result into a list
    [(u'Iris-virginica', 2.026),
     (u'Iris-setosa', 0.2459999999999999),
     (u'Iris-versicolor', 1.3259999999999998)]
 
    >>> from pandas import DataFrame
-   >>> into(DataFrame(), result)              # Push result into a DataFrame
+   >>> into(DataFrame, result)                # Push result into a DataFrame
               species  petal_width
    0   Iris-virginica        2.026
    1      Iris-setosa        0.246
    2  Iris-versicolor        1.326
 
-   >>> into(CSV('output.csv', schema=result.schema), # Write result to CSV file
-   ...      result)
+   >>> csv = CSV('output.csv', schema=result.schema)
+   >>> into(csv, result)                      # Write result to CSV file
 
 .. _`iris dataset`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.csv
 .. _`sqlite file`: https://raw.githubusercontent.com/ContinuumIO/blaze/master/examples/data/iris.db
