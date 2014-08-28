@@ -7,6 +7,10 @@ MongoDB, PyTables, and Spark.  A Blaze expression can run equally well on any
 of these backends, allowing developers to easily transition their computation
 to changing performance needs.
 
+.. raw:: html
+
+   <iframe style='width:100%; height:425px; border:0;' src='capabilities.html'></iframe>
+
 Existing Backends
 =================
 
