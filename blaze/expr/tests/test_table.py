@@ -697,7 +697,7 @@ def test_leaves():
 
     assert t.leaves() == [t]
     assert t.id.leaves() == [t]
-    assert by(t, t.name, t.id.nunique()).leaves() == [t]
+    assert by(t.name, t.id.nunique()).leaves() == [t]
     assert join(t, v).leaves() == [t, v]
     assert join(v, t).leaves() == [v, t]
 
