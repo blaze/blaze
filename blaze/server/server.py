@@ -207,7 +207,7 @@ def select(datasets, name):
 
 
 
-def to_tree(expr, names=dict()):
+def to_tree(expr, names=None):
     """ Represent Blaze expression with core data structures
 
     Transform a Blaze expression into a form using only strings, dicts, lists
@@ -256,7 +256,7 @@ def to_tree(expr, names=dict()):
 
     blaze.server.server.from_tree
     """
-    if expr in names:
+    if names and expr in names:
         return names[expr]
     if isinstance(expr, tuple):
         return [to_tree(arg, names=names) for arg in expr]
@@ -271,7 +271,7 @@ def to_tree(expr, names=dict()):
         return expr
 
 
-def from_tree(expr, namespace=dict()):
+def from_tree(expr, namespace=None):
     """ Convert core data structures to Blaze expression
 
     Core data structure representations created by ``to_tree`` are converted
@@ -337,7 +337,7 @@ def from_tree(expr, namespace=dict()):
         return cls(*children)
     elif isinstance(expr, list):
         return tuple(from_tree(arg, namespace) for arg in expr)
-    if expr in namespace:
+    if namespace and expr in namespace:
         return namespace[expr]
     else:
         return expr
