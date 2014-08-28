@@ -29,6 +29,7 @@ requirements:
       - unicodecsv
       - bcolz
       - pytables
+      - pymongo
 
 about:
     home: http://blaze.pydata.org

@@ -13,7 +13,7 @@ branches:
 
 addons:
   postgresql: "9.3"
-  
+
 services:
     - mongodb
     - postgres
@@ -32,7 +32,7 @@ install:
 
   # Install dependencies
   - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy
-  - conda install -n test-environment pandas h5py pip flask requests pytables cython bcolz
+  - conda install -n test-environment pandas h5py pip flask requests pytables cython bcolz pymongo
   - source activate test-environment
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
@@ -42,9 +42,6 @@ install:
 
   # Install BLZ
   # - pip install git+http://github.com/ContinuumIO/blz
-
-  # Install MongoDB
-  - pip install pymongo
 
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
