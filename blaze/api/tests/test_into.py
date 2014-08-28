@@ -117,8 +117,8 @@ def h5():
 @pytest.yield_fixture
 def good_csv():
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix=".csv") as f:
-        badfile = open(f.name, mode="w")
+    with tmpfile(".csv") as filename:
+        badfile = open(filename, mode="w")
         # Insert a new record
         badfile.write("userid,text,country\n")
         badfile.write("1,Alice,az\n")
@@ -133,8 +133,8 @@ def good_csv():
 @pytest.yield_fixture
 def bad_csv_df():
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix=".csv") as f:
-        badfile = open(f.name, mode="w")
+    with tmpfile(".csv") as filename:
+        badfile = open(filename, mode="w")
         # Insert a new record
         badfile.write("userid,text,country\n")
         badfile.write("1,Alice,az\n")
@@ -149,8 +149,8 @@ def bad_csv_df():
 
 @pytest.yield_fixture
 def out_hdf5():
-    with tempfile.NamedTemporaryFile(mode='w', suffix=".h5") as f:
-        yield f
+    with tmpfile(".h5") as filename:
+        yield filename
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_pytables_dataframe(h5):
@@ -318,14 +318,14 @@ def test_DataFrame_CSV():
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_tables_path(good_csv, out_hdf5):
-    tble = into(PyTables, good_csv.name, filename=out_hdf5.name, datapath='foo')
+    tble = into(PyTables, good_csv.name, filename=out_hdf5, datapath='foo')
     assert len(tble) == 3
 
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     tble = into(PyTables, bad_csv_df.name,
-                          filename=out_hdf5.name,
+                          filename=out_hdf5,
                           datapath='foo',
                           error_bad_lines=False)
     df_from_tbl = into(DataFrame, tble)
