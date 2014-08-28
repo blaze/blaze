@@ -61,6 +61,7 @@ try:
     import pymongo
 except ImportError:
     pymongo = None
+    Collection = None
 if pymongo:
     from pymongo.collection import Collection
     try:
