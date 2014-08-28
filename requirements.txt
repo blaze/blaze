@@ -10,3 +10,4 @@ toolz
 flask >= 0.10.1
 pytest
 requests
+tables
