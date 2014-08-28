@@ -31,7 +31,8 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy pandas h5py pip flask requests pytables cython bcolz cytoolz toolz multipledispatch
+  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION pytest numpy sqlalchemy
+  - conda install -n test-environment pandas h5py pip flask requests pytables cython
   - source activate test-environment
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then conda install unittest2; pip install unicodecsv; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install unicodecsv; fi
@@ -76,6 +77,8 @@ install:
   # - make install
   # - export PYTHONPATH=$PYTHONPATH:$PWD
   # - popd
+  #
+  - pip install bcolz cytoolz toolz multipledispatch
 
   # Install Blaze
   - python setup.py install
