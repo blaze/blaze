@@ -6,6 +6,7 @@ from bokeh.embed import *
 from bokeh.resources import Resources
 from collections import OrderedDict
 
+from toolz import concat
 import itertools
 
 """
@@ -85,41 +86,27 @@ capabilities = {
     }
 }
 
-colormap = [
-    "#5EDA9E", "#FFFFFF"
-]
+colormap = {True: "#5EDA9E", False: "#FFFFFF"}
 
-ringo = [x for x in capabilities]
-paul = [capabilities[x].values() for x in ringo]
-john = ['Arithmetic','Reductions', 'Selections', 'Grouping', 'Join', 'Sort', 'Distinct', 'Python Mapping']
+xnames = [x for x in capabilities]
+statuses = [capabilities[x].values() for x in xnames]
+ynames = ['Arithmetic','Reductions', 'Selections', 'Grouping', 'Join', 'Sort', 'Distinct', 'Python Mapping']
 
-def unpacking(i):
-    return_list = []
-    for x in i:
-        for y in x:
-            return_list.append(y)
-    return return_list
+statuses = list(concat(statuses))
+#import pdb; pdb.set_trace()
+x, y = zip(*itertools.product(xnames, ynames))
 
-def color_values(a, b):
-    colors = []
-    for x in paul:
-        if x:
-            colors.append(colormap[0])
-        elif not x:
-            colors.append(colormap[1])
-    return colors
-
-paul = unpacking(paul)
-
-x, y = zip(*itertools.product(ringo, john))
-
-colors = color_values(colormap, paul)
+colors = [colormap[value] for value in statuses]
 x = list(x)
 y = list(y)
 
 reset_output()
 
 output_file('build/html/capabilities.html', mode='cdn')
+
+"""
+Run this script AFTER you have done make html. It should automatically put the graph where it needs to be. 
+"""
 
 source = ColumnDataSource(
     data=dict(
@@ -132,7 +119,7 @@ source = ColumnDataSource(
 figure()
 
 rect('xname', 'yname', 0.99, 0.99, source=source,
-     x_range=ringo, y_range=john,
+     x_range=xnames, y_range=ynames,
      x_axis_location="above",
      color='colors', line_color=None,
      tools="resize,hover,previewsave", title="Blaze Capabilities by Backend",
