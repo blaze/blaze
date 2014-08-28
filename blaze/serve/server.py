@@ -192,7 +192,7 @@ def select(datasets, name):
 
 
 
-def to_tree(expr):
+def to_tree(expr, names=dict()):
     """ Represent Blaze expression with core data structures
 
     Transform a Blaze expression into a form using only strings, dicts, lists
@@ -226,20 +226,32 @@ def to_tree(expr):
          }]
      }
 
+    Simplify expresion using explicit ``names`` dictionary.  In the example
+    below we replace the ``TableSymbol`` node with the string ``'t'``.
+
+    >>> tree = to_tree(t.x, names={t: 't'})
+    >>> tree # doctest: +SKIP
+    {'op': 'Column', 'args': ['t', 'x']}
+
+    >>> from_tree(tree, namespace={'t': t})
+    t['x']
+
     See Also
     --------
 
     ``blaze.serve.server.from_tree``
     """
+    if expr in names:
+        return names[expr]
     if isinstance(expr, tuple):
-        return list(map(to_tree, expr))
+        return [to_tree(arg, names=names) for arg in expr]
     elif isinstance(expr, Mono):
         return str(expr)
     elif isinstance(expr, Table):
-        return to_tree(TableSymbol(expr._name, expr.schema))
+        return to_tree(TableSymbol(expr._name, expr.schema), names)
     elif isinstance(expr, Expr):
         return {'op': type(expr).__name__,
-                'args': list(map(to_tree, expr.args))}
+                'args': [to_tree(arg, names) for arg in expr.args]}
     else:
         return expr
 
@@ -284,11 +296,21 @@ def from_tree(expr, namespace=dict()):
     >>> from_tree(tree)
     sum(t['x'])
 
+    Simplify expresion using explicit ``names`` dictionary.  In the example
+    below we replace the ``TableSymbol`` node with the string ``'t'``.
+
+    >>> tree = to_tree(t.x, names={t: 't'})
+    >>> tree # doctest: +SKIP
+    {'op': 'Column', 'args': ['t', 'x']}
+
+    >>> from_tree(tree, namespace={'t': t})
+    t['x']
+
 
     See Also
     --------
 
-    ``blaze.serve.server.from_tree``
+    ``blaze.serve.server.to_tree``
     """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']

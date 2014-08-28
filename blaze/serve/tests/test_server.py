@@ -161,6 +161,18 @@ def test_to_tree():
                 }
     assert to_tree(expr) == expected
 
+
+def test_to_from_tree_namespace():
+    t = TableSymbol('t', '{name: string, amount: int32}')
+    expr = t.name
+
+    tree = to_tree(expr, names={t: 't'})
+    assert tree == {'op': 'Column', 'args': ['t', 'name']}
+
+    new = from_tree(tree, namespace={'t': t})
+    assert new.isidentical(expr)
+
+
 def test_compute():
     t = TableSymbol('t', '{name: string, amount: int}')
     expr = t.amount.sum()
