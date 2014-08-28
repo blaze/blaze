@@ -26,7 +26,7 @@ x = np.array([(1, 'Alice', 100),
 
 @pytest.yield_fixture
 def data():
-    with tempfile.NamedTemporaryFile() as fobj:
+    with tempfile.NamedTemporaryFile(suffix='.h5') as fobj:
         f = tb.open_file(fobj.name, mode='w')
         d = f.create_table('/', 'title',  x)
         yield d
@@ -36,7 +36,7 @@ def data():
 
 @pytest.yield_fixture
 def csi_data():
-    with tempfile.NamedTemporaryFile() as fobj:
+    with tempfile.NamedTemporaryFile(suffix='.h5') as fobj:
         f = tb.open_file(fobj.name, mode='w')
         d = f.create_table('/', 'title', x)
         d.cols.amount.create_csindex()
@@ -48,7 +48,7 @@ def csi_data():
 
 @pytest.yield_fixture
 def idx_data():
-    with tempfile.NamedTemporaryFile() as fobj:
+    with tempfile.NamedTemporaryFile(suffix='.h5') as fobj:
         f = tb.open_file(fobj.name, mode='w')
         d = f.create_table('/', 'title', x)
         d.cols.amount.create_index()
