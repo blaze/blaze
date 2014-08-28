@@ -27,6 +27,7 @@ requirements:
       - cytoolz
       - toolz
       - unicodecsv
+      - bcolz
 
 about:
     home: http://blaze.pydata.org
