@@ -6,6 +6,7 @@ a new version of Blaze.
 
 1. Update version numbers in the following locations:
 
+ * /setup.py
  * /blaze/__init__.py
  * /conda.yaml
 

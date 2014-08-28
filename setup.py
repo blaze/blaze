@@ -6,7 +6,6 @@ import os
 import sys
 import shutil
 import textwrap
-import blaze
 from fnmatch import fnmatchcase
 
 from distutils.core import Command, setup
@@ -135,7 +134,7 @@ longdesc = open('README.md').read()
 
 setup(
     name='blaze',
-    version=blaze.__version__,
+    version='0.6.2',
     author='Continuum Analytics',
     author_email='blaze-dev@continuum.io',
     description='Blaze',
