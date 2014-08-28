@@ -321,6 +321,8 @@ def test_into_tables_path(good_csv, out_hdf5):
     tble = into(PyTables, good_csv.name, filename=out_hdf5, datapath='foo')
     assert len(tble) == 3
 
+    tble.close()
+
 
 @skip_if_not(PyTables and DataFrame)
 def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
@@ -334,6 +336,8 @@ def test_into_tables_path_bad_csv(bad_csv_df, out_hdf5):
     assert len(df_from_csv) == len(df_from_tbl)
     assert list(df_from_csv.columns) == list(df_from_tbl.columns)
     assert (df_from_csv == df_from_tbl).all().all()
+
+    tble.close()
 
 
 def test_numpy_datetimes():

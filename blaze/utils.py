@@ -132,10 +132,14 @@ def filetexts(d, open=open):
 def tmpfile(extension=''):
     filename = tempfile.mktemp(extension)
 
-    yield filename
-
-    if os.path.exists(filename):
-        os.remove(filename)
+    try:
+        yield filename
+    finally:
+        try:
+            if os.path.exists(filename):
+                os.remove(filename)
+        except Exception:  # Sometimes Windows can't close files
+            pass
 
 
 def raises(err, lamda):
