@@ -193,6 +193,44 @@ def select(datasets, name):
 
 
 def to_tree(expr):
+    """ Represent Blaze expression with core data structures
+
+    Transform a Blaze expression into a form using only strings, dicts, lists
+    and base types (int, float, datetime, ....)  This form can be useful for
+    serialization.
+
+    Parameters
+    ----------
+
+    expr: Blaze Expression
+
+    Examples
+    --------
+
+    >>> t = TableSymbol('t', '{x: int32, y: int32}')
+    >>> to_tree(t) # doctest: +SKIP
+    {'op': 'TableSymbol',
+     'args': ['t', 'var * { x : int32, y : int32 }', False]}
+
+
+    >>> to_tree(t.x.sum()) # doctest: +SKIP
+    {'op': 'sum',
+     'args': [
+         {'op': 'Column',
+         'args': [
+             {
+              'op': 'TableSymbol'
+              'args': ['t', 'var * { x : int32, y : int32 }', False]
+             }
+             'x']
+         }]
+     }
+
+    See Also
+    --------
+
+    ``blaze.serve.server.from_tree``
+    """
     if isinstance(expr, tuple):
         return list(map(to_tree, expr))
     elif isinstance(expr, Mono):
@@ -207,6 +245,51 @@ def to_tree(expr):
 
 
 def from_tree(expr, namespace=dict()):
+    """ Convert core data structures to Blaze expression
+
+    Core data structure representations created by ``to_tree`` are converted
+    back into Blaze expressions.
+
+    Parameters
+    ----------
+
+    expr: dict
+
+    Examples
+    --------
+
+    >>> t = TableSymbol('t', '{x: int32, y: int32}')
+    >>> tree = to_tree(t)
+    >>> tree # doctest: +SKIP
+    {'op': 'TableSymbol',
+     'args': ['t', 'var * { x : int32, y : int32 }', False]}
+
+    >>> from_tree(tree)
+    t
+
+    >>> tree = to_tree(t.x.sum())
+    >>> tree # doctest: +SKIP
+    {'op': 'sum',
+     'args': [
+         {'op': 'Column',
+         'args': [
+             {
+              'op': 'TableSymbol'
+              'args': ['t', 'var * { x : int32, y : int32 }', False]
+             }
+             'x']
+         }]
+     }
+
+    >>> from_tree(tree)
+    sum(t['x'])
+
+
+    See Also
+    --------
+
+    ``blaze.serve.server.from_tree``
+    """
     if isinstance(expr, dict):
         op, args = expr['op'], expr['args']
         cls = getattr(blaze.expr, op)
