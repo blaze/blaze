@@ -10,6 +10,7 @@ import os
 from blaze.api.into import into, discover
 import blaze
 from blaze import Table
+from blaze.utils import tmpfile
 import pytest
 
 def skip(test_foo):
@@ -95,8 +96,8 @@ def h5():
         date  = StringCol(20)
         country  = StringCol(2)
 
-    with tempfile.NamedTemporaryFile(mode='w') as f:
-        h5file = open_file(f.name, mode = "w", title = "Test file")
+    with tmpfile('.h5') as filename:
+        h5file = open_file(filename, mode = "w", title = "Test file")
         group = h5file.create_group("/", 'test', 'Info')
         tab = h5file.create_table(group, 'sample', Test, "Example")
         arow = tab.row

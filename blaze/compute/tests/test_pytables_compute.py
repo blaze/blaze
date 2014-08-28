@@ -12,6 +12,7 @@ import tempfile
 from blaze.compute.core import compute
 from blaze.expr import TableSymbol
 from blaze import drop, discover, create_index
+from blaze.utils import tmpfile
 
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
@@ -26,8 +27,8 @@ x = np.array([(1, 'Alice', 100),
 
 @pytest.yield_fixture
 def data():
-    with tempfile.NamedTemporaryFile(suffix='.h5') as fobj:
-        f = tb.open_file(fobj.name, mode='w')
+    with tmpfile('.h5') as filename:
+        f = tb.open_file(filename, mode='w')
         d = f.create_table('/', 'title',  x)
         yield d
         d.close()
@@ -36,8 +37,8 @@ def data():
 
 @pytest.yield_fixture
 def csi_data():
-    with tempfile.NamedTemporaryFile(suffix='.h5') as fobj:
-        f = tb.open_file(fobj.name, mode='w')
+    with tmpfile('.h5') as filename:
+        f = tb.open_file(filename, mode='w')
         d = f.create_table('/', 'title', x)
         d.cols.amount.create_csindex()
         d.cols.id.create_csindex()
@@ -48,8 +49,8 @@ def csi_data():
 
 @pytest.yield_fixture
 def idx_data():
-    with tempfile.NamedTemporaryFile(suffix='.h5') as fobj:
-        f = tb.open_file(fobj.name, mode='w')
+    with tmpfile('.h5') as fn:
+        f = tb.open_file(fn, mode='w')
         d = f.create_table('/', 'title', x)
         d.cols.amount.create_index()
         d.cols.id.create_index()
