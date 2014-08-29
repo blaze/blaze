@@ -6,8 +6,9 @@ import gzip
 from blaze.utils import filetext, filetexts, tmpfile
 from blaze.data.utils import tuplify
 from blaze.data import *
-from blaze.data.usability import *
+from blaze.api.resource import *
 from blaze.compatibility import xfail
+from blaze.api.into import *
 
 
 class TestResource(TestCase):
@@ -24,12 +25,6 @@ class TestResource(TestCase):
             assert isinstance(dd, CSV)
             self.assertEqual(tuplify(list(dd)), ((1, 1), (2, 2)))
 
-    def test_resource_json(self):
-        with filetext('[[1,1], [2,2]]', extension='.json') as fn:
-            dd = resource(fn, schema='2 * int')
-            assert isinstance(dd, JSON)
-            self.assertEqual(tuplify(list(dd)), ((1, 1), (2, 2)))
-
     @xfail
     def test_resource_gz(self):
         with filetext('1,1\n2,2', extension='.csv.gz', open=gzip.open) as fn:
@@ -44,8 +39,8 @@ class TestResource(TestCase):
              prefix + 'b.csv': '1,1\n2,2'}
         with filetexts(d) as filenames:
             dd = resource(prefix + '*.csv', schema='2 * int')
-            self.assertEqual(tuplify(tuple(dd)),
-                            (((1, 1), (2, 2)), ((1, 1), (2, 2))))
+            self.assertEqual(into(list, dd),
+                            [(1, 1), (2, 2), (1, 1), (2, 2)])
 
     def test_sql(self):
         assert isinstance(resource('sqlite:///:memory:::tablename',
@@ -58,15 +53,6 @@ class TestResource(TestCase):
                                        schema='2 * int'),
                               HDF5)
 
-
-class TestCopy(TestCase):
-    def test_copy(self):
-        with filetext('1,1\n2,2', extension='.csv') as a:
-            with tmpfile(extension='.csv') as b:
-                A = resource(a, schema='2 * int')
-                B = resource(b, schema='2 * int', mode='a')
-                copy(A, B)
-                assert tuplify(list(B)) == ((1, 1), (2, 2))
 
 
 class TestInto(TestCase):

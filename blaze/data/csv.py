@@ -12,6 +12,7 @@ from collections import Iterator
 from multipledispatch import dispatch
 
 from datashape.discovery import discover, null, unpack
+import gzip
 from datashape import dshape, Record, Option, Fixed, CType, Tuple, string
 
 from .core import DataDescriptor
@@ -287,5 +288,3 @@ def resource_csv(uri, **kwargs):
 @resource.register('.*\.(csv|data|txt|dat)\.gz')
 def resource_csv_gz(uri, **kwargs):
     return CSV(uri, open=gzip.open, **kwargs)
-
-
