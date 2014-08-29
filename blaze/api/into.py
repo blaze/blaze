@@ -3,19 +3,17 @@ from __future__ import absolute_import, division, print_function
 from dynd import nd
 import datashape
 import sys
-from datashape import DataShape, dshape, Record, to_numpy_dtype
+from datashape import dshape, Record, to_numpy_dtype
 import toolz
 from toolz import concat, partition_all, valmap
 from cytoolz import pluck
 import copy
 from datetime import datetime
-from datashape.user import validate, issubschema
 from numbers import Number
 from collections import Iterable, Iterator
 import gzip
 import numpy as np
 import pandas as pd
-import h5py
 import tables
 
 from ..compute.chunks import ChunkIterator
@@ -196,6 +194,7 @@ def into(df, x):
         columns = list(x.dtype.names)
     return pd.DataFrame(numpy_ensure_strings(x), columns=columns)
 
+
 @dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tables.Table)
 def into(a, t):
     x = into(np.ndarray, t)
@@ -238,9 +237,6 @@ def into(_, x, filename=None, datapath=None, **kwargs):
 @dispatch(tables.Table, pd.DataFrame)
 def into(a, df, **kwargs):
     return into(a, into(np.ndarray, df), **kwargs)
-    # store = pd.HDFStore(filename, mode='w')
-    # store.put(datapath, df, format='table', data_columns=True, index=False)
-    # return getattr(store.root, datapath).table
 
 
 @dispatch(tables.Table, _strtypes)
@@ -299,10 +295,8 @@ def into(ser, col):
     return ser
 
 @dispatch(pd.Series, np.ndarray)
-def into(_, x):
-    return pd.Series(numpy_ensure_strings(x))
-    df = into(pd.DataFrame(), x)
-    return df[df.columns[0]]
+def into(s, x):
+    return pd.Series(numpy_ensure_strings(x), name=s.name)
 
 @dispatch(pd.DataFrame, pd.Series)
 def into(_, df):
