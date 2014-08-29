@@ -563,10 +563,10 @@ def into(l, coll, columns=None, schema=None):
     return type(l)(into(Iterator, coll, columns=columns, schema=schema))
 
 
-@dispatch(Collection, ((CSV, JSON, JSON_Streaming)) )
+@dispatch(Collection, CSV)
 def into(coll, d, if_exists="replace", **kwargs):
     """
-    into function which converts TSV/CSV/JSON into a MongoDB Collection
+    into function which converts TSV/CSV into a MongoDB Collection
     Parameters
     ----------
     if_exists : string
@@ -577,23 +577,21 @@ def into(coll, d, if_exists="replace", **kwargs):
         list of column names
     ignore_blank: bool
         Ignores empty fields in csv and tsv exports. Default: creates fields without values
-    json_array : bool
-        Accepts the import of data expressed with multiple MongoDB documents within a single JSON array.
     """
     import subprocess
     from dateutil import parser
 
+    csv_dd = d
     db = coll.database
 
-    copy_info = {
-        'dbname':db.name,
-        'coll': coll.name,
-        'abspath': d._abspath
-        }
-    optional_flags = []
+    try:
+        copy_info = {
+            'dbname':db.name,
+            'coll': coll.name,
+            'abspath': d._abspath
+            }
+        optional_flags = []
 
-    if isinstance(d, CSV):
-        csv_dd = d
         if if_exists=='replace':
             optional_flags.append('--drop')
 
@@ -610,7 +608,7 @@ def into(coll, d, if_exists="replace", **kwargs):
         elif csv_dd.dialect['delimiter'] == '\t':
             copy_info['file_type'] = 'tsv'
         else:
-            raise NotImplemented("Only CSV and TSV files are supported by mongoimport")
+            raise NotImplementedError("Only CSV and TSV files are supported by mongoimport")
 
         copy_cmd = """
                 mongoimport -d {dbname} \
@@ -642,9 +640,43 @@ def into(coll, d, if_exists="replace", **kwargs):
                 m_id = doc['_id']
                 coll.update({'_id':m_id},{"$set": {d_col: t}})
 
-    if isinstance(d, JSON) or isinstance(d, JSON_Streaming):
 
-        json_dd = d
+        return coll
+    except Exception as e:
+
+        # not sure what will go wrong yet
+        # should we roll back and drop collection?
+
+        print("Something went wrong with the import. ", e)
+        print("Trying again without mongoimport call")
+        dd_into_coll = into.dispatch(Collection, DataDescriptor)
+        return dd_into_coll(coll,csv_dd)
+
+
+@dispatch(Collection, (JSON, JSON_Streaming))
+def into(coll, d, if_exists="replace", **kwargs):
+    """
+    into function which converts TSV/CSV/JSON into a MongoDB Collection
+    Parameters
+    ----------
+    if_exists : string
+        {replace, append, fail}
+    json_array : bool
+        Accepts the import of data expressed with multiple MongoDB documents within a single JSON array.
+    """
+    import subprocess
+
+    json_dd = d
+    db = coll.database
+
+    try:
+        copy_info = {
+            'dbname':db.name,
+            'coll': coll.name,
+            'abspath': d._abspath
+            }
+        optional_flags = []
+
 
         if if_exists=='replace':
             optional_flags.append('--drop')
@@ -661,6 +693,17 @@ def into(coll, d, if_exists="replace", **kwargs):
         ps = subprocess.Popen(copy_cmd,shell=True, stdout=subprocess.PIPE)
 
         output = ps.stdout.read()
+
+        return coll
+    except Exception as e:
+
+        # not sure what will go wrong yet
+        # should we roll back and drop collection?
+
+        print("Something went wrong with the import. ", e)
+        print("Trying again without mongoimport call")
+        dd_into_coll = into.dispatch(Collection, DataDescriptor)
+        return dd_into_coll(coll,csv_dd)
 
 
 

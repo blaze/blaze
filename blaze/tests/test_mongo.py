@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 import json
 import os
+from blaze.utils import filetext
+
 pymongo = pytest.importorskip('pymongo')
 
 try:
@@ -21,6 +23,7 @@ from blaze import drop, into, create_index
 conn = pymongo.MongoClient()
 db = conn.test_db
 file_name = 'test.csv'
+file_name_colon = 'colon_test.csv'
 
 from pymongo import ASCENDING, DESCENDING
 
@@ -31,6 +34,16 @@ def setup_function(function):
         csv_writer = csv_module.writer(f)
         for row in data:
             csv_writer.writerow(row)
+
+    with open(file_name_colon, 'w') as f:
+        csv_writer = csv_module.writer(f, delimiter=':')
+        for row in data:
+            csv_writer.writerow(row)
+
+
+def teardown_function(function):
+    os.remove(file_name)
+    os.remove(file_name_colon)
 
 
 @pytest.yield_fixture
@@ -196,16 +209,25 @@ def test_csv_into_mongodb(empty_collec):
     assert list(csv[:,'_0']) == [i['_0'] for i in mongo_data]
 
 
+def test_csv_into_mongodb_colon_del(empty_collec):
+
+
+    csv = CSV(file_name_colon)
+
+    coll = empty_collec
+
+    assert into(list, csv) == into(list, into(coll, csv))
+
+
 def test_csv_into_mongodb_columns(empty_collec):
 
     csv = CSV(file_name, schema='{x: int, y: int}')
 
 
     coll = empty_collec
-    into(coll,csv)
-    mongo_data = list(coll.find({},{'x': 1, '_id': 0}))
+    # mongo_data = list(coll.find({},{'x': 1, '_id': 0}))
 
-    assert list(csv[:,'x']) == [i['x'] for i in mongo_data]
+    assert into(list, csv) == into(list, into(coll, csv))
 
 def test_csv_into_mongodb_complex(empty_collec):
 
@@ -217,6 +239,10 @@ def test_csv_into_mongodb_complex(empty_collec):
     into(coll,csv)
 
     mongo_data = list(coll.find({},{'_id': 0}))
+
+
+    # This assertion doesn't work due to python floating errors
+    # into(list, csv) == into(list, into(coll, csv))
 
     assert list(csv[0]) == [mongo_data[0][col] for col in csv.columns]
     assert list(csv[9]) == [mongo_data[-1][col] for col in csv.columns]
@@ -235,22 +261,20 @@ les_mis_data = {"nodes":[{"name":"Myriel","group":1},
 
 def test_json_into_mongodb(empty_collec):
 
-    filename = tempfile.mktemp(".json")
-    with open(filename, "w") as f:
-        json.dump(les_mis_data, f)
+    with filetext(json.dumps(les_mis_data)) as filename:
 
+        dd = JSON(filename)
+        coll = empty_collec
+        into(coll,dd)
 
-    dd = JSON(filename)
-    coll = empty_collec
-    into(coll,dd)
+        mongo_data = list(coll.find())
 
-    mongo_data = list(coll.find())
+        last = mongo_data[0]['nodes'][-1]
+        first = mongo_data[0]['nodes'][0]
 
-    last = mongo_data[0]['nodes'][-1]
-    first = mongo_data[0]['nodes'][0]
+        assert dd.as_py()[1][-1] == tuple(last.values())
+        assert dd.as_py()[1][0] == tuple(first.values())
 
-    assert dd.as_py()[1][-1] == tuple(last.values())
-    assert dd.as_py()[1][0] == tuple(first.values())
 
 
 data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
