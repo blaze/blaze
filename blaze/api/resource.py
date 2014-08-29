@@ -5,7 +5,7 @@ import os
 from glob import glob
 import gzip
 from ..dispatch import dispatch
-from ..data import DataDescriptor, CSV
+from ..data import DataDescriptor, CSV, Excel
 from blaze.compute.chunks import ChunkIndexable
 
 class ChunkList(ChunkIndexable):
@@ -25,9 +25,11 @@ def resource(uri, **kwargs):
         return ChunkList(list(map(resource, uris)))
 
     csv_extensions = ['csv', 'data', 'txt', 'dat']
-    if os.path.isfile(uri) and uri.split('.')[-1] in csv_extensions:
+    if os.path.isfile(uri) and "xls" in uri.split('.')[-1]:
+        return Excel(uri)
+    elif os.path.isfile(uri) and uri.split('.')[-1] in csv_extensions:
         return CSV(uri, **kwargs)
-    if (os.path.isfile(uri) and uri.endswith("gz")
+    elif (os.path.isfile(uri) and uri.endswith("gz")
                             and uri.split('.')[-2] in csv_extensions):
         return CSV(uri, open=gzip.open, **kwargs)
     else:
