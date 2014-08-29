@@ -134,10 +134,11 @@ def compute_one(expr, example, children, **kwargs):
 
 @dispatch(TableExpr, np.ndarray)
 def compute_one(t, x, **kwargs):
-    df = into(DataFrame(columns=t.child.columns)
-              if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None
-              else Series(name=t.child.columns[0]), x)
-    return compute_one(t, df, **kwargs)
+    if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
+        df = DataFrame(columns=t.child.columns)
+    else:
+        df = Series(name=t.child.columns[0])
+    return compute_one(t, into(df, x), **kwargs)
 
 
 @dispatch(np.ndarray)
