@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 import h5py
 import tables
-import blaze
 
 from ..compute.chunks import ChunkIterator
 from ..dispatch import dispatch
@@ -593,7 +592,7 @@ def into(coll, d, if_exists="replace", **kwargs):
         }
     optional_flags = []
 
-    if isinstance(d, blaze.data.CSV):
+    if isinstance(d, CSV):
         csv_dd = d
         if if_exists=='replace':
             optional_flags.append('--drop')
@@ -643,7 +642,7 @@ def into(coll, d, if_exists="replace", **kwargs):
                 m_id = doc['_id']
                 coll.update({'_id':m_id},{"$set": {d_col: t}})
 
-    if isinstance(d, blaze.data.JSON) or isinstance(d, blaze.data.JSON_Streaming):
+    if isinstance(d, JSON) or isinstance(d, JSON_Streaming):
 
         json_dd = d
 
