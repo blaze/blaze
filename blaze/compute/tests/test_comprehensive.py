@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-from dynd import nd
 import numpy as np
 from pandas import DataFrame
 import numpy as np
@@ -9,10 +8,7 @@ from blaze.expr import TableSymbol, by, TableExpr
 from blaze.api.into import into
 from blaze.api.table import Table
 from blaze.compute import compute
-import blaze.compute.numpy
-import blaze.compute.pandas
-import blaze.compute.bcolz
-from blaze.expr.functions import *
+from blaze.expr.functions import sin, exp
 from blaze.sql import SQL
 
 
@@ -76,8 +72,8 @@ expressions = {
         by(t[['id', 'amount']], t.name.nunique()): [mongo],
         by(t.id, t.amount.count()): [],
         by(t.id, t.id.nunique()): [mongo],
-        # by(t, t, t.count()): [],
-        # by(t, t.id, t.count()): [df],
+        # by(t, t.count()): [],
+        # by(t.id, t.count()): [df],
         t[['amount', 'id']]: [x], # https://github.com/numpy/numpy/issues/3256
         t[['id', 'amount']]: [x, bc], # bcolz sorting
         }
@@ -87,16 +83,22 @@ base = df
 
 def df_eq(a, b):
     return (list(a.columns) == list(b.columns)
-        and list(a.dtypes) == list(b.dtypes)
-        and into(set, into(list, a)) == into(set, into(list, b)))
+            and list(a.dtypes) == list(b.dtypes)
+            and into(set, into(list, a)) == into(set, into(list, b)))
+
+
+def typename(obj):
+    return type(obj).__name__
 
 
 def test_base():
     for expr, exclusions in expressions.items():
         model = compute(expr.subs({t: Table(base, t.schema)}))
+        print('\nexpr: %s\n' % expr)
         for source in sources:
             if id(source) in map(id, exclusions):
                 continue
+            print('%s <- %s' % (typename(model), typename(source)))
             T = Table(source)
             result = into(model, expr.subs({t: T}))
             if isinstance(expr, TableExpr):
