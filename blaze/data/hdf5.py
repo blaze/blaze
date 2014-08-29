@@ -12,6 +12,7 @@ from ..dispatch import dispatch
 from .core import DataDescriptor
 from ..utils import partition_all, get
 from ..compatibility import _strtypes, unicode
+from ..api.resource import resource
 
 h5py_attributes = ['chunks', 'compression', 'compression_opts', 'dtype',
                    'fillvalue', 'fletcher32', 'maxshape', 'shape']
@@ -182,3 +183,14 @@ class HDF5(DataDescriptor):
 def drop(h):
     with h5py.File(h.path) as f:
         del f[h.datapath]
+
+
+@resource.register('.*\.hdf5')
+def resource_hdf5(uri, datapath, *args, **kwargs):
+    return HDF5(uri, datapath, *args, **kwargs)
+
+
+@resource.register('.*\.hdf5::.*')
+def resource_hdf5(uri, *args, **kwargs):
+    uri, datapath = uri.rsplit('::', 1)
+    return HDF5(uri, datapath, *args, **kwargs)
