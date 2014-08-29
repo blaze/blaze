@@ -10,7 +10,8 @@ from toolz import concat
 import itertools
 
 """
-Run this script AFTER you have done make html. It will automatically put the graph where it needs to be. 
+Run this script AFTER you have done make html in the same directory you run make html. 
+It should automatically put the graph where it needs to be. 
 """
 
 capabilities = {
@@ -35,14 +36,14 @@ capabilities = {
         'Python Mapping':True
     },
     'SQL':{
-        'Arithmetic':True,
+        'Arithmetic':"Generally yes, but math is limited in SQLite",
         'Reductions':True,
         'Selections':True,
         'Grouping':True,
         'Join':True,
         'Sort':True,
         'Distinct':True,
-        'Python Mapping':False
+        'Python Mapping':"Only in Postgres"
     },
     'Spark':{
         'Arithmetic':False,
@@ -90,12 +91,13 @@ colormap = {True: "#5EDA9E", False: "#FFFFFF"}
 
 xnames = [x for x in capabilities]
 statuses = [capabilities[x].values() for x in xnames]
-ynames = ['Arithmetic','Reductions', 'Selections', 'Grouping', 'Join', 'Sort', 'Distinct', 'Python Mapping']
+ynames = [capabilities['SQL'].keys()]
 
 statuses = list(concat(statuses))
+ynames = list(concat(ynames))
 x, y = zip(*itertools.product(xnames, ynames))
 
-colors = [colormap[value] for value in statuses]
+colors = [colormap[0] if not value else colormap[1] for value in statuses]
 x = list(x)
 y = list(y)
 
@@ -103,14 +105,12 @@ reset_output()
 
 output_file('build/html/capabilities.html', mode='cdn')
 
-"""
-Run this script AFTER you have done make html. It should automatically put the graph where it needs to be. 
-"""
 
 source = ColumnDataSource(
     data=dict(
         xname=x,
         yname=y,
+        statuses=statuses,
         colors=colors,
     )
 )
@@ -118,11 +118,11 @@ source = ColumnDataSource(
 figure()
 
 rect('xname', 'yname', 0.99, 0.99, source=source,
-     x_range=xnames, y_range=ynames,
+     x_range=xnames, y_range=list(reversed(ynames)),
      x_axis_location="above",
      color='colors', line_color=None,
-     tools="resize,hover,previewsave", title="Blaze Capabilities by Backend",
-     plot_width=725, plot_height=400)
+     tools="hover,previewsave", title="Blaze Capabilities by Backend",
+     plot_width=800, plot_height=600)
 
 grid().grid_line_color = None
 axis().axis_line_color = None
@@ -130,4 +130,10 @@ axis().major_tick_line_color = None
 axis().major_label_text_font_size = "5pt"
 axis().major_label_standoff = 0
 
-show()      # show the plot'
+hover = [t for t in curplot().tools if isinstance(t, HoverTool)][0]
+hover.tooltips = OrderedDict([
+    ('names', '@yname, @xname'),
+    ('status', '@statuses'),
+])
+
+save()      # show the plot'

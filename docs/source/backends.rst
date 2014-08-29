@@ -9,7 +9,7 @@ to changing performance needs.
 
 .. raw:: html
 
-   <iframe style='width:100%; height:425px; border:0;' src='capabilities.html'></iframe>
+   <iframe style='width:105%; height:625px; border:0;' src='capabilities.html'></iframe>
 
 Existing Backends
 =================
