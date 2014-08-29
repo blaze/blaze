@@ -222,10 +222,23 @@ def test_csv_into_mongodb_complex(empty_collec):
     assert list(csv[9]) == [mongo_data[-1][col] for col in csv.columns]
 
 
+les_mis_data = {"nodes":[{"name":"Myriel","group":1},
+                         {"name":"Napoleon","group":1},
+                         {"name":"Mlle.Baptistine","group":1},
+                        ],
+                "links":[{"source":1,"target":0,"value":1},
+                         {"source":2,"target":0,"value":8},
+                         {"source":3,"target":0,"value":10},
+                        ],
+                }
+
+
 def test_json_into_mongodb(empty_collec):
 
-    this_dir = os.path.dirname(__file__)
-    filename = os.path.join(this_dir, 'les_mis.json')
+    filename = tempfile.mktemp(".json")
+    with open(filename, "w") as f:
+        json.dump(les_mis_data, f)
+
 
     dd = JSON(filename)
     coll = empty_collec
