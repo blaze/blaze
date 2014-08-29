@@ -10,7 +10,7 @@ from blaze.compute.core import compute
 from blaze import dshape, Table
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
-                        min, max, any, all)
+                        min, max, any, all, Projection)
 from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -91,8 +91,8 @@ def test_join():
     R = TableSymbol('R', '{name: string, id: int}')
     joined = join(L, R, 'name')
 
-    assert dshape(joined.schema) == \
-            dshape('{name: string, amount: int, id: int}')
+    assert (dshape(joined.schema) ==
+            dshape('{name: string, amount: int, id: int}'))
 
     result = compute(joined, {L: left, R: right})
 
@@ -134,12 +134,18 @@ def test_multi_column_join():
     assert list(result.columns) == list(j.columns)
 
 
-def test_UnaryOp():
+def test_unary_op():
     assert (compute(exp(t['amount']), df) == np.exp(df['amount'])).all()
 
 
-def test_Neg():
+def test_neg():
     assert (compute(-t['amount'], df) == -df['amount']).all()
+
+
+@xfail(not hasattr(Projection, '__neg__'),
+       reason='Projection does not support arithmetic')
+def test_neg_projection():
+    assert (compute(-t[['amount', 'id']], df) == -df[['amount', 'id']]).all()
 
 
 def test_columns_series():
@@ -147,7 +153,7 @@ def test_columns_series():
     assert isinstance(compute(t['amount'] > 150, df), Series)
 
 
-def test_Reductions():
+def test_reductions():
     assert compute(mean(t['amount']), df) == 350./3
     assert compute(count(t['amount']), df) == 3
     assert compute(sum(t['amount']), df) == 100 + 200 + 50
@@ -159,7 +165,7 @@ def test_Reductions():
     assert compute(any(t['amount'] > 250), df) == False
 
 
-def test_Distinct():
+def test_distinct():
     dftoobig = DataFrame([['Alice', 'F', 100, 1],
                           ['Alice', 'F', 100, 1],
                           ['Alice', 'F', 100, 3],
