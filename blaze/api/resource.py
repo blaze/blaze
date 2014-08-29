@@ -7,6 +7,7 @@ import gzip
 from ..dispatch import dispatch
 from ..data import DataDescriptor, CSV
 from blaze.compute.chunks import ChunkIndexable
+from ..regex import RegexDispatcher
 
 class ChunkList(ChunkIndexable):
     def __init__(self, data):
@@ -19,17 +20,24 @@ class ChunkList(ChunkIndexable):
         return iter(self.data)
 
 
-def resource(uri, **kwargs):
-    if '*' in uri:
-        uris = sorted(glob(uri))
-        return ChunkList(list(map(resource, uris)))
+resource = RegexDispatcher('resource')
 
-    csv_extensions = ['csv', 'data', 'txt', 'dat']
-    if os.path.isfile(uri) and uri.split('.')[-1] in csv_extensions:
-        return CSV(uri, **kwargs)
-    if (os.path.isfile(uri) and uri.endswith("gz")
-                            and uri.split('.')[-2] in csv_extensions):
-        return CSV(uri, open=gzip.open, **kwargs)
-    else:
-        raise NotImplementedError(
-            "Blaze can't read '%s' yet!" % uri)
+@resource.register('.*\*.*', priority=14)
+def resource_glob(uri, **kwargs):
+    uris = sorted(glob(uri))
+    return ChunkList(list(map(resource, uris)))
+
+
+@resource.register('.*\.(csv|data|txt|dat)')
+def resource_csv(uri, **kwargs):
+    return CSV(uri, **kwargs)
+
+
+@resource.register('.*\.(csv|data|txt|dat)\.gz')
+def resource_csv(uri, **kwargs):
+    return CSV(uri, open=gzip.open, **kwargs)
+
+
+@resource.register('.*', priority=1)
+def resource_all(uri, *args, **kwargs):
+    raise NotImplementedError("Unable to parse uri to data resource: " + uri)
