@@ -20,6 +20,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
+from collections import defaultdict
 
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
