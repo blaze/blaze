@@ -160,15 +160,6 @@ def unpack(seq):
     return seq
 
 
-# @dispatch(By, DataFrame)
-# def compute_one(t, df, **kwargs):
-#     if t.grouper.iscolumn:
-#         grouper = compute(t.grouper, {t.child: df}) # a Series
-#     elif isinstance(t.grouper, Projection) and t.grouper.child is t.child:
-#         grouper = t.grouper.columns  # list of column names
-
-
-
 Grouper = Column, Projection, list, Series, DataFrame, ColumnWise
 
 
