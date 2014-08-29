@@ -51,9 +51,11 @@ def test_UnaryOp():
     assert eq(compute(exp(t['amount']), x),
               np.exp(x['amount']))
 
+
 def test_Neg():
     assert eq(compute(-t['amount'], x),
               -x['amount'])
+
 
 def test_invert_not():
     assert eq(compute(~(t.amount > 0), x),
