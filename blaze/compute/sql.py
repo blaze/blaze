@@ -153,7 +153,7 @@ names = {mean: 'avg',
 def compute_one(t, s, **kwargs):
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
-    except:
+    except AttributeError:
         symbol = names.get(type(t), t.symbol)
         op = getattr(sqlalchemy.sql.func, symbol)
     result = op(s)
