@@ -11,6 +11,7 @@ from ..data.utils import coerce
 from ..expr import Expr, TableExpr
 from ..dispatch import dispatch
 from .index import emit_index
+from ..api.resource import resource
 
 # These are a hack for testing
 # It's convenient to use requests for live production but use
@@ -141,3 +142,16 @@ def compute_down(expr, ec):
     data = json.loads(content(r))
 
     return data['data']
+
+
+@resource.register('blaze://.*')
+def resource_blaze(uri, name):
+    uri = uri[len('blaze://'):]
+    return ExprClient(uri, name)
+
+
+@resource.register('blaze://.*::\w*')
+def resource_blaze_all(uri):
+    uri = uri[len('blaze://'):]
+    uri, name = uri.rsplit('::', 1)
+    return ExprClient(uri, name)
