@@ -130,6 +130,7 @@ def filetexts(d, open=open):
 
 @contextmanager
 def tmpfile(extension=''):
+    extension = '.' + extension.lstrip('.')
     filename = tempfile.mktemp(extension)
 
     try:
