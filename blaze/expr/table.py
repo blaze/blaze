@@ -876,7 +876,7 @@ class By(TableExpr):
     --------
 
     >>> t = TableSymbol('t', '{name: string, amount: int, id: int}')
-    >>> e = by(t, t['name'], t['amount'].sum())
+    >>> e = by(t['name'], t['amount'].sum())
 
     >>> data = [['Alice', 100, 1],
     ...         ['Bob', 200, 2],
@@ -887,9 +887,13 @@ class By(TableExpr):
     [('Alice', 150), ('Bob', 200)]
     """
 
-    __slots__ = 'child', 'grouper', 'apply'
+    __slots__ = 'grouper', 'apply'
 
     iscolumn = False
+
+    @property
+    def child(self):
+            return common_subexpression(self.grouper, self.apply)
 
     @property
     def schema(self):
@@ -905,16 +909,16 @@ class By(TableExpr):
         return dshape(Record(list(params)))
 
 
-@dispatch(TableExpr, TableExpr, (Summary, Reduction))
-def by(child, grouper, apply):
-    child = common_subexpression(child, grouper, apply)
-    return By(child, grouper, apply)
+
+@dispatch(TableExpr, (Summary, Reduction))
+def by(grouper, apply):
+    return By(grouper, apply)
 
 
-@dispatch(TableExpr, TableExpr)
-def by(child, grouper, **kwargs):
-    child = common_subexpression(child, grouper)
-    return By(child, grouper, summary(**kwargs))
+@dispatch(TableExpr)
+def by(grouper, **kwargs):
+    return By(grouper, summary(**kwargs))
+
 
 
 class Sort(TableExpr):

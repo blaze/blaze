@@ -91,10 +91,10 @@ def test_join():
 
 
 def test_by():
-    assert set(compute(by(t, t.name, t.amount.sum()), c)) == \
+    assert set(compute(by(t.name, t.amount.sum()), c)) == \
             set([('Alice', -200), ('Bob', 200),
                  ('Charlie', 400), ('Edith', 200)])
-    assert set(compute(by(t, t.name, t.amount.count()), c)) == \
+    assert set(compute(by(t.name, t.amount.count()), c)) == \
             set([('Alice', 2), ('Bob', 1),
                  ('Charlie', 1), ('Edith', 1)])
 

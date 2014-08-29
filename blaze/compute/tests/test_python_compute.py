@@ -111,24 +111,24 @@ def test_mean():
 
 def test_by_no_grouper():
     names = t['name']
-    assert set(compute(by(names, names, names.count()), data)) == \
+    assert set(compute(by(names, names.count()), data)) == \
             set([('Alice', 2), ('Bob', 1)])
 
 
 def test_by_one():
-    print(compute(by(t, t['name'], t['amount'].sum()), data))
-    assert set(compute(by(t, t['name'], t['amount'].sum()), data)) == \
+    print(compute(by(t['name'], t['amount'].sum()), data))
+    assert set(compute(by(t['name'], t['amount'].sum()), data)) == \
             set([('Alice', 150), ('Bob', 200)])
 
 
 def test_by_compound_apply():
-    print(compute(by(t, t['name'], (t['amount'] + 1).sum()), data))
-    assert set(compute(by(t, t['name'], (t['amount'] + 1).sum()), data)) == \
+    print(compute(by(t['name'], (t['amount'] + 1).sum()), data))
+    assert set(compute(by(t['name'], (t['amount'] + 1).sum()), data)) == \
             set([('Alice', 152), ('Bob', 201)])
 
 
 def test_by_two():
-    result = compute(by(tbig, tbig[['name', 'sex']], tbig['amount'].sum()),
+    result = compute(by(tbig[['name', 'sex']], tbig['amount'].sum()),
                      databig)
 
     expected = [('Alice', 'F', 200),
@@ -140,8 +140,7 @@ def test_by_two():
 
 
 def test_by_three():
-    result = compute(by(tbig,
-                        tbig[['name', 'sex']],
+    result = compute(by(tbig[['name', 'sex']],
                         (tbig['id'] + tbig['amount']).sum()),
                      databig)
 
@@ -246,7 +245,7 @@ def test_Distinct():
 
 def test_Distinct_count():
     t2 = t['name'].distinct()
-    gby = by(t2, t2['name'], t2['name'].count())
+    gby = by(t2['name'], t2['name'].count())
     result = set(compute(gby, data))
     assert result == set([('Alice', 1), ('Bob', 1)])
 
@@ -373,7 +372,7 @@ def test_map_datetime():
 
 def test_by_multi_column_grouper():
     t = TableSymbol('t', '{x: int, y: int, z: int}')
-    expr = by(t, t[['x', 'y']], t['z'].count())
+    expr = by(t[['x', 'y']], t['z'].count())
     data = [(1, 2, 0), (1, 2, 0), (1, 1, 0)]
 
     print(set(compute(expr, data)))
@@ -422,7 +421,7 @@ def test_recursive_rowfunc():
 
 
 def test_recursive_rowfunc_is_used():
-    expr = by(t, t['name'], (2 * (t['amount'] + t['id'])).sum())
+    expr = by(t['name'], (2 * (t['amount'] + t['id'])).sum())
     expected = [('Alice', 2*(101 + 53)),
                 ('Bob', 2*(202))]
     assert set(compute(expr, data)) == set(expected)
@@ -499,13 +498,13 @@ def test_by_groupby_deep():
 
     t2 = t[t['name'] != '']
     t3 = merge(t2.x, t2.name)
-    expr = by(t3, t3.name, t3.x.mean())
+    expr = by(t3.name, t3.x.mean())
     result = set(compute(expr, data))
     assert result == set([('Alice', 1.5), ('Bob', 1.0)])
 
 
 def test_by_then_sort_dict_items_sequence():
-    expr = by(tbig, tbig.name, tbig.amount.sum()).sort('name')
+    expr = by(tbig.name, tbig.amount.sum()).sort('name')
     assert compute(expr, databig)
 
 
@@ -515,15 +514,15 @@ def test_summary():
 
 
 def test_summary_by():
-    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum()))
+    expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum()))
     assert set(compute(expr, data)) == set([('Alice', 2, 150),
                                             ('Bob', 1, 200)])
 
-    expr = by(t, t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
+    expr = by(t.name, summary(count=t.id.count(), sum=(t.amount + 1).sum()))
     assert set(compute(expr, data)) == set([('Alice', 2, 152),
                                             ('Bob', 1, 201)])
 
-    expr = by(t, t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
+    expr = by(t.name, summary(count=t.id.count(), sum=t.amount.sum() + 1))
     assert set(compute(expr, data)) == set([('Alice', 2, 151),
                                             ('Bob', 1, 201)])
 
