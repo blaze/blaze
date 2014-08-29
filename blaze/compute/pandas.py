@@ -28,7 +28,7 @@ from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
                     Map, Apply, Merge, Union, TableExpr)
-from ..expr import UnaryOp, USub, BinOp
+from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
 
@@ -205,16 +205,17 @@ def compute_by(t, r, g, df):
 
 @dispatch(By, Summary, Grouper, NDFrame)
 def compute_by(t, s, g, df):
-    names = t.apply.names
-    preapply = DataFrame(dict(zip(names, [compute(v.child, {t.child: df})
-                                          for v in t.apply.values])))
+    names = s.names
+    preapply = DataFrame(dict(zip(names,
+                                  (compute(v.child, {t.child: df})
+                                   for v in s.values))))
 
     df2 = concat_nodup(df, preapply)
 
     groups = df2.groupby(g)
 
     d = defaultdict(list)
-    for name, v in zip(names, t.apply.values):
+    for name, v in zip(names, s.values):
         d[name].append(getattr(Series, v.symbol))
 
     result = groups.agg(dict(d))
