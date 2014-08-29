@@ -34,7 +34,7 @@ def resource_csv(uri, **kwargs):
 
 
 @resource.register('.*\.(csv|data|txt|dat)\.gz')
-def resource_csv(uri, **kwargs):
+def resource_csv_gz(uri, **kwargs):
     return CSV(uri, open=gzip.open, **kwargs)
 
 
