@@ -272,8 +272,11 @@ def test_json_into_mongodb(empty_collec):
         last = mongo_data[0]['nodes'][-1]
         first = mongo_data[0]['nodes'][0]
 
-        assert dd.as_py()[1][-1] == tuple(last.values())
-        assert dd.as_py()[1][0] == tuple(first.values())
+        first = (first['group'], first['name'])
+        last = (last['group'], last['name'])
+
+        assert dd.as_py()[1][-1] == last
+        assert dd.as_py()[1][0] == first
 
 
 
