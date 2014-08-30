@@ -3,9 +3,8 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 
 from blaze.compute.core import compute
-from blaze.compute.numpy import *
-from blaze.expr import *
-from blaze.compatibility import xfail
+from blaze.expr import TableSymbol, union, by, exp
+
 
 t = TableSymbol('t', '{id: int, name: string, amount: int}')
 
@@ -84,6 +83,10 @@ def test_Reductions():
     assert compute(t['amount'].min(), x) == x['amount'].min()
     assert compute(t['amount'].max(), x) == x['amount'].max()
     assert compute(t['amount'].nunique(), x) == len(np.unique(x['amount']))
+    assert compute(t['amount'].var(), x) == x['amount'].var()
+    assert compute(t['amount'].std(), x) == x['amount'].std()
+    assert compute(t['amount'].var(unbiased=True), x) == x['amount'].var(ddof=1)
+    assert compute(t['amount'].std(unbiased=True), x) == x['amount'].std(ddof=1)
     assert compute((t['amount'] > 150).any(), x) == True
     assert compute((t['amount'] > 250).all(), x) == False
 
