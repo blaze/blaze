@@ -388,11 +388,11 @@ class ColumnSyntaxMixin(object):
     def mean(self):
         return mean(self)
 
-    def var(self):
-        return var(self)
+    def var(self, unbiased=False):
+        return var(self, unbiased)
 
-    def std(self):
-        return std(self)
+    def std(self, unbiased=False):
+        return std(self, unbiased)
 
     def isnan(self):
         return columnwise(scalar.isnan, self)
@@ -824,9 +824,21 @@ class min(Reduction, Number):
 class mean(Reduction, Number):
     dtype = ct.real
 class var(Reduction, Number):
+    __slots__ = 'child', 'unbiased'
+
     dtype = ct.real
+
+    def __init__(self, child, unbiased=False):
+        super(var, self).__init__(child, unbiased)
+
 class std(Reduction, Number):
+    __slots__ = 'child', 'unbiased'
+
     dtype = ct.real
+
+    def __init__(self, child, unbiased=False):
+        super(std, self).__init__(child, unbiased)
+
 class count(Reduction, Number):
     dtype = ct.int_
 class nunique(Reduction, Number):
