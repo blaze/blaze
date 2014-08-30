@@ -5,7 +5,7 @@ import numbers
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By, Map
 from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
 from ..expr import count, sum, min, max, mean, nunique, var, std
-from ..expr import Arithmetic, UnaryOp
+from ..expr import Arithmetic, UnaryOp, BinOp
 
 from ..compatibility import basestring, zip
 
@@ -143,10 +143,11 @@ def compute_one(s, _, **kwargs):
     return s
 
 
-@dispatch((Relational, Arithmetic), RqlQuery)
+@dispatch((BinOp, Relational, Arithmetic), RqlQuery)
 def compute_one(r, t, **kwargs):
-    return r.op(compute_one(r.lhs, t, **kwargs),
-                compute_one(r.rhs, t, **kwargs))
+    lhs = compute_one(r.lhs, t, **kwargs)
+    rhs = compute_one(r.rhs, t, **kwargs)
+    return r.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, (RqlQuery, RTable))
@@ -156,14 +157,12 @@ def compute_one(o, t, **kwargs):
 
 @dispatch(Selection, RqlQuery)
 def compute_one(s, t, **kwargs):
-    e = s.predicate.expr
-    return t.filter(e.op(compute_one(e.lhs, t, **kwargs),
-                         compute_one(e.rhs, t, **kwargs)))
+    return t.filter(compute_one(s.predicate.expr, t))
 
 
 @dispatch(Distinct, RqlQuery)
 def compute_one(d, t, **kwargs):
-    return t.with_fields(*d.columns).distinct()
+    return t.distinct()
 
 
 @dispatch(ColumnWise, RqlQuery)
