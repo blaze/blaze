@@ -10,7 +10,7 @@ from blaze.compute.core import compute
 from blaze import dshape, Table
 from blaze.expr import TableSymbol, join, by, summary, Distinct
 from blaze.expr import (merge, exp, mean, count, nunique, Apply, union, sum,
-                        min, max, any, all, Projection)
+                        min, max, any, all, Projection, var, std)
 from blaze.compatibility import builtins, xfail
 
 t = TableSymbol('t', '{name: string, amount: int, id: int}')
@@ -163,6 +163,10 @@ def test_reductions():
     assert compute(nunique(t['name']), df) == 2
     assert compute(any(t['amount'] > 150), df) == True
     assert compute(any(t['amount'] > 250), df) == False
+    assert compute(var(t['amount']), df) == df.amount.var(ddof=0)
+    assert compute(var(t['amount'], unbiased=True), df) == df.amount.var()
+    assert compute(std(t['amount']), df) == df.amount.std(ddof=0)
+    assert compute(std(t['amount'], unbiased=True), df) == df.amount.std()
 
 
 def test_distinct():
