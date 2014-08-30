@@ -33,8 +33,8 @@ def tb():
     rt.table_drop('test').run(conn)
 
 
-@pytest.yield_fixture
-def tb_into():
+@pytest.yield_fixture(scope='module')
+def create_into():
     rt = pytest.importorskip('rethinkdb')
     from blaze.compute.rethink import RTable
     conn = rt.connect()
@@ -42,6 +42,16 @@ def tb_into():
     t = rt.table('into')
     yield RTable(t, conn)
     rt.table_drop('into').run(conn)
+
+
+@pytest.yield_fixture
+def tb_into(create_into):
+    rt = pytest.importorskip('rethinkdb')
+    from blaze.compute.rethink import RTable
+    conn = rt.connect()
+    t = rt.table('into')
+    yield RTable(t, conn)
+    t.delete().run(conn)
 
 
 @pytest.fixture
