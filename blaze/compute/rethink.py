@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import numbers
+import math
 
 from ..expr import TableSymbol, Sort, Head, Distinct, Expr, Projection, By, Map
 from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
@@ -109,7 +110,11 @@ def compute_one(v, t, **kwargs):
 
 @dispatch(std, RqlQuery)
 def compute_one(s, t, **kwargs):
-    raise NotImplementedError('No way to call a function on a number')
+    # we have to evaluate this immediately because Rql doesn't accept x ** 0.5
+    # or math.sqrt
+    result = compute_one(var(*s.args), t)
+    num = post_compute(s, result, kwargs.get('scope', {}))
+    return math.sqrt(num)
 
 
 @dispatch((min, max), RqlQuery)

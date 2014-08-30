@@ -202,7 +202,6 @@ class TestReductions(object):
         assert isinstance(result, numbers.Real)
         assert result == np.var([r['amount'] for r in bank]).item()
 
-    @xfail(True, reason='No way to call math.sqrt on the result of var')
     def test_std(self, ts, tb):
         result = compute(ts.amount.std(), tb)
         assert isinstance(result, numbers.Real)
