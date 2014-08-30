@@ -42,7 +42,7 @@ class Expr(object):
         >>> t = TableSymbol('t', '{id: int32, name: string}')
         >>> t.leaves()
         [t]
-        >>> by(t, t.name, t.id.nunique()).leaves()
+        >>> by(t.name, t.id.nunique()).leaves()
         [t]
 
         >>> v = TableSymbol('v', '{id: int32, city: string}')
