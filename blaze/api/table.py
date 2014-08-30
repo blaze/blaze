@@ -134,6 +134,9 @@ def concrete_head(expr, n=10):
         head = expr.head(n + 1)
         result = compute(head)
 
+        if not len(result):
+            return DataFrame(columns=expr.columns)
+
         if expr.columns:
             return into(DataFrame(columns=expr.columns), result)
         else:
