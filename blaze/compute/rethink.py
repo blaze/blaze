@@ -7,7 +7,7 @@ from ..expr import Selection, Relational, ScalarSymbol, ColumnWise, Summary
 from ..expr import count, sum, min, max, mean, nunique, var, std
 from ..expr import Arithmetic, UnaryOp
 
-from ..compatibility import basestring
+from ..compatibility import basestring, zip
 
 from ..dispatch import dispatch
 
