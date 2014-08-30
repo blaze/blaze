@@ -15,7 +15,6 @@ from __future__ import absolute_import, division, print_function
 import itertools
 import numbers
 from collections import Iterator
-import operator
 from functools import partial
 from toolz import map, filter, compose, juxt, identity
 from cytoolz import groupby, reduceby, unique, take, concat, first
@@ -31,11 +30,10 @@ from ..expr.table import (Projection, Column, ColumnWise, Map, Label, ReLabel,
                           By, Sort, Head, Apply, Union, Summary)
 from ..expr.table import count, nunique, mean, var, std
 from ..expr import table, eval_str
-from ..expr.scalar.core import Scalar
 from ..expr.scalar.numbers import BinOp, UnaryOp, RealMath
 from ..compatibility import builtins, apply, unicode
 from . import core
-from .core import compute, compute_one, base
+from .core import compute, compute_one
 
 from ..data import DataDescriptor
 
@@ -190,19 +188,20 @@ def _mean(seq):
     return float(total) / count
 
 
-def _var(seq):
+def _var(seq, unbiased):
     total = 0
     total_squared = 0
     count = 0
     for item in seq:
         total += item
-        total_squared += item ** 2
+        total_squared += item * item
         count += 1
-    return 1.0*total_squared/count - (1.0*total/count) ** 2
+
+    return (total_squared - (total * total) / count) / (count - unbiased)
 
 
-def _std(seq):
-    return math.sqrt(_var(seq))
+def _std(seq, unbiased):
+    return math.sqrt(_var(seq, unbiased))
 
 
 @dispatch(count, Sequence)
@@ -236,12 +235,12 @@ def compute_one(t, seq, **kwargs):
 
 @dispatch(var, Sequence)
 def compute_one(t, seq, **kwargs):
-    return _var(seq)
+    return _var(seq, t.unbiased)
 
 
 @dispatch(std, Sequence)
 def compute_one(t, seq, **kwargs):
-    return _std(seq)
+    return _std(seq, t.unbiased)
 
 
 lesser = lambda x, y: x if x < y else y
