@@ -8,7 +8,7 @@ Current Core Developers
 ```````````````````````
 
 *   Tyler Alumbaugh
-*   Matt Rockin
+*   Matt Rocklin
 *   Andy R. Terrel
 *   Mark Wiebe
 
