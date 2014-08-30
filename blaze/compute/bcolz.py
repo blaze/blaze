@@ -1,17 +1,21 @@
 from __future__ import absolute_import, division, print_function
 
-from blaze.expr import *
+from blaze.expr import Selection, Head, Column, Projection, ReLabel, RowWise
+from blaze.expr import Label, Distinct, By, Reduction
+from blaze.expr import std, var, count, mean, nunique, sum
+from blaze.expr import eval_str
+
 import datashape
 import bcolz
-from toolz import map
-import numpy as np
 import math
-from .chunks import ChunkIterable, ChunkIterator, ChunkIndexable
+from .chunks import ChunkIndexable
+
 
 from ..compatibility import builtins
 from ..dispatch import dispatch
 
 __all__ = ['bcolz']
+
 
 @dispatch(bcolz.ctable)
 def discover(t):
@@ -23,7 +27,8 @@ def compute_one(sel, t, **kwargs):
     s = eval_str(sel.predicate.expr)
     try:
         return t.where(s)
-    except (NotImplementedError, NameError): # numexpr may not be able to handle the predicate
+    except (NotImplementedError, NameError):
+        # numexpr may not be able to handle the predicate
         return compute_one(sel, iter(t), **kwargs)
 
 
@@ -58,19 +63,17 @@ def compute_one(expr, ba, **kwargs):
 
 
 @dispatch(var, bcolz.carray)
-def compute_one(expr, ba, chunksize=2**20, **kwargs):
-
-    E_X_2 = builtins.sum((chunk**2).sum() / chunksize for chunk in chunks(ba))
-    E_X_2 *= float(chunksize) * math.ceil(ba.len / float(chunksize)) / ba.len
-
-    E_2_X = float(ba.sum()) / ba.len
-
-    return E_X_2 - E_2_X**2
+def compute_one(expr, ba, chunksize=2 ** 20, **kwargs):
+    n = ba.len
+    E_X_2 = builtins.sum((chunk * chunk).sum() for chunk in chunks(ba))
+    E_X = float(ba.sum())
+    return (E_X_2 - (E_X * E_X) / n) / (n - expr.unbiased)
 
 
 @dispatch(std, bcolz.carray)
 def compute_one(expr, ba, **kwargs):
-    return math.sqrt(compute_one(expr.child.var(), ba, **kwargs))
+    result = compute_one(expr.child.var(unbiased=expr.unbiased), ba, **kwargs)
+    return math.sqrt(result)
 
 
 @dispatch((ReLabel, Label), (bcolz.carray, bcolz.ctable))
