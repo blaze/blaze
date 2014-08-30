@@ -450,3 +450,5 @@ def into(sql, csv, if_exists="replace", **kwargs):
         print("Warning! Could not find native copy call")
         print("Defaulting to sql.extend() method")
         sql.extend(csv)
+
+    return sql
