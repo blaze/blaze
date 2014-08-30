@@ -178,11 +178,6 @@ def get_grouper(c, grouper, df):
     return grouper.columns
 
 
-@dispatch(By, Head, Grouper, DataFrame)
-def compute_by(t, app, grouper, df):
-    return df.groupby(grouper).head(app.n)
-
-
 @dispatch(By, Reduction, Grouper, NDFrame)
 def compute_by(t, r, g, df):
     names = r.dshape[0].names
