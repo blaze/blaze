@@ -12,6 +12,7 @@ import toolz
 from toolz import concat, partition_all, valmap, first, merge
 from cytoolz import pluck, compose
 import copy
+import sys
 from datetime import datetime
 from numbers import Number
 from collections import Iterable, Iterator
