@@ -3,16 +3,13 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 from cytoolz import compose
 import numbers
-import sys
 import pytest
 import numpy as np
 import pandas as pd
 
-from blaze.compatibility import xfail
+from blaze.compatibility import xfail, PY3
 from blaze import TableSymbol, discover, dshape, compute, by, summary, into
 
-nopython3 = xfail(sys.version_info[0] >= 3,
-                  reason='RethinkDB is not compatible with Python 3')
 
 bank = [{'name': 'Alice', 'amount': 100, 'id': 3},
         {'name': 'Alice', 'amount': 200, 'id': 4},
@@ -99,7 +96,6 @@ def bsg():
     rt.table_drop('bsg').run(conn)
 
 
-@nopython3
 def test_discover(bsg):
     result = discover(bsg)
     expected_s = ('3 * {id: string, name: string, '
@@ -109,13 +105,11 @@ def test_discover(bsg):
     assert result == expected
 
 
-@nopython3
 def test_table_symbol(ts, tb):
     result = list(compute(ts.child, tb))
     assert result == list(tb.t.run(tb.conn))
 
 
-@nopython3
 def test_projection(ts, tb):
     result = list(compute(ts[['name', 'id']], tb))
     bank = [{'name': 'Alice', 'id': 3},
@@ -126,14 +120,12 @@ def test_projection(ts, tb):
     assert result == bank
 
 
-@nopython3
 def test_head_column(ts, tb):
     expr = ts.name.head(3)
     result = list(compute(expr, tb))
     assert result == [{'name': 'Alice'}, {'name': 'Alice'}, {'name': 'Bob'}]
 
 
-@nopython3
 def test_head(ts, tb):
     result = list(compute(ts.head(3), tb))
     assert result == [{'name': 'Alice', 'amount': 100, 'id': 3},
@@ -141,14 +133,12 @@ def test_head(ts, tb):
                       {'name': 'Bob', 'amount': 100, 'id': 7}]
 
 
-@nopython3
 def test_selection(ts, tb):
     q = ts[(ts.name == 'Alice') & (ts.amount < 200)]
     result = compute(q, tb)
     assert list(result) == [{'name': 'Alice', 'amount': 100, 'id': 3}]
 
 
-@nopython3
 def test_multiple_column_sort(ts, tb):
     expr = ts.sort(['name', 'id'], ascending=False).head(3)[['name', 'id']]
     result = list(compute(expr, tb))
@@ -160,7 +150,6 @@ def test_multiple_column_sort(ts, tb):
     assert result == bank[:-4:-1]
 
 
-@nopython3
 class TestReductions(object):
     def test_sum(self, ts, tb):
         expr = ts.amount.sum()
@@ -208,7 +197,6 @@ class TestReductions(object):
         assert result == np.std([r['amount'] for r in bank]).item()
 
 
-@nopython3
 def test_simple_by(tsc, tb):
     expr = by(tsc.name, tsc.amount.sum())
     result = compute(expr, tb)
@@ -216,7 +204,6 @@ def test_simple_by(tsc, tb):
     assert result == {'Alice': 300, 'Bob': 600}
 
 
-@nopython3
 def test_by_with_summary(tsc, tb):
     ts = tsc
     s = summary(nuniq=ts.id.nunique(), sum=ts.amount.sum(),
@@ -230,7 +217,6 @@ def test_by_with_summary(tsc, tb):
                       {'id_nuniq': 3, 'amount_sum': 600, 'amount_mean': 200}}
 
 
-@nopython3
 def test_simple_summary(ts, tb):
     expr = summary(nuniq=ts.id.nunique(), sum=ts.amount.sum(),
                    mean=ts.amount.mean())
@@ -239,7 +225,6 @@ def test_simple_summary(ts, tb):
     assert result == {'id_nuniq': 5, 'amount_sum': 900, 'amount_mean': 180}
 
 
-@nopython3
 class TestColumnWise(object):
     def test_add(self, ts, tb):
         expr = ts.id + ts.amount
@@ -255,14 +240,11 @@ class TestColumnWise(object):
 @xfail(raises=NotImplementedError,
        reason='ReQL does not support unary operations')
 def test_unary(ts, tb):
-    if sys.version_info[0] >= 3:
-        pytest.xfail('RethinkDB is not compatible with Python 3')
     expr = -ts.id + ts.amount
     result = list(compute(expr, tb))
     assert result == [-r['id'] + r['amount'] for r in bank]
 
 
-@nopython3
 def test_map(ts, tb):
     add_one = lambda x: x + 1
     expr = ts.amount.map(add_one, schema='{amount: int64}')
@@ -270,7 +252,6 @@ def test_map(ts, tb):
     assert result == [{'amount': add_one(r['amount'])} for r in bank]
 
 
-@nopython3
 def test_map_with_columns(ts, tb):
     add_one = lambda x: x + 1
     expr = ts[['amount', 'id']].map(add_one,
@@ -280,14 +261,12 @@ def test_map_with_columns(ts, tb):
                        'id': add_one(r['id'])} for r in bank]
 
 
-@nopython3
 def test_create_index(tb):
     from blaze.compute.rethink import create_index
     create_index(tb, 'name')
     assert 'name' in tb.t.index_list().run(tb.conn)
 
 
-@nopython3
 def test_create_index_with_name(tb):
     from blaze.compute.rethink import create_index
     import rethinkdb as rt
@@ -306,7 +285,6 @@ def drop_tb():
     return RTable(t, conn)
 
 
-@nopython3
 def test_drop(drop_tb):
     from blaze.compute.rethink import drop
     import rethinkdb as rt
@@ -316,13 +294,15 @@ def test_drop(drop_tb):
     assert table_name not in rt.table_list().run(rt.connect())
 
 
-@nopython3
 class TestInto(object):
+    @xfail(PY3, reason='Python 3 has stronger restrictions on type ordering')
     def test_list(self, tb, tb_into):
-        expected = sorted(compute(tb))
+        result = compute(tb)
+        expected = sorted(result)
         into(tb_into, expected)
         assert sorted(compute(tb_into)) == expected
 
+    @xfail(PY3, reason='NumPy integers are not JSON serializable')
     def test_numpy(self, tb_into):
         df = pd.DataFrame({'a': [1, 2, 3], 'b': list('def'),
                            'c': [1.0, 2.0, 3.0]})
@@ -333,6 +313,7 @@ class TestInto(object):
         result = tb_into.t.with_fields('a', 'b', 'c').run(tb_into.conn)
         assert sorted(result) == sorted(rec_list)
 
+    @xfail(PY3, reason='Python 3 has stronger restrictions on type ordering')
     def test_rql(self, tb, tb_into):
         into(tb_into, tb)
         lhs = sorted(compute(tb_into))
