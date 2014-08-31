@@ -96,4 +96,4 @@ n = count
 
 @dispatch(GroupBy)
 def summarize(t, **kwargs):
-    return by(t.child, t.grouper, summary(**kwargs))
+    return by(t.grouper, summary(**kwargs))

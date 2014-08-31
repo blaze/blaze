@@ -271,7 +271,7 @@ def reduce_by_funcs(t):
 
     Turns a by operation like
 
-        by(t, t.name, t.amount.sum())
+        by(t.name, t.amount.sum())
 
     into a grouper like
 

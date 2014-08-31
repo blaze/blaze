@@ -17,16 +17,18 @@ Name: name, dtype: object
 from __future__ import absolute_import, division, print_function
 
 import pandas as pd
+from pandas.core.generic import NDFrame
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 import numpy as np
 from collections import defaultdict
 
+from ..api.into import into
 from ..dispatch import dispatch
 from ..expr import (Projection, Column, Sort, Head, ColumnWise, Selection,
                     Reduction, Distinct, Join, By, Summary, Label, ReLabel,
-                    Map, Apply, Merge, Union)
-from ..expr import UnaryOp, USub, BinOp
+                    Map, Apply, Merge, Union, TableExpr)
+from ..expr import UnaryOp, BinOp
 from ..expr import TableSymbol, common_subexpression
 from .core import compute, compute_one, base
 
@@ -55,8 +57,8 @@ def compute_one(t, df, **kwargs):
 
 
 @dispatch(ColumnWise, Series)
-def compute_one(c, s, **kwargs):
-    return compute(c.expr, {c.child[c.child.columns[0]].scalar_symbol: s})
+def compute_one(t, s, **kwargs):
+    return compute_one(t, s.to_frame(), **kwargs)
 
 
 @dispatch(BinOp, Series, (Series, base))
@@ -69,14 +71,13 @@ def compute_one(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
-@dispatch(UnaryOp, Series)
+@dispatch(UnaryOp, NDFrame)
 def compute_one(t, df, **kwargs):
-    return getattr(np, t.symbol)(df)
-
-
-@dispatch(USub, (DataFrame, Series))
-def compute_one(t, df, **kwargs):
-    return -df
+    f = getattr(t, 'op', getattr(np, t.symbol, None))
+    if f is None:
+        raise ValueError('%s is not a valid operation on %s objects' %
+                         (t.symbol, type(df).__name__))
+    return f(df)
 
 
 @dispatch(Selection, (Series, DataFrame))
@@ -159,57 +160,82 @@ def unpack(seq):
     return seq
 
 
-@dispatch(By, DataFrame)
-def compute_one(t, df, **kwargs):
-    if t.grouper.iscolumn:
-        grouper = compute(t.grouper, {t.child: df}) # a Series
-    elif isinstance(t.grouper, Projection) and t.grouper.child is t.child:
-        grouper = t.grouper.columns  # list of column names
+Grouper = Column, ColumnWise, Series, list
 
-    if isinstance(t.apply, Summary):
-        names = t.apply.names
-        preapply = DataFrame(dict(zip(
-            names,
-            [compute(v.child, {t.child: df}) for v in t.apply.values])))
 
-        df2 = concat_nodup(df, preapply)
+@dispatch(By, list, DataFrame)
+def get_grouper(c, grouper, df):
+    return grouper
 
-        groups = df2.groupby(grouper)
 
-        d = defaultdict(list)
-        for name, v in zip(names, t.apply.values):
-            d[name].append(getattr(Series, v.symbol))
+@dispatch(By, (Column, ColumnWise, Series), NDFrame)
+def get_grouper(c, grouper, df):
+    return compute(grouper, {c.child: df})
 
-        result = groups.agg(dict(d))
 
-        # Rearrange columns to match names order
-        result = result[sorted(list(result.columns),
-                               key=lambda t: names.index(t[0]))]
-        result.columns = t.apply.names  # flatten down multiindex
+@dispatch(By, Projection, NDFrame)
+def get_grouper(c, grouper, df):
+    return grouper.columns
 
-    if isinstance(t.apply, Reduction):
-        names = t.apply.dshape[0].names
-        preapply = compute(t.apply.child, {t.child: df})
-        # Pandas and Blaze column naming schemes differ
-        # Coerce DataFrame column names to match Blaze's names
-        preapply = preapply.copy()
-        if isinstance(preapply, Series):
-            preapply.name = names[0]
-        else:
-            preapply.columns = names
 
-        df2 = concat_nodup(df, preapply)
+@dispatch(By, Reduction, Grouper, NDFrame)
+def compute_by(t, r, g, df):
+    names = r.dshape[0].names
+    preapply = compute(r.child, {t.child: df})
 
-        if t.apply.child.iscolumn:
-            groups = df2.groupby(grouper)[names[0]]
-        else:
-            groups = df2.groupby(grouper)[names]
+    # Pandas and Blaze column naming schemes differ
+    # Coerce DataFrame column names to match Blaze's names
+    preapply = preapply.copy()
+    if isinstance(preapply, Series):
+        preapply.name = names[0]
+    else:
+        preapply.columns = names
+    group_df = concat_nodup(df, preapply)
 
-        result = compute_one(t.apply, groups) # do reduction
+    gb = group_df.groupby(g)
+    groups = gb[names[0] if t.apply.child.iscolumn else names]
 
-    result = DataFrame(result).reset_index()
-    result.columns = t.columns
+    return compute_one(r, groups)  # do reduction
+
+
+@dispatch(By, Summary, Grouper, NDFrame)
+def compute_by(t, s, g, df):
+    names = s.names
+    preapply = DataFrame(dict(zip(names,
+                                  (compute(v.child, {t.child: df})
+                                   for v in s.values))))
+
+    df2 = concat_nodup(df, preapply)
+
+    groups = df2.groupby(g)
+
+    d = defaultdict(list)
+    for name, v in zip(names, s.values):
+        d[name].append(getattr(Series, v.symbol))
+
+    result = groups.agg(dict(d))
+
+    # Rearrange columns to match names order
+    result = result[sorted(result.columns, key=lambda t: names.index(t[0]))]
+    result.columns = t.apply.names  # flatten down multiindex
     return result
+
+
+@dispatch(TableExpr, DataFrame)
+def post_compute_by(t, df):
+    return df.reset_index(drop=True)
+
+
+@dispatch((Summary, Reduction), DataFrame)
+def post_compute_by(t, df):
+    return df.reset_index()
+
+
+@dispatch(By, NDFrame)
+def compute_one(t, df, **kwargs):
+    grouper = get_grouper(t, t.grouper, df)
+    result = compute_by(t, t.apply, grouper, df)
+    return post_compute_by(t.apply, into(DataFrame, result))
 
 
 def concat_nodup(a, b):
