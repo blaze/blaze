@@ -69,7 +69,7 @@ def create_index(s, columns, name=None, unique=False):
 
 @resource.register('(sqlite|postgresql|mysql)://.*::\w*', priority=11)
 def resource_sql_single_uri(uri, *args, **kwargs):
-    uri, table_name = uri.split('::')
+    uri, table_name = uri.rsplit('::', 1)
     return SQL(uri, table_name, *args, **kwargs)
 
 @resource.register('(sqlite|postgresql|mysql)://.*')

@@ -72,3 +72,11 @@ def test_register(sql):
         sql = SQL(uri, 'foo', schema='{x: int, y: int}')
         assert isinstance(resource(uri, 'foo'), SQL)
         assert isinstance(resource(uri + '::foo'), SQL)
+
+    sql = SQL('sqlite:///:memory:', 'foo', schema='{x: int, y: int}')
+    assert isinstance(resource('sqlite:///:memory:', 'foo',
+                               schema='{x: int, y: int}'),
+                      SQL)
+    assert isinstance(resource('sqlite:///:memory:::foo',
+                               schema='{x: int, y: int}'),
+                      SQL)
