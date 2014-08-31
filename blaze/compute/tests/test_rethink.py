@@ -1,13 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
 from functools import partial
+from operator import methodcaller
 from cytoolz import compose
 import numbers
 import pytest
 import numpy as np
 import pandas as pd
 
-from blaze.compatibility import xfail, PY3
+from blaze.compatibility import xfail, PY3, zip, map
 from blaze import TableSymbol, discover, dshape, compute, by, summary, into
 
 
@@ -294,13 +295,22 @@ def test_drop(drop_tb):
     assert table_name not in rt.table_list().run(rt.connect())
 
 
+def list_of_dicts_equal(lhs, rhs):
+    mapper = compose(list, methodcaller('items'))
+    left = sorted(map(mapper, lhs))
+    right = sorted(map(mapper, rhs))
+    return left == right
+
+
 class TestInto(object):
-    @xfail(PY3, reason='Python 3 has stronger restrictions on type ordering')
     def test_list(self, tb, tb_into):
         result = compute(tb)
-        expected = sorted(result)
-        into(tb_into, expected)
-        assert sorted(compute(tb_into)) == expected
+        rhs = list(result)
+        assert tb_into.t.count() == 0
+        into(tb_into, rhs)
+        assert tb_into.t.count() != 0
+        lhs = list(compute(tb_into))
+        assert list_of_dicts_equal(lhs, rhs)
 
     @xfail(PY3, reason='NumPy integers are not JSON serializable')
     def test_numpy(self, tb_into):
@@ -311,11 +321,11 @@ class TestInto(object):
         rec_list = map(partial(compose(dict, zip), recs.dtype.fields.keys()),
                        recs)
         result = tb_into.t.with_fields('a', 'b', 'c').run(tb_into.conn)
-        assert sorted(result) == sorted(rec_list)
+        assert list_of_dicts_equal(list(result), list(rec_list))
 
-    @xfail(PY3, reason='Python 3 has stronger restrictions on type ordering')
     def test_rql(self, tb, tb_into):
+        assert tb_into.t.count() == 0
         into(tb_into, tb)
-        lhs = sorted(compute(tb_into))
-        rhs = sorted(compute(tb))
-        assert lhs == rhs
+        assert tb_into.t.count() != 0
+        assert list_of_dicts_equal(list(compute(tb_into)),
+                                   list(compute(tb)))
