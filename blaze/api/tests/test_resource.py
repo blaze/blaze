@@ -61,9 +61,10 @@ class TestResource(TestCase):
                             [(1, 1), (2, 2), (1, 1), (2, 2)])
 
     def test_sql(self):
-        assert isinstance(resource('sqlite:///:memory:::tablename',
-                                   schema='{x: int, y: int}'),
-                          SQL)
+        with tmpfile('.db') as filename:
+            assert isinstance(resource('sqlite:///%s::tablename' % filename,
+                                       schema='{x: int, y: int}'),
+                              SQL)
 
     def test_hdf5(self):
         with tmpfile('.hdf5') as filename:
