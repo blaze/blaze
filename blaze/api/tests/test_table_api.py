@@ -91,6 +91,11 @@ def test_dataframe_backed_repr_complex():
     t = Table(df)
     repr(t[t['balance'] < 0])
 
+def test_table_repr_empty():
+    s = repr(t[t.amount > 1e9])
+    assert isinstance(s, str)
+    assert 'amount' in s
+
 
 def test_to_html():
     s = t.to_html()

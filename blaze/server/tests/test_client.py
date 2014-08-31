@@ -69,9 +69,9 @@ def test_expr_client_interactive():
     t = Table(ec)
 
     assert compute(t.name) == ['Alice', 'Bob']
-    assert into(set, compute(by(t, t.name, min=t.amount.min(),
-                                     max=t.amount.max()))) == \
-            set([('Alice', 100, 100), ('Bob', 200, 200)])
+    assert (into(set, compute(by(t.name, min=t.amount.min(),
+                                         max=t.amount.max()))) ==
+            set([('Alice', 100, 100), ('Bob', 200, 200)]))
 
 
 def test_resource():

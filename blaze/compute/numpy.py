@@ -1,11 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from blaze.expr import *
+from blaze.expr import ColumnWise, Projection, Column, Not, Selection
+from blaze.expr import count, nunique, Reduction, Distinct, Sort, Head, Label
+from blaze.expr import TableExpr, ReLabel, Union
+
 from blaze.expr.scalar import BinOp, UnaryOp, USub
-from datashape import Record
 from .core import base, compute
 from ..dispatch import dispatch
+from blaze.api.into import into
+from pandas import DataFrame, Series
 
 __all__ = ['np']
 
@@ -23,14 +27,13 @@ def compute_one(c, x, **kwargs):
 def compute_one(t, x, **kwargs):
     if all(col in x.dtype.names for col in t.columns):
         return x[t.columns]
-    if not x.dtype.names and x.shape[1] == len(c.child.columns):
-        return x[:, [c.child.columns.index(col) for col in c.columns]]
+    if not x.dtype.names and x.shape[1] == len(t.child.columns):
+        return x[:, [t.child.columns.index(col) for col in t.columns]]
     raise NotImplementedError()
 
 
 @dispatch(ColumnWise, np.ndarray)
 def compute_one(t, x, **kwargs):
-    columns = [t.child[c] for c in t.child.columns]
     d = dict((t.child[c].scalar_symbol, x[c]) for c in t.child.columns)
     return compute(t.expr, d)
 
@@ -48,6 +51,7 @@ def compute_one(t, lhs, rhs, **kwargs):
 @dispatch(UnaryOp, np.ndarray)
 def compute_one(t, x, **kwargs):
     return getattr(np, t.symbol)(x)
+
 
 @dispatch(Not, np.ndarray)
 def compute_one(t, x, **kwargs):
@@ -90,12 +94,12 @@ def compute_one(t, x, **kwargs):
     if (t.key in x.dtype.names or
         isinstance(t.key, list) and all(k in x.dtype.names for k in t.key)):
         result = np.sort(x, order=t.key)
-    elif key:
+    elif t.key:
         raise NotImplementedError("Sort key %s not supported" % str(t.key))
     else:
         result = np.sort(x)
 
-    if t.ascending == False:
+    if not t.ascending:
         result = result[::-1]
 
     return result
@@ -127,12 +131,14 @@ def compute_one(expr, example, children, **kwargs):
     return np.concatenate(list(children), axis=0)
 
 
+
 @dispatch(TableExpr, np.ndarray)
 def compute_one(t, x, **kwargs):
-    from blaze.api.into import into
-    from pandas import DataFrame
-    df = into(DataFrame(columns=t.child.columns), x)
-    return compute_one(t, df, **kwargs)
+    if x.ndim > 1 or isinstance(x, np.recarray) or x.dtype.fields is not None:
+        df = DataFrame(columns=t.child.columns)
+    else:
+        df = Series(name=t.child.columns[0])
+    return compute_one(t, into(df, x), **kwargs)
 
 
 @dispatch(np.ndarray)
