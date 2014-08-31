@@ -2,7 +2,8 @@ import json
 import unittest
 from sqlalchemy import create_engine
 
-from blaze.data import CSV, JSON_Streaming, HDF5, SQL, copy
+from blaze.data import CSV, JSON_Streaming, HDF5, SQL
+from blaze.api.into import into
 from blaze.utils import filetext, tmpfile
 from blaze.data.utils import tuplify
 
@@ -42,7 +43,7 @@ class SingleTestClass(unittest.TestCase):
                 csv = CSV(csv_fn, schema=schema)
                 json = JSON_Streaming(json_fn, mode='r+', schema=schema)
 
-                copy(csv, json)
+                into(json, csv)
 
                 self.assertEquals(tuplify(tuple(json)), ((1, 1), (2, 2)))
 
@@ -58,7 +59,7 @@ class SingleTestClass(unittest.TestCase):
                 js = JSON_Streaming(json_fn, schema=schema)
                 csv = CSV(csv_fn, mode='r+', schema=schema)
 
-                copy(js, csv)
+                into(csv, js)
 
                 self.assertEquals(tuple(csv), tuples)
 
@@ -73,7 +74,7 @@ class SingleTestClass(unittest.TestCase):
                 csv = CSV(csv_fn, mode='r+', schema='3 * int')
                 hdf5 = HDF5(hdf5_fn, '/data')
 
-                copy(hdf5, csv)
+                into(csv, hdf5)
 
                 self.assertEquals(tuple(map(tuple, csv)),
                                   ((1, 1, 1), (1, 1, 1), (1, 1, 1)))
@@ -82,22 +83,22 @@ class SingleTestClass(unittest.TestCase):
         data = [('Alice', 100), ('Bob', 200)]
         text = '\n'.join(','.join(map(str, row)) for row in data)
         schema = '{name: string, amount: int}'
-        engine = create_engine('sqlite:///:memory:')
         with filetext(text) as csv_fn:
             with filetext('') as json_fn:
+                with tmpfile('db') as sqldb:
 
-                csv = CSV(csv_fn, mode='r', schema=schema)
-                sql = SQL(engine, 'testtable', schema=schema)
-                json = JSON_Streaming(json_fn, mode='r+', schema=schema)
+                    csv = CSV(csv_fn, mode='r', schema=schema)
+                    sql = SQL('sqlite:///' + sqldb, 'testtable', schema=schema)
+                    json = JSON_Streaming(json_fn, mode='r+', schema=schema)
 
-                copy(csv, sql)
+                    into(sql, csv)
 
-                self.assertEqual(list(sql), data)
+                    self.assertEqual(into(list, sql), data)
 
-                copy(sql, json)
+                    into(json, sql)
 
-                with open(json_fn) as f:
-                    assert 'Alice' in f.read()
+                    with open(json_fn) as f:
+                        assert 'Alice' in f.read()
 
     def test_csv_hdf5(self):
         import h5py
@@ -107,7 +108,7 @@ class SingleTestClass(unittest.TestCase):
                 csv = CSV(csv_fn, schema='2 * int')
                 hdf5 = HDF5(hdf5_fn, '/data', schema='2 * int')
 
-                copy(csv, hdf5)
+                into(hdf5, csv)
 
                 self.assertEquals(nd.as_py(hdf5.as_dynd()),
                                   [[1, 1], [2, 2]])

@@ -10,7 +10,8 @@ import pytest
 
 h5py = pytest.importorskip('h5py')
 
-from blaze import HDF5, discover, into, drop
+from blaze import HDF5, discover, into, drop, resource
+from blaze.utils import tmpfile
 from blaze.compatibility import unicode, xfail
 
 
@@ -275,3 +276,9 @@ def test_hdf5(h5):
     with h5py.File(h5.path, mode='r') as f:
         with pytest.raises(KeyError):
             f['/test']
+
+def test_resource():
+    with tmpfile('hdf5') as filename:
+        h = HDF5(filename, '/test', schema=schema)
+        assert resource(filename, '/test').schema == h.schema
+        assert resource(filename + '::/test').schema == h.schema

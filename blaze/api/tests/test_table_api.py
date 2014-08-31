@@ -3,6 +3,7 @@ from blaze.data.python import Python
 from blaze.compute.core import compute
 from blaze.compute.python import compute
 from datashape import dshape
+from blaze.utils import tmpfile
 
 import pandas as pd
 
@@ -115,3 +116,14 @@ def test_serialization():
     assert t.schema == t2.schema
     assert t._name == t2._name
     assert t.iscolumn == t2.iscolumn
+
+
+def test_table_resource():
+    from blaze.data import CSV
+    with tmpfile('csv') as filename:
+        csv = CSV(filename, 'w', schema='{x: int, y: int}')
+        csv.extend([[1, 2], [10, 20]])
+
+        t = Table(filename)
+        assert isinstance(t.data, CSV)
+        assert list(compute(t)) == list(csv)

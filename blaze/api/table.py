@@ -13,6 +13,7 @@ from ..expr.table import TableSymbol, TableExpr
 from ..dispatch import dispatch
 from .into import into
 from ..compatibility import _strtypes, unicode
+from .resource import resource
 
 __all__ = ['Table', 'compute', 'into']
 
@@ -56,6 +57,8 @@ class Table(TableSymbol):
 
     def __init__(self, data, dshape=None, name=None, columns=None,
             iscolumn=False, schema=None):
+        if isinstance(data, str):
+            data = resource(data)
         if schema and dshape:
             raise ValueError("Please specify one of schema= or dshape= keyword"
                     " arguments")

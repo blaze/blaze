@@ -115,7 +115,6 @@ def into(a, b):
     except TypeError:
         return set(map(tuple, b))
 
-
 @dispatch(dict, (list, tuple, set))
 def into(a, b):
     return dict(b)
@@ -566,11 +565,6 @@ def into(_, dd, **kwargs):
     return iter(dd)
 
 
-@dispatch((list, tuple, set), DataDescriptor)
-def into(c, dd, **kwargs):
-    return type(c)(dd)
-
-
 @dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable), DataDescriptor)
 def into(a, b, **kwargs):
     return into(a, into(nd.array(), b), **kwargs)
@@ -662,3 +656,16 @@ def into(coll, chunks, **kwargs):
     for chunk in chunks:
         into(coll, chunk, **kwargs)
     return coll
+
+
+@dispatch((list, tuple, set), DataDescriptor)
+def into(a, b, **kwargs):
+    if not isinstance(a, type):
+        a = type(a)
+    return a(b)
+
+
+@dispatch(DataDescriptor, (list, tuple, set, DataDescriptor))
+def into(a, b, **kwargs):
+    a.extend(b)
+    return a
