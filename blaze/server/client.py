@@ -150,7 +150,7 @@ def resource_blaze(uri, name):
     return ExprClient(uri, name)
 
 
-@resource.register('blaze://.*::\w*')
+@resource.register('blaze://.*::\w*', priority=11)
 def resource_blaze_all(uri):
     uri = uri[len('blaze://'):]
     uri, name = uri.rsplit('::', 1)
