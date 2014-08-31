@@ -43,7 +43,6 @@ class TestResource(TestCase):
             assert isinstance(dd, CSV)
             self.assertEqual(into(list, dd), [(1, 1), (2, 2)])
 
-    @xfail
     def test_resource_gz(self):
         with filetext('1,1\n2,2', extension='.csv.gz', open=gzip.open) as fn:
             dd = resource(fn, schema='{x: int, y: int}')
