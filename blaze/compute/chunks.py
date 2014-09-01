@@ -339,6 +339,15 @@ def get_chunk(seq, i, chunksize=1024):
     stop = chunksize * (i + 1)
     return seq[start:stop]
 
+@dispatch(object)
+def nchunks(b, chunksize=2**15):
+    """ Number of chunks in object
+
+    >>> nchunks([1, 2, 3, 4, 5], chunksize=2)
+    3
+    """
+    return math.ceil(len(b) / float(chunksize))
+
 @dispatch((list, tuple), ChunkIterator)
 def into(a, b):
     return type(a)(concat((into(a, chunk) for chunk in b)))
