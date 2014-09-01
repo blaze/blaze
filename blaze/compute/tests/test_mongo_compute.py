@@ -12,7 +12,7 @@ from datetime import datetime
 from contextlib import contextmanager
 from toolz import pluck
 
-from blaze import into, compute, compute_one
+from blaze import into, compute, compute_up
 
 from blaze.compute.mongo import MongoQuery
 from blaze.expr import TableSymbol, by
@@ -59,17 +59,17 @@ q = MongoQuery('fake', [])
 
 def test_tablesymbol_one():
     with collection(bank) as coll:
-        assert compute_one(t, coll) == MongoQuery(coll, ())
+        assert compute_up(t, coll) == MongoQuery(coll, ())
 
 def test_tablesymbol():
     with collection(bank) as coll:
         assert compute(t, coll) == list(pluck(['name', 'amount'], bank))
 
 def test_projection_one():
-    assert compute_one(t[['name']], q).query == ({'$project': {'name': 1}},)
+    assert compute_up(t[['name']], q).query == ({'$project': {'name': 1}},)
 
 def test_head_one():
-    assert compute_one(t.head(5), q).query == ({'$limit': 5},)
+    assert compute_up(t.head(5), q).query == ({'$limit': 5},)
 
 def test_head():
     with collection(bank) as coll:
@@ -107,7 +107,7 @@ def test_columnwise():
 
 
 def test_by_one():
-    assert compute_one(by(t.name, t.amount.sum()), q).query == \
+    assert compute_up(by(t.name, t.amount.sum()), q).query == \
             ({'$group': {'_id': {'name': '$name'},
                          'amount_sum': {'$sum': '$amount'}}},
              {'$project': {'amount_sum': '$amount_sum', 'name': '$_id.name'}})

@@ -104,32 +104,32 @@ class MongoQuery(object):
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean, Reduction,
            Head, ReLabel, Apply, Distinct, RowWise, By), Collection)
-def compute_one(e, coll, **kwargs):
-    return compute_one(e, MongoQuery(coll, []))
+def compute_up(e, coll, **kwargs):
+    return compute_up(e, MongoQuery(coll, []))
 
 
 @dispatch(TableSymbol, Collection)
-def compute_one(t, coll, **kwargs):
+def compute_up(t, coll, **kwargs):
     return MongoQuery(coll, [])
 
 
 @dispatch(Head, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     return q.append({'$limit': t.n})
 
 
 @dispatch(Projection, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     return q.append({'$project': dict((col, 1) for col in t.columns)})
 
 
 @dispatch(Selection, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     return q.append({'$match': match(t.predicate.expr)})
 
 
 @dispatch(By, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     if not isinstance(t.grouper, Projection):
         raise ValueError("Complex By operations not supported on MongoDB.\n"
                 "Must be of the form `by(t[columns], t[column].reduction()`")
@@ -148,7 +148,7 @@ def compute_one(t, q, **kwargs):
 
 
 @dispatch(Distinct, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     return MongoQuery(q.coll, q.query +
     ({'$group': {'_id': dict((col, '$'+col) for col in t.columns)}},
      {'$project': toolz.merge(dict((col, '$_id.'+col) for col in t.columns),
@@ -182,13 +182,13 @@ def group_apply(expr):
 
 
 @dispatch(count, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     name = t.dshape[0].names[0]
     return q.append({'$group': {'_id': {}, name: {'$sum': 1}}})
 
 
 @dispatch((sum, min, max, mean), MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     name = t.dshape[0].names[0]
     reduction = {sum: '$sum', min: '$min', max: '$max', mean: '$avg'}[type(t)]
     column = '$' + t.child.columns[0]
@@ -196,7 +196,7 @@ def compute_one(t, q, **kwargs):
 
 
 @dispatch(Sort, MongoQuery)
-def compute_one(t, q, **kwargs):
+def compute_up(t, q, **kwargs):
     return q.append({'$sort': {t.key: 1 if t.ascending else -1}})
 
 
@@ -223,7 +223,7 @@ def post_compute(e, q, d):
     """
     Execute a query using MongoDB's aggregation pipeline
 
-    The compute_one functions operate on Mongo Collection / list-of-dict
+    The compute_up functions operate on Mongo Collection / list-of-dict
     queries.  Once they're done we need to actually execute the query on
     MongoDB.  We do this using the aggregation pipeline framework.
 

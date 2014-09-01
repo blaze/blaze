@@ -30,13 +30,13 @@ from ..expr import nunique, Distinct, By, Sort, Head, Label, ReLabel, Merge
 from ..expr import common_subexpression, Union, Summary
 from ..compatibility import reduce
 from ..utils import unique
-from .core import compute_one, compute, base
+from .core import compute_up, compute, base
 
 __all__ = ['sqlalchemy', 'select']
 
 
 @dispatch(Projection, Selectable)
-def compute_one(t, s, scope=None, **kwargs):
+def compute_up(t, s, scope=None, **kwargs):
     # Walk up the tree to get the original columns
     if scope is None:
         scope = {}
@@ -53,40 +53,40 @@ def compute_one(t, s, scope=None, **kwargs):
 
 
 @dispatch(Column, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.c.get(t.columns[0])
 
 
 @dispatch(ColumnWise, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     columns = [t.child[c] for c in t.child.columns]
     d = dict((t.child[c].scalar_symbol, getattr(s.c, c)) for c in t.child.columns)
     return compute(t.expr, d)
 
 
 @dispatch(BinOp, ClauseElement, (ClauseElement, base))
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(BinOp, (ClauseElement, base), ClauseElement)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     return t.op(lhs, rhs)
 
 
 @dispatch(UnaryOp, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     op = getattr(sa.func, t.symbol)
     return op(s)
 
 
 @dispatch(USub, (sa.Column, Selectable))
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return -s
 
 
 @dispatch(Selection, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     predicate = compute(t.predicate, {t.child: s})
     try:
         return s.where(predicate)
@@ -120,7 +120,7 @@ def listpack(x):
 
 
 @dispatch(Join, Selectable, Selectable)
-def compute_one(t, lhs, rhs, **kwargs):
+def compute_up(t, lhs, rhs, **kwargs):
     condition = reduce(and_, [getattr(lhs.c, l) == getattr(rhs.c, r)
         for l, r in zip(listpack(t.on_left), listpack(t.on_right))])
 
@@ -150,7 +150,7 @@ names = {mean: 'avg',
 
 
 @dispatch(Reduction, sql.elements.ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     try:
         op = getattr(sqlalchemy.sql.functions, t.symbol)
     except AttributeError:
@@ -166,17 +166,17 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(nunique, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return sqlalchemy.sql.functions.count(sqlalchemy.distinct(s))
 
 
 @dispatch(Distinct, (sa.Column, Selectable))
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return sqlalchemy.distinct(s)
 
 
 @dispatch(By, (Selectable, ClauseElement))
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if isinstance(t.grouper, Projection):
         grouper = [compute(t.grouper.child[col], {t.child: s})
                     for col in t.grouper.columns]
@@ -188,7 +188,7 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Sort, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if isinstance(t.key, (tuple, list)):
         raise NotImplementedError("Multi-column sort not yet implemented")
     col = getattr(s.c, t.key)
@@ -198,7 +198,7 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Head, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     if hasattr(s, 'limit'):
         return s.limit(t.n)
     else:
@@ -206,12 +206,12 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Label, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return s.label(t.label)
 
 
 @dispatch(ReLabel, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     columns = [getattr(s.c, col).label(new_col)
                if col != new_col else
                getattr(s.c, col)
@@ -221,18 +221,18 @@ def compute_one(t, s, **kwargs):
 
 
 @dispatch(Merge, Selectable)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     subexpression = common_subexpression(*t.children)
     children = [compute(child, {subexpression: s}) for child in t.children]
     return select(children)
 
 
 @dispatch(Union, Selectable, tuple)
-def compute_one(t, _, children):
+def compute_up(t, _, children):
     return sqlalchemy.union(*children)
 
 
 @dispatch(Summary, ClauseElement)
-def compute_one(t, s, **kwargs):
+def compute_up(t, s, **kwargs):
     return select([compute(value, {t.child: s}).label(name)
         for value, name in zip(t.values, t.names)])
