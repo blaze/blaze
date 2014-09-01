@@ -36,12 +36,14 @@ def into(a, b, **kwargs):
 
 @dispatch(carray, np.ndarray)
 def into(a, b, **kwargs):
+    kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
     return carray(b, **kwargs)
 
 
 @dispatch(carray, (tuple, list))
 def into(a, b, dtype=None, **kwargs):
     x = into(np.ndarray(0), b, dtype=dtype)
+    kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
     return into(a, x, **kwargs)
 
 
@@ -63,6 +65,7 @@ def into(a, b, names=None, types=None, **kwargs):
 
 @dispatch((carray, ctable), Iterator)
 def into(a, b, **kwargs):
+    kwargs = keyfilter(keywords(ctable).__contains__, kwargs)
     chunks = partition_all(1024, b)
     chunk = next(chunks)
     a = into(a, chunk, **kwargs)
