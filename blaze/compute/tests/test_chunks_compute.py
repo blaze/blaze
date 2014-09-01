@@ -65,6 +65,9 @@ def test_selection():
     assert list(concat(compute(t[t.name == 'Alice'], c))) == \
             [[1, 'Alice', 100], [3, 'Alice', -300]]
 
+def test_compute_down_doesnt_squash():
+    expr = t.name.distinct().count()
+    assert compute(expr, c) == 4
 
 def test_compound():
     assert compute(t[t.name == 'Alice'].amount.sum(), c) == -200
