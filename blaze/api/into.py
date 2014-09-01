@@ -559,7 +559,8 @@ def into(l, coll, columns=None, schema=None):
 @dispatch(Collection, CSV)
 def into(coll, d, if_exists="replace", **kwargs):
     """
-    into function which converts TSV/CSV into a MongoDB Collection
+    Convert from TSV/CSV into MongoDB Collection
+
     Parameters
     ----------
     if_exists : string
@@ -633,14 +634,11 @@ def into(coll, d, if_exists="replace", **kwargs):
                 m_id = doc['_id']
                 coll.update({'_id':m_id},{"$set": {d_col: t}})
 
-
         return coll
     except Exception as e:
-
         # not sure what will go wrong yet
         # should we roll back and drop collection?
-
-        print("Something went wrong with the import. ", e)
+        print("Fast mongoimport operation failed.  Reason: ", e)
         print("Trying again without mongoimport call")
         dd_into_coll = into.dispatch(Collection, DataDescriptor)
         return dd_into_coll(coll,csv_dd)
@@ -670,7 +668,6 @@ def into(coll, d, if_exists="replace", **kwargs):
             }
         optional_flags = []
 
-
         if if_exists=='replace':
             optional_flags.append('--drop')
 
@@ -689,15 +686,12 @@ def into(coll, d, if_exists="replace", **kwargs):
 
         return coll
     except Exception as e:
-
         # not sure what will go wrong yet
         # should we roll back and drop collection?
-
-        print("Something went wrong with the import. ", e)
+        print("Fast mongoimport operation failed.  Reason: ", e)
         print("Trying again without mongoimport call")
         dd_into_coll = into.dispatch(Collection, DataDescriptor)
         return dd_into_coll(coll,csv_dd)
-
 
 
 @dispatch(nd.array, DataDescriptor)

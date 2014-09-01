@@ -198,9 +198,7 @@ def test_csv_mongodb_load(empty_collec):
 
 
 def test_csv_into_mongodb(empty_collec):
-
     csv = CSV(file_name)
-
 
     coll = empty_collec
     into(coll,csv)
@@ -210,8 +208,6 @@ def test_csv_into_mongodb(empty_collec):
 
 
 def test_csv_into_mongodb_colon_del(empty_collec):
-
-
     csv = CSV(file_name_colon)
 
     coll = empty_collec
@@ -220,12 +216,9 @@ def test_csv_into_mongodb_colon_del(empty_collec):
 
 
 def test_csv_into_mongodb_columns(empty_collec):
-
     csv = CSV(file_name, schema='{x: int, y: int}')
 
-
     coll = empty_collec
-    # mongo_data = list(coll.find({},{'x': 1, '_id': 0}))
 
     assert into(list, csv) == into(list, into(coll, csv))
 
@@ -239,7 +232,6 @@ def test_csv_into_mongodb_complex(empty_collec):
     into(coll,csv)
 
     mongo_data = list(coll.find({},{'_id': 0}))
-
 
     # This assertion doesn't work due to python floating errors
     # into(list, csv) == into(list, into(coll, csv))
@@ -277,7 +269,6 @@ def test_json_into_mongodb(empty_collec):
 
         assert dd.as_py()[1][-1] == last
         assert dd.as_py()[1][0] == first
-
 
 
 data = [{u'id': u'90742205-0032-413b-b101-ce363ba268ef',
