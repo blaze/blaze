@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify, json
 from dynd import nd
 from cytoolz import first
 from functools import partial, wraps
-from blaze import into, compute, compute_one
+from blaze import into, compute, compute_up
 from ..api import discover, Table
 from ..expr import Expr, TableSymbol, Selection, ColumnWise, TableSymbol
 from ..expr import TableExpr
@@ -284,13 +284,13 @@ def expression_from_name(name):
     >>> expression_from_name('By')
     <class 'blaze.expr.table.By'>
     """
-    for signature, func in compute_one.funcs.items():
+    for signature, func in compute_up.funcs.items():
         try:
             if signature[0].__name__ == name:
                 return signature[0]
         except TypeError:
             pass
-    raise ValueError('%s not found in compute_one' % name)
+    raise ValueError('%s not found in compute_up' % name)
 
 
 def from_tree(expr, namespace=None):

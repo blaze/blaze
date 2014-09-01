@@ -71,39 +71,39 @@ def make_query(rdd, primary_key='', name=None):
 
 
 @dispatch(TableSymbol, SchemaRDD)
-def compute_one(ts, rdd, **kwargs):
+def compute_up(ts, rdd, **kwargs):
     return make_query(rdd)
 
 
 @dispatch((var, Label, std, Sort, count, nunique, Selection, mean,
            Head, ReLabel, Apply, Distinct, RowWise, By, any, all, sum, max,
            min, Reduction, Projection, Column), SchemaRDD)
-def compute_one(e, rdd, **kwargs):
-    return compute_one(e, make_query(rdd), **kwargs)
+def compute_up(e, rdd, **kwargs):
+    return compute_up(e, make_query(rdd), **kwargs)
 
 
 @dispatch((BinOp, Join),
           (SparkSQLQuery, SchemaRDD),
           (SparkSQLQuery, SchemaRDD))
-def compute_one(e, a, b, **kwargs):
+def compute_up(e, a, b, **kwargs):
     if not isinstance(a, SparkSQLQuery):
         a = make_query(a)
     if not isinstance(b, SparkSQLQuery):
         b = make_query(b)
-    return compute_one(e, a, b, **kwargs)
+    return compute_up(e, a, b, **kwargs)
 
 
 @dispatch((UnaryOp, Expr), SparkSQLQuery)
-def compute_one(expr, q, **kwargs):
+def compute_up(expr, q, **kwargs):
     scope = kwargs.pop('scope', dict())
     scope = dict((t, q.mapping.get(data, data)) for t, data in scope.items())
 
-    q2 = compute_one(expr, q.query, scope=scope, **kwargs)
+    q2 = compute_up(expr, q.query, scope=scope, **kwargs)
     return SparkSQLQuery(q.context, q2, q.mapping)
 
 
 @dispatch((BinOp, Join, Expr), SparkSQLQuery, SparkSQLQuery)
-def compute_one(expr, a, b, **kwargs):
+def compute_up(expr, a, b, **kwargs):
     assert a.context == b.context
 
     mapping = toolz.merge(a.mapping, b.mapping)
@@ -111,7 +111,7 @@ def compute_one(expr, a, b, **kwargs):
     scope = kwargs.pop('scope', dict())
     scope = dict((t, mapping.get(data, data)) for t, data in scope.items())
 
-    c = compute_one(expr, a.query, b.query, scope=scope, **kwargs)
+    c = compute_up(expr, a.query, b.query, scope=scope, **kwargs)
     return SparkSQLQuery(a.context, c, mapping)
 
 
