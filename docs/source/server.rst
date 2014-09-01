@@ -35,14 +35,14 @@ To demonstrate the use of the Blaze server we serve the iris csv file.
 
 
 Then we host this under the name ``'iris'`` and serve publicly on port
-``5000``
+``6363``
 
 
 .. code-block:: python
 
    >>> from blaze.server import Server
    >>> server = Server({'iris': csv})
-   >>> server.app.run(host='0.0.0.0', port=5000)
+   >>> server.run(host='0.0.0.0', port=6363)
 
 A Server is the following
 
@@ -50,14 +50,14 @@ A Server is the following
 2.  A `Flask <http://flask.pocoo.org/docs/0.10/quickstart/#a-minimal-application>`_ app.
 
 With this code our machine is now hosting our CSV file through a
-web-application on port 5000.  We can now access our CSV file, through Blaze,
+web-application on port 6363.  We can now access our CSV file, through Blaze,
 as a service from a variety of applications.
 
 Interacting with the Web Server from the Client
 ===============================================
 
 Computation is now available on this server at
-``hostname:5000/compute/iris.json``.  To communicate the computation to be done
+``hostname:6363/compute/iris.json``.  To communicate the computation to be done
 we pass Blaze expressions in JSON format through the request.  See the examples
 below.
 
@@ -69,7 +69,7 @@ We can use standard command line tools to interact with this web service::
    $ curl \
        -H "Content-Type: application/json" \
        -d '{"expr": {"op": "Column", "args": ["iris", "species"]}}' \
-       localhost:5000/compute/iris.json
+       localhost:6363/compute/iris.json
 
    {
      "data": [
@@ -86,7 +86,7 @@ We can use standard command line tools to interact with this web service::
        -d  '{"expr": {"op": "sum", \
                       "args": [{"op": "Column", \
                                  "args": ["iris", "petal_Length"]}]}}' \
-       localhost:5000/compute/iris.json
+       localhost:6363/compute/iris.json
 
    {
      "data": 563.8000000000004,
@@ -116,7 +116,7 @@ First we repeat the same experiment as before, this time using the Python
    ...                   'args': [{'op': 'Column',
    ...                             'args': ['iris', 'petal_length']}]}}
 
-   >>> r = requests.get('http://localhost:5000/compute/iris.json',
+   >>> r = requests.get('http://localhost:6363/compute/iris.json',
    ...                 data=json.dumps(query),
    ...                 headers={'Content-Type': 'application/json'})
 
@@ -164,7 +164,7 @@ do work for us
 
    >>> from blaze import *
    >>> from blaze.server import ExprClient
-   >>> ec = ExprClient('http://localhost:5000', 'iris')
+   >>> ec = ExprClient('http://localhost:6363', 'iris')
 
    >>> t = Table(ec)
        sepal_length  sepal_width  petal_length  petal_width      species
