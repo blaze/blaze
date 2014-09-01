@@ -2,12 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-psycopg2 = pytest.importorskip('psycopg2')
-import subprocess
-ps = subprocess.Popen("ps aux | grep postgres",shell=True, stdout=subprocess.PIPE)
-output = ps.stdout.read()
-pytestmark = pytest.mark.skipif(len(output.split('\n')) < 6, reason="No Postgres Installation")
-
 
 from blaze import SQL
 from blaze import CSV
@@ -15,11 +9,7 @@ from blaze.api.into import into
 import sqlalchemy
 import os
 import csv as csv_module
-from blaze import Table
-from blaze import compute
-import pandas as pd
-import datetime as dt
-
+import subprocess
 
 db_file_name = "db_test.db"
 url = 'sqlite:///{}'.format(db_file_name)

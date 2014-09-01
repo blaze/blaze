@@ -2,11 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-MySQLdb = pytest.importorskip('MySQLdb')
+pymysql = pytest.importorskip('pymysql')
 import subprocess
-ps = subprocess.Popen("ps aux | grep mysql",shell=True, stdout=subprocess.PIPE)
+ps = subprocess.Popen("ps aux | grep '[m]ysql'",shell=True, stdout=subprocess.PIPE)
 output = ps.stdout.read()
-pytestmark = pytest.mark.skipif(len(output.split('\n')) < 6, reason="No MySQL Installation")
+num_processes = len(output.splitlines())
+pytestmark = pytest.mark.skipif(num_processes < 3, reason="No MySQL Installation")
 
 
 from blaze import SQL
@@ -21,7 +22,7 @@ import numpy as np
 import getpass
 
 username = getpass.getuser()
-url = 'mysql://{}@localhost:3306/test'.format(username)
+url = 'mysql+pymysql://{}@localhost:3306/test'.format(username)
 file_name = 'test.csv'
 file_name_floats = 'test_floats.csv'
 
@@ -72,7 +73,7 @@ def test_csv_postgres_load():
 
     cursor = conn.cursor()
     full_path = os.path.abspath(file_name)
-    load = '''LOAD DATA LOCAL INFILE '{}' INTO TABLE {} FIELDS TERMINATED BY ','
+    load = '''LOAD DATA INFILE '{}' INTO TABLE {} FIELDS TERMINATED BY ','
         lines terminated by '\n'
         '''.format(full_path, tbl)
     cursor.execute(load)

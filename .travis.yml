@@ -46,6 +46,9 @@ install:
   # Install PyMongo
   - pip install pymongo
 
+  # Install MySQL py2.y/3.x
+  pip install pymysql
+
   # Install Spark
   # - wget http://d3kbcqa49mib13.cloudfront.net/spark-0.9.1.tgz
   # - tar xvfz spark-0.9.1.tgz
