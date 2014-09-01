@@ -21,6 +21,7 @@ like Pandas onto more restricted out-of-core backends like PyTables.
 
 from __future__ import absolute_import, division, print_function
 
+from multipledispatch.dispatcher import MDNotImplementedError
 from blaze.expr import *
 from toolz import map, partition_all, reduce
 import numpy as np
@@ -93,6 +94,8 @@ def compute_down(expr, c, **kwargs):
     a, b = reductions[type(expr)]
 
     leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
 
     return compute_up(b(t), [compute(expr, {leaf: chunk}) for chunk in c])
 
@@ -102,6 +105,8 @@ def compute_down(expr, c, **kwargs):
     total_sum = 0
     total_count = 0
     leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
@@ -115,6 +120,8 @@ def compute_down(expr, c, **kwargs):
 @dispatch(Head, ChunkIterator)
 def compute_down(expr, c, **kwargs):
     leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     c = iter(c)
     if expr.iscolumn:
         container = Series
@@ -132,15 +139,32 @@ def compute_down(expr, c, **kwargs):
 
     return df
 
+def rowwise_path(expr, leaf):
+    """ Path from expr to leaf is all rowwise operations
+
+    >>> t = TableSymbol('t', '{name: string, amount: int}')
+    >>> rowwise_path(t.amount + 1, t)
+    True
+    >>> rowwise_path((t.amount + 1).sum(), t)  # top expression can be non-row
+    True
+    >>> rowwise_path((t.amount + 1).distinct().count(), t)
+    False
+    """
+    nodes = list(path(expr, leaf))[1:-1]
+    return builtins.all(isinstance(e, RowWise) for e in nodes)
 
 @dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
 def compute_down(expr, c, **kwargs):
     leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     return ChunkIterator(compute(expr, {leaf: chunk}) for chunk in c)
 
 @dispatch(Join, ChunkIterable, (ChunkIterable, ChunkIterator))
 def compute_down(expr, c1, c2, **kwargs):
     left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
     return ChunkIterator(compute(expr, {left_leaf: c1, right_leaf: chunk})
                                 for chunk in c2)
 
@@ -148,6 +172,8 @@ def compute_down(expr, c1, c2, **kwargs):
 @dispatch(Join, ChunkIterator, ChunkIterable)
 def compute_down(expr, c1, c2, **kwargs):
     left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
     return ChunkIterator(compute(expr, {left_leaf: chunk, right_leaf: c2})
                            for chunk in c1)
 
@@ -162,6 +188,8 @@ dict_items = type(dict().items())
 @dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
 def compute_down(expr, other, c, **kwargs):
     left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
     return ChunkIterator(compute(expr, {left_leaf: other, right_leaf: chunk})
                          for chunk in c)
 
@@ -170,6 +198,8 @@ def compute_down(expr, other, c, **kwargs):
     DataDescriptor))
 def compute_down(expr, c, other, **kwargs):
     left_leaf, right_leaf = expr.leaves()
+    if not (rowwise_path(expr, left_leaf) and rowwise_path(expr, right_leaf)):
+        raise MDNotImplementedError()
     return ChunkIterator(compute(expr, {left_leaf: chunk, right_leaf: other})
                          for chunk in c)
 
@@ -177,6 +207,8 @@ def compute_down(expr, c, other, **kwargs):
 @dispatch(Distinct, ChunkIterator)
 def compute_down(expr, c, **kwargs):
     leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     intermediates = concat(into(Iterator, compute(expr, {leaf: chunk})) for chunk in c)
     return unique(intermediates)
 
@@ -192,6 +224,8 @@ def compute_down(expr, c, **kwargs):
 @dispatch(By, ChunkIterator)
 def compute_down(expr, c, **kwargs):
     leaf = expr.leaves()[0]
+    if not rowwise_path(expr, leaf):
+        raise MDNotImplementedError()
     if not isinstance(expr.apply, tuple(reductions)):
         c2 = toolz.concat(into(list, chunk) for chunk in c)
         return compute(expr, {leaf: c2})

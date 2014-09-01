@@ -67,23 +67,28 @@ def top_to_bottom(d, expr):
         return d[expr]
 
     # See if we have a direct computation path
-    if (hasattr(expr, 'leaves') and compute_down.dispatch(
-            type(expr), *tuple(type(d.get(leaf)) for leaf in expr.leaves()))):
-        leaves = [d[leaf] for leaf in expr.leaves()]
-        return compute_down(expr, *leaves)
-    else:
-        # Compute children of this expression
-        children = ([top_to_bottom(d, child) for child in expr.inputs]
-                    if hasattr(expr, 'inputs') else [])
+    if hasattr(expr, 'leaves'):
+        try:
+            leaves = [d[leaf] for leaf in expr.leaves()]
+            return compute_down(expr, *leaves)
+        except (KeyError, NotImplementedError):
+            pass
 
-        # Compute this expression given the children
-        cd = compute_down.dispatch(type(expr), *map(type, children))
-        if isinstance(expr, Expr) and cd:
-            d = dict((inp, TableSymbol('_%d'%i, inp.schema, inp.iscolumn))
-                        for i, inp in enumerate(expr.inputs))
-            return cd(expr.subs(d), *children)
-        else:
-            return compute_up(expr, *children, scope=d)
+    # Recursively compute children of this expression
+    children = ([top_to_bottom(d, child) for child in expr.inputs]
+                if hasattr(expr, 'inputs') else [])
+
+    # Compute this expression given the children
+    cd = compute_down.dispatch(type(expr), *map(type, children))
+    if isinstance(expr, Expr) and cd:
+        leaves = dict((inp, TableSymbol('_%d'%i, inp.schema, inp.iscolumn))
+                    for i, inp in enumerate(expr.inputs))
+        try:
+            return cd(expr.subs(leaves), *children, scope=d)
+        except NotImplementedError:
+            pass
+
+    return compute_up(expr, *children, scope=d)
 
 
 
