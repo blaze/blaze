@@ -79,7 +79,7 @@ def top_to_bottom(d, expr):
         # Compute this expression given the children
         cd = compute_down.dispatch(type(expr), *map(type, children))
         if isinstance(expr, Expr) and cd:
-            d = dict((inp, TableSymbol('_%d'%i, inp.schema))
+            d = dict((inp, TableSymbol('_%d'%i, inp.schema, inp.iscolumn))
                         for i, inp in enumerate(expr.inputs))
             return cd(expr.subs(d), *children)
         else:

@@ -73,14 +73,19 @@ def compute_up(expr, ba, **kwargs):
     return math.sqrt(compute_up(expr.child.var(), ba, **kwargs))
 
 
+@dispatch(Reduction, (bcolz.carray, bcolz.ctable))
+def compute_up(expr, data, **kwargs):
+    return compute_up(expr, iter(data), **kwargs)
+
+
 @dispatch((ReLabel, Label), (bcolz.carray, bcolz.ctable))
 def compute_up(expr, b, **kwargs):
     raise NotImplementedError()
 
 
 @dispatch((RowWise, Distinct, By, nunique), bcolz.ctable)
-def compute_up(c, t, **kwargs):
-    return compute_up(c, iter(t), **kwargs)
+def compute_down(c, t, **kwargs):
+    return compute_down(c, ChunkIndexable(t), **kwargs)
 
 
 @dispatch(nunique, bcolz.carray)
@@ -88,9 +93,9 @@ def compute_up(expr, data, **kwargs):
     return len(set(data))
 
 
-@dispatch(Reduction, (bcolz.carray, bcolz.ctable))
-def compute_up(expr, data, **kwargs):
-    return compute_up(expr, ChunkIndexable(data), **kwargs)
+@dispatch((sum, min, max, count, any, all, mean), (bcolz.carray, bcolz.ctable))
+def compute_down(expr, data, **kwargs):
+    return compute_down(expr, ChunkIndexable(data), **kwargs)
 
 
 @dispatch((bcolz.carray, bcolz.ctable))

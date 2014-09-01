@@ -186,7 +186,7 @@ def into(a, b):
 
 
 @dispatch(pd.DataFrame, np.ndarray)
-def into(df, x):
+def into(df, x, **kwargs):
     if len(df.columns) > 0:
         columns = list(df.columns)
     else:
@@ -195,7 +195,7 @@ def into(df, x):
 
 
 @dispatch((pd.DataFrame, list, tuple, Iterator, nd.array), tables.Table)
-def into(a, t):
+def into(a, t, **kwargs):
     x = into(np.ndarray, t)
     return into(a, x)
 
@@ -276,7 +276,7 @@ def into(_, df):
     return df.copy()
 
 @dispatch(pd.Series, pd.Series)
-def into(_, ser):
+def into(_, ser, **kwargs):
     return ser
 
 @dispatch(pd.Series, Iterator)
@@ -288,14 +288,20 @@ def into(a, b, **kwargs):
     return pd.Series(b, **kwargs)
 
 @dispatch(pd.Series, TableExpr)
-def into(ser, col):
+def into(ser, col, **kwargs):
     ser = into(ser, compute(col))
     ser.name = col.name
     return ser
 
 @dispatch(pd.Series, np.ndarray)
-def into(s, x):
-    return pd.Series(numpy_ensure_strings(x), name=s.name)
+def into(s, x, **kwargs):
+    if 'columns' in kwargs:
+        name = kwargs['columns'][0]
+    elif isinstance(s, pd.Series) and s.name:
+        name = s.name
+    else:
+        name = None
+    return pd.Series(numpy_ensure_strings(x), name=name)
 
 @dispatch(pd.DataFrame, pd.Series)
 def into(_, df):
@@ -649,7 +655,8 @@ def into(df, chunks, **kwargs):
 @dispatch(np.ndarray, ChunkIterator)
 def into(x, chunks, **kwargs):
     arrs = [into(x, chunk, **kwargs) for chunk in chunks]
-    return np.vstack(arrs)
+    return np.concatenate(arrs)
+
 
 @dispatch(Collection, ChunkIterator)
 def into(coll, chunks, **kwargs):
@@ -669,3 +676,8 @@ def into(a, b, **kwargs):
 def into(a, b, **kwargs):
     a.extend(b)
     return a
+
+
+@dispatch(Iterator, (np.ndarray, pd.DataFrame, pd.Series))
+def into(a, b, **kwargs):
+    return iter(into(list, b))

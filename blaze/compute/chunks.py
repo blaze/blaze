@@ -27,6 +27,7 @@ import numpy as np
 import math
 from collections import Iterator
 from toolz import concat, first
+import toolz
 from cytoolz import unique
 from datashape import var, isdimension
 import pandas as pd
@@ -110,16 +111,21 @@ def compute_down(expr, c, **kwargs):
     return total_sum / total_count
 
 
+
 @dispatch(Head, ChunkIterator)
 def compute_down(expr, c, **kwargs):
     leaf = expr.leaves()[0]
     c = iter(c)
-    df = into(DataFrame, compute(expr, {leaf: next(c)}),
+    if expr.iscolumn:
+        container = Series
+    else:
+        container = DataFrame
+    df = into(container, compute(expr, {leaf: next(c)}),
               columns=expr.columns)
     for chunk in c:
         if len(df) >= expr.n:
             break
-        df2 = into(DataFrame,
+        df2 = into(container,
                    compute(expr.child.head(expr.n - len(df)), {leaf: chunk}),
                    columns=expr.columns)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
@@ -185,11 +191,13 @@ def compute_down(expr, c, **kwargs):
 
 @dispatch(By, ChunkIterator)
 def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
     if not isinstance(expr.apply, tuple(reductions)):
+        c2 = toolz.concat(into(list, chunk) for chunk in c)
+        return compute(expr, {leaf: c2})
         raise NotImplementedError("Chunked split-apply-combine only "
                 "implemented for simple reductions")
 
-    leaf = expr.leaves()[0]
 
     a, b = reductions[type(expr.apply)]
 
@@ -210,6 +218,12 @@ def compute_down(expr, c, **kwargs):
                b(t[apply_cols]))
 
     return compute(group, {t: intermediate})
+
+
+@dispatch(Reduction, ChunkIterator)
+def compute_up(expr, data, **kwargs):
+    seq = toolz.concat(into([], chunk) for chunk in data)
+    return compute_up(expr, seq, **kwargs)
 
 
 @dispatch(object)
@@ -296,10 +310,10 @@ def into(a, b):
     return type(a)(concat((into(a, chunk) for chunk in b)))
 
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 import pandas
 
-@dispatch(DataFrame, ChunkIterator)
+@dispatch((DataFrame, Series), ChunkIterator)
 def into(df, b, **kwargs):
     chunks = [into(df, chunk, **kwargs) for chunk in b]
     return pandas.concat(chunks, ignore_index=True)
