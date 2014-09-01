@@ -18,7 +18,7 @@ import tables
 
 from ..compute.chunks import ChunkIterator
 from ..dispatch import dispatch
-from ..expr import TableExpr, Expr
+from ..expr import TableExpr, Expr, Projection, TableSymbol
 from ..compute.core import compute
 from .resource import resource
 from ..compatibility import _strtypes
@@ -618,6 +618,29 @@ def into(a, b, **kwargs):
                        names=b.columns,
                        **options)
 
+@dispatch((np.ndarray, pd.DataFrame, ColumnDataSource, ctable, tables.Table,
+    list, tuple, set), Projection)
+def into(a, b, **kwargs):
+    """ Special case on anything <- Table(CSV)[columns]
+
+    Many CSV injest functions have keyword arguments to take only certain
+    columns.  We should leverage these if our input is of the form like the
+    following for CSVs
+
+    >>> csv = CSV('/path/to/file.csv')              # doctest: +SKIP
+    >>> t = Table(csv)                              # doctest: +SKIP
+    >>> into(list, t[['column-1', 'column-2']]      # doctest: +SKIP
+    """
+    if isinstance(b.child, TableSymbol) and isinstance(b.child.data, CSV):
+        return into(a, b.child.data, names=b.columns, **kwargs)
+    else:
+        # TODO, replace with with raise MDNotImplementeError once
+        # https://github.com/mrocklin/multipledispatch/pull/39 is merged
+        a = a if isinstance(a, type) else type(a)
+        f = into.dispatch(a, TableExpr)
+        return f(a, b, **kwargs)
+
+        # TODO: add signature for SQL import
 
 @dispatch(pd.DataFrame, DataDescriptor)
 def into(a, b):
