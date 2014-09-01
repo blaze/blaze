@@ -87,36 +87,40 @@ reductions = {sum: (sum, sum), count: (count, sum),
 
 
 @dispatch(tuple(reductions), ChunkIterator)
-def compute_up(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
     t = TableSymbol('_', dshape=expr.child.dshape)
     a, b = reductions[type(expr)]
 
-    return compute_up(b(t), [compute_up(a(t), chunk) for chunk in c])
+    leaf = expr.leaves()[0]
+
+    return compute_up(b(t), [compute(expr, {leaf: chunk}) for chunk in c])
 
 
 @dispatch(mean, ChunkIterator)
-def compute_up(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
     total_sum = 0
     total_count = 0
+    leaf = expr.leaves()[0]
     for chunk in c:
         if isinstance(chunk, Iterator):
             chunk = list(chunk)
-        total_sum += compute_up(expr.child.sum(), chunk)
-        total_count += compute_up(expr.child.count(), chunk)
+        total_sum += compute(expr.child.sum(), {leaf: chunk})
+        total_count += compute(expr.child.count(), {leaf: chunk})
 
     return total_sum / total_count
 
 
 @dispatch(Head, ChunkIterator)
-def compute_up(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
     c = iter(c)
-    df = into(DataFrame, compute_up(expr, next(c)),
+    df = into(DataFrame, compute(expr, {leaf: next(c)}),
               columns=expr.columns)
     for chunk in c:
         if len(df) >= expr.n:
             break
         df2 = into(DataFrame,
-                   compute_up(expr.child.head(expr.n - len(df)), chunk),
+                   compute(expr.child.head(expr.n - len(df)), {leaf: chunk}),
                    columns=expr.columns)
         df = pd.concat([df, df2], axis=0, ignore_index=True)
 
@@ -124,18 +128,22 @@ def compute_up(expr, c, **kwargs):
 
 
 @dispatch((Selection, RowWise, Label, ReLabel), ChunkIterator)
-def compute_up(expr, c, **kwargs):
-    return ChunkIterator(compute_up(expr, chunk) for chunk in c)
-
+def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
+    return ChunkIterator(compute(expr, {leaf: chunk}) for chunk in c)
 
 @dispatch(Join, ChunkIterable, (ChunkIterable, ChunkIterator))
-def compute_up(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_up(expr, c1, chunk) for chunk in c2)
+def compute_down(expr, c1, c2, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    return ChunkIterator(compute(expr, {left_leaf: c1, right_leaf: chunk})
+                                for chunk in c2)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterable)
-def compute_up(expr, c1, c2, **kwargs):
-    return ChunkIterator(compute_up(expr, chunk, c2) for chunk in c1)
+def compute_down(expr, c1, c2, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    return ChunkIterator(compute(expr, {left_leaf: chunk, right_leaf: c2})
+                           for chunk in c1)
 
 
 @dispatch(Join, ChunkIterator, ChunkIterator)
@@ -146,40 +154,49 @@ def compute_up(expr, c1, c2, **kwargs):
 dict_items = type(dict().items())
 
 @dispatch(Join, (object, tuple, list, Iterator, dict_items, DataDescriptor), ChunkIterator)
-def compute_up(expr, other, c, **kwargs):
-    return ChunkIterator(compute_up(expr, other, chunk) for chunk in c)
+def compute_down(expr, other, c, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    return ChunkIterator(compute(expr, {left_leaf: other, right_leaf: chunk})
+                         for chunk in c)
 
 
 @dispatch(Join, ChunkIterator, (tuple, list, object, dict_items, Iterator,
     DataDescriptor))
-def compute_up(expr, c, other, **kwargs):
-    return ChunkIterator(compute_up(expr, chunk, other) for chunk in c)
+def compute_down(expr, c, other, **kwargs):
+    left_leaf, right_leaf = expr.leaves()
+    return ChunkIterator(compute(expr, {left_leaf: chunk, right_leaf: other})
+                         for chunk in c)
 
 
 @dispatch(Distinct, ChunkIterator)
-def compute_up(expr, c, **kwargs):
-    intermediates = concat(into(Iterator, compute_up(expr, chunk)) for chunk in c)
+def compute_down(expr, c, **kwargs):
+    leaf = expr.leaves()[0]
+    intermediates = concat(into(Iterator, compute(expr, {leaf: chunk})) for chunk in c)
     return unique(intermediates)
 
 
 @dispatch(nunique, ChunkIterator)
-def compute_up(expr, c, **kwargs):
-    dist = compute_up(expr.child.distinct(), c)
-    return compute_up(expr.child.count(), dist)
+def compute_down(expr, c, **kwargs):
+    dist = compute_down(expr.child.distinct(), c)
+
+    t = TableSymbol('_1', expr.child.dshape, expr.child.iscolumn)
+    return compute(t.count(), {t: dist})
 
 
 @dispatch(By, ChunkIterator)
-def compute_up(expr, c, **kwargs):
+def compute_down(expr, c, **kwargs):
     if not isinstance(expr.apply, tuple(reductions)):
         raise NotImplementedError("Chunked split-apply-combine only "
                 "implemented for simple reductions")
+
+    leaf = expr.leaves()[0]
 
     a, b = reductions[type(expr.apply)]
 
     perchunk = by(expr.grouper, a(expr.apply.child))
 
     # Put each chunk into a list, then concatenate
-    intermediate = concat(into([], compute_up(perchunk, chunk))
+    intermediate = concat(into([], compute(perchunk, {leaf: chunk}))
                           for chunk in c)
 
     # Form computation to do on the concatenated union
@@ -192,7 +209,7 @@ def compute_up(expr, c, **kwargs):
     group = by(t[expr.grouper.columns],
                b(t[apply_cols]))
 
-    return compute_up(group, intermediate)
+    return compute(group, {t: intermediate})
 
 
 @dispatch(object)

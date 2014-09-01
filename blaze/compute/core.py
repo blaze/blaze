@@ -67,8 +67,8 @@ def top_to_bottom(d, expr):
         return d[expr]
 
     # See if we have a direct computation path
-    if (hasattr(expr, 'leaves') and compute_down.resolve(
-            (type(expr),) + tuple(type(d.get(leaf)) for leaf in expr.leaves()))):
+    if (hasattr(expr, 'leaves') and compute_down.dispatch(
+            type(expr), *tuple(type(d.get(leaf)) for leaf in expr.leaves()))):
         leaves = [d[leaf] for leaf in expr.leaves()]
         return compute_down(expr, *leaves)
     else:
@@ -77,7 +77,14 @@ def top_to_bottom(d, expr):
                     if hasattr(expr, 'inputs') else [])
 
         # Compute this expression given the children
-        return compute_up(expr, *children, scope=d)
+        cd = compute_down.dispatch(type(expr), *map(type, children))
+        if isinstance(expr, Expr) and cd:
+            d = dict((inp, TableSymbol('_%d'%i, inp.schema))
+                        for i, inp in enumerate(expr.inputs))
+            return cd(expr.subs(d), *children)
+        else:
+            return compute_up(expr, *children, scope=d)
+
 
 
 def bottom_up(d, expr):
