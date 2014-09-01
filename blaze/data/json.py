@@ -31,6 +31,7 @@ class JSON(DataDescriptor):
     """
     def __init__(self, path, mode='rt', schema=None, dshape=None, open=open):
         self.path = path
+        self._abspath = os.path.abspath(path)
         self.mode = mode
         self.open = open
         if dshape:
@@ -92,6 +93,7 @@ class JSON_Streaming(JSON):
     def __init__(self, path, mode='rt', schema=None, dshape=None, open=open,
                  nrows_discovery=50):
         self.path = path
+        self._abspath = os.path.abspath(path)
         self.mode = mode
         self.open = open
         if dshape:
