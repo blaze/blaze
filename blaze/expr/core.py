@@ -6,7 +6,7 @@ from toolz import unique, concat
 
 from ..dispatch import dispatch
 
-__all__ = ['Expr', 'discover']
+__all__ = ['Expr', 'discover', 'path']
 
 
 def _str(s):
@@ -183,5 +183,8 @@ def path(a, b):
     """
     while not a.isidentical(b):
         yield a
-        a = a.child
+        for child in a.inputs:
+            if b in child.traverse():
+                a = child
+                break
     yield a
