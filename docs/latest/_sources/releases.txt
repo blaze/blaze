@@ -2,6 +2,17 @@
 Release Notes
 ======================
 
+Release 0.6.3
+-------------
+
+* by takes only two arguments, the grouper and apply
+  child is inferred using common_subexpression
+* Better handling of pandas Series object
+* Better printing of empty results in interactive mode
+* Regex dispatched resource function bound to Table, e.g.
+  >>> Table('/path/to/file.csv')
+
+
 Release 0.6.2
 -------------
 

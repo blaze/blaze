@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Expressions &mdash; Blaze 0.6.2 documentation</title>
+    <title>Expressions &mdash; Blaze 0.6.3 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.6.2',
+        VERSION:     '0.6.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.2 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
     <link rel="next" title="Backends" href="backends.html" />
     <link rel="prev" title="Data" href="data.html" />
 <meta charset='utf-8'>
@@ -140,8 +140,7 @@ a comutation to do in the future.</p>
 <p>Blaze borrows the <tt class="docutils literal"><span class="pre">by</span></tt> operation from <tt class="docutils literal"><span class="pre">R</span></tt> and <tt class="docutils literal"><span class="pre">Julia</span></tt>.  The <tt class="docutils literal"><span class="pre">by</span></tt>
 operation is a combined <tt class="docutils literal"><span class="pre">groupby</span></tt> and reduction, fulfilling
 split-apply-combine workflows.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">accounts</span><span class="p">,</span>                     <span class="c"># Table</span>
-<span class="gp">... </span>   <span class="n">accounts</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>             <span class="c"># Splitting/grouping element</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">accounts</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>             <span class="c"># Splitting/grouping element</span>
 <span class="gp">... </span>   <span class="n">accounts</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>    <span class="c"># Apply and reduction</span>
 </pre></div>
 </div>

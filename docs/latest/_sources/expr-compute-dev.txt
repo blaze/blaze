@@ -19,7 +19,7 @@ Blaze represents expressions as Python objects.  Classes include::
     ColumnWise - a combination of a table and a scalar expression, -t['amount'] + 1
     Join - join two tables on shared columns, join(t, s, 'id')
     Reduction - perform a sum or min or max on a table, t['amount'].sum()
-    By - split-apply-combine operation, by(t, t['name'], t['amount'].sum())
+    By - split-apply-combine operation, by(t['name'], t['amount'].sum())
 
     Also:
         Sort, Distinct, Head, Label, Map, Apply, Merge

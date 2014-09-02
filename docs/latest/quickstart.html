@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Quickstart &mdash; Blaze 0.6.2 documentation</title>
+    <title>Quickstart &mdash; Blaze 0.6.3 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.6.2',
+        VERSION:     '0.6.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-scrollspy.js"></script>
     <script type="text/javascript" src="_static/js/bootstrap-affix.js"></script>
-    <link rel="top" title="Blaze 0.6.2 documentation" href="index.html" />
+    <link rel="top" title="Blaze 0.6.3 documentation" href="index.html" />
     <link rel="next" title="Data" href="data.html" />
     <link rel="prev" title="Overview" href="overview.html" />
 <meta charset='utf-8'>
@@ -195,8 +195,7 @@ stored in a <a class="reference external" href="https://raw.githubusercontent.co
 <h2>More Computations<a class="headerlink" href="#more-computations" title="Permalink to this headline">¶</a></h2>
 <p>Common operations like Joins and split-apply-combine are available on any kind
 of data</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span>                        <span class="c"># Split apply combine operation</span>
-<span class="gp">... </span>   <span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>                <span class="c"># Group by species</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>                <span class="c"># Group by species</span>
 <span class="gp">... </span>   <span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>     <span class="c"># Take the mean of the petal_width column</span>
 <span class="go">           species  petal_width</span>
 <span class="go">0   Iris-virginica        2.026</span>
@@ -221,8 +220,7 @@ by calling <tt class="docutils literal"><span class="pre">compute</span></tt>.</
 </div>
 <p>Alternatively use the <tt class="docutils literal"><span class="pre">into</span></tt> operation to push your output into a suitable
 container type.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
 <span class="gp">... </span>            <span class="n">iris</span><span class="o">.</span><span class="n">petal_width</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">into</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>                     <span class="c"># Push result into a list</span>
