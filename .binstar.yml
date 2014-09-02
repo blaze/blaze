@@ -1,4 +1,5 @@
 package: blaze
+user: blaze
 
 platform:
   - linux-64
