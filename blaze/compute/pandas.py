@@ -333,7 +333,9 @@ def compute_one(t, df, **kwargs):
 
 @dispatch(Map, Series)
 def compute_one(t, df, **kwargs):
-    return df.map(t.func)
+    result = df.map(t.func)
+    result.name = t.name
+    return result
 
 
 @dispatch(Apply, (Series, DataFrame))
