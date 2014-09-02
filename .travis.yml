@@ -91,7 +91,7 @@ before_script:
   - mysql -e 'create database test'
 
 script: 
-  - coverage run --source=toolz $(which py.test) --with-doctest
+  - coverage run --source=blaze $(which py.test) --with-doctest
   - coverage report --show-missing
 
 after_success:
