@@ -1,8 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
+import os
+import shutil
 from functools import partial
 import numpy as np
 import tables as tb
+from blaze.utils import tmpfile
+
+import datashape
 from blaze.expr import (Selection, Head, Column, ColumnWise, Projection,
                         TableSymbol, Sort, Reduction, count)
 from blaze.expr import eval_str
@@ -38,6 +43,46 @@ def create_index(t, columns, name=None, **kwargs):
 @dispatch(tb.Column)
 def create_index(c, optlevel=9, kind='full', name=None, **kwargs):
     c.create_index(optlevel=optlevel, kind=kind, **kwargs)
+
+
+def to_dtype(dshape):
+    dshape = datashape.dshape(dshape)
+    dtype = datashape.to_numpy_dtype(dshape)
+    fields = dict(dtype.fields.items())
+    for k, (v, _) in fields.items():
+        # pytables borks on unicode (even in Py3!) and object, probably should
+        # raise here if either of those is the case
+        if issubclass(v.type, basestring) and isinstance(dshape.subshape[k],
+                                                         datashape.String):
+            fields[k] = np.dtype('|S%d' % v.itemsize)
+    return np.dtype(list(fields.items()))
+
+
+def PyTables(path, datapath, dshape=None):
+    def possibly_create_table(filename, dtype):
+        f = tb.open_file(filename, mode='a')
+        try:
+            if datapath not in f:
+                if dtype is None:
+                    raise ValueError('dshape cannot be None and datapath not'
+                                     ' in file')
+                else:
+                    f.create_table('/', datapath.lstrip('/'), description=dtype)
+        finally:
+            f.close()
+
+    if dshape is not None:
+        dtype = to_dtype(dshape)
+    else:
+        dtype = None
+
+    if os.path.exists(path):
+        possibly_create_table(path, dtype)
+    else:
+        with tmpfile('.h5') as filename:
+            path = possibly_create_table(filename, dtype)
+            shutil.copyfile(filename, path)
+    return tb.open_file(path).get_node(datapath)
 
 
 @dispatch(Selection, tb.Table)
