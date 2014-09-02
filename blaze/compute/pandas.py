@@ -334,7 +334,11 @@ def compute_one(t, df, **kwargs):
 @dispatch(Map, Series)
 def compute_one(t, df, **kwargs):
     result = df.map(t.func)
-    result.name = t.name
+    try:
+        result.name = t.name
+    except NotImplementedError:
+        # We don't have a schema, but we should still be able to map
+        result.name = df.name
     return result
 
 
